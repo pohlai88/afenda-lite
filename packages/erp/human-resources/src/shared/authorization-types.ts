@@ -6,37 +6,37 @@ import type {
 } from "../module-ids";
 import type { HumanResourcesPermission } from "../permissions";
 
-export type HumanResourcesAuthorizationPort = {
-	can(input: {
+export interface HumanResourcesAuthorizationPort {
+	can: (input: {
 		organizationId: string;
 		actorUserId: string;
 		permission: HumanResourcesPermission;
-	}): Promise<boolean>;
-};
+	}) => Promise<boolean>;
+}
 
-export type HumanResourcesAuthorizationDecisionInput = {
-	organizationId: string;
+export interface HumanResourcesAuthorizationDecisionInput {
 	actorUserId: string;
+	asOf?: string | undefined;
+	organizationId: string;
+	ownerEmployeeId?: HumanResourcesEmployeeId | undefined;
 	permission: HumanResourcesPermission;
+	resourceId?: string | undefined;
 
 	resourceType?: string | undefined;
-	resourceId?: string | undefined;
-	subjectEmployeeId?: HumanResourcesEmployeeId | undefined;
-	ownerEmployeeId?: HumanResourcesEmployeeId | undefined;
 
 	sensitivity?: "standard" | "sensitive" | "highly_restricted" | undefined;
-	asOf?: string | undefined;
-};
+	subjectEmployeeId?: HumanResourcesEmployeeId | undefined;
+}
 
-export type HumanResourcesResourceAwareAuthorizationPort = {
-	canWithContext(input: HumanResourcesAuthorizationDecisionInput): Promise<
+export interface HumanResourcesResourceAwareAuthorizationPort {
+	canWithContext: (input: HumanResourcesAuthorizationDecisionInput) => Promise<
 		Result<{
 			allowed: boolean;
 			projectedFields?: string[] | undefined;
 			reason?: string | undefined;
 		}>
 	>;
-};
+}
 
 export type HumanResourcesOperationId =
 	| HumanResourcesCommandId
@@ -68,28 +68,13 @@ export type HumanResourcesResourceKind =
 	| "privacy_subject";
 
 export interface HumanResourcesActorContext {
-	organizationId: string;
-	actorUserId: string;
 	actorEmployeeId?: string | undefined;
+	actorUserId: string;
 	correlationId: string;
+	organizationId: string;
 }
 
 export interface HumanResourcesResourceContext {
-	organizationId: string;
-	kind: HumanResourcesResourceKind;
-	resourceId?: string | undefined;
-
-	/**
-	 * Employee/person affected by the operation.
-	 */
-	subjectEmployeeId?: string | undefined;
-	subjectPersonId?: string | undefined;
-
-	/**
-	 * Optional policy-relevant relationships.
-	 */
-	ownerUserId?: string | undefined;
-	managerEmployeeId?: string | undefined;
 	assignedUserIds?: readonly string[] | undefined;
 
 	/**
@@ -98,20 +83,35 @@ export interface HumanResourcesResourceContext {
 	attributes?:
 		| Readonly<Record<string, string | number | boolean | null>>
 		| undefined;
+	kind: HumanResourcesResourceKind;
+	managerEmployeeId?: string | undefined;
+	organizationId: string;
+
+	/**
+	 * Optional policy-relevant relationships.
+	 */
+	ownerUserId?: string | undefined;
+	resourceId?: string | undefined;
+
+	/**
+	 * Employee/person affected by the operation.
+	 */
+	subjectEmployeeId?: string | undefined;
+	subjectPersonId?: string | undefined;
 }
 
 export interface HumanResourcesAuthorizationRequest {
-	operationId: HumanResourcesOperationId;
-	operationKind: HumanResourcesOperationKind;
-	requiredPermission: HumanResourcesPermission;
 	actor: HumanResourcesActorContext;
-	resource?: HumanResourcesResourceContext | undefined;
-	requestedFields?: readonly string[] | undefined;
 	/**
 	 * Full actor permission set for query field projection.
 	 * Defaults to `[requiredPermission]` when omitted.
 	 */
 	actorPermissions?: readonly HumanResourcesPermission[] | undefined;
+	operationId: HumanResourcesOperationId;
+	operationKind: HumanResourcesOperationKind;
+	requestedFields?: readonly string[] | undefined;
+	requiredPermission: HumanResourcesPermission;
+	resource?: HumanResourcesResourceContext | undefined;
 }
 
 export type HumanResourcesAuthorizationDenyCode =

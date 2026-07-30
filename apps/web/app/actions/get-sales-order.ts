@@ -10,9 +10,9 @@ import {
 	actionFail,
 } from "@/modules/platform/schemas/action-result";
 
-export type GetSalesOrderActionData = {
+export interface GetSalesOrderActionData {
 	order: SalesOrder;
-};
+}
 
 /**
  * Sales order get — session org stamp + `sales.order.read`.
@@ -20,7 +20,7 @@ export type GetSalesOrderActionData = {
 export async function getSalesOrderAction(
 	orderId: string,
 ): Promise<ActionResult<GetSalesOrderActionData>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getSalesOrderAction",
 		permission: "sales.order.read",
 		safeMessage: "Could not load sales order. Try again or contact an admin.",

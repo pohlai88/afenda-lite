@@ -24,8 +24,10 @@ describe("@afenda/master-data tenant loader architecture", () => {
 			const lines = readFileSync(file, "utf8").split(/\r?\n/);
 			for (const [index, line] of lines.entries()) {
 				for (const match of line.matchAll(/eq\((md[A-Za-z]+)\.id,/g)) {
-					const table = match[1];
-					if (table === undefined) continue;
+					const [, table] = match;
+					if (table === undefined) {
+						continue;
+					}
 					const window = lines
 						.slice(Math.max(0, index - 12), index + 13)
 						.join("\n");

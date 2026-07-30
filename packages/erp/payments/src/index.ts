@@ -63,7 +63,7 @@ const parse = <T>(
 
 const normalized = (value: string) => value.trim().toUpperCase();
 
-async function permit(
+function permit(
 	options: PaymentsCommandOptions,
 	input: { organizationId: string; actorUserId: string },
 	permission: Parameters<typeof requirePaymentsPermission>[1]["permission"],
@@ -83,9 +83,13 @@ export async function createPaymentAccount(
 		input,
 		"Invalid payment-account input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const allowed = await permit(options, parsed.data, "payments.account.manage");
-	if (!allowed.ok) return allowed;
+	if (!allowed.ok) {
+		return allowed;
+	}
 	return resolvePaymentsStore(options.store).createPaymentAccount({
 		organizationId: parsed.data.organizationId,
 		code: parsed.data.code,
@@ -107,9 +111,13 @@ export async function listPaymentAccounts(
 		input,
 		"Invalid payment-account list input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const allowed = await permit(options, parsed.data, "payments.account.read");
-	if (!allowed.ok) return allowed;
+	if (!allowed.ok) {
+		return allowed;
+	}
 	return resolvePaymentsStore(options.store).listPaymentAccounts(
 		parsed.data.organizationId,
 	);
@@ -124,10 +132,14 @@ export async function createDraftPayment(
 		input,
 		"Invalid payment create input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const allowed = await permit(options, parsed.data, "payments.payment.create");
-	if (!allowed.ok) return allowed;
-	const data = parsed.data;
+	if (!allowed.ok) {
+		return allowed;
+	}
+	const { data } = parsed;
 	return resolvePaymentsStore(options.store).createDraft({
 		organizationId: data.organizationId,
 		code: data.code,
@@ -159,13 +171,17 @@ export async function addPaymentApplicationInstruction(
 		input,
 		"Invalid payment application instruction input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const allowed = await permit(
 		options,
 		parsed.data,
 		"payments.application_instruction.manage",
 	);
-	if (!allowed.ok) return allowed;
+	if (!allowed.ok) {
+		return allowed;
+	}
 	return resolvePaymentsStore(options.store).addApplicationInstruction({
 		organizationId: parsed.data.organizationId,
 		paymentId: parsed.data.paymentId,
@@ -190,9 +206,13 @@ export async function postPayment(
 		input,
 		"Invalid payment post input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const allowed = await permit(options, parsed.data, "payments.payment.post");
-	if (!allowed.ok) return allowed;
+	if (!allowed.ok) {
+		return allowed;
+	}
 	return resolvePaymentsStore(options.store).post(parsed.data);
 }
 
@@ -205,13 +225,17 @@ export async function reversePayment(
 		input,
 		"Invalid payment reversal input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const allowed = await permit(
 		options,
 		parsed.data,
 		"payments.payment.reverse",
 	);
-	if (!allowed.ok) return allowed;
+	if (!allowed.ok) {
+		return allowed;
+	}
 	return resolvePaymentsStore(options.store).reverse(parsed.data);
 }
 
@@ -224,11 +248,17 @@ export async function createAndPostPaymentTransfer(
 		input,
 		"Invalid payment transfer input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const create = await permit(options, parsed.data, "payments.transfer.create");
-	if (!create.ok) return create;
+	if (!create.ok) {
+		return create;
+	}
 	const post = await permit(options, parsed.data, "payments.transfer.post");
-	if (!post.ok) return post;
+	if (!post.ok) {
+		return post;
+	}
 	return resolvePaymentsStore(options.store).createAndPostTransfer({
 		...parsed.data,
 		normalizedCode: normalized(parsed.data.code),
@@ -245,11 +275,17 @@ export async function postRefund(
 		input,
 		"Invalid payment refund input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const create = await permit(options, parsed.data, "payments.refund.create");
-	if (!create.ok) return create;
+	if (!create.ok) {
+		return create;
+	}
 	const post = await permit(options, parsed.data, "payments.refund.post");
-	if (!post.ok) return post;
+	if (!post.ok) {
+		return post;
+	}
 	return resolvePaymentsStore(options.store).postRefund({
 		organizationId: parsed.data.organizationId,
 		code: parsed.data.code,
@@ -274,13 +310,17 @@ export async function markApplicationInstructionApplied(
 		input,
 		"Invalid application instruction input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const allowed = await permit(
 		options,
 		parsed.data,
 		"payments.application_instruction.manage",
 	);
-	if (!allowed.ok) return allowed;
+	if (!allowed.ok) {
+		return allowed;
+	}
 	return resolvePaymentsStore(options.store).markInstructionApplied(
 		parsed.data,
 	);
@@ -295,13 +335,17 @@ export async function markApplicationInstructionRejected(
 		input,
 		"Invalid application instruction input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const allowed = await permit(
 		options,
 		parsed.data,
 		"payments.application_instruction.manage",
 	);
-	if (!allowed.ok) return allowed;
+	if (!allowed.ok) {
+		return allowed;
+	}
 	return resolvePaymentsStore(options.store).markInstructionRejected(
 		parsed.data,
 	);
@@ -316,9 +360,13 @@ export async function getPaymentById(
 		input,
 		"Invalid payment get input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const allowed = await permit(options, parsed.data, "payments.payment.read");
-	if (!allowed.ok) return allowed;
+	if (!allowed.ok) {
+		return allowed;
+	}
 	return resolvePaymentsStore(options.store).getById(
 		parsed.data.organizationId,
 		parsed.data.id,
@@ -334,9 +382,13 @@ export async function listPayments(
 		input,
 		"Invalid payment list input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const allowed = await permit(options, parsed.data, "payments.payment.read");
-	if (!allowed.ok) return allowed;
+	if (!allowed.ok) {
+		return allowed;
+	}
 	return resolvePaymentsStore(options.store).list(parsed.data);
 }
 
@@ -349,13 +401,17 @@ export async function getPaymentApplicationAvailability(
 		input,
 		"Invalid payment availability input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const allowed = await permit(
 		options,
 		parsed.data,
 		"payments.availability.read",
 	);
-	if (!allowed.ok) return allowed;
+	if (!allowed.ok) {
+		return allowed;
+	}
 	return resolvePaymentsStore(options.store).getApplicationAvailability(
 		parsed.data.organizationId,
 		parsed.data.paymentId,

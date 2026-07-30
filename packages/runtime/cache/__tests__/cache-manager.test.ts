@@ -14,47 +14,56 @@ function createMemoryL2(): CacheL2Store & {
 	return {
 		store,
 		tags,
-		async get(key) {
-			return store.get(key) ?? null;
+		get(key) {
+			return Promise.resolve(store.get(key) ?? null);
 		},
-		async set(key, entry) {
+		set(key, entry) {
 			store.set(key, entry);
+			return Promise.resolve();
 		},
-		async delete(key) {
+		delete(key) {
 			store.delete(key);
+			return Promise.resolve();
 		},
-		async deleteMany(keys) {
+		deleteMany(keys) {
 			for (const key of keys) {
 				store.delete(key);
 			}
+			return Promise.resolve();
 		},
-		async addToTag(tag, key) {
+		addToTag(tag, key) {
 			let set = tags.get(tag);
 			if (!set) {
 				set = new Set();
 				tags.set(tag, set);
 			}
 			set.add(key);
+			return Promise.resolve();
 		},
-		async removeFromTag(tag, key) {
+		removeFromTag(tag, key) {
 			tags.get(tag)?.delete(key);
 			if (tags.get(tag)?.size === 0) {
 				tags.delete(tag);
 			}
+			return Promise.resolve();
 		},
-		async keysForTag(tag) {
-			return [...(tags.get(tag) ?? [])];
+		keysForTag(tag) {
+			return Promise.resolve([...(tags.get(tag) ?? [])]);
 		},
-		async keysByPattern(pattern) {
+		keysByPattern(pattern) {
 			const regex = patternToRegExp(pattern);
-			return [...store.keys()].filter((key) => regex.test(key));
+			return Promise.resolve(
+				[...store.keys()].filter((key) => regex.test(key)),
+			);
 		},
-		async clearTag(tag) {
+		clearTag(tag) {
 			tags.delete(tag);
+			return Promise.resolve();
 		},
-		async flushPrefix() {
+		flushPrefix() {
 			store.clear();
 			tags.clear();
+			return Promise.resolve();
 		},
 	};
 }
@@ -82,9 +91,7 @@ describe("CacheManager", () => {
 
 		const fallback = await cache.getOrSet(
 			"k",
-			async () => {
-				throw new Error("network down");
-			},
+			() => Promise.reject(new Error("network down")),
 			{ strategy: "network-first" },
 		);
 		expect(fallback).toBe("fresh");

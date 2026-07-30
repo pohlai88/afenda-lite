@@ -60,7 +60,7 @@ function readProperty(input: object, key: PropertyKey): unknown {
 	try {
 		return Reflect.get(input, key);
 	} catch {
-		return undefined;
+		// Proxies may reject reflective access; callers treat that as absent input.
 	}
 }
 
@@ -73,7 +73,9 @@ export async function readRefCountry(
 		input,
 		"country",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const row = await store.getCountryById(parsed.data.id);
 	return row === null ? failReferenceNotFound("country") : ok(row);
 }
@@ -87,7 +89,9 @@ export async function readRefCountryByCode(
 		input,
 		"country",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const row = await store.getCountryByCode(parsed.data.code);
 	return row === null ? failReferenceNotFound("country") : ok(row);
 }
@@ -101,7 +105,9 @@ export async function readRefCountries(
 		input,
 		"country",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	return ok(await store.listCountries(parsed.data));
 }
 
@@ -114,7 +120,9 @@ export async function readRefCurrency(
 		input,
 		"currency",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const row = await store.getCurrencyById(parsed.data.id);
 	return row === null ? failReferenceNotFound("currency") : ok(row);
 }
@@ -128,7 +136,9 @@ export async function readRefCurrencyByCode(
 		input,
 		"currency",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const row = await store.getCurrencyByCode(parsed.data.code);
 	return row === null ? failReferenceNotFound("currency") : ok(row);
 }
@@ -142,7 +152,9 @@ export async function readRefCurrencies(
 		input,
 		"currency",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	return ok(await store.listCurrencies(parsed.data));
 }
 
@@ -155,7 +167,9 @@ export async function readRefLanguage(
 		input,
 		"language",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const row = await store.getLanguageById(parsed.data.id);
 	return row === null ? failReferenceNotFound("language") : ok(row);
 }
@@ -169,7 +183,9 @@ export async function readRefLanguageByCode(
 		input,
 		"language",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const row = await store.getLanguageByCode(parsed.data.code);
 	return row === null ? failReferenceNotFound("language") : ok(row);
 }
@@ -183,7 +199,9 @@ export async function readRefLanguages(
 		input,
 		"language",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	return ok(await store.listLanguages(parsed.data));
 }
 
@@ -196,7 +214,9 @@ export async function readRefTimeZone(
 		input,
 		"time_zone",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const row = await store.getTimeZoneById(parsed.data.id);
 	return row === null ? failReferenceNotFound("time_zone") : ok(row);
 }
@@ -210,7 +230,9 @@ export async function readRefTimeZoneByCode(
 		input,
 		"time_zone",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const row = await store.getTimeZoneByCode(parsed.data.code);
 	return row === null ? failReferenceNotFound("time_zone") : ok(row);
 }
@@ -224,7 +246,9 @@ export async function readRefTimeZones(
 		input,
 		"time_zone",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	return ok(await store.listTimeZones(parsed.data));
 }
 
@@ -237,7 +261,9 @@ export async function readRefUomDimension(
 		input,
 		"uom_dimension",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const row = await store.getUomDimensionById(parsed.data.id);
 	return row === null ? failReferenceNotFound("uom_dimension") : ok(row);
 }
@@ -251,7 +277,9 @@ export async function readRefUomDimensionByCode(
 		input,
 		"uom_dimension",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const row = await store.getUomDimensionByCode(parsed.data.code);
 	return row === null ? failReferenceNotFound("uom_dimension") : ok(row);
 }
@@ -268,7 +296,9 @@ export async function readRefUomDimensions(
 		input,
 		"uom_dimension",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	return ok(await store.listUomDimensions(parsed.data));
 }
 
@@ -277,7 +307,9 @@ export async function readRefUom(
 	input: unknown,
 ): Promise<Result<RefUom>> {
 	const parsed = parseReferenceInput(getRefUomInputSchema, input, "uom");
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const row = await store.getUomById(parsed.data.id);
 	return row === null ? failReferenceNotFound("uom") : ok(row);
 }
@@ -287,7 +319,9 @@ export async function readRefUomByCode(
 	input: unknown,
 ): Promise<Result<RefUom>> {
 	const parsed = parseReferenceInput(getRefUomByCodeInputSchema, input, "uom");
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const row = await store.getUomByCode(parsed.data.code);
 	return row === null ? failReferenceNotFound("uom") : ok(row);
 }
@@ -297,7 +331,9 @@ export async function readRefUoms(
 	input: unknown,
 ): Promise<Result<ListPage<RefUom>>> {
 	const parsed = parseReferenceInput(listRefUomsInputSchema, input, "uom");
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	return ok(await store.listUoms(parsed.data));
 }
 
@@ -310,7 +346,9 @@ export async function readRefUomsByDimension(
 		input,
 		"uom",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	return ok(await store.listUomsByDimension(parsed.data));
 }
 

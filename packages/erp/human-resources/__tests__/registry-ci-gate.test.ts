@@ -63,7 +63,9 @@ describe("Slice 3.8 — HR mutation-emission registry CI gate", () => {
 		for (const definition of Object.values(
 			HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD,
 		)) {
-			if (!definition) continue;
+			if (!definition) {
+				continue;
+			}
 			for (const eventType of definition.eventTypes) {
 				if (!HumanResourcesEventSchemas[eventType]) {
 					missingEvents.push(`${definition.commandId} -> ${eventType}`);
@@ -87,7 +89,9 @@ describe("Slice 3.8 — HR mutation-emission registry CI gate", () => {
 		for (const definition of Object.values(
 			HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD,
 		)) {
-			if (!definition) continue;
+			if (!definition) {
+				continue;
+			}
 			if (definition.emissionMode === "domain_event") {
 				expect(definition.eventTypes.length).toBeGreaterThan(0);
 			}
@@ -103,7 +107,9 @@ describe("Slice 3.8 — HR mutation-emission registry CI gate", () => {
 		for (const definition of Object.values(
 			HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD,
 		)) {
-			if (!definition) continue;
+			if (!definition) {
+				continue;
+			}
 			if (definition.emissionMode === "audit_only") {
 				expect(definition.eventTypes).toEqual([]);
 			}
@@ -119,7 +125,9 @@ describe("Slice 3.8 — HR mutation-emission registry CI gate", () => {
 		for (const definition of Object.values(
 			HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD,
 		)) {
-			if (!definition) continue;
+			if (!definition) {
+				continue;
+			}
 			expect(definition.correlationRequired).toBe(true);
 		}
 	});
@@ -133,7 +141,9 @@ describe("Slice 3.8 — HR mutation-emission registry CI gate", () => {
 		for (const definition of Object.values(
 			HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD,
 		)) {
-			if (!definition) continue;
+			if (!definition) {
+				continue;
+			}
 			expect(definition.auditRequired).toBe(true);
 		}
 	});

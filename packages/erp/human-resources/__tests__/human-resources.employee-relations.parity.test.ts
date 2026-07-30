@@ -129,7 +129,9 @@ describe.skipIf(!runDrizzleParity)(
 					authReady,
 				);
 				expect(opened.ok).toBe(true);
-				if (!opened.ok) return;
+				if (!opened.ok) {
+					return;
+				}
 
 				const finding = await recordEmployeeCaseFinding(
 					{
@@ -144,7 +146,9 @@ describe.skipIf(!runDrizzleParity)(
 					authReady,
 				);
 				expect(finding.ok).toBe(true);
-				if (!finding.ok) return;
+				if (!finding.ok) {
+					return;
+				}
 
 				const recommended = await recommendEmployeeCaseAction(
 					{
@@ -159,7 +163,9 @@ describe.skipIf(!runDrizzleParity)(
 					authReady,
 				);
 				expect(recommended.ok).toBe(true);
-				if (!recommended.ok) return;
+				if (!recommended.ok) {
+					return;
+				}
 
 				const approved = await approveEmployeeCaseAction(
 					{
@@ -174,7 +180,9 @@ describe.skipIf(!runDrizzleParity)(
 					authReady,
 				);
 				expect(approved.ok).toBe(true);
-				if (!approved.ok) return;
+				if (!approved.ok) {
+					return;
+				}
 				expect(approved.data.status).toBe("approved");
 			});
 		}

@@ -38,7 +38,9 @@ export async function createPartyExternalId(
 		return parsed;
 	}
 	const normalized = normalizeExternalId(parsed.data);
-	if (!normalized.ok) return normalized;
+	if (!normalized.ok) {
+		return normalized;
+	}
 	const { store, roots, ports, authorization } = resolvePartyExtensionDeps(
 		options,
 		["createPartyExternalId"],
@@ -58,7 +60,9 @@ export async function createPartyExternalId(
 		parsed.data.organizationId,
 		parsed.data.partyId,
 	);
-	if (!parent.ok) return parent;
+	if (!parent.ok) {
+		return parent;
+	}
 	return store.createPartyExternalId(
 		{
 			organizationId: parsed.data.organizationId,
@@ -89,7 +93,9 @@ export async function findPartyByExternalId(
 		return parsed;
 	}
 	const normalized = normalizeExternalId(parsed.data);
-	if (!normalized.ok) return normalized;
+	if (!normalized.ok) {
+		return normalized;
+	}
 	const { store, authorization } = resolvePartyExtensionDeps(options, [
 		"findPartyByExternalId",
 	]);

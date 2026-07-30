@@ -15,8 +15,13 @@ export function requireMigrationDatabaseUrl(env = process.env) {
 	let parsed;
 	try {
 		parsed = new URL(url);
-	} catch {
-		throw new Error("@afenda/db: DATABASE_URL must be a valid URL (migration)");
+	} catch (error) {
+		throw new Error(
+			"@afenda/db: DATABASE_URL must be a valid URL (migration)",
+			{
+				cause: error,
+			},
+		);
 	}
 	if (parsed.protocol !== "postgresql:" && parsed.protocol !== "postgres:") {
 		throw new Error(

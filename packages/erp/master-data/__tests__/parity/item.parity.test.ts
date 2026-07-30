@@ -23,7 +23,9 @@ const contract: RootParityContract<Item> = {
 			},
 			harness.options,
 		);
-		if (!group.ok) return group;
+		if (!group.ok) {
+			return group;
+		}
 		const active = await activateItemGroup(
 			{
 				...harness.context(),
@@ -32,7 +34,9 @@ const contract: RootParityContract<Item> = {
 			},
 			harness.options,
 		);
-		if (!active.ok) return active;
+		if (!active.ok) {
+			return active;
+		}
 		return createItem(
 			{
 				...harness.context(),

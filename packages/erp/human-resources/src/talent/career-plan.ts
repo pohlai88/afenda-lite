@@ -52,7 +52,7 @@ export const HUMAN_RESOURCES_AGGREGATE_CAREER_PLAN = "career-plan" as const;
 export type HumanResourcesCareerPlanAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_CAREER_PLAN;
 
-export async function createCareerPlan(
+export function createCareerPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CareerPlan>> {
@@ -95,7 +95,7 @@ export async function createCareerPlan(
 				return ok(existingByKey.data.careerPlan);
 			}
 
-			return await store.createCareerPlan(
+			return store.createCareerPlan(
 				{
 					organizationId: data.organizationId,
 					employeeId: data.employeeId,
@@ -116,7 +116,7 @@ export async function createCareerPlan(
 	});
 }
 
-export async function updateCareerPlan(
+export function updateCareerPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CareerPlan>> {
@@ -126,8 +126,8 @@ export async function updateCareerPlan(
 		command: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_UPDATE,
 		resolveResource: (data, opts) =>
 			resolveTalentProfileResourceFromCareerPlan(data, opts),
-		execute: async (data, { store, ports }) => {
-			return await store.updateCareerPlan(
+		execute: async (data, { store, ports }) =>
+			await store.updateCareerPlan(
 				{
 					organizationId: data.organizationId,
 					careerPlanId: data.careerPlanId,
@@ -140,12 +140,11 @@ export async function updateCareerPlan(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_UPDATE,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function acknowledgeCareerPlan(
+export function acknowledgeCareerPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CareerPlan>> {
@@ -155,8 +154,8 @@ export async function acknowledgeCareerPlan(
 		command: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACKNOWLEDGE,
 		resolveResource: (data, opts) =>
 			resolveTalentProfileResourceFromCareerPlan(data, opts),
-		execute: async (data, { store, ports }) => {
-			return await store.acknowledgeCareerPlan(
+		execute: async (data, { store, ports }) =>
+			await store.acknowledgeCareerPlan(
 				{
 					organizationId: data.organizationId,
 					careerPlanId: data.careerPlanId,
@@ -168,12 +167,11 @@ export async function acknowledgeCareerPlan(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACKNOWLEDGE,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function addCareerPlanAction(
+export function addCareerPlanAction(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CareerPlanAction>> {
@@ -183,8 +181,8 @@ export async function addCareerPlanAction(
 		command: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACTION_ADD,
 		resolveResource: (data, opts) =>
 			resolveTalentProfileResourceFromCareerPlan(data, opts),
-		execute: async (data, { store, ports }) => {
-			return await store.addCareerPlanAction(
+		execute: async (data, { store, ports }) =>
+			await store.addCareerPlanAction(
 				{
 					organizationId: data.organizationId,
 					careerPlanId: data.careerPlanId,
@@ -198,12 +196,11 @@ export async function addCareerPlanAction(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACTION_ADD,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function completeCareerPlanAction(
+export function completeCareerPlanAction(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CareerPlanAction>> {
@@ -218,7 +215,7 @@ export async function completeCareerPlanAction(
 				actionId: data.actionId,
 			});
 			if (!action.ok || action.data === null) {
-				return undefined;
+				return;
 			}
 			return resolveTalentProfileResourceFromCareerPlan(
 				{
@@ -228,8 +225,8 @@ export async function completeCareerPlanAction(
 				opts,
 			);
 		},
-		execute: async (data, { store, ports }) => {
-			return await store.completeCareerPlanAction(
+		execute: async (data, { store, ports }) =>
+			await store.completeCareerPlanAction(
 				{
 					organizationId: data.organizationId,
 					actionId: data.actionId,
@@ -241,12 +238,11 @@ export async function completeCareerPlanAction(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACTION_COMPLETE,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function closeCareerPlan(
+export function closeCareerPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CareerPlan>> {
@@ -256,8 +252,8 @@ export async function closeCareerPlan(
 		command: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_CLOSE,
 		resolveResource: (data, opts) =>
 			resolveTalentProfileResourceFromCareerPlan(data, opts),
-		execute: async (data, { store, ports }) => {
-			return await store.closeCareerPlan(
+		execute: async (data, { store, ports }) =>
+			await store.closeCareerPlan(
 				{
 					organizationId: data.organizationId,
 					careerPlanId: data.careerPlanId,
@@ -269,12 +265,11 @@ export async function closeCareerPlan(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_CLOSE,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function getCareerPlanById(
+export function getCareerPlanById(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CareerPlanWithActions | null>> {
@@ -303,7 +298,7 @@ export async function getCareerPlanById(
 	});
 }
 
-export async function listEmployeeCareerPlans(
+export function listEmployeeCareerPlans(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CareerPlanListPage>> {

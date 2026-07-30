@@ -74,7 +74,7 @@ async function ensureRequisitionHasHiringManagerForTransition(
 	return assertRequisitionHasHiringManager(requisition.data);
 }
 
-export async function createDraftRequisition(
+export function createDraftRequisition(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<JobRequisition>> {
@@ -149,7 +149,7 @@ export async function createDraftRequisition(
 	});
 }
 
-export async function amendRequisition(
+export function amendRequisition(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<JobRequisition>> {
@@ -158,15 +158,16 @@ export async function amendRequisition(
 		invalidMessage: "Invalid requisition amend input",
 		command: HUMAN_RESOURCES_COMMAND_REQUISITION_AMEND,
 		execute: async (data, { store, ports }) => {
-			if (data.hiringManagerEmployeeId !== undefined) {
-				if (data.hiringManagerEmployeeId !== null) {
-					const manager = await validateHiringManagerEmployee(store, {
-						organizationId: data.organizationId,
-						hiringManagerEmployeeId: data.hiringManagerEmployeeId,
-					});
-					if (!manager.ok) {
-						return manager;
-					}
+			if (
+				data.hiringManagerEmployeeId !== undefined &&
+				data.hiringManagerEmployeeId !== null
+			) {
+				const manager = await validateHiringManagerEmployee(store, {
+					organizationId: data.organizationId,
+					hiringManagerEmployeeId: data.hiringManagerEmployeeId,
+				});
+				if (!manager.ok) {
+					return manager;
 				}
 			}
 
@@ -192,7 +193,7 @@ export async function amendRequisition(
 	});
 }
 
-export async function assignHiringManager(
+export function assignHiringManager(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<JobRequisition>> {
@@ -251,7 +252,7 @@ export async function assignHiringManager(
 	});
 }
 
-async function transitionRequisition(
+function transitionRequisition(
 	input: unknown,
 	options: HumanResourcesCommandOptions,
 	config: {
@@ -299,7 +300,7 @@ async function transitionRequisition(
 	});
 }
 
-export async function submitRequisition(
+export function submitRequisition(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<JobRequisition>> {
@@ -311,7 +312,7 @@ export async function submitRequisition(
 	});
 }
 
-export async function approveRequisition(
+export function approveRequisition(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<JobRequisition>> {
@@ -324,7 +325,7 @@ export async function approveRequisition(
 	});
 }
 
-export async function openRequisition(
+export function openRequisition(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<JobRequisition>> {
@@ -336,7 +337,7 @@ export async function openRequisition(
 	});
 }
 
-export async function placeRequisitionOnHold(
+export function placeRequisitionOnHold(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<JobRequisition>> {
@@ -347,7 +348,7 @@ export async function placeRequisitionOnHold(
 	});
 }
 
-export async function closeRequisition(
+export function closeRequisition(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<JobRequisition>> {
@@ -358,7 +359,7 @@ export async function closeRequisition(
 	});
 }
 
-export async function cancelRequisition(
+export function cancelRequisition(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<JobRequisition>> {
@@ -369,7 +370,7 @@ export async function cancelRequisition(
 	});
 }
 
-export async function getRequisition(
+export function getRequisition(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<JobRequisition>> {
@@ -397,7 +398,7 @@ export async function getRequisition(
 	});
 }
 
-export async function listRequisitions(
+export function listRequisitions(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<RequisitionListPage>> {

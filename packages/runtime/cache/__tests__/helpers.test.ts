@@ -53,9 +53,7 @@ describe("BatchLoader", () => {
 	it("rejects non-error failures with a stable message and preserved cause", async () => {
 		const source = { message: "password=secret" };
 		const loader = new BatchLoader<string, string>(
-			async () => {
-				throw source;
-			},
+			() => Promise.reject(source),
 			{ batchDelayMs: 0 },
 		);
 

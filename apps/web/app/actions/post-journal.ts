@@ -23,7 +23,7 @@ export async function postJournalAction(
 	_prev: PostJournalActionState,
 	formData: FormData,
 ): Promise<PostJournalActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "postJournalAction",
 		permission: "accounting.journal.post",
 		safeMessage: "Could not post journal. Try again or contact an admin.",
@@ -32,12 +32,13 @@ export async function postJournalAction(
 				journalId: formData.get("journalId"),
 				expectedVersion: formData.get("expectedVersion"),
 			});
-			if (!parsed.success)
+			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
 					"Enter a valid journal and version.",
 					parsed.details,
 				);
+			}
 			const mapped = mapPackageResult(
 				await postJournal(
 					{
@@ -49,7 +50,9 @@ export async function postJournalAction(
 					createAccountingCommandOptions(),
 				),
 			);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePath("/admin/accounting");
 			revalidatePath("/client/accounting");
 			return { ok: true, data: { journal: mapped.data } };

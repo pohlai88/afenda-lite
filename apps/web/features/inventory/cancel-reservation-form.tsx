@@ -1,13 +1,14 @@
+// biome-ignore-all lint/performance/noJsxPropsBind: The enabled React Compiler stabilizes JSX callback props.
 "use client";
 
 import { cancelReservationAction } from "@/app/actions/cancel-reservation";
 import { ReservationLifecycleForm } from "@/features/inventory/reservation-lifecycle-form";
 
-type CancelReservationFormProps = {
+interface CancelReservationFormProps {
 	canRelease: boolean;
-	defaultReservationId?: string | undefined;
 	defaultExpectedVersion?: number | undefined;
-};
+	defaultReservationId?: string | undefined;
+}
 
 export function CancelReservationForm({
 	canRelease,
@@ -16,19 +17,19 @@ export function CancelReservationForm({
 }: CancelReservationFormProps) {
 	return (
 		<ReservationLifecycleForm
+			action={cancelReservationAction}
 			canRelease={canRelease}
-			unavailableTitle="Cancel unavailable"
-			unavailableBody="You can view inventory but cannot cancel reservations in this organization."
-			successTitle="Reservation cancelled"
+			defaultExpectedVersion={defaultExpectedVersion}
+			defaultReservationId={defaultReservationId}
+			fieldIdPrefix="stock-cancel"
+			idempotencyPrefix="cancel-rsv"
+			submitLabel="Cancel reservation"
 			successDetail={(reservation) =>
 				`${reservation.code} · ${reservation.status}.`
 			}
-			submitLabel="Cancel reservation"
-			fieldIdPrefix="stock-cancel"
-			idempotencyPrefix="cancel-rsv"
-			defaultReservationId={defaultReservationId}
-			defaultExpectedVersion={defaultExpectedVersion}
-			action={cancelReservationAction}
+			successTitle="Reservation cancelled"
+			unavailableBody="You can view inventory but cannot cancel reservations in this organization."
+			unavailableTitle="Cancel unavailable"
 		/>
 	);
 }

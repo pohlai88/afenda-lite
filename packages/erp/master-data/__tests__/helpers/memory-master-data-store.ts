@@ -143,6 +143,7 @@ import type {
 import { normalizeVariantAttributeValue } from "../../src/capabilities/extensions/variant-attribute-value-policy";
 import type { MasterFailureDetails } from "../../src/contracts/reasons";
 import type { MutationPorts } from "../../src/ports";
+import { resolveAsync, runSequentiallyUntil } from "../../src/resolve-async";
 import type {
 	ChangeRequest,
 	Item,
@@ -174,14 +175,14 @@ import type {
 	WarehouseExternalId,
 } from "../../src/types";
 
-type SeedRefsInput = {
+interface SeedRefsInput {
 	countries?: RefCountry[];
 	currencies?: RefCurrency[];
+	dimensions?: RefUomDimension[];
 	languages?: RefLanguage[];
 	timeZones?: RefTimeZone[];
-	dimensions?: RefUomDimension[];
 	uoms?: RefUom[];
-};
+}
 
 /** Stored variant membership row — assembled with item + values on read. */
 type ItemVariantMembership = Omit<ItemVariant, "item" | "values">;
@@ -330,7 +331,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		version: number,
 	): void {
 		const context = meta.importMutation;
-		if (context === undefined) return;
+		if (context === undefined) {
+			return;
+		}
 		const batch = this.importBatches.get(context.batchId);
 		if (
 			batch === undefined ||
@@ -346,7 +349,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				candidate.batchId === context.batchId &&
 				candidate.sourceRowNumber === context.sourceRowNumber,
 		);
-		if (row === undefined || row.status === "applied") return;
+		if (row === undefined || row.status === "applied") {
+			return;
+		}
 		const now = new Date();
 		this.importBatchRows.set(row.id, {
 			...row,
@@ -433,214 +438,240 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		}
 	}
 
-	async getRefCountryByCode(code: string): Promise<Result<RefCountry | null>> {
-		const normalized = code.trim().toUpperCase();
-		for (const row of this.countries.values()) {
-			if (row.code.toUpperCase() === normalized) {
-				return ok({ ...row });
+	getRefCountryByCode(code: string): Promise<Result<RefCountry | null>> {
+		return resolveAsync(() => {
+			const normalized = code.trim().toUpperCase();
+			for (const row of this.countries.values()) {
+				if (row.code.toUpperCase() === normalized) {
+					return ok({ ...row });
+				}
 			}
-		}
-		return ok(null);
+			return ok(null);
+		});
 	}
 
-	async getRefCountryById(id: string): Promise<Result<RefCountry | null>> {
-		const row = this.countries.get(id);
-		return ok(row === undefined ? null : { ...row });
+	getRefCountryById(id: string): Promise<Result<RefCountry | null>> {
+		return resolveAsync(() => {
+			const row = this.countries.get(id);
+			return ok(row === undefined ? null : { ...row });
+		});
 	}
 
-	async getRefCurrencyByCode(
-		code: string,
-	): Promise<Result<RefCurrency | null>> {
-		const normalized = code.trim().toUpperCase();
-		for (const row of this.currencies.values()) {
-			if (row.code.toUpperCase() === normalized) {
-				return ok({ ...row });
+	getRefCurrencyByCode(code: string): Promise<Result<RefCurrency | null>> {
+		return resolveAsync(() => {
+			const normalized = code.trim().toUpperCase();
+			for (const row of this.currencies.values()) {
+				if (row.code.toUpperCase() === normalized) {
+					return ok({ ...row });
+				}
 			}
-		}
-		return ok(null);
+			return ok(null);
+		});
 	}
 
-	async getRefCurrencyById(id: string): Promise<Result<RefCurrency | null>> {
-		const row = this.currencies.get(id);
-		return ok(row === undefined ? null : { ...row });
+	getRefCurrencyById(id: string): Promise<Result<RefCurrency | null>> {
+		return resolveAsync(() => {
+			const row = this.currencies.get(id);
+			return ok(row === undefined ? null : { ...row });
+		});
 	}
 
-	async getRefLanguageByCode(
-		code: string,
-	): Promise<Result<RefLanguage | null>> {
-		const normalized = code.trim().toLowerCase();
-		for (const row of this.languages.values()) {
-			if (row.code.toLowerCase() === normalized) {
-				return ok({ ...row });
+	getRefLanguageByCode(code: string): Promise<Result<RefLanguage | null>> {
+		return resolveAsync(() => {
+			const normalized = code.trim().toLowerCase();
+			for (const row of this.languages.values()) {
+				if (row.code.toLowerCase() === normalized) {
+					return ok({ ...row });
+				}
 			}
-		}
-		return ok(null);
+			return ok(null);
+		});
 	}
 
-	async getRefTimeZoneByIana(
-		ianaName: string,
-	): Promise<Result<RefTimeZone | null>> {
-		const normalized = ianaName.trim();
-		for (const row of this.timeZones.values()) {
-			if (row.ianaName === normalized) {
-				return ok({ ...row });
+	getRefTimeZoneByIana(ianaName: string): Promise<Result<RefTimeZone | null>> {
+		return resolveAsync(() => {
+			const normalized = ianaName.trim();
+			for (const row of this.timeZones.values()) {
+				if (row.ianaName === normalized) {
+					return ok({ ...row });
+				}
 			}
-		}
-		return ok(null);
+			return ok(null);
+		});
 	}
 
-	async getRefUomDimensionByCode(
+	getRefUomDimensionByCode(
 		code: string,
 	): Promise<Result<RefUomDimension | null>> {
-		const normalized = code.trim().toLowerCase();
-		for (const row of this.dimensions.values()) {
-			if (row.code === normalized) {
-				return ok({ ...row });
+		return resolveAsync(() => {
+			const normalized = code.trim().toLowerCase();
+			for (const row of this.dimensions.values()) {
+				if (row.code === normalized) {
+					return ok({ ...row });
+				}
 			}
-		}
-		return ok(null);
+			return ok(null);
+		});
 	}
 
-	async getRefUomById(id: string): Promise<Result<RefUom | null>> {
-		const row = this.uoms.get(id);
-		return ok(row === undefined ? null : { ...row });
+	getRefUomById(id: string): Promise<Result<RefUom | null>> {
+		return resolveAsync(() => {
+			const row = this.uoms.get(id);
+			return ok(row === undefined ? null : { ...row });
+		});
 	}
 
-	async getRefUomByCode(code: string): Promise<Result<RefUom | null>> {
-		const normalized = code.trim().toUpperCase();
-		for (const row of this.uoms.values()) {
-			if (row.code.toUpperCase() === normalized) {
-				return ok({ ...row });
+	getRefUomByCode(code: string): Promise<Result<RefUom | null>> {
+		return resolveAsync(() => {
+			const normalized = code.trim().toUpperCase();
+			for (const row of this.uoms.values()) {
+				if (row.code.toUpperCase() === normalized) {
+					return ok({ ...row });
+				}
 			}
-		}
-		return ok(null);
+			return ok(null);
+		});
 	}
 
-	async listRefUoms(): Promise<Result<RefUom[]>> {
-		return ok([...this.uoms.values()].map((row) => ({ ...row })));
+	listRefUoms(): Promise<Result<RefUom[]>> {
+		return resolveAsync(() =>
+			ok([...this.uoms.values()].map((row) => ({ ...row }))),
+		);
 	}
 
-	async getPartyById(
+	getPartyById(
 		organizationId: string,
 		id: string,
 	): Promise<Result<Party | null>> {
-		const row = this.parties.get(id);
-		if (row === undefined || row.organizationId !== organizationId) {
-			return ok(null);
-		}
-		return ok(cloneParty(row));
+		return resolveAsync(() => {
+			const row = this.parties.get(id);
+			if (row === undefined || row.organizationId !== organizationId) {
+				return ok(null);
+			}
+			return ok(cloneParty(row));
+		});
 	}
 
-	async getPartyByCode(
+	getPartyByCode(
 		organizationId: string,
 		normalizedCode: string,
 	): Promise<Result<Party | null>> {
-		for (const row of this.parties.values()) {
-			if (
-				row.organizationId === organizationId &&
-				row.normalizedCode === normalizedCode &&
-				row.retiredAt === null &&
-				row.mergedIntoId === null
-			) {
-				return ok(cloneParty(row));
+		return resolveAsync(() => {
+			for (const row of this.parties.values()) {
+				if (
+					row.organizationId === organizationId &&
+					row.normalizedCode === normalizedCode &&
+					row.retiredAt === null &&
+					row.mergedIntoId === null
+				) {
+					return ok(cloneParty(row));
+				}
 			}
-		}
-		return ok(null);
+			return ok(null);
+		});
 	}
 
-	async listParties(filter: ListFilter): Promise<Result<Party[]>> {
-		const rows = [...this.parties.values()]
-			.filter(
-				(row) =>
-					row.organizationId === filter.organizationId &&
-					(filter.status === undefined || row.status === filter.status) &&
-					(filter.updatedSince === undefined ||
-						row.updatedAt > filter.updatedSince),
-			)
-			.sort((a, b) =>
-				a.normalizedCode === b.normalizedCode
-					? a.id.localeCompare(b.id)
-					: a.normalizedCode.localeCompare(b.normalizedCode),
-			);
-		return ok(paginate(rows, filter.page, filter.pageSize).map(cloneParty));
-	}
-
-	async listPartiesByRole(filter: PartyByRoleFilter): Promise<Result<Party[]>> {
-		const partyIds = new Set(
-			[...this.partyRoles.values()]
+	listParties(filter: ListFilter): Promise<Result<Party[]>> {
+		return resolveAsync(() => {
+			const rows = [...this.parties.values()]
 				.filter(
 					(row) =>
 						row.organizationId === filter.organizationId &&
-						row.roleCode === filter.roleCode &&
-						row.archivedAt === null &&
-						(!filter.activeOnly || row.status === "active"),
+						(filter.status === undefined || row.status === filter.status) &&
+						(filter.updatedSince === undefined ||
+							row.updatedAt > filter.updatedSince),
 				)
-				.map((row) => row.partyId),
-		);
-		const rows = [...this.parties.values()]
-			.filter(
-				(row) =>
-					partyIds.has(row.id) &&
-					row.organizationId === filter.organizationId &&
-					(filter.status === undefined || row.status === filter.status) &&
-					(filter.updatedSince === undefined ||
-						row.updatedAt > filter.updatedSince),
-			)
-			.sort((a, b) =>
-				a.normalizedCode === b.normalizedCode
-					? a.id.localeCompare(b.id)
-					: a.normalizedCode.localeCompare(b.normalizedCode),
-			);
-		return ok(paginate(rows, filter.page, filter.pageSize).map(cloneParty));
+				.sort((a, b) =>
+					a.normalizedCode === b.normalizedCode
+						? a.id.localeCompare(b.id)
+						: a.normalizedCode.localeCompare(b.normalizedCode),
+				);
+			return ok(paginate(rows, filter.page, filter.pageSize).map(cloneParty));
+		});
 	}
 
-	async findPartyByTaxRegistration(
+	listPartiesByRole(filter: PartyByRoleFilter): Promise<Result<Party[]>> {
+		return resolveAsync(() => {
+			const partyIds = new Set(
+				[...this.partyRoles.values()]
+					.filter(
+						(row) =>
+							row.organizationId === filter.organizationId &&
+							row.roleCode === filter.roleCode &&
+							row.archivedAt === null &&
+							(!filter.activeOnly || row.status === "active"),
+					)
+					.map((row) => row.partyId),
+			);
+			const rows = [...this.parties.values()]
+				.filter(
+					(row) =>
+						partyIds.has(row.id) &&
+						row.organizationId === filter.organizationId &&
+						(filter.status === undefined || row.status === filter.status) &&
+						(filter.updatedSince === undefined ||
+							row.updatedAt > filter.updatedSince),
+				)
+				.sort((a, b) =>
+					a.normalizedCode === b.normalizedCode
+						? a.id.localeCompare(b.id)
+						: a.normalizedCode.localeCompare(b.normalizedCode),
+				);
+			return ok(paginate(rows, filter.page, filter.pageSize).map(cloneParty));
+		});
+	}
+
+	findPartyByTaxRegistration(
 		filter: PartyTaxRegistrationLookup,
 	): Promise<Result<Party | null>> {
-		for (const registration of this.taxRegistrations.values()) {
-			if (
-				registration.organizationId !== filter.organizationId ||
-				registration.jurisdictionCountryId !== filter.jurisdictionCountryId ||
-				registration.registrationType !== filter.registrationType ||
-				registration.normalizedRegistrationNumber !==
-					filter.normalizedRegistrationNumber ||
-				registration.deletedAt !== null
-			) {
-				continue;
+		return resolveAsync(() => {
+			for (const registration of this.taxRegistrations.values()) {
+				if (
+					registration.organizationId !== filter.organizationId ||
+					registration.jurisdictionCountryId !== filter.jurisdictionCountryId ||
+					registration.registrationType !== filter.registrationType ||
+					registration.normalizedRegistrationNumber !==
+						filter.normalizedRegistrationNumber ||
+					registration.deletedAt !== null
+				) {
+					continue;
+				}
+				const party = this.parties.get(registration.partyId);
+				if (
+					party !== undefined &&
+					party.organizationId === filter.organizationId &&
+					party.retiredAt === null &&
+					party.mergedIntoId === null
+				) {
+					return ok(cloneParty(party));
+				}
 			}
-			const party = this.parties.get(registration.partyId);
-			if (
-				party !== undefined &&
-				party.organizationId === filter.organizationId &&
-				party.retiredAt === null &&
-				party.mergedIntoId === null
-			) {
-				return ok(cloneParty(party));
-			}
-		}
-		return ok(null);
+			return ok(null);
+		});
 	}
 
-	async searchParties(filter: PartySearchFilter): Promise<Result<Party[]>> {
-		const needle = filter.query.trim().toUpperCase();
-		const rows = [...this.parties.values()]
-			.filter(
-				(row) =>
-					row.organizationId === filter.organizationId &&
-					(filter.status === undefined || row.status === filter.status) &&
-					(filter.updatedSince === undefined ||
-						row.updatedAt > filter.updatedSince) &&
-					(row.normalizedCode.includes(needle) ||
-						row.name.toUpperCase().includes(needle) ||
-						(row.legalName?.toUpperCase().includes(needle) ?? false) ||
-						(row.tradingName?.toUpperCase().includes(needle) ?? false)),
-			)
-			.sort((a, b) =>
-				a.normalizedCode === b.normalizedCode
-					? a.id.localeCompare(b.id)
-					: a.normalizedCode.localeCompare(b.normalizedCode),
-			);
-		return ok(paginate(rows, filter.page, filter.pageSize).map(cloneParty));
+	searchParties(filter: PartySearchFilter): Promise<Result<Party[]>> {
+		return resolveAsync(() => {
+			const needle = filter.query.trim().toUpperCase();
+			const rows = [...this.parties.values()]
+				.filter(
+					(row) =>
+						row.organizationId === filter.organizationId &&
+						(filter.status === undefined || row.status === filter.status) &&
+						(filter.updatedSince === undefined ||
+							row.updatedAt > filter.updatedSince) &&
+						(row.normalizedCode.includes(needle) ||
+							row.name.toUpperCase().includes(needle) ||
+							(row.legalName?.toUpperCase().includes(needle) ?? false) ||
+							(row.tradingName?.toUpperCase().includes(needle) ?? false)),
+				)
+				.sort((a, b) =>
+					a.normalizedCode === b.normalizedCode
+						? a.id.localeCompare(b.id)
+						: a.normalizedCode.localeCompare(b.normalizedCode),
+				);
+			return ok(paginate(rows, filter.page, filter.pageSize).map(cloneParty));
+		});
 	}
 
 	async createParty(
@@ -777,27 +808,27 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			...existing,
 			name: record.name ?? existing.name,
 			legalName:
-				record.legalName !== undefined ? record.legalName : existing.legalName,
+				record.legalName === undefined ? existing.legalName : record.legalName,
 			tradingName:
-				record.tradingName !== undefined
-					? record.tradingName
-					: existing.tradingName,
+				record.tradingName === undefined
+					? existing.tradingName
+					: record.tradingName,
 			registrationNumber:
-				record.registrationNumber !== undefined
-					? record.registrationNumber
-					: existing.registrationNumber,
+				record.registrationNumber === undefined
+					? existing.registrationNumber
+					: record.registrationNumber,
 			registrationCountryId:
-				record.registrationCountryId !== undefined
-					? record.registrationCountryId
-					: existing.registrationCountryId,
+				record.registrationCountryId === undefined
+					? existing.registrationCountryId
+					: record.registrationCountryId,
 			preferredLanguageId:
-				record.preferredLanguageId !== undefined
-					? record.preferredLanguageId
-					: existing.preferredLanguageId,
+				record.preferredLanguageId === undefined
+					? existing.preferredLanguageId
+					: record.preferredLanguageId,
 			defaultCurrencyId:
-				record.defaultCurrencyId !== undefined
-					? record.defaultCurrencyId
-					: existing.defaultCurrencyId,
+				record.defaultCurrencyId === undefined
+					? existing.defaultCurrencyId
+					: record.defaultCurrencyId,
 			version: existing.version + 1,
 			updatedBy: record.updatedBy,
 			updatedAt: new Date(),
@@ -1366,43 +1397,47 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		return ok({ survivor: cloneParty(survivor), merged: cloneParty(merged) });
 	}
 
-	async getChangeRequestById(
+	getChangeRequestById(
 		organizationId: string,
 		id: string,
 	): Promise<Result<ChangeRequest | null>> {
-		const row = this.changeRequests.get(id);
-		if (row === undefined || row.organizationId !== organizationId) {
-			return ok(null);
-		}
-		return ok({ ...row, payload: { ...row.payload } });
+		return resolveAsync(() => {
+			const row = this.changeRequests.get(id);
+			if (row === undefined || row.organizationId !== organizationId) {
+				return ok(null);
+			}
+			return ok({ ...row, payload: { ...row.payload } });
+		});
 	}
 
-	async listChangeRequests(
+	listChangeRequests(
 		filter: ChangeRequestListFilter,
 	): Promise<Result<ChangeRequest[]>> {
-		const rows = [...this.changeRequests.values()]
-			.filter((row) => {
-				if (row.organizationId !== filter.organizationId) {
-					return false;
-				}
-				if (filter.status !== undefined && row.status !== filter.status) {
-					return false;
-				}
-				if (
-					filter.commandKind !== undefined &&
-					row.commandKind !== filter.commandKind
-				) {
-					return false;
-				}
-				return true;
-			})
-			.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
-		return ok(
-			paginate(rows, filter.page, filter.pageSize).map((row) => ({
-				...row,
-				payload: { ...row.payload },
-			})),
-		);
+		return resolveAsync(() => {
+			const rows = [...this.changeRequests.values()]
+				.filter((row) => {
+					if (row.organizationId !== filter.organizationId) {
+						return false;
+					}
+					if (filter.status !== undefined && row.status !== filter.status) {
+						return false;
+					}
+					if (
+						filter.commandKind !== undefined &&
+						row.commandKind !== filter.commandKind
+					) {
+						return false;
+					}
+					return true;
+				})
+				.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+			return ok(
+				paginate(rows, filter.page, filter.pageSize).map((row) => ({
+					...row,
+					payload: { ...row.payload },
+				})),
+			);
+		});
 	}
 
 	async createChangeRequest(
@@ -1533,48 +1568,56 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		return ok({ ...updated, payload: { ...updated.payload } });
 	}
 
-	async getItemGroupById(
+	getItemGroupById(
 		organizationId: string,
 		id: string,
 	): Promise<Result<ItemGroup | null>> {
-		const row = this.itemGroups.get(id);
-		if (row === undefined || row.organizationId !== organizationId) {
-			return ok(null);
-		}
-		return ok(cloneItemGroup(row));
+		return resolveAsync(() => {
+			const row = this.itemGroups.get(id);
+			if (row === undefined || row.organizationId !== organizationId) {
+				return ok(null);
+			}
+			return ok(cloneItemGroup(row));
+		});
 	}
 
-	async getItemGroupByCode(
+	getItemGroupByCode(
 		organizationId: string,
 		normalizedCode: string,
 	): Promise<Result<ItemGroup | null>> {
-		for (const row of this.itemGroups.values()) {
-			if (
-				row.organizationId === organizationId &&
-				row.normalizedCode === normalizedCode &&
-				row.retiredAt === null
-			) {
-				return ok(cloneItemGroup(row));
+		return resolveAsync(() => {
+			for (const row of this.itemGroups.values()) {
+				if (
+					row.organizationId === organizationId &&
+					row.normalizedCode === normalizedCode &&
+					row.retiredAt === null
+				) {
+					return ok(cloneItemGroup(row));
+				}
 			}
-		}
-		return ok(null);
+			return ok(null);
+		});
 	}
 
-	async listItemGroups(filter: ListFilter): Promise<Result<ItemGroup[]>> {
-		const rows = [...this.itemGroups.values()]
-			.filter(
-				(row) =>
-					row.organizationId === filter.organizationId &&
-					(filter.status === undefined || row.status === filter.status) &&
-					(filter.updatedSince === undefined ||
-						row.updatedAt > filter.updatedSince),
-			)
-			.sort((a, b) =>
-				a.normalizedCode === b.normalizedCode
-					? a.id.localeCompare(b.id)
-					: a.normalizedCode.localeCompare(b.normalizedCode),
+	listItemGroups(filter: ListFilter): Promise<Result<ItemGroup[]>> {
+		return resolveAsync(() => {
+			const rows = [...this.itemGroups.values()]
+				.filter(
+					(row) =>
+						row.organizationId === filter.organizationId &&
+						(filter.status === undefined || row.status === filter.status) &&
+						(filter.updatedSince === undefined ||
+							row.updatedAt > filter.updatedSince),
+				)
+				.sort((a, b) =>
+					a.normalizedCode === b.normalizedCode
+						? a.id.localeCompare(b.id)
+						: a.normalizedCode.localeCompare(b.normalizedCode),
+				);
+			return ok(
+				paginate(rows, filter.page, filter.pageSize).map(cloneItemGroup),
 			);
-		return ok(paginate(rows, filter.page, filter.pageSize).map(cloneItemGroup));
+		});
 	}
 
 	async createItemGroup(
@@ -1671,7 +1714,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			);
 		}
 		const nextParentId =
-			record.parentId !== undefined ? record.parentId : existing.parentId;
+			record.parentId === undefined ? existing.parentId : record.parentId;
 		const parentCheck = this.assertParentItemGroup(
 			record.organizationId,
 			existing.id,
@@ -1864,50 +1907,56 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		return ok(cloneItemGroup(updated));
 	}
 
-	async getItemById(
+	getItemById(
 		organizationId: string,
 		id: string,
 	): Promise<Result<Item | null>> {
-		const row = this.items.get(id);
-		if (row === undefined || row.organizationId !== organizationId) {
-			return ok(null);
-		}
-		return ok(cloneItem(row));
+		return resolveAsync(() => {
+			const row = this.items.get(id);
+			if (row === undefined || row.organizationId !== organizationId) {
+				return ok(null);
+			}
+			return ok(cloneItem(row));
+		});
 	}
 
-	async getItemByCode(
+	getItemByCode(
 		organizationId: string,
 		normalizedCode: string,
 	): Promise<Result<Item | null>> {
-		for (const row of this.items.values()) {
-			if (
-				row.organizationId === organizationId &&
-				row.normalizedCode === normalizedCode &&
-				row.retiredAt === null
-			) {
-				return ok(cloneItem(row));
+		return resolveAsync(() => {
+			for (const row of this.items.values()) {
+				if (
+					row.organizationId === organizationId &&
+					row.normalizedCode === normalizedCode &&
+					row.retiredAt === null
+				) {
+					return ok(cloneItem(row));
+				}
 			}
-		}
-		return ok(null);
+			return ok(null);
+		});
 	}
 
-	async listItems(filter: ItemListFilter): Promise<Result<Item[]>> {
-		const rows = [...this.items.values()]
-			.filter(
-				(row) =>
-					row.organizationId === filter.organizationId &&
-					(filter.status === undefined || row.status === filter.status) &&
-					(filter.updatedSince === undefined ||
-						row.updatedAt > filter.updatedSince) &&
-					(filter.itemGroupId === undefined ||
-						row.itemGroupId === filter.itemGroupId),
-			)
-			.sort((a, b) =>
-				a.normalizedCode === b.normalizedCode
-					? a.id.localeCompare(b.id)
-					: a.normalizedCode.localeCompare(b.normalizedCode),
-			);
-		return ok(paginate(rows, filter.page, filter.pageSize).map(cloneItem));
+	listItems(filter: ItemListFilter): Promise<Result<Item[]>> {
+		return resolveAsync(() => {
+			const rows = [...this.items.values()]
+				.filter(
+					(row) =>
+						row.organizationId === filter.organizationId &&
+						(filter.status === undefined || row.status === filter.status) &&
+						(filter.updatedSince === undefined ||
+							row.updatedAt > filter.updatedSince) &&
+						(filter.itemGroupId === undefined ||
+							row.itemGroupId === filter.itemGroupId),
+				)
+				.sort((a, b) =>
+					a.normalizedCode === b.normalizedCode
+						? a.id.localeCompare(b.id)
+						: a.normalizedCode.localeCompare(b.normalizedCode),
+				);
+			return ok(paginate(rows, filter.page, filter.pageSize).map(cloneItem));
+		});
 	}
 
 	async createItem(
@@ -2183,9 +2232,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			...existing,
 			name: record.name ?? existing.name,
 			description:
-				record.description !== undefined
-					? record.description
-					: existing.description,
+				record.description === undefined
+					? existing.description
+					: record.description,
 			itemType: nextItemType,
 			baseUomId: nextBaseUomId,
 			itemGroupId: nextGroupId,
@@ -2213,78 +2262,78 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				action: "UPDATE",
 				changes: [
 					{ field: "name", oldValue: snapshot.name, newValue: updated.name },
-					...(snapshot.description !== updated.description
-						? [
+					...(snapshot.description === updated.description
+						? []
+						: [
 								{
 									field: "description",
 									oldValue: snapshot.description,
 									newValue: updated.description,
 								},
-							]
-						: []),
-					...(snapshot.itemType !== updated.itemType
-						? [
+							]),
+					...(snapshot.itemType === updated.itemType
+						? []
+						: [
 								{
 									field: "itemType",
 									oldValue: snapshot.itemType,
 									newValue: updated.itemType,
 								},
-							]
-						: []),
-					...(snapshot.itemGroupId !== updated.itemGroupId
-						? [
+							]),
+					...(snapshot.itemGroupId === updated.itemGroupId
+						? []
+						: [
 								{
 									field: "itemGroupId",
 									oldValue: snapshot.itemGroupId,
 									newValue: updated.itemGroupId,
 								},
-							]
-						: []),
-					...(snapshot.trackingPolicy !== updated.trackingPolicy
-						? [
+							]),
+					...(snapshot.trackingPolicy === updated.trackingPolicy
+						? []
+						: [
 								{
 									field: "trackingPolicy",
 									oldValue: snapshot.trackingPolicy,
 									newValue: updated.trackingPolicy,
 								},
-							]
-						: []),
-					...(snapshot.sellable !== updated.sellable
-						? [
+							]),
+					...(snapshot.sellable === updated.sellable
+						? []
+						: [
 								{
 									field: "sellable",
 									oldValue: snapshot.sellable,
 									newValue: updated.sellable,
 								},
-							]
-						: []),
-					...(snapshot.purchasable !== updated.purchasable
-						? [
+							]),
+					...(snapshot.purchasable === updated.purchasable
+						? []
+						: [
 								{
 									field: "purchasable",
 									oldValue: snapshot.purchasable,
 									newValue: updated.purchasable,
 								},
-							]
-						: []),
-					...(snapshot.stocked !== updated.stocked
-						? [
+							]),
+					...(snapshot.stocked === updated.stocked
+						? []
+						: [
 								{
 									field: "stocked",
 									oldValue: snapshot.stocked,
 									newValue: updated.stocked,
 								},
-							]
-						: []),
-					...(snapshot.serviceIndicator !== updated.serviceIndicator
-						? [
+							]),
+					...(snapshot.serviceIndicator === updated.serviceIndicator
+						? []
+						: [
 								{
 									field: "serviceIndicator",
 									oldValue: snapshot.serviceIndicator,
 									newValue: updated.serviceIndicator,
 								},
-							]
-						: []),
+							]),
 				],
 				oldValue: {
 					name: snapshot.name,
@@ -2528,48 +2577,56 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		return ok(cloneItem(updated));
 	}
 
-	async getWarehouseById(
+	getWarehouseById(
 		organizationId: string,
 		id: string,
 	): Promise<Result<Warehouse | null>> {
-		const row = this.warehouses.get(id);
-		if (row === undefined || row.organizationId !== organizationId) {
-			return ok(null);
-		}
-		return ok(cloneWarehouse(row));
+		return resolveAsync(() => {
+			const row = this.warehouses.get(id);
+			if (row === undefined || row.organizationId !== organizationId) {
+				return ok(null);
+			}
+			return ok(cloneWarehouse(row));
+		});
 	}
 
-	async getWarehouseByCode(
+	getWarehouseByCode(
 		organizationId: string,
 		normalizedCode: string,
 	): Promise<Result<Warehouse | null>> {
-		for (const row of this.warehouses.values()) {
-			if (
-				row.organizationId === organizationId &&
-				row.normalizedCode === normalizedCode &&
-				row.retiredAt === null
-			) {
-				return ok(cloneWarehouse(row));
+		return resolveAsync(() => {
+			for (const row of this.warehouses.values()) {
+				if (
+					row.organizationId === organizationId &&
+					row.normalizedCode === normalizedCode &&
+					row.retiredAt === null
+				) {
+					return ok(cloneWarehouse(row));
+				}
 			}
-		}
-		return ok(null);
+			return ok(null);
+		});
 	}
 
-	async listWarehouses(filter: ListFilter): Promise<Result<Warehouse[]>> {
-		const rows = [...this.warehouses.values()]
-			.filter(
-				(row) =>
-					row.organizationId === filter.organizationId &&
-					(filter.status === undefined || row.status === filter.status) &&
-					(filter.updatedSince === undefined ||
-						row.updatedAt > filter.updatedSince),
-			)
-			.sort((a, b) =>
-				a.normalizedCode === b.normalizedCode
-					? a.id.localeCompare(b.id)
-					: a.normalizedCode.localeCompare(b.normalizedCode),
+	listWarehouses(filter: ListFilter): Promise<Result<Warehouse[]>> {
+		return resolveAsync(() => {
+			const rows = [...this.warehouses.values()]
+				.filter(
+					(row) =>
+						row.organizationId === filter.organizationId &&
+						(filter.status === undefined || row.status === filter.status) &&
+						(filter.updatedSince === undefined ||
+							row.updatedAt > filter.updatedSince),
+				)
+				.sort((a, b) =>
+					a.normalizedCode === b.normalizedCode
+						? a.id.localeCompare(b.id)
+						: a.normalizedCode.localeCompare(b.normalizedCode),
+				);
+			return ok(
+				paginate(rows, filter.page, filter.pageSize).map(cloneWarehouse),
 			);
-		return ok(paginate(rows, filter.page, filter.pageSize).map(cloneWarehouse));
+		});
 	}
 
 	async createWarehouse(
@@ -2687,9 +2744,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		const snapshot = cloneWarehouse(existing);
 		const nextLocationType = record.locationType ?? existing.locationType;
 		const nextAddressCountryId =
-			record.addressCountryId !== undefined
-				? record.addressCountryId
-				: existing.addressCountryId;
+			record.addressCountryId === undefined
+				? existing.addressCountryId
+				: record.addressCountryId;
 		if (nextAddressCountryId !== null) {
 			const country = this.countries.get(nextAddressCountryId);
 			if (country === undefined || !country.active) {
@@ -2715,7 +2772,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				existing.parentId,
 				nextLocationType,
 			);
-			if (!parentCheck.ok) return parentCheck;
+			if (!parentCheck.ok) {
+				return parentCheck;
+			}
 			const incompatibleChild = [...this.warehouses.values()].some(
 				(child) =>
 					child.organizationId === record.organizationId &&
@@ -2742,25 +2801,25 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			locationType: nextLocationType,
 			addressCountryId: nextAddressCountryId,
 			addressLine1:
-				record.addressLine1 !== undefined
-					? record.addressLine1
-					: existing.addressLine1,
+				record.addressLine1 === undefined
+					? existing.addressLine1
+					: record.addressLine1,
 			addressLine2:
-				record.addressLine2 !== undefined
-					? record.addressLine2
-					: existing.addressLine2,
+				record.addressLine2 === undefined
+					? existing.addressLine2
+					: record.addressLine2,
 			addressCity:
-				record.addressCity !== undefined
-					? record.addressCity
-					: existing.addressCity,
+				record.addressCity === undefined
+					? existing.addressCity
+					: record.addressCity,
 			addressRegion:
-				record.addressRegion !== undefined
-					? record.addressRegion
-					: existing.addressRegion,
+				record.addressRegion === undefined
+					? existing.addressRegion
+					: record.addressRegion,
 			addressPostalCode:
-				record.addressPostalCode !== undefined
-					? record.addressPostalCode
-					: existing.addressPostalCode,
+				record.addressPostalCode === undefined
+					? existing.addressPostalCode
+					: record.addressPostalCode,
 			version: existing.version + 1,
 			updatedBy: record.updatedBy,
 			updatedAt: new Date(),
@@ -2909,7 +2968,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			existing.status,
 			record.toStatus,
 		);
-		if (!lifecycle.ok) return lifecycle;
+		if (!lifecycle.ok) {
+			return lifecycle;
+		}
 		if (record.toStatus === "active" && existing.parentId !== null) {
 			const parent = this.warehouses.get(existing.parentId);
 			if (
@@ -2995,50 +3056,56 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		return ok(cloneWarehouse(updated));
 	}
 
-	async getPaymentTermById(
+	getPaymentTermById(
 		organizationId: string,
 		id: string,
 	): Promise<Result<PaymentTerm | null>> {
-		const row = this.paymentTerms.get(id);
-		if (row === undefined || row.organizationId !== organizationId) {
-			return ok(null);
-		}
-		return ok(clonePaymentTerm(row));
+		return resolveAsync(() => {
+			const row = this.paymentTerms.get(id);
+			if (row === undefined || row.organizationId !== organizationId) {
+				return ok(null);
+			}
+			return ok(clonePaymentTerm(row));
+		});
 	}
 
-	async getPaymentTermByCode(
+	getPaymentTermByCode(
 		organizationId: string,
 		normalizedCode: string,
 	): Promise<Result<PaymentTerm | null>> {
-		for (const row of this.paymentTerms.values()) {
-			if (
-				row.organizationId === organizationId &&
-				row.normalizedCode === normalizedCode &&
-				row.retiredAt === null
-			) {
-				return ok(clonePaymentTerm(row));
+		return resolveAsync(() => {
+			for (const row of this.paymentTerms.values()) {
+				if (
+					row.organizationId === organizationId &&
+					row.normalizedCode === normalizedCode &&
+					row.retiredAt === null
+				) {
+					return ok(clonePaymentTerm(row));
+				}
 			}
-		}
-		return ok(null);
+			return ok(null);
+		});
 	}
 
-	async listPaymentTerms(filter: ListFilter): Promise<Result<PaymentTerm[]>> {
-		const rows = [...this.paymentTerms.values()]
-			.filter(
-				(row) =>
-					row.organizationId === filter.organizationId &&
-					(filter.status === undefined || row.status === filter.status) &&
-					(filter.updatedSince === undefined ||
-						row.updatedAt > filter.updatedSince),
-			)
-			.sort((a, b) =>
-				a.normalizedCode === b.normalizedCode
-					? a.id.localeCompare(b.id)
-					: a.normalizedCode.localeCompare(b.normalizedCode),
+	listPaymentTerms(filter: ListFilter): Promise<Result<PaymentTerm[]>> {
+		return resolveAsync(() => {
+			const rows = [...this.paymentTerms.values()]
+				.filter(
+					(row) =>
+						row.organizationId === filter.organizationId &&
+						(filter.status === undefined || row.status === filter.status) &&
+						(filter.updatedSince === undefined ||
+							row.updatedAt > filter.updatedSince),
+				)
+				.sort((a, b) =>
+					a.normalizedCode === b.normalizedCode
+						? a.id.localeCompare(b.id)
+						: a.normalizedCode.localeCompare(b.normalizedCode),
+				);
+			return ok(
+				paginate(rows, filter.page, filter.pageSize).map(clonePaymentTerm),
 			);
-		return ok(
-			paginate(rows, filter.page, filter.pageSize).map(clonePaymentTerm),
-		);
+		});
 	}
 
 	async createPaymentTerm(
@@ -3047,7 +3114,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		meta: { correlationId: string },
 	): Promise<Result<PaymentTerm>> {
 		const ruleResult = normalizePaymentTermRule(record);
-		if (!ruleResult.ok) return ruleResult;
+		if (!ruleResult.ok) {
+			return ruleResult;
+		}
 		const rule = ruleResult.data;
 		if (rule.currencyRestrictionId !== null) {
 			const currency = this.currencies.get(rule.currencyRestrictionId);
@@ -3150,29 +3219,31 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		const ruleResult = normalizePaymentTermRule({
 			netDays: record.netDays ?? existing.netDays,
 			discountDays:
-				record.discountDays !== undefined
-					? record.discountDays
-					: existing.discountDays,
+				record.discountDays === undefined
+					? existing.discountDays
+					: record.discountDays,
 			discountPercent:
-				record.discountPercent !== undefined
-					? record.discountPercent
-					: existing.discountPercent,
+				record.discountPercent === undefined
+					? existing.discountPercent
+					: record.discountPercent,
 			dueDayRule: record.dueDayRule ?? existing.dueDayRule,
 			endOfMonth: record.endOfMonth ?? existing.endOfMonth,
 			installmentPolicy: record.installmentPolicy ?? existing.installmentPolicy,
 			installmentCount:
-				record.installmentCount !== undefined
-					? record.installmentCount
-					: existing.installmentCount,
+				record.installmentCount === undefined
+					? existing.installmentCount
+					: record.installmentCount,
 			validFrom:
-				record.validFrom !== undefined ? record.validFrom : existing.validFrom,
-			validTo: record.validTo !== undefined ? record.validTo : existing.validTo,
+				record.validFrom === undefined ? existing.validFrom : record.validFrom,
+			validTo: record.validTo === undefined ? existing.validTo : record.validTo,
 			currencyRestrictionId:
-				record.currencyRestrictionId !== undefined
-					? record.currencyRestrictionId
-					: existing.currencyRestrictionId,
+				record.currencyRestrictionId === undefined
+					? existing.currencyRestrictionId
+					: record.currencyRestrictionId,
 		});
-		if (!ruleResult.ok) return ruleResult;
+		if (!ruleResult.ok) {
+			return ruleResult;
+		}
 		const rule = ruleResult.data;
 		if (rule.currencyRestrictionId !== null) {
 			const currency = this.currencies.get(rule.currencyRestrictionId);
@@ -3208,15 +3279,15 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				action: "UPDATE",
 				changes: [
 					{ field: "name", oldValue: snapshot.name, newValue: updated.name },
-					...(snapshot.netDays !== updated.netDays
-						? [
+					...(snapshot.netDays === updated.netDays
+						? []
+						: [
 								{
 									field: "netDays",
 									oldValue: snapshot.netDays,
 									newValue: updated.netDays,
 								},
-							]
-						: []),
+							]),
 				],
 				oldValue: {
 					name: snapshot.name,
@@ -3271,7 +3342,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			existing.status,
 			record.toStatus,
 		);
-		if (!lifecycle.ok) return lifecycle;
+		if (!lifecycle.ok) {
+			return lifecycle;
+		}
 		const snapshot = clonePaymentTerm(existing);
 		const now = new Date();
 		const updated: PaymentTerm = {
@@ -3326,75 +3399,83 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		return ok(clonePaymentTerm(updated));
 	}
 
-	async getTaxRegistrationById(
+	getTaxRegistrationById(
 		organizationId: string,
 		id: string,
 	): Promise<Result<TaxRegistration | null>> {
-		const row = this.taxRegistrations.get(id);
-		if (row === undefined || row.organizationId !== organizationId) {
-			return ok(null);
-		}
-		return ok(cloneTaxRegistration(row));
-	}
-
-	async listTaxRegistrations(
-		filter: TaxRegistrationListFilter,
-	): Promise<Result<TaxRegistration[]>> {
-		const rows = [...this.taxRegistrations.values()]
-			.filter(
-				(row) =>
-					row.organizationId === filter.organizationId &&
-					(filter.status === undefined || row.status === filter.status) &&
-					(filter.partyId === undefined || row.partyId === filter.partyId) &&
-					(filter.updatedSince === undefined ||
-						row.updatedAt > filter.updatedSince) &&
-					row.deletedAt === null,
-			)
-			.sort((a, b) =>
-				a.normalizedRegistrationNumber === b.normalizedRegistrationNumber
-					? a.id.localeCompare(b.id)
-					: a.normalizedRegistrationNumber.localeCompare(
-							b.normalizedRegistrationNumber,
-						),
-			);
-		return ok(
-			paginate(rows, filter.page, filter.pageSize).map(cloneTaxRegistration),
-		);
-	}
-
-	async findTaxRegistrationsByParty(
-		organizationId: string,
-		partyId: string,
-	): Promise<Result<TaxRegistration[]>> {
-		return this.listTaxRegistrations({
-			organizationId,
-			partyId,
-			page: 1,
-			pageSize: 100,
+		return resolveAsync(() => {
+			const row = this.taxRegistrations.get(id);
+			if (row === undefined || row.organizationId !== organizationId) {
+				return ok(null);
+			}
+			return ok(cloneTaxRegistration(row));
 		});
 	}
 
-	async findOverlappingActiveTaxRegistration(
+	listTaxRegistrations(
+		filter: TaxRegistrationListFilter,
+	): Promise<Result<TaxRegistration[]>> {
+		return resolveAsync(() => {
+			const rows = [...this.taxRegistrations.values()]
+				.filter(
+					(row) =>
+						row.organizationId === filter.organizationId &&
+						(filter.status === undefined || row.status === filter.status) &&
+						(filter.partyId === undefined || row.partyId === filter.partyId) &&
+						(filter.updatedSince === undefined ||
+							row.updatedAt > filter.updatedSince) &&
+						row.deletedAt === null,
+				)
+				.sort((a, b) =>
+					a.normalizedRegistrationNumber === b.normalizedRegistrationNumber
+						? a.id.localeCompare(b.id)
+						: a.normalizedRegistrationNumber.localeCompare(
+								b.normalizedRegistrationNumber,
+							),
+				);
+			return ok(
+				paginate(rows, filter.page, filter.pageSize).map(cloneTaxRegistration),
+			);
+		});
+	}
+
+	findTaxRegistrationsByParty(
+		organizationId: string,
+		partyId: string,
+	): Promise<Result<TaxRegistration[]>> {
+		return resolveAsync(() =>
+			this.listTaxRegistrations({
+				organizationId,
+				partyId,
+				page: 1,
+				pageSize: 100,
+			}),
+		);
+	}
+
+	findOverlappingActiveTaxRegistration(
 		query: TaxRegistrationOverlapQuery,
 	): Promise<Result<TaxRegistration | null>> {
-		for (const row of this.taxRegistrations.values()) {
-			if (
-				row.organizationId === query.organizationId &&
-				row.partyId === query.partyId &&
-				row.jurisdictionCountryId === query.jurisdictionCountryId &&
-				row.registrationType === query.registrationType &&
-				row.status === "active" &&
-				row.deletedAt === null &&
-				row.id !== query.excludeId &&
-				validityRangesOverlap(
-					{ validFrom: query.validFrom, validTo: query.validTo },
-					{ validFrom: row.validFrom, validTo: row.validTo },
-				)
-			) {
-				return ok(cloneTaxRegistration(row));
+		return resolveAsync(() => {
+			for (const row of this.taxRegistrations.values()) {
+				if (
+					row.organizationId === query.organizationId &&
+					row.partyId === query.partyId &&
+					row.jurisdictionCountryId === query.jurisdictionCountryId &&
+					row.registrationType === query.registrationType &&
+					row.status === "active" &&
+					row.deletedAt === null &&
+					row.id !== query.excludeId &&
+					validityRangesOverlap(
+						{ validFrom: query.validFrom, validTo: query.validTo },
+						{ validFrom: row.validFrom, validTo: row.validTo },
+					)
+				) {
+					return ok(cloneTaxRegistration(row));
+				}
 			}
-		}
-		return ok(null);
+			return ok(null);
+		});
 	}
 
 	async createTaxRegistration(
@@ -3543,9 +3624,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			} satisfies MasterFailureDetails);
 		}
 		const nextValidFrom =
-			record.validFrom !== undefined ? record.validFrom : existing.validFrom;
+			record.validFrom === undefined ? existing.validFrom : record.validFrom;
 		const nextValidTo =
-			record.validTo !== undefined ? record.validTo : existing.validTo;
+			record.validTo === undefined ? existing.validTo : record.validTo;
 		if (
 			isInvalidValidityRange({
 				validFrom: nextValidFrom,
@@ -3571,7 +3652,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				validTo: nextValidTo,
 				excludeId: existing.id,
 			});
-			if (!overlap.ok) return overlap;
+			if (!overlap.ok) {
+				return overlap;
+			}
 			if (overlap.data !== null) {
 				return fail(
 					"CONFLICT",
@@ -3583,7 +3666,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		const snapshot = cloneTaxRegistration(existing);
 		const updated: TaxRegistration = {
 			...existing,
-			name: record.name !== undefined ? record.name : existing.name,
+			name: record.name === undefined ? existing.name : record.name,
 			validFrom: nextValidFrom,
 			validTo: nextValidTo,
 			version: existing.version + 1,
@@ -3674,7 +3757,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 						existing.status,
 						record.toStatus,
 					);
-		if (!lifecycle.ok) return lifecycle;
+		if (!lifecycle.ok) {
+			return lifecycle;
+		}
 		if (record.toStatus === "active") {
 			if (existing.validFrom === null) {
 				return fail("CONFLICT", "Active tax registration requires validFrom", {
@@ -3716,7 +3801,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				validTo: existing.validTo,
 				excludeId: existing.id,
 			});
-			if (!overlap.ok) return overlap;
+			if (!overlap.ok) {
+				return overlap;
+			}
 			if (overlap.data !== null) {
 				return fail(
 					"CONFLICT",
@@ -4164,7 +4251,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	}
 
 	/** Object-form wrapper used by extension mutations. */
-	private async commitSideEffects(input: {
+	private commitSideEffects(input: {
 		ports: MutationPorts;
 		organizationId: string;
 		actorUserId: string;
@@ -4180,95 +4267,105 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		changes?: Array<{ field: string; oldValue: unknown; newValue: unknown }>;
 		newValue?: Record<string, unknown>;
 	}): Promise<Result<true>> {
-		return this.commitMutation(input.rollback, input.ports, {
-			organizationId: input.organizationId,
-			actorUserId: input.actorUserId,
-			correlationId: input.correlationId,
-			entity: input.entity,
-			entityId: input.entityId,
-			action: input.action,
-			changes: input.changes ?? [
-				{ field: "id", oldValue: null, newValue: input.entityId },
-			],
-			newValue: input.newValue ?? { code: input.code },
-			type: input.type,
-			code: input.code,
-			version: input.version,
-			eventPayload: input.eventPayload,
-		});
+		return resolveAsync(() =>
+			this.commitMutation(input.rollback, input.ports, {
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: input.correlationId,
+				entity: input.entity,
+				entityId: input.entityId,
+				action: input.action,
+				changes: input.changes ?? [
+					{ field: "id", oldValue: null, newValue: input.entityId },
+				],
+				newValue: input.newValue ?? { code: input.code },
+				type: input.type,
+				code: input.code,
+				version: input.version,
+				eventPayload: input.eventPayload,
+			}),
+		);
 	}
 
-	async countActivePartyRoles(
+	countActivePartyRoles(
 		organizationId: string,
 		partyId: string,
 	): Promise<Result<number>> {
-		let count = 0;
-		for (const role of this.partyRoles.values()) {
-			if (
-				role.organizationId === organizationId &&
-				role.partyId === partyId &&
-				role.status === "active" &&
-				role.archivedAt === null
-			) {
-				count += 1;
-			}
-		}
-		return ok(count);
-	}
-
-	async listPartyRoles(
-		filter: PartyRoleListFilter,
-	): Promise<Result<ExtensionListPage<PartyRole>>> {
-		const rows = [...this.partyRoles.values()]
-			.filter(
-				(r) =>
-					r.organizationId === filter.organizationId &&
-					r.partyId === filter.partyId,
-			)
-			.sort((a, b) => a.roleCode.localeCompare(b.roleCode));
-		return ok({
-			items: paginate(rows, filter.page, filter.pageSize).map((r) => ({
-				...r,
-			})),
-			page: filter.page,
-			pageSize: filter.pageSize,
-			hasNextPage: rows.length > filter.page * filter.pageSize,
-		});
-	}
-
-	async listActivePartyRoles(
-		filter: PartyRoleListFilter,
-	): Promise<Result<ExtensionListPage<PartyRole>>> {
-		const rows = [...this.partyRoles.values()]
-			.filter(
-				(role) =>
-					role.organizationId === filter.organizationId &&
-					role.partyId === filter.partyId &&
+		return resolveAsync(() => {
+			let count = 0;
+			for (const role of this.partyRoles.values()) {
+				if (
+					role.organizationId === organizationId &&
+					role.partyId === partyId &&
 					role.status === "active" &&
-					role.archivedAt === null,
-			)
-			.sort((a, b) => a.roleCode.localeCompare(b.roleCode));
-		return ok({
-			items: paginate(rows, filter.page, filter.pageSize).map((role) => ({
-				...role,
-			})),
-			page: filter.page,
-			pageSize: filter.pageSize,
-			hasNextPage: rows.length > filter.page * filter.pageSize,
+					role.archivedAt === null
+				) {
+					count += 1;
+				}
+			}
+			return ok(count);
 		});
 	}
 
-	async getPartyRoleById(
+	listPartyRoles(
+		filter: PartyRoleListFilter,
+	): Promise<Result<ExtensionListPage<PartyRole>>> {
+		return resolveAsync(() => {
+			const rows = [...this.partyRoles.values()]
+				.filter(
+					(r) =>
+						r.organizationId === filter.organizationId &&
+						r.partyId === filter.partyId,
+				)
+				.sort((a, b) => a.roleCode.localeCompare(b.roleCode));
+			return ok({
+				items: paginate(rows, filter.page, filter.pageSize).map((r) => ({
+					...r,
+				})),
+				page: filter.page,
+				pageSize: filter.pageSize,
+				hasNextPage: rows.length > filter.page * filter.pageSize,
+			});
+		});
+	}
+
+	listActivePartyRoles(
+		filter: PartyRoleListFilter,
+	): Promise<Result<ExtensionListPage<PartyRole>>> {
+		return resolveAsync(() => {
+			const rows = [...this.partyRoles.values()]
+				.filter(
+					(role) =>
+						role.organizationId === filter.organizationId &&
+						role.partyId === filter.partyId &&
+						role.status === "active" &&
+						role.archivedAt === null,
+				)
+				.sort((a, b) => a.roleCode.localeCompare(b.roleCode));
+			return ok({
+				items: paginate(rows, filter.page, filter.pageSize).map((role) => ({
+					...role,
+				})),
+				page: filter.page,
+				pageSize: filter.pageSize,
+				hasNextPage: rows.length > filter.page * filter.pageSize,
+			});
+		});
+	}
+
+	getPartyRoleById(
 		organizationId: string,
 		partyId: string,
 		id: string,
 	): Promise<Result<PartyRole | null>> {
-		const role = this.partyRoles.get(id);
-		return ok(
-			role?.organizationId === organizationId && role.partyId === partyId
-				? { ...role }
-				: null,
-		);
+		return resolveAsync(() => {
+			const role = this.partyRoles.get(id);
+			return ok(
+				role?.organizationId === organizationId && role.partyId === partyId
+					? { ...role }
+					: null,
+			);
+		});
 	}
 
 	async getPartyRoleLifecycleContext(
@@ -4290,7 +4387,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			organizationId,
 			role.partyId,
 		);
-		if (!activeRoleCount.ok) return activeRoleCount;
+		if (!activeRoleCount.ok) {
+			return activeRoleCount;
+		}
 		return ok({
 			role: { ...role },
 			party:
@@ -4361,7 +4460,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			}),
 			rollback: () => this.partyRoles.delete(role.id),
 		});
-		if (!side.ok) return side;
+		if (!side.ok) {
+			return side;
+		}
 		this.partyRoles.set(role.id, role);
 		return ok({ ...role });
 	}
@@ -4382,7 +4483,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			record.expectedVersion,
 			"party_role",
 		);
-		if (!version.ok) return version;
+		if (!version.ok) {
+			return version;
+		}
 		if (role.status !== "draft" && role.status !== "inactive") {
 			return fail(
 				"CONFLICT",
@@ -4396,8 +4499,8 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			...role,
 			roleCode: record.roleCode ?? role.roleCode,
 			validFrom:
-				record.validFrom !== undefined ? record.validFrom : role.validFrom,
-			validTo: record.validTo !== undefined ? record.validTo : role.validTo,
+				record.validFrom === undefined ? role.validFrom : record.validFrom,
+			validTo: record.validTo === undefined ? role.validTo : record.validTo,
 			version: nextExtensionVersion(role.version),
 			updatedBy: record.updatedBy,
 			updatedAt: new Date(),
@@ -4443,7 +4546,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			newValue: { roleCode: next.roleCode },
 			rollback: () => this.partyRoles.set(role.id, previous),
 		});
-		if (!side.ok) return side;
+		if (!side.ok) {
+			return side;
+		}
 		return ok({ ...next });
 	}
 
@@ -4466,18 +4571,24 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			record.expectedVersion,
 			"party_role",
 		);
-		if (!version.ok) return version;
+		if (!version.ok) {
+			return version;
+		}
 		const transition = resolveExtensionLifecycleTransition(
 			"party_role",
 			assertStandardChildLifecycleStatus(role.status),
 			record.toStatus,
 		);
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 		const reason = assertExtensionTransitionReason(
 			transition.data,
 			record.reason,
 		);
-		if (!reason.ok) return reason;
+		if (!reason.ok) {
+			return reason;
+		}
 		if (
 			record.toStatus === "active" &&
 			[...this.partyRoles.values()].some(
@@ -4519,28 +4630,25 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (
 			record.toStatus !== "active" &&
 			role.status === "active" &&
-			role.archivedAt === null
+			role.archivedAt === null &&
+			party?.organizationId === record.organizationId &&
+			party.status === "active"
 		) {
-			if (
-				party?.organizationId === record.organizationId &&
-				party.status === "active"
-			) {
-				const activeCount = await this.countActivePartyRoles(
-					record.organizationId,
-					role.partyId,
+			const activeCount = await this.countActivePartyRoles(
+				record.organizationId,
+				role.partyId,
+			);
+			if (!activeCount.ok) {
+				return activeCount;
+			}
+			if (activeCount.data <= 1) {
+				return fail(
+					"CONFLICT",
+					"An active party cannot lose its final active role",
+					{
+						reason: "MASTER_FINAL_ACTIVE_ROLE",
+					},
 				);
-				if (!activeCount.ok) {
-					return activeCount;
-				}
-				if (activeCount.data <= 1) {
-					return fail(
-						"CONFLICT",
-						"An active party cannot lose its final active role",
-						{
-							reason: "MASTER_FINAL_ACTIVE_ROLE",
-						},
-					);
-				}
 			}
 		}
 		const next: PartyRole = {
@@ -4593,56 +4701,64 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			newValue: { status: next.status, reason: reason.data },
 			rollback: () => this.partyRoles.set(role.id, prev),
 		});
-		if (!side.ok) return side;
+		if (!side.ok) {
+			return side;
+		}
 		return ok({ ...next });
 	}
 
-	async listPartyAddresses(
+	listPartyAddresses(
 		filter: ParentListFilter,
 	): Promise<Result<PartyAddress[]>> {
-		const rows = [...this.partyAddresses.values()]
-			.filter(
-				(r) =>
-					r.organizationId === filter.organizationId &&
-					r.partyId === filter.parentId,
-			)
-			.sort((a, b) => a.line1.localeCompare(b.line1));
-		return ok(
-			paginate(rows, filter.page, filter.pageSize).map((r) => ({ ...r })),
-		);
+		return resolveAsync(() => {
+			const rows = [...this.partyAddresses.values()]
+				.filter(
+					(r) =>
+						r.organizationId === filter.organizationId &&
+						r.partyId === filter.parentId,
+				)
+				.sort((a, b) => a.line1.localeCompare(b.line1));
+			return ok(
+				paginate(rows, filter.page, filter.pageSize).map((r) => ({ ...r })),
+			);
+		});
 	}
 
-	async getPartyAddressById(
+	getPartyAddressById(
 		organizationId: string,
 		partyId: string,
 		id: string,
 	): Promise<Result<PartyAddress | null>> {
-		const row = this.partyAddresses.get(id);
-		if (
-			!row ||
-			row.organizationId !== organizationId ||
-			row.partyId !== partyId
-		) {
-			return ok(null);
-		}
-		return ok({ ...row });
+		return resolveAsync(() => {
+			const row = this.partyAddresses.get(id);
+			if (
+				!row ||
+				row.organizationId !== organizationId ||
+				row.partyId !== partyId
+			) {
+				return ok(null);
+			}
+			return ok({ ...row });
+		});
 	}
 
-	async getPrimaryPartyAddress(
+	getPrimaryPartyAddress(
 		organizationId: string,
 		partyId: string,
 		purpose: PartyAddress["purpose"],
 	): Promise<Result<PartyAddress | null>> {
-		const row = [...this.partyAddresses.values()].find(
-			(address) =>
-				address.organizationId === organizationId &&
-				address.partyId === partyId &&
-				address.purpose === purpose &&
-				address.isPrimary &&
-				address.status === "active" &&
-				address.archivedAt === null,
-		);
-		return ok(row ? { ...row } : null);
+		return resolveAsync(() => {
+			const row = [...this.partyAddresses.values()].find(
+				(address) =>
+					address.organizationId === organizationId &&
+					address.partyId === partyId &&
+					address.purpose === purpose &&
+					address.isPrimary &&
+					address.status === "active" &&
+					address.archivedAt === null,
+			);
+			return ok(row ? { ...row } : null);
+		});
 	}
 
 	async createPartyAddress(
@@ -4681,8 +4797,10 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			);
 		}
 		if (
-			record.effectiveFrom != null &&
-			record.effectiveTo != null &&
+			record.effectiveFrom !== undefined &&
+			record.effectiveFrom !== null &&
+			record.effectiveTo !== undefined &&
+			record.effectiveTo !== null &&
 			record.effectiveFrom > record.effectiveTo
 		) {
 			return fail(
@@ -4771,7 +4889,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				}
 			},
 		});
-		if (!side.ok) return side;
+		if (!side.ok) {
+			return side;
+		}
 		this.partyAddresses.set(row.id, row);
 		return ok({ ...row });
 	}
@@ -4792,7 +4912,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			record.expectedVersion,
 			"party_address",
 		);
-		if (!version.ok) return version;
+		if (!version.ok) {
+			return version;
+		}
 		const party = this.parties.get(row.partyId);
 		if (
 			!party ||
@@ -4810,26 +4932,26 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			addressType: record.addressType ?? row.addressType,
 			purpose: record.purpose ?? row.purpose,
 			line1: record.line1 ?? row.line1,
-			line2: record.line2 !== undefined ? record.line2 : row.line2,
-			line3: record.line3 !== undefined ? record.line3 : row.line3,
+			line2: record.line2 === undefined ? row.line2 : record.line2,
+			line3: record.line3 === undefined ? row.line3 : record.line3,
 			city: record.city ?? row.city,
 			administrativeArea:
-				record.administrativeArea !== undefined
-					? record.administrativeArea
-					: row.administrativeArea,
+				record.administrativeArea === undefined
+					? row.administrativeArea
+					: record.administrativeArea,
 			postalCode:
-				record.postalCode !== undefined ? record.postalCode : row.postalCode,
+				record.postalCode === undefined ? row.postalCode : record.postalCode,
 			countryId: record.countryId ?? row.countryId,
 			attention:
-				record.attention !== undefined ? record.attention : row.attention,
+				record.attention === undefined ? row.attention : record.attention,
 			isPrimary: record.isPrimary ?? row.isPrimary,
 			validationStatus: record.validationStatus ?? row.validationStatus,
 			effectiveFrom:
-				record.effectiveFrom !== undefined
-					? record.effectiveFrom
-					: row.effectiveFrom,
+				record.effectiveFrom === undefined
+					? row.effectiveFrom
+					: record.effectiveFrom,
 			effectiveTo:
-				record.effectiveTo !== undefined ? record.effectiveTo : row.effectiveTo,
+				record.effectiveTo === undefined ? row.effectiveTo : record.effectiveTo,
 			version: nextExtensionVersion(row.version),
 			updatedBy: record.updatedBy,
 			updatedAt: new Date(),
@@ -4917,42 +5039,46 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				}
 			},
 		});
-		if (!side.ok) return side;
+		if (!side.ok) {
+			return side;
+		}
 		return ok({ ...next });
 	}
 
-	async listPartyContacts(
-		filter: ParentListFilter,
-	): Promise<Result<PartyContact[]>> {
-		const rows = [...this.partyContacts.values()]
-			.filter(
-				(r) =>
-					r.organizationId === filter.organizationId &&
-					r.partyId === filter.parentId,
-			)
-			.sort((a, b) => a.value.localeCompare(b.value));
-		return ok(
-			paginate(rows, filter.page, filter.pageSize).map((r) => ({ ...r })),
-		);
+	listPartyContacts(filter: ParentListFilter): Promise<Result<PartyContact[]>> {
+		return resolveAsync(() => {
+			const rows = [...this.partyContacts.values()]
+				.filter(
+					(r) =>
+						r.organizationId === filter.organizationId &&
+						r.partyId === filter.parentId,
+				)
+				.sort((a, b) => a.value.localeCompare(b.value));
+			return ok(
+				paginate(rows, filter.page, filter.pageSize).map((r) => ({ ...r })),
+			);
+		});
 	}
 
-	async getPrimaryPartyContact(
+	getPrimaryPartyContact(
 		organizationId: string,
 		partyId: string,
 		contactType: PartyContact["contactType"],
 		purpose: string | null,
 	): Promise<Result<PartyContact | null>> {
-		const row = [...this.partyContacts.values()].find(
-			(contact) =>
-				contact.organizationId === organizationId &&
-				contact.partyId === partyId &&
-				contact.contactType === contactType &&
-				contact.purpose === purpose &&
-				contact.isPrimary &&
-				contact.status === "active" &&
-				contact.archivedAt === null,
-		);
-		return ok(row ? { ...row } : null);
+		return resolveAsync(() => {
+			const row = [...this.partyContacts.values()].find(
+				(contact) =>
+					contact.organizationId === organizationId &&
+					contact.partyId === partyId &&
+					contact.contactType === contactType &&
+					contact.purpose === purpose &&
+					contact.isPrimary &&
+					contact.status === "active" &&
+					contact.archivedAt === null,
+			);
+			return ok(row ? { ...row } : null);
+		});
 	}
 
 	async createPartyContact(
@@ -4976,8 +5102,10 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			});
 		}
 		if (
-			record.effectiveFrom != null &&
-			record.effectiveTo != null &&
+			record.effectiveFrom !== undefined &&
+			record.effectiveFrom !== null &&
+			record.effectiveTo !== undefined &&
+			record.effectiveTo !== null &&
 			record.effectiveFrom > record.effectiveTo
 		) {
 			return fail(
@@ -5063,7 +5191,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				}
 			},
 		});
-		if (!side.ok) return side;
+		if (!side.ok) {
+			return side;
+		}
 		this.partyContacts.set(row.id, row);
 		return ok({ ...row });
 	}
@@ -5084,7 +5214,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			record.expectedVersion,
 			"party_contact",
 		);
-		if (!version.ok) return version;
+		if (!version.ok) {
+			return version;
+		}
 		if (
 			(record.contactType === undefined) !== (record.value === undefined) ||
 			(record.value === undefined) !== (record.normalizedValue === undefined)
@@ -5098,8 +5230,10 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (
 			record.verificationStatus !== undefined &&
 			((record.verificationStatus === "verified" &&
-				record.verifiedAt == null) ||
-				(record.verificationStatus !== "verified" && record.verifiedAt != null))
+				(record.verifiedAt === undefined || record.verifiedAt === null)) ||
+				(record.verificationStatus !== "verified" &&
+					record.verifiedAt !== undefined &&
+					record.verifiedAt !== null))
 		) {
 			return fail(
 				"BAD_REQUEST",
@@ -5121,28 +5255,30 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		}
 		const contactIdentityChanged =
 			record.contactType !== undefined || record.value !== undefined;
+		let verifiedAt = record.verifiedAt ?? null;
+		if (contactIdentityChanged) {
+			verifiedAt = null;
+		} else if (record.verificationStatus === undefined) {
+			({ verifiedAt } = row);
+		}
 		const next: PartyContact = {
 			...row,
 			contactType: record.contactType ?? row.contactType,
 			value: record.value ?? row.value,
 			normalizedValue: record.normalizedValue ?? row.normalizedValue,
-			label: record.label !== undefined ? record.label : row.label,
-			purpose: record.purpose !== undefined ? record.purpose : row.purpose,
+			label: record.label === undefined ? row.label : record.label,
+			purpose: record.purpose === undefined ? row.purpose : record.purpose,
 			isPrimary: record.isPrimary ?? row.isPrimary,
 			verificationStatus: contactIdentityChanged
 				? "unverified"
 				: (record.verificationStatus ?? row.verificationStatus),
-			verifiedAt: contactIdentityChanged
-				? null
-				: record.verificationStatus !== undefined
-					? (record.verifiedAt ?? null)
-					: row.verifiedAt,
+			verifiedAt,
 			effectiveFrom:
-				record.effectiveFrom !== undefined
-					? record.effectiveFrom
-					: row.effectiveFrom,
+				record.effectiveFrom === undefined
+					? row.effectiveFrom
+					: record.effectiveFrom,
 			effectiveTo:
-				record.effectiveTo !== undefined ? record.effectiveTo : row.effectiveTo,
+				record.effectiveTo === undefined ? row.effectiveTo : record.effectiveTo,
 			version: nextExtensionVersion(row.version),
 			updatedBy: record.updatedBy,
 			updatedAt: new Date(),
@@ -5214,16 +5350,18 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				}
 			},
 		});
-		if (!side.ok) return side;
+		if (!side.ok) {
+			return side;
+		}
 		return ok({ ...next });
 	}
 
-	async updatePartyContactVerification(
+	updatePartyContactVerification(
 		record: PartyContactVerificationRecord,
 		ports: MutationPorts,
 		meta: { correlationId: string },
 	): Promise<Result<PartyContact>> {
-		return this.updatePartyContact(record, ports, meta);
+		return resolveAsync(() => this.updatePartyContact(record, ports, meta));
 	}
 
 	async createPartyExternalId(
@@ -5323,36 +5461,42 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				}
 			},
 		});
-		if (!side.ok) return side;
+		if (!side.ok) {
+			return side;
+		}
 		this.partyExternalIds.set(row.id, row);
 		return ok({ ...row });
 	}
 
-	async findPartyByExternalId(
+	findPartyByExternalId(
 		filter: PartyExternalIdLookup,
 	): Promise<Result<Party | null>> {
-		const matches: PartyExternalId[] = [];
-		for (const ext of this.partyExternalIds.values()) {
-			if (
-				ext.organizationId === filter.organizationId &&
-				ext.status === "active" &&
-				ext.archivedAt === null &&
-				ext.sourceSystem === filter.sourceSystem &&
-				ext.externalIdType === filter.externalIdType &&
-				ext.normalizedValue === filter.normalizedValue &&
-				ext.caseSensitivity === filter.caseSensitivity
-			) {
-				matches.push(ext);
+		return resolveAsync(() => {
+			const matches: PartyExternalId[] = [];
+			for (const ext of this.partyExternalIds.values()) {
+				if (
+					ext.organizationId === filter.organizationId &&
+					ext.status === "active" &&
+					ext.archivedAt === null &&
+					ext.sourceSystem === filter.sourceSystem &&
+					ext.externalIdType === filter.externalIdType &&
+					ext.normalizedValue === filter.normalizedValue &&
+					ext.caseSensitivity === filter.caseSensitivity
+				) {
+					matches.push(ext);
+				}
 			}
-		}
-		if (matches.length === 0) return ok(null);
-		if (matches.length > 1) {
-			return fail("CONFLICT", "External id resolves to multiple parties", {
-				reason: "MASTER_EXTERNAL_ID_CONFLICT",
-			});
-		}
-		const party = this.parties.get(matches[0].partyId);
-		return ok(party ? cloneParty(party) : null);
+			if (matches.length === 0) {
+				return ok(null);
+			}
+			if (matches.length > 1) {
+				return fail("CONFLICT", "External id resolves to multiple parties", {
+					reason: "MASTER_EXTERNAL_ID_CONFLICT",
+				});
+			}
+			const party = this.parties.get(matches[0].partyId);
+			return ok(party ? cloneParty(party) : null);
+		});
 	}
 
 	async createPartyRelationship(
@@ -5368,8 +5512,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		const from = this.parties.get(record.sourcePartyId);
 		const to = this.parties.get(record.targetPartyId);
 		if (
-			!from ||
-			!to ||
+			!(from && to) ||
 			from.organizationId !== record.organizationId ||
 			to.organizationId !== record.organizationId ||
 			from.status === "retired" ||
@@ -5464,129 +5607,141 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			}),
 			rollback: () => this.partyRelationships.delete(row.id),
 		});
-		if (!side.ok) return side;
+		if (!side.ok) {
+			return side;
+		}
 		this.partyRelationships.set(row.id, row);
 		return ok({ ...row });
 	}
 
-	async listPartyRelationships(
+	listPartyRelationships(
 		filter: PartyRelationshipListFilter,
 	): Promise<Result<ExtensionListPage<PartyRelationship>>> {
-		const rows = [...this.partyRelationships.values()]
-			.filter(
-				(relationship) =>
-					relationship.organizationId === filter.organizationId &&
-					(relationship.sourcePartyId === filter.partyId ||
-						relationship.targetPartyId === filter.partyId),
-			)
-			.sort(
-				(left, right) => left.createdAt.getTime() - right.createdAt.getTime(),
-			);
-		return ok({
-			items: paginate(rows, filter.page, filter.pageSize).map((row) => ({
-				...row,
-			})),
-			page: filter.page,
-			pageSize: filter.pageSize,
-			hasNextPage: rows.length > filter.page * filter.pageSize,
+		return resolveAsync(() => {
+			const rows = [...this.partyRelationships.values()]
+				.filter(
+					(relationship) =>
+						relationship.organizationId === filter.organizationId &&
+						(relationship.sourcePartyId === filter.partyId ||
+							relationship.targetPartyId === filter.partyId),
+				)
+				.sort(
+					(left, right) => left.createdAt.getTime() - right.createdAt.getTime(),
+				);
+			return ok({
+				items: paginate(rows, filter.page, filter.pageSize).map((row) => ({
+					...row,
+				})),
+				page: filter.page,
+				pageSize: filter.pageSize,
+				hasNextPage: rows.length > filter.page * filter.pageSize,
+			});
 		});
 	}
 
-	async resolveItemUomCompatibilityContext(
+	resolveItemUomCompatibilityContext(
 		filter: ItemUomCompatibilityContextFilter,
 	): Promise<Result<ItemUomCompatibilityContext>> {
-		const item = this.items.get(filter.itemId);
-		if (
-			!item ||
-			item.organizationId !== filter.organizationId ||
-			item.status === "retired"
-		) {
-			return fail("NOT_FOUND", "Item not found", {
-				reason: "MASTER_NOT_FOUND",
+		return resolveAsync(() => {
+			const item = this.items.get(filter.itemId);
+			if (
+				!item ||
+				item.organizationId !== filter.organizationId ||
+				item.status === "retired"
+			) {
+				return fail("NOT_FOUND", "Item not found", {
+					reason: "MASTER_NOT_FOUND",
+				});
+			}
+			if (filter.alternateUomId === item.baseUomId) {
+				return fail("BAD_REQUEST", "Item UoM conversion duplicates base UoM", {
+					reason: "MASTER_INVALID_UOM_CONVERSION",
+					field: "alternateUomId",
+				});
+			}
+			const baseUom = this.uoms.get(item.baseUomId);
+			const altUom = this.uoms.get(filter.alternateUomId);
+			if (!(baseUom && altUom)) {
+				return fail("BAD_REQUEST", "UoM not found", {
+					reason: "MASTER_VALIDATION_FAILED",
+					field: "alternateUomId",
+				});
+			}
+			if (!(baseUom.active && altUom.active)) {
+				return fail("BAD_REQUEST", "UoM must be active", {
+					reason: "MASTER_VALIDATION_FAILED",
+					field: "alternateUomId",
+				});
+			}
+			const baseDimension = this.dimensions.get(baseUom.dimensionId);
+			const alternateDimension = this.dimensions.get(altUom.dimensionId);
+			if (!(baseDimension && alternateDimension)) {
+				return fail("BAD_REQUEST", "UoM dimension not found", {
+					reason: "MASTER_VALIDATION_FAILED",
+					field: "alternateUomId",
+				});
+			}
+			return ok({
+				itemId: item.id,
+				baseUomId: item.baseUomId,
+				alternateUomId: filter.alternateUomId,
+				baseDimensionCode: baseDimension.code,
+				alternateDimensionCode: alternateDimension.code,
 			});
-		}
-		if (filter.alternateUomId === item.baseUomId) {
-			return fail("BAD_REQUEST", "Item UoM conversion duplicates base UoM", {
-				reason: "MASTER_INVALID_UOM_CONVERSION",
-				field: "alternateUomId",
-			});
-		}
-		const baseUom = this.uoms.get(item.baseUomId);
-		const altUom = this.uoms.get(filter.alternateUomId);
-		if (!baseUom || !altUom) {
-			return fail("BAD_REQUEST", "UoM not found", {
-				reason: "MASTER_VALIDATION_FAILED",
-				field: "alternateUomId",
-			});
-		}
-		if (!baseUom.active || !altUom.active) {
-			return fail("BAD_REQUEST", "UoM must be active", {
-				reason: "MASTER_VALIDATION_FAILED",
-				field: "alternateUomId",
-			});
-		}
-		const baseDimension = this.dimensions.get(baseUom.dimensionId);
-		const alternateDimension = this.dimensions.get(altUom.dimensionId);
-		if (!baseDimension || !alternateDimension) {
-			return fail("BAD_REQUEST", "UoM dimension not found", {
-				reason: "MASTER_VALIDATION_FAILED",
-				field: "alternateUomId",
-			});
-		}
-		return ok({
-			itemId: item.id,
-			baseUomId: item.baseUomId,
-			alternateUomId: filter.alternateUomId,
-			baseDimensionCode: baseDimension.code,
-			alternateDimensionCode: alternateDimension.code,
 		});
 	}
 
-	async listItemUoms(
+	listItemUoms(
 		filter: ItemUomListFilter,
 	): Promise<Result<ExtensionListPage<ItemUom>>> {
-		const rows = [...this.itemUoms.values()]
-			.filter(
-				(r) =>
-					r.organizationId === filter.organizationId &&
-					r.itemId === filter.itemId,
-			)
-			.sort((a, b) => a.alternateUomId.localeCompare(b.alternateUomId));
-		return ok(
-			pageResult(
-				rows.map((r) => ({ ...r })),
-				filter.page,
-				filter.pageSize,
-			),
-		);
+		return resolveAsync(() => {
+			const rows = [...this.itemUoms.values()]
+				.filter(
+					(r) =>
+						r.organizationId === filter.organizationId &&
+						r.itemId === filter.itemId,
+				)
+				.sort((a, b) => a.alternateUomId.localeCompare(b.alternateUomId));
+			return ok(
+				pageResult(
+					rows.map((r) => ({ ...r })),
+					filter.page,
+					filter.pageSize,
+				),
+			);
+		});
 	}
 
-	async getDefaultItemSalesUom(
+	getDefaultItemSalesUom(
 		filter: ItemUomDefaultFilter,
 	): Promise<Result<ItemUom | null>> {
-		const row = [...this.itemUoms.values()].find(
-			(uom) =>
-				uom.organizationId === filter.organizationId &&
-				uom.itemId === filter.itemId &&
-				uom.isDefaultSalesUom &&
-				uom.status === "active" &&
-				uom.archivedAt === null,
-		);
-		return ok(row ? { ...row } : null);
+		return resolveAsync(() => {
+			const row = [...this.itemUoms.values()].find(
+				(uom) =>
+					uom.organizationId === filter.organizationId &&
+					uom.itemId === filter.itemId &&
+					uom.isDefaultSalesUom &&
+					uom.status === "active" &&
+					uom.archivedAt === null,
+			);
+			return ok(row ? { ...row } : null);
+		});
 	}
 
-	async getDefaultItemPurchaseUom(
+	getDefaultItemPurchaseUom(
 		filter: ItemUomDefaultFilter,
 	): Promise<Result<ItemUom | null>> {
-		const row = [...this.itemUoms.values()].find(
-			(uom) =>
-				uom.organizationId === filter.organizationId &&
-				uom.itemId === filter.itemId &&
-				uom.isDefaultPurchaseUom &&
-				uom.status === "active" &&
-				uom.archivedAt === null,
-		);
-		return ok(row ? { ...row } : null);
+		return resolveAsync(() => {
+			const row = [...this.itemUoms.values()].find(
+				(uom) =>
+					uom.organizationId === filter.organizationId &&
+					uom.itemId === filter.itemId &&
+					uom.isDefaultPurchaseUom &&
+					uom.status === "active" &&
+					uom.archivedAt === null,
+			);
+			return ok(row ? { ...row } : null);
+		});
 	}
 
 	async createItemUom(
@@ -5602,12 +5757,12 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		}
 		const baseUom = this.uoms.get(item.baseUomId);
 		const altUom = this.uoms.get(record.alternateUomId);
-		if (!baseUom || !altUom) {
+		if (!(baseUom && altUom)) {
 			return fail("BAD_REQUEST", "UoM not found", {
 				reason: "MASTER_VALIDATION_FAILED",
 			});
 		}
-		if (!baseUom.active || !altUom.active) {
+		if (!(baseUom.active && altUom.active)) {
 			return fail("BAD_REQUEST", "UoM must be active", {
 				reason: "MASTER_VALIDATION_FAILED",
 			});
@@ -5619,7 +5774,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			});
 		}
 		const factor = normalizeItemUomConversionFactor(record.conversionFactor);
-		if (!factor.ok) return factor;
+		if (!factor.ok) {
+			return factor;
+		}
 		if (record.alternateUomId === item.baseUomId && factor.data !== "1") {
 			return fail("BAD_REQUEST", "Base UoM conversion factor must equal 1", {
 				reason: "MASTER_INVALID_UOM_CONVERSION",
@@ -5627,7 +5784,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		}
 		const baseDimension = this.dimensions.get(baseUom.dimensionId);
 		const alternateDimension = this.dimensions.get(altUom.dimensionId);
-		if (!baseDimension || !alternateDimension) {
+		if (!(baseDimension && alternateDimension)) {
 			return fail("BAD_REQUEST", "UoM dimension not found", {
 				reason: "MASTER_VALIDATION_FAILED",
 			});
@@ -5638,7 +5795,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			compatibilityMode: record.compatibilityMode,
 			packagingApprovalReference: record.packagingApprovalReference,
 		});
-		if (!compatible.ok) return compatible;
+		if (!compatible.ok) {
+			return compatible;
+		}
 		if (
 			(record.isDefaultPurchaseUom && !record.isPurchaseUom) ||
 			(record.isDefaultSalesUom && !record.isSalesUom)
@@ -5740,7 +5899,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				}
 			},
 		});
-		if (!side.ok) return side;
+		if (!side.ok) {
+			return side;
+		}
 		this.itemUoms.set(row.id, row);
 		return ok({ ...row });
 	}
@@ -5764,12 +5925,16 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			rawValue: record.barcodeValue,
 			symbology: record.symbology,
 		});
-		if (!normalized.ok) return normalized;
+		if (!normalized.ok) {
+			return normalized;
+		}
 		const packQuantity =
 			record.packQuantity === null
 				? null
 				: normalizeBarcodePackQuantity(record.packQuantity);
-		if (packQuantity !== null && !packQuantity.ok) return packQuantity;
+		if (packQuantity !== null && !packQuantity.ok) {
+			return packQuantity;
+		}
 		if ((record.uomId === null) !== (packQuantity === null)) {
 			return fail("BAD_REQUEST", "Invalid barcode packaging", {
 				reason: "MASTER_INVALID_BARCODE",
@@ -5880,32 +6045,36 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				}
 			},
 		});
-		if (!side.ok) return side;
+		if (!side.ok) {
+			return side;
+		}
 		this.itemBarcodes.set(row.id, row);
 		return ok({ ...row });
 	}
 
-	async findItemByBarcode(
-		filter: ItemBarcodeLookup,
-	): Promise<Result<Item | null>> {
-		const matches = [...this.itemBarcodes.values()].filter(
-			(row) =>
-				row.organizationId === filter.organizationId &&
-				row.symbology === filter.symbology &&
-				row.normalizedValue === filter.normalizedValue &&
-				(filter.includeArchived ||
-					(row.status === "active" && row.archivedAt === null)),
-		);
-		if (matches.length > 1) {
-			return fail("CONFLICT", "Barcode resolves to multiple items", {
-				reason: "MASTER_DUPLICATE",
-				candidateCount: matches.length,
-			});
-		}
-		const barcode = matches[0];
-		if (barcode === undefined) return ok(null);
-		const item = this.items.get(barcode.itemId);
-		return ok(item === undefined ? null : { ...item });
+	findItemByBarcode(filter: ItemBarcodeLookup): Promise<Result<Item | null>> {
+		return resolveAsync(() => {
+			const matches = [...this.itemBarcodes.values()].filter(
+				(row) =>
+					row.organizationId === filter.organizationId &&
+					row.symbology === filter.symbology &&
+					row.normalizedValue === filter.normalizedValue &&
+					(filter.includeArchived ||
+						(row.status === "active" && row.archivedAt === null)),
+			);
+			if (matches.length > 1) {
+				return fail("CONFLICT", "Barcode resolves to multiple items", {
+					reason: "MASTER_DUPLICATE",
+					candidateCount: matches.length,
+				});
+			}
+			const [barcode] = matches;
+			if (barcode === undefined) {
+				return ok(null);
+			}
+			const item = this.items.get(barcode.itemId);
+			return ok(item === undefined ? null : { ...item });
+		});
 	}
 
 	async createItemExternalId(
@@ -5924,7 +6093,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			});
 		}
 		const normalized = normalizeExternalId(record);
-		if (!normalized.ok) return normalized;
+		if (!normalized.ok) {
+			return normalized;
+		}
 		for (const existing of this.itemExternalIds.values()) {
 			if (
 				existing.organizationId === record.organizationId &&
@@ -6015,34 +6186,40 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				}
 			},
 		});
-		if (!side.ok) return side;
+		if (!side.ok) {
+			return side;
+		}
 		this.itemExternalIds.set(row.id, row);
 		return ok({ ...row });
 	}
 
-	async findItemByExternalId(
+	findItemByExternalId(
 		filter: ItemExternalIdLookup,
 	): Promise<Result<Item | null>> {
-		const matches = [...this.itemExternalIds.values()].filter(
-			(ext) =>
-				ext.organizationId === filter.organizationId &&
-				ext.sourceSystem === filter.sourceSystem &&
-				ext.externalIdType === filter.externalIdType &&
-				ext.normalizedValue === filter.normalizedValue &&
-				ext.caseSensitivity === filter.caseSensitivity &&
-				ext.status === "active" &&
-				ext.archivedAt === null,
-		);
-		if (matches.length > 1) {
-			return fail("CONFLICT", "External id resolves to multiple items", {
-				reason: "MASTER_DUPLICATE",
-				candidateCount: matches.length,
-			});
-		}
-		const ext = matches[0];
-		if (ext === undefined) return ok(null);
-		const item = this.items.get(ext.itemId);
-		return ok(item ? cloneItem(item) : null);
+		return resolveAsync(() => {
+			const matches = [...this.itemExternalIds.values()].filter(
+				(externalId) =>
+					externalId.organizationId === filter.organizationId &&
+					externalId.sourceSystem === filter.sourceSystem &&
+					externalId.externalIdType === filter.externalIdType &&
+					externalId.normalizedValue === filter.normalizedValue &&
+					externalId.caseSensitivity === filter.caseSensitivity &&
+					externalId.status === "active" &&
+					externalId.archivedAt === null,
+			);
+			if (matches.length > 1) {
+				return fail("CONFLICT", "External id resolves to multiple items", {
+					reason: "MASTER_DUPLICATE",
+					candidateCount: matches.length,
+				});
+			}
+			const [ext] = matches;
+			if (ext === undefined) {
+				return ok(null);
+			}
+			const item = this.items.get(ext.itemId);
+			return ok(item ? cloneItem(item) : null);
+		});
 	}
 
 	async createItemAlias(
@@ -6061,9 +6238,13 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			});
 		}
 		const normalized = normalizeItemAlias(record.aliasValue);
-		if (!normalized.ok) return normalized;
+		if (!normalized.ok) {
+			return normalized;
+		}
 		const source = normalizeItemAliasSource(record.source);
-		if (!source.ok) return source;
+		if (!source.ok) {
+			return source;
+		}
 		if (record.languageId !== null) {
 			const language = this.languages.get(record.languageId);
 			if (language?.active !== true) {
@@ -6118,61 +6299,67 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			}),
 			rollback: () => this.itemAliases.delete(row.id),
 		});
-		if (!side.ok) return side;
+		if (!side.ok) {
+			return side;
+		}
 		this.itemAliases.set(row.id, row);
 		return ok({ ...row });
 	}
 
-	async listItemAliases(
+	listItemAliases(
 		filter: ItemAliasListFilter,
 	): Promise<Result<ExtensionListPage<ItemAlias>>> {
-		const rows = [...this.itemAliases.values()]
-			.filter(
-				(alias) =>
-					alias.organizationId === filter.organizationId &&
-					alias.itemId === filter.itemId,
-			)
-			.sort((left, right) => left.aliasValue.localeCompare(right.aliasValue));
-		return ok(
-			pageResult(
-				rows.map((row) => ({ ...row })),
-				filter.page,
-				filter.pageSize,
-			),
-		);
+		return resolveAsync(() => {
+			const rows = [...this.itemAliases.values()]
+				.filter(
+					(alias) =>
+						alias.organizationId === filter.organizationId &&
+						alias.itemId === filter.itemId,
+				)
+				.sort((left, right) => left.aliasValue.localeCompare(right.aliasValue));
+			return ok(
+				pageResult(
+					rows.map((row) => ({ ...row })),
+					filter.page,
+					filter.pageSize,
+				),
+			);
+		});
 	}
 
-	async listItemsByAlias(
+	listItemsByAlias(
 		filter: ItemAliasSearchFilter,
 	): Promise<Result<ExtensionListPage<Item>>> {
-		const matches = new Map<string, Item>();
-		for (const alias of this.itemAliases.values()) {
-			if (
-				alias.organizationId === filter.organizationId &&
-				alias.normalizedValue === filter.normalizedValue &&
-				alias.isSearchable &&
-				alias.status === "active" &&
-				alias.archivedAt === null &&
-				(filter.aliasType === undefined ||
-					alias.aliasType === filter.aliasType) &&
-				(filter.languageId === undefined ||
-					alias.languageId === filter.languageId)
-			) {
-				const item = this.items.get(alias.itemId);
+		return resolveAsync(() => {
+			const matches = new Map<string, Item>();
+			for (const alias of this.itemAliases.values()) {
 				if (
-					item !== undefined &&
-					item.status === "active" &&
-					item.retiredAt === null
+					alias.organizationId === filter.organizationId &&
+					alias.normalizedValue === filter.normalizedValue &&
+					alias.isSearchable &&
+					alias.status === "active" &&
+					alias.archivedAt === null &&
+					(filter.aliasType === undefined ||
+						alias.aliasType === filter.aliasType) &&
+					(filter.languageId === undefined ||
+						alias.languageId === filter.languageId)
 				) {
-					matches.set(item.id, cloneItem(item));
+					const item = this.items.get(alias.itemId);
+					if (
+						item !== undefined &&
+						item.status === "active" &&
+						item.retiredAt === null
+					) {
+						matches.set(item.id, cloneItem(item));
+					}
 				}
 			}
-		}
-		const items = [...matches.values()].sort((left, right) => {
-			const codeOrder = left.code.localeCompare(right.code);
-			return codeOrder === 0 ? left.id.localeCompare(right.id) : codeOrder;
+			const items = [...matches.values()].sort((left, right) => {
+				const codeOrder = left.code.localeCompare(right.code);
+				return codeOrder === 0 ? left.id.localeCompare(right.id) : codeOrder;
+			});
+			return ok(pageResult(items, filter.page, filter.pageSize));
 		});
-		return ok(pageResult(items, filter.page, filter.pageSize));
 	}
 
 	async findItemByAlias(filter: ItemAliasLookup): Promise<Result<Item | null>> {
@@ -6181,7 +6368,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			page: 1,
 			pageSize: 2,
 		});
-		if (!matches.ok) return matches;
+		if (!matches.ok) {
+			return matches;
+		}
 		if (matches.data.items.length > 1) {
 			return fail("CONFLICT", "Alias resolves to multiple active items", {
 				reason: "MASTER_DUPLICATE",
@@ -6268,88 +6457,100 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			}),
 			rollback: () => this.warehouseExternalIds.delete(row.id),
 		});
-		if (!side.ok) return side;
+		if (!side.ok) {
+			return side;
+		}
 		this.warehouseExternalIds.set(row.id, row);
 		return ok({ ...row });
 	}
 
-	async findWarehouseByExternalId(
+	findWarehouseByExternalId(
 		organizationId: string,
 		sourceSystem: string,
 		externalIdType: string,
 		normalizedValue: string,
 	): Promise<Result<Warehouse | null>> {
-		const matches: WarehouseExternalId[] = [];
-		for (const ext of this.warehouseExternalIds.values()) {
-			if (
-				ext.organizationId === organizationId &&
-				ext.sourceSystem === sourceSystem &&
-				ext.externalIdType === externalIdType &&
-				ext.normalizedValue === normalizedValue &&
-				ext.status === "active" &&
-				ext.archivedAt === null
-			) {
-				matches.push(ext);
+		return resolveAsync(() => {
+			const matches: WarehouseExternalId[] = [];
+			for (const ext of this.warehouseExternalIds.values()) {
+				if (
+					ext.organizationId === organizationId &&
+					ext.sourceSystem === sourceSystem &&
+					ext.externalIdType === externalIdType &&
+					ext.normalizedValue === normalizedValue &&
+					ext.status === "active" &&
+					ext.archivedAt === null
+				) {
+					matches.push(ext);
+				}
 			}
-		}
-		if (matches.length > 1) {
-			return fail("CONFLICT", "External ID resolves to multiple warehouses", {
-				reason: "MASTER_EXTERNAL_ID_CONFLICT",
-				candidateCount: matches.length,
-			});
-		}
-		const ext = matches[0];
-		if (ext === undefined) return ok(null);
-		const warehouse = this.warehouses.get(ext.warehouseId);
-		return ok(
-			warehouse?.status === "active" && warehouse.retiredAt === null
-				? cloneWarehouse(warehouse)
-				: null,
-		);
+			if (matches.length > 1) {
+				return fail("CONFLICT", "External ID resolves to multiple warehouses", {
+					reason: "MASTER_EXTERNAL_ID_CONFLICT",
+					candidateCount: matches.length,
+				});
+			}
+			const [ext] = matches;
+			if (ext === undefined) {
+				return ok(null);
+			}
+			const warehouse = this.warehouses.get(ext.warehouseId);
+			return ok(
+				warehouse?.status === "active" && warehouse.retiredAt === null
+					? cloneWarehouse(warehouse)
+					: null,
+			);
+		});
 	}
 
-	async getItemTemplateById(
+	getItemTemplateById(
 		organizationId: string,
 		id: string,
 	): Promise<Result<ItemTemplate | null>> {
-		const row = this.itemTemplates.get(id);
-		if (row === undefined || row.organizationId !== organizationId) {
-			return ok(null);
-		}
-		return ok(cloneItemTemplate(row));
+		return resolveAsync(() => {
+			const row = this.itemTemplates.get(id);
+			if (row === undefined || row.organizationId !== organizationId) {
+				return ok(null);
+			}
+			return ok(cloneItemTemplate(row));
+		});
 	}
 
-	async getItemTemplateByCode(
+	getItemTemplateByCode(
 		organizationId: string,
 		normalizedCode: string,
 	): Promise<Result<ItemTemplate | null>> {
-		for (const row of this.itemTemplates.values()) {
-			if (
-				row.organizationId === organizationId &&
-				row.normalizedCode === normalizedCode &&
-				row.retiredAt === null
-			) {
-				return ok(cloneItemTemplate(row));
+		return resolveAsync(() => {
+			for (const row of this.itemTemplates.values()) {
+				if (
+					row.organizationId === organizationId &&
+					row.normalizedCode === normalizedCode &&
+					row.retiredAt === null
+				) {
+					return ok(cloneItemTemplate(row));
+				}
 			}
-		}
-		return ok(null);
+			return ok(null);
+		});
 	}
 
-	async listItemTemplates(filter: ListFilter): Promise<Result<ItemTemplate[]>> {
-		const rows = [...this.itemTemplates.values()]
-			.filter(
-				(row) =>
-					row.organizationId === filter.organizationId &&
-					(filter.status === undefined || row.status === filter.status),
-			)
-			.sort((a, b) =>
-				a.normalizedCode === b.normalizedCode
-					? a.id.localeCompare(b.id)
-					: a.normalizedCode.localeCompare(b.normalizedCode),
+	listItemTemplates(filter: ListFilter): Promise<Result<ItemTemplate[]>> {
+		return resolveAsync(() => {
+			const rows = [...this.itemTemplates.values()]
+				.filter(
+					(row) =>
+						row.organizationId === filter.organizationId &&
+						(filter.status === undefined || row.status === filter.status),
+				)
+				.sort((a, b) =>
+					a.normalizedCode === b.normalizedCode
+						? a.id.localeCompare(b.id)
+						: a.normalizedCode.localeCompare(b.normalizedCode),
+				);
+			return ok(
+				paginate(rows, filter.page, filter.pageSize).map(cloneItemTemplate),
 			);
-		return ok(
-			paginate(rows, filter.page, filter.pageSize).map(cloneItemTemplate),
-		);
+		});
 	}
 
 	async createItemTemplate(
@@ -6433,7 +6634,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			record.expectedVersion,
 			"item_template",
 		);
-		if (!version.ok) return version;
+		if (!version.ok) {
+			return version;
+		}
 		const snapshot = cloneItemTemplate(existing);
 		const updated: ItemTemplate = {
 			...existing,
@@ -6497,7 +6700,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			record.expectedVersion,
 			"item_template",
 		);
-		if (!version.ok) return version;
+		if (!version.ok) {
+			return version;
+		}
 		const lifecycle = assertLifecycleTransition(
 			existing.status,
 			record.toStatus,
@@ -6601,92 +6806,107 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		return ok(cloneItemTemplate(updated));
 	}
 
-	async listItemTemplateAttributes(
+	listItemTemplateAttributes(
 		organizationId: string,
 		templateId: string,
 	): Promise<Result<ItemTemplateAttribute[]>> {
-		const rows = [...this.itemTemplateAttributes.values()]
-			.filter(
-				(row) =>
-					row.organizationId === organizationId &&
-					row.templateId === templateId,
-			)
-			.sort((a, b) =>
-				a.sortOrder === b.sortOrder
-					? a.normalizedCode === b.normalizedCode
-						? a.id.localeCompare(b.id)
-						: a.normalizedCode.localeCompare(b.normalizedCode)
-					: a.sortOrder - b.sortOrder,
-			);
-		return ok(rows.map(cloneItemTemplateAttribute));
-	}
-
-	async listItemTemplateAttributeOptions(
-		organizationId: string,
-		attributeId: string,
-	): Promise<Result<ItemTemplateAttributeOption[]>> {
-		const rows = [...this.itemTemplateAttributeOptions.values()]
-			.filter(
-				(row) =>
-					row.organizationId === organizationId &&
-					row.attributeId === attributeId,
-			)
-			.sort((a, b) =>
-				a.sortOrder === b.sortOrder
-					? a.normalizedCode === b.normalizedCode
-						? a.id.localeCompare(b.id)
-						: a.normalizedCode.localeCompare(b.normalizedCode)
-					: a.sortOrder - b.sortOrder,
-			);
-		return ok(rows.map(cloneItemTemplateAttributeOption));
-	}
-
-	async getItemTemplateAttributeContextById(
-		organizationId: string,
-		attributeId: string,
-	): Promise<Result<ItemTemplateAttributeContext | null>> {
-		const attribute = this.itemTemplateAttributes.get(attributeId);
-		if (
-			attribute === undefined ||
-			attribute.organizationId !== organizationId
-		) {
-			return ok(null);
-		}
-		const template = this.itemTemplates.get(attribute.templateId);
-		if (template === undefined || template.organizationId !== organizationId) {
-			return ok(null);
-		}
-		return ok({
-			attribute: cloneItemTemplateAttribute(attribute),
-			template: cloneItemTemplate(template),
+		return resolveAsync(() => {
+			const rows = [...this.itemTemplateAttributes.values()]
+				.filter(
+					(row) =>
+						row.organizationId === organizationId &&
+						row.templateId === templateId,
+				)
+				.sort((a, b) => {
+					if (a.sortOrder !== b.sortOrder) {
+						return a.sortOrder - b.sortOrder;
+					}
+					if (a.normalizedCode !== b.normalizedCode) {
+						return a.normalizedCode.localeCompare(b.normalizedCode);
+					}
+					return a.id.localeCompare(b.id);
+				});
+			return ok(rows.map(cloneItemTemplateAttribute));
 		});
 	}
 
-	async listItemTemplateAttributeOptionsByTemplate(
+	listItemTemplateAttributeOptions(
+		organizationId: string,
+		attributeId: string,
+	): Promise<Result<ItemTemplateAttributeOption[]>> {
+		return resolveAsync(() => {
+			const rows = [...this.itemTemplateAttributeOptions.values()]
+				.filter(
+					(row) =>
+						row.organizationId === organizationId &&
+						row.attributeId === attributeId,
+				)
+				.sort((a, b) => {
+					if (a.sortOrder !== b.sortOrder) {
+						return a.sortOrder - b.sortOrder;
+					}
+					if (a.normalizedCode !== b.normalizedCode) {
+						return a.normalizedCode.localeCompare(b.normalizedCode);
+					}
+					return a.id.localeCompare(b.id);
+				});
+			return ok(rows.map(cloneItemTemplateAttributeOption));
+		});
+	}
+
+	getItemTemplateAttributeContextById(
+		organizationId: string,
+		attributeId: string,
+	): Promise<Result<ItemTemplateAttributeContext | null>> {
+		return resolveAsync(() => {
+			const attribute = this.itemTemplateAttributes.get(attributeId);
+			if (
+				attribute === undefined ||
+				attribute.organizationId !== organizationId
+			) {
+				return ok(null);
+			}
+			const template = this.itemTemplates.get(attribute.templateId);
+			if (
+				template === undefined ||
+				template.organizationId !== organizationId
+			) {
+				return ok(null);
+			}
+			return ok({
+				attribute: cloneItemTemplateAttribute(attribute),
+				template: cloneItemTemplate(template),
+			});
+		});
+	}
+
+	listItemTemplateAttributeOptionsByTemplate(
 		organizationId: string,
 		templateId: string,
 	): Promise<Result<ItemTemplateAttributeOption[]>> {
-		const attributeIds = new Set(
-			[...this.itemTemplateAttributes.values()]
-				.filter(
-					(attribute) =>
-						attribute.organizationId === organizationId &&
-						attribute.templateId === templateId,
-				)
-				.map((attribute) => attribute.id),
-		);
-		const rows = [...this.itemTemplateAttributeOptions.values()]
-			.filter(
-				(option) =>
-					option.organizationId === organizationId &&
-					attributeIds.has(option.attributeId),
-			)
-			.sort((a, b) =>
-				a.sortOrder === b.sortOrder
-					? a.id.localeCompare(b.id)
-					: a.sortOrder - b.sortOrder,
+		return resolveAsync(() => {
+			const attributeIds = new Set(
+				[...this.itemTemplateAttributes.values()]
+					.filter(
+						(attribute) =>
+							attribute.organizationId === organizationId &&
+							attribute.templateId === templateId,
+					)
+					.map((attribute) => attribute.id),
 			);
-		return ok(rows.map(cloneItemTemplateAttributeOption));
+			const rows = [...this.itemTemplateAttributeOptions.values()]
+				.filter(
+					(option) =>
+						option.organizationId === organizationId &&
+						attributeIds.has(option.attributeId),
+				)
+				.sort((a, b) =>
+					a.sortOrder === b.sortOrder
+						? a.id.localeCompare(b.id)
+						: a.sortOrder - b.sortOrder,
+				);
+			return ok(rows.map(cloneItemTemplateAttributeOption));
+		});
 	}
 
 	async addItemTemplateAttribute(
@@ -6943,51 +7163,58 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		return ok(cloneItemTemplateAttributeOption(archived));
 	}
 
-	async getItemVariantById(
+	getItemVariantById(
 		organizationId: string,
 		id: string,
 	): Promise<Result<ItemVariant | null>> {
-		const variant = this.itemVariants.get(id);
-		if (variant === undefined || variant.organizationId !== organizationId) {
-			return ok(null);
-		}
-		const assembled = this.assembleItemVariant(variant);
-		if (assembled === null) {
-			return fail("INTERNAL_ERROR", "Item variant item row missing");
-		}
-		return ok(assembled);
+		return resolveAsync(() => {
+			const variant = this.itemVariants.get(id);
+			if (variant === undefined || variant.organizationId !== organizationId) {
+				return ok(null);
+			}
+			const assembled = this.assembleItemVariant(variant);
+			if (assembled === null) {
+				return fail("INTERNAL_ERROR", "Item variant item row missing");
+			}
+			return ok(assembled);
+		});
 	}
 
-	async listItemVariantsByTemplate(
+	listItemVariantsByTemplate(
 		filter: ListItemVariantsFilter,
 	): Promise<Result<ItemVariant[]>> {
-		const memberships = [...this.itemVariants.values()].filter(
-			(variant) =>
-				variant.organizationId === filter.organizationId &&
-				variant.templateId === filter.templateId,
-		);
-		const assembled: ItemVariant[] = [];
-		for (const membership of memberships) {
-			const item = this.items.get(membership.itemId);
-			if (item === undefined || item.organizationId !== filter.organizationId) {
-				continue;
+		return resolveAsync(() => {
+			const memberships = [...this.itemVariants.values()].filter(
+				(variant) =>
+					variant.organizationId === filter.organizationId &&
+					variant.templateId === filter.templateId,
+			);
+			const assembled: ItemVariant[] = [];
+			for (const membership of memberships) {
+				const item = this.items.get(membership.itemId);
+				if (
+					item === undefined ||
+					item.organizationId !== filter.organizationId
+				) {
+					continue;
+				}
+				if (filter.status !== undefined && item.status !== filter.status) {
+					continue;
+				}
+				const variant = this.assembleItemVariant(membership);
+				if (variant !== null) {
+					assembled.push(variant);
+				}
 			}
-			if (filter.status !== undefined && item.status !== filter.status) {
-				continue;
-			}
-			const variant = this.assembleItemVariant(membership);
-			if (variant !== null) {
-				assembled.push(variant);
-			}
-		}
-		assembled.sort((a, b) =>
-			a.item.normalizedCode === b.item.normalizedCode
-				? a.id.localeCompare(b.id)
-				: a.item.normalizedCode.localeCompare(b.item.normalizedCode),
-		);
-		return ok(
-			paginate(assembled, filter.page, filter.pageSize).map(cloneItemVariant),
-		);
+			assembled.sort((a, b) =>
+				a.item.normalizedCode === b.item.normalizedCode
+					? a.id.localeCompare(b.id)
+					: a.item.normalizedCode.localeCompare(b.item.normalizedCode),
+			);
+			return ok(
+				paginate(assembled, filter.page, filter.pageSize).map(cloneItemVariant),
+			);
+		});
 	}
 
 	async createItemVariant(
@@ -7092,16 +7319,16 @@ export class MemoryMasterDataStore implements MasterDataStore {
 						: { referenceValue: value.referenceValue }),
 				},
 			});
-			if (!normalized.ok) return normalized;
+			if (!normalized.ok) {
+				return normalized;
+			}
 			let expectedNormalizedValue = normalized.data.normalizedValue;
-			const selectedOptionIds =
-				attribute.dataType === "single_option"
-					? value.optionId === null
-						? []
-						: [value.optionId]
-					: attribute.dataType === "multiple_option"
-						? [...value.optionIds]
-						: [];
+			let selectedOptionIds: string[] = [];
+			if (attribute.dataType === "single_option" && value.optionId !== null) {
+				selectedOptionIds = [value.optionId];
+			} else if (attribute.dataType === "multiple_option") {
+				selectedOptionIds = [...value.optionIds];
+			}
 			if (selectedOptionIds.length > 0) {
 				const selectedOptions = selectedOptionIds.map((optionId) =>
 					this.itemTemplateAttributeOptions.get(optionId),
@@ -7122,7 +7349,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				}
 				expectedNormalizedValue = selectedOptions
 					.map((option) => option?.normalizedCode ?? "")
-					.sort()
+					.sort((left, right) => left.localeCompare(right))
 					.join(",");
 			}
 			if (value.normalizedValue !== expectedNormalizedValue) {
@@ -7286,46 +7513,50 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			return variantSide;
 		}
 
-		for (const value of values) {
-			const valueSide = await this.commitMutation(rollbackAll, ports, {
-				organizationId: value.organizationId,
-				actorUserId: value.createdBy,
-				correlationId: meta.correlationId,
-				entity: "item_variant_attribute_value",
-				entityId: value.id,
-				action: "CREATE",
-				changes: [
-					{
-						field: "attributeId",
-						oldValue: null,
-						newValue: value.attributeId,
-					},
-				],
-				newValue: {
-					attributeId: value.attributeId,
-					valueType: value.valueType,
-					version: value.version,
-				},
-				type: EXTENSION_EVENT_TYPES.itemVariantAttributeValueAssigned,
-				code: value.valueType,
-				version: value.version,
-				eventPayload: createExtensionEventPayload({
+		const failedValueSide = await runSequentiallyUntil(
+			values,
+			async (value) => {
+				const valueSide = await this.commitMutation(rollbackAll, ports, {
 					organizationId: value.organizationId,
-					entityType: "item_variant_attribute_value",
-					entityId: value.id,
-					parentEntityId: value.variantId,
-					classification: extensionEventClassification(
-						"item_variant_attribute_value",
-						value.valueType,
-					),
-					version: value.version,
-					actorId: value.createdBy,
+					actorUserId: value.createdBy,
 					correlationId: meta.correlationId,
-				}),
-			});
-			if (!valueSide.ok) {
-				return valueSide;
-			}
+					entity: "item_variant_attribute_value",
+					entityId: value.id,
+					action: "CREATE",
+					changes: [
+						{
+							field: "attributeId",
+							oldValue: null,
+							newValue: value.attributeId,
+						},
+					],
+					newValue: {
+						attributeId: value.attributeId,
+						valueType: value.valueType,
+						version: value.version,
+					},
+					type: EXTENSION_EVENT_TYPES.itemVariantAttributeValueAssigned,
+					code: value.valueType,
+					version: value.version,
+					eventPayload: createExtensionEventPayload({
+						organizationId: value.organizationId,
+						entityType: "item_variant_attribute_value",
+						entityId: value.id,
+						parentEntityId: value.variantId,
+						classification: extensionEventClassification(
+							"item_variant_attribute_value",
+							value.valueType,
+						),
+						version: value.version,
+						actorId: value.createdBy,
+						correlationId: meta.correlationId,
+					}),
+				});
+				return valueSide.ok ? undefined : valueSide;
+			},
+		);
+		if (failedValueSide !== undefined) {
+			return failedValueSide;
 		}
 
 		const assembled = this.assembleItemVariant(variant);
@@ -7357,12 +7588,16 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			variant,
 			record.expectedVariantVersion,
 		);
-		if (!variantVersion.ok) return variantVersion;
+		if (!variantVersion.ok) {
+			return variantVersion;
+		}
 		const itemVersion = assertExpectedCoreVersion(
 			item,
 			record.expectedItemVersion,
 		);
-		if (!itemVersion.ok) return itemVersion;
+		if (!itemVersion.ok) {
+			return itemVersion;
+		}
 		const retired = await this.transitionItem(
 			{
 				organizationId: record.organizationId,
@@ -7385,19 +7620,21 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			: ok(assembled);
 	}
 
-	async getImportBatchByIdempotencyKey(
+	getImportBatchByIdempotencyKey(
 		organizationId: string,
 		idempotencyKey: string,
 	): Promise<Result<ImportBatchRecord | null>> {
-		for (const batch of this.importBatches.values()) {
-			if (
-				batch.organizationId === organizationId &&
-				batch.idempotencyKey === idempotencyKey
-			) {
-				return ok(batch);
+		return resolveAsync(() => {
+			for (const batch of this.importBatches.values()) {
+				if (
+					batch.organizationId === organizationId &&
+					batch.idempotencyKey === idempotencyKey
+				) {
+					return ok(batch);
+				}
 			}
-		}
-		return ok(null);
+			return ok(null);
+		});
 	}
 
 	async claimImportBatch(
@@ -7461,93 +7698,106 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		return ok({ kind: "claimed", batch });
 	}
 
-	async acquireImportBatchLease(
+	acquireImportBatchLease(
 		record: ImportBatchLeaseRequest,
 	): Promise<Result<ImportBatchLeaseResult>> {
-		const batch = this.importBatches.get(record.batchId);
-		if (batch === undefined || batch.organizationId !== record.organizationId) {
-			return fail("NOT_FOUND", "Import batch not found", {
-				reason: "MASTER_NOT_FOUND",
-			} satisfies MasterFailureDetails);
-		}
-		if (batch.status === "applied") {
-			return ok({ kind: "completed", batch });
-		}
-		const leaseActive =
-			batch.status === "applying" &&
-			batch.leaseExpiresAt !== null &&
-			batch.leaseExpiresAt.getTime() > Date.now();
-		if (leaseActive) {
-			return ok({ kind: "busy", batch });
-		}
-		const acquired: ImportBatchRecord = {
-			...batch,
-			status: "applying",
-			leaseOwner: record.leaseOwner,
-			leaseExpiresAt: record.leaseExpiresAt,
-			updatedAt: new Date(),
-		};
-		this.importBatches.set(acquired.id, acquired);
-		return ok({ kind: "acquired", batch: acquired });
+		return resolveAsync(() => {
+			const batch = this.importBatches.get(record.batchId);
+			if (
+				batch === undefined ||
+				batch.organizationId !== record.organizationId
+			) {
+				return fail("NOT_FOUND", "Import batch not found", {
+					reason: "MASTER_NOT_FOUND",
+				} satisfies MasterFailureDetails);
+			}
+			if (batch.status === "applied") {
+				return ok({ kind: "completed", batch });
+			}
+			const leaseActive =
+				batch.status === "applying" &&
+				batch.leaseExpiresAt !== null &&
+				batch.leaseExpiresAt.getTime() > Date.now();
+			if (leaseActive) {
+				return ok({ kind: "busy", batch });
+			}
+			const acquired: ImportBatchRecord = {
+				...batch,
+				status: "applying",
+				leaseOwner: record.leaseOwner,
+				leaseExpiresAt: record.leaseExpiresAt,
+				updatedAt: new Date(),
+			};
+			this.importBatches.set(acquired.id, acquired);
+			return ok({ kind: "acquired", batch: acquired });
+		});
 	}
 
-	async listImportBatchRows(
+	listImportBatchRows(
 		organizationId: string,
 		batchId: string,
 	): Promise<Result<ImportBatchRowRecord[]>> {
-		return ok(
-			[...this.importBatchRows.values()]
-				.filter(
-					(row) =>
-						row.organizationId === organizationId && row.batchId === batchId,
-				)
-				.sort((left, right) => left.sourceRowNumber - right.sourceRowNumber),
+		return resolveAsync(() =>
+			ok(
+				[...this.importBatchRows.values()]
+					.filter(
+						(row) =>
+							row.organizationId === organizationId && row.batchId === batchId,
+					)
+					.sort((left, right) => left.sourceRowNumber - right.sourceRowNumber),
+			),
 		);
 	}
 
-	async completeImportBatch(
+	completeImportBatch(
 		record: ImportBatchCompletionRecord,
 	): Promise<Result<ImportBatchRecord>> {
-		const batch = this.importBatches.get(record.batchId);
-		if (
-			batch === undefined ||
-			batch.organizationId !== record.organizationId ||
-			batch.leaseOwner !== record.leaseOwner
-		) {
-			return fail("CONFLICT", "Import batch lease was lost", {
-				reason: "MASTER_VERSION_CONFLICT",
-			} satisfies MasterFailureDetails);
-		}
-		const completedAt = new Date();
-		for (const result of record.rows) {
-			const row = [...this.importBatchRows.values()].find(
-				(candidate) =>
-					candidate.organizationId === record.organizationId &&
-					candidate.batchId === record.batchId &&
-					candidate.sourceRowNumber === result.sourceRowNumber,
-			);
-			if (row === undefined) continue;
-			if (row.status === "applied" && result.status !== "applied") continue;
-			this.importBatchRows.set(row.id, {
-				...row,
-				...result,
+		return resolveAsync(() => {
+			const batch = this.importBatches.get(record.batchId);
+			if (
+				batch === undefined ||
+				batch.organizationId !== record.organizationId ||
+				batch.leaseOwner !== record.leaseOwner
+			) {
+				return fail("CONFLICT", "Import batch lease was lost", {
+					reason: "MASTER_VERSION_CONFLICT",
+				} satisfies MasterFailureDetails);
+			}
+			const completedAt = new Date();
+			for (const result of record.rows) {
+				const row = [...this.importBatchRows.values()].find(
+					(candidate) =>
+						candidate.organizationId === record.organizationId &&
+						candidate.batchId === record.batchId &&
+						candidate.sourceRowNumber === result.sourceRowNumber,
+				);
+				if (row === undefined) {
+					continue;
+				}
+				if (row.status === "applied" && result.status !== "applied") {
+					continue;
+				}
+				this.importBatchRows.set(row.id, {
+					...row,
+					...result,
+					leaseOwner: null,
+					leaseExpiresAt: null,
+					completedAt,
+					updatedAt: completedAt,
+				});
+			}
+			const completed: ImportBatchRecord = {
+				...batch,
+				status: record.status,
+				report: record.report,
 				leaseOwner: null,
 				leaseExpiresAt: null,
 				completedAt,
 				updatedAt: completedAt,
-			});
-		}
-		const completed: ImportBatchRecord = {
-			...batch,
-			status: record.status,
-			report: record.report,
-			leaseOwner: null,
-			leaseExpiresAt: null,
-			completedAt,
-			updatedAt: completedAt,
-		};
-		this.importBatches.set(completed.id, completed);
-		return ok(completed);
+			};
+			this.importBatches.set(completed.id, completed);
+			return ok(completed);
+		});
 	}
 }
 

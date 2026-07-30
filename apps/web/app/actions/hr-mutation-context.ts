@@ -32,7 +32,7 @@ function hrActionSchemaFromRefinedPackageSchema(schema: z.ZodTypeAny) {
 		});
 		if (!result.success) {
 			for (const issue of result.error.issues) {
-				const path0 = issue.path[0];
+				const [path0] = issue.path;
 				if (path0 === "organizationId" || path0 === "actorUserId") {
 					continue;
 				}

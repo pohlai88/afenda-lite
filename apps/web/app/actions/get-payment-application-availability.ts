@@ -27,7 +27,7 @@ export async function getPaymentApplicationAvailabilityAction(
 	_prev: GetPaymentApplicationAvailabilityActionState,
 	formData: FormData,
 ): Promise<GetPaymentApplicationAvailabilityActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getPaymentApplicationAvailabilityAction",
 		permission: "payments.availability.read",
 		safeMessage:
@@ -53,7 +53,9 @@ export async function getPaymentApplicationAvailabilityAction(
 					createPaymentsCommandOptions(),
 				),
 			);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { availability: mapped.data } };
 		},
 	});

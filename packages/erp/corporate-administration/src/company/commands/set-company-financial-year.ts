@@ -1,3 +1,4 @@
+// biome-ignore-all lint/style/useDestructuring: Explicit company state access keeps financial-year evidence visible.
 import { fail, type Result } from "@afenda/errors/result";
 import {
 	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
@@ -52,7 +53,9 @@ export async function setCompanyFinancialYear(
 		setCompanyFinancialYearInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 
 	const authorized = await requireCorporateAdministrationPermission(
 		options.authorization,
@@ -63,7 +66,9 @@ export async function setCompanyFinancialYear(
 				CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS.setCompanyFinancialYear,
 		},
 	);
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 
 	const identity = createCorporateAdministrationCommandFingerprint({
 		schema: setCompanyFinancialYearInputSchema,
@@ -71,7 +76,9 @@ export async function setCompanyFinancialYear(
 		commandId: "corporate-administration.legal-company.set-financial-year",
 		input: parsed.data,
 	});
-	if (!identity.ok) return identity;
+	if (!identity.ok) {
+		return identity;
+	}
 	const approved = await requireCorporateAdministrationApprovalIfConfigured(
 		dependencies,
 		{
@@ -82,22 +89,30 @@ export async function setCompanyFinancialYear(
 			commandFingerprint: identity.data.fingerprint,
 		},
 	);
-	if (!approved.ok) return approved;
+	if (!approved.ok) {
+		return approved;
+	}
 
 	const financialYearEnd = validateFinancialYearEnd({
 		month: parsed.data.fiscalYearStartMonth,
 		day: parsed.data.fiscalYearStartDay,
 		allowFebruary29: true,
 	});
-	if (!financialYearEnd.ok) return financialYearEnd;
+	if (!financialYearEnd.ok) {
+		return financialYearEnd;
+	}
 
 	const current = await dependencies.store.lockLegalCompany({
 		organizationId: options.organizationId,
 		legalCompanyId: parsed.data.legalCompanyId,
 		expectedVersion: parsed.data.expectedCompanyVersion,
 	});
-	if (!current.ok) return current;
-	if (current.data === null) return legalCompanyNotFound();
+	if (!current.ok) {
+		return current;
+	}
+	if (current.data === null) {
+		return legalCompanyNotFound();
+	}
 	if (current.data.version !== parsed.data.expectedCompanyVersion) {
 		return staleCompanyVersion(
 			parsed.data.expectedCompanyVersion,
@@ -110,7 +125,9 @@ export async function setCompanyFinancialYear(
 		currencyCode: parsed.data.reportingCurrencyCode,
 		effectiveDate: parsed.data.effectiveFrom,
 	});
-	if (!currency.ok) return currency;
+	if (!currency.ok) {
+		return currency;
+	}
 	if (currency.data === null || !currency.data.active) {
 		return inactiveReference("reportingCurrencyCode", currency.data === null);
 	}
@@ -119,7 +136,9 @@ export async function setCompanyFinancialYear(
 		organizationId: options.organizationId,
 		sourceDocumentId: parsed.data.sourceDocumentId,
 	});
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	if (source.data === null || !source.data.active) {
 		return inactiveReference("sourceDocumentId", source.data === null);
 	}
@@ -135,12 +154,16 @@ export async function setCompanyFinancialYear(
 			legalCompanyId: parsed.data.legalCompanyId,
 			effectivePeriod,
 		});
-	if (!overlap.ok) return overlap;
+	if (!overlap.ok) {
+		return overlap;
+	}
 	const chronology = validateFinancialYearChronology({
 		candidate: effectivePeriod,
 		existing: overlap.data === null ? [] : [overlap.data],
 	});
-	if (!chronology.ok) return chronology;
+	if (!chronology.ok) {
+		return chronology;
+	}
 
 	return runDurableCompanyCommand({
 		commandId: "corporate-administration.legal-company.set-financial-year",

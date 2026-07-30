@@ -207,16 +207,16 @@ export type EvidenceKind =
 export type GovernanceEvidenceKind = EvidenceKind;
 
 export interface ComponentEvidence {
-	readonly kind: GovernanceEvidenceKind;
 	readonly file: string;
+	readonly kind: GovernanceEvidenceKind;
 	readonly target: string;
 }
 
 export type NonEmptyReadonlyArray<T> = readonly [T, ...T[]];
 
 export interface UsageRule {
-	readonly meaning: string;
 	readonly allowedWhen: NonEmptyReadonlyArray<string>;
+	readonly meaning: string;
 	readonly prohibitedWhen?: NonEmptyReadonlyArray<string>;
 }
 
@@ -228,66 +228,66 @@ export type ComponentContractOwnership = Readonly<{
 }>;
 
 export interface GovernedComponentContract {
-	readonly standard: UiComponentContractStandard;
-	readonly id: `${UiComponentMetadata["id"]}.contract`;
+	readonly accessibility: NonEmptyReadonlyArray<string>;
+	readonly approvedSizes?: Readonly<Record<string, UsageRule>>;
+	readonly approvedVariants?: Readonly<Record<string, UsageRule>>;
 	readonly component: UiComponentMetadata["id"];
-	readonly purpose: string;
+	readonly id: `${UiComponentMetadata["id"]}.contract`;
 	readonly ownership: ComponentContractOwnership;
+	readonly prohibitedUsage: NonEmptyReadonlyArray<string>;
+	readonly purpose: string;
+	readonly rules: NonEmptyReadonlyArray<string>;
 	/** Interpretations or decisions that the component must not imply. */
 	readonly semanticBoundaries: NonEmptyReadonlyArray<string>;
-	readonly approvedVariants?: Readonly<Record<string, UsageRule>>;
-	readonly approvedSizes?: Readonly<Record<string, UsageRule>>;
-	readonly rules: NonEmptyReadonlyArray<string>;
-	readonly accessibility: NonEmptyReadonlyArray<string>;
-	readonly prohibitedUsage: NonEmptyReadonlyArray<string>;
+	readonly standard: UiComponentContractStandard;
 }
 
 export type ComponentContractInput = GovernedComponentContract;
 
 export interface ComponentGovernance {
-	readonly lifecycle: ComponentLifecycle;
 	readonly contract?: GovernedComponentContract;
-	readonly evidence?: readonly ComponentEvidence[];
 	readonly deprecatedBy?: UiComponentMetadata["id"];
+	readonly evidence?: readonly ComponentEvidence[];
+	readonly lifecycle: ComponentLifecycle;
 	readonly notes?: readonly string[];
 }
 
 export interface UiComponentMetadata {
-	name: string;
-	id: `ui.${string}`;
-	sourceModule: `src/components/ui/${string}.ts${"" | "x"}`;
-	publicExports: readonly string[];
-	variants?: readonly string[];
-	sizes?: readonly string[];
-	layer: UiLayer;
-	family: UiFamily;
-	renderMode: UiRenderMode;
 	capabilities: readonly UiCapabilityId[];
-	qualityProfiles: readonly UiQualityProfileId[];
-	requiredStates: readonly UiState[];
-	tokenFamilies: readonly UiTokenFamilyId[];
 	evidence: readonly UiEvidence[];
-	lifecycle: ComponentLifecycle;
+	family: UiFamily;
 	governance?: ComponentGovernance;
+	id: `ui.${string}`;
+	layer: UiLayer;
+	lifecycle: ComponentLifecycle;
+	name: string;
+	publicExports: readonly string[];
+	qualityProfiles: readonly UiQualityProfileId[];
+	renderMode: UiRenderMode;
+	requiredStates: readonly UiState[];
+	sizes?: readonly string[];
+	sourceModule: `src/components/ui/${string}.ts${"" | "x"}`;
+	tokenFamilies: readonly UiTokenFamilyId[];
+	variants?: readonly string[];
 }
 
 export interface UiCapabilityMetadata {
-	id: UiCapabilityId;
-	family: UiFamily;
 	description: string;
-	providers: readonly UiComponentMetadata["id"][];
+	family: UiFamily;
+	id: UiCapabilityId;
 	lifecycle: UiLifecycle;
+	providers: readonly UiComponentMetadata["id"][];
 }
 
 export interface UiQualityProfileMetadata {
 	id: UiQualityProfileId;
-	requiredStates: readonly UiState[];
 	requiredEvidence: readonly UiEvidenceKind[];
+	requiredStates: readonly UiState[];
 }
 
 export interface UiSurfaceProfileMetadata {
-	id: UiSurfaceProfileId;
 	capabilities: readonly UiCapabilityId[];
+	id: UiSurfaceProfileId;
 }
 
 export interface UiModuleCoverageMetadata {
@@ -297,8 +297,8 @@ export interface UiModuleCoverageMetadata {
 
 export interface UiTokenFamilyMetadata {
 	id: UiTokenFamilyId;
-	variables: readonly `--${string}`[];
 	requiredThemes: "both" | "root-only";
+	variables: readonly `--${string}`[];
 }
 
 export interface UiCatalog {
@@ -308,22 +308,22 @@ export interface UiCatalog {
 		state: "locked";
 		lockedOn: `${number}-${number}-${number}`;
 	};
-	components: readonly UiComponentMetadata[];
 	capabilities: readonly UiCapabilityMetadata[];
+	components: readonly UiComponentMetadata[];
+	moduleCoverage: readonly UiModuleCoverageMetadata[];
 	qualityProfiles: readonly UiQualityProfileMetadata[];
 	surfaceProfiles: readonly UiSurfaceProfileMetadata[];
-	moduleCoverage: readonly UiModuleCoverageMetadata[];
 	tokenFamilies: readonly UiTokenFamilyMetadata[];
 }
 
 export interface UiRepositorySnapshot {
-	componentSources: Readonly<Record<string, string>>;
-	exportsBySource: Readonly<Record<string, readonly string[]>>;
 	barrelSource: string;
-	packageExportKeys: readonly string[];
-	tokenCss: string;
+	componentSources: Readonly<Record<string, string>>;
 	erpModuleIds: readonly string[];
 	evidencePaths: readonly string[];
+	exportsBySource: Readonly<Record<string, readonly string[]>>;
+	packageExportKeys: readonly string[];
+	tokenCss: string;
 }
 
 export type UiCatalogIssue =
@@ -366,15 +366,15 @@ export type GovernanceDiagnosticCode =
 	| "invalid_evidence";
 
 export interface GovernanceDiagnostic {
-	readonly severity: "error" | "warning";
 	readonly code: GovernanceDiagnosticCode;
 	readonly component: string;
 	readonly message: string;
+	readonly severity: "error" | "warning";
 }
 
 export interface GovernanceValidationResult {
-	readonly ok: boolean;
 	readonly diagnostics: readonly GovernanceDiagnostic[];
+	readonly ok: boolean;
 }
 
 export function defineComponentContract<

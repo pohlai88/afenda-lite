@@ -5,9 +5,9 @@ import {
 	humanResourcesErrorDetails,
 } from "../error-codes";
 
-export type PerformanceRatingScale = {
+export interface PerformanceRatingScale {
 	codes: string[];
-};
+}
 
 export const performanceRatingScaleSchema = z
 	.object({

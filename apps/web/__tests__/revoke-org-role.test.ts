@@ -139,3 +139,4 @@ describe.skipIf(!hasDatabase)("revokeOrgRoleWithAudit tenancy (I3.1)", () => {
 		}
 	});
 });
+// biome-ignore-all lint/performance/noAwaitInLoops: Cases run serially to isolate mutable test state and ordered transitions.

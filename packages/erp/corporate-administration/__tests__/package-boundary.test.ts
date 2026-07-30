@@ -1,3 +1,5 @@
+// biome-ignore-all lint/performance/noNamespaceImport: Boundary checks inspect namespace imports as source text.
+// biome-ignore-all lint/style/noNestedTernary: File classification remains adjacent to the boundary scanner.
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -1252,13 +1254,7 @@ describe("Corporate Administration CA-0.4 package boundary", () => {
 		const forbiddenApplicationSurface =
 			/(?:["']use server["']|NextResponse|NextRequest|\bResponse\b|\bRequest\b|ActionResult|actionOk|actionFail|ServerAction|\.tsx\b|jsx|@afenda\/ui-system)/;
 		const forbiddenImplementation = new RegExp(
-			[
-				"TODO",
-				"NotImplemented",
-				"throw new Error",
-				"stu" + "b",
-				"sh" + "im",
-			].join("|"),
+			["TODO", "NotImplemented", "throw new Error", "stub", "shim"].join("|"),
 			"i",
 		);
 

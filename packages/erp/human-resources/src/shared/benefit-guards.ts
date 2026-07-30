@@ -101,11 +101,15 @@ export function assertBenefitContributionFacts(input: {
 
 	if (hasEmployeeAmount && input.employeeContributionAmount !== null) {
 		const parsed = parseNonNegativeAmount(input.employeeContributionAmount);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 	}
 	if (hasEmployerAmount && input.employerContributionAmount !== null) {
 		const parsed = parseNonNegativeAmount(input.employerContributionAmount);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 	}
 
 	return ok(undefined);

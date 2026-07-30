@@ -1,3 +1,5 @@
+// biome-ignore-all lint/complexity/noExcessiveCognitiveComplexity: Identifier supersession coordinates policy, CAS, idempotency, audit, and outbox atomically.
+// biome-ignore-all lint/style/useDestructuring: Explicit predecessor access keeps supersession evidence visible.
 import { fail, type Result } from "@afenda/errors/result";
 import {
 	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
@@ -55,13 +57,17 @@ export async function supersedeCompanyIdentifier(
 	const nonTaxInput = assertNonTaxCompanyIdentifierType(
 		input.replacement.identifierType,
 	);
-	if (!nonTaxInput.ok) return nonTaxInput;
+	if (!nonTaxInput.ok) {
+		return nonTaxInput;
+	}
 
 	const parsed = parseCorporateAdministrationInput(
 		supersedeCompanyIdentifierInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 
 	const authorized = await requireCorporateAdministrationPermission(
 		options.authorization,
@@ -72,7 +78,9 @@ export async function supersedeCompanyIdentifier(
 				CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS.supersedeCompanyIdentifier,
 		},
 	);
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 
 	const identity = createCorporateAdministrationCommandFingerprint({
 		schema: supersedeCompanyIdentifierInputSchema,
@@ -80,7 +88,9 @@ export async function supersedeCompanyIdentifier(
 		commandId: "corporate-administration.legal-company.supersede-identifier",
 		input: parsed.data,
 	});
-	if (!identity.ok) return identity;
+	if (!identity.ok) {
+		return identity;
+	}
 	const approved = await requireCorporateAdministrationApprovalIfConfigured(
 		dependencies,
 		{
@@ -91,37 +101,51 @@ export async function supersedeCompanyIdentifier(
 			commandFingerprint: identity.data.fingerprint,
 		},
 	);
-	if (!approved.ok) return approved;
+	if (!approved.ok) {
+		return approved;
+	}
 
 	const nonTax = assertNonTaxCompanyIdentifierType(
 		parsed.data.replacement.identifierType,
 	);
-	if (!nonTax.ok) return nonTax;
+	if (!nonTax.ok) {
+		return nonTax;
+	}
 	const predecessor = await dependencies.identifierStore.getCompanyIdentifier({
 		organizationId: options.organizationId,
 		legalCompanyId: parsed.data.legalCompanyId,
 		companyIdentifierId: parsed.data.companyIdentifierId,
 	});
-	if (!predecessor.ok) return predecessor;
+	if (!predecessor.ok) {
+		return predecessor;
+	}
 	const supersession = validateIdentifierSupersession({
 		identifier: predecessor.data,
 		expectedVersion: parsed.data.expectedIdentifierVersion,
 	});
-	if (!supersession.ok) return supersession;
+	if (!supersession.ok) {
+		return supersession;
+	}
 	const jurisdiction = validateIdentifierJurisdiction(
 		parsed.data.replacement.jurisdictionCode,
 	);
-	if (!jurisdiction.ok) return jurisdiction;
+	if (!jurisdiction.ok) {
+		return jurisdiction;
+	}
 	const authority = validateIdentifierAuthority(
 		parsed.data.replacement.issuingAuthorityCode,
 	);
-	if (!authority.ok) return authority;
+	if (!authority.ok) {
+		return authority;
+	}
 	const country = await dependencies.referenceData.resolveCountry({
 		organizationId: options.organizationId,
 		countryCode: parsed.data.replacement.jurisdictionCode,
 		effectiveDate: parsed.data.replacement.effectiveFrom,
 	});
-	if (!country.ok) return country;
+	if (!country.ok) {
+		return country;
+	}
 	if (country.data === null || !country.data.active) {
 		return inactiveReference("jurisdictionCode", country.data === null);
 	}
@@ -132,7 +156,9 @@ export async function supersedeCompanyIdentifier(
 			authorityCode: authority.data,
 			effectiveDate: parsed.data.replacement.effectiveFrom,
 		});
-	if (!resolvedAuthority.ok) return resolvedAuthority;
+	if (!resolvedAuthority.ok) {
+		return resolvedAuthority;
+	}
 	if (resolvedAuthority.data === null || !resolvedAuthority.data.active) {
 		return inactiveReference("authorityCode", resolvedAuthority.data === null);
 	}
@@ -140,7 +166,9 @@ export async function supersedeCompanyIdentifier(
 		organizationId: options.organizationId,
 		sourceDocumentId: parsed.data.replacement.sourceDocumentId,
 	});
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	if (source.data === null || !source.data.active) {
 		return inactiveReference("sourceDocumentId", source.data === null);
 	}
@@ -167,7 +195,9 @@ export async function supersedeCompanyIdentifier(
 			effectivePeriod,
 			ignoreCompanyIdentifierId: parsed.data.companyIdentifierId,
 		});
-	if (!overlap.ok) return overlap;
+	if (!overlap.ok) {
+		return overlap;
+	}
 	const effectiveRange = validateIdentifierEffectiveRange({
 		candidate: effectivePeriod,
 		identifierType: parsed.data.replacement.identifierType,
@@ -178,7 +208,9 @@ export async function supersedeCompanyIdentifier(
 		ignoreCompanyIdentifierId: parsed.data.companyIdentifierId,
 		legalCompanyId: parsed.data.legalCompanyId,
 	});
-	if (!effectiveRange.ok) return effectiveRange;
+	if (!effectiveRange.ok) {
+		return effectiveRange;
+	}
 
 	return runDurableCompanyCommand({
 		commandId: "corporate-administration.legal-company.supersede-identifier",

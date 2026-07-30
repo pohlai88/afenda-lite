@@ -7,9 +7,9 @@ export const AUTH_SURFACE_CYCLE_MS = 25_000;
 
 const PAUSED_CLASS = "auth-surface--paused";
 
-type AuthSurfaceRootProps = {
+interface AuthSurfaceRootProps {
 	children: ReactNode;
-};
+}
 
 /**
  * Persistent cinematic root — wall-clock `animation-delay` so remounts
@@ -39,8 +39,8 @@ export function AuthSurfaceRoot({ children }: AuthSurfaceRootProps) {
 
 	return (
 		<div
-			ref={rootRef}
 			className="auth-surface dark relative grid min-h-dvh grid-cols-1 lg:grid-cols-[minmax(0,1.2fr)_minmax(20rem,24rem)]"
+			ref={rootRef}
 			suppressHydrationWarning
 		>
 			{children}

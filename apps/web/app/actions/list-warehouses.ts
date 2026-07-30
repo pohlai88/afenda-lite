@@ -12,9 +12,9 @@ import {
 	actionFailInternal,
 } from "@/modules/platform/schemas/action-result";
 
-export type ListWarehousesActionData = {
+export interface ListWarehousesActionData {
 	warehouses: Warehouse[];
-};
+}
 
 /**
  * Master-data warehouse list — session org stamp + `master_data.read`.

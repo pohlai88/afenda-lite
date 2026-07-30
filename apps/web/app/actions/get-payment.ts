@@ -15,18 +15,19 @@ import { parseSchema } from "@/modules/platform/schemas/common";
 export async function getPaymentAction(
 	paymentId: string,
 ): Promise<ActionResult<{ payment: Payment }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getPaymentAction",
 		permission: "payments.payment.read",
 		safeMessage: "Could not load payment. Try again or contact an admin.",
 		execute: async (session) => {
 			const parsed = parseSchema(z.string().uuid(), paymentId);
-			if (!parsed.success)
+			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
 					"Enter a valid payment id.",
 					parsed.details,
 				);
+			}
 			const mapped = mapPackageResult(
 				await getPaymentById(
 					{
@@ -37,9 +38,12 @@ export async function getPaymentAction(
 					createPaymentsCommandOptions(),
 				),
 			);
-			if (!mapped.ok) return mapped;
-			if (mapped.data === null)
+			if (!mapped.ok) {
+				return mapped;
+			}
+			if (mapped.data === null) {
 				return actionFail("NOT_FOUND", "Payment not found");
+			}
 			return { ok: true, data: { payment: mapped.data } };
 		},
 	});

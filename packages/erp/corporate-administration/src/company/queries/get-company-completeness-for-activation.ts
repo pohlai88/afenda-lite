@@ -24,7 +24,9 @@ export async function getCompanyCompletenessForActivation(
 		getCompanyCompletenessForActivationInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 
 	const authorized = await requireCorporateAdministrationPermission(
 		options.authorization,
@@ -35,13 +37,17 @@ export async function getCompanyCompletenessForActivation(
 				CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS.getCompanyCompletenessForActivation,
 		},
 	);
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 
 	const current = await dependencies.store.getLegalCompany({
 		organizationId: options.organizationId,
 		legalCompanyId: parsed.data.legalCompanyId,
 	});
-	if (!current.ok) return current;
+	if (!current.ok) {
+		return current;
+	}
 	if (current.data === null) {
 		return fail(
 			"NOT_FOUND",
@@ -63,7 +69,9 @@ export async function getCompanyCompletenessForActivation(
 		asOf: parsed.data.asOf,
 		knownAt,
 	});
-	if (!jurisdiction.ok) return jurisdiction;
+	if (!jurisdiction.ok) {
+		return jurisdiction;
+	}
 	const name = await dependencies.nameStore.findCompanyNameAsOf({
 		organizationId: options.organizationId,
 		legalCompanyId: parsed.data.legalCompanyId,
@@ -72,14 +80,18 @@ export async function getCompanyCompletenessForActivation(
 		asOf: parsed.data.asOf,
 		knownAt,
 	});
-	if (!name.ok) return name;
+	if (!name.ok) {
+		return name;
+	}
 	const legalForm = await dependencies.legalFormStore.findCompanyLegalFormAsOf({
 		organizationId: options.organizationId,
 		legalCompanyId: parsed.data.legalCompanyId,
 		asOf: parsed.data.asOf,
 		knownAt,
 	});
-	if (!legalForm.ok) return legalForm;
+	if (!legalForm.ok) {
+		return legalForm;
+	}
 	const identifier =
 		await dependencies.identifierStore.findCompanyIdentifierAsOf({
 			organizationId: options.organizationId,
@@ -88,7 +100,9 @@ export async function getCompanyCompletenessForActivation(
 			asOf: parsed.data.asOf,
 			knownAt,
 		});
-	if (!identifier.ok) return identifier;
+	if (!identifier.ok) {
+		return identifier;
+	}
 	const financialYear =
 		await dependencies.financialYearStore.findCompanyFinancialYearAsOf({
 			organizationId: options.organizationId,
@@ -96,7 +110,9 @@ export async function getCompanyCompletenessForActivation(
 			asOf: parsed.data.asOf,
 			knownAt,
 		});
-	if (!financialYear.ok) return financialYear;
+	if (!financialYear.ok) {
+		return financialYear;
+	}
 	const activities = await dependencies.activityStore.listCompanyActivitiesAsOf(
 		{
 			organizationId: options.organizationId,
@@ -105,7 +121,9 @@ export async function getCompanyCompletenessForActivation(
 			knownAt,
 		},
 	);
-	if (!activities.ok) return activities;
+	if (!activities.ok) {
+		return activities;
+	}
 	const registeredAddress =
 		await dependencies.establishmentStore.findRegisteredAddressAsOf({
 			organizationId: options.organizationId,
@@ -115,7 +133,9 @@ export async function getCompanyCompletenessForActivation(
 			asOf: parsed.data.asOf,
 			knownAt,
 		});
-	if (!registeredAddress.ok) return registeredAddress;
+	if (!registeredAddress.ok) {
+		return registeredAddress;
+	}
 	const checks = {
 		hasJurisdictionProfile: jurisdiction.data !== null,
 		hasLegalName: name.data !== null,

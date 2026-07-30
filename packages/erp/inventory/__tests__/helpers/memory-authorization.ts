@@ -10,8 +10,8 @@ export function createGrantingInventoryAuthorization(
 ): InventoryAuthorizationPort {
 	const allowed = new Set(grants);
 	return {
-		async can(input) {
-			return allowed.has(input.permission);
+		can(input) {
+			return Promise.resolve(allowed.has(input.permission));
 		},
 	};
 }

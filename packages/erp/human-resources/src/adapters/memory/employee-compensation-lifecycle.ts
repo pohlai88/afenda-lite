@@ -27,6 +27,7 @@ import {
 	resolveEmployeeCompensationApprovalStatus,
 } from "../../shared/employee-compensation-lifecycle";
 import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
+import { runRollbacks } from "../../shared/rollback";
 import type { EmployeeCompensation } from "../../types";
 import type { CompensationBenefitsMemoryState } from "./compensation-benefits";
 import type { CoreMemoryState } from "./core";
@@ -81,7 +82,9 @@ async function recordCompensationMutation(
 		action: input.action,
 		changes: [],
 	});
-	if (!audit.ok) return audit;
+	if (!audit.ok) {
+		return audit;
+	}
 
 	const outbox = await ports.outbox.append({
 		organizationId: compensation.organizationId,
@@ -96,7 +99,9 @@ async function recordCompensationMutation(
 			correlationId: meta.correlationId,
 		},
 	});
-	if (!outbox.ok) return outbox;
+	if (!outbox.ok) {
+		return outbox;
+	}
 	return ok(undefined);
 }
 
@@ -208,7 +213,9 @@ export async function memoryCreateEmployeeCompensation(
 		record.employmentId,
 		record.employeeId,
 	);
-	if (!employmentCheck.ok) return employmentCheck;
+	if (!employmentCheck.ok) {
+		return employmentCheck;
+	}
 
 	if (
 		findByStatus(state, record.organizationId, record.employmentId, "draft") !==
@@ -218,7 +225,9 @@ export async function memoryCreateEmployeeCompensation(
 	}
 
 	const idResult = parseHumanResourcesEmployeeCompensationId(randomUUID());
-	if (!idResult.ok) return idResult;
+	if (!idResult.ok) {
+		return idResult;
+	}
 
 	const now = new Date();
 	const compensation: EmployeeCompensation = {
@@ -263,7 +272,7 @@ export async function memoryCreateEmployeeCompensation(
 		meta,
 	);
 	if (!sideEffect.ok) {
-		for (const undo of rollback) undo();
+		runRollbacks(rollback);
 		return sideEffect;
 	}
 	return ok({ ...compensation });
@@ -300,7 +309,9 @@ export async function memoryAmendEmployeeCompensation(
 		comp.version,
 		input.expectedVersion,
 	);
-	if (!versionCheck.ok) return versionCheck;
+	if (!versionCheck.ok) {
+		return versionCheck;
+	}
 	if (!isEmployeeCompensationDraft(comp.status)) {
 		return invalidState("Only draft compensation agreements can be amended");
 	}
@@ -314,15 +325,15 @@ export async function memoryAmendEmployeeCompensation(
 		payFrequency: input.payFrequency ?? comp.payFrequency,
 		effectiveFrom: input.effectiveFrom ?? comp.effectiveFrom,
 		effectiveTo:
-			input.effectiveTo !== undefined ? input.effectiveTo : comp.effectiveTo,
+			input.effectiveTo === undefined ? comp.effectiveTo : input.effectiveTo,
 		reason: input.reason ?? comp.reason,
-		gradeId: input.gradeId !== undefined ? input.gradeId : comp.gradeId,
+		gradeId: input.gradeId === undefined ? comp.gradeId : input.gradeId,
 		salaryBandId:
-			input.salaryBandId !== undefined ? input.salaryBandId : comp.salaryBandId,
+			input.salaryBandId === undefined ? comp.salaryBandId : input.salaryBandId,
 		confidentialNote:
-			input.confidentialNote !== undefined
-				? input.confidentialNote
-				: comp.confidentialNote,
+			input.confidentialNote === undefined
+				? comp.confidentialNote
+				: input.confidentialNote,
 		version: comp.version + 1,
 		updatedBy: input.actorUserId,
 		updatedAt: now,
@@ -364,7 +375,9 @@ export async function memoryApproveEmployeeCompensation(
 		comp.version,
 		input.expectedVersion,
 	);
-	if (!versionCheck.ok) return versionCheck;
+	if (!versionCheck.ok) {
+		return versionCheck;
+	}
 	if (!isEmployeeCompensationDraft(comp.status)) {
 		return invalidState("Only draft compensation agreements can be approved");
 	}
@@ -398,7 +411,9 @@ export async function memoryApproveEmployeeCompensation(
 			ports,
 			meta,
 		);
-		if (!ended.ok) return ended;
+		if (!ended.ok) {
+			return ended;
+		}
 	}
 
 	const now = new Date();
@@ -489,7 +504,9 @@ export async function memoryScheduleEmployeeCompensationChange(
 		ports,
 		meta,
 	);
-	if (!created.ok) return created;
+	if (!created.ok) {
+		return created;
+	}
 
 	return memoryApproveEmployeeCompensation(
 		state,
@@ -526,7 +543,9 @@ export async function memoryActivateEmployeeCompensation(
 		comp.version,
 		input.expectedVersion,
 	);
-	if (!versionCheck.ok) return versionCheck;
+	if (!versionCheck.ok) {
+		return versionCheck;
+	}
 	if (!isEmployeeCompensationScheduled(comp.status)) {
 		return invalidState(
 			"Only scheduled compensation agreements can be activated",
@@ -549,7 +568,9 @@ export async function memoryActivateEmployeeCompensation(
 		ports,
 		meta,
 	);
-	if (!ended.ok) return ended;
+	if (!ended.ok) {
+		return ended;
+	}
 
 	const now = new Date();
 	const previous = { ...comp };
@@ -645,7 +666,9 @@ export async function memoryCorrectEmployeeCompensation(
 	}
 
 	const idResult = parseHumanResourcesEmployeeCompensationId(randomUUID());
-	if (!idResult.ok) return idResult;
+	if (!idResult.ok) {
+		return idResult;
+	}
 
 	const successor: EmployeeCompensation = {
 		id: idResult.data,
@@ -740,7 +763,9 @@ export async function memoryEndEmployeeCompensation(
 		comp.version,
 		input.expectedVersion,
 	);
-	if (!versionCheck.ok) return versionCheck;
+	if (!versionCheck.ok) {
+		return versionCheck;
+	}
 	if (!isEmployeeCompensationCancellable(comp.status)) {
 		return invalidState("Compensation cannot be ended in its current status");
 	}

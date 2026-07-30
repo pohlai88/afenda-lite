@@ -18,58 +18,58 @@ import type {
 export const REFERENCE_STATUSES = ["active", "inactive"] as const;
 export type ReferenceStatus = (typeof REFERENCE_STATUSES)[number];
 
-export type RefCountry = {
-	id: RefCountryId;
-	code: CountryCode;
+export interface RefCountry {
+	active: boolean;
 	alpha3: string;
+	code: CountryCode;
+	id: RefCountryId;
 	name: string;
-	active: boolean;
-};
+}
 
-export type RefCurrency = {
-	id: RefCurrencyId;
+export interface RefCurrency {
+	active: boolean;
 	code: CurrencyCode;
-	name: string;
+	id: RefCurrencyId;
 	minorUnits: number;
-	active: boolean;
-};
+	name: string;
+}
 
-export type RefLanguage = {
-	id: RefLanguageId;
+export interface RefLanguage {
+	active: boolean;
 	code: LanguageCode;
+	id: RefLanguageId;
 	name: string;
-	active: boolean;
-};
+}
 
-export type RefTimeZone = {
-	id: RefTimeZoneId;
+export interface RefTimeZone {
+	active: boolean;
 	ianaName: TimeZoneCode;
+	id: RefTimeZoneId;
 	name: string;
-	active: boolean;
-};
+}
 
-export type RefUomDimension = {
-	id: RefUomDimensionId;
+export interface RefUomDimension {
 	code: UomDimensionCode;
+	id: RefUomDimensionId;
 	name: string;
-};
+}
 
-export type RefUom = {
-	id: RefUomId;
+export interface RefUom {
+	active: boolean;
 	code: UomCode;
+	dimensionId: RefUomDimensionId;
+	id: RefUomId;
+	isBase: boolean;
 	name: string;
 	symbol: string;
-	dimensionId: RefUomDimensionId;
-	toBaseNumerator: string;
 	toBaseDenominator: string;
-	isBase: boolean;
-	active: boolean;
-};
+	toBaseNumerator: string;
+}
 
-export type ListPage<TItem> = {
+export interface ListPage<TItem> {
 	items: TItem[];
 	nextCursor?: string;
-};
+}
 
 export const UOM_DIMENSION_COMPATIBILITY_POLICIES = [
 	"strict_dimension",
@@ -79,22 +79,22 @@ export const UOM_DIMENSION_COMPATIBILITY_POLICIES = [
 export type UomDimensionCompatibilityPolicy =
 	(typeof UOM_DIMENSION_COMPATIBILITY_POLICIES)[number];
 
-export type UomDimensionCompatibilityInput = {
-	baseUom: RefUom;
+export interface UomDimensionCompatibilityInput {
 	alternateUom: RefUom;
-	policy: UomDimensionCompatibilityPolicy;
+	baseUom: RefUom;
 	isApprovedPackagingOrCountConversion?: boolean;
-};
+	policy: UomDimensionCompatibilityPolicy;
+}
 
 export const uomConversionDirection =
 	"1 alternate UoM = conversionFactor x base UoM" as const;
 export type UomConversionDirection = typeof uomConversionDirection;
 
-export type MemoryPlatformReferenceSeed = {
+export interface MemoryPlatformReferenceSeed {
 	countries?: RefCountry[];
 	currencies?: RefCurrency[];
 	languages?: RefLanguage[];
 	timeZones?: RefTimeZone[];
 	uomDimensions?: RefUomDimension[];
 	uoms?: RefUom[];
-};
+}

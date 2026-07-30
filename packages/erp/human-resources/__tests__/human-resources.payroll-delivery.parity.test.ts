@@ -75,7 +75,9 @@ async function exercise(store: PayrollDeliveryStorePort) {
 		},
 		ports,
 	);
-	if (!queued.ok) throw new Error(queued.message);
+	if (!queued.ok) {
+		throw new Error(queued.message);
+	}
 	const replay = await queuePayrollDelivery(
 		{
 			organizationId,
@@ -95,7 +97,9 @@ async function exercise(store: PayrollDeliveryStorePort) {
 		},
 		ports,
 	);
-	if (!delivered.ok) throw new Error(delivered.message);
+	if (!delivered.ok) {
+		throw new Error(delivered.message);
+	}
 	const acknowledged = await recordPayrollDeliveryFeedback(
 		{
 			organizationId,
@@ -120,7 +124,9 @@ async function exercise(store: PayrollDeliveryStorePort) {
 		},
 		ports,
 	);
-	if (!correctionSource.ok) throw new Error(correctionSource.message);
+	if (!correctionSource.ok) {
+		throw new Error(correctionSource.message);
+	}
 	const correctionDelivered = await deliverPayrollHandoff(
 		{
 			organizationId,
@@ -130,7 +136,9 @@ async function exercise(store: PayrollDeliveryStorePort) {
 		},
 		ports,
 	);
-	if (!correctionDelivered.ok) throw new Error(correctionDelivered.message);
+	if (!correctionDelivered.ok) {
+		throw new Error(correctionDelivered.message);
+	}
 	const correctionRequired = await recordPayrollDeliveryFeedback(
 		{
 			organizationId,
@@ -142,7 +150,9 @@ async function exercise(store: PayrollDeliveryStorePort) {
 		},
 		ports,
 	);
-	if (!correctionRequired.ok) throw new Error(correctionRequired.message);
+	if (!correctionRequired.ok) {
+		throw new Error(correctionRequired.message);
+	}
 	const correction = await queuePayrollDelivery(
 		{
 			organizationId,

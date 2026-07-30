@@ -45,8 +45,10 @@ export async function recordHrCommand(
 		labels: { area: input.area, outcome: input.outcome },
 	});
 	if (input.outcome === "failure") {
-		const failureReason = input.failureReason;
-		if (!failureReason) throw new Error("Command failure reason is required");
+		const { failureReason } = input;
+		if (!failureReason) {
+			throw new Error("Command failure reason is required");
+		}
 		await ports.recorder.recordEvent({
 			name: "hr.command.failed",
 			severity: "error",
@@ -89,8 +91,9 @@ export async function recordHrPrivacyOperation(
 		labels: { operation: input.operation, outcome: input.outcome },
 	});
 	if (input.outcome === "failure") {
-		if (!input.failureReason)
+		if (!input.failureReason) {
 			throw new Error("Privacy failure reason is required");
+		}
 		await ports.recorder.recordEvent({
 			name: "hr.privacy.operation.failed",
 			severity: "error",
@@ -152,8 +155,12 @@ export async function recordHrConnectorHealth(
 	input: { connector: HrConnector; health: HrConnectorHealth },
 	ports: HrObservabilityPorts,
 ): Promise<void> {
-	const value =
-		input.health === "healthy" ? 1 : input.health === "degraded" ? 0.5 : 0;
+	let value: 0 | 0.5 | 1 = 0;
+	if (input.health === "healthy") {
+		value = 1;
+	} else if (input.health === "degraded") {
+		value = 0.5;
+	}
 	await ports.recorder.recordMetric({
 		name: "hr.connector.health",
 		kind: "gauge",

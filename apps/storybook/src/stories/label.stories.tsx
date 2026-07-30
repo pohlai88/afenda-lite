@@ -15,11 +15,15 @@ import {
 	Textarea,
 } from "@afenda/ui-system";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import type { ReactNode } from "react";
+import type { FormEvent, ReactNode } from "react";
 import { contractDocsParameters } from "./contract-docs";
 import { contractEvidence, StorySection } from "./evidence";
 
 const evidence = contractEvidence("ui.label");
+
+function preventSubmit(event: FormEvent<HTMLFormElement>): void {
+	event.preventDefault();
+}
 
 type WorkbenchSectionProps = Readonly<{
 	id: string;
@@ -35,12 +39,12 @@ function WorkbenchSection({
 	children,
 }: WorkbenchSectionProps) {
 	return (
-		<section className="grid gap-4" aria-labelledby={id}>
+		<section aria-labelledby={id} className="grid gap-4">
 			<div className="grid gap-1">
-				<h2 className="text-base font-semibold tracking-tight" id={id}>
+				<h2 className="font-semibold text-base tracking-tight" id={id}>
 					{title}
 				</h2>
-				<p className="max-w-5xl text-sm leading-5 text-foreground-secondary">
+				<p className="max-w-5xl text-foreground-secondary text-sm leading-5">
 					{description}
 				</p>
 			</div>
@@ -83,14 +87,14 @@ export const Overview: Story = {
 			<div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-5 border-b pb-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
 					<div className="grid gap-2">
-						<p className="text-sm font-medium text-foreground-secondary">
+						<p className="font-medium text-foreground-secondary text-sm">
 							Corporate administration · legal company
 						</p>
 						<div className="grid gap-1">
-							<h1 className="text-2xl font-semibold tracking-tight">
+							<h1 className="font-semibold text-2xl tracking-tight">
 								Organization identity
 							</h1>
-							<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+							<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 								Every editable control needs a concise Label tied to a stable
 								id. Help text and errors belong beside the field — not inside
 								the label.
@@ -99,25 +103,25 @@ export const Overview: Story = {
 					</div>
 					<dl className="grid grid-cols-2 gap-x-8 gap-y-3 rounded-lg border bg-card p-4">
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Subject
 							</dt>
 							<dd className="text-sm">Form labelling</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Scope
 							</dt>
 							<dd className="text-sm">Visible control names</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Ownership
 							</dt>
 							<dd className="text-sm">Label semantics</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Lifecycle
 							</dt>
 							<dd className="text-sm">Stable at every breakpoint</dd>
@@ -129,7 +133,7 @@ export const Overview: Story = {
 					<CardHeader>
 						<div className="flex flex-wrap items-center gap-2">
 							<Badge variant="outline">Corporate Administration</Badge>
-							<StatusBadge size="sm" status="pending" label="Draft" />
+							<StatusBadge label="Draft" size="sm" status="pending" />
 						</div>
 						<CardTitle>Legal identity</CardTitle>
 						<CardDescription>
@@ -137,19 +141,16 @@ export const Overview: Story = {
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<form
-							className="grid gap-5"
-							onSubmit={(event) => event.preventDefault()}
-						>
+						<form className="grid gap-5" onSubmit={preventSubmit}>
 							<div className="grid gap-2">
 								<Label htmlFor="overview-org-name">Organization name</Label>
 								<Input
+									autoComplete="organization"
+									defaultValue="Nexus Canon Sdn. Bhd."
 									id="overview-org-name"
 									name="organizationName"
-									defaultValue="Nexus Canon Sdn. Bhd."
-									autoComplete="organization"
 								/>
-								<p className="text-sm text-foreground-secondary">
+								<p className="text-foreground-secondary text-sm">
 									Registered legal name as it appears on tax documents.
 								</p>
 							</div>
@@ -157,20 +158,20 @@ export const Overview: Story = {
 							<div className="grid gap-2">
 								<Label htmlFor="overview-trading-name">Trading name</Label>
 								<Input
+									autoComplete="organization"
+									defaultValue="Afenda"
 									id="overview-trading-name"
 									name="tradingName"
-									defaultValue="Afenda"
-									autoComplete="organization"
 								/>
 							</div>
 
 							<div className="grid gap-2">
 								<Label htmlFor="overview-tax-id">Tax registration number</Label>
 								<Input
+									autoComplete="off"
+									defaultValue="C1234567890"
 									id="overview-tax-id"
 									name="taxRegistration"
-									defaultValue="C1234567890"
-									autoComplete="off"
 								/>
 							</div>
 						</form>
@@ -199,18 +200,18 @@ export const Usage: Story = {
 	},
 	render: () => (
 		<WorkbenchSection
+			description="Label provides the visible name while the control owns the input itself."
 			id="label-usage-title"
 			title="Labels tied to controls"
-			description="Label provides the visible name while the control owns the input itself."
 		>
 			<div className="grid w-full max-w-xl gap-6">
 				<StorySection title="Label + Input (htmlFor)">
 					<div className="grid gap-2">
 						<Label htmlFor="usage-supplier-code">Supplier code</Label>
 						<Input
-							id="usage-supplier-code"
-							defaultValue="SUP-0142"
 							autoComplete="off"
+							defaultValue="SUP-0142"
+							id="usage-supplier-code"
 						/>
 					</div>
 				</StorySection>
@@ -219,9 +220,9 @@ export const Usage: Story = {
 					<div className="grid gap-2">
 						<Label htmlFor="usage-remittance-notes">Remittance notes</Label>
 						<Textarea
+							defaultValue="Prefer MYR settlement on Tuesdays."
 							id="usage-remittance-notes"
 							rows={3}
-							defaultValue="Prefer MYR settlement on Tuesdays."
 						/>
 					</div>
 				</StorySection>
@@ -236,7 +237,7 @@ export const Usage: Story = {
 				<StorySection title="Label beside Switch">
 					<div className="flex items-center justify-between gap-4 rounded-lg border px-3 py-2">
 						<Label htmlFor="usage-auto-match">Auto-match payments</Label>
-						<Switch id="usage-auto-match" defaultChecked />
+						<Switch defaultChecked id="usage-auto-match" />
 					</div>
 				</StorySection>
 			</div>
@@ -260,9 +261,9 @@ export const StatesAndAccessibility: Story = {
 				<div className="grid gap-2">
 					<Label htmlFor="state-default">Invoice number</Label>
 					<Input
-						id="state-default"
-						defaultValue="INV-1048"
 						autoComplete="off"
+						defaultValue="INV-1048"
+						id="state-default"
 					/>
 				</div>
 			</StorySection>
@@ -271,12 +272,12 @@ export const StatesAndAccessibility: Story = {
 				<div className="grid gap-2">
 					<Label htmlFor="state-disabled">Organization id</Label>
 					<Input
-						id="state-disabled"
-						disabled
-						defaultValue="org-fragrant-lake-90358173"
 						autoComplete="off"
+						defaultValue="org-fragrant-lake-90358173"
+						disabled
+						id="state-disabled"
 					/>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						Assigned by the platform — operators cannot edit it here.
 					</p>
 				</div>
@@ -288,13 +289,13 @@ export const StatesAndAccessibility: Story = {
 						Legal name <span className="text-destructive">*</span>
 					</Label>
 					<Input
-						id="state-required"
-						required
-						name="legalName"
-						autoComplete="organization"
 						aria-required
+						autoComplete="organization"
+						id="state-required"
+						name="legalName"
+						required
 					/>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						Asterisk is visual cue only — required lives on the control.
 					</p>
 				</div>
@@ -302,11 +303,11 @@ export const StatesAndAccessibility: Story = {
 
 			<StorySection title="Do not rely on destructive color alone">
 				<div className="grid gap-2">
-					<Label htmlFor="state-color-only" className="text-destructive">
+					<Label className="text-destructive" htmlFor="state-color-only">
 						Required field
 					</Label>
-					<Input id="state-color-only" defaultValue="" autoComplete="off" />
-					<p className="text-sm text-foreground-secondary">
+					<Input autoComplete="off" defaultValue="" id="state-color-only" />
+					<p className="text-foreground-secondary text-sm">
 						Color-only “Required field” copy is not a substitute for a named
 						value label plus required semantics.
 					</p>
@@ -332,7 +333,7 @@ export const Composition: Story = {
 				<CardHeader>
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="outline">Payables</Badge>
-						<StatusBadge size="sm" status="pending" label="Awaiting review" />
+						<StatusBadge label="Awaiting review" size="sm" status="pending" />
 					</div>
 					<CardTitle>Supplier remittance</CardTitle>
 					<CardDescription>
@@ -343,22 +344,22 @@ export const Composition: Story = {
 					<div className="grid gap-2">
 						<Label htmlFor="comp-bank-name">Bank name</Label>
 						<Input
-							id="comp-bank-name"
-							defaultValue="Maybank Berhad"
 							autoComplete="off"
+							defaultValue="Maybank Berhad"
+							id="comp-bank-name"
 						/>
 					</div>
 					<div className="grid gap-2">
 						<Label htmlFor="comp-account">Account number</Label>
 						<Input
-							id="comp-account"
-							defaultValue="512345678901"
-							inputMode="numeric"
 							autoComplete="off"
+							defaultValue="512345678901"
+							id="comp-account"
+							inputMode="numeric"
 						/>
 					</div>
 					<Label className="gap-3 rounded-lg border p-3">
-						<Checkbox id="comp-primary" defaultChecked />
+						<Checkbox defaultChecked id="comp-primary" />
 						<span>Mark as primary settlement account</span>
 					</Label>
 				</CardContent>
@@ -374,7 +375,7 @@ export const Composition: Story = {
 				<CardHeader>
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="secondary">Receivables</Badge>
-						<StatusBadge size="sm" status="active" label="Operational" />
+						<StatusBadge label="Operational" size="sm" status="active" />
 					</div>
 					<CardTitle>Invoice header</CardTitle>
 					<CardDescription>
@@ -384,14 +385,14 @@ export const Composition: Story = {
 				<CardContent className="grid gap-4">
 					<div className="grid gap-2">
 						<Label htmlFor="comp-po">Customer PO</Label>
-						<Input id="comp-po" defaultValue="PO-77821" autoComplete="off" />
+						<Input autoComplete="off" defaultValue="PO-77821" id="comp-po" />
 					</div>
 					<div className="grid gap-2">
 						<Label htmlFor="comp-dispute">Dispute notes</Label>
 						<Textarea
+							defaultValue="Customer queried freight line on 12 Jul."
 							id="comp-dispute"
 							rows={3}
-							defaultValue="Customer queried freight line on 12 Jul."
 						/>
 					</div>
 				</CardContent>
@@ -416,15 +417,15 @@ export const DoAndDoNot: Story = {
 				<div className="grid gap-2 rounded-lg border p-3">
 					<Label htmlFor="do-legal-name">Legal name</Label>
 					<Input
-						id="do-legal-name"
-						defaultValue="Nexus Canon Sdn. Bhd."
 						autoComplete="organization"
+						defaultValue="Nexus Canon Sdn. Bhd."
+						id="do-legal-name"
 					/>
 				</div>
 			</StorySection>
 
 			<StorySection title="Do not: Label as generic typography">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Do not use Label for Card titles, page headings, or body copy. Those
 					surfaces use heading elements or CardTitle — Label only names form
 					controls.
@@ -434,7 +435,7 @@ export const DoAndDoNot: Story = {
 			<StorySection title="Do: keep wording stable and task-specific">
 				<div className="grid gap-2 rounded-lg border p-3">
 					<Label htmlFor="do-tax">Tax registration number</Label>
-					<Input id="do-tax" defaultValue="C1234567890" autoComplete="off" />
+					<Input autoComplete="off" defaultValue="C1234567890" id="do-tax" />
 				</div>
 			</StorySection>
 
@@ -442,11 +443,11 @@ export const DoAndDoNot: Story = {
 				<div className="grid gap-2 rounded-lg border p-3">
 					<Input
 						aria-label="Missing visible label demo"
-						placeholder="Legal name"
-						defaultValue=""
 						autoComplete="off"
+						defaultValue=""
+						placeholder="Legal name"
 					/>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						Placeholder disappears on input and is not a durable visible label.
 						Always pair a Label (or an equally clear accessible name pattern).
 					</p>

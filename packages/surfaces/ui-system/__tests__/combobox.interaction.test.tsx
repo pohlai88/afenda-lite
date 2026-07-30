@@ -20,10 +20,10 @@ describe("Combobox — search callbacks", () => {
 
 		render(
 			<Combobox
-				options={OPTIONS}
 				aria-label="Member"
-				searchPlaceholder="Search…"
 				onSearchChange={onSearchChange}
+				options={OPTIONS}
+				searchPlaceholder="Search…"
 			/>,
 		);
 
@@ -43,10 +43,10 @@ describe("Combobox — search callbacks", () => {
 
 		render(
 			<Combobox
-				options={OPTIONS}
 				aria-label="Member"
-				searchPlaceholder="Search…"
 				filterMode="none"
+				options={OPTIONS}
+				searchPlaceholder="Search…"
 			/>,
 		);
 

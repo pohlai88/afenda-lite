@@ -72,6 +72,7 @@ import {
 import {
 	assertExtensionTransitionReason,
 	assertStandardChildLifecycleStatus,
+	type ExtensionParentStateRequirement,
 	resolveExtensionLifecycleTransition,
 } from "../../extension-lifecycle";
 import {
@@ -128,7 +129,9 @@ function parsePartyRelationshipDirection(
 	value: string,
 ): PartyRelationshipDirection | null {
 	for (const candidate of PARTY_RELATIONSHIP_DIRECTIONS) {
-		if (candidate === value) return candidate;
+		if (candidate === value) {
+			return candidate;
+		}
 	}
 	return null;
 }
@@ -674,7 +677,9 @@ export async function drizzleGetPartyRoleLifecycleContext(
 			organizationId,
 			role.partyId,
 		);
-		if (!activeRoleCount.ok) return activeRoleCount;
+		if (!activeRoleCount.ok) {
+			return activeRoleCount;
+		}
 		return ok({
 			role,
 			party: partyRow === undefined ? null : mapParty(partyRow),
@@ -752,7 +757,7 @@ export async function drizzleCreatePartyRole(
 			`,
 			],
 		);
-		const row = rows[0];
+		const [row] = rows;
 		if (row === undefined) {
 			return fail("INTERNAL_ERROR", "Party role create returned no row");
 		}
@@ -813,7 +818,9 @@ export async function drizzleUpdatePartyRole(
 			record.expectedVersion,
 			"party_role",
 		);
-		if (!version.ok) return version;
+		if (!version.ok) {
+			return version;
+		}
 		if (existing.status !== "draft" && existing.status !== "inactive") {
 			return fail(
 				"CONFLICT",
@@ -827,12 +834,14 @@ export async function drizzleUpdatePartyRole(
 			record.organizationId,
 			existing.partyId,
 		);
-		if (!parent.ok) return parent;
+		if (!parent.ok) {
+			return parent;
+		}
 		const nextRoleCode = record.roleCode ?? existing.roleCode;
 		const nextValidFrom =
-			record.validFrom !== undefined ? record.validFrom : existing.validFrom;
+			record.validFrom === undefined ? existing.validFrom : record.validFrom;
 		const nextValidTo =
-			record.validTo !== undefined ? record.validTo : existing.validTo;
+			record.validTo === undefined ? existing.validTo : record.validTo;
 		if (
 			nextValidFrom !== null &&
 			nextValidTo !== null &&
@@ -900,7 +909,7 @@ export async function drizzleUpdatePartyRole(
 				`,
 			],
 		);
-		const row = rows[0];
+		const [row] = rows;
 		if (row === undefined) {
 			return fail("CONFLICT", "Party role update conflict", {
 				reason: "MASTER_VERSION_CONFLICT",
@@ -937,6 +946,132 @@ export async function drizzleUpdatePartyRole(
 	}
 }
 
+type PartyRoleLifecycleState = Pick<
+	typeof mdPartyRole.$inferSelect,
+	"archivedAt" | "partyId" | "status"
+>;
+
+async function validatePartyRoleParentState(
+	record: PartyRoleLifecycleRecord,
+	partyId: string,
+	requirement: ExtensionParentStateRequirement,
+): Promise<Result<true>> {
+	const parent = await requireUsablePartyMutationParent(
+		record.organizationId,
+		partyId,
+	);
+	if (!parent.ok) {
+		return parent;
+	}
+	if (requirement !== "parent_active") {
+		return ok(true);
+	}
+	const [party] = await db
+		.select({ status: mdParty.status })
+		.from(mdParty)
+		.where(
+			and(
+				eq(mdParty.organizationId, record.organizationId),
+				eq(mdParty.id, partyId),
+			),
+		)
+		.limit(1);
+	if (party?.status !== "active") {
+		return fail("CONFLICT", "Party must be active for this transition", {
+			reason: "MASTER_INVALID_STATE",
+		} satisfies MasterFailureDetails);
+	}
+	return ok(true);
+}
+
+async function protectFinalActivePartyRole(
+	record: PartyRoleLifecycleRecord,
+	current: PartyRoleLifecycleState,
+): Promise<Result<true>> {
+	if (
+		record.toStatus === "active" ||
+		current.status !== "active" ||
+		current.archivedAt !== null
+	) {
+		return ok(true);
+	}
+	const [party] = await db
+		.select({ status: mdParty.status })
+		.from(mdParty)
+		.where(
+			and(
+				eq(mdParty.id, current.partyId),
+				eq(mdParty.organizationId, record.organizationId),
+			),
+		)
+		.limit(1);
+	if (party?.status !== "active") {
+		return ok(true);
+	}
+	const activeCount = await drizzleCountActivePartyRoles(
+		record.organizationId,
+		current.partyId,
+	);
+	if (!activeCount.ok) {
+		return activeCount;
+	}
+	if (activeCount.data <= 1) {
+		return fail(
+			"CONFLICT",
+			"An active party cannot lose its final active role",
+			{ reason: "MASTER_FINAL_ACTIVE_ROLE" } satisfies MasterFailureDetails,
+		);
+	}
+	return ok(true);
+}
+
+function resolvePartyRoleLifecycleTimestamps(
+	record: PartyRoleLifecycleRecord,
+	existing: typeof mdPartyRole.$inferSelect,
+) {
+	return {
+		activatedAt:
+			record.toStatus === "active" ? new Date() : existing.activatedAt,
+		activatedBy:
+			record.toStatus === "active" ? record.actorUserId : existing.activatedBy,
+		retiredAt: record.toStatus === "retired" ? new Date() : existing.retiredAt,
+		retiredBy:
+			record.toStatus === "retired" ? record.actorUserId : existing.retiredBy,
+		archivedAt:
+			record.toStatus === "archived" ? new Date() : existing.archivedAt,
+		archivedBy:
+			record.toStatus === "archived" ? record.actorUserId : existing.archivedBy,
+	};
+}
+
+async function partyRoleMutationConflict(
+	record: PartyRoleLifecycleRecord,
+): Promise<Result<never>> {
+	const [current] = await db
+		.select({
+			partyId: mdPartyRole.partyId,
+			status: mdPartyRole.status,
+			archivedAt: mdPartyRole.archivedAt,
+		})
+		.from(mdPartyRole)
+		.where(
+			and(
+				eq(mdPartyRole.id, record.id),
+				eq(mdPartyRole.organizationId, record.organizationId),
+			),
+		)
+		.limit(1);
+	if (current !== undefined) {
+		const finalRole = await protectFinalActivePartyRole(record, current);
+		if (!finalRole.ok) {
+			return finalRole;
+		}
+	}
+	return fail("CONFLICT", "Party role version conflict", {
+		reason: "MASTER_VERSION_CONFLICT",
+	} satisfies MasterFailureDetails);
+}
+
 export async function drizzleTransitionPartyRole(
 	record: PartyRoleLifecycleRecord,
 	_ports: MutationPorts,
@@ -969,75 +1104,37 @@ export async function drizzleTransitionPartyRole(
 			record.expectedVersion,
 			"party_role",
 		);
-		if (!version.ok) return version;
+		if (!version.ok) {
+			return version;
+		}
 		const currentStatus = assertStandardChildLifecycleStatus(existing.status);
 		const transition = resolveExtensionLifecycleTransition(
 			"party_role",
 			currentStatus,
 			record.toStatus,
 		);
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 		const reason = assertExtensionTransitionReason(
 			transition.data,
 			record.reason,
 		);
-		if (!reason.ok) return reason;
-		const parent = await requireUsablePartyMutationParent(
-			record.organizationId,
+		if (!reason.ok) {
+			return reason;
+		}
+		const parent = await validatePartyRoleParentState(
+			record,
 			existing.partyId,
+			transition.data.parentStateRequirement,
 		);
-		if (!parent.ok) return parent;
-		if (transition.data.parentStateRequirement === "parent_active") {
-			const [party] = await db
-				.select({ status: mdParty.status })
-				.from(mdParty)
-				.where(
-					and(
-						eq(mdParty.organizationId, record.organizationId),
-						eq(mdParty.id, existing.partyId),
-					),
-				)
-				.limit(1);
-			if (party?.status !== "active") {
-				return fail("CONFLICT", "Party must be active for this transition", {
-					reason: "MASTER_INVALID_STATE",
-				} satisfies MasterFailureDetails);
-			}
+		if (!parent.ok) {
+			return parent;
 		}
 		// Active party cannot lose its final active role (reverse of activation invariant).
-		if (
-			record.toStatus !== "active" &&
-			existing.status === "active" &&
-			existing.archivedAt === null
-		) {
-			const [partyRow] = await db
-				.select({ status: mdParty.status })
-				.from(mdParty)
-				.where(
-					and(
-						eq(mdParty.id, existing.partyId),
-						eq(mdParty.organizationId, record.organizationId),
-					),
-				)
-				.limit(1);
-			if (partyRow?.status === "active") {
-				const activeCount = await drizzleCountActivePartyRoles(
-					record.organizationId,
-					existing.partyId,
-				);
-				if (!activeCount.ok) {
-					return activeCount;
-				}
-				if (activeCount.data <= 1) {
-					return fail(
-						"CONFLICT",
-						"An active party cannot lose its final active role",
-						{
-							reason: "MASTER_FINAL_ACTIVE_ROLE",
-						} satisfies MasterFailureDetails,
-					);
-				}
-			}
+		const finalRole = await protectFinalActivePartyRole(record, existing);
+		if (!finalRole.ok) {
+			return finalRole;
 		}
 		const changesJson = fieldChangeJson(
 			"status",
@@ -1057,18 +1154,14 @@ export async function drizzleTransitionPartyRole(
 			actorId: record.actorUserId,
 			correlationId: meta.correlationId,
 		});
-		const activatedAt =
-			record.toStatus === "active" ? new Date() : existing.activatedAt;
-		const activatedBy =
-			record.toStatus === "active" ? record.actorUserId : existing.activatedBy;
-		const retiredAt =
-			record.toStatus === "retired" ? new Date() : existing.retiredAt;
-		const retiredBy =
-			record.toStatus === "retired" ? record.actorUserId : existing.retiredBy;
-		const archivedAt =
-			record.toStatus === "archived" ? new Date() : existing.archivedAt;
-		const archivedBy =
-			record.toStatus === "archived" ? record.actorUserId : existing.archivedBy;
+		const {
+			activatedAt,
+			activatedBy,
+			retiredAt,
+			retiredBy,
+			archivedAt,
+			archivedBy,
+		} = resolvePartyRoleLifecycleTimestamps(record, existing);
 		const [, rows] = await runNeonHttpTransaction<
 			[Record<string, unknown>[], Record<string, unknown>[]]
 		>((sql) => [
@@ -1146,55 +1239,9 @@ export async function drizzleTransitionPartyRole(
 				SELECT mutated.* FROM mutated, audited, outboxed
 			`,
 		]);
-		const row = rows[0];
+		const [row] = rows;
 		if (row === undefined) {
-			if (record.toStatus !== "active") {
-				const [current] = await db
-					.select({
-						partyId: mdPartyRole.partyId,
-						status: mdPartyRole.status,
-						archivedAt: mdPartyRole.archivedAt,
-					})
-					.from(mdPartyRole)
-					.where(
-						and(
-							eq(mdPartyRole.id, record.id),
-							eq(mdPartyRole.organizationId, record.organizationId),
-						),
-					)
-					.limit(1);
-				if (current?.status === "active" && current.archivedAt === null) {
-					const [party] = await db
-						.select({ status: mdParty.status })
-						.from(mdParty)
-						.where(
-							and(
-								eq(mdParty.id, current.partyId),
-								eq(mdParty.organizationId, record.organizationId),
-							),
-						)
-						.limit(1);
-					if (party?.status === "active") {
-						const activeCount = await drizzleCountActivePartyRoles(
-							record.organizationId,
-							current.partyId,
-						);
-						if (!activeCount.ok) return activeCount;
-						if (activeCount.data <= 1) {
-							return fail(
-								"CONFLICT",
-								"An active party cannot lose its final active role",
-								{
-									reason: "MASTER_FINAL_ACTIVE_ROLE",
-								} satisfies MasterFailureDetails,
-							);
-						}
-					}
-				}
-			}
-			return fail("CONFLICT", "Party role version conflict", {
-				reason: "MASTER_VERSION_CONFLICT",
-			} satisfies MasterFailureDetails);
+			return partyRoleMutationConflict(record);
 		}
 		return ok(
 			mapPartyRole({
@@ -1254,7 +1301,9 @@ export async function drizzleCreatePartyAddress(
 	});
 	try {
 		const country = await requireActiveAddressCountry(record.countryId);
-		if (!country.ok) return country;
+		if (!country.ok) {
+			return country;
+		}
 		const [rows] = await runNeonHttpTransaction<[Record<string, unknown>[]]>(
 			(sql) => [
 				sql`
@@ -1363,15 +1412,19 @@ export async function drizzleCreatePartyAddress(
 				`,
 			],
 		);
-		const row = rows[0];
+		const [row] = rows;
 		if (row === undefined) {
 			const parent = await requireUsablePartyMutationParent(
 				record.organizationId,
 				record.partyId,
 			);
-			if (!parent.ok) return parent;
+			if (!parent.ok) {
+				return parent;
+			}
 			const activeCountry = await requireActiveAddressCountry(record.countryId);
-			if (!activeCountry.ok) return activeCountry;
+			if (!activeCountry.ok) {
+				return activeCountry;
+			}
 			return fail("INTERNAL_ERROR", "Party address create returned no row");
 		}
 		return ok(
@@ -1412,6 +1465,55 @@ export async function drizzleCreatePartyAddress(
 	}
 }
 
+function resolvePartyAddressUpdateState(
+	record: PartyAddressUpdateRecord,
+	existing: typeof mdPartyAddress.$inferSelect,
+) {
+	const effectiveFrom =
+		record.effectiveFrom === undefined
+			? existing.effectiveFrom
+			: record.effectiveFrom;
+	const effectiveTo =
+		record.effectiveTo === undefined
+			? existing.effectiveTo
+			: record.effectiveTo;
+	if (
+		effectiveFrom !== null &&
+		effectiveTo !== null &&
+		effectiveFrom > effectiveTo
+	) {
+		return fail(
+			"BAD_REQUEST",
+			"effectiveTo must be on or after effectiveFrom",
+			{
+				reason: "MASTER_VALIDATION_FAILED",
+				field: "effectiveTo",
+			} satisfies MasterFailureDetails,
+		);
+	}
+	return ok({
+		line1: record.line1 ?? existing.line1,
+		addressType: record.addressType ?? existing.addressType,
+		purpose: record.purpose ?? existing.purpose,
+		countryId: record.countryId ?? existing.countryId,
+		line2: record.line2 === undefined ? existing.line2 : record.line2,
+		line3: record.line3 === undefined ? existing.line3 : record.line3,
+		city: record.city ?? existing.city,
+		administrativeArea:
+			record.administrativeArea === undefined
+				? existing.administrativeArea
+				: record.administrativeArea,
+		postalCode:
+			record.postalCode === undefined ? existing.postalCode : record.postalCode,
+		attention:
+			record.attention === undefined ? existing.attention : record.attention,
+		isPrimary: record.isPrimary ?? existing.isPrimary,
+		validationStatus: record.validationStatus ?? existing.validationStatus,
+		effectiveFrom,
+		effectiveTo,
+	});
+}
+
 export async function drizzleUpdatePartyAddress(
 	record: PartyAddressUpdateRecord,
 	_ports: MutationPorts,
@@ -1438,35 +1540,22 @@ export async function drizzleUpdatePartyAddress(
 			record.expectedVersion,
 			"party_address",
 		);
-		if (!version.ok) return version;
-		const nextLine1 = record.line1 ?? existing.line1;
-		const nextType = record.addressType ?? existing.addressType;
-		const nextPurpose = record.purpose ?? existing.purpose;
-		const nextCountryId = record.countryId ?? existing.countryId;
-		const nextEffectiveFrom =
-			record.effectiveFrom !== undefined
-				? record.effectiveFrom
-				: existing.effectiveFrom;
-		const nextEffectiveTo =
-			record.effectiveTo !== undefined
-				? record.effectiveTo
-				: existing.effectiveTo;
-		if (
-			nextEffectiveFrom !== null &&
-			nextEffectiveTo !== null &&
-			nextEffectiveFrom > nextEffectiveTo
-		) {
-			return fail(
-				"BAD_REQUEST",
-				"effectiveTo must be on or after effectiveFrom",
-				{
-					reason: "MASTER_VALIDATION_FAILED",
-					field: "effectiveTo",
-				} satisfies MasterFailureDetails,
-			);
+		if (!version.ok) {
+			return version;
 		}
+		const stateResult = resolvePartyAddressUpdateState(record, existing);
+		if (!stateResult.ok) {
+			return stateResult;
+		}
+		const state = stateResult.data;
+		const nextLine1 = state.line1;
+		const nextType = state.addressType;
+		const nextPurpose = state.purpose;
+		const nextCountryId = state.countryId;
 		const country = await requireActiveAddressCountry(nextCountryId);
-		if (!country.ok) return country;
+		if (!country.ok) {
+			return country;
+		}
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const demotionAuditId = randomUUID();
@@ -1522,7 +1611,7 @@ export async function drizzleUpdatePartyAddress(
 							AND is_primary = true
 							AND status = 'active'
 							AND archived_at IS NULL
-							AND ${record.isPrimary ?? existing.isPrimary} = true
+							AND ${state.isPrimary} = true
 							AND EXISTS (SELECT 1 FROM parent_locked)
 							AND EXISTS (SELECT 1 FROM target_locked)
 						RETURNING *
@@ -1532,25 +1621,17 @@ export async function drizzleUpdatePartyAddress(
 						SET address_type = ${nextType},
 							purpose = ${nextPurpose},
 							line1 = ${nextLine1},
-							line2 = ${record.line2 !== undefined ? record.line2 : existing.line2},
-							line3 = ${record.line3 !== undefined ? record.line3 : existing.line3},
-							city = ${record.city ?? existing.city},
-							administrative_area = ${
-								record.administrativeArea !== undefined
-									? record.administrativeArea
-									: existing.administrativeArea
-							},
-							postal_code = ${
-								record.postalCode !== undefined
-									? record.postalCode
-									: existing.postalCode
-							},
+							line2 = ${state.line2},
+							line3 = ${state.line3},
+							city = ${state.city},
+							administrative_area = ${state.administrativeArea},
+							postal_code = ${state.postalCode},
 							country_id = ${nextCountryId},
-							attention = ${record.attention !== undefined ? record.attention : existing.attention},
-							is_primary = ${record.isPrimary ?? existing.isPrimary},
-							validation_status = ${record.validationStatus ?? existing.validationStatus},
-							effective_from = ${nextEffectiveFrom},
-							effective_to = ${nextEffectiveTo},
+							attention = ${state.attention},
+							is_primary = ${state.isPrimary},
+							validation_status = ${state.validationStatus},
+							effective_from = ${state.effectiveFrom},
+							effective_to = ${state.effectiveTo},
 							version = version + 1,
 							updated_by = ${record.updatedBy},
 							updated_at = now()
@@ -1617,15 +1698,19 @@ export async function drizzleUpdatePartyAddress(
 				`,
 			],
 		);
-		const row = rows[0];
+		const [row] = rows;
 		if (row === undefined) {
 			const parent = await requireUsablePartyMutationParent(
 				record.organizationId,
 				existing.partyId,
 			);
-			if (!parent.ok) return parent;
+			if (!parent.ok) {
+				return parent;
+			}
 			const activeCountry = await requireActiveAddressCountry(nextCountryId);
-			if (!activeCountry.ok) return activeCountry;
+			if (!activeCountry.ok) {
+				return activeCountry;
+			}
 			return fail("CONFLICT", "Party address version conflict", {
 				reason: "MASTER_VERSION_CONFLICT",
 			} satisfies MasterFailureDetails);
@@ -1916,13 +2001,15 @@ export async function drizzleCreatePartyContact(
 				`,
 			],
 		);
-		const row = rows[0];
+		const [row] = rows;
 		if (row === undefined) {
 			const parent = await requireUsablePartyMutationParent(
 				record.organizationId,
 				record.partyId,
 			);
-			if (!parent.ok) return parent;
+			if (!parent.ok) {
+				return parent;
+			}
 			return fail("INTERNAL_ERROR", "Party contact create returned no row");
 		}
 		return ok(
@@ -1959,6 +2046,100 @@ export async function drizzleCreatePartyContact(
 	}
 }
 
+function validatePartyContactUpdateInput(
+	record: PartyContactUpdateRecord,
+): Result<true> {
+	if (
+		record.verificationStatus !== undefined &&
+		((record.verificationStatus === "verified" &&
+			(record.verifiedAt === undefined || record.verifiedAt === null)) ||
+			(record.verificationStatus !== "verified" &&
+				record.verifiedAt !== undefined &&
+				record.verifiedAt !== null))
+	) {
+		return fail("BAD_REQUEST", "Invalid party contact verification evidence", {
+			reason: "MASTER_VALIDATION_FAILED",
+			field: "verificationStatus",
+		} satisfies MasterFailureDetails);
+	}
+	if (
+		(record.contactType === undefined) !== (record.value === undefined) ||
+		(record.value === undefined) !== (record.normalizedValue === undefined)
+	) {
+		return fail(
+			"BAD_REQUEST",
+			"Contact type, value, and normalized value must change together",
+			{
+				reason: "MASTER_VALIDATION_FAILED",
+				field: "value",
+			} satisfies MasterFailureDetails,
+		);
+	}
+	return ok(true);
+}
+
+function resolvePartyContactUpdateState(
+	record: PartyContactUpdateRecord,
+	existing: typeof mdPartyContact.$inferSelect,
+) {
+	const effectiveFrom =
+		record.effectiveFrom === undefined
+			? existing.effectiveFrom
+			: record.effectiveFrom;
+	const effectiveTo =
+		record.effectiveTo === undefined
+			? existing.effectiveTo
+			: record.effectiveTo;
+	if (
+		effectiveFrom !== null &&
+		effectiveTo !== null &&
+		effectiveFrom > effectiveTo
+	) {
+		return fail(
+			"BAD_REQUEST",
+			"effectiveTo must be on or after effectiveFrom",
+			{
+				reason: "MASTER_VALIDATION_FAILED",
+				field: "effectiveTo",
+			} satisfies MasterFailureDetails,
+		);
+	}
+	const contactIdentityChanged =
+		record.value !== undefined || record.contactType !== undefined;
+	const verificationStatus = contactIdentityChanged
+		? "unverified"
+		: (record.verificationStatus ?? existing.verificationStatus);
+	let verifiedAt = record.verifiedAt ?? null;
+	if (contactIdentityChanged) {
+		verifiedAt = null;
+	} else if (record.verificationStatus === undefined) {
+		({ verifiedAt } = existing);
+	}
+	let changesJson = fieldChangeJson(
+		"verificationStatus",
+		existing.verificationStatus,
+		verificationStatus,
+	);
+	if (contactIdentityChanged) {
+		changesJson = fieldChangeJson("value", "[protected]", "[protected]");
+	} else if (record.verificationStatus === undefined) {
+		changesJson = fieldChangeJson("contact", "unchanged", "updated");
+	}
+	return ok({
+		value: record.value ?? existing.value,
+		contactType: record.contactType ?? existing.contactType,
+		normalizedValue: record.normalizedValue ?? existing.normalizedValue,
+		purpose: record.purpose === undefined ? existing.purpose : record.purpose,
+		label: record.label === undefined ? existing.label : record.label,
+		isPrimary: record.isPrimary ?? existing.isPrimary,
+		effectiveFrom,
+		effectiveTo,
+		verificationStatus,
+		verifiedAt,
+		changesJson,
+	});
+}
+
 export async function drizzleUpdatePartyContact(
 	record: PartyContactUpdateRecord,
 	_ports: MutationPorts,
@@ -1985,86 +2166,29 @@ export async function drizzleUpdatePartyContact(
 			record.expectedVersion,
 			"party_contact",
 		);
-		if (!version.ok) return version;
-		if (
-			record.verificationStatus !== undefined &&
-			((record.verificationStatus === "verified" &&
-				record.verifiedAt == null) ||
-				(record.verificationStatus !== "verified" && record.verifiedAt != null))
-		) {
-			return fail(
-				"BAD_REQUEST",
-				"Invalid party contact verification evidence",
-				{
-					reason: "MASTER_VALIDATION_FAILED",
-					field: "verificationStatus",
-				} satisfies MasterFailureDetails,
-			);
+		if (!version.ok) {
+			return version;
 		}
-		if (
-			(record.contactType === undefined) !== (record.value === undefined) ||
-			(record.value === undefined) !== (record.normalizedValue === undefined)
-		) {
-			return fail(
-				"BAD_REQUEST",
-				"Contact type, value, and normalized value must change together",
-				{
-					reason: "MASTER_VALIDATION_FAILED",
-					field: "value",
-				} satisfies MasterFailureDetails,
-			);
+		const inputValidation = validatePartyContactUpdateInput(record);
+		if (!inputValidation.ok) {
+			return inputValidation;
 		}
-		const nextValue = record.value ?? existing.value;
-		const nextType = record.contactType ?? existing.contactType;
-		const nextNormalizedValue =
-			record.normalizedValue ?? existing.normalizedValue;
-		const nextPurpose =
-			record.purpose !== undefined ? record.purpose : existing.purpose;
-		const nextEffectiveFrom =
-			record.effectiveFrom !== undefined
-				? record.effectiveFrom
-				: existing.effectiveFrom;
-		const nextEffectiveTo =
-			record.effectiveTo !== undefined
-				? record.effectiveTo
-				: existing.effectiveTo;
-		if (
-			nextEffectiveFrom !== null &&
-			nextEffectiveTo !== null &&
-			nextEffectiveFrom > nextEffectiveTo
-		) {
-			return fail(
-				"BAD_REQUEST",
-				"effectiveTo must be on or after effectiveFrom",
-				{
-					reason: "MASTER_VALIDATION_FAILED",
-					field: "effectiveTo",
-				} satisfies MasterFailureDetails,
-			);
+		const stateResult = resolvePartyContactUpdateState(record, existing);
+		if (!stateResult.ok) {
+			return stateResult;
 		}
-		const contactIdentityChanged =
-			record.value !== undefined || record.contactType !== undefined;
-		const nextVerificationStatus = contactIdentityChanged
-			? "unverified"
-			: (record.verificationStatus ?? existing.verificationStatus);
-		const nextVerifiedAt = contactIdentityChanged
-			? null
-			: record.verificationStatus !== undefined
-				? (record.verifiedAt ?? null)
-				: existing.verifiedAt;
+		const state = stateResult.data;
+		const nextValue = state.value;
+		const nextType = state.contactType;
+		const nextNormalizedValue = state.normalizedValue;
+		const nextPurpose = state.purpose;
+		const nextVerificationStatus = state.verificationStatus;
+		const nextVerifiedAt = state.verifiedAt;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const demotionAuditId = randomUUID();
 		const demotionEventId = randomUUID();
-		const changesJson = contactIdentityChanged
-			? fieldChangeJson("value", "[protected]", "[protected]")
-			: record.verificationStatus !== undefined
-				? fieldChangeJson(
-						"verificationStatus",
-						existing.verificationStatus,
-						nextVerificationStatus,
-					)
-				: fieldChangeJson("contact", "unchanged", "updated");
+		const { changesJson } = state;
 		const payloadJson = eventPayloadJson({
 			organizationId: record.organizationId,
 			entityType: "party_contact",
@@ -2110,7 +2234,7 @@ export async function drizzleUpdatePartyContact(
 							AND is_primary = true
 							AND status = 'active'
 							AND archived_at IS NULL
-							AND ${record.isPrimary ?? existing.isPrimary} = true
+							AND ${state.isPrimary} = true
 							AND EXISTS (SELECT 1 FROM parent_locked)
 							AND EXISTS (SELECT 1 FROM target_locked)
 						RETURNING *
@@ -2120,13 +2244,13 @@ export async function drizzleUpdatePartyContact(
 						SET contact_type = ${nextType},
 							value = ${nextValue},
 							normalized_value = ${nextNormalizedValue},
-							label = ${record.label !== undefined ? record.label : existing.label},
+							label = ${state.label},
 							purpose = ${nextPurpose},
-							is_primary = ${record.isPrimary ?? existing.isPrimary},
+							is_primary = ${state.isPrimary},
 							verification_status = ${nextVerificationStatus},
 							verified_at = ${nextVerifiedAt},
-							effective_from = ${nextEffectiveFrom},
-							effective_to = ${nextEffectiveTo},
+							effective_from = ${state.effectiveFrom},
+							effective_to = ${state.effectiveTo},
 							version = version + 1,
 							updated_by = ${record.updatedBy},
 							updated_at = now()
@@ -2193,13 +2317,15 @@ export async function drizzleUpdatePartyContact(
 				`,
 			],
 		);
-		const row = rows[0];
+		const [row] = rows;
 		if (row === undefined) {
 			const parent = await requireUsablePartyMutationParent(
 				record.organizationId,
 				existing.partyId,
 			);
-			if (!parent.ok) return parent;
+			if (!parent.ok) {
+				return parent;
+			}
 			return fail("CONFLICT", "Party contact version conflict", {
 				reason: "MASTER_VERSION_CONFLICT",
 			} satisfies MasterFailureDetails);
@@ -2365,7 +2491,7 @@ export async function drizzleCreatePartyExternalId(
 				`,
 			],
 		);
-		const row = rows[0];
+		const [row] = rows;
 		if (row === undefined) {
 			return fail("INTERNAL_ERROR", "Party external id create returned no row");
 		}
@@ -2425,7 +2551,7 @@ export async function drizzleFindPartyByExternalId(
 				reason: "MASTER_EXTERNAL_ID_CONFLICT",
 			} satisfies MasterFailureDetails);
 		}
-		const ext = matches[0];
+		const [ext] = matches;
 		if (ext === undefined) {
 			return ok(null);
 		}
@@ -2445,7 +2571,7 @@ export async function drizzleFindPartyByExternalId(
 	}
 }
 
-export async function drizzleUpdatePartyContactVerification(
+export function drizzleUpdatePartyContactVerification(
 	record: PartyContactVerificationRecord,
 	ports: MutationPorts,
 	meta: { correlationId: string },
@@ -2570,7 +2696,7 @@ export async function drizzleCreatePartyRelationship(
 				`,
 			],
 		);
-		const row = rows[0];
+		const [row] = rows;
 		if (row === undefined) {
 			if (record.direction === "hierarchical") {
 				return fail("CONFLICT", "Party relationship would create a cycle", {
@@ -2632,7 +2758,9 @@ export async function drizzleListPartyRelationships(
 		const mapped: PartyRelationship[] = [];
 		for (const row of rows.slice(0, filter.pageSize)) {
 			const relationship = mapPartyRelationshipRow(row);
-			if (!relationship.ok) return relationship;
+			if (!relationship.ok) {
+				return relationship;
+			}
 			mapped.push(relationship.data);
 		}
 		return ok({
@@ -2697,7 +2825,7 @@ export async function drizzleResolveItemUomCompatibilityContext(
 				field: "alternateUomId",
 			} satisfies MasterFailureDetails);
 		}
-		if (!row.baseUomActive || !alternate.active) {
+		if (!(row.baseUomActive && alternate.active)) {
 			return fail("BAD_REQUEST", "UoM must be active", {
 				reason: "MASTER_VALIDATION_FAILED",
 				field: "alternateUomId",
@@ -2771,7 +2899,9 @@ async function drizzleGetDefaultItemUom(
 				),
 			)
 			.limit(1);
-		if (row === undefined) return ok(null);
+		if (row === undefined) {
+			return ok(null);
+		}
 		return mapItemUomRow(row);
 	} catch (error) {
 		return failFromPersistence(
@@ -2793,13 +2923,9 @@ export function drizzleGetDefaultItemPurchaseUom(
 	return drizzleGetDefaultItemUom(filter, "purchase");
 }
 
-export async function drizzleCreateItemUom(
+function assertConsistentDefaultItemUomUsage(
 	record: ItemUomCreateRecord,
-	_ports: MutationPorts,
-	meta: { correlationId: string },
-): Promise<Result<ItemUom>> {
-	const factor = normalizeItemUomConversionFactor(record.conversionFactor);
-	if (!factor.ok) return factor;
+): Result<true> {
 	if (
 		(record.isDefaultPurchaseUom && !record.isPurchaseUom) ||
 		(record.isDefaultSalesUom && !record.isSalesUom)
@@ -2807,6 +2933,22 @@ export async function drizzleCreateItemUom(
 		return fail("BAD_REQUEST", "Default UoM usage is inconsistent", {
 			reason: "MASTER_INVALID_UOM_CONVERSION",
 		} satisfies MasterFailureDetails);
+	}
+	return ok(true);
+}
+
+export async function drizzleCreateItemUom(
+	record: ItemUomCreateRecord,
+	_ports: MutationPorts,
+	meta: { correlationId: string },
+): Promise<Result<ItemUom>> {
+	const factor = normalizeItemUomConversionFactor(record.conversionFactor);
+	if (!factor.ok) {
+		return factor;
+	}
+	const consistentUsage = assertConsistentDefaultItemUomUsage(record);
+	if (!consistentUsage.ok) {
+		return consistentUsage;
 	}
 	try {
 		const [item] = await db
@@ -2839,7 +2981,7 @@ export async function drizzleCreateItemUom(
 				reason: "MASTER_VALIDATION_FAILED",
 			} satisfies MasterFailureDetails);
 		}
-		if (!baseUom.active || !altUom.active) {
+		if (!(baseUom.active && altUom.active)) {
 			return fail("BAD_REQUEST", "UoM must be active", {
 				reason: "MASTER_VALIDATION_FAILED",
 			} satisfies MasterFailureDetails);
@@ -2871,7 +3013,9 @@ export async function drizzleCreateItemUom(
 			compatibilityMode: record.compatibilityMode,
 			packagingApprovalReference: record.packagingApprovalReference,
 		});
-		if (!compatible.ok) return compatible;
+		if (!compatible.ok) {
+			return compatible;
+		}
 	} catch (error) {
 		return failFromPersistence(error, "Failed to validate item UoM");
 	}
@@ -3034,7 +3178,7 @@ export async function drizzleCreateItemUom(
 				`,
 			],
 		);
-		const row = rows[0];
+		const [row] = rows;
 		if (row === undefined) {
 			return fail("BAD_REQUEST", "Item UoM conversion is not eligible", {
 				reason: "MASTER_INVALID_UOM_CONVERSION",
@@ -3086,12 +3230,16 @@ export async function drizzleCreateItemBarcode(
 		rawValue: record.barcodeValue,
 		symbology: record.symbology,
 	});
-	if (!normalized.ok) return normalized;
+	if (!normalized.ok) {
+		return normalized;
+	}
 	const packQuantity =
 		record.packQuantity === null
 			? null
 			: normalizeBarcodePackQuantity(record.packQuantity);
-	if (packQuantity !== null && !packQuantity.ok) return packQuantity;
+	if (packQuantity !== null && !packQuantity.ok) {
+		return packQuantity;
+	}
 	if ((record.uomId === null) !== (packQuantity === null)) {
 		return fail(
 			"BAD_REQUEST",
@@ -3248,13 +3396,15 @@ export async function drizzleCreateItemBarcode(
 				`,
 			],
 		);
-		const row = rows[0];
+		const [row] = rows;
 		if (row === undefined) {
 			const parent = await requireUsableItemMutationParent(
 				record.organizationId,
 				record.itemId,
 			);
-			if (!parent.ok) return parent;
+			if (!parent.ok) {
+				return parent;
+			}
 			return fail("BAD_REQUEST", "Item barcode packaging UoM is not eligible", {
 				reason: "MASTER_INVALID_BARCODE",
 			} satisfies MasterFailureDetails);
@@ -3314,8 +3464,10 @@ export async function drizzleFindItemByBarcode(
 				candidateCount: barcodes.length,
 			} satisfies MasterFailureDetails);
 		}
-		const barcode = barcodes[0];
-		if (barcode === undefined) return ok(null);
+		const [barcode] = barcodes;
+		if (barcode === undefined) {
+			return ok(null);
+		}
 
 		const [item] = await db
 			.select()
@@ -3456,7 +3608,7 @@ export async function drizzleCreateItemExternalId(
 				`,
 			],
 		);
-		const row = rows[0];
+		const [row] = rows;
 		if (row === undefined) {
 			return fail("NOT_FOUND", "Item not found", {
 				reason: "MASTER_NOT_FOUND",
@@ -3518,7 +3670,7 @@ export async function drizzleFindItemByExternalId(
 				candidateCount: rows.length,
 			} satisfies MasterFailureDetails);
 		}
-		const ext = rows[0];
+		const [ext] = rows;
 		if (ext === undefined) {
 			return ok(null);
 		}
@@ -3626,13 +3778,15 @@ export async function drizzleCreateItemAlias(
 				`,
 			],
 		);
-		const row = rows[0];
+		const [row] = rows;
 		if (row === undefined) {
 			const parent = await requireUsableItemMutationParent(
 				record.organizationId,
 				record.itemId,
 			);
-			if (!parent.ok) return parent;
+			if (!parent.ok) {
+				return parent;
+			}
 			return fail("BAD_REQUEST", "Alias language is not active", {
 				reason: "MASTER_VALIDATION_FAILED",
 			} satisfies MasterFailureDetails);
@@ -3752,7 +3906,9 @@ export async function drizzleFindItemByAlias(
 		page: 1,
 		pageSize: 2,
 	});
-	if (!matches.ok) return matches;
+	if (!matches.ok) {
+		return matches;
+	}
 	if (matches.data.items.length > 1) {
 		return fail("CONFLICT", "Alias resolves to multiple active items", {
 			reason: "MASTER_DUPLICATE",
@@ -3839,7 +3995,7 @@ export async function drizzleCreateWarehouseExternalId(
 				`,
 			],
 		);
-		const row = rows[0];
+		const [row] = rows;
 		if (row === undefined) {
 			return fail("NOT_FOUND", "Warehouse not found", {
 				reason: "MASTER_NOT_FOUND",
@@ -3902,7 +4058,7 @@ export async function drizzleFindWarehouseByExternalId(
 				candidateCount: matches.length,
 			} satisfies MasterFailureDetails);
 		}
-		const ext = matches[0];
+		const [ext] = matches;
 		if (ext === undefined) {
 			return ok(null);
 		}

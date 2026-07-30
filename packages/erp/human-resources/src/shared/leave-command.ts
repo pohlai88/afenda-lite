@@ -32,25 +32,25 @@ import type { HumanResourcesAuthorizedActorInput } from "./run-authorized-operat
 
 type ActorScoped = HumanResourcesAuthorizedActorInput;
 
-type CommandDeps = {
-	store: HumanResourcesStore;
+interface CommandDeps {
+	authorization: HumanResourcesAuthorizationPort | undefined;
+	identityResolver: HumanResourcesIdentityResolverPort | undefined;
 	ports: MutationPorts;
-	workCalendar: WorkCalendarPort;
-	authorization: HumanResourcesAuthorizationPort | undefined;
-	identityResolver: HumanResourcesIdentityResolverPort | undefined;
-};
-
-type QueryDeps = {
 	store: HumanResourcesStore;
 	workCalendar: WorkCalendarPort;
+}
+
+interface QueryDeps {
 	authorization: HumanResourcesAuthorizationPort | undefined;
 	identityResolver: HumanResourcesIdentityResolverPort | undefined;
-};
+	store: HumanResourcesStore;
+	workCalendar: WorkCalendarPort;
+}
 
 /** Authorization port that grants after a custom leave authorize proof succeeded. */
 const CUSTOM_AUTHORIZE_PROVEN: HumanResourcesAuthorizationPort = {
 	async can() {
-		return true;
+		return await true;
 	},
 };
 
@@ -74,7 +74,7 @@ export async function runLeaveCommand<
 		) => Promise<Result<TOut>>;
 	},
 ): Promise<Result<TOut>> {
-	return runParsedAuthorizedCommand(input, options, {
+	return await runParsedAuthorizedCommand(input, options, {
 		schema: config.schema,
 		invalidMessage: config.invalidMessage,
 		command: config.command,
@@ -124,7 +124,7 @@ export async function runLeaveQuery<
 		execute: (data: z.infer<TSchema>, deps: QueryDeps) => Promise<Result<TOut>>;
 	},
 ): Promise<Result<TOut>> {
-	return runParsedAuthorizedQuery(input, options, {
+	return await runParsedAuthorizedQuery(input, options, {
 		schema: config.schema,
 		invalidMessage: config.invalidMessage,
 		query: config.query,
@@ -156,7 +156,7 @@ export async function requireLeaveRequestBackdatePermission(
 		operationId: HumanResourcesCommandId;
 	},
 ): Promise<Result<void>> {
-	return assertHumanResourcesSupplementalAuthorization(
+	return await assertHumanResourcesSupplementalAuthorization(
 		{
 			operationId: input.operationId,
 			operationKind: "command",
@@ -201,7 +201,7 @@ export async function requireLeaveRequestSensitiveRead(
 		operationKind: "command" | "query";
 	},
 ): Promise<Result<void>> {
-	return assertHumanResourcesSupplementalAuthorization(
+	return await assertHumanResourcesSupplementalAuthorization(
 		{
 			operationId: input.operationId,
 			operationKind: input.operationKind,
@@ -230,12 +230,12 @@ export async function assertLeaveRequestSensitiveReadAllowed(
 	},
 ): Promise<Result<void>> {
 	if (!input.policy.sensitive) {
-		return ok(undefined);
+		return await ok(undefined);
 	}
 	if (input.request.createdBy === input.actorUserId) {
-		return ok(undefined);
+		return await ok(undefined);
 	}
-	return requireLeaveRequestSensitiveRead(options, {
+	return await requireLeaveRequestSensitiveRead(options, {
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: input.correlationId,

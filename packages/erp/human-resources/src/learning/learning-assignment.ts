@@ -31,7 +31,7 @@ export const HUMAN_RESOURCES_AGGREGATE_LEARNING_ASSIGNMENT =
 export type HumanResourcesLearningAssignmentAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_LEARNING_ASSIGNMENT;
 
-export async function assignLearning(
+export function assignLearning(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningAssignment>> {
@@ -73,7 +73,7 @@ export async function assignLearning(
 				return ok(existingByKey.data.assignment);
 			}
 
-			return await store.createLearningAssignment(
+			return store.createLearningAssignment(
 				{
 					organizationId: data.organizationId,
 					employeeId: data.employeeId,
@@ -96,7 +96,7 @@ export async function assignLearning(
 	});
 }
 
-export async function enrolAssignment(
+export function enrolAssignment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningAssignment>> {
@@ -104,8 +104,8 @@ export async function enrolAssignment(
 		schema: enrolLearningAssignmentInputSchema,
 		invalidMessage: "Invalid learning assignment enrol input",
 		command: HUMAN_RESOURCES_COMMAND_LEARNING_ASSIGNMENT_ENROL,
-		execute: async (data, { store, ports }) => {
-			return await store.enrollLearningAssignment(
+		execute: async (data, { store, ports }) =>
+			await store.enrollLearningAssignment(
 				{
 					organizationId: data.organizationId,
 					assignmentId: data.assignmentId,
@@ -118,12 +118,11 @@ export async function enrolAssignment(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_LEARNING_ASSIGNMENT_ENROL,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function waiveAssignment(
+export function waiveAssignment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningAssignment>> {
@@ -131,8 +130,8 @@ export async function waiveAssignment(
 		schema: waiveLearningAssignmentInputSchema,
 		invalidMessage: "Invalid learning assignment waive input",
 		command: HUMAN_RESOURCES_COMMAND_LEARNING_ASSIGNMENT_WAIVE,
-		execute: async (data, { store, ports }) => {
-			return await store.waiveLearningAssignment(
+		execute: async (data, { store, ports }) =>
+			await store.waiveLearningAssignment(
 				{
 					organizationId: data.organizationId,
 					assignmentId: data.assignmentId,
@@ -144,12 +143,11 @@ export async function waiveAssignment(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_LEARNING_ASSIGNMENT_WAIVE,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function getLearningAssignmentByAssignmentId(
+export function getLearningAssignmentByAssignmentId(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningAssignment | null>> {
@@ -157,23 +155,22 @@ export async function getLearningAssignmentByAssignmentId(
 		schema: getLearningAssignmentInputSchema,
 		invalidMessage: "Invalid learning assignment get input",
 		query: HUMAN_RESOURCES_QUERY_LEARNING_ASSIGNMENT_GET,
-		execute: async (data, { store }) => {
-			return await store.getLearningAssignmentById({
+		execute: async (data, { store }) =>
+			await store.getLearningAssignmentById({
 				organizationId: data.organizationId,
 				assignmentId: data.assignmentId,
-			});
-		},
+			}),
 	});
 }
 
-export async function getLearningAssignment(
+export function getLearningAssignment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningAssignment | null>> {
 	return getLearningAssignmentByAssignmentId(input, options);
 }
 
-export async function listAssignments(
+export function listAssignments(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningAssignmentListPage>> {
@@ -181,20 +178,19 @@ export async function listAssignments(
 		schema: listLearningAssignmentsInputSchema,
 		invalidMessage: "Invalid learning assignment list input",
 		query: HUMAN_RESOURCES_QUERY_LEARNING_ASSIGNMENT_LIST,
-		execute: async (data, { store }) => {
-			return await store.listLearningAssignments({
+		execute: async (data, { store }) =>
+			await store.listLearningAssignments({
 				organizationId: data.organizationId,
 				page: data.page ?? 1,
 				pageSize: data.pageSize ?? 20,
 				status: data.status,
 				employeeId: data.employeeId,
 				courseId: data.courseId,
-			});
-		},
+			}),
 	});
 }
 
-export async function listLearningAssignments(
+export function listLearningAssignments(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningAssignmentListPage>> {

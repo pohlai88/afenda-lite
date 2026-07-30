@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/useAwait: Drizzle officer wrappers expose uniform asynchronous store contracts.
 import {
 	and,
 	asc,
@@ -91,7 +92,9 @@ class DrizzleCorporateAdministrationOfficerStore implements OfficerStore {
 		input: Parameters<OfficerStore["listRequiredStatutoryOffices"]>[0],
 	) {
 		const listed = await this.listStatutoryOffices(input);
-		if (!listed.ok) return listed;
+		if (!listed.ok) {
+			return listed;
+		}
 		return ok(
 			listed.data.filter(
 				(row) =>
@@ -269,8 +272,12 @@ class DrizzleCorporateAdministrationOfficerStore implements OfficerStore {
 		input: Parameters<OfficerStore["amendOfficerAppointment"]>[0],
 	) {
 		const current = await this.getOfficerAppointment(input);
-		if (!current.ok) return current;
-		if (current.data === null) return notFound();
+		if (!current.ok) {
+			return current;
+		}
+		if (current.data === null) {
+			return notFound();
+		}
 		if (current.data.version !== input.expectedVersion) {
 			return stale(input.expectedVersion, current.data.version);
 		}
@@ -327,8 +334,12 @@ class DrizzleCorporateAdministrationOfficerStore implements OfficerStore {
 		input: Parameters<OfficerStore["endOfficerAppointment"]>[0],
 	) {
 		const current = await this.getOfficerAppointment(input);
-		if (!current.ok) return current;
-		if (current.data === null) return notFound();
+		if (!current.ok) {
+			return current;
+		}
+		if (current.data === null) {
+			return notFound();
+		}
 		if (current.data.version !== input.expectedVersion) {
 			return stale(input.expectedVersion, current.data.version);
 		}
@@ -457,7 +468,9 @@ class DrizzleCorporateAdministrationOfficerStore implements OfficerStore {
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}

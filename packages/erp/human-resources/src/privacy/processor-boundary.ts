@@ -2,25 +2,25 @@ import { fail, ok, type Result } from "@afenda/errors/result";
 
 import type { HumanResourcesRetentionClassification } from "../privacy";
 
-export type HumanResourcesPrivacyProcessor = {
-	processorId: string;
-	role: "processor" | "subprocessor";
-	parentProcessorId: string | null;
-	contractReference: string;
-	verifiedAt: string;
-	status: "active" | "suspended" | "terminated";
-	purpose: string;
+export interface HumanResourcesPrivacyProcessor {
 	classifications: readonly HumanResourcesRetentionClassification[];
+	contractReference: string;
 	deletionCapability: "delete" | "anonymize" | "retain_only";
-};
+	parentProcessorId: string | null;
+	processorId: string;
+	purpose: string;
+	role: "processor" | "subprocessor";
+	status: "active" | "suspended" | "terminated";
+	verifiedAt: string;
+}
 
-export type HumanResourcesPrivacyProcessorBoundary = {
-	organizationId: string;
+export interface HumanResourcesPrivacyProcessorBoundary {
 	boundaryVersion: string;
 	controllerReference: string;
+	organizationId: string;
 	primaryProcessor: HumanResourcesPrivacyProcessor;
 	subprocessors: readonly HumanResourcesPrivacyProcessor[];
-};
+}
 
 export function verifyHumanResourcesPrivacyProcessorBoundary(
 	boundary: HumanResourcesPrivacyProcessorBoundary,

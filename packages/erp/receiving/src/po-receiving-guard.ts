@@ -43,7 +43,9 @@ export async function loadPurchaseOrderReceivingSnapshot(
 		);
 	}
 	const snapshot = await port.getReceivingSnapshot(input);
-	if (!snapshot.ok) return snapshot;
+	if (!snapshot.ok) {
+		return snapshot;
+	}
 	if (snapshot.data === null) {
 		return fail("NOT_FOUND", PO_NOT_FOUND_MESSAGE);
 	}
@@ -67,7 +69,7 @@ export function assertPurchaseOrderPostedForCreate(
 function receiptCeiling(ordered: string, tolerancePercent: string): number {
 	const orderedQty = Number(ordered);
 	const tolerance = Number(tolerancePercent);
-	if (!Number.isFinite(orderedQty) || !Number.isFinite(tolerance)) {
+	if (!(Number.isFinite(orderedQty) && Number.isFinite(tolerance))) {
 		return Number.NaN;
 	}
 	return orderedQty * (1 + tolerance / 100);
@@ -80,9 +82,10 @@ function receiptCeiling(ordered: string, tolerancePercent: string): number {
 export function buildPoConsumptionGuard(
 	purchaseOrderId: string,
 	snapshot: PurchaseOrderReceivingSnapshot,
-	lines: ReadonlyArray<
-		Pick<GoodsReceiptLine, "purchaseOrderLineId" | "quantityAccepted">
-	>,
+	lines: readonly Pick<
+		GoodsReceiptLine,
+		"purchaseOrderLineId" | "quantityAccepted"
+	>[],
 ): Result<PoConsumptionGuard> {
 	if (snapshot.status !== "posted") {
 		return fail(
@@ -173,12 +176,15 @@ export function assertAcceptedWithinPoCeilings(
 export function assertPurchaseOrderReceivableForPost(
 	purchaseOrderId: string,
 	snapshot: PurchaseOrderReceivingSnapshot,
-	lines: ReadonlyArray<
-		Pick<GoodsReceiptLine, "purchaseOrderLineId" | "quantityAccepted">
-	>,
+	lines: readonly Pick<
+		GoodsReceiptLine,
+		"purchaseOrderLineId" | "quantityAccepted"
+	>[],
 	alreadyAcceptedByLine: ReadonlyMap<string, number>,
 ): Result<true> {
 	const guard = buildPoConsumptionGuard(purchaseOrderId, snapshot, lines);
-	if (!guard.ok) return guard;
+	if (!guard.ok) {
+		return guard;
+	}
 	return assertAcceptedWithinPoCeilings(guard.data, alreadyAcceptedByLine);
 }

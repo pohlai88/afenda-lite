@@ -46,7 +46,7 @@ import type {
 	PersonIdentifier,
 } from "./types";
 
-export async function updatePersonPreferredName(
+export function updatePersonPreferredName(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Person>> {
@@ -54,8 +54,8 @@ export async function updatePersonPreferredName(
 		schema: updatePersonPreferredNameInputSchema,
 		invalidMessage: "Invalid person preferred name update input",
 		command: HUMAN_RESOURCES_COMMAND_PERSON_PREFERRED_NAME_UPDATE,
-		execute: async (data, { store, ports }) => {
-			return store.updatePersonPreferredName(
+		execute: async (data, { store, ports }) =>
+			store.updatePersonPreferredName(
 				{
 					organizationId: data.organizationId,
 					personId: data.personId,
@@ -68,12 +68,11 @@ export async function updatePersonPreferredName(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_PERSON_PREFERRED_NAME_UPDATE,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function setPersonPrivacyClassification(
+export function setPersonPrivacyClassification(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Person>> {
@@ -81,8 +80,8 @@ export async function setPersonPrivacyClassification(
 		schema: setPersonPrivacyClassificationInputSchema,
 		invalidMessage: "Invalid person privacy classification input",
 		command: HUMAN_RESOURCES_COMMAND_PERSON_PRIVACY_CLASSIFICATION_SET,
-		execute: async (data, { store, ports }) => {
-			return store.setPersonPrivacyClassification(
+		execute: async (data, { store, ports }) =>
+			store.setPersonPrivacyClassification(
 				{
 					organizationId: data.organizationId,
 					personId: data.personId,
@@ -96,12 +95,11 @@ export async function setPersonPrivacyClassification(
 					operationId:
 						HUMAN_RESOURCES_COMMAND_PERSON_PRIVACY_CLASSIFICATION_SET,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function addPersonContact(
+export function addPersonContact(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PersonContact>> {
@@ -163,7 +161,7 @@ export async function addPersonContact(
 	});
 }
 
-export async function updatePersonContact(
+export function updatePersonContact(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PersonContact>> {
@@ -211,7 +209,7 @@ export async function updatePersonContact(
 	});
 }
 
-export async function retirePersonContact(
+export function retirePersonContact(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PersonContact>> {
@@ -219,8 +217,8 @@ export async function retirePersonContact(
 		schema: retirePersonContactInputSchema,
 		invalidMessage: "Invalid person contact retire input",
 		command: HUMAN_RESOURCES_COMMAND_PERSON_CONTACT_RETIRE,
-		execute: async (data, { store, ports }) => {
-			return store.retirePersonContact(
+		execute: async (data, { store, ports }) =>
+			store.retirePersonContact(
 				{
 					organizationId: data.organizationId,
 					personId: data.personId,
@@ -233,12 +231,11 @@ export async function retirePersonContact(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_PERSON_CONTACT_RETIRE,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function listPersonContacts(
+export function listPersonContacts(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<readonly PersonContact[]>> {
@@ -246,16 +243,15 @@ export async function listPersonContacts(
 		schema: listPersonContactsInputSchema,
 		invalidMessage: "Invalid person contacts list input",
 		query: HUMAN_RESOURCES_QUERY_PERSON_CONTACTS_LIST,
-		execute: async (data, { store }) => {
-			return store.listPersonContacts({
+		execute: async (data, { store }) =>
+			store.listPersonContacts({
 				organizationId: data.organizationId,
 				personId: data.personId,
-			});
-		},
+			}),
 	});
 }
 
-export async function addPersonIdentifier(
+export function addPersonIdentifier(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PersonIdentifier>> {
@@ -318,7 +314,7 @@ export async function addPersonIdentifier(
 	});
 }
 
-export async function retirePersonIdentifier(
+export function retirePersonIdentifier(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PersonIdentifier>> {
@@ -326,8 +322,8 @@ export async function retirePersonIdentifier(
 		schema: retirePersonIdentifierInputSchema,
 		invalidMessage: "Invalid person identifier retire input",
 		command: HUMAN_RESOURCES_COMMAND_PERSON_IDENTIFIER_RETIRE,
-		execute: async (data, { store, ports }) => {
-			return store.retirePersonIdentifier(
+		execute: async (data, { store, ports }) =>
+			store.retirePersonIdentifier(
 				{
 					organizationId: data.organizationId,
 					personId: data.personId,
@@ -341,12 +337,11 @@ export async function retirePersonIdentifier(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_PERSON_IDENTIFIER_RETIRE,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function listPersonIdentifiers(
+export function listPersonIdentifiers(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<readonly PersonIdentifier[]>> {
@@ -354,16 +349,15 @@ export async function listPersonIdentifiers(
 		schema: listPersonIdentifiersInputSchema,
 		invalidMessage: "Invalid person identifiers list input",
 		query: HUMAN_RESOURCES_QUERY_PERSON_IDENTIFIERS_LIST,
-		execute: async (data, { store }) => {
-			return store.listPersonIdentifiers({
+		execute: async (data, { store }) =>
+			store.listPersonIdentifiers({
 				organizationId: data.organizationId,
 				personId: data.personId,
-			});
-		},
+			}),
 	});
 }
 
-export async function detectPersonDuplicates(
+export function detectPersonDuplicates(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<readonly PersonDuplicateCandidate[]>> {
@@ -371,11 +365,10 @@ export async function detectPersonDuplicates(
 		schema: detectPersonDuplicatesInputSchema,
 		invalidMessage: "Invalid person duplicate detection input",
 		query: HUMAN_RESOURCES_QUERY_PERSON_DUPLICATES_DETECT,
-		execute: async (data, { store }) => {
-			return store.detectPersonDuplicates({
+		execute: async (data, { store }) =>
+			store.detectPersonDuplicates({
 				organizationId: data.organizationId,
 				personId: data.personId,
-			});
-		},
+			}),
 	});
 }

@@ -33,7 +33,9 @@ describe("approved payroll handoff parser (Slice 8.8)", () => {
 	it("P1: integer base preserves scale 0 and round-trips scaled amount", () => {
 		const result = parseApprovedPayrollHandoffInput(HANDOFF_FIXTURE_P1);
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 
 		expect(result.data.baseAmount).toBe("85000");
 		expect(result.data.decimalScale).toBe(0);
@@ -44,7 +46,9 @@ describe("approved payroll handoff parser (Slice 8.8)", () => {
 	it("P2: max HR precision (4 dp) preserved through scale-12 conversion", () => {
 		const result = parseApprovedPayrollHandoffInput(HANDOFF_FIXTURE_P2);
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 
 		expect(result.data.baseAmount).toBe("1234.5678");
 		expect(result.data.decimalScale).toBe(4);
@@ -57,7 +61,9 @@ describe("approved payroll handoff parser (Slice 8.8)", () => {
 	it("P3: typical 2 dp amount preserved exactly", () => {
 		const result = parseApprovedPayrollHandoffInput(HANDOFF_FIXTURE_P3);
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 
 		expect(result.data.baseAmount).toBe("470.12");
 		expect(formatScaledToDecimal(result.data.baseAmountScaled)).toBe("470.12");
@@ -66,7 +72,9 @@ describe("approved payroll handoff parser (Slice 8.8)", () => {
 	it("P4: trailing-zero fractional digits keep decimalScale 2", () => {
 		const result = parseApprovedPayrollHandoffInput(HANDOFF_FIXTURE_P4);
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 
 		expect(result.data.baseAmount).toBe("100.10");
 		expect(result.data.decimalScale).toBe(2);
@@ -81,7 +89,9 @@ describe("approved payroll handoff parser (Slice 8.8)", () => {
 	it("P5: benefit employee and employer contribution components preserve amounts", () => {
 		const result = parseApprovedPayrollHandoffInput(HANDOFF_FIXTURE_P5);
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 
 		expect(result.data.components).toHaveLength(3);
 		const employee = result.data.components.find(
@@ -92,7 +102,9 @@ describe("approved payroll handoff parser (Slice 8.8)", () => {
 		);
 		expect(employee?.amount).toBe("125.50");
 		expect(employer?.amount).toBe("300.00");
-		if (!employee || !employer) return;
+		if (!(employee && employer)) {
+			return;
+		}
 		expect(
 			formatScaledToHandoffAmount(employee.amountScaled, employee.decimalScale),
 		).toBe("125.50");
@@ -104,7 +116,9 @@ describe("approved payroll handoff parser (Slice 8.8)", () => {
 	it("P6: period boundary effective date unchanged", () => {
 		const result = parseApprovedPayrollHandoffInput(HANDOFF_FIXTURE_P6);
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 
 		expect(result.data.effectiveDate).toBe("2024-12-31");
 		expect(result.data.baseAmount).toBe("5000");
@@ -113,10 +127,12 @@ describe("approved payroll handoff parser (Slice 8.8)", () => {
 	it("P7: leave segment dates preserved verbatim across month end", () => {
 		const result = parseApprovedPayrollHandoffInput(HANDOFF_FIXTURE_P7);
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 
 		expect(result.data.leaveFacts).toHaveLength(1);
-		const leave = result.data.leaveFacts[0];
+		const [leave] = result.data.leaveFacts;
 		expect(leave?.startDate).toBe("2025-01-30");
 		expect(leave?.endDate).toBe("2025-02-02");
 		expect(leave?.segments.map((s) => s.date)).toEqual([
@@ -129,7 +145,9 @@ describe("approved payroll handoff parser (Slice 8.8)", () => {
 	it("P8: time facts period dates preserved verbatim", () => {
 		const result = parseApprovedPayrollHandoffInput(HANDOFF_FIXTURE_P8);
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 
 		expect(result.data.timeFacts?.periodStart).toBe("2025-01-01");
 		expect(result.data.timeFacts?.periodEnd).toBe("2025-01-31");
@@ -140,7 +158,9 @@ describe("approved payroll handoff parser (Slice 8.8)", () => {
 	it("P9: rejects scale mismatch between amount and decimalScale", () => {
 		const result = parseApprovedPayrollHandoffInput(HANDOFF_FIXTURE_P9);
 		expect(result.ok).toBe(false);
-		if (result.ok) return;
+		if (result.ok) {
+			return;
+		}
 		expect(result.code).toBe("BAD_REQUEST");
 	});
 
@@ -152,7 +172,9 @@ describe("approved payroll handoff parser (Slice 8.8)", () => {
 	it("P11: accepts compensation-only handoff with null time facts", () => {
 		const result = parseApprovedPayrollHandoffInput(HANDOFF_FIXTURE_P11);
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 
 		expect(result.data.timeFacts).toBeNull();
 		expect(result.data.overtimeFacts).toEqual([]);
@@ -161,7 +183,9 @@ describe("approved payroll handoff parser (Slice 8.8)", () => {
 	it("maps rounding policy from handoff decimal scale and mode", () => {
 		const result = parseApprovedPayrollHandoffInput(HANDOFF_FIXTURE_P2);
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 
 		expect(result.data.roundingPolicy).toEqual({
 			scale: 4,
@@ -174,7 +198,9 @@ describe("parseApprovedPayrollHandoff contract boundaries", () => {
 	it("parses Slice 8.7 golden handoff and bridges rounding policy", () => {
 		const parsed = parseApprovedPayrollHandoff(HANDOFF_FIXTURE_SLICE_87);
 		expect(parsed.ok).toBe(true);
-		if (!parsed.ok) return;
+		if (!parsed.ok) {
+			return;
+		}
 
 		expect(parsed.data.baseAmount).toBe("85000.00");
 		expect(parsed.data.effectiveDate).toBe("2025-01-01");

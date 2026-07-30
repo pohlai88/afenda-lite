@@ -1,13 +1,14 @@
+// biome-ignore-all lint/performance/noJsxPropsBind: The enabled React Compiler stabilizes JSX callback props.
 "use client";
 
 import { releaseReservationAction } from "@/app/actions/release-reservation";
 import { ReservationLifecycleForm } from "@/features/inventory/reservation-lifecycle-form";
 
-type ReleaseReservationFormProps = {
+interface ReleaseReservationFormProps {
 	canRelease: boolean;
-	defaultReservationId?: string | undefined;
 	defaultExpectedVersion?: number | undefined;
-};
+	defaultReservationId?: string | undefined;
+}
 
 /**
  * Release active reservation — returns the released `StockReservation`.
@@ -19,19 +20,19 @@ export function ReleaseReservationForm({
 }: ReleaseReservationFormProps) {
 	return (
 		<ReservationLifecycleForm
+			action={releaseReservationAction}
 			canRelease={canRelease}
-			unavailableTitle="Release unavailable"
-			unavailableBody="You can view inventory but cannot release reservations in this organization."
-			successTitle="Reservation released"
+			defaultExpectedVersion={defaultExpectedVersion}
+			defaultReservationId={defaultReservationId}
+			fieldIdPrefix="stock-release"
+			idempotencyPrefix="release"
+			submitLabel="Release reservation"
 			successDetail={(reservation) =>
 				`${reservation.code} · ${reservation.status} · released.`
 			}
-			submitLabel="Release reservation"
-			fieldIdPrefix="stock-release"
-			idempotencyPrefix="release"
-			defaultReservationId={defaultReservationId}
-			defaultExpectedVersion={defaultExpectedVersion}
-			action={releaseReservationAction}
+			successTitle="Reservation released"
+			unavailableBody="You can view inventory but cannot release reservations in this organization."
+			unavailableTitle="Release unavailable"
 		/>
 	);
 }

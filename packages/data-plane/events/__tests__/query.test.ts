@@ -253,9 +253,9 @@ describe("@afenda/events query", () => {
 
 	it("keeps HR queue pagination bounded under operational load", async () => {
 		const store = new MemoryEventStore();
-		for (let index = 0; index < 250; index += 1) {
-			assertOk(
-				await store.append({
+		const entries = await Promise.all(
+			Array.from({ length: 250 }, (_, index) =>
+				store.append({
 					organizationId: "org-load",
 					type: "human-resources.employee.created.v1",
 					sourceModule: "human-resources",
@@ -269,7 +269,10 @@ describe("@afenda/events query", () => {
 						correlationId: `corr-load-${index}`,
 					},
 				}),
-			);
+			),
+		);
+		for (const entry of entries) {
+			assertOk(entry);
 		}
 
 		const secondPage = assertOk(

@@ -20,7 +20,9 @@ export function requiredVotesForThreshold(input: {
 			? validation("requiredFor")
 			: ok(input.requiredFor);
 	}
-	if (input.thresholdType === "unanimous") return ok(input.eligibleVotes);
+	if (input.thresholdType === "unanimous") {
+		return ok(input.eligibleVotes);
+	}
 	if (input.thresholdType === "supermajority") {
 		return ok(Math.ceil((input.eligibleVotes * 2) / 3));
 	}
@@ -42,8 +44,12 @@ export function calculateVoteOutcome(input: {
 		return validation("votesFor");
 	}
 	const required = requiredVotesForThreshold(input);
-	if (!required.ok) return required;
-	if (required.data > input.eligibleVotes) return validation("requiredFor");
+	if (!required.ok) {
+		return required;
+	}
+	if (required.data > input.eligibleVotes) {
+		return validation("requiredFor");
+	}
 	return ok({
 		requiredFor: required.data,
 		outcome: input.votesFor >= required.data ? "adopted" : "rejected",

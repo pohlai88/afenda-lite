@@ -119,7 +119,7 @@ const getWorkforcePlanVarianceActionSchema = hrActionSchema(
 export async function createHeadcountPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: HeadcountPlan }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "createHeadcountPlanAction",
 		permission: PLAN_PREPARE,
 		safeMessage: "Could not create headcount plan.",
@@ -134,7 +134,7 @@ export async function createHeadcountPlanAction(
 export async function updateHeadcountPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: HeadcountPlan }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "updateHeadcountPlanAction",
 		permission: PLAN_PREPARE,
 		safeMessage: "Could not update headcount plan.",
@@ -149,7 +149,7 @@ export async function updateHeadcountPlanAction(
 export async function submitHeadcountPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: HeadcountPlan }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "submitHeadcountPlanAction",
 		permission: PLAN_PREPARE,
 		safeMessage: "Could not submit headcount plan.",
@@ -164,7 +164,7 @@ export async function submitHeadcountPlanAction(
 export async function approveHeadcountPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: HeadcountPlan }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "approveHeadcountPlanAction",
 		permission: PLAN_APPROVE,
 		safeMessage: "Could not approve headcount plan.",
@@ -179,7 +179,7 @@ export async function approveHeadcountPlanAction(
 export async function rejectHeadcountPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: HeadcountPlan }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "rejectHeadcountPlanAction",
 		permission: PLAN_APPROVE,
 		safeMessage: "Could not reject headcount plan.",
@@ -194,7 +194,7 @@ export async function rejectHeadcountPlanAction(
 export async function closeHeadcountPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: HeadcountPlan }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "closeHeadcountPlanAction",
 		permission: PLAN_APPROVE,
 		safeMessage: "Could not close headcount plan.",
@@ -209,7 +209,7 @@ export async function closeHeadcountPlanAction(
 export async function supersedeHeadcountPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: HeadcountPlan }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "supersedeHeadcountPlanAction",
 		permission: PLAN_PREPARE,
 		safeMessage: "Could not supersede headcount plan.",
@@ -224,7 +224,7 @@ export async function supersedeHeadcountPlanAction(
 export async function addHeadcountPlanLineAction(
 	input: unknown,
 ): Promise<ActionResult<{ line: HeadcountPlanLine }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "addHeadcountPlanLineAction",
 		permission: PLAN_PREPARE,
 		safeMessage: "Could not add headcount plan line.",
@@ -239,7 +239,7 @@ export async function addHeadcountPlanLineAction(
 export async function updateHeadcountPlanLineAction(
 	input: unknown,
 ): Promise<ActionResult<{ line: HeadcountPlanLine }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "updateHeadcountPlanLineAction",
 		permission: PLAN_PREPARE,
 		safeMessage: "Could not update headcount plan line.",
@@ -254,7 +254,7 @@ export async function updateHeadcountPlanLineAction(
 export async function removeHeadcountPlanLineAction(
 	input: unknown,
 ): Promise<ActionResult<{ removed: true }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "removeHeadcountPlanLineAction",
 		permission: PLAN_PREPARE,
 		safeMessage: "Could not remove headcount plan line.",
@@ -269,7 +269,7 @@ export async function removeHeadcountPlanLineAction(
 export async function reserveHeadcountAction(
 	input: unknown,
 ): Promise<ActionResult<{ reservation: HeadcountReservation }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "reserveHeadcountAction",
 		permission: HEADCOUNT_RESERVE,
 		safeMessage: "Could not reserve headcount.",
@@ -284,7 +284,7 @@ export async function reserveHeadcountAction(
 export async function releaseHeadcountReservationAction(
 	input: unknown,
 ): Promise<ActionResult<{ reservation: HeadcountReservation }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "releaseHeadcountReservationAction",
 		permission: HEADCOUNT_RESERVE,
 		safeMessage: "Could not release headcount reservation.",
@@ -299,7 +299,7 @@ export async function releaseHeadcountReservationAction(
 export async function consumeHeadcountReservationAction(
 	input: unknown,
 ): Promise<ActionResult<{ reservation: HeadcountReservation }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "consumeHeadcountReservationAction",
 		permission: HEADCOUNT_RESERVE,
 		safeMessage: "Could not consume headcount reservation.",
@@ -314,7 +314,7 @@ export async function consumeHeadcountReservationAction(
 export async function getHeadcountPlanByIdAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: HeadcountPlan | null }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "getHeadcountPlanByIdAction",
 		permission: PLAN_READ,
 		safeMessage: "Could not get headcount plan.",
@@ -329,7 +329,7 @@ export async function getHeadcountPlanByIdAction(
 export async function listHeadcountPlansAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: HeadcountPlanListPage }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "listHeadcountPlansAction",
 		permission: PLAN_READ,
 		safeMessage: "Could not list headcount plans.",
@@ -344,7 +344,7 @@ export async function listHeadcountPlansAction(
 export async function getApprovedHeadcountPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: HeadcountPlan | null }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "getApprovedHeadcountPlanAction",
 		permission: PLAN_READ,
 		safeMessage: "Could not get approved headcount plan.",
@@ -359,7 +359,7 @@ export async function getApprovedHeadcountPlanAction(
 export async function getHeadcountAvailabilityAction(
 	input: unknown,
 ): Promise<ActionResult<{ availability: HeadcountAvailability }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "getHeadcountAvailabilityAction",
 		permission: PLAN_READ,
 		safeMessage: "Could not get headcount availability.",
@@ -374,7 +374,7 @@ export async function getHeadcountAvailabilityAction(
 export async function listHeadcountReservationsAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: HeadcountReservationListPage }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "listHeadcountReservationsAction",
 		permission: PLAN_READ,
 		safeMessage: "Could not list headcount reservations.",
@@ -389,7 +389,7 @@ export async function listHeadcountReservationsAction(
 export async function getRecruitmentHeadcountHandoffAction(
 	input: unknown,
 ): Promise<ActionResult<{ handoff: RecruitmentHeadcountHandoff | null }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "getRecruitmentHeadcountHandoffAction",
 		permission: PLAN_READ,
 		safeMessage: "Could not get recruitment headcount handoff.",
@@ -404,7 +404,7 @@ export async function getRecruitmentHeadcountHandoffAction(
 export async function getWorkforcePlanVarianceAction(
 	input: unknown,
 ): Promise<ActionResult<{ variance: WorkforcePlanVariance }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "getWorkforcePlanVarianceAction",
 		permission: PLAN_READ,
 		safeMessage: "Could not get workforce plan variance.",

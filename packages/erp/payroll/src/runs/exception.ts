@@ -23,7 +23,7 @@ import { loadPayrollRun } from "./run-helpers";
 export const PAYROLL_AGGREGATE_EXCEPTION = "exception" as const;
 export type PayrollExceptionAggregate = typeof PAYROLL_AGGREGATE_EXCEPTION;
 
-export async function recordPayrollException(
+export function recordPayrollException(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollException>> {
@@ -64,7 +64,7 @@ export async function recordPayrollException(
 	});
 }
 
-export async function listPayrollExceptionsForRun(
+export function listPayrollExceptionsForRun(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollException[]>> {

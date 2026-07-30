@@ -1,3 +1,5 @@
+// biome-ignore-all lint/suspicious/useAwait: The deterministic memory adapter implements asynchronous corporate administration ports.
+// biome-ignore-all lint/suspicious/noShadow: Domain-local callback names mirror the company records they inspect.
 import { randomUUID } from "node:crypto";
 import { fail, ok, type Result } from "@afenda/errors/result";
 import {
@@ -647,7 +649,9 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 				existing: listIdentifierRecords(input),
 				legalCompanyId: input.legalCompanyId,
 			});
-			if (!overlap.ok) return overlap;
+			if (!overlap.ok) {
+				return overlap;
+			}
 			const id = companyIdentifierIdSchema.parse(randomUUID());
 			const identifier = makeIdentifierRecord(id, input);
 			identifiers.set(id, cloneIdentifier(identifier));
@@ -685,7 +689,9 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 				ignoreCompanyIdentifierId: input.companyIdentifierId,
 				legalCompanyId: input.legalCompanyId,
 			});
-			if (!overlap.ok) return overlap;
+			if (!overlap.ok) {
+				return overlap;
+			}
 			const replacementId = companyIdentifierIdSchema.parse(randomUUID());
 			const replacement = makeIdentifierReplacementRecord(replacementId, input);
 			identifiers.set(input.companyIdentifierId, {
@@ -833,7 +839,9 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 				candidate: input.effectivePeriod,
 				existing: listFinancialYearRecords(input),
 			});
-			if (!overlap.ok) return overlap;
+			if (!overlap.ok) {
+				return overlap;
+			}
 			const id = companyFinancialYearIdSchema.parse(randomUUID());
 			const financialYear = makeFinancialYearRecord(id, input);
 			financialYears.set(id, cloneFinancialYear(financialYear));
@@ -899,7 +907,9 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 				activityCode: input.activityCode,
 				jurisdictionCode: input.jurisdictionCode,
 			});
-			if (!overlap.ok) return overlap;
+			if (!overlap.ok) {
+				return overlap;
+			}
 			const id = companyActivityIdSchema.parse(randomUUID());
 			const activity = makeActivityRecord(id, input);
 			activities.set(id, cloneActivity(activity));
@@ -984,7 +994,9 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 			const company = cloneNullable(
 				companies.get(key(input.organizationId, input.legalCompanyId)),
 			);
-			if (company === null) return ok(null);
+			if (company === null) {
+				return ok(null);
+			}
 			return ok({
 				...company,
 				currentJurisdictionProfile: findCurrentProfile({
@@ -1383,7 +1395,9 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 		const company = companies.get(
 			key(input.organizationId, input.legalCompanyId),
 		);
-		if (company === undefined) return;
+		if (company === undefined) {
+			return;
+		}
 		companies.set(key(input.organizationId, input.legalCompanyId), {
 			...company,
 			version: input.expectedVersion + 1,

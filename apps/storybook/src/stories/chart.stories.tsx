@@ -19,11 +19,16 @@ import {
 	TableRow,
 } from "@afenda/ui-system";
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import type { ReactNode } from "react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { contractDocsParameters } from "./contract-docs";
 import { contractEvidence, StorySection } from "./evidence";
 
 const evidence = contractEvidence("ui.chart");
+
+function formatChartYearLabel(label: ReactNode): ReactNode {
+	return <>{label} 2026</>;
+}
 
 const receivablesByMonth = [
 	{ month: "Apr", invoiced: 186, paid: 120 },
@@ -71,7 +76,7 @@ function ReceivablesBarChart({
 	showYAxis = false,
 }: ReceivablesChartProps) {
 	return (
-		<ChartContainer id={id} className={className} config={receivablesConfig}>
+		<ChartContainer className={className} config={receivablesConfig} id={id}>
 			<BarChart
 				accessibilityLayer
 				data={[...receivablesByMonth]}
@@ -79,9 +84,9 @@ function ReceivablesBarChart({
 			>
 				<CartesianGrid vertical={false} />
 				<XAxis
+					axisLine={false}
 					dataKey="month"
 					tickLine={false}
-					axisLine={false}
 					tickMargin={8}
 				/>
 				{showYAxis ? (
@@ -94,10 +99,10 @@ function ReceivablesBarChart({
 					/>
 				) : null}
 				<ChartTooltip
-					cursor={false}
 					content={
-						<ChartTooltipContent labelFormatter={(label) => `${label} 2026`} />
+						<ChartTooltipContent labelFormatter={formatChartYearLabel} />
 					}
+					cursor={false}
 				/>
 				<ChartLegend content={<ChartLegendContent />} />
 				<Bar dataKey="invoiced" fill="var(--color-invoiced)" radius={4} />
@@ -153,10 +158,10 @@ function EmptyChartFrame() {
 			role="status"
 		>
 			<div className="grid max-w-sm gap-1">
-				<p className="text-sm font-medium text-foreground">
+				<p className="font-medium text-foreground text-sm">
 					No receivables data for this period
 				</p>
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Change the reporting period or verify that invoices have been posted.
 				</p>
 			</div>
@@ -182,13 +187,13 @@ export const Overview: Story = {
 				<header className="grid gap-3 border-b pb-6">
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="outline">Accounts receivable</Badge>
-						<StatusBadge size="sm" status="active" label="Operational" />
+						<StatusBadge label="Operational" size="sm" status="active" />
 					</div>
 					<div className="grid gap-2">
-						<h1 className="text-2xl font-semibold tracking-tight">
+						<h1 className="font-semibold text-2xl tracking-tight">
 							How closely are collections tracking invoicing?
 						</h1>
-						<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+						<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 							Apr–Jul 2026 · MYR thousands · current organization. Feature code
 							owns authorization, aggregation, period boundaries, currency, and
 							source-of-truth selection.
@@ -211,7 +216,7 @@ export const Overview: Story = {
 							</figcaption>
 							<ReceivablesBarChart id="receivables-overview" showYAxis />
 						</figure>
-						<p className="text-sm leading-6 text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm leading-6">
 							July shows the smallest open gap at MYR 8k. That observation is a
 							follow-up signal, not evidence of cause, posting completeness, or
 							collection quality by itself.
@@ -219,15 +224,15 @@ export const Overview: Story = {
 					</CardContent>
 				</Card>
 
-				<section className="grid gap-3" aria-labelledby="exact-values-title">
+				<section aria-labelledby="exact-values-title" className="grid gap-3">
 					<div className="grid gap-1">
 						<h2
-							className="text-base font-semibold tracking-tight"
+							className="font-semibold text-base tracking-tight"
 							id="exact-values-title"
 						>
 							Exact values
 						</h2>
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							Use the tabular representation for reconciliation, posting,
 							export, and assistive-technology access to exact amounts.
 						</p>
@@ -259,10 +264,10 @@ export const Usage: Story = {
 			<StorySection title="One analytical question">
 				<div className="grid gap-3">
 					<div className="grid gap-1">
-						<p className="text-sm font-medium text-foreground">
+						<p className="font-medium text-foreground text-sm">
 							How closely are collections tracking invoicing?
 						</p>
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							Invoiced versus paid · MYR thousands · monthly · Apr–Jul 2026
 						</p>
 					</div>
@@ -271,7 +276,7 @@ export const Usage: Story = {
 			</StorySection>
 
 			<StorySection title="Declared ownership boundary">
-				<div className="grid gap-2 text-sm text-foreground-secondary">
+				<div className="grid gap-2 text-foreground-secondary text-sm">
 					<p>
 						Feature code owns query authorization, tenant scope, currency,
 						period definition, aggregation, rounding, and empty-state meaning.
@@ -301,18 +306,18 @@ export const ResponsiveLayout: Story = {
 		<div className="grid w-full max-w-5xl gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
 			<StorySection title="Wide operational panel">
 				<ReceivablesBarChart
-					id="receivables-responsive-wide"
 					className="h-72 w-full"
+					id="receivables-responsive-wide"
 					showYAxis
 				/>
 			</StorySection>
 			<StorySection title="Narrow side panel">
 				<div className="grid gap-3">
 					<ReceivablesBarChart
-						id="receivables-responsive-narrow"
 						className="h-64 w-full"
+						id="receivables-responsive-narrow"
 					/>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						Keep the same question and series meaning. Reduce secondary axis
 						decoration before removing labels, units, or the exact-value path.
 					</p>
@@ -338,21 +343,21 @@ export const StatesAndAccessibility: Story = {
 			<StorySection title="Accessible analytical figure">
 				<figure className="grid gap-4">
 					<figcaption className="grid gap-1">
-						<p className="text-base font-semibold tracking-tight">
+						<p className="font-semibold text-base tracking-tight">
 							Invoiced versus paid by month
 						</p>
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							MYR thousands · Apr–Jul 2026. Legend labels identify both series
 							independently of colour.
 						</p>
 					</figcaption>
 					<ReceivablesBarChart
-						id="receivables-accessibility"
 						className="h-64 w-full"
+						id="receivables-accessibility"
 						showYAxis
 					/>
 					<div className="grid gap-2">
-						<p className="text-sm font-medium text-foreground">
+						<p className="font-medium text-foreground text-sm">
 							Exact-value alternative
 						</p>
 						<ReceivablesTable />
@@ -365,7 +370,7 @@ export const StatesAndAccessibility: Story = {
 			</StorySection>
 
 			<StorySection title="High-contrast contract">
-				<p className="text-sm leading-6 text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm leading-6">
 					Series remain named in the legend and tooltip, grid and axis contrast
 					use semantic tokens, and exact values remain available when chart
 					colours or geometry are difficult to distinguish.
@@ -391,7 +396,7 @@ export const Composition: Story = {
 			<CardHeader>
 				<div className="flex flex-wrap items-center gap-2">
 					<Badge variant="outline">Receivables</Badge>
-					<StatusBadge size="sm" status="pending" label="Close in progress" />
+					<StatusBadge label="Close in progress" size="sm" status="pending" />
 				</div>
 				<CardTitle>How closely are collections tracking invoicing?</CardTitle>
 				<CardDescription>
@@ -400,7 +405,7 @@ export const Composition: Story = {
 			</CardHeader>
 			<CardContent className="grid gap-4">
 				<ReceivablesBarChart id="receivables-composition" showYAxis />
-				<p className="text-sm leading-6 text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm leading-6">
 					Use the pattern to select a period for investigation. Confirm exact
 					posted amounts and document status in the authoritative receivables
 					workflow before acting.
@@ -425,21 +430,21 @@ export const DoAndDoNot: Story = {
 		<div className="grid max-w-5xl gap-6 sm:grid-cols-2">
 			<StorySection title="Do: state question, metric, unit, and period">
 				<div className="grid gap-2">
-					<p className="text-sm font-medium text-foreground">
+					<p className="font-medium text-foreground text-sm">
 						How closely are collections tracking invoicing?
 					</p>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						Invoiced versus paid · MYR thousands · Apr–Jul 2026
 					</p>
 					<ReceivablesBarChart
-						id="receivables-do-contract"
 						className="h-56 w-full"
+						id="receivables-do-contract"
 					/>
 				</div>
 			</StorySection>
 
 			<StorySection title="Do not: decorate without a question">
-				<div className="rounded-md border border-dashed p-4 text-sm leading-6 text-foreground-tertiary">
+				<div className="rounded-md border border-dashed p-4 text-foreground-tertiary text-sm leading-6">
 					A colourful trend with no metric definition, unit, period, comparison
 					basis, or intended decision is decoration—not ERP analytics.
 				</div>
@@ -450,21 +455,21 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do not: treat geometry as ledger truth">
-				<div className="rounded-md border border-dashed p-4 text-sm leading-6 text-foreground-tertiary">
+				<div className="rounded-md border border-dashed p-4 text-foreground-tertiary text-sm leading-6">
 					Bar height is not a posted journal amount, audit trail, or proof of
 					cause. Authoritative figures remain in the governed domain record.
 				</div>
 			</StorySection>
 
 			<StorySection title="Do: compare compatible series">
-				<p className="text-sm leading-6 text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm leading-6">
 					Use the same organization scope, currency, aggregation grain, period
 					boundary, and accounting basis for every series in the frame.
 				</p>
 			</StorySection>
 
 			<StorySection title="Do not: mix incompatible bases">
-				<div className="rounded-md border border-dashed p-4 text-sm leading-6 text-foreground-tertiary">
+				<div className="rounded-md border border-dashed p-4 text-foreground-tertiary text-sm leading-6">
 					Do not compare MYR invoiced with USD paid, calendar months with fiscal
 					weeks, or gross values with net values without explicit normalization.
 				</div>
@@ -475,7 +480,7 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do not: silently render an empty plot">
-				<div className="rounded-md border border-dashed p-4 text-sm leading-6 text-foreground-tertiary">
+				<div className="rounded-md border border-dashed p-4 text-foreground-tertiary text-sm leading-6">
 					An empty axis does not tell operators whether there are no records,
 					filters excluded everything, access was denied, or the query failed.
 				</div>

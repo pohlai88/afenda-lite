@@ -39,11 +39,15 @@ export async function createItemBarcode(
 		rawValue: parsed.data.barcodeValue,
 		symbology: parsed.data.symbology,
 	});
-	if (!normalized.ok) return normalized;
+	if (!normalized.ok) {
+		return normalized;
+	}
 	let packQuantity: string | null = null;
 	if (parsed.data.packQuantity !== undefined) {
 		const result = normalizeBarcodePackQuantity(parsed.data.packQuantity);
-		if (!result.ok) return result;
+		if (!result.ok) {
+			return result;
+		}
 		packQuantity = result.data;
 	}
 	const { store, roots, ports, authorization } = resolveItemExtensionDeps(
@@ -63,7 +67,9 @@ export async function createItemBarcode(
 		parsed.data.organizationId,
 		parsed.data.itemId,
 	);
-	if (!parent.ok) return parent;
+	if (!parent.ok) {
+		return parent;
+	}
 	return store.createItemBarcode(
 		{
 			organizationId: parsed.data.organizationId,
@@ -90,12 +96,16 @@ export async function findItemByBarcode(
 		input,
 		"Invalid item barcode lookup input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const normalized = normalizeBarcode({
 		rawValue: parsed.data.barcodeValue,
 		symbology: parsed.data.symbology,
 	});
-	if (!normalized.ok) return normalized;
+	if (!normalized.ok) {
+		return normalized;
+	}
 
 	const { store, authorization } = resolveItemExtensionDeps(options, [
 		"findItemByBarcode",
@@ -105,7 +115,9 @@ export async function findItemByBarcode(
 		actorUserId: parsed.data.actorUserId,
 		query: MASTER_QUERY_ITEM_FIND_BY_BARCODE,
 	});
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return store.findItemByBarcode({
 		organizationId: parsed.data.organizationId,
 		symbology: parsed.data.symbology,

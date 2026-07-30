@@ -12,10 +12,10 @@ import type {
 /**
  * Persistence port for general domain audit. Production adapter: DrizzleAuditStore.
  */
-export type AuditStore = {
-	write(entry: AuditWriteInput): Promise<Result<AuditEntry>>;
-	query(options: AuditQueryOptions): Promise<Result<AuditEntry[]>>;
-	count(options: AuditQueryFilter): Promise<Result<number>>;
-	export(options: AuditExportOptions): Promise<Result<string>>;
-	purge(options: AuditPurgeOptions): Promise<Result<number>>;
-};
+export interface AuditStore {
+	count: (options: AuditQueryFilter) => Promise<Result<number>>;
+	export: (options: AuditExportOptions) => Promise<Result<string>>;
+	purge: (options: AuditPurgeOptions) => Promise<Result<number>>;
+	query: (options: AuditQueryOptions) => Promise<Result<AuditEntry[]>>;
+	write: (entry: AuditWriteInput) => Promise<Result<AuditEntry>>;
+}

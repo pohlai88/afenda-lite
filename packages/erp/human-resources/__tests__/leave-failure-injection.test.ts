@@ -27,6 +27,7 @@ import {
 	vi,
 } from "vitest";
 import { drizzleLeave } from "../src/adapters/drizzle/leave";
+// biome-ignore lint/performance/noNamespaceImport: vi.spyOn requires the live module namespace.
 import * as leaveTransactions from "../src/adapters/drizzle/leave-transactions";
 import { runDrizzleParity } from "./helpers/database-gate";
 import type {
@@ -517,7 +518,7 @@ describe.skipIf(!runDrizzleParity)("Leave Failure Injection Tests", () => {
 			vi.spyOn(leaveTransactions, "runLeaveTransaction").mockImplementation(
 				() =>
 					new Promise((_, reject) => {
-						setTimeout(() => reject(new Error("Transaction timeout")), 60000);
+						setTimeout(() => reject(new Error("Transaction timeout")), 60_000);
 					}),
 			);
 
@@ -557,7 +558,7 @@ describe.skipIf(!runDrizzleParity)("Leave Failure Injection Tests", () => {
 			]);
 
 			const elapsed = Date.now() - startTime;
-			expect(elapsed).toBeLessThan(10000); // Should timeout before 10 seconds
+			expect(elapsed).toBeLessThan(10_000); // Should timeout before 10 seconds
 			expect(result.ok).toBe(false);
 
 			// Verify no partial state exists after timeout

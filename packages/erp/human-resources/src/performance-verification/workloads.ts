@@ -75,6 +75,7 @@ async function seedEmployees(input: {
 		for (let index = 0; index < organization.count; index += 1) {
 			sequence += 1;
 			unwrap(
+				// biome-ignore lint/performance/noAwaitInLoops: Serial creation preserves deterministic fixture sequence and mutation evidence.
 				await store.createEmployee(
 					{
 						organizationId: organization.id,
@@ -105,6 +106,7 @@ async function seedEmployeeCases() {
 	for (const organization of organizations) {
 		employeeSequence += 1;
 		const employee = unwrap(
+			// biome-ignore lint/performance/noAwaitInLoops: Each organization fixture depends on deterministic prior mutation ordering.
 			await store.createEmployee(
 				{
 					organizationId: organization.id,
@@ -141,6 +143,7 @@ async function seedEmployeeCases() {
 		for (let index = 0; index < organization.count; index += 1) {
 			caseSequence += 1;
 			unwrap(
+				// biome-ignore lint/performance/noAwaitInLoops: Serial case creation preserves deterministic IDs and benchmark fixture order.
 				await store.openEmployeeCase(
 					{
 						organizationId: organization.id,
@@ -256,8 +259,8 @@ export async function createHrLocalBenchmarkWorkloads(): Promise<
 		],
 	});
 	const caseStore = await seedEmployeeCases();
-	const attendanceBatches = Array.from({ length: 4 }, (_, batchIndex) =>
-		Array.from({ length: 500 }, (_, rowIndex) => {
+	const attendanceBatches = Array.from({ length: 4 }, (_batch, batchIndex) =>
+		Array.from({ length: 500 }, (_row, rowIndex) => {
 			const index = batchIndex * 500 + rowIndex;
 			const workDay = ((index % 28) + 1).toString().padStart(2, "0");
 			return {
@@ -270,14 +273,14 @@ export async function createHrLocalBenchmarkWorkloads(): Promise<
 			};
 		}),
 	);
-	const bulkRows = Array.from({ length: 2_000 }, (_, index) => ({
+	const bulkRows = Array.from({ length: 2000 }, (_, index) => ({
 		sourceReference: `bulk-employee-${index}`,
 		payload: {
 			employeeNumber: `BULK-${index.toString().padStart(6, "0")}`,
 			legalName: `Bulk Employee ${index}`,
 		},
 	}));
-	const attendanceSessions = Array.from({ length: 2_000 }, (_, index) =>
+	const attendanceSessions = Array.from({ length: 2000 }, (_, index) =>
 		createResolvedAttendanceSession(index),
 	);
 	const lineId = unwrap(
@@ -313,7 +316,7 @@ export async function createHrLocalBenchmarkWorkloads(): Promise<
 			parseHumanResourcesEmploymentId(deterministicUuid(index + 10)),
 		),
 		employeeId: unwrap(
-			parseHumanResourcesEmployeeId(deterministicUuid(index + 1_000)),
+			parseHumanResourcesEmployeeId(deterministicUuid(index + 1000)),
 		),
 		positionId,
 		departmentId: null,
@@ -351,7 +354,7 @@ export async function createHrLocalBenchmarkWorkloads(): Promise<
 			description:
 				"Memory store tenant/status employee-case list over 1,000 rows",
 			implementation: "real_memory_api",
-			fixtureSize: 1_000,
+			fixtureSize: 1000,
 			thresholdP95Ms: HR_LOCAL_BENCHMARK_THRESHOLDS_MS.case_lists,
 			async run() {
 				const cases = unwrap(
@@ -377,7 +380,7 @@ export async function createHrLocalBenchmarkWorkloads(): Promise<
 			description:
 				"Real timesheet-generation projection over 2,000 resolved sessions",
 			implementation: "real_domain_kernel",
-			fixtureSize: 2_000,
+			fixtureSize: 2000,
 			thresholdP95Ms: HR_LOCAL_BENCHMARK_THRESHOLDS_MS.timesheet_generation,
 			run() {
 				let entryCount = 0;
@@ -396,7 +399,7 @@ export async function createHrLocalBenchmarkWorkloads(): Promise<
 			description:
 				"Real attendance import namespacing, deduplication and fingerprint kernels over 2,000 events",
 			implementation: "real_domain_kernel",
-			fixtureSize: 2_000,
+			fixtureSize: 2000,
 			thresholdP95Ms: HR_LOCAL_BENCHMARK_THRESHOLDS_MS.attendance_import,
 			run() {
 				const seenReferences = new Set<string>();
@@ -407,7 +410,9 @@ export async function createHrLocalBenchmarkWorkloads(): Promise<
 							"local-benchmark",
 							event.sourceReference,
 						);
-						if (seenReferences.has(sourceReference)) continue;
+						if (seenReferences.has(sourceReference)) {
+							continue;
+						}
 						seenReferences.add(sourceReference);
 						fingerprintBytes += buildImportEventFingerprint({
 							employeeId: event.employeeId,
@@ -430,13 +435,14 @@ export async function createHrLocalBenchmarkWorkloads(): Promise<
 			name: "bulk_employee_import",
 			description: "Real HR bulk employee dry-run pipeline over 2,000 rows",
 			implementation: "real_domain_kernel",
-			fixtureSize: 2_000,
+			fixtureSize: 2000,
 			thresholdP95Ms: HR_LOCAL_BENCHMARK_THRESHOLDS_MS.bulk_employee_import,
 			async run() {
 				let accepted = 0;
 				for (let batchIndex = 0; batchIndex < 4; batchIndex += 1) {
 					const rows = bulkRows.slice(batchIndex * 500, (batchIndex + 1) * 500);
 					const result = unwrap(
+						// biome-ignore lint/performance/noAwaitInLoops: Batch order is part of the controlled bulk pipeline workload.
 						await runEmployeeBulkImport(
 							{
 								organizationId: ORGANIZATION_ID,
@@ -535,7 +541,7 @@ export async function createHrLocalBenchmarkWorkloads(): Promise<
 			description:
 				"Memory store tenant-isolated employee page over 1,000 cross-tenant rows",
 			implementation: "real_memory_api",
-			fixtureSize: 1_000,
+			fixtureSize: 1000,
 			thresholdP95Ms: HR_LOCAL_BENCHMARK_THRESHOLDS_MS.large_tenant_isolation,
 			async run() {
 				const orgA = unwrap(

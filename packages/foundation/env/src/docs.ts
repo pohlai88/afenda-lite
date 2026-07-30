@@ -7,6 +7,10 @@
 import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
 
+const TRAILING_DOT_PATTERN = /\.$/;
+const PRIVATE_KEY_PATTERN =
+	/^-----BEGIN (?:RSA )?PRIVATE KEY-----[\s\S]+-----END (?:RSA )?PRIVATE KEY-----$/;
+
 const runtimeCtx = {
 	nodeEnv: process.env.NODE_ENV,
 	vercelEnv: process.env.VERCEL_ENV,
@@ -43,7 +47,10 @@ function isOriginUrl(value: string): boolean {
 }
 
 function isLocalHostname(hostname: string): boolean {
-	const normalized = hostname.trim().toLowerCase().replace(/\.$/, "");
+	const normalized = hostname
+		.trim()
+		.toLowerCase()
+		.replace(TRAILING_DOT_PATTERN, "");
 	return (
 		normalized === "localhost" ||
 		normalized === "127.0.0.1" ||
@@ -72,15 +79,9 @@ const githubAppPrivateKeySchema = z
 	.trim()
 	.min(1)
 	.transform((value) => value.replace(/\\n/g, "\n"))
-	.refine(
-		(value) =>
-			/^-----BEGIN (?:RSA )?PRIVATE KEY-----[\s\S]+-----END (?:RSA )?PRIVATE KEY-----$/.test(
-				value,
-			),
-		{
-			message: "GITHUB_APP_PRIVATE_KEY must be a valid PEM private key.",
-		},
-	);
+	.refine((value) => PRIVATE_KEY_PATTERN.test(value), {
+		message: "GITHUB_APP_PRIVATE_KEY must be a valid PEM private key.",
+	});
 
 /**
  * Typed environment contract for `@afenda/docs`.

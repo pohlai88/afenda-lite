@@ -91,6 +91,13 @@ import {
 	type PerformanceCycleReviewPeriodKind,
 	type PerformanceWeightingModel,
 } from "../../shared/performance-status";
+import { isResultFailure } from "../../shared/result-guards";
+import { runRollbacks } from "../../shared/rollback";
+import {
+	runSequential,
+	sequentialContinue,
+	sequentialReturn,
+} from "../../shared/run-sequential";
 import type {
 	HumanResourcesStore,
 	IdempotentImprovementPlanRecord,
@@ -125,29 +132,29 @@ import {
 	PERFORMANCE_REVIEW_SELF_SEQUENCE,
 } from "../../types";
 
-export type PerformanceMemoryState = {
-	cycles: Map<HumanResourcesPerformanceCycleId, PerformanceCycle>;
+export interface PerformanceMemoryState {
+	assessments: Map<string, PerformanceAssessment>;
+	checkpoints: Map<string, PerformanceImprovementCheckpoint>;
+	cycleEligibility: Map<string, PerformanceCycleEligibility>;
 	cycleIdempotency: Map<string, IdempotentPerformanceCycleRecord>;
 	cycleParticipants: Map<
 		HumanResourcesPerformanceCycleParticipantId,
 		PerformanceCycleParticipant
 	>;
 	cycleReviewPeriods: Map<string, PerformanceCycleReviewPeriod[]>;
-	cycleEligibility: Map<string, PerformanceCycleEligibility>;
-	goals: Map<HumanResourcesGoalId, PerformanceGoal>;
+	cycles: Map<HumanResourcesPerformanceCycleId, PerformanceCycle>;
 	goalIdempotency: Map<string, IdempotentPerformanceGoalRecord>;
 	goalProgress: Map<string, PerformanceGoalProgress>;
-	reviews: Map<HumanResourcesReviewId, PerformanceReview>;
-	reviewFinalizeIdempotency: Map<string, PerformanceReview>;
-	reviewParticipants: Map<string, PerformanceReviewParticipant>;
-	assessments: Map<string, PerformanceAssessment>;
+	goals: Map<HumanResourcesGoalId, PerformanceGoal>;
 	improvementPlans: Map<
 		HumanResourcesImprovementPlanId,
 		PerformanceImprovementPlan
 	>;
 	planIdempotency: Map<string, IdempotentImprovementPlanRecord>;
-	checkpoints: Map<string, PerformanceImprovementCheckpoint>;
-};
+	reviewFinalizeIdempotency: Map<string, PerformanceReview>;
+	reviewParticipants: Map<string, PerformanceReviewParticipant>;
+	reviews: Map<HumanResourcesReviewId, PerformanceReview>;
+}
 
 export type MemoryPerformanceHost = Pick<
 	HumanResourcesStore,
@@ -322,7 +329,7 @@ async function recordAudit(
 		action: "CREATE" | "UPDATE";
 	},
 ): Promise<Result<{ id: string }>> {
-	return ports.audit.record({
+	return await ports.audit.record({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: meta.correlationId,
@@ -344,7 +351,7 @@ async function recordOutbox(
 		entityId: string;
 	},
 ): Promise<Result<{ id: string }>> {
-	return ports.outbox.append({
+	return await ports.outbox.append({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: meta.correlationId,
@@ -387,6 +394,31 @@ function getGoal(
 		);
 	}
 	return ok(goal);
+}
+
+function validateApprovedGoalWeightTotal(
+	state: PerformanceMemoryState,
+	goal: PerformanceGoal,
+	cycle: PerformanceCycle,
+): Result<void> {
+	if (cycle.weightingModel !== "percent100") {
+		return ok(undefined);
+	}
+	const relatedGoals = Array.from(state.goals.values()).filter(
+		(item) =>
+			item.organizationId === goal.organizationId &&
+			item.cycleId === goal.cycleId &&
+			item.employeeId === goal.employeeId &&
+			item.id !== goal.id,
+	);
+	if (relatedGoals.some((item) => item.status === "submitted")) {
+		return ok(undefined);
+	}
+	const weights = [goal, ...relatedGoals]
+		.filter((item) => item.status === "approved" || item.status === "active")
+		.map((item) => item.weight)
+		.filter((weight): weight is string => weight !== null);
+	return assertGoalWeightsSumTo100(weights);
 }
 
 function getReview(
@@ -533,9 +565,9 @@ function buildPerformanceMemoryMethods(
 		}): Promise<Result<PerformanceCycle | null>> {
 			const cycle = state.cycles.get(input.cycleId);
 			if (!cycle || cycle.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok(cloneCycle(cycle));
+			return await ok(cloneCycle(cycle));
 		},
 
 		async findPerformanceCycleByIdempotencyKey(input: {
@@ -546,9 +578,9 @@ function buildPerformanceMemoryMethods(
 				idemKey(input.organizationId, input.idempotencyKey),
 			);
 			if (!record) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({
+			return await ok({
 				cycle: cloneCycle(record.cycle),
 				createRequestFingerprint: record.createRequestFingerprint,
 			});
@@ -572,9 +604,9 @@ function buildPerformanceMemoryMethods(
 			}
 
 			const duplicate = Array.from(state.cycles.values()).find(
-				(cycle) =>
-					cycle.organizationId === record.organizationId &&
-					cycle.code === record.code,
+				(cycleValue) =>
+					cycleValue.organizationId === record.organizationId &&
+					cycleValue.code === record.code,
 			);
 			if (duplicate) {
 				return fail(
@@ -641,11 +673,11 @@ function buildPerformanceMemoryMethods(
 			input: {
 				organizationId: string;
 				cycleId: HumanResourcesPerformanceCycleId;
-				name?: string;
-				periodStart?: string;
-				periodEnd?: string;
-				ratingScale?: PerformanceRatingScale;
-				weightingModel?: PerformanceWeightingModel;
+				name?: string | undefined;
+				periodStart?: string | undefined;
+				periodEnd?: string | undefined;
+				ratingScale?: PerformanceRatingScale | undefined;
+				weightingModel?: PerformanceWeightingModel | undefined;
 				expectedVersion: number;
 				actorUserId: string;
 			},
@@ -675,7 +707,7 @@ function buildPerformanceMemoryMethods(
 				return periodCheck;
 			}
 
-			let ratingScale = cycle.ratingScale;
+			let { ratingScale } = cycle;
 			if (input.ratingScale !== undefined) {
 				const scaleCheck = assertRatingScaleUniqueCodes(input.ratingScale);
 				if (!scaleCheck.ok) {
@@ -844,7 +876,7 @@ function buildPerformanceMemoryMethods(
 				action: "UPDATE",
 			});
 			if (!audit.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return audit;
 			}
 
@@ -856,7 +888,7 @@ function buildPerformanceMemoryMethods(
 				entityId: updated.id,
 			});
 			if (!outbox.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return outbox;
 			}
 
@@ -1067,7 +1099,7 @@ function buildPerformanceMemoryMethods(
 				action: "UPDATE",
 			});
 			if (!audit.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return audit;
 			}
 
@@ -1080,9 +1112,9 @@ function buildPerformanceMemoryMethods(
 		}): Promise<Result<PerformanceCycleReviewPeriod[]>> {
 			const cycle = getCycle(state, input.organizationId, input.cycleId);
 			if (!cycle.ok) {
-				return cycle;
+				return await cycle;
 			}
-			return ok(
+			return await ok(
 				reviewPeriodsForCycle(state, input.organizationId, input.cycleId).map(
 					(period) => ({ ...period }),
 				),
@@ -1166,7 +1198,7 @@ function buildPerformanceMemoryMethods(
 				action: existing ? "UPDATE" : "CREATE",
 			});
 			if (!audit.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return audit;
 			}
 
@@ -1179,14 +1211,14 @@ function buildPerformanceMemoryMethods(
 		}): Promise<Result<PerformanceCycleEligibility | null>> {
 			const cycle = getCycle(state, input.organizationId, input.cycleId);
 			if (!cycle.ok) {
-				return cycle;
+				return await cycle;
 			}
 			const eligibility = eligibilityForCycle(
 				state,
 				input.organizationId,
 				input.cycleId,
 			);
-			return ok(eligibility === null ? null : { ...eligibility });
+			return await ok(eligibility === null ? null : { ...eligibility });
 		},
 
 		async enrollEligibleCycleParticipants(
@@ -1222,10 +1254,9 @@ function buildPerformanceMemoryMethods(
 			}
 
 			const enrolled: PerformanceCycleParticipant[] = [];
-			let page = 1;
 			const pageSize = 100;
 
-			while (true) {
+			const enrollPage = async (page: number): Promise<Result<void>> => {
 				const employees = await this.listEmployees({
 					organizationId: input.organizationId,
 					page,
@@ -1235,74 +1266,91 @@ function buildPerformanceMemoryMethods(
 					return employees;
 				}
 				if (employees.data.employees.length === 0) {
-					break;
+					return ok(undefined);
 				}
 
-				for (const employee of employees.data.employees) {
-					const employments = await this.listEmploymentsByEmployee({
-						organizationId: input.organizationId,
-						employeeId: employee.id,
-					});
-					if (!employments.ok) {
-						return employments;
-					}
-
-					for (const employmentRef of employments.data) {
-						const employment = await this.getEmploymentById({
+				const sequentialOuterOutcome1 = await runSequential(
+					employees.data.employees,
+					async (employee) => {
+						const employments = await this.listEmploymentsByEmployee({
 							organizationId: input.organizationId,
-							employmentId: employmentRef.id,
+							employeeId: employee.id,
 						});
-						if (!employment.ok) {
-							return employment;
-						}
-						if (employment.data === null) {
-							continue;
-						}
-						if (
-							!isEmploymentEligibleForPerformanceCycle({
-								eligibility,
-								employmentStatus: employment.data.status,
-								tenureDays: tenureDaysOn(
-									employment.data.startsOn,
-									input.asOfDate,
-								),
-							})
-						) {
-							continue;
+						if (!employments.ok) {
+							return sequentialReturn(employments);
 						}
 
-						const added = await this.addCycleParticipant(
-							{
-								organizationId: input.organizationId,
-								cycleId: input.cycleId,
-								employeeId: employee.id,
-								employmentId: employmentRef.id,
-								asOfDate: input.asOfDate,
-								actorUserId: input.actorUserId,
+						const sequentialOutcome1 = await runSequential(
+							employments.data,
+							async (employmentRef) => {
+								const employment = await this.getEmploymentById({
+									organizationId: input.organizationId,
+									employmentId: employmentRef.id,
+								});
+								if (!employment.ok) {
+									return sequentialReturn(employment);
+								}
+								if (employment.data === null) {
+									return sequentialContinue();
+								}
+								if (
+									!isEmploymentEligibleForPerformanceCycle({
+										eligibility,
+										employmentStatus: employment.data.status,
+										tenureDays: tenureDaysOn(
+											employment.data.startsOn,
+											input.asOfDate,
+										),
+									})
+								) {
+									return sequentialContinue();
+								}
+
+								const added = await this.addCycleParticipant(
+									{
+										organizationId: input.organizationId,
+										cycleId: input.cycleId,
+										employeeId: employee.id,
+										employmentId: employmentRef.id,
+										asOfDate: input.asOfDate,
+										actorUserId: input.actorUserId,
+									},
+									ports,
+									meta,
+								);
+								if (!added.ok) {
+									if (
+										added.code === "CONFLICT" &&
+										added.message ===
+											"Participant is already active in this cycle"
+									) {
+										return sequentialContinue();
+									}
+									return sequentialReturn(added);
+								}
+								enrolled.push(added.data);
 							},
-							ports,
-							meta,
 						);
-						if (!added.ok) {
-							if (
-								added.code === "CONFLICT" &&
-								added.message === "Participant is already active in this cycle"
-							) {
-								continue;
-							}
-							return added;
+						if (sequentialOutcome1.kind === "return") {
+							return sequentialReturn(sequentialOutcome1.value);
 						}
-						enrolled.push(added.data);
-					}
+					},
+				);
+				if (sequentialOuterOutcome1.kind === "return") {
+					return sequentialOuterOutcome1.value;
 				}
 
 				if (
 					page * pageSize >= employees.data.totalCount ||
 					employees.data.employees.length < pageSize
 				) {
-					break;
+					return ok(undefined);
 				}
-				page += 1;
+				return enrollPage(page + 1);
+			};
+			const enrollment = await enrollPage(1);
+			if (!enrollment.ok) {
+				return enrollment;
 			}
 
 			return ok(enrolled);
@@ -1314,7 +1362,7 @@ function buildPerformanceMemoryMethods(
 				cycleId: HumanResourcesPerformanceCycleId;
 				employeeId: HumanResourcesEmployeeId;
 				employmentId: HumanResourcesEmploymentId;
-				asOfDate?: string;
+				asOfDate?: string | undefined;
 				actorUserId: string;
 			},
 			ports: MutationPorts,
@@ -1374,10 +1422,10 @@ function buildPerformanceMemoryMethods(
 			}
 
 			const existing = Array.from(state.cycleParticipants.values()).find(
-				(participant) =>
-					participant.organizationId === input.organizationId &&
-					participant.cycleId === input.cycleId &&
-					participant.employmentId === input.employmentId,
+				(participantValue2) =>
+					participantValue2.organizationId === input.organizationId &&
+					participantValue2.cycleId === input.cycleId &&
+					participantValue2.employmentId === input.employmentId,
 			);
 
 			const now = new Date();
@@ -1509,7 +1557,7 @@ function buildPerformanceMemoryMethods(
 			organizationId: string;
 			page: number;
 			pageSize: number;
-			status?: PerformanceCycle["status"];
+			status?: PerformanceCycle["status"] | undefined;
 		}): Promise<Result<PerformanceCycleListPage>> {
 			let filtered = Array.from(state.cycles.values()).filter(
 				(cycle) => cycle.organizationId === input.organizationId,
@@ -1523,7 +1571,7 @@ function buildPerformanceMemoryMethods(
 			const cycles = filtered
 				.slice(start, start + input.pageSize)
 				.map((cycle) => cloneCycle(cycle));
-			return ok({
+			return await ok({
 				cycles,
 				totalCount,
 				page: input.page,
@@ -1540,7 +1588,7 @@ function buildPerformanceMemoryMethods(
 				input.organizationId,
 				input.cycleId,
 			).map((participant) => ({ ...participant }));
-			return ok(participants);
+			return await ok(participants);
 		},
 
 		async getPerformanceGoalById(input: {
@@ -1549,9 +1597,9 @@ function buildPerformanceMemoryMethods(
 		}): Promise<Result<PerformanceGoal | null>> {
 			const goal = state.goals.get(input.goalId);
 			if (!goal || goal.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...goal });
+			return await ok({ ...goal });
 		},
 
 		async findPerformanceGoalByIdempotencyKey(input: {
@@ -1562,9 +1610,9 @@ function buildPerformanceMemoryMethods(
 				idemKey(input.organizationId, input.idempotencyKey),
 			);
 			if (!record) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({
+			return await ok({
 				goal: { ...record.goal },
 				createRequestFingerprint: record.createRequestFingerprint,
 			});
@@ -1688,7 +1736,9 @@ function buildPerformanceMemoryMethods(
 							record.organizationId,
 							parentId as HumanResourcesGoalId,
 						);
-						if (!resolved.ok) return null;
+						if (!resolved.ok) {
+							return null;
+						}
 						return {
 							id: resolved.data.id,
 							alignedToGoalId: resolved.data.alignedToGoalId,
@@ -1726,11 +1776,11 @@ function buildPerformanceMemoryMethods(
 			input: {
 				organizationId: string;
 				goalId: HumanResourcesGoalId;
-				title?: string;
-				description?: string | null;
-				weight?: string | null;
-				periodStart?: string;
-				periodEnd?: string;
+				title?: string | undefined;
+				description?: string | null | undefined;
+				weight?: string | null | undefined;
+				periodStart?: string | undefined;
+				periodEnd?: string | undefined;
 				expectedVersion: number;
 				actorUserId: string;
 			},
@@ -1777,10 +1827,10 @@ function buildPerformanceMemoryMethods(
 				...goal,
 				title: input.title ?? goal.title,
 				description:
-					input.description !== undefined
-						? input.description
-						: goal.description,
-				weight: input.weight !== undefined ? input.weight : goal.weight,
+					input.description === undefined
+						? goal.description
+						: input.description,
+				weight: input.weight === undefined ? goal.weight : input.weight,
 				periodStart,
 				periodEnd,
 				version: goal.version + 1,
@@ -1816,24 +1866,24 @@ function buildPerformanceMemoryMethods(
 		): Promise<Result<PerformanceGoal>> {
 			const current = getGoal(state, input.organizationId, input.goalId);
 			if (!current.ok) {
-				return current;
+				return await current;
 			}
 			const goal = current.data;
 			if (goal.goalKind === "manager") {
-				return invalidState("Manager-assigned goals cannot be submitted");
+				return await invalidState("Manager-assigned goals cannot be submitted");
 			}
 			const cycleResult = getCycle(state, goal.organizationId, goal.cycleId);
 			if (!cycleResult.ok) {
-				return cycleResult;
+				return await cycleResult;
 			}
 			const weightCheck = assertGoalWeightForModel({
 				weight: goal.weight,
 				weightingModel: cycleResult.data.weightingModel,
 			});
 			if (!weightCheck.ok) {
-				return weightCheck;
+				return await weightCheck;
 			}
-			return transitionGoalStatus(
+			return await transitionGoalStatus(
 				state,
 				ports,
 				meta,
@@ -1887,32 +1937,14 @@ function buildPerformanceMemoryMethods(
 			};
 			state.goals.set(updated.id, updated);
 
-			if (cycle.weightingModel === "percent100") {
-				const hasPendingSubmitted = Array.from(state.goals.values()).some(
-					(item) =>
-						item.organizationId === goal.organizationId &&
-						item.cycleId === goal.cycleId &&
-						item.employeeId === goal.employeeId &&
-						item.id !== goal.id &&
-						item.status === "submitted",
-				);
-				if (!hasPendingSubmitted) {
-					const weights = Array.from(state.goals.values())
-						.filter(
-							(item) =>
-								item.organizationId === goal.organizationId &&
-								item.cycleId === goal.cycleId &&
-								item.employeeId === goal.employeeId &&
-								(item.status === "approved" || item.status === "active"),
-						)
-						.map((item) => item.weight)
-						.filter((weight): weight is string => weight !== null);
-					const weightCheck = assertGoalWeightsSumTo100(weights);
-					if (!weightCheck.ok) {
-						state.goals.set(previous.id, previous);
-						return weightCheck;
-					}
-				}
+			const weightCheck = validateApprovedGoalWeightTotal(
+				state,
+				updated,
+				cycle,
+			);
+			if (!weightCheck.ok) {
+				state.goals.set(previous.id, previous);
+				return weightCheck;
 			}
 
 			const rollback: Array<() => void> = [
@@ -1927,7 +1959,7 @@ function buildPerformanceMemoryMethods(
 				action: "UPDATE",
 			});
 			if (!audit.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return audit;
 			}
 
@@ -1939,7 +1971,7 @@ function buildPerformanceMemoryMethods(
 				entityId: updated.id,
 			});
 			if (!outbox.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return outbox;
 			}
 
@@ -1956,7 +1988,7 @@ function buildPerformanceMemoryMethods(
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceGoal>> {
-			return transitionGoalStatus(
+			return await transitionGoalStatus(
 				state,
 				ports,
 				meta,
@@ -2032,7 +2064,7 @@ function buildPerformanceMemoryMethods(
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceGoal>> {
-			return transitionGoalStatus(
+			return await transitionGoalStatus(
 				state,
 				ports,
 				meta,
@@ -2070,7 +2102,7 @@ function buildPerformanceMemoryMethods(
 				input.alignedToGoalId === null
 					? ok(null)
 					: getGoal(state, input.organizationId, input.alignedToGoalId);
-			if (!parent.ok) {
+			if (isResultFailure(parent)) {
 				return parent;
 			}
 			const alignment = assertGoalAlignment({
@@ -2092,7 +2124,9 @@ function buildPerformanceMemoryMethods(
 						input.organizationId,
 						parentId as HumanResourcesGoalId,
 					);
-					if (!resolved.ok) return null;
+					if (!resolved.ok) {
+						return null;
+					}
 					return {
 						id: resolved.data.id,
 						alignedToGoalId: resolved.data.alignedToGoalId,
@@ -2196,7 +2230,7 @@ function buildPerformanceMemoryMethods(
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceGoal>> {
-			return transitionGoalStatus(
+			return await transitionGoalStatus(
 				state,
 				ports,
 				meta,
@@ -2223,7 +2257,7 @@ function buildPerformanceMemoryMethods(
 			const progress = filtered
 				.slice(start, start + input.pageSize)
 				.map((entry) => ({ ...entry }));
-			return ok({
+			return await ok({
 				progress,
 				totalCount,
 				page: input.page,
@@ -2236,7 +2270,7 @@ function buildPerformanceMemoryMethods(
 			employeeId: HumanResourcesEmployeeId;
 			page: number;
 			pageSize: number;
-			status?: PerformanceGoal["status"];
+			status?: PerformanceGoal["status"] | undefined;
 		}): Promise<Result<PerformanceGoalListPage>> {
 			let filtered = Array.from(state.goals.values()).filter(
 				(goal) =>
@@ -2252,7 +2286,7 @@ function buildPerformanceMemoryMethods(
 			const goals = filtered
 				.slice(start, start + input.pageSize)
 				.map((goal) => ({ ...goal }));
-			return ok({
+			return await ok({
 				goals,
 				totalCount,
 				page: input.page,
@@ -2307,10 +2341,10 @@ function buildPerformanceMemoryMethods(
 			}
 
 			const duplicate = Array.from(state.reviews.values()).find(
-				(review) =>
-					review.organizationId === input.organizationId &&
-					review.cycleId === input.cycleId &&
-					review.employeeId === input.employeeId,
+				(reviewValue) =>
+					reviewValue.organizationId === input.organizationId &&
+					reviewValue.cycleId === input.cycleId &&
+					reviewValue.employeeId === input.employeeId,
 			);
 			if (duplicate) {
 				return conflict(
@@ -2351,10 +2385,12 @@ function buildPerformanceMemoryMethods(
 			const selfAssessmentId = newBrandId(humanResourcesAssessmentIdSchema);
 			const managerAssessmentId = newBrandId(humanResourcesAssessmentIdSchema);
 			if (
-				!selfParticipantId.ok ||
-				!managerParticipantId.ok ||
-				!selfAssessmentId.ok ||
-				!managerAssessmentId.ok
+				!(
+					selfParticipantId.ok &&
+					managerParticipantId.ok &&
+					selfAssessmentId.ok &&
+					managerAssessmentId.ok
+				)
 			) {
 				state.reviews.delete(review.id);
 				return fail(
@@ -2444,7 +2480,7 @@ function buildPerformanceMemoryMethods(
 				action: "CREATE",
 			});
 			if (!audit.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return audit;
 			}
 
@@ -2464,7 +2500,7 @@ function buildPerformanceMemoryMethods(
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceReview>> {
-			return submitAssessment(
+			return await submitAssessment(
 				state,
 				ports,
 				meta,
@@ -2493,14 +2529,14 @@ function buildPerformanceMemoryMethods(
 				input.reviewId,
 			);
 			if (!reviewResult.ok) {
-				return reviewResult;
+				return await reviewResult;
 			}
 			if (input.managerEmployeeId === reviewResult.data.employeeId) {
-				return invalidInput(
+				return await invalidInput(
 					"Manager cannot be the same as the review employee",
 				);
 			}
-			return submitAssessment(
+			return await submitAssessment(
 				state,
 				ports,
 				meta,
@@ -2547,7 +2583,8 @@ function buildPerformanceMemoryMethods(
 			const participants = participantsForReview(state, review.id);
 			if (
 				participants.some(
-					(participant) => participant.employeeId === input.delegatedEmployeeId,
+					(participantValue) =>
+						participantValue.employeeId === input.delegatedEmployeeId,
 				)
 			) {
 				return conflict("Employee is already a review participant");
@@ -2555,7 +2592,7 @@ function buildPerformanceMemoryMethods(
 
 			const participantId = newBrandId(humanResourcesReviewParticipantIdSchema);
 			const assessmentId = newBrandId(humanResourcesAssessmentIdSchema);
-			if (!participantId.ok || !assessmentId.ok) {
+			if (!(participantId.ok && assessmentId.ok)) {
 				return fail(
 					"INTERNAL_ERROR",
 					"Could not create delegated reviewer",
@@ -2620,7 +2657,7 @@ function buildPerformanceMemoryMethods(
 				action: "UPDATE",
 			});
 			if (!audit.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return audit;
 			}
 
@@ -2743,7 +2780,7 @@ function buildPerformanceMemoryMethods(
 				action: "UPDATE",
 			});
 			if (!audit.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return audit;
 			}
 
@@ -2840,7 +2877,7 @@ function buildPerformanceMemoryMethods(
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceReview>> {
-			return transitionReviewStatus(
+			return await transitionReviewStatus(
 				state,
 				ports,
 				meta,
@@ -2992,10 +3029,10 @@ function buildPerformanceMemoryMethods(
 			const managerAssessment = reviewAssessments.find(
 				(assessment) => assessment.kind === "manager",
 			);
-			if (!selfAssessment || !managerAssessment) {
+			if (!(selfAssessment && managerAssessment)) {
 				return invalidState("Review is missing required assessments");
 			}
-			if (!selfAssessment.submittedAt || !managerAssessment.submittedAt) {
+			if (!(selfAssessment.submittedAt && managerAssessment.submittedAt)) {
 				return invalidState(
 					"Both self and manager assessments must be submitted",
 				);
@@ -3030,7 +3067,7 @@ function buildPerformanceMemoryMethods(
 				action: "UPDATE",
 			});
 			if (!audit.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return audit;
 			}
 
@@ -3042,7 +3079,7 @@ function buildPerformanceMemoryMethods(
 				entityId: updated.id,
 			});
 			if (!outbox.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return outbox;
 			}
 
@@ -3105,7 +3142,7 @@ function buildPerformanceMemoryMethods(
 				action: "UPDATE",
 			});
 			if (!audit.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return audit;
 			}
 
@@ -3117,7 +3154,7 @@ function buildPerformanceMemoryMethods(
 				entityId: updated.id,
 			});
 			if (!outbox.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return outbox;
 			}
 
@@ -3131,7 +3168,7 @@ function buildPerformanceMemoryMethods(
 		}): Promise<Result<PerformanceReviewDetail | null>> {
 			const review = state.reviews.get(input.reviewId);
 			if (!review || review.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
 			const detail = projectPerformanceReviewDetailForReader(
 				{
@@ -3141,7 +3178,7 @@ function buildPerformanceMemoryMethods(
 				},
 				input.includeConfidential,
 			);
-			return ok(detail);
+			return await ok(detail);
 		},
 
 		async listEmployeePerformanceReviews(input: {
@@ -3164,7 +3201,7 @@ function buildPerformanceMemoryMethods(
 				filtered.slice(start, start + input.pageSize),
 				input.includeConfidential,
 			);
-			return ok({
+			return await ok({
 				reviews,
 				totalCount,
 				page: input.page,
@@ -3197,7 +3234,7 @@ function buildPerformanceMemoryMethods(
 			const reviews = filtered
 				.slice(start, start + input.pageSize)
 				.map((review) => ({ ...review }));
-			return ok({
+			return await ok({
 				reviews,
 				totalCount,
 				page: input.page,
@@ -3211,9 +3248,9 @@ function buildPerformanceMemoryMethods(
 		}): Promise<Result<PerformanceImprovementPlan | null>> {
 			const plan = state.improvementPlans.get(input.planId);
 			if (!plan || plan.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...plan });
+			return await ok({ ...plan });
 		},
 
 		async findImprovementPlanByIdempotencyKey(input: {
@@ -3224,9 +3261,9 @@ function buildPerformanceMemoryMethods(
 				idemKey(input.organizationId, input.idempotencyKey),
 			);
 			if (!record) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({
+			return await ok({
 				plan: { ...record.plan },
 				createRequestFingerprint: record.createRequestFingerprint,
 			});
@@ -3317,7 +3354,7 @@ function buildPerformanceMemoryMethods(
 					humanResourcesImprovementCheckpointIdSchema,
 				);
 				if (!checkpointId.ok) {
-					for (const undo of rollback) undo();
+					runRollbacks(rollback);
 					for (const checkpointIdToDelete of createdCheckpointIds) {
 						state.checkpoints.delete(checkpointIdToDelete);
 					}
@@ -3350,7 +3387,7 @@ function buildPerformanceMemoryMethods(
 				action: "CREATE",
 			});
 			if (!audit.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return audit;
 			}
 
@@ -3409,7 +3446,7 @@ function buildPerformanceMemoryMethods(
 				action: "UPDATE",
 			});
 			if (!audit.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return audit;
 			}
 
@@ -3421,7 +3458,7 @@ function buildPerformanceMemoryMethods(
 				entityId: updated.id,
 			});
 			if (!outbox.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return outbox;
 			}
 
@@ -3438,7 +3475,7 @@ function buildPerformanceMemoryMethods(
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceImprovementPlan>> {
-			return transitionPlanStatus(
+			return await transitionPlanStatus(
 				state,
 				ports,
 				meta,
@@ -3518,13 +3555,13 @@ function buildPerformanceMemoryMethods(
 			input: {
 				organizationId: string;
 				planId: HumanResourcesImprovementPlanId;
-				performanceGap?: string;
-				expectedOutcome?: string;
-				measurableActions?: string;
-				supportResources?: string;
-				dueDate?: string;
-				extensionReason?: string;
-				extensionEvidenceReference?: string | null;
+				performanceGap?: string | undefined;
+				expectedOutcome?: string | undefined;
+				measurableActions?: string | undefined;
+				supportResources?: string | undefined;
+				dueDate?: string | undefined;
+				extensionReason?: string | undefined;
+				extensionEvidenceReference?: string | null | undefined;
 				expectedVersion: number;
 				actorUserId: string;
 			},
@@ -3583,21 +3620,21 @@ function buildPerformanceMemoryMethods(
 			const updated: PerformanceImprovementPlan = {
 				...plan,
 				performanceGap:
-					input.performanceGap !== undefined
-						? input.performanceGap
-						: plan.performanceGap,
+					input.performanceGap === undefined
+						? plan.performanceGap
+						: input.performanceGap,
 				expectedOutcome:
-					input.expectedOutcome !== undefined
-						? input.expectedOutcome
-						: plan.expectedOutcome,
+					input.expectedOutcome === undefined
+						? plan.expectedOutcome
+						: input.expectedOutcome,
 				measurableActions:
-					input.measurableActions !== undefined
-						? input.measurableActions
-						: plan.measurableActions,
+					input.measurableActions === undefined
+						? plan.measurableActions
+						: input.measurableActions,
 				supportResources:
-					input.supportResources !== undefined
-						? input.supportResources
-						: plan.supportResources,
+					input.supportResources === undefined
+						? plan.supportResources
+						: input.supportResources,
 				dueDate: nextDueDate,
 				lastExtensionReason: extending
 					? (input.extensionReason ?? null)
@@ -3624,7 +3661,8 @@ function buildPerformanceMemoryMethods(
 				}
 				const nextSequence =
 					existingCheckpoints.reduce(
-						(max, checkpoint) => Math.max(max, checkpoint.sequenceNumber),
+						(max, checkpointValue) =>
+							Math.max(max, checkpointValue.sequenceNumber),
 						0,
 					) + 1;
 				const checkpoint: PerformanceImprovementCheckpoint = {
@@ -3653,7 +3691,7 @@ function buildPerformanceMemoryMethods(
 				action: "UPDATE",
 			});
 			if (!audit.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return audit;
 			}
 
@@ -3666,8 +3704,8 @@ function buildPerformanceMemoryMethods(
 				planId: HumanResourcesImprovementPlanId;
 				expectedVersion: number;
 				actorUserId: string;
-				outcomeReason?: string;
-				outcomeEvidenceReference?: string | null;
+				outcomeReason?: string | undefined;
+				outcomeEvidenceReference?: string | null | undefined;
 			},
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
@@ -3723,7 +3761,7 @@ function buildPerformanceMemoryMethods(
 				action: "UPDATE",
 			});
 			if (!audit.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return audit;
 			}
 
@@ -3735,7 +3773,7 @@ function buildPerformanceMemoryMethods(
 				entityId: updated.id,
 			});
 			if (!outbox.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return outbox;
 			}
 
@@ -3748,8 +3786,8 @@ function buildPerformanceMemoryMethods(
 				planId: HumanResourcesImprovementPlanId;
 				expectedVersion: number;
 				actorUserId: string;
-				outcomeReason?: string;
-				outcomeEvidenceReference?: string | null;
+				outcomeReason?: string | undefined;
+				outcomeEvidenceReference?: string | null | undefined;
 			},
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
@@ -3819,7 +3857,7 @@ function buildPerformanceMemoryMethods(
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceImprovementPlan>> {
-			return transitionPlanStatus(
+			return await transitionPlanStatus(
 				state,
 				ports,
 				meta,
@@ -3846,7 +3884,7 @@ function buildPerformanceMemoryMethods(
 			const plans = filtered
 				.slice(start, start + input.pageSize)
 				.map((plan) => ({ ...plan }));
-			return ok({
+			return await ok({
 				plans,
 				totalCount,
 				page: input.page,
@@ -3928,7 +3966,7 @@ function buildPerformanceMemoryMethods(
 				};
 			});
 
-			return ok({
+			return await ok({
 				employeeId: input.employeeId,
 				entries,
 			});
@@ -4217,7 +4255,7 @@ async function submitAssessment(
 		action: "UPDATE",
 	});
 	if (!audit.ok) {
-		for (const undo of rollback) undo();
+		runRollbacks(rollback);
 		return audit;
 	}
 

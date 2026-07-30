@@ -1,3 +1,6 @@
+// biome-ignore-all lint/suspicious/useAwait: The deterministic memory adapter implements asynchronous establishment ports.
+// biome-ignore-all lint/style/useDestructuring: Explicit record access keeps establishment identity visible.
+// biome-ignore-all lint/suspicious/noShadow: Domain-local callbacks intentionally mirror establishment records.
 import { randomUUID } from "node:crypto";
 import { fail, ok } from "@afenda/errors/result";
 
@@ -99,7 +102,9 @@ export function createMemoryCorporateAdministrationEstablishmentStore(): Establi
 					row.normalizedRegistrationIdentifier ===
 						input.normalizedRegistrationIdentifier,
 			);
-			if (duplicate) return conflict("registrationIdentifier");
+			if (duplicate) {
+				return conflict("registrationIdentifier");
+			}
 			const id = legalEstablishmentIdSchema.parse(randomUUID());
 			const now = new Date(input.recordedAt);
 			const row: LegalEstablishment = {
@@ -142,7 +147,9 @@ export function createMemoryCorporateAdministrationEstablishmentStore(): Establi
 			const current = establishments.get(
 				key(input.organizationId, input.legalEstablishmentId),
 			);
-			if (current === undefined) return notFound();
+			if (current === undefined) {
+				return notFound();
+			}
 			if (current.version !== input.expectedVersion) {
 				return stale(input.expectedVersion, current.version);
 			}
@@ -160,7 +167,9 @@ export function createMemoryCorporateAdministrationEstablishmentStore(): Establi
 			const current = establishments.get(
 				key(input.organizationId, input.legalEstablishmentId),
 			);
-			if (current === undefined) return notFound();
+			if (current === undefined) {
+				return notFound();
+			}
 			if (current.version !== input.expectedVersion) {
 				return stale(input.expectedVersion, current.version);
 			}
@@ -304,7 +313,9 @@ export function createMemoryCorporateAdministrationEstablishmentStore(): Establi
 		},
 		async endPremise(input) {
 			const current = premises.get(key(input.organizationId, input.premiseId));
-			if (current === undefined) return notFound();
+			if (current === undefined) {
+				return notFound();
+			}
 			if (current.version !== input.expectedVersion) {
 				return stale(input.expectedVersion, current.version);
 			}

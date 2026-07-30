@@ -1,6 +1,15 @@
 "use client";
 
-import * as React from "react";
+import {
+	Children,
+	type ComponentProps,
+	cloneElement,
+	type HTMLAttributes,
+	isValidElement,
+	type ReactNode,
+	type RefObject,
+	useId,
+} from "react";
 import { cn } from "../../lib/utils";
 import { Field, FieldDescription, FieldGroup } from "./field";
 import { FormError } from "./form-error";
@@ -8,88 +17,90 @@ import { Input } from "./input";
 import { Label } from "./label";
 import { Textarea } from "./textarea";
 
-interface FormFieldProps extends React.HTMLAttributes<HTMLDivElement> {
-	label?: string | undefined;
+interface FormFieldProps extends HTMLAttributes<HTMLDivElement> {
+	children?: ReactNode;
 	description?: string | undefined;
 	error?: string | undefined;
-	required?: boolean | undefined;
-	children?: React.ReactNode;
 	fieldId?: string | undefined;
+	label?: string | undefined;
+	required?: boolean | undefined;
 }
 
-const FormField = React.forwardRef<HTMLDivElement, FormFieldProps>(
-	(
-		{
-			className,
-			label,
-			description,
-			error,
-			required = false,
-			children,
-			fieldId,
-			...props
-		},
-		ref,
-	) => {
-		const generatedId = React.useId();
-		const id = fieldId || generatedId;
-		const descriptionId = description ? `${id}-description` : undefined;
-		const errorId = error ? `${id}-error` : undefined;
+const FormField = ({
+	className,
+	label,
+	description,
+	error,
+	required = false,
+	children,
+	fieldId,
+	ref,
+	...props
+}: FormFieldProps & { ref?: RefObject<HTMLDivElement | null> }) => {
+	const generatedId = useId();
+	const id = fieldId || generatedId;
+	const descriptionId = description ? `${id}-description` : undefined;
+	const errorId = error ? `${id}-error` : undefined;
 
-		return (
-			<Field ref={ref} className={cn("space-y-2", className)} {...props}>
-				{label && (
-					<Label
-						htmlFor={id}
-						className={
-							required
-								? "after:content-['*'] after:ml-0.5 after:text-destructive-subtle-foreground"
-								: undefined
-						}
-					>
-						{label}
-					</Label>
-				)}
+	return (
+		<Field className={cn("space-y-2", className)} ref={ref} {...props}>
+			{label === null || label === undefined ? null : (
+				<Label
+					className={
+						required
+							? "after:ml-0.5 after:text-destructive-subtle-foreground after:content-['*']"
+							: undefined
+					}
+					htmlFor={id}
+				>
+					{label}
+				</Label>
+			)}
 
-				<FieldGroup>
-					{children
-						? React.Children.map(children, (child) => {
-								if (React.isValidElement<Record<string, unknown>>(child)) {
-									return React.cloneElement(child, {
-										id,
-										"aria-describedby":
-											[descriptionId, errorId].filter(Boolean).join(" ") ||
-											undefined,
-										"aria-invalid": error ? true : undefined,
-									});
-								}
-								return child;
-							})
-						: null}
-				</FieldGroup>
+			<FieldGroup>
+				{children
+					? Children.map(children, (child) => {
+							if (isValidElement<Record<string, unknown>>(child)) {
+								return cloneElement(child, {
+									id,
+									"aria-describedby":
+										[descriptionId, errorId].filter(Boolean).join(" ") ||
+										undefined,
+									"aria-invalid": error ? true : undefined,
+								});
+							}
+							return child;
+						})
+					: null}
+			</FieldGroup>
 
-				{description && (
-					<FieldDescription id={descriptionId}>{description}</FieldDescription>
-				)}
+			{description === null || description === undefined ? null : (
+				<FieldDescription id={descriptionId}>{description}</FieldDescription>
+			)}
 
-				{error && <FormError message={error} id={errorId} />}
-			</Field>
-		);
-	},
-);
+			{error === null || error === undefined ? null : (
+				<FormError id={errorId} message={error} />
+			)}
+		</Field>
+	);
+};
 FormField.displayName = "FormField";
 
 // Convenience exports for common form controls
-const FormInput = React.forwardRef<
-	HTMLInputElement,
-	React.ComponentProps<typeof Input>
->((props, ref) => <Input ref={ref} {...props} />);
+const FormInput = ({
+	ref,
+	...props
+}: ComponentProps<typeof Input> & {
+	ref?: RefObject<HTMLInputElement | null>;
+}) => <Input ref={ref} {...props} />;
 FormInput.displayName = "FormInput";
 
-const FormTextarea = React.forwardRef<
-	HTMLTextAreaElement,
-	React.ComponentProps<typeof Textarea>
->((props, ref) => <Textarea ref={ref} {...props} />);
+const FormTextarea = ({
+	ref,
+	...props
+}: ComponentProps<typeof Textarea> & {
+	ref?: RefObject<HTMLTextAreaElement | null>;
+}) => <Textarea ref={ref} {...props} />;
 FormTextarea.displayName = "FormTextarea";
 
 export { FormField, FormInput, FormTextarea };

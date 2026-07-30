@@ -34,7 +34,7 @@ import type { HrOperationsCapabilities, HrOperationsData } from "./types";
 
 function ErrorNotice({ message }: { message?: string | undefined }) {
 	return message ? (
-		<Alert variant="destructive" role="alert">
+		<Alert role="alert" variant="destructive">
 			<AlertTitle>Operations data unavailable</AlertTitle>
 			<AlertDescription>{message}</AlertDescription>
 		</Alert>
@@ -66,18 +66,25 @@ function defaultTab(capabilities: HrOperationsCapabilities) {
 		capabilities.canOnboard ||
 		capabilities.canOffboard ||
 		capabilities.canManageEmployment
-	)
+	) {
 		return "lifecycle";
-	if (capabilities.canAdministerCompliance) return "compliance";
-	if (capabilities.canOpenCases || capabilities.canReadCases) return "cases";
+	}
+	if (capabilities.canAdministerCompliance) {
+		return "compliance";
+	}
+	if (capabilities.canOpenCases || capabilities.canReadCases) {
+		return "cases";
+	}
 	if (
 		capabilities.canPrepareWorkforcePlans ||
 		capabilities.canReadWorkforcePlans
-	)
+	) {
 		return "planning";
+	}
 	return "integration";
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Capability branches intentionally map independent operations workflows.
 export function HrOperationsWorkspace({
 	capabilities,
 	data,
@@ -101,17 +108,17 @@ export function HrOperationsWorkspace({
 					<Badge variant="outline">HR operations</Badge>
 					<Badge variant="secondary">Permission-scoped</Badge>
 				</div>
-				<h1 className="text-2xl font-semibold tracking-normal">
+				<h1 className="font-semibold text-2xl tracking-normal">
 					HR operations workspace
 				</h1>
-				<p className="max-w-3xl text-sm text-muted-foreground">
+				<p className="max-w-3xl text-muted-foreground text-sm">
 					Run controlled employee lifecycle, compliance, employee-relations, and
 					workforce-planning journeys.
 				</p>
 			</header>
 			<Tabs defaultValue={defaultTab(capabilities)}>
 				<div className="overflow-x-auto pb-1">
-					<TabsList variant="line" aria-label="HR operations areas">
+					<TabsList aria-label="HR operations areas" variant="line">
 						{hasLifecycle ? (
 							<TabsTrigger value="lifecycle">Lifecycle</TabsTrigger>
 						) : null}
@@ -131,37 +138,37 @@ export function HrOperationsWorkspace({
 				</div>
 				{hasLifecycle ? (
 					<TabsContent
-						value="lifecycle"
 						className="grid gap-4 pt-4 lg:grid-cols-2"
+						value="lifecycle"
 					>
 						{capabilities.canOnboard ? (
 							<JourneyCard
-								title="Onboarding"
 								description="Launch the canonical onboarding workflow for an employment record."
+								title="Onboarding"
 							>
 								<OnboardingLaunchForm />
 							</JourneyCard>
 						) : null}
 						{capabilities.canManageEmployment ? (
 							<JourneyCard
-								title="Assignment transfer"
 								description="Move an active employment assignment through the controlled transfer journey."
+								title="Assignment transfer"
 							>
 								<TransferLaunchForm />
 							</JourneyCard>
 						) : null}
 						{capabilities.canManageEmployment ? (
 							<JourneyCard
-								title="Termination proposal"
 								description="Propose an employment termination for downstream review and execution."
+								title="Termination proposal"
 							>
 								<TerminationLaunchForm />
 							</JourneyCard>
 						) : null}
 						{capabilities.canOffboard ? (
 							<JourneyCard
-								title="Offboarding"
 								description="Launch the canonical offboarding workflow for an employment record."
+								title="Offboarding"
 							>
 								<OffboardingLaunchForm />
 							</JourneyCard>
@@ -169,30 +176,30 @@ export function HrOperationsWorkspace({
 					</TabsContent>
 				) : null}
 				{capabilities.canAdministerCompliance ? (
-					<TabsContent value="compliance" className="space-y-4 pt-4">
+					<TabsContent className="space-y-4 pt-4" value="compliance">
 						<ErrorNotice message={data.errors.compliance} />
 						<JourneyCard
-							title="Compliance expiry operations"
 							description="Detect upcoming document and work-eligibility risks using the existing compliance operation."
+							title="Compliance expiry operations"
 						>
 							<ComplianceScanForm />
 						</JourneyCard>
 						<div className="grid gap-4 lg:grid-cols-2">
 							<RequirementTable requirements={data.missingRequirements} />
 							<DocumentTable
-								title="Expiring documents"
 								documents={data.expiringDocuments}
+								title="Expiring documents"
 							/>
 						</div>
 					</TabsContent>
 				) : null}
 				{hasCases ? (
-					<TabsContent value="cases" className="space-y-4 pt-4">
+					<TabsContent className="space-y-4 pt-4" value="cases">
 						<ErrorNotice message={data.errors.cases} />
 						{capabilities.canOpenCases ? (
 							<JourneyCard
-								title="Open employee case"
 								description="Create a permission-controlled employee-relations case."
+								title="Open employee case"
 							>
 								<CaseOpenForm />
 							</JourneyCard>
@@ -203,12 +210,12 @@ export function HrOperationsWorkspace({
 					</TabsContent>
 				) : null}
 				{hasPlanning ? (
-					<TabsContent value="planning" className="space-y-4 pt-4">
+					<TabsContent className="space-y-4 pt-4" value="planning">
 						<ErrorNotice message={data.errors.plans} />
 						{capabilities.canPrepareWorkforcePlans ? (
 							<JourneyCard
-								title="Prepare workforce plan"
 								description="Create a draft headcount plan in the canonical planning domain."
+								title="Prepare workforce plan"
 							>
 								<WorkforcePlanCreateForm />
 							</JourneyCard>
@@ -219,7 +226,7 @@ export function HrOperationsWorkspace({
 					</TabsContent>
 				) : null}
 				{integrationHealth ? (
-					<TabsContent value="integration" className="pt-4">
+					<TabsContent className="pt-4" value="integration">
 						{integrationHealth}
 					</TabsContent>
 				) : null}

@@ -9,6 +9,7 @@ import {
 } from "../src/order";
 import { PURCHASING_PERMISSION_CODES } from "../src/permissions";
 import type { MutationPorts, OutboxFactInput } from "../src/ports";
+import { resolveAsync } from "../src/resolve-async";
 import { createGrantingPurchasingAuthorization } from "./helpers/memory-authorization";
 import {
 	createMemoryMasterLookup,
@@ -46,13 +47,15 @@ describe("@afenda/purchasing transactions", () => {
 	it("rolls back entity write when outbox append fails", async () => {
 		const failingOutbox: MutationPorts = {
 			audit: {
-				async record() {
-					return ok({ id: "audit-1" });
+				record() {
+					return resolveAsync(() => ok({ id: "audit-1" }));
 				},
 			},
 			outbox: {
-				async append(_input: OutboxFactInput): Promise<Result<{ id: string }>> {
-					return fail("INTERNAL_ERROR", "forced outbox failure");
+				append(_input: OutboxFactInput): Promise<Result<{ id: string }>> {
+					return resolveAsync(() =>
+						fail("INTERNAL_ERROR", "forced outbox failure"),
+					);
 				},
 			},
 		};

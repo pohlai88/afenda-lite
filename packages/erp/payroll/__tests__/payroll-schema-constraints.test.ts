@@ -34,7 +34,9 @@ const assignmentInputsMigrationSql = migrationSql;
 const calculationOutputsMigrationSql = migrationSql;
 
 function expectCreatesTable(sqlText: string, table: string): void {
-	expect(sqlText).toContain(`CREATE TABLE "${table}"`);
+	if (!sqlText.includes(`CREATE TABLE "${table}"`)) {
+		throw new Error(`Migration does not create table ${table}`);
+	}
 }
 
 function expectTableHasColumn(
@@ -42,9 +44,14 @@ function expectTableHasColumn(
 	table: string,
 	column: string,
 ): void {
-	expect(sqlText).toMatch(
-		new RegExp(`CREATE TABLE "${table}" \\([\\s\\S]*"${column}"`),
+	const columnPattern = new RegExp(
+		`CREATE TABLE "${table}" \\([\\s\\S]*"${column}"`,
 	);
+	if (!columnPattern.test(sqlText)) {
+		throw new Error(
+			`Migration table ${table} does not define column ${column}`,
+		);
+	}
 }
 
 const { hasDatabase } = resolveDatabaseUrlForTests();
@@ -239,9 +246,9 @@ describe.skipIf(!payrollFoundationReady)(
 					createdBy: actorUserId,
 					updatedBy: actorUserId,
 				}),
-			).rejects.toSatisfy((error: unknown) => {
-				return postgresSqlState(error) === "23514";
-			});
+			).rejects.toSatisfy(
+				(error: unknown) => postgresSqlState(error) === "23514",
+			);
 		});
 
 		it("rejects inverted period ranges via payroll_period_range_check", async () => {
@@ -260,9 +267,9 @@ describe.skipIf(!payrollFoundationReady)(
 					createdBy: actorUserId,
 					updatedBy: actorUserId,
 				}),
-			).rejects.toSatisfy((error: unknown) => {
-				return postgresSqlState(error) === "23514";
-			});
+			).rejects.toSatisfy(
+				(error: unknown) => postgresSqlState(error) === "23514",
+			);
 		});
 
 		it("rejects invalid exception severity via payroll_exception_severity_check", async () => {
@@ -277,9 +284,9 @@ describe.skipIf(!payrollFoundationReady)(
 					employeeRef: null,
 					createdBy: actorUserId,
 				}),
-			).rejects.toSatisfy((error: unknown) => {
-				return postgresSqlState(error) === "23514";
-			});
+			).rejects.toSatisfy(
+				(error: unknown) => postgresSqlState(error) === "23514",
+			);
 		});
 
 		it("rejects duplicate run identity via payroll_run_org_identity_uidx", async () => {
@@ -301,9 +308,9 @@ describe.skipIf(!payrollFoundationReady)(
 					createdBy: actorUserId,
 					updatedBy: actorUserId,
 				}),
-			).rejects.toSatisfy((error: unknown) => {
-				return postgresSqlState(error) === "23505";
-			});
+			).rejects.toSatisfy(
+				(error: unknown) => postgresSqlState(error) === "23505",
+			);
 		});
 
 		it("rejects duplicate pay group code via payroll_pay_group_org_code_uidx", async () => {
@@ -322,9 +329,9 @@ describe.skipIf(!payrollFoundationReady)(
 					createdBy: actorUserId,
 					updatedBy: actorUserId,
 				}),
-			).rejects.toSatisfy((error: unknown) => {
-				return postgresSqlState(error) === "23505";
-			});
+			).rejects.toSatisfy(
+				(error: unknown) => postgresSqlState(error) === "23505",
+			);
 		});
 
 		it("rejects missing run FK via payroll_exception_org_run_fk", async () => {
@@ -339,9 +346,9 @@ describe.skipIf(!payrollFoundationReady)(
 					employeeRef: null,
 					createdBy: actorUserId,
 				}),
-			).rejects.toSatisfy((error: unknown) => {
-				return postgresSqlState(error) === "23503";
-			});
+			).rejects.toSatisfy(
+				(error: unknown) => postgresSqlState(error) === "23503",
+			);
 		});
 
 		it("rejects missing calendar FK via payroll_pay_group_org_calendar_fk", async () => {
@@ -360,9 +367,9 @@ describe.skipIf(!payrollFoundationReady)(
 					createdBy: actorUserId,
 					updatedBy: actorUserId,
 				}),
-			).rejects.toSatisfy((error: unknown) => {
-				return postgresSqlState(error) === "23503";
-			});
+			).rejects.toSatisfy(
+				(error: unknown) => postgresSqlState(error) === "23503",
+			);
 		});
 	},
 );

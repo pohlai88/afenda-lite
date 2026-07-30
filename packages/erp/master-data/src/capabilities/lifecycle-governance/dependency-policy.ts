@@ -17,21 +17,21 @@ export type DependencyResult =
 	  }>;
 
 export interface MasterLifecycleDependencyPort {
-	checkPartyDependencies(input: {
-		organizationId: string;
-		partyId: string;
-		operation: string;
-	}): Promise<DependencyResult>;
-	checkItemDependencies(input: {
+	checkItemDependencies: (input: {
 		organizationId: string;
 		itemId: string;
 		operation: string;
-	}): Promise<DependencyResult>;
-	checkWarehouseDependencies(input: {
+	}) => Promise<DependencyResult>;
+	checkPartyDependencies: (input: {
+		organizationId: string;
+		partyId: string;
+		operation: string;
+	}) => Promise<DependencyResult>;
+	checkWarehouseDependencies: (input: {
 		organizationId: string;
 		warehouseId: string;
 		operation: string;
-	}): Promise<DependencyResult>;
+	}) => Promise<DependencyResult>;
 }
 
 export function dependencyResult(

@@ -84,10 +84,10 @@ const lifecycleReasonSchema = z
 const optionalEffectiveDateSchema = z.coerce.date().optional();
 const nullableEffectiveDatePatchSchema = z.coerce.date().nullable().optional();
 
-type NullableDateRange = {
+interface NullableDateRange {
 	effectiveFrom?: Date | null | undefined;
 	effectiveTo?: Date | null | undefined;
-};
+}
 
 function validateSuppliedEffectiveRange(
 	input: NullableDateRange,

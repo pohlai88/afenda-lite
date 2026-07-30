@@ -38,7 +38,9 @@ function definePositionOccupancyParitySuite(
 			actorUserId,
 		});
 		expect(references).not.toBeNull();
-		if (!references) return;
+		if (!references) {
+			return;
+		}
 
 		const employee = await createEmployee(
 			{
@@ -52,7 +54,9 @@ function definePositionOccupancyParitySuite(
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const employment = await createEmployment(
 			{
@@ -66,7 +70,9 @@ function definePositionOccupancyParitySuite(
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const position = await createPosition(
 			{
@@ -81,7 +87,9 @@ function definePositionOccupancyParitySuite(
 			ready,
 		);
 		expect(position.ok).toBe(true);
-		if (!position.ok) return;
+		if (!position.ok) {
+			return;
+		}
 
 		const assignment = await createAssignment(
 			{
@@ -97,7 +105,9 @@ function definePositionOccupancyParitySuite(
 			ready,
 		);
 		expect(assignment.ok).toBe(true);
-		if (!assignment.ok) return;
+		if (!assignment.ok) {
+			return;
+		}
 
 		const occupied = await getPositionOccupancyAsOf(
 			{

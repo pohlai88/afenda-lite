@@ -13,6 +13,8 @@ import type {
 	SearchUpsertInput,
 } from "../types";
 
+const SEARCH_TOKEN_SEPARATOR = /\s+/;
+
 function scoreDocument(doc: SearchDocument, query: string): number {
 	const q = query.toLowerCase();
 	const title = doc.title.toLowerCase();
@@ -23,7 +25,9 @@ function scoreDocument(doc: SearchDocument, query: string): number {
 	if (description.includes(q)) {
 		return 0.5 + q.length / Math.max(description.length, 1);
 	}
-	const tokens = q.split(/\s+/).filter((token) => token.length > 0);
+	const tokens = q
+		.split(SEARCH_TOKEN_SEPARATOR)
+		.filter((token) => token.length > 0);
 	let hits = 0;
 	for (const token of tokens) {
 		if (title.includes(token) || description.includes(token)) {
@@ -41,7 +45,7 @@ export class MemorySearchStore implements SearchStore {
 		return `${organizationId}\0${entity}\0${documentId}`;
 	}
 
-	async upsert(input: SearchUpsertInput): Promise<Result<SearchDocument>> {
+	upsert(input: SearchUpsertInput): Promise<Result<SearchDocument>> {
 		const key = this.key(input.organizationId, input.entity, input.documentId);
 		const existing = this.documents.get(key);
 		const now = new Date();
@@ -58,31 +62,34 @@ export class MemorySearchStore implements SearchStore {
 			updatedAt: now,
 		};
 		this.documents.set(key, document);
-		return ok(document);
+		return Promise.resolve(ok(document));
 	}
 
-	async upsertBatch(
-		inputs: SearchUpsertInput[],
-	): Promise<Result<SearchDocument[]>> {
-		const documents: SearchDocument[] = [];
-		for (const input of inputs) {
-			const result = await this.upsert(input);
-			if (!result.ok) {
-				return result;
-			}
-			documents.push(result.data);
-		}
-		return ok(documents);
+	upsertBatch(inputs: SearchUpsertInput[]): Promise<Result<SearchDocument[]>> {
+		return inputs.reduce<Promise<Result<SearchDocument[]>>>(
+			async (previousResult, input) => {
+				const accumulated = await previousResult;
+				if (!accumulated.ok) {
+					return accumulated;
+				}
+
+				const result = await this.upsert(input);
+				if (!result.ok) {
+					return result;
+				}
+				accumulated.data.push(result.data);
+				return accumulated;
+			},
+			Promise.resolve(ok<SearchDocument[]>([])),
+		);
 	}
 
-	async delete(
-		input: SearchDeleteInput,
-	): Promise<Result<{ deleted: boolean }>> {
+	delete(input: SearchDeleteInput): Promise<Result<{ deleted: boolean }>> {
 		const key = this.key(input.organizationId, input.entity, input.documentId);
-		return ok({ deleted: this.documents.delete(key) });
+		return Promise.resolve(ok({ deleted: this.documents.delete(key) }));
 	}
 
-	async listDocumentIds(input: SearchListIdsInput): Promise<Result<string[]>> {
+	listDocumentIds(input: SearchListIdsInput): Promise<Result<string[]>> {
 		const ids: string[] = [];
 		for (const doc of this.documents.values()) {
 			if (
@@ -92,10 +99,10 @@ export class MemorySearchStore implements SearchStore {
 				ids.push(doc.documentId);
 			}
 		}
-		return ok(ids);
+		return Promise.resolve(ok(ids));
 	}
 
-	async search(options: SearchQueryOptions): Promise<Result<SearchHit[]>> {
+	search(options: SearchQueryOptions): Promise<Result<SearchHit[]>> {
 		const hits: SearchHit[] = [];
 		for (const doc of this.documents.values()) {
 			if (doc.organizationId !== options.organizationId) {
@@ -121,6 +128,8 @@ export class MemorySearchStore implements SearchStore {
 			});
 		}
 		hits.sort((a, b) => b.score - a.score);
-		return ok(hits.slice(options.offset, options.offset + options.limit));
+		return Promise.resolve(
+			ok(hits.slice(options.offset, options.offset + options.limit)),
+		);
 	}
 }

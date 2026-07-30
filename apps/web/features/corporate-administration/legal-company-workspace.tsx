@@ -128,16 +128,16 @@ export function LegalCompanyWorkspace({
 							<fieldset className="space-y-4" disabled={disabled || noParties}>
 								<FormField
 									id="registerCompanyCode"
-									name="companyCode"
 									label="Company code"
 									maxLength={64}
+									name="companyCode"
 									required
 								/>
 								<FormField
 									id="registerDisplayName"
-									name="displayName"
 									label="Display name"
 									maxLength={256}
+									name="displayName"
 									required
 								/>
 								<div className="space-y-2">
@@ -160,13 +160,13 @@ export function LegalCompanyWorkspace({
 									</NativeSelect>
 								</div>
 								<FormField
+									className="uppercase"
 									id="registerHomeJurisdictionCountryCode"
-									name="homeJurisdictionCountryCode"
 									label="Home jurisdiction"
 									maxLength={2}
+									name="homeJurisdictionCountryCode"
 									pattern="[A-Za-z]{2}"
 									required
-									className="uppercase"
 								/>
 								<SubmitButton>Register draft</SubmitButton>
 							</fieldset>
@@ -187,7 +187,7 @@ export function LegalCompanyWorkspace({
 					</CardHeader>
 					<CardContent>
 						{noCompanies ? (
-							<p className="text-sm text-muted-foreground">
+							<p className="text-muted-foreground text-sm">
 								No legal company drafts yet.
 							</p>
 						) : (
@@ -220,9 +220,9 @@ export function LegalCompanyWorkspace({
 											</TableCell>
 											<TableCell>
 												<StatusBadge
-													status="pending"
 													label={`v${company.version}`}
 													showIcon={false}
+													status="pending"
 												/>
 											</TableCell>
 										</TableRow>
@@ -236,21 +236,21 @@ export function LegalCompanyWorkspace({
 
 			<div className="grid gap-6 lg:grid-cols-3">
 				<CompanyProfileForm
+					action={profileAction}
 					companies={companies}
 					disabled={disabled || noCompanies}
-					action={profileAction}
 					state={profileState}
 				/>
 				<SetJurisdictionProfileForm
+					action={jurisdictionAction}
 					companies={companies}
 					disabled={disabled || noCompanies}
-					action={jurisdictionAction}
 					state={jurisdictionState}
 				/>
 				<SupersedeJurisdictionProfileForm
-					profiles={profiles}
-					disabled={disabled || profiles.length === 0}
 					action={supersedeAction}
+					disabled={disabled || profiles.length === 0}
+					profiles={profiles}
 					state={supersedeState}
 				/>
 			</div>
@@ -287,26 +287,26 @@ function CompanyProfileForm({
 						/>
 						<FormField
 							id="profileDisplayName"
-							name="displayName"
 							label="Display name"
 							maxLength={256}
+							name="displayName"
 							required
 						/>
 						<FormField
 							id="profileRegisteredName"
-							name="registeredName"
 							label="Registered name"
 							maxLength={256}
+							name="registeredName"
 						/>
 						<FormField
 							id="profileShortName"
-							name="shortName"
 							label="Short name"
 							maxLength={128}
+							name="shortName"
 						/>
 						<input
-							type="hidden"
 							name="sourceReference"
+							type="hidden"
 							value="web:legal-company-profile"
 						/>
 						<SubmitButton>Update profile</SubmitButton>
@@ -347,8 +347,8 @@ function SetJurisdictionProfileForm({
 						/>
 						<JurisdictionFields idPrefix="set" />
 						<input
-							type="hidden"
 							name="sourceReference"
+							type="hidden"
 							value="web:jurisdiction-profile"
 						/>
 						<SubmitButton>Set profile</SubmitButton>
@@ -433,16 +433,16 @@ function SupersedeJurisdictionProfileForm({
 							</Label>
 							<Input
 								id="expectedProfileVersion"
-								name="expectedProfileVersion"
-								type="number"
 								min={0}
+								name="expectedProfileVersion"
 								required
+								type="number"
 							/>
 						</div>
 						<JurisdictionFields idPrefix="supersede" />
 						<input
-							type="hidden"
 							name="sourceReference"
+							type="hidden"
 							value="web:jurisdiction-profile-supersession"
 						/>
 						<SubmitButton>Supersede profile</SubmitButton>
@@ -487,10 +487,10 @@ function CompanySelect({
 				<Label htmlFor={versionFieldId}>Expected company version</Label>
 				<Input
 					id={versionFieldId}
-					name={versionFieldName}
-					type="number"
 					min={0}
+					name={versionFieldName}
 					required
+					type="number"
 				/>
 			</div>
 		</div>
@@ -503,13 +503,13 @@ function JurisdictionFields({
 	return (
 		<>
 			<FormField
+				className="uppercase"
 				id={`${idPrefix}JurisdictionCountryCode`}
-				name="jurisdictionCountryCode"
 				label="Jurisdiction"
 				maxLength={2}
+				name="jurisdictionCountryCode"
 				pattern="[A-Za-z]{2}"
 				required
-				className="uppercase"
 			/>
 			<div className="space-y-2">
 				<Label htmlFor={`${idPrefix}EntityType`}>Entity type</Label>
@@ -524,15 +524,15 @@ function JurisdictionFields({
 			</div>
 			<FormField
 				id={`${idPrefix}EffectiveFrom`}
-				name="effectiveFrom"
 				label="Effective from"
-				type="date"
+				name="effectiveFrom"
 				required
+				type="date"
 			/>
 			<FormField
 				id={`${idPrefix}EffectiveTo`}
-				name="effectiveTo"
 				label="Effective to"
+				name="effectiveTo"
 				type="date"
 			/>
 		</>
@@ -557,8 +557,8 @@ function FormField({
 function SubmitButton({ children }: Readonly<{ children: React.ReactNode }>) {
 	const status = useFormStatus();
 	return (
-		<Button type="submit" disabled={status.pending}>
-			{status.pending ? "Saving..." : children}
+		<Button disabled={status.pending} type="submit">
+			{status.pending ? "Saving..." : <span>{children}</span>}
 		</Button>
 	);
 }
@@ -570,10 +570,12 @@ export function ActionFeedback({
 	state: ActionResult<unknown> | null;
 	success: string;
 }>) {
-	if (state === null) return null;
+	if (state === null) {
+		return null;
+	}
 	if (!state.ok) {
 		return (
-			<Alert variant="destructive" role="alert">
+			<Alert role="alert" variant="destructive">
 				<AlertTitle>Change not saved</AlertTitle>
 				<AlertDescription>{state.message}</AlertDescription>
 			</Alert>

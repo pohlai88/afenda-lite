@@ -130,26 +130,26 @@ export const PRIVACY_TEST_ACTOR_USER_ID = "user-1";
 export const PRIVACY_TEST_CORRELATION_ID = "corr-1";
 export const PRIVACY_TEST_REQUESTED_AT = "2026-07-25T00:00:00.000Z";
 
-export type CreateHumanResourcesTestPrivacyPortInput = {
-	records?: readonly HumanResourcesPrivacySubjectRecord[];
+export interface CreateHumanResourcesTestPrivacyPortInput {
 	legalHold?: {
 		active: boolean;
 		reasonCode: string;
 	};
-};
+	records?: readonly HumanResourcesPrivacySubjectRecord[];
+}
 
 export function createHumanResourcesTestPrivacyPort(
 	input: CreateHumanResourcesTestPrivacyPortInput = {},
 ): HumanResourcesPrivacyPort {
 	const records = input.records ?? [];
-	const legalHold = input.legalHold;
+	const { legalHold } = input;
 
 	return {
 		async exportSubject(context) {
 			const tenantRecords = records.filter(
 				(record) => record.organizationId === context.organizationId,
 			);
-			return ok({
+			return await ok({
 				exportReference: `test://organizations/${context.organizationId}/exports/subject`,
 				recordCount: tenantRecords.length,
 				records: tenantRecords,
@@ -157,36 +157,36 @@ export function createHumanResourcesTestPrivacyPort(
 		},
 		async evaluateAnonymization(_context) {
 			if (legalHold?.active === true) {
-				return ok({
+				return await ok({
 					allowed: false,
 					reasonCode: legalHold.reasonCode,
 				});
 			}
-			return ok({ allowed: true });
+			return await ok({ allowed: true });
 		},
 		async rectifySubject() {
-			return ok({ rectifiedRecordCount: 0 });
+			return await ok({ rectifiedRecordCount: 0 });
 		},
 		async anonymizeSubject(context) {
 			if (legalHold?.active === true) {
-				return ok({ anonymizedRecordCount: 0 });
+				return await ok({ anonymizedRecordCount: 0 });
 			}
 			const tenantRecords = records.filter(
 				(record) => record.organizationId === context.organizationId,
 			);
-			return ok({ anonymizedRecordCount: tenantRecords.length });
+			return await ok({ anonymizedRecordCount: tenantRecords.length });
 		},
 		async placeLegalHold() {
-			return ok({ legalHoldId: "test-hold" });
+			return await ok({ legalHoldId: "test-hold" });
 		},
 		async releaseLegalHold() {
-			return ok(undefined);
+			return await ok(undefined);
 		},
 		async redactDownstream() {
-			return ok({ redactedSystemCount: 0 });
+			return await ok({ redactedSystemCount: 0 });
 		},
 		async getSubjectPrivacyCase(context) {
-			return ok({
+			return await ok({
 				organizationId: context.organizationId,
 				subjectEmployeeId: context.subjectEmployeeId,
 				exports: [],

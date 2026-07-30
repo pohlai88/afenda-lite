@@ -44,7 +44,7 @@ function buildVariableInputSourceFingerprint(input: {
 	return buildPayrollCreateFingerprint(input);
 }
 
-export async function createPayrollVariableInput(
+export function createPayrollVariableInput(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollVariableInput>> {
@@ -52,6 +52,7 @@ export async function createPayrollVariableInput(
 		schema: createPayrollVariableInputInputSchema,
 		invalidMessage: "Invalid payroll variable input create input",
 		command: PAYROLL_COMMAND_INPUT_VARIABLE_CREATE,
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The command boundary validates employee, period, rule, currency, source, and idempotency invariants before mutation.
 		execute: async (data, { store, ports, employees }) => {
 			const employeeResult = await requirePayrollEmployeeAtDate({
 				employees,
@@ -228,7 +229,7 @@ export async function createPayrollVariableInput(
 	});
 }
 
-export async function getPayrollVariableInput(
+export function getPayrollVariableInput(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollVariableInput | null>> {

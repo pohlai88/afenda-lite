@@ -5,32 +5,81 @@ import { eventDispatchOptionsSchema } from "./schemas";
 import type { EventStore } from "./store";
 import type { DomainEvent, DomainEventHandlerMap } from "./types";
 
-export type CreateEventDispatcherOptions = {
-	store?: EventStore;
+export interface CreateEventDispatcherOptions {
 	handlers: DomainEventHandlerMap;
-};
+	store?: EventStore;
+}
 
-export type EventDispatchSummary = {
+export interface EventDispatchSummary {
 	claimed: number;
-	processed: number;
-	failed: number;
-	skipped: number;
 	events: DomainEvent[];
-};
+	failed: number;
+	processed: number;
+	skipped: number;
+}
 
-export type EventDispatcher = {
-	dispatchPending(input?: unknown): Promise<Result<EventDispatchSummary>>;
-};
+export interface EventDispatcher {
+	dispatchPending: (input?: unknown) => Promise<Result<EventDispatchSummary>>;
+}
 
 function errorMessage(error: unknown): string {
 	return normalizeUnknown(error, "Domain event handler failed").message;
+}
+
+interface EventDispatchOutcome {
+	event: DomainEvent;
+	failed: number;
+	processed: number;
+	skipped: number;
+}
+
+interface EventDispatchAccumulator {
+	events: DomainEvent[];
+	failed: number;
+	processed: number;
+	skipped: number;
+}
+
+async function dispatchEvent(
+	event: DomainEvent,
+	handler: DomainEventHandlerMap[string] | undefined,
+	store: EventStore,
+): Promise<Result<EventDispatchOutcome>> {
+	if (handler === undefined) {
+		return ok({ event, failed: 0, processed: 0, skipped: 1 });
+	}
+	try {
+		await handler(event);
+		const marked = await store.markProcessed({
+			id: event.id,
+			organizationId: event.organizationId,
+		});
+		if (!marked.ok) {
+			return marked;
+		}
+		return marked.data === null
+			? fail("INTERNAL_ERROR", `Failed to mark event ${event.id} processed`)
+			: ok({ event: marked.data, failed: 0, processed: 1, skipped: 0 });
+	} catch (error) {
+		const marked = await store.markFailed({
+			id: event.id,
+			organizationId: event.organizationId,
+			lastError: errorMessage(error),
+		});
+		if (!marked.ok) {
+			return marked;
+		}
+		return marked.data === null
+			? fail("INTERNAL_ERROR", `Failed to mark event ${event.id} failed`)
+			: ok({ event: marked.data, failed: 1, processed: 0, skipped: 0 });
+	}
 }
 
 export function createEventDispatcher(
 	options: CreateEventDispatcherOptions,
 ): EventDispatcher {
 	const store = resolveEventStore(options.store);
-	const handlers = options.handlers;
+	const { handlers } = options;
 
 	return {
 		async dispatchPending(
@@ -49,62 +98,40 @@ export function createEventDispatcher(
 			}
 
 			const claimed = claimedResult.data;
-			let processed = 0;
-			let failed = 0;
-			let skipped = 0;
-			const events: DomainEvent[] = [];
+			const dispatched = await claimed.reduce<
+				Promise<Result<EventDispatchAccumulator>>
+			>(
+				async (previousResult, event) => {
+					const accumulated = await previousResult;
+					if (!accumulated.ok) {
+						return accumulated;
+					}
 
-			for (const event of claimed) {
-				const handler = handlers[event.type];
-				if (handler === undefined) {
-					skipped += 1;
-					events.push(event);
-					continue;
-				}
-
-				try {
-					await handler(event);
-					const marked = await store.markProcessed({
-						id: event.id,
-						organizationId: event.organizationId,
-					});
-					if (!marked.ok) {
-						return marked;
+					const outcome = await dispatchEvent(
+						event,
+						handlers[event.type],
+						store,
+					);
+					if (!outcome.ok) {
+						return outcome;
 					}
-					if (marked.data === null) {
-						return fail(
-							"INTERNAL_ERROR",
-							`Failed to mark event ${event.id} processed`,
-						);
-					}
-					processed += 1;
-					events.push(marked.data);
-				} catch (error) {
-					const marked = await store.markFailed({
-						id: event.id,
-						organizationId: event.organizationId,
-						lastError: errorMessage(error),
-					});
-					if (!marked.ok) {
-						return marked;
-					}
-					if (marked.data === null) {
-						return fail(
-							"INTERNAL_ERROR",
-							`Failed to mark event ${event.id} failed`,
-						);
-					}
-					failed += 1;
-					events.push(marked.data);
-				}
+					accumulated.data.events.push(outcome.data.event);
+					accumulated.data.processed += outcome.data.processed;
+					accumulated.data.failed += outcome.data.failed;
+					accumulated.data.skipped += outcome.data.skipped;
+					return accumulated;
+				},
+				Promise.resolve(
+					ok({ events: [], failed: 0, processed: 0, skipped: 0 }),
+				),
+			);
+			if (!dispatched.ok) {
+				return dispatched;
 			}
 
 			return ok({
 				claimed: claimed.length,
-				processed,
-				failed,
-				skipped,
-				events,
+				...dispatched.data,
 			});
 		},
 	};

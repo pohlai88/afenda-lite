@@ -8,16 +8,17 @@ import type {
 } from "@afenda/master-data";
 
 import type { MasterLookupPort } from "../../src/ports";
+import { resolveAsync } from "../../src/resolve-async";
 
-export type MemoryMastersSeed = {
-	parties?: Party[];
+export interface MemoryMastersSeed {
 	items?: Item[];
+	parties?: Party[];
 	paymentTerms?: PaymentTerm[];
-	uoms?: RefUom[];
-	warehouses?: Warehouse[];
 	/** Party IDs that have an active supplier role in the test harness. */
 	supplierPartyIds?: string[];
-};
+	uoms?: RefUom[];
+	warehouses?: Warehouse[];
+}
 
 export function createMemoryMasterLookup(
 	seed: MemoryMastersSeed = {},
@@ -32,67 +33,77 @@ export function createMemoryMasterLookup(
 	const supplierPartyIds = new Set(seed.supplierPartyIds ?? []);
 
 	return {
-		async getPartyById(
+		getPartyById(
 			organizationId: string,
 			id: string,
 			_actorUserId: string,
 		): Promise<Result<Party | null>> {
-			const row = parties.get(id);
-			if (row === undefined || row.organizationId !== organizationId) {
-				return ok(null);
-			}
-			return ok(row);
+			return resolveAsync(() => {
+				const row = parties.get(id);
+				if (row === undefined || row.organizationId !== organizationId) {
+					return ok(null);
+				}
+				return ok(row);
+			});
 		},
-		async getItemById(
+		getItemById(
 			organizationId: string,
 			id: string,
 			_actorUserId: string,
 		): Promise<Result<Item | null>> {
-			const row = items.get(id);
-			if (row === undefined || row.organizationId !== organizationId) {
-				return ok(null);
-			}
-			return ok(row);
+			return resolveAsync(() => {
+				const row = items.get(id);
+				if (row === undefined || row.organizationId !== organizationId) {
+					return ok(null);
+				}
+				return ok(row);
+			});
 		},
-		async getPaymentTermById(
+		getPaymentTermById(
 			organizationId: string,
 			id: string,
 			_actorUserId: string,
 		): Promise<Result<PaymentTerm | null>> {
-			const row = terms.get(id);
-			if (row === undefined || row.organizationId !== organizationId) {
-				return ok(null);
-			}
-			return ok(row);
+			return resolveAsync(() => {
+				const row = terms.get(id);
+				if (row === undefined || row.organizationId !== organizationId) {
+					return ok(null);
+				}
+				return ok(row);
+			});
 		},
-		async getRefUomById(
+		getRefUomById(
 			_organizationId: string,
 			id: string,
 			_actorUserId: string,
 		): Promise<Result<RefUom | null>> {
-			return ok(uoms.get(id) ?? null);
+			return resolveAsync(() => ok(uoms.get(id) ?? null));
 		},
-		async hasActiveSupplierRole(
+		hasActiveSupplierRole(
 			organizationId: string,
 			partyId: string,
 			_actorUserId: string,
 		): Promise<Result<boolean>> {
-			const party = parties.get(partyId);
-			if (party === undefined || party.organizationId !== organizationId) {
-				return ok(false);
-			}
-			return ok(supplierPartyIds.has(partyId));
+			return resolveAsync(() => {
+				const party = parties.get(partyId);
+				if (party === undefined || party.organizationId !== organizationId) {
+					return ok(false);
+				}
+				return ok(supplierPartyIds.has(partyId));
+			});
 		},
-		async getWarehouseById(
+		getWarehouseById(
 			organizationId: string,
 			id: string,
 			_actorUserId: string,
 		): Promise<Result<Warehouse | null>> {
-			const row = warehouses.get(id);
-			if (row === undefined || row.organizationId !== organizationId) {
-				return ok(null);
-			}
-			return ok(row);
+			return resolveAsync(() => {
+				const row = warehouses.get(id);
+				if (row === undefined || row.organizationId !== organizationId) {
+					return ok(null);
+				}
+				return ok(row);
+			});
 		},
 	};
 }

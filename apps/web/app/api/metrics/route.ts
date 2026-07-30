@@ -13,12 +13,13 @@ import { createPlatformRouteHandler } from "@/modules/platform/api/route-pipelin
 export const runtime = "nodejs";
 
 const METRICS_ROUTE_TEMPLATE = "/api/metrics" as const;
+const BEARER_TOKEN_PATTERN = /^Bearer\s+(\S+)$/i;
 
 function extractBearerToken(authorization: string | null): string | null {
 	if (authorization === null) {
 		return null;
 	}
-	const match = /^Bearer\s+(\S+)$/i.exec(authorization.trim());
+	const match = BEARER_TOKEN_PATTERN.exec(authorization.trim());
 	return match?.[1] ?? null;
 }
 

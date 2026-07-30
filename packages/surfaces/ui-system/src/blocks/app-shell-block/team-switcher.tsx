@@ -1,7 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { useState } from "react";
+import { type MouseEvent, type ReactNode, useCallback, useState } from "react";
 
 export function TeamSwitcher({
 	onCreateTeam,
@@ -17,6 +16,18 @@ export function TeamSwitcher({
 	onCreateTeam?: () => void;
 }>) {
 	const [current, setCurrent] = useState(teams[0]);
+	const handleTeamChange = useCallback(
+		(event: MouseEvent<HTMLButtonElement>) => {
+			const team = teams.find(
+				(candidate) => candidate.id === event.currentTarget.value,
+			);
+			if (team) {
+				setCurrent(team);
+				onTeamChange?.(team.id);
+			}
+		},
+		[onTeamChange, teams],
+	);
 	return (
 		<div>
 			<button type="button">
@@ -25,18 +36,16 @@ export function TeamSwitcher({
 			{teams.slice(1).map((team) => (
 				<button
 					key={team.id}
-					type="button"
+					onClick={handleTeamChange}
 					role="menuitem"
-					onClick={() => {
-						setCurrent(team);
-						onTeamChange?.(team.id);
-					}}
+					type="button"
+					value={team.id}
 				>
 					{team.name}
 				</button>
 			))}
 			{onCreateTeam ? (
-				<button type="button" role="menuitem" onClick={onCreateTeam}>
+				<button onClick={onCreateTeam} role="menuitem" type="button">
 					Add team
 				</button>
 			) : null}

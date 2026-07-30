@@ -1,4 +1,5 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
+import type { z } from "zod";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
@@ -35,9 +36,84 @@ import {
 	assertNoEmploymentOverlap,
 } from "../shared/employment-status";
 import { buildMutationMeta } from "../shared/mutation-meta";
+import type { HumanResourcesCoreStore } from "../store/core";
 import type { Employment, EmploymentStatusHistory } from "../types";
 
-export async function createEmployment(
+interface ValidatedEmploymentAmendment {
+	endsOn: string | null;
+	lifecycleEffectiveOn: string | undefined;
+	startsOn: string;
+}
+
+async function validateEmploymentAmendment(
+	store: HumanResourcesCoreStore,
+	data: z.output<typeof amendEmploymentInputSchema>,
+): Promise<Result<ValidatedEmploymentAmendment>> {
+	const existing = await store.getEmploymentById({
+		organizationId: data.organizationId,
+		employmentId: data.employmentId,
+	});
+	if (!existing.ok) {
+		return existing;
+	}
+	if (existing.data === null) {
+		return fail(
+			"NOT_FOUND",
+			"Employment not found",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+		);
+	}
+	if (data.status !== undefined) {
+		const transitionCheck = assertEmploymentStatusTransition(
+			existing.data.status,
+			data.status,
+		);
+		if (!transitionCheck.ok) {
+			return transitionCheck;
+		}
+	}
+	const startsOn = data.startsOn ?? existing.data.startsOn;
+	const endsOn = resolveAmendEndsOn({
+		nextStatus: data.status,
+		startsOn,
+		endsOn: data.endsOn,
+		previousEndsOn: existing.data.endsOn,
+	});
+	if (!endsOn.ok) {
+		return endsOn;
+	}
+	const siblings = await store.listEmploymentsByEmployee({
+		organizationId: data.organizationId,
+		employeeId: existing.data.employeeId,
+	});
+	if (!siblings.ok) {
+		return siblings;
+	}
+	const overlapCheck = assertNoEmploymentOverlap({
+		candidateEmploymentId: data.employmentId,
+		candidateStartsOn: startsOn,
+		candidateEndsOn: endsOn.data,
+		existing: siblings.data,
+	});
+	if (!overlapCheck.ok) {
+		return overlapCheck;
+	}
+	const nextStatus = data.status ?? existing.data.status;
+	const lifecycleEffectiveOn =
+		data.status !== undefined && data.status !== existing.data.status
+			? resolveLifecycleEffectiveOn({
+					status: nextStatus,
+					startsOn,
+					endsOn: endsOn.data,
+					...(data.effectiveOn === undefined
+						? {}
+						: { requestedEffectiveOn: data.effectiveOn }),
+				})
+			: undefined;
+	return ok({ endsOn: endsOn.data, lifecycleEffectiveOn, startsOn });
+}
+
+export function createEmployment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Employment>> {
@@ -91,7 +167,7 @@ export async function createEmployment(
 	});
 }
 
-export async function amendEmployment(
+export function amendEmployment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Employment>> {
@@ -100,71 +176,10 @@ export async function amendEmployment(
 		invalidMessage: "Invalid employment amend input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_AMEND,
 		execute: async (data, { store, ports }) => {
-			const existing = await store.getEmploymentById({
-				organizationId: data.organizationId,
-				employmentId: data.employmentId,
-			});
-			if (!existing.ok) {
-				return existing;
+			const amendment = await validateEmploymentAmendment(store, data);
+			if (!amendment.ok) {
+				return amendment;
 			}
-			if (existing.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Employment not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
-			}
-
-			if (data.status !== undefined) {
-				const transitionCheck = assertEmploymentStatusTransition(
-					existing.data.status,
-					data.status,
-				);
-				if (!transitionCheck.ok) {
-					return transitionCheck;
-				}
-			}
-
-			const startsOn = data.startsOn ?? existing.data.startsOn;
-			const endsOnResolved = resolveAmendEndsOn({
-				nextStatus: data.status,
-				startsOn,
-				endsOn: data.endsOn,
-				previousEndsOn: existing.data.endsOn,
-			});
-			if (!endsOnResolved.ok) {
-				return endsOnResolved;
-			}
-
-			const siblingEmployments = await store.listEmploymentsByEmployee({
-				organizationId: data.organizationId,
-				employeeId: existing.data.employeeId,
-			});
-			if (!siblingEmployments.ok) {
-				return siblingEmployments;
-			}
-			const overlapCheck = assertNoEmploymentOverlap({
-				candidateEmploymentId: data.employmentId,
-				candidateStartsOn: startsOn,
-				candidateEndsOn: endsOnResolved.data,
-				existing: siblingEmployments.data,
-			});
-			if (!overlapCheck.ok) {
-				return overlapCheck;
-			}
-
-			const nextStatus = data.status ?? existing.data.status;
-			const lifecycleEffectiveOn =
-				data.status !== undefined && data.status !== existing.data.status
-					? resolveLifecycleEffectiveOn({
-							status: nextStatus,
-							startsOn,
-							endsOn: endsOnResolved.data,
-							...(data.effectiveOn === undefined
-								? {}
-								: { requestedEffectiveOn: data.effectiveOn }),
-						})
-					: undefined;
 
 			return store.amendEmployment(
 				{
@@ -172,10 +187,12 @@ export async function amendEmployment(
 					employmentId: data.employmentId,
 					...(data.status === undefined ? {} : { status: data.status }),
 					...(data.startsOn === undefined ? {} : { startsOn: data.startsOn }),
-					endsOn: endsOnResolved.data,
-					...(lifecycleEffectiveOn === undefined
+					endsOn: amendment.data.endsOn,
+					...(amendment.data.lifecycleEffectiveOn === undefined
 						? {}
-						: { lifecycleEffectiveOn }),
+						: {
+								lifecycleEffectiveOn: amendment.data.lifecycleEffectiveOn,
+							}),
 					expectedVersion: data.expectedVersion,
 					actorUserId: data.actorUserId,
 				},
@@ -189,7 +206,7 @@ export async function amendEmployment(
 	});
 }
 
-export async function correctEmployment(
+export function correctEmployment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Employment>> {
@@ -226,7 +243,7 @@ export async function correctEmployment(
 
 			const startsOn = data.startsOn ?? existing.data.startsOn;
 			const endsOn =
-				data.endsOn !== undefined ? data.endsOn : existing.data.endsOn;
+				data.endsOn === undefined ? existing.data.endsOn : data.endsOn;
 			const siblingEmployments = await store.listEmploymentsByEmployee({
 				organizationId: data.organizationId,
 				employeeId: existing.data.employeeId,
@@ -267,7 +284,7 @@ export async function correctEmployment(
 	});
 }
 
-export async function getEmployment(
+export function getEmployment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Employment>> {
@@ -295,7 +312,7 @@ export async function getEmployment(
 	});
 }
 
-export async function getEmploymentAsOf(
+export function getEmploymentAsOf(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Employment | null>> {
@@ -303,17 +320,16 @@ export async function getEmploymentAsOf(
 		schema: getEmploymentAsOfInputSchema,
 		invalidMessage: "Invalid employment as-of input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYMENT_AS_OF,
-		execute: async (data, { store }) => {
-			return store.findEmploymentByEmployeeAsOf({
+		execute: async (data, { store }) =>
+			store.findEmploymentByEmployeeAsOf({
 				organizationId: data.organizationId,
 				employeeId: data.employeeId,
 				asOf: data.asOf,
-			});
-		},
+			}),
 	});
 }
 
-export async function listEmploymentStatusHistory(
+export function listEmploymentStatusHistory(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<

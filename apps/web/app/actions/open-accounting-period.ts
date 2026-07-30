@@ -29,7 +29,7 @@ export async function openAccountingPeriodAction(
 	_prev: OpenAccountingPeriodActionState,
 	formData: FormData,
 ): Promise<OpenAccountingPeriodActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "openAccountingPeriodAction",
 		permission: "accounting.period.open",
 		safeMessage:
@@ -40,12 +40,13 @@ export async function openAccountingPeriodAction(
 				startDate: formData.get("startDate"),
 				endDate: formData.get("endDate"),
 			});
-			if (!parsed.success)
+			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
 					"Enter valid accounting period dates.",
 					parsed.details,
 				);
+			}
 			const mapped = mapPackageResult(
 				await openAccountingPeriod(
 					{
@@ -57,7 +58,9 @@ export async function openAccountingPeriodAction(
 					createAccountingCommandOptions(),
 				),
 			);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePath("/admin/accounting");
 			revalidatePath("/client/accounting");
 			return { ok: true, data: { period: mapped.data } };

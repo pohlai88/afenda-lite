@@ -15,7 +15,9 @@ export async function loadLeaveEntitlementForCommand(
 	},
 ): Promise<Result<LeaveEntitlement>> {
 	const entitlement = await store.getLeaveEntitlementById(input);
-	if (!entitlement.ok) return entitlement;
+	if (!entitlement.ok) {
+		return entitlement;
+	}
 	if (entitlement.data === null) {
 		return fail("NOT_FOUND", "Leave entitlement not found");
 	}
@@ -38,12 +40,16 @@ export async function loadPublishedLeavePolicyForEntitlement(
 		organizationId: input.organizationId,
 		policyId: input.entitlement.policyId,
 	});
-	if (!policy.ok) return policy;
+	if (!policy.ok) {
+		return policy;
+	}
 	if (policy.data === null) {
 		return fail("NOT_FOUND", "Leave policy not found");
 	}
 	const published = assertLeavePolicyPublished(policy.data.status);
-	if (!published.ok) return published;
+	if (!published.ok) {
+		return published;
+	}
 	return ok({
 		policy: policy.data,
 		balanceRules: resolveLeavePolicyBalanceRulesFromInput(policy.data),

@@ -11,14 +11,14 @@ import { AUTH_API_BASE_PATH } from "@afenda/auth/client";
 import { CLIENT_GATE_PATHS } from "./features/auth/client-paths";
 import { PRE_LOGIN_API_PATHS } from "./features/auth/pre-login-route-contract";
 
-export type SessionGateRequest = {
+export interface SessionGateRequest {
+	hasHeader: (name: string) => boolean;
 	method: string;
 	pathname: string;
-	searchParams: Pick<URLSearchParams, "get">;
-	hasHeader: (name: string) => boolean;
 	/** When true, `/playground/*` may bypass the session gate (local harness). */
 	playgroundEnabled?: boolean;
-};
+	searchParams: Pick<URLSearchParams, "get">;
+}
 
 function isClientPublicPath(pathname: string): boolean {
 	return CLIENT_GATE_PATHS.some(

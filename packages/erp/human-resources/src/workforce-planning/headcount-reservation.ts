@@ -1,4 +1,5 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
+import type { z } from "zod";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -13,6 +14,7 @@ import {
 	HUMAN_RESOURCES_QUERY_HEADCOUNT_RESERVATION_LIST,
 	HUMAN_RESOURCES_QUERY_RECRUITMENT_HEADCOUNT_HANDOFF_GET,
 } from "../module-ids";
+import type { MutationPorts } from "../ports";
 import {
 	consumeHeadcountReservationInputSchema,
 	getHeadcountAvailabilityInputSchema,
@@ -30,8 +32,10 @@ import {
 	runWorkforcePlanningQuery,
 } from "../shared/workforce-planning-command";
 import { assertReservationWithinAvailability } from "../shared/workforce-planning-guards";
+import type { HumanResourcesStore } from "../store";
 import type {
 	HeadcountAvailability,
+	HeadcountPlanLine,
 	HeadcountReservation,
 	HeadcountReservationListPage,
 	RecruitmentHeadcountHandoff,
@@ -43,7 +47,185 @@ export const HUMAN_RESOURCES_AGGREGATE_HEADCOUNT_RESERVATION =
 export type HumanResourcesHeadcountReservationAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_HEADCOUNT_RESERVATION;
 
-export async function reserveHeadcount(
+type ReserveHeadcountInput = z.infer<typeof reserveHeadcountInputSchema>;
+
+async function findReservationReplay(input: {
+	data: ReserveHeadcountInput;
+	requestFingerprint: string;
+	store: HumanResourcesStore;
+}): Promise<Result<HeadcountReservation | null>> {
+	const existingByKey =
+		await input.store.findHeadcountReservationByIdempotencyKey({
+			organizationId: input.data.organizationId,
+			idempotencyKey: input.data.idempotencyKey,
+		});
+	if (!existingByKey.ok) {
+		return existingByKey;
+	}
+	if (existingByKey.data === null) {
+		return ok(null);
+	}
+	if (
+		existingByKey.data.createRequestFingerprint !== input.requestFingerprint
+	) {
+		return fail(
+			"CONFLICT",
+			"Idempotency key reused with different payload",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+		);
+	}
+	return ok(existingByKey.data.reservation);
+}
+
+async function loadReservablePlanLine(input: {
+	data: ReserveHeadcountInput;
+	store: HumanResourcesStore;
+}): Promise<Result<HeadcountPlanLine>> {
+	const line = await input.store.getHeadcountPlanLineById({
+		organizationId: input.data.organizationId,
+		planLineId: input.data.planLineId,
+	});
+	if (!line.ok) {
+		return line;
+	}
+	if (line.data === null) {
+		return fail(
+			"NOT_FOUND",
+			"Headcount plan line not found",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+		);
+	}
+
+	const plan = await input.store.getHeadcountPlanById({
+		organizationId: input.data.organizationId,
+		planId: line.data.planId,
+	});
+	if (!plan.ok) {
+		return plan;
+	}
+	if (plan.data === null || plan.data.status !== "approved") {
+		return fail(
+			"BAD_REQUEST",
+			"Headcount reservations require an approved plan line",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+		);
+	}
+
+	const requisition = await input.store.getRequisitionById({
+		organizationId: input.data.organizationId,
+		requisitionId: input.data.requisitionId,
+	});
+	if (!requisition.ok) {
+		return requisition;
+	}
+	if (requisition.data === null) {
+		return fail(
+			"NOT_FOUND",
+			"Requisition not found",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+		);
+	}
+
+	const statusGate = assertRequisitionAllowsHeadcountReservation(
+		requisition.data.status,
+	);
+	if (!statusGate.ok) {
+		return statusGate;
+	}
+	return ok(line.data);
+}
+
+async function assertReservationCapacity(input: {
+	data: ReserveHeadcountInput;
+	line: HeadcountPlanLine;
+	store: HumanResourcesStore;
+}): Promise<Result<void>> {
+	const existingActive =
+		await input.store.findActiveHeadcountReservationForRequisition({
+			organizationId: input.data.organizationId,
+			requisitionId: input.data.requisitionId,
+		});
+	if (!existingActive.ok) {
+		return existingActive;
+	}
+	if (existingActive.data !== null) {
+		return conflict("Requisition already has an active headcount reservation");
+	}
+
+	const reservations = await input.store.listHeadcountReservationsByPlanLineId({
+		organizationId: input.data.organizationId,
+		planLineId: input.data.planLineId,
+	});
+	if (!reservations.ok) {
+		return reservations;
+	}
+	const availability = computeLineAvailability({
+		line: input.line,
+		reservations: reservations.data,
+	});
+	return assertReservationWithinAvailability({
+		availableFte: availability.availableFte,
+		availableHeadcount: availability.availableHeadcount,
+		reservedFte: input.data.reservedFte,
+		reservedHeadcount: input.data.reservedHeadcount,
+	});
+}
+
+async function executeReserveHeadcount(
+	data: ReserveHeadcountInput,
+	deps: { store: HumanResourcesStore; ports: MutationPorts },
+): Promise<Result<HeadcountReservation>> {
+	const requestFingerprint = fingerprintHeadcountReservation({
+		planLineId: data.planLineId,
+		requisitionId: data.requisitionId,
+		reservedFte: data.reservedFte,
+		reservedHeadcount: data.reservedHeadcount,
+	});
+	const replay = await findReservationReplay({
+		data,
+		requestFingerprint,
+		store: deps.store,
+	});
+	if (!replay.ok) {
+		return replay;
+	}
+	if (replay.data !== null) {
+		return ok(replay.data);
+	}
+
+	const line = await loadReservablePlanLine({ data, store: deps.store });
+	if (!line.ok) {
+		return line;
+	}
+	const capacity = await assertReservationCapacity({
+		data,
+		line: line.data,
+		store: deps.store,
+	});
+	if (!capacity.ok) {
+		return capacity;
+	}
+
+	return deps.store.reserveHeadcount(
+		{
+			organizationId: data.organizationId,
+			planLineId: data.planLineId,
+			requisitionId: data.requisitionId,
+			reservedFte: data.reservedFte,
+			reservedHeadcount: data.reservedHeadcount,
+			createIdempotencyKey: data.idempotencyKey,
+			createRequestFingerprint: requestFingerprint,
+			createdBy: data.actorUserId,
+		},
+		deps.ports,
+		buildMutationMeta({
+			correlationId: data.correlationId,
+			operationId: HUMAN_RESOURCES_COMMAND_HEADCOUNT_RESERVE,
+		}),
+	);
+}
+
+export function reserveHeadcount(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<HeadcountReservation>> {
@@ -51,145 +233,11 @@ export async function reserveHeadcount(
 		schema: reserveHeadcountInputSchema,
 		invalidMessage: "Invalid headcount reserve input",
 		command: HUMAN_RESOURCES_COMMAND_HEADCOUNT_RESERVE,
-		execute: async (data, { store, ports }) => {
-			const requestFingerprint = fingerprintHeadcountReservation({
-				planLineId: data.planLineId,
-				requisitionId: data.requisitionId,
-				reservedFte: data.reservedFte,
-				reservedHeadcount: data.reservedHeadcount,
-			});
-
-			const existingByKey =
-				await store.findHeadcountReservationByIdempotencyKey({
-					organizationId: data.organizationId,
-					idempotencyKey: data.idempotencyKey,
-				});
-			if (!existingByKey.ok) {
-				return existingByKey;
-			}
-			if (existingByKey.data !== null) {
-				if (
-					existingByKey.data.createRequestFingerprint !== requestFingerprint
-				) {
-					return fail(
-						"CONFLICT",
-						"Idempotency key reused with different payload",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
-				}
-				return ok(existingByKey.data.reservation);
-			}
-
-			const line = await store.getHeadcountPlanLineById({
-				organizationId: data.organizationId,
-				planLineId: data.planLineId,
-			});
-			if (!line.ok) {
-				return line;
-			}
-			if (line.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Headcount plan line not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
-			}
-
-			const plan = await store.getHeadcountPlanById({
-				organizationId: data.organizationId,
-				planId: line.data.planId,
-			});
-			if (!plan.ok) {
-				return plan;
-			}
-			if (plan.data === null || plan.data.status !== "approved") {
-				return fail(
-					"BAD_REQUEST",
-					"Headcount reservations require an approved plan line",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
-			}
-
-			const requisition = await store.getRequisitionById({
-				organizationId: data.organizationId,
-				requisitionId: data.requisitionId,
-			});
-			if (!requisition.ok) {
-				return requisition;
-			}
-			if (requisition.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Requisition not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
-			}
-
-			const statusGate = assertRequisitionAllowsHeadcountReservation(
-				requisition.data.status,
-			);
-			if (!statusGate.ok) {
-				return statusGate;
-			}
-
-			const existingActive =
-				await store.findActiveHeadcountReservationForRequisition({
-					organizationId: data.organizationId,
-					requisitionId: data.requisitionId,
-				});
-			if (!existingActive.ok) {
-				return existingActive;
-			}
-			if (existingActive.data !== null) {
-				return conflict(
-					"Requisition already has an active headcount reservation",
-				);
-			}
-
-			const reservations = await store.listHeadcountReservationsByPlanLineId({
-				organizationId: data.organizationId,
-				planLineId: data.planLineId,
-			});
-			if (!reservations.ok) {
-				return reservations;
-			}
-			const availability = computeLineAvailability({
-				line: line.data,
-				reservations: reservations.data,
-			});
-
-			const withinAvailability = assertReservationWithinAvailability({
-				availableFte: availability.availableFte,
-				availableHeadcount: availability.availableHeadcount,
-				reservedFte: data.reservedFte,
-				reservedHeadcount: data.reservedHeadcount,
-			});
-			if (!withinAvailability.ok) {
-				return withinAvailability;
-			}
-
-			return store.reserveHeadcount(
-				{
-					organizationId: data.organizationId,
-					planLineId: data.planLineId,
-					requisitionId: data.requisitionId,
-					reservedFte: data.reservedFte,
-					reservedHeadcount: data.reservedHeadcount,
-					createIdempotencyKey: data.idempotencyKey,
-					createRequestFingerprint: requestFingerprint,
-					createdBy: data.actorUserId,
-				},
-				ports,
-				buildMutationMeta({
-					correlationId: data.correlationId,
-					operationId: HUMAN_RESOURCES_COMMAND_HEADCOUNT_RESERVE,
-				}),
-			);
-		},
+		execute: executeReserveHeadcount,
 	});
 }
 
-export async function releaseHeadcountReservation(
+export function releaseHeadcountReservation(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<HeadcountReservation>> {
@@ -214,7 +262,7 @@ export async function releaseHeadcountReservation(
 	});
 }
 
-export async function consumeHeadcountReservation(
+export function consumeHeadcountReservation(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<HeadcountReservation>> {
@@ -239,7 +287,7 @@ export async function consumeHeadcountReservation(
 	});
 }
 
-export async function getHeadcountAvailability(
+export function getHeadcountAvailability(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<HeadcountAvailability>> {
@@ -267,7 +315,7 @@ export async function getHeadcountAvailability(
 	});
 }
 
-export async function listHeadcountReservations(
+export function listHeadcountReservations(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<HeadcountReservationListPage>> {
@@ -286,7 +334,7 @@ export async function listHeadcountReservations(
 	});
 }
 
-export async function getRecruitmentHeadcountHandoff(
+export function getRecruitmentHeadcountHandoff(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<RecruitmentHeadcountHandoff>> {

@@ -32,8 +32,8 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 	const id = `contract-${title.toLowerCase().replaceAll(" ", "-")}`;
 
 	return (
-		<section className="grid gap-4 border-t pt-6" aria-labelledby={id}>
-			<h2 className="text-lg font-medium" id={id}>
+		<section aria-labelledby={id} className="grid gap-4 border-t pt-6">
+			<h2 className="font-medium text-lg" id={id}>
 				{title}
 			</h2>
 			{children}
@@ -91,8 +91,8 @@ function ApprovedApiTable({
 }) {
 	return (
 		<section
-			className="afenda-contract-api-table overflow-x-auto rounded-md border"
 			aria-label={label}
+			className="afenda-contract-api-table overflow-x-auto rounded-md border"
 			{...keyboardScrollableRegionProps}
 		>
 			<Table>
@@ -108,7 +108,7 @@ function ApprovedApiTable({
 					{Object.entries(items).map(([name, rule]) => (
 						<TableRow className="align-top" key={name}>
 							<TableHead
-								className="h-auto whitespace-normal py-2 align-top font-mono font-medium text-foreground"
+								className="h-auto whitespace-normal py-2 align-top font-medium font-mono text-foreground"
 								scope="row"
 							>
 								{name}
@@ -160,16 +160,16 @@ export function ContractDocsPage({
 
 	return (
 		<Unstyled>
-			<main className="afenda-contract-docs grid gap-6 font-sans text-sm text-foreground">
+			<main className="afenda-contract-docs grid gap-6 font-sans text-foreground text-sm">
 				<header className="grid gap-4">
-					<h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+					<h1 className="font-semibold text-2xl tracking-tight">{title}</h1>
 					<div className="grid gap-4 rounded-md border bg-surface-sunken p-4">
-						<p className="text-lg font-medium text-foreground">
+						<p className="font-medium text-foreground text-lg">
 							{evidence.purpose}
 						</p>
 						<ul
-							className="flex flex-wrap gap-2"
 							aria-label="Contract classification"
+							className="flex flex-wrap gap-2"
 						>
 							{[evidence.family, evidence.layer, evidence.qualityProfile].map(
 								(classification) => (
@@ -179,7 +179,7 @@ export function ContractDocsPage({
 								),
 							)}
 						</ul>
-						<p className="font-mono text-xs text-foreground-tertiary">
+						<p className="font-mono text-foreground-tertiary text-xs">
 							{evidence.contractId} · {evidence.componentId}
 						</p>
 					</div>
@@ -231,7 +231,7 @@ export function ContractDocsPage({
 						Evidence stories must visibly represent these catalogue-required
 						states.
 					</p>
-					<ul className="flex flex-wrap gap-2" aria-label="Required states">
+					<ul aria-label="Required states" className="flex flex-wrap gap-2">
 						{evidence.requiredStates.map((state) => (
 							<li key={state}>
 								<Badge variant="outline">{state}</Badge>

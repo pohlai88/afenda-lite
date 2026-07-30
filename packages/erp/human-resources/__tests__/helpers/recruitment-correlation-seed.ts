@@ -118,7 +118,7 @@ export async function seedCandidateForCorrelation(
 		idempotencyKey: string;
 	},
 ) {
-	return createCandidate(
+	return await createCandidate(
 		{
 			organizationId: input.organizationId,
 			actorUserId: input.actorUserId,

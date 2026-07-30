@@ -12,7 +12,7 @@ import {
 import { runCoreQuery } from "../shared/core-command";
 import { resolveEmployeeOrgContextForEmployment } from "./employee-org-context-resolution";
 
-export async function resolveEmployeeOrgContextAsOf(
+export function resolveEmployeeOrgContextAsOf(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeOrgContextAsOf>> {

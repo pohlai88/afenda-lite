@@ -113,103 +113,103 @@ export type DrizzleEmployeeRelationsMethods = Pick<
 	| "getEmployeeCaseOutcome"
 >;
 
-type EmployeeRelationsHost = {
+interface EmployeeRelationsHost {
 	getEmployeeById: HumanResourcesStore["getEmployeeById"];
 	getEmploymentById: HumanResourcesStore["getEmploymentById"];
-};
+}
 
 type CaseRow = typeof hrEmployeeCase.$inferSelect;
 type EventRow = typeof hrEmployeeCaseEvent.$inferSelect;
 type ActionRow = typeof hrEmployeeCaseAction.$inferSelect;
 type AppealRow = typeof hrEmployeeCaseAppeal.$inferSelect;
 
-type CaseSqlRow = {
-	id: string;
-	organization_id: string;
-	employee_id: string;
-	employment_id: string;
-	case_type: string;
-	status: string;
-	severity: string;
+interface CaseSqlRow {
 	allegation_summary: string;
+	case_type: string;
 	classification_code: string;
-	owner_actor_user_id: string;
-	subject_actor_user_id: string | null;
-	participants: unknown;
-	conflicted_actor_user_ids: unknown;
-	interim_authority: string | null;
-	interim_reason: string | null;
-	interim_starts_on: string | null;
-	interim_review_on: string | null;
-	interim_status: string | null;
-	finding_code: string | null;
-	finding_summary: string | null;
-	finding_recorded_by: string | null;
-	finding_recorded_at: Date | null;
-	outcome_code: string | null;
 	closed_at: Date | null;
 	closed_by: string | null;
+	conflicted_actor_user_ids: unknown;
 	create_idempotency_key: string;
 	create_request_fingerprint: string;
-	version: number;
+	created_at: Date;
 	created_by: string;
-	updated_by: string;
-	created_at: Date;
-	updated_at: Date;
-};
-
-type EventSqlRow = {
+	employee_id: string;
+	employment_id: string;
+	finding_code: string | null;
+	finding_recorded_at: Date | null;
+	finding_recorded_by: string | null;
+	finding_summary: string | null;
 	id: string;
+	interim_authority: string | null;
+	interim_reason: string | null;
+	interim_review_on: string | null;
+	interim_starts_on: string | null;
+	interim_status: string | null;
 	organization_id: string;
-	case_id: string;
-	event_kind: string;
-	sequence_no: number;
-	document_ref: string | null;
-	payload_json: unknown;
-	redacts_event_id: string | null;
-	recorded_by: string;
-	recorded_at: Date;
-	created_at: Date;
-};
-
-type ActionSqlRow = {
-	id: string;
-	organization_id: string;
-	case_id: string;
-	action_type: string;
+	outcome_code: string | null;
+	owner_actor_user_id: string;
+	participants: unknown;
+	severity: string;
 	status: string;
-	recommended_by: string;
+	subject_actor_user_id: string | null;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+}
+
+interface EventSqlRow {
+	case_id: string;
+	created_at: Date;
+	document_ref: string | null;
+	event_kind: string;
+	id: string;
+	organization_id: string;
+	payload_json: unknown;
+	recorded_at: Date;
+	recorded_by: string;
+	redacts_event_id: string | null;
+	sequence_no: number;
+}
+
+interface ActionSqlRow {
+	action_type: string;
 	approved_by: string | null;
+	case_id: string;
+	create_idempotency_key: string;
+	create_request_fingerprint: string;
+	created_at: Date;
+	created_by: string;
+	id: string;
+	organization_id: string;
 	policy_validation_recorded: boolean;
 	recommendation_note: string | null;
+	recommended_by: string;
+	status: string;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+}
+
+interface AppealSqlRow {
+	appeal_grounds_summary: string;
+	appeal_outcome_code: string | null;
+	case_id: string;
 	create_idempotency_key: string;
 	create_request_fingerprint: string;
-	version: number;
-	created_by: string;
-	updated_by: string;
 	created_at: Date;
-	updated_at: Date;
-};
-
-type AppealSqlRow = {
+	created_by: string;
 	id: string;
 	organization_id: string;
-	case_id: string;
 	original_finding_code: string;
 	original_finding_recorded_at: Date;
-	appeal_grounds_summary: string;
-	status: string;
-	appeal_outcome_code: string | null;
-	resolved_by: string | null;
 	resolved_at: Date | null;
-	create_idempotency_key: string;
-	create_request_fingerprint: string;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
+	resolved_by: string | null;
+	status: string;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+}
 
 function entityPayloadJson(input: {
 	organizationId: string;
@@ -228,7 +228,9 @@ function entityPayloadJson(input: {
 }
 
 function parseParticipants(raw: unknown): Result<EmployeeCaseParticipant[]> {
-	if (!Array.isArray(raw)) return invalidState("Invalid case participants");
+	if (!Array.isArray(raw)) {
+		return invalidState("Invalid case participants");
+	}
 	const participants: EmployeeCaseParticipant[] = [];
 	for (const item of raw) {
 		if (typeof item !== "object" || item === null) {
@@ -242,7 +244,9 @@ function parseParticipants(raw: unknown): Result<EmployeeCaseParticipant[]> {
 			return invalidState("Invalid case participants");
 		}
 		const role = employeeCaseParticipantRoleSchema.safeParse(record.role);
-		if (!role.success) return invalidState("Invalid case participants");
+		if (!role.success) {
+			return invalidState("Invalid case participants");
+		}
 		participants.push({
 			actorUserId: record.actorUserId,
 			role: role.data,
@@ -253,25 +257,41 @@ function parseParticipants(raw: unknown): Result<EmployeeCaseParticipant[]> {
 }
 
 function parseConflictedIds(raw: unknown): string[] {
-	if (!Array.isArray(raw)) return [];
+	if (!Array.isArray(raw)) {
+		return [];
+	}
 	return raw.filter((value): value is string => typeof value === "string");
 }
 
 function mapCase(row: CaseRow): Result<EmployeeCase> {
 	const id = parseHumanResourcesEmployeeCaseId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const employeeId = parseHumanResourcesEmployeeId(row.employeeId);
-	if (!employeeId.ok) return employeeId;
+	if (!employeeId.ok) {
+		return employeeId;
+	}
 	const employmentId = parseHumanResourcesEmploymentId(row.employmentId);
-	if (!employmentId.ok) return employmentId;
+	if (!employmentId.ok) {
+		return employmentId;
+	}
 	const caseType = employeeCaseTypeSchema.safeParse(row.caseType);
-	if (!caseType.success) return invalidState("Invalid case type");
+	if (!caseType.success) {
+		return invalidState("Invalid case type");
+	}
 	const status = employeeCaseStatusSchema.safeParse(row.status);
-	if (!status.success) return invalidState("Invalid case status");
+	if (!status.success) {
+		return invalidState("Invalid case status");
+	}
 	const severity = employeeCaseSeveritySchema.safeParse(row.severity);
-	if (!severity.success) return invalidState("Invalid case severity");
+	if (!severity.success) {
+		return invalidState("Invalid case severity");
+	}
 	const participants = parseParticipants(row.participants);
-	if (!participants.ok) return participants;
+	if (!participants.ok) {
+		return participants;
+	}
 	const interimParsed =
 		row.interimStatus === null
 			? null
@@ -352,15 +372,23 @@ function mapCaseSql(row: CaseSqlRow): Result<EmployeeCase> {
 
 function mapEvent(row: EventRow): Result<EmployeeCaseEvent> {
 	const id = parseHumanResourcesEmployeeCaseEventId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const caseId = parseHumanResourcesEmployeeCaseId(row.caseId);
-	if (!caseId.ok) return caseId;
+	if (!caseId.ok) {
+		return caseId;
+	}
 	const eventKind = employeeCaseEventKindSchema.safeParse(row.eventKind);
-	if (!eventKind.success) return invalidState("Invalid case event kind");
+	if (!eventKind.success) {
+		return invalidState("Invalid case event kind");
+	}
 	let redactsEventId: EmployeeCaseEvent["redactsEventId"] = null;
 	if (row.redactsEventId !== null) {
 		const parsed = parseHumanResourcesEmployeeCaseEventId(row.redactsEventId);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		redactsEventId = parsed.data;
 	}
 	const payloadJson =
@@ -400,13 +428,21 @@ function mapEventSql(row: EventSqlRow): Result<EmployeeCaseEvent> {
 
 function mapAction(row: ActionRow): Result<EmployeeCaseAction> {
 	const id = parseHumanResourcesEmployeeCaseActionId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const caseId = parseHumanResourcesEmployeeCaseId(row.caseId);
-	if (!caseId.ok) return caseId;
+	if (!caseId.ok) {
+		return caseId;
+	}
 	const actionType = employeeCaseActionTypeSchema.safeParse(row.actionType);
-	if (!actionType.success) return invalidState("Invalid case action type");
+	if (!actionType.success) {
+		return invalidState("Invalid case action type");
+	}
 	const status = employeeCaseActionStatusSchema.safeParse(row.status);
-	if (!status.success) return invalidState("Invalid case action status");
+	if (!status.success) {
+		return invalidState("Invalid case action status");
+	}
 	return ok({
 		id: id.data,
 		organizationId: row.organizationId,
@@ -448,11 +484,17 @@ function mapActionSql(row: ActionSqlRow): Result<EmployeeCaseAction> {
 
 function mapAppeal(row: AppealRow): Result<EmployeeCaseAppeal> {
 	const id = parseHumanResourcesEmployeeCaseAppealId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const caseId = parseHumanResourcesEmployeeCaseId(row.caseId);
-	if (!caseId.ok) return caseId;
+	if (!caseId.ok) {
+		return caseId;
+	}
 	const status = employeeCaseAppealStatusSchema.safeParse(row.status);
-	if (!status.success) return invalidState("Invalid case appeal status");
+	if (!status.success) {
+		return invalidState("Invalid case appeal status");
+	}
 	return ok({
 		id: id.data,
 		organizationId: row.organizationId,
@@ -495,7 +537,9 @@ function mapAppealSql(row: AppealSqlRow): Result<EmployeeCaseAppeal> {
 }
 
 function hasCaseAccess(caseRecord: EmployeeCase, actorUserId: string): boolean {
-	if (caseRecord.ownerActorUserId === actorUserId) return true;
+	if (caseRecord.ownerActorUserId === actorUserId) {
+		return true;
+	}
 	return caseRecord.participants.some((p) => p.actorUserId === actorUserId);
 }
 
@@ -518,8 +562,10 @@ async function fetchCaseById(input: {
 				),
 			)
 			.limit(1);
-		const row = rows[0];
-		if (!row) return ok(null);
+		const [row] = rows;
+		if (!row) {
+			return ok(null);
+		}
 		return mapCase(row);
 	} catch (error) {
 		return mapPersistenceFailure(error, "Failed to load employee case");
@@ -531,7 +577,9 @@ async function fetchCaseInOrg(input: {
 	caseId: HumanResourcesEmployeeCaseId;
 }): Promise<Result<EmployeeCase>> {
 	const loaded = await fetchCaseById(input);
-	if (!loaded.ok) return loaded;
+	if (!loaded.ok) {
+		return loaded;
+	}
 	if (loaded.data === null) {
 		return notFound("Case not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
 	}
@@ -547,7 +595,9 @@ async function fetchCaseWithAccess(input: {
 		organizationId: input.organizationId,
 		caseId: input.caseId,
 	});
-	if (!loaded.ok) return loaded;
+	if (!loaded.ok) {
+		return loaded;
+	}
 	if (!hasCaseAccess(loaded.data, input.actorUserId)) {
 		return notFound("Case not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
 	}
@@ -571,7 +621,7 @@ async function fetchEventInOrg(input: {
 				),
 			)
 			.limit(1);
-		const row = rows[0];
+		const [row] = rows;
 		if (!row) {
 			return notFound("Case event not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
 		}
@@ -598,7 +648,7 @@ async function fetchActionInOrg(input: {
 				),
 			)
 			.limit(1);
-		const row = rows[0];
+		const [row] = rows;
 		if (!row) {
 			return notFound("Case action not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
 		}
@@ -625,7 +675,7 @@ async function fetchAppealInOrg(input: {
 				),
 			)
 			.limit(1);
-		const row = rows[0];
+		const [row] = rows;
 		if (!row) {
 			return notFound("Case appeal not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
 		}
@@ -647,7 +697,9 @@ async function listCasesForOrg(
 		const cases: EmployeeCase[] = [];
 		for (const row of rows) {
 			const mapped = mapCase(row);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			cases.push(mapped.data);
 		}
 		return ok(cases);
@@ -670,10 +722,14 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			const mapped = mapCase(row);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return ok({
 				caseId: mapped.data.id,
 				createRequestFingerprint: row.createRequestFingerprint,
@@ -692,7 +748,9 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			organizationId: record.organizationId,
 			idempotencyKey: record.createIdempotencyKey,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data !== null) {
 			if (
 				existing.data.createRequestFingerprint !==
@@ -706,14 +764,22 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			organizationId: record.organizationId,
 			employeeId: record.employeeId,
 		});
-		if (!employee.ok) return employee;
-		if (employee.data === null) return notFound("Employee not found");
+		if (!employee.ok) {
+			return employee;
+		}
+		if (employee.data === null) {
+			return notFound("Employee not found");
+		}
 		const employment = await this.getEmploymentById({
 			organizationId: record.organizationId,
 			employmentId: record.employmentId,
 		});
-		if (!employment.ok) return employment;
-		if (employment.data === null) return notFound("Employment not found");
+		if (!employment.ok) {
+			return employment;
+		}
+		if (employment.data === null) {
+			return notFound("Employment not found");
+		}
 		if (employment.data.employeeId !== record.employeeId) {
 			return notFound(
 				"Employment not found",
@@ -725,11 +791,17 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			conflictedActorUserIds: record.conflictedActorUserIds,
 			subjectActorUserId: record.subjectActorUserId,
 		});
-		if (!coi.ok) return coi;
+		if (!coi.ok) {
+			return coi;
+		}
 		const caseId = parseHumanResourcesEmployeeCaseId(randomUUID());
-		if (!caseId.ok) return caseId;
+		if (!caseId.ok) {
+			return caseId;
+		}
 		const eventId = parseHumanResourcesEmployeeCaseEventId(randomUUID());
-		if (!eventId.ok) return eventId;
+		if (!eventId.ok) {
+			return eventId;
+		}
 		const auditId = randomUUID();
 		const outboxId = randomUUID();
 		const conflictedJson = JSON.stringify(record.conflictedActorUserIds);
@@ -807,8 +879,10 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					SELECT mutated.* FROM mutated, audited, outboxed, inserted_event
 				`,
 			]);
-			const row = rows[0];
-			if (!row) return notFound("Employee or employment not found");
+			const [row] = rows;
+			if (!row) {
+				return notFound("Employee or employment not found");
+			}
 			return mapCaseSql(row);
 		} catch (error) {
 			if (isCreateIdempotencyUniqueViolation(error)) {
@@ -816,7 +890,9 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					organizationId: record.organizationId,
 					idempotencyKey: record.createIdempotencyKey,
 				});
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (replay.data !== null) {
 					if (
 						replay.data.createRequestFingerprint ===
@@ -832,7 +908,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 	},
 
 	async getEmployeeCaseById(input) {
-		return fetchCaseWithAccess(input);
+		return await fetchCaseWithAccess(input);
 	},
 
 	async findEmployeeCaseInOrganization(input) {
@@ -851,7 +927,9 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 
 	async listEmployeeCases(input) {
 		const loaded = await listCasesForOrg(input.organizationId);
-		if (!loaded.ok) return loaded;
+		if (!loaded.ok) {
+			return loaded;
+		}
 		const filtered = loaded.data.filter((caseRecord) => {
 			if (input.status !== undefined && caseRecord.status !== input.status) {
 				return false;
@@ -863,7 +941,9 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 
 	async listCasesAssignedToActor(input) {
 		const loaded = await listCasesForOrg(input.organizationId);
-		if (!loaded.ok) return loaded;
+		if (!loaded.ok) {
+			return loaded;
+		}
 		const filtered = loaded.data.filter(
 			(caseRecord) => caseRecord.ownerActorUserId === input.ownerActorUserId,
 		);
@@ -872,7 +952,9 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 
 	async listOpenEmployeeRelationsCases(input) {
 		const loaded = await listCasesForOrg(input.organizationId);
-		if (!loaded.ok) return loaded;
+		if (!loaded.ok) {
+			return loaded;
+		}
 		const filtered = loaded.data.filter(
 			(caseRecord) => caseRecord.status !== "closed",
 		);
@@ -881,7 +963,9 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 
 	async getEmployeeRelationsHistoryByEmployee(input) {
 		const loaded = await listCasesForOrg(input.organizationId);
-		if (!loaded.ok) return loaded;
+		if (!loaded.ok) {
+			return loaded;
+		}
 		const filtered = loaded.data.filter(
 			(caseRecord) => caseRecord.employeeId === input.employeeId,
 		);
@@ -893,17 +977,25 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			organizationId: input.organizationId,
 			caseId: input.caseId,
 		});
-		if (!loaded.ok) return loaded;
+		if (!loaded.ok) {
+			return loaded;
+		}
 		const mutable = assertEmployeeCaseMutable(loaded.data.status);
-		if (!mutable.ok) return mutable;
+		if (!mutable.ok) {
+			return mutable;
+		}
 		const versionCheck = assertExpectedVersion(
 			loaded.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const nextVersion = input.expectedVersion + 1;
 		const eventId = parseHumanResourcesEmployeeCaseEventId(randomUUID());
-		if (!eventId.ok) return eventId;
+		if (!eventId.ok) {
+			return eventId;
+		}
 		const auditId = randomUUID();
 		try {
 			const [rows] = await runNeonHttpTransaction<[CaseSqlRow[]]>((sqlTag) => [
@@ -950,7 +1042,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					SELECT mutated.* FROM mutated, audited, inserted_event
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -971,23 +1063,33 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			organizationId: input.organizationId,
 			caseId: input.caseId,
 		});
-		if (!loaded.ok) return loaded;
+		if (!loaded.ok) {
+			return loaded;
+		}
 		const mutable = assertEmployeeCaseMutable(loaded.data.status);
-		if (!mutable.ok) return mutable;
+		if (!mutable.ok) {
+			return mutable;
+		}
 		const versionCheck = assertExpectedVersion(
 			loaded.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const coi = assertEmployeeCaseOwnerNotConflicted({
 			ownerActorUserId: input.ownerActorUserId,
 			conflictedActorUserIds: loaded.data.conflictedActorUserIds,
 			subjectActorUserId: loaded.data.subjectActorUserId,
 		});
-		if (!coi.ok) return coi;
+		if (!coi.ok) {
+			return coi;
+		}
 		const nextVersion = input.expectedVersion + 1;
 		const eventId = parseHumanResourcesEmployeeCaseEventId(randomUUID());
-		if (!eventId.ok) return eventId;
+		if (!eventId.ok) {
+			return eventId;
+		}
 		const auditId = randomUUID();
 		const outboxId = randomUUID();
 		const outboxPayload = entityPayloadJson({
@@ -1054,7 +1156,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					SELECT mutated.* FROM mutated, audited, inserted_event, outboxed
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -1075,14 +1177,20 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			organizationId: input.organizationId,
 			caseId: input.caseId,
 		});
-		if (!loaded.ok) return loaded;
+		if (!loaded.ok) {
+			return loaded;
+		}
 		const mutable = assertEmployeeCaseMutable(loaded.data.status);
-		if (!mutable.ok) return mutable;
+		if (!mutable.ok) {
+			return mutable;
+		}
 		const versionCheck = assertExpectedVersion(
 			loaded.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		if (
 			loaded.data.participants.some(
 				(participant) =>
@@ -1101,7 +1209,9 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		]);
 		const nextVersion = input.expectedVersion + 1;
 		const eventId = parseHumanResourcesEmployeeCaseEventId(randomUUID());
-		if (!eventId.ok) return eventId;
+		if (!eventId.ok) {
+			return eventId;
+		}
 		const auditId = randomUUID();
 		try {
 			const [rows] = await runNeonHttpTransaction<[CaseSqlRow[]]>((sqlTag) => [
@@ -1148,7 +1258,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					SELECT mutated.* FROM mutated, audited, inserted_event
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -1169,11 +1279,17 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			organizationId: input.organizationId,
 			caseId: input.caseId,
 		});
-		if (!loaded.ok) return loaded;
+		if (!loaded.ok) {
+			return loaded;
+		}
 		const mutable = assertEmployeeCaseMutable(loaded.data.status);
-		if (!mutable.ok) return mutable;
+		if (!mutable.ok) {
+			return mutable;
+		}
 		const eventId = parseHumanResourcesEmployeeCaseEventId(randomUUID());
-		if (!eventId.ok) return eventId;
+		if (!eventId.ok) {
+			return eventId;
+		}
 		const auditId = randomUUID();
 		const payloadJson =
 			input.payloadJson === undefined || input.payloadJson === null
@@ -1236,7 +1352,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					SELECT inserted_event.* FROM inserted_event, audited, case_row
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -1257,11 +1373,17 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			organizationId: input.organizationId,
 			caseId: input.caseId,
 		});
-		if (!loaded.ok) return loaded;
+		if (!loaded.ok) {
+			return loaded;
+		}
 		const mutable = assertEmployeeCaseMutable(loaded.data.status);
-		if (!mutable.ok) return mutable;
+		if (!mutable.ok) {
+			return mutable;
+		}
 		const eventId = parseHumanResourcesEmployeeCaseEventId(randomUUID());
-		if (!eventId.ok) return eventId;
+		if (!eventId.ok) {
+			return eventId;
+		}
 		const auditId = randomUUID();
 		const nextVersion = loaded.data.version + 1;
 		try {
@@ -1309,7 +1431,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					SELECT inserted_event.* FROM inserted_event, audited, case_update
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -1330,20 +1452,28 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			organizationId: input.organizationId,
 			caseId: input.caseId,
 		});
-		if (!loaded.ok) return loaded;
+		if (!loaded.ok) {
+			return loaded;
+		}
 		const mutable = assertEmployeeCaseMutable(loaded.data.status);
-		if (!mutable.ok) return mutable;
+		if (!mutable.ok) {
+			return mutable;
+		}
 		const targetEvent = await fetchEventInOrg({
 			organizationId: input.organizationId,
 			caseId: input.caseId,
 			eventId: input.eventId,
 		});
-		if (!targetEvent.ok) return targetEvent;
+		if (!targetEvent.ok) {
+			return targetEvent;
+		}
 		if (targetEvent.data.eventKind !== "evidence_reference_added") {
 			return invalidState("Only evidence references can be redacted");
 		}
 		const eventId = parseHumanResourcesEmployeeCaseEventId(randomUUID());
-		if (!eventId.ok) return eventId;
+		if (!eventId.ok) {
+			return eventId;
+		}
 		const auditId = randomUUID();
 		const payloadJson = JSON.stringify({ reasonCode: input.reasonCode });
 		try {
@@ -1387,7 +1517,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					SELECT inserted_event.* FROM inserted_event, audited, case_row
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -1408,22 +1538,32 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			organizationId: input.organizationId,
 			caseId: input.caseId,
 		});
-		if (!loaded.ok) return loaded;
+		if (!loaded.ok) {
+			return loaded;
+		}
 		const mutable = assertEmployeeCaseMutable(loaded.data.status);
-		if (!mutable.ok) return mutable;
+		if (!mutable.ok) {
+			return mutable;
+		}
 		const versionCheck = assertExpectedVersion(
 			loaded.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const dates = assertInterimMeasureDates({
 			startsOn: input.interimStartsOn,
 			reviewOn: input.interimReviewOn,
 		});
-		if (!dates.ok) return dates;
+		if (!dates.ok) {
+			return dates;
+		}
 		const nextVersion = input.expectedVersion + 1;
 		const eventId = parseHumanResourcesEmployeeCaseEventId(randomUUID());
-		if (!eventId.ok) return eventId;
+		if (!eventId.ok) {
+			return eventId;
+		}
 		const auditId = randomUUID();
 		const outboxId = randomUUID();
 		const outboxPayload = entityPayloadJson({
@@ -1494,7 +1634,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					SELECT mutated.* FROM mutated, audited, outboxed, inserted_event
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -1515,21 +1655,31 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			organizationId: input.organizationId,
 			caseId: input.caseId,
 		});
-		if (!loaded.ok) return loaded;
+		if (!loaded.ok) {
+			return loaded;
+		}
 		const mutable = assertEmployeeCaseMutable(loaded.data.status);
-		if (!mutable.ok) return mutable;
+		if (!mutable.ok) {
+			return mutable;
+		}
 		const allowsFinding = assertEmployeeCaseStatusAllowsFinding(
 			loaded.data.status,
 		);
-		if (!allowsFinding.ok) return allowsFinding;
+		if (!allowsFinding.ok) {
+			return allowsFinding;
+		}
 		const versionCheck = assertExpectedVersion(
 			loaded.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const nextVersion = input.expectedVersion + 1;
 		const eventId = parseHumanResourcesEmployeeCaseEventId(randomUUID());
-		if (!eventId.ok) return eventId;
+		if (!eventId.ok) {
+			return eventId;
+		}
 		const auditId = randomUUID();
 		const outboxId = randomUUID();
 		const outboxPayload = entityPayloadJson({
@@ -1599,7 +1749,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					SELECT mutated.* FROM mutated, audited, outboxed, inserted_event
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -1627,10 +1777,14 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			const mapped = mapAction(row);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return ok({
 				actionId: mapped.data.id,
 				createRequestFingerprint: row.createRequestFingerprint,
@@ -1649,7 +1803,9 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			organizationId: record.organizationId,
 			idempotencyKey: record.createIdempotencyKey,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data !== null) {
 			if (
 				existing.data.createRequestFingerprint !==
@@ -1663,22 +1819,34 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			organizationId: record.organizationId,
 			caseId: record.caseId,
 		});
-		if (!loaded.ok) return loaded;
+		if (!loaded.ok) {
+			return loaded;
+		}
 		const mutable = assertEmployeeCaseMutable(loaded.data.status);
-		if (!mutable.ok) return mutable;
+		if (!mutable.ok) {
+			return mutable;
+		}
 		const allowsRecommend = assertEmployeeCaseStatusAllowsActionRecommend(
 			loaded.data.status,
 		);
-		if (!allowsRecommend.ok) return allowsRecommend;
+		if (!allowsRecommend.ok) {
+			return allowsRecommend;
+		}
 		const versionCheck = assertExpectedVersion(
 			loaded.data.version,
 			record.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const actionId = parseHumanResourcesEmployeeCaseActionId(randomUUID());
-		if (!actionId.ok) return actionId;
+		if (!actionId.ok) {
+			return actionId;
+		}
 		const eventId = parseHumanResourcesEmployeeCaseEventId(randomUUID());
-		if (!eventId.ok) return eventId;
+		if (!eventId.ok) {
+			return eventId;
+		}
 		const auditId = randomUUID();
 		const nextCaseVersion = record.expectedVersion + 1;
 		try {
@@ -1751,7 +1919,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 				`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -1765,7 +1933,9 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					organizationId: record.organizationId,
 					idempotencyKey: record.createIdempotencyKey,
 				});
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (replay.data !== null) {
 					if (
 						replay.data.createRequestFingerprint ===
@@ -1788,9 +1958,13 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			organizationId: input.organizationId,
 			caseId: input.caseId,
 		});
-		if (!loaded.ok) return loaded;
+		if (!loaded.ok) {
+			return loaded;
+		}
 		const mutable = assertEmployeeCaseMutable(loaded.data.status);
-		if (!mutable.ok) return mutable;
+		if (!mutable.ok) {
+			return mutable;
+		}
 		if (loaded.data.status !== "action_pending") {
 			return invalidState(
 				"Action cannot be approved in the current case status",
@@ -1800,13 +1974,17 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			loaded.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const actionLoaded = await fetchActionInOrg({
 			organizationId: input.organizationId,
 			caseId: input.caseId,
 			actionId: input.actionId,
 		});
-		if (!actionLoaded.ok) return actionLoaded;
+		if (!actionLoaded.ok) {
+			return actionLoaded;
+		}
 		if (actionLoaded.data.status !== "recommended") {
 			return invalidState("Case action is not awaiting approval");
 		}
@@ -1814,11 +1992,15 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			actionType: actionLoaded.data.actionType,
 			policyValidationRecorded: input.policyValidationRecorded,
 		});
-		if (!policy.ok) return policy;
+		if (!policy.ok) {
+			return policy;
+		}
 		const nextCaseVersion = input.expectedVersion + 1;
 		const nextActionVersion = actionLoaded.data.version + 1;
 		const eventId = parseHumanResourcesEmployeeCaseEventId(randomUUID());
-		if (!eventId.ok) return eventId;
+		if (!eventId.ok) {
+			return eventId;
+		}
 		const auditId = randomUUID();
 		const outboxId = randomUUID();
 		const outboxPayload = entityPayloadJson({
@@ -1900,7 +2082,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 				`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -1928,10 +2110,14 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			const mapped = mapAppeal(row);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return ok({
 				appealId: mapped.data.id,
 				createRequestFingerprint: row.createRequestFingerprint,
@@ -1950,7 +2136,9 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			organizationId: record.organizationId,
 			idempotencyKey: record.createIdempotencyKey,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data !== null) {
 			if (
 				existing.data.createRequestFingerprint !==
@@ -1964,13 +2152,19 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			organizationId: record.organizationId,
 			caseId: record.caseId,
 		});
-		if (!loaded.ok) return loaded;
+		if (!loaded.ok) {
+			return loaded;
+		}
 		const mutable = assertEmployeeCaseMutable(loaded.data.status);
-		if (!mutable.ok) return mutable;
+		if (!mutable.ok) {
+			return mutable;
+		}
 		const allowsAppeal = assertEmployeeCaseStatusAllowsAppeal(
 			loaded.data.status,
 		);
-		if (!allowsAppeal.ok) return allowsAppeal;
+		if (!allowsAppeal.ok) {
+			return allowsAppeal;
+		}
 		if (
 			loaded.data.findingCode === null ||
 			loaded.data.findingRecordedAt === null
@@ -1981,11 +2175,17 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			loaded.data.version,
 			record.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const appealId = parseHumanResourcesEmployeeCaseAppealId(randomUUID());
-		if (!appealId.ok) return appealId;
+		if (!appealId.ok) {
+			return appealId;
+		}
 		const eventId = parseHumanResourcesEmployeeCaseEventId(randomUUID());
-		if (!eventId.ok) return eventId;
+		if (!eventId.ok) {
+			return eventId;
+		}
 		const auditId = randomUUID();
 		const outboxId = randomUUID();
 		const outboxPayload = entityPayloadJson({
@@ -2080,7 +2280,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 				`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -2094,7 +2294,9 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					organizationId: record.organizationId,
 					idempotencyKey: record.createIdempotencyKey,
 				});
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (replay.data !== null) {
 					if (
 						replay.data.createRequestFingerprint ===
@@ -2117,9 +2319,13 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			organizationId: input.organizationId,
 			caseId: input.caseId,
 		});
-		if (!loaded.ok) return loaded;
+		if (!loaded.ok) {
+			return loaded;
+		}
 		const mutable = assertEmployeeCaseMutable(loaded.data.status);
-		if (!mutable.ok) return mutable;
+		if (!mutable.ok) {
+			return mutable;
+		}
 		if (loaded.data.status !== "under_appeal") {
 			return invalidState("Case is not under appeal");
 		}
@@ -2127,20 +2333,26 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			loaded.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const appealLoaded = await fetchAppealInOrg({
 			organizationId: input.organizationId,
 			caseId: input.caseId,
 			appealId: input.appealId,
 		});
-		if (!appealLoaded.ok) return appealLoaded;
+		if (!appealLoaded.ok) {
+			return appealLoaded;
+		}
 		if (appealLoaded.data.status !== "open") {
 			return invalidState("Appeal is not open");
 		}
 		const nextCaseVersion = input.expectedVersion + 1;
 		const nextAppealVersion = appealLoaded.data.version + 1;
 		const eventId = parseHumanResourcesEmployeeCaseEventId(randomUUID());
-		if (!eventId.ok) return eventId;
+		if (!eventId.ok) {
+			return eventId;
+		}
 		const auditId = randomUUID();
 		const outboxId = randomUUID();
 		const outboxPayload = entityPayloadJson({
@@ -2223,7 +2435,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 				`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -2244,9 +2456,13 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			organizationId: input.organizationId,
 			caseId: input.caseId,
 		});
-		if (!loaded.ok) return loaded;
+		if (!loaded.ok) {
+			return loaded;
+		}
 		const mutable = assertEmployeeCaseMutable(loaded.data.status);
-		if (!mutable.ok) return mutable;
+		if (!mutable.ok) {
+			return mutable;
+		}
 		if (
 			loaded.data.status !== "finding_recorded" &&
 			loaded.data.status !== "action_approved"
@@ -2257,10 +2473,14 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			loaded.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const nextVersion = input.expectedVersion + 1;
 		const eventId = parseHumanResourcesEmployeeCaseEventId(randomUUID());
-		if (!eventId.ok) return eventId;
+		if (!eventId.ok) {
+			return eventId;
+		}
 		const auditId = randomUUID();
 		const outboxId = randomUUID();
 		const outboxPayload = entityPayloadJson({
@@ -2329,7 +2549,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					SELECT mutated.* FROM mutated, audited, outboxed, inserted_event
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -2347,7 +2567,9 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			organizationId: input.organizationId,
 			caseId: input.caseId,
 		});
-		if (!loaded.ok) return loaded;
+		if (!loaded.ok) {
+			return loaded;
+		}
 		if (loaded.data.status !== "closed") {
 			return invalidState("Only closed cases can be reopened");
 		}
@@ -2355,10 +2577,14 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			loaded.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const nextVersion = input.expectedVersion + 1;
 		const eventId = parseHumanResourcesEmployeeCaseEventId(randomUUID());
-		if (!eventId.ok) return eventId;
+		if (!eventId.ok) {
+			return eventId;
+		}
 		const auditId = randomUUID();
 		const outboxId = randomUUID();
 		const timelinePayloadJson = JSON.stringify({
@@ -2432,7 +2658,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					SELECT mutated.* FROM mutated, audited, inserted_event, outboxed
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -2450,7 +2676,9 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			organizationId: input.organizationId,
 			caseId: input.caseId,
 		});
-		if (!loaded.ok) return loaded;
+		if (!loaded.ok) {
+			return loaded;
+		}
 		try {
 			const rows = await db
 				.select()
@@ -2465,7 +2693,9 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			const events: EmployeeCaseEvent[] = [];
 			for (const row of rows) {
 				const mapped = mapEvent(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				events.push(mapped.data);
 			}
 			const timeline: EmployeeCaseTimeline = {
@@ -2486,7 +2716,9 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			organizationId: input.organizationId,
 			caseId: input.caseId,
 		});
-		if (!loaded.ok) return loaded;
+		if (!loaded.ok) {
+			return loaded;
+		}
 		try {
 			const actionRows = await db
 				.select()
@@ -2501,7 +2733,9 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			const approvedActions: EmployeeCaseAction[] = [];
 			for (const row of actionRows) {
 				const mapped = mapAction(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				approvedActions.push(mapped.data);
 			}
 			const appealRows = await db
@@ -2517,7 +2751,9 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			const openAppeals: EmployeeCaseAppeal[] = [];
 			for (const row of appealRows) {
 				const mapped = mapAppeal(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				openAppeals.push(mapped.data);
 			}
 			const terminationAction = approvedActions.find(

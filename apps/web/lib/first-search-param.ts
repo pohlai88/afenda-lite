@@ -14,5 +14,4 @@ export function firstSearchParam(
 	) {
 		return value[0];
 	}
-	return undefined;
 }

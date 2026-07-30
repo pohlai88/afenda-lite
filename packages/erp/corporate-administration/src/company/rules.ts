@@ -1,3 +1,4 @@
+// biome-ignore-all lint/style/noNestedTernary: Three-state date normalization remains adjacent to its policy rule.
 import { fail, ok, type Result } from "@afenda/errors/result";
 
 import { corporateAdministrationErrorDetails } from "../error-codes";
@@ -225,7 +226,9 @@ export function validateIdentifierAuthority(
 	authorityCode: string,
 ): Result<string> {
 	const trimmed = authorityCode.trim();
-	if (AUTHORITY_CODE_PATTERN.test(trimmed)) return ok(trimmed);
+	if (AUTHORITY_CODE_PATTERN.test(trimmed)) {
+		return ok(trimmed);
+	}
 	return fail(
 		"VALIDATION_ERROR",
 		"Corporate Administration identifier authority is invalid.",
@@ -240,7 +243,9 @@ export function validateIdentifierJurisdiction(
 	jurisdictionCode: string,
 ): Result<string> {
 	const trimmed = jurisdictionCode.trim();
-	if (COUNTRY_CODE_PATTERN.test(trimmed)) return ok(trimmed);
+	if (COUNTRY_CODE_PATTERN.test(trimmed)) {
+		return ok(trimmed);
+	}
 	return fail(
 		"VALIDATION_ERROR",
 		"Corporate Administration identifier jurisdiction is invalid.",
@@ -285,7 +290,9 @@ export function validateIdentifierEffectiveRange(input: {
 	legalCompanyId?: string | undefined;
 }): Result<void> {
 	const chronology = assertEffectivePeriodChronology(input.candidate);
-	if (!chronology.ok) return chronology;
+	if (!chronology.ok) {
+		return chronology;
+	}
 	const uniquenessScope =
 		input.uniquenessScope ??
 		classifyIdentifierType(input.identifierType).uniquenessScope;
@@ -307,7 +314,9 @@ export function validateIdentifierEffectiveRange(input: {
 				input.candidate,
 			),
 	);
-	if (overlap === undefined) return ok(undefined);
+	if (overlap === undefined) {
+		return ok(undefined);
+	}
 	return fail(
 		"CONFLICT",
 		"Corporate Administration company identifier overlaps an existing identifier in the same jurisdiction and authority.",
@@ -419,7 +428,9 @@ export function validateFinancialYearChronology(input: {
 	ignoreCompanyFinancialYearId?: string;
 }): Result<void> {
 	const chronology = assertEffectivePeriodChronology(input.candidate);
-	if (!chronology.ok) return chronology;
+	if (!chronology.ok) {
+		return chronology;
+	}
 	const overlap = input.existing.find(
 		(financialYear) =>
 			financialYear.id !== input.ignoreCompanyFinancialYearId &&
@@ -428,7 +439,9 @@ export function validateFinancialYearChronology(input: {
 				input.candidate,
 			),
 	);
-	if (overlap === undefined) return ok(undefined);
+	if (overlap === undefined) {
+		return ok(undefined);
+	}
 	return fail(
 		"CONFLICT",
 		"Corporate Administration financial-year definition overlaps an existing definition.",
@@ -518,7 +531,9 @@ export function validateActivityEffectiveRange(input: {
 	ignoreCompanyActivityId?: string;
 }): Result<void> {
 	const chronology = assertEffectivePeriodChronology(input.candidate);
-	if (!chronology.ok) return chronology;
+	if (!chronology.ok) {
+		return chronology;
+	}
 	const overlap = input.existing.find(
 		(activity) =>
 			activity.id !== input.ignoreCompanyActivityId &&
@@ -534,7 +549,9 @@ export function validateActivityEffectiveRange(input: {
 				input.candidate,
 			),
 	);
-	if (overlap === undefined) return ok(undefined);
+	if (overlap === undefined) {
+		return ok(undefined);
+	}
 	return fail(
 		"CONFLICT",
 		"Corporate Administration company activity overlaps an existing activity.",
@@ -555,7 +572,9 @@ export function validateActivityAuthority(input: {
 	const classification = validateCompanyActivityClassification(
 		input.activityType,
 	);
-	if (!classification.ok) return classification;
+	if (!classification.ok) {
+		return classification;
+	}
 	if (input.classificationSystem.trim().length === 0) {
 		return fail(
 			"VALIDATION_ERROR",
@@ -786,7 +805,9 @@ export function validateCompanyNameEffectiveRange(input: {
 	ignoreCompanyNameId?: string;
 }): Result<void> {
 	const chronology = assertEffectivePeriodChronology(input.candidate);
-	if (!chronology.ok) return chronology;
+	if (!chronology.ok) {
+		return chronology;
+	}
 
 	const duplicate = input.existing.find(
 		(name) =>
@@ -834,7 +855,9 @@ export function validateLegalFormEffectiveRange(input: {
 	ignoreLegalFormId?: string;
 }): Result<void> {
 	const chronology = assertEffectivePeriodChronology(input.candidate);
-	if (!chronology.ok) return chronology;
+	if (!chronology.ok) {
+		return chronology;
+	}
 
 	const overlap = input.existing.find(
 		(legalForm) =>
@@ -1285,7 +1308,9 @@ function compareCompanyNameResolutionOrder(
 		right.effectiveFrom,
 		left.effectiveFrom,
 	);
-	if (effectiveOrder !== 0) return effectiveOrder;
+	if (effectiveOrder !== 0) {
+		return effectiveOrder;
+	}
 	return right.recordedAt.getTime() - left.recordedAt.getTime();
 }
 
@@ -1297,7 +1322,9 @@ function compareFinancialYearResolutionOrder(
 		right.effectiveFrom,
 		left.effectiveFrom,
 	);
-	if (effectiveOrder !== 0) return effectiveOrder;
+	if (effectiveOrder !== 0) {
+		return effectiveOrder;
+	}
 	return right.recordedAt.getTime() - left.recordedAt.getTime();
 }
 
@@ -1308,20 +1335,28 @@ function compareActivityResolutionOrder(
 	const classOrder =
 		activityClassificationRank(left.classification) -
 		activityClassificationRank(right.classification);
-	if (classOrder !== 0) return classOrder;
+	if (classOrder !== 0) {
+		return classOrder;
+	}
 	const effectiveOrder = compareCanonicalDates(
 		right.effectiveFrom,
 		left.effectiveFrom,
 	);
-	if (effectiveOrder !== 0) return effectiveOrder;
+	if (effectiveOrder !== 0) {
+		return effectiveOrder;
+	}
 	return right.recordedAt.getTime() - left.recordedAt.getTime();
 }
 
 function activityClassificationRank(
 	classification: CompanyActivityClassification,
 ): number {
-	if (classification === "registered_object") return 0;
-	if (classification === "regulated") return 1;
+	if (classification === "registered_object") {
+		return 0;
+	}
+	if (classification === "regulated") {
+		return 1;
+	}
 	return 2;
 }
 
@@ -1333,6 +1368,8 @@ function compareLegalFormResolutionOrder(
 		right.effectiveFrom,
 		left.effectiveFrom,
 	);
-	if (effectiveOrder !== 0) return effectiveOrder;
+	if (effectiveOrder !== 0) {
+		return effectiveOrder;
+	}
 	return right.recordedAt.getTime() - left.recordedAt.getTime();
 }

@@ -218,10 +218,10 @@ export const ACTIVE_LEAVE_OVERLAP_STATUSES = [
 	"approved",
 ] as const satisfies readonly LeaveRequestStatus[];
 
-export type LeaveOverlapSegment = {
-	segmentDate: string;
+export interface LeaveOverlapSegment {
 	dayPortion: "morning" | "afternoon" | "full";
-};
+	segmentDate: string;
+}
 
 export function segmentsOverlap(
 	left: LeaveOverlapSegment,

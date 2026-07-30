@@ -71,10 +71,10 @@ function uniqueSuffix(adapter: WorkforceStoreAdapter): string {
 
 function readEffectiveOn(payload: unknown): string | undefined {
 	if (typeof payload !== "object" || payload === null) {
-		return undefined;
+		return;
 	}
 	if (!("effectiveOn" in payload)) {
-		return undefined;
+		return;
 	}
 	return typeof payload.effectiveOn === "string"
 		? payload.effectiveOn
@@ -107,7 +107,9 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				ready,
 			);
 			expect(employee.ok).toBe(true);
-			if (!employee.ok) return;
+			if (!employee.ok) {
+				return;
+			}
 
 			const employment = await createEmployment(
 				{
@@ -120,14 +122,18 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				ready,
 			);
 			expect(employment.ok).toBe(true);
-			if (!employment.ok) return;
+			if (!employment.ok) {
+				return;
+			}
 
 			const orgSeed = await seedDepartmentAndJob(ready, {
 				organizationId,
 				actorUserId,
 			});
 			expect(orgSeed).not.toBeNull();
-			if (!orgSeed) return;
+			if (!orgSeed) {
+				return;
+			}
 
 			const positionA = await createPosition(
 				{
@@ -142,7 +148,9 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				ready,
 			);
 			expect(positionA.ok).toBe(true);
-			if (!positionA.ok) return;
+			if (!positionA.ok) {
+				return;
+			}
 
 			const positionB = await createPosition(
 				{
@@ -157,7 +165,9 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				ready,
 			);
 			expect(positionB.ok).toBe(true);
-			if (!positionB.ok) return;
+			if (!positionB.ok) {
+				return;
+			}
 
 			const assignment = await createAssignment(
 				{
@@ -172,7 +182,9 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				ready,
 			);
 			expect(assignment.ok).toBe(true);
-			if (!assignment.ok) return;
+			if (!assignment.ok) {
+				return;
+			}
 
 			const transfer = await transferAssignment(
 				{
@@ -189,7 +201,9 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				ready,
 			);
 			expect(transfer.ok).toBe(true);
-			if (!transfer.ok) return;
+			if (!transfer.ok) {
+				return;
+			}
 			expect(transfer.data.movementKind).toBe("transfer");
 			expect(isoDateTimeSchema.safeParse(transfer.data.createdAt).success).toBe(
 				true,
@@ -264,7 +278,9 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				rehireEligible: true,
 			});
 			expect(termFlow.ok).toBe(true);
-			if (!termFlow.ok) return;
+			if (!termFlow.ok) {
+				return;
+			}
 
 			if (adapter === "memory") {
 				const transferEvent = ready.ports.outbox.calls.find(
@@ -322,7 +338,9 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				ready,
 			);
 			expect(employee.ok).toBe(true);
-			if (!employee.ok) return;
+			if (!employee.ok) {
+				return;
+			}
 
 			const employment = await createEmployment(
 				{
@@ -335,7 +353,9 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				ready,
 			);
 			expect(employment.ok).toBe(true);
-			if (!employment.ok) return;
+			if (!employment.ok) {
+				return;
+			}
 
 			const termFlow = await runEmploymentTerminationFlow(ready, {
 				organizationId,
@@ -349,7 +369,9 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				rehireEligible: false,
 			});
 			expect(termFlow.ok).toBe(true);
-			if (!termFlow.ok) return;
+			if (!termFlow.ok) {
+				return;
+			}
 			expect(termFlow.proposed.status).toBe("draft");
 			expect(termFlow.proposed.rehireEligible).toBe(false);
 			expect(termFlow.approved.approvedAt).not.toBeNull();
@@ -371,7 +393,9 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				ready,
 			);
 			expect(offboarding.ok).toBe(true);
-			if (!offboarding.ok) return;
+			if (!offboarding.ok) {
+				return;
+			}
 
 			const access = await getOffboardingAccessRevocationByCase(
 				{
@@ -383,7 +407,9 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				ready,
 			);
 			expect(access.ok).toBe(true);
-			if (!access.ok || access.data === null) return;
+			if (!access.ok || access.data === null) {
+				return;
+			}
 			expect(access.data.status).toBe("pending");
 
 			const payroll = await getOffboardingPayrollHandoffByCase(
@@ -396,7 +422,9 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				ready,
 			);
 			expect(payroll.ok).toBe(true);
-			if (!payroll.ok || payroll.data === null) return;
+			if (!payroll.ok || payroll.data === null) {
+				return;
+			}
 			expect(payroll.data.status).toBe("pending");
 
 			const tasks = await listOffboardingTasks(
@@ -409,10 +437,14 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				ready,
 			);
 			expect(tasks.ok).toBe(true);
-			if (!tasks.ok) return;
-			const task = tasks.data[0];
+			if (!tasks.ok) {
+				return;
+			}
+			const [task] = tasks.data;
 			expect(task).toBeDefined();
-			if (!task) return;
+			if (!task) {
+				return;
+			}
 
 			const taskCompleted = await completeOffboardingTask(
 				{
@@ -426,7 +458,9 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				ready,
 			);
 			expect(taskCompleted.ok, resultFailureMessage(taskCompleted)).toBe(true);
-			if (!taskCompleted.ok) return;
+			if (!taskCompleted.ok) {
+				return;
+			}
 			const interviewRecorded = await recordExitInterview(
 				{
 					organizationId,
@@ -442,7 +476,9 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				interviewRecorded.ok,
 				resultFailureMessage(interviewRecorded),
 			).toBe(true);
-			if (!interviewRecorded.ok) return;
+			if (!interviewRecorded.ok) {
+				return;
+			}
 
 			const clearance = await getClearanceByOffboardingCase(
 				{
@@ -454,7 +490,9 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				ready,
 			);
 			expect(clearance.ok).toBe(true);
-			if (!clearance.ok || clearance.data === null) return;
+			if (!clearance.ok || clearance.data === null) {
+				return;
+			}
 
 			const clearanceRecorded = await recordClearance(
 				{
@@ -471,7 +509,9 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				clearanceRecorded.ok,
 				resultFailureMessage(clearanceRecorded),
 			).toBe(true);
-			if (!clearanceRecorded.ok) return;
+			if (!clearanceRecorded.ok) {
+				return;
+			}
 
 			const accessRecorded = await recordOffboardingAccessRevocation(
 				{
@@ -486,7 +526,9 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				ready,
 			);
 			expect(accessRecorded.ok).toBe(true);
-			if (!accessRecorded.ok) return;
+			if (!accessRecorded.ok) {
+				return;
+			}
 
 			const payrollRecorded = await recordOffboardingPayrollHandoff(
 				{
@@ -501,7 +543,9 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				ready,
 			);
 			expect(payrollRecorded.ok).toBe(true);
-			if (!payrollRecorded.ok) return;
+			if (!payrollRecorded.ok) {
+				return;
+			}
 
 			const completed = await completeOffboarding(
 				{
@@ -514,7 +558,9 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				ready,
 			);
 			expect(completed.ok, resultFailureMessage(completed)).toBe(true);
-			if (!completed.ok) return;
+			if (!completed.ok) {
+				return;
+			}
 			expect(completed.data.status).toBe("completed");
 
 			if (adapter === "memory") {
@@ -590,7 +636,9 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				ready,
 			);
 			expect(employee.ok).toBe(true);
-			if (!employee.ok) return;
+			if (!employee.ok) {
+				return;
+			}
 
 			const employment = await createEmployment(
 				{
@@ -603,7 +651,9 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				ready,
 			);
 			expect(employment.ok).toBe(true);
-			if (!employment.ok) return;
+			if (!employment.ok) {
+				return;
+			}
 
 			const probation = await openProbation(
 				{
@@ -618,7 +668,9 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				ready,
 			);
 			expect(probation.ok).toBe(true);
-			if (!probation.ok) return;
+			if (!probation.ok) {
+				return;
+			}
 
 			const assessment = await recordProbationAssessment(
 				{
@@ -633,7 +685,9 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				ready,
 			);
 			expect(assessment.ok).toBe(true);
-			if (!assessment.ok) return;
+			if (!assessment.ok) {
+				return;
+			}
 
 			const extended = await extendProbation(
 				{
@@ -648,7 +702,9 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				ready,
 			);
 			expect(extended.ok).toBe(true);
-			if (!extended.ok) return;
+			if (!extended.ok) {
+				return;
+			}
 
 			const outcome = await recordProbationOutcome(
 				{
@@ -664,7 +720,9 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				ready,
 			);
 			expect(outcome.ok).toBe(true);
-			if (!outcome.ok) return;
+			if (!outcome.ok) {
+				return;
+			}
 
 			const confirmed = await confirmEmployment(
 				{
@@ -741,7 +799,9 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				ready,
 			);
 			expect(employee.ok).toBe(true);
-			if (!employee.ok) return;
+			if (!employee.ok) {
+				return;
+			}
 
 			const employment = await createEmployment(
 				{
@@ -754,7 +814,9 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				ready,
 			);
 			expect(employment.ok).toBe(true);
-			if (!employment.ok) return;
+			if (!employment.ok) {
+				return;
+			}
 
 			const completed = await completeOnboardingPath(ready, {
 				organizationId,
@@ -764,7 +826,9 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				suffix,
 			});
 			expect(completed.ok).toBe(true);
-			if (!completed.ok) return;
+			if (!completed.ok) {
+				return;
+			}
 			expect(completed.data.status).toBe("completed");
 
 			if (adapter === "memory") {

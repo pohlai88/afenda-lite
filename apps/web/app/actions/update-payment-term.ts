@@ -16,9 +16,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type UpdatePaymentTermActionData = {
+export interface UpdatePaymentTermActionData {
 	paymentTerm: PaymentTerm;
-};
+}
 
 export type UpdatePaymentTermActionState =
 	ActionResult<UpdatePaymentTermActionData> | null;

@@ -19,8 +19,8 @@ const actorUserId = "user-1";
 const counterpartyId = "00000000-0000-4000-8000-000000000001";
 const targetId = "00000000-0000-4000-8000-000000000002";
 const authorization = {
-	async can() {
-		return true;
+	can() {
+		return Promise.resolve(true);
 	},
 };
 
@@ -40,8 +40,9 @@ async function seedAccount(
 		},
 		{ store, authorization },
 	);
-	expect(account.ok).toBe(true);
-	if (!account.ok) throw new Error("account seed failed");
+	if (!account.ok) {
+		throw new Error("account seed failed");
+	}
 	return account.data;
 }
 
@@ -68,7 +69,9 @@ describe("payments lifecycle", () => {
 			options,
 		);
 		expect(created.ok && created.data.status).toBe("draft");
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const instruction = await addPaymentApplicationInstruction(
 			{
@@ -195,7 +198,9 @@ describe("payments lifecycle", () => {
 			},
 			options,
 		);
-		if (!from.ok || !to.ok) return;
+		if (!(from.ok && to.ok)) {
+			return;
+		}
 
 		const transfer = await createAndPostPaymentTransfer(
 			{
@@ -212,7 +217,9 @@ describe("payments lifecycle", () => {
 			options,
 		);
 		expect(transfer.ok).toBe(true);
-		if (!transfer.ok) return;
+		if (!transfer.ok) {
+			return;
+		}
 		expect(transfer.data.outgoing.status).toBe("posted");
 		expect(transfer.data.incoming.status).toBe("posted");
 		expect(transfer.data.outgoing.transferGroupId).toBe(
@@ -243,7 +250,9 @@ describe("payments lifecycle", () => {
 			},
 			options,
 		);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 		const incompatible = await addPaymentApplicationInstruction(
 			{
 				organizationId,
@@ -299,7 +308,9 @@ describe("payments lifecycle", () => {
 			options,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 		const [first, second] = await Promise.all([
 			addPaymentApplicationInstruction(
 				{
@@ -359,7 +370,9 @@ describe("payments lifecycle", () => {
 		const second = await createDraftPayment(input, options);
 		expect(first.ok).toBe(true);
 		expect(second.ok).toBe(true);
-		if (!first.ok || !second.ok) return;
+		if (!(first.ok && second.ok)) {
+			return;
+		}
 		expect(second.data.id).toBe(first.data.id);
 	});
 });

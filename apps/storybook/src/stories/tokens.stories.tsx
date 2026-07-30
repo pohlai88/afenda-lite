@@ -162,7 +162,7 @@ function ColorGrid({ roles }: { roles: readonly ColorRole[] }) {
 					<p
 						className={
 							role.foreground === "--muted-foreground"
-								? "text-xl font-bold"
+								? "font-bold text-xl"
 								: "font-semibold"
 						}
 					>
@@ -211,15 +211,15 @@ function WorkbenchSection({
 	children,
 }: WorkbenchSectionProps) {
 	return (
-		<section className="grid gap-4" aria-labelledby={id}>
+		<section aria-labelledby={id} className="grid gap-4">
 			<div className="grid gap-1">
 				<h2
-					className="text-base font-semibold tracking-tight text-foreground"
+					className="font-semibold text-base text-foreground tracking-tight"
 					id={id}
 				>
 					{title}
 				</h2>
-				<p className="max-w-5xl text-sm leading-5 text-foreground-secondary">
+				<p className="max-w-5xl text-foreground-secondary text-sm leading-5">
 					{description}
 				</p>
 			</div>
@@ -231,22 +231,22 @@ function WorkbenchSection({
 function TokensOverview() {
 	return (
 		<main
-			className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-6 sm:px-6 lg:px-8"
 			aria-labelledby="token-page-title"
+			className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-6 sm:px-6 lg:px-8"
 		>
 			<header className="grid gap-5 border-b pb-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
 				<div className="grid gap-2">
-					<p className="text-sm font-medium text-foreground-secondary">
+					<p className="font-medium text-foreground-secondary text-sm">
 						Afenda UI foundation
 					</p>
 					<div className="grid gap-1">
 						<h1
-							className="text-2xl font-semibold tracking-tight"
+							className="font-semibold text-2xl tracking-tight"
 							id="token-page-title"
 						>
 							Semantic design tokens
 						</h1>
-						<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+						<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 							Every sample resolves the active CSS custom property from
 							tokens.css. Switch the Storybook theme to verify the governed
 							light and dark values. Prefer semantic roles over inventing
@@ -256,25 +256,25 @@ function TokensOverview() {
 				</div>
 				<dl className="grid grid-cols-2 gap-x-8 gap-y-3 rounded-lg border bg-card p-4">
 					<div className="grid gap-1">
-						<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+						<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 							Theme source
 						</dt>
 						<dd className="text-sm">tokens.css</dd>
 					</div>
 					<div className="grid gap-1">
-						<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+						<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 							Verification
 						</dt>
 						<dd className="text-sm">Light and dark</dd>
 					</div>
 					<div className="grid gap-1">
-						<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+						<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 							Scope
 						</dt>
 						<dd className="text-sm">Foundation roles</dd>
 					</div>
 					<div className="grid gap-1">
-						<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+						<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 							Use
 						</dt>
 						<dd className="text-sm">Semantic components</dd>
@@ -285,43 +285,43 @@ function TokensOverview() {
 			<Separator />
 
 			<WorkbenchSection
+				description="Neutral surfaces and action emphasis used across standard component composition."
 				id="foundation-roles"
 				title="Foundation roles"
-				description="Neutral surfaces and action emphasis used across standard component composition."
 			>
 				<ColorGrid roles={foundationRoles} />
 			</WorkbenchSection>
 
 			<WorkbenchSection
+				description="Complete background, readable foreground, and border triplets for lifecycle and outcome communication."
 				id="status-roles"
 				title="ERP status roles"
-				description="Complete background, readable foreground, and border triplets for lifecycle and outcome communication."
 			>
 				<ColorGrid roles={statusRoles} />
 			</WorkbenchSection>
 
 			<WorkbenchSection
+				description="Workspace depth, collection rows, and control affordances without feature-owned color invention."
 				id="business-surfaces"
 				title="Business surfaces"
-				description="Workspace depth, collection rows, and control affordances without feature-owned color invention."
 			>
 				<ColorGrid roles={surfaceRoles} />
 			</WorkbenchSection>
 
 			<WorkbenchSection
+				description="Ordered categorical accents; chart meaning and accessible labels remain consumer-owned."
 				id="chart-sequence"
 				title="Chart sequence"
-				description="Ordered categorical accents; chart meaning and accessible labels remain consumer-owned."
 			>
 				<ol className="grid list-none grid-cols-5 gap-2 p-0">
 					{chartTokens.map((token, index) => (
 						<li className="space-y-2 text-center" key={token}>
 							<div
+								aria-hidden="true"
 								className="h-20 rounded-md border"
 								style={{ backgroundColor: variable(token) }}
-								aria-hidden="true"
 							/>
-							<span className="block text-xs font-medium">
+							<span className="block font-medium text-xs">
 								Series {index + 1}
 							</span>
 							<code className="block text-[0.6875rem] text-foreground-secondary">
@@ -333,9 +333,9 @@ function TokensOverview() {
 			</WorkbenchSection>
 
 			<WorkbenchSection
+				description="Shared control rhythm, table density, radius, and elevation primitives."
 				id="density-and-elevation"
 				title="Density and elevation"
-				description="Shared control rhythm, table density, radius, and elevation primitives."
 			>
 				<div className="grid gap-4 lg:grid-cols-2">
 					<Card className="shadow-none">
@@ -352,8 +352,8 @@ function TokensOverview() {
 									key={token}
 									style={{ height: variable(token) }}
 								>
-									<span className="text-sm font-medium">{name}</span>
-									<code className="text-xs text-foreground-secondary">
+									<span className="font-medium text-sm">{name}</span>
+									<code className="text-foreground-secondary text-xs">
 										{token}
 									</code>
 								</div>
@@ -383,9 +383,9 @@ function TokensOverview() {
 			</WorkbenchSection>
 
 			<WorkbenchSection
+				description="Hover the track to compare governed durations using the standard easing curve."
 				id="motion"
 				title="Motion"
-				description="Hover the track to compare governed durations using the standard easing curve."
 			>
 				<div className="space-y-3">
 					{durationTokens.map((duration) => (
@@ -490,11 +490,11 @@ export const ControlledUsage: Story = {
 				}}
 			>
 				<p className="font-medium">Raised card sample</p>
-				<code className="mt-2 block text-xs text-foreground-secondary">
+				<code className="mt-2 block text-foreground-secondary text-xs">
 					var(--card) · var(--card-foreground)
 				</code>
 			</div>
-			<p className="text-sm text-foreground-secondary">
+			<p className="text-foreground-secondary text-sm">
 				Prefer `bg-card`, `text-foreground-secondary`, and status utilities from
 				`@afenda/ui-system` styles.
 			</p>
@@ -526,7 +526,7 @@ export const VariantsAndSizes: Story = {
 	render: () => (
 		<div className="grid w-full max-w-5xl gap-6">
 			<div className="grid gap-2">
-				<p className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+				<p className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 					Heights
 				</p>
 				{sizeTokens.map(({ name, token }) => (
@@ -535,17 +535,17 @@ export const VariantsAndSizes: Story = {
 						key={token}
 						style={{ height: variable(token) }}
 					>
-						<span className="text-sm font-medium">{name}</span>
-						<code className="text-xs text-foreground-secondary">{token}</code>
+						<span className="font-medium text-sm">{name}</span>
+						<code className="text-foreground-secondary text-xs">{token}</code>
 					</div>
 				))}
 			</div>
 			<div className="grid gap-2">
-				<p className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+				<p className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 					Motion
 				</p>
 				{durationTokens.map((duration) => (
-					<code key={duration} className="text-sm">
+					<code className="text-sm" key={duration}>
 						{duration}
 					</code>
 				))}
@@ -573,11 +573,11 @@ export const Composition: Story = {
 					</div>
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="outline">Foundation</Badge>
-						<StatusBadge status="success" label="Contrast ready" />
+						<StatusBadge label="Contrast ready" status="success" />
 					</div>
 				</div>
 			</CardHeader>
-			<CardContent className="text-sm text-foreground-secondary">
+			<CardContent className="text-foreground-secondary text-sm">
 				StatusBadge consumes status tokens. Do not invent a parallel success hex
 				in feature CSS.
 			</CardContent>
@@ -612,7 +612,7 @@ export const DoAndDoNot: Story = {
 				</div>
 			</StorySection>
 			<StorySection title="Do not: invent feature hex">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Do not hardcode `#22c55e` in product CSS, or use background-only color
 					to mean success without a readable foreground pair.
 				</p>

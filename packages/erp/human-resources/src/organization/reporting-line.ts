@@ -26,7 +26,7 @@ export const HUMAN_RESOURCES_AGGREGATE_REPORTING_LINE =
 export type HumanResourcesReportingLineAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_REPORTING_LINE;
 
-export async function assignPrimaryReportingLine(
+export function assignPrimaryReportingLine(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ReportingLine>> {
@@ -53,7 +53,7 @@ export async function assignPrimaryReportingLine(
 	});
 }
 
-export async function closeReportingLine(
+export function closeReportingLine(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ReportingLine>> {
@@ -79,7 +79,7 @@ export async function closeReportingLine(
 	});
 }
 
-export async function replacePrimaryReportingLine(
+export function replacePrimaryReportingLine(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ReportingLine>> {
@@ -87,7 +87,7 @@ export async function replacePrimaryReportingLine(
 		schema: replacePrimaryReportingLineInputSchema,
 		invalidMessage: "Invalid primary reporting line replace input",
 		command: HUMAN_RESOURCES_COMMAND_REPORTING_LINE_REPLACE_PRIMARY,
-		execute: async (data, { store, ports }) => {
+		execute: (data, { store, ports }) => {
 			const closePriorOn = data.closePriorOn ?? data.startsOn;
 			return store.replacePrimaryReportingLine(
 				{
@@ -109,7 +109,7 @@ export async function replacePrimaryReportingLine(
 	});
 }
 
-export async function resolvePrimaryManager(
+export function resolvePrimaryManager(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ReportingLine | null>> {
@@ -117,7 +117,7 @@ export async function resolvePrimaryManager(
 		schema: resolvePrimaryManagerInputSchema,
 		invalidMessage: "Invalid resolve primary manager input",
 		query: HUMAN_RESOURCES_QUERY_REPORTING_LINE_RESOLVE_PRIMARY_MANAGER,
-		execute: async (data, { store }) => {
+		execute: (data, { store }) => {
 			const asOf = data.asOf ?? new Date().toISOString().slice(0, 10);
 			return store.resolvePrimaryManager({
 				organizationId: data.organizationId,
@@ -128,7 +128,7 @@ export async function resolvePrimaryManager(
 	});
 }
 
-export async function listDirectReports(
+export function listDirectReports(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<{ reportingLines: ReportingLine[]; totalCount: number }>> {
@@ -136,7 +136,7 @@ export async function listDirectReports(
 		schema: listDirectReportsInputSchema,
 		invalidMessage: "Invalid list direct reports input",
 		query: HUMAN_RESOURCES_QUERY_REPORTING_LINE_LIST_DIRECT_REPORTS,
-		execute: async (data, { store }) => {
+		execute: (data, { store }) => {
 			const asOf = data.asOf ?? new Date().toISOString().slice(0, 10);
 			return store.listDirectReports({
 				organizationId: data.organizationId,

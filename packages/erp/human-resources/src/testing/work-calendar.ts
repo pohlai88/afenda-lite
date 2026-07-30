@@ -13,9 +13,11 @@ function parseIsoDate(value: string): Date {
 	const month = Number(monthText);
 	const day = Number(dayText);
 	if (
-		!Number.isInteger(year) ||
-		!Number.isInteger(month) ||
-		!Number.isInteger(day)
+		!(
+			Number.isInteger(year) &&
+			Number.isInteger(month) &&
+			Number.isInteger(day)
+		)
 	) {
 		throw new RangeError(`Invalid ISO date: ${value}`);
 	}
@@ -50,15 +52,15 @@ function quantityForPortion(dayPortion: DayPortion): string {
 /** Test-only weekend calendar — Mon–Fri working; hours unit treats every day as working. */
 export function createMemoryWorkCalendar(): WorkCalendarPort {
 	return {
-		async isWorkingDay(input) {
+		isWorkingDay(input) {
 			try {
 				const date = parseIsoDate(input.date);
-				return ok(!isWeekend(date));
+				return Promise.resolve(ok(!isWeekend(date)));
 			} catch {
-				return ok(false);
+				return Promise.resolve(ok(false));
 			}
 		},
-		async expandLeaveSegments(
+		expandLeaveSegments(
 			input: WorkCalendarSegmentInput,
 		): Promise<Result<WorkCalendarSegment[]>> {
 			const dayPortion = input.partialDay ?? "full";
@@ -80,7 +82,7 @@ export function createMemoryWorkCalendar(): WorkCalendarPort {
 				cursor = addUtcDays(cursor, 1);
 			}
 
-			return ok(segments);
+			return Promise.resolve(ok(segments));
 		},
 	};
 }

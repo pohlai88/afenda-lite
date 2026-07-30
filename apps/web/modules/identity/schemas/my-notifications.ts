@@ -14,7 +14,7 @@ export const listMyNotificationsCommandSchema = z.object({
 		.optional()
 		.transform((value) => {
 			if (value === undefined) {
-				return undefined;
+				return;
 			}
 			return value === "true";
 		}),

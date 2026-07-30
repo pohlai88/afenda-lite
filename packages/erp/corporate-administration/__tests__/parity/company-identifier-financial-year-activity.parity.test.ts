@@ -42,7 +42,9 @@ async function seedCompany(store: Ca13Store) {
 		createdAt: "2026-01-01T00:00:00.000Z",
 		correlationId,
 	});
-	if (!registered.ok) throw new Error("seed company failed");
+	if (!registered.ok) {
+		throw new Error("seed company failed");
+	}
 	return registered.data.legalCompanyId;
 }
 
@@ -75,7 +77,9 @@ describe("company identifier, financial-year, and activity memory parity", () =>
 			correlationId,
 		});
 		expect(first.ok).toBe(true);
-		if (!first.ok) throw new Error("identifier registration failed");
+		if (!first.ok) {
+			throw new Error("identifier registration failed");
+		}
 
 		const duplicate = await store.registerCompanyIdentifier({
 			organizationId,
@@ -243,7 +247,9 @@ describe("company identifier, financial-year, and activity memory parity", () =>
 			correlationId,
 		});
 		expect(registered.ok).toBe(true);
-		if (!registered.ok) throw new Error("activity registration failed");
+		if (!registered.ok) {
+			throw new Error("activity registration failed");
+		}
 
 		const invalidEnd = await store.endCompanyActivity({
 			organizationId,

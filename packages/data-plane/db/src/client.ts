@@ -1,13 +1,13 @@
 import { and, eq, type GetColumnData } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/neon-http";
 import type { AnyPgColumn, AnyPgTable, PgColumn } from "drizzle-orm/pg-core";
+import { databaseSchema } from "./database-schema";
 import { getNeonSql } from "./http-transaction";
-import * as schema from "./schema";
 
-export type DbSchema = typeof schema;
+export type DbSchema = typeof databaseSchema;
 
 function createDb() {
-	return drizzle(getNeonSql(), { schema });
+	return drizzle(getNeonSql(), { schema: databaseSchema });
 }
 
 export type Database = ReturnType<typeof createDb>;
@@ -78,7 +78,7 @@ export async function withOrg<T extends TenantTable>(
 	}
 	const rows = await db
 		.select()
-		.from(table as unknown as typeof schema.platformRoleAssignment)
+		.from(table as unknown as typeof databaseSchema.platformRoleAssignment)
 		.where(eq(table.organizationId, trimmed));
 	return rows as T["$inferSelect"][];
 }

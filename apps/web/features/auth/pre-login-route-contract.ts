@@ -4,12 +4,10 @@
  */
 
 import {
-	AUTH_ACCEPT_INVITATION_PATH,
 	AUTH_API_BASE_PATH,
 	CLIENT_HOME_PATH,
 	OPERATOR_HOME_PATH,
 	PRE_LOGIN_PUBLIC_PATHS,
-	type PreLoginPublicPath,
 } from "@afenda/auth/client";
 
 import {
@@ -20,7 +18,7 @@ import {
 /** Document-public pages — re-export of `@afenda/auth` allowlist. */
 export const PRE_LOGIN_PUBLIC_ROUTE_PATHS = PRE_LOGIN_PUBLIC_PATHS;
 
-export type { PreLoginPublicPath };
+export type { PreLoginPublicPath } from "@afenda/auth/client";
 
 /** Session-gate bypass surfaces (client gate aliases). */
 export const PRE_LOGIN_GATE_BYPASS_PATHS = CLIENT_GATE_PATHS;
@@ -72,4 +70,4 @@ export const POST_LOGIN_PATHS_NOT_PUBLIC = [
 ] as const;
 
 /** Declared redirect source (next.config → JOIN_PATH); not a public page. */
-export { AUTH_ACCEPT_INVITATION_PATH };
+export { AUTH_ACCEPT_INVITATION_PATH } from "@afenda/auth/client";

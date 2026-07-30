@@ -120,7 +120,7 @@ export async function hireEmploymentAction(input: {
 	startsOn: string;
 	endsOn?: string | null;
 }): Promise<ActionResult<{ employment: Employment }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "hireEmploymentAction",
 		permission: "human-resources.employment.manage",
 		safeMessage: "Could not hire employment.",
@@ -138,7 +138,9 @@ export async function hireEmploymentAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { employment: mapped.data } };
 		},
 	});
@@ -150,7 +152,7 @@ export async function rehireEmploymentAction(input: {
 	startsOn: string;
 	endsOn?: string | null;
 }): Promise<ActionResult<{ employment: Employment }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "rehireEmploymentAction",
 		permission: "human-resources.employment.manage",
 		safeMessage: "Could not rehire employment.",
@@ -168,7 +170,9 @@ export async function rehireEmploymentAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { employment: mapped.data } };
 		},
 	});
@@ -183,7 +187,7 @@ export async function amendEmploymentAction(input: {
 	effectiveOn?: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ employment: Employment }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "amendEmploymentAction",
 		permission: "human-resources.employment.manage",
 		safeMessage: "Could not amend employment.",
@@ -201,7 +205,9 @@ export async function amendEmploymentAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { employment: mapped.data } };
 		},
 	});
@@ -215,7 +221,7 @@ export async function suspendEmploymentAction(input: {
 	effectiveOn?: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ employment: Employment }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "suspendEmploymentAction",
 		permission: "human-resources.employment.manage",
 		safeMessage: "Could not suspend employment.",
@@ -233,7 +239,9 @@ export async function suspendEmploymentAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { employment: mapped.data } };
 		},
 	});
@@ -247,7 +255,7 @@ export async function reactivateEmploymentAction(input: {
 	effectiveOn?: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ employment: Employment }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "reactivateEmploymentAction",
 		permission: "human-resources.employment.manage",
 		safeMessage: "Could not reactivate employment.",
@@ -265,7 +273,9 @@ export async function reactivateEmploymentAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { employment: mapped.data } };
 		},
 	});
@@ -279,7 +289,7 @@ export async function terminateEmploymentAction(input: {
 	effectiveOn?: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ employment: Employment }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "terminateEmploymentAction",
 		permission: "human-resources.employment.manage",
 		safeMessage: "Could not terminate employment.",
@@ -297,7 +307,9 @@ export async function terminateEmploymentAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { employment: mapped.data } };
 		},
 	});
@@ -314,7 +326,7 @@ export async function correctEmploymentAction(input: {
 	effectiveOn?: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ employment: Employment }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "correctEmploymentAction",
 		permission: "human-resources.employment.manage",
 		safeMessage: "Could not correct employment.",
@@ -332,7 +344,9 @@ export async function correctEmploymentAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { employment: mapped.data } };
 		},
 	});
@@ -347,7 +361,7 @@ export async function createEmploymentContractAction(input: {
 	reasonCode: string;
 	sourceReference?: string;
 }): Promise<ActionResult<{ contract: EmploymentContract }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "createEmploymentContractAction",
 		permission: "human-resources.employment.manage",
 		safeMessage: "Could not create employment contract.",
@@ -365,7 +379,9 @@ export async function createEmploymentContractAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { contract: mapped.data } };
 		},
 	});
@@ -381,7 +397,7 @@ export async function amendEmploymentContractAction(input: {
 	sourceReference: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ contract: EmploymentContract }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "amendEmploymentContractAction",
 		permission: "human-resources.employment.manage",
 		safeMessage: "Could not amend employment contract.",
@@ -399,7 +415,9 @@ export async function amendEmploymentContractAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { contract: mapped.data } };
 		},
 	});
@@ -420,7 +438,7 @@ export async function renewEmploymentContractAction(input: {
 		successor: EmploymentContract;
 	}>
 > {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "renewEmploymentContractAction",
 		permission: "human-resources.employment.manage",
 		safeMessage: "Could not renew employment contract.",
@@ -441,7 +459,9 @@ export async function renewEmploymentContractAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return {
 				ok: true,
 				data: {
@@ -468,7 +488,7 @@ export async function supersedeEmploymentContractAction(input: {
 		successor: EmploymentContract;
 	}>
 > {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "supersedeEmploymentContractAction",
 		permission: "human-resources.employment.manage",
 		safeMessage: "Could not supersede employment contract.",
@@ -489,7 +509,9 @@ export async function supersedeEmploymentContractAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return {
 				ok: true,
 				data: {
@@ -509,7 +531,7 @@ export async function endEmploymentContractAction(input: {
 	sourceReference: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ contract: EmploymentContract }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "endEmploymentContractAction",
 		permission: "human-resources.employment.manage",
 		safeMessage: "Could not end employment contract.",
@@ -527,7 +549,9 @@ export async function endEmploymentContractAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { contract: mapped.data } };
 		},
 	});
@@ -537,7 +561,7 @@ export async function getEmploymentAction(input: {
 	correlationId?: string;
 	employmentId: string;
 }): Promise<ActionResult<{ employment: Employment }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getEmploymentAction",
 		permission: "human-resources.employee.read",
 		safeMessage: "Could not get employment.",
@@ -560,7 +584,9 @@ export async function getEmploymentAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { employment: mapped.data } };
 		},
 	});
@@ -571,7 +597,7 @@ export async function getEmploymentAsOfAction(input: {
 	employeeId: string;
 	asOf: string;
 }): Promise<ActionResult<{ employment: Employment | null }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getEmploymentAsOfAction",
 		permission: "human-resources.employee.read",
 		safeMessage: "Could not get employment as of date.",
@@ -595,7 +621,9 @@ export async function getEmploymentAsOfAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { employment: mapped.data } };
 		},
 	});
@@ -616,7 +644,7 @@ export async function listEmploymentStatusHistoryAction(input: {
 		} | null;
 	}>
 > {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listEmploymentStatusHistoryAction",
 		permission: "human-resources.employee.read",
 		safeMessage: "Could not list employment status history.",
@@ -640,7 +668,9 @@ export async function listEmploymentStatusHistoryAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return {
 				ok: true,
 				data: {
@@ -656,7 +686,7 @@ export async function getEmploymentContractAction(input: {
 	correlationId?: string;
 	employmentContractId: string;
 }): Promise<ActionResult<{ contract: EmploymentContract }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getEmploymentContractAction",
 		permission: "human-resources.employee.read",
 		safeMessage: "Could not get employment contract.",
@@ -679,7 +709,9 @@ export async function getEmploymentContractAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { contract: mapped.data } };
 		},
 	});
@@ -690,7 +722,7 @@ export async function getEmploymentContractAsOfAction(input: {
 	employmentId: string;
 	asOf: string;
 }): Promise<ActionResult<{ contract: EmploymentContract | null }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getEmploymentContractAsOfAction",
 		permission: "human-resources.employee.read",
 		safeMessage: "Could not get employment contract as of date.",
@@ -714,7 +746,9 @@ export async function getEmploymentContractAsOfAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { contract: mapped.data } };
 		},
 	});
@@ -725,7 +759,7 @@ export async function getCurrentEmploymentContractAction(input: {
 	employmentId: string;
 	asOf: string;
 }): Promise<ActionResult<{ contract: EmploymentContract | null }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getCurrentEmploymentContractAction",
 		permission: "human-resources.employee.read",
 		safeMessage: "Could not get current employment contract.",
@@ -749,7 +783,9 @@ export async function getCurrentEmploymentContractAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { contract: mapped.data } };
 		},
 	});
@@ -759,7 +795,7 @@ export async function listEmploymentContractsAction(input: {
 	correlationId?: string;
 	employmentId: string;
 }): Promise<ActionResult<{ contracts: EmploymentContract[] }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listEmploymentContractsAction",
 		permission: "human-resources.employee.read",
 		safeMessage: "Could not list employment contracts.",
@@ -782,7 +818,9 @@ export async function listEmploymentContractsAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { contracts: mapped.data } };
 		},
 	});

@@ -61,6 +61,9 @@ jobs:
       - name: Tenancy soft-residue scan (N9 / ARCH-023 R1)
         run: pnpm check:tenancy-residue
 
+      - name: Biome adopted packages (wave 1)
+        run: pnpm --filter @afenda/config --filter @afenda/env --filter @afenda/errors --filter @afenda/testing --filter @afenda/auth --filter @afenda/admin --filter @afenda/logger --filter @afenda/http --filter @afenda/cache --filter @afenda/rate-limit --filter @afenda/security --filter @afenda/metrics --filter @afenda/openapi --filter @afenda/audit --filter @afenda/db --filter @afenda/search --filter @afenda/notifications --filter @afenda/events --filter @afenda/ai-the-machine --filter @afenda/master-data --filter @afenda/sales --filter @afenda/purchasing --filter @afenda/inventory --filter @afenda/receiving --filter @afenda/fulfillment --filter @afenda/receivables --filter @afenda/payables --filter @afenda/payments --filter @afenda/accounting lint
+
       - name: Biome CI
         run: pnpm run lint:ci
 

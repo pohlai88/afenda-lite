@@ -10,7 +10,7 @@ function AfendaThemeBoundary({
 	theme: "light" | "dark";
 }) {
 	useEffect(() => {
-		const documentElement = document.documentElement;
+		const { documentElement } = document;
 		const hadLightTheme = documentElement.classList.contains("light");
 		const hadDarkTheme = documentElement.classList.contains("dark");
 
@@ -19,8 +19,12 @@ function AfendaThemeBoundary({
 
 		return () => {
 			documentElement.classList.remove("light", "dark");
-			if (hadLightTheme) documentElement.classList.add("light");
-			if (hadDarkTheme) documentElement.classList.add("dark");
+			if (hadLightTheme) {
+				documentElement.classList.add("light");
+			}
+			if (hadDarkTheme) {
+				documentElement.classList.add("dark");
+			}
 		};
 	}, [theme]);
 

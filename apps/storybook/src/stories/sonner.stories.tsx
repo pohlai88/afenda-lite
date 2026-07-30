@@ -12,6 +12,18 @@ import { contractDocsParameters } from "./contract-docs";
 import { contractEvidence, StorySection } from "./evidence";
 
 const evidence = contractEvidence("ui.sonner");
+
+function showSuccessToast(): void {
+	toast.success("Invoice saved");
+}
+
+function showErrorToast(): void {
+	toast.error("Posting failed");
+}
+
+function showWarningToast(): void {
+	toast.warning("Evidence expires in 7 days");
+}
 const meta = {
 	title: "UI System/Sonner",
 	component: Toaster,
@@ -26,10 +38,8 @@ function ToastControls() {
 		<>
 			<Toaster />
 			<div className="flex flex-wrap gap-2">
-				<Button onClick={() => toast.success("Invoice saved")}>
-					Show success
-				</Button>
-				<Button variant="outline" onClick={() => toast.error("Posting failed")}>
+				<Button onClick={showSuccessToast}>Show success</Button>
+				<Button onClick={showErrorToast} variant="outline">
 					Show error
 				</Button>
 			</div>
@@ -60,13 +70,10 @@ export const StatesAndAccessibility: Story = {
 	render: () => (
 		<div className="grid gap-3">
 			<Toaster />
-			<Button
-				variant="outline"
-				onClick={() => toast.warning("Evidence expires in 7 days")}
-			>
+			<Button onClick={showWarningToast} variant="outline">
 				Announce warning
 			</Button>
-			<p className="text-sm text-foreground-secondary">
+			<p className="text-foreground-secondary text-sm">
 				Severity determines announcement urgency; repeated outcomes must be
 				deduplicated.
 			</p>
@@ -75,7 +82,7 @@ export const StatesAndAccessibility: Story = {
 };
 export const VariantsAndSizes: Story = {
 	render: () => (
-		<p className="text-sm text-foreground-secondary">
+		<p className="text-foreground-secondary text-sm">
 			Sonner severity is selected by the toast API; one Toaster owns viewport,
 			theme, stacking, and dismissal.
 		</p>
@@ -86,12 +93,12 @@ export const DoAndDoNot: Story = {
 	render: () => (
 		<div className="grid gap-6 sm:grid-cols-2">
 			<StorySection title="Do: announce confirmed outcomes">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Call toast only after the authoritative command result is known.
 				</p>
 			</StorySection>
 			<StorySection title="Do not: replace durable state">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Keep actionable failures in the workflow with Alert or FormError.
 				</p>
 			</StorySection>

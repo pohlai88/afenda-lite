@@ -32,7 +32,7 @@ import type { JobDefinitionAtAsOf } from "./organization-structure-lineage";
 export const HUMAN_RESOURCES_AGGREGATE_JOB = "job" as const;
 export type HumanResourcesJobAggregate = typeof HUMAN_RESOURCES_AGGREGATE_JOB;
 
-export async function createJob(
+export function createJob(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Job>> {
@@ -58,7 +58,7 @@ export async function createJob(
 	});
 }
 
-export async function updateJob(
+export function updateJob(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Job>> {
@@ -87,7 +87,7 @@ export async function updateJob(
 	});
 }
 
-export async function activateJob(
+export function activateJob(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Job>> {
@@ -113,7 +113,7 @@ export async function activateJob(
 	});
 }
 
-export async function archiveJob(
+export function archiveJob(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Job>> {
@@ -139,7 +139,7 @@ export async function archiveJob(
 	});
 }
 
-export async function getJob(
+export function getJob(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Job>> {
@@ -167,7 +167,7 @@ export async function getJob(
 	});
 }
 
-export async function getJobAsOf(
+export function getJobAsOf(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<JobDefinitionAtAsOf>> {
@@ -196,7 +196,7 @@ export async function getJobAsOf(
 	});
 }
 
-export async function listJobs(
+export function listJobs(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<{ jobs: Job[]; totalCount: number }>> {

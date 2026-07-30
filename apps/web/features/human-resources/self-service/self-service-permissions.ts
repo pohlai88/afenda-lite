@@ -8,7 +8,7 @@ import {
 import type { SelfServicePermissions } from "./types";
 
 async function has(session: Session, code: ProductPermissionCode) {
-	return sessionHasPermission(session, code);
+	return await sessionHasPermission(session, code);
 }
 
 export async function resolveSelfServicePermissions(

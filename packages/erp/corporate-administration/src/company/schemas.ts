@@ -176,14 +176,16 @@ function validateCommandEffectivePeriod(
 	value: { effectiveFrom: string; effectiveTo?: string | null | undefined },
 	context: z.RefinementCtx,
 ): void {
-	if (value.effectiveTo !== undefined && value.effectiveTo !== null) {
-		if (value.effectiveTo <= value.effectiveFrom) {
-			context.addIssue({
-				code: "custom",
-				path: ["effectiveTo"],
-				message: "Effective end date must be after effective start date",
-			});
-		}
+	if (
+		value.effectiveTo !== undefined &&
+		value.effectiveTo !== null &&
+		value.effectiveTo <= value.effectiveFrom
+	) {
+		context.addIssue({
+			code: "custom",
+			path: ["effectiveTo"],
+			message: "Effective end date must be after effective start date",
+		});
 	}
 }
 

@@ -188,7 +188,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const loaded = await getCompetencyById(
 			{
@@ -200,7 +202,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(loaded.ok).toBe(true);
-		if (!loaded.ok) return;
+		if (!loaded.ok) {
+			return;
+		}
 		expect(loaded.data?.code).toBe(code);
 
 		const listed = await listCompetencies(
@@ -214,7 +218,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(listed.ok).toBe(true);
-		if (!listed.ok) return;
+		if (!listed.ok) {
+			return;
+		}
 		expect(listed.data.competencies.some((c) => c.id === created.data.id)).toBe(
 			true,
 		);
@@ -230,7 +236,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(retired.ok).toBe(true);
-		if (!retired.ok) return;
+		if (!retired.ok) {
+			return;
+		}
 		expect(retired.data.status).toBe("retired");
 	});
 
@@ -251,7 +259,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 
 		const second = await createCompetency(
 			{
@@ -288,7 +298,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const updated = await updateCompetency(
 			{
@@ -302,7 +314,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(updated.ok).toBe(true);
-		if (!updated.ok) return;
+		if (!updated.ok) {
+			return;
+		}
 		expect(updated.data.name).toBe("After");
 
 		const loaded = await getCompetencyById(
@@ -315,7 +329,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(loaded.ok).toBe(true);
-		if (!loaded.ok) return;
+		if (!loaded.ok) {
+			return;
+		}
 		expect(loaded.data?.name).toBe("After");
 	});
 
@@ -326,7 +342,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			actorUserId: ACTOR,
 		});
 		expect(seeded).not.toBeNull();
-		if (!seeded) return;
+		if (!seeded) {
+			return;
+		}
 
 		const competency = await createCompetency(
 			{
@@ -341,7 +359,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(competency.ok).toBe(true);
-		if (!competency.ok) return;
+		if (!competency.ok) {
+			return;
+		}
 
 		const mapped = await mapCompetencyToJob(
 			{
@@ -355,7 +375,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(mapped.ok).toBe(true);
-		if (!mapped.ok) return;
+		if (!mapped.ok) {
+			return;
+		}
 		expect(mapped.data.requiredLevel).toBe(3);
 
 		const listed = await listJobCompetencies(
@@ -368,7 +390,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(listed.ok).toBe(true);
-		if (!listed.ok) return;
+		if (!listed.ok) {
+			return;
+		}
 		expect(
 			listed.data.jobCompetencies.some((row) => row.id === mapped.data.id),
 		).toBe(true);
@@ -384,7 +408,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(removed.ok).toBe(true);
-		if (!removed.ok) return;
+		if (!removed.ok) {
+			return;
+		}
 		expect(removed.data.status).toBe("removed");
 	});
 
@@ -409,7 +435,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(competency.ok).toBe(true);
-		if (!competency.ok) return;
+		if (!competency.ok) {
+			return;
+		}
 
 		const assessed = await assessEmployeeCompetency(
 			{
@@ -429,7 +457,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(assessed.ok).toBe(true);
-		if (!assessed.ok) return;
+		if (!assessed.ok) {
+			return;
+		}
 		expect(assessed.data.level).toBe(3);
 		expect(assessed.data.evidenceSource).toBe("Manager observation Q1");
 		expect(assessed.data.expiresOn).toBe("2099-01-15");
@@ -444,7 +474,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(profile.ok).toBe(true);
-		if (!profile.ok) return;
+		if (!profile.ok) {
+			return;
+		}
 		expect(profile.data.assessments).toHaveLength(1);
 		expect(profile.data.assessments[0]?.id).toBe(assessed.data.id);
 
@@ -465,7 +497,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(superseded.ok).toBe(true);
-		if (!superseded.ok) return;
+		if (!superseded.ok) {
+			return;
+		}
 		expect(superseded.data.level).toBe(4);
 		expect(superseded.data.supersedesAssessmentId).toBe(assessed.data.id);
 		expect(superseded.data.status).toBe("current");
@@ -481,7 +515,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(expired.ok).toBe(true);
-		if (!expired.ok) return;
+		if (!expired.ok) {
+			return;
+		}
 		expect(expired.data.status).toBe("expired");
 
 		const reAssessed = await assessEmployeeCompetency(
@@ -501,7 +537,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(reAssessed.ok).toBe(true);
-		if (!reAssessed.ok) return;
+		if (!reAssessed.ok) {
+			return;
+		}
 		expect(reAssessed.data.status).toBe("current");
 	});
 
@@ -526,7 +564,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(profile.ok).toBe(true);
-		if (!profile.ok) return;
+		if (!profile.ok) {
+			return;
+		}
 
 		const updated = await updateTalentProfile(
 			{
@@ -540,7 +580,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(updated.ok).toBe(true);
-		if (!updated.ok) return;
+		if (!updated.ok) {
+			return;
+		}
 		expect(updated.data.summary).toBe("Updated summary");
 
 		const archived = await archiveTalentProfile(
@@ -554,7 +596,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(archived.ok).toBe(true);
-		if (!archived.ok) return;
+		if (!archived.ok) {
+			return;
+		}
 		expect(archived.data.status).toBe("archived");
 
 		const denied = await updateTalentProfile(
@@ -591,7 +635,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(profile.ok).toBe(true);
-		if (!profile.ok) return;
+		if (!profile.ok) {
+			return;
+		}
 
 		const draft = await recordTalentProfileAssessment(
 			{
@@ -607,7 +653,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 
 		const confirmed = await confirmTalentProfileAssessment(
 			{
@@ -620,7 +668,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(confirmed.ok).toBe(true);
-		if (!confirmed.ok) return;
+		if (!confirmed.ok) {
+			return;
+		}
 
 		const sensitive = await getTalentProfileByEmployee(
 			{
@@ -633,7 +683,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(sensitive.ok).toBe(true);
-		if (!sensitive.ok) return;
+		if (!sensitive.ok) {
+			return;
+		}
 		expect(sensitive.data?.currentClassification).toBe("high_potential");
 
 		const redacted = await getTalentProfileByEmployee(
@@ -647,7 +699,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(redacted.ok).toBe(true);
-		if (!redacted.ok) return;
+		if (!redacted.ok) {
+			return;
+		}
 		expect(redacted.data?.currentClassification).toBeNull();
 
 		const history = await listTalentProfileAssessments(
@@ -661,7 +715,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(history.ok).toBe(true);
-		if (!history.ok) return;
+		if (!history.ok) {
+			return;
+		}
 		expect(
 			history.data.assessments.some((a) => a.id === confirmed.data.id),
 		).toBe(true);
@@ -687,7 +743,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(profile.ok).toBe(true);
-		if (!profile.ok) return;
+		if (!profile.ok) {
+			return;
+		}
 
 		const first = await recordTalentProfileMobility(
 			{
@@ -705,7 +763,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 
 		const second = await recordTalentProfileMobility(
 			{
@@ -723,7 +783,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(second.ok).toBe(true);
-		if (!second.ok) return;
+		if (!second.ok) {
+			return;
+		}
 		expect(second.data.status).toBe("current");
 
 		const listedSensitive = await listTalentProfileMobility(
@@ -737,7 +799,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(listedSensitive.ok).toBe(true);
-		if (!listedSensitive.ok) return;
+		if (!listedSensitive.ok) {
+			return;
+		}
 		const currentRows = listedSensitive.data.mobilities.filter(
 			(row) => row.dimension === "geographic" && row.status === "current",
 		);
@@ -760,7 +824,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(listedRedacted.ok).toBe(true);
-		if (!listedRedacted.ok) return;
+		if (!listedRedacted.ok) {
+			return;
+		}
 		expect(listedRedacted.data.mobilities[0]?.evidenceSummary).toBeNull();
 	});
 
@@ -789,7 +855,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(profile.ok).toBe(true);
-		if (!profile.ok) return;
+		if (!profile.ok) {
+			return;
+		}
 
 		const first = await recordCriticalRoleReadiness(
 			{
@@ -807,7 +875,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 
 		const second = await recordCriticalRoleReadiness(
 			{
@@ -825,7 +895,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(second.ok).toBe(true);
-		if (!second.ok) return;
+		if (!second.ok) {
+			return;
+		}
 
 		const listed = await listCriticalRoleReadiness(
 			{
@@ -838,7 +910,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(listed.ok).toBe(true);
-		if (!listed.ok) return;
+		if (!listed.ok) {
+			return;
+		}
 		const currentRows = listed.data.readinessRecords.filter(
 			(row) => row.positionId === position.id && row.status === "current",
 		);
@@ -866,7 +940,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(pool.ok).toBe(true);
-		if (!pool.ok) return;
+		if (!pool.ok) {
+			return;
+		}
 
 		const nominated = await nominateTalentPoolMember(
 			{
@@ -881,7 +957,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(nominated.ok).toBe(true);
-		if (!nominated.ok) return;
+		if (!nominated.ok) {
+			return;
+		}
 
 		const approved = await approveTalentPoolMember(
 			{
@@ -895,7 +973,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 
 		const removed = await removeTalentPoolMember(
 			{
@@ -908,7 +988,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(removed.ok).toBe(true);
-		if (!removed.ok) return;
+		if (!removed.ok) {
+			return;
+		}
 		expect(removed.data.status).toBe("removed");
 	});
 
@@ -932,7 +1014,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(pool.ok).toBe(true);
-		if (!pool.ok) return;
+		if (!pool.ok) {
+			return;
+		}
 
 		const closed = await closeTalentPool(
 			{
@@ -945,7 +1029,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(closed.ok).toBe(true);
-		if (!closed.ok) return;
+		if (!closed.ok) {
+			return;
+		}
 
 		const denied = await nominateTalentPoolMember(
 			{
@@ -986,7 +1072,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(profileFirst.ok).toBe(true);
-		if (!profileFirst.ok) return;
+		if (!profileFirst.ok) {
+			return;
+		}
 
 		const profileConflict = await createTalentProfile(
 			{
@@ -1016,7 +1104,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(poolFirst.ok).toBe(true);
-		if (!poolFirst.ok) return;
+		if (!poolFirst.ok) {
+			return;
+		}
 
 		const poolConflict = await createTalentPool(
 			{
@@ -1054,7 +1144,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 		const acknowledged = await acknowledgeCareerPlan(
 			{
 				organizationId: ORG,
@@ -1066,7 +1158,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(acknowledged.ok).toBe(true);
-		if (!acknowledged.ok) return;
+		if (!acknowledged.ok) {
+			return;
+		}
 		const action = await addCareerPlanAction(
 			{
 				organizationId: ORG,
@@ -1079,7 +1173,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(action.ok).toBe(true);
-		if (!action.ok) return;
+		if (!action.ok) {
+			return;
+		}
 		const completed = await completeCareerPlanAction(
 			{
 				organizationId: ORG,
@@ -1091,7 +1187,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(completed.ok).toBe(true);
-		if (!completed.ok) return;
+		if (!completed.ok) {
+			return;
+		}
 		expect(completed.data.status).toBe("done");
 		const closed = await closeCareerPlan(
 			{
@@ -1104,7 +1202,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(closed.ok).toBe(true);
-		if (!closed.ok) return;
+		if (!closed.ok) {
+			return;
+		}
 		expect(closed.data.status).toBe("closed");
 	});
 
@@ -1134,7 +1234,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(plan.ok).toBe(true);
-		if (!plan.ok) return;
+		if (!plan.ok) {
+			return;
+		}
 		const nominated = await nominateSuccessionCandidate(
 			{
 				organizationId: ORG,
@@ -1151,7 +1253,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(nominated.ok).toBe(true);
-		if (!nominated.ok) return;
+		if (!nominated.ok) {
+			return;
+		}
 		const approved = await approveSuccessionCandidate(
 			{
 				organizationId: ORG,
@@ -1163,7 +1267,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 		const coverage = await getPositionSuccessionCoverage(
 			{
 				organizationId: ORG,
@@ -1174,7 +1280,9 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(coverage.ok).toBe(true);
-		if (!coverage.ok) return;
+		if (!coverage.ok) {
+			return;
+		}
 		expect(coverage.data.totalActiveCandidateCount).toBe(1);
 		expect(coverage.data.readyNowCandidateCount).toBe(0);
 	});
@@ -1307,7 +1415,9 @@ describe("@afenda/human-resources talent competency guards (memory)", () => {
 			harness,
 		);
 		expect(assessed.ok).toBe(true);
-		if (!assessed.ok) return;
+		if (!assessed.ok) {
+			return;
+		}
 
 		const superseded = await supersedeCompetencyAssessment(
 			{
@@ -1325,7 +1435,9 @@ describe("@afenda/human-resources talent competency guards (memory)", () => {
 			harness,
 		);
 		expect(superseded.ok).toBe(true);
-		if (!superseded.ok) return;
+		if (!superseded.ok) {
+			return;
+		}
 
 		const expireOld = await expireCompetencyAssessment(
 			{
@@ -1452,7 +1564,9 @@ describe("@afenda/human-resources talent sensitive authorization (memory)", () =
 			adminReady,
 		);
 		expect(profile.ok).toBe(true);
-		if (!profile.ok) return;
+		if (!profile.ok) {
+			return;
+		}
 
 		const assessment = await recordTalentProfileAssessment(
 			{
@@ -1468,7 +1582,9 @@ describe("@afenda/human-resources talent sensitive authorization (memory)", () =
 			adminReady,
 		);
 		expect(assessment.ok).toBe(true);
-		if (!assessment.ok) return;
+		if (!assessment.ok) {
+			return;
+		}
 		const confirmed = await confirmTalentProfileAssessment(
 			{
 				organizationId: ORG,
@@ -1510,7 +1626,9 @@ describe("@afenda/human-resources talent sensitive authorization (memory)", () =
 			subjectReady,
 		);
 		expect(redacted.ok).toBe(true);
-		if (!redacted.ok) return;
+		if (!redacted.ok) {
+			return;
+		}
 		expect(redacted.data?.currentClassification).toBeNull();
 
 		const sensitive = await getTalentProfileByEmployee(
@@ -1524,7 +1642,9 @@ describe("@afenda/human-resources talent sensitive authorization (memory)", () =
 			subjectReady,
 		);
 		expect(sensitive.ok).toBe(true);
-		if (!sensitive.ok) return;
+		if (!sensitive.ok) {
+			return;
+		}
 		expect(sensitive.data?.currentClassification).toBe("high_potential");
 	});
 });

@@ -18,7 +18,7 @@ import { MAIN_CONTENT_ID } from "@/features/auth/main-content";
 export async function AuthIslandLayout({ children }: { children: ReactNode }) {
 	const appOrigin = await resolveAuthUiOrigin();
 	return (
-		<main id={MAIN_CONTENT_ID} tabIndex={-1} className="min-h-dvh">
+		<main className="min-h-dvh" id={MAIN_CONTENT_ID} tabIndex={-1}>
 			<Suspense fallback={null}>
 				<AuthUiProvider appOrigin={appOrigin}>
 					<AuthSurfaceChrome>{children}</AuthSurfaceChrome>

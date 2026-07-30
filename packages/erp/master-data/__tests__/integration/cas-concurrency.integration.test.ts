@@ -16,7 +16,9 @@ it("allows exactly one concurrent update for the same expected version", async (
 			harness.options,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const results = await Promise.all([
 			updateParty(
@@ -41,7 +43,9 @@ it("allows exactly one concurrent update for the same expected version", async (
 		expect(results.filter((result) => result.ok)).toHaveLength(1);
 		const conflict = results.find((result) => !result.ok);
 		expect(conflict?.ok).toBe(false);
-		if (conflict === undefined || conflict.ok) return;
+		if (conflict === undefined || conflict.ok) {
+			return;
+		}
 		expect(conflict.code).toBe("CONFLICT");
 		expect(conflict.details).toMatchObject({
 			reason: "MASTER_VERSION_CONFLICT",

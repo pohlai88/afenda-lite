@@ -15,12 +15,12 @@ import {
 	type PrivacyOperationStore,
 } from "./privacy-operation-store";
 
-export type CreatePlatformPrivacyServiceDeps = {
-	store?: PrivacyOperationStore;
-	inventory?: PrivacySubjectInventoryPort;
+export interface CreatePlatformPrivacyServiceDeps {
 	audit: PrivacyAuditPort;
 	createId?: () => string;
-};
+	inventory?: PrivacySubjectInventoryPort;
+	store?: PrivacyOperationStore;
+}
 
 function assertTenantRecords(
 	organizationId: string,
@@ -109,9 +109,9 @@ function activeLegalHoldReason(
 ): string | undefined {
 	const activeHolds = store.listActiveLegalHolds(input);
 	if (activeHolds.length === 0) {
-		return undefined;
+		return;
 	}
-	const firstHold = activeHolds[0];
+	const [firstHold] = activeHolds;
 	return firstHold?.holdReference ?? "legal_hold_active";
 }
 

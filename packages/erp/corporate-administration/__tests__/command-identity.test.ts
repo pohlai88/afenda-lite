@@ -28,7 +28,9 @@ describe("Corporate Administration command identity", () => {
 			commandId,
 			input,
 		});
-		if (!result.ok) throw new Error("expected valid test command input");
+		if (!result.ok) {
+			throw new Error("expected valid test command input");
+		}
 		return result.data;
 	}
 
@@ -132,7 +134,9 @@ describe("Corporate Administration command identity", () => {
 
 		expect(omitted.ok).toBe(true);
 		expect(explicitUndefined.ok).toBe(true);
-		if (!omitted.ok || !explicitUndefined.ok) return;
+		if (!(omitted.ok && explicitUndefined.ok)) {
+			return;
+		}
 
 		expect(explicitUndefined.data.envelope.input).toEqual({
 			code: "CA-01",

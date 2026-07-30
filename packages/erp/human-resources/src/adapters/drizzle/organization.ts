@@ -102,6 +102,12 @@ import {
 	isPostgresUniqueViolation,
 	mapPersistenceFailure,
 } from "../../shared/persistence-errors";
+import { isResultFailure } from "../../shared/result-guards";
+import {
+	runSequential,
+	sequentialContinue,
+	sequentialReturn,
+} from "../../shared/run-sequential";
 import type {
 	DepartmentCreateRecord,
 	HumanResourcesStore,
@@ -143,9 +149,13 @@ function mapDepartment(
 	row: typeof hrDepartment.$inferSelect,
 ): Result<Department> {
 	const id = parseHumanResourcesDepartmentId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const parentDepartmentId = mapNullableDepartmentId(row.parentDepartmentId);
-	if (!parentDepartmentId.ok) return parentDepartmentId;
+	if (!parentDepartmentId.ok) {
+		return parentDepartmentId;
+	}
 	const status = departmentStatusSchema.safeParse(row.status);
 	if (!status.success) {
 		return fail(
@@ -171,7 +181,9 @@ function mapDepartment(
 
 function mapJob(row: typeof hrJob.$inferSelect): Result<Job> {
 	const id = parseHumanResourcesJobId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const status = jobStatusSchema.safeParse(row.status);
 	if (!status.success) {
 		return fail(
@@ -196,11 +208,17 @@ function mapJob(row: typeof hrJob.$inferSelect): Result<Job> {
 
 function mapPosition(row: typeof hrPosition.$inferSelect): Result<Position> {
 	const id = parseHumanResourcesPositionId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const departmentId = mapNullableDepartmentId(row.departmentId);
-	if (!departmentId.ok) return departmentId;
+	if (!departmentId.ok) {
+		return departmentId;
+	}
 	const jobId = mapNullableJobId(row.jobId);
-	if (!jobId.ok) return jobId;
+	if (!jobId.ok) {
+		return jobId;
+	}
 	const status = positionStatusSchema.safeParse(row.status);
 	if (!status.success) {
 		return fail(
@@ -233,19 +251,29 @@ function mapReportingLine(
 	const managerEmployeeId = parseHumanResourcesEmployeeId(
 		row.managerEmployeeId,
 	);
-	if (!id.ok) return id;
-	if (!employeeId.ok) return employeeId;
-	if (!managerEmployeeId.ok) return managerEmployeeId;
+	if (!id.ok) {
+		return id;
+	}
+	if (!employeeId.ok) {
+		return employeeId;
+	}
+	if (!managerEmployeeId.ok) {
+		return managerEmployeeId;
+	}
 	const supersedesReportingLineId =
 		row.supersedesReportingLineId === null
 			? ok(null)
 			: parseHumanResourcesReportingLineId(row.supersedesReportingLineId);
-	if (!supersedesReportingLineId.ok) return supersedesReportingLineId;
+	if (isResultFailure(supersedesReportingLineId)) {
+		return supersedesReportingLineId;
+	}
 	const supersededByReportingLineId =
 		row.supersededByReportingLineId === null
 			? ok(null)
 			: parseHumanResourcesReportingLineId(row.supersededByReportingLineId);
-	if (!supersededByReportingLineId.ok) return supersededByReportingLineId;
+	if (isResultFailure(supersededByReportingLineId)) {
+		return supersededByReportingLineId;
+	}
 	const relationshipKind = reportingRelationshipKindSchema.safeParse(
 		row.relationshipKind,
 	);
@@ -274,20 +302,20 @@ function mapReportingLine(
 	});
 }
 
-type PositionSqlRow = {
-	id: string;
-	organization_id: string;
+interface PositionSqlRow {
 	code: string;
-	title: string;
-	department_id: string | null;
-	job_id: string | null;
-	status: string;
-	version: number;
-	created_by: string;
-	updated_by: string;
 	created_at: Date;
+	created_by: string;
+	department_id: string | null;
+	id: string;
+	job_id: string | null;
+	organization_id: string;
+	status: string;
+	title: string;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+}
 
 function mapPositionSqlRow(row: PositionSqlRow): Result<Position> {
 	return mapPosition({
@@ -306,19 +334,19 @@ function mapPositionSqlRow(row: PositionSqlRow): Result<Position> {
 	});
 }
 
-type DepartmentSqlRow = {
-	id: string;
-	organization_id: string;
+interface DepartmentSqlRow {
 	code: string;
+	created_at: Date;
+	created_by: string;
+	id: string;
 	name: string;
+	organization_id: string;
 	parent_department_id: string | null;
 	status: string;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+}
 
 function mapDepartmentSqlRow(row: DepartmentSqlRow): Result<Department> {
 	return mapDepartment({
@@ -336,18 +364,18 @@ function mapDepartmentSqlRow(row: DepartmentSqlRow): Result<Department> {
 	});
 }
 
-type JobSqlRow = {
+interface JobSqlRow {
+	code: string;
+	created_at: Date;
+	created_by: string;
 	id: string;
 	organization_id: string;
-	code: string;
-	title: string;
 	status: string;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
+	title: string;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+}
 
 function mapJobSqlRow(row: JobSqlRow): Result<Job> {
 	return mapJob({
@@ -364,22 +392,22 @@ function mapJobSqlRow(row: JobSqlRow): Result<Job> {
 	});
 }
 
-type ReportingLineSqlRow = {
-	id: string;
-	organization_id: string;
+interface ReportingLineSqlRow {
+	created_at: Date;
+	created_by: string;
 	employee_id: string;
+	ends_on: string | null;
+	id: string;
 	manager_employee_id: string;
+	organization_id: string;
 	relationship_kind: string;
 	starts_on: string;
-	ends_on: string | null;
-	supersedes_reporting_line_id: string | null;
 	superseded_by_reporting_line_id: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
+	supersedes_reporting_line_id: string | null;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+}
 
 function mapReportingLineSqlRow(
 	row: ReportingLineSqlRow,
@@ -409,9 +437,13 @@ function mapDepartmentStructureVersionRow(
 	row: DepartmentStructureVersionSqlRow,
 ): Result<DepartmentStructureVersion> {
 	const departmentId = parseHumanResourcesDepartmentId(row.departmentId);
-	if (!departmentId.ok) return departmentId;
+	if (!departmentId.ok) {
+		return departmentId;
+	}
 	const parentDepartmentId = mapNullableDepartmentId(row.parentDepartmentId);
-	if (!parentDepartmentId.ok) return parentDepartmentId;
+	if (!parentDepartmentId.ok) {
+		return parentDepartmentId;
+	}
 	return ok({
 		id: row.id,
 		organizationId: row.organizationId,
@@ -438,7 +470,9 @@ function mapJobDefinitionVersionRow(
 	row: JobDefinitionVersionSqlRow,
 ): Result<JobDefinitionVersion> {
 	const jobId = parseHumanResourcesJobId(row.jobId);
-	if (!jobId.ok) return jobId;
+	if (!jobId.ok) {
+		return jobId;
+	}
 	return ok({
 		id: row.id,
 		organizationId: row.organizationId,
@@ -465,11 +499,17 @@ function mapPositionDefinitionVersionRow(
 	row: PositionDefinitionVersionSqlRow,
 ): Result<PositionDefinitionVersion> {
 	const positionId = parseHumanResourcesPositionId(row.positionId);
-	if (!positionId.ok) return positionId;
+	if (!positionId.ok) {
+		return positionId;
+	}
 	const departmentId = mapNullableDepartmentId(row.departmentId);
-	if (!departmentId.ok) return departmentId;
+	if (!departmentId.ok) {
+		return departmentId;
+	}
 	const jobId = mapNullableJobId(row.jobId);
-	if (!jobId.ok) return jobId;
+	if (!jobId.ok) {
+		return jobId;
+	}
 	return ok({
 		id: row.id,
 		organizationId: row.organizationId,
@@ -508,7 +548,9 @@ async function listDepartmentStructureVersions(input: {
 		const versions: DepartmentStructureVersion[] = [];
 		for (const row of rows) {
 			const mapped = mapDepartmentStructureVersionRow(row);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			versions.push(mapped.data);
 		}
 		return ok(versions);
@@ -537,7 +579,9 @@ async function listJobDefinitionVersions(input: {
 		const versions: JobDefinitionVersion[] = [];
 		for (const row of rows) {
 			const mapped = mapJobDefinitionVersionRow(row);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			versions.push(mapped.data);
 		}
 		return ok(versions);
@@ -566,7 +610,9 @@ async function listPositionDefinitionVersions(input: {
 		const versions: PositionDefinitionVersion[] = [];
 		for (const row of rows) {
 			const mapped = mapPositionDefinitionVersionRow(row);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			versions.push(mapped.data);
 		}
 		return ok(versions);
@@ -630,17 +676,21 @@ async function assertReportingLineAssignable(
 		managerEmployeeId: HumanResourcesEmployeeId;
 		startsOn: string;
 		endsOn: string | null;
-		excludeReportingLineId?: HumanResourcesReportingLineId;
+		excludeReportingLineId?: HumanResourcesReportingLineId | undefined;
 	},
 ): Promise<Result<void>> {
 	const dateCheck = assertValidDateRange(input.startsOn, input.endsOn);
-	if (!dateCheck.ok) return dateCheck;
+	if (!dateCheck.ok) {
+		return dateCheck;
+	}
 
 	const employee = await host.getEmployeeById({
 		organizationId: input.organizationId,
 		employeeId: input.employeeId,
 	});
-	if (!employee.ok) return employee;
+	if (!employee.ok) {
+		return employee;
+	}
 	if (employee.data === null) {
 		return fail(
 			"NOT_FOUND",
@@ -654,7 +704,9 @@ async function assertReportingLineAssignable(
 		organizationId: input.organizationId,
 		employeeId: input.managerEmployeeId,
 	});
-	if (!manager.ok) return manager;
+	if (!manager.ok) {
+		return manager;
+	}
 	if (manager.data === null) {
 		return fail(
 			"NOT_FOUND",
@@ -669,19 +721,28 @@ async function assertReportingLineAssignable(
 		string,
 		HumanResourcesEmployeeId | null | undefined
 	>();
-	let current: HumanResourcesEmployeeId | null = input.managerEmployeeId;
-	while (current !== null) {
-		if (managerCache.has(current)) break;
+	const loadManagerChain = async (
+		current: HumanResourcesEmployeeId | null,
+	): Promise<Result<void>> => {
+		if (current === null || managerCache.has(current)) {
+			return ok(undefined);
+		}
 		const openPrimary: Result<ReportingLine | null> =
 			await host.findOpenPrimaryReportingLine({
 				organizationId: input.organizationId,
 				employeeId: current,
 			});
-		if (!openPrimary.ok) return openPrimary;
+		if (!openPrimary.ok) {
+			return openPrimary;
+		}
 		const next: HumanResourcesEmployeeId | null =
 			openPrimary.data === null ? null : openPrimary.data.managerEmployeeId;
 		managerCache.set(current, next);
-		current = next;
+		return loadManagerChain(next);
+	};
+	const managerChain = await loadManagerChain(input.managerEmployeeId);
+	if (!managerChain.ok) {
+		return managerChain;
 	}
 
 	const acyclic = assertReportingLineAcyclic({
@@ -689,13 +750,17 @@ async function assertReportingLineAssignable(
 		managerEmployeeId: input.managerEmployeeId,
 		getOpenPrimaryManagerId: (employeeId) => managerCache.get(employeeId),
 	});
-	if (!acyclic.ok) return acyclic;
+	if (!acyclic.ok) {
+		return acyclic;
+	}
 
 	const existingLines = await host.listReportingLinesForEmployee({
 		organizationId: input.organizationId,
 		employeeId: input.employeeId,
 	});
-	if (!existingLines.ok) return existingLines;
+	if (!existingLines.ok) {
+		return existingLines;
+	}
 	const overlapCandidates = existingLines.data.filter(
 		(line) =>
 			input.excludeReportingLineId === undefined ||
@@ -732,7 +797,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 				)
 				.limit(1);
 			const [department] = result;
-			if (!department) return ok(null);
+			if (!department) {
+				return ok(null);
+			}
 			return mapDepartment(department);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load department");
@@ -755,7 +822,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 				)
 				.limit(1);
 			const [department] = result;
-			if (!department) return ok(null);
+			if (!department) {
+				return ok(null);
+			}
 			return mapDepartment(department);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to find department by code");
@@ -771,7 +840,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			organizationId: record.organizationId,
 			code: record.code,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data !== null) {
 			return fail(
 				"CONFLICT",
@@ -782,16 +853,18 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 
 		const entityId = randomUUID();
 		const brandedId = parseHumanResourcesDepartmentId(entityId);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 		const structureVersionId = randomUUID();
 		const effectiveFrom = new Date().toISOString().slice(0, 10);
 		const parentId = record.parentDepartmentId;
 		try {
 			const [rows] = await runNeonHttpTransaction<[DepartmentSqlRow[]]>(
-				(sql) => [
+				(sqlValue12) => [
 					parentId === null
-						? sql`
+						? sqlValue12`
 								WITH mutated AS (
 									INSERT INTO hr_department (
 										id, organization_id, code, name, parent_department_id, status,
@@ -828,7 +901,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 								)
 								SELECT mutated.* FROM mutated, lineage, audited
 							`
-						: sql`
+						: sqlValue12`
 								WITH parent AS (
 									SELECT id, organization_id
 									FROM hr_department
@@ -875,14 +948,16 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 							`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				if (parentId !== null) {
 					const parent = await this.getDepartmentById({
 						organizationId: record.organizationId,
 						departmentId: parentId,
 					});
-					if (!parent.ok) return parent;
+					if (!parent.ok) {
+						return parent;
+					}
 					if (parent.data === null) {
 						return fail(
 							"NOT_FOUND",
@@ -893,7 +968,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 						);
 					}
 					const parentActive = assertActiveDepartment(parent.data.status);
-					if (!parentActive.ok) return parentActive;
+					if (!parentActive.ok) {
+						return parentActive;
+					}
 				}
 				return fail("INTERNAL_ERROR", "Department create returned no row");
 			}
@@ -914,11 +991,11 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		input: {
 			organizationId: string;
 			departmentId: HumanResourcesDepartmentId;
-			name?: string;
-			parentDepartmentId?: HumanResourcesDepartmentId | null;
+			name?: string | undefined;
+			parentDepartmentId?: HumanResourcesDepartmentId | null | undefined;
 			effectiveOn: string;
 			reasonCode: string;
-			evidenceRef?: string;
+			evidenceRef?: string | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -929,7 +1006,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			organizationId: input.organizationId,
 			departmentId: input.departmentId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Department not found");
 		}
@@ -938,13 +1017,15 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
-		const nextName = input.name !== undefined ? input.name : existing.data.name;
+		const nextName = input.name === undefined ? existing.data.name : input.name;
 		const nextParent =
-			input.parentDepartmentId !== undefined
-				? input.parentDepartmentId
-				: existing.data.parentDepartmentId;
+			input.parentDepartmentId === undefined
+				? existing.data.parentDepartmentId
+				: input.parentDepartmentId;
 
 		if (
 			nextName === existing.data.name &&
@@ -961,7 +1042,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			organizationId: input.organizationId,
 			departmentId: input.departmentId,
 		});
-		if (!versionsResult.ok) return versionsResult;
+		if (!versionsResult.ok) {
+			return versionsResult;
+		}
 		const openSegment = findOpenDepartmentStructureVersion(
 			versionsResult.data,
 			input.organizationId,
@@ -975,19 +1058,25 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			);
 		}
 		const mutableCheck = assertLineageSegmentMutable(openSegment);
-		if (!mutableCheck.ok) return mutableCheck;
+		if (!mutableCheck.ok) {
+			return mutableCheck;
+		}
 		const effectiveOnCheck = validateLineageSegmentEffectiveOn({
 			openEffectiveFrom: openSegment.effectiveFrom,
 			effectiveOn: input.effectiveOn,
 		});
-		if (!effectiveOnCheck.ok) return effectiveOnCheck;
+		if (!effectiveOnCheck.ok) {
+			return effectiveOnCheck;
+		}
 
 		if (nextParent !== null) {
 			const parent = await this.getDepartmentById({
 				organizationId: input.organizationId,
 				departmentId: nextParent,
 			});
-			if (!parent.ok) return parent;
+			if (!parent.ok) {
+				return parent;
+			}
 			if (parent.data === null) {
 				return fail(
 					"NOT_FOUND",
@@ -998,7 +1087,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 				);
 			}
 			const parentActive = assertActiveDepartment(parent.data.status);
-			if (!parentActive.ok) return parentActive;
+			if (!parentActive.ok) {
+				return parentActive;
+			}
 		}
 
 		const parentCache = new Map<
@@ -1006,22 +1097,29 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			HumanResourcesDepartmentId | null | undefined
 		>();
 		if (nextParent !== null) {
-			let current: HumanResourcesDepartmentId | null = nextParent;
-			while (current !== null) {
-				if (parentCache.has(current)) {
-					break;
+			const loadParentChain = async (
+				current: HumanResourcesDepartmentId | null,
+			): Promise<Result<void>> => {
+				if (current === null || parentCache.has(current)) {
+					return ok(undefined);
 				}
 				const loaded = await this.getDepartmentById({
 					organizationId: input.organizationId,
 					departmentId: current,
 				});
-				if (!loaded.ok) return loaded;
+				if (!loaded.ok) {
+					return loaded;
+				}
 				if (loaded.data === null) {
 					parentCache.set(current, undefined);
-					break;
+					return ok(undefined);
 				}
 				parentCache.set(current, loaded.data.parentDepartmentId);
-				current = loaded.data.parentDepartmentId;
+				return loadParentChain(loaded.data.parentDepartmentId);
+			};
+			const parentChain = await loadParentChain(nextParent);
+			if (!parentChain.ok) {
+				return parentChain;
 			}
 		}
 		const acyclic = assertDepartmentParentAcyclic({
@@ -1029,7 +1127,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			proposedParentId: nextParent,
 			getParentId: (id) => parentCache.get(id),
 		});
-		if (!acyclic.ok) return acyclic;
+		if (!acyclic.ok) {
+			return acyclic;
+		}
 
 		const auditId = randomUUID();
 		const successorId = randomUUID();
@@ -1038,8 +1138,8 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		const parentValue = nextParent;
 		try {
 			const [rows] = await runNeonHttpTransaction<[DepartmentSqlRow[]]>(
-				(sql) => [
-					sql`
+				(sqlValue11) => [
+					sqlValue11`
 							WITH mutated AS (
 								UPDATE hr_department
 								SET name = ${nextName},
@@ -1095,13 +1195,15 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 						`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				const again = await this.getDepartmentById({
 					organizationId: input.organizationId,
 					departmentId: input.departmentId,
 				});
-				if (!again.ok) return again;
+				if (!again.ok) {
+					return again;
+				}
 				return missAfterOptimisticUpdate({
 					found: again.data !== null,
 					entityLabel: "Department",
@@ -1128,7 +1230,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			organizationId: input.organizationId,
 			departmentId: input.departmentId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Department not found");
 		}
@@ -1136,14 +1240,18 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			existing.data.status,
 			input.status,
 		);
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 
 		if (input.status === "archived") {
 			const children = await this.countActiveChildDepartments({
 				organizationId: input.organizationId,
 				parentDepartmentId: input.departmentId,
 			});
-			if (!children.ok) return children;
+			if (!children.ok) {
+				return children;
+			}
 			if (children.data > 0) {
 				return conflict(
 					"Cannot archive department with active child departments",
@@ -1153,7 +1261,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 				organizationId: input.organizationId,
 				departmentId: input.departmentId,
 			});
-			if (!positions.ok) return positions;
+			if (!positions.ok) {
+				return positions;
+			}
 			if (positions.data > 0) {
 				return conflict(
 					"Cannot archive department with active or frozen positions",
@@ -1163,12 +1273,15 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 
 		const auditId = randomUUID();
 		const nextVersion = input.expectedVersion + 1;
-		const domainEventType =
-			input.status === "active"
-				? HUMAN_RESOURCES_DEPARTMENT_ACTIVATED_EVENT
-				: input.status === "archived"
-					? HUMAN_RESOURCES_DEPARTMENT_ARCHIVED_EVENT
-					: null;
+		const domainEventType = (() => {
+			if (input.status === "active") {
+				return HUMAN_RESOURCES_DEPARTMENT_ACTIVATED_EVENT;
+			}
+			if (input.status === "archived") {
+				return HUMAN_RESOURCES_DEPARTMENT_ARCHIVED_EVENT;
+			}
+			return null;
+		})();
 		const eventId = domainEventType ? randomUUID() : null;
 		const payloadJson = domainEventType
 			? humanResourcesEntityEventPayloadJson({
@@ -1181,9 +1294,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			: null;
 		try {
 			const [rows] = await runNeonHttpTransaction<[DepartmentSqlRow[]]>(
-				(sql) => [
+				(sqlValue10) => [
 					domainEventType
-						? sql`
+						? sqlValue10`
 							WITH mutated AS (
 								UPDATE hr_department
 								SET status = ${input.status},
@@ -1219,7 +1332,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 							)
 							SELECT mutated.* FROM mutated, audited, outboxed
 						`
-						: sql`
+						: sqlValue10`
 							WITH mutated AS (
 								UPDATE hr_department
 								SET status = ${input.status},
@@ -1246,13 +1359,15 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 						`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				const again = await this.getDepartmentById({
 					organizationId: input.organizationId,
 					departmentId: input.departmentId,
 				});
-				if (!again.ok) return again;
+				if (!again.ok) {
+					return again;
+				}
 				return missAfterOptimisticUpdate({
 					found: again.data !== null,
 					entityLabel: "Department",
@@ -1268,8 +1383,8 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		status?: DepartmentStatus;
-		parentDepartmentId?: HumanResourcesDepartmentId | null;
+		status?: DepartmentStatus | undefined;
+		parentDepartmentId?: HumanResourcesDepartmentId | null | undefined;
 	}): Promise<Result<{ departments: Department[]; totalCount: number }>> {
 		try {
 			const conditions = [
@@ -1306,7 +1421,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			const departments: Department[] = [];
 			for (const row of rows) {
 				const mapped = mapDepartment(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				departments.push(mapped.data);
 			}
 			return ok({
@@ -1330,7 +1447,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			const departments: Department[] = [];
 			for (const row of rows) {
 				const mapped = mapDepartment(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				departments.push(mapped.data);
 			}
 			return ok(departments);
@@ -1355,7 +1474,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 				)
 				.limit(1);
 			const [job] = result;
-			if (!job) return ok(null);
+			if (!job) {
+				return ok(null);
+			}
 			return mapJob(job);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load job");
@@ -1378,7 +1499,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 				)
 				.limit(1);
 			const [job] = result;
-			if (!job) return ok(null);
+			if (!job) {
+				return ok(null);
+			}
 			return mapJob(job);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to find job by code");
@@ -1394,7 +1517,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			organizationId: record.organizationId,
 			code: record.code,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data !== null) {
 			return fail(
 				"CONFLICT",
@@ -1405,13 +1530,16 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 
 		const entityId = randomUUID();
 		const brandedId = parseHumanResourcesJobId(entityId);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 		const definitionVersionId = randomUUID();
 		const effectiveFrom = new Date().toISOString().slice(0, 10);
 		try {
-			const [rows] = await runNeonHttpTransaction<[JobSqlRow[]]>((sql) => [
-				sql`
+			const [rows] = await runNeonHttpTransaction<[JobSqlRow[]]>(
+				(sqlValue9) => [
+					sqlValue9`
 						WITH mutated AS (
 							INSERT INTO hr_job (
 								id, organization_id, code, title, status,
@@ -1447,8 +1575,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 						)
 						SELECT mutated.* FROM mutated, lineage, audited
 					`,
-			]);
-			const row = rows[0];
+				],
+			);
+			const [row] = rows;
 			if (!row) {
 				return fail("INTERNAL_ERROR", "Job create returned no row");
 			}
@@ -1472,7 +1601,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			title: string;
 			effectiveOn: string;
 			reasonCode: string;
-			evidenceRef?: string;
+			evidenceRef?: string | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -1483,7 +1612,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			organizationId: input.organizationId,
 			jobId: input.jobId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Job not found");
 		}
@@ -1492,7 +1623,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		if (input.title === existing.data.title) {
 			return fail(
@@ -1506,7 +1639,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			organizationId: input.organizationId,
 			jobId: input.jobId,
 		});
-		if (!versionsResult.ok) return versionsResult;
+		if (!versionsResult.ok) {
+			return versionsResult;
+		}
 		const openSegment = findOpenJobDefinitionVersion(
 			versionsResult.data,
 			input.organizationId,
@@ -1520,20 +1655,25 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			);
 		}
 		const mutableCheck = assertLineageSegmentMutable(openSegment);
-		if (!mutableCheck.ok) return mutableCheck;
+		if (!mutableCheck.ok) {
+			return mutableCheck;
+		}
 		const effectiveOnCheck = validateLineageSegmentEffectiveOn({
 			openEffectiveFrom: openSegment.effectiveFrom,
 			effectiveOn: input.effectiveOn,
 		});
-		if (!effectiveOnCheck.ok) return effectiveOnCheck;
+		if (!effectiveOnCheck.ok) {
+			return effectiveOnCheck;
+		}
 
 		const auditId = randomUUID();
 		const successorId = randomUUID();
 		const nextVersion = input.expectedVersion + 1;
 		const predecessorEnd = previousIsoDate(input.effectiveOn);
 		try {
-			const [rows] = await runNeonHttpTransaction<[JobSqlRow[]]>((sql) => [
-				sql`
+			const [rows] = await runNeonHttpTransaction<[JobSqlRow[]]>(
+				(sqlValue8) => [
+					sqlValue8`
 						WITH mutated AS (
 							UPDATE hr_job
 							SET title = ${input.title},
@@ -1585,14 +1725,17 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 						)
 						SELECT mutated.* FROM mutated, closed, successor, audited
 					`,
-			]);
-			const row = rows[0];
+				],
+			);
+			const [row] = rows;
 			if (!row) {
 				const again = await this.getJobById({
 					organizationId: input.organizationId,
 					jobId: input.jobId,
 				});
-				if (!again.ok) return again;
+				if (!again.ok) {
+					return again;
+				}
 				return missAfterOptimisticUpdate({
 					found: again.data !== null,
 					entityLabel: "Job",
@@ -1619,7 +1762,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			organizationId: input.organizationId,
 			jobId: input.jobId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Job not found");
 		}
@@ -1627,14 +1772,18 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			existing.data.status,
 			input.status,
 		);
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 
 		if (input.status === "archived") {
 			const positions = await this.countActiveOrFrozenPositionsForJob({
 				organizationId: input.organizationId,
 				jobId: input.jobId,
 			});
-			if (!positions.ok) return positions;
+			if (!positions.ok) {
+				return positions;
+			}
 			if (positions.data > 0) {
 				return conflict("Cannot archive job with active or frozen positions");
 			}
@@ -1642,12 +1791,15 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 
 		const auditId = randomUUID();
 		const nextVersion = input.expectedVersion + 1;
-		const domainEventType =
-			input.status === "active"
-				? HUMAN_RESOURCES_JOB_ACTIVATED_EVENT
-				: input.status === "archived"
-					? HUMAN_RESOURCES_JOB_ARCHIVED_EVENT
-					: null;
+		const domainEventType = (() => {
+			if (input.status === "active") {
+				return HUMAN_RESOURCES_JOB_ACTIVATED_EVENT;
+			}
+			if (input.status === "archived") {
+				return HUMAN_RESOURCES_JOB_ARCHIVED_EVENT;
+			}
+			return null;
+		})();
 		const eventId = domainEventType ? randomUUID() : null;
 		const payloadJson = domainEventType
 			? humanResourcesEntityEventPayloadJson({
@@ -1659,9 +1811,10 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 				})
 			: null;
 		try {
-			const [rows] = await runNeonHttpTransaction<[JobSqlRow[]]>((sql) => [
-				domainEventType
-					? sql`
+			const [rows] = await runNeonHttpTransaction<[JobSqlRow[]]>(
+				(sqlValue7) => [
+					domainEventType
+						? sqlValue7`
 						WITH mutated AS (
 							UPDATE hr_job
 							SET status = ${input.status},
@@ -1697,7 +1850,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`
-					: sql`
+						: sqlValue7`
 						WITH mutated AS (
 							UPDATE hr_job
 							SET status = ${input.status},
@@ -1722,14 +1875,17 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-			]);
-			const row = rows[0];
+				],
+			);
+			const [row] = rows;
 			if (!row) {
 				const again = await this.getJobById({
 					organizationId: input.organizationId,
 					jobId: input.jobId,
 				});
-				if (!again.ok) return again;
+				if (!again.ok) {
+					return again;
+				}
 				return missAfterOptimisticUpdate({
 					found: again.data !== null,
 					entityLabel: "Job",
@@ -1745,7 +1901,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		status?: JobStatus;
+		status?: JobStatus | undefined;
 	}): Promise<Result<{ jobs: Job[]; totalCount: number }>> {
 		try {
 			const conditions = [eq(hrJob.organizationId, input.organizationId)];
@@ -1769,7 +1925,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			const jobs: Job[] = [];
 			for (const row of rows) {
 				const mapped = mapJob(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				jobs.push(mapped.data);
 			}
 			return ok({
@@ -1797,7 +1955,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 				)
 				.limit(1);
 			const [position] = result;
-			if (!position) return ok(null);
+			if (!position) {
+				return ok(null);
+			}
 			return mapPosition(position);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load position");
@@ -1820,7 +1980,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 				)
 				.limit(1);
 			const [position] = result;
-			if (!position) return ok(null);
+			if (!position) {
+				return ok(null);
+			}
 			return mapPosition(position);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to find position by code");
@@ -1834,13 +1996,16 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 	): Promise<Result<Position>> {
 		const entityId = randomUUID();
 		const brandedId = parseHumanResourcesPositionId(entityId);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 		const definitionVersionId = randomUUID();
 		const effectiveFrom = new Date().toISOString().slice(0, 10);
 		try {
-			const [rows] = await runNeonHttpTransaction<[PositionSqlRow[]]>((sql) => [
-				sql`
+			const [rows] = await runNeonHttpTransaction<[PositionSqlRow[]]>(
+				(sqlValue6) => [
+					sqlValue6`
 						WITH department AS (
 							SELECT id, organization_id
 							FROM hr_department
@@ -1892,14 +2057,17 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 						)
 						SELECT mutated.* FROM mutated, lineage, audited
 					`,
-			]);
-			const row = rows[0];
+				],
+			);
+			const [row] = rows;
 			if (!row) {
 				const department = await this.getDepartmentById({
 					organizationId: record.organizationId,
 					departmentId: record.departmentId,
 				});
-				if (!department.ok) return department;
+				if (!department.ok) {
+					return department;
+				}
 				if (department.data === null) {
 					return fail(
 						"NOT_FOUND",
@@ -1910,12 +2078,16 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 					);
 				}
 				const departmentActive = assertActiveDepartment(department.data.status);
-				if (!departmentActive.ok) return departmentActive;
+				if (!departmentActive.ok) {
+					return departmentActive;
+				}
 				const job = await this.getJobById({
 					organizationId: record.organizationId,
 					jobId: record.jobId,
 				});
-				if (!job.ok) return job;
+				if (!job.ok) {
+					return job;
+				}
 				if (job.data === null) {
 					return fail(
 						"NOT_FOUND",
@@ -1926,7 +2098,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 					);
 				}
 				const jobActive = assertActiveJob(job.data.status);
-				if (!jobActive.ok) return jobActive;
+				if (!jobActive.ok) {
+					return jobActive;
+				}
 				return fail("INTERNAL_ERROR", "Position create returned no row");
 			}
 			return mapPositionSqlRow(row);
@@ -1939,12 +2113,12 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		input: {
 			organizationId: string;
 			positionId: HumanResourcesPositionId;
-			title?: string;
-			departmentId?: HumanResourcesDepartmentId;
-			jobId?: HumanResourcesJobId;
+			title?: string | undefined;
+			departmentId?: HumanResourcesDepartmentId | undefined;
+			jobId?: HumanResourcesJobId | undefined;
 			effectiveOn: string;
 			reasonCode: string;
-			evidenceRef?: string;
+			evidenceRef?: string | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -1955,7 +2129,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			organizationId: input.organizationId,
 			positionId: input.positionId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Position not found");
 		}
@@ -1964,16 +2140,18 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const nextTitle =
-			input.title !== undefined ? input.title : existing.data.title;
+			input.title === undefined ? existing.data.title : input.title;
 		const nextDepartmentId =
-			input.departmentId !== undefined
-				? input.departmentId
-				: existing.data.departmentId;
+			input.departmentId === undefined
+				? existing.data.departmentId
+				: input.departmentId;
 		const nextJobId =
-			input.jobId !== undefined ? input.jobId : existing.data.jobId;
+			input.jobId === undefined ? existing.data.jobId : input.jobId;
 
 		if (nextDepartmentId === null || nextJobId === null) {
 			return invalidInput("Position requires department and job");
@@ -1995,7 +2173,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			organizationId: input.organizationId,
 			positionId: input.positionId,
 		});
-		if (!versionsResult.ok) return versionsResult;
+		if (!versionsResult.ok) {
+			return versionsResult;
+		}
 		const openSegment = findOpenPositionDefinitionVersion(
 			versionsResult.data,
 			input.organizationId,
@@ -2009,19 +2189,25 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			);
 		}
 		const mutableCheck = assertLineageSegmentMutable(openSegment);
-		if (!mutableCheck.ok) return mutableCheck;
+		if (!mutableCheck.ok) {
+			return mutableCheck;
+		}
 		const effectiveOnCheck = validateLineageSegmentEffectiveOn({
 			openEffectiveFrom: openSegment.effectiveFrom,
 			effectiveOn: input.effectiveOn,
 		});
-		if (!effectiveOnCheck.ok) return effectiveOnCheck;
+		if (!effectiveOnCheck.ok) {
+			return effectiveOnCheck;
+		}
 
 		if (input.departmentId !== undefined) {
 			const department = await this.getDepartmentById({
 				organizationId: input.organizationId,
 				departmentId: input.departmentId,
 			});
-			if (!department.ok) return department;
+			if (!department.ok) {
+				return department;
+			}
 			if (department.data === null) {
 				return fail(
 					"NOT_FOUND",
@@ -2032,14 +2218,18 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 				);
 			}
 			const departmentActive = assertActiveDepartment(department.data.status);
-			if (!departmentActive.ok) return departmentActive;
+			if (!departmentActive.ok) {
+				return departmentActive;
+			}
 		}
 		if (input.jobId !== undefined) {
 			const job = await this.getJobById({
 				organizationId: input.organizationId,
 				jobId: input.jobId,
 			});
-			if (!job.ok) return job;
+			if (!job.ok) {
+				return job;
+			}
 			if (job.data === null) {
 				return fail(
 					"NOT_FOUND",
@@ -2050,7 +2240,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 				);
 			}
 			const jobActive = assertActiveJob(job.data.status);
-			if (!jobActive.ok) return jobActive;
+			if (!jobActive.ok) {
+				return jobActive;
+			}
 		}
 
 		const auditId = randomUUID();
@@ -2058,8 +2250,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		const nextVersion = input.expectedVersion + 1;
 		const predecessorEnd = previousIsoDate(input.effectiveOn);
 		try {
-			const [rows] = await runNeonHttpTransaction<[PositionSqlRow[]]>((sql) => [
-				sql`
+			const [rows] = await runNeonHttpTransaction<[PositionSqlRow[]]>(
+				(sqlValue5) => [
+					sqlValue5`
 						WITH mutated AS (
 							UPDATE hr_position
 							SET title = ${nextTitle},
@@ -2114,14 +2307,17 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 						)
 						SELECT mutated.* FROM mutated, closed, successor, audited
 					`,
-			]);
-			const row = rows[0];
+				],
+			);
+			const [row] = rows;
 			if (!row) {
 				const again = await this.getPositionById({
 					organizationId: input.organizationId,
 					positionId: input.positionId,
 				});
-				if (!again.ok) return again;
+				if (!again.ok) {
+					return again;
+				}
 				return missAfterOptimisticUpdate({
 					found: again.data !== null,
 					entityLabel: "Position",
@@ -2148,7 +2344,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			organizationId: input.organizationId,
 			positionId: input.positionId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Position not found");
 		}
@@ -2156,14 +2354,18 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			existing.data.status,
 			input.status,
 		);
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 
 		if (input.status === "frozen" || input.status === "closed") {
 			const openAssignments = await this.countOpenAssignmentsForPosition({
 				organizationId: input.organizationId,
 				positionId: input.positionId,
 			});
-			if (!openAssignments.ok) return openAssignments;
+			if (!openAssignments.ok) {
+				return openAssignments;
+			}
 			if (openAssignments.data > 0) {
 				return conflict(
 					"Cannot freeze or close position with open assignments",
@@ -2173,14 +2375,18 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 
 		const auditId = randomUUID();
 		const nextVersion = input.expectedVersion + 1;
-		const domainEventType =
-			input.status === "active"
-				? HUMAN_RESOURCES_POSITION_ACTIVATED_EVENT
-				: input.status === "frozen"
-					? HUMAN_RESOURCES_POSITION_FROZEN_EVENT
-					: input.status === "closed"
-						? HUMAN_RESOURCES_POSITION_CLOSED_EVENT
-						: null;
+		const domainEventType = (() => {
+			if (input.status === "active") {
+				return HUMAN_RESOURCES_POSITION_ACTIVATED_EVENT;
+			}
+			if (input.status === "frozen") {
+				return HUMAN_RESOURCES_POSITION_FROZEN_EVENT;
+			}
+			if (input.status === "closed") {
+				return HUMAN_RESOURCES_POSITION_CLOSED_EVENT;
+			}
+			return null;
+		})();
 		const eventId = domainEventType ? randomUUID() : null;
 		const payloadJson = domainEventType
 			? humanResourcesEntityEventPayloadJson({
@@ -2192,9 +2398,10 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 				})
 			: null;
 		try {
-			const [rows] = await runNeonHttpTransaction<[PositionSqlRow[]]>((sql) => [
-				domainEventType
-					? sql`
+			const [rows] = await runNeonHttpTransaction<[PositionSqlRow[]]>(
+				(sqlValue4) => [
+					domainEventType
+						? sqlValue4`
 						WITH mutated AS (
 							UPDATE hr_position
 							SET status = ${input.status},
@@ -2230,7 +2437,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`
-					: sql`
+						: sqlValue4`
 						WITH mutated AS (
 							UPDATE hr_position
 							SET status = ${input.status},
@@ -2255,14 +2462,17 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-			]);
-			const row = rows[0];
+				],
+			);
+			const [row] = rows;
 			if (!row) {
 				const again = await this.getPositionById({
 					organizationId: input.organizationId,
 					positionId: input.positionId,
 				});
-				if (!again.ok) return again;
+				if (!again.ok) {
+					return again;
+				}
 				return missAfterOptimisticUpdate({
 					found: again.data !== null,
 					entityLabel: "Position",
@@ -2278,9 +2488,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		status?: string;
-		departmentId?: HumanResourcesDepartmentId;
-		jobId?: HumanResourcesJobId;
+		status?: string | undefined;
+		departmentId?: HumanResourcesDepartmentId | undefined;
+		jobId?: HumanResourcesJobId | undefined;
 	}): Promise<Result<{ positions: Position[]; totalCount: number }>> {
 		try {
 			const conditions = [eq(hrPosition.organizationId, input.organizationId)];
@@ -2313,7 +2523,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			const positions: Position[] = [];
 			for (const row of rows) {
 				const mapped = mapPosition(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				positions.push(mapped.data);
 			}
 
@@ -2420,7 +2632,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 				)
 				.limit(1);
 			const [reportingLine] = result;
-			if (!reportingLine) return ok(null);
+			if (!reportingLine) {
+				return ok(null);
+			}
 			return mapReportingLine(reportingLine);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load reporting line");
@@ -2445,7 +2659,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			const lines: ReportingLine[] = [];
 			for (const row of rows) {
 				const mapped = mapReportingLine(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				lines.push(mapped.data);
 			}
 			return ok(lines);
@@ -2475,7 +2691,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 				)
 				.limit(1);
 			const [reportingLine] = result;
-			if (!reportingLine) return ok(null);
+			if (!reportingLine) {
+				return ok(null);
+			}
 			return mapReportingLine(reportingLine);
 		} catch (error) {
 			return mapPersistenceFailure(
@@ -2558,7 +2776,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			const reportingLines: ReportingLine[] = [];
 			for (const row of rows) {
 				const mapped = mapReportingLine(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				reportingLines.push(mapped.data);
 			}
 			return ok({
@@ -2582,11 +2802,15 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			startsOn: record.startsOn,
 			endsOn: record.endsOn,
 		});
-		if (!assignable.ok) return assignable;
+		if (!assignable.ok) {
+			return assignable;
+		}
 
 		const entityId = randomUUID();
 		const brandedId = parseHumanResourcesReportingLineId(entityId);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const payloadJson = humanResourcesEntityEventPayloadJson({
@@ -2598,8 +2822,8 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		});
 		try {
 			const [rows] = await runNeonHttpTransaction<[ReportingLineSqlRow[]]>(
-				(sql) => [
-					sql`
+				(sqlValue3) => [
+					sqlValue3`
 							WITH employee AS (
 								SELECT id, organization_id
 								FROM hr_employee
@@ -2660,7 +2884,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 						`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return conflict("Employee already has an open primary reporting line");
 			}
@@ -2691,7 +2915,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			organizationId: input.organizationId,
 			reportingLineId: input.reportingLineId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Reporting line not found");
 		}
@@ -2699,7 +2925,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			existing.data.startsOn,
 			input.endsOn,
 		);
-		if (!dateCheck.ok) return dateCheck;
+		if (!dateCheck.ok) {
+			return dateCheck;
+		}
 
 		const auditId = randomUUID();
 		const eventId = randomUUID();
@@ -2713,8 +2941,8 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		});
 		try {
 			const [rows] = await runNeonHttpTransaction<[ReportingLineSqlRow[]]>(
-				(sql) => [
-					sql`
+				(sqlValue2) => [
+					sqlValue2`
 							WITH mutated AS (
 								UPDATE hr_reporting_line
 								SET ends_on = ${input.endsOn},
@@ -2752,13 +2980,15 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 						`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				const again = await this.getReportingLineById({
 					organizationId: input.organizationId,
 					reportingLineId: input.reportingLineId,
 				});
-				if (!again.ok) return again;
+				if (!again.ok) {
+					return again;
+				}
 				return missAfterOptimisticUpdate({
 					found: again.data !== null,
 					entityLabel: "Reporting line",
@@ -2787,7 +3017,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			organizationId: input.organizationId,
 			employeeId: input.employeeId,
 		});
-		if (!prior.ok) return prior;
+		if (!prior.ok) {
+			return prior;
+		}
 		if (prior.data === null) {
 			return notFound("Open primary reporting line not found");
 		}
@@ -2801,7 +3033,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			priorLine.startsOn,
 			input.closePriorOn,
 		);
-		if (!closeDateCheck.ok) return closeDateCheck;
+		if (!closeDateCheck.ok) {
+			return closeDateCheck;
+		}
 		if (input.closePriorOn > input.startsOn) {
 			return invalidInput(
 				"closePriorOn must be on or before the new reporting line start date",
@@ -2816,11 +3050,15 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			endsOn: input.endsOn,
 			excludeReportingLineId: priorLine.id,
 		});
-		if (!assignable.ok) return assignable;
+		if (!assignable.ok) {
+			return assignable;
+		}
 
 		const newId = randomUUID();
 		const brandedId = parseHumanResourcesReportingLineId(newId);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const closeAuditId = randomUUID();
 		const createAuditId = randomUUID();
 		const replaceEventId = randomUUID();
@@ -2834,8 +3072,8 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		});
 		try {
 			const [rows] = await runNeonHttpTransaction<[ReportingLineSqlRow[]]>(
-				(sql) => [
-					sql`
+				(sqlValue) => [
+					sqlValue`
 							WITH closed AS (
 								UPDATE hr_reporting_line
 								SET ends_on = ${input.closePriorOn},
@@ -2913,7 +3151,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 						`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return conflict("Could not replace primary reporting line");
 			}
@@ -2938,7 +3176,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		const departments = await this.listAllDepartments({
 			organizationId: input.organizationId,
 		});
-		if (!departments.ok) return departments;
+		if (!departments.ok) {
+			return departments;
+		}
 		if (input.rootDepartmentId !== null) {
 			const root = departments.data.find(
 				(d) => d.id === input.rootDepartmentId,
@@ -2965,14 +3205,20 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			organizationId: input.organizationId,
 			departmentId: input.departmentId,
 		});
-		if (!department.ok) return department;
-		if (department.data === null) return ok(null);
+		if (!department.ok) {
+			return department;
+		}
+		if (department.data === null) {
+			return ok(null);
+		}
 
 		const versionsResult = await listDepartmentStructureVersions({
 			organizationId: input.organizationId,
 			departmentId: input.departmentId,
 		});
-		if (!versionsResult.ok) return versionsResult;
+		if (!versionsResult.ok) {
+			return versionsResult;
+		}
 
 		const resolved = resolveDepartmentStructureAsOf({
 			versions: versionsResult.data,
@@ -2986,7 +3232,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
 			);
 		}
-		if (resolved.record === null) return ok(null);
+		if (resolved.record === null) {
+			return ok(null);
+		}
 
 		return ok({
 			departmentId: input.departmentId,
@@ -3009,14 +3257,20 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			organizationId: input.organizationId,
 			jobId: input.jobId,
 		});
-		if (!job.ok) return job;
-		if (job.data === null) return ok(null);
+		if (!job.ok) {
+			return job;
+		}
+		if (job.data === null) {
+			return ok(null);
+		}
 
 		const versionsResult = await listJobDefinitionVersions({
 			organizationId: input.organizationId,
 			jobId: input.jobId,
 		});
-		if (!versionsResult.ok) return versionsResult;
+		if (!versionsResult.ok) {
+			return versionsResult;
+		}
 
 		const resolved = resolveJobDefinitionAsOf({
 			versions: versionsResult.data,
@@ -3030,7 +3284,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
 			);
 		}
-		if (resolved.record === null) return ok(null);
+		if (resolved.record === null) {
+			return ok(null);
+		}
 
 		return ok({
 			jobId: input.jobId,
@@ -3052,14 +3308,20 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			organizationId: input.organizationId,
 			positionId: input.positionId,
 		});
-		if (!position.ok) return position;
-		if (position.data === null) return ok(null);
+		if (!position.ok) {
+			return position;
+		}
+		if (position.data === null) {
+			return ok(null);
+		}
 
 		const versionsResult = await listPositionDefinitionVersions({
 			organizationId: input.organizationId,
 			positionId: input.positionId,
 		});
-		if (!versionsResult.ok) return versionsResult;
+		if (!versionsResult.ok) {
+			return versionsResult;
+		}
 
 		const resolved = resolvePositionDefinitionAsOf({
 			versions: versionsResult.data,
@@ -3073,7 +3335,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
 			);
 		}
-		if (resolved.record === null) return ok(null);
+		if (resolved.record === null) {
+			return ok(null);
+		}
 
 		return ok({
 			positionId: input.positionId,
@@ -3098,22 +3362,34 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		const departments = await this.listAllDepartments({
 			organizationId: input.organizationId,
 		});
-		if (!departments.ok) return departments;
+		if (!departments.ok) {
+			return departments;
+		}
 
 		const historicalDepartments: Department[] = [];
-		for (const department of departments.data) {
-			const asOfStructure = await this.findDepartmentAsOf({
-				organizationId: input.organizationId,
-				departmentId: department.id,
-				asOf: input.asOf,
-			});
-			if (!asOfStructure.ok) return asOfStructure;
-			if (asOfStructure.data === null) continue;
-			historicalDepartments.push({
-				...department,
-				name: asOfStructure.data.name,
-				parentDepartmentId: asOfStructure.data.parentDepartmentId,
-			});
+		const sequentialOutcome1 = await runSequential(
+			departments.data,
+			async (department) => {
+				const asOfStructure = await this.findDepartmentAsOf({
+					organizationId: input.organizationId,
+					departmentId: department.id,
+					asOf: input.asOf,
+				});
+				if (!asOfStructure.ok) {
+					return sequentialReturn(asOfStructure);
+				}
+				if (asOfStructure.data === null) {
+					return sequentialContinue();
+				}
+				historicalDepartments.push({
+					...department,
+					name: asOfStructure.data.name,
+					parentDepartmentId: asOfStructure.data.parentDepartmentId,
+				});
+			},
+		);
+		if (sequentialOutcome1.kind === "return") {
+			return sequentialOutcome1.value;
 		}
 
 		if (input.rootDepartmentId !== null) {

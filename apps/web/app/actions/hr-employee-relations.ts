@@ -147,7 +147,7 @@ const getEmployeeCaseOutcomeActionSchema = hrActionSchema(
 export async function openEmployeeCaseAction(
 	input: unknown,
 ): Promise<ActionResult<{ case: EmployeeCase }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "openEmployeeCaseAction",
 		permission: CASE_OPEN,
 		safeMessage: "Could not open employee case.",
@@ -162,7 +162,7 @@ export async function openEmployeeCaseAction(
 export async function updateEmployeeCaseClassificationAction(
 	input: unknown,
 ): Promise<ActionResult<{ case: EmployeeCase }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "updateEmployeeCaseClassificationAction",
 		permission: CASE_INVESTIGATE,
 		safeMessage: "Could not update employee case classification.",
@@ -177,7 +177,7 @@ export async function updateEmployeeCaseClassificationAction(
 export async function assignEmployeeCaseOwnerAction(
 	input: unknown,
 ): Promise<ActionResult<{ case: EmployeeCase }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "assignEmployeeCaseOwnerAction",
 		permission: CASE_EXCEPTIONAL_ADMIN,
 		safeMessage: "Could not assign employee case owner.",
@@ -192,7 +192,7 @@ export async function assignEmployeeCaseOwnerAction(
 export async function addEmployeeCaseParticipantAction(
 	input: unknown,
 ): Promise<ActionResult<{ case: EmployeeCase }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "addEmployeeCaseParticipantAction",
 		permission: CASE_INVESTIGATE,
 		safeMessage: "Could not add employee case participant.",
@@ -207,7 +207,7 @@ export async function addEmployeeCaseParticipantAction(
 export async function recordEmployeeCaseEventAction(
 	input: unknown,
 ): Promise<ActionResult<{ event: EmployeeCaseEvent }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "recordEmployeeCaseEventAction",
 		permission: CASE_INVESTIGATE,
 		safeMessage: "Could not record employee case event.",
@@ -222,7 +222,7 @@ export async function recordEmployeeCaseEventAction(
 export async function addEmployeeCaseEvidenceReferenceAction(
 	input: unknown,
 ): Promise<ActionResult<{ event: EmployeeCaseEvent }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "addEmployeeCaseEvidenceReferenceAction",
 		permission: CASE_INVESTIGATE,
 		safeMessage: "Could not add employee case evidence.",
@@ -237,7 +237,7 @@ export async function addEmployeeCaseEvidenceReferenceAction(
 export async function redactEmployeeCaseEvidenceReferenceAction(
 	input: unknown,
 ): Promise<ActionResult<{ event: EmployeeCaseEvent }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "redactEmployeeCaseEvidenceReferenceAction",
 		permission: CASE_EXCEPTIONAL_ADMIN,
 		safeMessage: "Could not redact employee case evidence.",
@@ -252,7 +252,7 @@ export async function redactEmployeeCaseEvidenceReferenceAction(
 export async function issueInterimEmployeeMeasureAction(
 	input: unknown,
 ): Promise<ActionResult<{ case: EmployeeCase }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "issueInterimEmployeeMeasureAction",
 		permission: CASE_INVESTIGATE,
 		safeMessage: "Could not issue interim employee measure.",
@@ -267,7 +267,7 @@ export async function issueInterimEmployeeMeasureAction(
 export async function recordEmployeeCaseFindingAction(
 	input: unknown,
 ): Promise<ActionResult<{ case: EmployeeCase }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "recordEmployeeCaseFindingAction",
 		permission: CASE_FINDING,
 		safeMessage: "Could not record employee case finding.",
@@ -282,7 +282,7 @@ export async function recordEmployeeCaseFindingAction(
 export async function recommendEmployeeCaseActionAction(
 	input: unknown,
 ): Promise<ActionResult<{ action: EmployeeCaseAction }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "recommendEmployeeCaseActionAction",
 		permission: CASE_FINDING,
 		safeMessage: "Could not recommend employee case action.",
@@ -297,7 +297,7 @@ export async function recommendEmployeeCaseActionAction(
 export async function approveEmployeeCaseActionAction(
 	input: unknown,
 ): Promise<ActionResult<{ action: EmployeeCaseAction }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "approveEmployeeCaseActionAction",
 		permission: CASE_ACTION_APPROVE,
 		safeMessage: "Could not approve employee case action.",
@@ -312,7 +312,7 @@ export async function approveEmployeeCaseActionAction(
 export async function recordEmployeeCaseAppealAction(
 	input: unknown,
 ): Promise<ActionResult<{ appeal: EmployeeCaseAppeal }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "recordEmployeeCaseAppealAction",
 		permission: CASE_APPEAL,
 		safeMessage: "Could not record employee case appeal.",
@@ -327,7 +327,7 @@ export async function recordEmployeeCaseAppealAction(
 export async function resolveEmployeeCaseAppealAction(
 	input: unknown,
 ): Promise<ActionResult<{ appeal: EmployeeCaseAppeal }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "resolveEmployeeCaseAppealAction",
 		permission: CASE_APPEAL,
 		safeMessage: "Could not resolve employee case appeal.",
@@ -342,7 +342,7 @@ export async function resolveEmployeeCaseAppealAction(
 export async function closeEmployeeCaseAction(
 	input: unknown,
 ): Promise<ActionResult<{ case: EmployeeCase }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "closeEmployeeCaseAction",
 		permission: CASE_FINDING,
 		safeMessage: "Could not close employee case.",
@@ -357,7 +357,7 @@ export async function closeEmployeeCaseAction(
 export async function reopenEmployeeCaseAction(
 	input: unknown,
 ): Promise<ActionResult<{ case: EmployeeCase }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "reopenEmployeeCaseAction",
 		permission: CASE_EXCEPTIONAL_ADMIN,
 		safeMessage: "Could not reopen employee case.",
@@ -372,7 +372,7 @@ export async function reopenEmployeeCaseAction(
 export async function getEmployeeCaseByIdAction(
 	input: unknown,
 ): Promise<ActionResult<{ case: ProjectedEmployeeCase | null }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "getEmployeeCaseByIdAction",
 		permission: CASE_ASSIGNED_READ,
 		safeMessage: "Could not get employee case.",
@@ -389,7 +389,7 @@ export async function getEmployeeCaseByIdAction(
 export async function listEmployeeCasesAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: EmployeeCaseListPage }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "listEmployeeCasesAction",
 		permission: CASE_EXCEPTIONAL_ADMIN,
 		safeMessage: "Could not list employee cases.",
@@ -404,7 +404,7 @@ export async function listEmployeeCasesAction(
 export async function listCasesAssignedToActorAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: EmployeeCaseListPage }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "listCasesAssignedToActorAction",
 		permission: CASE_ASSIGNED_READ,
 		safeMessage: "Could not list assigned employee cases.",
@@ -419,7 +419,7 @@ export async function listCasesAssignedToActorAction(
 export async function listOpenEmployeeRelationsCasesAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: EmployeeCaseListPage }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "listOpenEmployeeRelationsCasesAction",
 		permission: CASE_EXCEPTIONAL_ADMIN,
 		safeMessage: "Could not list open employee relations cases.",
@@ -434,7 +434,7 @@ export async function listOpenEmployeeRelationsCasesAction(
 export async function getEmployeeRelationsHistoryByEmployeeAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: EmployeeCaseListPage }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "getEmployeeRelationsHistoryByEmployeeAction",
 		permission: CASE_ASSIGNED_READ,
 		safeMessage: "Could not get employee relations history.",
@@ -449,7 +449,7 @@ export async function getEmployeeRelationsHistoryByEmployeeAction(
 export async function getEmployeeCaseTimelineAction(
 	input: unknown,
 ): Promise<ActionResult<{ timeline: EmployeeCaseTimeline }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "getEmployeeCaseTimelineAction",
 		permission: CASE_ASSIGNED_READ,
 		safeMessage: "Could not get employee case timeline.",
@@ -464,7 +464,7 @@ export async function getEmployeeCaseTimelineAction(
 export async function getEmployeeCaseOutcomeAction(
 	input: unknown,
 ): Promise<ActionResult<{ outcome: EmployeeCaseOutcome }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "getEmployeeCaseOutcomeAction",
 		permission: CASE_ASSIGNED_READ,
 		safeMessage: "Could not get employee case outcome.",

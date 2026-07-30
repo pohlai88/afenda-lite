@@ -147,7 +147,9 @@ describe("Identity Resolver Parity - Memory Store", () => {
 				ready,
 			);
 			expect(managerEmp.ok).toBe(true);
-			if (!managerEmp.ok) return;
+			if (!managerEmp.ok) {
+				return;
+			}
 
 			const reportEmp = await createEmployee(
 				{
@@ -161,7 +163,9 @@ describe("Identity Resolver Parity - Memory Store", () => {
 				ready,
 			);
 			expect(reportEmp.ok).toBe(true);
-			if (!reportEmp.ok) return;
+			if (!reportEmp.ok) {
+				return;
+			}
 
 			const mapped = await fullStore.createUserEmployeeMapping({
 				organizationId,

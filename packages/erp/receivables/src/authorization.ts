@@ -7,13 +7,13 @@ import type { RECEIVABLES_PERMISSION_CODES } from "./permissions";
 export type ReceivablesPermission =
 	(typeof RECEIVABLES_PERMISSION_CODES)[number];
 
-export type ReceivablesAuthorizationPort = {
-	can(input: {
+export interface ReceivablesAuthorizationPort {
+	can: (input: {
 		organizationId: string;
 		actorUserId: string;
 		permission: ReceivablesPermission;
-	}): Promise<boolean>;
-};
+	}) => Promise<boolean>;
+}
 
 async function requirePermission(
 	authorization: ReceivablesAuthorizationPort | undefined,

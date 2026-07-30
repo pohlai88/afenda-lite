@@ -12,7 +12,7 @@ export function createReceivablesAuthorizationPort(): ReceivablesAuthorizationPo
 			actorUserId: string;
 			permission: ReceivablesPermission;
 		}) {
-			return hasPermission({
+			return await hasPermission({
 				orgId: input.organizationId,
 				userId: input.actorUserId,
 				code: input.permission,

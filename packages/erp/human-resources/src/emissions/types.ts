@@ -22,11 +22,11 @@ export type HumanResourcesDomain =
 	| "privacy";
 
 interface HumanResourcesEmissionBase {
-	commandId: HumanResourcesCommandId;
+	aggregateType: string;
 	auditRequired: true;
+	commandId: HumanResourcesCommandId;
 	correlationRequired: true;
 	domain: HumanResourcesDomain;
-	aggregateType: string;
 }
 
 export interface HumanResourcesAuditOnlyEmission

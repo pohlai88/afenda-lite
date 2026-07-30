@@ -5,13 +5,13 @@ import { recordNotificationCommandSchema } from "./schemas";
 import type { NotificationStore } from "./store";
 import type { Notification } from "./types";
 
-export type CreateNotificationRecorderOptions = {
+export interface CreateNotificationRecorderOptions {
 	store?: NotificationStore;
-};
+}
 
-export type NotificationRecorder = {
-	record(input: unknown): Promise<Result<Notification>>;
-};
+export interface NotificationRecorder {
+	record: (input: unknown) => Promise<Result<Notification>>;
+}
 
 export function createNotificationRecorder(
 	options: CreateNotificationRecorderOptions = {},
@@ -19,12 +19,14 @@ export function createNotificationRecorder(
 	const store = resolveNotificationStore(options.store);
 
 	return {
-		async record(input: unknown): Promise<Result<Notification>> {
+		record(input: unknown): Promise<Result<Notification>> {
 			const parsed = recordNotificationCommandSchema.safeParse(input);
 			if (!parsed.success) {
-				return fail("BAD_REQUEST", "Invalid notification record input", {
-					fieldErrors: parsed.error.flatten().fieldErrors,
-				});
+				return Promise.resolve(
+					fail("BAD_REQUEST", "Invalid notification record input", {
+						fieldErrors: parsed.error.flatten().fieldErrors,
+					}),
+				);
 			}
 
 			const command = parsed.data;

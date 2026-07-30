@@ -1,3 +1,5 @@
+// biome-ignore-all lint/style/noNestedTernary: Resolution decision timestamps mirror the three-state decision model.
+// biome-ignore-all lint/suspicious/useAwait: Command wrappers expose one asynchronous boundary for delegated resolution transitions.
 import { fail, ok, type Result } from "@afenda/errors/result";
 
 import {
@@ -42,10 +44,10 @@ import type {
 } from "./types";
 
 export type ResolutionReferencePort = Readonly<{
-	validateSourceDocument(input: {
+	validateSourceDocument: (input: {
 		organizationId: string;
 		sourceDocumentId: string;
-	}): Promise<Result<{ sourceDocumentId: string; active: boolean } | null>>;
+	}) => Promise<Result<{ sourceDocumentId: string; active: boolean } | null>>;
 }>;
 
 type Dependencies = DurableLegalCompanyCommandDependencies &
@@ -64,27 +66,39 @@ export async function recordMeetingVote(
 		recordMeetingVoteInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "recordMeetingVote");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const meeting = await dependencies.meetingStore.getGovernanceMeeting({
 		organizationId: options.organizationId,
 		governanceMeetingId: parsed.data.governanceMeetingId,
 	});
-	if (!meeting.ok) return meeting;
-	if (meeting.data === null) return notFound("governanceMeeting");
+	if (!meeting.ok) {
+		return meeting;
+	}
+	if (meeting.data === null) {
+		return notFound("governanceMeeting");
+	}
 	if (meeting.data.version !== parsed.data.expectedMeetingVersion) {
 		return stale(parsed.data.expectedMeetingVersion, meeting.data.version);
 	}
 	const meetingData = meeting.data;
 	const outcome = calculateVoteOutcome(parsed.data);
-	if (!outcome.ok) return outcome;
+	if (!outcome.ok) {
+		return outcome;
+	}
 	const source = await validateSource(
 		dependencies,
 		options.organizationId,
 		parsed.data.sourceDocumentId,
 	);
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	return runDurableCompanyCommand({
 		commandId: "corporate-administration.resolution.record-meeting-vote",
 		fingerprintSchema: recordMeetingVoteInputSchema,
@@ -166,9 +180,13 @@ export async function recordWrittenResolution(
 		recordWrittenResolutionInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "recordWrittenResolution");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const outcome = calculateVoteOutcome({
 		eligibleVotes: parsed.data.eligibleVotes,
 		votesFor: parsed.data.votesFor,
@@ -177,7 +195,9 @@ export async function recordWrittenResolution(
 		thresholdType: parsed.data.thresholdType,
 		requiredFor: parsed.data.requiredFor,
 	});
-	if (!outcome.ok) return outcome;
+	if (!outcome.ok) {
+		return outcome;
+	}
 	if (outcome.data.outcome !== "adopted") {
 		return fail(
 			"CONFLICT",
@@ -192,7 +212,9 @@ export async function recordWrittenResolution(
 		options.organizationId,
 		parsed.data.sourceDocumentId,
 	);
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	return runDurableCompanyCommand({
 		commandId: "corporate-administration.resolution.record-written",
 		fingerprintSchema: recordWrittenResolutionInputSchema,
@@ -234,15 +256,23 @@ export async function supersedeResolution(
 		supersedeResolutionInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "supersedeResolution");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const current = await dependencies.resolutionStore.getResolution({
 		organizationId: options.organizationId,
 		resolutionId: parsed.data.resolutionId,
 	});
-	if (!current.ok) return current;
-	if (current.data === null) return notFound("resolution");
+	if (!current.ok) {
+		return current;
+	}
+	if (current.data === null) {
+		return notFound("resolution");
+	}
 	if (current.data.version !== parsed.data.expectedVersion) {
 		return stale(parsed.data.expectedVersion, current.data.version);
 	}
@@ -251,7 +281,9 @@ export async function supersedeResolution(
 		options.organizationId,
 		parsed.data.sourceDocumentId,
 	);
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	return runDurableCompanyCommand({
 		commandId: "corporate-administration.resolution.supersede",
 		fingerprintSchema: supersedeResolutionInputSchema,
@@ -284,15 +316,23 @@ export async function assignResolutionAction(
 		assignResolutionActionInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "assignResolutionAction");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const resolution = await dependencies.resolutionStore.getResolution({
 		organizationId: options.organizationId,
 		resolutionId: parsed.data.resolutionId,
 	});
-	if (!resolution.ok) return resolution;
-	if (resolution.data === null) return notFound("resolution");
+	if (!resolution.ok) {
+		return resolution;
+	}
+	if (resolution.data === null) {
+		return notFound("resolution");
+	}
 	if (resolution.data.version !== parsed.data.expectedResolutionVersion) {
 		return stale(
 			parsed.data.expectedResolutionVersion,
@@ -305,7 +345,9 @@ export async function assignResolutionAction(
 		options.organizationId,
 		parsed.data.sourceDocumentId,
 	);
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	return runDurableCompanyCommand({
 		commandId: "corporate-administration.resolution.assign-action",
 		fingerprintSchema: assignResolutionActionInputSchema,
@@ -343,15 +385,21 @@ export async function completeResolutionAction(
 		completeResolutionActionInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "completeResolutionAction");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const source = await validateSource(
 		dependencies,
 		options.organizationId,
 		parsed.data.sourceDocumentId,
 	);
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	return runActionUpdate({
 		commandId: "corporate-administration.resolution.complete-action",
 		input: parsed.data,
@@ -384,15 +432,21 @@ export async function recordMinutesDocument(
 		recordMinutesDocumentInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "recordMinutesDocument");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const source = await validateSource(
 		dependencies,
 		options.organizationId,
 		parsed.data.sourceDocumentId,
 	);
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	return runDurableCompanyCommand({
 		commandId: "corporate-administration.resolution.record-minutes",
 		fingerprintSchema: recordMinutesDocumentInputSchema,
@@ -435,7 +489,9 @@ function recordVoteResolution(input: {
 		input.inputSchema,
 		input.input,
 	);
-	if (!parsed.ok) return Promise.resolve(parsed);
+	if (!parsed.ok) {
+		return Promise.resolve(parsed);
+	}
 	return recordVoteResolutionParsed({
 		...input,
 		parsed: parsed.data,
@@ -459,13 +515,19 @@ async function recordVoteResolutionParsed(input: {
 		input.options,
 		input.status === "adopted" ? "adoptResolution" : "rejectResolution",
 	);
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const vote = await input.dependencies.resolutionStore.getMeetingVote({
 		organizationId: input.options.organizationId,
 		meetingVoteId: input.parsed.meetingVoteId,
 	});
-	if (!vote.ok) return vote;
-	if (vote.data === null) return notFound("meetingVote");
+	if (!vote.ok) {
+		return vote;
+	}
+	if (vote.data === null) {
+		return notFound("meetingVote");
+	}
 	if (vote.data.version !== input.parsed.expectedVoteVersion) {
 		return stale(input.parsed.expectedVoteVersion, vote.data.version);
 	}
@@ -475,7 +537,9 @@ async function recordVoteResolutionParsed(input: {
 		input.options.organizationId,
 		input.parsed.sourceDocumentId,
 	);
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	const decidedAt =
 		input.status === "adopted" && "approvedAt" in input.parsed
 			? input.parsed.approvedAt
@@ -498,7 +562,9 @@ async function recordVoteResolutionParsed(input: {
 		decidedAt,
 		effectiveFrom: input.parsed.effectiveFrom,
 	});
-	if (!chronology.ok) return chronology;
+	if (!chronology.ok) {
+		return chronology;
+	}
 	return runDurableCompanyCommand({
 		commandId: `corporate-administration.resolution.${input.status}`,
 		fingerprintSchema: input.inputSchema,
@@ -644,7 +710,9 @@ async function validateSource(
 		organizationId,
 		sourceDocumentId,
 	});
-	if (!result.ok) return result;
+	if (!result.ok) {
+		return result;
+	}
 	if (result.data === null || !result.data.active) {
 		return fail(
 			"VALIDATION_ERROR",

@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noAwaitInLoops: Ordered boundary scenarios preserve deterministic evidence.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fail, ok } from "@afenda/errors/result";

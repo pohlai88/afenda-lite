@@ -16,15 +16,16 @@ import type {
 } from "../../hire-orchestration/types";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import { conflict } from "../../shared/domain-guards";
+import { runSequential, sequentialReturn } from "../../shared/run-sequential";
 import type {
 	HumanResourcesHireOrchestrationStore,
 	IdempotentHireAttemptRecord,
 } from "../../store/hire-orchestration";
 
-export type HireOrchestrationMemoryState = {
+export interface HireOrchestrationMemoryState {
 	attemptsById: Map<string, HireAttempt>;
 	idempotencyByKey: Map<string, IdempotentHireAttemptRecord>;
-};
+}
 
 function idempotencyMapKey(
 	organizationId: string,
@@ -72,22 +73,28 @@ export function createMemoryHireOrchestrationMethods(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
 			if (record === undefined) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok(cloneRecord(record));
+			return await ok(cloneRecord(record));
 		},
 
 		async findOpenHireAttemptByOfferId(input) {
-			for (const attempt of state.attemptsById.values()) {
-				if (
-					attempt.organizationId === input.organizationId &&
-					attempt.offerId === input.offerId &&
-					(attempt.status === "in_progress" || attempt.status === "completed")
-				) {
-					return ok(cloneAttempt(attempt));
-				}
+			const sequentialOutcome1 = await runSequential(
+				state.attemptsById.values(),
+				async (attempt) => {
+					if (
+						attempt.organizationId === input.organizationId &&
+						attempt.offerId === input.offerId &&
+						(attempt.status === "in_progress" || attempt.status === "completed")
+					) {
+						return sequentialReturn(await ok(cloneAttempt(attempt)));
+					}
+				},
+			);
+			if (sequentialOutcome1.kind === "return") {
+				return sequentialOutcome1.value;
 			}
-			return ok(null);
+			return await ok(null);
 		},
 
 		async createHireAttempt(record, _ports, _meta) {
@@ -153,10 +160,10 @@ export function createMemoryHireOrchestrationMethods(
 		async updateHireAttemptProgress(input, _ports, _meta) {
 			const existing = state.attemptsById.get(input.attemptId);
 			if (existing === undefined) {
-				return conflict("Hire attempt not found");
+				return await conflict("Hire attempt not found");
 			}
 			if (existing.organizationId !== input.organizationId) {
-				return conflict("Hire attempt organization mismatch");
+				return await conflict("Hire attempt organization mismatch");
 			}
 
 			const versionCheck = assertExpectedVersion(
@@ -164,7 +171,7 @@ export function createMemoryHireOrchestrationMethods(
 				input.expectedVersion,
 			);
 			if (!versionCheck.ok) {
-				return versionCheck;
+				return await versionCheck;
 			}
 
 			const now = new Date();
@@ -200,9 +207,16 @@ export function createMemoryHireOrchestrationMethods(
 				);
 			}
 
-			return ok(cloneAttempt(updated));
+			return await ok(cloneAttempt(updated));
 		},
 	};
+}
+
+function parseNullableHireId<T>(
+	value: string | null,
+	parse: (value: string) => Result<T>,
+): Result<T | null> {
+	return value === null ? ok(null) : parse(value);
 }
 
 export function mapHireAttemptRow(row: {
@@ -228,45 +242,55 @@ export function mapHireAttemptRow(row: {
 	updatedAt: Date;
 }): Result<HireAttempt> {
 	const id = parseHumanResourcesHireAttemptId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const offerId = parseHumanResourcesOfferId(row.offerId);
-	if (!offerId.ok) return offerId;
+	if (!offerId.ok) {
+		return offerId;
+	}
 
-	let personId = null;
-	if (row.personId !== null) {
-		const parsed = parseHumanResourcesPersonId(row.personId);
-		if (!parsed.ok) return parsed;
-		personId = parsed.data;
+	const personId = parseNullableHireId(
+		row.personId,
+		parseHumanResourcesPersonId,
+	);
+	if (!personId.ok) {
+		return personId;
 	}
-	let employeeId = null;
-	if (row.employeeId !== null) {
-		const parsed = parseHumanResourcesEmployeeId(row.employeeId);
-		if (!parsed.ok) return parsed;
-		employeeId = parsed.data;
+	const employeeId = parseNullableHireId(
+		row.employeeId,
+		parseHumanResourcesEmployeeId,
+	);
+	if (!employeeId.ok) {
+		return employeeId;
 	}
-	let employmentId = null;
-	if (row.employmentId !== null) {
-		const parsed = parseHumanResourcesEmploymentId(row.employmentId);
-		if (!parsed.ok) return parsed;
-		employmentId = parsed.data;
+	const employmentId = parseNullableHireId(
+		row.employmentId,
+		parseHumanResourcesEmploymentId,
+	);
+	if (!employmentId.ok) {
+		return employmentId;
 	}
-	let workerId = null;
-	if (row.workerId !== null) {
-		const parsed = parseHumanResourcesWorkerId(row.workerId);
-		if (!parsed.ok) return parsed;
-		workerId = parsed.data;
+	const workerId = parseNullableHireId(
+		row.workerId,
+		parseHumanResourcesWorkerId,
+	);
+	if (!workerId.ok) {
+		return workerId;
 	}
-	let assignmentId = null;
-	if (row.assignmentId !== null) {
-		const parsed = parseHumanResourcesAssignmentId(row.assignmentId);
-		if (!parsed.ok) return parsed;
-		assignmentId = parsed.data;
+	const assignmentId = parseNullableHireId(
+		row.assignmentId,
+		parseHumanResourcesAssignmentId,
+	);
+	if (!assignmentId.ok) {
+		return assignmentId;
 	}
-	let onboardingCaseId = null;
-	if (row.onboardingCaseId !== null) {
-		const parsed = parseHumanResourcesOnboardingCaseId(row.onboardingCaseId);
-		if (!parsed.ok) return parsed;
-		onboardingCaseId = parsed.data;
+	const onboardingCaseId = parseNullableHireId(
+		row.onboardingCaseId,
+		parseHumanResourcesOnboardingCaseId,
+	);
+	if (!onboardingCaseId.ok) {
+		return onboardingCaseId;
 	}
 
 	const compensationLog = Array.isArray(row.compensationLog)
@@ -282,12 +306,12 @@ export function mapHireAttemptRow(row: {
 		requestFingerprint: row.requestFingerprint,
 		status: row.status as HireAttempt["status"],
 		currentStep: row.currentStep as HireAttempt["currentStep"],
-		personId,
-		employeeId,
-		employmentId,
-		workerId,
-		assignmentId,
-		onboardingCaseId,
+		personId: personId.data,
+		employeeId: employeeId.data,
+		employmentId: employmentId.data,
+		workerId: workerId.data,
+		assignmentId: assignmentId.data,
+		onboardingCaseId: onboardingCaseId.data,
 		compensationLog,
 		version: row.version,
 		createdBy: row.createdBy,

@@ -13,9 +13,9 @@ export function createHumanResourcesIdentityResolverPort(): HumanResourcesIdenti
 		async resolveEmployeeForActor(input: {
 			organizationId: string;
 			actorUserId: string;
-			asOf?: string;
+			asOf?: string | undefined;
 		}): Promise<Result<HumanResourcesEmployeeIdentity | null>> {
-			return store.getUserEmployeeMapping({
+			return await store.getUserEmployeeMapping({
 				organizationId: input.organizationId,
 				userId: input.actorUserId,
 				...(input.asOf === undefined ? {} : { asOf: input.asOf }),
@@ -25,9 +25,9 @@ export function createHumanResourcesIdentityResolverPort(): HumanResourcesIdenti
 		async resolveManagerEmployeesForActor(input: {
 			organizationId: string;
 			actorUserId: string;
-			asOf?: string;
+			asOf?: string | undefined;
 		}): Promise<Result<HumanResourcesEmployeeId[]>> {
-			return store.getManagerEmployeesForUser({
+			return await store.getManagerEmployeesForUser({
 				organizationId: input.organizationId,
 				userId: input.actorUserId,
 				...(input.asOf === undefined ? {} : { asOf: input.asOf }),

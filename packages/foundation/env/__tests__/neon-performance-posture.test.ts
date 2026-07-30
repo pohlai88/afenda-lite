@@ -44,7 +44,7 @@ describe("@afenda/env neon-performance-posture", () => {
 		expect(TARGET_AUTOSCALING_MIN_CU).toBe(0.25);
 		expect(TARGET_AUTOSCALING_MAX_CU).toBe(2);
 		expect(TARGET_SUSPEND_TIMEOUT_SECONDS).toBe(0);
-		expect(MAX_SELECT1_LATENCY_MS).toBe(5_000);
+		expect(MAX_SELECT1_LATENCY_MS).toBe(5000);
 		expect(MAX_CONNECTION_USAGE_PERCENT).toBe(80);
 	});
 

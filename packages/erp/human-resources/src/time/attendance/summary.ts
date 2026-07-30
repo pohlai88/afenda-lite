@@ -10,7 +10,7 @@ export async function getDailyAttendanceSummary(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<DailyAttendanceSummary>> {
-	return runTimeQuery(input, options, {
+	return await runTimeQuery(input, options, {
 		schema: getDailyAttendanceSummaryInputSchema,
 		invalidMessage: "Invalid daily attendance summary input",
 		query: HUMAN_RESOURCES_QUERY_ATTENDANCE_DAILY_SUMMARY_GET,

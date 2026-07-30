@@ -16,9 +16,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type AddStockMovementLineActionData = {
+export interface AddStockMovementLineActionData {
 	line: StockMovementLine;
-};
+}
 
 export type AddStockMovementLineActionState =
 	ActionResult<AddStockMovementLineActionData> | null;
@@ -38,7 +38,7 @@ export async function addStockMovementLineAction(
 	_prev: AddStockMovementLineActionState,
 	formData: FormData,
 ): Promise<AddStockMovementLineActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "addStockMovementLineAction",
 		permission: "inventory.movement.create",
 		safeMessage:

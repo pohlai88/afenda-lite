@@ -30,8 +30,12 @@ export function createPurchaseOrderMatchQueryPort(
 				},
 				createPurchasingCommandOptions(),
 			);
-			if (!result.ok) return result;
-			if (result.data === null) return ok(null);
+			if (!result.ok) {
+				return result;
+			}
+			if (result.data === null) {
+				return ok(null);
+			}
 			const order = result.data;
 			return ok({
 				purchaseOrderId: order.id,
@@ -68,8 +72,12 @@ export function createGoodsReceiptMatchQueryPort(
 				},
 				createReceivingCommandOptions(),
 			);
-			if (!result.ok) return result;
-			if (result.data === null) return ok(null);
+			if (!result.ok) {
+				return result;
+			}
+			if (result.data === null) {
+				return ok(null);
+			}
 			const receipt = result.data;
 			if (
 				receipt.sourceType !== "purchase_order" ||

@@ -13,9 +13,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type PostSalesOrderActionData = {
+export interface PostSalesOrderActionData {
 	order: SalesOrder;
-};
+}
 
 export type PostSalesOrderActionState =
 	ActionResult<PostSalesOrderActionData> | null;
@@ -38,7 +38,7 @@ export async function postSalesOrderAction(
 	_prev: PostSalesOrderActionState,
 	formData: FormData,
 ): Promise<PostSalesOrderActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "postSalesOrderAction",
 		permission: "sales.order.post",
 		safeMessage: "Could not post sales order. Try again or contact an admin.",

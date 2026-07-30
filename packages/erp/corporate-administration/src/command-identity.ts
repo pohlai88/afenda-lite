@@ -64,7 +64,9 @@ export function createCorporateAdministrationCommandFingerprint<
 		input.schema,
 		input.input,
 	);
-	if (!parsedInput.ok) return parsedInput;
+	if (!parsedInput.ok) {
+		return parsedInput;
+	}
 
 	if (!commandIdentitySchema.safeParse(input.commandId).success) {
 		return fail(

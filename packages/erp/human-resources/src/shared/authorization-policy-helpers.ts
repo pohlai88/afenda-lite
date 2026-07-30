@@ -10,6 +10,7 @@ import type {
 	HumanResourcesResourceContext,
 } from "./authorization-types";
 import { partitionRequestedFieldsBySensitivity } from "./field-projection";
+import { runSequential, sequentialReturn } from "./run-sequential";
 import type { HumanResourcesSensitiveFieldClass } from "./sensitive-field-types";
 
 export function denyAuthorization(
@@ -127,15 +128,22 @@ export async function actorHoldsAnyPermission(
 	if (options?.authorization === undefined) {
 		return false;
 	}
-	for (const permission of permissions) {
-		const allowed = await options.authorization.can({
-			organizationId: request.actor.organizationId,
-			actorUserId: request.actor.actorUserId,
-			permission,
-		});
-		if (allowed) {
-			return true;
-		}
+	const { authorization } = options;
+	const sequentialOutcome1 = await runSequential(
+		permissions,
+		async (permission) => {
+			const allowed = await authorization.can({
+				organizationId: request.actor.organizationId,
+				actorUserId: request.actor.actorUserId,
+				permission,
+			});
+			if (allowed) {
+				return sequentialReturn(true);
+			}
+		},
+	);
+	if (sequentialOutcome1.kind === "return") {
+		return sequentialOutcome1.value;
 	}
 	return false;
 }
@@ -147,7 +155,7 @@ export async function requirePrivilegedAccess(input: {
 	options?: HumanResourcesCommandOptions | undefined;
 }): Promise<HumanResourcesAuthorizationDecision | null> {
 	const { request, policyId, privilegedPermissions, options } = input;
-	const resource = request.resource;
+	const { resource } = request;
 	if (resource !== undefined && isPrivilegedActor(resource)) {
 		return null;
 	}

@@ -8,12 +8,12 @@ export type PayrollDeliveryStatus =
 	| "correction_required"
 	| "failed";
 
-export type PayrollDeliveryAudit = {
-	createdBy: string;
+export interface PayrollDeliveryAudit {
 	createdAt: Date;
-	updatedBy: string;
+	createdBy: string;
 	updatedAt: Date;
-};
+	updatedBy: string;
+}
 
 export type PayrollDeliveryRecord = PayrollDeliveryAudit & {
 	id: string;

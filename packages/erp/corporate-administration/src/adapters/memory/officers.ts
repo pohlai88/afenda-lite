@@ -1,3 +1,5 @@
+// biome-ignore-all lint/suspicious/useAwait: The deterministic memory adapter implements asynchronous officer ports.
+// biome-ignore-all lint/suspicious/noShadow: Domain-local callbacks intentionally mirror officer records.
 import { randomUUID } from "node:crypto";
 import { fail, ok } from "@afenda/errors/result";
 
@@ -75,7 +77,9 @@ export function createMemoryCorporateAdministrationOfficerStore(): OfficerStore 
 					row.officeTypeCode === input.officeTypeCode &&
 					row.status === "active",
 			);
-			if (duplicate) return conflict("officeTypeCode");
+			if (duplicate) {
+				return conflict("officeTypeCode");
+			}
 			const id = statutoryOfficeIdSchema.parse(randomUUID());
 			const now = new Date(input.recordedAt);
 			const row: StatutoryOffice = {
@@ -178,7 +182,9 @@ export function createMemoryCorporateAdministrationOfficerStore(): OfficerStore 
 			const current = appointments.get(
 				key(input.organizationId, input.officerAppointmentId),
 			);
-			if (current === undefined) return notFound();
+			if (current === undefined) {
+				return notFound();
+			}
 			if (current.version !== input.expectedVersion) {
 				return stale(input.expectedVersion, current.version);
 			}
@@ -204,7 +210,9 @@ export function createMemoryCorporateAdministrationOfficerStore(): OfficerStore 
 			const current = appointments.get(
 				key(input.organizationId, input.officerAppointmentId),
 			);
-			if (current === undefined) return notFound();
+			if (current === undefined) {
+				return notFound();
+			}
 			if (current.version !== input.expectedVersion) {
 				return stale(input.expectedVersion, current.version);
 			}

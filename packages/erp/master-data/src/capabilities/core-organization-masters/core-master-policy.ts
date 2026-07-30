@@ -95,7 +95,9 @@ export function evaluateTaxRegistrationUsability(
 	asOf: Date,
 ): CoreMasterUsability {
 	const status = evaluateMasterStatus(registration.status);
-	if (!status.usable) return status;
+	if (!status.usable) {
+		return status;
+	}
 	if (registration.validFrom !== null && registration.validFrom > asOf) {
 		return { usable: false, reason: "not_yet_valid" };
 	}
@@ -114,7 +116,9 @@ export function evaluateItemTemplateUsability(
 export function evaluateItemVariantUsability(
 	variant: ItemVariant,
 ): CoreMasterUsability {
-	if (variant.retiredAt !== null) return { usable: false, reason: "retired" };
+	if (variant.retiredAt !== null) {
+		return { usable: false, reason: "retired" };
+	}
 	// Existing variants follow their operational md_item, not template lifecycle.
 	return evaluateItemUsability(variant.item);
 }

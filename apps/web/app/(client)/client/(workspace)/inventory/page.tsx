@@ -1,9 +1,9 @@
 import { InventoryShell } from "@/features/inventory/inventory-shell";
 import { firstSearchParam } from "@/lib/first-search-param";
 
-type ClientInventoryPageProps = {
+interface ClientInventoryPageProps {
 	searchParams: Promise<{ movementId?: string | string[] }>;
-};
+}
 
 /**
  * Client workspace inventory — read-only console (mutations are operator/admin).

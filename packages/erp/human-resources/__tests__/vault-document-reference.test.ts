@@ -14,7 +14,9 @@ describe("createVaultDocumentReferenceAdapter", () => {
 			reference: `vault://organizations/${ORG}/passport/doc-1?version=v2`,
 		});
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 		expect(result.data.documentKind).toBe("passport");
 		expect(result.data.documentId).toBe("doc-1");
 		expect(result.data.version).toBe("v2");
@@ -80,7 +82,7 @@ describe("createVaultDocumentReferenceAdapter", () => {
 		const withResolver = createVaultDocumentReferenceAdapter({
 			resolver: {
 				async assertObjectAcceptable() {
-					return fail("CONFLICT", "Object quarantined");
+					return await fail("CONFLICT", "Object quarantined");
 				},
 			},
 		});
@@ -89,7 +91,9 @@ describe("createVaultDocumentReferenceAdapter", () => {
 			reference: `vault://organizations/${ORG}/passport/doc-1`,
 		});
 		expect(result.ok).toBe(false);
-		if (result.ok) return;
+		if (result.ok) {
+			return;
+		}
 		expect(result.message).toContain("quarantined");
 	});
 });

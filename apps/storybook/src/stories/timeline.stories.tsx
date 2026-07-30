@@ -47,26 +47,26 @@ export const Overview: Story = {
 				<header className="grid gap-2 border-b pb-6">
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="outline">Accounts receivable</Badge>
-						<StatusBadge size="sm" status="active" label="Audit trail" />
+						<StatusBadge label="Audit trail" size="sm" status="active" />
 					</div>
-					<h1 className="text-2xl font-semibold tracking-tight">
+					<h1 className="font-semibold text-2xl tracking-tight">
 						Invoice INV-1048 · activity
 					</h1>
-					<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+					<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 						Timeline presents chronological events. Feature code owns ordering
 						policy, redaction, and whether the history is complete.
 					</p>
 				</header>
 
-				<section className="grid gap-3" aria-labelledby="timeline-audit-title">
+				<section aria-labelledby="timeline-audit-title" className="grid gap-3">
 					<div className="grid gap-1">
 						<h2
-							className="text-base font-semibold tracking-tight text-foreground"
+							className="font-semibold text-base text-foreground tracking-tight"
 							id="timeline-audit-title"
 						>
 							Operator events
 						</h2>
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							Newest first from authoritative timestamps (Asia/Kuala_Lumpur).
 						</p>
 					</div>
@@ -80,26 +80,26 @@ export const Overview: Story = {
 						<CardContent>
 							<Timeline>
 								<TimelineEntry
-									title="Invoice approved"
-									timestamp="09:42"
 									description="Aisha Rahman approved INV-1048 for posting."
 									icon={<CheckIcon className="size-3" />}
+									timestamp="09:42"
+									title="Invoice approved"
 								/>
 								<TimelineEntry
-									title="Evidence attached"
-									timestamp="09:18"
 									description="invoice-1048.pdf was added to the record."
 									icon={<FileClockIcon className="size-3" />}
+									timestamp="09:18"
+									title="Evidence attached"
 								/>
 								<TimelineEntry
-									title="Draft created"
-									timestamp="Yesterday"
 									description="Created from purchase order PO-8841 with a deliberately longer audit description that remains readable on narrow screens."
+									timestamp="Yesterday"
+									title="Draft created"
 								/>
 							</Timeline>
 						</CardContent>
 						<CardFooter className="justify-end border-t">
-							<Button type="button" size="sm" variant="outline">
+							<Button size="sm" type="button" variant="outline">
 								Export audit CSV
 							</Button>
 						</CardFooter>
@@ -123,14 +123,14 @@ export const Usage: Story = {
 		<div className="w-full max-w-md">
 			<Timeline>
 				<TimelineEntry
-					title="Remittance sent"
-					timestamp="14:05"
 					description="Advice REM-0718 emailed to finance@northwind.example."
+					timestamp="14:05"
+					title="Remittance sent"
 				/>
 				<TimelineEntry
-					title="Allocation confirmed"
-					timestamp="13:40"
 					description="USD 1,250.00 allocated to INV-8841."
+					timestamp="13:40"
+					title="Allocation confirmed"
 				/>
 			</Timeline>
 		</div>
@@ -149,33 +149,33 @@ export const StatesAndAccessibility: Story = {
 	render: () => (
 		<div className="grid w-full max-w-md gap-6">
 			<StorySection
-				title="With markers"
 				description="Optional icons remain decorative; titles carry meaning."
+				title="With markers"
 			>
 				<Timeline>
 					<TimelineEntry
-						title="Posted"
-						timestamp="10:00"
 						description="Journal batch JB-2044 posted."
 						icon={<CheckIcon className="size-3" />}
+						timestamp="10:00"
+						title="Posted"
 					/>
 					<TimelineEntry
-						title="Reviewed"
-						timestamp="09:30"
 						description="Differences accepted by controller."
 						icon={<FileClockIcon className="size-3" />}
+						timestamp="09:30"
+						title="Reviewed"
 					/>
 				</Timeline>
 			</StorySection>
 			<StorySection
-				title="Text-only markers"
 				description="Default bullet when no icon is supplied."
+				title="Text-only markers"
 			>
 				<Timeline>
 					<TimelineEntry
-						title="Imported from bank"
-						timestamp="08:00"
 						description="Statement line matched automatically."
+						timestamp="08:00"
+						title="Imported from bank"
 					/>
 				</Timeline>
 			</StorySection>
@@ -203,28 +203,28 @@ export const Composition: Story = {
 			<CardContent>
 				<Timeline>
 					<TimelineEntry
-						title="Batch posted"
-						timestamp="11:12"
 						description="Aisha Rahman posted 14 journal lines."
 						icon={<CheckIcon className="size-3" />}
+						timestamp="11:12"
+						title="Batch posted"
 					/>
 					<TimelineEntry
-						title="Differences reviewed"
-						timestamp="10:58"
 						description="Variance under materiality threshold accepted."
+						timestamp="10:58"
+						title="Differences reviewed"
 					/>
 					<TimelineEntry
-						title="Batch prepared"
-						timestamp="10:20"
 						description="Prepared from receivables run REC-2026-07."
+						timestamp="10:20"
+						title="Batch prepared"
 					/>
 				</Timeline>
 			</CardContent>
 			<CardFooter className="justify-end gap-2 border-t">
-				<Button type="button" variant="outline" size="sm">
+				<Button size="sm" type="button" variant="outline">
 					Show all events
 				</Button>
-				<Button type="button" size="sm">
+				<Button size="sm" type="button">
 					Export
 				</Button>
 			</CardFooter>
@@ -244,30 +244,30 @@ export const DoAndDoNot: Story = {
 	render: () => (
 		<div className="grid w-full max-w-5xl gap-6 md:grid-cols-2">
 			<StorySection
-				title="Do"
 				description="Immutable audit wording with actor and time."
+				title="Do"
 			>
 				<Timeline>
 					<TimelineEntry
-						title="Invoice approved"
-						timestamp="09:42"
 						description="Aisha Rahman approved INV-1048 for posting."
+						timestamp="09:42"
+						title="Invoice approved"
 					/>
 				</Timeline>
 			</StorySection>
 			<StorySection
-				title="Do not"
 				description="Do not invent events the audit store did not record."
+				title="Do not"
 			>
 				<div className="grid gap-2 rounded-md border border-destructive/40 p-3">
 					<Timeline>
 						<TimelineEntry
-							title="Probably approved"
-							timestamp="Unknown"
 							description="Assumed approval because status is open."
+							timestamp="Unknown"
+							title="Probably approved"
 						/>
 					</Timeline>
-					<p className="text-xs text-destructive">
+					<p className="text-destructive text-xs">
 						Guessed chronology is not an audit trail.
 					</p>
 				</div>

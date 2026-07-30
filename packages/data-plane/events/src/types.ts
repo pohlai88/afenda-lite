@@ -26,80 +26,80 @@ export const EVENT_STATUSES = ["pending", "processed", "failed"] as const;
 
 export type EventStatus = (typeof EVENT_STATUSES)[number];
 
-export type DomainEvent<T = unknown> = {
-	id: string;
-	type: string;
-	sourceModule: EventSourceModule;
-	deduplicationKey?: string | null | undefined;
-	occurredAt: Date;
-	correlationId: string;
-	causationId: string | null;
-	organizationId: string;
+export interface DomainEvent<T = unknown> {
 	actorUserId: string;
-	payload: T;
-	metadata: Record<string, unknown> | null;
-	status: EventStatus;
 	attempts: number;
-	lastError: string | null;
-	processedAt: Date | null;
-};
-
-export type DomainEventWriteInput = {
-	organizationId: string;
-	type: string;
-	sourceModule: EventSourceModule;
-	deduplicationKey?: string | null;
+	causationId: string | null;
 	correlationId: string;
-	causationId?: string | null;
-	actorUserId: string;
-	payload: Record<string, unknown>;
-	metadata?: Record<string, unknown> | null;
-	createdAt?: Date;
-};
-
-export type DomainEventQueryFilter = {
+	deduplicationKey?: string | null | undefined;
+	id: string;
+	lastError: string | null;
+	metadata: Record<string, unknown> | null;
+	occurredAt: Date;
 	organizationId: string;
-	id?: string | undefined;
-	type?: string | undefined;
-	sourceModule?: EventSourceModule | undefined;
-	status?: EventStatus | undefined;
+	payload: T;
+	processedAt: Date | null;
+	sourceModule: EventSourceModule;
+	status: EventStatus;
+	type: string;
+}
+
+export interface DomainEventWriteInput {
+	actorUserId: string;
+	causationId?: string | null;
+	correlationId: string;
+	createdAt?: Date;
+	deduplicationKey?: string | null;
+	metadata?: Record<string, unknown> | null;
+	organizationId: string;
+	payload: Record<string, unknown>;
+	sourceModule: EventSourceModule;
+	type: string;
+}
+
+export interface DomainEventQueryFilter {
 	correlationId?: string | undefined;
 	from?: Date | undefined;
+	id?: string | undefined;
+	organizationId: string;
+	sourceModule?: EventSourceModule | undefined;
+	status?: EventStatus | undefined;
 	to?: Date | undefined;
-};
+	type?: string | undefined;
+}
 
 export type DomainEventQueryOptions = DomainEventQueryFilter & {
 	page: number;
 	pageSize: number;
 };
 
-export type DomainEventClaimOptions = {
-	organizationId?: string | undefined;
+export interface DomainEventClaimOptions {
 	limit: number;
-};
+	organizationId?: string | undefined;
+}
 
-export type DomainEventMarkProcessedInput = {
+export interface DomainEventMarkProcessedInput {
 	id: string;
 	organizationId: string;
 	processedAt?: Date;
-};
+}
 
-export type DomainEventMarkFailedInput = {
+export interface DomainEventMarkFailedInput {
 	id: string;
-	organizationId: string;
 	lastError: string;
-};
+	organizationId: string;
+}
 
-export type DomainEventRequeueInput = {
+export interface DomainEventRequeueInput {
+	fromStatus: "failed" | "processed";
 	id: string;
 	organizationId: string;
-	fromStatus: "failed" | "processed";
-};
+}
 
-export type DomainEventPurgeOptions = {
-	organizationId: string;
+export interface DomainEventPurgeOptions {
 	olderThan: Date;
-};
+	organizationId: string;
+}
 
 export type DomainEventHandler = (event: DomainEvent) => Promise<void> | void;
 

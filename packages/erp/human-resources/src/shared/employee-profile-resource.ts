@@ -47,7 +47,7 @@ export async function resolveEmployeeProfileResource(
 	},
 	options: HumanResourcesCommandOptions,
 ): Promise<HumanResourcesResourceContext> {
-	return withPrimaryManagerOnResource(
+	return await withPrimaryManagerOnResource(
 		employeeProfileResource(input),
 		input.employeeId,
 		input.asOf,
@@ -62,7 +62,7 @@ export async function resolveEmployeeProfileResourceFromInput(
 	},
 	options: HumanResourcesCommandOptions,
 ): Promise<HumanResourcesResourceContext> {
-	return resolveEmployeeProfileResource(
+	return await resolveEmployeeProfileResource(
 		{
 			organizationId: data.organizationId,
 			employeeId: data.employeeId,

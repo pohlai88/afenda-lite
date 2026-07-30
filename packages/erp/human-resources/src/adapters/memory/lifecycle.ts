@@ -324,63 +324,63 @@ function cloneOffboardingCase(value: OffboardingCase): OffboardingCase {
 	};
 }
 
-export type LifecycleMemoryState = {
-	onboardingCases: Map<HumanResourcesOnboardingCaseId, OnboardingCase>;
-	onboardingTasks: Map<HumanResourcesOnboardingTaskId, OnboardingTask>;
-	onboardingOrientations: Map<
-		HumanResourcesOnboardingOrientationId,
-		OnboardingOrientation
-	>;
-	onboardingEquipmentHandoffs: Map<
-		HumanResourcesOnboardingEquipmentHandoffId,
-		OnboardingEquipmentHandoff
-	>;
-	onboardingAccessHandoffs: Map<
-		HumanResourcesOnboardingAccessHandoffId,
-		OnboardingAccessHandoff
-	>;
-	onboardingIdempotencyByKey: Map<string, IdempotentOnboardingCaseRecord>;
-	probationReviews: Map<HumanResourcesProbationReviewId, ProbationReview>;
-	probationAssessments: Map<
-		HumanResourcesProbationAssessmentId,
-		ProbationAssessment
-	>;
-	probationIdempotencyByKey: Map<string, IdempotentProbationReviewRecord>;
-	employmentConfirmations: Map<
-		HumanResourcesEmploymentConfirmationId,
-		EmploymentConfirmation
-	>;
+export interface LifecycleMemoryState {
+	clearances: Map<HumanResourcesClearanceId, Clearance>;
 	confirmationIdempotencyByKey: Map<
 		string,
 		IdempotentEmploymentConfirmationRecord
+	>;
+	employmentConfirmations: Map<
+		HumanResourcesEmploymentConfirmationId,
+		EmploymentConfirmation
 	>;
 	employmentMovements: Map<
 		HumanResourcesEmploymentMovementId,
 		EmploymentMovement
 	>;
-	transferIdempotencyByKey: Map<string, IdempotentEmploymentMovementRecord>;
-	terminations: Map<HumanResourcesTerminationId, Termination>;
-	terminationIdempotencyByKey: Map<string, IdempotentTerminationRecord>;
-	offboardingCases: Map<HumanResourcesOffboardingCaseId, OffboardingCase>;
-	offboardingTasks: Map<HumanResourcesOffboardingTaskId, OffboardingTask>;
+	exitInterviews: Map<HumanResourcesExitInterviewId, ExitInterview>;
 	offboardingAccessRevocations: Map<
 		HumanResourcesOffboardingAccessRevocationId,
 		OffboardingAccessRevocation
 	>;
+	offboardingCases: Map<HumanResourcesOffboardingCaseId, OffboardingCase>;
+	offboardingIdempotencyByKey: Map<string, IdempotentOffboardingCaseRecord>;
 	offboardingPayrollHandoffs: Map<
 		HumanResourcesOffboardingPayrollHandoffId,
 		OffboardingPayrollHandoff
 	>;
-	exitInterviews: Map<HumanResourcesExitInterviewId, ExitInterview>;
-	clearances: Map<HumanResourcesClearanceId, Clearance>;
-	offboardingIdempotencyByKey: Map<string, IdempotentOffboardingCaseRecord>;
-};
+	offboardingTasks: Map<HumanResourcesOffboardingTaskId, OffboardingTask>;
+	onboardingAccessHandoffs: Map<
+		HumanResourcesOnboardingAccessHandoffId,
+		OnboardingAccessHandoff
+	>;
+	onboardingCases: Map<HumanResourcesOnboardingCaseId, OnboardingCase>;
+	onboardingEquipmentHandoffs: Map<
+		HumanResourcesOnboardingEquipmentHandoffId,
+		OnboardingEquipmentHandoff
+	>;
+	onboardingIdempotencyByKey: Map<string, IdempotentOnboardingCaseRecord>;
+	onboardingOrientations: Map<
+		HumanResourcesOnboardingOrientationId,
+		OnboardingOrientation
+	>;
+	onboardingTasks: Map<HumanResourcesOnboardingTaskId, OnboardingTask>;
+	probationAssessments: Map<
+		HumanResourcesProbationAssessmentId,
+		ProbationAssessment
+	>;
+	probationIdempotencyByKey: Map<string, IdempotentProbationReviewRecord>;
+	probationReviews: Map<HumanResourcesProbationReviewId, ProbationReview>;
+	terminationIdempotencyByKey: Map<string, IdempotentTerminationRecord>;
+	terminations: Map<HumanResourcesTerminationId, Termination>;
+	transferIdempotencyByKey: Map<string, IdempotentEmploymentMovementRecord>;
+}
 
-export type LifecycleDeps = {
+export interface LifecycleDeps {
 	core: CoreMemoryState;
 	org: OrganizationMemoryState;
 	recruitment: RecruitmentMemoryState;
-};
+}
 
 export type MemoryLifecycleMethods = Pick<
 	HumanResourcesStore,
@@ -502,9 +502,9 @@ export function createMemoryLifecycleMethods(
 		}): Promise<Result<OnboardingCase | null>> {
 			const row = state.onboardingCases.get(input.onboardingCaseId);
 			if (!row || row.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok(cloneOnboardingCase(row));
+			return await ok(cloneOnboardingCase(row));
 		},
 
 		async findOnboardingByStartIdempotencyKey(input: {
@@ -515,9 +515,9 @@ export function createMemoryLifecycleMethods(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
 			if (record === undefined) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({
+			return await ok({
 				onboardingCase: cloneOnboardingCase(record.onboardingCase),
 				startRequestFingerprint: record.startRequestFingerprint,
 			});
@@ -948,7 +948,7 @@ export function createMemoryLifecycleMethods(
 				!onboardingCase ||
 				onboardingCase.organizationId !== input.organizationId
 			) {
-				return notFound("Onboarding case not found");
+				return await notFound("Onboarding case not found");
 			}
 			const tasks = Array.from(state.onboardingTasks.values())
 				.filter(
@@ -958,7 +958,7 @@ export function createMemoryLifecycleMethods(
 				)
 				.map((task) => ({ ...task, completedAt: task.completedAt }));
 			tasks.sort((a, b) => a.code.localeCompare(b.code));
-			return ok(tasks);
+			return await ok(tasks);
 		},
 
 		async getOnboardingTask(input: {
@@ -967,9 +967,9 @@ export function createMemoryLifecycleMethods(
 		}): Promise<Result<OnboardingTask | null>> {
 			const task = state.onboardingTasks.get(input.taskId);
 			if (!task || task.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...task, completedAt: task.completedAt });
+			return await ok({ ...task, completedAt: task.completedAt });
 		},
 
 		async getOnboardingOrientationByCase(input: {
@@ -981,7 +981,9 @@ export function createMemoryLifecycleMethods(
 					item.organizationId === input.organizationId &&
 					item.onboardingCaseId === input.onboardingCaseId,
 			);
-			return ok(row === undefined ? null : cloneOnboardingOrientation(row));
+			return await ok(
+				row === undefined ? null : cloneOnboardingOrientation(row),
+			);
 		},
 
 		async getOnboardingEquipmentHandoffByCase(input: {
@@ -993,7 +995,7 @@ export function createMemoryLifecycleMethods(
 					item.organizationId === input.organizationId &&
 					item.onboardingCaseId === input.onboardingCaseId,
 			);
-			return ok(
+			return await ok(
 				row === undefined ? null : cloneOnboardingEquipmentHandoff(row),
 			);
 		},
@@ -1007,7 +1009,9 @@ export function createMemoryLifecycleMethods(
 					item.organizationId === input.organizationId &&
 					item.onboardingCaseId === input.onboardingCaseId,
 			);
-			return ok(row === undefined ? null : cloneOnboardingAccessHandoff(row));
+			return await ok(
+				row === undefined ? null : cloneOnboardingAccessHandoff(row),
+			);
 		},
 
 		async recordOnboardingOrientation(
@@ -1268,9 +1272,9 @@ export function createMemoryLifecycleMethods(
 		}): Promise<Result<ProbationReview | null>> {
 			const row = state.probationReviews.get(input.probationReviewId);
 			if (!row || row.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok(cloneProbationReview(row));
+			return await ok(cloneProbationReview(row));
 		},
 
 		async listProbationReviewsByEmployment(input: {
@@ -1285,7 +1289,7 @@ export function createMemoryLifecycleMethods(
 				)
 				.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
 				.map(cloneProbationReview);
-			return ok(rows);
+			return await ok(rows);
 		},
 
 		async listProbationAssessments(input: {
@@ -1294,7 +1298,7 @@ export function createMemoryLifecycleMethods(
 		}): Promise<Result<ProbationAssessment[]>> {
 			const probation = state.probationReviews.get(input.probationReviewId);
 			if (!probation || probation.organizationId !== input.organizationId) {
-				return notFound("Probation review not found");
+				return await notFound("Probation review not found");
 			}
 			const rows = Array.from(state.probationAssessments.values())
 				.filter(
@@ -1304,7 +1308,7 @@ export function createMemoryLifecycleMethods(
 				)
 				.sort((a, b) => a.reviewedOn.localeCompare(b.reviewedOn))
 				.map(cloneProbationAssessment);
-			return ok(rows);
+			return await ok(rows);
 		},
 
 		async findProbationByOpenIdempotencyKey(input: {
@@ -1315,9 +1319,9 @@ export function createMemoryLifecycleMethods(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
 			if (record === undefined) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({
+			return await ok({
 				probationReview: cloneProbationReview(record.probationReview),
 				openRequestFingerprint: record.openRequestFingerprint,
 			});
@@ -1734,9 +1738,9 @@ export function createMemoryLifecycleMethods(
 				input.employmentConfirmationId,
 			);
 			if (!row || row.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok(cloneEmploymentConfirmation(row));
+			return await ok(cloneEmploymentConfirmation(row));
 		},
 
 		async findConfirmationByIdempotencyKey(input: {
@@ -1747,9 +1751,9 @@ export function createMemoryLifecycleMethods(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
 			if (record === undefined) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({
+			return await ok({
 				employmentConfirmation: cloneEmploymentConfirmation(
 					record.employmentConfirmation,
 				),
@@ -1909,9 +1913,9 @@ export function createMemoryLifecycleMethods(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
 			if (record === undefined) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({
+			return await ok({
 				employmentMovement: cloneEmploymentMovement(record.employmentMovement),
 				transferRequestFingerprint: record.transferRequestFingerprint,
 			});
@@ -2146,9 +2150,9 @@ export function createMemoryLifecycleMethods(
 		}): Promise<Result<Termination | null>> {
 			const row = state.terminations.get(input.terminationId);
 			if (!row || row.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok(cloneTermination(row));
+			return await ok(cloneTermination(row));
 		},
 
 		async findTerminationByIdempotencyKey(input: {
@@ -2159,9 +2163,9 @@ export function createMemoryLifecycleMethods(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
 			if (record === undefined) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({
+			return await ok({
 				termination: cloneTermination(record.termination),
 				terminationRequestFingerprint: record.terminationRequestFingerprint,
 			});
@@ -2473,9 +2477,9 @@ export function createMemoryLifecycleMethods(
 		}): Promise<Result<OffboardingCase | null>> {
 			const row = state.offboardingCases.get(input.offboardingCaseId);
 			if (!row || row.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok(cloneOffboardingCase(row));
+			return await ok(cloneOffboardingCase(row));
 		},
 
 		async findOffboardingByStartIdempotencyKey(input: {
@@ -2486,9 +2490,9 @@ export function createMemoryLifecycleMethods(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
 			if (record === undefined) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({
+			return await ok({
 				offboardingCase: cloneOffboardingCase(record.offboardingCase),
 				startRequestFingerprint: record.startRequestFingerprint,
 			});
@@ -2525,7 +2529,14 @@ export function createMemoryLifecycleMethods(
 			}
 
 			let hasFinalizedTermination = false;
-			if (record.terminationId !== null) {
+			if (record.terminationId === null) {
+				hasFinalizedTermination = Array.from(state.terminations.values()).some(
+					(row) =>
+						row.organizationId === record.organizationId &&
+						row.employmentId === record.employmentId &&
+						row.status === "finalized",
+				);
+			} else {
 				const termination = state.terminations.get(record.terminationId);
 				if (
 					!termination ||
@@ -2541,13 +2552,6 @@ export function createMemoryLifecycleMethods(
 					return invalidState("Linked termination must be finalized");
 				}
 				hasFinalizedTermination = true;
-			} else {
-				hasFinalizedTermination = Array.from(state.terminations.values()).some(
-					(row) =>
-						row.organizationId === record.organizationId &&
-						row.employmentId === record.employmentId &&
-						row.status === "finalized",
-				);
 			}
 
 			const eligibility = assertEmploymentForOffboarding({
@@ -3114,7 +3118,7 @@ export function createMemoryLifecycleMethods(
 				!offboardingCase ||
 				offboardingCase.organizationId !== input.organizationId
 			) {
-				return notFound("Offboarding case not found");
+				return await notFound("Offboarding case not found");
 			}
 			const tasks = Array.from(state.offboardingTasks.values())
 				.filter(
@@ -3124,7 +3128,7 @@ export function createMemoryLifecycleMethods(
 				)
 				.map((task) => ({ ...task }));
 			tasks.sort((a, b) => a.code.localeCompare(b.code));
-			return ok(tasks);
+			return await ok(tasks);
 		},
 
 		async getClearanceByOffboardingCase(input: {
@@ -3138,7 +3142,7 @@ export function createMemoryLifecycleMethods(
 				!offboardingCase ||
 				offboardingCase.organizationId !== input.organizationId
 			) {
-				return notFound("Offboarding case not found");
+				return await notFound("Offboarding case not found");
 			}
 			const clearance =
 				Array.from(state.clearances.values()).find(
@@ -3146,7 +3150,7 @@ export function createMemoryLifecycleMethods(
 						row.organizationId === input.organizationId &&
 						row.offboardingCaseId === input.offboardingCaseId,
 				) ?? null;
-			return ok(clearance === null ? null : { ...clearance });
+			return await ok(clearance === null ? null : { ...clearance });
 		},
 
 		async getOffboardingAccessRevocationByCase(input: {
@@ -3160,7 +3164,7 @@ export function createMemoryLifecycleMethods(
 				!offboardingCase ||
 				offboardingCase.organizationId !== input.organizationId
 			) {
-				return notFound("Offboarding case not found");
+				return await notFound("Offboarding case not found");
 			}
 			const row =
 				Array.from(state.offboardingAccessRevocations.values()).find(
@@ -3168,7 +3172,9 @@ export function createMemoryLifecycleMethods(
 						revocation.organizationId === input.organizationId &&
 						revocation.offboardingCaseId === input.offboardingCaseId,
 				) ?? null;
-			return ok(row === null ? null : cloneOffboardingAccessRevocation(row));
+			return await ok(
+				row === null ? null : cloneOffboardingAccessRevocation(row),
+			);
 		},
 
 		async getOffboardingPayrollHandoffByCase(input: {
@@ -3182,7 +3188,7 @@ export function createMemoryLifecycleMethods(
 				!offboardingCase ||
 				offboardingCase.organizationId !== input.organizationId
 			) {
-				return notFound("Offboarding case not found");
+				return await notFound("Offboarding case not found");
 			}
 			const row =
 				Array.from(state.offboardingPayrollHandoffs.values()).find(
@@ -3190,7 +3196,9 @@ export function createMemoryLifecycleMethods(
 						handoff.organizationId === input.organizationId &&
 						handoff.offboardingCaseId === input.offboardingCaseId,
 				) ?? null;
-			return ok(row === null ? null : cloneOffboardingPayrollHandoff(row));
+			return await ok(
+				row === null ? null : cloneOffboardingPayrollHandoff(row),
+			);
 		},
 
 		async recordOffboardingAccessRevocation(

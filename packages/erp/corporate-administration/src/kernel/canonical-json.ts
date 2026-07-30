@@ -67,7 +67,9 @@ function assertPlainDataObject(value: Record<string, unknown>): void {
 }
 
 function serialize(value: unknown, ancestors: WeakSet<object>): string {
-	if (value === null) return "null";
+	if (value === null) {
+		return "null";
+	}
 	if (typeof value === "string" || typeof value === "boolean") {
 		return JSON.stringify(value);
 	}
@@ -138,7 +140,9 @@ export function assertCanonicalJsonValue(
 }
 
 function copyCanonicalJsonValue(value: CanonicalJsonValue): CanonicalJsonValue {
-	if (value === null || typeof value !== "object") return value;
+	if (value === null || typeof value !== "object") {
+		return value;
+	}
 	if (Array.isArray(value)) {
 		return Object.freeze(value.map(copyCanonicalJsonValue));
 	}

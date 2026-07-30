@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-
 import type { HumanResourcesAuthorizationPort } from "../src/authorization";
 import {
 	HUMAN_RESOURCES_ERROR_AUTHORIZATION_DENIED,
@@ -25,13 +24,14 @@ import {
 } from "../src/shared/authorization-policy-registry";
 import type { HumanResourcesAuthorizationRequest } from "../src/shared/authorization-types";
 import { authorizeHumanResourcesOperation } from "../src/shared/contextual-authorization";
+import { helperAssert as assert } from "./helpers/helper-assert";
 
 function grantingAuthorization(
 	permissions: ReadonlySet<string>,
 ): HumanResourcesAuthorizationPort {
 	return {
 		async can(input) {
-			return permissions.has(input.permission);
+			return await permissions.has(input.permission);
 		},
 	};
 }
@@ -102,7 +102,7 @@ function stubPolicy(
 		mode: "subject_scoped",
 		resourceRequired: true,
 		async evaluate() {
-			return { allowed: true, policyId: overrides.id };
+			return await { allowed: true, policyId: overrides.id };
 		},
 		...overrides,
 	};
@@ -112,14 +112,14 @@ function expectAuthorizationDenied(
 	result: Awaited<ReturnType<typeof authorizeHumanResourcesOperation>>,
 	denyCode: string,
 ) {
-	expect(result.ok).toBe(false);
+	assert.strictEqual(result.ok, false);
 	if (result.ok) {
 		return;
 	}
-	expect(result.code).toBe("FORBIDDEN");
-	expect(result.message).toBe("Human Resources authorization denied");
-	expect(result.message).not.toMatch(/manager|case membership|investigator/i);
-	expect(result.details).toMatchObject({
+	assert.strictEqual(result.code, "FORBIDDEN");
+	assert.strictEqual(result.message, "Human Resources authorization denied");
+	assert.doesNotMatch(result.message, /manager|case membership|investigator/i);
+	assert.deepInclude(result.details, {
 		humanResourcesCode: HUMAN_RESOURCES_ERROR_AUTHORIZATION_DENIED,
 		denyCode,
 	});
@@ -315,7 +315,7 @@ describe("authorizeHumanResourcesOperation facade", () => {
 				mode: "resource_scoped",
 				operationPrefixes: ["human-resources.leave-request."],
 				async evaluate(request) {
-					const resource = request.resource;
+					const { resource } = request;
 					if (!resource) {
 						return {
 							allowed: false,
@@ -327,7 +327,7 @@ describe("authorizeHumanResourcesOperation facade", () => {
 					const isManager =
 						request.actor.actorEmployeeId !== undefined &&
 						request.actor.actorEmployeeId === resource.managerEmployeeId;
-					return isManager
+					return (await isManager)
 						? { allowed: true, policyId: "custom.leave.manager" }
 						: {
 								allowed: false,

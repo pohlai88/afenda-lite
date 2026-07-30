@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noJsxPropsBind: The enabled React Compiler stabilizes JSX callback props.
 "use client";
 
 import {
@@ -51,45 +52,45 @@ import { formatInstantUtc } from "@/modules/platform/format/instant";
  * ADR-010 · I3.4 Sheet assign). Audit View Dialog projects full RBAC audit
  * fields from Platform domain (actor, target, values, when).
  */
-export type OrgRoleRow = {
-	id: string;
-	name: string;
+export interface OrgRoleRow {
 	active: boolean;
-	isSystemTemplate: boolean;
-};
-
-export type OrgAssignmentRow = {
 	id: string;
-	userId: string;
-	/** Directory label (`name · email`) when known; else Neon `userId`. */
-	userLabel: string;
+	isSystemTemplate: boolean;
+	name: string;
+}
+
+export interface OrgAssignmentRow {
+	id: string;
 	roleId: string;
 	roleName: string;
 	scopeType: string;
-};
+	userId: string;
+	/** Directory label (`name · email`) when known; else Neon `userId`. */
+	userLabel: string;
+}
 
-export type OrgAuditRow = {
-	id: string;
+export interface OrgAuditRow {
 	action: string;
-	targetType: string | null;
-	targetId: string | null;
-	actorUserId: string;
 	/** Directory label when known; else Neon `actorUserId`. */
 	actorLabel: string;
-	roleId: string | null;
-	reason: string | null;
+	actorUserId: string;
 	/** ISO-8601 from domain `createdAt`. */
 	createdAt: string;
-	oldValueJson: string | null;
+	id: string;
 	newValueJson: string | null;
-};
+	oldValueJson: string | null;
+	reason: string | null;
+	roleId: string | null;
+	targetId: string | null;
+	targetType: string | null;
+}
 
-type OrgAdminPanelsProps = {
-	roles: OrgRoleRow[];
+interface OrgAdminPanelsProps {
 	assignments: OrgAssignmentRow[];
 	auditRows: OrgAuditRow[];
 	memberDirectory: MemberDirectoryState;
-};
+	roles: OrgRoleRow[];
+}
 
 const roleColumns: DataTableColumn<OrgRoleRow>[] = [
 	{ key: "name", title: "Role", sortable: true },
@@ -103,8 +104,8 @@ const roleColumns: DataTableColumn<OrgRoleRow>[] = [
 		title: "Status",
 		render: (value) => (
 			<StatusBadge
-				status={value ? "active" : "inactive"}
 				label={value ? "Active" : "Inactive"}
+				status={value ? "active" : "inactive"}
 			/>
 		),
 	},
@@ -127,14 +128,14 @@ function AssignmentUserCell({
 	}
 	return (
 		<span className="flex flex-col gap-0.5">
-			<span className="text-sm text-foreground">{userLabel}</span>
-			<Code className="text-xs text-foreground-secondary">{userId}</Code>
+			<span className="text-foreground text-sm">{userLabel}</span>
+			<Code className="text-foreground-secondary text-xs">{userId}</Code>
 		</span>
 	);
 }
 
 function auditDetailValue(value: string | null | undefined): string {
-	if (value == null || value.trim().length === 0) {
+	if (value === null || value.trim().length === 0) {
 		return "—";
 	}
 	return value;
@@ -205,7 +206,7 @@ function RevokeAssignmentDialog({
 	const showFormError = !pending && state?.ok === false;
 
 	return (
-		<AlertDialog open={open} onOpenChange={onOpenChange}>
+		<AlertDialog onOpenChange={onOpenChange} open={open}>
 			<AlertDialogContent>
 				{assignment ? (
 					<form
@@ -213,7 +214,7 @@ function RevokeAssignmentDialog({
 						aria-busy={pending}
 						className="flex flex-col gap-(--field-gap)"
 					>
-						<input type="hidden" name="assignmentId" value={assignment.id} />
+						<input name="assignmentId" type="hidden" value={assignment.id} />
 						<AlertDialogHeader>
 							<AlertDialogTitle>Revoke role assignment</AlertDialogTitle>
 							<AlertDialogDescription>
@@ -222,7 +223,6 @@ function RevokeAssignmentDialog({
 							</AlertDialogDescription>
 						</AlertDialogHeader>
 						<KeyValueList
-							size="sm"
 							items={[
 								{
 									label: "User",
@@ -239,17 +239,18 @@ function RevokeAssignmentDialog({
 									value: <Code>{assignment.id}</Code>,
 								},
 							]}
+							size="sm"
 						/>
 						{showFormError ? <FormError message={state.message} /> : null}
 						<AlertDialogFooter>
 							<AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
-							<Button type="submit" variant="destructive" disabled={pending}>
+							<Button disabled={pending} type="submit" variant="destructive">
 								{pending ? (
 									<>
 										<Spinner
-											size="sm"
-											label="Revoking assignment"
 											className="text-primary-foreground"
+											label="Revoking assignment"
+											size="sm"
 										/>
 										Revoking…
 									</>
@@ -310,16 +311,16 @@ export function OrgAdminPanels({
 					<DataTable
 						columns={roleColumns}
 						data={sortedRoles}
+						density="compact"
+						emptyDescription="System templates or org-scoped roles appear here when seeded."
+						emptyTitle="No assignable roles"
 						getRowId={(row) => row.id}
-						sortBy={sortBy}
-						sortDirection={sortDirection}
 						onSort={(key, direction) => {
 							setSortBy(key);
 							setSortDirection(direction);
 						}}
-						emptyTitle="No assignable roles"
-						emptyDescription="System templates or org-scoped roles appear here when seeded."
-						density="compact"
+						sortBy={sortBy}
+						sortDirection={sortDirection}
 					/>
 				</CardContent>
 			</Card>
@@ -332,13 +333,13 @@ export function OrgAdminPanels({
 							Active assignments for this organization ({assignments.length}).
 						</CardDescription>
 					</div>
-					<Sheet open={assignOpen} onOpenChange={setAssignOpen}>
+					<Sheet onOpenChange={setAssignOpen} open={assignOpen}>
 						<SheetTrigger asChild>
 							<Button type="button">Assign role</Button>
 						</SheetTrigger>
 						<SheetContent
-							side="right"
 							className="flex w-full flex-col gap-(--section-gap) sm:max-w-md"
+							side="right"
 						>
 							<SheetHeader>
 								<SheetTitle>Assign role</SheetTitle>
@@ -349,8 +350,8 @@ export function OrgAdminPanels({
 							</SheetHeader>
 							<div className="flex flex-1 flex-col gap-(--field-gap) overflow-y-auto px-4 pb-4">
 								<AssignOrgRoleForm
-									roles={assignableRoleOptions}
 									memberDirectory={memberDirectory}
+									roles={assignableRoleOptions}
 								/>
 							</div>
 						</SheetContent>
@@ -360,16 +361,16 @@ export function OrgAdminPanels({
 					<DataTable
 						columns={assignmentColumns}
 						data={assignments}
-						getRowId={(row) => row.id}
-						emptyTitle="No role assignments yet"
-						emptyDescription="Assign a platform role to an organization member."
 						density="compact"
+						emptyDescription="Assign a platform role to an organization member."
+						emptyTitle="No role assignments yet"
+						getRowId={(row) => row.id}
 						rowActions={(row) => (
 							<Button
+								onClick={() => setRevokeTarget(row)}
+								size="sm"
 								type="button"
 								variant="outline"
-								size="sm"
-								onClick={() => setRevokeTarget(row)}
 							>
 								Revoke
 							</Button>
@@ -392,28 +393,28 @@ export function OrgAdminPanels({
 					<DataTable
 						columns={auditColumns}
 						data={auditRows}
-						getRowId={(row) => row.id}
-						emptyTitle="No audit rows yet"
-						emptyDescription="Invites and role changes write audit entries here."
 						density="compact"
+						emptyDescription="Invites and role changes write audit entries here."
+						emptyTitle="No audit rows yet"
+						getRowId={(row) => row.id}
 						rowActions={(row) => (
 							<Button
+								onClick={() => setSelectedAudit(row)}
+								size="sm"
 								type="button"
 								variant="outline"
-								size="sm"
-								onClick={() => setSelectedAudit(row)}
 							>
 								View
 							</Button>
 						)}
 					/>
 					<Dialog
-						open={selectedAudit !== null}
 						onOpenChange={(open) => {
 							if (!open) {
 								setSelectedAudit(null);
 							}
 						}}
+						open={selectedAudit !== null}
 					>
 						<DialogContent>
 							<DialogHeader>
@@ -424,7 +425,6 @@ export function OrgAdminPanels({
 							</DialogHeader>
 							{selectedAudit ? (
 								<KeyValueList
-									size="sm"
 									items={[
 										{ label: "Action", value: selectedAudit.action },
 										{
@@ -489,6 +489,7 @@ export function OrgAdminPanels({
 											value: <Code>{selectedAudit.id}</Code>,
 										},
 									]}
+									size="sm"
 								/>
 							) : null}
 						</DialogContent>
@@ -498,14 +499,14 @@ export function OrgAdminPanels({
 
 			{revokeTarget ? (
 				<RevokeAssignmentDialog
-					key={revokeTarget.id}
 					assignment={revokeTarget}
-					open
+					key={revokeTarget.id}
 					onOpenChange={(open) => {
 						if (!open) {
 							setRevokeTarget(null);
 						}
 					}}
+					open
 				/>
 			) : null}
 		</div>

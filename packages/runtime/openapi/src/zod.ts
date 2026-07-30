@@ -1,5 +1,5 @@
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
-import { z } from "zod";
+import { z as openApiZod } from "zod";
 
 /**
  * Single Zod instance extended for OPEN-001 generation.
@@ -7,6 +7,6 @@ import { z } from "zod";
  * (or via `@afenda/openapi`) so registry.register can call `.openapi()` on the
  * same prototype.
  */
-extendZodWithOpenApi(z);
+extendZodWithOpenApi(openApiZod);
 
-export { z };
+export { z } from "zod";

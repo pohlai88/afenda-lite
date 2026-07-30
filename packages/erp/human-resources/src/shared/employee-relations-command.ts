@@ -28,18 +28,18 @@ import type { HumanResourcesAuthorizedActorInput } from "./run-authorized-operat
 
 type ActorScoped = HumanResourcesAuthorizedActorInput;
 
-type CommandDeps = {
-	store: HumanResourcesStore;
+interface CommandDeps {
+	authorization: HumanResourcesAuthorizationPort | undefined;
+	identityResolver: HumanResourcesIdentityResolverPort | undefined;
 	ports: MutationPorts;
-	authorization: HumanResourcesAuthorizationPort | undefined;
-	identityResolver: HumanResourcesIdentityResolverPort | undefined;
-};
-
-type QueryDeps = {
 	store: HumanResourcesStore;
+}
+
+interface QueryDeps {
 	authorization: HumanResourcesAuthorizationPort | undefined;
 	identityResolver: HumanResourcesIdentityResolverPort | undefined;
-};
+	store: HumanResourcesStore;
+}
 
 export async function runEmployeeRelationsCommand<
 	TSchema extends z.ZodType<ActorScoped>,
@@ -57,7 +57,7 @@ export async function runEmployeeRelationsCommand<
 		) => Promise<Result<TOut>>;
 	},
 ): Promise<Result<TOut>> {
-	return runParsedAuthorizedCommand(input, options, {
+	return await runParsedAuthorizedCommand(input, options, {
 		schema: config.schema,
 		invalidMessage: config.invalidMessage,
 		command: config.command,
@@ -92,7 +92,7 @@ export async function runEmployeeRelationsQuery<
 		execute: (data: z.infer<TSchema>, deps: QueryDeps) => Promise<Result<TOut>>;
 	},
 ): Promise<Result<TOut>> {
-	return runParsedAuthorizedQuery(input, options, {
+	return await runParsedAuthorizedQuery(input, options, {
 		schema: config.schema,
 		invalidMessage: config.invalidMessage,
 		query: config.query,
@@ -112,11 +112,11 @@ export async function requireEmployeeRelationsIdentityResolver(
 	identityResolver: HumanResourcesIdentityResolverPort | undefined,
 ): Promise<Result<HumanResourcesIdentityResolverPort>> {
 	if (!identityResolver) {
-		return fail(
+		return await fail(
 			"UNAUTHORIZED",
 			"Human Resources identity resolver port is required",
 			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_UNAUTHORIZED),
 		);
 	}
-	return ok(identityResolver);
+	return await ok(identityResolver);
 }

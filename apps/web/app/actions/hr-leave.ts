@@ -133,7 +133,7 @@ const getApprovedLeaveHandoffActionSchema = hrActionSchema(
 export async function createDraftLeaveRequestAction(
 	input: HrActionInput<typeof createDraftLeaveRequestInputSchema>,
 ): Promise<ActionResult<{ request: LeaveRequest }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "createDraftLeaveRequestAction",
 		permission: "human-resources.leave-request.own",
 		safeMessage: "Could not create leave request.",
@@ -151,7 +151,9 @@ export async function createDraftLeaveRequestAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { request: mapped.data } };
 		},
 	});
@@ -160,7 +162,7 @@ export async function createDraftLeaveRequestAction(
 export async function submitLeaveRequestAction(
 	input: HrActionInput<typeof submitLeaveRequestInputSchema>,
 ): Promise<ActionResult<{ request: LeaveRequest }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "submitLeaveRequestAction",
 		permission: "human-resources.leave-request.own",
 		safeMessage: "Could not submit leave request.",
@@ -178,7 +180,9 @@ export async function submitLeaveRequestAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { request: mapped.data } };
 		},
 	});
@@ -187,7 +191,7 @@ export async function submitLeaveRequestAction(
 export async function amendLeaveRequestAction(
 	input: HrActionInput<typeof amendLeaveRequestInputSchema>,
 ): Promise<ActionResult<{ request: LeaveRequest }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "amendLeaveRequestAction",
 		permission: "human-resources.leave-request.own",
 		safeMessage: "Could not amend leave request.",
@@ -205,7 +209,9 @@ export async function amendLeaveRequestAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { request: mapped.data } };
 		},
 	});
@@ -214,7 +220,7 @@ export async function amendLeaveRequestAction(
 export async function withdrawLeaveRequestAction(
 	input: HrActionInput<typeof withdrawLeaveRequestInputSchema>,
 ): Promise<ActionResult<{ request: LeaveRequest }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "withdrawLeaveRequestAction",
 		permission: "human-resources.leave-request.own",
 		safeMessage: "Could not withdraw leave request.",
@@ -232,7 +238,9 @@ export async function withdrawLeaveRequestAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { request: mapped.data } };
 		},
 	});
@@ -241,7 +249,7 @@ export async function withdrawLeaveRequestAction(
 export async function cancelApprovedLeaveRequestAction(
 	input: HrActionInput<typeof cancelApprovedLeaveRequestInputSchema>,
 ): Promise<ActionResult<{ request: LeaveRequest }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "cancelApprovedLeaveRequestAction",
 		permission: "human-resources.leave-request.approve-team",
 		safeMessage: "Could not cancel approved leave request.",
@@ -259,7 +267,9 @@ export async function cancelApprovedLeaveRequestAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { request: mapped.data } };
 		},
 	});
@@ -268,7 +278,7 @@ export async function cancelApprovedLeaveRequestAction(
 export async function getLeaveBalanceAction(
 	input: HrActionInput<typeof getLeaveBalanceInputSchema>,
 ): Promise<ActionResult<{ balance: LeaveBalance | null }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getLeaveBalanceAction",
 		permission: "human-resources.leave-entitlement.read",
 		safeMessage: "Could not get leave balance.",
@@ -286,7 +296,9 @@ export async function getLeaveBalanceAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { balance: mapped.data } };
 		},
 	});
@@ -297,7 +309,7 @@ export async function reconcileLeaveBalanceAction(
 ): Promise<
 	ActionResult<{ reconciliation: LeaveBalanceReconciliation | null }>
 > {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "reconcileLeaveBalanceAction",
 		permission: "human-resources.leave-entitlement.read",
 		safeMessage: "Could not reconcile leave balance.",
@@ -315,7 +327,9 @@ export async function reconcileLeaveBalanceAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { reconciliation: mapped.data } };
 		},
 	});
@@ -324,7 +338,7 @@ export async function reconcileLeaveBalanceAction(
 export async function getLeaveEntitlementAction(
 	input: HrActionInput<typeof getLeaveEntitlementInputSchema>,
 ): Promise<ActionResult<{ entitlement: LeaveEntitlement | null }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getLeaveEntitlementAction",
 		permission: "human-resources.leave-entitlement.read",
 		safeMessage: "Could not get leave entitlement.",
@@ -342,7 +356,9 @@ export async function getLeaveEntitlementAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { entitlement: mapped.data } };
 		},
 	});
@@ -351,7 +367,7 @@ export async function getLeaveEntitlementAction(
 export async function listLeaveEntitlementsAction(
 	input: HrActionInput<typeof listLeaveEntitlementsInputSchema>,
 ): Promise<ActionResult<{ page: LeaveEntitlementListPage }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listLeaveEntitlementsAction",
 		permission: "human-resources.leave-entitlement.read",
 		safeMessage: "Could not list leave entitlements.",
@@ -369,7 +385,9 @@ export async function listLeaveEntitlementsAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { page: mapped.data } };
 		},
 	});
@@ -378,7 +396,7 @@ export async function listLeaveEntitlementsAction(
 export async function approveLeaveRequestAction(
 	input: HrActionInput<typeof approveLeaveRequestInputSchema>,
 ): Promise<ActionResult<{ request: LeaveRequest }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "approveLeaveRequestAction",
 		permission: "human-resources.leave-request.approve-team",
 		safeMessage: "Could not approve leave request.",
@@ -396,7 +414,9 @@ export async function approveLeaveRequestAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { request: mapped.data } };
 		},
 	});
@@ -405,7 +425,7 @@ export async function approveLeaveRequestAction(
 export async function rejectLeaveRequestAction(
 	input: HrActionInput<typeof rejectLeaveRequestInputSchema>,
 ): Promise<ActionResult<{ request: LeaveRequest }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "rejectLeaveRequestAction",
 		permission: "human-resources.leave-request.approve-team",
 		safeMessage: "Could not reject leave request.",
@@ -423,7 +443,9 @@ export async function rejectLeaveRequestAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { request: mapped.data } };
 		},
 	});
@@ -432,7 +454,7 @@ export async function rejectLeaveRequestAction(
 export async function returnLeaveRequestAction(
 	input: HrActionInput<typeof returnLeaveRequestInputSchema>,
 ): Promise<ActionResult<{ request: LeaveRequest }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "returnLeaveRequestAction",
 		permission: "human-resources.leave-request.approve-team",
 		safeMessage: "Could not return leave request.",
@@ -450,7 +472,9 @@ export async function returnLeaveRequestAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { request: mapped.data } };
 		},
 	});
@@ -459,7 +483,7 @@ export async function returnLeaveRequestAction(
 export async function listPendingApprovalLeaveRequestsAction(
 	input: HrActionInput<typeof listPendingApprovalLeaveRequestsInputSchema>,
 ): Promise<ActionResult<{ page: LeaveRequestListPage }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listPendingApprovalLeaveRequestsAction",
 		permission: "human-resources.leave-request.approve-team",
 		safeMessage: "Could not list pending leave approvals.",
@@ -480,7 +504,9 @@ export async function listPendingApprovalLeaveRequestsAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { page: mapped.data } };
 		},
 	});
@@ -489,7 +515,7 @@ export async function listPendingApprovalLeaveRequestsAction(
 export async function listTeamCalendarLeaveRequestsAction(
 	input: HrActionInput<typeof listTeamCalendarLeaveRequestsInputSchema>,
 ): Promise<ActionResult<{ page: TeamCalendarLeavePage }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listTeamCalendarLeaveRequestsAction",
 		permission: "human-resources.leave-request.approve-team",
 		safeMessage: "Could not list team leave calendar.",
@@ -510,7 +536,9 @@ export async function listTeamCalendarLeaveRequestsAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { page: mapped.data } };
 		},
 	});
@@ -519,7 +547,7 @@ export async function listTeamCalendarLeaveRequestsAction(
 export async function createLeavePolicyAction(
 	input: HrActionInput<typeof createLeavePolicyInputSchema>,
 ): Promise<ActionResult<{ policy: LeavePolicy }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "createLeavePolicyAction",
 		permission: "human-resources.leave-policy.manage",
 		safeMessage: "Could not create leave policy.",
@@ -542,7 +570,9 @@ export async function createLeavePolicyAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { policy: mapped.data } };
 		},
 	});
@@ -551,7 +581,7 @@ export async function createLeavePolicyAction(
 export async function updateLeavePolicyAction(
 	input: HrActionInput<typeof updateLeavePolicyInputSchema>,
 ): Promise<ActionResult<{ policy: LeavePolicy }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "updateLeavePolicyAction",
 		permission: "human-resources.leave-policy.manage",
 		safeMessage: "Could not update leave policy.",
@@ -574,7 +604,9 @@ export async function updateLeavePolicyAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { policy: mapped.data } };
 		},
 	});
@@ -583,7 +615,7 @@ export async function updateLeavePolicyAction(
 export async function publishLeavePolicyAction(
 	input: HrActionInput<typeof publishLeavePolicyInputSchema>,
 ): Promise<ActionResult<{ policy: LeavePolicy }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "publishLeavePolicyAction",
 		permission: "human-resources.leave-policy.manage",
 		safeMessage: "Could not publish leave policy.",
@@ -601,7 +633,9 @@ export async function publishLeavePolicyAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { policy: mapped.data } };
 		},
 	});
@@ -610,7 +644,7 @@ export async function publishLeavePolicyAction(
 export async function supersedeLeavePolicyAction(
 	input: HrActionInput<typeof supersedeLeavePolicyInputSchema>,
 ): Promise<ActionResult<{ policy: LeavePolicy }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "supersedeLeavePolicyAction",
 		permission: "human-resources.leave-policy.manage",
 		safeMessage: "Could not supersede leave policy.",
@@ -633,7 +667,9 @@ export async function supersedeLeavePolicyAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { policy: mapped.data } };
 		},
 	});
@@ -642,7 +678,7 @@ export async function supersedeLeavePolicyAction(
 export async function archiveLeavePolicyAction(
 	input: HrActionInput<typeof archiveLeavePolicyInputSchema>,
 ): Promise<ActionResult<{ policy: LeavePolicy }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "archiveLeavePolicyAction",
 		permission: "human-resources.leave-policy.manage",
 		safeMessage: "Could not archive leave policy.",
@@ -660,7 +696,9 @@ export async function archiveLeavePolicyAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { policy: mapped.data } };
 		},
 	});
@@ -669,7 +707,7 @@ export async function archiveLeavePolicyAction(
 export async function getLeavePolicyAction(
 	input: HrActionInput<typeof getLeavePolicyInputSchema>,
 ): Promise<ActionResult<{ policy: LeavePolicy | null }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getLeavePolicyAction",
 		permission: "human-resources.leave-policy.read",
 		safeMessage: "Could not get leave policy.",
@@ -687,7 +725,9 @@ export async function getLeavePolicyAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { policy: mapped.data } };
 		},
 	});
@@ -696,7 +736,7 @@ export async function getLeavePolicyAction(
 export async function listLeavePoliciesAction(
 	input: HrActionInput<typeof listLeavePoliciesInputSchema>,
 ): Promise<ActionResult<{ page: LeavePolicyListPage }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listLeavePoliciesAction",
 		permission: "human-resources.leave-policy.read",
 		safeMessage: "Could not list leave policies.",
@@ -714,7 +754,9 @@ export async function listLeavePoliciesAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { page: mapped.data } };
 		},
 	});
@@ -723,7 +765,7 @@ export async function listLeavePoliciesAction(
 export async function resolveApplicableLeavePolicyAction(
 	input: HrActionInput<typeof resolveApplicableLeavePolicyInputSchema>,
 ): Promise<ActionResult<{ resolvedPolicy: ResolvedLeavePolicy | null }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "resolveApplicableLeavePolicyAction",
 		permission: "human-resources.leave-policy.read",
 		safeMessage: "Could not resolve applicable leave policy.",
@@ -744,7 +786,9 @@ export async function resolveApplicableLeavePolicyAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { resolvedPolicy: mapped.data } };
 		},
 	});
@@ -753,7 +797,7 @@ export async function resolveApplicableLeavePolicyAction(
 export async function getApprovedLeaveHandoffAction(
 	input: HrActionInput<typeof getApprovedLeaveHandoffInputSchema>,
 ): Promise<ActionResult<{ handoff: ApprovedLeaveHandoff | null }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getApprovedLeaveHandoffAction",
 		permission: "human-resources.leave.handoff.read",
 		safeMessage: "Could not get approved leave handoff.",
@@ -771,7 +815,9 @@ export async function getApprovedLeaveHandoffAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { handoff: mapped.data } };
 		},
 	});

@@ -71,12 +71,12 @@ function restoreDocsProcessEnv() {
 	}
 }
 
-async function importFreshDocsEnv() {
+function importFreshDocsEnv() {
 	vi.resetModules();
 	return import("../src/docs");
 }
 
-async function importFreshWebEnv() {
+function importFreshWebEnv() {
 	vi.resetModules();
 	return import("../src/web");
 }
@@ -658,8 +658,8 @@ describe("@afenda/env createEnv export", () => {
 			"utf8",
 		);
 
-		expect(packageJson.exports?.["./docs"]?.default).toBe("./src/docs.ts");
-		expect(packageJson.exports?.["."]?.default).toBe("./src/index.ts");
+		expect(packageJson.exports["./docs"].default).toBe("./src/docs.ts");
+		expect(packageJson.exports["."].default).toBe("./src/index.ts");
 		expect(readme).toContain("does not export or evaluate `docsEnv`");
 		expect(readme).toContain("avoids loading web Neon schema");
 		expect(readme).not.toContain("docsEnv` re-export");

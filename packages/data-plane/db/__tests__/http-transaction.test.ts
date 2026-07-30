@@ -35,9 +35,16 @@ describe.skipIf(!hasDatabase)("runNeonHttpTransaction atomicity (N12)", () => {
 				AND organization_id IS NULL
 			LIMIT 1
 		`;
-		expect(template?.id).toMatch(
-			/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-		);
+		if (
+			!(
+				template?.id &&
+				/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+					template.id,
+				)
+			)
+		) {
+			throw new Error("org_admin role template is missing a valid UUID");
+		}
 		roleId = String(template.id);
 	});
 

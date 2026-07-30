@@ -23,6 +23,13 @@ export const OPTION_COMPATIBLE_ATTRIBUTE_DATA_TYPES = [
 ] as const satisfies readonly ItemTemplateAttributeDataType[];
 
 export const MAX_TEMPLATE_TEXT_LENGTH = 65_535;
+const LEADING_DECIMAL_ZERO_RE = /^0+(?=\d)/;
+const TRAILING_DECIMAL_ZERO_RE = /0+$/;
+const LEADING_ZERO_RE = /^0+/;
+
+function compileUnicodePattern(pattern: string): RegExp {
+	return new RegExp(pattern, "u");
+}
 export const MAX_TEMPLATE_PATTERN_LENGTH = 512;
 
 const textRulesSchema = z
@@ -48,7 +55,7 @@ const textRulesSchema = z
 			// Syntax validation is not execution-safety validation. Runtime
 			// validators must compile with the same flags and apply input limits.
 			try {
-				new RegExp(rules.pattern, "u");
+				compileUnicodePattern(rules.pattern);
 			} catch {
 				ctx.addIssue({
 					code: z.ZodIssueCode.custom,
@@ -97,8 +104,8 @@ function decimalParts(value: string): {
 	const negative = value.startsWith("-");
 	const unsigned = negative ? value.slice(1) : value;
 	const [rawInteger = "0", rawFraction = ""] = unsigned.split(".");
-	const integer = rawInteger.replace(/^0+(?=\d)/, "");
-	const fraction = rawFraction.replace(/0+$/, "");
+	const integer = rawInteger.replace(LEADING_DECIMAL_ZERO_RE, "");
+	const fraction = rawFraction.replace(TRAILING_DECIMAL_ZERO_RE, "");
 	const isZero = integer === "0" && fraction.length === 0;
 	return { negative: negative && !isZero, integer, fraction };
 }
@@ -116,7 +123,9 @@ function compareUnsignedDecimalParts(
 	const fractionLength = Math.max(left.fraction.length, right.fraction.length);
 	const leftFraction = left.fraction.padEnd(fractionLength, "0");
 	const rightFraction = right.fraction.padEnd(fractionLength, "0");
-	if (leftFraction === rightFraction) return 0;
+	if (leftFraction === rightFraction) {
+		return 0;
+	}
 	return leftFraction < rightFraction ? -1 : 1;
 }
 
@@ -130,14 +139,18 @@ export function compareCanonicalDecimalValues(
 		return leftParts.negative ? -1 : 1;
 	}
 	const compared = compareUnsignedDecimalParts(leftParts, rightParts);
-	if (!leftParts.negative || compared === 0) return compared;
+	if (!leftParts.negative || compared === 0) {
+		return compared;
+	}
 	return compared === 1 ? -1 : 1;
 }
 
 function decimalDigitCount(value: string): number {
 	const unsigned = value.startsWith("-") ? value.slice(1) : value;
 	const [integerPart = "0", fractionPart = ""] = unsigned.split(".");
-	return `${integerPart}${fractionPart}`.replace(/^0+/, "").length || 1;
+	return (
+		`${integerPart}${fractionPart}`.replace(LEADING_ZERO_RE, "").length || 1
+	);
 }
 
 function decimalFractionLength(value: string): number {
@@ -153,7 +166,9 @@ function validateDecimalBoundFit(
 	},
 	ctx: z.RefinementCtx,
 ): void {
-	if (value === undefined) return;
+	if (value === undefined) {
+		return;
+	}
 	if (
 		rules.precision !== undefined &&
 		decimalDigitCount(value) > rules.precision
@@ -272,7 +287,15 @@ function validationRulesSchemaFor(
 		case "single_option":
 		case "multiple_option":
 			return emptyRulesSchema;
+		default:
+			return unsupportedAttributeDataType(dataType);
 	}
+}
+
+function unsupportedAttributeDataType(value: never): never {
+	throw new TypeError(
+		`Unsupported item template attribute data type: ${value}`,
+	);
 }
 
 /** Validates rules against the declared attribute data type. */

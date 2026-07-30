@@ -20,13 +20,13 @@ import {
 	StatusBadge,
 } from "@afenda/ui-system";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import type { ReactNode } from "react";
-import * as React from "react";
+import { type ChangeEvent, type ReactNode, useCallback, useState } from "react";
 import { expect, userEvent, within } from "storybook/test";
 import { contractDocsParameters } from "./contract-docs";
 import { contractEvidence, StorySection } from "./evidence";
 
 const evidence = contractEvidence("ui.filter-bar");
+const SUPPLIER_OPEN_PATTERN = /Supplier any · open/i;
 
 type WorkbenchSectionProps = Readonly<{
 	id: string;
@@ -42,12 +42,12 @@ function WorkbenchSection({
 	children,
 }: WorkbenchSectionProps) {
 	return (
-		<section className="grid gap-4" aria-labelledby={id}>
+		<section aria-labelledby={id} className="grid gap-4">
 			<div className="grid gap-1">
-				<h2 className="text-base font-semibold tracking-tight" id={id}>
+				<h2 className="font-semibold text-base tracking-tight" id={id}>
 					{title}
 				</h2>
-				<p className="max-w-5xl text-sm leading-5 text-foreground-secondary">
+				<p className="max-w-5xl text-foreground-secondary text-sm leading-5">
 					{description}
 				</p>
 			</div>
@@ -67,15 +67,28 @@ function InvoiceFilterBar({
 	ariaLabel?: string;
 	idPrefix?: string;
 }) {
-	const [supplier, setSupplier] = React.useState(initialSupplier);
-	const [status, setStatus] = React.useState(initialStatus);
-	const [applied, setApplied] = React.useState(
+	const [supplier, setSupplier] = useState(initialSupplier);
+	const [status, setStatus] = useState(initialStatus);
+	const [applied, setApplied] = useState(
 		initialSupplier || initialStatus !== "open"
 			? `Supplier ${initialSupplier || "any"} · ${initialStatus}`
 			: "No filters applied",
 	);
 	const supplierId = `${idPrefix}-supplier-filter`;
 	const statusId = `${idPrefix}-status-filter`;
+	const handleSupplierChange = useCallback(
+		(event: ChangeEvent<HTMLInputElement>) => setSupplier(event.target.value),
+		[],
+	);
+	const clearSupplier = useCallback(() => setSupplier(""), []);
+	const resetFilters = useCallback(() => {
+		setSupplier("");
+		setStatus("open");
+		setApplied("No filters applied");
+	}, []);
+	const applyFilters = useCallback(() => {
+		setApplied(`Supplier ${supplier || "any"} · ${status}`);
+	}, [status, supplier]);
 
 	return (
 		<div className="grid gap-3">
@@ -84,18 +97,18 @@ function InvoiceFilterBar({
 					<div className="grid min-w-44 gap-1">
 						<Label htmlFor={supplierId}>Supplier</Label>
 						<SearchField
-							id={supplierId}
-							value={supplier}
-							onChange={(event) => setSupplier(event.target.value)}
-							onClear={() => setSupplier("")}
-							placeholder="Search suppliers"
 							aria-label="Search suppliers"
+							id={supplierId}
+							onChange={handleSupplierChange}
+							onClear={clearSupplier}
+							placeholder="Search suppliers"
+							value={supplier}
 						/>
 					</div>
 					<div className="grid min-w-36 gap-1">
 						<Label htmlFor={statusId}>Status</Label>
-						<Select value={status} onValueChange={setStatus}>
-							<SelectTrigger id={statusId} aria-label="Status">
+						<Select onValueChange={setStatus} value={status}>
+							<SelectTrigger aria-label="Status" id={statusId}>
 								<SelectValue placeholder="Status" />
 							</SelectTrigger>
 							<SelectContent>
@@ -108,28 +121,15 @@ function InvoiceFilterBar({
 					</div>
 				</FilterBarGroup>
 				<FilterBarActions>
-					<Button
-						type="button"
-						variant="ghost"
-						onClick={() => {
-							setSupplier("");
-							setStatus("open");
-							setApplied("No filters applied");
-						}}
-					>
+					<Button onClick={resetFilters} type="button" variant="ghost">
 						Reset
 					</Button>
-					<Button
-						type="button"
-						onClick={() =>
-							setApplied(`Supplier ${supplier || "any"} · ${status}`)
-						}
-					>
+					<Button onClick={applyFilters} type="button">
 						Apply filters
 					</Button>
 				</FilterBarActions>
 			</FilterBar>
-			<p className="text-sm text-foreground-secondary" aria-live="polite">
+			<p aria-live="polite" className="text-foreground-secondary text-sm">
 				{applied}
 			</p>
 		</div>
@@ -170,14 +170,14 @@ export const Overview: Story = {
 			<div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-5 border-b pb-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
 					<div className="grid gap-2">
-						<p className="text-sm font-medium text-foreground-secondary">
+						<p className="font-medium text-foreground-secondary text-sm">
 							Accounts payable
 						</p>
 						<div className="grid gap-1">
-							<h1 className="text-2xl font-semibold tracking-tight">
+							<h1 className="font-semibold text-2xl tracking-tight">
 								Invoice list filters
 							</h1>
-							<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+							<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 								FilterBar owns filter layout and Apply/Reset placement. Feature
 								code owns query translation, authorization, and whether results
 								reflect the confirmed criteria.
@@ -186,25 +186,25 @@ export const Overview: Story = {
 					</div>
 					<dl className="grid grid-cols-2 gap-x-8 gap-y-3 rounded-lg border bg-card p-4">
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Subject
 							</dt>
 							<dd className="text-sm">Invoice filters</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Scope
 							</dt>
 							<dd className="text-sm">Draft criteria</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Ownership
 							</dt>
 							<dd className="text-sm">Apply and reset</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Lifecycle
 							</dt>
 							<dd className="text-sm">Draft to applied</dd>
@@ -223,7 +223,7 @@ export const Overview: Story = {
 							</div>
 							<div className="flex flex-wrap items-center gap-2">
 								<Badge variant="outline">Payables</Badge>
-								<StatusBadge status="warning" label="Overdue queue" />
+								<StatusBadge label="Overdue queue" status="warning" />
 							</div>
 						</div>
 					</CardHeader>
@@ -231,17 +231,17 @@ export const Overview: Story = {
 						<InvoiceFilterBar
 							ariaLabel="Overview invoice filters"
 							idPrefix="overview"
-							initialSupplier="Northwind"
 							initialStatus="overdue"
+							initialSupplier="Northwind"
 						/>
 						<ul className="grid gap-2 rounded-md border p-4 text-sm">
 							<li className="flex flex-wrap items-center justify-between gap-2">
 								<span>INV-1038 · Northwind Trading · MYR 22,100</span>
-								<StatusBadge status="warning" label="Overdue" />
+								<StatusBadge label="Overdue" status="warning" />
 							</li>
 							<li className="flex flex-wrap items-center justify-between gap-2">
 								<span>INV-1041 · Northwind Trading · MYR 4,800</span>
-								<StatusBadge status="warning" label="Overdue" />
+								<StatusBadge label="Overdue" status="warning" />
 							</li>
 						</ul>
 					</CardContent>
@@ -263,9 +263,9 @@ export const SemanticUsage: Story = {
 	},
 	render: () => (
 		<WorkbenchSection
+			description="FilterBar keeps draft criteria separate from the confirmed query state."
 			id="filter-bar-semantic-usage-title"
 			title="Draft versus applied criteria"
-			description="FilterBar keeps draft criteria separate from the confirmed query state."
 		>
 			<div className="grid w-full max-w-5xl gap-8">
 				<StorySection title="ERP · supplier invoices">
@@ -281,8 +281,8 @@ export const SemanticUsage: Story = {
 								<Label htmlFor="semantic-module-filter">Module</Label>
 								<Select defaultValue="accounting">
 									<SelectTrigger
-										id="semantic-module-filter"
 										aria-label="Module"
+										id="semantic-module-filter"
 									>
 										<SelectValue />
 									</SelectTrigger>
@@ -297,8 +297,8 @@ export const SemanticUsage: Story = {
 								<Label htmlFor="semantic-lifecycle-filter">Lifecycle</Label>
 								<Select defaultValue="active">
 									<SelectTrigger
-										id="semantic-lifecycle-filter"
 										aria-label="Lifecycle"
+										id="semantic-lifecycle-filter"
 									>
 										<SelectValue />
 									</SelectTrigger>
@@ -336,7 +336,7 @@ export const Usage: Story = {
 	render: () => (
 		<div className="grid w-full max-w-5xl gap-3">
 			<InvoiceFilterBar ariaLabel="Usage invoice filters" idPrefix="usage" />
-			<p className="text-sm text-foreground-secondary">
+			<p className="text-foreground-secondary text-sm">
 				URL sync, saved views, and result fetching stay with the feature — not
 				inside FilterBar.
 			</p>
@@ -366,8 +366,8 @@ export const StatesAndAccessibility: Story = {
 				<InvoiceFilterBar
 					ariaLabel="Applied invoice filters"
 					idPrefix="applied-invoice"
-					initialSupplier="Northwind"
 					initialStatus="overdue"
+					initialSupplier="Northwind"
 				/>
 			</StorySection>
 			<StorySection title="Unhealthy filtered result">
@@ -375,10 +375,10 @@ export const StatesAndAccessibility: Story = {
 					<InvoiceFilterBar
 						ariaLabel="Blocked invoice filters"
 						idPrefix="blocked-invoice"
-						initialSupplier="Contoso"
 						initialStatus="posted"
+						initialSupplier="Contoso"
 					/>
-					<p className="rounded-md border border-destructive-border bg-destructive-subtle p-4 text-sm text-destructive-subtle-foreground">
+					<p className="rounded-md border border-destructive-border bg-destructive-subtle p-4 text-destructive-subtle-foreground text-sm">
 						No posted Contoso invoices in the current period. Reset filters or
 						widen the supplier search.
 					</p>
@@ -388,13 +388,13 @@ export const StatesAndAccessibility: Story = {
 	),
 	play: async ({ canvasElement }) => {
 		const canvas = within(canvasElement);
-		const apply = canvas.getAllByRole("button", { name: "Apply filters" })[0];
-		const reset = canvas.getAllByRole("button", { name: "Reset" })[0];
-		if (!apply || !reset) {
+		const [apply] = canvas.getAllByRole("button", { name: "Apply filters" });
+		const [reset] = canvas.getAllByRole("button", { name: "Reset" });
+		if (!(apply && reset)) {
 			throw new Error("Expected Apply filters and Reset controls.");
 		}
 		await userEvent.click(apply);
-		await expect(canvas.getByText(/Supplier any · open/i)).toBeVisible();
+		await expect(canvas.getByText(SUPPLIER_OPEN_PATTERN)).toBeVisible();
 		await userEvent.click(reset);
 		await expect(
 			canvas.getAllByText("No filters applied").length,
@@ -415,7 +415,7 @@ export const VariantsAndSizes: Story = {
 	render: () => (
 		<div className="grid w-full max-w-5xl gap-6">
 			<div className="grid gap-2">
-				<p className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+				<p className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 					FilterBar · group · actions
 				</p>
 				<FilterBar aria-label="Variant family filters">
@@ -423,10 +423,10 @@ export const VariantsAndSizes: Story = {
 						<div className="grid min-w-40 gap-1">
 							<Label htmlFor="variant-status">Status</Label>
 							<Input
-								id="variant-status"
-								defaultValue="Open"
-								readOnly
 								aria-label="Status"
+								defaultValue="Open"
+								id="variant-status"
+								readOnly
 							/>
 						</div>
 					</FilterBarGroup>
@@ -439,7 +439,7 @@ export const VariantsAndSizes: Story = {
 				</FilterBar>
 			</div>
 			<div className="grid gap-2">
-				<p className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+				<p className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 					Multi-field group
 				</p>
 				<FilterBar aria-label="Variant multi-field filters">
@@ -447,20 +447,20 @@ export const VariantsAndSizes: Story = {
 						<div className="grid min-w-44 gap-1">
 							<Label htmlFor="variant-supplier">Supplier</Label>
 							<SearchField
-								id="variant-supplier"
-								defaultValue="Northwind"
-								readOnly
-								placeholder="Search suppliers"
 								aria-label="Search suppliers"
+								defaultValue="Northwind"
+								id="variant-supplier"
+								placeholder="Search suppliers"
+								readOnly
 							/>
 						</div>
 						<div className="grid min-w-36 gap-1">
 							<Label htmlFor="variant-lifecycle">Lifecycle</Label>
 							<Input
-								id="variant-lifecycle"
-								defaultValue="Active"
-								readOnly
 								aria-label="Lifecycle"
+								defaultValue="Active"
+								id="variant-lifecycle"
+								readOnly
 							/>
 						</div>
 					</FilterBarGroup>
@@ -493,8 +493,8 @@ export const AdaptiveLayout: Story = {
 					<InvoiceFilterBar
 						ariaLabel="Wide invoice filters"
 						idPrefix="adaptive-wide"
-						initialSupplier="Northwind"
 						initialStatus="overdue"
+						initialSupplier="Northwind"
 					/>
 				</div>
 			</StorySection>
@@ -506,7 +506,7 @@ export const AdaptiveLayout: Story = {
 					/>
 				</div>
 			</StorySection>
-			<p className="max-w-5xl text-sm text-foreground-secondary">
+			<p className="max-w-5xl text-foreground-secondary text-sm">
 				Responsive stacking must not reorder the logical sequence: criteria
 				first, then Reset, then Apply. Do not collapse required filters into
 				unlabeled icons.
@@ -535,7 +535,7 @@ export const Composition: Story = {
 					</div>
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="secondary">Finance</Badge>
-						<StatusBadge status="pending" label="Awaiting apply" />
+						<StatusBadge label="Awaiting apply" status="pending" />
 					</div>
 				</div>
 			</CardHeader>
@@ -566,7 +566,7 @@ export const DoAndDoNot: Story = {
 					<FilterBarGroup>
 						<div className="grid min-w-40 gap-1">
 							<Label htmlFor="do-status">Status</Label>
-							<Input id="do-status" value="Open" readOnly aria-label="Status" />
+							<Input aria-label="Status" id="do-status" readOnly value="Open" />
 						</div>
 					</FilterBarGroup>
 					<FilterBarActions>
@@ -578,7 +578,7 @@ export const DoAndDoNot: Story = {
 				</FilterBar>
 			</StorySection>
 			<StorySection title="Do not: hide filter commands in an unlabeled icon row">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Operators must see Apply and Reset as named actions beside the filter
 					fields. Do not fetch, authorize, or encode lifecycle in FilterBar
 					chrome.

@@ -128,11 +128,21 @@ export function canTransitionLeavePolicyStatus(
 	current: LeavePolicyStatus,
 	next: LeavePolicyStatus,
 ): boolean {
-	if (current === next) return false;
-	if (current === "draft" && next === "published") return true;
-	if (current === "published" && next === "superseded") return true;
-	if (current === "published" && next === "archived") return true;
-	if (current === "superseded" && next === "archived") return true;
+	if (current === next) {
+		return false;
+	}
+	if (current === "draft" && next === "published") {
+		return true;
+	}
+	if (current === "published" && next === "superseded") {
+		return true;
+	}
+	if (current === "published" && next === "archived") {
+		return true;
+	}
+	if (current === "superseded" && next === "archived") {
+		return true;
+	}
 	return false;
 }
 
@@ -140,7 +150,9 @@ export function canTransitionLeaveRequestStatus(
 	current: LeaveRequestStatus,
 	next: LeaveRequestStatus,
 ): boolean {
-	if (current === next) return false;
+	if (current === next) {
+		return false;
+	}
 	switch (current) {
 		case "draft":
 			return next === "submitted" || next === "withdrawn";
@@ -164,11 +176,23 @@ export function canTransitionLeaveEntitlementStatus(
 	current: LeaveEntitlementStatus,
 	next: LeaveEntitlementStatus,
 ): boolean {
-	if (current === next) return false;
-	if (current === "active" && next === "expired") return true;
-	if (current === "active" && next === "carried_forward") return true;
-	if (current === "active" && next === "closed") return true;
-	if (current === "expired" && next === "closed") return true;
-	if (current === "carried_forward" && next === "closed") return true;
+	if (current === next) {
+		return false;
+	}
+	if (current === "active" && next === "expired") {
+		return true;
+	}
+	if (current === "active" && next === "carried_forward") {
+		return true;
+	}
+	if (current === "active" && next === "closed") {
+		return true;
+	}
+	if (current === "expired" && next === "closed") {
+		return true;
+	}
+	if (current === "carried_forward" && next === "closed") {
+		return true;
+	}
 	return false;
 }

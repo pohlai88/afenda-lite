@@ -13,7 +13,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type StartPickingActionData = { delivery: Delivery };
+export interface StartPickingActionData {
+	delivery: Delivery;
+}
 export type StartPickingActionState =
 	ActionResult<StartPickingActionData> | null;
 
@@ -26,7 +28,7 @@ export async function startPickingAction(
 	_prev: StartPickingActionState,
 	formData: FormData,
 ): Promise<StartPickingActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "startPickingAction",
 		permission: "fulfillment.picking.confirm",
 		safeMessage: "Could not start picking. Try again or contact an admin.",
@@ -53,7 +55,9 @@ export async function startPickingAction(
 				createFulfillmentCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePath("/admin/fulfillment");
 			revalidatePath("/client/fulfillment");
 			return { ok: true, data: { delivery: mapped.data } };

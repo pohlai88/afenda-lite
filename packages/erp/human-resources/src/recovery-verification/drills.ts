@@ -75,16 +75,16 @@ function payrollPayload(baseAmount = "85000.00"): ApprovedPayrollHandoff {
 
 function reliabilityPorts(
 	outcomes: Result<ReliabilityExecutionOutcome>[],
-): ReliabilityKernelPorts & { advance(milliseconds: number): void } {
+): ReliabilityKernelPorts & { advance: (milliseconds: number) => void } {
 	let now = new Date("2026-01-01T00:00:00.000Z");
 	return {
 		store: createMemoryReliabilityStore(),
 		clock: { now: () => new Date(now) },
 		executor: {
-			async execute() {
-				return (
+			execute() {
+				return Promise.resolve(
 					outcomes.shift() ??
-					ok({ kind: "acknowledged", receiptId: "recovered" })
+						ok({ kind: "acknowledged", receiptId: "recovered" }),
 				);
 			},
 		},
@@ -133,17 +133,17 @@ export function createHrLocalRecoveryDrills(): readonly LocalRecoveryDrill[] {
 			injectedFailure:
 				"irreversible migration applied before deployment failure",
 			expectedControl: "choose forward repair instead of destructive rollback",
-			async execute() {
+			execute() {
 				const decision = decideMigrationRecovery({
 					migrationApplied: true,
 					migrationReversible: false,
 					previousApplicationCompatible: false,
 					dataWriteObserved: true,
 				});
-				return {
+				return Promise.resolve({
 					passed: decision === "forward_repair",
 					details: { decision },
-				};
+				});
 			},
 		},
 		{
@@ -222,11 +222,13 @@ export function createHrLocalRecoveryDrills(): readonly LocalRecoveryDrill[] {
 					store,
 					clock: { now: () => new Date("2026-01-02T00:00:00.000Z") },
 					producer: {
-						async publish() {
+						publish() {
 							attempts += 1;
-							return attempts === 1
-								? fail("INTERNAL_ERROR", "injected producer outage")
-								: ok({ receiptId: "receipt-recovered" });
+							return Promise.resolve(
+								attempts === 1
+									? fail("INTERNAL_ERROR", "injected producer outage")
+									: ok({ receiptId: "receipt-recovered" }),
+							);
 						},
 					},
 				};
@@ -324,20 +326,20 @@ export function createHrLocalRecoveryDrills(): readonly LocalRecoveryDrill[] {
 			injectedFailure: "cross-tenant PII appears in integration telemetry",
 			expectedControl:
 				"contain, quarantine, revoke connector, preserve evidence",
-			async execute() {
+			execute() {
 				const decision = decidePrivacyContainment({
 					crossTenantExposure: true,
 					piiInTelemetry: true,
 					credentialExposure: false,
 				});
-				return {
+				return Promise.resolve({
 					passed:
 						decision.action === "contain" &&
 						decision.quarantineQueue &&
 						decision.revokeConnector &&
 						decision.preserveAuditEvidence,
-					details: decision,
-				};
+					details: { ...decision },
+				});
 			},
 		},
 		{
@@ -346,7 +348,7 @@ export function createHrLocalRecoveryDrills(): readonly LocalRecoveryDrill[] {
 				"same-effective-date correction would create an inverted predecessor range",
 			expectedControl:
 				"supersede predecessor and clamp its end to a valid range",
-			async execute() {
+			execute() {
 				const result = applyEffectiveDatedCorrection({
 					current: {
 						id: "version-1",
@@ -360,7 +362,7 @@ export function createHrLocalRecoveryDrills(): readonly LocalRecoveryDrill[] {
 					effectiveFrom: "2026-02-01",
 					value: "86000.00",
 				});
-				return {
+				return Promise.resolve({
 					passed:
 						result.superseded.status === "superseded" &&
 						result.superseded.effectiveTo === "2026-02-01" &&
@@ -369,7 +371,7 @@ export function createHrLocalRecoveryDrills(): readonly LocalRecoveryDrill[] {
 						predecessorEnd: result.superseded.effectiveTo,
 						correctionStatus: result.correction.status,
 					},
-				};
+				});
 			},
 		},
 		{
@@ -384,9 +386,9 @@ export function createHrLocalRecoveryDrills(): readonly LocalRecoveryDrill[] {
 					store,
 					clock: { now: () => new Date("2026-01-02T00:00:00.000Z") },
 					producer: {
-						async publish() {
+						publish() {
 							producerCalls += 1;
-							return ok({ receiptId: "unexpected" });
+							return Promise.resolve(ok({ receiptId: "unexpected" }));
 						},
 					},
 				};
@@ -431,16 +433,16 @@ export function createHrLocalRecoveryDrills(): readonly LocalRecoveryDrill[] {
 			injectedFailure:
 				"new write shape exists when previous application is considered",
 			expectedControl: "block rollback and require forward repair",
-			async execute() {
+			execute() {
 				const decision = decideRollbackCompatibility({
 					previousReaderSupportsCurrentSchema: true,
 					irreversibleMigrationApplied: false,
 					newWriteShapeObserved: true,
 				});
-				return {
+				return Promise.resolve({
 					passed: decision === "forward_repair_required",
 					details: { decision },
-				};
+				});
 			},
 		},
 	];

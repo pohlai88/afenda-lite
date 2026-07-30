@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/useAwait: Drizzle compliance wrappers expose uniform asynchronous store contracts.
 import {
 	and,
 	asc,
@@ -183,8 +184,12 @@ class DrizzleCorporateAdministrationOfficerComplianceStore
 		input: Parameters<OfficerComplianceStore["supersedeOfficerDeclaration"]>[0],
 	) {
 		const current = await this.getOfficerDeclaration(input);
-		if (!current.ok) return current;
-		if (current.data === null) return notFound();
+		if (!current.ok) {
+			return current;
+		}
+		if (current.data === null) {
+			return notFound();
+		}
 		if (current.data.version !== input.expectedVersion) {
 			return stale(input.expectedVersion, current.data.version);
 		}
@@ -354,8 +359,12 @@ class DrizzleCorporateAdministrationOfficerComplianceStore
 		input: Parameters<OfficerComplianceStore["endOfficerDisqualification"]>[0],
 	) {
 		const current = await this.getOfficerDisqualification(input);
-		if (!current.ok) return current;
-		if (current.data === null) return notFound();
+		if (!current.ok) {
+			return current;
+		}
+		if (current.data === null) {
+			return notFound();
+		}
 		if (current.data.version !== input.expectedVersion) {
 			return stale(input.expectedVersion, current.data.version);
 		}
@@ -500,8 +509,12 @@ class DrizzleCorporateAdministrationOfficerComplianceStore
 		input: Parameters<OfficerComplianceStore["recordRecusal"]>[0],
 	) {
 		const current = await this.getConflictDisclosure(input);
-		if (!current.ok) return current;
-		if (current.data === null) return notFound();
+		if (!current.ok) {
+			return current;
+		}
+		if (current.data === null) {
+			return notFound();
+		}
 		if (current.data.version !== input.expectedVersion) {
 			return stale(input.expectedVersion, current.data.version);
 		}
@@ -554,7 +567,9 @@ class DrizzleCorporateAdministrationOfficerComplianceStore
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}

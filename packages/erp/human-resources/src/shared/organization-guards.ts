@@ -47,9 +47,15 @@ export function canTransitionDepartmentStatus(
 	current: DepartmentStatus,
 	next: DepartmentStatus,
 ): boolean {
-	if (current === next) return false;
-	if (current === "active" && next === "archived") return true;
-	if (current === "archived" && next === "active") return true;
+	if (current === next) {
+		return false;
+	}
+	if (current === "active" && next === "archived") {
+		return true;
+	}
+	if (current === "archived" && next === "active") {
+		return true;
+	}
 	return false;
 }
 
@@ -57,9 +63,15 @@ export function canTransitionJobStatus(
 	current: JobStatus,
 	next: JobStatus,
 ): boolean {
-	if (current === next) return false;
-	if (current === "active" && next === "archived") return true;
-	if (current === "archived" && next === "active") return true;
+	if (current === next) {
+		return false;
+	}
+	if (current === "active" && next === "archived") {
+		return true;
+	}
+	if (current === "archived" && next === "active") {
+		return true;
+	}
 	return false;
 }
 
@@ -67,7 +79,9 @@ export function canTransitionPositionStatus(
 	current: PositionStatus,
 	next: PositionStatus,
 ): boolean {
-	if (current === next) return false;
+	if (current === next) {
+		return false;
+	}
 	if (current === "active" && (next === "frozen" || next === "closed")) {
 		return true;
 	}
@@ -208,7 +222,9 @@ export function assertNoPrimaryReportingOverlap(input: {
 	existing: readonly ReportingLine[];
 }): Result<void> {
 	for (const line of input.existing) {
-		if (line.relationshipKind !== "primary") continue;
+		if (line.relationshipKind !== "primary") {
+			continue;
+		}
 		if (
 			datesOverlap({
 				startsOnA: input.candidateStartsOn,
@@ -269,7 +285,10 @@ export function buildBoundedDepartmentTree(input: {
 			? (byParent.get(null) ?? [])
 			: input.departments.filter((d) => d.id === input.rootDepartmentId);
 
-	type QueueItem = { department: Department; depth: number };
+	interface QueueItem {
+		department: Department;
+		depth: number;
+	}
 	const queue: QueueItem[] = roots.map((department) => ({
 		department,
 		depth: 0,
@@ -277,7 +296,9 @@ export function buildBoundedDepartmentTree(input: {
 
 	while (queue.length > 0) {
 		const item = queue.shift();
-		if (!item) break;
+		if (!item) {
+			break;
+		}
 		if (nodes.length >= input.maxNodes) {
 			truncated = true;
 			break;

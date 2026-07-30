@@ -7,6 +7,7 @@ import {
 	resolveRateLimitBackend,
 } from "../src/resolve-store";
 import { toRateLimitAppError } from "../src/to-app-error";
+import type { RateLimitResult, RateLimitStore } from "../src/types";
 
 const envMocks = vi.hoisted(() => ({
 	isProductionDeploymentNow: vi.fn(() => false),
@@ -21,6 +22,21 @@ vi.mock("@afenda/env", () => ({
 	isProductionDeploymentNow: () => envMocks.isProductionDeploymentNow(),
 }));
 
+async function collectRateLimitResults(
+	store: RateLimitStore,
+	key: string,
+	attempts: number,
+	results: RateLimitResult[] = [],
+): Promise<RateLimitResult[]> {
+	if (results.length >= attempts) {
+		return results;
+	}
+	results.push(
+		await checkRateLimit({ bucket: "auth_sign_in", key }, { store }),
+	);
+	return collectRateLimitResults(store, key, attempts, results);
+}
+
 describe("checkRateLimit (memory store)", () => {
 	afterEach(() => {
 		resetResolvedRateLimitBackend();
@@ -33,16 +49,13 @@ describe("checkRateLimit (memory store)", () => {
 	it("allows then denies within the same window", async () => {
 		const store = createMemoryRateLimitStore();
 		const key = `user-${crypto.randomUUID()}@example.test`;
+		const allowedResults = await collectRateLimitResults(store, key, 5);
 
-		for (let i = 0; i < 5; i += 1) {
-			const allowed = await checkRateLimit(
-				{ bucket: "auth_sign_in", key },
-				{ store },
-			);
+		for (const [index, allowed] of allowedResults.entries()) {
 			expect(allowed.ok).toBe(true);
 			if (allowed.ok) {
 				expect(allowed.quota.limit).toBe(5);
-				expect(allowed.quota.remaining).toBe(4 - i);
+				expect(allowed.quota.remaining).toBe(4 - index);
 				expect(allowed.quota.resetEpochMs).toBeGreaterThan(Date.now() - 1000);
 			}
 		}

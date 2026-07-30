@@ -96,6 +96,7 @@ export function createProductionPayrollRunCalculator(input: {
 		input.roundingPolicy ?? DEFAULT_PAYROLL_ROUNDING_POLICY;
 
 	return {
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: This fail-closed coordinator keeps load, calculation, evidence aggregation, and replacement persistence visibly ordered.
 		async calculate(calcInput, ports) {
 			const period = await input.store.getPeriod({
 				organizationId: calcInput.organizationId,
@@ -174,11 +175,13 @@ export function createProductionPayrollRunCalculator(input: {
 				}
 			}
 			if (
-				!assignments.ok ||
-				!earningRules.ok ||
-				!deductionRules.ok ||
-				!statutoryRules.ok ||
-				!variableInputs.ok
+				!(
+					assignments.ok &&
+					earningRules.ok &&
+					deductionRules.ok &&
+					statutoryRules.ok &&
+					variableInputs.ok
+				)
 			) {
 				return fail(
 					"INTERNAL_ERROR",
@@ -201,6 +204,34 @@ export function createProductionPayrollRunCalculator(input: {
 			const earningRuleSnapshots = earningRules.data.map(mapEarningRule);
 			const deductionRuleSnapshots = deductionRules.data.map(mapDeductionRule);
 			const statutoryRuleSnapshots = statutoryRules.data.map(mapStatutoryRule);
+			const assignmentContexts = await Promise.all(
+				selectedAssignments.map(async (assignment) => {
+					const [employeeFacts, recurringEarnings, recurringDeductions] =
+						await Promise.all([
+							input.employees.getPayrollEmployee({
+								organizationId: calcInput.organizationId,
+								employeeId: assignment.employeeId,
+								effectiveDate,
+							}),
+							input.store.listRecurringEarningsForAssignment({
+								organizationId: calcInput.organizationId,
+								assignmentId: assignment.id,
+								effectiveDate,
+							}),
+							input.store.listRecurringDeductionsForAssignment({
+								organizationId: calcInput.organizationId,
+								assignmentId: assignment.id,
+								effectiveDate,
+							}),
+						]);
+					return {
+						assignment,
+						employeeFacts,
+						recurringEarnings,
+						recurringDeductions,
+					};
+				}),
+			);
 
 			const runEmployees: PayrollRunEmployeeCreateRecord[] = [];
 			const resultLines: PayrollResultLineCreateRecord[] = [];
@@ -210,12 +241,13 @@ export function createProductionPayrollRunCalculator(input: {
 				[];
 			const snapshotHashes: string[] = [];
 
-			for (const assignment of selectedAssignments) {
-				const employeeFacts = await input.employees.getPayrollEmployee({
-					organizationId: calcInput.organizationId,
-					employeeId: assignment.employeeId,
-					effectiveDate,
-				});
+			for (const context of assignmentContexts) {
+				const {
+					assignment,
+					employeeFacts,
+					recurringEarnings,
+					recurringDeductions,
+				} = context;
 				if (employeeFacts === null) {
 					aggregateExceptions.push({
 						severity: "blocking",
@@ -225,19 +257,6 @@ export function createProductionPayrollRunCalculator(input: {
 					});
 					continue;
 				}
-
-				const [recurringEarnings, recurringDeductions] = await Promise.all([
-					input.store.listRecurringEarningsForAssignment({
-						organizationId: calcInput.organizationId,
-						assignmentId: assignment.id,
-						effectiveDate,
-					}),
-					input.store.listRecurringDeductionsForAssignment({
-						organizationId: calcInput.organizationId,
-						assignmentId: assignment.id,
-						effectiveDate,
-					}),
-				]);
 				if (!recurringEarnings.ok) {
 					return recurringEarnings;
 				}

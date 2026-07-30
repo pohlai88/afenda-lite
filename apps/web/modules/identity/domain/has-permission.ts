@@ -12,17 +12,17 @@ import { requireTrimmed } from "@/modules/platform/domain/require-trimmed";
 /** Coarse shell role used only for unassigned admin bootstrap (ARCH-023). */
 export type PermissionBootstrapRole = "admin" | "operator" | "client";
 
-export type HasPermissionInput = {
-	orgId: string;
-	userId: string;
-	/** ARCH-023 Tier-2 permission code (never role display names). */
-	code: string;
+export interface HasPermissionInput {
 	/**
 	 * Coarse session role for bootstrap only when the actor has zero active
 	 * platform assignments in the org (ARCH-023 §3.2 #2).
 	 */
 	bootstrapRole?: PermissionBootstrapRole;
-};
+	/** ARCH-023 Tier-2 permission code (never role display names). */
+	code: string;
+	orgId: string;
+	userId: string;
+}
 
 /**
  * Identity — Tier-2 permission check via active org assignments → role

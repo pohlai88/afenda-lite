@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-
 import {
 	parseHumanResourcesAttendanceEventId,
 	parseHumanResourcesEmployeeId,
@@ -24,6 +23,7 @@ import { resolveSessionFromEvents } from "../src/time/attendance/session-resolut
 import { resolveAttendanceSession } from "../src/time/attendance/sessions";
 import type { AttendanceEvent } from "../src/types";
 import { createTestHumanResourcesCommandOptions } from "./helpers/command-options";
+import { helperAssert as assert } from "./helpers/helper-assert";
 import { createStoreBackedIdentityResolver } from "./helpers/identity-resolver";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
@@ -39,7 +39,7 @@ const EMPLOYMENT_ID = parseHumanResourcesEmploymentId(
 const WORK_DATE = "2025-07-25";
 const SAME_TIME = new Date("2025-07-25T09:00:00.000Z");
 
-if (!EMPLOYEE_ID.ok || !EMPLOYMENT_ID.ok) {
+if (!(EMPLOYEE_ID.ok && EMPLOYMENT_ID.ok)) {
 	throw new Error("fixture brand parse failed");
 }
 
@@ -238,7 +238,7 @@ describe("human-resources.time session determinism integration", () => {
 			},
 			ready,
 		);
-		expect(employee.ok).toBe(true);
+		assert.strictEqual(employee.ok, true);
 		if (!employee.ok) {
 			throw new Error(employee.message);
 		}
@@ -252,7 +252,7 @@ describe("human-resources.time session determinism integration", () => {
 			},
 			ready,
 		);
-		expect(employment.ok).toBe(true);
+		assert.strictEqual(employment.ok, true);
 		if (!employment.ok) {
 			throw new Error(employment.message);
 		}
@@ -294,7 +294,9 @@ describe("human-resources.time session determinism integration", () => {
 			ready,
 		);
 		expect(imported.ok).toBe(true);
-		if (!imported.ok) return;
+		if (!imported.ok) {
+			return;
+		}
 
 		const session = await resolveAttendanceSession(
 			{
@@ -309,7 +311,9 @@ describe("human-resources.time session determinism integration", () => {
 			ready,
 		);
 		expect(session.ok).toBe(true);
-		if (!session.ok) return;
+		if (!session.ok) {
+			return;
+		}
 		expect(session.data.resolutionStatus).toBe("resolved");
 		expect(session.data.workedMinutes).toBe(0);
 		expect(session.data.breakMinutes).toBe(0);
@@ -346,7 +350,9 @@ describe("human-resources.time session determinism integration", () => {
 			ready,
 		);
 		expect(replay.ok).toBe(true);
-		if (!replay.ok) return;
+		if (!replay.ok) {
+			return;
+		}
 		expect(replay.data.skipped).toHaveLength(2);
 	});
 
@@ -387,7 +393,9 @@ describe("human-resources.time session determinism integration", () => {
 			ready,
 		);
 		expect(imported.ok).toBe(true);
-		if (!imported.ok) return;
+		if (!imported.ok) {
+			return;
+		}
 
 		const listed = await listAttendanceEvents(
 			{
@@ -401,7 +409,9 @@ describe("human-resources.time session determinism integration", () => {
 			ready,
 		);
 		expect(listed.ok).toBe(true);
-		if (!listed.ok) return;
+		if (!listed.ok) {
+			return;
+		}
 		const byReference = new Map(
 			listed.data.map((event) => [event.sourceReference, event.sourceSequence]),
 		);
@@ -429,7 +439,9 @@ describe("human-resources.time session determinism integration", () => {
 			ready,
 		);
 		expect(session.ok).toBe(true);
-		if (!session.ok) return;
+		if (!session.ok) {
+			return;
+		}
 		expect(session.data.resolutionStatus).toBe("resolved");
 		expect(session.data.workedMinutes).toBe(0);
 		expect(session.data.breakMinutes).toBe(0);

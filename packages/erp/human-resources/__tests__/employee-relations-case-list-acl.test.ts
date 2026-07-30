@@ -3,7 +3,6 @@
  */
 
 import { describe, expect, it } from "vitest";
-
 import type { HumanResourcesPermission } from "../src/authorization";
 import { createEmployee } from "../src/core/employee";
 import { createEmployment } from "../src/core/employment";
@@ -32,6 +31,7 @@ import {
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
 } from "../src/permissions";
+import { runSequential } from "../src/shared/run-sequential";
 import { createMemoryHumanResourcesStore } from "../src/testing";
 import { createTestHumanResourcesCommandOptions } from "./helpers/command-options";
 import {
@@ -202,7 +202,7 @@ async function openSeededCase(
 		ownerActorUserId?: string;
 	},
 ) {
-	return openEmployeeCase(
+	return await openEmployeeCase(
 		{
 			organizationId: ORG,
 			actorUserId: OWNER,
@@ -231,7 +231,9 @@ describe("employee relations case list ACL", () => {
 			employmentId: employment.id,
 		});
 		expect(opened.ok).toBe(true);
-		if (!opened.ok) return;
+		if (!opened.ok) {
+			return;
+		}
 
 		const adminReady = {
 			...ready,
@@ -318,7 +320,9 @@ describe("employee relations case list ACL", () => {
 			employmentId: employment.id,
 		});
 		expect(opened.ok).toBe(true);
-		if (!opened.ok) return;
+		if (!opened.ok) {
+			return;
+		}
 
 		const listed = await listEmployeeCases(
 			{
@@ -355,7 +359,9 @@ describe("employee relations case list ACL", () => {
 			employmentId: employment.id,
 		});
 		expect(visible.ok).toBe(true);
-		if (!visible.ok) return;
+		if (!visible.ok) {
+			return;
+		}
 
 		const hidden = await openSeededCase(ready, {
 			employeeId: subjectEmployee.id,
@@ -363,7 +369,9 @@ describe("employee relations case list ACL", () => {
 			ownerActorUserId: PARTICIPANT,
 		});
 		expect(hidden.ok).toBe(true);
-		if (!hidden.ok) return;
+		if (!hidden.ok) {
+			return;
+		}
 
 		const ownerList = await listEmployeeCases(
 			{
@@ -374,7 +382,9 @@ describe("employee relations case list ACL", () => {
 			ready,
 		);
 		expect(ownerList.ok).toBe(true);
-		if (!ownerList.ok) return;
+		if (!ownerList.ok) {
+			return;
+		}
 		expect(ownerList.data.totalCount).toBe(1);
 		expect(ownerList.data.cases.map((item) => item.id)).toEqual([
 			visible.data.id,
@@ -389,7 +399,9 @@ describe("employee relations case list ACL", () => {
 			employmentId: employment.id,
 		});
 		expect(opened.ok).toBe(true);
-		if (!opened.ok) return;
+		if (!opened.ok) {
+			return;
+		}
 
 		const listed = await listEmployeeCases(
 			{
@@ -400,9 +412,11 @@ describe("employee relations case list ACL", () => {
 			ready,
 		);
 		expect(listed.ok).toBe(true);
-		if (!listed.ok) return;
+		if (!listed.ok) {
+			return;
+		}
 		expect(listed.data.cases).toHaveLength(1);
-		const row = listed.data.cases[0];
+		const [row] = listed.data.cases;
 		expect(row?.classificationCode).toBe("CONDUCT-01");
 		expect(row?.allegationSummary).toBe("Sensitive allegation narrative");
 		expect(row?.findingSummary).toBeNull();
@@ -417,7 +431,9 @@ describe("employee relations case list ACL", () => {
 			employmentId: employment.id,
 		});
 		expect(opened.ok).toBe(true);
-		if (!opened.ok) return;
+		if (!opened.ok) {
+			return;
+		}
 
 		const participantAdded = await addEmployeeCaseParticipant(
 			{
@@ -432,7 +448,9 @@ describe("employee relations case list ACL", () => {
 			ready,
 		);
 		expect(participantAdded.ok).toBe(true);
-		if (!participantAdded.ok) return;
+		if (!participantAdded.ok) {
+			return;
+		}
 
 		const listed = await listEmployeeCases(
 			{
@@ -449,9 +467,11 @@ describe("employee relations case list ACL", () => {
 			},
 		);
 		expect(listed.ok).toBe(true);
-		if (!listed.ok) return;
+		if (!listed.ok) {
+			return;
+		}
 		expect(listed.data.cases).toHaveLength(1);
-		const row = listed.data.cases[0];
+		const [row] = listed.data.cases;
 		expect(row?.employeeId).toBe(subjectEmployee.id);
 		expect(row?.allegationSummary).toBeUndefined();
 		expect(row?.findingSummary).toBeUndefined();
@@ -469,7 +489,9 @@ describe("employee relations case list ACL", () => {
 			employmentId: employment.id,
 		});
 		expect(opened.ok).toBe(true);
-		if (!opened.ok) return;
+		if (!opened.ok) {
+			return;
+		}
 
 		const history = await getEmployeeRelationsHistoryByEmployee(
 			{
@@ -481,7 +503,9 @@ describe("employee relations case list ACL", () => {
 			ready,
 		);
 		expect(history.ok).toBe(true);
-		if (!history.ok) return;
+		if (!history.ok) {
+			return;
+		}
 		expect(history.data.totalCount).toBeGreaterThanOrEqual(1);
 		expect(history.data.cases.some((item) => item.id === opened.data.id)).toBe(
 			true,
@@ -496,7 +520,9 @@ describe("employee relations case list ACL", () => {
 			employmentId: employment.id,
 		});
 		expect(opened.ok).toBe(true);
-		if (!opened.ok) return;
+		if (!opened.ok) {
+			return;
+		}
 
 		const crossOrg = await listEmployeeCases(
 			{
@@ -520,7 +546,9 @@ describe("employee relations case list ACL", () => {
 			employmentId: employment.id,
 		});
 		expect(opened.ok).toBe(true);
-		if (!opened.ok) return;
+		if (!opened.ok) {
+			return;
+		}
 
 		const direct = await getEmployeeCaseById(
 			{
@@ -542,7 +570,9 @@ describe("employee relations case list ACL", () => {
 			ready,
 		);
 		expect(listed.ok).toBe(true);
-		if (!listed.ok) return;
+		if (!listed.ok) {
+			return;
+		}
 		expect(listed.data.cases.some((item) => item.id === opened.data.id)).toBe(
 			direct.ok,
 		);
@@ -586,13 +616,13 @@ describe("employee relations case list ACL", () => {
 		const ready = harness();
 		const { subjectEmployee, employment } = await seedCaseActors(ready);
 
-		for (let index = 0; index < 3; index += 1) {
+		await runSequential([0, 1, 2], async () => {
 			const opened = await openSeededCase(ready, {
 				employeeId: subjectEmployee.id,
 				employmentId: employment.id,
 			});
 			expect(opened.ok).toBe(true);
-		}
+		});
 
 		const pageOne = await listEmployeeCases(
 			{
@@ -605,7 +635,9 @@ describe("employee relations case list ACL", () => {
 			ready,
 		);
 		expect(pageOne.ok).toBe(true);
-		if (!pageOne.ok) return;
+		if (!pageOne.ok) {
+			return;
+		}
 		expect(pageOne.data.totalCount).toBe(3);
 		expect(pageOne.data.cases).toHaveLength(2);
 
@@ -620,7 +652,9 @@ describe("employee relations case list ACL", () => {
 			ready,
 		);
 		expect(pageTwo.ok).toBe(true);
-		if (!pageTwo.ok) return;
+		if (!pageTwo.ok) {
+			return;
+		}
 		expect(pageTwo.data.totalCount).toBe(3);
 		expect(pageTwo.data.cases).toHaveLength(1);
 	});
@@ -633,7 +667,9 @@ describe("employee relations case list ACL", () => {
 			employmentId: employment.id,
 		});
 		expect(opened.ok).toBe(true);
-		if (!opened.ok) return;
+		if (!opened.ok) {
+			return;
+		}
 
 		const listed = await listEmployeeCases(
 			{

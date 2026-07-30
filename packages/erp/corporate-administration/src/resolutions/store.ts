@@ -115,49 +115,49 @@ export type CompleteResolutionActionStoreInput = TransactionalWrite &
 	}>;
 
 export interface ResolutionStore {
-	getMeetingVote(input: {
+	assignResolutionAction: (
+		input: AssignResolutionActionStoreInput,
+	) => Promise<Result<ResolutionAction>>;
+	completeResolutionAction: (
+		input: CompleteResolutionActionStoreInput,
+	) => Promise<Result<ResolutionAction>>;
+	getMeetingVote: (input: {
 		organizationId: OrganizationId;
 		meetingVoteId: MeetingVoteId;
-	}): Promise<Result<MeetingVote | null>>;
-	recordMeetingVote(
-		input: RecordMeetingVoteStoreInput,
-	): Promise<Result<MeetingVote>>;
-	getResolution(input: {
+	}) => Promise<Result<MeetingVote | null>>;
+	getResolution: (input: {
 		organizationId: OrganizationId;
 		resolutionId: ResolutionId;
-	}): Promise<Result<Resolution | null>>;
-	listResolutionsAsOf(input: {
+	}) => Promise<Result<Resolution | null>>;
+	getResolutionAction: (input: {
+		organizationId: OrganizationId;
+		resolutionActionId: ResolutionActionId;
+	}) => Promise<Result<ResolutionAction | null>>;
+	listOverdueResolutionActions: (input: {
+		organizationId: OrganizationId;
+		legalCompanyId: LegalCompanyId;
+		asOf: CanonicalDate;
+	}) => Promise<Result<readonly ResolutionAction[]>>;
+	listResolutionActions: (input: {
+		organizationId: OrganizationId;
+		resolutionId: ResolutionId;
+	}) => Promise<Result<readonly ResolutionAction[]>>;
+	listResolutionsAsOf: (input: {
 		organizationId: OrganizationId;
 		legalCompanyId: LegalCompanyId;
 		asOf: CanonicalDate;
 		status?: ResolutionStatus | undefined;
-	}): Promise<Result<readonly Resolution[]>>;
-	recordResolution(
-		input: RecordResolutionStoreInput,
-	): Promise<Result<Resolution>>;
-	supersedeResolution(
-		input: SupersedeResolutionStoreInput,
-	): Promise<Result<Resolution>>;
-	recordMinutesDocument(
+	}) => Promise<Result<readonly Resolution[]>>;
+	recordMeetingVote: (
+		input: RecordMeetingVoteStoreInput,
+	) => Promise<Result<MeetingVote>>;
+	recordMinutesDocument: (
 		input: RecordMinutesDocumentStoreInput,
-	): Promise<Result<Resolution>>;
-	getResolutionAction(input: {
-		organizationId: OrganizationId;
-		resolutionActionId: ResolutionActionId;
-	}): Promise<Result<ResolutionAction | null>>;
-	listResolutionActions(input: {
-		organizationId: OrganizationId;
-		resolutionId: ResolutionId;
-	}): Promise<Result<readonly ResolutionAction[]>>;
-	listOverdueResolutionActions(input: {
-		organizationId: OrganizationId;
-		legalCompanyId: LegalCompanyId;
-		asOf: CanonicalDate;
-	}): Promise<Result<readonly ResolutionAction[]>>;
-	assignResolutionAction(
-		input: AssignResolutionActionStoreInput,
-	): Promise<Result<ResolutionAction>>;
-	completeResolutionAction(
-		input: CompleteResolutionActionStoreInput,
-	): Promise<Result<ResolutionAction>>;
+	) => Promise<Result<Resolution>>;
+	recordResolution: (
+		input: RecordResolutionStoreInput,
+	) => Promise<Result<Resolution>>;
+	supersedeResolution: (
+		input: SupersedeResolutionStoreInput,
+	) => Promise<Result<Resolution>>;
 }

@@ -46,392 +46,117 @@ import type {
  * This is a domain slice of `HumanResourcesStore`. Keep persistence behavior
  * here; cross-domain orchestration belongs in application commands/services.
  */
-export type RequisitionCreateRecord = {
-	organizationId: string;
+export interface RequisitionCreateRecord {
 	code: string;
-	title: string;
-	jobId: HumanResourcesJobId | null;
-	positionId: HumanResourcesPositionId | null;
-	departmentId: HumanResourcesDepartmentId | null;
-	hiringManagerEmployeeId: HumanResourcesEmployeeId | null;
+	createdBy: string;
 	createIdempotencyKey: string;
 	createRequestFingerprint: string;
-	createdBy: string;
-};
-
-export type IdempotentRequisitionRecord = {
-	requisition: JobRequisition;
-	createRequestFingerprint: string;
-};
-
-export type CandidateCreateRecord = {
+	departmentId: HumanResourcesDepartmentId | null;
+	hiringManagerEmployeeId: HumanResourcesEmployeeId | null;
+	jobId: HumanResourcesJobId | null;
 	organizationId: string;
+	positionId: HumanResourcesPositionId | null;
+	title: string;
+}
+
+export interface IdempotentRequisitionRecord {
+	createRequestFingerprint: string;
+	requisition: JobRequisition;
+}
+
+export interface CandidateCreateRecord {
+	consentCapturedAt: Date;
+	consentPolicyVersion: string;
+	consentSource: CandidateConsentSource;
+	createdBy: string;
+	createIdempotencyKey: string;
+	createRequestFingerprint: string;
 	displayName: string;
 	email: string;
 	normalizedEmail: string;
+	organizationId: string;
 	phone: string | null;
-	consentPolicyVersion: string;
-	consentCapturedAt: Date;
-	consentSource: CandidateConsentSource;
 	retentionUntil: string;
-	createIdempotencyKey: string;
-	createRequestFingerprint: string;
-	createdBy: string;
-};
+}
 
-export type IdempotentCandidateRecord = {
+export interface IdempotentCandidateRecord {
 	candidate: Candidate;
 	createRequestFingerprint: string;
-};
+}
 
-export type IdempotentOfferAcceptRecord = {
-	handoff: OfferAcceptanceHandoff;
+export interface IdempotentOfferAcceptRecord {
 	acceptRequestFingerprint: string;
-};
+	handoff: OfferAcceptanceHandoff;
+}
 
-export type ApplicationCreateRecord = {
-	organizationId: string;
+export interface ApplicationCreateRecord {
 	candidateId: HumanResourcesCandidateId;
-	requisitionId: HumanResourcesRequisitionId;
 	createdBy: string;
-};
-
-export type ApplicationStatusHistoryAppendRecord = {
 	organizationId: string;
+	requisitionId: HumanResourcesRequisitionId;
+}
+
+export interface ApplicationStatusHistoryAppendRecord {
+	actorUserId: string;
 	applicationId: HumanResourcesApplicationId;
 	candidateId: HumanResourcesCandidateId;
-	requisitionId: HumanResourcesRequisitionId;
-	fromStatus: ApplicationStatus | null;
-	toStatus: ApplicationStatus;
 	changeKind: ApplicationStatusChangeKind;
+	correlationId: string;
+	fromStatus: ApplicationStatus | null;
+	organizationId: string;
 	reason: string | null;
 	reasonCode: string | null;
-	correlationId: string;
-	actorUserId: string;
-};
+	requisitionId: HumanResourcesRequisitionId;
+	toStatus: ApplicationStatus;
+}
 
-export type InterviewScheduleRecord = {
-	organizationId: string;
+export interface InterviewScheduleRecord {
 	applicationId: HumanResourcesApplicationId;
-	scheduledAt: string;
-	interviewerActorId: string;
 	createdBy: string;
-};
-
-export type InterviewEvaluationCreateRecord = {
+	interviewerActorId: string;
 	organizationId: string;
-	interviewId: HumanResourcesInterviewId;
-	result: InterviewEvaluationResult;
-	scorecard: InterviewScorecard;
-	privateNotes: string | null;
+	scheduledAt: string;
+}
+
+export interface InterviewEvaluationCreateRecord {
+	createdBy: string;
 	evaluatorActorId: string;
 	expectedVersion: number;
-	createdBy: string;
-};
-
-export type OfferCreateRecord = {
+	interviewId: HumanResourcesInterviewId;
 	organizationId: string;
+	privateNotes: string | null;
+	result: InterviewEvaluationResult;
+	scorecard: InterviewScorecard;
+}
+
+export interface OfferCreateRecord {
 	applicationId: HumanResourcesApplicationId;
-	termsSummary: string;
-	expiresOn: string;
 	compensationProposalId?:
 		| HumanResourcesCompensationProposalId
 		| null
 		| undefined;
 	createdBy: string;
-};
+	expiresOn: string;
+	organizationId: string;
+	termsSummary: string;
+}
 
-export type HumanResourcesRecruitmentStore = {
-	// Requisition
-	findRequisitionByIdempotencyKey(input: {
-		organizationId: string;
-		idempotencyKey: string;
-	}): Promise<Result<IdempotentRequisitionRecord | null>>;
-
-	getRequisitionById(input: {
-		organizationId: string;
-		requisitionId: HumanResourcesRequisitionId;
-	}): Promise<Result<JobRequisition | null>>;
-
-	findRequisitionByCode(input: {
-		organizationId: string;
-		code: string;
-	}): Promise<Result<JobRequisition | null>>;
-
-	createDraftRequisition(
-		record: RequisitionCreateRecord,
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<JobRequisition>>;
-
-	amendRequisition(
+export interface HumanResourcesRecruitmentStore {
+	acceptOffer: (
 		input: {
 			organizationId: string;
-			requisitionId: HumanResourcesRequisitionId;
-			title?: string | undefined;
-			jobId?: HumanResourcesJobId | null | undefined;
-			positionId?: HumanResourcesPositionId | null | undefined;
-			departmentId?: HumanResourcesDepartmentId | null | undefined;
-			hiringManagerEmployeeId?: HumanResourcesEmployeeId | null | undefined;
+			offerId: HumanResourcesOfferId;
+			idempotencyKey: string;
+			acceptRequestFingerprint: string;
 			expectedVersion: number;
 			actorUserId: string;
+			asOfDate: string;
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<JobRequisition>>;
+	) => Promise<Result<OfferAcceptanceHandoff>>;
 
-	assignHiringManager(
-		input: {
-			organizationId: string;
-			requisitionId: HumanResourcesRequisitionId;
-			hiringManagerEmployeeId: HumanResourcesEmployeeId;
-			expectedVersion: number;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<JobRequisition>>;
-
-	transitionRequisitionStatus(
-		input: {
-			organizationId: string;
-			requisitionId: HumanResourcesRequisitionId;
-			status: RequisitionStatus;
-			expectedVersion: number;
-			actorUserId: string;
-			emitApprovedEvent?: boolean | undefined;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<JobRequisition>>;
-
-	listRequisitions(input: {
-		organizationId: string;
-		page: number;
-		pageSize: number;
-		status?: RequisitionStatus | undefined;
-	}): Promise<Result<RequisitionListPage>>;
-	// Candidate
-	findCandidateByIdempotencyKey(input: {
-		organizationId: string;
-		idempotencyKey: string;
-	}): Promise<Result<IdempotentCandidateRecord | null>>;
-
-	getCandidateById(input: {
-		organizationId: string;
-		candidateId: HumanResourcesCandidateId;
-	}): Promise<Result<Candidate | null>>;
-
-	findCandidateByNormalizedEmail(input: {
-		organizationId: string;
-		normalizedEmail: string;
-	}): Promise<Result<Candidate | null>>;
-
-	createCandidate(
-		record: CandidateCreateRecord,
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<Candidate>>;
-
-	updateCandidateProfile(
-		input: {
-			organizationId: string;
-			candidateId: HumanResourcesCandidateId;
-			displayName?: string | undefined;
-			phone?: string | null | undefined;
-			expectedVersion: number;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<Candidate>>;
-
-	withdrawCandidateConsent(
-		input: {
-			organizationId: string;
-			candidateId: HumanResourcesCandidateId;
-			expectedVersion: number;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<Candidate>>;
-
-	changeCandidateRetention(
-		input: {
-			organizationId: string;
-			candidateId: HumanResourcesCandidateId;
-			retentionUntil: string;
-			expectedVersion: number;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<Candidate>>;
-
-	anonymizeCandidate(
-		input: {
-			organizationId: string;
-			candidateId: HumanResourcesCandidateId;
-			expectedVersion: number;
-			actorUserId: string;
-			asOf: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<Candidate>>;
-
-	listCandidates(input: {
-		organizationId: string;
-		page: number;
-		pageSize: number;
-		status?: CandidateStatus | undefined;
-		retentionDueAsOf?: string | undefined;
-		query?: string | undefined;
-	}): Promise<Result<CandidateListPage>>;
-
-	detectCandidateDuplicates(input: {
-		organizationId: string;
-		email?: string | undefined;
-		displayName?: string | undefined;
-	}): Promise<Result<readonly CandidateDuplicateMatch[]>>;
-	// Application
-	getApplicationById(input: {
-		organizationId: string;
-		applicationId: HumanResourcesApplicationId;
-	}): Promise<Result<CandidateApplication | null>>;
-
-	findActiveApplicationByCandidateRequisition(input: {
-		organizationId: string;
-		candidateId: HumanResourcesCandidateId;
-		requisitionId: HumanResourcesRequisitionId;
-	}): Promise<Result<CandidateApplication | null>>;
-
-	createApplication(
-		record: ApplicationCreateRecord,
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<CandidateApplication>>;
-
-	transitionApplicationStatus(
-		input: {
-			organizationId: string;
-			applicationId: HumanResourcesApplicationId;
-			status: ApplicationStatus;
-			expectedVersion: number;
-			actorUserId: string;
-			reason?: string | null | undefined;
-			reasonCode?: string | null | undefined;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<CandidateApplication>>;
-
-	reopenApplication(
-		input: {
-			organizationId: string;
-			applicationId: HumanResourcesApplicationId;
-			expectedVersion: number;
-			actorUserId: string;
-			reason?: string | null | undefined;
-			reasonCode?: string | null | undefined;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<CandidateApplication>>;
-
-	listApplicationStatusHistory(input: {
-		organizationId: string;
-		applicationId: HumanResourcesApplicationId;
-	}): Promise<Result<ApplicationStatusHistory[]>>;
-
-	appendApplicationStatusHistory(
-		record: ApplicationStatusHistoryAppendRecord,
-	): Promise<Result<ApplicationStatusHistory>>;
-
-	listApplications(input: {
-		organizationId: string;
-		page: number;
-		pageSize: number;
-		status?: ApplicationStatus | undefined;
-		candidateId?: HumanResourcesCandidateId | undefined;
-		requisitionId?: HumanResourcesRequisitionId | undefined;
-	}): Promise<Result<ApplicationListPage>>;
-	// Interview
-	getInterviewById(input: {
-		organizationId: string;
-		interviewId: HumanResourcesInterviewId;
-	}): Promise<Result<Interview | null>>;
-
-	scheduleInterview(
-		record: InterviewScheduleRecord,
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<Interview>>;
-
-	cancelInterview(
-		input: {
-			organizationId: string;
-			interviewId: HumanResourcesInterviewId;
-			expectedVersion: number;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<Interview>>;
-
-	assignInterviewInterviewer(
-		input: {
-			organizationId: string;
-			interviewId: HumanResourcesInterviewId;
-			interviewerActorId: string;
-			expectedVersion: number;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<Interview>>;
-
-	listInterviews(input: {
-		organizationId: string;
-		page: number;
-		pageSize: number;
-		applicationId?: HumanResourcesApplicationId | undefined;
-	}): Promise<Result<InterviewListPage>>;
-	// Interview evaluation
-	getInterviewEvaluationByInterviewId(input: {
-		organizationId: string;
-		interviewId: HumanResourcesInterviewId;
-	}): Promise<Result<InterviewEvaluation | null>>;
-
-	recordInterviewEvaluation(
-		record: InterviewEvaluationCreateRecord,
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<InterviewEvaluation>>;
-	// Offer
-	getOfferById(input: {
-		organizationId: string;
-		offerId: HumanResourcesOfferId;
-	}): Promise<Result<EmploymentOffer | null>>;
-
-	findActiveOfferByApplication(input: {
-		organizationId: string;
-		applicationId: HumanResourcesApplicationId;
-	}): Promise<Result<EmploymentOffer | null>>;
-
-	findOfferByAcceptIdempotencyKey(input: {
-		organizationId: string;
-		idempotencyKey: string;
-	}): Promise<Result<IdempotentOfferAcceptRecord | null>>;
-
-	createOffer(
-		record: OfferCreateRecord,
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<EmploymentOffer>>;
-
-	amendOfferDraft(
+	amendOfferDraft: (
 		input: {
 			organizationId: string;
 			offerId: HumanResourcesOfferId;
@@ -446,9 +171,268 @@ export type HumanResourcesRecruitmentStore = {
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<EmploymentOffer>>;
+	) => Promise<Result<EmploymentOffer>>;
 
-	transitionOfferStatus(
+	amendRequisition: (
+		input: {
+			organizationId: string;
+			requisitionId: HumanResourcesRequisitionId;
+			title?: string | undefined;
+			jobId?: HumanResourcesJobId | null | undefined;
+			positionId?: HumanResourcesPositionId | null | undefined;
+			departmentId?: HumanResourcesDepartmentId | null | undefined;
+			hiringManagerEmployeeId?: HumanResourcesEmployeeId | null | undefined;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<JobRequisition>>;
+
+	anonymizeCandidate: (
+		input: {
+			organizationId: string;
+			candidateId: HumanResourcesCandidateId;
+			expectedVersion: number;
+			actorUserId: string;
+			asOf: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<Candidate>>;
+
+	appendApplicationStatusHistory: (
+		record: ApplicationStatusHistoryAppendRecord,
+	) => Promise<Result<ApplicationStatusHistory>>;
+
+	assignHiringManager: (
+		input: {
+			organizationId: string;
+			requisitionId: HumanResourcesRequisitionId;
+			hiringManagerEmployeeId: HumanResourcesEmployeeId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<JobRequisition>>;
+
+	assignInterviewInterviewer: (
+		input: {
+			organizationId: string;
+			interviewId: HumanResourcesInterviewId;
+			interviewerActorId: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<Interview>>;
+
+	cancelInterview: (
+		input: {
+			organizationId: string;
+			interviewId: HumanResourcesInterviewId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<Interview>>;
+
+	changeCandidateRetention: (
+		input: {
+			organizationId: string;
+			candidateId: HumanResourcesCandidateId;
+			retentionUntil: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<Candidate>>;
+
+	createApplication: (
+		record: ApplicationCreateRecord,
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<CandidateApplication>>;
+
+	createCandidate: (
+		record: CandidateCreateRecord,
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<Candidate>>;
+
+	createDraftRequisition: (
+		record: RequisitionCreateRecord,
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<JobRequisition>>;
+
+	createOffer: (
+		record: OfferCreateRecord,
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<EmploymentOffer>>;
+
+	detectCandidateDuplicates: (input: {
+		organizationId: string;
+		email?: string | undefined;
+		displayName?: string | undefined;
+	}) => Promise<Result<readonly CandidateDuplicateMatch[]>>;
+
+	findActiveApplicationByCandidateRequisition: (input: {
+		organizationId: string;
+		candidateId: HumanResourcesCandidateId;
+		requisitionId: HumanResourcesRequisitionId;
+	}) => Promise<Result<CandidateApplication | null>>;
+
+	findActiveOfferByApplication: (input: {
+		organizationId: string;
+		applicationId: HumanResourcesApplicationId;
+	}) => Promise<Result<EmploymentOffer | null>>;
+	// Candidate
+	findCandidateByIdempotencyKey: (input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}) => Promise<Result<IdempotentCandidateRecord | null>>;
+
+	findCandidateByNormalizedEmail: (input: {
+		organizationId: string;
+		normalizedEmail: string;
+	}) => Promise<Result<Candidate | null>>;
+
+	findOfferByAcceptIdempotencyKey: (input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}) => Promise<Result<IdempotentOfferAcceptRecord | null>>;
+
+	findRequisitionByCode: (input: {
+		organizationId: string;
+		code: string;
+	}) => Promise<Result<JobRequisition | null>>;
+	// Requisition
+	findRequisitionByIdempotencyKey: (input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}) => Promise<Result<IdempotentRequisitionRecord | null>>;
+	// Application
+	getApplicationById: (input: {
+		organizationId: string;
+		applicationId: HumanResourcesApplicationId;
+	}) => Promise<Result<CandidateApplication | null>>;
+
+	getCandidateById: (input: {
+		organizationId: string;
+		candidateId: HumanResourcesCandidateId;
+	}) => Promise<Result<Candidate | null>>;
+	// Interview
+	getInterviewById: (input: {
+		organizationId: string;
+		interviewId: HumanResourcesInterviewId;
+	}) => Promise<Result<Interview | null>>;
+	// Interview evaluation
+	getInterviewEvaluationByInterviewId: (input: {
+		organizationId: string;
+		interviewId: HumanResourcesInterviewId;
+	}) => Promise<Result<InterviewEvaluation | null>>;
+	// Offer
+	getOfferById: (input: {
+		organizationId: string;
+		offerId: HumanResourcesOfferId;
+	}) => Promise<Result<EmploymentOffer | null>>;
+
+	getRequisitionById: (input: {
+		organizationId: string;
+		requisitionId: HumanResourcesRequisitionId;
+	}) => Promise<Result<JobRequisition | null>>;
+
+	listApplicationStatusHistory: (input: {
+		organizationId: string;
+		applicationId: HumanResourcesApplicationId;
+	}) => Promise<Result<ApplicationStatusHistory[]>>;
+
+	listApplications: (input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		status?: ApplicationStatus | undefined;
+		candidateId?: HumanResourcesCandidateId | undefined;
+		requisitionId?: HumanResourcesRequisitionId | undefined;
+	}) => Promise<Result<ApplicationListPage>>;
+
+	listCandidates: (input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		status?: CandidateStatus | undefined;
+		retentionDueAsOf?: string | undefined;
+		query?: string | undefined;
+	}) => Promise<Result<CandidateListPage>>;
+
+	listInterviews: (input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		applicationId?: HumanResourcesApplicationId | undefined;
+	}) => Promise<Result<InterviewListPage>>;
+
+	listOffers: (input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		status?: OfferStatus | undefined;
+		applicationId?: HumanResourcesApplicationId | undefined;
+	}) => Promise<Result<OfferListPage>>;
+
+	listRequisitions: (input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		status?: RequisitionStatus | undefined;
+	}) => Promise<Result<RequisitionListPage>>;
+
+	recordInterviewEvaluation: (
+		record: InterviewEvaluationCreateRecord,
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<InterviewEvaluation>>;
+
+	reopenApplication: (
+		input: {
+			organizationId: string;
+			applicationId: HumanResourcesApplicationId;
+			expectedVersion: number;
+			actorUserId: string;
+			reason?: string | null | undefined;
+			reasonCode?: string | null | undefined;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<CandidateApplication>>;
+
+	scheduleInterview: (
+		record: InterviewScheduleRecord,
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<Interview>>;
+
+	transitionApplicationStatus: (
+		input: {
+			organizationId: string;
+			applicationId: HumanResourcesApplicationId;
+			status: ApplicationStatus;
+			expectedVersion: number;
+			actorUserId: string;
+			reason?: string | null | undefined;
+			reasonCode?: string | null | undefined;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<CandidateApplication>>;
+
+	transitionOfferStatus: (
 		input: {
 			organizationId: string;
 			offerId: HumanResourcesOfferId;
@@ -459,27 +443,42 @@ export type HumanResourcesRecruitmentStore = {
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<EmploymentOffer>>;
+	) => Promise<Result<EmploymentOffer>>;
 
-	acceptOffer(
+	transitionRequisitionStatus: (
 		input: {
 			organizationId: string;
-			offerId: HumanResourcesOfferId;
-			idempotencyKey: string;
-			acceptRequestFingerprint: string;
+			requisitionId: HumanResourcesRequisitionId;
+			status: RequisitionStatus;
 			expectedVersion: number;
 			actorUserId: string;
-			asOfDate: string;
+			emitApprovedEvent?: boolean | undefined;
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<OfferAcceptanceHandoff>>;
+	) => Promise<Result<JobRequisition>>;
 
-	listOffers(input: {
-		organizationId: string;
-		page: number;
-		pageSize: number;
-		status?: OfferStatus | undefined;
-		applicationId?: HumanResourcesApplicationId | undefined;
-	}): Promise<Result<OfferListPage>>;
-};
+	updateCandidateProfile: (
+		input: {
+			organizationId: string;
+			candidateId: HumanResourcesCandidateId;
+			displayName?: string | undefined;
+			phone?: string | null | undefined;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<Candidate>>;
+
+	withdrawCandidateConsent: (
+		input: {
+			organizationId: string;
+			candidateId: HumanResourcesCandidateId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<Candidate>>;
+}

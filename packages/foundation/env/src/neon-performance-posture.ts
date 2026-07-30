@@ -17,6 +17,7 @@
 
 /** Must equal `APPROVED_NEON_BRANCH_ID`; enforced by package tests. */
 export const PERFORMANCE_PROD_BRANCH_ID = "br-tiny-hill-ao82jp6f" as const;
+const TRAILING_DOT_PATTERN = /\.$/;
 
 /** Autoscaling minimum CU. Raise only with measured evidence. */
 export const TARGET_AUTOSCALING_MIN_CU = 0.25 as const;
@@ -32,7 +33,7 @@ export const TARGET_SUSPEND_TIMEOUT_SECONDS = 0 as const;
  *
  * This is a deployment guardrail, not a workload SLA or soak-test result.
  */
-export const MAX_SELECT1_LATENCY_MS = 5_000 as const;
+export const MAX_SELECT1_LATENCY_MS = 5000 as const;
 
 /**
  * Connection-pressure guardrail as a percentage of `max_connections`.
@@ -74,7 +75,7 @@ export function formatNeonPerformanceIssues(
 }
 
 function normalizeHostname(hostname: string): string {
-	return hostname.trim().toLowerCase().replace(/\.$/, "");
+	return hostname.trim().toLowerCase().replace(TRAILING_DOT_PATTERN, "");
 }
 
 function isPoolerHostname(hostname: string): boolean {
@@ -109,8 +110,7 @@ function isNonNegativeInteger(
 
 function cuEqual(actual: number | null | undefined, expected: number): boolean {
 	if (
-		!isFiniteNonNegativeNumber(actual) ||
-		!isFiniteNonNegativeNumber(expected)
+		!(isFiniteNonNegativeNumber(actual) && isFiniteNonNegativeNumber(expected))
 	) {
 		return false;
 	}
@@ -279,8 +279,8 @@ export function selectBranchReadWriteEndpoint(
 		};
 	}
 
-	const endpoint = matches[0];
-	if (endpoint === undefined) {
+	const [selectedEndpoint] = matches;
+	if (selectedEndpoint === undefined) {
 		return {
 			ok: false,
 			endpoint: null,
@@ -292,7 +292,7 @@ export function selectBranchReadWriteEndpoint(
 			],
 		};
 	}
-	return { ok: true, endpoint, issues: [] };
+	return { ok: true, endpoint: selectedEndpoint, issues: [] };
 }
 
 export function evaluateSelect1Latency(

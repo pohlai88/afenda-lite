@@ -24,7 +24,13 @@ import {
 	MASTER_COMMAND_PARTY_EXTERNAL_ID_CREATE_REGULATORY,
 } from "../../module-ids";
 import { parseMasterInput } from "../../parse-input";
-import { ITEM_TYPES, PARTY_KINDS, WAREHOUSE_LOCATION_TYPES } from "../../types";
+import { resolveAsync, runSequentially } from "../../resolve-async";
+import {
+	ITEM_TYPES,
+	PARTY_KINDS,
+	type Party,
+	WAREHOUSE_LOCATION_TYPES,
+} from "../../types";
 import { createItem, updateItem } from "../core-organization-masters/item";
 import {
 	createItemGroup,
@@ -89,23 +95,23 @@ export type ImportRowApplicationResult = Readonly<{
 	reason: string | null;
 }>;
 
-export type ImportRowResult = {
-	rowIndex: number;
-	sourceRowNumber: number;
+export interface ImportRowResult {
+	applicationResult: ImportRowApplicationResult;
 	code: string;
+	entityId?: string;
+	intendedOperation: "create" | "update" | "skip" | "reject";
+	matchedTargetId: string | null;
+	message?: string;
+	normalizedPayload: ImportReportPayload;
 	outcome: ImportRowOutcome;
 	rawPayload: ImportReportPayload;
-	normalizedPayload: ImportReportPayload;
-	matchedTargetId: string | null;
-	intendedOperation: "create" | "update" | "skip" | "reject";
-	validationErrors: string[];
-	applicationResult: ImportRowApplicationResult;
+	reason?: string;
 	resultingEntityId: string | null;
 	resultingEntityVersion: number | null;
-	entityId?: string;
-	message?: string;
-	reason?: string;
-};
+	rowIndex: number;
+	sourceRowNumber: number;
+	validationErrors: string[];
+}
 
 type ImportRowResultDraft = Readonly<{
 	rowIndex: number;
@@ -188,7 +194,7 @@ function requireApprovedForApply(ctx: {
 	approvedByActorUserId?: string | undefined;
 	requireSegregatedApproval?: boolean | undefined;
 }): Result<void> {
-	if (!ctx.dryRun && !ctx.approved) {
+	if (!(ctx.dryRun || ctx.approved)) {
 		return fail("CONFLICT", "Import batch is not approved", {
 			reason: "MASTER_IMPORT_NOT_APPROVED",
 		} satisfies MasterFailureDetails);
@@ -255,7 +261,9 @@ async function runImportWithIdempotency(input: {
 		execution?: ImportExecutionContext,
 	) => Promise<Result<ImportReconciliationReport>>;
 }): Promise<Result<ImportReconciliationReport>> {
-	if (input.idempotencyKey === undefined) return input.run();
+	if (input.idempotencyKey === undefined) {
+		return input.run();
+	}
 
 	const payloadHash = hashImportPayload({
 		operationType: input.operationType,
@@ -282,8 +290,10 @@ async function runImportWithIdempotency(input: {
 			normalizedPayload: toImportPayload(row),
 		})),
 	});
-	if (!claimed.ok) return claimed;
-	const batch = claimed.data.batch;
+	if (!claimed.ok) {
+		return claimed;
+	}
+	const { batch } = claimed.data;
 	if (
 		batch.operationType !== input.operationType ||
 		batch.entityType !== input.entityType ||
@@ -307,7 +317,9 @@ async function runImportWithIdempotency(input: {
 		leaseOwner,
 		leaseExpiresAt: new Date(Date.now() + IMPORT_BATCH_LEASE_DURATION_MS),
 	});
-	if (!lease.ok) return lease;
+	if (!lease.ok) {
+		return lease;
+	}
 	if (lease.data.kind === "completed") {
 		return parseStoredImportReport(lease.data.batch.report);
 	}
@@ -319,7 +331,9 @@ async function runImportWithIdempotency(input: {
 		input.organizationId,
 		batch.id,
 	);
-	if (!ledger.ok) return ledger;
+	if (!ledger.ok) {
+		return ledger;
+	}
 	const report = await input.run({
 		batchId: batch.id,
 		leaseOwner,
@@ -346,7 +360,9 @@ async function runImportWithIdempotency(input: {
 				resultVersion: null,
 			})),
 		});
-		if (!failed.ok) return failed;
+		if (!failed.ok) {
+			return failed;
+		}
 		return report;
 	}
 
@@ -360,12 +376,7 @@ async function runImportWithIdempotency(input: {
 			sourceRowNumber: row.sourceRowNumber,
 			intendedOperation: row.intendedOperation,
 			matchedEntityId: row.matchedTargetId,
-			status:
-				row.outcome === "unchanged"
-					? "skipped"
-					: row.outcome === "rejected" || row.outcome === "conflict"
-						? "failed"
-						: "applied",
+			status: importRowPersistenceStatus(row.outcome),
 			errorCode: row.reason ?? null,
 			errorDetails:
 				row.message === undefined && row.reason === undefined
@@ -378,17 +389,19 @@ async function runImportWithIdempotency(input: {
 			resultVersion: row.resultingEntityVersion,
 		})),
 	});
-	if (!completed.ok) return completed;
+	if (!completed.ok) {
+		return completed;
+	}
 	return report;
 }
 
 const IMPORT_BATCH_LEASE_DURATION_MS = 5 * 60 * 1000;
 
-type ImportExecutionContext = {
+interface ImportExecutionContext {
 	batchId: string;
 	leaseOwner: string;
 	rows: readonly ImportBatchRowRecord[];
-};
+}
 
 function importMutationOptions(
 	options: MasterCommandOptions,
@@ -403,7 +416,9 @@ function importMutationOptions(
 		>["partyExternalIds"];
 	},
 ): MasterCommandOptions {
-	if (input.execution === undefined) return options;
+	if (input.execution === undefined) {
+		return options;
+	}
 	return {
 		...options,
 		importMutation: {
@@ -424,12 +439,18 @@ function resumedAppliedResults<TRow extends { code: string }>(
 ): { results: ImportRowResultDraft[]; rowIndexes: ReadonlySet<number> } {
 	const results: ImportRowResultDraft[] = [];
 	const rowIndexes = new Set<number>();
-	if (execution === undefined) return { results, rowIndexes };
+	if (execution === undefined) {
+		return { results, rowIndexes };
+	}
 	for (const ledgerRow of execution.rows) {
-		if (ledgerRow.status !== "applied") continue;
+		if (ledgerRow.status !== "applied") {
+			continue;
+		}
 		const rowIndex = ledgerRow.sourceRowNumber - 1;
 		const row = rows[rowIndex];
-		if (row === undefined) continue;
+		if (row === undefined) {
+			continue;
+		}
 		rowIndexes.add(rowIndex);
 		results.push({
 			rowIndex,
@@ -470,9 +491,28 @@ function importBatchCompletionStatus(
 	report: ImportReconciliationReport,
 ): "partially_applied" | "applied" | "failed" {
 	const failed = report.rejected + report.conflicted;
-	if (failed === 0) return "applied";
+	if (failed === 0) {
+		return "applied";
+	}
 	const succeeded = report.created + report.updated + report.unchanged;
 	return succeeded === 0 ? "failed" : "partially_applied";
+}
+
+function importRowPersistenceStatus(
+	outcome: ImportRowOutcome,
+): "applied" | "failed" | "skipped" {
+	switch (outcome) {
+		case "unchanged":
+			return "skipped";
+		case "rejected":
+		case "conflict":
+			return "failed";
+		case "create":
+		case "update":
+			return "applied";
+		default:
+			return assertNever(outcome);
+	}
 }
 
 const partyImportRowSchema = z.object({
@@ -569,7 +609,8 @@ function normalizeImportReportPayload(input: {
 function intendedOperationForRow(
 	row: Pick<ImportRowResultDraft, "outcome" | "entityId">,
 ): ImportRowResult["intendedOperation"] {
-	switch (row.outcome) {
+	const outcome: string = row.outcome;
+	switch (outcome) {
 		case "create":
 			return "create";
 		case "update":
@@ -580,8 +621,12 @@ function intendedOperationForRow(
 		case "conflict":
 			return row.entityId === undefined ? "reject" : "update";
 		default:
-			return assertNever(row.outcome);
+			return unsupportedImportRowOutcome(outcome);
 	}
+}
+
+function unsupportedImportRowOutcome(value: string): never {
+	throw new Error(`Unsupported import row outcome: ${value}`);
 }
 
 function validationErrorsForRow(
@@ -602,14 +647,15 @@ function completeImportRows<TRow>(
 	return rows.map((row) => {
 		const sourceRow = sourceRows[row.rowIndex];
 		const rawPayload = toImportPayload(sourceRow);
-		const matchedTargetId =
-			row.matchedTargetId !== undefined
-				? row.matchedTargetId
-				: row.outcome === "update" ||
-						row.outcome === "unchanged" ||
-						row.outcome === "conflict"
-					? (row.entityId ?? null)
-					: null;
+		let matchedTargetId = row.matchedTargetId ?? null;
+		if (
+			row.matchedTargetId === undefined &&
+			(row.outcome === "update" ||
+				row.outcome === "unchanged" ||
+				row.outcome === "conflict")
+		) {
+			matchedTargetId = row.entityId ?? null;
+		}
 		return {
 			rowIndex: row.rowIndex,
 			sourceRowNumber: row.rowIndex + 1,
@@ -630,9 +676,9 @@ function completeImportRows<TRow>(
 			},
 			resultingEntityId: row.entityId ?? null,
 			resultingEntityVersion: row.entityVersion ?? null,
-			...(row.entityId !== undefined ? { entityId: row.entityId } : {}),
-			...(row.message !== undefined ? { message: row.message } : {}),
-			...(row.reason !== undefined ? { reason: row.reason } : {}),
+			...(row.entityId === undefined ? {} : { entityId: row.entityId }),
+			...(row.message === undefined ? {} : { message: row.message }),
+			...(row.reason === undefined ? {} : { reason: row.reason }),
 		};
 	});
 }
@@ -680,11 +726,11 @@ function markInFileDuplicates(
 	const duplicateIndexes = new Set<number>();
 	for (const row of codes) {
 		const prior = seen.get(row.normalizedCode);
-		if (prior !== undefined) {
+		if (prior === undefined) {
+			seen.set(row.normalizedCode, row.rowIndex);
+		} else {
 			duplicateIndexes.add(prior);
 			duplicateIndexes.add(row.rowIndex);
-		} else {
-			seen.set(row.normalizedCode, row.rowIndex);
 		}
 	}
 	return duplicateIndexes;
@@ -739,8 +785,296 @@ export async function upsertPartiesByCode(
 		entityType: "party",
 		operationType: "upsert_party_by_code",
 		rows: ctx.rows,
-		run: async (execution) => upsertPartiesByCodeBody(ctx, options, execution),
+		run: (execution) =>
+			resolveAsync(() => upsertPartiesByCodeBody(ctx, options, execution)),
 	});
+}
+
+type PartyImportContext = z.infer<typeof upsertPartiesByCodeInputSchema>;
+
+interface NormalizedPartyImportEntry {
+	code: string;
+	normalizedCode: string;
+	row: z.infer<typeof partyImportRowSchema>;
+	rowIndex: number;
+}
+
+async function findPartyImportExternalIdConflict(
+	ctx: PartyImportContext,
+	entry: NormalizedPartyImportEntry,
+	options: MasterCommandOptions,
+): Promise<ImportRowResultDraft | null> {
+	if (entry.row.externalId === undefined) {
+		return null;
+	}
+	const existingByExt = await findPartyByExternalId(
+		{
+			organizationId: ctx.organizationId,
+			actorUserId: ctx.actorUserId,
+			sourceSystem: entry.row.externalId.sourceSystem,
+			externalIdType: entry.row.externalId.externalIdType,
+			externalValue: entry.row.externalId.externalValue,
+			caseSensitivity: entry.row.externalId.caseSensitivity,
+		},
+		options,
+	);
+	if (!existingByExt.ok) {
+		return {
+			rowIndex: entry.rowIndex,
+			code: entry.code,
+			outcome: "rejected",
+			message: IMPORT_EXTERNAL_ID_LOOKUP_FAILED_MESSAGE,
+		};
+	}
+	if (
+		existingByExt.data !== null &&
+		existingByExt.data.normalizedCode !== entry.normalizedCode
+	) {
+		return {
+			rowIndex: entry.rowIndex,
+			code: entry.code,
+			outcome: "conflict",
+			message: "External id already bound to a different party",
+			reason: "MASTER_DUPLICATE",
+			entityId: existingByExt.data.id,
+		};
+	}
+	return null;
+}
+
+async function processNewPartyImport(
+	ctx: PartyImportContext,
+	entry: NormalizedPartyImportEntry,
+	options: MasterCommandOptions,
+	authorization: ReturnType<typeof resolveCommandDeps>["authorization"],
+	execution?: ImportExecutionContext,
+): Promise<ImportRowResultDraft> {
+	const createBlocked = modeBlocksCreate(ctx.mode, entry.rowIndex, entry.code);
+	if (createBlocked) {
+		return createBlocked;
+	}
+	if (ctx.dryRun) {
+		return {
+			rowIndex: entry.rowIndex,
+			code: entry.code,
+			outcome: "create",
+			message: "Would create party",
+		};
+	}
+	const importExternalIds: NonNullable<
+		NonNullable<MasterCommandOptions["importMutation"]>["partyExternalIds"]
+	>[number][] = [];
+	if (entry.row.externalId !== undefined) {
+		const normalizedExternalId = normalizeExternalId(entry.row.externalId);
+		if (!normalizedExternalId.ok) {
+			return {
+				rowIndex: entry.rowIndex,
+				code: entry.code,
+				outcome: "rejected",
+				message: normalizedExternalId.message,
+				reason: "MASTER_VALIDATION_FAILED",
+			};
+		}
+		const externalIdAuthorized = await requireMasterCommandPermission(
+			authorization,
+			{
+				organizationId: ctx.organizationId,
+				actorUserId: ctx.actorUserId,
+				command: isRegulatoryExternalIdType(
+					normalizedExternalId.data.externalIdType,
+				)
+					? MASTER_COMMAND_PARTY_EXTERNAL_ID_CREATE_REGULATORY
+					: MASTER_COMMAND_PARTY_EXTERNAL_ID_CREATE,
+			},
+		);
+		if (!externalIdAuthorized.ok) {
+			return {
+				rowIndex: entry.rowIndex,
+				code: entry.code,
+				outcome: "rejected",
+				message: IMPORT_EXTERNAL_ID_AUTHORIZATION_FAILED_MESSAGE,
+			};
+		}
+		importExternalIds.push({
+			id: randomUUID(),
+			...normalizedExternalId.data,
+			isPrimary: false,
+			createdBy: ctx.actorUserId,
+		});
+	}
+	const created = await createParty(
+		{
+			organizationId: ctx.organizationId,
+			actorUserId: ctx.actorUserId,
+			correlationId: ctx.correlationId,
+			code: entry.code,
+			name: entry.row.name,
+			partyKind: entry.row.partyKind,
+		},
+		importMutationOptions(options, {
+			execution,
+			organizationId: ctx.organizationId,
+			rowIndex: entry.rowIndex,
+			intendedOperation: "create",
+			matchedEntityId: null,
+			partyExternalIds: importExternalIds,
+		}),
+	);
+	if (!created.ok) {
+		return {
+			rowIndex: entry.rowIndex,
+			code: entry.code,
+			outcome: "rejected",
+			message: IMPORT_TARGET_CREATE_FAILED_MESSAGE,
+			reason: (created.details as MasterFailureDetails | undefined)?.reason,
+		};
+	}
+	return {
+		rowIndex: entry.rowIndex,
+		code: entry.code,
+		outcome: "create",
+		entityId: created.data.id,
+		...(created.data.version === undefined
+			? {}
+			: { entityVersion: created.data.version }),
+	};
+}
+
+async function processExistingPartyImport(
+	ctx: PartyImportContext,
+	entry: NormalizedPartyImportEntry,
+	current: Party,
+	options: MasterCommandOptions,
+	execution?: ImportExecutionContext,
+): Promise<ImportRowResultDraft> {
+	if (current.partyKind !== entry.row.partyKind) {
+		return {
+			rowIndex: entry.rowIndex,
+			code: entry.code,
+			outcome: "rejected",
+			entityId: current.id,
+			message:
+				"partyKind is immutable on import; only name may update via upsert",
+			reason: "MASTER_VALIDATION_FAILED",
+		};
+	}
+	if (
+		entry.row.expectedVersion !== undefined &&
+		entry.row.expectedVersion !== current.version
+	) {
+		return {
+			rowIndex: entry.rowIndex,
+			code: entry.code,
+			outcome: "conflict",
+			entityId: current.id,
+			message: `Version conflict: expected ${entry.row.expectedVersion}, found ${current.version}`,
+			reason: "MASTER_VERSION_CONFLICT",
+		};
+	}
+	if (current.name === entry.row.name) {
+		return {
+			rowIndex: entry.rowIndex,
+			code: entry.code,
+			outcome: "unchanged",
+			entityId: current.id,
+			entityVersion: current.version,
+		};
+	}
+	const updateBlocked = modeBlocksUpdate(
+		ctx.mode,
+		entry.rowIndex,
+		entry.code,
+		current.id,
+	);
+	if (updateBlocked) {
+		return updateBlocked;
+	}
+	if (ctx.dryRun) {
+		return {
+			rowIndex: entry.rowIndex,
+			code: entry.code,
+			outcome: "update",
+			entityId: current.id,
+			message: "Would update party",
+		};
+	}
+	const updated = await updateParty(
+		{
+			organizationId: ctx.organizationId,
+			actorUserId: ctx.actorUserId,
+			correlationId: ctx.correlationId,
+			id: current.id,
+			expectedVersion: current.version,
+			name: entry.row.name,
+		},
+		importMutationOptions(options, {
+			execution,
+			organizationId: ctx.organizationId,
+			rowIndex: entry.rowIndex,
+			intendedOperation: "update",
+			matchedEntityId: current.id,
+		}),
+	);
+	if (!updated.ok) {
+		const reason = (updated.details as MasterFailureDetails | undefined)
+			?.reason;
+		return {
+			rowIndex: entry.rowIndex,
+			code: entry.code,
+			outcome: reason === "MASTER_VERSION_CONFLICT" ? "conflict" : "rejected",
+			entityId: current.id,
+			message: IMPORT_TARGET_UPDATE_FAILED_MESSAGE,
+			reason,
+		};
+	}
+	return {
+		rowIndex: entry.rowIndex,
+		code: entry.code,
+		outcome: "update",
+		entityId: updated.data.id,
+		...(updated.data.version === undefined
+			? {}
+			: { entityVersion: updated.data.version }),
+	};
+}
+
+async function processPartyImportEntry(input: {
+	ctx: PartyImportContext;
+	entry: NormalizedPartyImportEntry;
+	options: MasterCommandOptions;
+	authorization: ReturnType<typeof resolveCommandDeps>["authorization"];
+	store: ReturnType<typeof resolveCommandDeps>["store"];
+	execution: ImportExecutionContext | undefined;
+	duplicateSet: ReadonlySet<number>;
+}): Promise<ImportRowResultDraft | null> {
+	const { ctx, entry, options, authorization, store, execution, duplicateSet } =
+		input;
+	if (duplicateSet.has(entry.rowIndex)) {
+		return null;
+	}
+	const externalIdConflict = await findPartyImportExternalIdConflict(
+		ctx,
+		entry,
+		options,
+	);
+	if (externalIdConflict !== null) {
+		return externalIdConflict;
+	}
+	const existing = await store.getPartyByCode(
+		ctx.organizationId,
+		entry.normalizedCode,
+	);
+	if (!existing.ok) {
+		return {
+			rowIndex: entry.rowIndex,
+			code: entry.code,
+			outcome: "rejected",
+			message: IMPORT_TARGET_LOOKUP_FAILED_MESSAGE,
+		};
+	}
+	return existing.data === null
+		? processNewPartyImport(ctx, entry, options, authorization, execution)
+		: processExistingPartyImport(ctx, entry, existing.data, options, execution);
 }
 
 async function upsertPartiesByCodeBody(
@@ -752,15 +1086,12 @@ async function upsertPartiesByCodeBody(
 	const resumed = resumedAppliedResults(execution, ctx.rows);
 	const results: ImportRowResultDraft[] = [...resumed.results];
 
-	const normalizedRows: Array<{
-		rowIndex: number;
-		normalizedCode: string;
-		code: string;
-		row: z.infer<typeof partyImportRowSchema>;
-	}> = [];
+	const normalizedRows: NormalizedPartyImportEntry[] = [];
 
 	for (let rowIndex = 0; rowIndex < ctx.rows.length; rowIndex += 1) {
-		if (resumed.rowIndexes.has(rowIndex)) continue;
+		if (resumed.rowIndexes.has(rowIndex)) {
+			continue;
+		}
 		const row = ctx.rows[rowIndex];
 		if (row === undefined) {
 			continue;
@@ -798,266 +1129,20 @@ async function upsertPartiesByCodeBody(
 	}
 	const duplicateSet = duplicates;
 
-	for (const entry of normalizedRows) {
-		if (duplicateSet.has(entry.rowIndex)) {
-			continue;
-		}
-
-		if (entry.row.externalId) {
-			const existingByExt = await findPartyByExternalId(
-				{
-					organizationId: ctx.organizationId,
-					actorUserId: ctx.actorUserId,
-					sourceSystem: entry.row.externalId.sourceSystem,
-					externalIdType: entry.row.externalId.externalIdType,
-					externalValue: entry.row.externalId.externalValue,
-					caseSensitivity: entry.row.externalId.caseSensitivity,
-				},
-				options,
-			);
-			if (!existingByExt.ok) {
-				results.push({
-					rowIndex: entry.rowIndex,
-					code: entry.code,
-					outcome: "rejected",
-					message: IMPORT_EXTERNAL_ID_LOOKUP_FAILED_MESSAGE,
-				});
-				continue;
-			}
-			if (
-				existingByExt.data !== null &&
-				existingByExt.data.normalizedCode !== entry.normalizedCode
-			) {
-				results.push({
-					rowIndex: entry.rowIndex,
-					code: entry.code,
-					outcome: "conflict",
-					message: "External id already bound to a different party",
-					reason: "MASTER_DUPLICATE",
-					entityId: existingByExt.data.id,
-				});
-				continue;
-			}
-		}
-
-		const existing = await store.getPartyByCode(
-			ctx.organizationId,
-			entry.normalizedCode,
-		);
-		if (!existing.ok) {
-			results.push({
-				rowIndex: entry.rowIndex,
-				code: entry.code,
-				outcome: "rejected",
-				message: IMPORT_TARGET_LOOKUP_FAILED_MESSAGE,
-			});
-			continue;
-		}
-
-		if (existing.data === null) {
-			const createBlocked = modeBlocksCreate(
-				ctx.mode,
-				entry.rowIndex,
-				entry.code,
-			);
-			if (createBlocked) {
-				results.push(createBlocked);
-				continue;
-			}
-			if (ctx.dryRun) {
-				results.push({
-					rowIndex: entry.rowIndex,
-					code: entry.code,
-					outcome: "create",
-					message: "Would create party",
-				});
-				continue;
-			}
-			const importExternalIds: NonNullable<
-				NonNullable<MasterCommandOptions["importMutation"]>["partyExternalIds"]
-			>[number][] = [];
-			if (entry.row.externalId !== undefined) {
-				const normalizedExternalId = normalizeExternalId(entry.row.externalId);
-				if (!normalizedExternalId.ok) {
-					results.push({
-						rowIndex: entry.rowIndex,
-						code: entry.code,
-						outcome: "rejected",
-						message: normalizedExternalId.message,
-						reason: "MASTER_VALIDATION_FAILED",
-					});
-					continue;
-				}
-				const externalIdAuthorized = await requireMasterCommandPermission(
-					authorization,
-					{
-						organizationId: ctx.organizationId,
-						actorUserId: ctx.actorUserId,
-						command: isRegulatoryExternalIdType(
-							normalizedExternalId.data.externalIdType,
-						)
-							? MASTER_COMMAND_PARTY_EXTERNAL_ID_CREATE_REGULATORY
-							: MASTER_COMMAND_PARTY_EXTERNAL_ID_CREATE,
-					},
-				);
-				if (!externalIdAuthorized.ok) {
-					results.push({
-						rowIndex: entry.rowIndex,
-						code: entry.code,
-						outcome: "rejected",
-						message: IMPORT_EXTERNAL_ID_AUTHORIZATION_FAILED_MESSAGE,
-					});
-					continue;
-				}
-				importExternalIds.push({
-					id: randomUUID(),
-					...normalizedExternalId.data,
-					isPrimary: false,
-					createdBy: ctx.actorUserId,
-				});
-			}
-			const created = await createParty(
-				{
-					organizationId: ctx.organizationId,
-					actorUserId: ctx.actorUserId,
-					correlationId: ctx.correlationId,
-					code: entry.code,
-					name: entry.row.name,
-					partyKind: entry.row.partyKind,
-				},
-				importMutationOptions(options, {
-					execution,
-					organizationId: ctx.organizationId,
-					rowIndex: entry.rowIndex,
-					intendedOperation: "create",
-					matchedEntityId: null,
-					partyExternalIds: importExternalIds,
-				}),
-			);
-			if (!created.ok) {
-				results.push({
-					rowIndex: entry.rowIndex,
-					code: entry.code,
-					outcome: "rejected",
-					message: IMPORT_TARGET_CREATE_FAILED_MESSAGE,
-					reason: (created.details as MasterFailureDetails | undefined)?.reason,
-				});
-				continue;
-			}
-			results.push({
-				rowIndex: entry.rowIndex,
-				code: entry.code,
-				outcome: "create",
-				entityId: created.data.id,
-				...(created.data.version !== undefined
-					? { entityVersion: created.data.version }
-					: {}),
-			});
-			continue;
-		}
-
-		const current = existing.data;
-		if (current.partyKind !== entry.row.partyKind) {
-			results.push({
-				rowIndex: entry.rowIndex,
-				code: entry.code,
-				outcome: "rejected",
-				entityId: current.id,
-				message:
-					"partyKind is immutable on import; only name may update via upsert",
-				reason: "MASTER_VALIDATION_FAILED",
-			});
-			continue;
-		}
-		if (
-			entry.row.expectedVersion !== undefined &&
-			entry.row.expectedVersion !== current.version
-		) {
-			results.push({
-				rowIndex: entry.rowIndex,
-				code: entry.code,
-				outcome: "conflict",
-				entityId: current.id,
-				message: `Version conflict: expected ${entry.row.expectedVersion}, found ${current.version}`,
-				reason: "MASTER_VERSION_CONFLICT",
-			});
-			continue;
-		}
-
-		if (current.name === entry.row.name) {
-			results.push({
-				rowIndex: entry.rowIndex,
-				code: entry.code,
-				outcome: "unchanged",
-				entityId: current.id,
-				entityVersion: current.version,
-			});
-			continue;
-		}
-
-		const updateBlocked = modeBlocksUpdate(
-			ctx.mode,
-			entry.rowIndex,
-			entry.code,
-			current.id,
-		);
-		if (updateBlocked) {
-			results.push(updateBlocked);
-			continue;
-		}
-
-		if (ctx.dryRun) {
-			results.push({
-				rowIndex: entry.rowIndex,
-				code: entry.code,
-				outcome: "update",
-				entityId: current.id,
-				message: "Would update party",
-			});
-			continue;
-		}
-
-		const updated = await updateParty(
-			{
-				organizationId: ctx.organizationId,
-				actorUserId: ctx.actorUserId,
-				correlationId: ctx.correlationId,
-				id: current.id,
-				expectedVersion: current.version,
-				name: entry.row.name,
-			},
-			importMutationOptions(options, {
-				execution,
-				organizationId: ctx.organizationId,
-				rowIndex: entry.rowIndex,
-				intendedOperation: "update",
-				matchedEntityId: current.id,
-			}),
-		);
-		if (!updated.ok) {
-			const reason = (updated.details as MasterFailureDetails | undefined)
-				?.reason;
-			results.push({
-				rowIndex: entry.rowIndex,
-				code: entry.code,
-				outcome: reason === "MASTER_VERSION_CONFLICT" ? "conflict" : "rejected",
-				entityId: current.id,
-				message: IMPORT_TARGET_UPDATE_FAILED_MESSAGE,
-				reason,
-			});
-			continue;
-		}
-		results.push({
-			rowIndex: entry.rowIndex,
-			code: entry.code,
-			outcome: "update",
-			entityId: updated.data.id,
-			...(updated.data.version !== undefined
-				? { entityVersion: updated.data.version }
-				: {}),
+	await runSequentially(normalizedRows, async (entry) => {
+		const result = await processPartyImportEntry({
+			ctx,
+			entry,
+			options,
+			authorization,
+			store,
+			execution,
+			duplicateSet,
 		});
-	}
-
+		if (result !== null) {
+			results.push(result);
+		}
+	});
 	results.sort((a, b) => a.rowIndex - b.rowIndex);
 	return ok({
 		sourceSystem: ctx.sourceSystem,
@@ -1069,7 +1154,39 @@ async function upsertPartiesByCodeBody(
 	});
 }
 
-async function upsertByCodeGeneric<
+interface GenericImportHandlers<TRow> {
+	create: (
+		row: TRow,
+		code: string,
+		commandOptions: MasterCommandOptions,
+	) => Promise<Result<{ id: string; version?: number | undefined }>>;
+	getByCode: (
+		organizationId: string,
+		normalizedCode: string,
+	) => Promise<Result<{ id: string; name: string; version: number } | null>>;
+	isUnchanged: (existing: { name: string }, row: TRow) => boolean;
+	/** Reject when row tries to change fields outside the mutable allowlist. */
+	rejectImmutable?: (
+		existing: { id: string; name: string; version: number },
+		row: TRow,
+		rowIndex: number,
+		code: string,
+	) => ImportRowResultDraft | null;
+	update: (
+		row: TRow,
+		existing: { id: string; version: number },
+		commandOptions: MasterCommandOptions,
+	) => Promise<Result<{ id: string; version?: number | undefined }>>;
+}
+
+interface NormalizedGenericImportEntry<TRow> {
+	code: string;
+	normalizedCode: string;
+	row: TRow;
+	rowIndex: number;
+}
+
+function upsertByCodeGeneric<
 	TRow extends {
 		code: string;
 		name: string;
@@ -1091,54 +1208,256 @@ async function upsertByCodeGeneric<
 		rows: TRow[];
 	},
 	options: MasterCommandOptions,
-	handlers: {
-		getByCode: (
-			organizationId: string,
-			normalizedCode: string,
-		) => Promise<Result<{ id: string; name: string; version: number } | null>>;
-		create: (
-			row: TRow,
-			code: string,
-			commandOptions: MasterCommandOptions,
-		) => Promise<Result<{ id: string; version?: number | undefined }>>;
-		update: (
-			row: TRow,
-			existing: { id: string; version: number },
-			commandOptions: MasterCommandOptions,
-		) => Promise<Result<{ id: string; version?: number | undefined }>>;
-		isUnchanged: (existing: { name: string }, row: TRow) => boolean;
-		/** Reject when row tries to change fields outside the mutable allowlist. */
-		rejectImmutable?: (
-			existing: { id: string; name: string; version: number },
-			row: TRow,
-			rowIndex: number,
-			code: string,
-		) => ImportRowResultDraft | null;
-	},
+	handlers: GenericImportHandlers<TRow>,
 ): Promise<Result<ImportReconciliationReport>> {
-	const approvedGate = requireApprovedForApply(input);
-	if (!approvedGate.ok) {
-		return approvedGate;
-	}
-	const idempotencyKeyResult = requireIdempotencyKeyForApply(input);
-	if (!idempotencyKeyResult.ok) {
-		return idempotencyKeyResult;
-	}
-	const { store } = resolveCommandDeps(options);
-	return runImportWithIdempotency({
-		store,
-		organizationId: input.organizationId,
-		actorUserId: input.actorUserId,
-		correlationId: input.correlationId,
-		sourceSystem: input.sourceSystem,
-		mode: input.mode,
-		idempotencyKey: idempotencyKeyResult.data,
-		entityType: input.entityType,
-		operationType: `upsert_${input.entityType}_by_code`,
-		rows: input.rows,
-		run: async (execution) =>
-			upsertByCodeGenericBody(input, options, handlers, execution),
+	return resolveAsync(() => {
+		const approvedGate = requireApprovedForApply(input);
+		if (!approvedGate.ok) {
+			return approvedGate;
+		}
+		const idempotencyKeyResult = requireIdempotencyKeyForApply(input);
+		if (!idempotencyKeyResult.ok) {
+			return idempotencyKeyResult;
+		}
+		const { store } = resolveCommandDeps(options);
+		return runImportWithIdempotency({
+			store,
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: input.correlationId,
+			sourceSystem: input.sourceSystem,
+			mode: input.mode,
+			idempotencyKey: idempotencyKeyResult.data,
+			entityType: input.entityType,
+			operationType: `upsert_${input.entityType}_by_code`,
+			rows: input.rows,
+			run: (execution) =>
+				resolveAsync(() =>
+					upsertByCodeGenericBody(input, options, handlers, execution),
+				),
+		});
 	});
+}
+
+async function processNewGenericImport<
+	TRow extends {
+		code: string;
+		name: string;
+		expectedVersion?: number | undefined;
+	},
+>(input: {
+	commandInput: {
+		organizationId: string;
+		mode: ImportMode;
+		dryRun: boolean;
+	};
+	entry: NormalizedGenericImportEntry<TRow>;
+	execution: ImportExecutionContext | undefined;
+	handlers: GenericImportHandlers<TRow>;
+	options: MasterCommandOptions;
+}): Promise<ImportRowResultDraft> {
+	const { commandInput, entry, execution, handlers, options } = input;
+	const createBlocked = modeBlocksCreate(
+		commandInput.mode,
+		entry.rowIndex,
+		entry.code,
+	);
+	if (createBlocked) {
+		return createBlocked;
+	}
+	if (commandInput.dryRun) {
+		return {
+			rowIndex: entry.rowIndex,
+			code: entry.code,
+			outcome: "create",
+			message: "Would create",
+		};
+	}
+	const created = await handlers.create(
+		entry.row,
+		entry.code,
+		importMutationOptions(options, {
+			execution,
+			organizationId: commandInput.organizationId,
+			rowIndex: entry.rowIndex,
+			intendedOperation: "create",
+			matchedEntityId: null,
+		}),
+	);
+	if (!created.ok) {
+		return {
+			rowIndex: entry.rowIndex,
+			code: entry.code,
+			outcome: "rejected",
+			message: IMPORT_TARGET_CREATE_FAILED_MESSAGE,
+		};
+	}
+	return {
+		rowIndex: entry.rowIndex,
+		code: entry.code,
+		outcome: "create",
+		entityId: created.data.id,
+		entityVersion: created.data.version,
+	};
+}
+
+async function processExistingGenericImport<
+	TRow extends {
+		code: string;
+		name: string;
+		expectedVersion?: number | undefined;
+	},
+>(input: {
+	commandInput: {
+		organizationId: string;
+		mode: ImportMode;
+		dryRun: boolean;
+	};
+	current: { id: string; name: string; version: number };
+	entry: NormalizedGenericImportEntry<TRow>;
+	execution: ImportExecutionContext | undefined;
+	handlers: GenericImportHandlers<TRow>;
+	options: MasterCommandOptions;
+}): Promise<ImportRowResultDraft> {
+	const { commandInput, current, entry, execution, handlers, options } = input;
+	const immutableReject = handlers.rejectImmutable?.(
+		current,
+		entry.row,
+		entry.rowIndex,
+		entry.code,
+	);
+	if (immutableReject) {
+		return immutableReject;
+	}
+	if (
+		entry.row.expectedVersion !== undefined &&
+		entry.row.expectedVersion !== current.version
+	) {
+		return {
+			rowIndex: entry.rowIndex,
+			code: entry.code,
+			outcome: "conflict",
+			entityId: current.id,
+			message: `Version conflict: expected ${entry.row.expectedVersion}, found ${current.version}`,
+			reason: "MASTER_VERSION_CONFLICT",
+		};
+	}
+	if (handlers.isUnchanged(current, entry.row)) {
+		return {
+			rowIndex: entry.rowIndex,
+			code: entry.code,
+			outcome: "unchanged",
+			entityId: current.id,
+			entityVersion: current.version,
+		};
+	}
+	const updateBlocked = modeBlocksUpdate(
+		commandInput.mode,
+		entry.rowIndex,
+		entry.code,
+		current.id,
+	);
+	if (updateBlocked) {
+		return updateBlocked;
+	}
+	if (commandInput.dryRun) {
+		return {
+			rowIndex: entry.rowIndex,
+			code: entry.code,
+			outcome: "update",
+			entityId: current.id,
+			message: "Would update",
+		};
+	}
+	const updated = await handlers.update(
+		entry.row,
+		current,
+		importMutationOptions(options, {
+			execution,
+			organizationId: commandInput.organizationId,
+			rowIndex: entry.rowIndex,
+			intendedOperation: "update",
+			matchedEntityId: current.id,
+		}),
+	);
+	if (!updated.ok) {
+		const reason = (updated.details as MasterFailureDetails | undefined)
+			?.reason;
+		return {
+			rowIndex: entry.rowIndex,
+			code: entry.code,
+			outcome: reason === "MASTER_VERSION_CONFLICT" ? "conflict" : "rejected",
+			entityId: current.id,
+			message: IMPORT_TARGET_UPDATE_FAILED_MESSAGE,
+			reason,
+		};
+	}
+	return {
+		rowIndex: entry.rowIndex,
+		code: entry.code,
+		outcome: "update",
+		entityId: updated.data.id,
+		entityVersion: updated.data.version,
+	};
+}
+
+async function processGenericImportEntry<
+	TRow extends {
+		code: string;
+		name: string;
+		expectedVersion?: number | undefined;
+	},
+>(input: {
+	input: {
+		organizationId: string;
+		mode: ImportMode;
+		dryRun: boolean;
+	};
+	entry: NormalizedGenericImportEntry<TRow>;
+	execution: ImportExecutionContext | undefined;
+	handlers: GenericImportHandlers<TRow>;
+	options: MasterCommandOptions;
+	duplicates: ReadonlySet<number>;
+}): Promise<ImportRowResultDraft | null> {
+	const {
+		input: commandInput,
+		entry,
+		execution,
+		handlers,
+		options,
+		duplicates,
+	} = input;
+	if (duplicates.has(entry.rowIndex)) {
+		return null;
+	}
+	const existing = await handlers.getByCode(
+		commandInput.organizationId,
+		entry.normalizedCode,
+	);
+	if (!existing.ok) {
+		return {
+			rowIndex: entry.rowIndex,
+			code: entry.code,
+			outcome: "rejected",
+			message: IMPORT_TARGET_LOOKUP_FAILED_MESSAGE,
+		};
+	}
+	return existing.data === null
+		? processNewGenericImport({
+				commandInput,
+				entry,
+				execution,
+				handlers,
+				options,
+			})
+		: processExistingGenericImport({
+				commandInput,
+				current: existing.data,
+				entry,
+				execution,
+				handlers,
+				options,
+			});
 }
 
 async function upsertByCodeGenericBody<
@@ -1158,42 +1477,17 @@ async function upsertByCodeGenericBody<
 		rows: TRow[];
 	},
 	options: MasterCommandOptions,
-	handlers: {
-		getByCode: (
-			organizationId: string,
-			normalizedCode: string,
-		) => Promise<Result<{ id: string; name: string; version: number } | null>>;
-		create: (
-			row: TRow,
-			code: string,
-			commandOptions: MasterCommandOptions,
-		) => Promise<Result<{ id: string; version?: number | undefined }>>;
-		update: (
-			row: TRow,
-			existing: { id: string; version: number },
-			commandOptions: MasterCommandOptions,
-		) => Promise<Result<{ id: string; version?: number | undefined }>>;
-		isUnchanged: (existing: { name: string }, row: TRow) => boolean;
-		rejectImmutable?: (
-			existing: { id: string; name: string; version: number },
-			row: TRow,
-			rowIndex: number,
-			code: string,
-		) => ImportRowResultDraft | null;
-	},
+	handlers: GenericImportHandlers<TRow>,
 	execution?: ImportExecutionContext,
 ): Promise<Result<ImportReconciliationReport>> {
 	const resumed = resumedAppliedResults(execution, input.rows);
 	const results: ImportRowResultDraft[] = [...resumed.results];
-	const normalizedRows: Array<{
-		rowIndex: number;
-		normalizedCode: string;
-		code: string;
-		row: TRow;
-	}> = [];
+	const normalizedRows: NormalizedGenericImportEntry<TRow>[] = [];
 
 	for (let rowIndex = 0; rowIndex < input.rows.length; rowIndex += 1) {
-		if (resumed.rowIndexes.has(rowIndex)) continue;
+		if (resumed.rowIndexes.has(rowIndex)) {
+			continue;
+		}
 		const row = input.rows[rowIndex];
 		if (row === undefined) {
 			continue;
@@ -1230,159 +1524,19 @@ async function upsertByCodeGenericBody<
 		}
 	}
 
-	for (const entry of normalizedRows) {
-		if (duplicates.has(entry.rowIndex)) {
-			continue;
-		}
-		const existing = await handlers.getByCode(
-			input.organizationId,
-			entry.normalizedCode,
-		);
-		if (!existing.ok) {
-			results.push({
-				rowIndex: entry.rowIndex,
-				code: entry.code,
-				outcome: "rejected",
-				message: IMPORT_TARGET_LOOKUP_FAILED_MESSAGE,
-			});
-			continue;
-		}
-		if (existing.data === null) {
-			const createBlocked = modeBlocksCreate(
-				input.mode,
-				entry.rowIndex,
-				entry.code,
-			);
-			if (createBlocked) {
-				results.push(createBlocked);
-				continue;
-			}
-			if (input.dryRun) {
-				results.push({
-					rowIndex: entry.rowIndex,
-					code: entry.code,
-					outcome: "create",
-					message: "Would create",
-				});
-				continue;
-			}
-			const created = await handlers.create(
-				entry.row,
-				entry.code,
-				importMutationOptions(options, {
-					execution,
-					organizationId: input.organizationId,
-					rowIndex: entry.rowIndex,
-					intendedOperation: "create",
-					matchedEntityId: null,
-				}),
-			);
-			if (!created.ok) {
-				results.push({
-					rowIndex: entry.rowIndex,
-					code: entry.code,
-					outcome: "rejected",
-					message: IMPORT_TARGET_CREATE_FAILED_MESSAGE,
-				});
-				continue;
-			}
-			results.push({
-				rowIndex: entry.rowIndex,
-				code: entry.code,
-				outcome: "create",
-				entityId: created.data.id,
-				entityVersion: created.data.version,
-			});
-			continue;
-		}
-
-		const current = existing.data;
-		const immutableReject = handlers.rejectImmutable?.(
-			current,
-			entry.row,
-			entry.rowIndex,
-			entry.code,
-		);
-		if (immutableReject) {
-			results.push(immutableReject);
-			continue;
-		}
-		if (
-			entry.row.expectedVersion !== undefined &&
-			entry.row.expectedVersion !== current.version
-		) {
-			results.push({
-				rowIndex: entry.rowIndex,
-				code: entry.code,
-				outcome: "conflict",
-				entityId: current.id,
-				message: `Version conflict: expected ${entry.row.expectedVersion}, found ${current.version}`,
-				reason: "MASTER_VERSION_CONFLICT",
-			});
-			continue;
-		}
-		if (handlers.isUnchanged(current, entry.row)) {
-			results.push({
-				rowIndex: entry.rowIndex,
-				code: entry.code,
-				outcome: "unchanged",
-				entityId: current.id,
-				entityVersion: current.version,
-			});
-			continue;
-		}
-		const updateBlocked = modeBlocksUpdate(
-			input.mode,
-			entry.rowIndex,
-			entry.code,
-			current.id,
-		);
-		if (updateBlocked) {
-			results.push(updateBlocked);
-			continue;
-		}
-		if (input.dryRun) {
-			results.push({
-				rowIndex: entry.rowIndex,
-				code: entry.code,
-				outcome: "update",
-				entityId: current.id,
-				message: "Would update",
-			});
-			continue;
-		}
-		const updated = await handlers.update(
-			entry.row,
-			current,
-			importMutationOptions(options, {
-				execution,
-				organizationId: input.organizationId,
-				rowIndex: entry.rowIndex,
-				intendedOperation: "update",
-				matchedEntityId: current.id,
-			}),
-		);
-		if (!updated.ok) {
-			const reason = (updated.details as MasterFailureDetails | undefined)
-				?.reason;
-			results.push({
-				rowIndex: entry.rowIndex,
-				code: entry.code,
-				outcome: reason === "MASTER_VERSION_CONFLICT" ? "conflict" : "rejected",
-				entityId: current.id,
-				message: IMPORT_TARGET_UPDATE_FAILED_MESSAGE,
-				reason,
-			});
-			continue;
-		}
-		results.push({
-			rowIndex: entry.rowIndex,
-			code: entry.code,
-			outcome: "update",
-			entityId: updated.data.id,
-			entityVersion: updated.data.version,
+	await runSequentially(normalizedRows, async (entry) => {
+		const result = await processGenericImportEntry({
+			input,
+			entry,
+			options,
+			handlers,
+			execution,
+			duplicates,
 		});
-	}
+		if (result !== null) {
+			results.push(result);
+		}
+	});
 
 	results.sort((a, b) => a.rowIndex - b.rowIndex);
 	return ok({
@@ -1438,28 +1592,32 @@ export async function upsertItemGroupsByCode(
 					version: result.data.version,
 				});
 			},
-			create: async (row, code, commandOptions) =>
-				createItemGroup(
-					{
-						organizationId: ctx.organizationId,
-						actorUserId: ctx.actorUserId,
-						correlationId: ctx.correlationId,
-						code,
-						name: row.name,
-					},
-					commandOptions,
+			create: (row, code, commandOptions) =>
+				resolveAsync(() =>
+					createItemGroup(
+						{
+							organizationId: ctx.organizationId,
+							actorUserId: ctx.actorUserId,
+							correlationId: ctx.correlationId,
+							code,
+							name: row.name,
+						},
+						commandOptions,
+					),
 				),
-			update: async (row, existing, commandOptions) =>
-				updateItemGroup(
-					{
-						organizationId: ctx.organizationId,
-						actorUserId: ctx.actorUserId,
-						correlationId: ctx.correlationId,
-						id: existing.id,
-						expectedVersion: existing.version,
-						name: row.name,
-					},
-					commandOptions,
+			update: (row, existing, commandOptions) =>
+				resolveAsync(() =>
+					updateItemGroup(
+						{
+							organizationId: ctx.organizationId,
+							actorUserId: ctx.actorUserId,
+							correlationId: ctx.correlationId,
+							id: existing.id,
+							expectedVersion: existing.version,
+							name: row.name,
+						},
+						commandOptions,
+					),
 				),
 			isUnchanged: (existing, row) => existing.name === row.name,
 		},
@@ -1518,31 +1676,35 @@ export async function upsertItemsByCode(
 					version: result.data.version,
 				});
 			},
-			create: async (row, code, commandOptions) =>
-				createItem(
-					{
-						organizationId: ctx.organizationId,
-						actorUserId: ctx.actorUserId,
-						correlationId: ctx.correlationId,
-						code,
-						name: row.name,
-						itemType: row.itemType,
-						baseUomId: row.baseUomId,
-						itemGroupId: row.itemGroupId,
-					},
-					commandOptions,
+			create: (row, code, commandOptions) =>
+				resolveAsync(() =>
+					createItem(
+						{
+							organizationId: ctx.organizationId,
+							actorUserId: ctx.actorUserId,
+							correlationId: ctx.correlationId,
+							code,
+							name: row.name,
+							itemType: row.itemType,
+							baseUomId: row.baseUomId,
+							itemGroupId: row.itemGroupId,
+						},
+						commandOptions,
+					),
 				),
-			update: async (row, existing, commandOptions) =>
-				updateItem(
-					{
-						organizationId: ctx.organizationId,
-						actorUserId: ctx.actorUserId,
-						correlationId: ctx.correlationId,
-						id: existing.id,
-						expectedVersion: existing.version,
-						name: row.name,
-					},
-					commandOptions,
+			update: (row, existing, commandOptions) =>
+				resolveAsync(() =>
+					updateItem(
+						{
+							organizationId: ctx.organizationId,
+							actorUserId: ctx.actorUserId,
+							correlationId: ctx.correlationId,
+							id: existing.id,
+							expectedVersion: existing.version,
+							name: row.name,
+						},
+						commandOptions,
+					),
 				),
 			isUnchanged: (existing, row) => existing.name === row.name,
 			rejectImmutable: (existing, row, rowIndex, code) => {
@@ -1616,29 +1778,33 @@ export async function upsertWarehousesByCode(
 					version: result.data.version,
 				});
 			},
-			create: async (row, code, commandOptions) =>
-				createWarehouse(
-					{
-						organizationId: ctx.organizationId,
-						actorUserId: ctx.actorUserId,
-						correlationId: ctx.correlationId,
-						code,
-						name: row.name,
-						locationType: row.locationType,
-					},
-					commandOptions,
+			create: (row, code, commandOptions) =>
+				resolveAsync(() =>
+					createWarehouse(
+						{
+							organizationId: ctx.organizationId,
+							actorUserId: ctx.actorUserId,
+							correlationId: ctx.correlationId,
+							code,
+							name: row.name,
+							locationType: row.locationType,
+						},
+						commandOptions,
+					),
 				),
-			update: async (row, existing, commandOptions) =>
-				updateWarehouse(
-					{
-						organizationId: ctx.organizationId,
-						actorUserId: ctx.actorUserId,
-						correlationId: ctx.correlationId,
-						id: existing.id,
-						expectedVersion: existing.version,
-						name: row.name,
-					},
-					commandOptions,
+			update: (row, existing, commandOptions) =>
+				resolveAsync(() =>
+					updateWarehouse(
+						{
+							organizationId: ctx.organizationId,
+							actorUserId: ctx.actorUserId,
+							correlationId: ctx.correlationId,
+							id: existing.id,
+							expectedVersion: existing.version,
+							name: row.name,
+						},
+						commandOptions,
+					),
 				),
 			isUnchanged: (existing, row) => existing.name === row.name,
 			rejectImmutable: (existing, row, rowIndex, code) => {
@@ -1661,22 +1827,24 @@ export async function upsertWarehousesByCode(
 }
 
 /** Validate-only alias — dry-run party upsert (`master_data.import_validate`). */
-export async function validatePartyImportBatch(
+export function validatePartyImportBatch(
 	input: unknown,
 	options: MasterCommandOptions = {},
 ): Promise<Result<ImportReconciliationReport>> {
-	const parsed = parseMasterInput(
-		upsertPartiesByCodeInputSchema,
-		input,
-		"Invalid party import validate input",
-	);
-	if (!parsed.ok) {
-		return parsed;
-	}
-	return upsertPartiesByCode(
-		{ ...parsed.data, dryRun: true, approved: false },
-		options,
-	);
+	return resolveAsync(() => {
+		const parsed = parseMasterInput(
+			upsertPartiesByCodeInputSchema,
+			input,
+			"Invalid party import validate input",
+		);
+		if (!parsed.ok) {
+			return parsed;
+		}
+		return upsertPartiesByCode(
+			{ ...parsed.data, dryRun: true, approved: false },
+			options,
+		);
+	});
 }
 
 function assertNever(value: never): never {

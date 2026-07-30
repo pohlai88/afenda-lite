@@ -48,14 +48,14 @@ export const Overview: Story = {
 			<div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-5 border-b pb-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
 					<div className="grid gap-2">
-						<p className="text-sm font-medium text-foreground-secondary">
+						<p className="font-medium text-foreground-secondary text-sm">
 							Accounts receivable
 						</p>
 						<div className="grid gap-1">
-							<h1 className="text-2xl font-semibold tracking-tight">
+							<h1 className="font-semibold text-2xl tracking-tight">
 								INV-1048
 							</h1>
-							<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+							<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 								Breadcrumb marks where the operator is in the workspace tree.
 								Feature code owns destinations and which ancestors are
 								authorized.
@@ -63,7 +63,7 @@ export const Overview: Story = {
 						</div>
 					</div>
 					<div className="grid gap-2 rounded-lg border bg-card p-4">
-						<p className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+						<p className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 							Location
 						</p>
 						<Breadcrumb aria-label="Invoice location">
@@ -95,11 +95,11 @@ export const Overview: Story = {
 							</div>
 							<div className="flex flex-wrap items-center gap-2">
 								<Badge variant="outline">Malaysia</Badge>
-								<StatusBadge status="pending" label="Awaiting approval" />
+								<StatusBadge label="Awaiting approval" status="pending" />
 							</div>
 						</div>
 					</CardHeader>
-					<CardContent className="grid gap-2 text-sm text-foreground-secondary">
+					<CardContent className="grid gap-2 text-foreground-secondary text-sm">
 						<p>Remittance owner: Aisha Rahman</p>
 						<p>Ledger: July 2026 receivables batch</p>
 					</CardContent>
@@ -140,7 +140,7 @@ export const Usage: Story = {
 					</BreadcrumbList>
 				</Breadcrumb>
 			</div>
-			<p className="text-sm text-foreground-secondary">
+			<p className="text-foreground-secondary text-sm">
 				Labels match list and record titles operators already recognize.
 			</p>
 		</div>
@@ -176,7 +176,7 @@ export const StatesAndAccessibility: Story = {
 					</BreadcrumbList>
 				</Breadcrumb>
 			</div>
-			<p className="text-sm text-foreground-secondary">
+			<p className="text-foreground-secondary text-sm">
 				Assistive technology announces the trail as navigation. The current page
 				is not a self-link.
 			</p>
@@ -197,7 +197,7 @@ export const VariantsAndSizes: Story = {
 	render: () => (
 		<div className="grid w-full max-w-5xl gap-6">
 			<div className="grid gap-2">
-				<p className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+				<p className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 					Full trail
 				</p>
 				<Breadcrumb aria-label="Full invoice trail">
@@ -221,7 +221,7 @@ export const VariantsAndSizes: Story = {
 				</Breadcrumb>
 			</div>
 			<div className="grid gap-2">
-				<p className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+				<p className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 					Truncated trail
 				</p>
 				<Breadcrumb aria-label="Truncated invoice trail">
@@ -282,11 +282,11 @@ export const Composition: Story = {
 						</div>
 						<div className="flex flex-wrap items-center gap-2">
 							<Badge>Strategic</Badge>
-							<StatusBadge status="active" label="Active" />
+							<StatusBadge label="Active" status="active" />
 						</div>
 					</div>
 				</CardHeader>
-				<CardContent className="text-sm text-foreground-secondary">
+				<CardContent className="text-foreground-secondary text-sm">
 					Trail location is independent of supplier classification and
 					lifecycle.
 				</CardContent>
@@ -330,7 +330,7 @@ export const DoAndDoNot: Story = {
 							</BreadcrumbItem>
 						</BreadcrumbList>
 					</Breadcrumb>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						The current page must use BreadcrumbPage, not a self-link.
 					</p>
 				</div>
@@ -355,21 +355,21 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do not: treat Breadcrumb as a stepper">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Step progress and wizard stages belong on Stepper. Breadcrumb only
 					answers where the operator is in the workspace tree.
 				</p>
 			</StorySection>
 
 			<StorySection title="Do: keep labels aligned with destination titles">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Prefer “Purchase orders” over vague crumbs such as “Back” or “Previous
 					page”.
 				</p>
 			</StorySection>
 
 			<StorySection title="Do not: expose unauthorized ancestors">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Feature code must omit ancestors the operator cannot open. Completing
 					a visual trail is not a reason to leak restricted modules.
 				</p>

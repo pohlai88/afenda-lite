@@ -14,7 +14,7 @@ import {
 } from "./run-helpers";
 import { assertPayrollRunTransition } from "./transitions";
 
-export async function calculatePayrollRun(
+export function calculatePayrollRun(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollRun>> {
@@ -22,6 +22,7 @@ export async function calculatePayrollRun(
 		schema: calculatePayrollRunInputSchema,
 		invalidMessage: "Invalid payroll run calculate input",
 		command: PAYROLL_COMMAND_RUN_CALCULATE,
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Run calculation coordinates state transition, output replacement, exception evidence, and rollback.
 		execute: async (data, { store, ports, calculator }) => {
 			const calculatorPort = requirePayrollRunCalculator(calculator);
 			if (!calculatorPort.ok) {

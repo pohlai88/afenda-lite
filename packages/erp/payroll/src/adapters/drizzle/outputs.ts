@@ -24,7 +24,7 @@ import {
 import type { PayrollOutputsStore } from "../../store/outputs";
 import type { PayrollResultLine, PayrollRunEmployee } from "../../types";
 
-async function recordAudit(
+function recordAudit(
 	ports: MutationPorts,
 	input: {
 		organizationId: string;
@@ -61,6 +61,7 @@ function mapRunEmployeeRow(
 		row.assignmentId === null
 			? ok(null)
 			: parsePayrollEmployeeAssignmentId(row.assignmentId);
+	// biome-ignore lint/suspicious/noUnnecessaryConditions: Runtime database rows are validated even when Drizzle's static brand says the failure is unreachable.
 	if (!assignmentId.ok) {
 		return assignmentId;
 	}
@@ -141,7 +142,7 @@ async function assertRunAllowsOutputMutation(input: {
 				),
 			)
 			.limit(1);
-		const row = rows[0];
+		const [row] = rows;
 		if (row === undefined) {
 			return mapNotFound("Payroll run not found");
 		}
@@ -226,75 +227,69 @@ export const drizzleOutputsMethods: PayrollOutputsStore = {
 		const resultLines: PayrollResultLine[] = [];
 
 		try {
-			for (const employee of input.runEmployees) {
+			if (input.runEmployees.length > 0) {
 				const rows = await db
 					.insert(payrollRunEmployee)
-					.values({
-						id: employee.id,
-						organizationId: input.organizationId,
-						runId: input.runId,
-						employeeId: employee.employeeId,
-						assignmentId: employee.assignmentId,
-						currencyCode: employee.currencyCode,
-						gross: employee.gross,
-						employeeDeductions: employee.employeeDeductions,
-						employeeStatutory: employee.employeeStatutory,
-						employerCost: employee.employerCost,
-						net: employee.net,
-						snapshotJson: employee.snapshotJson,
-						snapshotHash: employee.snapshotHash,
-						calculationVersion: employee.calculationVersion,
-						status: employee.status,
-					})
+					.values(
+						input.runEmployees.map((employee) => ({
+							id: employee.id,
+							organizationId: input.organizationId,
+							runId: input.runId,
+							employeeId: employee.employeeId,
+							assignmentId: employee.assignmentId,
+							currencyCode: employee.currencyCode,
+							gross: employee.gross,
+							employeeDeductions: employee.employeeDeductions,
+							employeeStatutory: employee.employeeStatutory,
+							employerCost: employee.employerCost,
+							net: employee.net,
+							snapshotJson: employee.snapshotJson,
+							snapshotHash: employee.snapshotHash,
+							calculationVersion: employee.calculationVersion,
+							status: employee.status,
+						})),
+					)
 					.returning();
-				const row = rows[0];
-				if (row === undefined) {
-					return mapPersistenceFailure(
-						new Error("Missing returning row"),
-						"Failed to create payroll run employee",
-					);
+				for (const row of rows) {
+					const mapped = mapRunEmployeeRow(row);
+					if (!mapped.ok) {
+						return mapped;
+					}
+					runEmployees.push(mapped.data);
 				}
-				const mapped = mapRunEmployeeRow(row);
-				if (!mapped.ok) {
-					return mapped;
-				}
-				runEmployees.push(mapped.data);
 			}
 
-			for (const line of input.resultLines) {
+			if (input.resultLines.length > 0) {
 				const rows = await db
 					.insert(payrollResultLine)
-					.values({
-						id: line.id,
-						organizationId: input.organizationId,
-						runId: input.runId,
-						runEmployeeId: line.runEmployeeId,
-						employeeId: line.employeeId,
-						lineKind: line.lineKind,
-						code: line.code,
-						ruleCode: line.ruleCode,
-						ruleVersion: line.ruleVersion,
-						ruleKind: line.ruleKind,
-						amount: line.amount,
-						currencyCode: line.currencyCode,
-						sourceType: line.sourceType,
-						sourceId: line.sourceId,
-						sequence: line.sequence,
-						traceRef: line.traceRef,
-					})
+					.values(
+						input.resultLines.map((line) => ({
+							id: line.id,
+							organizationId: input.organizationId,
+							runId: input.runId,
+							runEmployeeId: line.runEmployeeId,
+							employeeId: line.employeeId,
+							lineKind: line.lineKind,
+							code: line.code,
+							ruleCode: line.ruleCode,
+							ruleVersion: line.ruleVersion,
+							ruleKind: line.ruleKind,
+							amount: line.amount,
+							currencyCode: line.currencyCode,
+							sourceType: line.sourceType,
+							sourceId: line.sourceId,
+							sequence: line.sequence,
+							traceRef: line.traceRef,
+						})),
+					)
 					.returning();
-				const row = rows[0];
-				if (row === undefined) {
-					return mapPersistenceFailure(
-						new Error("Missing returning row"),
-						"Failed to create payroll result line",
-					);
+				for (const row of rows) {
+					const mapped = mapResultLineRow(row);
+					if (!mapped.ok) {
+						return mapped;
+					}
+					resultLines.push(mapped.data);
 				}
-				const mapped = mapResultLineRow(row);
-				if (!mapped.ok) {
-					return mapped;
-				}
-				resultLines.push(mapped.data);
 			}
 
 			const audit = await recordAudit(ports, {

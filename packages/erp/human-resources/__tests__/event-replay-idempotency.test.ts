@@ -32,7 +32,9 @@ describe("event replay and consumer idempotency", () => {
 			ready,
 		);
 		expect(emp.ok).toBe(true);
-		if (!emp.ok) return;
+		if (!emp.ok) {
+			return;
+		}
 
 		const payload = {
 			organizationId: "org-replay-cmd",
@@ -83,7 +85,9 @@ describe("event replay and consumer idempotency", () => {
 			ready,
 		);
 		expect(emp.ok).toBe(true);
-		if (!emp.ok) return;
+		if (!emp.ok) {
+			return;
+		}
 
 		const payload = {
 			organizationId: "org-replay-we",

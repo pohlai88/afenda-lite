@@ -93,27 +93,27 @@ import {
 	type WorkforcePlanningMemoryState,
 } from "./workforce-planning";
 
-export type MemoryHumanResourcesStoreState = {
-	core: CoreMemoryState;
-	organization: OrganizationMemoryState;
-	recruitment: RecruitmentMemoryState;
-	lifecycle: LifecycleMemoryState;
-	leave: LeaveMemoryState;
+export interface MemoryHumanResourcesStoreState {
 	compensationBenefits: CompensationBenefitsMemoryState;
-	performance: PerformanceMemoryState;
+	compliance: ComplianceMemoryState;
+	core: CoreMemoryState;
+	employeeRelations: EmployeeRelationsMemoryState;
+	hireOrchestration: HireOrchestrationMemoryState;
 	learning: LearningMemoryState;
+	leave: LeaveMemoryState;
+	lifecycle: LifecycleMemoryState;
+	organization: OrganizationMemoryState;
+	performance: PerformanceMemoryState;
+	recruitment: RecruitmentMemoryState;
 	talent: TalentMemoryState;
 	time: TimeMemoryState;
-	workforcePlanning: WorkforcePlanningMemoryState;
-	compliance: ComplianceMemoryState;
-	employeeRelations: EmployeeRelationsMemoryState;
 	workforceFoundation: WorkforceFoundationMemoryState;
-	hireOrchestration: HireOrchestrationMemoryState;
-};
+	workforcePlanning: WorkforcePlanningMemoryState;
+}
 
 export type MemoryHumanResourcesStore = HumanResourcesStore & {
 	readonly state: MemoryHumanResourcesStoreState;
-	reset(): void;
+	reset: () => void;
 };
 
 function createMemoryHumanResourcesStoreState(): MemoryHumanResourcesStoreState {

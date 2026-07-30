@@ -49,7 +49,7 @@ function resolveAssignmentUserLabel(
 }
 
 function formatAuditJsonValue(value: unknown): string | null {
-	if (value == null) {
+	if (value === null) {
 		return null;
 	}
 	try {
@@ -63,7 +63,7 @@ function formatAuditJsonValue(value: unknown): string | null {
 function toIsoInstantOrNull(
 	value: Date | string | null | undefined,
 ): string | null {
-	if (value == null) {
+	if (value === null) {
 		return null;
 	}
 	if (value instanceof Date) {
@@ -202,15 +202,15 @@ export async function OrgAdminShell() {
 	return (
 		<main className="flex flex-col gap-(--section-gap)">
 			<header className="flex flex-col gap-2">
-				<h1 className="text-2xl font-semibold tracking-tight">
+				<h1 className="font-semibold text-2xl tracking-tight">
 					Operator admin
 				</h1>
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Org-console and org-scoped RBAC for active org <Code>{orgId}</Code>.
 				</p>
 			</header>
 
-			<OrgConsolePanels orgList={orgList} usage={usage} activeOrgId={orgId} />
+			<OrgConsolePanels activeOrgId={orgId} orgList={orgList} usage={usage} />
 
 			{canManageRoles ? (
 				<MetricGrid
@@ -220,19 +220,19 @@ export async function OrgAdminShell() {
 							title: "Assignable roles",
 							value: roles.length,
 							description: "System templates and org-custom roles",
-							icon: <Shield className="size-4" aria-hidden />,
+							icon: <Shield aria-hidden className="size-4" />,
 						},
 						{
 							title: "Active assignments",
 							value: activeAssignments.length,
 							description: "Current org role bindings",
-							icon: <Users className="size-4" aria-hidden />,
+							icon: <Users aria-hidden className="size-4" />,
 						},
 						{
 							title: "Audit events",
 							value: auditRows.length,
 							description: "Org-scoped RBAC history",
-							icon: <ClipboardList className="size-4" aria-hidden />,
+							icon: <ClipboardList aria-hidden className="size-4" />,
 						},
 					]}
 				/>
@@ -259,12 +259,6 @@ export async function OrgAdminShell() {
 
 			{canManageRoles ? (
 				<OrgAdminPanels
-					roles={roles.map((item) => ({
-						id: item.id,
-						name: item.name,
-						active: item.active,
-						isSystemTemplate: item.isSystemTemplate,
-					}))}
 					assignments={activeAssignments.map((item) => ({
 						id: item.id,
 						userId: item.userId,
@@ -290,6 +284,12 @@ export async function OrgAdminShell() {
 						newValueJson: formatAuditJsonValue(item.newValue),
 					}))}
 					memberDirectory={memberDirectory}
+					roles={roles.map((item) => ({
+						id: item.id,
+						name: item.name,
+						active: item.active,
+						isSystemTemplate: item.isSystemTemplate,
+					}))}
 				/>
 			) : null}
 		</main>

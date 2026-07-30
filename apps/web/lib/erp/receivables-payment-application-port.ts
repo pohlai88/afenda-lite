@@ -5,6 +5,7 @@ import type { PaymentApplicationQueryPort } from "@afenda/receivables";
 import { createPaymentsCommandOptions } from "@/lib/erp/payments-command-options";
 
 const SCALE = 1_000_000n;
+const TRAILING_ZERO_PATTERN = /0+$/;
 
 function decimal(value: string): bigint {
 	const [whole = "0", fraction = ""] = value.split(".");
@@ -16,7 +17,7 @@ function formatDecimal(value: bigint): string {
 	const fraction = (value % SCALE)
 		.toString()
 		.padStart(6, "0")
-		.replace(/0+$/, "");
+		.replace(TRAILING_ZERO_PATTERN, "");
 	return fraction.length > 0 ? `${whole}.${fraction}` : whole.toString();
 }
 
@@ -48,13 +49,19 @@ export function createPaymentApplicationQueryPort(): PaymentApplicationQueryPort
 				},
 				createPaymentsCommandOptions(),
 			);
-			if (!result.ok) return result;
-			if (result.data === null) return ok(null);
+			if (!result.ok) {
+				return result;
+			}
+			if (result.data === null) {
+				return ok(null);
+			}
 			const payment = result.data;
 			const instruction = payment.applicationInstructions.find(
 				(candidate) => candidate.id === input.paymentApplicationInstructionId,
 			);
-			if (instruction === undefined) return ok(null);
+			if (instruction === undefined) {
+				return ok(null);
+			}
 			const remaining =
 				decimal(instruction.intendedAmount) -
 				decimal(instruction.appliedAmount);

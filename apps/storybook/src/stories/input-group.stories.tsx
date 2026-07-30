@@ -60,13 +60,13 @@ export const Overview: Story = {
 					<div className="grid gap-2">
 						<div className="flex flex-wrap items-center gap-2">
 							<Badge variant="outline">Accounts payable</Badge>
-							<StatusBadge size="sm" status="active" label="Draft remittance" />
+							<StatusBadge label="Draft remittance" size="sm" status="active" />
 						</div>
 						<div className="grid gap-1">
-							<h1 className="text-2xl font-semibold tracking-tight">
+							<h1 className="font-semibold text-2xl tracking-tight">
 								Supplier remittance line
 							</h1>
-							<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+							<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 								InputGroup keeps prefixes, suffixes, and local actions visually
 								tied to one control. Feature code owns currency meaning,
 								autosave, and posting.
@@ -75,25 +75,25 @@ export const Overview: Story = {
 					</div>
 					<dl className="grid grid-cols-2 gap-x-8 gap-y-3 rounded-lg border bg-card p-4">
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Subject
 							</dt>
 							<dd className="text-sm">Supplier remittance line</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Area
 							</dt>
 							<dd className="text-sm">Accounts payable</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Scope
 							</dt>
 							<dd className="text-sm">Prefix, suffix, and local actions</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								State
 							</dt>
 							<dd className="text-sm">Draft remittance</dd>
@@ -102,17 +102,17 @@ export const Overview: Story = {
 				</header>
 
 				<section
-					className="grid gap-3"
 					aria-labelledby="input-group-amount-title"
+					className="grid gap-3"
 				>
 					<div className="grid gap-1">
 						<h2
-							className="text-base font-semibold tracking-tight text-foreground"
+							className="font-semibold text-base text-foreground tracking-tight"
 							id="input-group-amount-title"
 						>
 							Payment amount
 						</h2>
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							Inline addons explain unit and currency without becoming the
 							submitted value.
 						</p>
@@ -126,8 +126,8 @@ export const Overview: Story = {
 						</CardHeader>
 						<CardContent className="grid gap-4">
 							<FormField
-								label="Amount"
 								description="Enter the settled value in the remittance currency."
+								label="Amount"
 							>
 								<InputGroup>
 									<InputGroupAddon align="inline-start">$</InputGroupAddon>
@@ -141,7 +141,7 @@ export const Overview: Story = {
 							</FormField>
 						</CardContent>
 						<CardFooter className="justify-end border-t">
-							<Button type="button" size="sm">
+							<Button size="sm" type="button">
 								Save line
 							</Button>
 						</CardFooter>
@@ -149,17 +149,17 @@ export const Overview: Story = {
 				</section>
 
 				<section
-					className="grid gap-3"
 					aria-labelledby="input-group-memo-title"
+					className="grid gap-3"
 				>
 					<div className="grid gap-1">
 						<h2
-							className="text-base font-semibold tracking-tight text-foreground"
+							className="font-semibold text-base text-foreground tracking-tight"
 							id="input-group-memo-title"
 						>
 							Remittance memo
 						</h2>
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							Block addons host supporting copy and a local clear action above
 							and below the control.
 						</p>
@@ -167,8 +167,8 @@ export const Overview: Story = {
 					<Card className="shadow-none">
 						<CardContent className="grid gap-4 pt-6">
 							<FormField
-								label="Description"
 								description="Visible on the remittance advice sent to the supplier."
+								label="Description"
 							>
 								<InputGroup>
 									<InputGroupAddon align="block-start">
@@ -207,8 +207,8 @@ export const SemanticUsage: Story = {
 	render: () => (
 		<div className="grid w-full max-w-md gap-6">
 			<StorySection
-				title="Inline currency framing"
 				description="Leading and trailing addons explain the amount without joining the value."
+				title="Inline currency framing"
 			>
 				<FormField label="Invoice total">
 					<InputGroup>
@@ -223,8 +223,8 @@ export const SemanticUsage: Story = {
 				</FormField>
 			</StorySection>
 			<StorySection
-				title="Reference with local action"
 				description="Trailing button operates on the same control — copy does not redefine the field."
+				title="Reference with local action"
 			>
 				<FormField label="Supplier reference">
 					<InputGroup>
@@ -235,9 +235,9 @@ export const SemanticUsage: Story = {
 						/>
 						<InputGroupAddon align="inline-end">
 							<InputGroupButton
+								aria-label="Copy supplier reference"
 								size="icon-xs"
 								type="button"
-								aria-label="Copy supplier reference"
 							>
 								<CopyIcon />
 							</InputGroupButton>
@@ -262,13 +262,13 @@ export const AdaptiveLayout: Story = {
 	render: () => (
 		<div className="grid w-full max-w-4xl gap-8">
 			<StorySection
-				title="Narrow payment drawer"
 				description="Currency framing remains visible and the numeric control retains usable width."
+				title="Narrow payment drawer"
 			>
-				<div className="w-full max-w-xs rounded-xl border border-dashed border-border p-4">
+				<div className="w-full max-w-xs rounded-xl border border-border border-dashed p-4">
 					<FormField
-						label="Settlement amount"
 						description="Enter the value in the invoice currency."
+						label="Settlement amount"
 					>
 						<InputGroup>
 							<InputGroupAddon align="inline-start">MYR</InputGroupAddon>
@@ -282,8 +282,8 @@ export const AdaptiveLayout: Story = {
 				</div>
 			</StorySection>
 			<StorySection
-				title="Long supporting status"
 				description="Block addons can carry supporting copy without compressing the textarea into an unusable inline row."
+				title="Long supporting status"
 			>
 				<FormField label="Internal reconciliation note">
 					<InputGroup>
@@ -320,8 +320,8 @@ export const OwnershipAndLocalActions: Story = {
 	render: () => (
 		<div className="grid w-full max-w-5xl gap-6">
 			<StorySection
-				title="Local copy action"
 				description="Copy uses the exact value already visible in the same field."
+				title="Local copy action"
 			>
 				<FormField label="Supplier reference">
 					<InputGroup>
@@ -332,9 +332,9 @@ export const OwnershipAndLocalActions: Story = {
 						/>
 						<InputGroupAddon align="inline-end">
 							<InputGroupButton
+								aria-label="Copy supplier reference"
 								size="icon-xs"
 								type="button"
-								aria-label="Copy supplier reference"
 							>
 								<CopyIcon aria-hidden="true" />
 							</InputGroupButton>
@@ -343,10 +343,10 @@ export const OwnershipAndLocalActions: Story = {
 				</FormField>
 			</StorySection>
 			<StorySection
-				title="Workflow command stays outside"
 				description="Approve remittance is not a local field action and therefore belongs in the Card footer."
+				title="Workflow command stays outside"
 			>
-				<p className="text-sm leading-6 text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm leading-6">
 					Do not place Submit, Approve, Post, or Delete inside an InputGroup
 					addon. Those commands act on the record or workflow, not only on the
 					grouped field.
@@ -367,7 +367,7 @@ export const Variants: Story = {
 	},
 	render: () => (
 		<div className="grid w-full max-w-md gap-6">
-			<StorySection title="inline-start" description="Leading inline addon.">
+			<StorySection description="Leading inline addon." title="inline-start">
 				<InputGroup>
 					<InputGroupAddon align="inline-start">$</InputGroupAddon>
 					<InputGroupInput
@@ -376,7 +376,7 @@ export const Variants: Story = {
 					/>
 				</InputGroup>
 			</StorySection>
-			<StorySection title="inline-end" description="Trailing inline addon.">
+			<StorySection description="Trailing inline addon." title="inline-end">
 				<InputGroup>
 					<InputGroupInput
 						aria-label="Inline end amount"
@@ -386,8 +386,8 @@ export const Variants: Story = {
 				</InputGroup>
 			</StorySection>
 			<StorySection
-				title="block-start"
 				description="Full-width supporting content before the control."
+				title="block-start"
 			>
 				<InputGroup>
 					<InputGroupAddon align="block-start">Line note</InputGroupAddon>
@@ -399,8 +399,8 @@ export const Variants: Story = {
 				</InputGroup>
 			</StorySection>
 			<StorySection
-				title="block-end"
 				description="Full-width supporting content after the control."
+				title="block-end"
 			>
 				<InputGroup>
 					<InputGroupTextarea
@@ -437,13 +437,13 @@ export const Sizes: Story = {
 				] as const
 			).map(({ size, label }) => (
 				<StorySection
-					key={size}
-					title={size}
 					description={
 						size.startsWith("icon")
 							? "Icon action with an explicit accessible name."
 							: "Labelled local action inside the group."
 					}
+					key={size}
+					title={size}
 				>
 					<InputGroup>
 						<InputGroupInput
@@ -452,11 +452,15 @@ export const Sizes: Story = {
 						/>
 						<InputGroupAddon align="inline-end">
 							<InputGroupButton
+								aria-label={size.startsWith("icon") ? label : undefined}
 								size={size}
 								type="button"
-								aria-label={size.startsWith("icon") ? label : undefined}
 							>
-								{size.startsWith("icon") ? <SearchIcon /> : label}
+								{size.startsWith("icon") ? (
+									<SearchIcon />
+								) : (
+									<span>{label}</span>
+								)}
 							</InputGroupButton>
 						</InputGroupAddon>
 					</InputGroup>
@@ -489,13 +493,13 @@ export const StatesAndAccessibility: Story = {
 				</InputGroup>
 			</FormField>
 			<FormField
-				label="Invalid tax identifier"
 				error="Enter a valid tax identifier."
+				label="Invalid tax identifier"
 			>
 				<InputGroup>
 					<InputGroupInput
-						aria-label="Invalid tax identifier"
 						aria-invalid
+						aria-label="Invalid tax identifier"
 						defaultValue="?"
 					/>
 					<InputGroupAddon align="inline-end">
@@ -514,10 +518,10 @@ export const StatesAndAccessibility: Story = {
 					/>
 					<InputGroupAddon align="inline-end">
 						<InputGroupButton
+							aria-label="Copy locked remittance reference"
+							disabled
 							size="icon-xs"
 							type="button"
-							disabled
-							aria-label="Copy locked remittance reference"
 						>
 							<CopyIcon />
 						</InputGroupButton>
@@ -548,8 +552,8 @@ export const Composition: Story = {
 			</CardHeader>
 			<CardContent className="grid gap-4">
 				<FormField
-					label="Allocation amount"
 					description="Currency framing stays outside the submitted amount."
+					label="Allocation amount"
 				>
 					<InputGroup>
 						<InputGroupAddon align="inline-start">$</InputGroupAddon>
@@ -579,10 +583,10 @@ export const Composition: Story = {
 				</FormField>
 			</CardContent>
 			<CardFooter className="justify-end gap-2 border-t">
-				<Button type="button" variant="outline" size="sm">
+				<Button size="sm" type="button" variant="outline">
 					Cancel
 				</Button>
-				<Button type="button" size="sm">
+				<Button size="sm" type="button">
 					Allocate
 				</Button>
 			</CardFooter>
@@ -602,8 +606,8 @@ export const DoAndDoNot: Story = {
 	render: () => (
 		<div className="grid w-full max-w-5xl gap-6 md:grid-cols-2">
 			<StorySection
-				title="Do"
 				description="One amount control, related currency framing, and FormField labelling."
+				title="Do"
 			>
 				<FormField label="Settled amount">
 					<InputGroup>
@@ -618,17 +622,17 @@ export const DoAndDoNot: Story = {
 				</FormField>
 			</StorySection>
 			<StorySection
-				title="Do not"
 				description="Do not treat addon chrome as the field label or cram unrelated inputs into one group."
+				title="Do not"
 			>
 				<div className="grid gap-2 rounded-md border border-destructive/40 p-3">
 					<InputGroup>
 						<InputGroupAddon align="inline-start">Amount</InputGroupAddon>
-						<InputGroupInput defaultValue="1250.00" aria-label="Amount" />
-						<InputGroupInput defaultValue="USD" aria-label="Currency code" />
-						<InputGroupInput defaultValue="PO-1042" aria-label="PO reference" />
+						<InputGroupInput aria-label="Amount" defaultValue="1250.00" />
+						<InputGroupInput aria-label="Currency code" defaultValue="USD" />
+						<InputGroupInput aria-label="PO reference" defaultValue="PO-1042" />
 					</InputGroup>
-					<p className="text-xs text-destructive">
+					<p className="text-destructive text-xs">
 						Addon text is not a field label, and three unrelated controls are
 						not one logical field.
 					</p>

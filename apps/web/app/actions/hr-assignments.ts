@@ -60,7 +60,7 @@ export async function createAssignmentAction(input: {
 	startsOn: string;
 	endsOn?: string | null;
 }): Promise<ActionResult<{ assignment: WorkAssignment }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "createAssignmentAction",
 		permission: "human-resources.employment.manage",
 		safeMessage: "Could not create assignment.",
@@ -78,7 +78,9 @@ export async function createAssignmentAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { assignment: mapped.data } };
 		},
 	});
@@ -90,7 +92,7 @@ export async function endAssignmentAction(input: {
 	endsOn: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ assignment: WorkAssignment }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "endAssignmentAction",
 		permission: "human-resources.employment.manage",
 		safeMessage: "Could not end assignment.",
@@ -108,7 +110,9 @@ export async function endAssignmentAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { assignment: mapped.data } };
 		},
 	});
@@ -127,7 +131,7 @@ export async function transferAssignmentAction(input: {
 	effectiveOn: string;
 	reason: string;
 }): Promise<ActionResult<{ movement: EmploymentMovement }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "transferAssignmentAction",
 		permission: "human-resources.employment.manage",
 		safeMessage: "Could not transfer assignment.",
@@ -145,7 +149,9 @@ export async function transferAssignmentAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { movement: mapped.data } };
 		},
 	});
@@ -155,7 +161,7 @@ export async function getAssignmentAction(input: {
 	correlationId?: string;
 	assignmentId: string;
 }): Promise<ActionResult<{ assignment: WorkAssignment }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getAssignmentAction",
 		permission: "human-resources.employee.read",
 		safeMessage: "Could not get assignment.",
@@ -173,7 +179,9 @@ export async function getAssignmentAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { assignment: mapped.data } };
 		},
 	});
@@ -184,7 +192,7 @@ export async function getAssignmentAsOfAction(input: {
 	employmentId: string;
 	asOf: string;
 }): Promise<ActionResult<{ assignment: WorkAssignment | null }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getAssignmentAsOfAction",
 		permission: "human-resources.employee.read",
 		safeMessage: "Could not get assignment as of date.",
@@ -202,7 +210,9 @@ export async function getAssignmentAsOfAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { assignment: mapped.data } };
 		},
 	});
@@ -213,7 +223,7 @@ export async function resolveEmployeeOrgContextAsOfAction(input: {
 	employeeId: string;
 	asOf: string;
 }): Promise<ActionResult<{ orgContext: EmployeeOrgContextAsOf }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "resolveEmployeeOrgContextAsOfAction",
 		permission: "human-resources.employee.read",
 		safeMessage: "Could not resolve employee org context.",
@@ -234,7 +244,9 @@ export async function resolveEmployeeOrgContextAsOfAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { orgContext: mapped.data } };
 		},
 	});

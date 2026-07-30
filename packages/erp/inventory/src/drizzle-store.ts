@@ -44,6 +44,7 @@ import {
 	inventoryErrorDetails,
 } from "./error-codes";
 import type { MutationPorts } from "./ports";
+import { runSequentiallyUntil } from "./resolve-async";
 import {
 	type AvailabilityFilter,
 	type BalanceEffect,
@@ -84,66 +85,68 @@ function failFromPersistence(error: unknown, fallbackMessage: string) {
 		: failFromAppError(mapped);
 }
 
-type TxIdRow = { id: string };
-
-type MovementSqlRow = {
+interface TxIdRow {
 	id: string;
-	organization_id: string;
+}
+
+interface MovementSqlRow {
+	adjustment_note: string | null;
+	adjustment_reason_code: string | null;
+	cancel_idempotency_key: string | null;
+	cancelled_at: Date | null;
+	cancelled_by: string | null;
 	code: string;
-	normalized_code: string;
-	movement_type: string;
-	status: string;
-	source: string;
-	warehouse_id: string | null;
-	warehouse_code: string | null;
-	warehouse_name: string | null;
-	from_warehouse_id: string | null;
+	create_idempotency_key: string;
+	created_at: Date;
+	created_by: string;
 	from_warehouse_code: string | null;
+	from_warehouse_id: string | null;
 	from_warehouse_name: string | null;
-	to_warehouse_id: string | null;
-	to_warehouse_code: string | null;
-	to_warehouse_name: string | null;
+	id: string;
+	movement_type: string;
+	normalized_code: string;
+	organization_id: string;
+	post_idempotency_key: string | null;
+	posted_at: Date | null;
+	posted_by: string | null;
 	reservation_id: string | null;
 	reverses_movement_id: string | null;
-	adjustment_reason_code: string | null;
-	adjustment_note: string | null;
-	source_module: string | null;
+	source: string;
 	source_aggregate_id: string | null;
 	source_event_id: string | null;
 	source_event_version: number | null;
 	source_line_id: string | null;
-	create_idempotency_key: string;
-	post_idempotency_key: string | null;
-	cancel_idempotency_key: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	posted_at: Date | null;
-	posted_by: string | null;
-	cancelled_at: Date | null;
-	cancelled_by: string | null;
-	created_at: Date;
+	source_module: string | null;
+	status: string;
+	to_warehouse_code: string | null;
+	to_warehouse_id: string | null;
+	to_warehouse_name: string | null;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+	warehouse_code: string | null;
+	warehouse_id: string | null;
+	warehouse_name: string | null;
+}
 
-type LineSqlRow = {
-	id: string;
-	organization_id: string;
-	movement_id: string;
-	line_no: number;
-	item_id: string;
-	item_code: string;
-	item_name: string;
-	base_uom_id: string;
+interface LineSqlRow {
 	base_uom_code: string;
-	quantity: string;
-	line_idempotency_key: string;
-	version: number;
-	created_by: string;
-	updated_by: string;
+	base_uom_id: string;
 	created_at: Date;
+	created_by: string;
+	id: string;
+	item_code: string;
+	item_id: string;
+	item_name: string;
+	line_idempotency_key: string;
+	line_no: number;
+	movement_id: string;
+	organization_id: string;
+	quantity: string;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+}
 
 function parseEnum<T extends string>(
 	value: string,
@@ -368,19 +371,27 @@ function json(value: unknown): string {
 
 const SQLSTATE_UNIQUE_VIOLATION = "23505";
 const SQLSTATE_DIVISION_BY_ZERO = "22012";
+const CREATE_MOVEMENT_CONFLICT_PATTERN =
+	/stock_movement_org_create_idempotency_uidx|create_idempotency_key/i;
+const LINE_CONFLICT_PATTERN =
+	/stock_movement_line_org_movement_idempotency_uidx|line_idempotency_key/i;
+const SOURCE_EVENT_CONFLICT_PATTERN =
+	/stock_movement_org_source_event_uidx|source_event_id/i;
+const RESERVATION_CREATE_CONFLICT_PATTERN =
+	/stock_reservation_org_create_idempotency_uidx|create_idempotency_key/i;
 
 function readErrorStringProperty(
 	error: unknown,
 	key: PropertyKey,
 ): string | undefined {
 	if (typeof error !== "object" || error === null) {
-		return undefined;
+		return;
 	}
 	try {
 		const value = Reflect.get(error, key);
 		return typeof value === "string" ? value : undefined;
 	} catch {
-		return undefined;
+		// Hostile error objects may expose throwing getters; absence is intentional.
 	}
 }
 
@@ -397,27 +408,19 @@ function isUniqueViolation(error: unknown): boolean {
 }
 
 function isCreateMovementIdempotencyConflict(error: unknown): boolean {
-	return /stock_movement_org_create_idempotency_uidx|create_idempotency_key/i.test(
-		readConstraintName(error),
-	);
+	return CREATE_MOVEMENT_CONFLICT_PATTERN.test(readConstraintName(error));
 }
 
 function isLineIdempotencyConflict(error: unknown): boolean {
-	return /stock_movement_line_org_movement_idempotency_uidx|line_idempotency_key/i.test(
-		readConstraintName(error),
-	);
+	return LINE_CONFLICT_PATTERN.test(readConstraintName(error));
 }
 
 function isSourceEventConflict(error: unknown): boolean {
-	return /stock_movement_org_source_event_uidx|source_event_id/i.test(
-		readConstraintName(error),
-	);
+	return SOURCE_EVENT_CONFLICT_PATTERN.test(readConstraintName(error));
 }
 
 function isReservationCreateIdempotencyConflict(error: unknown): boolean {
-	return /stock_reservation_org_create_idempotency_uidx|create_idempotency_key/i.test(
-		readConstraintName(error),
-	);
+	return RESERVATION_CREATE_CONFLICT_PATTERN.test(readConstraintName(error));
 }
 
 function isDivisionByZero(error: unknown): boolean {
@@ -452,6 +455,194 @@ function reservationNotFound(): Result<never> {
 	);
 }
 
+function validateMovementLineQuantity(
+	movementType: StockMovementType,
+	quantity: number,
+): Result<void> {
+	if (movementType === "adjustment" && quantity === 0) {
+		return fail("BAD_REQUEST", "Adjustment quantity must be non-zero");
+	}
+	if (movementType !== "adjustment" && quantity <= 0) {
+		return fail("BAD_REQUEST", "Quantity must be a positive number");
+	}
+	return ok(undefined);
+}
+
+interface ReservationReleaseProceed {
+	kind: "proceed";
+	remainingQuantity: number;
+}
+
+interface ReservationReleaseReplay {
+	kind: "replay";
+}
+
+type ReservationReleaseDecision =
+	| ReservationReleaseProceed
+	| ReservationReleaseReplay;
+
+interface DrizzlePostProceed {
+	effects: BalanceEffect[];
+	kind: "proceed";
+}
+
+interface DrizzlePostReplay {
+	kind: "replay";
+}
+
+type DrizzlePostDecision = DrizzlePostProceed | DrizzlePostReplay;
+
+interface DrizzlePostReservation {
+	consumedQuantity: number;
+	effects: BalanceEffect[];
+	reservation: StockReservation | null;
+}
+
+interface ReservationPostMutation {
+	auditId: string;
+	consumedQuantity: number;
+	status: "consumed" | "partially_consumed";
+}
+
+function reservationPostMutation(
+	reservation: StockReservation | null,
+	consumedQuantity: number,
+): ReservationPostMutation | null {
+	if (reservation === null || consumedQuantity <= 0) {
+		return null;
+	}
+	const nextConsumedQuantity =
+		parseQuantity(reservation.consumedQuantity) + consumedQuantity;
+	return {
+		auditId: randomUUID(),
+		consumedQuantity: nextConsumedQuantity,
+		status:
+			nextConsumedQuantity >= parseQuantity(reservation.quantity)
+				? "consumed"
+				: "partially_consumed",
+	};
+}
+
+function decideDrizzleMovementPost(
+	movement: StockMovement,
+	record: MovementPostRecord,
+): Result<DrizzlePostDecision> {
+	if (movement.status === "posted") {
+		return movement.postIdempotencyKey === record.postIdempotencyKey
+			? ok({ kind: "replay" })
+			: fail(
+					"CONFLICT",
+					"Stock movement is already posted",
+					inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_ALREADY_POSTED),
+				);
+	}
+	if (movement.status === "cancelled") {
+		return fail(
+			"CONFLICT",
+			"Cancelled stock movements cannot be posted",
+			inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_ALREADY_CANCELLED),
+		);
+	}
+	if (movement.status !== "draft") {
+		return fail(
+			"CONFLICT",
+			"Stock movement is not in draft status",
+			inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_NOT_DRAFT),
+		);
+	}
+	if (movement.version !== record.expectedVersion) {
+		return fail(
+			"CONFLICT",
+			"Stock movement version conflict",
+			inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_VERSION_CONFLICT),
+		);
+	}
+	if (movement.lines.length === 0) {
+		return fail(
+			"CONFLICT",
+			"Cannot post stock movement without lines",
+			inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_EMPTY_LINES),
+		);
+	}
+	if (movement.reservationId !== null && movement.movementType !== "issue") {
+		return fail(
+			"CONFLICT",
+			"Only issue movements may consume reservations",
+			inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_NOT_DRAFT),
+		);
+	}
+	try {
+		return ok({ effects: computeBalanceEffects(movement), kind: "proceed" });
+	} catch {
+		return fail(
+			"CONFLICT",
+			"Stock movement warehouses are invalid",
+			inventoryErrorDetails(INVENTORY_ERROR_INVALID_TRANSFER),
+		);
+	}
+}
+
+function decideReservationRelease(
+	reservation: StockReservation,
+	record: ReservationReleaseRecord,
+): Result<ReservationReleaseDecision> {
+	if (reservation.status === record.terminalStatus) {
+		return reservation.releaseIdempotencyKey === record.releaseIdempotencyKey
+			? ok({ kind: "replay" })
+			: fail(
+					"CONFLICT",
+					"Stock reservation is already terminated",
+					inventoryErrorDetails(INVENTORY_ERROR_RESERVATION_ALREADY_RELEASED),
+				);
+	}
+	if (!isReleasableReservationStatus(reservation.status)) {
+		return fail(
+			"CONFLICT",
+			"Stock reservation cannot be terminated",
+			inventoryErrorDetails(INVENTORY_ERROR_RESERVATION_ALREADY_RELEASED),
+		);
+	}
+	if (reservation.version !== record.expectedVersion) {
+		return fail(
+			"CONFLICT",
+			"Stock reservation version conflict",
+			inventoryErrorDetails(INVENTORY_ERROR_RESERVATION_VERSION_CONFLICT),
+		);
+	}
+	const remainingQuantity = getReservationRemainingQuantity(reservation);
+	if (remainingQuantity < 0) {
+		return fail(
+			"CONFLICT",
+			"Stock reservation remaining quantity is invalid",
+			inventoryErrorDetails(INVENTORY_ERROR_INSUFFICIENT_AVAILABLE),
+		);
+	}
+	return ok({ kind: "proceed", remainingQuantity });
+}
+
+function reservationReleaseEffects(
+	reservation: StockReservation,
+	remainingQuantity: number,
+): BalanceEffect[] {
+	return remainingQuantity === 0
+		? []
+		: [
+				{
+					warehouseId: reservation.warehouseId,
+					warehouseCode: reservation.warehouseCode,
+					itemId: reservation.itemId,
+					itemCode: reservation.itemCode,
+					baseUomId: reservation.baseUomId,
+					baseUomCode: reservation.baseUomCode,
+					onHandDelta: 0,
+					reservedDelta: -remainingQuantity,
+					availableDelta: remainingQuantity,
+					quantityDelta: 0,
+					movementLineId: null,
+				},
+			];
+}
+
 function getReservationRemainingQuantity(
 	reservation: StockReservation,
 ): number {
@@ -467,10 +658,10 @@ function isReleasableReservationStatus(
 	return status === "active" || status === "partially_consumed";
 }
 
-type ConsumptionResult = {
-	effects: BalanceEffect[];
+interface ConsumptionResult {
 	consumedQuantity: number;
-};
+	effects: BalanceEffect[];
+}
 
 function applyReservationConsumption(
 	effects: BalanceEffect[],
@@ -618,50 +809,101 @@ export class DrizzleInventoryStore implements InventoryStore {
 		organizationId: string,
 		effects: BalanceEffect[],
 	): Promise<Result<void>> {
-		for (const effect of effects) {
-			const [row] = await db
-				.select()
-				.from(stockBalance)
-				.where(
-					and(
-						eq(stockBalance.organizationId, organizationId),
-						eq(stockBalance.warehouseId, effect.warehouseId),
-						eq(stockBalance.itemId, effect.itemId),
-					),
-				)
-				.limit(1);
-			const onHand =
-				(row === undefined ? 0 : parseQuantity(row.onHand)) +
-				effect.onHandDelta;
-			const reserved =
-				(row === undefined ? 0 : parseQuantity(row.reserved)) +
-				effect.reservedDelta;
-			const available =
-				(row === undefined ? 0 : parseQuantity(row.available)) +
-				effect.availableDelta;
-			if (available < 0) {
-				return fail(
-					"CONFLICT",
-					"Insufficient available stock",
-					inventoryErrorDetails(INVENTORY_ERROR_INSUFFICIENT_AVAILABLE),
-				);
-			}
-			if (reserved < 0) {
-				return fail(
-					"CONFLICT",
-					"Insufficient reserved stock",
-					inventoryErrorDetails(INVENTORY_ERROR_INSUFFICIENT_AVAILABLE),
-				);
-			}
-			if (onHand < 0) {
-				return fail(
-					"CONFLICT",
-					"Stock on-hand would become negative",
-					inventoryErrorDetails(INVENTORY_ERROR_INSUFFICIENT_ON_HAND),
-				);
-			}
+		const terminal = await runSequentiallyUntil<BalanceEffect, Result<void>>(
+			effects,
+			async (effect) => {
+				const result = await this.validateBalanceEffect(organizationId, effect);
+				return result.ok ? undefined : result;
+			},
+		);
+		return terminal ?? ok(undefined);
+	}
+
+	private async validateBalanceEffect(
+		organizationId: string,
+		effect: BalanceEffect,
+	): Promise<Result<void>> {
+		const [row] = await db
+			.select()
+			.from(stockBalance)
+			.where(
+				and(
+					eq(stockBalance.organizationId, organizationId),
+					eq(stockBalance.warehouseId, effect.warehouseId),
+					eq(stockBalance.itemId, effect.itemId),
+				),
+			)
+			.limit(1);
+		const onHand =
+			(row === undefined ? 0 : parseQuantity(row.onHand)) + effect.onHandDelta;
+		const reserved =
+			(row === undefined ? 0 : parseQuantity(row.reserved)) +
+			effect.reservedDelta;
+		const available =
+			(row === undefined ? 0 : parseQuantity(row.available)) +
+			effect.availableDelta;
+		if (available < 0) {
+			return fail(
+				"CONFLICT",
+				"Insufficient available stock",
+				inventoryErrorDetails(INVENTORY_ERROR_INSUFFICIENT_AVAILABLE),
+			);
+		}
+		if (reserved < 0) {
+			return fail(
+				"CONFLICT",
+				"Insufficient reserved stock",
+				inventoryErrorDetails(INVENTORY_ERROR_INSUFFICIENT_AVAILABLE),
+			);
+		}
+		if (onHand < 0) {
+			return fail(
+				"CONFLICT",
+				"Stock on-hand would become negative",
+				inventoryErrorDetails(INVENTORY_ERROR_INSUFFICIENT_ON_HAND),
+			);
 		}
 		return ok(undefined);
+	}
+
+	private async resolveDrizzlePostReservation(
+		organizationId: string,
+		movement: StockMovement,
+		effects: BalanceEffect[],
+	): Promise<Result<DrizzlePostReservation>> {
+		if (movement.reservationId === null) {
+			return ok({ consumedQuantity: 0, effects, reservation: null });
+		}
+		const reservationResult = await this.getReservationById(
+			organizationId,
+			movement.reservationId,
+		);
+		if (!reservationResult.ok) {
+			return reservationResult;
+		}
+		if (reservationResult.data === null) {
+			return reservationNotFound();
+		}
+		const reservation = reservationResult.data;
+		if (
+			reservation.status === "released" ||
+			reservation.status === "expired" ||
+			reservation.status === "cancelled"
+		) {
+			return fail(
+				"CONFLICT",
+				"Stock reservation cannot be consumed",
+				inventoryErrorDetails(INVENTORY_ERROR_RESERVATION_ALREADY_RELEASED),
+			);
+		}
+		const adjustedEffects = applyReservationConsumption(
+			effects,
+			movement,
+			reservation,
+		);
+		return adjustedEffects.ok
+			? ok({ ...adjustedEffects.data, reservation })
+			: adjustedEffects;
 	}
 
 	async createMovement(
@@ -744,7 +986,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 					SELECT mutated.* FROM mutated, audited, outboxed
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return fail("INTERNAL_ERROR", "Stock movement create returned no row");
 			}
@@ -819,12 +1061,12 @@ export class DrizzleInventoryStore implements InventoryStore {
 		}
 
 		const quantity = parseQuantity(record.quantity);
-		if (movement.movementType === "adjustment") {
-			if (quantity === 0) {
-				return fail("BAD_REQUEST", "Adjustment quantity must be non-zero");
-			}
-		} else if (quantity <= 0) {
-			return fail("BAD_REQUEST", "Quantity must be a positive number");
+		const validQuantity = validateMovementLineQuantity(
+			movement.movementType,
+			quantity,
+		);
+		if (!validQuantity.ok) {
+			return validQuantity;
 		}
 
 		const lineNo =
@@ -883,7 +1125,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 					SELECT mutated.* FROM mutated, audited
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return fail(
 					"CONFLICT",
@@ -932,99 +1174,22 @@ export class DrizzleInventoryStore implements InventoryStore {
 		}
 
 		const movement = movementResult.data;
-		if (movement.status === "posted") {
-			if (movement.postIdempotencyKey === record.postIdempotencyKey) {
-				return ok(movement);
-			}
-			return fail(
-				"CONFLICT",
-				"Stock movement is already posted",
-				inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_ALREADY_POSTED),
-			);
+		const decision = decideDrizzleMovementPost(movement, record);
+		if (!decision.ok) {
+			return decision;
 		}
-		if (movement.status === "cancelled") {
-			return fail(
-				"CONFLICT",
-				"Cancelled stock movements cannot be posted",
-				inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_ALREADY_CANCELLED),
-			);
+		if (decision.data.kind === "replay") {
+			return ok(movement);
 		}
-		if (movement.status !== "draft") {
-			return fail(
-				"CONFLICT",
-				"Stock movement is not in draft status",
-				inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_NOT_DRAFT),
-			);
+		const reservationResult = await this.resolveDrizzlePostReservation(
+			record.organizationId,
+			movement,
+			decision.data.effects,
+		);
+		if (!reservationResult.ok) {
+			return reservationResult;
 		}
-		if (movement.version !== record.expectedVersion) {
-			return fail(
-				"CONFLICT",
-				"Stock movement version conflict",
-				inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_VERSION_CONFLICT),
-			);
-		}
-		if (movement.lines.length === 0) {
-			return fail(
-				"CONFLICT",
-				"Cannot post stock movement without lines",
-				inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_EMPTY_LINES),
-			);
-		}
-		if (movement.reservationId !== null && movement.movementType !== "issue") {
-			return fail(
-				"CONFLICT",
-				"Only issue movements may consume reservations",
-				inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_NOT_DRAFT),
-			);
-		}
-
-		let effects: BalanceEffect[];
-		try {
-			effects = computeBalanceEffects(movement);
-		} catch {
-			return fail(
-				"CONFLICT",
-				"Stock movement warehouses are invalid",
-				inventoryErrorDetails(INVENTORY_ERROR_INVALID_TRANSFER),
-			);
-		}
-
-		let reservation: StockReservation | null = null;
-		let consumedQuantity = 0;
-		if (movement.reservationId !== null) {
-			const reservationResult = await this.getReservationById(
-				record.organizationId,
-				movement.reservationId,
-			);
-			if (!reservationResult.ok) {
-				return reservationResult;
-			}
-			if (reservationResult.data === null) {
-				return reservationNotFound();
-			}
-			reservation = reservationResult.data;
-			if (
-				reservation.status === "released" ||
-				reservation.status === "expired" ||
-				reservation.status === "cancelled"
-			) {
-				return fail(
-					"CONFLICT",
-					"Stock reservation cannot be consumed",
-					inventoryErrorDetails(INVENTORY_ERROR_RESERVATION_ALREADY_RELEASED),
-				);
-			}
-			const adjustedEffects = applyReservationConsumption(
-				effects,
-				movement,
-				reservation,
-			);
-			if (!adjustedEffects.ok) {
-				return adjustedEffects;
-			}
-			effects = adjustedEffects.data.effects;
-			consumedQuantity = adjustedEffects.data.consumedQuantity;
-		}
+		const { consumedQuantity, effects, reservation } = reservationResult.data;
 
 		const balanceCheck = await this.validateBalanceEffects(
 			record.organizationId,
@@ -1057,17 +1222,10 @@ export class DrizzleInventoryStore implements InventoryStore {
 			movementType: movement.movementType,
 		});
 
-		const reservationAuditId = consumedQuantity > 0 ? randomUUID() : null;
-		const nextReservationConsumedQuantity =
-			reservation === null
-				? null
-				: parseQuantity(reservation.consumedQuantity) + consumedQuantity;
-		const nextReservationStatus =
-			reservation === null || nextReservationConsumedQuantity === null
-				? null
-				: nextReservationConsumedQuantity >= parseQuantity(reservation.quantity)
-					? "consumed"
-					: "partially_consumed";
+		const reservationMutation = reservationPostMutation(
+			reservation,
+			consumedQuantity,
+		);
 
 		try {
 			const resultSets = await runNeonHttpTransaction<unknown[][]>((sql) => {
@@ -1187,23 +1345,17 @@ export class DrizzleInventoryStore implements InventoryStore {
 					`);
 				}
 
-				if (
-					reservation !== null &&
-					consumedQuantity > 0 &&
-					reservationAuditId !== null &&
-					nextReservationConsumedQuantity !== null &&
-					nextReservationStatus !== null
-				) {
+				if (reservation !== null && reservationMutation !== null) {
 					const reservationChangesJson = json([
 						{
 							field: "consumed_quantity",
 							oldValue: reservation.consumedQuantity,
-							newValue: formatQuantity(nextReservationConsumedQuantity),
+							newValue: formatQuantity(reservationMutation.consumedQuantity),
 						},
 						{
 							field: "status",
 							oldValue: reservation.status,
-							newValue: nextReservationStatus,
+							newValue: reservationMutation.status,
 						},
 					]);
 					const reservationOldValueJson = valueSnapshotJson({
@@ -1212,15 +1364,17 @@ export class DrizzleInventoryStore implements InventoryStore {
 						consumedQuantity: reservation.consumedQuantity,
 					});
 					const reservationNewValueJson = valueSnapshotJson({
-						status: nextReservationStatus,
+						status: reservationMutation.status,
 						version: reservation.version + 1,
-						consumedQuantity: formatQuantity(nextReservationConsumedQuantity),
+						consumedQuantity: formatQuantity(
+							reservationMutation.consumedQuantity,
+						),
 					});
 					statements.push(sql`
 						WITH mutated AS (
 							UPDATE stock_reservation
-							SET consumed_quantity = CAST(${formatQuantity(nextReservationConsumedQuantity)} AS numeric(24, 12)),
-								status = ${nextReservationStatus},
+							SET consumed_quantity = CAST(${formatQuantity(reservationMutation.consumedQuantity)} AS numeric(24, 12)),
+								status = ${reservationMutation.status},
 								updated_by = ${record.actorUserId},
 								updated_at = now(),
 								version = version + 1
@@ -1235,7 +1389,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 								entity_id, action, changes, old_value, new_value
 							)
 							SELECT
-								${reservationAuditId}, organization_id, ${record.actorUserId}, ${meta.correlationId},
+								${reservationMutation.auditId}, organization_id, ${record.actorUserId}, ${meta.correlationId},
 								'inventory', 'stock_reservation', id, 'UPDATE',
 								${reservationChangesJson}::jsonb,
 								${reservationOldValueJson}::jsonb,
@@ -1254,7 +1408,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 				return statements;
 			});
 
-			const headerRows = resultSets[0];
+			const [headerRows] = resultSets;
 			if (!Array.isArray(headerRows) || headerRows[0] === undefined) {
 				const reloaded = await this.getMovementById(
 					record.organizationId,
@@ -1602,7 +1756,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 					SELECT id FROM created
 				`,
 			]);
-			const createdRows = resultSets[1];
+			const [, createdRows] = resultSets;
 			if (!Array.isArray(createdRows) || createdRows[0] === undefined) {
 				return fail(
 					"INTERNAL_ERROR",
@@ -1662,58 +1816,15 @@ export class DrizzleInventoryStore implements InventoryStore {
 		}
 
 		const reservation = reservationResult.data;
-		if (reservation.status === record.terminalStatus) {
-			if (reservation.releaseIdempotencyKey === record.releaseIdempotencyKey) {
-				return ok(reservation);
-			}
-			return fail(
-				"CONFLICT",
-				"Stock reservation is already terminated",
-				inventoryErrorDetails(INVENTORY_ERROR_RESERVATION_ALREADY_RELEASED),
-			);
+		const decision = decideReservationRelease(reservation, record);
+		if (!decision.ok) {
+			return decision;
 		}
-		if (!isReleasableReservationStatus(reservation.status)) {
-			return fail(
-				"CONFLICT",
-				"Stock reservation cannot be terminated",
-				inventoryErrorDetails(INVENTORY_ERROR_RESERVATION_ALREADY_RELEASED),
-			);
+		if (decision.data.kind === "replay") {
+			return ok(reservation);
 		}
-		if (reservation.version !== record.expectedVersion) {
-			return fail(
-				"CONFLICT",
-				"Stock reservation version conflict",
-				inventoryErrorDetails(INVENTORY_ERROR_RESERVATION_VERSION_CONFLICT),
-			);
-		}
-
-		const remainingQuantity = getReservationRemainingQuantity(reservation);
-		if (remainingQuantity < 0) {
-			return fail(
-				"CONFLICT",
-				"Stock reservation remaining quantity is invalid",
-				inventoryErrorDetails(INVENTORY_ERROR_INSUFFICIENT_AVAILABLE),
-			);
-		}
-
-		const effects: BalanceEffect[] =
-			remainingQuantity === 0
-				? []
-				: [
-						{
-							warehouseId: reservation.warehouseId,
-							warehouseCode: reservation.warehouseCode,
-							itemId: reservation.itemId,
-							itemCode: reservation.itemCode,
-							baseUomId: reservation.baseUomId,
-							baseUomCode: reservation.baseUomCode,
-							onHandDelta: 0,
-							reservedDelta: -remainingQuantity,
-							availableDelta: remainingQuantity,
-							quantityDelta: 0,
-							movementLineId: null,
-						},
-					];
+		const { remainingQuantity } = decision.data;
+		const effects = reservationReleaseEffects(reservation, remainingQuantity);
 		const balanceCheck = await this.validateBalanceEffects(
 			record.organizationId,
 			effects,
@@ -1842,7 +1953,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 				`);
 				return statements;
 			});
-			const last = resultSets[resultSets.length - 1];
+			const last = resultSets.at(-1);
 			if (!Array.isArray(last) || last[0] === undefined) {
 				const reloaded = await this.getReservationById(
 					record.organizationId,
@@ -2115,7 +2226,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 		}
 	}
 
-	async getLedgerSequence(organizationId: string): Promise<Result<number>> {
+	getLedgerSequence(organizationId: string): Promise<Result<number>> {
 		return this.getLatestLedgerSequence(organizationId);
 	}
 

@@ -14,8 +14,8 @@ describe("receivables transaction rollback", () => {
 	it("rolls back invoice and balance when outbox emission fails", async () => {
 		const store = createMemoryReceivablesStore();
 		const authorization = {
-			async can() {
-				return true;
+			can() {
+				return Promise.resolve(true);
 			},
 		};
 		const organizationId = "org-1";
@@ -25,8 +25,8 @@ describe("receivables transaction rollback", () => {
 			store,
 			authorization,
 			effects: {
-				async emit() {
-					return ok(undefined);
+				emit() {
+					return Promise.resolve(ok(undefined));
 				},
 			},
 		};
@@ -47,7 +47,9 @@ describe("receivables transaction rollback", () => {
 			common,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 		await addSalesInvoiceLine(
 			{
 				organizationId,
@@ -76,8 +78,8 @@ describe("receivables transaction rollback", () => {
 			{
 				...common,
 				effects: {
-					async emit() {
-						return fail("INTERNAL_ERROR", "outbox failed");
+					emit() {
+						return Promise.resolve(fail("INTERNAL_ERROR", "outbox failed"));
 					},
 				},
 			},

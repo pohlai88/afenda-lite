@@ -286,7 +286,7 @@ async function runPerformanceAction<Key extends string, Value>(config: {
 	dataKey: Key;
 	execute: (input: never) => Promise<Result<Value>>;
 }): Promise<ActionResult<PerformanceActionData<Key, Value>>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: config.path,
 		permission: config.permission,
 		safeMessage: config.safeMessage,
@@ -307,7 +307,9 @@ async function runPerformanceAction<Key extends string, Value>(config: {
 				) as never,
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return {
 				ok: true,
 				data: { [config.dataKey]: mapped.data } as PerformanceActionData<
@@ -322,7 +324,7 @@ async function runPerformanceAction<Key extends string, Value>(config: {
 export async function createPerformanceCycleAction(
 	input: unknown,
 ): Promise<ActionResult<{ cycle: PerformanceCycle }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "createPerformanceCycleAction",
 		permission: "human-resources.performance.manage",
 		safeMessage: "Could not create performance cycle.",
@@ -340,7 +342,9 @@ export async function createPerformanceCycleAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { cycle: mapped.data } };
 		},
 	});
@@ -349,7 +353,7 @@ export async function createPerformanceCycleAction(
 export async function openPerformanceCycleAction(
 	input: unknown,
 ): Promise<ActionResult<{ cycle: PerformanceCycle }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "openPerformanceCycleAction",
 		permission: "human-resources.performance.manage",
 		safeMessage: "Could not open performance cycle.",
@@ -367,7 +371,9 @@ export async function openPerformanceCycleAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { cycle: mapped.data } };
 		},
 	});
@@ -376,7 +382,7 @@ export async function openPerformanceCycleAction(
 export async function getPerformanceCycleByIdAction(
 	input: unknown,
 ): Promise<ActionResult<{ cycle: PerformanceCycle | null }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getPerformanceCycleByIdAction",
 		permission: "human-resources.performance.manage",
 		safeMessage: "Could not get performance cycle.",
@@ -394,7 +400,9 @@ export async function getPerformanceCycleByIdAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { cycle: mapped.data } };
 		},
 	});
@@ -403,7 +411,7 @@ export async function getPerformanceCycleByIdAction(
 export async function listPerformanceCyclesAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: PerformanceCycleListPage }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listPerformanceCyclesAction",
 		permission: "human-resources.performance.manage",
 		safeMessage: "Could not list performance cycles.",
@@ -421,7 +429,9 @@ export async function listPerformanceCyclesAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { page: mapped.data } };
 		},
 	});
@@ -430,7 +440,7 @@ export async function listPerformanceCyclesAction(
 export async function createPerformanceGoalAction(
 	input: unknown,
 ): Promise<ActionResult<{ goal: PerformanceGoal }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "createPerformanceGoalAction",
 		permission: "human-resources.performance.manage",
 		safeMessage: "Could not create performance goal.",
@@ -448,7 +458,9 @@ export async function createPerformanceGoalAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { goal: mapped.data } };
 		},
 	});
@@ -457,7 +469,7 @@ export async function createPerformanceGoalAction(
 export async function listEmployeeGoalsAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: PerformanceGoalListPage }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listEmployeeGoalsAction",
 		permission: "human-resources.performance.own.read",
 		safeMessage: "Could not list employee goals.",
@@ -475,7 +487,9 @@ export async function listEmployeeGoalsAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { page: mapped.data } };
 		},
 	});
@@ -484,7 +498,7 @@ export async function listEmployeeGoalsAction(
 export async function startPerformanceReviewAction(
 	input: unknown,
 ): Promise<ActionResult<{ review: PerformanceReview }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "startPerformanceReviewAction",
 		permission: "human-resources.performance.manager.manage",
 		safeMessage: "Could not start performance review.",
@@ -502,7 +516,9 @@ export async function startPerformanceReviewAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { review: mapped.data } };
 		},
 	});
@@ -511,7 +527,7 @@ export async function startPerformanceReviewAction(
 export async function getPerformanceReviewByIdAction(
 	input: unknown,
 ): Promise<ActionResult<{ review: PerformanceReviewDetail | null }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getPerformanceReviewByIdAction",
 		permission: "human-resources.performance.manager.manage",
 		safeMessage: "Could not get performance review.",
@@ -529,7 +545,9 @@ export async function getPerformanceReviewByIdAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { review: mapped.data } };
 		},
 	});
@@ -538,7 +556,7 @@ export async function getPerformanceReviewByIdAction(
 export async function listEmployeePerformanceReviewsAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: PerformanceReviewListPage }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listEmployeePerformanceReviewsAction",
 		permission: "human-resources.performance.own.read",
 		safeMessage: "Could not list employee performance reviews.",
@@ -559,7 +577,9 @@ export async function listEmployeePerformanceReviewsAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { page: mapped.data } };
 		},
 	});
@@ -568,7 +588,7 @@ export async function listEmployeePerformanceReviewsAction(
 export async function listReviewsPendingManagerActionAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: PerformanceReviewListPage }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listReviewsPendingManagerActionAction",
 		permission: "human-resources.performance.manager.manage",
 		safeMessage: "Could not list pending manager reviews.",
@@ -589,7 +609,9 @@ export async function listReviewsPendingManagerActionAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { page: mapped.data } };
 		},
 	});
@@ -598,7 +620,7 @@ export async function listReviewsPendingManagerActionAction(
 export async function getEmployeePerformanceHistoryAction(
 	input: unknown,
 ): Promise<ActionResult<{ history: EmployeePerformanceHistory }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getEmployeePerformanceHistoryAction",
 		permission: "human-resources.performance.own.read",
 		safeMessage: "Could not get employee performance history.",
@@ -619,7 +641,9 @@ export async function getEmployeePerformanceHistoryAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { history: mapped.data } };
 		},
 	});
@@ -628,7 +652,7 @@ export async function getEmployeePerformanceHistoryAction(
 export async function createImprovementPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: PerformanceImprovementPlan }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "createImprovementPlanAction",
 		permission: "human-resources.performance.improvement-plan.manage",
 		safeMessage: "Could not create improvement plan.",
@@ -646,7 +670,9 @@ export async function createImprovementPlanAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { plan: mapped.data } };
 		},
 	});
@@ -655,7 +681,7 @@ export async function createImprovementPlanAction(
 export async function updatePerformanceCycleAction(
 	input: unknown,
 ): Promise<ActionResult<{ cycle: PerformanceCycle }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: updatePerformanceCycleActionSchema,
 		path: "updatePerformanceCycleAction",
@@ -671,7 +697,7 @@ export async function updatePerformanceCycleAction(
 export async function publishPerformanceCycleAction(
 	input: unknown,
 ): Promise<ActionResult<{ cycle: PerformanceCycle }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: publishPerformanceCycleActionSchema,
 		path: "publishPerformanceCycleAction",
@@ -687,7 +713,7 @@ export async function publishPerformanceCycleAction(
 export async function closePerformanceCycleAction(
 	input: unknown,
 ): Promise<ActionResult<{ cycle: PerformanceCycle }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: closePerformanceCycleActionSchema,
 		path: "closePerformanceCycleAction",
@@ -703,7 +729,7 @@ export async function closePerformanceCycleAction(
 export async function cancelPerformanceCycleAction(
 	input: unknown,
 ): Promise<ActionResult<{ cycle: PerformanceCycle }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: cancelPerformanceCycleActionSchema,
 		path: "cancelPerformanceCycleAction",
@@ -719,7 +745,7 @@ export async function cancelPerformanceCycleAction(
 export async function setPerformanceCycleReviewPeriodsAction(
 	input: unknown,
 ): Promise<ActionResult<{ periods: PerformanceCycleReviewPeriod[] }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: setPerformanceCycleReviewPeriodsActionSchema,
 		path: "setPerformanceCycleReviewPeriodsAction",
@@ -738,7 +764,7 @@ export async function setPerformanceCycleReviewPeriodsAction(
 export async function listPerformanceCycleReviewPeriodsAction(
 	input: unknown,
 ): Promise<ActionResult<{ periods: PerformanceCycleReviewPeriod[] }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: listPerformanceCycleReviewPeriodsActionSchema,
 		path: "listPerformanceCycleReviewPeriodsAction",
@@ -757,7 +783,7 @@ export async function listPerformanceCycleReviewPeriodsAction(
 export async function setPerformanceCycleEligibilityAction(
 	input: unknown,
 ): Promise<ActionResult<{ eligibility: PerformanceCycleEligibility }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: setPerformanceCycleEligibilityActionSchema,
 		path: "setPerformanceCycleEligibilityAction",
@@ -776,7 +802,7 @@ export async function setPerformanceCycleEligibilityAction(
 export async function getPerformanceCycleEligibilityAction(
 	input: unknown,
 ): Promise<ActionResult<{ eligibility: PerformanceCycleEligibility | null }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: getPerformanceCycleEligibilityActionSchema,
 		path: "getPerformanceCycleEligibilityAction",
@@ -795,7 +821,7 @@ export async function getPerformanceCycleEligibilityAction(
 export async function enrollEligibleCycleParticipantsAction(
 	input: unknown,
 ): Promise<ActionResult<{ participants: PerformanceCycleParticipant[] }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: enrollEligibleCycleParticipantsActionSchema,
 		path: "enrollEligibleCycleParticipantsAction",
@@ -814,7 +840,7 @@ export async function enrollEligibleCycleParticipantsAction(
 export async function addCycleParticipantAction(
 	input: unknown,
 ): Promise<ActionResult<{ participant: PerformanceCycleParticipant }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: addCycleParticipantActionSchema,
 		path: "addCycleParticipantAction",
@@ -830,7 +856,7 @@ export async function addCycleParticipantAction(
 export async function removeCycleParticipantAction(
 	input: unknown,
 ): Promise<ActionResult<{ participant: PerformanceCycleParticipant }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: removeCycleParticipantActionSchema,
 		path: "removeCycleParticipantAction",
@@ -846,7 +872,7 @@ export async function removeCycleParticipantAction(
 export async function listCycleParticipantsAction(
 	input: unknown,
 ): Promise<ActionResult<{ participants: PerformanceCycleParticipant[] }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: listCycleParticipantsActionSchema,
 		path: "listCycleParticipantsAction",
@@ -862,7 +888,7 @@ export async function listCycleParticipantsAction(
 export async function updatePerformanceGoalAction(
 	input: unknown,
 ): Promise<ActionResult<{ goal: PerformanceGoal }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: updatePerformanceGoalActionSchema,
 		path: "updatePerformanceGoalAction",
@@ -878,7 +904,7 @@ export async function updatePerformanceGoalAction(
 export async function submitPerformanceGoalAction(
 	input: unknown,
 ): Promise<ActionResult<{ goal: PerformanceGoal }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: performanceGoalStatusTransitionActionSchema,
 		path: "submitPerformanceGoalAction",
@@ -894,7 +920,7 @@ export async function submitPerformanceGoalAction(
 export async function approvePerformanceGoalAction(
 	input: unknown,
 ): Promise<ActionResult<{ goal: PerformanceGoal }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: performanceGoalStatusTransitionActionSchema,
 		path: "approvePerformanceGoalAction",
@@ -910,7 +936,7 @@ export async function approvePerformanceGoalAction(
 export async function rejectPerformanceGoalAction(
 	input: unknown,
 ): Promise<ActionResult<{ goal: PerformanceGoal }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: performanceGoalStatusTransitionActionSchema,
 		path: "rejectPerformanceGoalAction",
@@ -926,7 +952,7 @@ export async function rejectPerformanceGoalAction(
 export async function recordGoalProgressAction(
 	input: unknown,
 ): Promise<ActionResult<{ progress: PerformanceGoalProgress }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: recordGoalProgressActionSchema,
 		path: "recordGoalProgressAction",
@@ -942,7 +968,7 @@ export async function recordGoalProgressAction(
 export async function activatePerformanceGoalAction(
 	input: unknown,
 ): Promise<ActionResult<{ goal: PerformanceGoal }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: performanceGoalStatusTransitionActionSchema,
 		path: "activatePerformanceGoalAction",
@@ -958,7 +984,7 @@ export async function activatePerformanceGoalAction(
 export async function alignPerformanceGoalAction(
 	input: unknown,
 ): Promise<ActionResult<{ goal: PerformanceGoal }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: alignPerformanceGoalActionSchema,
 		path: "alignPerformanceGoalAction",
@@ -974,7 +1000,7 @@ export async function alignPerformanceGoalAction(
 export async function closePerformanceGoalAction(
 	input: unknown,
 ): Promise<ActionResult<{ goal: PerformanceGoal }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: closePerformanceGoalActionSchema,
 		path: "closePerformanceGoalAction",
@@ -990,7 +1016,7 @@ export async function closePerformanceGoalAction(
 export async function cancelPerformanceGoalAction(
 	input: unknown,
 ): Promise<ActionResult<{ goal: PerformanceGoal }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: performanceGoalStatusTransitionActionSchema,
 		path: "cancelPerformanceGoalAction",
@@ -1006,7 +1032,7 @@ export async function cancelPerformanceGoalAction(
 export async function getPerformanceGoalByIdAction(
 	input: unknown,
 ): Promise<ActionResult<{ goal: PerformanceGoal | null }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: getPerformanceGoalByIdActionSchema,
 		path: "getPerformanceGoalByIdAction",
@@ -1022,7 +1048,7 @@ export async function getPerformanceGoalByIdAction(
 export async function listGoalProgressAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: PerformanceGoalProgressListPage }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: listGoalProgressActionSchema,
 		path: "listGoalProgressAction",
@@ -1038,7 +1064,7 @@ export async function listGoalProgressAction(
 export async function submitSelfAssessmentAction(
 	input: unknown,
 ): Promise<ActionResult<{ review: PerformanceReview }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: submitSelfAssessmentActionSchema,
 		path: "submitSelfAssessmentAction",
@@ -1054,7 +1080,7 @@ export async function submitSelfAssessmentAction(
 export async function submitManagerAssessmentAction(
 	input: unknown,
 ): Promise<ActionResult<{ review: PerformanceReview }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: submitManagerAssessmentActionSchema,
 		path: "submitManagerAssessmentAction",
@@ -1070,7 +1096,7 @@ export async function submitManagerAssessmentAction(
 export async function returnPerformanceReviewForCorrectionAction(
 	input: unknown,
 ): Promise<ActionResult<{ review: PerformanceReview }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: performanceReviewStatusTransitionActionSchema,
 		path: "returnPerformanceReviewForCorrectionAction",
@@ -1089,7 +1115,7 @@ export async function returnPerformanceReviewForCorrectionAction(
 export async function acknowledgePerformanceReviewAction(
 	input: unknown,
 ): Promise<ActionResult<{ review: PerformanceReview }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: acknowledgePerformanceReviewActionSchema,
 		path: "acknowledgePerformanceReviewAction",
@@ -1105,7 +1131,7 @@ export async function acknowledgePerformanceReviewAction(
 export async function finalizePerformanceReviewAction(
 	input: unknown,
 ): Promise<ActionResult<{ review: PerformanceReview }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: finalizePerformanceReviewActionSchema,
 		path: "finalizePerformanceReviewAction",
@@ -1121,7 +1147,7 @@ export async function finalizePerformanceReviewAction(
 export async function reopenPerformanceReviewAction(
 	input: unknown,
 ): Promise<ActionResult<{ review: PerformanceReview }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: reopenPerformanceReviewActionSchema,
 		path: "reopenPerformanceReviewAction",
@@ -1137,7 +1163,7 @@ export async function reopenPerformanceReviewAction(
 export async function calibratePerformanceReviewAction(
 	input: unknown,
 ): Promise<ActionResult<{ review: PerformanceReview }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: calibratePerformanceReviewActionSchema,
 		path: "calibratePerformanceReviewAction",
@@ -1153,7 +1179,7 @@ export async function calibratePerformanceReviewAction(
 export async function openImprovementPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: PerformanceImprovementPlan }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: improvementPlanStatusTransitionActionSchema,
 		path: "openImprovementPlanAction",
@@ -1169,7 +1195,7 @@ export async function openImprovementPlanAction(
 export async function acknowledgeImprovementPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: PerformanceImprovementPlan }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: improvementPlanStatusTransitionActionSchema,
 		path: "acknowledgeImprovementPlanAction",
@@ -1185,7 +1211,7 @@ export async function acknowledgeImprovementPlanAction(
 export async function recordImprovementCheckpointAction(
 	input: unknown,
 ): Promise<ActionResult<{ checkpoint: PerformanceImprovementCheckpoint }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: recordImprovementCheckpointActionSchema,
 		path: "recordImprovementCheckpointAction",
@@ -1201,7 +1227,7 @@ export async function recordImprovementCheckpointAction(
 export async function amendImprovementPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: PerformanceImprovementPlan }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: amendImprovementPlanActionSchema,
 		path: "amendImprovementPlanAction",
@@ -1217,7 +1243,7 @@ export async function amendImprovementPlanAction(
 export async function completeImprovementPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: PerformanceImprovementPlan }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: completeImprovementPlanActionSchema,
 		path: "completeImprovementPlanAction",
@@ -1233,7 +1259,7 @@ export async function completeImprovementPlanAction(
 export async function closeImprovementPlanUnsuccessfulAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: PerformanceImprovementPlan }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: closeImprovementPlanUnsuccessfulActionSchema,
 		path: "closeImprovementPlanUnsuccessfulAction",
@@ -1252,7 +1278,7 @@ export async function closeImprovementPlanUnsuccessfulAction(
 export async function cancelImprovementPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: PerformanceImprovementPlan }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: improvementPlanStatusTransitionActionSchema,
 		path: "cancelImprovementPlanAction",
@@ -1268,7 +1294,7 @@ export async function cancelImprovementPlanAction(
 export async function getImprovementPlanByIdAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: PerformanceImprovementPlan | null }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: getImprovementPlanByIdActionSchema,
 		path: "getImprovementPlanByIdAction",
@@ -1284,7 +1310,7 @@ export async function getImprovementPlanByIdAction(
 export async function listActiveImprovementPlansAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: PerformanceImprovementPlanListPage }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: listActiveImprovementPlansActionSchema,
 		path: "listActiveImprovementPlansAction",
@@ -1300,7 +1326,7 @@ export async function listActiveImprovementPlansAction(
 export async function listImprovementPlanCheckpointsAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: PerformanceImprovementCheckpointListPage }>> {
-	return runPerformanceAction({
+	return await runPerformanceAction({
 		input,
 		schema: listImprovementPlanCheckpointsActionSchema,
 		path: "listImprovementPlanCheckpointsAction",

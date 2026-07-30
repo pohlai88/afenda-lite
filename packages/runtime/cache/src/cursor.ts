@@ -1,15 +1,15 @@
-export type CursorPagination = {
+export interface CursorPagination {
 	cursor?: string;
-	limit: number;
 	direction: "forward" | "backward";
-};
+	limit: number;
+}
 
-export type CursorPage<T> = {
+export interface CursorPage<T> {
 	data: T[];
+	hasMore: boolean;
 	nextCursor?: string;
 	prevCursor?: string;
-	hasMore: boolean;
-};
+}
 
 /** Encode a stable cursor from record id + sort value. */
 export function encodeCursor(

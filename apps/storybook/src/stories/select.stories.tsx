@@ -37,12 +37,12 @@ function WorkbenchSection({
 	children,
 }: WorkbenchSectionProps) {
 	return (
-		<section className="grid gap-4" aria-labelledby={id}>
+		<section aria-labelledby={id} className="grid gap-4">
 			<div className="grid gap-1">
-				<h2 className="text-base font-semibold tracking-tight" id={id}>
+				<h2 className="font-semibold text-base tracking-tight" id={id}>
 					{title}
 				</h2>
-				<p className="max-w-5xl text-sm leading-5 text-foreground-secondary">
+				<p className="max-w-5xl text-foreground-secondary text-sm leading-5">
 					{description}
 				</p>
 			</div>
@@ -79,14 +79,14 @@ export const Overview: Story = {
 			<div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-5 border-b pb-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
 					<div className="grid gap-2">
-						<p className="text-sm font-medium text-foreground-secondary">
+						<p className="font-medium text-foreground-secondary text-sm">
 							Platform administration
 						</p>
 						<div className="grid gap-1">
-							<h1 className="text-2xl font-semibold tracking-tight">
+							<h1 className="font-semibold text-2xl tracking-tight">
 								Permission catalog
 							</h1>
-							<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+							<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 								Select scopes the catalog to one module. Feature code owns which
 								modules the operator may inspect.
 							</p>
@@ -94,25 +94,25 @@ export const Overview: Story = {
 					</div>
 					<dl className="grid grid-cols-2 gap-x-8 gap-y-3 rounded-lg border bg-card p-4">
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Subject
 							</dt>
 							<dd className="text-sm">Permission catalog</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Scope
 							</dt>
 							<dd className="text-sm">Single choice</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Ownership
 							</dt>
 							<dd className="text-sm">Feature composition</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Lifecycle
 							</dt>
 							<dd className="text-sm">Bounded listbox</dd>
@@ -128,7 +128,7 @@ export const Overview: Story = {
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<FormField label="Module" description="Stable module identifiers.">
+						<FormField description="Stable module identifiers." label="Module">
 							<Select defaultValue="accounting">
 								<SelectTrigger aria-label="Module">
 									<SelectValue placeholder="Select a module" />
@@ -164,9 +164,9 @@ export const SemanticUsage: Story = {
 	},
 	render: () => (
 		<WorkbenchSection
+			description="Select is for bounded choice sets without freeform search."
 			id="select-semantic-usage-title"
 			title="Closed lists and groups"
-			description="Select is for bounded choice sets without freeform search."
 		>
 			<div className="grid w-full max-w-xl gap-6">
 				<StorySection title="Posting period">
@@ -221,9 +221,9 @@ export const Usage: Story = {
 	},
 	render: () => (
 		<WorkbenchSection
+			description="Pair Select with FormField and keep the accessible name on the trigger."
 			id="select-usage-title"
 			title="Form field integration"
-			description="Pair Select with FormField and keep the accessible name on the trigger."
 		>
 			<Card className="w-80 shadow-none">
 				<CardContent className="pt-6">
@@ -257,9 +257,9 @@ export const StatesAndAccessibility: Story = {
 	},
 	render: () => (
 		<WorkbenchSection
+			description="The listbox stays navigable with arrows, Enter, and Escape while unavailable items remain perceivable."
 			id="select-accessibility-title"
 			title="Keyboard and disabled options"
-			description="The listbox stays navigable with arrows, Enter, and Escape while unavailable items remain perceivable."
 		>
 			<Card className="w-80 shadow-none">
 				<CardContent className="pt-6">
@@ -271,7 +271,7 @@ export const StatesAndAccessibility: Story = {
 							<SelectContent>
 								<SelectItem value="gl-main">Main ledger</SelectItem>
 								<SelectItem value="gl-tax">Tax ledger</SelectItem>
-								<SelectItem value="gl-closed" disabled>
+								<SelectItem disabled value="gl-closed">
 									Closed ledger — unavailable
 								</SelectItem>
 							</SelectContent>
@@ -310,7 +310,7 @@ export const Composition: Story = {
 			<CardContent className="grid gap-4 sm:grid-cols-2">
 				<FormField label="Status">
 					<Select defaultValue="open">
-						<SelectTrigger size="sm" aria-label="Status">
+						<SelectTrigger aria-label="Status" size="sm">
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>
@@ -322,7 +322,7 @@ export const Composition: Story = {
 				</FormField>
 				<FormField label="Currency">
 					<Select defaultValue="myr">
-						<SelectTrigger size="sm" aria-label="Currency">
+						<SelectTrigger aria-label="Currency" size="sm">
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>
@@ -363,7 +363,7 @@ export const DoAndDoNot: Story = {
 				</FormField>
 			</StorySection>
 			<StorySection title="Do not: searchable freeform entry">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Supplier name lookup and typeahead belong on Combobox or SearchField —
 					not Select.
 				</p>
@@ -386,13 +386,13 @@ export const AdaptiveAndHighContrast: Story = {
 		<div className="grid w-full max-w-5xl gap-6 sm:grid-cols-2">
 			<StorySection title="Narrow form field">
 				<FormField
-					label="Posting period"
 					description="One authorized period from the current ledger calendar."
+					label="Posting period"
 				>
 					<Select defaultValue="2026-07">
 						<SelectTrigger
-							className="w-full"
 							aria-label="Adaptive posting period"
+							className="w-full"
 						>
 							<SelectValue />
 						</SelectTrigger>
@@ -406,17 +406,17 @@ export const AdaptiveAndHighContrast: Story = {
 			</StorySection>
 			<StorySection title="Unavailable option with reason">
 				<FormField
-					label="Settlement account"
 					description="Closed accounts remain visible only when the reason helps the operator."
+					label="Settlement account"
 				>
 					<Select defaultValue="operating">
-						<SelectTrigger className="w-full" aria-label="Settlement account">
+						<SelectTrigger aria-label="Settlement account" className="w-full">
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>
 							<SelectItem value="operating">Operating account</SelectItem>
 							<SelectItem value="reserve">Reserve account</SelectItem>
-							<SelectItem value="legacy" disabled>
+							<SelectItem disabled value="legacy">
 								Legacy account — closed
 							</SelectItem>
 						</SelectContent>

@@ -64,7 +64,9 @@ async function seedEmployeeEmployment(ready: ReturnType<typeof readyHarness>) {
 		},
 		ready,
 	);
-	if (!employee.ok) return employee;
+	if (!employee.ok) {
+		return employee;
+	}
 
 	const mapped = await mapActorToEmployee(ready.store, {
 		organizationId: ORG,
@@ -73,7 +75,9 @@ async function seedEmployeeEmployment(ready: ReturnType<typeof readyHarness>) {
 		actorUserId: ACTOR,
 		effectiveFrom: "2026-01-01",
 	});
-	if (!mapped.ok) return mapped;
+	if (!mapped.ok) {
+		return mapped;
+	}
 
 	const employment = await createEmployment(
 		{
@@ -85,7 +89,9 @@ async function seedEmployeeEmployment(ready: ReturnType<typeof readyHarness>) {
 		},
 		ready,
 	);
-	if (!employment.ok) return employment;
+	if (!employment.ok) {
+		return employment;
+	}
 
 	return {
 		ok: true as const,
@@ -103,7 +109,9 @@ async function seedActiveEntitlement(
 	label: string,
 ) {
 	const seeded = await seedEmployeeEmployment(ready);
-	if (!seeded.ok) return seeded;
+	if (!seeded.ok) {
+		return seeded;
+	}
 
 	const policy = await createLeavePolicy(
 		{
@@ -122,7 +130,9 @@ async function seedActiveEntitlement(
 		},
 		ready,
 	);
-	if (!policy.ok) return policy;
+	if (!policy.ok) {
+		return policy;
+	}
 
 	const published = await publishLeavePolicy(
 		{
@@ -134,7 +144,9 @@ async function seedActiveEntitlement(
 		},
 		ready,
 	);
-	if (!published.ok) return published;
+	if (!published.ok) {
+		return published;
+	}
 
 	const entitlement = await grantLeaveEntitlement(
 		{
@@ -151,7 +163,9 @@ async function seedActiveEntitlement(
 		},
 		ready,
 	);
-	if (!entitlement.ok) return entitlement;
+	if (!entitlement.ok) {
+		return entitlement;
+	}
 
 	return {
 		ok: true as const,
@@ -259,7 +273,9 @@ describe("no double emission", () => {
 		const ready = readyHarness(ports);
 		const seeded = await seedActiveEntitlement(ready, "adjust");
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const auditBefore = ports.audit.calls.length;
 		const outboxBefore = ports.outbox.calls.length;
@@ -291,7 +307,9 @@ describe("no double emission", () => {
 		const ready = readyHarness(seedPorts);
 		const seeded = await seedActiveEntitlement(ready, "rollback");
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const failingPorts = createMemoryMutationPorts({ outboxFailAfter: 0 });
 		const failingReady = { ...ready, ports: failingPorts };
@@ -315,7 +333,9 @@ describe("no double emission", () => {
 			idempotencyKey: "idem-adjust-fail",
 		});
 		expect(replay.ok).toBe(true);
-		if (!replay.ok) return;
+		if (!replay.ok) {
+			return;
+		}
 		expect(replay.data).toBeNull();
 	});
 
@@ -324,7 +344,9 @@ describe("no double emission", () => {
 		const ready = readyHarness(ports);
 		const seeded = await seedActiveEntitlement(ready, "replay");
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const input = {
 			organizationId: ORG,
@@ -352,7 +374,9 @@ describe("no double emission", () => {
 		const ready = readyHarness(ports);
 		const seeded = await seedActiveEntitlement(ready, "submit");
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const draft = await createDraftLeaveRequest(
 			{
@@ -372,7 +396,9 @@ describe("no double emission", () => {
 			ready,
 		);
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 
 		const auditBefore = ports.audit.calls.length;
 		const outboxBefore = ports.outbox.calls.length;

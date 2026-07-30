@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/useAwait: Cleanup wrappers expose a uniform asynchronous test API.
 import {
 	and,
 	caCompanyActivity,
@@ -105,7 +106,9 @@ export function createNeonCorporateAdministrationPendingEventAppender(): Corpora
 
 	return {
 		async append(events) {
-			if (events.length === 0) return ok(undefined);
+			if (events.length === 0) {
+				return ok(undefined);
+			}
 			try {
 				await runNeonHttpTransaction(
 					(neonSql) =>

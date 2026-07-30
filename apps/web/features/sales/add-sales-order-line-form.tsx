@@ -20,9 +20,9 @@ import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 
 const initialState: AddSalesOrderLineActionState = null;
 
-type AddSalesOrderLineFormProps = {
+interface AddSalesOrderLineFormProps {
 	canUpdate: boolean;
-};
+}
 
 /**
  * Add line to draft sales order — CAPABLE when `sales.order.update` is granted.
@@ -80,102 +80,102 @@ export function AddSalesOrderLineForm({
 				<FormError>{state.message}</FormError>
 			) : null}
 			<FormField
+				error={orderError}
+				fieldId="sales-line-order"
 				label="Order id"
 				required
-				fieldId="sales-line-order"
-				error={orderError}
 			>
 				<Input
+					autoComplete="off"
+					disabled={pending}
 					id="sales-line-order"
 					name="orderId"
 					required
-					autoComplete="off"
-					disabled={pending}
 				/>
 			</FormField>
 			<FormField
+				error={versionError}
+				fieldId="sales-line-version"
 				label="Expected version"
 				required
-				fieldId="sales-line-version"
-				error={versionError}
 			>
 				<Input
-					id="sales-line-version"
-					name="expectedVersion"
-					type="number"
-					min="1"
-					required
 					disabled={pending}
+					id="sales-line-version"
+					min="1"
+					name="expectedVersion"
+					required
+					type="number"
 				/>
 			</FormField>
 			<FormField
+				error={itemError}
+				fieldId="sales-line-item"
 				label="Item id"
 				required
-				fieldId="sales-line-item"
-				error={itemError}
 			>
 				<Input
+					autoComplete="off"
+					disabled={pending}
 					id="sales-line-item"
 					name="itemId"
 					required
-					autoComplete="off"
-					disabled={pending}
 				/>
 			</FormField>
 			<FormField
+				error={qtyError}
+				fieldId="sales-line-qty"
 				label="Quantity"
 				required
-				fieldId="sales-line-qty"
-				error={qtyError}
 			>
 				<Input
-					id="sales-line-qty"
-					name="quantity"
-					type="number"
-					step="any"
-					min="0.000001"
-					required
 					disabled={pending}
+					id="sales-line-qty"
+					min="0.000001"
+					name="quantity"
+					required
+					step="any"
+					type="number"
 				/>
 			</FormField>
 			<FormField
+				error={priceError}
+				fieldId="sales-line-price"
 				label="Unit price"
 				required
-				fieldId="sales-line-price"
-				error={priceError}
 			>
 				<Input
-					id="sales-line-price"
-					name="unitPrice"
-					type="number"
-					step="any"
-					min="0"
-					required
 					disabled={pending}
+					id="sales-line-price"
+					min="0"
+					name="unitPrice"
+					required
+					step="any"
+					type="number"
 				/>
 			</FormField>
 			<FormField
-				label="Discount amount (optional)"
 				fieldId="sales-line-discount"
+				label="Discount amount (optional)"
 			>
 				<Input
-					id="sales-line-discount"
-					name="discountAmount"
-					type="number"
-					step="any"
-					min="0"
 					disabled={pending}
+					id="sales-line-discount"
+					min="0"
+					name="discountAmount"
+					step="any"
+					type="number"
 				/>
 			</FormField>
-			<FormField label="Tax classification (optional)" fieldId="sales-line-tax">
+			<FormField fieldId="sales-line-tax" label="Tax classification (optional)">
 				<Input
-					id="sales-line-tax"
-					name="taxClassification"
 					autoComplete="off"
 					disabled={pending}
+					id="sales-line-tax"
+					name="taxClassification"
 				/>
 			</FormField>
-			<Button type="submit" disabled={pending}>
+			<Button disabled={pending} type="submit">
 				{pending ? <Spinner /> : null}
 				Add line
 			</Button>

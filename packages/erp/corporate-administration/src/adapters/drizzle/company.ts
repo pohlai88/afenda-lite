@@ -1,3 +1,7 @@
+// biome-ignore-all lint/suspicious/useAwait: Drizzle adapter wrappers expose uniform asynchronous store contracts.
+// biome-ignore-all lint/performance/noAwaitInLoops: Ordered company history traversal preserves first-conflict evidence.
+// biome-ignore-all lint/style/useDestructuring: Guarded result indexing keeps affected-row handling explicit.
+// biome-ignore-all lint/suspicious/noShadow: Transaction-local row names intentionally mirror domain records.
 import {
 	and,
 	asc,
@@ -142,7 +146,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -181,7 +187,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -288,7 +296,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -298,7 +308,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 	) {
 		if (input.transaction !== undefined) {
 			const current = await this.getLegalCompany(input);
-			if (!current.ok) return current;
+			if (!current.ok) {
+				return current;
+			}
 			if (current.data === null) {
 				return fail(
 					"NOT_FOUND",
@@ -369,7 +381,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -496,7 +510,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -636,7 +652,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -773,7 +791,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -802,7 +822,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -827,7 +849,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -874,7 +898,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 			const items: CompanyNameListItem[] = [];
 			for (const row of rows) {
 				const mapped = mapCompanyNameRow(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				items.push({
 					id: mapped.data.id,
 					legalCompanyId: mapped.data.legalCompanyId,
@@ -891,7 +917,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -924,7 +952,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -945,7 +975,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -954,7 +986,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		input: CompanyNameOverlapQuery,
 	): Promise<Result<boolean>> {
 		const overlap = await this.findOverlappingCompanyName(input);
-		if (!overlap.ok) return overlap;
+		if (!overlap.ok) {
+			return overlap;
+		}
 		return ok(overlap.data !== null);
 	}
 
@@ -1112,7 +1146,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -1154,7 +1190,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -1274,7 +1312,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -1299,7 +1339,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -1324,12 +1366,16 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 				);
 			const mapped = await Promise.all(rows.map(mapCompanyLegalFormRow));
 			const failure = mapped.find((result) => !result.ok);
-			if (failure !== undefined) return failure;
+			if (failure !== undefined) {
+				return failure;
+			}
 			return ok(mapped.flatMap((result) => (result.ok ? [result.data] : [])));
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -1373,7 +1419,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -1394,7 +1442,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -1403,7 +1453,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		input: CompanyLegalFormOverlapQuery,
 	): Promise<Result<boolean>> {
 		const overlap = await this.findOverlappingCompanyLegalForm(input);
-		if (!overlap.ok) return overlap;
+		if (!overlap.ok) {
+			return overlap;
+		}
 		return ok(overlap.data !== null);
 	}
 
@@ -1415,7 +1467,62 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		const replacementId = companyLegalFormHistoryIdSchema.parse(
 			this.#createLegalCompanyId(),
 		);
-		if (input.transaction !== undefined) {
+		if (input.transaction === undefined) {
+			try {
+				await this.#database.insert(caCompanyLegalFormHistory).values({
+					id: replacementId,
+					organizationId: input.organizationId,
+					legalCompanyId: input.legalCompanyId,
+					jurisdictionCode: input.replacement.jurisdictionCode,
+					legalFormCode: input.replacement.legalFormCode,
+					entityTypeCode: input.replacement.entityTypeCode,
+					effectiveFrom: input.replacement.effectivePeriod.from,
+					effectiveTo: input.replacement.effectivePeriod.to,
+					recordedAt: new Date(input.replacement.recordedAt),
+					recordedFrom: new Date(input.replacement.recordedAt),
+					recordedBy: input.recordedByUserId,
+					sourceDocumentId: input.replacement.sourceDocumentId,
+					correctionReason: input.replacement.correctionReason,
+					status: "active",
+					supersedesId: input.companyLegalFormHistoryId,
+					version: 1,
+				});
+				await this.#database
+					.update(caCompanyLegalFormHistory)
+					.set({
+						status: "superseded",
+						supersededAt: new Date(input.replacement.recordedAt),
+						recordedTo: new Date(input.replacement.recordedAt),
+						supersededByLegalFormId: replacementId,
+						version: input.expectedLegalFormVersion + 1,
+						updatedAt: new Date(input.replacement.recordedAt),
+					})
+					.where(
+						and(
+							eq(
+								caCompanyLegalFormHistory.organizationId,
+								input.organizationId,
+							),
+							eq(
+								caCompanyLegalFormHistory.legalCompanyId,
+								input.legalCompanyId,
+							),
+							eq(caCompanyLegalFormHistory.id, input.companyLegalFormHistoryId),
+							eq(
+								caCompanyLegalFormHistory.version,
+								input.expectedLegalFormVersion,
+							),
+						),
+					);
+			} catch (error) {
+				const translated =
+					translateCorporateAdministrationInfrastructureError(error);
+				if (translated !== undefined) {
+					return translated;
+				}
+				throw error;
+			}
+		} else {
 			input.transaction.enqueue((database) => {
 				const txSql = database as (
 					strings: TemplateStringsArray,
@@ -1481,59 +1588,6 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 						AND version = ${input.expectedLegalFormVersion}
 				`;
 			});
-		} else {
-			try {
-				await this.#database.insert(caCompanyLegalFormHistory).values({
-					id: replacementId,
-					organizationId: input.organizationId,
-					legalCompanyId: input.legalCompanyId,
-					jurisdictionCode: input.replacement.jurisdictionCode,
-					legalFormCode: input.replacement.legalFormCode,
-					entityTypeCode: input.replacement.entityTypeCode,
-					effectiveFrom: input.replacement.effectivePeriod.from,
-					effectiveTo: input.replacement.effectivePeriod.to,
-					recordedAt: new Date(input.replacement.recordedAt),
-					recordedFrom: new Date(input.replacement.recordedAt),
-					recordedBy: input.recordedByUserId,
-					sourceDocumentId: input.replacement.sourceDocumentId,
-					correctionReason: input.replacement.correctionReason,
-					status: "active",
-					supersedesId: input.companyLegalFormHistoryId,
-					version: 1,
-				});
-				await this.#database
-					.update(caCompanyLegalFormHistory)
-					.set({
-						status: "superseded",
-						supersededAt: new Date(input.replacement.recordedAt),
-						recordedTo: new Date(input.replacement.recordedAt),
-						supersededByLegalFormId: replacementId,
-						version: input.expectedLegalFormVersion + 1,
-						updatedAt: new Date(input.replacement.recordedAt),
-					})
-					.where(
-						and(
-							eq(
-								caCompanyLegalFormHistory.organizationId,
-								input.organizationId,
-							),
-							eq(
-								caCompanyLegalFormHistory.legalCompanyId,
-								input.legalCompanyId,
-							),
-							eq(caCompanyLegalFormHistory.id, input.companyLegalFormHistoryId),
-							eq(
-								caCompanyLegalFormHistory.version,
-								input.expectedLegalFormVersion,
-							),
-						),
-					);
-			} catch (error) {
-				const translated =
-					translateCorporateAdministrationInfrastructureError(error);
-				if (translated !== undefined) return translated;
-				throw error;
-			}
 		}
 		return ok({
 			id: replacementId,
@@ -1672,7 +1726,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -1797,7 +1853,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -1823,8 +1881,12 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 				`;
 			});
 			const existing = await this.getCompanyIdentifier(input);
-			if (!existing.ok) return existing;
-			if (existing.data === null) return notFound("companyIdentifier");
+			if (!existing.ok) {
+				return existing;
+			}
+			if (existing.data === null) {
+				return notFound("companyIdentifier");
+			}
 			return ok({
 				...existing.data,
 				status: "retired",
@@ -1859,7 +1921,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -1886,7 +1950,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -1912,14 +1978,18 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 			const items: CompanyIdentifierListItem[] = [];
 			for (const row of rows) {
 				const mapped = mapCompanyIdentifierRow(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				items.push(toCompanyIdentifierListItem(mapped.data));
 			}
 			return ok({ items, nextCursor: null });
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -1943,7 +2013,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -1966,7 +2038,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -2066,7 +2140,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -2101,7 +2177,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -2124,7 +2202,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -2216,7 +2296,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -2241,8 +2323,12 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 				`;
 			});
 			const existing = await this.getCompanyActivity(input);
-			if (!existing.ok) return existing;
-			if (existing.data === null) return notFound("companyActivity");
+			if (!existing.ok) {
+				return existing;
+			}
+			if (existing.data === null) {
+				return notFound("companyActivity");
+			}
 			return ok({
 				...existing.data,
 				status: "ended",
@@ -2276,7 +2362,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -2303,7 +2391,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -2325,14 +2415,18 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 			const activities: CompanyActivity[] = [];
 			for (const row of rows) {
 				const mapped = mapCompanyActivityRow(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				activities.push(mapped.data);
 			}
 			return ok(activities);
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -2354,7 +2448,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		input: Parameters<LegalCompanyStore["findJurisdictionProfileAsOf"]>[0],
 	) {
 		const profiles = await this.listJurisdictionProfiles(input);
-		if (!profiles.ok) return profiles;
+		if (!profiles.ok) {
+			return profiles;
+		}
 		const profile =
 			profiles.data
 				.filter(
@@ -2394,14 +2490,18 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 			const profiles: CompanyJurisdictionProfile[] = [];
 			for (const row of rows) {
 				const mapped = mapJurisdictionProfileRow(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				profiles.push(mapped.data);
 			}
 			return ok(profiles);
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -2412,7 +2512,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		>[0],
 	) {
 		const profiles = await this.listJurisdictionProfiles(input);
-		if (!profiles.ok) return profiles;
+		if (!profiles.ok) {
+			return profiles;
+		}
 		const candidateTo = input.effectiveRange.to ?? "9999-12-31";
 		return ok(
 			profiles.data.some((profile) => {
@@ -2540,7 +2642,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -2571,7 +2675,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -2596,7 +2702,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 			const items: LegalCompanyListItem[] = [];
 			for (const row of rows) {
 				const company = mapLegalCompanyRow(row);
-				if (!company.ok) return company;
+				if (!company.ok) {
+					return company;
+				}
 				if (query.asOf !== undefined) {
 					const status = await this.findCompanyStatusAsOf({
 						organizationId: query.organizationId,
@@ -2604,8 +2712,12 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 						asOf: query.asOf,
 						knownAt: query.knownAt,
 					});
-					if (!status.ok) return status;
-					if (status.data?.status !== query.status) continue;
+					if (!status.ok) {
+						return status;
+					}
+					if (status.data?.status !== query.status) {
+						continue;
+					}
 				}
 				items.push({
 					organizationId: company.data.organizationId,
@@ -2620,13 +2732,17 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 					jurisdictionCountryCode: company.data.homeJurisdictionCountryCode,
 					entityType: "draft_legal_company",
 				});
-				if (items.length >= query.pagination.limit) break;
+				if (items.length >= query.pagination.limit) {
+					break;
+				}
 			}
 			return ok({ items, nextCursor: null });
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -2635,7 +2751,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		input: Parameters<LegalCompanyStore["getLegalCompanyTimeline"]>[0],
 	) {
 		const company = await this.getLegalCompany(input);
-		if (!company.ok) return company;
+		if (!company.ok) {
+			return company;
+		}
 		const entries: LegalCompanyTimelineEntry[] = [];
 		if (company.data !== null) {
 			entries.push({
@@ -2647,7 +2765,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 			});
 		}
 		const profiles = await this.listJurisdictionProfiles(input);
-		if (!profiles.ok) return profiles;
+		if (!profiles.ok) {
+			return profiles;
+		}
 		for (const profile of profiles.data) {
 			if (isVisibleAtKnownTime({ profile, knownAt: input.knownAt })) {
 				entries.push({ ...profile, kind: "jurisdiction_profile" });

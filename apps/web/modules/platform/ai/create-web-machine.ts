@@ -19,9 +19,9 @@ export function canReachAiGateway(): boolean {
 
 export function createWebTheMachine(): TheMachine {
 	const gateway =
-		env.AI_GATEWAY_API_KEY !== undefined
-			? createGateway({ apiKey: env.AI_GATEWAY_API_KEY })
-			: createGateway();
+		env.AI_GATEWAY_API_KEY === undefined
+			? createGateway()
+			: createGateway({ apiKey: env.AI_GATEWAY_API_KEY });
 
 	const modelId = env.AI_THE_MACHINE_MODEL ?? DEFAULT_MACHINE_MODEL_ID;
 	return createTheMachine({

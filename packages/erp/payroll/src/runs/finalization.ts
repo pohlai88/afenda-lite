@@ -20,7 +20,7 @@ export const PAYROLL_AGGREGATE_FINALIZATION = "finalization" as const;
 export type PayrollFinalizationAggregate =
 	typeof PAYROLL_AGGREGATE_FINALIZATION;
 
-export async function finalizePayrollRun(
+export function finalizePayrollRun(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollRun>> {

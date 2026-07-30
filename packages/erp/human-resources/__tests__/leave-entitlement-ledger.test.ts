@@ -94,7 +94,9 @@ async function seedEmployeeEmployment(ready: ReturnType<typeof harness>) {
 		},
 		seedReady,
 	);
-	if (!employee.ok) return employee;
+	if (!employee.ok) {
+		return employee;
+	}
 
 	const mapped = await mapActorToEmployee(ready.store, {
 		organizationId: ORG,
@@ -103,7 +105,9 @@ async function seedEmployeeEmployment(ready: ReturnType<typeof harness>) {
 		actorUserId: ACTOR,
 		effectiveFrom: "2025-01-01",
 	});
-	if (!mapped.ok) return mapped;
+	if (!mapped.ok) {
+		return mapped;
+	}
 
 	const employment = await createEmployment(
 		{
@@ -115,7 +119,9 @@ async function seedEmployeeEmployment(ready: ReturnType<typeof harness>) {
 		},
 		seedReady,
 	);
-	if (!employment.ok) return employment;
+	if (!employment.ok) {
+		return employment;
+	}
 
 	return {
 		ok: true as const,
@@ -166,7 +172,9 @@ async function seedPublishedPolicy(
 		},
 		policyReady,
 	);
-	if (!created.ok) return created;
+	if (!created.ok) {
+		return created;
+	}
 
 	if (options?.publish === false) {
 		return created;
@@ -206,7 +214,9 @@ async function seedManagerWithReportingLine(
 		},
 		seedReady,
 	);
-	if (!manager.ok) return manager;
+	if (!manager.ok) {
+		return manager;
+	}
 
 	const mapped = await mapActorToEmployee(ready.store, {
 		organizationId: ORG,
@@ -215,7 +225,9 @@ async function seedManagerWithReportingLine(
 		actorUserId: ACTOR,
 		effectiveFrom: "2025-01-01",
 	});
-	if (!mapped.ok) return mapped;
+	if (!mapped.ok) {
+		return mapped;
+	}
 
 	const assigned = await assignPrimaryReportingLine(
 		{
@@ -235,7 +247,9 @@ async function seedManagerWithReportingLine(
 			]),
 		},
 	);
-	if (!assigned.ok) return assigned;
+	if (!assigned.ok) {
+		return assigned;
+	}
 
 	return manager;
 }
@@ -253,11 +267,15 @@ describe("Slice 7.2 — entitlements and balances", () => {
 		const ready = harness([...ENTITLEMENT_PERMISSIONS]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const draftPolicy = await seedPublishedPolicy(ready, { publish: false });
 		expect(draftPolicy.ok).toBe(true);
-		if (!draftPolicy.ok) return;
+		if (!draftPolicy.ok) {
+			return;
+		}
 
 		const rejected = await grantLeaveEntitlement(
 			{
@@ -280,7 +298,9 @@ describe("Slice 7.2 — entitlements and balances", () => {
 
 		const published = await seedPublishedPolicy(ready);
 		expect(published.ok).toBe(true);
-		if (!published.ok) return;
+		if (!published.ok) {
+			return;
+		}
 
 		const granted = await grantLeaveEntitlement(
 			{
@@ -298,7 +318,9 @@ describe("Slice 7.2 — entitlements and balances", () => {
 			ready,
 		);
 		expect(granted.ok).toBe(true);
-		if (!granted.ok) return;
+		if (!granted.ok) {
+			return;
+		}
 
 		const balance = await getLeaveBalance(
 			{
@@ -310,7 +332,9 @@ describe("Slice 7.2 — entitlements and balances", () => {
 			ready,
 		);
 		expect(balance.ok).toBe(true);
-		if (!balance.ok) return;
+		if (!balance.ok) {
+			return;
+		}
 		expect(balance.data?.openingQuantity).toBe("10");
 		expect(balance.data?.balance).toBe("10");
 	});
@@ -319,13 +343,17 @@ describe("Slice 7.2 — entitlements and balances", () => {
 		const ready = harness([...ENTITLEMENT_PERMISSIONS]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const strictPolicy = await seedPublishedPolicy(ready, {
 			allowsNegativeBalance: false,
 		});
 		expect(strictPolicy.ok).toBe(true);
-		if (!strictPolicy.ok) return;
+		if (!strictPolicy.ok) {
+			return;
+		}
 
 		const granted = await grantLeaveEntitlement(
 			{
@@ -343,7 +371,9 @@ describe("Slice 7.2 — entitlements and balances", () => {
 			ready,
 		);
 		expect(granted.ok).toBe(true);
-		if (!granted.ok) return;
+		if (!granted.ok) {
+			return;
+		}
 
 		const credit = await adjustLeaveEntitlement(
 			{
@@ -379,7 +409,9 @@ describe("Slice 7.2 — entitlements and balances", () => {
 			allowsNegativeBalance: true,
 		});
 		expect(negativePolicy.ok).toBe(true);
-		if (!negativePolicy.ok) return;
+		if (!negativePolicy.ok) {
+			return;
+		}
 
 		const negativeGrant = await grantLeaveEntitlement(
 			{
@@ -397,7 +429,9 @@ describe("Slice 7.2 — entitlements and balances", () => {
 			ready,
 		);
 		expect(negativeGrant.ok).toBe(true);
-		if (!negativeGrant.ok) return;
+		if (!negativeGrant.ok) {
+			return;
+		}
 
 		const debitAllowed = await adjustLeaveEntitlement(
 			{
@@ -412,7 +446,9 @@ describe("Slice 7.2 — entitlements and balances", () => {
 			ready,
 		);
 		expect(debitAllowed.ok).toBe(true);
-		if (!debitAllowed.ok) return;
+		if (!debitAllowed.ok) {
+			return;
+		}
 
 		const negativeBalance = await getLeaveBalance(
 			{
@@ -424,7 +460,9 @@ describe("Slice 7.2 — entitlements and balances", () => {
 			ready,
 		);
 		expect(negativeBalance.ok).toBe(true);
-		if (!negativeBalance.ok) return;
+		if (!negativeBalance.ok) {
+			return;
+		}
 		expect(negativeBalance.data?.balance).toBe("-1");
 	});
 
@@ -432,7 +470,9 @@ describe("Slice 7.2 — entitlements and balances", () => {
 		const ready = harness([...ENTITLEMENT_PERMISSIONS]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const policy = await seedPublishedPolicy(ready, {
 			accrualBasis: "periodic",
@@ -440,7 +480,9 @@ describe("Slice 7.2 — entitlements and balances", () => {
 			accrualQuantityPerPeriod: "1.5",
 		});
 		expect(policy.ok).toBe(true);
-		if (!policy.ok) return;
+		if (!policy.ok) {
+			return;
+		}
 
 		const granted = await grantLeaveEntitlement(
 			{
@@ -458,7 +500,9 @@ describe("Slice 7.2 — entitlements and balances", () => {
 			ready,
 		);
 		expect(granted.ok).toBe(true);
-		if (!granted.ok) return;
+		if (!granted.ok) {
+			return;
+		}
 
 		const mismatch = await accrueLeaveEntitlement(
 			{
@@ -493,7 +537,9 @@ describe("Slice 7.2 — entitlements and balances", () => {
 		const repeated = await accrueLeaveEntitlement(accrualInput, ready);
 		expect(accrued.ok).toBe(true);
 		expect(repeated.ok).toBe(true);
-		if (!accrued.ok || !repeated.ok) return;
+		if (!(accrued.ok && repeated.ok)) {
+			return;
+		}
 		expect(repeated.data.id).toBe(accrued.data.id);
 
 		await adjustLeaveEntitlement(
@@ -519,7 +565,9 @@ describe("Slice 7.2 — entitlements and balances", () => {
 			ready,
 		);
 		expect(reconciliation.ok).toBe(true);
-		if (!reconciliation.ok) return;
+		if (!reconciliation.ok) {
+			return;
+		}
 		expect(reconciliation.data?.adjustmentCount).toBe(2);
 		expect(reconciliation.data?.balance).toBe("12.5");
 		const kinds = reconciliation.data?.adjustments.map((row) => row.kind);
@@ -528,7 +576,9 @@ describe("Slice 7.2 — entitlements and balances", () => {
 		for (let index = 1; index < ordered.length; index += 1) {
 			const previous = ordered[index - 1];
 			const current = ordered[index];
-			if (!previous || !current) continue;
+			if (!(previous && current)) {
+				continue;
+			}
 			const timeOrder =
 				previous.createdAt.getTime() - current.createdAt.getTime();
 			expect(timeOrder <= 0).toBe(true);
@@ -549,18 +599,24 @@ describe("Slice 7.2 — entitlements and balances", () => {
 		]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const manager = await seedManagerWithReportingLine(
 			ready,
 			seeded.employee.id,
 		);
 		expect(manager.ok).toBe(true);
-		if (!manager.ok) return;
+		if (!manager.ok) {
+			return;
+		}
 
 		const policy = await seedPublishedPolicy(ready);
 		expect(policy.ok).toBe(true);
-		if (!policy.ok) return;
+		if (!policy.ok) {
+			return;
+		}
 
 		const granted = await grantLeaveEntitlement(
 			{
@@ -578,7 +634,9 @@ describe("Slice 7.2 — entitlements and balances", () => {
 			ready,
 		);
 		expect(granted.ok).toBe(true);
-		if (!granted.ok) return;
+		if (!granted.ok) {
+			return;
+		}
 
 		const draft = await createDraftLeaveRequest(
 			{
@@ -595,7 +653,9 @@ describe("Slice 7.2 — entitlements and balances", () => {
 			ready,
 		);
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 
 		const submitted = await submitLeaveRequest(
 			{
@@ -608,7 +668,9 @@ describe("Slice 7.2 — entitlements and balances", () => {
 			ready,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 
 		const approved = await approveLeaveRequest(
 			{
@@ -622,7 +684,9 @@ describe("Slice 7.2 — entitlements and balances", () => {
 			ready,
 		);
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 
 		const afterApprove = await reconcileLeaveBalance(
 			{
@@ -634,7 +698,9 @@ describe("Slice 7.2 — entitlements and balances", () => {
 			ready,
 		);
 		expect(afterApprove.ok).toBe(true);
-		if (!afterApprove.ok) return;
+		if (!afterApprove.ok) {
+			return;
+		}
 		expect(afterApprove.data?.balance).toBe("7");
 		expect(afterApprove.data?.adjustments.at(-1)?.kind).toBe("consumption");
 
@@ -650,7 +716,9 @@ describe("Slice 7.2 — entitlements and balances", () => {
 			ready,
 		);
 		expect(cancelled.ok).toBe(true);
-		if (!cancelled.ok) return;
+		if (!cancelled.ok) {
+			return;
+		}
 
 		const afterCancel = await reconcileLeaveBalance(
 			{
@@ -662,7 +730,9 @@ describe("Slice 7.2 — entitlements and balances", () => {
 			ready,
 		);
 		expect(afterCancel.ok).toBe(true);
-		if (!afterCancel.ok) return;
+		if (!afterCancel.ok) {
+			return;
+		}
 		expect(afterCancel.data?.balance).toBe("10");
 		expect(afterCancel.data?.adjustments.at(-1)?.kind).toBe(
 			"cancellation_reversal",
@@ -673,13 +743,17 @@ describe("Slice 7.2 — entitlements and balances", () => {
 		const ready = harness([...ENTITLEMENT_PERMISSIONS]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const disabledPolicy = await seedPublishedPolicy(ready, {
 			carryForwardEnabled: false,
 		});
 		expect(disabledPolicy.ok).toBe(true);
-		if (!disabledPolicy.ok) return;
+		if (!disabledPolicy.ok) {
+			return;
+		}
 
 		const disabledGrant = await grantLeaveEntitlement(
 			{
@@ -697,7 +771,9 @@ describe("Slice 7.2 — entitlements and balances", () => {
 			ready,
 		);
 		expect(disabledGrant.ok).toBe(true);
-		if (!disabledGrant.ok) return;
+		if (!disabledGrant.ok) {
+			return;
+		}
 
 		const disabledCarry = await carryForwardLeaveEntitlement(
 			{
@@ -722,7 +798,9 @@ describe("Slice 7.2 — entitlements and balances", () => {
 			carryForwardMaxQuantity: "3",
 		});
 		expect(policy.ok).toBe(true);
-		if (!policy.ok) return;
+		if (!policy.ok) {
+			return;
+		}
 
 		const granted = await grantLeaveEntitlement(
 			{
@@ -740,7 +818,9 @@ describe("Slice 7.2 — entitlements and balances", () => {
 			ready,
 		);
 		expect(granted.ok).toBe(true);
-		if (!granted.ok) return;
+		if (!granted.ok) {
+			return;
+		}
 
 		const overMax = await carryForwardLeaveEntitlement(
 			{
@@ -775,7 +855,9 @@ describe("Slice 7.2 — entitlements and balances", () => {
 			ready,
 		);
 		expect(carried.ok).toBe(true);
-		if (!carried.ok) return;
+		if (!carried.ok) {
+			return;
+		}
 
 		const sourceBalance = await getLeaveBalance(
 			{
@@ -787,7 +869,9 @@ describe("Slice 7.2 — entitlements and balances", () => {
 			ready,
 		);
 		expect(sourceBalance.ok).toBe(true);
-		if (!sourceBalance.ok) return;
+		if (!sourceBalance.ok) {
+			return;
+		}
 		expect(sourceBalance.data?.balance).toBe("2");
 
 		const source = await getLeaveEntitlement(
@@ -800,7 +884,9 @@ describe("Slice 7.2 — entitlements and balances", () => {
 			ready,
 		);
 		expect(source.ok).toBe(true);
-		if (!source.ok) return;
+		if (!source.ok) {
+			return;
+		}
 		expect(source.data?.status).toBe("carried_forward");
 
 		const targetBalance = await getLeaveBalance(
@@ -813,7 +899,9 @@ describe("Slice 7.2 — entitlements and balances", () => {
 			ready,
 		);
 		expect(targetBalance.ok).toBe(true);
-		if (!targetBalance.ok) return;
+		if (!targetBalance.ok) {
+			return;
+		}
 		expect(targetBalance.data?.openingQuantity).toBe("3");
 		expect(targetBalance.data?.balance).toBe("3");
 	});
@@ -822,11 +910,15 @@ describe("Slice 7.2 — entitlements and balances", () => {
 		const ready = harness([...ENTITLEMENT_PERMISSIONS]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const policy = await seedPublishedPolicy(ready);
 		expect(policy.ok).toBe(true);
-		if (!policy.ok) return;
+		if (!policy.ok) {
+			return;
+		}
 
 		const withBalance = await grantLeaveEntitlement(
 			{
@@ -844,7 +936,9 @@ describe("Slice 7.2 — entitlements and balances", () => {
 			ready,
 		);
 		expect(withBalance.ok).toBe(true);
-		if (!withBalance.ok) return;
+		if (!withBalance.ok) {
+			return;
+		}
 
 		const expired = await expireLeaveEntitlement(
 			{
@@ -857,7 +951,9 @@ describe("Slice 7.2 — entitlements and balances", () => {
 			ready,
 		);
 		expect(expired.ok).toBe(true);
-		if (!expired.ok) return;
+		if (!expired.ok) {
+			return;
+		}
 		expect(expired.data.status).toBe("expired");
 
 		const reconciliation = await reconcileLeaveBalance(
@@ -870,7 +966,9 @@ describe("Slice 7.2 — entitlements and balances", () => {
 			ready,
 		);
 		expect(reconciliation.ok).toBe(true);
-		if (!reconciliation.ok) return;
+		if (!reconciliation.ok) {
+			return;
+		}
 		expect(reconciliation.data?.balance).toBe("0");
 		expect(reconciliation.data?.adjustments).toHaveLength(1);
 		expect(reconciliation.data?.adjustments[0]?.kind).toBe("expiry");
@@ -891,7 +989,9 @@ describe("Slice 7.2 — entitlements and balances", () => {
 			ready,
 		);
 		expect(zeroGrant.ok).toBe(true);
-		if (!zeroGrant.ok) return;
+		if (!zeroGrant.ok) {
+			return;
+		}
 
 		const expiredZero = await expireLeaveEntitlement(
 			{
@@ -904,7 +1004,9 @@ describe("Slice 7.2 — entitlements and balances", () => {
 			ready,
 		);
 		expect(expiredZero.ok).toBe(true);
-		if (!expiredZero.ok) return;
+		if (!expiredZero.ok) {
+			return;
+		}
 
 		const zeroReconcile = await reconcileLeaveBalance(
 			{
@@ -916,7 +1018,9 @@ describe("Slice 7.2 — entitlements and balances", () => {
 			ready,
 		);
 		expect(zeroReconcile.ok).toBe(true);
-		if (!zeroReconcile.ok) return;
+		if (!zeroReconcile.ok) {
+			return;
+		}
 		expect(zeroReconcile.data?.adjustmentCount).toBe(0);
 		expect(zeroReconcile.data?.balance).toBe("0");
 	});

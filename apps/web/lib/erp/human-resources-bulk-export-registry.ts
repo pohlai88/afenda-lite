@@ -8,6 +8,7 @@ import type {
 	HumanResourcesReportingSourcePort,
 	HumanResourcesStore,
 } from "@afenda/human-resources";
+// biome-ignore-all lint/performance/noAwaitInLoops: Export pages and dependent aggregates are read serially to preserve bounds and fail-fast ordering.
 import {
 	createDrizzleHumanResourcesReportingSource,
 	createDrizzleHumanResourcesStore,
@@ -25,7 +26,7 @@ export const HUMAN_RESOURCES_BULK_EXPORT_TYPES = [
 export type HumanResourcesBulkExportType =
 	(typeof HUMAN_RESOURCES_BULK_EXPORT_TYPES)[number];
 
-const MAXIMUM_EXPORT_ROWS = 5_000;
+const MAXIMUM_EXPORT_ROWS = 5000;
 const SOURCE_PAGE_SIZE = 200;
 
 export const HUMAN_RESOURCES_BULK_EXPORT_DEFINITIONS = {
@@ -122,6 +123,7 @@ function employeeSource(
 	store: HumanResourcesStore,
 ): HumanResourcesBulkExportSource {
 	return {
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Export pagination enforces bounded, typed projection for all HR sources.
 		async list(input) {
 			const records: HumanResourcesExportSourceRecord[] = [];
 			let page = 1;
@@ -131,7 +133,9 @@ function employeeSource(
 					page,
 					pageSize: SOURCE_PAGE_SIZE,
 				});
-				if (!listed.ok) return listed;
+				if (!listed.ok) {
+					return listed;
+				}
 				records.push(
 					...listed.data.employees.map((employee) => ({
 						organizationId: employee.organizationId,
@@ -147,7 +151,9 @@ function employeeSource(
 						},
 					})),
 				);
-				if (page * SOURCE_PAGE_SIZE >= listed.data.totalCount) break;
+				if (page * SOURCE_PAGE_SIZE >= listed.data.totalCount) {
+					break;
+				}
 				page += 1;
 			}
 			return ok(records);
@@ -168,19 +174,25 @@ function assignmentSource(
 					page,
 					pageSize: SOURCE_PAGE_SIZE,
 				});
-				if (!employees.ok) return employees;
+				if (!employees.ok) {
+					return employees;
+				}
 				for (const employee of employees.data.employees) {
 					const employments = await store.listEmploymentsByEmployee({
 						organizationId: input.organizationId,
 						employeeId: employee.id,
 					});
-					if (!employments.ok) return employments;
+					if (!employments.ok) {
+						return employments;
+					}
 					for (const employment of employments.data) {
 						const assignments = await store.listAssignmentsByEmployment({
 							organizationId: input.organizationId,
 							employmentId: employment.id,
 						});
-						if (!assignments.ok) return assignments;
+						if (!assignments.ok) {
+							return assignments;
+						}
 						for (const assignment of assignments.data) {
 							const dimensions = assignment.organizationDimensions;
 							records.push({
@@ -203,11 +215,15 @@ function assignmentSource(
 									projectKey: dimensions?.project.key ?? null,
 								},
 							});
-							if (records.length > MAXIMUM_EXPORT_ROWS) return ok(records);
+							if (records.length > MAXIMUM_EXPORT_ROWS) {
+								return ok(records);
+							}
 						}
 					}
 				}
-				if (page * SOURCE_PAGE_SIZE >= employees.data.totalCount) break;
+				if (page * SOURCE_PAGE_SIZE >= employees.data.totalCount) {
+					break;
+				}
 				page += 1;
 			}
 			return ok(records);
@@ -228,7 +244,9 @@ function leaveEntitlementSource(
 					page,
 					pageSize: SOURCE_PAGE_SIZE,
 				});
-				if (!listed.ok) return listed;
+				if (!listed.ok) {
+					return listed;
+				}
 				records.push(
 					...listed.data.entitlements.map((entitlement) => ({
 						organizationId: entitlement.organizationId,
@@ -247,7 +265,9 @@ function leaveEntitlementSource(
 						},
 					})),
 				);
-				if (page * SOURCE_PAGE_SIZE >= listed.data.totalCount) break;
+				if (page * SOURCE_PAGE_SIZE >= listed.data.totalCount) {
+					break;
+				}
 				page += 1;
 			}
 			return ok(records);
@@ -327,13 +347,19 @@ function reportingSource(
 					page,
 					pageSize: SOURCE_PAGE_SIZE,
 				});
-				if (!listed.ok) return listed;
+				if (!listed.ok) {
+					return listed;
+				}
 				for (const fact of listed.data.entries) {
 					const record = reportingRecord(fact);
-					if (!record.ok) return record;
+					if (!record.ok) {
+						return record;
+					}
 					records.push(record.data);
 				}
-				if (page * SOURCE_PAGE_SIZE >= listed.data.total) break;
+				if (page * SOURCE_PAGE_SIZE >= listed.data.total) {
+					break;
+				}
 				page += 1;
 			}
 			return ok(records);
@@ -351,6 +377,7 @@ export function createHumanResourcesBulkExportSource(
 	const store = dependencies.store ?? createDrizzleHumanResourcesStore();
 	const reporting =
 		dependencies.reporting ?? createDrizzleHumanResourcesReportingSource();
+	// biome-ignore lint/style/useDefaultSwitchClause: The export-type union is exhaustive so additions require an owned source.
 	switch (exportType) {
 		case "employee":
 			return employeeSource(store);

@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noJsxPropsBind: The enabled React Compiler stabilizes JSX callback props.
 "use client";
 
 import {
@@ -34,8 +35,12 @@ import {
 type Feedback = { ok: boolean; message: string } | null;
 
 function ResultMessage({ feedback }: { feedback: Feedback }) {
-	if (!feedback) return null;
-	if (!feedback.ok) return <FormError>{feedback.message}</FormError>;
+	if (!feedback) {
+		return null;
+	}
+	if (!feedback.ok) {
+		return <FormError>{feedback.message}</FormError>;
+	}
 	return (
 		<Alert role="status">
 			<AlertTitle>Recruitment record updated</AlertTitle>
@@ -61,7 +66,9 @@ function useRecruitmentAction() {
 					: (result.message ??
 						"The recruitment action could not be completed."),
 			});
-			if (result.ok) router.refresh();
+			if (result.ok) {
+				router.refresh();
+			}
 		});
 	}
 	return { feedback, pending, run };
@@ -71,8 +78,8 @@ export function RequisitionCreateForm() {
 	const state = useRecruitmentAction();
 	return (
 		<form
-			className="space-y-4"
 			aria-busy={state.pending}
+			className="space-y-4"
 			onSubmit={(event) => {
 				event.preventDefault();
 				const data = new FormData(event.currentTarget);
@@ -90,15 +97,15 @@ export function RequisitionCreateForm() {
 			<div className="grid gap-4 sm:grid-cols-2">
 				<div className="space-y-2">
 					<Label htmlFor="requisition-code">Code</Label>
-					<Input id="requisition-code" name="code" maxLength={64} required />
+					<Input id="requisition-code" maxLength={64} name="code" required />
 				</div>
 				<div className="space-y-2">
 					<Label htmlFor="requisition-title">Title</Label>
-					<Input id="requisition-title" name="title" maxLength={200} required />
+					<Input id="requisition-title" maxLength={200} name="title" required />
 				</div>
 			</div>
 			<ResultMessage feedback={state.feedback} />
-			<Button type="submit" disabled={state.pending}>
+			<Button disabled={state.pending} type="submit">
 				{state.pending ? <Spinner /> : null}Create requisition draft
 			</Button>
 		</form>
@@ -121,13 +128,13 @@ export function RequisitionTransitionForm({
 					: requisition.status === "open"
 						? { label: "Close", action: closeRequisitionAction }
 						: null;
-	if (!transition) return null;
+	if (!transition) {
+		return null;
+	}
 	return (
 		<div className="space-y-2">
 			<ResultMessage feedback={state.feedback} />
 			<Button
-				type="button"
-				variant="outline"
 				disabled={state.pending}
 				onClick={() =>
 					state.run(
@@ -139,6 +146,8 @@ export function RequisitionTransitionForm({
 						`Requisition ${transition.label.toLowerCase()} completed.`,
 					)
 				}
+				type="button"
+				variant="outline"
 			>
 				{state.pending ? <Spinner /> : null}
 				{transition.label}
@@ -162,13 +171,13 @@ export function PipelineTransitionForm({
 						action: moveApplicationToInterviewingAction,
 					}
 				: null;
-	if (!transition) return null;
+	if (!transition) {
+		return null;
+	}
 	return (
 		<div className="space-y-2">
 			<ResultMessage feedback={state.feedback} />
 			<Button
-				type="button"
-				variant="outline"
 				disabled={state.pending}
 				onClick={() =>
 					state.run(
@@ -180,6 +189,8 @@ export function PipelineTransitionForm({
 						`${transition.label} completed.`,
 					)
 				}
+				type="button"
+				variant="outline"
 			>
 				{state.pending ? <Spinner /> : null}
 				{transition.label}
@@ -196,8 +207,8 @@ export function InterviewScheduleForm({
 	const state = useRecruitmentAction();
 	return (
 		<form
-			className="space-y-4"
 			aria-busy={state.pending}
+			className="space-y-4"
 			onSubmit={(event) => {
 				event.preventDefault();
 				const data = new FormData(event.currentTarget);
@@ -220,8 +231,8 @@ export function InterviewScheduleForm({
 					<Input
 						id={`scheduled-${applicationId}`}
 						name="scheduledAt"
-						type="datetime-local"
 						required
+						type="datetime-local"
 					/>
 				</div>
 				<div className="space-y-2">
@@ -236,7 +247,7 @@ export function InterviewScheduleForm({
 				</div>
 			</div>
 			<ResultMessage feedback={state.feedback} />
-			<Button type="submit" disabled={state.pending}>
+			<Button disabled={state.pending} type="submit">
 				{state.pending ? <Spinner /> : null}Schedule interview
 			</Button>
 		</form>
@@ -247,8 +258,8 @@ export function OfferCreateForm({ applicationId }: { applicationId: string }) {
 	const state = useRecruitmentAction();
 	return (
 		<form
-			className="space-y-4"
 			aria-busy={state.pending}
+			className="space-y-4"
 			onSubmit={(event) => {
 				event.preventDefault();
 				const data = new FormData(event.currentTarget);
@@ -267,9 +278,9 @@ export function OfferCreateForm({ applicationId }: { applicationId: string }) {
 				<Label htmlFor={`offer-terms-${applicationId}`}>Terms summary</Label>
 				<Textarea
 					id={`offer-terms-${applicationId}`}
+					maxLength={2000}
 					name="termsSummary"
 					required
-					maxLength={2000}
 				/>
 			</div>
 			<div className="space-y-2">
@@ -277,12 +288,12 @@ export function OfferCreateForm({ applicationId }: { applicationId: string }) {
 				<Input
 					id={`offer-expiry-${applicationId}`}
 					name="expiresOn"
-					type="date"
 					required
+					type="date"
 				/>
 			</div>
 			<ResultMessage feedback={state.feedback} />
-			<Button type="submit" disabled={state.pending}>
+			<Button disabled={state.pending} type="submit">
 				{state.pending ? <Spinner /> : null}Create offer
 			</Button>
 		</form>
@@ -299,8 +310,6 @@ export function CandidateConsentForm({
 		<div className="space-y-2">
 			<ResultMessage feedback={state.feedback} />
 			<Button
-				type="button"
-				variant="destructive"
 				disabled={state.pending}
 				onClick={() =>
 					state.run(
@@ -312,6 +321,8 @@ export function CandidateConsentForm({
 						"Candidate consent withdrawn.",
 					)
 				}
+				type="button"
+				variant="destructive"
 			>
 				{state.pending ? <Spinner /> : null}Withdraw consent
 			</Button>
@@ -333,13 +344,13 @@ export function OfferTransitionForm({
 				: offer.status === "issued"
 					? { label: "Accept", action: acceptOfferAction, idempotent: true }
 					: null;
-	if (!transition) return null;
+	if (!transition) {
+		return null;
+	}
 	return (
 		<div className="space-y-2">
 			<ResultMessage feedback={state.feedback} />
 			<Button
-				type="button"
-				variant="outline"
 				disabled={state.pending}
 				onClick={() =>
 					state.run(
@@ -354,6 +365,8 @@ export function OfferTransitionForm({
 						`Offer ${transition.label.toLowerCase()} completed.`,
 					)
 				}
+				type="button"
+				variant="outline"
 			>
 				{state.pending ? <Spinner /> : null}
 				{transition.label}
@@ -366,8 +379,8 @@ export function HireConversionForm({ offerId }: { offerId: string }) {
 	const state = useRecruitmentAction();
 	return (
 		<form
-			className="space-y-4"
 			aria-busy={state.pending}
+			className="space-y-4"
 			onSubmit={(event) => {
 				event.preventDefault();
 				const data = new FormData(event.currentTarget);
@@ -421,8 +434,8 @@ export function HireConversionForm({ offerId }: { offerId: string }) {
 					<Input
 						id={`starts-on-${offerId}`}
 						name="startsOn"
-						type="date"
 						required
+						type="date"
 					/>
 				</div>
 				<div className="space-y-2">
@@ -440,7 +453,7 @@ export function HireConversionForm({ offerId }: { offerId: string }) {
 					"costCentreKey",
 					"projectKey",
 				].map((name) => (
-					<div key={name} className="space-y-2">
+					<div className="space-y-2" key={name}>
 						<Label htmlFor={`${name}-${offerId}`}>
 							{name.replace("Key", " key")}
 						</Label>
@@ -449,9 +462,10 @@ export function HireConversionForm({ offerId }: { offerId: string }) {
 				))}
 			</div>
 			<ResultMessage feedback={state.feedback} />
-			<Button type="submit" disabled={state.pending}>
+			<Button disabled={state.pending} type="submit">
 				{state.pending ? <Spinner /> : null}Convert accepted offer
 			</Button>
 		</form>
 	);
 }
+// biome-ignore-all lint/style/noNestedTernary: Exhaustive status and tri-state view mappings remain explicit at their use sites.

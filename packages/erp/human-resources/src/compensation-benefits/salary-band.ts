@@ -29,7 +29,7 @@ export const HUMAN_RESOURCES_AGGREGATE_SALARY_BAND = "salary_band" as const;
 export type HumanResourcesSalaryBandAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_SALARY_BAND;
 
-export async function createSalaryBand(
+export function createSalaryBand(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<SalaryBand>> {
@@ -67,7 +67,7 @@ export async function createSalaryBand(
 	});
 }
 
-export async function supersedeSalaryBand(
+export function supersedeSalaryBand(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<SalaryBand>> {
@@ -110,7 +110,7 @@ export async function supersedeSalaryBand(
 	});
 }
 
-export async function archiveSalaryBand(
+export function archiveSalaryBand(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<SalaryBand>> {
@@ -135,7 +135,7 @@ export async function archiveSalaryBand(
 	});
 }
 
-export async function getSalaryBand(
+export function getSalaryBand(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<SalaryBand>> {
@@ -159,7 +159,7 @@ export async function getSalaryBand(
 	});
 }
 
-export async function listSalaryBandsByGrade(
+export function listSalaryBandsByGrade(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<SalaryBandListPage>> {
@@ -178,7 +178,7 @@ export async function listSalaryBandsByGrade(
 	});
 }
 
-export async function findSalaryBandByGradeAndCurrencyAsOf(
+export function findSalaryBandByGradeAndCurrencyAsOf(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<SalaryBand>> {

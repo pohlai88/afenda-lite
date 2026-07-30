@@ -58,10 +58,10 @@ import { sessionHasPermission } from "@/modules/identity/domain/session-permissi
 const EA_UOM_ID = "b1000000-0000-4000-8000-000000000001";
 const TAX_JURISDICTION_COUNTRY_CODES = ["MY", "SG", "US"] as const;
 
-type MasterDataShellProps = {
+interface MasterDataShellProps {
 	/** Operator admin chrome vs client workspace. */
 	surface: "admin" | "client";
-};
+}
 
 /**
  * Master-data console — RSC load via package commands; mutations via Actions.
@@ -183,14 +183,14 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 	);
 	const draftOptionAttributes = templatePanels.flatMap(
 		({ template, attributes }) =>
-			template.status !== "draft"
-				? []
-				: attributes
+			template.status === "draft"
+				? attributes
 						.filter((attribute) => attribute.valueKind === "option")
 						.map((attribute) => ({
 							id: attribute.id,
 							label: `${template.code} · ${attribute.code} · ${attribute.name}`,
-						})),
+						}))
+				: [],
 	);
 	const variantRows = templatePanels.flatMap(({ template, variants }) =>
 		variants.map((variant) => ({
@@ -198,15 +198,16 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 			variant,
 		})),
 	);
-	const loadError =
-		!partiesResult.ok ||
-		!itemsResult.ok ||
-		!groupsResult.ok ||
-		!warehousesResult.ok ||
-		!paymentTermsResult.ok ||
-		!taxRegistrationsResult.ok ||
-		!changeRequestsResult.ok ||
-		!templatesResult.ok;
+	const loadError = !(
+		partiesResult.ok &&
+		itemsResult.ok &&
+		groupsResult.ok &&
+		warehousesResult.ok &&
+		paymentTermsResult.ok &&
+		taxRegistrationsResult.ok &&
+		changeRequestsResult.ok &&
+		templatesResult.ok
+	);
 
 	const partyOptions = parties.map((party) => ({
 		id: party.id,
@@ -266,18 +267,18 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 	return (
 		<section className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-10">
 			<header className="space-y-2">
-				<p className="text-sm text-muted-foreground">
+				<p className="text-muted-foreground text-sm">
 					{surface === "admin" ? "Org admin" : "Client workspace"}
 				</p>
-				<h1 className="text-2xl font-semibold tracking-tight">Master data</h1>
-				<p className="max-w-2xl text-sm text-muted-foreground">
+				<h1 className="font-semibold text-2xl tracking-tight">Master data</h1>
+				<p className="max-w-2xl text-muted-foreground text-sm">
 					Organization parties, items, item templates/variants, warehouses, and
 					payment terms. Writes go through `@afenda/master-data` only.
 				</p>
 			</header>
 
 			{loadError ? (
-				<Alert variant="destructive" role="alert">
+				<Alert role="alert" variant="destructive">
 					<AlertTitle>Catalog load incomplete</AlertTitle>
 					<AlertDescription>
 						One or more master-data lists failed. Retry or contact an admin.
@@ -306,8 +307,8 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 					</CardHeader>
 					<CardContent>
 						<MasterDataImportPanel
-							canImportValidate={canImportValidate}
 							canImportApply={canImportApply}
+							canImportValidate={canImportValidate}
 						/>
 					</CardContent>
 				</Card>
@@ -351,11 +352,11 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 				</CardHeader>
 				<CardContent>
 					<ChangeRequestPanel
-						canManage={canManage}
+						approvedActivateRequests={approvedActivateRequests}
 						canApprove={canApprove}
+						canManage={canManage}
 						parties={partyOptions}
 						submittedRequests={submittedRequests}
-						approvedActivateRequests={approvedActivateRequests}
 					/>
 				</CardContent>
 			</Card>
@@ -370,9 +371,9 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 				</CardHeader>
 				<CardContent>
 					<MergePartiesForm
+						approvedMergeRequests={approvedMergeRequests}
 						canManage={canManage}
 						parties={mergePartyOptions}
-						approvedMergeRequests={approvedMergeRequests}
 					/>
 				</CardContent>
 			</Card>
@@ -386,13 +387,13 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 				</CardHeader>
 				<CardContent>
 					{parties.length === 0 ? (
-						<p className="text-sm text-muted-foreground">No parties yet.</p>
+						<p className="text-muted-foreground text-sm">No parties yet.</p>
 					) : (
 						<ul className="divide-y divide-border">
 							{parties.map((party) => (
 								<li
-									key={party.id}
 									className="flex flex-wrap items-baseline justify-between gap-2 py-3 text-sm"
+									key={party.id}
 								>
 									<span>
 										<Code>{party.code}</Code> {party.name}
@@ -429,15 +430,15 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 					</CardHeader>
 					<CardContent>
 						{paymentTerms.length === 0 ? (
-							<p className="text-sm text-muted-foreground">
+							<p className="text-muted-foreground text-sm">
 								No payment terms yet.
 							</p>
 						) : (
 							<ul className="divide-y divide-border">
 								{paymentTerms.map((term) => (
 									<li
-										key={term.id}
 										className="flex flex-wrap items-baseline justify-between gap-2 py-3 text-sm"
+										key={term.id}
 									>
 										<span>
 											<Code>{term.code}</Code> {term.name}
@@ -449,8 +450,8 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 								))}
 							</ul>
 						)}
-						<div className="mt-6 border-t border-border pt-4">
-							<p className="mb-3 text-sm font-medium">Lifecycle</p>
+						<div className="mt-6 border-border border-t pt-4">
+							<p className="mb-3 font-medium text-sm">Lifecycle</p>
 							<PaymentTermLifecycleForm
 								canManage={canManage}
 								terms={paymentTerms}
@@ -472,11 +473,11 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 					<CardContent>
 						<CreateTaxRegistrationForm
 							canManage={canManage}
+							countryCodes={TAX_JURISDICTION_COUNTRY_CODES}
 							parties={partyOptions.map((party) => ({
 								id: party.id,
 								label: party.label,
 							}))}
-							countryCodes={TAX_JURISDICTION_COUNTRY_CODES}
 							registrationTypes={TAX_REGISTRATION_TYPES}
 						/>
 					</CardContent>
@@ -490,15 +491,15 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 					</CardHeader>
 					<CardContent>
 						{taxRegistrations.length === 0 ? (
-							<p className="text-sm text-muted-foreground">
+							<p className="text-muted-foreground text-sm">
 								No tax registrations yet.
 							</p>
 						) : (
 							<ul className="divide-y divide-border">
 								{taxRegistrations.map((row) => (
 									<li
-										key={row.id}
 										className="flex flex-wrap items-baseline justify-between gap-2 py-3 text-sm"
+										key={row.id}
 									>
 										<span>
 											<Code>{row.taxType}</Code> {row.maskedRegistrationNumber}
@@ -510,8 +511,8 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 								))}
 							</ul>
 						)}
-						<div className="mt-6 border-t border-border pt-4">
-							<p className="mb-3 text-sm font-medium">Lifecycle</p>
+						<div className="mt-6 border-border border-t pt-4">
+							<p className="mb-3 font-medium text-sm">Lifecycle</p>
 							<TaxRegistrationLifecycleForm
 								canManage={canManage}
 								registrations={taxRegistrations}
@@ -558,11 +559,11 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 					</CardHeader>
 					<CardContent>
 						{templates.length === 0 ? (
-							<p className="text-sm text-muted-foreground">No templates yet.</p>
+							<p className="text-muted-foreground text-sm">No templates yet.</p>
 						) : (
 							<ul className="divide-y divide-border">
 								{templatePanels.map(({ template, attributes }) => (
-									<li key={template.id} className="space-y-2 py-3 text-sm">
+									<li className="space-y-2 py-3 text-sm" key={template.id}>
 										<div className="flex flex-wrap items-baseline justify-between gap-2">
 											<span>
 												<Code>{template.code}</Code> {template.name}
@@ -588,13 +589,13 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 										) : null}
 										{canManage && template.status === "draft" ? (
 											<form action={activateItemTemplateFormAction}>
-												<input type="hidden" name="id" value={template.id} />
+												<input name="id" type="hidden" value={template.id} />
 												<input
-													type="hidden"
 													name="expectedVersion"
+													type="hidden"
 													value={template.version}
 												/>
-												<Button type="submit" size="sm" variant="outline">
+												<Button size="sm" type="submit" variant="outline">
 													Activate template
 												</Button>
 											</form>
@@ -619,13 +620,13 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 					</CardHeader>
 					<CardContent>
 						<CreateItemVariantForm
-							canManage={canManageVariantAttributes}
 							baseUomId={EA_UOM_ID}
-							itemTypes={ITEM_TYPES}
+							canManage={canManageVariantAttributes}
 							itemGroups={itemGroups.map((group) => ({
 								id: group.id,
 								label: `${group.code} · ${group.name}`,
 							}))}
+							itemTypes={ITEM_TYPES}
 							templates={templatePanels
 								.filter(({ template }) => template.status === "active")
 								.map(({ template, attributes }) => ({
@@ -651,22 +652,22 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 					</CardHeader>
 					<CardContent>
 						{variantRows.length === 0 ? (
-							<p className="text-sm text-muted-foreground">No variants yet.</p>
+							<p className="text-muted-foreground text-sm">No variants yet.</p>
 						) : (
 							<ul className="divide-y divide-border">
 								{variantRows.map(({ templateCode, variant }) => (
 									<li
-										key={variant.id}
 										className="flex flex-wrap items-baseline justify-between gap-2 py-3 text-sm"
+										key={variant.id}
 									>
 										<span>
 											<Code>{variant.item.code}</Code> {variant.item.name}
 										</span>
 										<span className="text-muted-foreground">
 											{templateCode} · {variant.item.status}
-											{variant.retiredAt !== null
-												? " · membership retired"
-												: ""}
+											{variant.retiredAt === null
+												? ""
+												: " · membership retired"}
 										</span>
 									</li>
 								))}
@@ -698,15 +699,15 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 					</CardHeader>
 					<CardContent>
 						{itemGroups.length === 0 ? (
-							<p className="text-sm text-muted-foreground">
+							<p className="text-muted-foreground text-sm">
 								No item groups yet.
 							</p>
 						) : (
 							<ul className="divide-y divide-border">
 								{itemGroups.map((group) => (
 									<li
-										key={group.id}
 										className="flex flex-wrap items-baseline justify-between gap-2 py-3 text-sm"
+										key={group.id}
 									>
 										<span>
 											<Code>{group.code}</Code> {group.name}
@@ -718,18 +719,18 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 								))}
 							</ul>
 						)}
-						<div className="mt-6 border-t border-border pt-4">
-							<p className="mb-3 text-sm font-medium">Lifecycle</p>
+						<div className="mt-6 border-border border-t pt-4">
+							<p className="mb-3 font-medium text-sm">Lifecycle</p>
 							<MasterRootLifecycleForm
 								canManage={canManage}
 								entity="itemGroup"
-								title="Item group"
 								options={itemGroups.map((group) => ({
 									id: group.id,
 									label: `${group.code} · ${group.name}`,
 									version: group.version,
 									status: group.status,
 								}))}
+								title="Item group"
 							/>
 						</div>
 					</CardContent>
@@ -747,13 +748,13 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 					</CardHeader>
 					<CardContent>
 						<CreateItemForm
-							canManage={canManage}
-							itemTypes={ITEM_TYPES}
 							baseUomId={EA_UOM_ID}
+							canManage={canManage}
 							itemGroups={itemGroups.map((group) => ({
 								id: group.id,
 								label: `${group.code} · ${group.name}`,
 							}))}
+							itemTypes={ITEM_TYPES}
 						/>
 					</CardContent>
 				</Card>
@@ -766,13 +767,13 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 					</CardHeader>
 					<CardContent>
 						{items.length === 0 ? (
-							<p className="text-sm text-muted-foreground">No items yet.</p>
+							<p className="text-muted-foreground text-sm">No items yet.</p>
 						) : (
 							<ul className="divide-y divide-border">
 								{items.map((item) => (
 									<li
-										key={item.id}
 										className="flex flex-wrap items-baseline justify-between gap-2 py-3 text-sm"
+										key={item.id}
 									>
 										<span>
 											<Code>{item.code}</Code> {item.name}
@@ -784,18 +785,18 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 								))}
 							</ul>
 						)}
-						<div className="mt-6 border-t border-border pt-4">
-							<p className="mb-3 text-sm font-medium">Lifecycle</p>
+						<div className="mt-6 border-border border-t pt-4">
+							<p className="mb-3 font-medium text-sm">Lifecycle</p>
 							<MasterRootLifecycleForm
 								canManage={canManage}
 								entity="item"
-								title="Item"
 								options={items.map((item) => ({
 									id: item.id,
 									label: `${item.code} · ${item.name}`,
 									version: item.version,
 									status: item.status,
 								}))}
+								title="Item"
 							/>
 						</div>
 					</CardContent>
@@ -827,15 +828,15 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 					</CardHeader>
 					<CardContent>
 						{warehouses.length === 0 ? (
-							<p className="text-sm text-muted-foreground">
+							<p className="text-muted-foreground text-sm">
 								No warehouses yet.
 							</p>
 						) : (
 							<ul className="divide-y divide-border">
 								{warehouses.map((warehouse) => (
 									<li
-										key={warehouse.id}
 										className="flex flex-wrap items-baseline justify-between gap-2 py-3 text-sm"
+										key={warehouse.id}
 									>
 										<span>
 											<Code>{warehouse.code}</Code> {warehouse.name}
@@ -848,18 +849,18 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 								))}
 							</ul>
 						)}
-						<div className="mt-6 border-t border-border pt-4">
-							<p className="mb-3 text-sm font-medium">Lifecycle</p>
+						<div className="mt-6 border-border border-t pt-4">
+							<p className="mb-3 font-medium text-sm">Lifecycle</p>
 							<MasterRootLifecycleForm
 								canManage={canManage}
 								entity="warehouse"
-								title="Warehouse"
 								options={warehouses.map((warehouse) => ({
 									id: warehouse.id,
 									label: `${warehouse.code} · ${warehouse.name}`,
 									version: warehouse.version,
 									status: warehouse.status,
 								}))}
+								title="Warehouse"
 							/>
 						</div>
 					</CardContent>

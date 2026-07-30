@@ -30,6 +30,7 @@ import type {
 	EmployeeOrganizationEntry,
 	EmployeeProfile,
 	PersonContact,
+	Worker,
 } from "./types";
 
 async function resolveOrganizationEntry(input: {
@@ -78,6 +79,71 @@ function emergencyContactsFromPerson(
 	);
 }
 
+interface PersonProfileDetails {
+	contacts: readonly PersonContact[];
+	homeAddress: string | null;
+	identifiers: EmployeeProfile["identifiers"];
+	personalPhoneNumber: string | null;
+	personDisplayName: string | null;
+	preferredName: string | null;
+}
+
+async function loadPersonProfileDetails(input: {
+	store: HumanResourcesStore;
+	organizationId: string;
+	personId: Worker["personId"];
+}): Promise<Result<PersonProfileDetails>> {
+	const person = await input.store.getPersonById({
+		organizationId: input.organizationId,
+		personId: input.personId,
+	});
+	if (!person.ok) {
+		return person;
+	}
+	const contacts = await input.store.listPersonContacts({
+		organizationId: input.organizationId,
+		personId: input.personId,
+	});
+	if (!contacts.ok) {
+		return contacts;
+	}
+	const identifiers = await input.store.listPersonIdentifiers({
+		organizationId: input.organizationId,
+		personId: input.personId,
+	});
+	if (!identifiers.ok) {
+		return identifiers;
+	}
+	return ok({
+		contacts: contacts.data,
+		homeAddress: contactValue(contacts.data, "postal_address"),
+		identifiers: identifiers.data,
+		personDisplayName: person.data?.legalName ?? null,
+		personalPhoneNumber: contactValue(contacts.data, "phone"),
+		preferredName: person.data?.preferredName ?? null,
+	});
+}
+
+async function resolveProfileEmployment(input: {
+	store: HumanResourcesStore;
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	asOf: string;
+}): Promise<Result<Employment | null>> {
+	const employmentAsOf = await input.store.findEmploymentByEmployeeAsOf({
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+		asOf: input.asOf,
+	});
+	if (!employmentAsOf.ok || employmentAsOf.data !== null) {
+		return employmentAsOf;
+	}
+	return input.store.findOpenEmploymentByEmployee({
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+	});
+}
+
 async function assembleEmployeeProfile(input: {
 	store: HumanResourcesStore;
 	organizationId: string;
@@ -99,25 +165,16 @@ async function assembleEmployeeProfile(input: {
 		);
 	}
 
-	const employmentAsOf = await input.store.findEmploymentByEmployeeAsOf({
+	const employmentResult = await resolveProfileEmployment({
+		store: input.store,
 		organizationId: input.organizationId,
 		employeeId: input.employeeId,
 		asOf: input.asOf,
 	});
-	if (!employmentAsOf.ok) {
-		return employmentAsOf;
+	if (!employmentResult.ok) {
+		return employmentResult;
 	}
-	let employment = employmentAsOf.data;
-	if (employment === null) {
-		const openEmployment = await input.store.findOpenEmploymentByEmployee({
-			organizationId: input.organizationId,
-			employeeId: input.employeeId,
-		});
-		if (!openEmployment.ok) {
-			return openEmployment;
-		}
-		employment = openEmployment.data;
-	}
+	const employment = employmentResult.data;
 
 	const workerResult = await input.store.findWorkerByEmployeeId({
 		organizationId: input.organizationId,
@@ -128,43 +185,24 @@ async function assembleEmployeeProfile(input: {
 	}
 	const worker = workerResult.data;
 
-	let personDisplayName: string | null = null;
-	let preferredName: string | null = null;
-	let contacts: readonly PersonContact[] = [];
-	let identifiers: EmployeeProfile["identifiers"] = null;
-	let personalPhoneNumber: string | null = null;
-	let homeAddress: string | null = null;
-
+	let personDetails: PersonProfileDetails = {
+		contacts: [],
+		homeAddress: null,
+		identifiers: null,
+		personDisplayName: null,
+		personalPhoneNumber: null,
+		preferredName: null,
+	};
 	if (worker !== null) {
-		const person = await input.store.getPersonById({
+		const loadedPersonDetails = await loadPersonProfileDetails({
+			store: input.store,
 			organizationId: input.organizationId,
 			personId: worker.personId,
 		});
-		if (!person.ok) {
-			return person;
+		if (!loadedPersonDetails.ok) {
+			return loadedPersonDetails;
 		}
-		if (person.data !== null) {
-			personDisplayName = person.data.legalName;
-			preferredName = person.data.preferredName;
-		}
-		const listedContacts = await input.store.listPersonContacts({
-			organizationId: input.organizationId,
-			personId: worker.personId,
-		});
-		if (!listedContacts.ok) {
-			return listedContacts;
-		}
-		contacts = listedContacts.data;
-		personalPhoneNumber = contactValue(contacts, "phone");
-		homeAddress = contactValue(contacts, "postal_address");
-		const listedIdentifiers = await input.store.listPersonIdentifiers({
-			organizationId: input.organizationId,
-			personId: worker.personId,
-		});
-		if (!listedIdentifiers.ok) {
-			return listedIdentifiers;
-		}
-		identifiers = listedIdentifiers.data;
+		personDetails = loadedPersonDetails.data;
 	}
 
 	let organizationEntry: EmployeeOrganizationEntry | null = null;
@@ -182,7 +220,7 @@ async function assembleEmployeeProfile(input: {
 		organizationEntry = entry.data;
 	}
 
-	const primaryIdentifier = identifiers?.find(
+	const primaryIdentifier = personDetails.identifiers?.find(
 		(identifier) => identifier.status === "active",
 	);
 
@@ -193,16 +231,16 @@ async function assembleEmployeeProfile(input: {
 		employmentStatus: employment?.status ?? null,
 		employmentId: employment?.id ?? null,
 		personId: worker?.personId ?? null,
-		personDisplayName,
-		preferredName,
+		personDisplayName: personDetails.personDisplayName,
+		preferredName: personDetails.preferredName,
 		workerType: worker?.workerType ?? null,
 		workerStatus: worker?.status ?? null,
 		organizationEntry,
-		personalPhoneNumber,
-		homeAddress,
-		emergencyContacts: emergencyContactsFromPerson(contacts),
-		contacts,
-		identifiers,
+		personalPhoneNumber: personDetails.personalPhoneNumber,
+		homeAddress: personDetails.homeAddress,
+		emergencyContacts: emergencyContactsFromPerson(personDetails.contacts),
+		contacts: personDetails.contacts,
+		identifiers: personDetails.identifiers,
 		ssn: primaryIdentifier?.identifierLast4 ?? null,
 		taxId: null,
 		socialSecurityNumber: null,

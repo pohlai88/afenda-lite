@@ -39,7 +39,9 @@ export async function createPartyRelationship(
 		return parsed;
 	}
 	const canonical = canonicalizePartyRelationship(parsed.data);
-	if (!canonical.ok) return canonical;
+	if (!canonical.ok) {
+		return canonical;
+	}
 	const { store, roots, ports, authorization } = resolvePartyExtensionDeps(
 		options,
 		["createPartyRelationship"],
@@ -60,7 +62,9 @@ export async function createPartyRelationship(
 		canonical.data.sourcePartyId,
 		canonical.data.targetPartyId,
 	);
-	if (!parents.ok) return parents;
+	if (!parents.ok) {
+		return parents;
+	}
 	return store.createPartyRelationship(
 		{
 			organizationId: parsed.data.organizationId,
@@ -86,7 +90,9 @@ export async function listPartyRelationships(
 		input,
 		"Invalid party relationship list input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const { store, authorization } = resolvePartyExtensionDeps(options, [
 		"listPartyRelationships",
 	]);
@@ -95,7 +101,9 @@ export async function listPartyRelationships(
 		actorUserId: parsed.data.actorUserId,
 		query: MASTER_QUERY_PARTY_RELATIONSHIP_LIST,
 	});
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return store.listPartyRelationships({
 		organizationId: parsed.data.organizationId,
 		partyId: parsed.data.partyId,

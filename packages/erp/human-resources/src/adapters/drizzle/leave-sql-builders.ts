@@ -20,6 +20,10 @@ import {
 	valueSnapshotJson,
 } from "./leave-transactions";
 
+const HR_REGEX_1 = /^[\s]*outboxed AS/;
+const HR_REGEX_2 = /^[\s]*audited AS/;
+const HR_REGEX_3 = /^[\s]*WITH\s/;
+
 function activeLeaveOverlapStatusSqlList(includeDraft: boolean): string {
 	return ACTIVE_LEAVE_OVERLAP_STATUSES.filter(
 		(status) => includeDraft || status !== "draft",
@@ -147,7 +151,7 @@ export function buildSubmitLeaveRequestSql(params: {
 		WITH ${buildLockRequestCte({
 			organizationId: params.organizationId,
 			requestId: params.requestId,
-		}).replace(/^[\s]*WITH\s/, "")},
+		}).replace(HR_REGEX_3, "")},
 		${buildLeaveOverlapGuardCtes({
 			organizationId: params.organizationId,
 			requestId: params.requestId,
@@ -167,10 +171,10 @@ export function buildSubmitLeaveRequestSql(params: {
 			AND NOT (SELECT found FROM overlap)
 			RETURNING hr_leave_request.*
 		),
-		${auditCte.replace(/^[\s]*audited AS/, "audited AS")}${
+		${auditCte.replace(HR_REGEX_2, "audited AS")}${
 			params.eventType
 				? `,
-		${outboxCte.replace(/^[\s]*outboxed AS/, "outboxed AS")}`
+		${outboxCte.replace(HR_REGEX_1, "outboxed AS")}`
 				: ""
 		}
 		SELECT
@@ -238,8 +242,8 @@ export function buildCreateLeaveRequestSql(params: {
 	});
 
 	return `
-		WITH ${requestCte.replace(/^[\s]*WITH\s/, "")}, 
-		${auditCte.replace(/^[\s]*audited AS/, "audited AS")}
+		WITH ${requestCte.replace(HR_REGEX_3, "")},
+		${auditCte.replace(HR_REGEX_2, "audited AS")}
 		SELECT inserted_request.* 
 		FROM inserted_request, inserted_segments, audited
 		WHERE inserted_segments.request_id = inserted_request.id
@@ -278,7 +282,7 @@ export function buildApproveLeaveRequestSql(params: {
 		WITH ${buildLockRequestCte({
 			organizationId: params.organizationId,
 			requestId: params.requestId,
-		}).replace(/^[\s]*WITH\s/, "")},
+		}).replace(HR_REGEX_3, "")},
 		${buildLeaveOverlapGuardCtes({
 			organizationId: params.organizationId,
 			requestId: params.requestId,
@@ -357,7 +361,7 @@ export function buildApproveLeaveRequestSql(params: {
 				entityId: "id",
 				actorUserId: `'${params.actorUserId}'`,
 			},
-		}).replace(/^[\s]*audited AS/, "audited AS")},
+		}).replace(HR_REGEX_2, "audited AS")},
 		${buildOutboxCte({
 			eventId,
 			eventType: params.eventType,
@@ -369,7 +373,7 @@ export function buildApproveLeaveRequestSql(params: {
 				organizationId: "organization_id",
 				actorUserId: `'${params.actorUserId}'`,
 			},
-		}).replace(/^[\s]*outboxed AS/, "outboxed AS")}
+		}).replace(HR_REGEX_1, "outboxed AS")}
 		SELECT
 			(SELECT found FROM overlap) AS overlap_detected,
 			updated_request.*
@@ -413,7 +417,7 @@ export function buildCancelApprovedLeaveRequestSql(params: {
 		WITH ${buildLockRequestCte({
 			organizationId: params.organizationId,
 			requestId: params.requestId,
-		}).replace(/^[\s]*WITH\s/, "")},
+		}).replace(HR_REGEX_3, "")},
 		entitlement_lock AS (
 			SELECT ent.* FROM hr_leave_entitlement ent
 			INNER JOIN locked_request req ON req.entitlement_id = ent.id
@@ -473,7 +477,7 @@ export function buildCancelApprovedLeaveRequestSql(params: {
 				entityId: "id",
 				actorUserId: `'${params.actorUserId}'`,
 			},
-		}).replace(/^[\s]*audited AS/, "audited AS")},
+		}).replace(HR_REGEX_2, "audited AS")},
 		${buildOutboxCte({
 			eventId,
 			eventType: params.eventType,
@@ -485,7 +489,7 @@ export function buildCancelApprovedLeaveRequestSql(params: {
 				organizationId: "organization_id",
 				actorUserId: `'${params.actorUserId}'`,
 			},
-		}).replace(/^[\s]*outboxed AS/, "outboxed AS")}
+		}).replace(HR_REGEX_1, "outboxed AS")}
 		SELECT updated_request.*
 		FROM updated_request, reversal_adjustment, cancellation_decision, audited, outboxed
 	`;
@@ -571,7 +575,7 @@ export function buildAmendLeaveRequestSql(params: {
 				entityId: "id",
 				actorUserId: `'${params.actorUserId}'`,
 			},
-		}).replace(/^[\s]*audited AS/, "audited AS")}
+		}).replace(HR_REGEX_2, "audited AS")}
 		SELECT updated_request.*
 		FROM updated_request, inserted_segments, audited
 		WHERE inserted_segments.request_id = updated_request.id
@@ -635,7 +639,7 @@ export function buildCreateLeaveEntitlementSql(params: {
 				entityId: "id",
 				actorUserId: "created_by",
 			},
-		}).replace(/^[\s]*audited AS/, "audited AS")}
+		}).replace(HR_REGEX_2, "audited AS")}
 		SELECT inserted_entitlement.*
 		FROM inserted_entitlement, audited
 	`;
@@ -709,7 +713,7 @@ export function buildCreateLeaveAdjustmentSql(params: {
 		WITH ${buildLockEntitlementCte({
 			organizationId: params.organizationId,
 			entitlementId: params.entitlementId,
-		}).replace(/^[\s]*WITH\s/, "")},
+		}).replace(HR_REGEX_3, "")},
 		inserted_adjustment AS (
 			INSERT INTO hr_leave_adjustment (
 				id, organization_id, entitlement_id, source_request_id, kind, delta,
@@ -726,10 +730,10 @@ export function buildCreateLeaveAdjustmentSql(params: {
 			WHERE locked_entitlement.status = 'active'
 			RETURNING *
 		),
-		${auditCte.replace(/^[\s]*audited AS/, "audited AS")}${
+		${auditCte.replace(HR_REGEX_2, "audited AS")}${
 			params.eventType
 				? `,
-		${outboxCte.replace(/^[\s]*outboxed AS/, "outboxed AS")}`
+		${outboxCte.replace(HR_REGEX_1, "outboxed AS")}`
 				: ""
 		}
 		SELECT inserted_adjustment.*
@@ -828,10 +832,10 @@ export function buildStatusTransitionSql(params: {
 			RETURNING *
 		),
 		${decisionCte}
-		${auditCte.replace(/^[\s]*audited AS/, "audited AS")}${
+		${auditCte.replace(HR_REGEX_2, "audited AS")}${
 			params.eventType
 				? `,
-		${outboxCte.replace(/^[\s]*outboxed AS/, "outboxed AS")}`
+		${outboxCte.replace(HR_REGEX_1, "outboxed AS")}`
 				: ""
 		}
 		SELECT updated_request.*
@@ -942,7 +946,7 @@ export function buildCarryForwardEntitlementSql(params: {
 				entityId: "id",
 				actorUserId: `'${params.actorUserId}'`,
 			},
-		}).replace(/^[\s]*audited AS/, "source_audited AS")},
+		}).replace(HR_REGEX_2, "source_audited AS")},
 		${buildAuditCte({
 			auditId: newAuditId,
 			module: "human-resources",
@@ -956,7 +960,7 @@ export function buildCarryForwardEntitlementSql(params: {
 				entityId: "id",
 				actorUserId: "created_by",
 			},
-		}).replace(/^[\s]*audited AS/, "new_audited AS")},
+		}).replace(HR_REGEX_2, "new_audited AS")},
 		${buildAuditCte({
 			auditId: carryOutAuditId,
 			module: "human-resources",
@@ -970,7 +974,7 @@ export function buildCarryForwardEntitlementSql(params: {
 				entityId: "id",
 				actorUserId: "created_by",
 			},
-		}).replace(/^[\s]*audited AS/, "carry_out_audited AS")},
+		}).replace(HR_REGEX_2, "carry_out_audited AS")},
 		${buildOutboxCte({
 			eventId,
 			eventType: params.eventType,
@@ -988,7 +992,7 @@ export function buildCarryForwardEntitlementSql(params: {
 				organizationId: "organization_id",
 				actorUserId: "created_by",
 			},
-		}).replace(/^[\s]*outboxed AS/, "outboxed AS")}
+		}).replace(HR_REGEX_1, "outboxed AS")}
 		SELECT new_entitlement.*
 		FROM new_entitlement, source_carry_out, source_audited, new_audited, carry_out_audited, outboxed
 	`;
@@ -1111,7 +1115,7 @@ export function buildExpireEntitlementSql(params: {
 				entityId: "id",
 				actorUserId: `'${params.actorUserId}'`,
 			},
-		}).replace(/^[\s]*audited AS/, "entitlement_audited AS")},
+		}).replace(HR_REGEX_2, "entitlement_audited AS")},
 		${buildAuditCte({
 			auditId: expiryAuditId,
 			module: "human-resources",
@@ -1125,10 +1129,10 @@ export function buildExpireEntitlementSql(params: {
 				entityId: "id",
 				actorUserId: "created_by",
 			},
-		}).replace(/^[\s]*audited AS/, "expiry_audited AS")}${
+		}).replace(HR_REGEX_2, "expiry_audited AS")}${
 			params.eventType
 				? `,
-		${outboxCte.replace(/^[\s]*outboxed AS/, "outboxed AS")}`
+		${outboxCte.replace(HR_REGEX_1, "outboxed AS")}`
 				: ""
 		}
 		SELECT updated_entitlement.*
@@ -1227,7 +1231,7 @@ export function buildCreateLeavePolicySql(params: {
 				entityId: "id",
 				actorUserId: "created_by",
 			},
-		}).replace(/^[\s]*audited AS/, "audited AS")}
+		}).replace(HR_REGEX_2, "audited AS")}
 		SELECT inserted_policy.*
 		FROM inserted_policy, inserted_eligibility, audited
 	`;
@@ -1274,7 +1278,7 @@ export function buildPolicyStatusTransitionSql(params: {
 				entityId: "id",
 				actorUserId: `'${params.actorUserId}'`,
 			},
-		}).replace(/^[\s]*audited AS/, "audited AS")}
+		}).replace(HR_REGEX_2, "audited AS")}
 		SELECT updated_policy.*
 		FROM updated_policy, audited
 	`;

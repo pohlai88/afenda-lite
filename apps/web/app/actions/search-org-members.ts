@@ -18,9 +18,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type SearchOrgMembersActionData = {
+export interface SearchOrgMembersActionData {
 	members: OrganizationMemberSearchHit[];
-};
+}
 
 /**
  * Operator member FTS — coarse `requireRole('operator')` + Tier-2

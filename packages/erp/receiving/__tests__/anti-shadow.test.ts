@@ -22,11 +22,15 @@ function walk(dir: string, out: string[] = []): string[] {
 				"__tests__",
 				"shadcn-studio",
 			].includes(entry)
-		)
+		) {
 			continue;
+		}
 		const full = path.join(dir, entry);
-		if (statSync(full).isDirectory()) walk(full, out);
-		else if (/\.(ts|tsx|sql)$/.test(entry)) out.push(full);
+		if (statSync(full).isDirectory()) {
+			walk(full, out);
+		} else if (/\.(ts|tsx|sql)$/.test(entry)) {
+			out.push(full);
+		}
 	}
 	return out;
 }

@@ -14,11 +14,11 @@ import {
 	Text,
 } from "react-email";
 
-export type OnboardingInviteEmailProps = {
+export interface OnboardingInviteEmailProps {
 	inviteeName: string;
-	organizationName: string;
 	inviteUrl: string;
-};
+	organizationName: string;
+}
 
 /**
  * App-owned onboarding invite template.
@@ -56,38 +56,38 @@ export function OnboardingInviteEmail({
 					</Preview>
 					<Container className="mx-auto my-10 max-w-xl px-5">
 						<Section className="rounded-lg bg-panel px-8 py-8">
-							<Text className="m-0 mb-2 text-sm font-semibold tracking-wide text-muted">
+							<Text className="m-0 mb-2 font-semibold text-muted text-sm tracking-wide">
 								Afenda-Lite
 							</Text>
-							<Heading className="m-0 mb-4 text-2xl font-semibold text-ink">
+							<Heading className="m-0 mb-4 font-semibold text-2xl text-ink">
 								Join {organizationName}
 							</Heading>
-							<Text className="m-0 mb-4 text-base leading-6 text-ink">
+							<Text className="m-0 mb-4 text-base text-ink leading-6">
 								Hi {inviteeName}, you have been invited to join{" "}
 								{organizationName} on Afenda-Lite.
 							</Text>
-							<Text className="m-0 mb-6 text-base leading-6 text-muted">
+							<Text className="m-0 mb-6 text-base text-muted leading-6">
 								Accept the invitation to create your account and continue
 								onboarding.
 							</Text>
 							<Button
+								className="box-border rounded-md bg-brand px-5 py-3 text-center font-semibold text-base text-white no-underline"
 								href={inviteUrl}
-								className="box-border rounded-md bg-brand px-5 py-3 text-center text-base font-semibold text-white no-underline"
 							>
 								Accept invitation
 							</Button>
-							<Hr className="my-8 border-solid border-line" />
-							<Text className="m-0 text-sm leading-5 text-muted">
+							<Hr className="my-8 border-line border-solid" />
+							<Text className="m-0 text-muted text-sm leading-5">
 								If the button does not work, open this link:
 							</Text>
 							<Link
+								className="mt-2 block text-brand text-sm leading-5 underline"
 								href={inviteUrl}
-								className="mt-2 block text-sm leading-5 text-brand underline"
 							>
 								{inviteUrl}
 							</Link>
 						</Section>
-						<Text className="m-0 mt-6 text-center text-xs text-muted">
+						<Text className="m-0 mt-6 text-center text-muted text-xs">
 							If you were not expecting this email, you can ignore it.
 						</Text>
 					</Container>
@@ -103,4 +103,5 @@ OnboardingInviteEmail.PreviewProps = {
 	inviteUrl: "https://www.nexuscanon.com/join?invitationId=preview-invite",
 } satisfies OnboardingInviteEmailProps;
 
+// biome-ignore lint/complexity/noRedundantDefaultExport: React Email previews require a default export while package consumers use the named export.
 export default OnboardingInviteEmail;

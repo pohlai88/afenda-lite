@@ -11,11 +11,22 @@ import type {
 	RefUom,
 	RefUomDimension,
 } from "../src/capabilities/platform-references";
-import * as platformReferences from "../src/capabilities/platform-references";
 import {
 	countryCodeSchema,
 	currencyCodeSchema,
+	getRefCountry,
+	getRefCurrency,
+	getRefLanguage,
+	getRefTimeZone,
+	getRefUom,
+	getRefUomDimension,
 	languageCodeSchema,
+	listRefCountries,
+	listRefCurrencies,
+	listRefLanguages,
+	listRefTimeZones,
+	listRefUomDimensions,
+	listRefUoms,
 	MemoryPlatformReferenceStore,
 	readRefCurrencies,
 	readRefCurrencyByCode,
@@ -34,7 +45,6 @@ import {
 	uomDimensionCodeSchema,
 	validateItemUomCompatibility,
 } from "../src/capabilities/platform-references";
-import * as masterDataRoot from "../src/index";
 import { createMasterDataTestHarness } from "./helpers/harness";
 
 const repoRoot = join(import.meta.dirname, "..", "..", "..", "..");
@@ -328,61 +338,50 @@ describe("@afenda/master-data platform references", () => {
 		const store = createReferenceStore();
 
 		await expect(
-			platformReferences.getRefCountry(store, { id: malaysiaCountryId }),
+			getRefCountry(store, { id: malaysiaCountryId }),
 		).resolves.toMatchObject({ ok: true, data: { code: "MY" } });
-		await expect(
-			platformReferences.listRefCountries(store, {}),
-		).resolves.toMatchObject({
+		await expect(listRefCountries(store, {})).resolves.toMatchObject({
 			ok: true,
 			data: { items: [{ code: "MY" }] },
 		});
 		await expect(
-			platformReferences.getRefCurrency(store, {
+			getRefCurrency(store, {
 				id: "d1000000-0000-4000-8000-000000000001",
 			}),
 		).resolves.toMatchObject({ ok: true, data: { code: "MYR" } });
-		await expect(
-			platformReferences.listRefCurrencies(store, {}),
-		).resolves.toMatchObject({
+		await expect(listRefCurrencies(store, {})).resolves.toMatchObject({
 			ok: true,
 			data: { items: [{ code: "MYR" }, { code: "USD" }] },
 		});
 		await expect(
-			platformReferences.getRefLanguage(store, { id: englishLanguageId }),
+			getRefLanguage(store, { id: englishLanguageId }),
 		).resolves.toMatchObject({ ok: true, data: { code: "en" } });
-		await expect(
-			platformReferences.listRefLanguages(store, {}),
-		).resolves.toMatchObject({
+		await expect(listRefLanguages(store, {})).resolves.toMatchObject({
 			ok: true,
 			data: { items: [{ code: "en" }] },
 		});
 		await expect(
-			platformReferences.getRefTimeZone(store, { id: kualaLumpurTimeZoneId }),
+			getRefTimeZone(store, { id: kualaLumpurTimeZoneId }),
 		).resolves.toMatchObject({
 			ok: true,
 			data: { ianaName: "Asia/Kuala_Lumpur" },
 		});
-		await expect(
-			platformReferences.listRefTimeZones(store, {}),
-		).resolves.toMatchObject({
+		await expect(listRefTimeZones(store, {})).resolves.toMatchObject({
 			ok: true,
 			data: { items: [{ ianaName: "Asia/Kuala_Lumpur" }] },
 		});
 		await expect(
-			platformReferences.getRefUomDimension(store, { id: massDimensionId }),
+			getRefUomDimension(store, { id: massDimensionId }),
 		).resolves.toMatchObject({ ok: true, data: { code: "mass" } });
-		await expect(
-			platformReferences.listRefUomDimensions(store, {}),
-		).resolves.toMatchObject({
+		await expect(listRefUomDimensions(store, {})).resolves.toMatchObject({
 			ok: true,
 			data: { items: [{ code: "count" }, { code: "mass" }] },
 		});
-		await expect(
-			platformReferences.getRefUom(store, { id: kilogramId }),
-		).resolves.toMatchObject({ ok: true, data: { code: "KG" } });
-		await expect(
-			platformReferences.listRefUoms(store, {}),
-		).resolves.toMatchObject({
+		await expect(getRefUom(store, { id: kilogramId })).resolves.toMatchObject({
+			ok: true,
+			data: { code: "KG" },
+		});
+		await expect(listRefUoms(store, {})).resolves.toMatchObject({
 			ok: true,
 			data: { items: [{ code: "G" }, { code: "KG" }] },
 		});
@@ -420,7 +419,9 @@ describe("@afenda/master-data platform references", () => {
 		);
 		const gram = await resolveActiveUom(store, refUomIdSchema.parse(gramId));
 		expect(kilogram.ok && gram.ok).toBe(true);
-		if (!kilogram.ok || !gram.ok) return;
+		if (!(kilogram.ok && gram.ok)) {
+			return;
+		}
 
 		const sameDimension = validateItemUomCompatibility({
 			baseUom: kilogram.data,
@@ -479,7 +480,9 @@ describe("@afenda/master-data platform references", () => {
 			options,
 		);
 		expect(group.ok).toBe(true);
-		if (!group.ok) return;
+		if (!group.ok) {
+			return;
+		}
 
 		const item = await createItem(
 			{
@@ -500,7 +503,11 @@ describe("@afenda/master-data platform references", () => {
 		}
 	});
 
-	it("keeps package export boundaries free of reference mutation APIs", () => {
+	it("keeps package export boundaries free of reference mutation APIs", async () => {
+		const masterDataRoot = await import("../src/index");
+		const platformReferences = await import(
+			"../src/capabilities/platform-references"
+		);
 		expect(masterDataRoot).toMatchObject({
 			getRefCountryByCode: expect.any(Function),
 			getRefCurrencyByCode: expect.any(Function),

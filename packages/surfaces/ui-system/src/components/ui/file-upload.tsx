@@ -1,23 +1,29 @@
 "use client";
 
 import { PaperclipIcon, UploadIcon, XIcon } from "lucide-react";
-import * as React from "react";
+import {
+	type ChangeEvent,
+	type ComponentProps,
+	type MouseEvent,
+	useCallback,
+	useId,
+} from "react";
 import { cn } from "../../lib/utils";
 import { Button } from "./button";
 import { Input } from "./input";
 import { Label } from "./label";
 
 interface UiAttachment {
+	href?: string;
 	id: string;
 	name: string;
 	size?: number;
-	href?: string;
 }
 
 interface FileUploadProps
-	extends Omit<React.ComponentProps<"input">, "type" | "onChange"> {
-	label?: string;
+	extends Omit<ComponentProps<"input">, "type" | "onChange"> {
 	description?: string;
+	label?: string;
 	onFilesSelected: (files: readonly File[]) => void;
 }
 
@@ -29,33 +35,36 @@ function FileUpload({
 	onFilesSelected,
 	...props
 }: FileUploadProps) {
-	const generatedId = React.useId();
+	const generatedId = useId();
 	const inputId = id ?? generatedId;
+	const handleFilesSelected = useCallback(
+		(event: ChangeEvent<HTMLInputElement>) =>
+			onFilesSelected(Array.from(event.target.files ?? [])),
+		[onFilesSelected],
+	);
 	return (
 		<div className="grid gap-2">
 			<Label htmlFor={inputId}>{label}</Label>
 			<label
-				htmlFor={inputId}
 				className={cn(
-					"flex min-h-28 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed bg-muted/40 p-4 text-center transition-colors hover:bg-muted focus-within:ring-2 focus-within:ring-ring",
+					"flex min-h-28 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed bg-muted/40 p-4 text-center transition-colors focus-within:ring-2 focus-within:ring-ring hover:bg-muted",
 					className,
 				)}
+				htmlFor={inputId}
 			>
 				<UploadIcon
-					className="size-5 text-muted-foreground"
 					aria-hidden="true"
+					className="size-5 text-muted-foreground"
 				/>
-				<span className="text-sm font-medium">Choose files</span>
+				<span className="font-medium text-sm">Choose files</span>
 				{description ? (
-					<span className="text-xs text-muted-foreground">{description}</span>
+					<span className="text-muted-foreground text-xs">{description}</span>
 				) : null}
 				<Input
-					id={inputId}
-					type="file"
 					className="sr-only"
-					onChange={(event) =>
-						onFilesSelected(Array.from(event.target.files ?? []))
-					}
+					id={inputId}
+					onChange={handleFilesSelected}
+					type="file"
 					{...props}
 				/>
 			</label>
@@ -63,7 +72,7 @@ function FileUpload({
 	);
 }
 
-interface AttachmentListProps extends React.ComponentProps<"ul"> {
+interface AttachmentListProps extends ComponentProps<"ul"> {
 	attachments: readonly UiAttachment[];
 	onRemove?: (id: string) => void;
 }
@@ -74,37 +83,43 @@ function AttachmentList({
 	className,
 	...props
 }: AttachmentListProps) {
+	const handleRemove = useCallback(
+		(event: MouseEvent<HTMLButtonElement>) =>
+			onRemove?.(event.currentTarget.value),
+		[onRemove],
+	);
 	return (
 		<ul className={cn("divide-y rounded-lg border", className)} {...props}>
 			{attachments.map((attachment) => (
-				<li key={attachment.id} className="flex items-center gap-3 px-3 py-2">
+				<li className="flex items-center gap-3 px-3 py-2" key={attachment.id}>
 					<PaperclipIcon
-						className="size-4 shrink-0 text-muted-foreground"
 						aria-hidden="true"
+						className="size-4 shrink-0 text-muted-foreground"
 					/>
 					<div className="min-w-0 flex-1">
 						<a
-							href={attachment.href}
 							className={cn(
-								"block truncate text-sm font-medium",
+								"block truncate font-medium text-sm",
 								attachment.href && "underline-offset-4 hover:underline",
 							)}
+							href={attachment.href}
 						>
 							{attachment.name}
 						</a>
-						{attachment.size !== undefined ? (
-							<span className="text-xs text-muted-foreground">
+						{attachment.size === undefined ? null : (
+							<span className="text-muted-foreground text-xs">
 								{attachment.size.toLocaleString()} bytes
 							</span>
-						) : null}
+						)}
 					</div>
 					{onRemove ? (
 						<Button
-							type="button"
-							variant="ghost"
-							size="icon-sm"
-							onClick={() => onRemove(attachment.id)}
 							aria-label={`Remove ${attachment.name}`}
+							onClick={handleRemove}
+							size="icon-sm"
+							type="button"
+							value={attachment.id}
+							variant="ghost"
 						>
 							<XIcon aria-hidden="true" />
 						</Button>

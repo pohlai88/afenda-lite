@@ -2,7 +2,7 @@ import { parseAdminEmployeeDirectoryParams } from "@/features/human-resources/ad
 import { EmployeeDirectoryWorkspace } from "@/features/human-resources/admin/employee-directory";
 import { parseHrDisplayPreferences } from "@/features/human-resources/display-preferences";
 
-type PageProps = {
+interface PageProps {
 	searchParams: Promise<{
 		page?: string | string[];
 		query?: string | string[];
@@ -10,7 +10,7 @@ type PageProps = {
 		locale?: string | string[];
 		timeZone?: string | string[];
 	}>;
-};
+}
 
 export default async function AdminHumanResourcesPage({
 	searchParams,

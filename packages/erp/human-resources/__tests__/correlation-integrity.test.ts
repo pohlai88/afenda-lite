@@ -345,6 +345,7 @@ import {
 	openRequisition,
 	submitRequisition,
 } from "../src/recruitment/requisition";
+import { runSequential, sequentialReturn } from "../src/shared/run-sequential";
 import {
 	approveTalentPoolMember,
 	createTalentPool,
@@ -453,6 +454,7 @@ import {
 	seedCompensationCorrelationFixture,
 	seedFinalizedCompensationReview,
 } from "./helpers/compensation-correlation-seed";
+import { helperAssert as assert } from "./helpers/helper-assert";
 import {
 	createStoreBackedIdentityResolver,
 	mapActorToEmployee,
@@ -537,7 +539,7 @@ async function grantManagerTimeApprovalAuthority(
 		},
 		ready,
 	);
-	expect(assigned.ok).toBe(true);
+	assert.strictEqual(assigned.ok, true);
 }
 
 function assertCorrelationPropagated(
@@ -546,18 +548,18 @@ function assertCorrelationPropagated(
 	options: { expectOutbox: boolean; operation: string },
 ) {
 	const ports = ready.ports as ReturnType<typeof createMemoryMutationPorts>;
-	expect(ports.audit.calls.length).toBeGreaterThan(0);
+	assert.isAbove(ports.audit.calls.length, 0);
 	for (const call of ports.audit.calls) {
-		expect(call.correlationId).toBe(correlationId);
-		expect(call.correlationId).not.toBe(options.operation);
+		assert.strictEqual(call.correlationId, correlationId);
+		assert.notStrictEqual(call.correlationId, options.operation);
 	}
 	if (options.expectOutbox) {
-		expect(ports.outbox.calls.length).toBeGreaterThan(0);
+		assert.isAbove(ports.outbox.calls.length, 0);
 		for (const call of ports.outbox.calls) {
-			expect(call.correlationId).toBe(correlationId);
-			expect(call.payload.correlationId).toBe(correlationId);
+			assert.strictEqual(call.correlationId, correlationId);
+			assert.strictEqual(call.payload.correlationId, correlationId);
 			if (typeof call.payload.operation === "string") {
-				expect(call.payload.operation).toBe(options.operation);
+				assert.strictEqual(call.payload.operation, options.operation);
 			}
 		}
 	}
@@ -656,7 +658,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(person.ok).toBe(true);
-		if (!person.ok) return;
+		if (!person.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, personCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_PERSON_CREATE,
@@ -678,7 +682,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(renamed.ok).toBe(true);
-		if (!renamed.ok) return;
+		if (!renamed.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, nameCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_PERSON_UPDATE,
@@ -699,7 +705,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(worker.ok).toBe(true);
-		if (!worker.ok) return;
+		if (!worker.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, workerCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_WORKER_CREATE,
@@ -722,7 +730,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(retyped.ok).toBe(true);
-		if (!retyped.ok) return;
+		if (!retyped.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, typeCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_WORKER_CHANGE_TYPE,
@@ -744,7 +754,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(statusChanged.ok).toBe(true);
-		if (!statusChanged.ok) return;
+		if (!statusChanged.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, statusCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_WORKER_CHANGE_STATUS,
@@ -768,7 +780,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const withdrawCorr = `trace-candidate-withdraw-${suffix}`;
@@ -783,7 +797,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(withdrawn.ok).toBe(true);
-		if (!withdrawn.ok) return;
+		if (!withdrawn.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, withdrawCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_CANDIDATE_WITHDRAW_CONSENT,
@@ -803,7 +819,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(retentionCreate.ok).toBe(true);
-		if (!retentionCreate.ok) return;
+		if (!retentionCreate.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const retentionCorr = `trace-candidate-retention-${suffix}`;
@@ -819,7 +837,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(changed.ok).toBe(true);
-		if (!changed.ok) return;
+		if (!changed.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, retentionCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_CANDIDATE_CHANGE_RETENTION,
@@ -839,7 +859,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(anonCreate.ok).toBe(true);
-		if (!anonCreate.ok) return;
+		if (!anonCreate.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const anonCorr = `trace-candidate-anonymize-${suffix}`;
@@ -855,7 +877,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(anonymized.ok).toBe(true);
-		if (!anonymized.ok) return;
+		if (!anonymized.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, anonCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_CANDIDATE_ANONYMIZE,
@@ -874,7 +898,9 @@ describe("correlation integrity", () => {
 			correlationPrefix: prefix,
 		});
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const approveCorr = `trace-req-approve-${suffix}`;
@@ -889,7 +915,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, approveCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_REQUISITION_APPROVE,
@@ -908,7 +936,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(opened.ok).toBe(true);
-		if (!opened.ok) return;
+		if (!opened.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, openCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_REQUISITION_OPEN,
@@ -924,7 +954,9 @@ describe("correlation integrity", () => {
 			idempotencyKey: `idem-cand-${suffix}`,
 		});
 		expect(candidate.ok).toBe(true);
-		if (!candidate.ok) return;
+		if (!candidate.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, candidateCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_CANDIDATE_CREATE,
@@ -943,7 +975,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(application.ok).toBe(true);
-		if (!application.ok) return;
+		if (!application.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, appCreateCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_APPLICATION_CREATE,
@@ -962,7 +996,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(inReview.ok).toBe(true);
-		if (!inReview.ok) return;
+		if (!inReview.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, inReviewCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_APPLICATION_MOVE_TO_IN_REVIEW,
@@ -981,7 +1017,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(interviewing.ok).toBe(true);
-		if (!interviewing.ok) return;
+		if (!interviewing.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, interviewingCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_APPLICATION_MOVE_TO_INTERVIEWING,
@@ -1001,7 +1039,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(interview.ok).toBe(true);
-		if (!interview.ok) return;
+		if (!interview.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, scheduleCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_INTERVIEW_SCHEDULE,
@@ -1023,7 +1063,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(evaluation.ok).toBe(true);
-		if (!evaluation.ok) return;
+		if (!evaluation.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, evalCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_INTERVIEW_RECORD_EVALUATION,
@@ -1046,7 +1088,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(offer.ok).toBe(true);
-		if (!offer.ok) return;
+		if (!offer.ok) {
+			return;
+		}
 
 		const proposal = await seedApprovedCompensationProposal(
 			withOfferLifecycleDeps(ready),
@@ -1058,7 +1102,9 @@ describe("correlation integrity", () => {
 			},
 		);
 		expect(proposal.ok).toBe(true);
-		if (!proposal.ok) return;
+		if (!proposal.ok) {
+			return;
+		}
 
 		const amended = await amendOfferDraft(
 			{
@@ -1072,7 +1118,9 @@ describe("correlation integrity", () => {
 			withOfferLifecycleDeps(ready),
 		);
 		expect(amended.ok).toBe(true);
-		if (!amended.ok) return;
+		if (!amended.ok) {
+			return;
+		}
 
 		const approvedOffer = await approveOffer(
 			{
@@ -1085,7 +1133,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(approvedOffer.ok).toBe(true);
-		if (!approvedOffer.ok) return;
+		if (!approvedOffer.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const issueCorr = `trace-offer-issue-${suffix}`;
@@ -1100,7 +1150,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(issued.ok).toBe(true);
-		if (!issued.ok) return;
+		if (!issued.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, issueCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_OFFER_ISSUE,
@@ -1121,7 +1173,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(accepted.ok).toBe(true);
-		if (!accepted.ok) return;
+		if (!accepted.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, acceptCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_OFFER_ACCEPT,
@@ -1135,7 +1189,9 @@ describe("correlation integrity", () => {
 			correlationPrefix: `${prefix}-rej`,
 		});
 		expect(rejectSeed.ok).toBe(true);
-		if (!rejectSeed.ok) return;
+		if (!rejectSeed.ok) {
+			return;
+		}
 		const rejectOpened = await approveAndOpenRequisitionForCorrelation(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,
@@ -1145,7 +1201,9 @@ describe("correlation integrity", () => {
 			openCorrelationId: `corr-rej-open-${suffix}`,
 		});
 		expect(rejectOpened.ok).toBe(true);
-		if (!rejectOpened.ok) return;
+		if (!rejectOpened.ok) {
+			return;
+		}
 		const rejectCandidate = await seedCandidateForCorrelation(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,
@@ -1154,7 +1212,9 @@ describe("correlation integrity", () => {
 			idempotencyKey: `idem-rej-cand-${suffix}`,
 		});
 		expect(rejectCandidate.ok).toBe(true);
-		if (!rejectCandidate.ok) return;
+		if (!rejectCandidate.ok) {
+			return;
+		}
 		const rejectApp = await createApplication(
 			{
 				organizationId: ORG,
@@ -1166,7 +1226,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(rejectApp.ok).toBe(true);
-		if (!rejectApp.ok) return;
+		if (!rejectApp.ok) {
+			return;
+		}
 		clearPorts(ready);
 		const rejectCorr = `trace-app-reject-${suffix}`;
 		const rejected = await rejectApplication(
@@ -1180,7 +1242,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(rejected.ok).toBe(true);
-		if (!rejected.ok) return;
+		if (!rejected.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, rejectCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_APPLICATION_REJECT,
@@ -1193,7 +1257,9 @@ describe("correlation integrity", () => {
 			correlationPrefix: `${prefix}-wd`,
 		});
 		expect(withdrawSeed.ok).toBe(true);
-		if (!withdrawSeed.ok) return;
+		if (!withdrawSeed.ok) {
+			return;
+		}
 		const withdrawOpened = await approveAndOpenRequisitionForCorrelation(
 			ready,
 			{
@@ -1206,7 +1272,9 @@ describe("correlation integrity", () => {
 			},
 		);
 		expect(withdrawOpened.ok).toBe(true);
-		if (!withdrawOpened.ok) return;
+		if (!withdrawOpened.ok) {
+			return;
+		}
 		const withdrawCandidate = await seedCandidateForCorrelation(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,
@@ -1215,7 +1283,9 @@ describe("correlation integrity", () => {
 			idempotencyKey: `idem-wd-cand-${suffix}`,
 		});
 		expect(withdrawCandidate.ok).toBe(true);
-		if (!withdrawCandidate.ok) return;
+		if (!withdrawCandidate.ok) {
+			return;
+		}
 		const withdrawApp = await createApplication(
 			{
 				organizationId: ORG,
@@ -1227,7 +1297,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(withdrawApp.ok).toBe(true);
-		if (!withdrawApp.ok) return;
+		if (!withdrawApp.ok) {
+			return;
+		}
 		clearPorts(ready);
 		const withdrawAppCorr = `trace-app-withdraw-${suffix}`;
 		const withdrawnApp = await withdrawApplication(
@@ -1241,7 +1313,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(withdrawnApp.ok).toBe(true);
-		if (!withdrawnApp.ok) return;
+		if (!withdrawnApp.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, withdrawAppCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_APPLICATION_WITHDRAW,
@@ -1254,7 +1328,9 @@ describe("correlation integrity", () => {
 			correlationPrefix: `${prefix}-of`,
 		});
 		expect(offerBranch.ok).toBe(true);
-		if (!offerBranch.ok) return;
+		if (!offerBranch.ok) {
+			return;
+		}
 		const offerOpened = await approveAndOpenRequisitionForCorrelation(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,
@@ -1264,7 +1340,9 @@ describe("correlation integrity", () => {
 			openCorrelationId: `corr-of-open-${suffix}`,
 		});
 		expect(offerOpened.ok).toBe(true);
-		if (!offerOpened.ok) return;
+		if (!offerOpened.ok) {
+			return;
+		}
 		const offerCandidate = await seedCandidateForCorrelation(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,
@@ -1273,7 +1351,9 @@ describe("correlation integrity", () => {
 			idempotencyKey: `idem-of-cand-${suffix}`,
 		});
 		expect(offerCandidate.ok).toBe(true);
-		if (!offerCandidate.ok) return;
+		if (!offerCandidate.ok) {
+			return;
+		}
 		const offerApp = await createApplication(
 			{
 				organizationId: ORG,
@@ -1285,7 +1365,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(offerApp.ok).toBe(true);
-		if (!offerApp.ok) return;
+		if (!offerApp.ok) {
+			return;
+		}
 		const offerInReview = await moveApplicationToInReview(
 			{
 				organizationId: ORG,
@@ -1297,7 +1379,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(offerInReview.ok).toBe(true);
-		if (!offerInReview.ok) return;
+		if (!offerInReview.ok) {
+			return;
+		}
 
 		const declineOfferEntity = await createOffer(
 			{
@@ -1311,7 +1395,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(declineOfferEntity.ok).toBe(true);
-		if (!declineOfferEntity.ok) return;
+		if (!declineOfferEntity.ok) {
+			return;
+		}
 		const declineIssued = await attachApprovedProposalAndIssueExistingOffer(
 			ready,
 			{
@@ -1323,7 +1409,9 @@ describe("correlation integrity", () => {
 			},
 		);
 		expect(declineIssued.ok).toBe(true);
-		if (!declineIssued.ok) return;
+		if (!declineIssued.ok) {
+			return;
+		}
 		clearPorts(ready);
 		const declineCorr = `trace-offer-decline-${suffix}`;
 		const declined = await declineOffer(
@@ -1337,7 +1425,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(declined.ok).toBe(true);
-		if (!declined.ok) return;
+		if (!declined.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, declineCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_OFFER_DECLINE,
@@ -1350,7 +1440,9 @@ describe("correlation integrity", () => {
 			correlationPrefix: `${prefix}-ex`,
 		});
 		expect(expireSeed.ok).toBe(true);
-		if (!expireSeed.ok) return;
+		if (!expireSeed.ok) {
+			return;
+		}
 		const expireOpened = await approveAndOpenRequisitionForCorrelation(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,
@@ -1360,7 +1452,9 @@ describe("correlation integrity", () => {
 			openCorrelationId: `corr-ex-open-${suffix}`,
 		});
 		expect(expireOpened.ok).toBe(true);
-		if (!expireOpened.ok) return;
+		if (!expireOpened.ok) {
+			return;
+		}
 		const expireCandidate = await seedCandidateForCorrelation(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,
@@ -1369,7 +1463,9 @@ describe("correlation integrity", () => {
 			idempotencyKey: `idem-ex-cand-${suffix}`,
 		});
 		expect(expireCandidate.ok).toBe(true);
-		if (!expireCandidate.ok) return;
+		if (!expireCandidate.ok) {
+			return;
+		}
 		const expireApp = await createApplication(
 			{
 				organizationId: ORG,
@@ -1381,7 +1477,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(expireApp.ok).toBe(true);
-		if (!expireApp.ok) return;
+		if (!expireApp.ok) {
+			return;
+		}
 		const expireInReview = await moveApplicationToInReview(
 			{
 				organizationId: ORG,
@@ -1393,7 +1491,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(expireInReview.ok).toBe(true);
-		if (!expireInReview.ok) return;
+		if (!expireInReview.ok) {
+			return;
+		}
 		const expireOfferDraft = await createOffer(
 			{
 				organizationId: ORG,
@@ -1406,7 +1506,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(expireOfferDraft.ok).toBe(true);
-		if (!expireOfferDraft.ok) return;
+		if (!expireOfferDraft.ok) {
+			return;
+		}
 		const expireIssued = await attachApprovedProposalAndIssueExistingOffer(
 			ready,
 			{
@@ -1418,7 +1520,9 @@ describe("correlation integrity", () => {
 			},
 		);
 		expect(expireIssued.ok).toBe(true);
-		if (!expireIssued.ok) return;
+		if (!expireIssued.ok) {
+			return;
+		}
 		clearPorts(ready);
 		const expireCorr = `trace-offer-expire-${suffix}`;
 		const expired = await expireOffer(
@@ -1432,7 +1536,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(expired.ok).toBe(true);
-		if (!expired.ok) return;
+		if (!expired.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, expireCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_OFFER_EXPIRE,
@@ -1445,7 +1551,9 @@ describe("correlation integrity", () => {
 			correlationPrefix: `${prefix}-ow`,
 		});
 		expect(withdrawOfferSeed.ok).toBe(true);
-		if (!withdrawOfferSeed.ok) return;
+		if (!withdrawOfferSeed.ok) {
+			return;
+		}
 		const withdrawOfferOpened = await approveAndOpenRequisitionForCorrelation(
 			ready,
 			{
@@ -1458,7 +1566,9 @@ describe("correlation integrity", () => {
 			},
 		);
 		expect(withdrawOfferOpened.ok).toBe(true);
-		if (!withdrawOfferOpened.ok) return;
+		if (!withdrawOfferOpened.ok) {
+			return;
+		}
 		const withdrawOfferCandidate = await seedCandidateForCorrelation(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,
@@ -1467,7 +1577,9 @@ describe("correlation integrity", () => {
 			idempotencyKey: `idem-ow-cand-${suffix}`,
 		});
 		expect(withdrawOfferCandidate.ok).toBe(true);
-		if (!withdrawOfferCandidate.ok) return;
+		if (!withdrawOfferCandidate.ok) {
+			return;
+		}
 		const withdrawOfferApp = await createApplication(
 			{
 				organizationId: ORG,
@@ -1479,7 +1591,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(withdrawOfferApp.ok).toBe(true);
-		if (!withdrawOfferApp.ok) return;
+		if (!withdrawOfferApp.ok) {
+			return;
+		}
 		const withdrawOfferInReview = await moveApplicationToInReview(
 			{
 				organizationId: ORG,
@@ -1491,7 +1605,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(withdrawOfferInReview.ok).toBe(true);
-		if (!withdrawOfferInReview.ok) return;
+		if (!withdrawOfferInReview.ok) {
+			return;
+		}
 		const withdrawOfferDraft = await createOffer(
 			{
 				organizationId: ORG,
@@ -1504,7 +1620,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(withdrawOfferDraft.ok).toBe(true);
-		if (!withdrawOfferDraft.ok) return;
+		if (!withdrawOfferDraft.ok) {
+			return;
+		}
 		const withdrawOfferIssued =
 			await attachApprovedProposalAndIssueExistingOffer(ready, {
 				organizationId: ORG,
@@ -1514,7 +1632,9 @@ describe("correlation integrity", () => {
 				correlationPrefix: `corr-ow-${suffix}`,
 			});
 		expect(withdrawOfferIssued.ok).toBe(true);
-		if (!withdrawOfferIssued.ok) return;
+		if (!withdrawOfferIssued.ok) {
+			return;
+		}
 		clearPorts(ready);
 		const withdrawOfferCorr = `trace-offer-withdraw-${suffix}`;
 		const withdrawnOffer = await withdrawOffer(
@@ -1528,7 +1648,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(withdrawnOffer.ok).toBe(true);
-		if (!withdrawnOffer.ok) return;
+		if (!withdrawnOffer.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, withdrawOfferCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_OFFER_WITHDRAW,
@@ -1541,7 +1663,9 @@ describe("correlation integrity", () => {
 			correlationPrefix: `${prefix}-cl`,
 		});
 		expect(closeSeed.ok).toBe(true);
-		if (!closeSeed.ok) return;
+		if (!closeSeed.ok) {
+			return;
+		}
 		const closeOpened = await approveAndOpenRequisitionForCorrelation(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,
@@ -1551,7 +1675,9 @@ describe("correlation integrity", () => {
 			openCorrelationId: `corr-cl-open-${suffix}`,
 		});
 		expect(closeOpened.ok).toBe(true);
-		if (!closeOpened.ok) return;
+		if (!closeOpened.ok) {
+			return;
+		}
 		clearPorts(ready);
 		const closeCorr = `trace-req-close-${suffix}`;
 		const closed = await closeRequisition(
@@ -1565,7 +1691,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(closed.ok).toBe(true);
-		if (!closed.ok) return;
+		if (!closed.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, closeCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_REQUISITION_CLOSE,
@@ -1587,7 +1715,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const employment = await createEmployment(
 			{
@@ -1601,14 +1731,18 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const orgSeed = await seedDepartmentAndJob(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,
 		});
 		expect(orgSeed).not.toBeNull();
-		if (orgSeed === null) return;
+		if (orgSeed === null) {
+			return;
+		}
 
 		const position = await createPosition(
 			{
@@ -1624,7 +1758,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(position.ok).toBe(true);
-		if (!position.ok) return;
+		if (!position.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const contractCorr = "trace-employment-contract-create";
@@ -1642,7 +1778,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(contract.ok).toBe(true);
-		if (!contract.ok) return;
+		if (!contract.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, contractCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_CREATE,
@@ -1664,7 +1802,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(assignment.ok).toBe(true);
-		if (!assignment.ok) return;
+		if (!assignment.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, assignmentCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_ASSIGNMENT_CREATE,
@@ -1683,7 +1823,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(dept.ok).toBe(true);
-		if (!dept.ok) return;
+		if (!dept.ok) {
+			return;
+		}
 
 		const archived = await archiveDepartment(
 			{
@@ -1696,7 +1838,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(archived.ok).toBe(true);
-		if (!archived.ok) return;
+		if (!archived.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const activateCorr = "trace-department-activate";
@@ -1711,7 +1855,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(activated.ok).toBe(true);
-		if (!activated.ok) return;
+		if (!activated.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, activateCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_DEPARTMENT_ACTIVATE,
@@ -1732,7 +1878,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(emp.ok).toBe(true);
-		if (!emp.ok) return;
+		if (!emp.ok) {
+			return;
+		}
 
 		memoryPorts(ready).audit.calls.length = 0;
 		memoryPorts(ready).outbox.calls.length = 0;
@@ -1750,7 +1898,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(req.ok).toBe(true);
-		if (!req.ok) return;
+		if (!req.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, reqCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_CREATE,
@@ -1770,7 +1920,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(updated.ok).toBe(true);
-		if (!updated.ok) return;
+		if (!updated.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, updCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_UPDATE,
@@ -1789,7 +1941,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(published.ok).toBe(true);
-		if (!published.ok) return;
+		if (!published.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, pubCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_PUBLISH,
@@ -1815,7 +1969,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(registered.ok).toBe(true);
-		if (!registered.ok) return;
+		if (!registered.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, regCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_REGISTER,
@@ -1848,7 +2004,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(metaUpdated.ok).toBe(true);
-		if (!metaUpdated.ok) return;
+		if (!metaUpdated.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, metaCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_UPDATE_METADATA,
@@ -1869,7 +2027,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(verified.ok).toBe(true);
-		if (!verified.ok) return;
+		if (!verified.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, verifyCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_VERIFY,
@@ -1888,7 +2048,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(revokedVer.ok).toBe(true);
-		if (!revokedVer.ok) return;
+		if (!revokedVer.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, revokeCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_REVOKE_VERIFICATION,
@@ -1911,7 +2073,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(rejectSeed.ok).toBe(true);
-		if (!rejectSeed.ok) return;
+		if (!rejectSeed.ok) {
+			return;
+		}
 
 		memoryPorts(ready).audit.calls.length = 0;
 		memoryPorts(ready).outbox.calls.length = 0;
@@ -1928,7 +2092,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(rejected.ok).toBe(true);
-		if (!rejected.ok) return;
+		if (!rejected.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, rejectCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_REJECT,
@@ -1951,7 +2117,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(reg2.ok).toBe(true);
-		if (!reg2.ok) return;
+		if (!reg2.ok) {
+			return;
+		}
 
 		memoryPorts(ready).audit.calls.length = 0;
 		memoryPorts(ready).outbox.calls.length = 0;
@@ -2005,7 +2173,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(emp.ok).toBe(true);
-		if (!emp.ok) return;
+		if (!emp.ok) {
+			return;
+		}
 
 		memoryPorts(ready).audit.calls.length = 0;
 		memoryPorts(ready).outbox.calls.length = 0;
@@ -2024,7 +2194,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(recorded.ok).toBe(true);
-		if (!recorded.ok) return;
+		if (!recorded.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, recordCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_RECORD,
@@ -2044,7 +2216,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(verified.ok).toBe(true);
-		if (!verified.ok) return;
+		if (!verified.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, verifyCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_VERIFY,
@@ -2064,7 +2238,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(suspended.ok).toBe(true);
-		if (!suspended.ok) return;
+		if (!suspended.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, suspendCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_SUSPEND,
@@ -2086,7 +2262,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(renewed.ok).toBe(true);
-		if (!renewed.ok) return;
+		if (!renewed.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, renewCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_RENEW,
@@ -2126,7 +2304,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(emp.ok).toBe(true);
-		if (!emp.ok) return;
+		if (!emp.ok) {
+			return;
+		}
 
 		memoryPorts(ready).audit.calls.length = 0;
 		memoryPorts(ready).outbox.calls.length = 0;
@@ -2144,7 +2324,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(issued.ok).toBe(true);
-		if (!issued.ok) return;
+		if (!issued.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, issueCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_ISSUE,
@@ -2164,7 +2346,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(ack.ok).toBe(true);
-		if (!ack.ok) return;
+		if (!ack.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, ackCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_ACKNOWLEDGE,
@@ -2185,7 +2369,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(issue2.ok).toBe(true);
-		if (!issue2.ok) return;
+		if (!issue2.ok) {
+			return;
+		}
 
 		memoryPorts(ready).audit.calls.length = 0;
 		const revokeCorr = "trace-pol-revoke";
@@ -2200,7 +2386,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(revoked.ok).toBe(true);
-		if (!revoked.ok) return;
+		if (!revoked.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, revokeCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_REVOKE,
@@ -2221,7 +2409,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(issue3.ok).toBe(true);
-		if (!issue3.ok) return;
+		if (!issue3.ok) {
+			return;
+		}
 
 		memoryPorts(ready).audit.calls.length = 0;
 		const supersedeCorr = "trace-pol-supersede";
@@ -2257,7 +2447,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(emp.ok).toBe(true);
-		if (!emp.ok) return;
+		if (!emp.ok) {
+			return;
+		}
 
 		const course = await createCourse(
 			{
@@ -2271,7 +2463,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(course.ok).toBe(true);
-		if (!course.ok) return;
+		if (!course.ok) {
+			return;
+		}
 
 		const assignment = await assignLearning(
 			{
@@ -2285,7 +2479,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(assignment.ok).toBe(true);
-		if (!assignment.ok) return;
+		if (!assignment.ok) {
+			return;
+		}
 
 		memoryPorts(ready).audit.calls.length = 0;
 		memoryPorts(ready).outbox.calls.length = 0;
@@ -2308,7 +2504,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(completion.ok).toBe(true);
-		if (!completion.ok) return;
+		if (!completion.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, completionCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_COMPLETION_RECORD,
@@ -2333,7 +2531,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(issued.ok).toBe(true);
-		if (!issued.ok) return;
+		if (!issued.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, issueCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_CERTIFICATION_ISSUE,
@@ -2355,7 +2555,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(expired.ok).toBe(true);
-		if (!expired.ok) return;
+		if (!expired.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, expireCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_CERTIFICATION_EXPIRE,
@@ -2373,7 +2575,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(assignment2.ok).toBe(true);
-		if (!assignment2.ok) return;
+		if (!assignment2.ok) {
+			return;
+		}
 
 		const completion2 = await recordCompletion(
 			{
@@ -2393,7 +2597,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(completion2.ok).toBe(true);
-		if (!completion2.ok) return;
+		if (!completion2.ok) {
+			return;
+		}
 
 		const issued2 = await issueCertification(
 			{
@@ -2410,7 +2616,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(issued2.ok).toBe(true);
-		if (!issued2.ok) return;
+		if (!issued2.ok) {
+			return;
+		}
 
 		memoryPorts(ready).audit.calls.length = 0;
 		const revokeCorr = "trace-cert-revoke";
@@ -2445,7 +2653,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(emp.ok).toBe(true);
-		if (!emp.ok) return;
+		if (!emp.ok) {
+			return;
+		}
 
 		const payload = {
 			organizationId: ORG,
@@ -2496,7 +2706,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(timesheet.ok).toBe(true);
-		if (!timesheet.ok) return;
+		if (!timesheet.ok) {
+			return;
+		}
 
 		const submitted = await submitTimesheet(
 			{
@@ -2509,7 +2721,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 
 		await grantManagerTimeApprovalAuthority(ready, "legacy");
 		clearPorts(ready);
@@ -2526,7 +2740,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, approveCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_TIMESHEET_APPROVE,
@@ -2559,7 +2775,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(calendar.ok).toBe(true);
-		if (!calendar.ok) return;
+		if (!calendar.ok) {
+			return;
+		}
 
 		const calendarAssigned = await assignEmploymentCalendar(
 			{
@@ -2574,7 +2792,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(calendarAssigned.ok).toBe(true);
-		if (!calendarAssigned.ok) return;
+		if (!calendarAssigned.ok) {
+			return;
+		}
 
 		const shift = await createShift(
 			{
@@ -2593,7 +2813,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(shift.ok).toBe(true);
-		if (!shift.ok) return;
+		if (!shift.ok) {
+			return;
+		}
 
 		const activatedShift = await activateShift(
 			{
@@ -2606,7 +2828,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(activatedShift.ok).toBe(true);
-		if (!activatedShift.ok) return;
+		if (!activatedShift.ok) {
+			return;
+		}
 
 		const assignment = await assignShift(
 			{
@@ -2625,7 +2849,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(assignment.ok).toBe(true);
-		if (!assignment.ok) return;
+		if (!assignment.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const publishCorr = "trace-time-publish";
@@ -2640,7 +2866,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(published.ok).toBe(true);
-		if (!published.ok) return;
+		if (!published.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, publishCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_SHIFT_ASSIGNMENT_PUBLISH,
@@ -2663,7 +2891,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(clockIn.ok).toBe(true);
-		if (!clockIn.ok) return;
+		if (!clockIn.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, clockCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_RECORD,
@@ -2684,7 +2914,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(corrected.ok).toBe(true);
-		if (!corrected.ok) return;
+		if (!corrected.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, correctCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_CORRECT,
@@ -2705,7 +2937,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(exception.ok).toBe(true);
-		if (!exception.ok) return;
+		if (!exception.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, exceptionCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_ATTENDANCE_EXCEPTION_CREATE,
@@ -2725,7 +2959,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(timesheet.ok).toBe(true);
-		if (!timesheet.ok) return;
+		if (!timesheet.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const submitCorr = "trace-time-submit";
@@ -2740,7 +2976,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, submitCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_TIMESHEET_SUBMIT,
@@ -2757,7 +2995,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(returned.ok).toBe(true);
-		if (!returned.ok) return;
+		if (!returned.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const reopenCorr = "trace-time-reopen";
@@ -2772,7 +3012,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(reopened.ok).toBe(true);
-		if (!reopened.ok) return;
+		if (!reopened.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, reopenCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_TIMESHEET_REOPEN,
@@ -2791,7 +3033,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(resubmitted.ok).toBe(true);
-		if (!resubmitted.ok) return;
+		if (!resubmitted.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, resubmitCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_TIMESHEET_SUBMIT,
@@ -2812,7 +3056,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, approveCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_TIMESHEET_APPROVE,
@@ -2831,7 +3077,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(locked.ok).toBe(true);
-		if (!locked.ok) return;
+		if (!locked.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, lockCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_TIMESHEET_LOCK,
@@ -2865,7 +3113,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(overtimeRequest.ok).toBe(true);
-		if (!overtimeRequest.ok) return;
+		if (!overtimeRequest.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const otApproveCorr = "trace-time-ot-approve";
@@ -2882,7 +3132,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(otApproved.ok).toBe(true);
-		if (!otApproved.ok) return;
+		if (!otApproved.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, otApproveCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_APPROVE,
@@ -2917,7 +3169,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(calendar.ok).toBe(true);
-		if (!calendar.ok) return;
+		if (!calendar.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, calCreateCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_CREATE,
@@ -2937,7 +3191,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(updatedCalendar.ok).toBe(true);
-		if (!updatedCalendar.ok) return;
+		if (!updatedCalendar.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, calUpdateCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_UPDATE,
@@ -2957,7 +3213,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(holiday.ok).toBe(true);
-		if (!holiday.ok) return;
+		if (!holiday.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, holidayAddCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_HOLIDAY_ADD,
@@ -2980,7 +3238,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(override.ok).toBe(true);
-		if (!override.ok) return;
+		if (!override.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, overrideAddCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_DATE_OVERRIDE_ADD,
@@ -2998,7 +3258,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(overrideRemoved.ok).toBe(true);
-		if (!overrideRemoved.ok) return;
+		if (!overrideRemoved.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, overrideRemoveCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_DATE_OVERRIDE_REMOVE,
@@ -3016,7 +3278,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(holidayRemoved.ok).toBe(true);
-		if (!holidayRemoved.ok) return;
+		if (!holidayRemoved.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, holidayRemoveCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_HOLIDAY_REMOVE,
@@ -3037,7 +3301,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(calendarAssignment.ok).toBe(true);
-		if (!calendarAssignment.ok) return;
+		if (!calendarAssignment.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, calAssignCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CALENDAR_ASSIGN,
@@ -3057,7 +3323,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(calendarEnded.ok).toBe(true);
-		if (!calendarEnded.ok) return;
+		if (!calendarEnded.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, calEndCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CALENDAR_END,
@@ -3076,7 +3344,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(archivedCalendar.ok).toBe(true);
-		if (!archivedCalendar.ok) return;
+		if (!archivedCalendar.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, calArchiveCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_ARCHIVE,
@@ -3101,7 +3371,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(shift.ok).toBe(true);
-		if (!shift.ok) return;
+		if (!shift.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, shiftCreateCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_SHIFT_CREATE,
@@ -3121,7 +3393,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(updatedShift.ok).toBe(true);
-		if (!updatedShift.ok) return;
+		if (!updatedShift.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, shiftUpdateCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_SHIFT_UPDATE,
@@ -3140,7 +3414,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(activatedShift.ok).toBe(true);
-		if (!activatedShift.ok) return;
+		if (!activatedShift.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, shiftActivateCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_SHIFT_ACTIVATE,
@@ -3160,7 +3436,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(shiftBreak.ok).toBe(true);
-		if (!shiftBreak.ok) return;
+		if (!shiftBreak.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, breakAddCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_SHIFT_BREAK_ADD,
@@ -3178,7 +3456,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(breakRemoved.ok).toBe(true);
-		if (!breakRemoved.ok) return;
+		if (!breakRemoved.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, breakRemoveCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_SHIFT_BREAK_REMOVE,
@@ -3197,7 +3477,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(deactivatedShift.ok).toBe(true);
-		if (!deactivatedShift.ok) return;
+		if (!deactivatedShift.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, shiftDeactivateCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_SHIFT_DEACTIVATE,
@@ -3214,7 +3496,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(activeShift.ok).toBe(true);
-		if (!activeShift.ok) return;
+		if (!activeShift.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const assignCorr = "trace-time-shift-assign";
@@ -3235,7 +3519,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(plannedAssignment.ok).toBe(true);
-		if (!plannedAssignment.ok) return;
+		if (!plannedAssignment.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, assignCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_SHIFT_ASSIGN,
@@ -3258,7 +3544,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(cancelAssignmentSeed.ok).toBe(true);
-		if (!cancelAssignmentSeed.ok) return;
+		if (!cancelAssignmentSeed.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const cancelCorr = "trace-time-assign-cancel";
@@ -3273,7 +3561,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(cancelledAssignment.ok).toBe(true);
-		if (!cancelledAssignment.ok) return;
+		if (!cancelledAssignment.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, cancelCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_SHIFT_ASSIGNMENT_CANCEL,
@@ -3294,7 +3584,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(changedAssignment.ok).toBe(true);
-		if (!changedAssignment.ok) return;
+		if (!changedAssignment.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, changeCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_SHIFT_ASSIGNMENT_CHANGE,
@@ -3317,7 +3609,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(completeAssignmentSeed.ok).toBe(true);
-		if (!completeAssignmentSeed.ok) return;
+		if (!completeAssignmentSeed.ok) {
+			return;
+		}
 
 		const publishedForComplete = await publishShiftAssignment(
 			{
@@ -3330,7 +3624,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(publishedForComplete.ok).toBe(true);
-		if (!publishedForComplete.ok) return;
+		if (!publishedForComplete.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const completeCorr = "trace-time-assign-complete";
@@ -3345,7 +3641,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(completedAssignment.ok).toBe(true);
-		if (!completedAssignment.ok) return;
+		if (!completedAssignment.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, completeCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_SHIFT_ASSIGNMENT_COMPLETE,
@@ -3375,7 +3673,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(imported.ok).toBe(true);
-		if (!imported.ok) return;
+		if (!imported.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, importCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENTS_IMPORT,
@@ -3396,7 +3696,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(voidSeed.ok).toBe(true);
-		if (!voidSeed.ok) return;
+		if (!voidSeed.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const voidCorr = "trace-time-void";
@@ -3412,7 +3714,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(voided.ok).toBe(true);
-		if (!voided.ok) return;
+		if (!voided.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, voidCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_VOID,
@@ -3462,7 +3766,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(session.ok).toBe(true);
-		if (!session.ok) return;
+		if (!session.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, sessionCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_ATTENDANCE_SESSION_RESOLVE,
@@ -3481,7 +3787,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(reviewExceptionSeed.ok).toBe(true);
-		if (!reviewExceptionSeed.ok) return;
+		if (!reviewExceptionSeed.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const reviewCorr = "trace-time-exc-review";
@@ -3496,7 +3804,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(reviewed.ok).toBe(true);
-		if (!reviewed.ok) return;
+		if (!reviewed.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, reviewCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_ATTENDANCE_EXCEPTION_REVIEW,
@@ -3516,7 +3826,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(excused.ok).toBe(true);
-		if (!excused.ok) return;
+		if (!excused.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, excuseCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_ATTENDANCE_EXCEPTION_EXCUSE,
@@ -3535,7 +3847,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(rejectExceptionSeed.ok).toBe(true);
-		if (!rejectExceptionSeed.ok) return;
+		if (!rejectExceptionSeed.ok) {
+			return;
+		}
 
 		const rejectReviewed = await reviewAttendanceException(
 			{
@@ -3548,7 +3862,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(rejectReviewed.ok).toBe(true);
-		if (!rejectReviewed.ok) return;
+		if (!rejectReviewed.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const rejectExcCorr = "trace-time-exc-reject";
@@ -3564,7 +3880,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(rejectedException.ok).toBe(true);
-		if (!rejectedException.ok) return;
+		if (!rejectedException.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, rejectExcCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_ATTENDANCE_EXCEPTION_REJECT,
@@ -3583,7 +3901,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(resolveExceptionSeed.ok).toBe(true);
-		if (!resolveExceptionSeed.ok) return;
+		if (!resolveExceptionSeed.ok) {
+			return;
+		}
 
 		const resolveReviewed = await reviewAttendanceException(
 			{
@@ -3596,7 +3916,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(resolveReviewed.ok).toBe(true);
-		if (!resolveReviewed.ok) return;
+		if (!resolveReviewed.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const resolveExcCorr = "trace-time-exc-resolve";
@@ -3612,7 +3934,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(resolvedException.ok).toBe(true);
-		if (!resolvedException.ok) return;
+		if (!resolvedException.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, resolveExcCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_ATTENDANCE_EXCEPTION_RESOLVE,
@@ -3635,7 +3959,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(auditCalendar.ok).toBe(true);
-		if (!auditCalendar.ok) return;
+		if (!auditCalendar.ok) {
+			return;
+		}
 
 		await assignEmploymentCalendar(
 			{
@@ -3666,7 +3992,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(timesheet.ok).toBe(true);
-		if (!timesheet.ok) return;
+		if (!timesheet.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, tsCreateCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_TIMESHEET_CREATE,
@@ -3685,7 +4013,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(generated.ok).toBe(true);
-		if (!generated.ok) return;
+		if (!generated.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, generateCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_TIMESHEET_GENERATE_ENTRIES,
@@ -3710,7 +4040,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(entry.ok).toBe(true);
-		if (!entry.ok) return;
+		if (!entry.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, entryAddCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_TIMESHEET_ENTRY_ADD,
@@ -3730,7 +4062,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(updatedEntry.ok).toBe(true);
-		if (!updatedEntry.ok) return;
+		if (!updatedEntry.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, entryUpdateCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_TIMESHEET_ENTRY_UPDATE,
@@ -3749,7 +4083,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(removedEntry.ok).toBe(true);
-		if (!removedEntry.ok) return;
+		if (!removedEntry.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, entryRemoveCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_TIMESHEET_ENTRY_REMOVE,
@@ -3765,7 +4101,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(timesheetForReturn.ok).toBe(true);
-		if (!timesheetForReturn.ok || timesheetForReturn.data === null) return;
+		if (!timesheetForReturn.ok || timesheetForReturn.data === null) {
+			return;
+		}
 		const submittedForReturn = await submitTimesheet(
 			{
 				organizationId: ORG,
@@ -3777,7 +4115,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(submittedForReturn.ok).toBe(true);
-		if (!submittedForReturn.ok) return;
+		if (!submittedForReturn.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const returnCorr = "trace-time-ts-return";
@@ -3793,7 +4133,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(returned.ok).toBe(true);
-		if (!returned.ok) return;
+		if (!returned.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, returnCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_TIMESHEET_RETURN,
@@ -3813,7 +4155,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(rejectTimesheetSeed.ok).toBe(true);
-		if (!rejectTimesheetSeed.ok) return;
+		if (!rejectTimesheetSeed.ok) {
+			return;
+		}
 
 		const submittedForReject = await submitTimesheet(
 			{
@@ -3826,7 +4170,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(submittedForReject.ok).toBe(true);
-		if (!submittedForReject.ok) return;
+		if (!submittedForReject.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const rejectTsCorr = "trace-time-ts-reject";
@@ -3842,7 +4188,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(rejectedTimesheet.ok).toBe(true);
-		if (!rejectedTimesheet.ok) return;
+		if (!rejectedTimesheet.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, rejectTsCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_TIMESHEET_REJECT,
@@ -3862,7 +4210,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(supersedeTimesheetSeed.ok).toBe(true);
-		if (!supersedeTimesheetSeed.ok) return;
+		if (!supersedeTimesheetSeed.ok) {
+			return;
+		}
 
 		const submittedForSupersede = await submitTimesheet(
 			{
@@ -3875,7 +4225,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(submittedForSupersede.ok).toBe(true);
-		if (!submittedForSupersede.ok) return;
+		if (!submittedForSupersede.ok) {
+			return;
+		}
 
 		await grantManagerTimeApprovalAuthority(ready, "supersede");
 		const approvedForSupersede = await approveTimesheet(
@@ -3890,7 +4242,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(approvedForSupersede.ok).toBe(true);
-		if (!approvedForSupersede.ok) return;
+		if (!approvedForSupersede.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const supersedeCorr = "trace-time-ts-supersede";
@@ -3906,7 +4260,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(superseded.ok).toBe(true);
-		if (!superseded.ok) return;
+		if (!superseded.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, supersedeCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_TIMESHEET_SUPERSEDE,
@@ -3931,7 +4287,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(otRejectSeed.ok).toBe(true);
-		if (!otRejectSeed.ok) return;
+		if (!otRejectSeed.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, otCreateCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_CREATE,
@@ -3951,7 +4309,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(otRejected.ok).toBe(true);
-		if (!otRejected.ok) return;
+		if (!otRejected.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, otRejectCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_REJECT,
@@ -3974,7 +4334,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(otCancelSeed.ok).toBe(true);
-		if (!otCancelSeed.ok) return;
+		if (!otCancelSeed.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const otCancelCorr = "trace-time-ot-cancel";
@@ -3989,7 +4351,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(otCancelled.ok).toBe(true);
-		if (!otCancelled.ok) return;
+		if (!otCancelled.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, otCancelCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_CANCEL,
@@ -4012,7 +4376,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(otActualSeed.ok).toBe(true);
-		if (!otActualSeed.ok) return;
+		if (!otActualSeed.ok) {
+			return;
+		}
 
 		const otApprovedForActual = await approveOvertimeRequest(
 			{
@@ -4027,7 +4393,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(otApprovedForActual.ok).toBe(true);
-		if (!otApprovedForActual.ok) return;
+		if (!otApprovedForActual.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const otActualCorr = "trace-time-ot-actual";
@@ -4043,7 +4411,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(otActual.ok).toBe(true);
-		if (!otActual.ok) return;
+		if (!otActual.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, otActualCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_RECORD_ACTUAL,
@@ -4063,7 +4433,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(otVerified.ok).toBe(true);
-		if (!otVerified.ok) return;
+		if (!otVerified.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, otVerifyCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_VERIFY,
@@ -4088,7 +4460,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(managerSeed.ok).toBe(true);
-		if (!managerSeed.ok) return;
+		if (!managerSeed.ok) {
+			return;
+		}
 
 		const submitSeed = await seedLeaveCorrelationFixture({
 			organizationId: ORG,
@@ -4110,7 +4484,9 @@ describe("correlation integrity", () => {
 			leaveReady,
 		);
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const submitCorr = "trace-leave-submit";
@@ -4125,7 +4501,9 @@ describe("correlation integrity", () => {
 			submitSeed.seedReady,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, submitCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_SUBMIT,
@@ -4171,7 +4549,9 @@ describe("correlation integrity", () => {
 			approvalReady,
 		);
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, approveCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_APPROVE,
@@ -4198,7 +4578,9 @@ describe("correlation integrity", () => {
 			leaveReady,
 		);
 		expect(rejectDraft.ok).toBe(true);
-		if (!rejectDraft.ok) return;
+		if (!rejectDraft.ok) {
+			return;
+		}
 		const rejectSubmitted = await submitLeaveRequest(
 			{
 				organizationId: ORG,
@@ -4210,7 +4592,9 @@ describe("correlation integrity", () => {
 			rejectSeed.seedReady,
 		);
 		expect(rejectSubmitted.ok).toBe(true);
-		if (!rejectSubmitted.ok) return;
+		if (!rejectSubmitted.ok) {
+			return;
+		}
 		await assignPrimaryReportingLine(
 			{
 				organizationId: ORG,
@@ -4236,7 +4620,9 @@ describe("correlation integrity", () => {
 			approvalReady,
 		);
 		expect(rejected.ok).toBe(true);
-		if (!rejected.ok) return;
+		if (!rejected.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, rejectCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_REJECT,
@@ -4257,7 +4643,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const correlationId = "trace-employment-started-effective";
@@ -4272,7 +4660,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, correlationId, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CREATE,
@@ -4296,7 +4686,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const firstEmployment = await createEmployment(
 			{
@@ -4310,7 +4702,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(firstEmployment.ok).toBe(true);
-		if (!firstEmployment.ok) return;
+		if (!firstEmployment.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const correlationId = "trace-employment-rehired-effective";
@@ -4325,7 +4719,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(rehire.ok).toBe(true);
-		if (!rehire.ok) return;
+		if (!rehire.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, correlationId, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CREATE,
@@ -4344,7 +4740,9 @@ describe("correlation integrity", () => {
 			suffix,
 		});
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const onboardingStartCorr = `trace-onboarding-start-${suffix}`;
@@ -4366,7 +4764,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(onboardingStarted.ok).toBe(true);
-		if (!onboardingStarted.ok) return;
+		if (!onboardingStarted.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, onboardingStartCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_ONBOARDING_START,
@@ -4382,12 +4782,16 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(onboardingTasks.ok).toBe(true);
-		if (!onboardingTasks.ok) return;
+		if (!onboardingTasks.ok) {
+			return;
+		}
 		const orientationTask = onboardingTasks.data.find(
 			(row) => row.code === ONBOARDING_TASK_CODE_ORIENTATION,
 		);
 		expect(orientationTask).toBeDefined();
-		if (!orientationTask) return;
+		if (!orientationTask) {
+			return;
+		}
 
 		clearPorts(ready);
 		const onboardingTaskCorr = `trace-onboarding-task-${suffix}`;
@@ -4403,7 +4807,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(onboardingTaskDone.ok).toBe(true);
-		if (!onboardingTaskDone.ok) return;
+		if (!onboardingTaskDone.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, onboardingTaskCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_ONBOARDING_COMPLETE_TASK,
@@ -4422,7 +4828,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(recordedEligibility.ok).toBe(true);
-		if (!recordedEligibility.ok) return;
+		if (!recordedEligibility.ok) {
+			return;
+		}
 		const verifiedEligibility = await verifyWorkEligibility(
 			{
 				organizationId: ORG,
@@ -4435,41 +4843,55 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(verifiedEligibility.ok).toBe(true);
-		if (!verifiedEligibility.ok) return;
+		if (!verifiedEligibility.ok) {
+			return;
+		}
 
 		let onboardingCase = onboardingTaskDone.data;
-		for (const code of [
-			ONBOARDING_TASK_CODE_IDENTITY_DOCUMENTS,
-			ONBOARDING_TASK_CODE_WORK_ELIGIBILITY,
-		] as const) {
-			const tasks = await listOnboardingTasks(
-				{
-					organizationId: ORG,
-					actorUserId: ACTOR,
-					correlationId: `corr-onb-task-${code}-${suffix}`,
-					onboardingCaseId: onboardingCase.id,
-				},
-				ready,
-			);
-			expect(tasks.ok).toBe(true);
-			if (!tasks.ok) return;
-			const task = tasks.data.find((row) => row.code === code);
-			expect(task).toBeDefined();
-			if (!task) return;
-			const done = await completeOnboardingTask(
-				{
-					organizationId: ORG,
-					actorUserId: ACTOR,
-					correlationId: `corr-onb-task-${code}-done-${suffix}`,
-					taskId: task.id,
-					status: "completed",
-					expectedVersion: task.version,
-				},
-				ready,
-			);
-			expect(done.ok).toBe(true);
-			if (!done.ok) return;
-			onboardingCase = done.data;
+		const sequentialOutcome1 = await runSequential(
+			[
+				ONBOARDING_TASK_CODE_IDENTITY_DOCUMENTS,
+				ONBOARDING_TASK_CODE_WORK_ELIGIBILITY,
+			] as const,
+			async (code) => {
+				const tasks = await listOnboardingTasks(
+					{
+						organizationId: ORG,
+						actorUserId: ACTOR,
+						correlationId: `corr-onb-task-${code}-${suffix}`,
+						onboardingCaseId: onboardingCase.id,
+					},
+					ready,
+				);
+				expect(tasks.ok).toBe(true);
+				if (!tasks.ok) {
+					return sequentialReturn(undefined);
+				}
+				const task = tasks.data.find((row) => row.code === code);
+				expect(task).toBeDefined();
+				if (!task) {
+					return sequentialReturn(undefined);
+				}
+				const done = await completeOnboardingTask(
+					{
+						organizationId: ORG,
+						actorUserId: ACTOR,
+						correlationId: `corr-onb-task-${code}-done-${suffix}`,
+						taskId: task.id,
+						status: "completed",
+						expectedVersion: task.version,
+					},
+					ready,
+				);
+				expect(done.ok).toBe(true);
+				if (!done.ok) {
+					return sequentialReturn(undefined);
+				}
+				onboardingCase = done.data;
+			},
+		);
+		if (sequentialOutcome1.kind === "return") {
+			return sequentialOutcome1.value;
 		}
 
 		const orientation = await getOnboardingOrientationByCase(
@@ -4482,7 +4904,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(orientation.ok).toBe(true);
-		if (!orientation.ok || orientation.data === null) return;
+		if (!orientation.ok || orientation.data === null) {
+			return;
+		}
 		const orientationRecorded = await recordOnboardingOrientation(
 			{
 				organizationId: ORG,
@@ -4495,7 +4919,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(orientationRecorded.ok).toBe(true);
-		if (!orientationRecorded.ok) return;
+		if (!orientationRecorded.ok) {
+			return;
+		}
 		onboardingCase = orientationRecorded.data;
 
 		const equipment = await getOnboardingEquipmentHandoffByCase(
@@ -4508,7 +4934,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(equipment.ok).toBe(true);
-		if (!equipment.ok || equipment.data === null) return;
+		if (!equipment.ok || equipment.data === null) {
+			return;
+		}
 		const equipmentRecorded = await recordOnboardingEquipmentHandoff(
 			{
 				organizationId: ORG,
@@ -4521,7 +4949,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(equipmentRecorded.ok).toBe(true);
-		if (!equipmentRecorded.ok) return;
+		if (!equipmentRecorded.ok) {
+			return;
+		}
 		onboardingCase = equipmentRecorded.data;
 
 		const access = await getOnboardingAccessHandoffByCase(
@@ -4534,7 +4964,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(access.ok).toBe(true);
-		if (!access.ok || access.data === null) return;
+		if (!access.ok || access.data === null) {
+			return;
+		}
 		const onboardingAccessRecorded = await recordOnboardingAccessHandoff(
 			{
 				organizationId: ORG,
@@ -4547,7 +4979,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(onboardingAccessRecorded.ok).toBe(true);
-		if (!onboardingAccessRecorded.ok) return;
+		if (!onboardingAccessRecorded.ok) {
+			return;
+		}
 		onboardingCase = onboardingAccessRecorded.data;
 
 		clearPorts(ready);
@@ -4563,7 +4997,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(onboardingCompleted.ok).toBe(true);
-		if (!onboardingCompleted.ok) return;
+		if (!onboardingCompleted.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, onboardingCompleteCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_ONBOARDING_COMPLETE,
@@ -4584,7 +5020,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(probation.ok).toBe(true);
-		if (!probation.ok) return;
+		if (!probation.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, probationOpenCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_PROBATION_OPEN,
@@ -4605,7 +5043,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(probationExtended.ok).toBe(true);
-		if (!probationExtended.ok) return;
+		if (!probationExtended.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, probationExtendCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_PROBATION_EXTEND,
@@ -4627,7 +5067,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(probationOutcome.ok).toBe(true);
-		if (!probationOutcome.ok) return;
+		if (!probationOutcome.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, probationOutcomeCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_PROBATION_RECORD_OUTCOME,
@@ -4648,7 +5090,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(confirmed.ok).toBe(true);
-		if (!confirmed.ok) return;
+		if (!confirmed.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, confirmCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONFIRM,
@@ -4672,7 +5116,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(transferred.ok).toBe(true);
-		if (!transferred.ok) return;
+		if (!transferred.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, transferCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_ASSIGNMENT_TRANSFER,
@@ -4701,7 +5147,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(proposed.ok).toBe(true);
-		if (!proposed.ok) return;
+		if (!proposed.ok) {
+			return;
+		}
 
 		const approved = await approveTermination(
 			{
@@ -4714,7 +5162,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const termination = await finalizeTermination(
@@ -4728,7 +5178,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(termination.ok).toBe(true);
-		if (!termination.ok) return;
+		if (!termination.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, terminationCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_TERMINATION_FINALIZE,
@@ -4756,7 +5208,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(offboarding.ok).toBe(true);
-		if (!offboarding.ok) return;
+		if (!offboarding.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, offboardingStartCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_OFFBOARDING_START,
@@ -4772,10 +5226,14 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(offboardingTasks.ok).toBe(true);
-		if (!offboardingTasks.ok) return;
-		const offboardingTask = offboardingTasks.data[0];
+		if (!offboardingTasks.ok) {
+			return;
+		}
+		const [offboardingTask] = offboardingTasks.data;
 		expect(offboardingTask).toBeDefined();
-		if (!offboardingTask) return;
+		if (!offboardingTask) {
+			return;
+		}
 
 		clearPorts(ready);
 		const offboardingTaskCorr = `trace-offboarding-task-${suffix}`;
@@ -4791,7 +5249,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(offboardingTaskDone.ok).toBe(true);
-		if (!offboardingTaskDone.ok) return;
+		if (!offboardingTaskDone.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, offboardingTaskCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE_TASK,
@@ -4811,7 +5271,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(exitInterview.ok).toBe(true);
-		if (!exitInterview.ok) return;
+		if (!exitInterview.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, exitInterviewCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_EXIT_INTERVIEW,
@@ -4832,7 +5294,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(clearance.ok).toBe(true);
-		if (!clearance.ok || !clearance.data) return;
+		if (!(clearance.ok && clearance.data)) {
+			return;
+		}
 
 		clearPorts(ready);
 		const clearanceCorr = `trace-clearance-${suffix}`;
@@ -4848,7 +5312,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(cleared.ok).toBe(true);
-		if (!cleared.ok) return;
+		if (!cleared.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, clearanceCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_CLEARANCE,
@@ -4864,7 +5330,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(accessRevocation.ok).toBe(true);
-		if (!accessRevocation.ok || !accessRevocation.data) return;
+		if (!(accessRevocation.ok && accessRevocation.data)) {
+			return;
+		}
 
 		clearPorts(ready);
 		const accessRevocationCorr = `trace-access-revocation-${suffix}`;
@@ -4881,7 +5349,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(accessRecorded.ok).toBe(true);
-		if (!accessRecorded.ok) return;
+		if (!accessRecorded.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, accessRevocationCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_ACCESS_REVOCATION,
@@ -4897,7 +5367,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(payrollHandoff.ok).toBe(true);
-		if (!payrollHandoff.ok || !payrollHandoff.data) return;
+		if (!(payrollHandoff.ok && payrollHandoff.data)) {
+			return;
+		}
 
 		clearPorts(ready);
 		const payrollHandoffCorr = `trace-payroll-handoff-${suffix}`;
@@ -4914,7 +5386,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(payrollRecorded.ok).toBe(true);
-		if (!payrollRecorded.ok) return;
+		if (!payrollRecorded.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, payrollHandoffCorr, {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_PAYROLL_HANDOFF,
@@ -4933,7 +5407,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(offboardingCompleted.ok).toBe(true);
-		if (!offboardingCompleted.ok) return;
+		if (!offboardingCompleted.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, offboardingCompleteCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE,
@@ -4955,7 +5431,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(emp.ok).toBe(true);
-		if (!emp.ok) return;
+		if (!emp.ok) {
+			return;
+		}
 
 		const employment = await createEmployment(
 			{
@@ -4968,7 +5446,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const openedForAssign = await openEmployeeCase(
 			{
@@ -4989,7 +5469,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(openedForAssign.ok).toBe(true);
-		if (!openedForAssign.ok) return;
+		if (!openedForAssign.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const assignCorr = `trace-er-assign-${suffix}`;
@@ -5005,7 +5487,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(assigned.ok).toBe(true);
-		if (!assigned.ok) return;
+		if (!assigned.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, assignCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ASSIGN_OWNER,
@@ -5030,7 +5514,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(openedForAppeal.ok).toBe(true);
-		if (!openedForAppeal.ok) return;
+		if (!openedForAppeal.ok) {
+			return;
+		}
 
 		await recordEmployeeCaseEvent(
 			{
@@ -5056,7 +5542,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(finding.ok).toBe(true);
-		if (!finding.ok) return;
+		if (!finding.ok) {
+			return;
+		}
 
 		const recommended = await recommendEmployeeCaseAction(
 			{
@@ -5071,7 +5559,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(recommended.ok).toBe(true);
-		if (!recommended.ok) return;
+		if (!recommended.ok) {
+			return;
+		}
 
 		const approved = await approveEmployeeCaseAction(
 			{
@@ -5086,7 +5576,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const appealCorr = `trace-er-appeal-${suffix}`;
@@ -5103,7 +5595,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(appealed.ok).toBe(true);
-		if (!appealed.ok) return;
+		if (!appealed.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, appealCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECORD_APPEAL,
@@ -5128,7 +5622,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(openedForReopen.ok).toBe(true);
-		if (!openedForReopen.ok) return;
+		if (!openedForReopen.ok) {
+			return;
+		}
 
 		await recordEmployeeCaseEvent(
 			{
@@ -5154,7 +5650,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(findingForClose.ok).toBe(true);
-		if (!findingForClose.ok) return;
+		if (!findingForClose.ok) {
+			return;
+		}
 
 		const closed = await closeEmployeeCase(
 			{
@@ -5168,7 +5666,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(closed.ok).toBe(true);
-		if (!closed.ok) return;
+		if (!closed.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const reopenCorr = `trace-er-reopen-${suffix}`;
@@ -5184,7 +5684,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(reopened.ok).toBe(true);
-		if (!reopened.ok) return;
+		if (!reopened.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, reopenCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_REOPEN,
@@ -5206,7 +5708,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(emp.ok).toBe(true);
-		if (!emp.ok) return;
+		if (!emp.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const createProfileCorr = `trace-talent-profile-create-${suffix}`;
@@ -5222,7 +5726,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(profile.ok).toBe(true);
-		if (!profile.ok) return;
+		if (!profile.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, createProfileCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_CREATE,
@@ -5242,7 +5748,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(updated.ok).toBe(true);
-		if (!updated.ok) return;
+		if (!updated.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, updateProfileCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_UPDATE,
@@ -5260,7 +5768,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(pool.ok).toBe(true);
-		if (!pool.ok) return;
+		if (!pool.ok) {
+			return;
+		}
 
 		const nominated = await nominateTalentPoolMember(
 			{
@@ -5275,7 +5785,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(nominated.ok).toBe(true);
-		if (!nominated.ok) return;
+		if (!nominated.ok) {
+			return;
+		}
 
 		const membership = await approveTalentPoolMember(
 			{
@@ -5289,7 +5801,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(membership.ok).toBe(true);
-		if (!membership.ok) return;
+		if (!membership.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const removeCorr = `trace-talent-pool-remove-${suffix}`;
@@ -5304,7 +5818,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(removed.ok).toBe(true);
-		if (!removed.ok) return;
+		if (!removed.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, removeCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_TALENT_POOL_MEMBER_REMOVE,
@@ -5320,7 +5836,9 @@ describe("correlation integrity", () => {
 			correlationId: `seed-wfp-${suffix}`,
 		});
 		expect(seeded).not.toBeNull();
-		if (!seeded) return;
+		if (!seeded) {
+			return;
+		}
 
 		const plan = await createHeadcountPlan(
 			{
@@ -5337,7 +5855,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(plan.ok).toBe(true);
-		if (!plan.ok) return;
+		if (!plan.ok) {
+			return;
+		}
 
 		const line = await addHeadcountPlanLine(
 			{
@@ -5353,7 +5873,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(line.ok).toBe(true);
-		if (!line.ok) return;
+		if (!line.ok) {
+			return;
+		}
 
 		const submitted = await submitHeadcountPlan(
 			{
@@ -5366,7 +5888,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const approveCorr = `trace-wfp-approve-${suffix}`;
@@ -5381,7 +5905,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, approveCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_APPROVE,
@@ -5393,7 +5919,9 @@ describe("correlation integrity", () => {
 			tag: suffix,
 		});
 		expect(manager.ok).toBe(true);
-		if (!manager.ok) return;
+		if (!manager.ok) {
+			return;
+		}
 
 		const requisition = await createDraftRequisition(
 			{
@@ -5408,27 +5936,37 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(requisition.ok).toBe(true);
-		if (!requisition.ok) return;
+		if (!requisition.ok) {
+			return;
+		}
 
 		let req = requisition.data;
-		for (const [cmd, corr] of [
-			[submitRequisition, `seed-wfp-req-submit-${suffix}`],
-			[approveRequisition, `seed-wfp-req-approve-${suffix}`],
-			[openRequisition, `seed-wfp-req-open-${suffix}`],
-		] as const) {
-			const next = await cmd(
-				{
-					organizationId: ORG,
-					actorUserId: ACTOR,
-					correlationId: corr,
-					requisitionId: req.id,
-					expectedVersion: req.version,
-				},
-				ready,
-			);
-			expect(next.ok).toBe(true);
-			if (!next.ok) return;
-			req = next.data;
+		const sequentialOutcome2 = await runSequential(
+			[
+				[submitRequisition, `seed-wfp-req-submit-${suffix}`],
+				[approveRequisition, `seed-wfp-req-approve-${suffix}`],
+				[openRequisition, `seed-wfp-req-open-${suffix}`],
+			] as const,
+			async ([cmd, corr]) => {
+				const next = await cmd(
+					{
+						organizationId: ORG,
+						actorUserId: ACTOR,
+						correlationId: corr,
+						requisitionId: req.id,
+						expectedVersion: req.version,
+					},
+					ready,
+				);
+				expect(next.ok).toBe(true);
+				if (!next.ok) {
+					return sequentialReturn(undefined);
+				}
+				req = next.data;
+			},
+		);
+		if (sequentialOutcome2.kind === "return") {
+			return sequentialOutcome2.value;
 		}
 
 		clearPorts(ready);
@@ -5447,7 +5985,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(reserved.ok).toBe(true);
-		if (!reserved.ok) return;
+		if (!reserved.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, reserveCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_RESERVE,
@@ -5466,7 +6006,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(released.ok).toBe(true);
-		if (!released.ok) return;
+		if (!released.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, releaseCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_RESERVATION_RELEASE,
@@ -5486,7 +6028,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(reservedAgain.ok).toBe(true);
-		if (!reservedAgain.ok) return;
+		if (!reservedAgain.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const consumeCorr = `trace-wfp-consume-${suffix}`;
@@ -5501,7 +6045,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(consumed.ok).toBe(true);
-		if (!consumed.ok) return;
+		if (!consumed.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, consumeCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_RESERVATION_CONSUME,
@@ -5537,9 +6083,11 @@ describe("correlation integrity", () => {
 		);
 		expect(
 			created.ok,
-			!created.ok ? `${created.code}: ${created.message}` : "ok",
+			created.ok ? "ok" : `${created.code}: ${created.message}`,
 		).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 		assertCorrelationPropagated(seeded.seedReady, createCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_CREATE,
@@ -5559,7 +6107,9 @@ describe("correlation integrity", () => {
 			seeded.seedReady,
 		);
 		expect(ended.ok).toBe(true);
-		if (!ended.ok) return;
+		if (!ended.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, endCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_END,
@@ -5587,7 +6137,9 @@ describe("correlation integrity", () => {
 			seeded.seedReady,
 		);
 		expect(applied.ok).toBe(true);
-		if (!applied.ok) return;
+		if (!applied.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, applyCorr, {
 			expectOutbox: true,
 			operation:
@@ -5610,7 +6162,9 @@ describe("correlation integrity", () => {
 			seeded.seedReady,
 		);
 		expect(enrolled.ok).toBe(true);
-		if (!enrolled.ok) return;
+		if (!enrolled.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, enrolCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_ENROL,
@@ -5630,7 +6184,9 @@ describe("correlation integrity", () => {
 			seeded.seedReady,
 		);
 		expect(endedEnrollment.ok).toBe(true);
-		if (!endedEnrollment.ok) return;
+		if (!endedEnrollment.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, endEnrolCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_END,
@@ -5650,7 +6206,9 @@ describe("correlation integrity", () => {
 			seeded.seedReady,
 		);
 		expect(enrolledAgain.ok).toBe(true);
-		if (!enrolledAgain.ok) return;
+		if (!enrolledAgain.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const cancelCorr = "trace-benefit-cancel";
@@ -5665,7 +6223,9 @@ describe("correlation integrity", () => {
 			seeded.seedReady,
 		);
 		expect(cancelled.ok).toBe(true);
-		if (!cancelled.ok) return;
+		if (!cancelled.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, cancelCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_CANCEL,
@@ -5702,7 +6262,9 @@ describe("correlation integrity", () => {
 			cycle: draftCycle,
 		});
 		expect(published.ok).toBe(true);
-		if (!published.ok) return;
+		if (!published.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 
@@ -5718,7 +6280,9 @@ describe("correlation integrity", () => {
 			worker.perfReady,
 		);
 		expect(cycleParticipant.ok).toBe(true);
-		if (!cycleParticipant.ok) return;
+		if (!cycleParticipant.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 
@@ -5733,7 +6297,9 @@ describe("correlation integrity", () => {
 			worker.perfReady,
 		);
 		expect(openedCycle.ok).toBe(true);
-		if (!openedCycle.ok) return;
+		if (!openedCycle.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, openCycleCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_OPEN,
@@ -5772,7 +6338,9 @@ describe("correlation integrity", () => {
 			worker.perfReady,
 		);
 		expect(approvedGoal.ok).toBe(true);
-		if (!approvedGoal.ok) return;
+		if (!approvedGoal.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, approveGoalCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_APPROVE,
@@ -5810,7 +6378,9 @@ describe("correlation integrity", () => {
 			worker.perfReady,
 		);
 		expect(acknowledged.ok).toBe(true);
-		if (!acknowledged.ok) return;
+		if (!acknowledged.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const finalizeCorr = "trace-perf-review-finalize";
@@ -5827,7 +6397,9 @@ describe("correlation integrity", () => {
 			worker.perfReady,
 		);
 		expect(finalized.ok).toBe(true);
-		if (!finalized.ok) return;
+		if (!finalized.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, finalizeCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_FINALIZE,
@@ -5847,7 +6419,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(reopened.ok).toBe(true);
-		if (!reopened.ok) return;
+		if (!reopened.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, reopenCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_REOPEN,
@@ -5885,7 +6459,9 @@ describe("correlation integrity", () => {
 			worker.perfReady,
 		);
 		expect(pipAcknowledged.ok).toBe(true);
-		if (!pipAcknowledged.ok) return;
+		if (!pipAcknowledged.ok) {
+			return;
+		}
 
 		const pipFinalized = await finalizePerformanceReview(
 			{
@@ -5900,7 +6476,9 @@ describe("correlation integrity", () => {
 			worker.perfReady,
 		);
 		expect(pipFinalized.ok).toBe(true);
-		if (!pipFinalized.ok) return;
+		if (!pipFinalized.ok) {
+			return;
+		}
 
 		const draftPlan = await createImprovementPlan(
 			{
@@ -5921,7 +6499,9 @@ describe("correlation integrity", () => {
 			worker.perfReady,
 		);
 		expect(draftPlan.ok).toBe(true);
-		if (!draftPlan.ok) return;
+		if (!draftPlan.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const openPipCorr = "trace-perf-pip-open";
@@ -5936,7 +6516,9 @@ describe("correlation integrity", () => {
 			worker.perfReady,
 		);
 		expect(openedPip.ok).toBe(true);
-		if (!openedPip.ok) return;
+		if (!openedPip.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, openPipCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_OPEN,
@@ -5955,7 +6537,9 @@ describe("correlation integrity", () => {
 			worker.perfReady,
 		);
 		expect(reviewedPip.ok).toBe(true);
-		if (!reviewedPip.ok) return;
+		if (!reviewedPip.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const completePipCorr = "trace-perf-pip-complete";
@@ -5970,7 +6554,9 @@ describe("correlation integrity", () => {
 			worker.perfReady,
 		);
 		expect(completedPip.ok).toBe(true);
-		if (!completedPip.ok) return;
+		if (!completedPip.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, completePipCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_COMPLETE,
@@ -5991,7 +6577,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(emp.ok).toBe(true);
-		if (!emp.ok) return;
+		if (!emp.ok) {
+			return;
+		}
 
 		const course = await createCourse(
 			{
@@ -6005,7 +6593,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(course.ok).toBe(true);
-		if (!course.ok) return;
+		if (!course.ok) {
+			return;
+		}
 
 		clearPorts(ready);
 		const assignCorr = "trace-learning-assign";
@@ -6021,7 +6611,9 @@ describe("correlation integrity", () => {
 			ready,
 		);
 		expect(assignment.ok).toBe(true);
-		if (!assignment.ok) return;
+		if (!assignment.ok) {
+			return;
+		}
 		assertCorrelationPropagated(ready, assignCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_LEARNING_ASSIGNMENT_CREATE,

@@ -28,8 +28,10 @@ function templateCodes(templateKey: string): readonly string[] {
 	const template = PLATFORM_ROLE_TEMPLATES_V1.find(
 		(row) => row.templateKey === templateKey,
 	);
-	expect(template).toBeDefined();
-	return template?.permissionCodes ?? [];
+	if (!template) {
+		throw new Error(`Missing platform role template: ${templateKey}`);
+	}
+	return template.permissionCodes;
 }
 
 describe("PLATFORM_PERMISSION_V1 (N10 / ARCH-023)", () => {
@@ -166,7 +168,9 @@ describe.skipIf(!hasDatabase)("ensurePlatformPermissionCatalog (N10)", () => {
 
 		const orgAdmin = first.templates.find((t) => t.templateKey === "org_admin");
 		expect(orgAdmin).toBeDefined();
-		if (orgAdmin === undefined) return;
+		if (orgAdmin === undefined) {
+			return;
+		}
 
 		const links = await db
 			.select({ permissionCode: platformRolePermission.permissionCode })

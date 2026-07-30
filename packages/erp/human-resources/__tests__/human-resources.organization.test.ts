@@ -38,6 +38,7 @@ import {
 	HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_ORGANIZATION_READ,
 } from "../src/permissions";
+import { runSequential, sequentialReturn } from "../src/shared/run-sequential";
 import { createMemoryHumanResourcesStore } from "../src/testing";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
@@ -61,7 +62,7 @@ async function seedEmployee(
 	ready: ReturnType<typeof harness>,
 	input: { organizationId: string; employeeNumber: string; legalName: string },
 ) {
-	return createEmployee(
+	return await createEmployee(
 		{
 			organizationId: input.organizationId,
 			actorUserId: ACTOR,
@@ -111,7 +112,9 @@ describe("@afenda/human-resources organization structure", () => {
 			ready,
 		);
 		expect(root.ok).toBe(true);
-		if (!root.ok) return;
+		if (!root.ok) {
+			return;
+		}
 
 		const child = await createDepartment(
 			{
@@ -125,7 +128,9 @@ describe("@afenda/human-resources organization structure", () => {
 			ready,
 		);
 		expect(child.ok).toBe(true);
-		if (!child.ok) return;
+		if (!child.ok) {
+			return;
+		}
 
 		const cycle = await updateDepartment(
 			{
@@ -161,7 +166,9 @@ describe("@afenda/human-resources organization structure", () => {
 			ready,
 		);
 		expect(parent.ok).toBe(true);
-		if (!parent.ok) return;
+		if (!parent.ok) {
+			return;
+		}
 
 		const archived = await archiveDepartment(
 			{
@@ -207,7 +214,9 @@ describe("@afenda/human-resources organization structure", () => {
 			ready,
 		);
 		expect(parent.ok).toBe(true);
-		if (!parent.ok) return;
+		if (!parent.ok) {
+			return;
+		}
 
 		const child = await createDepartment(
 			{
@@ -247,7 +256,9 @@ describe("@afenda/human-resources organization structure", () => {
 			actorUserId: ACTOR,
 		});
 		expect(refs).not.toBeNull();
-		if (!refs) return;
+		if (!refs) {
+			return;
+		}
 
 		const position = await createPosition(
 			{
@@ -295,7 +306,9 @@ describe("@afenda/human-resources organization structure", () => {
 			legalName: "B",
 		});
 		expect(a.ok && b.ok).toBe(true);
-		if (!a.ok || !b.ok) return;
+		if (!(a.ok && b.ok)) {
+			return;
+		}
 
 		const self = await assignPrimaryReportingLine(
 			{
@@ -365,7 +378,9 @@ describe("@afenda/human-resources organization structure", () => {
 			legalName: "Manager Two",
 		});
 		expect(employee.ok && m1.ok && m2.ok).toBe(true);
-		if (!employee.ok || !m1.ok || !m2.ok) return;
+		if (!(employee.ok && m1.ok && m2.ok)) {
+			return;
+		}
 
 		const first = await assignPrimaryReportingLine(
 			{
@@ -417,7 +432,9 @@ describe("@afenda/human-resources organization structure", () => {
 			legalName: "M2",
 		});
 		expect(employee.ok && m1.ok && m2.ok).toBe(true);
-		if (!employee.ok || !m1.ok || !m2.ok) return;
+		if (!(employee.ok && m1.ok && m2.ok)) {
+			return;
+		}
 
 		const first = await assignPrimaryReportingLine(
 			{
@@ -466,7 +483,9 @@ describe("@afenda/human-resources organization structure", () => {
 			legalName: "B",
 		});
 		expect(empA.ok && empB.ok).toBe(true);
-		if (!empA.ok || !empB.ok) return;
+		if (!(empA.ok && empB.ok)) {
+			return;
+		}
 
 		const cross = await assignPrimaryReportingLine(
 			{
@@ -500,7 +519,9 @@ describe("@afenda/human-resources organization structure", () => {
 			ready,
 		);
 		expect(department.ok).toBe(true);
-		if (!department.ok) return;
+		if (!department.ok) {
+			return;
+		}
 
 		const stale = await updateDepartment(
 			{
@@ -574,7 +595,9 @@ describe("@afenda/human-resources organization structure", () => {
 			legalName: "Mgr2",
 		});
 		expect(employee.ok && m1.ok && m2.ok).toBe(true);
-		if (!employee.ok || !m1.ok || !m2.ok) return;
+		if (!(employee.ok && m1.ok && m2.ok)) {
+			return;
+		}
 
 		const assigned = await assignPrimaryReportingLine(
 			{
@@ -648,10 +671,12 @@ describe("@afenda/human-resources organization structure", () => {
 			ready,
 		);
 		expect(root.ok).toBe(true);
-		if (!root.ok) return;
+		if (!root.ok) {
+			return;
+		}
 
 		let parentId = root.data.id;
-		for (let i = 0; i < 6; i += 1) {
+		const seedOutcome = await runSequential([0, 1, 2, 3, 4, 5], async (i) => {
 			const next = await createDepartment(
 				{
 					organizationId: ORG_A,
@@ -664,8 +689,13 @@ describe("@afenda/human-resources organization structure", () => {
 				ready,
 			);
 			expect(next.ok).toBe(true);
-			if (!next.ok) return;
+			if (!next.ok) {
+				return sequentialReturn(false);
+			}
 			parentId = next.data.id;
+		});
+		if (seedOutcome.kind === "return") {
+			return;
 		}
 
 		const tree = await getOrganizationTree(
@@ -693,7 +723,9 @@ describe("@afenda/human-resources organization structure", () => {
 			actorUserId: ACTOR,
 		});
 		expect(refs).not.toBeNull();
-		if (!refs) return;
+		if (!refs) {
+			return;
+		}
 
 		const position = await createPosition(
 			{
@@ -709,7 +741,9 @@ describe("@afenda/human-resources organization structure", () => {
 			ready,
 		);
 		expect(position.ok).toBe(true);
-		if (!position.ok) return;
+		if (!position.ok) {
+			return;
+		}
 
 		const frozen = await freezePosition(
 			{
@@ -756,7 +790,9 @@ describe("@afenda/human-resources organization structure", () => {
 			ready,
 		);
 		expect(department.ok).toBe(true);
-		if (!department.ok) return;
+		if (!department.ok) {
+			return;
+		}
 
 		const activated = await activateDepartment(
 			{
@@ -791,7 +827,9 @@ describe("@afenda/human-resources organization historical truth", () => {
 			ready,
 		);
 		expect(department.ok).toBe(true);
-		if (!department.ok) return;
+		if (!department.ok) {
+			return;
+		}
 
 		const updated = await updateDepartment(
 			{
@@ -846,7 +884,9 @@ describe("@afenda/human-resources organization historical truth", () => {
 			actorUserId: ACTOR,
 		});
 		expect(seeded).not.toBeNull();
-		if (seeded === null) return;
+		if (seeded === null) {
+			return;
+		}
 
 		const jobUpdated = await updateJob(
 			{
@@ -891,7 +931,9 @@ describe("@afenda/human-resources organization historical truth", () => {
 			ready,
 		);
 		expect(position.ok).toBe(true);
-		if (!position.ok) return;
+		if (!position.ok) {
+			return;
+		}
 
 		const positionUpdated = await updatePosition(
 			{
@@ -937,7 +979,9 @@ describe("@afenda/human-resources organization historical truth", () => {
 			ready,
 		);
 		expect(root.ok).toBe(true);
-		if (!root.ok) return;
+		if (!root.ok) {
+			return;
+		}
 
 		const child = await createDepartment(
 			{
@@ -951,7 +995,9 @@ describe("@afenda/human-resources organization historical truth", () => {
 			ready,
 		);
 		expect(child.ok).toBe(true);
-		if (!child.ok) return;
+		if (!child.ok) {
+			return;
+		}
 
 		const beforeTree = await getOrganizationTreeAsOf(
 			{
@@ -1011,7 +1057,9 @@ describe("@afenda/human-resources organization historical truth", () => {
 			legalName: "Reportee",
 		});
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const managerA = await seedEmployee(ready, {
 			organizationId: ORG_A,
@@ -1019,7 +1067,9 @@ describe("@afenda/human-resources organization historical truth", () => {
 			legalName: "Manager A",
 		});
 		expect(managerA.ok).toBe(true);
-		if (!managerA.ok) return;
+		if (!managerA.ok) {
+			return;
+		}
 
 		const managerB = await seedEmployee(ready, {
 			organizationId: ORG_A,
@@ -1027,7 +1077,9 @@ describe("@afenda/human-resources organization historical truth", () => {
 			legalName: "Manager B",
 		});
 		expect(managerB.ok).toBe(true);
-		if (!managerB.ok) return;
+		if (!managerB.ok) {
+			return;
+		}
 
 		const assigned = await assignPrimaryReportingLine(
 			{
@@ -1041,7 +1093,9 @@ describe("@afenda/human-resources organization historical truth", () => {
 			ready,
 		);
 		expect(assigned.ok).toBe(true);
-		if (!assigned.ok) return;
+		if (!assigned.ok) {
+			return;
+		}
 
 		const replaced = await replacePrimaryReportingLine(
 			{
@@ -1056,7 +1110,9 @@ describe("@afenda/human-resources organization historical truth", () => {
 			ready,
 		);
 		expect(replaced.ok).toBe(true);
-		if (!replaced.ok) return;
+		if (!replaced.ok) {
+			return;
+		}
 
 		expect(replaced.data.supersedesReportingLineId).toBe(assigned.data.id);
 

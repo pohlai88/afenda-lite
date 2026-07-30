@@ -25,7 +25,15 @@ import {
 	normalizeSearchText,
 } from "../src/capabilities/core-organization-masters/normalized-code";
 import { resolveDependencyInspector } from "../src/command-options";
-import * as masterDataRoot from "../src/index";
+import {
+	assertRestoreTransition as rootAssertRestoreTransition,
+	createItem as rootCreateItem,
+	createItemTemplate as rootCreateItemTemplate,
+	createParty as rootCreateParty,
+	createPaymentTerm as rootCreatePaymentTerm,
+	createTaxRegistration as rootCreateTaxRegistration,
+	createWarehouse as rootCreateWarehouse,
+} from "../src/index";
 
 const packageRoot = join(import.meta.dirname, "..");
 
@@ -198,13 +206,13 @@ describe("core organization masters capability", () => {
 	});
 
 	it("keeps aggregate commands available from the package root", () => {
-		expect(masterDataRoot.createParty).toBeTypeOf("function");
-		expect(masterDataRoot.createItem).toBeTypeOf("function");
-		expect(masterDataRoot.createWarehouse).toBeTypeOf("function");
-		expect(masterDataRoot.createPaymentTerm).toBeTypeOf("function");
-		expect(masterDataRoot.createTaxRegistration).toBeTypeOf("function");
-		expect(masterDataRoot.createItemTemplate).toBeTypeOf("function");
-		expect(masterDataRoot.assertRestoreTransition).toBeTypeOf("function");
+		expect(rootCreateParty).toBeTypeOf("function");
+		expect(rootCreateItem).toBeTypeOf("function");
+		expect(rootCreateWarehouse).toBeTypeOf("function");
+		expect(rootCreatePaymentTerm).toBeTypeOf("function");
+		expect(rootCreateTaxRegistration).toBeTypeOf("function");
+		expect(rootCreateItemTemplate).toBeTypeOf("function");
+		expect(rootAssertRestoreTransition).toBeTypeOf("function");
 	});
 
 	it("has one capability-owned implementation and no root compatibility files", () => {

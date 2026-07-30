@@ -52,9 +52,13 @@ describe("portal-chrome (N16)", () => {
 
 	it("filters operator nav via Identity permission ports (OR per item)", async () => {
 		hasPermissionMock.mockImplementation(async ({ code }) => {
-			if (code === "org.roles.manage") return true;
-			if (code === "inventory.movement.read") return true;
-			return false;
+			if (code === "org.roles.manage") {
+				return await true;
+			}
+			if (code === "inventory.movement.read") {
+				return await true;
+			}
+			return await false;
 		});
 
 		const nav = await resolveOperatorShellNav(session);
@@ -70,8 +74,10 @@ describe("portal-chrome (N16)", () => {
 
 	it("filters client nav for inventory read without operator-only items", async () => {
 		hasPermissionMock.mockImplementation(async ({ code }) => {
-			if (code === "inventory.movement.read") return true;
-			return false;
+			if (code === "inventory.movement.read") {
+				return await true;
+			}
+			return await false;
 		});
 
 		const nav = await resolveClientShellNav({

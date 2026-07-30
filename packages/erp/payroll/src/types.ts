@@ -172,20 +172,20 @@ export type PayrollStatutoryRuleSupersedeRecord = z.infer<
 	typeof payrollStatutoryRuleSupersedeRecordSchema
 >;
 
-export type PayrollRuleSupersedeResult<TRule> = {
-	superseded: TRule;
+export interface PayrollRuleSupersedeResult<TRule> {
 	successor: TRule;
-};
+	superseded: TRule;
+}
 
-export type IdempotentPayrollPayGroupRecord = {
+export interface IdempotentPayrollPayGroupRecord {
+	createRequestFingerprint: string;
 	payGroup: PayrollPayGroup;
-	createRequestFingerprint: string;
-};
+}
 
-export type IdempotentPayrollPeriodRecord = {
-	period: PayrollPeriod;
+export interface IdempotentPayrollPeriodRecord {
 	createRequestFingerprint: string;
-};
+	period: PayrollPeriod;
+}
 
 export type PayrollRunType = z.infer<typeof payrollRunTypeSchema>;
 export type PayrollRunStatus = z.infer<typeof payrollRunStatusSchema>;
@@ -202,15 +202,15 @@ export type PayrollExceptionCreateRecord = z.infer<
 	typeof payrollExceptionCreateRecordSchema
 >;
 
-export type IdempotentPayrollCalendarRecord = {
+export interface IdempotentPayrollCalendarRecord {
 	calendar: PayrollCalendar;
 	createRequestFingerprint: string;
-};
+}
 
-export type IdempotentPayrollRunRecord = {
-	run: PayrollRun;
+export interface IdempotentPayrollRunRecord {
 	createRequestFingerprint: string;
-};
+	run: PayrollRun;
+}
 
 export type PayrollEmployeeAssignmentStatus = z.infer<
 	typeof payrollEmployeeAssignmentStatusSchema

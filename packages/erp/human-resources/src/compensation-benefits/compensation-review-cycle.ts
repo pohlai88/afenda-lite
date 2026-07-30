@@ -35,7 +35,7 @@ export const HUMAN_RESOURCES_AGGREGATE_COMPENSATION_REVIEW_CYCLE =
 export type HumanResourcesCompensationReviewCycleAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_COMPENSATION_REVIEW_CYCLE;
 
-export async function createCompensationReviewCycle(
+export function createCompensationReviewCycle(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationReviewCycle>> {
@@ -105,7 +105,7 @@ export async function createCompensationReviewCycle(
 	});
 }
 
-export async function openCompensationReviewCycle(
+export function openCompensationReviewCycle(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationReviewCycle>> {
@@ -130,7 +130,7 @@ export async function openCompensationReviewCycle(
 	});
 }
 
-export async function closeCompensationReviewCycle(
+export function closeCompensationReviewCycle(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationReviewCycle>> {
@@ -155,7 +155,7 @@ export async function closeCompensationReviewCycle(
 	});
 }
 
-export async function cancelCompensationReviewCycle(
+export function cancelCompensationReviewCycle(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationReviewCycle>> {
@@ -180,7 +180,7 @@ export async function cancelCompensationReviewCycle(
 	});
 }
 
-export async function getCompensationReviewCycle(
+export function getCompensationReviewCycle(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationReviewCycle | null>> {
@@ -196,7 +196,7 @@ export async function getCompensationReviewCycle(
 	});
 }
 
-export async function listCompensationReviewCycles(
+export function listCompensationReviewCycles(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationReviewCycleListPage>> {

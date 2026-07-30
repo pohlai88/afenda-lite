@@ -47,7 +47,7 @@ export const HUMAN_RESOURCES_AGGREGATE_HEADCOUNT_PLAN =
 export type HumanResourcesHeadcountPlanAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_HEADCOUNT_PLAN;
 
-export async function createHeadcountPlan(
+export function createHeadcountPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<HeadcountPlan>> {
@@ -108,7 +108,7 @@ export async function createHeadcountPlan(
 	});
 }
 
-export async function updateHeadcountPlan(
+export function updateHeadcountPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<HeadcountPlan>> {
@@ -136,7 +136,7 @@ export async function updateHeadcountPlan(
 	});
 }
 
-async function transitionHeadcountPlan(
+function transitionHeadcountPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions,
 	config: {
@@ -168,7 +168,7 @@ async function transitionHeadcountPlan(
 	});
 }
 
-export async function submitHeadcountPlan(
+export function submitHeadcountPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<HeadcountPlan>> {
@@ -179,7 +179,7 @@ export async function submitHeadcountPlan(
 	});
 }
 
-export async function approveHeadcountPlan(
+export function approveHeadcountPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<HeadcountPlan>> {
@@ -190,7 +190,7 @@ export async function approveHeadcountPlan(
 	});
 }
 
-export async function rejectHeadcountPlan(
+export function rejectHeadcountPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<HeadcountPlan>> {
@@ -201,7 +201,7 @@ export async function rejectHeadcountPlan(
 	});
 }
 
-export async function closeHeadcountPlan(
+export function closeHeadcountPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<HeadcountPlan>> {
@@ -212,7 +212,7 @@ export async function closeHeadcountPlan(
 	});
 }
 
-export async function supersedeHeadcountPlan(
+export function supersedeHeadcountPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<HeadcountPlan>> {
@@ -285,7 +285,7 @@ export async function supersedeHeadcountPlan(
 	});
 }
 
-export async function getHeadcountPlanById(
+export function getHeadcountPlanById(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<HeadcountPlan>> {
@@ -313,7 +313,7 @@ export async function getHeadcountPlanById(
 	});
 }
 
-export async function listHeadcountPlans(
+export function listHeadcountPlans(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<HeadcountPlanListPage>> {
@@ -332,7 +332,7 @@ export async function listHeadcountPlans(
 	});
 }
 
-export async function getApprovedHeadcountPlan(
+export function getApprovedHeadcountPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<HeadcountPlan>> {
@@ -362,7 +362,7 @@ export async function getApprovedHeadcountPlan(
 	});
 }
 
-export async function getWorkforcePlanVariance(
+export function getWorkforcePlanVariance(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<WorkforcePlanVariance>> {

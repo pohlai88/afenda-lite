@@ -109,7 +109,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const employment = await createEmployment(
 			{
@@ -145,7 +147,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const employment = await createEmployment(
 			{
@@ -159,14 +163,18 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const seeded = await seedDepartmentAndJob(ready, {
 			organizationId: ORG_A,
 			actorUserId: ACTOR,
 		});
 		expect(seeded).not.toBeNull();
-		if (!seeded) return;
+		if (!seeded) {
+			return;
+		}
 
 		const position = await createPosition(
 			{
@@ -181,7 +189,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(position.ok).toBe(true);
-		if (!position.ok) return;
+		if (!position.ok) {
+			return;
+		}
 
 		const assignment = await createAssignment(
 			{
@@ -218,7 +228,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const employment = await createEmployment(
 			{
@@ -232,7 +244,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const terminated = await amendEmployment(
 			{
@@ -246,7 +260,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(terminated.ok).toBe(true);
-		if (!terminated.ok) return;
+		if (!terminated.ok) {
+			return;
+		}
 		expect(terminated.data.status).toBe("terminated");
 		expect(terminated.data.endsOn).toBe("2025-01-01");
 
@@ -278,7 +294,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const stale = await updateEmployee(
 			{
@@ -331,7 +349,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const first = await createEmployment(
 			{
@@ -379,7 +399,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const employment = await createEmployment(
 			{
@@ -393,14 +415,18 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const seeded = await seedDepartmentAndJob(ready, {
 			organizationId: ORG_A,
 			actorUserId: ACTOR,
 		});
 		expect(seeded).not.toBeNull();
-		if (!seeded) return;
+		if (!seeded) {
+			return;
+		}
 
 		const position = await createPosition(
 			{
@@ -415,7 +441,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(position.ok).toBe(true);
-		if (!position.ok) return;
+		if (!position.ok) {
+			return;
+		}
 
 		const first = await createAssignment(
 			{
@@ -431,7 +459,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 
 		const second = await createAssignment(
 			{
@@ -481,7 +511,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const employment = await createEmployment(
 			{
@@ -516,7 +548,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const employment = await createEmployment(
 			{
@@ -530,7 +564,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const code = `CONTRACT-${suffix}`;
 		const first = await createEmploymentContract(
@@ -624,7 +660,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const employment = await createEmployment(
 			{
@@ -638,7 +676,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const audits = await db
 			.select()
@@ -698,7 +738,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const future = await createEmployment(
 			{
@@ -712,7 +754,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(future.ok).toBe(true);
-		if (!future.ok) return;
+		if (!future.ok) {
+			return;
+		}
 
 		const beforeStart = await getEmploymentAsOf(
 			{
@@ -760,7 +804,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(terminated.ok).toBe(true);
-		if (!terminated.ok) return;
+		if (!terminated.ok) {
+			return;
+		}
 
 		if (adapter === "memory") {
 			ready.ports.outbox.calls.length = 0;
@@ -778,7 +824,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(rehire.ok).toBe(true);
-		if (!rehire.ok) return;
+		if (!rehire.ok) {
+			return;
+		}
 
 		if (adapter === "memory") {
 			expect(
@@ -802,7 +850,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(corrected.ok, resultFailureMessage(corrected)).toBe(true);
-		if (!corrected.ok) return;
+		if (!corrected.ok) {
+			return;
+		}
 		expect(corrected.data.startsOn).toBe("2099-07-15");
 
 		const overlappingCorrect = await correctEmployment(
@@ -836,7 +886,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(notice.ok).toBe(true);
-		if (!notice.ok) return;
+		if (!notice.ok) {
+			return;
+		}
 
 		const reactivated = await reactivateEmployment(
 			{
@@ -850,7 +902,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(reactivated.ok).toBe(true);
-		if (!reactivated.ok) return;
+		if (!reactivated.ok) {
+			return;
+		}
 		expect(reactivated.data.status).toBe("active");
 
 		const history = await listEmploymentStatusHistory(
@@ -864,7 +918,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(history.ok).toBe(true);
-		if (!history.ok) return;
+		if (!history.ok) {
+			return;
+		}
 		expect(history.data.statusAsOf?.status).toBe("notice");
 		expect(
 			history.data.history.some((row) => row.changeKind === "correction"),
@@ -885,7 +941,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const employment = await createEmployment(
 			{
@@ -899,7 +957,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const future = await createEmploymentContract(
 			{
@@ -915,7 +975,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(future.ok).toBe(true);
-		if (!future.ok) return;
+		if (!future.ok) {
+			return;
+		}
 
 		const beforeStart = await getEmploymentContractAsOf(
 			{
@@ -966,7 +1028,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(corrected.ok, resultFailureMessage(corrected)).toBe(true);
-		if (!corrected.ok) return;
+		if (!corrected.ok) {
+			return;
+		}
 		expect(corrected.data.startsOn).toBe("2099-06-15");
 		expect(corrected.data.version).toBe(2);
 
@@ -985,7 +1049,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(superseded.ok).toBe(true);
-		if (!superseded.ok) return;
+		if (!superseded.ok) {
+			return;
+		}
 		expect(superseded.data.superseded.lineageStatus).toBe("superseded");
 		expect(superseded.data.superseded.endsOn).toBe("2099-12-31");
 		expect(superseded.data.successor.lineageStatus).toBe("active");
@@ -1035,7 +1101,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const employment = await createEmployment(
 			{
@@ -1049,7 +1117,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const created = await createEmploymentContract(
 			{
@@ -1065,7 +1135,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const amended = await amendEmploymentContract(
 			{
@@ -1081,7 +1153,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(amended.ok, resultFailureMessage(amended)).toBe(true);
-		if (!amended.ok) return;
+		if (!amended.ok) {
+			return;
+		}
 		expect(amended.data.referenceCode).toBe(`CONTRACT-S55-AMEND-${suffix}`);
 
 		const renewed = await renewEmploymentContract(
@@ -1099,7 +1173,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(renewed.ok).toBe(true);
-		if (!renewed.ok) return;
+		if (!renewed.ok) {
+			return;
+		}
 		expect(renewed.data.superseded.lineageStatus).toBe("superseded");
 		expect(renewed.data.successor.lineageStatus).toBe("active");
 
@@ -1117,7 +1193,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(ended.ok).toBe(true);
-		if (!ended.ok) return;
+		if (!ended.ok) {
+			return;
+		}
 		expect(ended.data.endsOn).toBe("2100-06-30");
 		expect(ended.data.lineageStatus).toBe("active");
 
@@ -1167,7 +1245,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const employment = await createEmployment(
 			{
@@ -1181,14 +1261,18 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const seeded = await seedDepartmentAndJob(ready, {
 			organizationId: ORG_A,
 			actorUserId: ACTOR,
 		});
 		expect(seeded).not.toBeNull();
-		if (!seeded) return;
+		if (!seeded) {
+			return;
+		}
 
 		const positionA = await createPosition(
 			{
@@ -1203,7 +1287,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(positionA.ok).toBe(true);
-		if (!positionA.ok) return;
+		if (!positionA.ok) {
+			return;
+		}
 
 		const positionB = await createPosition(
 			{
@@ -1218,7 +1304,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(positionB.ok).toBe(true);
-		if (!positionB.ok) return;
+		if (!positionB.ok) {
+			return;
+		}
 
 		const closed = await createAssignment(
 			{
@@ -1234,7 +1322,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(closed.ok).toBe(true);
-		if (!closed.ok) return;
+		if (!closed.ok) {
+			return;
+		}
 
 		const future = await createAssignment(
 			{
@@ -1250,7 +1340,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(future.ok).toBe(true);
-		if (!future.ok) return;
+		if (!future.ok) {
+			return;
+		}
 
 		const beforeFuture = await getAssignmentAsOf(
 			{
@@ -1302,7 +1394,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(transfer.ok, resultFailureMessage(transfer)).toBe(true);
-		if (!transfer.ok) return;
+		if (!transfer.ok) {
+			return;
+		}
 
 		const predecessor = await ready.store.getAssignmentById({
 			organizationId: ORG_A,
@@ -1315,10 +1409,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 		expect(predecessor.ok).toBe(true);
 		expect(successor.ok).toBe(true);
 		if (
-			!predecessor.ok ||
-			!successor.ok ||
-			!predecessor.data ||
-			!successor.data
+			!(predecessor.ok && successor.ok && predecessor.data && successor.data)
 		) {
 			return;
 		}
@@ -1365,7 +1456,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const manager = await createEmployee(
 			{
@@ -1379,7 +1472,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(manager.ok).toBe(true);
-		if (!manager.ok) return;
+		if (!manager.ok) {
+			return;
+		}
 
 		const employment = await createEmployment(
 			{
@@ -1393,14 +1488,18 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const seeded = await seedDepartmentAndJob(ready, {
 			organizationId: ORG_A,
 			actorUserId: ACTOR,
 		});
 		expect(seeded).not.toBeNull();
-		if (!seeded) return;
+		if (!seeded) {
+			return;
+		}
 
 		const position = await createPosition(
 			{
@@ -1415,7 +1514,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(position.ok).toBe(true);
-		if (!position.ok) return;
+		if (!position.ok) {
+			return;
+		}
 
 		const outside = await createAssignment(
 			{
@@ -1466,7 +1567,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(calendar.ok).toBe(true);
-		if (!calendar.ok) return;
+		if (!calendar.ok) {
+			return;
+		}
 
 		await assignEmploymentCalendar(
 			{
@@ -1495,7 +1598,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(assignment.ok).toBe(true);
-		if (!assignment.ok) return;
+		if (!assignment.ok) {
+			return;
+		}
 		expect(assignment.data.managerEmployeeIdSnapshot).toBe(manager.data.id);
 		expect(assignment.data.workCalendarIdSnapshot).toBe(calendar.data.id);
 
@@ -1526,7 +1631,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(managerTwo.ok).toBe(true);
-		if (!managerTwo.ok) return;
+		if (!managerTwo.ok) {
+			return;
+		}
 
 		await assignPrimaryReportingLine(
 			{
@@ -1557,7 +1664,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(calendarTwo.ok).toBe(true);
-		if (!calendarTwo.ok) return;
+		if (!calendarTwo.ok) {
+			return;
+		}
 
 		await assignEmploymentCalendar(
 			{

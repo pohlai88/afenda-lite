@@ -23,8 +23,10 @@ export function resolveHumanResourcesAuthorizationPolicy(
 	operationId: HumanResourcesOperationId,
 	policies: readonly HumanResourcesAuthorizationPolicy[] = HUMAN_RESOURCES_AUTHORIZATION_POLICIES,
 ): HumanResourcesAuthorizationPolicy {
-	const matches = policies.filter((policy) =>
-		policy.operationPrefixes.some((prefix) => operationId.startsWith(prefix)),
+	const matches = policies.filter((policyValue2) =>
+		policyValue2.operationPrefixes.some((prefix) =>
+			operationId.startsWith(prefix),
+		),
 	);
 
 	if (matches.length === 0) {
@@ -38,12 +40,12 @@ export function resolveHumanResourcesAuthorizationPolicy(
 		throw new HumanResourcesAuthorizationPolicyResolveError(
 			"ambiguous_policy",
 			`Ambiguous HR authorization policies for ${operationId}: ${matches
-				.map((policy) => policy.id)
+				.map((policyValue) => policyValue.id)
 				.join(", ")}`,
 		);
 	}
 
-	const policy = matches[0];
+	const [policy] = matches;
 	if (policy === undefined) {
 		throw new HumanResourcesAuthorizationPolicyResolveError(
 			"policy_not_registered",

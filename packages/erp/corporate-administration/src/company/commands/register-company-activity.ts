@@ -1,3 +1,5 @@
+// biome-ignore-all lint/complexity/noExcessiveCognitiveComplexity: Activity registration coordinates policy, idempotency, audit, and outbox atomically.
+// biome-ignore-all lint/style/useDestructuring: Explicit company state access keeps command evidence visible.
 import { fail, type Result } from "@afenda/errors/result";
 import {
 	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
@@ -48,7 +50,9 @@ export async function registerCompanyActivity(
 		registerCompanyActivityInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 
 	const authorized = await requireCorporateAdministrationPermission(
 		options.authorization,
@@ -59,7 +63,9 @@ export async function registerCompanyActivity(
 				CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS.registerCompanyActivity,
 		},
 	);
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 
 	const identity = createCorporateAdministrationCommandFingerprint({
 		schema: registerCompanyActivityInputSchema,
@@ -67,7 +73,9 @@ export async function registerCompanyActivity(
 		commandId: "corporate-administration.legal-company.register-activity",
 		input: parsed.data,
 	});
-	if (!identity.ok) return identity;
+	if (!identity.ok) {
+		return identity;
+	}
 	const approved = await requireCorporateAdministrationApprovalIfConfigured(
 		dependencies,
 		{
@@ -78,7 +86,9 @@ export async function registerCompanyActivity(
 			commandFingerprint: identity.data.fingerprint,
 		},
 	);
-	if (!approved.ok) return approved;
+	if (!approved.ok) {
+		return approved;
+	}
 
 	const activityAuthority = validateActivityAuthority({
 		activityType: parsed.data.classification,
@@ -87,15 +97,21 @@ export async function registerCompanyActivity(
 		jurisdictionCode: parsed.data.jurisdictionCode,
 		regulatorCode: parsed.data.regulatorCode ?? null,
 	});
-	if (!activityAuthority.ok) return activityAuthority;
+	if (!activityAuthority.ok) {
+		return activityAuthority;
+	}
 
 	const current = await dependencies.store.lockLegalCompany({
 		organizationId: options.organizationId,
 		legalCompanyId: parsed.data.legalCompanyId,
 		expectedVersion: parsed.data.expectedCompanyVersion,
 	});
-	if (!current.ok) return current;
-	if (current.data === null) return legalCompanyNotFound();
+	if (!current.ok) {
+		return current;
+	}
+	if (current.data === null) {
+		return legalCompanyNotFound();
+	}
 	if (current.data.version !== parsed.data.expectedCompanyVersion) {
 		return staleCompanyVersion(
 			parsed.data.expectedCompanyVersion,
@@ -110,7 +126,9 @@ export async function registerCompanyActivity(
 			activityCode: parsed.data.activityCode,
 			effectiveDate: parsed.data.effectiveFrom,
 		});
-	if (!activity.ok) return activity;
+	if (!activity.ok) {
+		return activity;
+	}
 	if (activity.data === null || !activity.data.active) {
 		return inactiveReference("activityCode", activity.data === null);
 	}
@@ -119,7 +137,9 @@ export async function registerCompanyActivity(
 		countryCode: parsed.data.jurisdictionCode,
 		effectiveDate: parsed.data.effectiveFrom,
 	});
-	if (!country.ok) return country;
+	if (!country.ok) {
+		return country;
+	}
 	if (country.data === null || !country.data.active) {
 		return inactiveReference("jurisdictionCode", country.data === null);
 	}
@@ -133,7 +153,9 @@ export async function registerCompanyActivity(
 			regulatorCode: parsed.data.regulatorCode,
 			effectiveDate: parsed.data.effectiveFrom,
 		});
-		if (!regulator.ok) return regulator;
+		if (!regulator.ok) {
+			return regulator;
+		}
 		if (regulator.data === null || !regulator.data.active) {
 			return inactiveReference("regulatorCode", regulator.data === null);
 		}
@@ -142,7 +164,9 @@ export async function registerCompanyActivity(
 		organizationId: options.organizationId,
 		sourceDocumentId: parsed.data.sourceDocumentId,
 	});
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	if (source.data === null || !source.data.active) {
 		return inactiveReference("sourceDocumentId", source.data === null);
 	}
@@ -159,7 +183,9 @@ export async function registerCompanyActivity(
 			classification: parsed.data.classification,
 			jurisdictionCode: parsed.data.jurisdictionCode,
 		});
-	if (!existingActivities.ok) return existingActivities;
+	if (!existingActivities.ok) {
+		return existingActivities;
+	}
 	const activityRange = validateActivityEffectiveRange({
 		candidate: effectivePeriod,
 		existing: existingActivities.data,
@@ -167,7 +193,9 @@ export async function registerCompanyActivity(
 		activityCode: parsed.data.activityCode,
 		jurisdictionCode: parsed.data.jurisdictionCode,
 	});
-	if (!activityRange.ok) return activityRange;
+	if (!activityRange.ok) {
+		return activityRange;
+	}
 
 	return runDurableCompanyCommand({
 		commandId: "corporate-administration.legal-company.register-activity",

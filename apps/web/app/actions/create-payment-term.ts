@@ -12,9 +12,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type CreatePaymentTermActionData = {
+export interface CreatePaymentTermActionData {
 	paymentTerm: PaymentTerm;
-};
+}
 
 /** `null` = form idle (`useActionState`); otherwise API-002 `ActionResult`. */
 export type CreatePaymentTermActionState =
@@ -46,7 +46,7 @@ export async function createPaymentTermAction(
 		);
 	}
 
-	return runMemberPermissionAction({
+	return await runMemberPermissionAction({
 		path: "createPaymentTermAction",
 		permission: "master_data.manage",
 		safeMessage:

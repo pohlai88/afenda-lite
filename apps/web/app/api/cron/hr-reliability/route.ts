@@ -14,7 +14,9 @@ const responseHeaders = { "Cache-Control": "no-store" };
 function authorized(request: Request): boolean {
 	const secret = env.CRON_SECRET;
 	const header = request.headers.get("authorization");
-	if (secret === undefined || header === null) return false;
+	if (secret === undefined || header === null) {
+		return false;
+	}
 	const expected = createHash("sha256").update(`Bearer ${secret}`).digest();
 	const actual = createHash("sha256").update(header).digest();
 	return timingSafeEqual(expected, actual);
@@ -47,7 +49,7 @@ export async function GET(request: Request): Promise<Response> {
 		batchSize: env.HR_RELIABILITY_BATCH_SIZE,
 		concurrency: env.HR_RELIABILITY_CONCURRENCY,
 		perOrganizationLimit: env.HR_RELIABILITY_PER_ORG_LIMIT,
-		leaseDurationMs: env.HR_RELIABILITY_LEASE_SECONDS * 1_000,
+		leaseDurationMs: env.HR_RELIABILITY_LEASE_SECONDS * 1000,
 		timeBudgetMs: env.HR_RELIABILITY_TIME_BUDGET_MS,
 	});
 	if (!result.ok) {

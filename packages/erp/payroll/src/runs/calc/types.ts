@@ -15,12 +15,12 @@ export type PayrollRuleKind = "earning" | "deduction" | "statutory" | "none";
 
 export type PayrollDeductionTaxTiming = "pre_tax" | "post_tax";
 
-export type PayrollEmployeeSnapshotFacts = {
+export interface PayrollEmployeeSnapshotFacts {
+	baseCompensation: string;
+	currencyCode: string;
 	employeeId: string;
 	employmentStatus: "active" | "notice" | "terminated";
 	payGroupId: string;
-	baseCompensation: string;
-	currencyCode: string;
 	recurringAllowances: Array<{
 		code: string;
 		amount: string;
@@ -29,100 +29,102 @@ export type PayrollEmployeeSnapshotFacts = {
 		code: string;
 		amount: string;
 	}>;
-};
+}
 
-export type PayrollCalcEarningRuleSnapshot = {
-	id: string;
-	code: string;
-	name: string;
-	ruleType: "fixed" | "rate";
+export interface PayrollCalcEarningRuleSnapshot {
 	amount: string | null;
-	rate: string | null;
+	code: string;
 	currencyCode: string;
+	id: string;
+	name: string;
+	rate: string | null;
+	ruleType: "fixed" | "rate";
 	ruleVersion: string;
-};
+}
 
-export type PayrollCalcDeductionRuleSnapshot = {
-	id: string;
-	code: string;
-	name: string;
-	ruleType: "fixed" | "rate";
+export interface PayrollCalcDeductionRuleSnapshot {
 	amount: string | null;
-	rate: string | null;
+	code: string;
 	currencyCode: string;
+	id: string;
+	name: string;
+	rate: string | null;
+	ruleType: "fixed" | "rate";
 	ruleVersion: string;
 	taxTiming: PayrollDeductionTaxTiming;
-};
+}
 
-export type PayrollCalcStatutoryRuleSnapshot = {
-	id: string;
+export interface PayrollCalcStatutoryRuleSnapshot {
 	code: string;
-	name: string;
-	jurisdictionCode: string;
 	configJson: Record<string, unknown>;
+	id: string;
+	jurisdictionCode: string;
+	name: string;
 	ruleVersion: string;
-};
+}
 
-export type PayrollCalcRecurringEarningSnapshot = {
-	id: string;
-	earningRuleId: string;
-	earningRuleCode: string;
-	earningRuleVersion: string;
+export interface PayrollCalcRecurringEarningSnapshot {
 	amount: string;
 	currencyCode: string;
-};
-
-export type PayrollCalcRecurringDeductionSnapshot = {
+	earningRuleCode: string;
+	earningRuleId: string;
+	earningRuleVersion: string;
 	id: string;
-	deductionRuleId: string;
+}
+
+export interface PayrollCalcRecurringDeductionSnapshot {
+	amount: string;
+	currencyCode: string;
 	deductionRuleCode: string;
+	deductionRuleId: string;
 	deductionRuleVersion: string;
-	amount: string;
-	currencyCode: string;
-};
-
-export type PayrollCalcVariableInputSnapshot = {
 	id: string;
-	earningRuleId: string;
-	earningRuleCode: string;
-	earningRuleVersion: string;
+}
+
+export interface PayrollCalcVariableInputSnapshot {
 	amount: string;
 	currencyCode: string;
-	sourceType: string;
+	earningRuleCode: string;
+	earningRuleId: string;
+	earningRuleVersion: string;
+	id: string;
 	sourceId: string;
-};
+	sourceType: string;
+}
 
-export type PayrollEmployeeCalcSnapshot = {
-	organizationId: string;
-	employeeId: string;
+export interface PayrollEmployeeCalcSnapshot {
 	assignmentId: string;
-	payGroupId: string;
-	periodId: string;
-	currencyCode: string;
 	calculationVersion: typeof PAYROLL_CALCULATION_VERSION;
-	roundingPolicy: PayrollRoundingPolicy;
+	currencyCode: string;
+	deductionRules: PayrollCalcDeductionRuleSnapshot[];
+	earningRules: PayrollCalcEarningRuleSnapshot[];
 	eligibility: {
 		eligible: boolean;
 		reason: string | null;
 	};
 	employee: PayrollEmployeeSnapshotFacts;
-	recurringEarnings: PayrollCalcRecurringEarningSnapshot[];
+	employeeId: string;
+	organizationId: string;
+	payGroupId: string;
+	periodId: string;
 	recurringDeductions: PayrollCalcRecurringDeductionSnapshot[];
-	variableInputs: PayrollCalcVariableInputSnapshot[];
-	earningRules: PayrollCalcEarningRuleSnapshot[];
-	deductionRules: PayrollCalcDeductionRuleSnapshot[];
+	recurringEarnings: PayrollCalcRecurringEarningSnapshot[];
+	roundingPolicy: PayrollRoundingPolicy;
 	statutoryRules: PayrollCalcStatutoryRuleSnapshot[];
-};
+	variableInputs: PayrollCalcVariableInputSnapshot[];
+}
 
-export type PayrollCalcException = {
-	severity: PayrollExceptionSeverity;
+export interface PayrollCalcException {
 	exceptionCode: string;
 	message: string;
+	severity: PayrollExceptionSeverity;
 	sourceRef: string | null;
-};
+}
 
-export type PayrollCalcTraceStep = {
+export interface PayrollCalcTraceStep {
+	amount: string | null;
 	id: string;
+	message: string;
 	stage:
 		| "eligibility"
 		| "earnings"
@@ -131,56 +133,54 @@ export type PayrollCalcTraceStep = {
 		| "post_tax_deductions"
 		| "employer_contributions"
 		| "totals";
-	message: string;
-	amount: string | null;
-};
+}
 
-export type PayrollCalcResultLine = {
-	sequence: number;
-	lineKind: PayrollResultLineKind;
-	code: string;
-	ruleCode: string;
-	ruleVersion: string;
-	ruleKind: PayrollRuleKind;
+export interface PayrollCalcResultLine {
 	amount: string;
+	code: string;
 	currencyCode: string;
-	sourceType: string | null;
-	sourceId: string | null;
-	traceRef: string;
-};
-
-export type PayrollCalcStatutoryResult = {
+	lineKind: PayrollResultLineKind;
 	ruleCode: string;
+	ruleKind: PayrollRuleKind;
 	ruleVersion: string;
-	jurisdictionCode: string;
-	calculatorId: string;
+	sequence: number;
+	sourceId: string | null;
+	sourceType: string | null;
+	traceRef: string;
+}
+
+export interface PayrollCalcStatutoryResult {
 	baseAmount: string;
+	calculatorId: string;
+	configSnapshotJson: Record<string, unknown>;
+	currencyCode: string;
 	employeeAmount: string;
 	employerAmount: string;
-	currencyCode: string;
-	configSnapshotJson: Record<string, unknown>;
-};
+	jurisdictionCode: string;
+	ruleCode: string;
+	ruleVersion: string;
+}
 
-export type PayrollEmployeeCalcTotals = {
-	gross: string;
+export interface PayrollEmployeeCalcTotals {
 	employeeDeductions: string;
 	employeeStatutory: string;
 	employerCost: string;
+	gross: string;
 	net: string;
-};
+}
 
-export type PayrollEmployeeCalcOutput = {
-	employeeId: string;
+export interface PayrollEmployeeCalcOutput {
 	assignmentId: string;
-	currencyCode: string;
 	calculationVersion: typeof PAYROLL_CALCULATION_VERSION;
-	roundingPolicy: PayrollRoundingPolicy;
-	totals: PayrollEmployeeCalcTotals;
-	lines: PayrollCalcResultLine[];
-	statutoryResults: PayrollCalcStatutoryResult[];
+	currencyCode: string;
+	employeeId: string;
 	exceptions: PayrollCalcException[];
+	lines: PayrollCalcResultLine[];
+	roundingPolicy: PayrollRoundingPolicy;
+	statutoryResults: PayrollCalcStatutoryResult[];
+	totals: PayrollEmployeeCalcTotals;
 	trace: PayrollCalcTraceStep[];
-};
+}
 
 export type NormalizedPayrollCalcResultLine = PayrollCalcResultLine;
 
@@ -197,7 +197,7 @@ export type NormalizedPayrollEmployeeCalcOutput = Omit<
 	trace: NormalizedPayrollCalcTraceStep[];
 };
 
-export type PayrollAccountingIdentityResult = {
+export interface PayrollAccountingIdentityResult {
 	valid: boolean;
 	violations: string[];
-};
+}

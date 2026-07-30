@@ -1,7 +1,8 @@
 import { AccountingEventSchemas } from "./accounting.events";
 import { CorporateAdministrationEventSchemas } from "./corporate-administration.events";
 import { FulfillmentEventSchemas } from "./fulfillment.events";
-import {
+
+export {
 	type ApprovedPayrollHandoff,
 	approvedPayrollHandoffSchema,
 	DEFAULT_HANDOFF_ROUNDING_MODE,
@@ -35,6 +36,7 @@ import {
 	handoffSourceVersionSchema,
 	handoffTimeFactsSchema,
 } from "./hr-payroll-handoff";
+
 import { HumanResourcesEventSchemas } from "./human-resources.events";
 import { IdentityEventSchemas } from "./identity.events";
 import { InventoryEventSchemas } from "./inventory.events";
@@ -429,41 +431,6 @@ export {
 	salesOrderLinePayloadSchema,
 	salesOrderPayloadSchema,
 } from "./sales.events";
-
-export {
-	type ApprovedPayrollHandoff,
-	approvedPayrollHandoffSchema,
-	DEFAULT_HANDOFF_ROUNDING_MODE,
-	deriveHandoffDecimalScale,
-	HANDOFF_PAYROLL_CONTRACT_VERSION,
-	type HandoffApprovalEvidence,
-	type HandoffAssignment,
-	type HandoffCompensationComponent,
-	type HandoffLeaveFact,
-	type HandoffMoneyAmount,
-	type HandoffOvertimeFact,
-	type HandoffPayFrequency,
-	type HandoffRoundingMode,
-	type HandoffSourceVersion,
-	type HandoffTimeFacts,
-	handoffApprovalEvidenceSchema,
-	handoffAssignmentSchema,
-	handoffCompensationComponentKindSchema,
-	handoffCompensationComponentSchema,
-	handoffDecimalScaleMatchesAmount,
-	handoffIsoDateSchema,
-	handoffLeaveFactSchema,
-	handoffLeaveFactSegmentSchema,
-	handoffLeaveUnitSchema,
-	handoffMoneyAmountSchema,
-	handoffOvertimeFactSchema,
-	handoffOvertimeTypeSchema,
-	handoffPayFrequencySchema,
-	handoffQuantitySchema,
-	handoffRoundingModeSchema,
-	handoffSourceVersionSchema,
-	handoffTimeFactsSchema,
-};
 
 export const AllEventSchemas = {
 	...AccountingEventSchemas,

@@ -1,12 +1,12 @@
 export function humanResourcesCodeFromResult(result: {
 	details?: unknown;
 }): string | undefined {
-	const details = result.details;
+	const { details } = result;
 	if (typeof details !== "object" || details === null) {
-		return undefined;
+		return;
 	}
 	if (!("humanResourcesCode" in details)) {
-		return undefined;
+		return;
 	}
 	const { humanResourcesCode } = details;
 	return typeof humanResourcesCode === "string"

@@ -48,10 +48,10 @@ export type RecordEventPublicationFailedInput = Readonly<{
  * publication outcome when its own recording fails.
  */
 export interface EventPublicationObserver {
-	recordPublished(input: RecordEventPublishedInput): Promise<void>;
-	recordPublicationFailed(
+	recordPublicationFailed: (
 		input: RecordEventPublicationFailedInput,
-	): Promise<void>;
+	) => Promise<void>;
+	recordPublished: (input: RecordEventPublishedInput) => Promise<void>;
 }
 
 export type RecordSearchProjectionFailureInput = Readonly<{
@@ -71,7 +71,7 @@ export type RecordSearchProjectionFailureInput = Readonly<{
  * not this operational failure hook.
  */
 export interface SearchProjectionFailureObserver {
-	recordFailure(input: RecordSearchProjectionFailureInput): Promise<void>;
+	recordFailure: (input: RecordSearchProjectionFailureInput) => Promise<void>;
 }
 
 export type ProductionIntegrationProjectionPorts = Readonly<{

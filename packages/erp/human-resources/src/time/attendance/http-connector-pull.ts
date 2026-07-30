@@ -12,6 +12,8 @@ import type {
 	AttendanceSourceEvent,
 } from "../handoff/ports";
 
+const HR_REGEX_1 = /\/+$/;
+
 const attendanceConnectorHttpResponseSchema = z
 	.object({
 		events: z.array(attendanceImportEventRowSchema).optional(),
@@ -57,7 +59,7 @@ export function createHttpAttendanceConnectorPull(deps: {
 	sourceKey?: string;
 }): AttendanceConnectorPullPort {
 	const fetchImpl = deps.fetchImpl ?? fetch;
-	const normalizedBaseUrl = deps.baseUrl.replace(/\/+$/, "");
+	const normalizedBaseUrl = deps.baseUrl.replace(HR_REGEX_1, "");
 
 	return {
 		async pull(input) {

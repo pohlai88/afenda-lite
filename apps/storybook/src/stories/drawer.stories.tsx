@@ -58,7 +58,7 @@ function PostingBatchDrawer() {
 							final review.
 						</DrawerDescription>
 					</DrawerHeader>
-					<div className="grid gap-2 px-4 text-sm text-foreground-secondary">
+					<div className="grid gap-2 px-4 text-foreground-secondary text-sm">
 						<p>Debit total: MYR 184,250.00</p>
 						<p>Credit total: MYR 184,250.00</p>
 						<p>Organization time zone: MYT</p>
@@ -97,21 +97,21 @@ export const Overview: Story = {
 						<div className="flex flex-wrap items-center gap-2">
 							<Badge variant="outline">Accounts receivable</Badge>
 							<StatusBadge
+								label="Close in progress"
 								size="sm"
 								status="pending"
-								label="Close in progress"
 							/>
 						</div>
 						<div className="grid gap-1">
-							<h1 className="text-2xl font-semibold tracking-tight">
+							<h1 className="font-semibold text-2xl tracking-tight">
 								July posting batch queue
 							</h1>
-							<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+							<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 								Drawer opens a transient edge review for balanced batches.
 								Feature code owns authorization and whether Continue posts,
 								advances review, or opens a subsequent governed step.
 							</p>
-							<p className="max-w-5xl text-xs leading-5 text-foreground-tertiary">
+							<p className="max-w-5xl text-foreground-tertiary text-xs leading-5">
 								Operational standard: title, summary, action hierarchy, focus,
 								keyboard dismissal, and explicit close controls must remain
 								coherent without relying on drag gestures.
@@ -120,25 +120,25 @@ export const Overview: Story = {
 					</div>
 					<dl className="grid grid-cols-2 gap-x-8 gap-y-3 rounded-lg border bg-card p-4">
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Subject
 							</dt>
 							<dd className="text-sm">Posting batch queue</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Area
 							</dt>
 							<dd className="text-sm">Accounts receivable</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Scope
 							</dt>
 							<dd className="text-sm">Transient edge review</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								State
 							</dt>
 							<dd className="text-sm">Close in progress</dd>
@@ -146,15 +146,15 @@ export const Overview: Story = {
 					</dl>
 				</header>
 
-				<section className="grid gap-3" aria-labelledby="drawer-batch-title">
+				<section aria-labelledby="drawer-batch-title" className="grid gap-3">
 					<div className="grid gap-1">
 						<h2
-							className="text-base font-semibold tracking-tight text-foreground"
+							className="font-semibold text-base text-foreground tracking-tight"
 							id="drawer-batch-title"
 						>
 							Batch ready for review
 						</h2>
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							Compact totals and an explicit Cancel path — not gesture-only
 							dismissal.
 						</p>
@@ -166,7 +166,7 @@ export const Overview: Story = {
 								18 balanced journals · debit and credit MYR 184,250.00
 							</CardDescription>
 							<div className="pt-1">
-								<StatusBadge size="sm" status="active" label="Balanced" />
+								<StatusBadge label="Balanced" size="sm" status="active" />
 							</div>
 						</CardHeader>
 						<CardContent>
@@ -175,34 +175,34 @@ export const Overview: Story = {
 					</Card>
 				</section>
 
-				<section className="grid gap-3" aria-labelledby="drawer-sheet-title">
+				<section aria-labelledby="drawer-sheet-title" className="grid gap-3">
 					<div className="grid gap-1">
 						<h2
-							className="text-base font-semibold tracking-tight text-foreground"
+							className="font-semibold text-base text-foreground tracking-tight"
 							id="drawer-sheet-title"
 						>
 							Retained inspector work stays on Sheet
 						</h2>
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							Long invoice inspection and side-task editing belong on Sheet —
 							Drawer stays transient.
 						</p>
 					</div>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						Open INV-1042 in the record Sheet when operators need persistent
 						side context while scrolling the queue.
 					</p>
 				</section>
 
-				<section className="grid gap-3" aria-labelledby="drawer-ack-title">
+				<section aria-labelledby="drawer-ack-title" className="grid gap-3">
 					<div className="grid gap-1">
 						<h2
-							className="text-base font-semibold tracking-tight text-foreground"
+							className="font-semibold text-base text-foreground tracking-tight"
 							id="drawer-ack-title"
 						>
 							Quiet acknowledgement
 						</h2>
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							Short notices may use Drawer when touch-friendly dismissal is
 							appropriate.
 						</p>
@@ -292,7 +292,7 @@ export const StatesAndAccessibility: Story = {
 	render: () => (
 		<div className="grid max-w-5xl gap-4">
 			<PostingBatchDrawer />
-			<p className="text-sm text-foreground-secondary">
+			<p className="text-foreground-secondary text-sm">
 				Open the Drawer, Tab through Continue and Cancel, then dismiss with
 				Cancel or Escape when the surface allows it.
 			</p>
@@ -316,7 +316,7 @@ export const Composition: Story = {
 				<CardHeader>
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="outline">Posting</Badge>
-						<StatusBadge size="sm" status="active" label="Balanced" />
+						<StatusBadge label="Balanced" size="sm" status="active" />
 					</div>
 					<CardTitle>Batch PB-2026-0728</CardTitle>
 					<CardDescription>
@@ -348,49 +348,49 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do not: rely on drag alone">
-				<div className="rounded-md border border-dashed p-4 text-sm text-foreground-tertiary">
+				<div className="rounded-md border border-dashed p-4 text-foreground-tertiary text-sm">
 					Keyboard and pointer operators must reach Cancel or Close without
 					using a drag gesture.
 				</div>
 			</StorySection>
 
 			<StorySection title="Do: keep content compact">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Summaries, totals, and one Continue action fit Drawer. Multi-field
 					invoice editing belongs on Sheet or a page.
 				</p>
 			</StorySection>
 
 			<StorySection title="Do not: replace Sheet for side tasks">
-				<div className="rounded-md border border-dashed p-4 text-sm text-foreground-tertiary">
+				<div className="rounded-md border border-dashed p-4 text-foreground-tertiary text-sm">
 					Retained invoice inspectors and long contextual forms use Sheet — not
 					Drawer as a mechanical twin.
 				</div>
 			</StorySection>
 
 			<StorySection title="Do: use Dialog for compact decisions">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Approve-or-keep-draft choices that interrupt the page belong in
 					Dialog, not an edge Drawer.
 				</p>
 			</StorySection>
 
 			<StorySection title="Do not: use Drawer as app navigation">
-				<div className="rounded-md border border-dashed p-4 text-sm text-foreground-tertiary">
+				<div className="rounded-md border border-dashed p-4 text-foreground-tertiary text-sm">
 					Module menus and primary navigation stay in the application shell —
 					never inside a posting Drawer.
 				</div>
 			</StorySection>
 
 			<StorySection title="Do: preserve the originating context">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					The trigger and Drawer title should name the same posting batch,
 					notice, or review subject.
 				</p>
 			</StorySection>
 
 			<StorySection title="Do not: turn Drawer into a hidden workflow">
-				<div className="rounded-md border border-dashed p-4 text-sm text-foreground-tertiary">
+				<div className="rounded-md border border-dashed p-4 text-foreground-tertiary text-sm">
 					A sequence of approvals, attachments, policy edits, and posting steps
 					belongs on a page workflow rather than stacked transient Drawers.
 				</div>

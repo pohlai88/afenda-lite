@@ -1,6 +1,6 @@
 "use client";
 
-import type { ComponentType, ReactNode } from "react";
+import { type ComponentType, type ReactNode, useCallback } from "react";
 import {
 	Sidebar,
 	SidebarContent,
@@ -106,9 +106,9 @@ function renderItem(
 		return (
 			<SidebarMenuItem key={item.id}>
 				<button
-					type="button"
-					data-state={active ? "open" : "closed"}
 					className="w-full rounded-md px-2 py-1.5 text-left text-sm"
+					data-state={active ? "open" : "closed"}
+					type="button"
 				>
 					{item.label}
 				</button>
@@ -216,15 +216,19 @@ function AppShellInner({
 	const unreadCount =
 		notifications?.notifications.filter((notification) => !notification.read)
 			.length ?? 0;
+	const handleSidebarOpenChange = useCallback(
+		(sidebarOpen: boolean) => setSettings({ ...settings, sidebarOpen }),
+		[setSettings, settings],
+	);
 	return (
 		<SidebarProvider
 			defaultOpen={resolvedDefaultSidebarOpen ?? settings.sidebarOpen}
+			onOpenChange={handleSidebarOpenChange}
 			open={settings.sidebarOpen}
-			onOpenChange={(sidebarOpen) => setSettings({ ...settings, sidebarOpen })}
 		>
 			<Sidebar
-				variant={settings.sidebarVariant}
 				collapsible={settings.sidebarCollapsible}
+				variant={settings.sidebarVariant}
 			>
 				<SidebarHeader>{brand ?? themeConfig?.brand?.name}</SidebarHeader>
 				<SidebarContent>
@@ -263,12 +267,12 @@ function AppShellInner({
 					unreadCount={unreadCount}
 				/>
 				<main
-					id={mainContentId}
-					data-slot="app-shell-content"
 					className={cn(
 						"bg-background",
 						settings.layout === "compact" ? "p-4" : "p-6",
 					)}
+					data-slot="app-shell-content"
+					id={mainContentId}
 				>
 					{children}
 				</main>

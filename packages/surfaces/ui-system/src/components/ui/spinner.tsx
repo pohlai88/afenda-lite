@@ -1,7 +1,7 @@
 "use client";
 
 import { cva, type VariantProps } from "class-variance-authority";
-import * as React from "react";
+import type { HTMLAttributes, RefObject } from "react";
 import { cn } from "../../lib/utils";
 
 const spinnerVariants = cva(
@@ -28,26 +28,29 @@ const spinnerVariants = cva(
 );
 
 interface SpinnerProps
-	extends React.HTMLAttributes<HTMLDivElement>,
+	extends HTMLAttributes<HTMLDivElement>,
 		VariantProps<typeof spinnerVariants> {
 	label?: string;
 }
 
-const Spinner = React.forwardRef<HTMLDivElement, SpinnerProps>(
-	({ className, size, variant, label = "Loading", ...props }, ref) => {
-		return (
-			<div
-				ref={ref}
-				role="status"
-				aria-label={label}
-				aria-live="polite"
-				className={cn(spinnerVariants({ size, variant }), className)}
-				{...props}
-			>
-				<span className="sr-only">{label}</span>
-			</div>
-		);
-	},
+const Spinner = ({
+	className,
+	size,
+	variant,
+	label = "Loading",
+	ref,
+	...props
+}: SpinnerProps & { ref?: RefObject<HTMLDivElement | null> }) => (
+	<div
+		aria-label={label}
+		aria-live="polite"
+		className={cn(spinnerVariants({ size, variant }), className)}
+		ref={ref}
+		role="status"
+		{...props}
+	>
+		<span className="sr-only">{label}</span>
+	</div>
 );
 Spinner.displayName = "Spinner";
 

@@ -59,31 +59,26 @@ export function normalizePartyContactValue(
 		);
 	}
 
-	let normalized: Result<{ value: string; normalizedValue: string }>;
 	switch (contactType) {
 		case "email":
-			normalized = normalizeEmail(value);
-			break;
+			return normalizeEmail(value);
 		case "telephone":
 		case "mobile":
 		case "fax":
-			normalized = normalizePhone(value);
-			break;
+			return normalizePhone(value);
 		case "website": {
 			const website = normalizeWebsite(value);
-			if (!website.ok) return website;
-			normalized = ok({ value, normalizedValue: website.data });
-			break;
+			if (!website.ok) {
+				return website;
+			}
+			return ok({ value, normalizedValue: website.data });
 		}
 		case "messaging":
 		case "other":
-			normalized = ok({ value, normalizedValue: value });
-			break;
+			return ok({ value, normalizedValue: value });
 		default:
 			return invalidContactValue("Party contact type is invalid");
 	}
-	if (!normalized.ok) return normalized;
-	return ok(normalized.data);
 }
 
 /** Trusted notification routing requires explicit verification and usability. */

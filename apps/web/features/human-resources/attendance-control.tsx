@@ -21,7 +21,7 @@ export function AttendanceControl({ timeZone }: { timeZone: HrTimeZone }) {
 
 	return (
 		<form action={action} aria-busy={pending} className="space-y-4">
-			<input type="hidden" name="timeZone" value={timeZone} />
+			<input name="timeZone" type="hidden" value={timeZone} />
 			{state?.ok ? (
 				<Alert role="status">
 					<AlertTitle>Attendance recorded</AlertTitle>
@@ -39,12 +39,12 @@ export function AttendanceControl({ timeZone }: { timeZone: HrTimeZone }) {
 					["clock-out", "Clock out"],
 				].map(([value, label]) => (
 					<Button
+						disabled={pending}
 						key={value}
-						type="submit"
 						name="eventType"
+						type="submit"
 						value={value}
 						variant={value === "clock-in" ? "default" : "outline"}
-						disabled={pending}
 					>
 						{pending ? <Spinner /> : null}
 						{label}

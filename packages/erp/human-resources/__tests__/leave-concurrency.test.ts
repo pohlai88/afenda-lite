@@ -720,7 +720,7 @@ describe.skipIf(!runDrizzleParity)("Leave Concurrency Tests", () => {
 
 			expect(successes, JSON.stringify(outcomes)).toHaveLength(1);
 			expect(failures).toHaveLength(1);
-			const failure = failures[0];
+			const [failure] = failures;
 			expect(failure).toBeDefined();
 			expect(humanResourcesCodeFromResult(failure)).toBe(
 				HUMAN_RESOURCES_ERROR_EFFECTIVE_RANGE_OVERLAP,
@@ -762,7 +762,9 @@ describe.skipIf(!runDrizzleParity)("Leave Concurrency Tests", () => {
 				harness.meta,
 			);
 			expect(submitted1.ok, resultFailureMessage(submitted1)).toBe(true);
-			if (!submitted1.ok) return;
+			if (!submitted1.ok) {
+				return;
+			}
 
 			const submitted2 = await drizzleLeave.submitLeaveRequest(
 				{
@@ -775,7 +777,9 @@ describe.skipIf(!runDrizzleParity)("Leave Concurrency Tests", () => {
 				harness.meta,
 			);
 			expect(submitted2.ok).toBe(false);
-			if (submitted2.ok) return;
+			if (submitted2.ok) {
+				return;
+			}
 
 			const [approve1, approve2Attempt] = await Promise.all([
 				drizzleLeave.approveLeaveRequest(

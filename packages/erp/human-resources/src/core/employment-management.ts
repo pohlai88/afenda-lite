@@ -27,7 +27,7 @@ function amendWithStatus(
 }
 
 /** Hire — alias for `createEmployment` (first tenure or explicit hire). */
-export async function hireEmployment(
+export function hireEmployment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Employment>> {
@@ -35,7 +35,7 @@ export async function hireEmployment(
 }
 
 /** Rehire — alias for `hireEmployment` after prior tenure ended. */
-export async function rehireEmployment(
+export function rehireEmployment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Employment>> {
@@ -43,7 +43,7 @@ export async function rehireEmployment(
 }
 
 /** Suspend — `active → notice` via `amendEmployment`. */
-export async function suspendEmployment(
+export function suspendEmployment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Employment>> {
@@ -51,7 +51,7 @@ export async function suspendEmployment(
 }
 
 /** Reactivate — `notice → active` via `amendEmployment`. */
-export async function reactivateEmployment(
+export function reactivateEmployment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Employment>> {
@@ -59,7 +59,7 @@ export async function reactivateEmployment(
 }
 
 /** Terminate — `active|notice → terminated` via `amendEmployment`. */
-export async function terminateEmployment(
+export function terminateEmployment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Employment>> {

@@ -40,7 +40,9 @@ export async function createItemUom(
 		return parsed;
 	}
 	const factor = normalizeItemUomConversionFactor(parsed.data.conversionFactor);
-	if (!factor.ok) return factor;
+	if (!factor.ok) {
+		return factor;
+	}
 	const packagingApprovalReference =
 		parsed.data.packagingApprovalReference ?? null;
 	const { store, roots, ports, authorization } = resolveItemExtensionDeps(
@@ -60,20 +62,26 @@ export async function createItemUom(
 		parsed.data.organizationId,
 		parsed.data.itemId,
 	);
-	if (!parent.ok) return parent;
+	if (!parent.ok) {
+		return parent;
+	}
 	const context = await store.resolveItemUomCompatibilityContext({
 		organizationId: parsed.data.organizationId,
 		itemId: parsed.data.itemId,
 		alternateUomId: parsed.data.alternateUomId,
 	});
-	if (!context.ok) return context;
+	if (!context.ok) {
+		return context;
+	}
 	const compatible = assertItemUomCompatibility({
 		baseDimensionCode: context.data.baseDimensionCode,
 		alternateDimensionCode: context.data.alternateDimensionCode,
 		compatibilityMode: parsed.data.compatibilityMode,
 		packagingApprovalReference,
 	});
-	if (!compatible.ok) return compatible;
+	if (!compatible.ok) {
+		return compatible;
+	}
 	return store.createItemUom(
 		{
 			organizationId: parsed.data.organizationId,
@@ -126,13 +134,13 @@ export async function listItemUoms(
 	});
 }
 
-type DefaultItemUomDescriptor<Key extends keyof ItemExtensionStore> = {
+interface DefaultItemUomDescriptor<Key extends keyof ItemExtensionStore> {
+	capability: Key;
 	query:
 		| typeof MASTER_QUERY_ITEM_UOM_GET_DEFAULT_SALES
 		| typeof MASTER_QUERY_ITEM_UOM_GET_DEFAULT_PURCHASE;
 	usage: "sales" | "purchase";
-	capability: Key;
-};
+}
 
 async function getDefaultItemUom(
 	input: unknown,
@@ -146,7 +154,9 @@ async function getDefaultItemUom(
 		input,
 		`Invalid default item ${descriptor.usage} UoM input`,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const { store, authorization } = resolveItemExtensionDeps(options, [
 		descriptor.capability,
 	]);
@@ -155,7 +165,9 @@ async function getDefaultItemUom(
 		actorUserId: parsed.data.actorUserId,
 		query: descriptor.query,
 	});
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return store[descriptor.capability]({
 		organizationId: parsed.data.organizationId,
 		itemId: parsed.data.itemId,

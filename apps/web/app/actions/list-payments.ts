@@ -29,18 +29,19 @@ export async function listPaymentsAction(input?: {
 	status?: Payment["status"];
 	direction?: Payment["direction"];
 }): Promise<ActionResult<{ payments: Payment[] }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listPaymentsAction",
 		permission: "payments.payment.read",
 		safeMessage: "Could not list payments. Try again or contact an admin.",
 		execute: async (session) => {
 			const parsed = parseSchema(schema, input);
-			if (!parsed.success)
+			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
 					"Enter valid payment filters.",
 					parsed.details,
 				);
+			}
 			const mapped = mapPackageResult(
 				await listPayments(
 					{
@@ -51,7 +52,9 @@ export async function listPaymentsAction(input?: {
 					createPaymentsCommandOptions(),
 				),
 			);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { payments: mapped.data } };
 		},
 	});

@@ -1,3 +1,5 @@
+// biome-ignore-all lint/style/useDefaultSwitchClause: PostgreSQL error code handling is intentionally selective and falls through to the original error.
+// biome-ignore-all lint/suspicious/noEmptyBlockStatements: Error metadata reflection failures intentionally fall through.
 import {
 	fromPostgresUnknown,
 	postgresSqlState,
@@ -117,7 +119,7 @@ export function translateCorporateAdministrationInfrastructureError(
 				),
 			);
 		case "unexpected_infrastructure_error":
-			return undefined;
+			return;
 	}
 }
 
@@ -166,29 +168,32 @@ function classifyInfrastructureFailure(
 		if (UNEXPECTED_DATABASE_SQLSTATES.has(sqlState)) {
 			return "unexpected_infrastructure_error";
 		}
-		return undefined;
+		return;
 	}
 
 	const driverCode = readDriverCode(error);
 	if (driverCode !== undefined && DATABASE_UNAVAILABLE_CODES.has(driverCode)) {
 		return "database_unavailable";
 	}
-	return undefined;
 }
 
 function readDriverCode(value: unknown, depth = 0): string | undefined {
-	if (depth > 3 || value === null || value === undefined) return undefined;
-	if (typeof value !== "object") return undefined;
+	if (depth > 3 || value === null || value === undefined) {
+		return;
+	}
+	if (typeof value !== "object") {
+		return;
+	}
 	const record = value as Record<string, unknown>;
 	const candidate = readProperty(record, "code");
-	if (typeof candidate === "string") return candidate;
+	if (typeof candidate === "string") {
+		return candidate;
+	}
 	return readDriverCode(readProperty(record, "cause"), depth + 1);
 }
 
 function readProperty(value: Record<string, unknown>, key: string): unknown {
 	try {
 		return value[key];
-	} catch {
-		return undefined;
-	}
+	} catch {}
 }

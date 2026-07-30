@@ -54,39 +54,39 @@ export function AfendaSignInForm() {
 
 	return (
 		<form action={formAction} className="flex flex-col gap-(--field-gap)">
-			<input type="hidden" name={POST_LOGIN_CALLBACK_PARAM} value={callback} />
+			<input name={POST_LOGIN_CALLBACK_PARAM} type="hidden" value={callback} />
 			<div className="flex flex-col gap-1">
-				<h1 className="text-2xl font-semibold tracking-tight">Sign in</h1>
-				<p className="text-sm text-foreground-secondary">
+				<h1 className="font-semibold text-2xl tracking-tight">Sign in</h1>
+				<p className="text-foreground-secondary text-sm">
 					Enter your Afenda email and password to continue.
 				</p>
 			</div>
 			<FormField
+				error={actionFieldMessage(state, "email")}
+				fieldId="auth-sign-in-email"
 				label="Email"
 				required
-				fieldId="auth-sign-in-email"
-				error={actionFieldMessage(state, "email")}
 			>
 				<Input
-					name="email"
-					type="email"
 					autoComplete="email"
-					required
+					name="email"
 					placeholder="you@example.com"
+					required
+					type="email"
 				/>
 			</FormField>
 			<FormField
+				error={actionFieldMessage(state, "password")}
+				fieldId="auth-sign-in-password"
 				label="Password"
 				required
-				fieldId="auth-sign-in-password"
-				error={actionFieldMessage(state, "password")}
 			>
 				<Input
-					name="password"
-					type="password"
 					autoComplete="current-password"
-					required
+					name="password"
 					placeholder="••••••••"
+					required
+					type="password"
 				/>
 			</FormField>
 			{state && !state.ok ? (
@@ -100,13 +100,13 @@ export function AfendaSignInForm() {
 					)}
 				</div>
 			) : null}
-			<Button type="submit" className="w-full" disabled={pending}>
+			<Button className="w-full" disabled={pending} type="submit">
 				{pending ? "Signing in…" : "Sign in"}
 			</Button>
 			<div className="flex flex-col gap-2 text-center text-sm">
 				<Link
-					href={AUTH_FORGOT_PASSWORD_PATH}
 					className="text-foreground hover:underline"
+					href={AUTH_FORGOT_PASSWORD_PATH}
 				>
 					Forgot password?
 				</Link>

@@ -60,7 +60,7 @@ export function createScopedPolicy(input: {
 					fieldClasses,
 				});
 			}
-			const resource = request.resource;
+			const { resource } = request;
 			if (resource === undefined) {
 				return denyAuthorization(
 					"resource_context_required",
@@ -81,7 +81,7 @@ export function createScopedPolicy(input: {
 					options,
 					input.privilegedPermissions,
 				));
-			if (!inSubjectScope && !privilegedBypass) {
+			if (!(inSubjectScope || privilegedBypass)) {
 				return denyAuthorization(
 					"subject_scope_denied",
 					`Actor is outside the allowed subject scope for ${input.id}`,

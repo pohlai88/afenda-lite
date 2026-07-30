@@ -65,74 +65,74 @@ export function AddGoodsReceiptLineForm({ canManage }: { canManage: boolean }) {
 				<FormError>{state.message}</FormError>
 			) : null}
 			<FormField
+				error={receiptError}
+				fieldId="receipt-line-receipt"
 				label="Receipt id"
 				required
-				fieldId="receipt-line-receipt"
-				error={receiptError}
 			>
 				<Input
+					autoComplete="off"
+					disabled={pending}
 					id="receipt-line-receipt"
 					name="receiptId"
 					required
-					autoComplete="off"
-					disabled={pending}
 				/>
 			</FormField>
 			<FormField
+				error={itemError}
+				fieldId="receipt-line-item"
 				label="Item id"
 				required
-				fieldId="receipt-line-item"
-				error={itemError}
 			>
 				<Input
+					autoComplete="off"
+					disabled={pending}
 					id="receipt-line-item"
 					name="itemId"
 					required
-					autoComplete="off"
-					disabled={pending}
 				/>
 			</FormField>
 			<FormField
-				label="Ordered quantity (optional)"
 				fieldId="receipt-line-ordered"
+				label="Ordered quantity (optional)"
 			>
 				<Input
-					id="receipt-line-ordered"
-					name="quantityOrdered"
-					type="number"
-					step="any"
-					min="0.000001"
 					disabled={pending}
+					id="receipt-line-ordered"
+					min="0.000001"
+					name="quantityOrdered"
+					step="any"
+					type="number"
 				/>
 			</FormField>
 			<FormField
+				error={receivedError}
+				fieldId="receipt-line-received"
 				label="Received quantity"
 				required
-				fieldId="receipt-line-received"
-				error={receivedError}
 			>
 				<Input
-					id="receipt-line-received"
-					name="quantityReceived"
-					type="number"
-					step="any"
-					min="0.000001"
-					required
 					disabled={pending}
+					id="receipt-line-received"
+					min="0.000001"
+					name="quantityReceived"
+					required
+					step="any"
+					type="number"
 				/>
 			</FormField>
 			<FormField
-				label="Purchase order line id (optional)"
 				fieldId="receipt-line-purchase-order"
+				label="Purchase order line id (optional)"
 			>
 				<Input
-					id="receipt-line-purchase-order"
-					name="purchaseOrderLineId"
 					autoComplete="off"
 					disabled={pending}
+					id="receipt-line-purchase-order"
+					name="purchaseOrderLineId"
 				/>
 			</FormField>
-			<Button type="submit" disabled={pending}>
+			<Button disabled={pending} type="submit">
 				{pending ? <Spinner /> : null}
 				Add line
 			</Button>

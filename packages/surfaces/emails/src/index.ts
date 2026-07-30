@@ -21,14 +21,14 @@ export {
 } from "./password-reset";
 
 /** Render app-owned onboarding-invite HTML for composition outside Neon Auth delivery. */
-export async function renderOnboardingInviteEmail(
+export function renderOnboardingInviteEmail(
 	props: OnboardingInviteEmailProps,
 ): Promise<string> {
 	return render(createElement(OnboardingInviteEmail, props));
 }
 
 /** Render app-owned password-reset HTML for composition outside Neon Auth delivery. */
-export async function renderPasswordResetEmail(
+export function renderPasswordResetEmail(
 	props: PasswordResetEmailProps,
 ): Promise<string> {
 	return render(createElement(PasswordResetEmail, props));

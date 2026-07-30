@@ -19,17 +19,17 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type SearchMasterDataHit = {
+export interface SearchMasterDataHit {
+	description: string | null;
 	documentId: string;
 	entity: string;
-	title: string;
-	description: string | null;
 	score: number;
-};
+	title: string;
+}
 
-export type SearchMasterDataActionData = {
+export interface SearchMasterDataActionData {
 	hits: SearchMasterDataHit[];
-};
+}
 
 const searchMasterDataQuerySchema = z.object({
 	query: z.string().trim().min(1).max(500),

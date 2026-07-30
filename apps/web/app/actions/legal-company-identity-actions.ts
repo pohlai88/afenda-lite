@@ -299,7 +299,7 @@ const endCompanyActivityActionSchema = z
 export async function addCompanyNameAction(
 	formData: FormData,
 ): Promise<ActionResult<{ companyNameId: string; version: number }>> {
-	return runMemberPermissionAction({
+	return await runMemberPermissionAction({
 		path: "addCompanyNameAction",
 		permission: "corporate_administration.company.manage",
 		safeMessage: "Could not add company name.",
@@ -331,7 +331,9 @@ export async function addCompanyNameAction(
 				createCorporateAdministrationCompanyDependencies(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 
 			revalidateLegalCompanyIdentityRoutes(
 				parsed.data.organizationSlug,
@@ -348,7 +350,7 @@ export async function addCompanyNameAction(
 export async function supersedeCompanyNameAction(
 	formData: FormData,
 ): Promise<ActionResult<{ companyNameId: string; version: number }>> {
-	return runMemberPermissionAction({
+	return await runMemberPermissionAction({
 		path: "supersedeCompanyNameAction",
 		permission: "corporate_administration.company.manage",
 		safeMessage: "Could not supersede company name.",
@@ -380,7 +382,9 @@ export async function supersedeCompanyNameAction(
 				createCorporateAdministrationCompanyDependencies(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 
 			revalidateLegalCompanyIdentityRoutes(
 				parsed.data.organizationSlug,
@@ -397,7 +401,7 @@ export async function supersedeCompanyNameAction(
 export async function retireCompanyNameAction(
 	formData: FormData,
 ): Promise<ActionResult<{ companyNameId: string; version: number }>> {
-	return runMemberPermissionAction({
+	return await runMemberPermissionAction({
 		path: "retireCompanyNameAction",
 		permission: "corporate_administration.company.manage",
 		safeMessage: "Could not retire company name.",
@@ -423,7 +427,9 @@ export async function retireCompanyNameAction(
 				createCorporateAdministrationCompanyDependencies(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 
 			revalidateLegalCompanyIdentityRoutes(
 				parsed.data.organizationSlug,
@@ -440,7 +446,7 @@ export async function retireCompanyNameAction(
 export async function setCompanyLegalFormAction(
 	formData: FormData,
 ): Promise<ActionResult<{ legalFormHistoryId: string; version: number }>> {
-	return runMemberPermissionAction({
+	return await runMemberPermissionAction({
 		path: "setCompanyLegalFormAction",
 		permission: "corporate_administration.company.manage",
 		safeMessage: "Could not set company legal form.",
@@ -472,7 +478,9 @@ export async function setCompanyLegalFormAction(
 				createCorporateAdministrationCompanyDependencies(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 
 			revalidateLegalCompanyIdentityRoutes(
 				parsed.data.organizationSlug,
@@ -492,7 +500,7 @@ export async function setCompanyLegalFormAction(
 export async function supersedeCompanyLegalFormAction(
 	formData: FormData,
 ): Promise<ActionResult<{ legalFormHistoryId: string; version: number }>> {
-	return runMemberPermissionAction({
+	return await runMemberPermissionAction({
 		path: "supersedeCompanyLegalFormAction",
 		permission: "corporate_administration.company.manage",
 		safeMessage: "Could not supersede company legal form.",
@@ -524,7 +532,9 @@ export async function supersedeCompanyLegalFormAction(
 				createCorporateAdministrationCompanyDependencies(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 
 			revalidateLegalCompanyIdentityRoutes(
 				parsed.data.organizationSlug,
@@ -544,7 +554,7 @@ export async function supersedeCompanyLegalFormAction(
 export async function registerCompanyIdentifierAction(
 	formData: FormData,
 ): Promise<ActionResult<{ companyIdentifierId: string; version: number }>> {
-	return runMemberPermissionAction({
+	return await runMemberPermissionAction({
 		path: "registerCompanyIdentifierAction",
 		permission: "corporate_administration.company.manage",
 		safeMessage: "Could not register company identifier.",
@@ -577,7 +587,9 @@ export async function registerCompanyIdentifierAction(
 				createCorporateAdministrationCompanyDependencies(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 
 			revalidateLegalCompanyIdentityRoutes(
 				parsed.data.organizationSlug,
@@ -597,7 +609,7 @@ export async function registerCompanyIdentifierAction(
 export async function supersedeCompanyIdentifierAction(
 	formData: FormData,
 ): Promise<ActionResult<{ companyIdentifierId: string; version: number }>> {
-	return runMemberPermissionAction({
+	return await runMemberPermissionAction({
 		path: "supersedeCompanyIdentifierAction",
 		permission: "corporate_administration.company.manage",
 		safeMessage: "Could not supersede company identifier.",
@@ -630,7 +642,9 @@ export async function supersedeCompanyIdentifierAction(
 				createCorporateAdministrationCompanyDependencies(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 
 			revalidateLegalCompanyIdentityRoutes(
 				parsed.data.organizationSlug,
@@ -650,7 +664,7 @@ export async function supersedeCompanyIdentifierAction(
 export async function retireCompanyIdentifierAction(
 	formData: FormData,
 ): Promise<ActionResult<{ companyIdentifierId: string; version: number }>> {
-	return runMemberPermissionAction({
+	return await runMemberPermissionAction({
 		path: "retireCompanyIdentifierAction",
 		permission: "corporate_administration.company.manage",
 		safeMessage: "Could not retire company identifier.",
@@ -675,7 +689,9 @@ export async function retireCompanyIdentifierAction(
 				createCorporateAdministrationCompanyDependencies(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 
 			revalidateLegalCompanyIdentityRoutes(
 				parsed.data.organizationSlug,
@@ -695,7 +711,7 @@ export async function retireCompanyIdentifierAction(
 export async function setCompanyFinancialYearAction(
 	formData: FormData,
 ): Promise<ActionResult<{ companyFinancialYearId: string; version: number }>> {
-	return runMemberPermissionAction({
+	return await runMemberPermissionAction({
 		path: "setCompanyFinancialYearAction",
 		permission: "corporate_administration.company.manage",
 		safeMessage: "Could not set company financial year.",
@@ -727,7 +743,9 @@ export async function setCompanyFinancialYearAction(
 				createCorporateAdministrationCompanyDependencies(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 
 			revalidateLegalCompanyIdentityRoutes(
 				parsed.data.organizationSlug,
@@ -747,7 +765,7 @@ export async function setCompanyFinancialYearAction(
 export async function registerCompanyActivityAction(
 	formData: FormData,
 ): Promise<ActionResult<{ companyActivityId: string; version: number }>> {
-	return runMemberPermissionAction({
+	return await runMemberPermissionAction({
 		path: "registerCompanyActivityAction",
 		permission: "corporate_administration.company.manage",
 		safeMessage: "Could not register company activity.",
@@ -777,7 +795,9 @@ export async function registerCompanyActivityAction(
 				createCorporateAdministrationCompanyDependencies(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 
 			revalidateLegalCompanyIdentityRoutes(
 				parsed.data.organizationSlug,
@@ -797,7 +817,7 @@ export async function registerCompanyActivityAction(
 export async function endCompanyActivityAction(
 	formData: FormData,
 ): Promise<ActionResult<{ companyActivityId: string; version: number }>> {
-	return runMemberPermissionAction({
+	return await runMemberPermissionAction({
 		path: "endCompanyActivityAction",
 		permission: "corporate_administration.company.manage",
 		safeMessage: "Could not end company activity.",
@@ -822,7 +842,9 @@ export async function endCompanyActivityAction(
 				createCorporateAdministrationCompanyDependencies(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 
 			revalidateLegalCompanyIdentityRoutes(
 				parsed.data.organizationSlug,
@@ -846,7 +868,7 @@ export async function addCompanyNameFormAction(
 	}> | null,
 	formData: FormData,
 ): Promise<ActionResult<{ companyNameId: string; version: number }> | null> {
-	return addCompanyNameAction(formData);
+	return await addCompanyNameAction(formData);
 }
 
 export async function supersedeCompanyNameFormAction(
@@ -856,7 +878,7 @@ export async function supersedeCompanyNameFormAction(
 	}> | null,
 	formData: FormData,
 ): Promise<ActionResult<{ companyNameId: string; version: number }> | null> {
-	return supersedeCompanyNameAction(formData);
+	return await supersedeCompanyNameAction(formData);
 }
 
 export async function retireCompanyNameFormAction(
@@ -866,7 +888,7 @@ export async function retireCompanyNameFormAction(
 	}> | null,
 	formData: FormData,
 ): Promise<ActionResult<{ companyNameId: string; version: number }> | null> {
-	return retireCompanyNameAction(formData);
+	return await retireCompanyNameAction(formData);
 }
 
 export async function setCompanyLegalFormFormAction(
@@ -879,7 +901,7 @@ export async function setCompanyLegalFormFormAction(
 	legalFormHistoryId: string;
 	version: number;
 }> | null> {
-	return setCompanyLegalFormAction(formData);
+	return await setCompanyLegalFormAction(formData);
 }
 
 export async function supersedeCompanyLegalFormFormAction(
@@ -892,7 +914,7 @@ export async function supersedeCompanyLegalFormFormAction(
 	legalFormHistoryId: string;
 	version: number;
 }> | null> {
-	return supersedeCompanyLegalFormAction(formData);
+	return await supersedeCompanyLegalFormAction(formData);
 }
 
 export async function registerCompanyIdentifierFormAction(
@@ -905,7 +927,7 @@ export async function registerCompanyIdentifierFormAction(
 	companyIdentifierId: string;
 	version: number;
 }> | null> {
-	return registerCompanyIdentifierAction(formData);
+	return await registerCompanyIdentifierAction(formData);
 }
 
 export async function supersedeCompanyIdentifierFormAction(
@@ -918,7 +940,7 @@ export async function supersedeCompanyIdentifierFormAction(
 	companyIdentifierId: string;
 	version: number;
 }> | null> {
-	return supersedeCompanyIdentifierAction(formData);
+	return await supersedeCompanyIdentifierAction(formData);
 }
 
 export async function retireCompanyIdentifierFormAction(
@@ -931,7 +953,7 @@ export async function retireCompanyIdentifierFormAction(
 	companyIdentifierId: string;
 	version: number;
 }> | null> {
-	return retireCompanyIdentifierAction(formData);
+	return await retireCompanyIdentifierAction(formData);
 }
 
 export async function setCompanyFinancialYearFormAction(
@@ -944,7 +966,7 @@ export async function setCompanyFinancialYearFormAction(
 	companyFinancialYearId: string;
 	version: number;
 }> | null> {
-	return setCompanyFinancialYearAction(formData);
+	return await setCompanyFinancialYearAction(formData);
 }
 
 export async function registerCompanyActivityFormAction(
@@ -957,7 +979,7 @@ export async function registerCompanyActivityFormAction(
 	companyActivityId: string;
 	version: number;
 }> | null> {
-	return registerCompanyActivityAction(formData);
+	return await registerCompanyActivityAction(formData);
 }
 
 export async function endCompanyActivityFormAction(
@@ -970,7 +992,7 @@ export async function endCompanyActivityFormAction(
 	companyActivityId: string;
 	version: number;
 }> | null> {
-	return endCompanyActivityAction(formData);
+	return await endCompanyActivityAction(formData);
 }
 
 function createCommandOptions(
@@ -1013,7 +1035,9 @@ function revalidateLegalCompanyIdentityRoutes(
 function formDataToStrictObject(formData: FormData): Record<string, unknown> {
 	const output: Record<string, unknown> = {};
 	for (const [key, value] of formData.entries()) {
-		if (key.startsWith("$ACTION_")) continue;
+		if (key.startsWith("$ACTION_")) {
+			continue;
+		}
 		setFormValue(output, key, value);
 	}
 	return output;
@@ -1026,7 +1050,9 @@ function setFormValue(
 ): void {
 	const scalar = typeof value === "string" ? value : value.name;
 	const [head, ...tail] = key.split(".");
-	if (head === undefined || head.length === 0) return;
+	if (head === undefined || head.length === 0) {
+		return;
+	}
 	if (tail.length === 0) {
 		target[head] = scalar;
 		return;
@@ -1043,7 +1069,9 @@ function setFormValue(
 }
 
 function emptyStringToUndefined(value: unknown): unknown {
-	if (typeof value !== "string") return value;
+	if (typeof value !== "string") {
+		return value;
+	}
 	const trimmed = value.trim();
 	return trimmed.length === 0 ? undefined : trimmed;
 }

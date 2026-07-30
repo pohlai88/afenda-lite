@@ -33,9 +33,11 @@ function parseIsoDateParts(value: string): {
 	const month = Number(match[2]);
 	const day = Number(match[3]);
 	if (
-		!Number.isInteger(year) ||
-		!Number.isInteger(month) ||
-		!Number.isInteger(day)
+		!(
+			Number.isInteger(year) &&
+			Number.isInteger(month) &&
+			Number.isInteger(day)
+		)
 	) {
 		return null;
 	}
@@ -179,8 +181,9 @@ export function createProductionWorkCalendar(deps: {
 			const segments: WorkCalendarSegment[] = [];
 			let cursor = startParts;
 			const endKey = formatIsoDateFromParts(endParts);
+			let reachedEnd = false;
 
-			while (true) {
+			while (!reachedEnd) {
 				const date = formatIsoDateFromParts(cursor);
 				const working =
 					input.unit === "hours"
@@ -202,10 +205,10 @@ export function createProductionWorkCalendar(deps: {
 					});
 				}
 
-				if (date === endKey) {
-					break;
+				reachedEnd = date === endKey;
+				if (!reachedEnd) {
+					cursor = addCalendarDays(cursor, 1);
 				}
-				cursor = addCalendarDays(cursor, 1);
 			}
 
 			return ok(segments);

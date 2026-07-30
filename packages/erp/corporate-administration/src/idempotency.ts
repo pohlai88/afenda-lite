@@ -72,13 +72,13 @@ export type CorporateAdministrationIdempotencyReleaseInput = Readonly<{
  * no longer complete or release, and no expiry or takeover path exists.
  */
 export type CorporateAdministrationIdempotencyPort = Readonly<{
-	begin(
+	begin: (
 		input: CorporateAdministrationIdempotencyBeginInput,
-	): Promise<Result<CorporateAdministrationIdempotencyBeginOutcome>>;
-	complete(
+	) => Promise<Result<CorporateAdministrationIdempotencyBeginOutcome>>;
+	complete: (
 		input: CorporateAdministrationIdempotencyCompletionInput,
-	): Promise<Result<void>>;
-	release(
+	) => Promise<Result<void>>;
+	release: (
 		input: CorporateAdministrationIdempotencyReleaseInput,
-	): Promise<Result<void>>;
+	) => Promise<Result<void>>;
 }>;

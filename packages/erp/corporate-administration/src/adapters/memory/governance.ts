@@ -1,3 +1,5 @@
+// biome-ignore-all lint/suspicious/useAwait: The deterministic memory adapter implements asynchronous governance ports.
+// biome-ignore-all lint/suspicious/noShadow: Domain-local callbacks intentionally mirror governance records.
 import { randomUUID } from "node:crypto";
 import { fail, ok } from "@afenda/errors/result";
 
@@ -55,7 +57,9 @@ export function createMemoryCorporateAdministrationGovernanceStore(): Governance
 					row.legalCompanyId === input.legalCompanyId &&
 					row.normalizedBodyCode === input.normalizedBodyCode,
 			);
-			if (duplicate) return conflict("bodyCode");
+			if (duplicate) {
+				return conflict("bodyCode");
+			}
 			const id = governanceBodyIdSchema.parse(randomUUID());
 			const now = new Date(input.recordedAt);
 			const row: GovernanceBody = {
@@ -85,7 +89,9 @@ export function createMemoryCorporateAdministrationGovernanceStore(): Governance
 			const current = bodies.get(
 				key(input.organizationId, input.governanceBodyId),
 			);
-			if (current === undefined) return notFound();
+			if (current === undefined) {
+				return notFound();
+			}
 			if (current.version !== input.expectedVersion) {
 				return stale(input.expectedVersion, current.version);
 			}
@@ -106,7 +112,9 @@ export function createMemoryCorporateAdministrationGovernanceStore(): Governance
 			const current = bodies.get(
 				key(input.organizationId, input.governanceBodyId),
 			);
-			if (current === undefined) return notFound();
+			if (current === undefined) {
+				return notFound();
+			}
 			if (current.version !== input.expectedVersion) {
 				return stale(input.expectedVersion, current.version);
 			}
@@ -197,7 +205,9 @@ export function createMemoryCorporateAdministrationGovernanceStore(): Governance
 			const current = memberships.get(
 				key(input.organizationId, input.governanceMembershipId),
 			);
-			if (current === undefined) return notFound();
+			if (current === undefined) {
+				return notFound();
+			}
 			if (current.version !== input.expectedVersion) {
 				return stale(input.expectedVersion, current.version);
 			}
@@ -222,7 +232,9 @@ export function createMemoryCorporateAdministrationGovernanceStore(): Governance
 			const current = memberships.get(
 				key(input.organizationId, input.governanceMembershipId),
 			);
-			if (current === undefined) return notFound();
+			if (current === undefined) {
+				return notFound();
+			}
 			if (current.version !== input.expectedVersion) {
 				return stale(input.expectedVersion, current.version);
 			}

@@ -38,7 +38,9 @@ it("serializes identical import claims and rejects changed payloads", async () =
 			pageSize: 100,
 		});
 		expect(parties.ok).toBe(true);
-		if (!parties.ok) return;
+		if (!parties.ok) {
+			return;
+		}
 		expect(
 			parties.data.filter((party) => party.code === "IMPORT-RACE"),
 		).toHaveLength(1);
@@ -52,7 +54,9 @@ it("serializes identical import claims and rejects changed payloads", async () =
 			harness.options,
 		);
 		expect(conflict.ok).toBe(false);
-		if (conflict.ok) return;
+		if (conflict.ok) {
+			return;
+		}
 		expect(conflict.details).toMatchObject({
 			reason: "MASTER_IDEMPOTENCY_CONFLICT",
 			errorCode: "MASTER_DATA_IDEMPOTENCY_CONFLICT",
@@ -105,7 +109,7 @@ it("resumes an expired lease without reapplying an applied row", async () => {
 			organizationId: harness.organizationId,
 			batchId,
 			leaseOwner,
-			leaseExpiresAt: new Date(Date.now() - 1_000),
+			leaseExpiresAt: new Date(Date.now() - 1000),
 		});
 		expect(leased.ok).toBe(true);
 
@@ -137,7 +141,9 @@ it("resumes an expired lease without reapplying an applied row", async () => {
 			harness.options,
 		);
 		expect(resumed.ok).toBe(true);
-		if (!resumed.ok) return;
+		if (!resumed.ok) {
+			return;
+		}
 		expect(resumed.data.created).toBe(1);
 
 		const parties = await harness.store.listParties({
@@ -146,7 +152,9 @@ it("resumes an expired lease without reapplying an applied row", async () => {
 			pageSize: 100,
 		});
 		expect(parties.ok).toBe(true);
-		if (!parties.ok) return;
+		if (!parties.ok) {
+			return;
+		}
 		expect(
 			parties.data.filter((party) => party.code === row.code),
 		).toHaveLength(1);

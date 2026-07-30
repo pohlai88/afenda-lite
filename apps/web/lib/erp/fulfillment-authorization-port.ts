@@ -5,7 +5,7 @@ import { hasPermission } from "@/modules/identity/domain/has-permission";
 export function createFulfillmentAuthorizationPort(): FulfillmentAuthorizationPort {
 	return {
 		async can(input) {
-			return hasPermission({
+			return await hasPermission({
 				orgId: input.organizationId,
 				userId: input.actorUserId,
 				code: input.permission,

@@ -78,7 +78,9 @@ function defineSuccessorLineageParitySuite(
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const employment = await createEmployment(
 			{
@@ -91,7 +93,9 @@ function defineSuccessorLineageParitySuite(
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const calendar = await createWorkCalendar(
 			{
@@ -110,7 +114,9 @@ function defineSuccessorLineageParitySuite(
 			ready,
 		);
 		expect(calendar.ok).toBe(true);
-		if (!calendar.ok) return;
+		if (!calendar.ok) {
+			return;
+		}
 
 		const assigned = await assignEmploymentCalendar(
 			{
@@ -141,7 +147,9 @@ function defineSuccessorLineageParitySuite(
 			ready,
 		);
 		expect(supersession.ok).toBe(true);
-		if (!supersession.ok) return;
+		if (!supersession.ok) {
+			return;
+		}
 
 		expect(supersession.data.superseded).toMatchObject({
 			id: calendar.data.id,
@@ -164,7 +172,9 @@ function defineSuccessorLineageParitySuite(
 			ready,
 		);
 		expect(persistedRoot.ok).toBe(true);
-		if (!persistedRoot.ok) return;
+		if (!persistedRoot.ok) {
+			return;
+		}
 		expect(persistedRoot.data).toMatchObject({
 			status: "superseded",
 			effectiveTo: "2025-07-31",
@@ -181,7 +191,9 @@ function defineSuccessorLineageParitySuite(
 			ready,
 		);
 		expect(persistedSuccessor.ok).toBe(true);
-		if (!persistedSuccessor.ok) return;
+		if (!persistedSuccessor.ok) {
+			return;
+		}
 		expect(persistedSuccessor.data).toMatchObject({
 			status: "active",
 			effectiveFrom: "2025-08-01",
@@ -220,7 +232,9 @@ function defineSuccessorLineageParitySuite(
 			ready,
 		);
 		expect(historical.ok).toBe(true);
-		if (!historical.ok) return;
+		if (!historical.ok) {
+			return;
+		}
 		expect(historical.data?.calendarId).toBe(calendar.data.id);
 
 		const future = await resolveEmploymentCalendar(
@@ -235,7 +249,9 @@ function defineSuccessorLineageParitySuite(
 			ready,
 		);
 		expect(future.ok).toBe(true);
-		if (!future.ok) return;
+		if (!future.ok) {
+			return;
+		}
 		expect(future.data?.calendarId).toBe(supersession.data.successor.id);
 	});
 
@@ -258,7 +274,9 @@ function defineSuccessorLineageParitySuite(
 			ready,
 		);
 		expect(shift.ok).toBe(true);
-		if (!shift.ok) return;
+		if (!shift.ok) {
+			return;
+		}
 
 		const activated = await activateShift(
 			{
@@ -271,7 +289,9 @@ function defineSuccessorLineageParitySuite(
 			ready,
 		);
 		expect(activated.ok).toBe(true);
-		if (!activated.ok) return;
+		if (!activated.ok) {
+			return;
+		}
 
 		const supersession = await supersedeShift(
 			{
@@ -288,7 +308,9 @@ function defineSuccessorLineageParitySuite(
 			ready,
 		);
 		expect(supersession.ok).toBe(true);
-		if (!supersession.ok) return;
+		if (!supersession.ok) {
+			return;
+		}
 
 		expect(supersession.data.superseded).toMatchObject({
 			id: activated.data.id,
@@ -311,7 +333,9 @@ function defineSuccessorLineageParitySuite(
 			ready,
 		);
 		expect(persistedRoot.ok).toBe(true);
-		if (!persistedRoot.ok) return;
+		if (!persistedRoot.ok) {
+			return;
+		}
 		expect(persistedRoot.data).toMatchObject({
 			status: "superseded",
 			effectiveTo: "2025-07-31",
@@ -329,7 +353,9 @@ function defineSuccessorLineageParitySuite(
 			ready,
 		);
 		expect(persistedSuccessor.ok).toBe(true);
-		if (!persistedSuccessor.ok) return;
+		if (!persistedSuccessor.ok) {
+			return;
+		}
 		expect(persistedSuccessor.data).toMatchObject({
 			status: "active",
 			effectiveFrom: "2025-08-01",

@@ -42,7 +42,7 @@ export async function createLeavePolicy(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LeavePolicy>> {
-	return runLeaveCommand(input, options, {
+	return await runLeaveCommand(input, options, {
 		schema: createLeavePolicyInputSchema,
 		invalidMessage: "Invalid leave policy create input",
 		command: HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_CREATE,
@@ -59,7 +59,9 @@ export async function createLeavePolicy(
 				code: data.code,
 				effectiveFrom: data.effectiveFrom,
 			});
-			if (!existing.ok) return existing;
+			if (!existing.ok) {
+				return existing;
+			}
 			if (existing.data !== null) {
 				return fail(
 					"CONFLICT",
@@ -101,7 +103,7 @@ export async function updateLeavePolicy(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LeavePolicy>> {
-	return runLeaveCommand(input, options, {
+	return await runLeaveCommand(input, options, {
 		schema: updateLeavePolicyInputSchema,
 		invalidMessage: "Invalid leave policy update input",
 		command: HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_UPDATE,
@@ -142,7 +144,7 @@ export async function publishLeavePolicy(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LeavePolicy>> {
-	return runLeaveCommand(input, options, {
+	return await runLeaveCommand(input, options, {
 		schema: publishLeavePolicyInputSchema,
 		invalidMessage: "Invalid leave policy publish input",
 		command: HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_PUBLISH,
@@ -167,7 +169,7 @@ export async function supersedeLeavePolicy(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LeavePolicy>> {
-	return runLeaveCommand(input, options, {
+	return await runLeaveCommand(input, options, {
 		schema: supersedeLeavePolicyInputSchema,
 		invalidMessage: "Invalid leave policy supersede input",
 		command: HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_SUPERSEDE,
@@ -206,7 +208,7 @@ export async function archiveLeavePolicy(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LeavePolicy>> {
-	return runLeaveCommand(input, options, {
+	return await runLeaveCommand(input, options, {
 		schema: archiveLeavePolicyInputSchema,
 		invalidMessage: "Invalid leave policy archive input",
 		command: HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_ARCHIVE,
@@ -231,7 +233,7 @@ export async function getLeavePolicy(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LeavePolicy | null>> {
-	return runLeaveQuery(input, options, {
+	return await runLeaveQuery(input, options, {
 		schema: getLeavePolicyInputSchema,
 		invalidMessage: "Invalid leave policy get input",
 		query: HUMAN_RESOURCES_QUERY_LEAVE_POLICY_GET,
@@ -247,7 +249,7 @@ export async function listLeavePolicies(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LeavePolicyListPage>> {
-	return runLeaveQuery(input, options, {
+	return await runLeaveQuery(input, options, {
 		schema: listLeavePoliciesInputSchema,
 		invalidMessage: "Invalid leave policy list input",
 		query: HUMAN_RESOURCES_QUERY_LEAVE_POLICY_LIST,
@@ -265,7 +267,7 @@ export async function resolveApplicableLeavePolicy(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ResolvedLeavePolicy | null>> {
-	return runLeaveQuery(input, options, {
+	return await runLeaveQuery(input, options, {
 		schema: resolveApplicableLeavePolicyInputSchema,
 		invalidMessage: "Invalid resolve applicable leave policy input",
 		query: HUMAN_RESOURCES_QUERY_LEAVE_POLICY_RESOLVE_APPLICABLE,

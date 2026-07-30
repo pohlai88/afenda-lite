@@ -18,13 +18,13 @@ export default function GlobalError({
 		<html lang="en">
 			<body>
 				<main className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-canvas p-4">
-					<h1 className="text-2xl font-semibold tracking-tight">
+					<h1 className="font-semibold text-2xl tracking-tight">
 						Something went wrong
 					</h1>
-					<p className="max-w-md text-center text-sm text-foreground-secondary">
+					<p className="max-w-md text-center text-foreground-secondary text-sm">
 						{GLOBAL_ERROR_PUBLIC_MESSAGE}
 					</p>
-					<Button type="button" variant="outline" onClick={reset}>
+					<Button onClick={reset} type="button" variant="outline">
 						Try again
 					</Button>
 				</main>

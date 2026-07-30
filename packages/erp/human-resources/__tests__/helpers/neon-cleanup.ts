@@ -136,10 +136,14 @@ import {
 	platformAuditLog,
 	platformDomainEvent,
 } from "@afenda/db";
+import {
+	runSequential,
+	sequentialBreak,
+} from "../../src/shared/run-sequential";
 
 function isForeignKeyViolation(error: unknown): boolean {
 	let current: unknown = error;
-	for (let depth = 0; depth < 4 && current != null; depth += 1) {
+	for (let depth = 0; depth < 4 && current !== null; depth += 1) {
 		if (
 			typeof current === "object" &&
 			"code" in current &&
@@ -198,19 +202,19 @@ async function deleteLeaveGraphForOrganization(
 	organizationId: string,
 ): Promise<void> {
 	const maxAttempts = 3;
-	for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+	await runSequential([1, 2, 3], async (attempt) => {
 		await deleteLeaveChildrenForOrganization(organizationId);
 		try {
 			await db
 				.delete(hrLeaveRequest)
 				.where(eq(hrLeaveRequest.organizationId, organizationId));
-			break;
+			return sequentialBreak();
 		} catch (error) {
 			if (!isForeignKeyViolation(error) || attempt === maxAttempts) {
 				throw error;
 			}
 		}
-	}
+	});
 
 	await db
 		.delete(hrLeaveEntitlement)
@@ -225,7 +229,7 @@ async function deleteLeaveGraphForOrganization(
 
 function isUndefinedTable(error: unknown): boolean {
 	let current: unknown = error;
-	for (let depth = 0; depth < 4 && current != null; depth += 1) {
+	for (let depth = 0; depth < 4 && current !== null; depth += 1) {
 		if (
 			typeof current === "object" &&
 			"code" in current &&
@@ -378,7 +382,7 @@ async function deleteTimeGraphForOrganization(
 export async function cleanupHumanResourcesNeonOrgs(
 	organizationIds: readonly string[],
 ): Promise<void> {
-	for (const organizationId of organizationIds) {
+	await runSequential(organizationIds, async (organizationId) => {
 		await deleteTimeGraphForOrganization(organizationId);
 		await db
 			.delete(hrInterviewEvaluation)
@@ -597,7 +601,7 @@ export async function cleanupHumanResourcesNeonOrgs(
 		await db
 			.delete(hrBonusEligibility)
 			.where(eq(hrBonusEligibility.organizationId, organizationId));
-		for (let attempt = 1; attempt <= 3; attempt++) {
+		await runSequential([1, 2, 3], async (attempt) => {
 			await db
 				.delete(hrEmployeeCompensation)
 				.where(eq(hrEmployeeCompensation.organizationId, organizationId));
@@ -608,13 +612,13 @@ export async function cleanupHumanResourcesNeonOrgs(
 				await db
 					.delete(hrEmployment)
 					.where(eq(hrEmployment.organizationId, organizationId));
-				break;
+				return sequentialBreak();
 			} catch (error) {
 				if (!isForeignKeyViolation(error) || attempt === 3) {
 					throw error;
 				}
 			}
-		}
+		});
 		await db
 			.delete(hrSalaryBand)
 			.where(eq(hrSalaryBand.organizationId, organizationId));
@@ -718,7 +722,7 @@ export async function cleanupHumanResourcesNeonOrgs(
 		await db
 			.delete(platformDomainEvent)
 			.where(eq(platformDomainEvent.organizationId, organizationId));
-	}
+	});
 }
 
 export function createNeonOrgTracker(): {

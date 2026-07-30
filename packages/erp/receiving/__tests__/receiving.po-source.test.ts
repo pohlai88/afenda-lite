@@ -60,7 +60,7 @@ function harness(
 	};
 }
 
-async function createAgainstPo(
+function createAgainstPo(
 	ctx: ReturnType<typeof harness>,
 	code: string,
 	purchaseOrderId = PO_ID,
@@ -86,7 +86,9 @@ describe("@afenda/receiving PO source-state", () => {
 		});
 		const draft = await createAgainstPo(ctx, "GR-PO-DRAFT");
 		expect(draft.ok).toBe(false);
-		if (!draft.ok) expect(draft.code).toBe("CONFLICT");
+		if (!draft.ok) {
+			expect(draft.code).toBe("CONFLICT");
+		}
 	});
 
 	it("rejects create against closed and cancelled purchase orders", async () => {
@@ -95,14 +97,18 @@ describe("@afenda/receiving PO source-state", () => {
 		});
 		const closed = await createAgainstPo(closedCtx, "GR-PO-CLOSED");
 		expect(closed.ok).toBe(false);
-		if (!closed.ok) expect(closed.code).toBe("CONFLICT");
+		if (!closed.ok) {
+			expect(closed.code).toBe("CONFLICT");
+		}
 
 		const cancelledCtx = harness({
 			[PO_ID]: postedPoSnapshot({ status: "cancelled", lineId: PO_LINE }),
 		});
 		const cancelled = await createAgainstPo(cancelledCtx, "GR-PO-CANCEL");
 		expect(cancelled.ok).toBe(false);
-		if (!cancelled.ok) expect(cancelled.code).toBe("CONFLICT");
+		if (!cancelled.ok) {
+			expect(cancelled.code).toBe("CONFLICT");
+		}
 	});
 
 	it("rejects create when purchase order is missing or cross-org without existence leak", async () => {
@@ -132,7 +138,6 @@ describe("@afenda/receiving PO source-state", () => {
 	it("rejects create when purchase order receiving query port is omitted", async () => {
 		const ctx = harness();
 		const { purchaseOrderReceivingQuery: _omit, ...withoutPort } = ctx;
-		void _omit;
 		const draft = await createDraftGoodsReceipt(
 			{
 				organizationId: ORG_A,
@@ -146,7 +151,9 @@ describe("@afenda/receiving PO source-state", () => {
 			withoutPort,
 		);
 		expect(draft.ok).toBe(false);
-		if (!draft.ok) expect(draft.code).toBe("INTERNAL_ERROR");
+		if (!draft.ok) {
+			expect(draft.code).toBe("INTERNAL_ERROR");
+		}
 	});
 
 	it("rejects post when accepted quantity exceeds remaining plus over-receipt tolerance", async () => {
@@ -160,7 +167,9 @@ describe("@afenda/receiving PO source-state", () => {
 		});
 		const draft = await createAgainstPo(ctx, "GR-PO-OVER");
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 		await addGoodsReceiptLine(
 			{
 				organizationId: ORG_A,
@@ -179,7 +188,9 @@ describe("@afenda/receiving PO source-state", () => {
 			{ organizationId: ORG_A, actorUserId: "user-1", id: draft.data.id },
 			ctx,
 		);
-		if (!current.ok || current.data === null) return;
+		if (!current.ok || current.data === null) {
+			return;
+		}
 		const posted = await postGoodsReceipt(
 			{
 				organizationId: ORG_A,
@@ -192,7 +203,9 @@ describe("@afenda/receiving PO source-state", () => {
 			ctx,
 		);
 		expect(posted.ok).toBe(false);
-		if (!posted.ok) expect(posted.code).toBe("CONFLICT");
+		if (!posted.ok) {
+			expect(posted.code).toBe("CONFLICT");
+		}
 	});
 
 	it("allows post at exact over-receipt tolerance boundary", async () => {
@@ -206,7 +219,9 @@ describe("@afenda/receiving PO source-state", () => {
 		});
 		const draft = await createAgainstPo(ctx, "GR-PO-BOUND");
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 		await addGoodsReceiptLine(
 			{
 				organizationId: ORG_A,
@@ -225,7 +240,9 @@ describe("@afenda/receiving PO source-state", () => {
 			{ organizationId: ORG_A, actorUserId: "user-1", id: draft.data.id },
 			ctx,
 		);
-		if (!current.ok || current.data === null) return;
+		if (!current.ok || current.data === null) {
+			return;
+		}
 		const posted = await postGoodsReceipt(
 			{
 				organizationId: ORG_A,
@@ -246,7 +263,9 @@ describe("@afenda/receiving PO source-state", () => {
 		});
 		const draft = await createAgainstPo(ctx, "GR-PO-CLOSE-RACE");
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 		await addGoodsReceiptLine(
 			{
 				organizationId: ORG_A,
@@ -268,7 +287,9 @@ describe("@afenda/receiving PO source-state", () => {
 			{ organizationId: ORG_A, actorUserId: "user-1", id: draft.data.id },
 			ctx,
 		);
-		if (!current.ok || current.data === null) return;
+		if (!current.ok || current.data === null) {
+			return;
+		}
 		const posted = await postGoodsReceipt(
 			{
 				organizationId: ORG_A,

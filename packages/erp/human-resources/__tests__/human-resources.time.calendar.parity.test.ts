@@ -82,7 +82,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const employment = await createEmployment(
 			{
@@ -95,7 +97,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const calendar = await createWorkCalendar(
 			{
@@ -114,7 +118,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(calendar.ok).toBe(true);
-		if (!calendar.ok) return;
+		if (!calendar.ok) {
+			return;
+		}
 
 		const assignedCal = await assignEmploymentCalendar(
 			{
@@ -142,7 +148,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(resolvedCal.ok).toBe(true);
-		if (!resolvedCal.ok) return;
+		if (!resolvedCal.ok) {
+			return;
+		}
 		expect(resolvedCal.data?.calendarId).toBe(calendar.data.id);
 
 		const shift = await createShift(
@@ -162,7 +170,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(shift.ok).toBe(true);
-		if (!shift.ok) return;
+		if (!shift.ok) {
+			return;
+		}
 
 		const activated = await activateShift(
 			{
@@ -175,7 +185,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(activated.ok).toBe(true);
-		if (!activated.ok) return;
+		if (!activated.ok) {
+			return;
+		}
 
 		const assignment = await assignShift(
 			{
@@ -206,7 +218,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(assignment.ok).toBe(true);
-		if (!assignment.ok) return;
+		if (!assignment.ok) {
+			return;
+		}
 		const assignmentSegments = await listShiftAssignmentSegments(
 			{
 				organizationId: ORG,
@@ -217,7 +231,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(assignmentSegments.ok).toBe(true);
-		if (!assignmentSegments.ok) return;
+		if (!assignmentSegments.ok) {
+			return;
+		}
 		expect(
 			assignmentSegments.data.map((segment) => segment.segmentOrder),
 		).toEqual([1, 2]);
@@ -233,7 +249,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(published.ok).toBe(true);
-		if (!published.ok) return;
+		if (!published.ok) {
+			return;
+		}
 		expect(published.data.publicationStatus).toBe("published");
 
 		const clockIn = await recordClockIn(
@@ -284,7 +302,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(session.ok).toBe(true);
-		if (!session.ok) return;
+		if (!session.ok) {
+			return;
+		}
 		expect(session.data.workedMinutes).toBe(480);
 
 		const timesheet = await createTimesheet(
@@ -301,7 +321,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(timesheet.ok).toBe(true);
-		if (!timesheet.ok) return;
+		if (!timesheet.ok) {
+			return;
+		}
 
 		const entry = await addTimesheetEntry(
 			{
@@ -327,7 +349,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(entry.ok).toBe(true);
-		if (!entry.ok) return;
+		if (!entry.ok) {
+			return;
+		}
 		expect(entry.data).toMatchObject({
 			costCenterId: "cost-center-parity",
 			projectId: "project-parity",
@@ -366,7 +390,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(current.ok).toBe(true);
-		if (!current.ok || current.data === null) return;
+		if (!current.ok || current.data === null) {
+			return;
+		}
 
 		const submitted = await submitTimesheet(
 			{
@@ -379,7 +405,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 		const authority = await assignTimeApprovalAuthority(
 			{
 				organizationId: ORG,
@@ -392,7 +420,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(authority.ok).toBe(true);
-		if (!authority.ok) return;
+		if (!authority.ok) {
+			return;
+		}
 
 		const approved = await approveTimesheet(
 			{
@@ -406,7 +436,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 
 		const handoff = await getApprovedTimeHandoff(
 			{
@@ -418,7 +450,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(handoff.ok).toBe(true);
-		if (!handoff.ok || handoff.data === null) return;
+		if (!handoff.ok || handoff.data === null) {
+			return;
+		}
 		expect(handoff.data.regularMinutes).toBe(480);
 		expect(handoff.data.overtime).toEqual([
 			{ type: "weekday_overtime", minutes: 90 },
@@ -439,7 +473,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 		const employment = await createEmployment(
 			{
 				organizationId: ORG,
@@ -451,7 +487,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 		const calendar = await createWorkCalendar(
 			{
 				organizationId: ORG,
@@ -469,7 +507,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(calendar.ok).toBe(true);
-		if (!calendar.ok) return;
+		if (!calendar.ok) {
+			return;
+		}
 		const assigned = await assignEmploymentCalendar(
 			{
 				organizationId: ORG,
@@ -498,7 +538,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(calendarSuccessor.ok).toBe(true);
-		if (!calendarSuccessor.ok) return;
+		if (!calendarSuccessor.ok) {
+			return;
+		}
 		const historicalCalendar = await resolveEmploymentCalendar(
 			{
 				organizationId: ORG,
@@ -511,7 +553,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(historicalCalendar.ok).toBe(true);
-		if (!historicalCalendar.ok) return;
+		if (!historicalCalendar.ok) {
+			return;
+		}
 		expect(historicalCalendar.data?.calendarId).toBe(calendar.data.id);
 		const futureCalendar = await resolveEmploymentCalendar(
 			{
@@ -525,7 +569,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(futureCalendar.ok).toBe(true);
-		if (!futureCalendar.ok) return;
+		if (!futureCalendar.ok) {
+			return;
+		}
 		expect(futureCalendar.data?.calendarId).toBe(
 			calendarSuccessor.data.successor.id,
 		);
@@ -558,7 +604,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(isolatedCalendar.ok).toBe(true);
-		if (!isolatedCalendar.ok) return;
+		if (!isolatedCalendar.ok) {
+			return;
+		}
 		expect(isolatedCalendar.data?.calendarId).toBe(
 			calendarSuccessor.data.successor.id,
 		);
@@ -580,7 +628,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(shift.ok).toBe(true);
-		if (!shift.ok) return;
+		if (!shift.ok) {
+			return;
+		}
 		const shiftBreak = await addShiftBreak(
 			{
 				organizationId: ORG,
@@ -604,7 +654,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(activeShift.ok).toBe(true);
-		if (!activeShift.ok) return;
+		if (!activeShift.ok) {
+			return;
+		}
 		const shiftSuccessor = await supersedeShift(
 			{
 				organizationId: ORG,
@@ -620,7 +672,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(shiftSuccessor.ok).toBe(true);
-		if (!shiftSuccessor.ok) return;
+		if (!shiftSuccessor.ok) {
+			return;
+		}
 		expect(shiftSuccessor.data.superseded).toMatchObject({
 			status: "superseded",
 			effectiveTo: "2025-07-31",
@@ -638,7 +692,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(clonedBreaks.ok).toBe(true);
-		if (!clonedBreaks.ok) return;
+		if (!clonedBreaks.ok) {
+			return;
+		}
 		expect(clonedBreaks.data).toHaveLength(1);
 		expect(clonedBreaks.data[0]?.durationMinutes).toBe(60);
 	});
@@ -646,7 +702,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 	it("normal, holiday, half-day, and replacement calendar days resolve identically", async () => {
 		const ready = createHrParityHarness(adapter);
 		expect(ready.store).toBeDefined();
-		if (ready.store === undefined) return;
+		if (ready.store === undefined) {
+			return;
+		}
 
 		const employee = await createEmployee(
 			{
@@ -660,7 +718,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const employment = await createEmployment(
 			{
@@ -673,7 +733,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const calendar = await createWorkCalendar(
 			{
@@ -692,7 +754,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(calendar.ok).toBe(true);
-		if (!calendar.ok) return;
+		if (!calendar.ok) {
+			return;
+		}
 
 		const assigned = await assignEmploymentCalendar(
 			{
@@ -707,7 +771,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(assigned.ok).toBe(true);
-		if (!assigned.ok) return;
+		if (!assigned.ok) {
+			return;
+		}
 
 		const override = await addCalendarDateOverride(
 			{
@@ -724,7 +790,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(override.ok).toBe(true);
-		if (!override.ok) return;
+		if (!override.ok) {
+			return;
+		}
 		expect(override.data.overrideKind).toBe("half_day");
 		expect(override.data.expectedMinutes).toBe(240);
 		const holiday = await addCalendarDateOverride(
@@ -740,7 +808,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(holiday.ok).toBe(true);
-		if (!holiday.ok) return;
+		if (!holiday.ok) {
+			return;
+		}
 		const replacement = await addCalendarDateOverride(
 			{
 				organizationId: ORG,
@@ -755,7 +825,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(replacement.ok).toBe(true);
-		if (!replacement.ok) return;
+		if (!replacement.ok) {
+			return;
+		}
 
 		const lookup = createStoreWorkCalendarLookup({ store: ready.store });
 		const context = await lookup.resolveCalendarContext({
@@ -766,7 +838,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 			toDate: "2025-01-11",
 		});
 		expect(context.ok).toBe(true);
-		if (!context.ok) return;
+		if (!context.ok) {
+			return;
+		}
 		const halfDay = resolveWorkCalendarCivilDay(context.data, "2025-01-07");
 		expect(halfDay.isWorkingDay).toBe(true);
 		expect(halfDay.expectedMinutes).toBe(240);
@@ -795,7 +869,9 @@ function defineTimeCalendarParitySuite(adapter: WorkforceStoreAdapter): void {
 			date: "2025-01-07",
 		});
 		expect(working.ok).toBe(true);
-		if (!working.ok) return;
+		if (!working.ok) {
+			return;
+		}
 		expect(working.data).toBe(true);
 	});
 }

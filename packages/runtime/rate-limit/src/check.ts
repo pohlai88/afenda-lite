@@ -10,16 +10,16 @@ import type {
 	RateLimitStore,
 } from "./types";
 
-export type CheckRateLimitInput = {
+export interface CheckRateLimitInput {
 	bucket: RateLimitBucket;
 	/** Opaque composite identity (email, org:user, IP+path). Never log secrets. */
 	key: string;
-};
+}
 
-export type CheckRateLimitOptions = {
+export interface CheckRateLimitOptions {
 	/** Injected store for Vitest; production callers omit this. */
 	store?: RateLimitStore;
-};
+}
 
 const EMPTY_KEY_RETRY_AFTER_SECONDS = 60;
 

@@ -128,7 +128,7 @@ describe("Corporate Administration company-name and legal-form journey", () => {
 					version: 1,
 				};
 				names.push(record);
-				return {
+				return await {
 					ok: true,
 					data: { id: record.companyNameId, version: record.version },
 				};
@@ -157,7 +157,7 @@ describe("Corporate Administration company-name and legal-form journey", () => {
 					status: "active",
 					version: 1,
 				});
-				return {
+				return await {
 					ok: true,
 					data: {
 						id: "55555555-5555-4555-8555-555555555555",

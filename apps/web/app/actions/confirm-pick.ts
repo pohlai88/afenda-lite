@@ -13,7 +13,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type ConfirmPickActionData = { pick: DeliveryPick };
+export interface ConfirmPickActionData {
+	pick: DeliveryPick;
+}
 export type ConfirmPickActionState = ActionResult<ConfirmPickActionData> | null;
 
 const confirmPickFormSchema = z.object({
@@ -32,7 +34,7 @@ export async function confirmPickAction(
 	_prev: ConfirmPickActionState,
 	formData: FormData,
 ): Promise<ConfirmPickActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "confirmPickAction",
 		permission: "fulfillment.picking.confirm",
 		safeMessage: "Could not confirm pick. Try again or contact an admin.",
@@ -62,7 +64,9 @@ export async function confirmPickAction(
 				createFulfillmentCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePath("/admin/fulfillment");
 			revalidatePath("/client/fulfillment");
 			return { ok: true, data: { pick: mapped.data } };

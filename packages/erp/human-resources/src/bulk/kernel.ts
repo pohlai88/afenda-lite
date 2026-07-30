@@ -17,7 +17,9 @@ export const MAX_HUMAN_RESOURCES_BULK_ROWS = 500;
 export const DEFAULT_HUMAN_RESOURCES_BULK_ROWS_PER_RUN = 100;
 
 function canonicalize(value: unknown): unknown {
-	if (Array.isArray(value)) return value.map(canonicalize);
+	if (Array.isArray(value)) {
+		return value.map(canonicalize);
+	}
 	if (value !== null && typeof value === "object") {
 		return Object.fromEntries(
 			Object.entries(value)
@@ -58,15 +60,17 @@ function validateRequest<Row>(input: BulkImportRequest<Row>): Result<number> {
 		(input.mode !== "dry_run" && input.mode !== "commit") ||
 		input.rows.length === 0 ||
 		input.rows.length > MAX_HUMAN_RESOURCES_BULK_ROWS
-	)
+	) {
 		return fail("VALIDATION_ERROR", "Invalid Human Resources bulk request");
+	}
 	const rowsPerRun =
 		input.maxRowsPerRun ?? DEFAULT_HUMAN_RESOURCES_BULK_ROWS_PER_RUN;
-	if (rowsPerRun < 1 || rowsPerRun > MAX_HUMAN_RESOURCES_BULK_ROWS)
+	if (rowsPerRun < 1 || rowsPerRun > MAX_HUMAN_RESOURCES_BULK_ROWS) {
 		return fail(
 			"VALIDATION_ERROR",
 			"Bulk rows per run is outside the safe range",
 		);
+	}
 	return ok(rowsPerRun);
 }
 
@@ -74,20 +78,22 @@ function sourceReferenceIssue(
 	sourceReference: string,
 	seen: Set<string>,
 ): BulkRowIssue | null {
-	if (sourceReference.trim().length === 0)
+	if (sourceReference.trim().length === 0) {
 		return {
 			code: "EMPTY_SOURCE_REFERENCE",
 			message: "Source reference is required",
 			field: "sourceReference",
 			disposition: "terminal",
 		};
-	if (seen.has(sourceReference))
+	}
+	if (seen.has(sourceReference)) {
 		return {
 			code: "DUPLICATE_SOURCE_REFERENCE",
 			message: "Source reference is duplicated in this batch",
 			field: "sourceReference",
 			disposition: "terminal",
 		};
+	}
 	seen.add(sourceReference);
 	return null;
 }
@@ -137,88 +143,336 @@ function presentResult<Output>(input: {
 	};
 }
 
-export async function runHumanResourcesBulkImport<Row, Validated, Output>(
+async function validateDryRunRows<Row, Validated, Output>(
 	input: BulkImportRequest<Row>,
 	ports: BulkImportPorts<Row, Validated, Output>,
-): Promise<Result<BulkImportResult<Output>>> {
-	const validatedRequest = validateRequest(input);
-	if (!validatedRequest.ok) return validatedRequest;
-	const fingerprint = fingerprintBulkRequest(input);
-
-	if (input.mode === "dry_run") {
-		const outcomes: BulkRowOutcome<Output>[] = [];
-		const seenSourceReferences = new Set<string>();
-		for (const [rowIndex, row] of input.rows.entries()) {
-			const referenceIssue = sourceReferenceIssue(
-				row.sourceReference,
-				seenSourceReferences,
-			);
-			if (referenceIssue !== null) {
-				outcomes.push({
+	rowIndex: number,
+	outcomes: readonly BulkRowOutcome<Output>[],
+	seenSourceReferences: Set<string>,
+): Promise<Result<readonly BulkRowOutcome<Output>[]>> {
+	const row = input.rows[rowIndex];
+	if (row === undefined) {
+		return ok(outcomes);
+	}
+	const referenceIssue = sourceReferenceIssue(
+		row.sourceReference,
+		seenSourceReferences,
+	);
+	if (referenceIssue !== null) {
+		return validateDryRunRows(
+			input,
+			ports,
+			rowIndex + 1,
+			[
+				...outcomes,
+				{
 					rowIndex,
 					sourceReference: row.sourceReference,
 					status: "rejected",
 					issues: [referenceIssue],
-				});
-				continue;
-			}
-			const validation = await ports.validate({
-				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId: input.correlationId,
-				entityType: input.entityType,
+				},
+			],
+			seenSourceReferences,
+		);
+	}
+	const validation = await ports.validate({
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		correlationId: input.correlationId,
+		entityType: input.entityType,
+		rowIndex,
+		row,
+	});
+	const outcome: BulkRowOutcome<Output> = validation.valid
+		? { rowIndex, sourceReference: row.sourceReference, status: "accepted" }
+		: {
 				rowIndex,
-				row,
-			});
-			outcomes.push(
-				validation.valid
-					? {
-							rowIndex,
-							sourceReference: row.sourceReference,
-							status: "accepted",
-						}
-					: {
-							rowIndex,
-							sourceReference: row.sourceReference,
-							status: "rejected",
-							issues: terminalIssues(validation.issues),
-						},
-			);
+				sourceReference: row.sourceReference,
+				status: "rejected",
+				issues: terminalIssues(validation.issues),
+			};
+	return validateDryRunRows(
+		input,
+		ports,
+		rowIndex + 1,
+		[...outcomes, outcome],
+		seenSourceReferences,
+	);
+}
+
+type CommitRowResolution<Output> =
+	| { kind: "outcome"; outcome: BulkRowOutcome<Output> }
+	| {
+			kind: "retryable_failure";
+			failure: NonNullable<BulkCheckpoint<Output>["retryableFailure"]>;
+	  };
+
+async function resolveCommitRow<Row, Validated, Output>(
+	input: BulkImportRequest<Row>,
+	ports: BulkImportPorts<Row, Validated, Output>,
+	rowIndex: number,
+	seenSourceReferences: Set<string>,
+): Promise<Result<CommitRowResolution<Output>>> {
+	const row = input.rows[rowIndex];
+	if (row === undefined) {
+		return fail("INTERNAL_ERROR", "Bulk checkpoint exceeded the row boundary");
+	}
+	const referenceIssue = sourceReferenceIssue(
+		row.sourceReference,
+		seenSourceReferences,
+	);
+	const validation = await ports.validate({
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		correlationId: input.correlationId,
+		entityType: input.entityType,
+		rowIndex,
+		row,
+	});
+	if (referenceIssue !== null) {
+		return ok({
+			kind: "outcome",
+			outcome: {
+				rowIndex,
+				sourceReference: row.sourceReference,
+				status: "rejected",
+				issues: [referenceIssue],
+			},
+		});
+	}
+	if (!validation.valid) {
+		return ok({
+			kind: "outcome",
+			outcome: {
+				rowIndex,
+				sourceReference: row.sourceReference,
+				status: "rejected",
+				issues: terminalIssues(validation.issues),
+			},
+		});
+	}
+	let execution: BulkRowExecutionResult<Output>;
+	try {
+		execution = await ports.execute({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: input.correlationId,
+			entityType: input.entityType,
+			batchId: input.batchId,
+			rowIndex,
+			sourceReference: row.sourceReference,
+			rowIdempotencyKey: `${input.idempotencyKey}:${row.sourceReference}`,
+			value: validation.value,
+		});
+	} catch {
+		execution = {
+			status: "retryable_failure",
+			issue: {
+				code: "EXECUTOR_UNAVAILABLE",
+				message: "Bulk row executor is temporarily unavailable",
+			},
+		};
+	}
+	if (execution.status === "retryable_failure") {
+		return ok({
+			kind: "retryable_failure",
+			failure: {
+				...execution.issue,
+				disposition: "retryable",
+				rowIndex,
+				sourceReference: row.sourceReference,
+			},
+		});
+	}
+	if (execution.status === "applied") {
+		return ok({
+			kind: "outcome",
+			outcome: {
+				rowIndex,
+				sourceReference: row.sourceReference,
+				status: "accepted",
+				...(execution.output === undefined ? {} : { output: execution.output }),
+			},
+		});
+	}
+	return ok({
+		kind: "outcome",
+		outcome: {
+			rowIndex,
+			sourceReference: row.sourceReference,
+			status: "rejected",
+			issues: terminalIssues(execution.issues),
+		},
+	});
+}
+
+function checkpointStatus<Output>(
+	atEnd: boolean,
+	outcomes: readonly BulkRowOutcome<Output>[],
+): BulkCheckpoint<Output>["status"] {
+	if (!atEnd) {
+		return "checkpointed";
+	}
+	return outcomes.some((entry) => entry.status === "rejected")
+		? "completed_with_rejections"
+		: "completed";
+}
+
+interface CommitProcessingState<Output> {
+	auditTrail: readonly BulkAuditEvent[];
+	checkpoint: BulkCheckpoint<Output> | null;
+	expectedVersion: number | null;
+	nextRowIndex: number;
+	outcomes: readonly BulkRowOutcome<Output>[];
+	runEnd: number;
+	seenSourceReferences: Set<string>;
+}
+
+async function processCommitRows<Row, Validated, Output>(
+	input: BulkImportRequest<Row>,
+	ports: BulkImportPorts<Row, Validated, Output>,
+	fingerprint: string,
+	state: CommitProcessingState<Output>,
+): Promise<Result<BulkImportResult<Output>>> {
+	if (state.nextRowIndex >= state.runEnd) {
+		if (state.checkpoint === null) {
+			return fail("INTERNAL_ERROR", "Bulk checkpoint was not persisted");
 		}
 		return ok(
 			presentResult({
 				request: input,
 				fingerprint,
-				status: "dry_run_completed",
-				nextRowIndex: input.rows.length,
-				checkpointVersion: null,
-				rows: outcomes,
-				retryableFailure: null,
+				status: state.checkpoint.status,
+				nextRowIndex: state.checkpoint.nextRowIndex,
+				checkpointVersion: state.checkpoint.version,
+				rows: state.checkpoint.rows,
+				retryableFailure: state.checkpoint.retryableFailure,
 			}),
 		);
 	}
+	const resolved = await resolveCommitRow(
+		input,
+		ports,
+		state.nextRowIndex,
+		state.seenSourceReferences,
+	);
+	if (!resolved.ok) {
+		return resolved;
+	}
+	if (resolved.data.kind === "retryable_failure") {
+		const auditTrail = appendAudit(
+			state.auditTrail,
+			"BATCH_RETRYABLE_FAILED",
+			state.nextRowIndex,
+		);
+		const saved = await ports.checkpoints.save({
+			expectedVersion: state.expectedVersion,
+			checkpoint: {
+				organizationId: input.organizationId,
+				batchId: input.batchId,
+				entityType: input.entityType,
+				idempotencyKey: input.idempotencyKey,
+				requestFingerprint: fingerprint,
+				status: "retryable_failed",
+				nextRowIndex: state.nextRowIndex,
+				version: (state.expectedVersion ?? 0) + 1,
+				rows: state.outcomes,
+				retryableFailure: resolved.data.failure,
+				auditTrail,
+			},
+		});
+		if (!saved.ok) {
+			return saved;
+		}
+		return ok(
+			presentResult({
+				request: input,
+				fingerprint,
+				status: saved.data.status,
+				nextRowIndex: state.nextRowIndex,
+				checkpointVersion: saved.data.version,
+				rows: state.outcomes,
+				retryableFailure: resolved.data.failure,
+			}),
+		);
+	}
+	const outcomes = [...state.outcomes, resolved.data.outcome];
+	const nextRowIndex = state.nextRowIndex + 1;
+	let auditTrail = appendAudit(
+		state.auditTrail,
+		resolved.data.outcome.status === "accepted"
+			? "ROW_ACCEPTED"
+			: "ROW_REJECTED",
+		resolved.data.outcome.rowIndex,
+	);
+	const atEnd = nextRowIndex === input.rows.length;
+	if (atEnd || nextRowIndex === state.runEnd) {
+		auditTrail = appendAudit(
+			auditTrail,
+			atEnd ? "BATCH_COMPLETED" : "BATCH_CHECKPOINTED",
+			null,
+		);
+	}
+	const saved = await ports.checkpoints.save({
+		expectedVersion: state.expectedVersion,
+		checkpoint: {
+			organizationId: input.organizationId,
+			batchId: input.batchId,
+			entityType: input.entityType,
+			idempotencyKey: input.idempotencyKey,
+			requestFingerprint: fingerprint,
+			status: checkpointStatus(atEnd, outcomes),
+			nextRowIndex,
+			version: (state.expectedVersion ?? 0) + 1,
+			rows: outcomes,
+			retryableFailure: null,
+			auditTrail,
+		},
+	});
+	if (!saved.ok) {
+		return saved;
+	}
+	return processCommitRows(input, ports, fingerprint, {
+		...state,
+		auditTrail,
+		checkpoint: saved.data,
+		expectedVersion: saved.data.version,
+		nextRowIndex,
+		outcomes,
+	});
+}
 
+async function runCommitImport<Row, Validated, Output>(
+	input: BulkImportRequest<Row>,
+	ports: BulkImportPorts<Row, Validated, Output>,
+	fingerprint: string,
+	rowsPerRun: number,
+): Promise<Result<BulkImportResult<Output>>> {
 	const loaded = await ports.checkpoints.load({
 		organizationId: input.organizationId,
 		idempotencyKey: input.idempotencyKey,
 	});
-	if (!loaded.ok) return loaded;
-	let checkpoint = loaded.data;
-	if (checkpoint !== null && checkpoint.requestFingerprint !== fingerprint)
+	if (!loaded.ok) {
+		return loaded;
+	}
+	const checkpoint = loaded.data;
+	if (checkpoint !== null && checkpoint.requestFingerprint !== fingerprint) {
 		return fail(
 			"CONFLICT",
 			"Bulk idempotency key was reused with different rows",
 		);
+	}
 	if (
 		input.expectedCheckpointVersion !== undefined &&
 		checkpoint?.version !== input.expectedCheckpointVersion
-	)
+	) {
 		return fail("CONFLICT", "Bulk resume checkpoint version is stale");
+	}
 	if (
 		checkpoint !== null &&
 		(checkpoint.status === "completed" ||
 			checkpoint.status === "completed_with_rejections")
-	)
+	) {
 		return ok(
 			presentResult({
 				request: input,
@@ -230,187 +484,56 @@ export async function runHumanResourcesBulkImport<Row, Validated, Output>(
 				retryableFailure: null,
 			}),
 		);
-
-	let expectedVersion = checkpoint?.version ?? null;
-	const outcomes = [...(checkpoint?.rows ?? [])];
-	let nextRowIndex = checkpoint?.nextRowIndex ?? 0;
-	let auditTrail = checkpoint?.auditTrail ?? [];
-	const seenSourceReferences = new Set(
-		input.rows.slice(0, nextRowIndex).map((row) => row.sourceReference),
-	);
-	if (checkpoint === null)
-		auditTrail = appendAudit(auditTrail, "BATCH_STARTED", null);
-	const runEnd = Math.min(
-		nextRowIndex + validatedRequest.data,
-		input.rows.length,
-	);
-
-	while (nextRowIndex < runEnd) {
-		const row = input.rows[nextRowIndex];
-		if (row === undefined)
-			return fail(
-				"INTERNAL_ERROR",
-				"Bulk checkpoint exceeded the row boundary",
-			);
-		const referenceIssue = sourceReferenceIssue(
-			row.sourceReference,
-			seenSourceReferences,
-		);
-		const validation = await ports.validate({
-			organizationId: input.organizationId,
-			actorUserId: input.actorUserId,
-			correlationId: input.correlationId,
-			entityType: input.entityType,
-			rowIndex: nextRowIndex,
-			row,
-		});
-		let outcome: BulkRowOutcome<Output>;
-		if (referenceIssue !== null) {
-			outcome = {
-				rowIndex: nextRowIndex,
-				sourceReference: row.sourceReference,
-				status: "rejected",
-				issues: [referenceIssue],
-			};
-		} else if (!validation.valid) {
-			outcome = {
-				rowIndex: nextRowIndex,
-				sourceReference: row.sourceReference,
-				status: "rejected",
-				issues: terminalIssues(validation.issues),
-			};
-		} else {
-			let execution: BulkRowExecutionResult<Output>;
-			try {
-				execution = await ports.execute({
-					organizationId: input.organizationId,
-					actorUserId: input.actorUserId,
-					correlationId: input.correlationId,
-					entityType: input.entityType,
-					batchId: input.batchId,
-					rowIndex: nextRowIndex,
-					sourceReference: row.sourceReference,
-					rowIdempotencyKey: `${input.idempotencyKey}:${row.sourceReference}`,
-					value: validation.value,
-				});
-			} catch {
-				execution = {
-					status: "retryable_failure" as const,
-					issue: {
-						code: "EXECUTOR_UNAVAILABLE",
-						message: "Bulk row executor is temporarily unavailable",
-					},
-				};
-			}
-			if (execution.status === "retryable_failure") {
-				const retryableFailure = {
-					...execution.issue,
-					disposition: "retryable" as const,
-					rowIndex: nextRowIndex,
-					sourceReference: row.sourceReference,
-				};
-				auditTrail = appendAudit(
-					auditTrail,
-					"BATCH_RETRYABLE_FAILED",
-					nextRowIndex,
-				);
-				const saved = await ports.checkpoints.save({
-					expectedVersion,
-					checkpoint: {
-						organizationId: input.organizationId,
-						batchId: input.batchId,
-						entityType: input.entityType,
-						idempotencyKey: input.idempotencyKey,
-						requestFingerprint: fingerprint,
-						status: "retryable_failed",
-						nextRowIndex,
-						version: (expectedVersion ?? 0) + 1,
-						rows: outcomes,
-						retryableFailure,
-						auditTrail,
-					},
-				});
-				if (!saved.ok) return saved;
-				return ok(
-					presentResult({
-						request: input,
-						fingerprint,
-						status: saved.data.status,
-						nextRowIndex,
-						checkpointVersion: saved.data.version,
-						rows: outcomes,
-						retryableFailure,
-					}),
-				);
-			}
-			outcome =
-				execution.status === "applied"
-					? {
-							rowIndex: nextRowIndex,
-							sourceReference: row.sourceReference,
-							status: "accepted",
-							...(execution.output === undefined
-								? {}
-								: { output: execution.output }),
-						}
-					: {
-							rowIndex: nextRowIndex,
-							sourceReference: row.sourceReference,
-							status: "rejected",
-							issues: terminalIssues(execution.issues),
-						};
-		}
-
-		outcomes.push(outcome);
-		nextRowIndex += 1;
-		auditTrail = appendAudit(
-			auditTrail,
-			outcome.status === "accepted" ? "ROW_ACCEPTED" : "ROW_REJECTED",
-			outcome.rowIndex,
-		);
-		const atEnd = nextRowIndex === input.rows.length;
-		const status: BulkCheckpoint<Output>["status"] = atEnd
-			? outcomes.some((entry) => entry.status === "rejected")
-				? "completed_with_rejections"
-				: "completed"
-			: "checkpointed";
-		if (atEnd || nextRowIndex === runEnd)
-			auditTrail = appendAudit(
-				auditTrail,
-				atEnd ? "BATCH_COMPLETED" : "BATCH_CHECKPOINTED",
-				null,
-			);
-		const saved = await ports.checkpoints.save({
-			expectedVersion,
-			checkpoint: {
-				organizationId: input.organizationId,
-				batchId: input.batchId,
-				entityType: input.entityType,
-				idempotencyKey: input.idempotencyKey,
-				requestFingerprint: fingerprint,
-				status,
-				nextRowIndex,
-				version: (expectedVersion ?? 0) + 1,
-				rows: outcomes,
-				retryableFailure: null,
-				auditTrail,
-			},
-		});
-		if (!saved.ok) return saved;
-		checkpoint = saved.data;
-		expectedVersion = saved.data.version;
 	}
-	if (checkpoint === null)
-		return fail("INTERNAL_ERROR", "Bulk checkpoint was not persisted");
+	const nextRowIndex = checkpoint?.nextRowIndex ?? 0;
+	const initialAuditTrail = checkpoint?.auditTrail ?? [];
+	return processCommitRows(input, ports, fingerprint, {
+		auditTrail:
+			checkpoint === null
+				? appendAudit(initialAuditTrail, "BATCH_STARTED", null)
+				: initialAuditTrail,
+		checkpoint,
+		expectedVersion: checkpoint?.version ?? null,
+		nextRowIndex,
+		outcomes: checkpoint?.rows ?? [],
+		runEnd: Math.min(nextRowIndex + rowsPerRun, input.rows.length),
+		seenSourceReferences: new Set(
+			input.rows.slice(0, nextRowIndex).map((row) => row.sourceReference),
+		),
+	});
+}
+
+export async function runHumanResourcesBulkImport<Row, Validated, Output>(
+	input: BulkImportRequest<Row>,
+	ports: BulkImportPorts<Row, Validated, Output>,
+): Promise<Result<BulkImportResult<Output>>> {
+	const validatedRequest = validateRequest(input);
+	if (!validatedRequest.ok) {
+		return validatedRequest;
+	}
+	const fingerprint = fingerprintBulkRequest(input);
+	if (input.mode === "commit") {
+		return runCommitImport(input, ports, fingerprint, validatedRequest.data);
+	}
+	const outcomes = await validateDryRunRows(
+		input,
+		ports,
+		0,
+		[],
+		new Set<string>(),
+	);
+	if (!outcomes.ok) {
+		return outcomes;
+	}
 	return ok(
 		presentResult({
 			request: input,
 			fingerprint,
-			status: checkpoint.status,
-			nextRowIndex: checkpoint.nextRowIndex,
-			checkpointVersion: checkpoint.version,
-			rows: checkpoint.rows,
-			retryableFailure: checkpoint.retryableFailure,
+			status: "dry_run_completed",
+			nextRowIndex: input.rows.length,
+			checkpointVersion: null,
+			rows: outcomes.data,
+			retryableFailure: null,
 		}),
 	);
 }

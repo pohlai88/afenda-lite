@@ -27,7 +27,7 @@ export const HUMAN_RESOURCES_AGGREGATE_COMPLETION = "completion" as const;
 export type HumanResourcesCompletionAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_COMPLETION;
 
-export async function recordCompletion(
+export function recordCompletion(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningCompletion>> {
@@ -40,7 +40,9 @@ export async function recordCompletion(
 				organizationId: data.organizationId,
 				assignmentId: data.assignmentId,
 			});
-			if (!assignment.ok) return assignment;
+			if (!assignment.ok) {
+				return assignment;
+			}
 			if (assignment.data === null) {
 				return fail(
 					"NOT_FOUND",
@@ -54,9 +56,9 @@ export async function recordCompletion(
 			const employeeId = data.employeeId ?? assignment.data.employeeId;
 			const courseId = data.courseId ?? assignment.data.courseId;
 			const sessionId =
-				data.sessionId !== undefined
-					? data.sessionId
-					: assignment.data.sessionId;
+				data.sessionId === undefined
+					? assignment.data.sessionId
+					: data.sessionId;
 			const completedAt = new Date(data.completedAt);
 			const assessorUserId = data.assessorUserId ?? data.actorUserId;
 			const notes = data.notes ?? null;
@@ -92,7 +94,7 @@ export async function recordCompletion(
 				return ok(existingByKey.data.completion);
 			}
 
-			return await store.recordCompletion(
+			return store.recordCompletion(
 				{
 					organizationId: data.organizationId,
 					assignmentId: data.assignmentId,
@@ -117,7 +119,7 @@ export async function recordCompletion(
 	});
 }
 
-export async function getCompletion(
+export function getCompletion(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningCompletion | null>> {
@@ -125,16 +127,15 @@ export async function getCompletion(
 		schema: getCompletionByAssignmentInputSchema,
 		invalidMessage: "Invalid completion get input",
 		query: HUMAN_RESOURCES_QUERY_COMPLETION_GET_BY_ASSIGNMENT,
-		execute: async (data, { store }) => {
-			return await store.findCompletionByAssignmentId({
+		execute: async (data, { store }) =>
+			await store.findCompletionByAssignmentId({
 				organizationId: data.organizationId,
 				assignmentId: data.assignmentId,
-			});
-		},
+			}),
 	});
 }
 
-export async function listCompletions(
+export function listCompletions(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompletionListPage>> {
@@ -142,14 +143,13 @@ export async function listCompletions(
 		schema: listCompletionsInputSchema,
 		invalidMessage: "Invalid completion list input",
 		query: HUMAN_RESOURCES_QUERY_COMPLETION_LIST,
-		execute: async (data, { store }) => {
-			return await store.listCompletions({
+		execute: async (data, { store }) =>
+			await store.listCompletions({
 				organizationId: data.organizationId,
 				page: data.page ?? 1,
 				pageSize: data.pageSize ?? 20,
 				employeeId: data.employeeId,
 				courseId: data.courseId,
-			});
-		},
+			}),
 	});
 }

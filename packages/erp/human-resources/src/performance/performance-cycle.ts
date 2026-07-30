@@ -57,7 +57,7 @@ export const HUMAN_RESOURCES_AGGREGATE_PERFORMANCE_CYCLE =
 export type HumanResourcesPerformanceCycleAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_PERFORMANCE_CYCLE;
 
-export async function createPerformanceCycle(
+export function createPerformanceCycle(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceCycle>> {
@@ -122,7 +122,7 @@ export async function createPerformanceCycle(
 	});
 }
 
-export async function updatePerformanceCycle(
+export function updatePerformanceCycle(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceCycle>> {
@@ -130,11 +130,11 @@ export async function updatePerformanceCycle(
 		schema: updatePerformanceCycleInputSchema,
 		invalidMessage: "Invalid performance cycle update input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_UPDATE,
-		execute: async (data, { store, ports }) => {
+		execute: (data, { store, ports }) => {
 			if (data.ratingScale !== undefined) {
 				const scaleCheck = assertRatingScaleUniqueCodes(data.ratingScale);
 				if (!scaleCheck.ok) {
-					return scaleCheck;
+					return Promise.resolve(scaleCheck);
 				}
 			}
 			return store.updatePerformanceCycle(
@@ -159,7 +159,7 @@ export async function updatePerformanceCycle(
 	});
 }
 
-export async function publishPerformanceCycle(
+export function publishPerformanceCycle(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceCycle>> {
@@ -184,7 +184,7 @@ export async function publishPerformanceCycle(
 	});
 }
 
-export async function openPerformanceCycle(
+export function openPerformanceCycle(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceCycle>> {
@@ -209,7 +209,7 @@ export async function openPerformanceCycle(
 	});
 }
 
-export async function closePerformanceCycle(
+export function closePerformanceCycle(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceCycle>> {
@@ -234,7 +234,7 @@ export async function closePerformanceCycle(
 	});
 }
 
-export async function cancelPerformanceCycle(
+export function cancelPerformanceCycle(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceCycle>> {
@@ -259,7 +259,7 @@ export async function cancelPerformanceCycle(
 	});
 }
 
-export async function setPerformanceCycleReviewPeriods(
+export function setPerformanceCycleReviewPeriods(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceCycleReviewPeriod[]>> {
@@ -286,7 +286,7 @@ export async function setPerformanceCycleReviewPeriods(
 	});
 }
 
-export async function listPerformanceCycleReviewPeriods(
+export function listPerformanceCycleReviewPeriods(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceCycleReviewPeriod[]>> {
@@ -302,7 +302,7 @@ export async function listPerformanceCycleReviewPeriods(
 	});
 }
 
-export async function setPerformanceCycleEligibility(
+export function setPerformanceCycleEligibility(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceCycleEligibility>> {
@@ -330,7 +330,7 @@ export async function setPerformanceCycleEligibility(
 	});
 }
 
-export async function getPerformanceCycleEligibility(
+export function getPerformanceCycleEligibility(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceCycleEligibility | null>> {
@@ -346,7 +346,7 @@ export async function getPerformanceCycleEligibility(
 	});
 }
 
-export async function enrollEligibleCycleParticipants(
+export function enrollEligibleCycleParticipants(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceCycleParticipant[]>> {
@@ -372,7 +372,7 @@ export async function enrollEligibleCycleParticipants(
 	});
 }
 
-export async function addCycleParticipant(
+export function addCycleParticipant(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceCycleParticipant>> {
@@ -400,7 +400,7 @@ export async function addCycleParticipant(
 	});
 }
 
-export async function removeCycleParticipant(
+export function removeCycleParticipant(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceCycleParticipant>> {
@@ -427,7 +427,7 @@ export async function removeCycleParticipant(
 	});
 }
 
-export async function getPerformanceCycleById(
+export function getPerformanceCycleById(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceCycle | null>> {
@@ -443,7 +443,7 @@ export async function getPerformanceCycleById(
 	});
 }
 
-export async function listPerformanceCycles(
+export function listPerformanceCycles(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceCycleListPage>> {
@@ -461,7 +461,7 @@ export async function listPerformanceCycles(
 	});
 }
 
-export async function listCycleParticipants(
+export function listCycleParticipants(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceCycleParticipant[]>> {

@@ -13,7 +13,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type PostSalesInvoiceActionData = { invoice: SalesInvoice };
+export interface PostSalesInvoiceActionData {
+	invoice: SalesInvoice;
+}
 export type PostSalesInvoiceActionState =
 	ActionResult<PostSalesInvoiceActionData> | null;
 
@@ -27,7 +29,7 @@ export async function postSalesInvoiceAction(
 	_prev: PostSalesInvoiceActionState,
 	formData: FormData,
 ): Promise<PostSalesInvoiceActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "postSalesInvoiceAction",
 		permission: "receivables.invoice.post",
 		safeMessage: "Could not post sales invoice. Try again or contact an admin.",
@@ -54,7 +56,9 @@ export async function postSalesInvoiceAction(
 				createReceivablesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePath("/admin/receivables");
 			revalidatePath("/client/receivables");
 			return { ok: true, data: { invoice: mapped.data } };

@@ -12,7 +12,9 @@ export function renderBulkErrorFile(
 			? []
 			: row.issues.map((issue) => ({ row, issue })),
 	);
-	if (errors.length === 0) return null;
+	if (errors.length === 0) {
+		return null;
+	}
 	return [
 		"row_index,source_reference,error_code,error_message,field,disposition",
 		...errors.map(({ row, issue }) =>

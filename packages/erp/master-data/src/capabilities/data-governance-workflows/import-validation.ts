@@ -71,7 +71,8 @@ export function summarizeImportFindings(
 	const information: ImportValidationFinding[] = [];
 
 	for (const finding of findings) {
-		switch (finding.severity) {
+		const severity: string = finding.severity;
+		switch (severity) {
 			case "error":
 				errors.push(finding);
 				break;
@@ -82,7 +83,7 @@ export function summarizeImportFindings(
 				information.push(finding);
 				break;
 			default:
-				assertNever(finding.severity);
+				unsupportedFindingSeverity(severity);
 		}
 	}
 
@@ -182,12 +183,12 @@ function normalizeFinding(
 		code: finding.code.trim(),
 		message: finding.message.trim(),
 		...(finding.field?.trim() ? { field: finding.field.trim() } : {}),
-		...(finding.rowNumber !== undefined
-			? { rowNumber: finding.rowNumber }
-			: {}),
+		...(finding.rowNumber === undefined
+			? {}
+			: { rowNumber: finding.rowNumber }),
 	};
 }
 
-function assertNever(value: never): never {
-	throw new Error(`Unsupported import finding severity: ${String(value)}`);
+function unsupportedFindingSeverity(value: string): never {
+	throw new Error(`Unsupported import finding severity: ${value}`);
 }

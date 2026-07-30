@@ -31,7 +31,7 @@ export const HUMAN_RESOURCES_AGGREGATE_COURSE = "course" as const;
 export type HumanResourcesCourseAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_COURSE;
 
-export async function createCourse(
+export function createCourse(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningCourse>> {
@@ -71,7 +71,7 @@ export async function createCourse(
 				return ok(existingByKey.data.course);
 			}
 
-			return await store.createCourse(
+			return store.createCourse(
 				{
 					organizationId: data.organizationId,
 					code: data.code,
@@ -92,7 +92,7 @@ export async function createCourse(
 	});
 }
 
-export async function updateCourse(
+export function updateCourse(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningCourse>> {
@@ -125,7 +125,7 @@ export async function updateCourse(
 	});
 }
 
-export async function activateCourse(
+export function activateCourse(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningCourse>> {
@@ -133,8 +133,8 @@ export async function activateCourse(
 		schema: courseStatusTransitionInputSchema,
 		invalidMessage: "Invalid course activate input",
 		command: HUMAN_RESOURCES_COMMAND_COURSE_ACTIVATE,
-		execute: async (data, { store, ports }) => {
-			return await store.activateCourse(
+		execute: async (data, { store, ports }) =>
+			await store.activateCourse(
 				{
 					organizationId: data.organizationId,
 					courseId: data.courseId,
@@ -146,12 +146,11 @@ export async function activateCourse(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_COURSE_ACTIVATE,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function archiveCourse(
+export function archiveCourse(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningCourse>> {
@@ -159,8 +158,8 @@ export async function archiveCourse(
 		schema: courseStatusTransitionInputSchema,
 		invalidMessage: "Invalid course archive input",
 		command: HUMAN_RESOURCES_COMMAND_COURSE_ARCHIVE,
-		execute: async (data, { store, ports }) => {
-			return await store.archiveCourse(
+		execute: async (data, { store, ports }) =>
+			await store.archiveCourse(
 				{
 					organizationId: data.organizationId,
 					courseId: data.courseId,
@@ -172,12 +171,11 @@ export async function archiveCourse(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_COURSE_ARCHIVE,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function getCourse(
+export function getCourse(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningCourse | null>> {
@@ -185,16 +183,15 @@ export async function getCourse(
 		schema: getCourseInputSchema,
 		invalidMessage: "Invalid course get input",
 		query: HUMAN_RESOURCES_QUERY_COURSE_GET,
-		execute: async (data, { store }) => {
-			return await store.getCourseById({
+		execute: async (data, { store }) =>
+			await store.getCourseById({
 				organizationId: data.organizationId,
 				courseId: data.courseId,
-			});
-		},
+			}),
 	});
 }
 
-export async function listCourses(
+export function listCourses(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CourseListPage>> {
@@ -202,13 +199,12 @@ export async function listCourses(
 		schema: listCoursesInputSchema,
 		invalidMessage: "Invalid course list input",
 		query: HUMAN_RESOURCES_QUERY_COURSE_LIST,
-		execute: async (data, { store }) => {
-			return await store.listCourses({
+		execute: async (data, { store }) =>
+			await store.listCourses({
 				organizationId: data.organizationId,
 				page: data.page ?? 1,
 				pageSize: data.pageSize ?? 20,
 				status: data.status,
-			});
-		},
+			}),
 	});
 }

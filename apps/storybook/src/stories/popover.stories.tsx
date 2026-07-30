@@ -44,13 +44,13 @@ export const Overview: Story = {
 		<div className="min-h-screen bg-canvas text-foreground">
 			<div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-2 border-b pb-6">
-					<p className="text-sm font-medium text-foreground-secondary">
+					<p className="font-medium text-foreground-secondary text-sm">
 						General ledger
 					</p>
-					<h1 className="text-2xl font-semibold tracking-tight">
+					<h1 className="font-semibold text-2xl tracking-tight">
 						July batch posting
 					</h1>
-					<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+					<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 						Use Popover for short contextual controls. Move substantial edits to
 						Dialog or Sheet.
 					</p>
@@ -58,10 +58,10 @@ export const Overview: Story = {
 
 				<div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border bg-card px-4 py-3">
 					<div className="grid gap-1">
-						<p className="text-sm font-medium text-foreground">
+						<p className="font-medium text-foreground text-sm">
 							Journal batch JB-2201
 						</p>
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							14 validated lines · ready for period check
 						</p>
 					</div>
@@ -80,10 +80,10 @@ export const Overview: Story = {
 								</PopoverDescription>
 							</PopoverHeader>
 							<FormField
-								label="Posting period"
 								description="YYYY-MM from the open ledger calendar."
+								label="Posting period"
 							>
-								<Input defaultValue="2026-07" autoComplete="off" />
+								<Input autoComplete="off" defaultValue="2026-07" />
 							</FormField>
 						</PopoverContent>
 					</Popover>
@@ -138,7 +138,7 @@ export const SemanticUsage: Story = {
 							</PopoverDescription>
 						</PopoverHeader>
 						<FormField label="Currency code">
-							<Input defaultValue="MYR" autoComplete="off" />
+							<Input autoComplete="off" defaultValue="MYR" />
 						</FormField>
 					</PopoverContent>
 				</Popover>
@@ -172,7 +172,7 @@ export const Usage: Story = {
 					</PopoverDescription>
 				</PopoverHeader>
 				<FormField label="Period">
-					<Input defaultValue="2026-07" autoComplete="off" />
+					<Input autoComplete="off" defaultValue="2026-07" />
 				</FormField>
 			</PopoverContent>
 		</Popover>
@@ -236,14 +236,14 @@ export const Composition: Story = {
 	render: () => (
 		<div className="flex w-full max-w-xl items-center justify-between gap-4 rounded-lg border px-4 py-3">
 			<div className="grid gap-1">
-				<p className="text-sm font-medium">INV-1042</p>
-				<p className="text-sm text-foreground-secondary">
+				<p className="font-medium text-sm">INV-1042</p>
+				<p className="text-foreground-secondary text-sm">
 					Northwind Trading · awaiting period check
 				</p>
 			</div>
 			<Popover>
 				<PopoverTrigger asChild>
-					<Button type="button" size="sm" variant="outline">
+					<Button size="sm" type="button" variant="outline">
 						Period check
 					</Button>
 				</PopoverTrigger>
@@ -291,7 +291,7 @@ export const DoAndDoNot: Story = {
 				</Popover>
 			</StorySection>
 			<StorySection title="Do not: confirm irreversible harm here">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Voiding an invoice or deleting a supplier requires AlertDialog.
 					Popover visibility never means commitment.
 				</p>

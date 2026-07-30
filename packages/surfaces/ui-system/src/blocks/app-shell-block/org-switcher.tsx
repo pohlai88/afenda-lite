@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { type MouseEvent, useCallback, useState } from "react";
 
 export function OrgSwitcher({
 	onOrganizationChange,
@@ -10,6 +10,18 @@ export function OrgSwitcher({
 	onOrganizationChange?: (id: string) => void;
 }>) {
 	const [current, setCurrent] = useState(organizations[0]);
+	const handleOrganizationChange = useCallback(
+		(event: MouseEvent<HTMLButtonElement>) => {
+			const organization = organizations.find(
+				(candidate) => candidate.id === event.currentTarget.value,
+			);
+			if (organization) {
+				setCurrent(organization);
+				onOrganizationChange?.(organization.id);
+			}
+		},
+		[onOrganizationChange, organizations],
+	);
 	return (
 		<div>
 			<button type="button">
@@ -18,12 +30,10 @@ export function OrgSwitcher({
 			{organizations.slice(1).map((organization) => (
 				<button
 					key={organization.id}
-					type="button"
+					onClick={handleOrganizationChange}
 					role="menuitem"
-					onClick={() => {
-						setCurrent(organization);
-						onOrganizationChange?.(organization.id);
-					}}
+					type="button"
+					value={organization.id}
 				>
 					{organization.name}
 				</button>

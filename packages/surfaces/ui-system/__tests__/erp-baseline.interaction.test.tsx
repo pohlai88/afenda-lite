@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useState } from "react";
+import { type ChangeEvent, useCallback, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { ColumnVisibilityMenu } from "../src/components/ui/column-visibility-menu";
 import { DataTable } from "../src/components/ui/data-table";
@@ -13,12 +13,17 @@ describe("ERP baseline interactions", () => {
 		const user = userEvent.setup();
 		function Example() {
 			const [value, setValue] = useState("invoice");
+			const handleChange = useCallback(
+				(event: ChangeEvent<HTMLInputElement>) => setValue(event.target.value),
+				[],
+			);
+			const handleClear = useCallback(() => setValue(""), []);
 			return (
 				<SearchField
 					aria-label="Search records"
+					onChange={handleChange}
+					onClear={handleClear}
 					value={value}
-					onChange={(event) => setValue(event.target.value)}
-					onClear={() => setValue("")}
 				/>
 			);
 		}
@@ -79,15 +84,15 @@ describe("ERP baseline interactions", () => {
 	it("applies controlled table visibility and bulk actions", () => {
 		render(
 			<DataTable
+				bulkActions={<button type="button">Post selected</button>}
 				columns={[
 					{ key: "name", title: "Name" },
 					{ key: "amount", title: "Amount" },
 				]}
-				data={[{ name: "Invoice", amount: 42 }]}
 				columnVisibility={{ amount: false }}
+				data={[{ name: "Invoice", amount: 42 }]}
 				selectable
 				selectedRowIds={new Set(["0"])}
-				bulkActions={<button type="button">Post selected</button>}
 			/>,
 		);
 		expect(

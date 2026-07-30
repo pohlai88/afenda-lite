@@ -50,28 +50,28 @@ export const Overview: Story = {
 				<header className="grid gap-2 border-b pb-6">
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="outline">Accounts payable</Badge>
-						<StatusBadge size="sm" status="active" label="Draft advice">
+						<StatusBadge label="Draft advice" size="sm" status="active">
 							Draft advice
 						</StatusBadge>
 					</div>
-					<h1 className="text-2xl font-semibold tracking-tight">
+					<h1 className="font-semibold text-2xl tracking-tight">
 						Remittance advice note
 					</h1>
-					<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+					<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 						Textarea captures plain multiline notes. FormField owns labels and
 						errors; feature code owns length and persistence.
 					</p>
 				</header>
 
-				<section className="grid gap-3" aria-labelledby="textarea-note-title">
+				<section aria-labelledby="textarea-note-title" className="grid gap-3">
 					<div className="grid gap-1">
 						<h2
-							className="text-base font-semibold tracking-tight text-foreground"
+							className="font-semibold text-base text-foreground tracking-tight"
 							id="textarea-note-title"
 						>
 							Supplier-facing memo
 						</h2>
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							Placeholder stays an example — never the only label.
 						</p>
 					</div>
@@ -84,8 +84,8 @@ export const Overview: Story = {
 						</CardHeader>
 						<CardContent>
 							<FormField
-								label="Advice note"
 								description="Plain text only. Keep under 500 characters before submit."
+								label="Advice note"
 							>
 								<Textarea
 									defaultValue="Quarterly service fee settlement against PO-1042. Hold freight variance for CN-3391."
@@ -94,7 +94,7 @@ export const Overview: Story = {
 							</FormField>
 						</CardContent>
 						<CardFooter className="justify-end border-t">
-							<Button type="button" size="sm">
+							<Button size="sm" type="button">
 								Save note
 							</Button>
 						</CardFooter>
@@ -117,8 +117,8 @@ export const Usage: Story = {
 	render: () => (
 		<div className="grid w-full max-w-md gap-4">
 			<FormField
-				label="Internal posting comment"
 				description="Visible to finance controllers on the journal batch."
+				label="Internal posting comment"
 			>
 				<Textarea
 					defaultValue="Approved with tax evidence attached."
@@ -143,8 +143,8 @@ export const StatesAndAccessibility: Story = {
 			<FormField label="Editable note">
 				<Textarea defaultValue="Ready for advice generation." rows={3} />
 			</FormField>
-			<FormField label="Invalid note" error="Enter at least 10 characters.">
-				<Textarea defaultValue="Too short" aria-invalid rows={3} />
+			<FormField error="Enter at least 10 characters." label="Invalid note">
+				<Textarea aria-invalid defaultValue="Too short" rows={3} />
 			</FormField>
 			<FormField label="Approved note">
 				<Textarea defaultValue="Locked after posting." readOnly rows={3} />
@@ -185,17 +185,17 @@ export const Composition: Story = {
 			</CardHeader>
 			<CardContent>
 				<FormField
-					label="Rejection reason"
 					description="Plain text shared with the batch preparer."
+					label="Rejection reason"
 				>
 					<Textarea placeholder="Describe the posting exception…" rows={5} />
 				</FormField>
 			</CardContent>
 			<CardFooter className="justify-end gap-2 border-t">
-				<Button type="button" variant="outline" size="sm">
+				<Button size="sm" type="button" variant="outline">
 					Cancel
 				</Button>
-				<Button type="button" size="sm">
+				<Button size="sm" type="button">
 					Reject batch
 				</Button>
 			</CardFooter>
@@ -215,8 +215,8 @@ export const DoAndDoNot: Story = {
 	render: () => (
 		<div className="grid w-full max-w-5xl gap-6 md:grid-cols-2">
 			<StorySection
-				title="Do"
 				description="Visible label and optional length guidance."
+				title="Do"
 			>
 				<FormField label="Credit note narrative">
 					<Textarea
@@ -226,16 +226,16 @@ export const DoAndDoNot: Story = {
 				</FormField>
 			</StorySection>
 			<StorySection
-				title="Do not"
 				description="Placeholder-only instruction is not a field label."
+				title="Do not"
 			>
 				<div className="grid gap-2 rounded-md border border-destructive/40 p-3">
 					<Textarea
-						placeholder="Enter credit note narrative"
 						aria-label="Credit note narrative"
+						placeholder="Enter credit note narrative"
 						rows={4}
 					/>
-					<p className="text-xs text-destructive">
+					<p className="text-destructive text-xs">
 						Accessible name alone does not replace a visible field label.
 					</p>
 				</div>

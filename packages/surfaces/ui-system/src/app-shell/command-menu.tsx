@@ -1,7 +1,15 @@
 "use client";
 
 import { Search } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+	type ChangeEvent,
+	type MouseEvent,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { Button } from "../components/ui/button";
 
 export type CommandMenuCommand = Readonly<{
@@ -53,14 +61,14 @@ export function CommandMenu({
 		return groups.flatMap((group) => {
 			const groupId = normalize(group.id);
 			const groupLabel = normalize(group.label);
-			if (!groupId || !groupLabel || seenGroups.has(groupId)) {
+			if (!(groupId && groupLabel) || seenGroups.has(groupId)) {
 				return [];
 			}
 			seenGroups.add(groupId);
 			const commands = group.commands.flatMap((command) => {
 				const id = normalize(command.id);
 				const label = normalize(command.label);
-				if (!id || !label || seenCommands.has(id)) {
+				if (!(id && label) || seenCommands.has(id)) {
 					return [];
 				}
 				seenCommands.add(id);
@@ -87,6 +95,27 @@ export function CommandMenu({
 		setOpen(false);
 		triggerRef.current?.focus();
 	}, []);
+	const openMenu = useCallback(() => setOpen(true), []);
+	const handleQueryChange = useCallback(
+		(event: ChangeEvent<HTMLInputElement>) => setQuery(event.target.value),
+		[],
+	);
+	const handleCommand = useCallback(
+		(event: MouseEvent<HTMLButtonElement>) => {
+			const commandId = event.currentTarget.value;
+			const command = normalizedGroups
+				.flatMap((group) => group.commands)
+				.find((candidate) => candidate.id === commandId);
+			if (command?.disabled !== false && command?.disabled !== undefined) {
+				return;
+			}
+			if (command !== undefined) {
+				onCommand?.(command.id);
+				close();
+			}
+		},
+		[close, normalizedGroups, onCommand],
+	);
 
 	useEffect(() => {
 		const handleKeyDown = (event: KeyboardEvent) => {
@@ -103,7 +132,7 @@ export function CommandMenu({
 				!event.ctrlKey &&
 				!event.metaKey &&
 				event.key === "/";
-			if (!commandShortcut && !slashShortcut) {
+			if (!(commandShortcut || slashShortcut)) {
 				return;
 			}
 			event.preventDefault();
@@ -118,6 +147,19 @@ export function CommandMenu({
 			searchRef.current?.focus();
 		}
 	}, [open]);
+
+	useEffect(() => {
+		if (!open) {
+			return;
+		}
+		const handleEscape = (event: KeyboardEvent) => {
+			if (event.key === "Escape") {
+				close();
+			}
+		};
+		document.addEventListener("keydown", handleEscape);
+		return () => document.removeEventListener("keydown", handleEscape);
+	}, [close, open]);
 
 	const filteredGroups = normalizedGroups.flatMap((group) => {
 		const search = query.trim().toLowerCase();
@@ -140,67 +182,57 @@ export function CommandMenu({
 	return (
 		<>
 			<Button
+				aria-expanded={open}
+				aria-label="Open command menu"
+				onClick={openMenu}
 				ref={triggerRef}
+				size="icon-sm"
 				type="button"
 				variant="ghost"
-				size="icon-sm"
-				aria-label="Open command menu"
-				aria-expanded={open}
-				onClick={() => setOpen(true)}
 			>
 				<Search />
 			</Button>
 			{open ? (
-				<div
-					role="dialog"
+				<dialog
 					aria-label="Command menu"
 					className="fixed inset-0 z-50 bg-background/80 p-6"
-					onKeyDown={(event) => {
-						if (event.key === "Escape") {
-							close();
-						}
-					}}
+					open
 				>
 					<div className="mx-auto max-w-lg rounded-lg border bg-popover p-3 shadow-lg">
 						<label className="sr-only" htmlFor="app-shell-command-search">
 							Search workspace commands
 						</label>
 						<input
-							ref={searchRef}
-							id="app-shell-command-search"
-							role="combobox"
-							aria-label="Search workspace commands"
 							aria-controls="app-shell-command-options"
 							aria-expanded="true"
-							value={query}
-							onChange={(event) => setQuery(event.target.value)}
+							aria-label="Search workspace commands"
 							className="mb-3 w-full rounded-md border bg-background px-3 py-2 text-sm"
+							id="app-shell-command-search"
+							onChange={handleQueryChange}
+							ref={searchRef}
+							role="combobox"
+							value={query}
 						/>
 						{filteredGroups.map((group) => (
-							<section key={group.id} aria-label={group.label}>
-								<h2 className="px-2 py-1 text-xs font-medium text-muted-foreground">
+							<section aria-label={group.label} key={group.id}>
+								<h2 className="px-2 py-1 font-medium text-muted-foreground text-xs">
 									{group.label}
 								</h2>
 								<div
+									aria-label={group.label}
 									id="app-shell-command-options"
 									role="listbox"
-									aria-label={group.label}
 								>
 									{group.commands.map((command) => (
 										<button
-											key={command.id}
-											type="button"
-											role="option"
-											aria-selected="false"
 											aria-disabled={command.disabled ? "true" : undefined}
+											aria-selected="false"
 											className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm hover:bg-accent disabled:opacity-50"
-											onClick={() => {
-												if (command.disabled) {
-													return;
-												}
-												onCommand?.(command.id);
-												close();
-											}}
+											key={command.id}
+											onClick={handleCommand}
+											role="option"
+											type="button"
+											value={command.id}
 										>
 											<span>{command.label}</span>
 											{command.shortcut ? (
@@ -214,7 +246,7 @@ export function CommandMenu({
 							</section>
 						))}
 					</div>
-				</div>
+				</dialog>
 			) : null}
 		</>
 	);

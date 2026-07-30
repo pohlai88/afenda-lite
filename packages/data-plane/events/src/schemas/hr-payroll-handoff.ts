@@ -206,7 +206,7 @@ export const DEFAULT_HANDOFF_ROUNDING_MODE: HandoffRoundingMode = "half_even";
 
 /** Fractional digit count for a handoff money amount (0–4). */
 export function deriveHandoffDecimalScale(amount: string): number {
-	const fractional = amount.split(".")[1];
+	const [, fractional] = amount.split(".");
 	if (!fractional) {
 		return 0;
 	}

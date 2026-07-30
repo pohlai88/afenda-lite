@@ -10,7 +10,13 @@ import {
 	type VisibilityState,
 } from "@tanstack/react-table";
 import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
-import * as React from "react";
+import {
+	type ChangeEvent,
+	type MouseEvent,
+	type ReactNode,
+	useCallback,
+	useMemo,
+} from "react";
 import { cn } from "../../lib/utils";
 import { Alert, AlertDescription, AlertTitle } from "./alert";
 import { BulkActionBar } from "./bulk-action-bar";
@@ -37,48 +43,48 @@ import {
 } from "./table";
 
 export interface DataTableColumn<T> {
-	key: keyof T;
-	title: string;
-	sortable?: boolean;
 	filterable?: boolean;
+	key: keyof T;
+	render?: (value: T[keyof T], row: T, index: number) => ReactNode;
+	sortable?: boolean;
+	title: string;
 	width?: string;
-	render?: (value: T[keyof T], row: T, index: number) => React.ReactNode;
 }
 
 export type DataTableDensity = "comfortable" | "compact";
 
 export interface DataTableProps<T> {
+	bulkActions?: ReactNode;
+	className?: string;
+	columnOrder?: ColumnOrderState;
 	columns: DataTableColumn<T>[];
+	columnVisibility?: VisibilityState;
+	currentPage?: number;
 	data: T[];
+	density?: DataTableDensity;
+	emptyAction?: ReactNode;
+	emptyDescription?: string;
+	emptyTitle?: string;
+	error?: { title?: string; description: string; action?: ReactNode };
+	filters?: Partial<Record<keyof T, string>>;
 	getRowId?: (row: T, index: number) => string;
 	loading?: boolean;
-	emptyTitle?: string;
-	emptyDescription?: string;
-	emptyAction?: React.ReactNode;
-	sortBy?: keyof T;
-	sortDirection?: "asc" | "desc";
-	onSort?: (key: keyof T, direction: "asc" | "desc") => void;
-	currentPage?: number;
-	totalPages?: number;
+	onColumnOrderChange?: (order: ColumnOrderState) => void;
+	onColumnVisibilityChange?: (visibility: VisibilityState) => void;
+	onFilterChange?: (key: keyof T, value: string) => void;
 	onPageChange?: (page: number) => void;
-	showPagination?: boolean;
+	onPinnedColumnsChange?: (pinning: ColumnPinningState) => void;
+	onSelectionChange?: (selectedRowIds: Set<string>) => void;
+	onSort?: (key: keyof T, direction: "asc" | "desc") => void;
+	pinnedColumns?: ColumnPinningState;
+	rowActions?: (row: T, index: number) => ReactNode;
 	selectable?: boolean;
 	selectedRowIds?: Set<string>;
-	onSelectionChange?: (selectedRowIds: Set<string>) => void;
-	rowActions?: (row: T, index: number) => React.ReactNode;
-	toolbar?: React.ReactNode;
-	filters?: Partial<Record<keyof T, string>>;
-	onFilterChange?: (key: keyof T, value: string) => void;
-	density?: DataTableDensity;
-	columnVisibility?: VisibilityState;
-	onColumnVisibilityChange?: (visibility: VisibilityState) => void;
-	columnOrder?: ColumnOrderState;
-	onColumnOrderChange?: (order: ColumnOrderState) => void;
-	pinnedColumns?: ColumnPinningState;
-	onPinnedColumnsChange?: (pinning: ColumnPinningState) => void;
-	bulkActions?: React.ReactNode;
-	error?: { title?: string; description: string; action?: React.ReactNode };
-	className?: string;
+	showPagination?: boolean;
+	sortBy?: keyof T;
+	sortDirection?: "asc" | "desc";
+	toolbar?: ReactNode;
+	totalPages?: number;
 }
 
 function pageWindow(
@@ -96,7 +102,33 @@ function pageWindow(
 	return Array.from({ length: end - start + 1 }, (_, i) => start + i);
 }
 
-function DataTable<T extends Record<string, unknown>>({
+function RowSelectionCheckbox({
+	checked,
+	label,
+	onSelectionChange,
+	rowId,
+}: Readonly<{
+	checked: boolean;
+	label: string;
+	onSelectionChange: (rowId: string, checked: boolean) => void;
+	rowId: string;
+}>) {
+	const handleCheckedChange = useCallback(
+		(nextChecked: boolean) => onSelectionChange(rowId, nextChecked === true),
+		[onSelectionChange, rowId],
+	);
+	return (
+		<Checkbox
+			aria-label={label}
+			checked={checked}
+			onCheckedChange={handleCheckedChange}
+		/>
+	);
+}
+
+// This component coordinates independent table capabilities while delegating their handlers and controls.
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Keeping the render states together preserves their precedence and accessibility structure.
+function DataTable<T extends object>({
 	columns,
 	data,
 	getRowId = (_row, index) => String(index),
@@ -129,8 +161,11 @@ function DataTable<T extends Record<string, unknown>>({
 	error,
 	className,
 }: DataTableProps<T>) {
-	const resolvedSelected = selectedRowIds ?? new Set<string>();
-	const tableColumns = React.useMemo<ColumnDef<T>[]>(
+	const resolvedSelected = useMemo(
+		() => selectedRowIds ?? new Set<string>(),
+		[selectedRowIds],
+	);
+	const tableColumns = useMemo<ColumnDef<T>[]>(
 		() =>
 			columns.map((column) => ({
 				id: String(column.key),
@@ -156,7 +191,7 @@ function DataTable<T extends Record<string, unknown>>({
 			onPinnedColumnsChange?.(functionalUpdate(updater, pinnedColumns)),
 		getCoreRowModel: getCoreRowModel(),
 	});
-	const columnById = React.useMemo(
+	const columnById = useMemo(
 		() => new Map(columns.map((column) => [String(column.key), column])),
 		[columns],
 	);
@@ -165,15 +200,23 @@ function DataTable<T extends Record<string, unknown>>({
 		return definition ? [{ column, definition }] : [];
 	});
 
-	const handleSort = (columnKey: keyof T) => {
-		if (!onSort) return;
-		const newDirection: "asc" | "desc" =
-			sortBy === columnKey && sortDirection === "asc" ? "desc" : "asc";
-		onSort(columnKey, newDirection);
-	};
+	const handleSortClick = useCallback(
+		(event: MouseEvent<HTMLButtonElement>) => {
+			const definition = columnById.get(event.currentTarget.value);
+			if (!(definition && onSort)) {
+				return;
+			}
+			const newDirection: "asc" | "desc" =
+				sortBy === definition.key && sortDirection === "asc" ? "desc" : "asc";
+			onSort(definition.key, newDirection);
+		},
+		[columnById, onSort, sortBy, sortDirection],
+	);
 
 	const getSortIcon = (columnKey: keyof T) => {
-		if (sortBy !== columnKey) return null;
+		if (sortBy !== columnKey) {
+			return null;
+		}
 		return sortDirection === "asc" ? (
 			<ChevronUpIcon className="ml-1 h-4 w-4" />
 		) : (
@@ -181,20 +224,54 @@ function DataTable<T extends Record<string, unknown>>({
 		);
 	};
 
-	const rowIds = data.map((row, index) => getRowId(row, index));
+	const rowIds = useMemo(
+		() => data.map((row, index) => getRowId(row, index)),
+		[data, getRowId],
+	);
 
-	const handleSelectAll = (checked: boolean) => {
-		if (!onSelectionChange) return;
-		onSelectionChange(checked ? new Set(rowIds) : new Set());
-	};
+	const handleSelectAll = useCallback(
+		(checked: boolean) => {
+			if (!onSelectionChange) {
+				return;
+			}
+			onSelectionChange(checked ? new Set(rowIds) : new Set());
+		},
+		[onSelectionChange, rowIds],
+	);
 
-	const handleSelectRow = (rowId: string, checked: boolean) => {
-		if (!onSelectionChange) return;
-		const next = new Set(resolvedSelected);
-		if (checked) next.add(rowId);
-		else next.delete(rowId);
-		onSelectionChange(next);
-	};
+	const handleSelectRow = useCallback(
+		(rowId: string, checked: boolean) => {
+			if (!onSelectionChange) {
+				return;
+			}
+			const next = new Set(resolvedSelected);
+			if (checked) {
+				next.add(rowId);
+			} else {
+				next.delete(rowId);
+			}
+			onSelectionChange(next);
+		},
+		[onSelectionChange, resolvedSelected],
+	);
+	const handleFilterChange = useCallback(
+		(event: ChangeEvent<HTMLInputElement>) => {
+			const definition = columnById.get(event.currentTarget.name);
+			if (definition !== undefined) {
+				onFilterChange?.(definition.key, event.currentTarget.value);
+			}
+		},
+		[columnById, onFilterChange],
+	);
+	const handlePageClick = useCallback(
+		(event: MouseEvent<HTMLElement>) => {
+			const page = Number(event.currentTarget.dataset.page);
+			if (Number.isInteger(page) && page >= 1 && page <= totalPages) {
+				onPageChange?.(page);
+			}
+		},
+		[onPageChange, totalPages],
+	);
 
 	const isAllSelected =
 		data.length > 0 && rowIds.every((id) => resolvedSelected.has(id));
@@ -202,6 +279,12 @@ function DataTable<T extends Record<string, unknown>>({
 		resolvedSelected.size > 0 &&
 		!isAllSelected &&
 		rowIds.some((id) => resolvedSelected.has(id));
+	let selectAllState: boolean | "indeterminate" = false;
+	if (isAllSelected) {
+		selectAllState = true;
+	} else if (isPartialSelected) {
+		selectAllState = "indeterminate";
+	}
 
 	const rowHeightClass =
 		density === "compact"
@@ -211,14 +294,14 @@ function DataTable<T extends Record<string, unknown>>({
 	if (loading) {
 		return (
 			<div className="flex items-center justify-center py-12">
-				<Spinner size="lg" label="Loading data..." />
+				<Spinner label="Loading data..." size="lg" />
 			</div>
 		);
 	}
 
 	if (error) {
 		return (
-			<Alert variant="destructive" className={className}>
+			<Alert className={className} variant="destructive">
 				<AlertTitle>{error.title ?? "Unable to load data"}</AlertTitle>
 				<AlertDescription>{error.description}</AlertDescription>
 				{error.action ? <div className="mt-3">{error.action}</div> : null}
@@ -229,9 +312,9 @@ function DataTable<T extends Record<string, unknown>>({
 	if (data.length === 0 && !toolbar && !onFilterChange) {
 		return (
 			<Empty
-				title={emptyTitle}
-				description={emptyDescription}
 				action={emptyAction}
+				description={emptyDescription}
+				title={emptyTitle}
 			/>
 		);
 	}
@@ -242,11 +325,11 @@ function DataTable<T extends Record<string, unknown>>({
 		<div className={cn("space-y-3", className)}>
 			{bulkActions ? (
 				<BulkActionBar
-					selectedCount={resolvedSelected.size}
 					actions={bulkActions}
+					selectedCount={resolvedSelected.size}
 				/>
 			) : null}
-			{(toolbar || onFilterChange) && (
+			{toolbar !== undefined || onFilterChange !== undefined ? (
 				<div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
 					{onFilterChange ? (
 						<div className="flex flex-1 flex-wrap gap-2">
@@ -254,14 +337,13 @@ function DataTable<T extends Record<string, unknown>>({
 								.filter((column) => column.filterable)
 								.map((column) => (
 									<Input
-										key={String(column.key)}
-										value={filters?.[column.key] ?? ""}
-										onChange={(event) =>
-											onFilterChange(column.key, event.target.value)
-										}
-										placeholder={`Filter ${column.title}`}
 										aria-label={`Filter ${column.title}`}
 										className="max-w-xs"
+										key={String(column.key)}
+										name={String(column.key)}
+										onChange={handleFilterChange}
+										placeholder={`Filter ${column.title}`}
+										value={filters?.[column.key] ?? ""}
 									/>
 								))}
 						</div>
@@ -270,36 +352,33 @@ function DataTable<T extends Record<string, unknown>>({
 					)}
 					{toolbar}
 				</div>
-			)}
+			) : null}
 
 			{data.length === 0 ? (
 				<Empty
-					title={emptyTitle}
-					description={emptyDescription}
 					action={emptyAction}
+					description={emptyDescription}
+					title={emptyTitle}
 				/>
 			) : (
 				<div className="overflow-x-auto rounded-md border">
 					<Table>
-						<TableHeader className="bg-surface-sunken sticky top-0 z-10">
+						<TableHeader className="sticky top-0 z-10 bg-surface-sunken">
 							<TableRow className={rowHeightClass}>
-								{selectable && (
+								{selectable ? (
 									<TableHead className="w-12">
 										<Checkbox
-											checked={
-												isAllSelected
-													? true
-													: isPartialSelected
-														? "indeterminate"
-														: false
-											}
-											onCheckedChange={handleSelectAll}
 											aria-label="Select all rows"
+											checked={selectAllState}
+											onCheckedChange={handleSelectAll}
 										/>
 									</TableHead>
-								)}
+								) : null}
 								{visibleColumns.map(({ column, definition }) => (
 									<TableHead
+										className={cn(
+											column.getIsPinned() && "sticky z-20 bg-surface-sunken",
+										)}
 										key={column.id}
 										style={{
 											width: definition.width,
@@ -312,17 +391,15 @@ function DataTable<T extends Record<string, unknown>>({
 													? column.getAfter("right")
 													: undefined,
 										}}
-										className={cn(
-											column.getIsPinned() && "sticky z-20 bg-surface-sunken",
-										)}
 									>
 										{definition.sortable && onSort ? (
 											<Button
-												variant="ghost"
-												size="sm"
-												className="h-auto p-0 font-medium hover:bg-transparent"
-												onClick={() => handleSort(definition.key)}
 												aria-label={`Sort by ${definition.title}`}
+												className="h-auto p-0 font-medium hover:bg-transparent"
+												onClick={handleSortClick}
+												size="sm"
+												value={String(definition.key)}
+												variant="ghost"
 											>
 												{definition.title}
 												{getSortIcon(definition.key)}
@@ -342,30 +419,32 @@ function DataTable<T extends Record<string, unknown>>({
 								const rowId = getRowId(row, index);
 								return (
 									<TableRow
-										key={rowId}
-										data-state={
-											resolvedSelected.has(rowId) ? "selected" : undefined
-										}
 										className={cn(
 											rowHeightClass,
 											index % 2 === 1 &&
 												!resolvedSelected.has(rowId) &&
 												"bg-table-stripe",
 										)}
+										data-state={
+											resolvedSelected.has(rowId) ? "selected" : undefined
+										}
+										key={rowId}
 									>
-										{selectable && (
+										{selectable ? (
 											<TableCell>
-												<Checkbox
+												<RowSelectionCheckbox
 													checked={resolvedSelected.has(rowId)}
-													onCheckedChange={(checked) =>
-														handleSelectRow(rowId, checked === true)
-													}
-													aria-label={`Select row ${index + 1}`}
+													label={`Select row ${index + 1}`}
+													onSelectionChange={handleSelectRow}
+													rowId={rowId}
 												/>
 											</TableCell>
-										)}
+										) : null}
 										{visibleColumns.map(({ column, definition }) => (
 											<TableCell
+												className={cn(
+													column.getIsPinned() && "sticky z-10 bg-background",
+												)}
 												key={column.id}
 												style={{
 													left:
@@ -377,9 +456,6 @@ function DataTable<T extends Record<string, unknown>>({
 															? column.getAfter("right")
 															: undefined,
 												}}
-												className={cn(
-													column.getIsPinned() && "sticky z-10 bg-background",
-												)}
 											>
 												{definition.render
 													? definition.render(row[definition.key], row, index)
@@ -405,24 +481,24 @@ function DataTable<T extends Record<string, unknown>>({
 						<PaginationContent>
 							<PaginationItem>
 								<PaginationPrevious
-									onClick={() =>
-										currentPage > 1 && onPageChange(currentPage - 1)
-									}
+									aria-disabled={currentPage <= 1}
 									className={
 										currentPage <= 1
 											? "pointer-events-none opacity-50"
 											: "cursor-pointer"
 									}
-									aria-disabled={currentPage <= 1}
+									data-page={currentPage - 1}
+									onClick={handlePageClick}
 								/>
 							</PaginationItem>
 							{pages.map((pageNumber) => (
 								<PaginationItem key={pageNumber}>
 									<PaginationLink
-										onClick={() => onPageChange(pageNumber)}
-										isActive={currentPage === pageNumber}
-										className="cursor-pointer"
 										aria-label={`Go to page ${pageNumber}`}
+										className="cursor-pointer"
+										data-page={pageNumber}
+										isActive={currentPage === pageNumber}
+										onClick={handlePageClick}
 									>
 										{pageNumber}
 									</PaginationLink>
@@ -430,15 +506,14 @@ function DataTable<T extends Record<string, unknown>>({
 							))}
 							<PaginationItem>
 								<PaginationNext
-									onClick={() =>
-										currentPage < totalPages && onPageChange(currentPage + 1)
-									}
+									aria-disabled={currentPage >= totalPages}
 									className={
 										currentPage >= totalPages
 											? "pointer-events-none opacity-50"
 											: "cursor-pointer"
 									}
-									aria-disabled={currentPage >= totalPages}
+									data-page={currentPage + 1}
+									onClick={handlePageClick}
 								/>
 							</PaginationItem>
 						</PaginationContent>

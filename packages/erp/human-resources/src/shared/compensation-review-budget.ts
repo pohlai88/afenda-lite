@@ -68,6 +68,41 @@ function parseBudgetAmount(amount: string): Result<ExactDecimal> {
 	return ok(parsed);
 }
 
+function computeCommittedCycleIncrease(input: {
+	budgetCurrencyCode: string;
+	excludedReviewId: string;
+	otherCycleReviews: CompensationReview[];
+	activeBaseByEmploymentId: Map<string, string | null>;
+}): Result<ExactDecimal> {
+	let committedIncrease = EXACT_DECIMAL_ZERO;
+	for (const other of input.otherCycleReviews) {
+		if (
+			other.id === input.excludedReviewId ||
+			(other.status !== "recorded" && other.status !== "finalized") ||
+			!(other.proposedBaseAmount && other.proposedCurrencyCode)
+		) {
+			continue;
+		}
+		if (other.proposedCurrencyCode !== input.budgetCurrencyCode) {
+			return fail(
+				"VALIDATION_ERROR",
+				"Another review in this cycle uses a different currency than the cycle budget.",
+				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
+			);
+		}
+		const otherIncrease = computeCompensationIncreaseAmount({
+			currentBaseAmount:
+				input.activeBaseByEmploymentId.get(other.employmentId) ?? null,
+			proposedBaseAmount: other.proposedBaseAmount,
+		});
+		if (!otherIncrease.ok) {
+			return otherIncrease;
+		}
+		committedIncrease = addExactDecimals(committedIncrease, otherIncrease.data);
+	}
+	return ok(committedIncrease);
+}
+
 export function assertCompensationReviewWithinBudget(input: {
 	cycle: Pick<
 		CompensationReviewCycle,
@@ -85,7 +120,7 @@ export function assertCompensationReviewWithinBudget(input: {
 	activeBaseByEmploymentId: Map<string, string | null>;
 }): Result<true> {
 	const { cycle, review } = input;
-	if (!review.proposedBaseAmount || !review.proposedCurrencyCode) {
+	if (!(review.proposedBaseAmount && review.proposedCurrencyCode)) {
 		return fail(
 			"VALIDATION_ERROR",
 			"Review must include proposed amount and currency for budget check.",
@@ -101,7 +136,9 @@ export function assertCompensationReviewWithinBudget(input: {
 	}
 
 	const budgetTotal = parseBudgetAmount(cycle.budgetTotalAmount);
-	if (!budgetTotal.ok) return budgetTotal;
+	if (!budgetTotal.ok) {
+		return budgetTotal;
+	}
 
 	const currentBase =
 		input.activeBaseByEmploymentId.get(review.employmentId) ?? null;
@@ -109,32 +146,22 @@ export function assertCompensationReviewWithinBudget(input: {
 		currentBaseAmount: currentBase,
 		proposedBaseAmount: review.proposedBaseAmount,
 	});
-	if (!proposedIncrease.ok) return proposedIncrease;
+	if (!proposedIncrease.ok) {
+		return proposedIncrease;
+	}
 
-	let committedIncrease = EXACT_DECIMAL_ZERO;
-	for (const other of input.otherCycleReviews) {
-		if (other.id === review.id) continue;
-		if (other.status !== "recorded" && other.status !== "finalized") continue;
-		if (!other.proposedBaseAmount || !other.proposedCurrencyCode) continue;
-		if (other.proposedCurrencyCode !== cycle.budgetCurrencyCode) {
-			return fail(
-				"VALIDATION_ERROR",
-				"Another review in this cycle uses a different currency than the cycle budget.",
-				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-			);
-		}
-		const otherCurrentBase =
-			input.activeBaseByEmploymentId.get(other.employmentId) ?? null;
-		const otherIncrease = computeCompensationIncreaseAmount({
-			currentBaseAmount: otherCurrentBase,
-			proposedBaseAmount: other.proposedBaseAmount,
-		});
-		if (!otherIncrease.ok) return otherIncrease;
-		committedIncrease = addExactDecimals(committedIncrease, otherIncrease.data);
+	const committedIncrease = computeCommittedCycleIncrease({
+		budgetCurrencyCode: cycle.budgetCurrencyCode,
+		excludedReviewId: review.id,
+		otherCycleReviews: input.otherCycleReviews,
+		activeBaseByEmploymentId: input.activeBaseByEmploymentId,
+	});
+	if (!committedIncrease.ok) {
+		return committedIncrease;
 	}
 
 	const totalIncrease = addExactDecimals(
-		committedIncrease,
+		committedIncrease.data,
 		proposedIncrease.data,
 	);
 	if (compareExactDecimals(totalIncrease, budgetTotal.data) > 0) {

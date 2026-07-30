@@ -1,9 +1,9 @@
 import { InventoryShell } from "@/features/inventory/inventory-shell";
 import { firstSearchParam } from "@/lib/first-search-param";
 
-type AdminInventoryPageProps = {
+interface AdminInventoryPageProps {
 	searchParams: Promise<{ movementId?: string | string[] }>;
-};
+}
 
 /**
  * Operator admin inventory — session + fine-grained inventory permissions.

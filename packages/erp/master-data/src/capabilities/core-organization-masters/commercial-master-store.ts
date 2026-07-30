@@ -1,6 +1,6 @@
 import type { CommercialMasterStore } from "./store";
 
-export type { CommercialMasterStore };
+export type { CommercialMasterStore } from "./store";
 
 export type PaymentTermStore = Pick<
 	CommercialMasterStore,

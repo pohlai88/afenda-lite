@@ -3,7 +3,6 @@
  */
 
 import { describe, expect, it } from "vitest";
-
 import { createEmployee } from "../src/core/employee";
 import { createEmployment } from "../src/core/employment";
 import {
@@ -25,6 +24,7 @@ import {
 import { assignPrimaryReportingLine } from "../src/organization/reporting-line";
 import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/permissions";
 import { createProductionWorkCalendar } from "../src/production-work-calendar";
+import { runSequential, sequentialReturn } from "../src/shared/run-sequential";
 import {
 	createMemoryHumanResourcesStore,
 	createStoreAssignmentContextQuery,
@@ -128,6 +128,7 @@ import {
 } from "../src/time/timesheet-generation";
 import type { AttendanceExceptionType } from "../src/types";
 import { createTestHumanResourcesCommandOptions } from "./helpers/command-options";
+import { helperAssert as assert } from "./helpers/helper-assert";
 import {
 	createStoreBackedIdentityResolver,
 	mapActorToEmployee,
@@ -191,8 +192,10 @@ async function grantTimeApprovalAuthority(
 		},
 		ready,
 	);
-	expect(assigned.ok).toBe(true);
-	if (!assigned.ok) throw new Error("approval authority seed failed");
+	assert.strictEqual(assigned.ok, true);
+	if (!assigned.ok) {
+		throw new Error("approval authority seed failed");
+	}
 	return assigned.data;
 }
 
@@ -215,8 +218,10 @@ async function seedEmployeeEmployment(
 		},
 		ready,
 	);
-	expect(employee.ok).toBe(true);
-	if (!employee.ok) throw new Error("employee seed failed");
+	assert.strictEqual(employee.ok, true);
+	if (!employee.ok) {
+		throw new Error("employee seed failed");
+	}
 	const employment = await createEmployment(
 		{
 			organizationId: input.organizationId,
@@ -227,8 +232,10 @@ async function seedEmployeeEmployment(
 		},
 		ready,
 	);
-	expect(employment.ok).toBe(true);
-	if (!employment.ok) throw new Error("employment seed failed");
+	assert.strictEqual(employment.ok, true);
+	if (!employment.ok) {
+		throw new Error("employment seed failed");
+	}
 	return { employee: employee.data, employment: employment.data };
 }
 
@@ -267,8 +274,10 @@ async function seedPublishedDayShift(
 		},
 		ready,
 	);
-	expect(shift.ok).toBe(true);
-	if (!shift.ok) throw new Error("shift seed failed");
+	assert.strictEqual(shift.ok, true);
+	if (!shift.ok) {
+		throw new Error("shift seed failed");
+	}
 	const activated = await activateShift(
 		{
 			organizationId: ORG,
@@ -279,8 +288,10 @@ async function seedPublishedDayShift(
 		},
 		ready,
 	);
-	expect(activated.ok).toBe(true);
-	if (!activated.ok) throw new Error("shift activate failed");
+	assert.strictEqual(activated.ok, true);
+	if (!activated.ok) {
+		throw new Error("shift activate failed");
+	}
 	const assignment = await assignShift(
 		{
 			organizationId: ORG,
@@ -297,8 +308,10 @@ async function seedPublishedDayShift(
 		},
 		ready,
 	);
-	expect(assignment.ok).toBe(true);
-	if (!assignment.ok) throw new Error("assign failed");
+	assert.strictEqual(assignment.ok, true);
+	if (!assignment.ok) {
+		throw new Error("assign failed");
+	}
 	const published = await publishShiftAssignment(
 		{
 			organizationId: ORG,
@@ -309,8 +322,10 @@ async function seedPublishedDayShift(
 		},
 		ready,
 	);
-	expect(published.ok).toBe(true);
-	if (!published.ok) throw new Error("publish failed");
+	assert.strictEqual(published.ok, true);
+	if (!published.ok) {
+		throw new Error("publish failed");
+	}
 	return { shift: shift.data, assignment: published.data };
 }
 
@@ -357,7 +372,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(calendar.ok).toBe(true);
-		if (!calendar.ok) return;
+		if (!calendar.ok) {
+			return;
+		}
 
 		const assigned = await assignEmploymentCalendar(
 			{
@@ -372,7 +389,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(assigned.ok).toBe(true);
-		if (!assigned.ok) return;
+		if (!assigned.ok) {
+			return;
+		}
 
 		const resolved = await resolveEmploymentCalendar(
 			{
@@ -386,7 +405,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(resolved.ok).toBe(true);
-		if (!resolved.ok) return;
+		if (!resolved.ok) {
+			return;
+		}
 		expect(resolved.data?.calendarId).toBe(calendar.data.id);
 	});
 
@@ -415,7 +436,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(shift.ok).toBe(true);
-		if (!shift.ok) return;
+		if (!shift.ok) {
+			return;
+		}
 		expect(shift.data.isOvernight).toBe(true);
 
 		const activated = await activateShift(
@@ -429,7 +452,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(activated.ok).toBe(true);
-		if (!activated.ok) return;
+		if (!activated.ok) {
+			return;
+		}
 
 		const assignment = await assignShift(
 			{
@@ -448,7 +473,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(assignment.ok).toBe(true);
-		if (!assignment.ok) return;
+		if (!assignment.ok) {
+			return;
+		}
 
 		const published = await publishShiftAssignment(
 			{
@@ -461,7 +488,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(published.ok).toBe(true);
-		if (!published.ok) return;
+		if (!published.ok) {
+			return;
+		}
 		expect(published.data.publicationStatus).toBe("published");
 	});
 
@@ -488,7 +517,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(clockIn.ok).toBe(true);
-		if (!clockIn.ok) return;
+		if (!clockIn.ok) {
+			return;
+		}
 
 		const clockOut = await recordAttendanceEvent(
 			{
@@ -506,7 +537,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(clockOut.ok).toBe(true);
-		if (!clockOut.ok) return;
+		if (!clockOut.ok) {
+			return;
+		}
 
 		const session = await resolveAttendanceSession(
 			{
@@ -521,7 +554,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(session.ok).toBe(true);
-		if (!session.ok) return;
+		if (!session.ok) {
+			return;
+		}
 		expect(session.data.workedMinutes).toBe(480);
 		expect(session.data.resolutionStatus).toBe("resolved");
 
@@ -539,7 +574,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(exception.ok).toBe(true);
-		if (!exception.ok) return;
+		if (!exception.ok) {
+			return;
+		}
 
 		const reviewed = await reviewAttendanceException(
 			{
@@ -552,7 +589,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(reviewed.ok).toBe(true);
-		if (!reviewed.ok) return;
+		if (!reviewed.ok) {
+			return;
+		}
 		expect(reviewed.data.reviewStatus).toBe("in_review");
 
 		const excused = await excuseAttendanceException(
@@ -567,7 +606,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(excused.ok).toBe(true);
-		if (!excused.ok) return;
+		if (!excused.ok) {
+			return;
+		}
 		expect(excused.data.reviewStatus).toBe("excused");
 	});
 
@@ -593,7 +634,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(timesheet.ok).toBe(true);
-		if (!timesheet.ok) return;
+		if (!timesheet.ok) {
+			return;
+		}
 
 		const regular = await addTimesheetEntry(
 			{
@@ -661,7 +704,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(current.ok).toBe(true);
-		if (!current.ok || current.data === null) return;
+		if (!current.ok || current.data === null) {
+			return;
+		}
 
 		const submitted = await submitTimesheet(
 			{
@@ -674,7 +719,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 		await grantTimeApprovalAuthority(ready, {
 			organizationId: ORG,
 			targetActorUserId: ACTOR,
@@ -700,7 +747,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(selfApprove.ok).toBe(false);
-		if (selfApprove.ok) return;
+		if (selfApprove.ok) {
+			return;
+		}
 		expect(humanResourcesCodeFromResult(selfApprove)).toBe(
 			HUMAN_RESOURCES_ERROR_FORBIDDEN,
 		);
@@ -717,7 +766,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 		expect(approved.data.status).toBe("approved");
 
 		const handoff = await getApprovedTimeHandoff(
@@ -730,7 +781,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(handoff.ok).toBe(true);
-		if (!handoff.ok || handoff.data === null) return;
+		if (!handoff.ok || handoff.data === null) {
+			return;
+		}
 		expect(handoff.data.regularMinutes).toBe(480);
 		expect(handoff.data.overtime).toEqual(
 			expect.arrayContaining([
@@ -743,12 +796,12 @@ describe("human-resources.time (memory)", () => {
 
 	it("enforces cross-org isolation and create idempotency", async () => {
 		const ready = harness();
-		const seededA = await seedEmployeeEmployment(ready, {
+		await seedEmployeeEmployment(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,
 			suffix: "iso-a",
 		});
-		const seededB = await seedEmployeeEmployment(ready, {
+		await seedEmployeeEmployment(ready, {
 			organizationId: ORG_B,
 			actorUserId: ACTOR,
 			suffix: "iso-b",
@@ -771,7 +824,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(calendarA.ok).toBe(true);
-		if (!calendarA.ok) return;
+		if (!calendarA.ok) {
+			return;
+		}
 
 		const replay = await createWorkCalendar(
 			{
@@ -790,7 +845,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(replay.ok).toBe(true);
-		if (!replay.ok) return;
+		if (!replay.ok) {
+			return;
+		}
 		expect(replay.data.id).toBe(calendarA.data.id);
 
 		const conflict = await createWorkCalendar(
@@ -810,7 +867,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(conflict.ok).toBe(false);
-		if (conflict.ok) return;
+		if (conflict.ok) {
+			return;
+		}
 		expect(humanResourcesCodeFromResult(conflict)).toBe(
 			HUMAN_RESOURCES_ERROR_CONFLICT,
 		);
@@ -820,11 +879,10 @@ describe("human-resources.time (memory)", () => {
 			calendarId: calendarA.data.id,
 		});
 		expect(fetchedCrossOrg.ok).toBe(true);
-		if (!fetchedCrossOrg.ok) return;
+		if (!fetchedCrossOrg.ok) {
+			return;
+		}
 		expect(fetchedCrossOrg.data).toBeNull();
-
-		void seededA;
-		void seededB;
 	});
 
 	it("rejects non-IANA timezones at every Time command boundary", async () => {
@@ -846,7 +904,9 @@ describe("human-resources.time (memory)", () => {
 		);
 
 		expect(result.ok).toBe(false);
-		if (result.ok) return;
+		if (result.ok) {
+			return;
+		}
 		expect(humanResourcesCodeFromResult(result)).toBe(
 			HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 		);
@@ -880,7 +940,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(mismatched.ok).toBe(false);
-		if (mismatched.ok) return;
+		if (mismatched.ok) {
+			return;
+		}
 		expect(humanResourcesCodeFromResult(mismatched)).toBe(
 			HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 		);
@@ -899,7 +961,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(resolved.ok).toBe(true);
-		if (!resolved.ok) return;
+		if (!resolved.ok) {
+			return;
+		}
 		expect(resolved.data.employmentId).toBe(first.employment.id);
 	});
 
@@ -927,7 +991,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 		expect(created.data.status).toBe("draft");
 
 		const activated = await activateTimePolicy(
@@ -941,7 +1007,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(activated.ok).toBe(true);
-		if (!activated.ok) return;
+		if (!activated.ok) {
+			return;
+		}
 		expect(activated.data.status).toBe("active");
 
 		const assignment = await assignTimePolicy(
@@ -968,7 +1036,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(resolved.ok).toBe(true);
-		if (!resolved.ok || resolved.data === null) return;
+		if (!resolved.ok || resolved.data === null) {
+			return;
+		}
 		expect(resolved.data).toMatchObject({
 			minimumRestMinutes: 660,
 			automaticBreakAfterMinutes: 360,
@@ -990,7 +1060,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(policyTimesheet.ok).toBe(true);
-		if (!policyTimesheet.ok) return;
+		if (!policyTimesheet.ok) {
+			return;
+		}
 		const submittedTimesheet = await submitTimesheet(
 			{
 				organizationId: ORG,
@@ -1002,7 +1074,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(submittedTimesheet.ok).toBe(true);
-		if (!submittedTimesheet.ok) return;
+		if (!submittedTimesheet.ok) {
+			return;
+		}
 		expect(submittedTimesheet.data).toMatchObject({
 			approvalPolicyId: activated.data.id,
 			requiredApprovalSteps: ["line_manager", "payroll"],
@@ -1046,7 +1120,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(managerApproval.ok).toBe(true);
-		if (!managerApproval.ok) return;
+		if (!managerApproval.ok) {
+			return;
+		}
 		expect(managerApproval.data).toMatchObject({
 			status: "submitted",
 			completedApprovalSteps: 1,
@@ -1064,13 +1140,17 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(payrollApproval.ok).toBe(true);
-		if (!payrollApproval.ok) return;
+		if (!payrollApproval.ok) {
+			return;
+		}
 		expect(payrollApproval.data).toMatchObject({
 			status: "approved",
 			completedApprovalSteps: 2,
 		});
 		expect(payrollApproval.data.submissionReference).not.toBeNull();
-		if (payrollApproval.data.submissionReference === null) return;
+		if (payrollApproval.data.submissionReference === null) {
+			return;
+		}
 
 		const decisions = await listTimesheetApprovalDecisions(
 			{
@@ -1083,7 +1163,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(decisions.ok).toBe(true);
-		if (!decisions.ok) return;
+		if (!decisions.ok) {
+			return;
+		}
 		expect(
 			decisions.data.map(({ stepIndex, authority }) => ({
 				stepIndex,
@@ -1094,118 +1176,130 @@ describe("human-resources.time (memory)", () => {
 			{ stepIndex: 1, authority: "payroll" },
 		]);
 
-		for (const [workDate, suffix] of [
-			["2025-07-01", "deducted"],
-			["2025-07-02", "repeated"],
-		] as const) {
-			await recordClockIn(
-				{
-					organizationId: ORG,
-					actorUserId: ACTOR,
-					correlationId: `corr-time-policy-${suffix}-in`,
-					idempotencyKey: `idem-time-policy-${suffix}-in`,
-					employeeId: employee.id,
-					employmentId: employment.id,
-					occurredAt: `${workDate}T01:00:00.000Z`,
-					sourceTimezone: "UTC",
-					localWorkDate: workDate,
-				},
-				ready,
-			);
-			await recordClockOut(
-				{
-					organizationId: ORG,
-					actorUserId: ACTOR,
-					correlationId: `corr-time-policy-${suffix}-out`,
-					idempotencyKey: `idem-time-policy-${suffix}-out`,
-					employeeId: employee.id,
-					employmentId: employment.id,
-					occurredAt: `${workDate}T09:00:00.000Z`,
-					sourceTimezone: "UTC",
-					localWorkDate: workDate,
-				},
-				ready,
-			);
-			const session = await resolveAttendanceSession(
-				{
-					organizationId: ORG,
-					actorUserId: ACTOR,
-					correlationId: `corr-time-policy-${suffix}-session`,
-					idempotencyKey: `idem-time-policy-${suffix}-session`,
-					employeeId: employee.id,
-					localWorkDate: workDate,
-					timezone: "UTC",
-				},
-				ready,
-			);
-			expect(session.ok).toBe(true);
-			if (!session.ok) return;
-			expect(session.data.grossMinutes).toBe(480);
-			expect(session.data.breakMinutes).toBe(60);
-			expect(session.data.workedMinutes).toBe(420);
-			expect(session.data.provenance.automaticBreak).toMatchObject({
-				policyId: activated.data.id,
-				minutes: 60,
-				applied: true,
-			});
-			if (suffix === "deducted") {
-				const waiver = await approveAttendanceBreakWaiver(
-					{
-						organizationId: ORG,
-						actorUserId: MANAGER,
-						correlationId: "corr-time-policy-break-waiver",
-						sessionId: session.data.id,
-						authority: "line_manager",
-						reason: "Approved operational break waiver",
-						evidenceReference: "evidence://break-waiver/2025-07-01",
-						expectedVersion: session.data.version,
-					},
-					ready,
-				);
-				expect(waiver.ok).toBe(true);
-				if (!waiver.ok) return;
-				expect(waiver.data).toMatchObject({
-					policyId: activated.data.id,
-					authority: "line_manager",
-					automaticBreakMinutes: 60,
-					recordedBreakMinutes: 0,
-					sessionVersion: session.data.version,
-				});
-				const duplicate = await approveAttendanceBreakWaiver(
-					{
-						organizationId: ORG,
-						actorUserId: MANAGER,
-						correlationId: "corr-time-policy-break-waiver-duplicate",
-						sessionId: session.data.id,
-						authority: "line_manager",
-						reason: "Duplicate",
-						evidenceReference: "evidence://break-waiver/duplicate",
-						expectedVersion: session.data.version,
-					},
-					ready,
-				);
-				expect(duplicate.ok).toBe(false);
-				if (!duplicate.ok) {
-					expect(humanResourcesCodeFromResult(duplicate)).toBe(
-						HUMAN_RESOURCES_ERROR_CONFLICT,
-					);
-				}
-				const decisions = await listAttendanceBreakWaiverDecisions(
+		const sequentialOutcome1 = await runSequential(
+			[
+				["2025-07-01", "deducted"],
+				["2025-07-02", "repeated"],
+			] as const,
+			async ([workDate, suffix]) => {
+				await recordClockIn(
 					{
 						organizationId: ORG,
 						actorUserId: ACTOR,
-						correlationId: "corr-time-policy-break-waiver-list",
-						sessionId: session.data.id,
+						correlationId: `corr-time-policy-${suffix}-in`,
+						idempotencyKey: `idem-time-policy-${suffix}-in`,
+						employeeId: employee.id,
+						employmentId: employment.id,
+						occurredAt: `${workDate}T01:00:00.000Z`,
+						sourceTimezone: "UTC",
+						localWorkDate: workDate,
 					},
 					ready,
 				);
-				expect(decisions.ok).toBe(true);
-				if (!decisions.ok) return;
-				expect(decisions.data).toHaveLength(1);
-				expect(decisions.data[0]?.evidenceReference).toBe(
-					"evidence://break-waiver/2025-07-01",
+				await recordClockOut(
+					{
+						organizationId: ORG,
+						actorUserId: ACTOR,
+						correlationId: `corr-time-policy-${suffix}-out`,
+						idempotencyKey: `idem-time-policy-${suffix}-out`,
+						employeeId: employee.id,
+						employmentId: employment.id,
+						occurredAt: `${workDate}T09:00:00.000Z`,
+						sourceTimezone: "UTC",
+						localWorkDate: workDate,
+					},
+					ready,
 				);
-			}
+				const session = await resolveAttendanceSession(
+					{
+						organizationId: ORG,
+						actorUserId: ACTOR,
+						correlationId: `corr-time-policy-${suffix}-session`,
+						idempotencyKey: `idem-time-policy-${suffix}-session`,
+						employeeId: employee.id,
+						localWorkDate: workDate,
+						timezone: "UTC",
+					},
+					ready,
+				);
+				expect(session.ok).toBe(true);
+				if (!session.ok) {
+					return sequentialReturn(undefined);
+				}
+				expect(session.data.grossMinutes).toBe(480);
+				expect(session.data.breakMinutes).toBe(60);
+				expect(session.data.workedMinutes).toBe(420);
+				expect(session.data.provenance.automaticBreak).toMatchObject({
+					policyId: activated.data.id,
+					minutes: 60,
+					applied: true,
+				});
+				if (suffix === "deducted") {
+					const waiver = await approveAttendanceBreakWaiver(
+						{
+							organizationId: ORG,
+							actorUserId: MANAGER,
+							correlationId: "corr-time-policy-break-waiver",
+							sessionId: session.data.id,
+							authority: "line_manager",
+							reason: "Approved operational break waiver",
+							evidenceReference: "evidence://break-waiver/2025-07-01",
+							expectedVersion: session.data.version,
+						},
+						ready,
+					);
+					expect(waiver.ok).toBe(true);
+					if (!waiver.ok) {
+						return sequentialReturn(undefined);
+					}
+					expect(waiver.data).toMatchObject({
+						policyId: activated.data.id,
+						authority: "line_manager",
+						automaticBreakMinutes: 60,
+						recordedBreakMinutes: 0,
+						sessionVersion: session.data.version,
+					});
+					const duplicate = await approveAttendanceBreakWaiver(
+						{
+							organizationId: ORG,
+							actorUserId: MANAGER,
+							correlationId: "corr-time-policy-break-waiver-duplicate",
+							sessionId: session.data.id,
+							authority: "line_manager",
+							reason: "Duplicate",
+							evidenceReference: "evidence://break-waiver/duplicate",
+							expectedVersion: session.data.version,
+						},
+						ready,
+					);
+					expect(duplicate.ok).toBe(false);
+					if (!duplicate.ok) {
+						expect(humanResourcesCodeFromResult(duplicate)).toBe(
+							HUMAN_RESOURCES_ERROR_CONFLICT,
+						);
+					}
+					const decisionsValue6 = await listAttendanceBreakWaiverDecisions(
+						{
+							organizationId: ORG,
+							actorUserId: ACTOR,
+							correlationId: "corr-time-policy-break-waiver-list",
+							sessionId: session.data.id,
+						},
+						ready,
+					);
+					expect(decisionsValue6.ok).toBe(true);
+					if (!decisionsValue6.ok) {
+						return sequentialReturn(undefined);
+					}
+					expect(decisionsValue6.data).toHaveLength(1);
+					expect(decisionsValue6.data[0]?.evidenceReference).toBe(
+						"evidence://break-waiver/2025-07-01",
+					);
+				}
+			},
+		);
+		if (sequentialOutcome1.kind === "return") {
+			return sequentialOutcome1.value;
 		}
 
 		const supersession = await supersedeTimePolicy(
@@ -1226,7 +1320,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(supersession.ok).toBe(true);
-		if (!supersession.ok) return;
+		if (!supersession.ok) {
+			return;
+		}
 		expect(supersession.data.superseded).toMatchObject({
 			id: activated.data.id,
 			status: "superseded",
@@ -1250,7 +1346,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(historical.ok).toBe(true);
-		if (!historical.ok || historical.data === null) return;
+		if (!historical.ok || historical.data === null) {
+			return;
+		}
 		expect(historical.data.id).toBe(activated.data.id);
 
 		const future = await resolveTimePolicy(
@@ -1264,7 +1362,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(future.ok).toBe(true);
-		if (!future.ok || future.data === null) return;
+		if (!future.ok || future.data === null) {
+			return;
+		}
 		expect(future.data.id).toBe(supersession.data.successor.id);
 	});
 
@@ -1310,7 +1410,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(ended.ok).toBe(true);
-		if (!ended.ok) return;
+		if (!ended.ok) {
+			return;
+		}
 
 		const timesheet = await createTimesheet(
 			{
@@ -1325,7 +1427,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(timesheet.ok).toBe(true);
-		if (!timesheet.ok) return;
+		if (!timesheet.ok) {
+			return;
+		}
 		const submitted = await submitTimesheet(
 			{
 				organizationId: ORG,
@@ -1337,7 +1441,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 		const denied = await approveTimesheet(
 			{
 				organizationId: ORG,
@@ -1381,7 +1487,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(calendar.ok).toBe(true);
-		if (!calendar.ok) return;
+		if (!calendar.ok) {
+			return;
+		}
 		const holiday = await addCalendarDateOverride(
 			{
 				organizationId: ORG,
@@ -1426,7 +1534,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(calendarSuccessor.ok).toBe(true);
-		if (!calendarSuccessor.ok) return;
+		if (!calendarSuccessor.ok) {
+			return;
+		}
 		expect(calendarSuccessor.data.superseded).toMatchObject({
 			id: calendar.data.id,
 			status: "superseded",
@@ -1449,7 +1559,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(historicalCalendar.ok).toBe(true);
-		if (!historicalCalendar.ok || historicalCalendar.data === null) return;
+		if (!historicalCalendar.ok || historicalCalendar.data === null) {
+			return;
+		}
 		expect(historicalCalendar.data.calendarId).toBe(calendar.data.id);
 		const futureCalendar = await resolveEmploymentCalendar(
 			{
@@ -1463,7 +1575,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(futureCalendar.ok).toBe(true);
-		if (!futureCalendar.ok || futureCalendar.data === null) return;
+		if (!futureCalendar.ok || futureCalendar.data === null) {
+			return;
+		}
 		expect(futureCalendar.data.calendarId).toBe(
 			calendarSuccessor.data.successor.id,
 		);
@@ -1477,7 +1591,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(successorHolidays.ok).toBe(true);
-		if (!successorHolidays.ok) return;
+		if (!successorHolidays.ok) {
+			return;
+		}
 		expect(successorHolidays.data).toHaveLength(1);
 		expect(successorHolidays.data[0]?.holidayDate).toBe("2025-12-24");
 
@@ -1498,7 +1614,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(shift.ok).toBe(true);
-		if (!shift.ok) return;
+		if (!shift.ok) {
+			return;
+		}
 		const shiftBreak = await addShiftBreak(
 			{
 				organizationId: ORG,
@@ -1523,7 +1641,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(activated.ok).toBe(true);
-		if (!activated.ok) return;
+		if (!activated.ok) {
+			return;
+		}
 		const activeUpdate = await updateShift(
 			{
 				organizationId: ORG,
@@ -1552,7 +1672,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(shiftSuccessor.ok).toBe(true);
-		if (!shiftSuccessor.ok) return;
+		if (!shiftSuccessor.ok) {
+			return;
+		}
 		expect(shiftSuccessor.data.superseded).toMatchObject({
 			id: activated.data.id,
 			status: "superseded",
@@ -1573,7 +1695,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(successorBreaks.ok).toBe(true);
-		if (!successorBreaks.ok) return;
+		if (!successorBreaks.ok) {
+			return;
+		}
 		expect(successorBreaks.data).toHaveLength(1);
 		expect(successorBreaks.data[0]?.durationMinutes).toBe(60);
 	});
@@ -1597,7 +1721,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(calendar.ok).toBe(true);
-		if (!calendar.ok) return;
+		if (!calendar.ok) {
+			return;
+		}
 		const calendarFailure = await supersedeWorkCalendar(
 			{
 				organizationId: ORG,
@@ -1625,7 +1751,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(restoredCalendar.ok).toBe(true);
-		if (!restoredCalendar.ok || restoredCalendar.data === null) return;
+		if (!restoredCalendar.ok || restoredCalendar.data === null) {
+			return;
+		}
 		expect(restoredCalendar.data).toMatchObject({
 			status: "active",
 			effectiveTo: null,
@@ -1649,7 +1777,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(shift.ok).toBe(true);
-		if (!shift.ok) return;
+		if (!shift.ok) {
+			return;
+		}
 		const activeShift = await activateShift(
 			{
 				organizationId: ORG,
@@ -1661,7 +1791,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(activeShift.ok).toBe(true);
-		if (!activeShift.ok) return;
+		if (!activeShift.ok) {
+			return;
+		}
 		const shiftFailure = await supersedeShift(
 			{
 				organizationId: ORG,
@@ -1689,7 +1821,9 @@ describe("human-resources.time (memory)", () => {
 			ready,
 		);
 		expect(restoredShift.ok).toBe(true);
-		if (!restoredShift.ok || restoredShift.data === null) return;
+		if (!restoredShift.ok || restoredShift.data === null) {
+			return;
+		}
 		expect(restoredShift.data).toMatchObject({
 			status: "active",
 			effectiveTo: null,
@@ -1721,8 +1855,10 @@ describe("human-resources.time (memory)", () => {
 				},
 				ready,
 			);
-			expect(calendar.ok).toBe(true);
-			if (!calendar.ok) throw new Error("calendar seed failed");
+			assert.strictEqual(calendar.ok, true);
+			if (!calendar.ok) {
+				throw new Error("calendar seed failed");
+			}
 			const assigned = await assignEmploymentCalendar(
 				{
 					organizationId: ORG,
@@ -1735,8 +1871,10 @@ describe("human-resources.time (memory)", () => {
 				},
 				ready,
 			);
-			expect(assigned.ok).toBe(true);
-			if (!assigned.ok) throw new Error("assignment seed failed");
+			assert.strictEqual(assigned.ok, true);
+			if (!assigned.ok) {
+				throw new Error("assignment seed failed");
+			}
 			return { ready, employee, employment, calendar: calendar.data };
 		}
 
@@ -1754,8 +1892,10 @@ describe("human-resources.time (memory)", () => {
 				fromDate: date,
 				toDate: date,
 			});
-			expect(context.ok).toBe(true);
-			if (!context.ok) throw new Error("context resolve failed");
+			assert.strictEqual(context.ok, true);
+			if (!context.ok) {
+				throw new Error("context resolve failed");
+			}
 			return resolveWorkCalendarCivilDay(context.data, date);
 		}
 
@@ -1790,7 +1930,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(override.ok).toBe(true);
-			if (!override.ok) return;
+			if (!override.ok) {
+				return;
+			}
 			expect(override.data.overrideKind).toBe("holiday");
 			expect(override.data.isWorkingDay).toBe(false);
 
@@ -1815,7 +1957,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(listed.ok).toBe(true);
-			if (!listed.ok) return;
+			if (!listed.ok) {
+				return;
+			}
 			expect(listed.data).toHaveLength(1);
 			expect(listed.data[0]?.overrideKind).toBe("holiday");
 
@@ -1858,7 +2002,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(override.ok).toBe(true);
-			if (!override.ok) return;
+			if (!override.ok) {
+				return;
+			}
 			expect(override.data.expectedMinutes).toBe(240);
 
 			const day = await resolveDay(
@@ -1881,7 +2027,9 @@ describe("human-resources.time (memory)", () => {
 				date: "2025-01-07",
 			});
 			expect(working.ok).toBe(true);
-			if (!working.ok) return;
+			if (!working.ok) {
+				return;
+			}
 			expect(working.data).toBe(true);
 		});
 
@@ -1911,7 +2059,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(override.ok).toBe(true);
-			if (!override.ok) return;
+			if (!override.ok) {
+				return;
+			}
 
 			const day = await resolveDay(
 				ready,
@@ -1942,7 +2092,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(override.ok).toBe(true);
-			if (!override.ok) return;
+			if (!override.ok) {
+				return;
+			}
 			expect(override.data.overrideKind).toBe("shortened_day");
 			expect(override.data.expectedMinutes).toBe(360);
 
@@ -1983,7 +2135,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(calendar.ok).toBe(true);
-			if (!calendar.ok) return;
+			if (!calendar.ok) {
+				return;
+			}
 			const assigned = await assignEmploymentCalendar(
 				{
 					organizationId: ORG,
@@ -1997,7 +2151,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(assigned.ok).toBe(true);
-			if (!assigned.ok) return;
+			if (!assigned.ok) {
+				return;
+			}
 			const ended = await endWorkCalendarAssignment(
 				{
 					organizationId: ORG,
@@ -2010,7 +2166,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(ended.ok).toBe(true);
-			if (!ended.ok) return;
+			if (!ended.ok) {
+				return;
+			}
 			expect(ended.data.effectiveTo).toBe("2025-06-30");
 			const afterEnd = await resolveEmploymentCalendar(
 				{
@@ -2024,7 +2182,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(afterEnd.ok).toBe(true);
-			if (!afterEnd.ok) return;
+			if (!afterEnd.ok) {
+				return;
+			}
 			expect(afterEnd.data).toBeNull();
 		});
 
@@ -2050,7 +2210,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(clockOut.ok).toBe(true);
-			if (!clockOut.ok) return;
+			if (!clockOut.ok) {
+				return;
+			}
 			expect(clockOut.data.eventType).toBe("clock_out");
 
 			const breakStart = await recordBreakStart(
@@ -2068,7 +2230,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(breakStart.ok).toBe(true);
-			if (!breakStart.ok) return;
+			if (!breakStart.ok) {
+				return;
+			}
 			expect(breakStart.data.eventType).toBe("break_start");
 
 			const breakEnd = await recordBreakEnd(
@@ -2086,7 +2250,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(breakEnd.ok).toBe(true);
-			if (!breakEnd.ok) return;
+			if (!breakEnd.ok) {
+				return;
+			}
 			expect(breakEnd.data.eventType).toBe("break_end");
 		});
 
@@ -2113,7 +2279,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(manual.ok).toBe(true);
-			if (!manual.ok) return;
+			if (!manual.ok) {
+				return;
+			}
 			expect(manual.data.source).toBe("manual");
 			expect(manual.data.eventType).toBe("clock_in");
 		});
@@ -2138,7 +2306,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(created.ok).toBe(true);
-			if (!created.ok) return;
+			if (!created.ok) {
+				return;
+			}
 			expect(created.data.reviewStatus).toBe("open");
 		});
 
@@ -2166,7 +2336,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(shift.ok).toBe(true);
-			if (!shift.ok) return;
+			if (!shift.ok) {
+				return;
+			}
 			const activated = await activateShift(
 				{
 					organizationId: ORG,
@@ -2178,7 +2350,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(activated.ok).toBe(true);
-			if (!activated.ok) return;
+			if (!activated.ok) {
+				return;
+			}
 			const assignment = await assignShift(
 				{
 					organizationId: ORG,
@@ -2197,7 +2371,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(assignment.ok).toBe(true);
-			if (!assignment.ok) return;
+			if (!assignment.ok) {
+				return;
+			}
 			const published = await publishShiftAssignment(
 				{
 					organizationId: ORG,
@@ -2209,7 +2385,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(published.ok).toBe(true);
-			if (!published.ok) return;
+			if (!published.ok) {
+				return;
+			}
 
 			const scheduled = await getScheduledShiftForEmployeeDate(
 				{
@@ -2222,7 +2400,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(scheduled.ok).toBe(true);
-			if (!scheduled.ok) return;
+			if (!scheduled.ok) {
+				return;
+			}
 			expect(scheduled.data?.id).toBe(published.data.id);
 			expect(scheduled.data?.publicationStatus).toBe("published");
 
@@ -2238,7 +2418,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(location.ok).toBe(true);
-			if (!location.ok) return;
+			if (!location.ok) {
+				return;
+			}
 			expect(location.data).toHaveLength(1);
 			expect(location.data[0]?.locationKey).toBe("WH-A");
 		});
@@ -2265,7 +2447,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(clockIn.ok).toBe(true);
-			if (!clockIn.ok) return;
+			if (!clockIn.ok) {
+				return;
+			}
 			const clockOut = await recordClockOut(
 				{
 					organizationId: ORG,
@@ -2281,7 +2465,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(clockOut.ok).toBe(true);
-			if (!clockOut.ok) return;
+			if (!clockOut.ok) {
+				return;
+			}
 			const session = await resolveAttendanceSession(
 				{
 					organizationId: ORG,
@@ -2295,7 +2481,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(session.ok).toBe(true);
-			if (!session.ok) return;
+			if (!session.ok) {
+				return;
+			}
 
 			const openExc = await createAttendanceException(
 				{
@@ -2310,7 +2498,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(openExc.ok).toBe(true);
-			if (!openExc.ok) return;
+			if (!openExc.ok) {
+				return;
+			}
 
 			const unresolved = await listUnresolvedAttendanceExceptions(
 				{
@@ -2322,7 +2512,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(unresolved.ok).toBe(true);
-			if (!unresolved.ok) return;
+			if (!unresolved.ok) {
+				return;
+			}
 			expect(unresolved.data.some((row) => row.id === openExc.data.id)).toBe(
 				true,
 			);
@@ -2339,7 +2531,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(summary.ok).toBe(true);
-			if (!summary.ok) return;
+			if (!summary.ok) {
+				return;
+			}
 			expect(summary.data.session?.id).toBe(session.data.id);
 			expect(summary.data.events.length).toBeGreaterThanOrEqual(2);
 			expect(summary.data.workedMinutes).toBe(480);
@@ -2366,7 +2560,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(timesheet.ok).toBe(true);
-			if (!timesheet.ok) return;
+			if (!timesheet.ok) {
+				return;
+			}
 			const entry = await addTimesheetEntry(
 				{
 					organizationId: ORG,
@@ -2384,7 +2580,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(entry.ok).toBe(true);
-			if (!entry.ok) return;
+			if (!entry.ok) {
+				return;
+			}
 
 			const found = await getTimesheetForEmployeePeriod(
 				{
@@ -2398,7 +2596,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(found.ok).toBe(true);
-			if (!found.ok) return;
+			if (!found.ok) {
+				return;
+			}
 			expect(found.data?.id).toBe(timesheet.data.id);
 
 			const totals = await getTimesheetTotals(
@@ -2411,7 +2611,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(totals.ok).toBe(true);
-			if (!totals.ok) return;
+			if (!totals.ok) {
+				return;
+			}
 			expect(totals.data?.entryCount).toBe(1);
 			expect(totals.data?.totalApprovedMinutes).toBe(480);
 		});
@@ -2447,7 +2649,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(requested.ok).toBe(true);
-			if (!requested.ok) return;
+			if (!requested.ok) {
+				return;
+			}
 			expect(requested.data.status).toBe("requested");
 
 			const pending = await listPendingOvertimeApprovals(
@@ -2459,7 +2663,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(pending.ok).toBe(true);
-			if (!pending.ok) return;
+			if (!pending.ok) {
+				return;
+			}
 			expect(pending.data.some((row) => row.id === requested.data.id)).toBe(
 				true,
 			);
@@ -2486,7 +2692,9 @@ describe("human-resources.time (memory)", () => {
 				effectiveFrom: "2025-01-01",
 			});
 			expect(actorMapped.ok).toBe(true);
-			if (!actorMapped.ok) return;
+			if (!actorMapped.ok) {
+				return;
+			}
 
 			const managerEmployee = await createEmployee(
 				{
@@ -2500,7 +2708,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(managerEmployee.ok).toBe(true);
-			if (!managerEmployee.ok) return;
+			if (!managerEmployee.ok) {
+				return;
+			}
 
 			const managerMapped = await mapActorToEmployee(ready.store, {
 				organizationId: ORG,
@@ -2510,7 +2720,9 @@ describe("human-resources.time (memory)", () => {
 				effectiveFrom: "2025-01-01",
 			});
 			expect(managerMapped.ok).toBe(true);
-			if (!managerMapped.ok) return;
+			if (!managerMapped.ok) {
+				return;
+			}
 
 			const reporting = await assignPrimaryReportingLine(
 				{
@@ -2524,7 +2736,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(reporting.ok).toBe(true);
-			if (!reporting.ok) return;
+			if (!reporting.ok) {
+				return;
+			}
 
 			const calendar = await createWorkCalendar(
 				{
@@ -2543,7 +2757,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(calendar.ok).toBe(true);
-			if (!calendar.ok) return;
+			if (!calendar.ok) {
+				return;
+			}
 
 			const assignedCalendar = await assignEmploymentCalendar(
 				{
@@ -2558,7 +2774,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(assignedCalendar.ok).toBe(true);
-			if (!assignedCalendar.ok) return;
+			if (!assignedCalendar.ok) {
+				return;
+			}
 
 			const shift = await createShift(
 				{
@@ -2577,7 +2795,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(shift.ok).toBe(true);
-			if (!shift.ok) return;
+			if (!shift.ok) {
+				return;
+			}
 
 			const activated = await activateShift(
 				{
@@ -2590,42 +2810,54 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(activated.ok).toBe(true);
-			if (!activated.ok) return;
+			if (!activated.ok) {
+				return;
+			}
 
-			for (const [date, suffix] of [
-				["2025-07-02", "leave-day"],
-				["2025-07-03", "control-day"],
-			] as const) {
-				const assignment = await assignShift(
-					{
-						organizationId: ORG,
-						actorUserId: ACTOR,
-						correlationId: `corr-p03-assign-${suffix}`,
-						idempotencyKey: `idem-p03-assign-${suffix}`,
-						employeeId: employee.id,
-						employmentId: employment.id,
-						shiftId: shift.data.id,
-						scheduledDate: date,
-						startsAt: `${date}T01:00:00.000Z`,
-						endsAt: `${date}T09:00:00.000Z`,
-						timezone: "Asia/Singapore",
-					},
-					ready,
-				);
-				expect(assignment.ok).toBe(true);
-				if (!assignment.ok) return;
-				const published = await publishShiftAssignment(
-					{
-						organizationId: ORG,
-						actorUserId: ACTOR,
-						correlationId: `corr-p03-pub-${suffix}`,
-						assignmentId: assignment.data.id,
-						expectedVersion: assignment.data.version,
-					},
-					ready,
-				);
-				expect(published.ok).toBe(true);
-				if (!published.ok) return;
+			const sequentialOutcome2 = await runSequential(
+				[
+					["2025-07-02", "leave-day"],
+					["2025-07-03", "control-day"],
+				] as const,
+				async ([date, suffix]) => {
+					const assignment = await assignShift(
+						{
+							organizationId: ORG,
+							actorUserId: ACTOR,
+							correlationId: `corr-p03-assign-${suffix}`,
+							idempotencyKey: `idem-p03-assign-${suffix}`,
+							employeeId: employee.id,
+							employmentId: employment.id,
+							shiftId: shift.data.id,
+							scheduledDate: date,
+							startsAt: `${date}T01:00:00.000Z`,
+							endsAt: `${date}T09:00:00.000Z`,
+							timezone: "Asia/Singapore",
+						},
+						ready,
+					);
+					expect(assignment.ok).toBe(true);
+					if (!assignment.ok) {
+						return sequentialReturn(undefined);
+					}
+					const published = await publishShiftAssignment(
+						{
+							organizationId: ORG,
+							actorUserId: ACTOR,
+							correlationId: `corr-p03-pub-${suffix}`,
+							assignmentId: assignment.data.id,
+							expectedVersion: assignment.data.version,
+						},
+						ready,
+					);
+					expect(published.ok).toBe(true);
+					if (!published.ok) {
+						return sequentialReturn(undefined);
+					}
+				},
+			);
+			if (sequentialOutcome2.kind === "return") {
+				return sequentialOutcome2.value;
 			}
 
 			const policy = await createLeavePolicy(
@@ -2646,7 +2878,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(policy.ok).toBe(true);
-			if (!policy.ok) return;
+			if (!policy.ok) {
+				return;
+			}
 
 			const publishedPolicy = await publishLeavePolicy(
 				{
@@ -2659,7 +2893,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(publishedPolicy.ok).toBe(true);
-			if (!publishedPolicy.ok) return;
+			if (!publishedPolicy.ok) {
+				return;
+			}
 
 			const entitlement = await grantLeaveEntitlement(
 				{
@@ -2677,7 +2913,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(entitlement.ok).toBe(true);
-			if (!entitlement.ok) return;
+			if (!entitlement.ok) {
+				return;
+			}
 
 			const draftLeave = await createDraftLeaveRequest(
 				{
@@ -2694,7 +2932,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(draftLeave.ok).toBe(true);
-			if (!draftLeave.ok) return;
+			if (!draftLeave.ok) {
+				return;
+			}
 
 			const submittedLeave = await submitLeaveRequest(
 				{
@@ -2707,7 +2947,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(submittedLeave.ok).toBe(true);
-			if (!submittedLeave.ok) return;
+			if (!submittedLeave.ok) {
+				return;
+			}
 
 			const approvedLeave = await approveLeaveRequest(
 				{
@@ -2720,7 +2962,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(approvedLeave.ok).toBe(true);
-			if (!approvedLeave.ok) return;
+			if (!approvedLeave.ok) {
+				return;
+			}
 
 			const timesheet = await createTimesheet(
 				{
@@ -2736,7 +2980,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(timesheet.ok).toBe(true);
-			if (!timesheet.ok) return;
+			if (!timesheet.ok) {
+				return;
+			}
 
 			const generated = await generateTimesheetEntries(
 				{
@@ -2749,7 +2995,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(generated.ok).toBe(true);
-			if (!generated.ok) return;
+			if (!generated.ok) {
+				return;
+			}
 
 			const leaveEntries = generated.data.entries.filter(
 				(entry) => entry.sourceType === "leave",
@@ -2770,7 +3018,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(regenerated.ok).toBe(true);
-			if (!regenerated.ok) return;
+			if (!regenerated.ok) {
+				return;
+			}
 			const leaveAfterRegen = regenerated.data.entries.filter(
 				(entry) => entry.sourceType === "leave",
 			);
@@ -2786,7 +3036,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(unresolved.ok).toBe(true);
-			if (!unresolved.ok) return;
+			if (!unresolved.ok) {
+				return;
+			}
 
 			const absenceDates = unresolved.data
 				.filter((exception) => exception.exceptionType === "absence")
@@ -2811,7 +3063,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(listed.ok).toBe(true);
-			if (!listed.ok) return;
+			if (!listed.ok) {
+				return;
+			}
 
 			const submitted = await submitTimesheet(
 				{
@@ -2824,7 +3078,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(submitted.ok).toBe(true);
-			if (!submitted.ok) return;
+			if (!submitted.ok) {
+				return;
+			}
 			await grantTimeApprovalAuthority(ready, {
 				organizationId: ORG,
 				targetActorUserId: MANAGER,
@@ -2844,7 +3100,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(approved.ok).toBe(true);
-			if (!approved.ok) return;
+			if (!approved.ok) {
+				return;
+			}
 
 			const handoff = await getApprovedTimeHandoff(
 				{
@@ -2856,7 +3114,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(handoff.ok).toBe(true);
-			if (!handoff.ok || handoff.data === null) return;
+			if (!handoff.ok || handoff.data === null) {
+				return;
+			}
 			expect(handoff.data.paidLeaveMinutes).toBe(480);
 			expect(handoff.data.unpaidLeaveMinutes).toBe(0);
 		});
@@ -2904,7 +3164,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(first.ok).toBe(true);
-			if (!first.ok) return;
+			if (!first.ok) {
+				return;
+			}
 			expect(first.data.status).toBe("completed");
 			expect(first.data.totals.accepted).toBe(2);
 			expect(first.data.totals.skipped).toBe(0);
@@ -2922,7 +3184,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(listed.ok).toBe(true);
-			if (!listed.ok) return;
+			if (!listed.ok) {
+				return;
+			}
 			expect(listed.data).toHaveLength(2);
 
 			const replayBatch = await importAttendanceEvents(
@@ -2955,7 +3219,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(replayBatch.ok).toBe(true);
-			if (!replayBatch.ok) return;
+			if (!replayBatch.ok) {
+				return;
+			}
 			expect(replayBatch.data.importBatchId).toBe(first.data.importBatchId);
 			expect(replayBatch.data.totals).toEqual(first.data.totals);
 
@@ -3005,7 +3271,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(idempotentRows.ok).toBe(true);
-			if (!idempotentRows.ok) return;
+			if (!idempotentRows.ok) {
+				return;
+			}
 			expect(idempotentRows.data.status).toBe("partial");
 			expect(idempotentRows.data.totals.skipped).toBe(1);
 			expect(idempotentRows.data.totals.accepted).toBe(1);
@@ -3039,7 +3307,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(conflict.ok).toBe(true);
-			if (!conflict.ok) return;
+			if (!conflict.ok) {
+				return;
+			}
 			expect(conflict.data.status).toBe("failed");
 			expect(conflict.data.totals.rejected).toBe(1);
 			expect(conflict.data.rejected[0]?.errorCode).toBe(
@@ -3056,7 +3326,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(listedAfter.ok).toBe(true);
-			if (!listedAfter.ok) return;
+			if (!listedAfter.ok) {
+				return;
+			}
 			expect(listedAfter.data).toHaveLength(3);
 		});
 
@@ -3069,7 +3341,7 @@ describe("human-resources.time (memory)", () => {
 			});
 			const attendanceSource: AttendanceSourcePort = {
 				async fetchEvents() {
-					return {
+					return await {
 						ok: true,
 						data: {
 							events: [
@@ -3088,7 +3360,7 @@ describe("human-resources.time (memory)", () => {
 					};
 				},
 				async previewEvents() {
-					return {
+					return await {
 						ok: true,
 						data: {
 							mode: "preview",
@@ -3113,7 +3385,9 @@ describe("human-resources.time (memory)", () => {
 				{ ...ready, attendanceSource },
 			);
 			expect(imported.ok).toBe(true);
-			if (!imported.ok) return;
+			if (!imported.ok) {
+				return;
+			}
 			expect(imported.data.status).toBe("completed");
 			expect(imported.data.totals.accepted).toBe(1);
 			expect(imported.data.nextCursor).toBe("cursor-2");
@@ -3130,7 +3404,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(listed.ok).toBe(true);
-			if (!listed.ok) return;
+			if (!listed.ok) {
+				return;
+			}
 			expect(listed.data).toHaveLength(1);
 			expect(listed.data[0]?.sourceSequence).toBe(4);
 		});
@@ -3169,7 +3445,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(clockIn.ok).toBe(true);
-			if (!clockIn.ok) return;
+			if (!clockIn.ok) {
+				return;
+			}
 			const clockOut = await recordClockOut(
 				{
 					organizationId: ORG,
@@ -3186,7 +3464,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(clockOut.ok).toBe(true);
-			if (!clockOut.ok) return;
+			if (!clockOut.ok) {
+				return;
+			}
 
 			const session = await resolveAttendanceSession(
 				{
@@ -3201,7 +3481,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(session.ok).toBe(true);
-			if (!session.ok) return;
+			if (!session.ok) {
+				return;
+			}
 			expect(session.data.resolutionStatus).toBe("resolved");
 
 			const unresolved = await listUnresolvedAttendanceExceptions(
@@ -3214,7 +3496,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(unresolved.ok).toBe(true);
-			if (!unresolved.ok) return;
+			if (!unresolved.ok) {
+				return;
+			}
 			expect(
 				autoDetectedTypes(unresolved.data, ATTENDANCE_SESSION_DETECTION_SOURCE),
 			).toContain("late_arrival");
@@ -3280,7 +3564,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(session.ok).toBe(true);
-			if (!session.ok) return;
+			if (!session.ok) {
+				return;
+			}
 
 			const unresolved = await listUnresolvedAttendanceExceptions(
 				{
@@ -3292,7 +3578,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(unresolved.ok).toBe(true);
-			if (!unresolved.ok) return;
+			if (!unresolved.ok) {
+				return;
+			}
 			expect(
 				autoDetectedTypes(unresolved.data, ATTENDANCE_SESSION_DETECTION_SOURCE),
 			).toContain("early_departure");
@@ -3343,7 +3631,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(session.ok).toBe(true);
-			if (!session.ok) return;
+			if (!session.ok) {
+				return;
+			}
 			expect(session.data.resolutionStatus).toBe("needs_review");
 
 			const unresolved = await listUnresolvedAttendanceExceptions(
@@ -3356,7 +3646,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(unresolved.ok).toBe(true);
-			if (!unresolved.ok) return;
+			if (!unresolved.ok) {
+				return;
+			}
 			expect(
 				autoDetectedTypes(unresolved.data, ATTENDANCE_SESSION_DETECTION_SOURCE),
 			).toContain("missing_clock_out");
@@ -3407,7 +3699,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(session.ok).toBe(true);
-			if (!session.ok) return;
+			if (!session.ok) {
+				return;
+			}
 
 			const unresolved = await listUnresolvedAttendanceExceptions(
 				{
@@ -3419,7 +3713,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(unresolved.ok).toBe(true);
-			if (!unresolved.ok) return;
+			if (!unresolved.ok) {
+				return;
+			}
 			expect(
 				autoDetectedTypes(unresolved.data, ATTENDANCE_SESSION_DETECTION_SOURCE),
 			).toContain("missing_clock_in");
@@ -3475,7 +3771,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(session.ok).toBe(true);
-			if (!session.ok) return;
+			if (!session.ok) {
+				return;
+			}
 
 			const unresolved = await listUnresolvedAttendanceExceptions(
 				{
@@ -3487,7 +3785,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(unresolved.ok).toBe(true);
-			if (!unresolved.ok) return;
+			if (!unresolved.ok) {
+				return;
+			}
 			expect(
 				autoDetectedTypes(unresolved.data, ATTENDANCE_SESSION_DETECTION_SOURCE),
 			).toContain("unplanned_attendance");
@@ -3526,7 +3826,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(otherShift.ok).toBe(true);
-			if (!otherShift.ok) return;
+			if (!otherShift.ok) {
+				return;
+			}
 			const activated = await activateShift(
 				{
 					organizationId: ORG,
@@ -3538,7 +3840,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(activated.ok).toBe(true);
-			if (!activated.ok) return;
+			if (!activated.ok) {
+				return;
+			}
 			const otherAssignment = await assignShift(
 				{
 					organizationId: ORG,
@@ -3556,7 +3860,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(otherAssignment.ok).toBe(true);
-			if (!otherAssignment.ok) return;
+			if (!otherAssignment.ok) {
+				return;
+			}
 
 			await recordClockIn(
 				{
@@ -3602,7 +3908,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(session.ok).toBe(true);
-			if (!session.ok) return;
+			if (!session.ok) {
+				return;
+			}
 			expect(session.data.shiftAssignmentId).toBe(otherAssignment.data.id);
 			expect(session.data.shiftAssignmentId).not.toBe(scheduled.id);
 
@@ -3616,7 +3924,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(unresolved.ok).toBe(true);
-			if (!unresolved.ok) return;
+			if (!unresolved.ok) {
+				return;
+			}
 			expect(
 				autoDetectedTypes(unresolved.data, ATTENDANCE_SESSION_DETECTION_SOURCE),
 			).toContain("schedule_mismatch");
@@ -3644,7 +3954,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(policy.ok).toBe(true);
-			if (!policy.ok) return;
+			if (!policy.ok) {
+				return;
+			}
 			const activated = await activateTimePolicy(
 				{
 					organizationId: ORG,
@@ -3656,7 +3968,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(activated.ok).toBe(true);
-			if (!activated.ok) return;
+			if (!activated.ok) {
+				return;
+			}
 			const assigned = await assignTimePolicy(
 				{
 					organizationId: ORG,
@@ -3737,7 +4051,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(current.ok).toBe(true);
-			if (!current.ok) return;
+			if (!current.ok) {
+				return;
+			}
 			const unresolved = await listUnresolvedAttendanceExceptions(
 				{
 					organizationId: ORG,
@@ -3748,7 +4064,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(unresolved.ok).toBe(true);
-			if (!unresolved.ok) return;
+			if (!unresolved.ok) {
+				return;
+			}
 			expect(
 				autoDetectedTypes(unresolved.data, ATTENDANCE_SESSION_DETECTION_SOURCE),
 			).toContain("insufficient_rest");
@@ -3780,7 +4098,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(shift.ok).toBe(true);
-			if (!shift.ok) return;
+			if (!shift.ok) {
+				return;
+			}
 			const activated = await activateShift(
 				{
 					organizationId: ORG,
@@ -3792,7 +4112,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(activated.ok).toBe(true);
-			if (!activated.ok) return;
+			if (!activated.ok) {
+				return;
+			}
 			const assignment = await assignShift(
 				{
 					organizationId: ORG,
@@ -3811,7 +4133,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(assignment.ok).toBe(true);
-			if (!assignment.ok) return;
+			if (!assignment.ok) {
+				return;
+			}
 			const published = await publishShiftAssignment(
 				{
 					organizationId: ORG,
@@ -3823,7 +4147,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(published.ok).toBe(true);
-			if (!published.ok) return;
+			if (!published.ok) {
+				return;
+			}
 
 			const baseEvent = {
 				organizationId: ORG,
@@ -3894,7 +4220,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(session.ok).toBe(true);
-			if (!session.ok) return;
+			if (!session.ok) {
+				return;
+			}
 			const unresolved = await listUnresolvedAttendanceExceptions(
 				{
 					organizationId: ORG,
@@ -3905,7 +4233,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(unresolved.ok).toBe(true);
-			if (!unresolved.ok) return;
+			if (!unresolved.ok) {
+				return;
+			}
 			const detected = autoDetectedTypes(
 				unresolved.data,
 				ATTENDANCE_SESSION_DETECTION_SOURCE,
@@ -3970,7 +4300,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(session.ok).toBe(true);
-			if (!session.ok) return;
+			if (!session.ok) {
+				return;
+			}
 
 			const beforePublish = await listUnresolvedAttendanceExceptions(
 				{
@@ -3982,7 +4314,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(beforePublish.ok).toBe(true);
-			if (!beforePublish.ok) return;
+			if (!beforePublish.ok) {
+				return;
+			}
 			expect(
 				autoDetectedTypes(
 					beforePublish.data,
@@ -4007,7 +4341,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(shift.ok).toBe(true);
-			if (!shift.ok) return;
+			if (!shift.ok) {
+				return;
+			}
 			const activated = await activateShift(
 				{
 					organizationId: ORG,
@@ -4019,7 +4355,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(activated.ok).toBe(true);
-			if (!activated.ok) return;
+			if (!activated.ok) {
+				return;
+			}
 			const assignment = await assignShift(
 				{
 					organizationId: ORG,
@@ -4037,7 +4375,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(assignment.ok).toBe(true);
-			if (!assignment.ok) return;
+			if (!assignment.ok) {
+				return;
+			}
 
 			const published = await publishShiftAssignment(
 				{
@@ -4050,7 +4390,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(published.ok).toBe(true);
-			if (!published.ok) return;
+			if (!published.ok) {
+				return;
+			}
 
 			const afterPublish = await listUnresolvedAttendanceExceptions(
 				{
@@ -4062,7 +4404,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(afterPublish.ok).toBe(true);
-			if (!afterPublish.ok) return;
+			if (!afterPublish.ok) {
+				return;
+			}
 			expect(
 				autoDetectedTypes(afterPublish.data, SCHEDULE_PUBLISH_DETECTION_SOURCE),
 			).toContain("late_arrival");
@@ -4087,7 +4431,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(reresolve.ok).toBe(true);
-			if (!reresolve.ok) return;
+			if (!reresolve.ok) {
+				return;
+			}
 
 			const afterReresolve = await listUnresolvedAttendanceExceptions(
 				{
@@ -4099,7 +4445,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(afterReresolve.ok).toBe(true);
-			if (!afterReresolve.ok) return;
+			if (!afterReresolve.ok) {
+				return;
+			}
 			const lateCountAfter = afterReresolve.data.filter(
 				(exception) =>
 					exception.exceptionType === "late_arrival" &&
@@ -4237,7 +4585,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(session.ok).toBe(true);
-			if (!session.ok) return;
+			if (!session.ok) {
+				return;
+			}
 			expect(session.data.resolutionStatus).toBe("resolved");
 			expect(session.data.breakMinutes).toBe(45);
 			expect(session.data.workedMinutes).toBe(435);
@@ -4252,7 +4602,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(unresolved.ok).toBe(true);
-			if (!unresolved.ok) return;
+			if (!unresolved.ok) {
+				return;
+			}
 			const auto = autoDetectedTypes(
 				unresolved.data,
 				ATTENDANCE_SESSION_DETECTION_SOURCE,
@@ -4327,7 +4679,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(session.ok).toBe(true);
-			if (!session.ok) return;
+			if (!session.ok) {
+				return;
+			}
 			expect(session.data.workedMinutes).toBe(450);
 
 			const unresolved = await listUnresolvedAttendanceExceptions(
@@ -4340,7 +4694,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(unresolved.ok).toBe(true);
-			if (!unresolved.ok) return;
+			if (!unresolved.ok) {
+				return;
+			}
 			expect(
 				autoDetectedTypes(unresolved.data, ATTENDANCE_SESSION_DETECTION_SOURCE),
 			).toContain("late_arrival");
@@ -4367,7 +4723,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(shift.ok).toBe(true);
-			if (!shift.ok) return;
+			if (!shift.ok) {
+				return;
+			}
 			expect(shift.data.shiftKind).toBe("fixed");
 			expect(shift.data.isOvernight).toBe(false);
 
@@ -4382,7 +4740,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(activated.ok).toBe(true);
-			if (!activated.ok) return;
+			if (!activated.ok) {
+				return;
+			}
 			expect(activated.data.status).toBe("active");
 		});
 
@@ -4407,7 +4767,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(shift.ok).toBe(true);
-			if (!shift.ok) return;
+			if (!shift.ok) {
+				return;
+			}
 			expect(shift.data.shiftKind).toBe("flexible");
 			expect(shift.data.earliestClockInLocal).toBe("07:00");
 			expect(shift.data.latestClockOutLocal).toBe("19:00");
@@ -4423,7 +4785,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(activated.ok).toBe(true);
-			if (!activated.ok) return;
+			if (!activated.ok) {
+				return;
+			}
 			expect(activated.data.status).toBe("active");
 		});
 
@@ -4446,7 +4810,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(shift.ok).toBe(true);
-			if (!shift.ok) return;
+			if (!shift.ok) {
+				return;
+			}
 			expect(shift.data.shiftKind).toBe("split");
 
 			const breakA = await addShiftBreak(
@@ -4489,7 +4855,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(listed.ok).toBe(true);
-			if (!listed.ok) return;
+			if (!listed.ok) {
+				return;
+			}
 			expect(listed.data).toHaveLength(2);
 			expect(listed.data.map((row) => row.breakOrder)).toEqual([1, 2]);
 			expect(listed.data.map((row) => row.durationMinutes)).toEqual([30, 60]);
@@ -4505,7 +4873,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(activated.ok).toBe(true);
-			if (!activated.ok) return;
+			if (!activated.ok) {
+				return;
+			}
 			const { employee, employment } = await seedEmployeeEmployment(ready, {
 				organizationId: ORG,
 				actorUserId: ACTOR,
@@ -4540,7 +4910,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(assignment.ok).toBe(true);
-			if (!assignment.ok) return;
+			if (!assignment.ok) {
+				return;
+			}
 			const segments = await listShiftAssignmentSegments(
 				{
 					organizationId: ORG,
@@ -4551,7 +4923,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(segments.ok).toBe(true);
-			if (!segments.ok) return;
+			if (!segments.ok) {
+				return;
+			}
 			expect(segments.data.map((segment) => segment.segmentOrder)).toEqual([
 				1, 2,
 			]);
@@ -4599,7 +4973,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(overlapping.ok).toBe(false);
-			if (overlapping.ok) return;
+			if (overlapping.ok) {
+				return;
+			}
 			expect(humanResourcesCodeFromResult(overlapping)).toBe(
 				HUMAN_RESOURCES_ERROR_CONFLICT,
 			);
@@ -4634,7 +5010,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(changed.ok).toBe(true);
-			if (!changed.ok) return;
+			if (!changed.ok) {
+				return;
+			}
 			expect(changed.data.publicationStatus).toBe("changed");
 			expect(changed.data.startsAt.toISOString()).toBe(
 				"2025-07-16T02:00:00.000Z",
@@ -4689,7 +5067,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(changed.ok).toBe(false);
-			if (changed.ok) return;
+			if (changed.ok) {
+				return;
+			}
 			expect(humanResourcesCodeFromResult(changed)).toBe(
 				HUMAN_RESOURCES_ERROR_CONFLICT,
 			);
@@ -4715,14 +5095,18 @@ describe("human-resources.time (memory)", () => {
 			};
 			const first = await recordClockIn(payload, ready);
 			expect(first.ok).toBe(true);
-			if (!first.ok) return;
+			if (!first.ok) {
+				return;
+			}
 
 			const replay = await recordClockIn(
 				{ ...payload, correlationId: "corr-p07-idem-cin-2" },
 				ready,
 			);
 			expect(replay.ok).toBe(true);
-			if (!replay.ok) return;
+			if (!replay.ok) {
+				return;
+			}
 			expect(replay.data.id).toBe(first.data.id);
 
 			const listed = await listAttendanceEvents(
@@ -4737,7 +5121,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(listed.ok).toBe(true);
-			if (!listed.ok) return;
+			if (!listed.ok) {
+				return;
+			}
 			expect(listed.data).toHaveLength(1);
 		});
 
@@ -4790,7 +5176,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(session.ok).toBe(true);
-			if (!session.ok) return;
+			if (!session.ok) {
+				return;
+			}
 			expect(session.data.workedMinutes).toBe(480);
 			expect(session.data.resolutionStatus).toBe("resolved");
 			expect(session.data.firstClockInAt?.toISOString()).toBe(
@@ -4823,7 +5211,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(clockIn.ok).toBe(true);
-			if (!clockIn.ok) return;
+			if (!clockIn.ok) {
+				return;
+			}
 			const originalOccurredAt = clockIn.data.occurredAt.toISOString();
 
 			const corrected = await correctAttendanceEvent(
@@ -4839,7 +5229,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(corrected.ok).toBe(true);
-			if (!corrected.ok) return;
+			if (!corrected.ok) {
+				return;
+			}
 			expect(corrected.data.id).toBe(clockIn.data.id);
 			expect(corrected.data.version).toBe(clockIn.data.version + 1);
 			expect(corrected.data.voidedAt).toBeNull();
@@ -4858,7 +5250,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(fetched.ok).toBe(true);
-			if (!fetched.ok || fetched.data === null) return;
+			if (!fetched.ok || fetched.data === null) {
+				return;
+			}
 			expect(fetched.data.occurredAt.toISOString()).toBe(
 				"2025-07-19T01:15:00.000Z",
 			);
@@ -4921,7 +5315,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(session.ok).toBe(true);
-			if (!session.ok) return;
+			if (!session.ok) {
+				return;
+			}
 
 			const timesheet = await createTimesheet(
 				{
@@ -4937,7 +5333,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(timesheet.ok).toBe(true);
-			if (!timesheet.ok) return;
+			if (!timesheet.ok) {
+				return;
+			}
 
 			const generated = await generateTimesheetEntries(
 				{
@@ -4950,10 +5348,14 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(generated.ok).toBe(true);
-			if (!generated.ok) return;
+			if (!generated.ok) {
+				return;
+			}
 			expect(generated.data.entries.length).toBeGreaterThanOrEqual(1);
 			const [entry] = generated.data.entries;
-			if (!entry) throw new Error("Expected a generated timesheet entry");
+			if (!entry) {
+				throw new Error("Expected a generated timesheet entry");
+			}
 
 			const edited = await updateTimesheetEntry(
 				{
@@ -4974,7 +5376,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(edited.ok).toBe(true);
-			if (!edited.ok) return;
+			if (!edited.ok) {
+				return;
+			}
 			expect(edited.data).toMatchObject({
 				costCenterId: "cost-center-ops",
 				projectId: "project-erp",
@@ -4995,7 +5399,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(submitted.ok).toBe(true);
-			if (!submitted.ok) return;
+			if (!submitted.ok) {
+				return;
+			}
 			expect(submitted.data.status).toBe("submitted");
 
 			const returned = await returnTimesheet(
@@ -5010,7 +5416,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(returned.ok).toBe(true);
-			if (!returned.ok) return;
+			if (!returned.ok) {
+				return;
+			}
 			expect(returned.data.status).toBe("returned");
 
 			const reopened = await reopenTimesheet(
@@ -5024,7 +5432,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(reopened.ok).toBe(true);
-			if (!reopened.ok) return;
+			if (!reopened.ok) {
+				return;
+			}
 			expect(reopened.data.status).toBe("draft");
 			expect(reopened.data.approverNotes).toBeNull();
 			expect(reopened.data.rejectionReason).toBeNull();
@@ -5043,7 +5453,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(reEdited.ok).toBe(true);
-			if (!reEdited.ok) return;
+			if (!reEdited.ok) {
+				return;
+			}
 
 			const resubmitted = await submitTimesheet(
 				{
@@ -5056,7 +5468,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(resubmitted.ok).toBe(true);
-			if (!resubmitted.ok) return;
+			if (!resubmitted.ok) {
+				return;
+			}
 			await grantTimeApprovalAuthority(ready, {
 				organizationId: ORG,
 				targetActorUserId: MANAGER,
@@ -5076,7 +5490,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(approved.ok).toBe(true);
-			if (!approved.ok) return;
+			if (!approved.ok) {
+				return;
+			}
 			expect(approved.data.status).toBe("approved");
 		});
 
@@ -5102,7 +5518,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(timesheet.ok).toBe(true);
-			if (!timesheet.ok) return;
+			if (!timesheet.ok) {
+				return;
+			}
 
 			await addTimesheetEntry(
 				{
@@ -5131,7 +5549,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(draft.ok).toBe(true);
-			if (!draft.ok || draft.data === null) return;
+			if (!draft.ok || draft.data === null) {
+				return;
+			}
 
 			const submitted = await submitTimesheet(
 				{
@@ -5144,7 +5564,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(submitted.ok).toBe(true);
-			if (!submitted.ok) return;
+			if (!submitted.ok) {
+				return;
+			}
 
 			const rejected = await rejectTimesheet(
 				{
@@ -5158,7 +5580,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(rejected.ok).toBe(true);
-			if (!rejected.ok) return;
+			if (!rejected.ok) {
+				return;
+			}
 			expect(rejected.data.status).toBe("rejected");
 			expect(rejected.data.rejectionReason).toBe("Incomplete documentation");
 
@@ -5173,7 +5597,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(reopened.ok).toBe(true);
-			if (!reopened.ok) return;
+			if (!reopened.ok) {
+				return;
+			}
 			expect(reopened.data.status).toBe("draft");
 			expect(reopened.data.rejectionReason).toBeNull();
 			expect(reopened.data.approverNotes).toBeNull();
@@ -5190,7 +5616,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(resubmitted.ok).toBe(true);
-			if (!resubmitted.ok) return;
+			if (!resubmitted.ok) {
+				return;
+			}
 
 			await grantTimeApprovalAuthority(ready, {
 				organizationId: ORG,
@@ -5211,7 +5639,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(approved.ok).toBe(true);
-			if (!approved.ok) return;
+			if (!approved.ok) {
+				return;
+			}
 			expect(approved.data.status).toBe("approved");
 		});
 
@@ -5246,7 +5676,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(requested.ok).toBe(true);
-			if (!requested.ok) return;
+			if (!requested.ok) {
+				return;
+			}
 			expect(requested.data.requestedMinutes).toBe(120);
 
 			await grantTimeApprovalAuthority(ready, {
@@ -5269,7 +5701,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(approved.ok).toBe(true);
-			if (!approved.ok) return;
+			if (!approved.ok) {
+				return;
+			}
 			expect(approved.data.approvedMaximumMinutes).toBe(90);
 
 			const worked = await recordOvertimeActual(
@@ -5284,7 +5718,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(worked.ok).toBe(true);
-			if (!worked.ok) return;
+			if (!worked.ok) {
+				return;
+			}
 			expect(worked.data.actualMinutes).toBe(75);
 
 			const verified = await verifyOvertimeRequest(
@@ -5299,7 +5735,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(verified.ok).toBe(true);
-			if (!verified.ok) return;
+			if (!verified.ok) {
+				return;
+			}
 			expect(verified.data.requestedMinutes).toBe(120);
 			expect(verified.data.approvedMaximumMinutes).toBe(90);
 			expect(verified.data.actualMinutes).toBe(75);
@@ -5338,7 +5776,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(calendar.ok).toBe(true);
-			if (!calendar.ok) return;
+			if (!calendar.ok) {
+				return;
+			}
 
 			const assignedCal = await assignEmploymentCalendar(
 				{
@@ -5371,7 +5811,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(shift.ok).toBe(true);
-			if (!shift.ok) return;
+			if (!shift.ok) {
+				return;
+			}
 			const activated = await activateShift(
 				{
 					organizationId: ORG,
@@ -5383,7 +5825,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(activated.ok).toBe(true);
-			if (!activated.ok) return;
+			if (!activated.ok) {
+				return;
+			}
 
 			const assignment = await assignShift(
 				{
@@ -5402,7 +5846,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(assignment.ok).toBe(true);
-			if (!assignment.ok) return;
+			if (!assignment.ok) {
+				return;
+			}
 
 			const published = await publishShiftAssignment(
 				{
@@ -5415,7 +5861,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(published.ok).toBe(true);
-			if (!published.ok) return;
+			if (!published.ok) {
+				return;
+			}
 			expect(published.data.timezone).toBe("America/Los_Angeles");
 
 			const scheduled = await getScheduledShiftForEmployeeDate(
@@ -5429,7 +5877,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(scheduled.ok).toBe(true);
-			if (!scheduled.ok || scheduled.data === null) return;
+			if (!scheduled.ok || scheduled.data === null) {
+				return;
+			}
 			expect(scheduled.data.id).toBe(published.data.id);
 			expect(scheduled.data.timezone).toBe("America/Los_Angeles");
 
@@ -5449,7 +5899,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(clockIn.ok).toBe(true);
-			if (!clockIn.ok) return;
+			if (!clockIn.ok) {
+				return;
+			}
 			expect(clockIn.data.sourceTimezone).toBe("America/Los_Angeles");
 			expect(clockIn.data.localWorkDate).toBe("2025-07-23");
 			expect(calendar.data.timezone).toBe("Asia/Singapore");
@@ -5476,7 +5928,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(timesheet.ok).toBe(true);
-			if (!timesheet.ok) return;
+			if (!timesheet.ok) {
+				return;
+			}
 
 			const entry = await addTimesheetEntry(
 				{
@@ -5506,7 +5960,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(draftHandoff.ok).toBe(true);
-			if (!draftHandoff.ok) return;
+			if (!draftHandoff.ok) {
+				return;
+			}
 			expect(draftHandoff.data).toBeNull();
 
 			const current = await getTimesheet(
@@ -5519,7 +5975,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(current.ok).toBe(true);
-			if (!current.ok || current.data === null) return;
+			if (!current.ok || current.data === null) {
+				return;
+			}
 
 			const submitted = await submitTimesheet(
 				{
@@ -5532,7 +5990,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(submitted.ok).toBe(true);
-			if (!submitted.ok) return;
+			if (!submitted.ok) {
+				return;
+			}
 
 			const submittedHandoff = await getApprovedTimeHandoff(
 				{
@@ -5544,7 +6004,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(submittedHandoff.ok).toBe(true);
-			if (!submittedHandoff.ok) return;
+			if (!submittedHandoff.ok) {
+				return;
+			}
 			expect(submittedHandoff.data).toBeNull();
 
 			const returned = await returnTimesheet(
@@ -5558,7 +6020,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(returned.ok).toBe(true);
-			if (!returned.ok) return;
+			if (!returned.ok) {
+				return;
+			}
 
 			const returnedHandoff = await getApprovedTimeHandoff(
 				{
@@ -5570,7 +6034,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(returnedHandoff.ok).toBe(true);
-			if (!returnedHandoff.ok) return;
+			if (!returnedHandoff.ok) {
+				return;
+			}
 			expect(returnedHandoff.data).toBeNull();
 
 			const resubmitted = await submitTimesheet(
@@ -5584,7 +6050,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(resubmitted.ok).toBe(true);
-			if (!resubmitted.ok) return;
+			if (!resubmitted.ok) {
+				return;
+			}
 			await grantTimeApprovalAuthority(ready, {
 				organizationId: ORG,
 				targetActorUserId: MANAGER,
@@ -5604,7 +6072,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(approved.ok).toBe(true);
-			if (!approved.ok) return;
+			if (!approved.ok) {
+				return;
+			}
 
 			const handoff = await getApprovedTimeHandoff(
 				{
@@ -5616,7 +6086,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(handoff.ok).toBe(true);
-			if (!handoff.ok || handoff.data === null) return;
+			if (!handoff.ok || handoff.data === null) {
+				return;
+			}
 			expect(handoff.data.regularMinutes).toBe(480);
 		});
 
@@ -5641,7 +6113,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(timesheet.ok).toBe(true);
-			if (!timesheet.ok) return;
+			if (!timesheet.ok) {
+				return;
+			}
 
 			const entry = await addTimesheetEntry(
 				{
@@ -5671,7 +6145,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(current.ok).toBe(true);
-			if (!current.ok || current.data === null) return;
+			if (!current.ok || current.data === null) {
+				return;
+			}
 
 			const stale = await submitTimesheet(
 				{
@@ -5684,7 +6160,9 @@ describe("human-resources.time (memory)", () => {
 				ready,
 			);
 			expect(stale.ok).toBe(false);
-			if (stale.ok) return;
+			if (stale.ok) {
+				return;
+			}
 			expect(humanResourcesCodeFromResult(stale)).toBe(
 				HUMAN_RESOURCES_ERROR_STALE_VERSION,
 			);

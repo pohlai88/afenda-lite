@@ -152,11 +152,15 @@ describe("mapApprovedPayrollHandoff", () => {
 		});
 
 		expect(mapped.ok).toBe(true);
-		if (!mapped.ok) return;
+		if (!mapped.ok) {
+			return;
+		}
 
 		const contract = approvedPayrollHandoffSchema.safeParse(mapped.data);
 		expect(contract.success).toBe(true);
-		if (!contract.success) return;
+		if (!contract.success) {
+			return;
+		}
 
 		expect(mapped.data.organizationId).toBe("org-1");
 		expect(mapped.data.employeeId).toBe(compensation.employeeId);

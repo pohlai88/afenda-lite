@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/useAwait: Command wrappers expose one asynchronous boundary for validation failures and delegated transactions.
 import { fail, type Result } from "@afenda/errors/result";
 
 import {
@@ -60,16 +61,24 @@ export async function registerLegalEstablishment(
 		registerLegalEstablishmentInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "registerLegalEstablishment");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const company = await dependencies.companyStore.lockLegalCompany({
 		organizationId: options.organizationId,
 		legalCompanyId: parsed.data.legalCompanyId,
 		expectedVersion: parsed.data.expectedCompanyVersion,
 	});
-	if (!company.ok) return company;
-	if (company.data === null) return notFound("legalCompany");
+	if (!company.ok) {
+		return company;
+	}
+	if (company.data === null) {
+		return notFound("legalCompany");
+	}
 	if (company.data.version !== parsed.data.expectedCompanyVersion) {
 		return stale(parsed.data.expectedCompanyVersion, company.data.version);
 	}
@@ -78,14 +87,18 @@ export async function registerLegalEstablishment(
 		transitionDate: parsed.data.registeredFrom,
 		companyCreatedAt: company.data.createdAt,
 	});
-	if (!chronology.ok) return chronology;
+	if (!chronology.ok) {
+		return chronology;
+	}
 	const references = await validateReferences(dependencies, {
 		organizationId: options.organizationId,
 		countryCode: parsed.data.jurisdictionCode,
 		effectiveDate: parsed.data.registeredFrom,
 		sourceDocumentId: parsed.data.sourceDocumentId,
 	});
-	if (!references.ok) return references;
+	if (!references.ok) {
+		return references;
+	}
 
 	return runDurableCompanyCommand({
 		commandId: "corporate-administration.legal-establishment.register",
@@ -146,15 +159,23 @@ export async function updateLegalEstablishment(
 		updateLegalEstablishmentInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "updateLegalEstablishment");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const current = await dependencies.establishmentStore.getLegalEstablishment({
 		organizationId: options.organizationId,
 		legalEstablishmentId: parsed.data.legalEstablishmentId,
 	});
-	if (!current.ok) return current;
-	if (current.data === null) return notFound("legalEstablishment");
+	if (!current.ok) {
+		return current;
+	}
+	if (current.data === null) {
+		return notFound("legalEstablishment");
+	}
 	if (current.data.version !== parsed.data.expectedVersion) {
 		return stale(parsed.data.expectedVersion, current.data.version);
 	}
@@ -163,7 +184,9 @@ export async function updateLegalEstablishment(
 		options.organizationId,
 		parsed.data.sourceDocumentId,
 	);
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	return runDurableCompanyCommand({
 		commandId: "corporate-administration.legal-establishment.update",
 		fingerprintSchema: updateLegalEstablishmentInputSchema,
@@ -263,15 +286,23 @@ async function transitionEstablishment(
 	dependencies: Dependencies,
 ): Promise<Result<LegalEstablishment>> {
 	const parsed = parseCorporateAdministrationInput(schema, input);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, commandId);
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const current = await dependencies.establishmentStore.getLegalEstablishment({
 		organizationId: options.organizationId,
 		legalEstablishmentId: parsed.data.legalEstablishmentId,
 	});
-	if (!current.ok) return current;
-	if (current.data === null) return notFound("legalEstablishment");
+	if (!current.ok) {
+		return current;
+	}
+	if (current.data === null) {
+		return notFound("legalEstablishment");
+	}
 	if (current.data.version !== parsed.data.expectedVersion) {
 		return stale(parsed.data.expectedVersion, current.data.version);
 	}
@@ -279,25 +310,35 @@ async function transitionEstablishment(
 		from: current.data.currentStatus,
 		to: targetStatus,
 	});
-	if (!transition.ok) return transition;
+	if (!transition.ok) {
+		return transition;
+	}
 	const company = await dependencies.companyStore.getLegalCompany({
 		organizationId: options.organizationId,
 		legalCompanyId: current.data.legalCompanyId,
 	});
-	if (!company.ok) return company;
-	if (company.data === null) return notFound("legalCompany");
+	if (!company.ok) {
+		return company;
+	}
+	if (company.data === null) {
+		return notFound("legalCompany");
+	}
 	const chronology = validateEstablishmentChronology({
 		registeredFrom: current.data.registeredFrom,
 		transitionDate: parsed.data.effectiveFrom,
 		companyCreatedAt: company.data.createdAt,
 	});
-	if (!chronology.ok) return chronology;
+	if (!chronology.ok) {
+		return chronology;
+	}
 	const source = await validateSource(
 		dependencies,
 		options.organizationId,
 		parsed.data.sourceDocumentId,
 	);
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	const previousStatus = current.data.currentStatus;
 
 	return runDurableCompanyCommand({
@@ -353,15 +394,21 @@ export async function setRegisteredAddress(
 		setRegisteredAddressInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "setRegisteredAddress");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const prepared = await prepareAddressMutation(
 		parsed.data,
 		options,
 		dependencies,
 	);
-	if (!prepared.ok) return prepared;
+	if (!prepared.ok) {
+		return prepared;
+	}
 	const existing =
 		await dependencies.establishmentStore.listRegisteredAddresses({
 			organizationId: options.organizationId,
@@ -369,7 +416,9 @@ export async function setRegisteredAddress(
 			legalEstablishmentId: parsed.data.legalEstablishmentId ?? null,
 			addressType: parsed.data.addressType,
 		});
-	if (!existing.ok) return existing;
+	if (!existing.ok) {
+		return existing;
+	}
 	const overlap = assertNoRegisteredAddressOverlap({
 		candidate: {
 			effectiveFrom: parsed.data.effectiveFrom,
@@ -377,7 +426,9 @@ export async function setRegisteredAddress(
 		},
 		existing: existing.data,
 	});
-	if (!overlap.ok) return overlap;
+	if (!overlap.ok) {
+		return overlap;
+	}
 
 	return runDurableCompanyCommand({
 		commandId: "corporate-administration.registered-address.set",
@@ -435,15 +486,21 @@ export async function registerPremise(
 		registerPremiseInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "registerPremise");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const prepared = await prepareAddressMutation(
 		parsed.data,
 		options,
 		dependencies,
 	);
-	if (!prepared.ok) return prepared;
+	if (!prepared.ok) {
+		return prepared;
+	}
 
 	return runDurableCompanyCommand({
 		commandId: "corporate-administration.premise.register",
@@ -500,15 +557,23 @@ export async function endPremise(
 		endPremiseInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "endPremise");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const current = await dependencies.establishmentStore.getPremise({
 		organizationId: options.organizationId,
 		premiseId: parsed.data.premiseId,
 	});
-	if (!current.ok) return current;
-	if (current.data === null) return notFound("premise");
+	if (!current.ok) {
+		return current;
+	}
+	if (current.data === null) {
+		return notFound("premise");
+	}
 	if (current.data.version !== parsed.data.expectedVersion) {
 		return stale(parsed.data.expectedVersion, current.data.version);
 	}
@@ -523,7 +588,9 @@ export async function endPremise(
 		options.organizationId,
 		parsed.data.sourceDocumentId,
 	);
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 
 	return runDurableCompanyCommand({
 		commandId: "corporate-administration.premise.end",
@@ -582,18 +649,27 @@ async function prepareAddressMutation(
 		legalCompanyId: input.legalCompanyId,
 		expectedVersion: input.expectedCompanyVersion,
 	});
-	if (!company.ok) return company;
-	if (company.data === null) return notFound("legalCompany");
+	if (!company.ok) {
+		return company;
+	}
+	if (company.data === null) {
+		return notFound("legalCompany");
+	}
 	if (company.data.version !== input.expectedCompanyVersion) {
 		return stale(input.expectedCompanyVersion, company.data.version);
 	}
-	if (input.legalEstablishmentId != null) {
+	if (
+		input.legalEstablishmentId !== undefined &&
+		input.legalEstablishmentId !== null
+	) {
 		const establishment =
 			await dependencies.establishmentStore.getLegalEstablishment({
 				organizationId: options.organizationId,
 				legalEstablishmentId: input.legalEstablishmentId,
 			});
-		if (!establishment.ok) return establishment;
+		if (!establishment.ok) {
+			return establishment;
+		}
 		if (
 			establishment.data === null ||
 			establishment.data.legalCompanyId !== input.legalCompanyId
@@ -607,7 +683,9 @@ async function prepareAddressMutation(
 		partyAddressId: input.sourcePartyAddressId,
 		asOf: input.effectiveFrom,
 	});
-	if (!address.ok) return address;
+	if (!address.ok) {
+		return address;
+	}
 	if (
 		address.data === null ||
 		!address.data.active ||
@@ -621,7 +699,9 @@ async function prepareAddressMutation(
 		countryCode: address.data.countryCode,
 		effectiveDate: input.effectiveFrom,
 	});
-	if (!country.ok) return country;
+	if (!country.ok) {
+		return country;
+	}
 	if (country.data === null || !country.data.active) {
 		return invalidReference("countryCode", country.data !== null);
 	}
@@ -630,7 +710,9 @@ async function prepareAddressMutation(
 		options.organizationId,
 		input.sourceDocumentId,
 	);
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	return { ok: true as const, data: { address: address.data } };
 }
 
@@ -648,7 +730,9 @@ async function validateReferences(
 		countryCode: input.countryCode,
 		effectiveDate: input.effectiveDate,
 	});
-	if (!country.ok) return country;
+	if (!country.ok) {
+		return country;
+	}
 	if (country.data === null || !country.data.active) {
 		return invalidReference("jurisdictionCode", country.data !== null);
 	}
@@ -668,7 +752,9 @@ async function validateSource(
 		organizationId,
 		sourceDocumentId,
 	});
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	return source.data === null || !source.data.active
 		? invalidReference("sourceDocumentId", source.data !== null)
 		: { ok: true as const, data: undefined };

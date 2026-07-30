@@ -68,7 +68,9 @@ export type LearningAssignmentBulkRow = z.infer<
 	typeof learningAssignmentBulkRowSchema
 >;
 
-export type BulkCommandOutput = { id: string };
+export interface BulkCommandOutput {
+	id: string;
+}
 
 type EmployeeInput = z.infer<typeof createEmployeeInputSchema>;
 type AssignmentInput = z.infer<typeof createAssignmentInputSchema>;
@@ -79,13 +81,13 @@ type LearningAssignmentInput = z.infer<
 	typeof createLearningAssignmentInputSchema
 >;
 
-export type HumanResourcesBulkCommandStamp = {
-	organizationId: string;
+export interface HumanResourcesBulkCommandStamp {
 	actorUserId: string;
 	correlationId: string;
-	sourceReference: string;
 	idempotencyKey: string;
-};
+	organizationId: string;
+	sourceReference: string;
+}
 
 type Command<Input> = (
 	input: Input,
@@ -93,14 +95,14 @@ type Command<Input> = (
 	stamp?: HumanResourcesBulkCommandStamp,
 ) => Promise<Result<{ id: unknown }>>;
 
-export type HumanResourcesBulkCommandPorts = {
-	createEmployee: Command<EmployeeInput>;
+export interface HumanResourcesBulkCommandPorts {
+	assignLearning: Command<LearningAssignmentInput>;
 	createAssignment: Command<AssignmentInput>;
+	createEmployee: Command<EmployeeInput>;
+	createEmployeeCompensation: Command<CompensationInput>;
 	grantLeaveEntitlement: Command<LeaveEntitlementInput>;
 	recordAttendanceEvent: Command<AttendanceInput>;
-	createEmployeeCompensation: Command<CompensationInput>;
-	assignLearning: Command<LearningAssignmentInput>;
-};
+}
 
 const defaultCommands: HumanResourcesBulkCommandPorts = {
 	createEmployee,
@@ -111,19 +113,19 @@ const defaultCommands: HumanResourcesBulkCommandPorts = {
 	assignLearning,
 };
 
-export type HumanResourcesBulkSourceDependencies = {
+export interface HumanResourcesBulkSourceDependencies {
 	checkpoints: BulkCheckpointPort<BulkCommandOutput>;
 	commandOptions?: HumanResourcesCommandOptions;
 	commands?: Partial<HumanResourcesBulkCommandPorts>;
-};
+}
 
-type ExecutionContext = {
-	organizationId: string;
+interface ExecutionContext {
 	actorUserId: string;
 	correlationId: string;
-	sourceReference: string;
+	organizationId: string;
 	rowIdempotencyKey: string;
-};
+	sourceReference: string;
+}
 
 const retryableCodes = new Set(["INTERNAL_ERROR", "SERVICE_UNAVAILABLE"]);
 const BULK_ROW_COMMAND_FAILED_MESSAGE = "Bulk row command failed";
@@ -131,8 +133,9 @@ const BULK_ROW_COMMAND_FAILED_MESSAGE = "Bulk row command failed";
 function mapCommandResult(
 	result: Result<{ id: unknown }>,
 ): BulkRowExecutionResult<BulkCommandOutput> {
-	if (result.ok)
+	if (result.ok) {
 		return { status: "applied", output: { id: String(result.data.id) } };
+	}
 	const issue = { code: result.code, message: BULK_ROW_COMMAND_FAILED_MESSAGE };
 	return retryableCodes.has(result.code)
 		? { status: "retryable_failure", issue }
@@ -151,15 +154,17 @@ function createSourcePorts<Row, Input extends object>(input: {
 	schema: z.ZodType<Row>;
 	dependencies: HumanResourcesBulkSourceDependencies;
 	command: Command<Input>;
-	buildInput(context: ExecutionContext, row: Row): Input;
+	buildInput: (context: ExecutionContext, row: Row) => Input;
 }): BulkImportPorts<Row, Row, BulkCommandOutput> {
 	return {
 		checkpoints: input.dependencies.checkpoints,
-		async validate({ row }) {
+		validate({ row }) {
 			const parsed = input.schema.safeParse(row.payload);
-			return parsed.success
-				? { valid: true, value: parsed.data }
-				: { valid: false, issues: validationIssues(parsed.error) };
+			return Promise.resolve(
+				parsed.success
+					? { valid: true, value: parsed.data }
+					: { valid: false, issues: validationIssues(parsed.error) },
+			);
 		},
 		async execute(context) {
 			return mapCommandResult(

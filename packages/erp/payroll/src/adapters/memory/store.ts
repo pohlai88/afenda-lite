@@ -17,7 +17,7 @@ import { createMemoryStatutoryMethods } from "./statutory";
 
 export type MemoryPayrollStore = PayrollStore & {
 	readonly state: MemoryPayrollStoreState;
-	reset(): void;
+	reset: () => void;
 };
 
 /** Composition root for Vitest and local harnesses. */

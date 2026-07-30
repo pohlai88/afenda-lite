@@ -34,9 +34,13 @@ export async function listRequiredStatutoryOffices(
 		listRequiredStatutoryOfficesInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "listRequiredStatutoryOffices");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return dependencies.officerStore.listRequiredStatutoryOffices({
 		organizationId: options.organizationId,
 		legalCompanyId: parsed.data.legalCompanyId,
@@ -55,9 +59,13 @@ export async function listOfficersAsOf(
 		listOfficersAsOfInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "listOfficersAsOf");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return dependencies.officerStore.listOfficersAsOf({
 		organizationId: options.organizationId,
 		legalCompanyId: parsed.data.legalCompanyId,
@@ -76,14 +84,20 @@ export async function getOfficerAppointment(
 		getOfficerAppointmentInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "getOfficerAppointment");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const result = await dependencies.officerStore.getOfficerAppointment({
 		organizationId: options.organizationId,
 		officerAppointmentId: parsed.data.officerAppointmentId,
 	});
-	if (!result.ok) return result;
+	if (!result.ok) {
+		return result;
+	}
 	return result.data === null
 		? notFound("officerAppointment")
 		: ok(result.data);
@@ -98,20 +112,30 @@ export async function getOfficerVacancyStatus(
 		getOfficerVacancyStatusInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "getOfficerVacancyStatus");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const office = await dependencies.officerStore.getStatutoryOffice({
 		organizationId: options.organizationId,
 		statutoryOfficeId: parsed.data.statutoryOfficeId,
 	});
-	if (!office.ok) return office;
-	if (office.data === null) return notFound("statutoryOffice");
+	if (!office.ok) {
+		return office;
+	}
+	if (office.data === null) {
+		return notFound("statutoryOffice");
+	}
 	const appointments = await dependencies.officerStore.listOfficerAppointments({
 		organizationId: options.organizationId,
 		statutoryOfficeId: parsed.data.statutoryOfficeId,
 	});
-	if (!appointments.ok) return appointments;
+	if (!appointments.ok) {
+		return appointments;
+	}
 	return ok(
 		calculateOfficerVacancyStatus({
 			office: office.data,

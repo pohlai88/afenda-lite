@@ -46,7 +46,7 @@ export async function createDraftPaymentAction(
 	_prev: CreateDraftPaymentActionState,
 	formData: FormData,
 ): Promise<CreateDraftPaymentActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "createDraftPaymentAction",
 		permission: "payments.payment.create",
 		safeMessage: "Could not create payment. Try again or contact an admin.",
@@ -61,12 +61,13 @@ export async function createDraftPaymentAction(
 				amount: formData.get("amount"),
 				reference: formData.get("reference"),
 			});
-			if (!parsed.success)
+			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
 					"Enter valid payment details.",
 					parsed.details,
 				);
+			}
 			const mapped = mapPackageResult(
 				await createDraftPayment(
 					{
@@ -79,7 +80,9 @@ export async function createDraftPaymentAction(
 					createPaymentsCommandOptions(),
 				),
 			);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePath("/admin/payments");
 			revalidatePath("/client/payments");
 			return { ok: true, data: { payment: mapped.data } };

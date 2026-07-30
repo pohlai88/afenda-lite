@@ -1,9 +1,9 @@
 import { CORRELATION_HEADER, resolveCorrelationId } from "./correlation";
 
-export type HttpContext = {
+export interface HttpContext {
 	readonly correlationId: string;
 	readonly startTime: number;
-};
+}
 
 export function createHttpContext(request: Request): HttpContext {
 	return {

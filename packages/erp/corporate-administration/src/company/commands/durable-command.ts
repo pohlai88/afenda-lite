@@ -135,9 +135,9 @@ export type RunDurableCompanyCommandInput<TResult> = Readonly<{
 			| "meeting_vote"
 			| "resolution"
 			| "resolution_action";
-		aggregateId(result: TResult): string;
-		aggregateVersion(result: TResult): number;
-		payload(
+		aggregateId: (result: TResult) => string;
+		aggregateVersion: (result: TResult) => number;
+		payload: (
 			result: TResult,
 			context: Readonly<{
 				organizationId: string;
@@ -146,14 +146,14 @@ export type RunDurableCompanyCommandInput<TResult> = Readonly<{
 				correlationId: string;
 				causationId?: string | undefined;
 			}>,
-		): unknown;
+		) => unknown;
 		safeMetadata?: Readonly<Record<string, string | number | boolean | null>>;
 	}>;
-	work(
+	work: (
 		transaction: CorporateAdministrationTransactionContext,
 		context: Readonly<{ occurredAt: ReturnType<typeof toCanonicalInstant> }>,
-	): Promise<Result<TResult>>;
-	serializeResult?(result: TResult): unknown;
+	) => Promise<Result<TResult>>;
+	serializeResult?: (result: TResult) => unknown;
 }>;
 
 export async function runDurableCompanyCommand<TResult>(
@@ -165,7 +165,9 @@ export async function runDurableCompanyCommand<TResult>(
 		commandId: input.commandId,
 		input: input.fingerprintInput,
 	});
-	if (!identity.ok) return identity;
+	if (!identity.ok) {
+		return identity;
+	}
 
 	const scope = {
 		organizationId: input.options.organizationId,
@@ -176,7 +178,9 @@ export async function runDurableCompanyCommand<TResult>(
 		scope,
 		fingerprint: identity.data.fingerprint,
 	});
-	if (!reservation.ok) return reservation;
+	if (!reservation.ok) {
+		return reservation;
+	}
 	if (reservation.data.status === "replay") {
 		const replay = input.outputSchema.safeParse(reservation.data.result);
 		return replay.success

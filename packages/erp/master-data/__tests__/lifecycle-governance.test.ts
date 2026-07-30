@@ -74,6 +74,7 @@ import {
 	toStandardLifecycleState,
 	warehouseLifecyclePolicy,
 } from "../src/capabilities/lifecycle-governance";
+import { runSequentially } from "../src/resolve-async";
 import { CHANGE_REQUEST_STATUSES, MASTER_STATUSES } from "../src/types";
 
 describe("lifecycle governance capability", () => {
@@ -387,11 +388,13 @@ describe("lifecycle governance capability", () => {
 		});
 		const governanceOnlyStates = GOVERNANCE_WORKFLOW_STATES.filter(
 			(state) =>
-				!SIMPLE_MASTER_STATES.includes(
-					state as (typeof SIMPLE_MASTER_STATES)[number],
-				) &&
-				!EFFECTIVE_DATED_STATES.includes(
-					state as (typeof EFFECTIVE_DATED_STATES)[number],
+				!(
+					SIMPLE_MASTER_STATES.includes(
+						state as (typeof SIMPLE_MASTER_STATES)[number],
+					) ||
+					EFFECTIVE_DATED_STATES.includes(
+						state as (typeof EFFECTIVE_DATED_STATES)[number],
+					)
 				),
 		);
 		for (const state of governanceOnlyStates) {
@@ -709,7 +712,7 @@ describe("lifecycle governance capability", () => {
 			updateItemTemplate,
 		] as const;
 
-		for (const command of commands) {
+		await runSequentially(commands, async (command) => {
 			const result = await command(base);
 			expect(result.ok).toBe(false);
 			if (!result.ok) {
@@ -719,7 +722,7 @@ describe("lifecycle governance capability", () => {
 					fields: ["status"],
 				});
 			}
-		}
+		});
 	});
 
 	it("uses explicit authoritative state instead of derived lifecycle signals", () => {

@@ -16,7 +16,7 @@ function runHook(command) {
 	});
 }
 
-const deny = runHook("pnpm --filter @afenda/db " + "db" + ":migrate");
+const deny = runHook("pnpm --filter @afenda/db db:migrate");
 const allowCheck = runHook("pnpm --filter @afenda/db db:check");
 const denyPush = runHook("pnpm db:push");
 const guardDenied = spawnSync(process.execPath, [guard], {

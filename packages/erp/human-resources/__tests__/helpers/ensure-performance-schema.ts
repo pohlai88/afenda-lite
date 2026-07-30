@@ -265,7 +265,7 @@ export async function ensurePerformanceSchemaForTests(): Promise<void> {
 	await runNeonHttpTransaction((sql) => [
 		sql`
 			INSERT INTO drizzle.__drizzle_migrations (hash, created_at)
-			SELECT ${migrationHash}, ${1784900000000}
+			SELECT ${migrationHash}, ${1_784_900_000_000}
 			WHERE NOT EXISTS (
 				SELECT 1 FROM drizzle.__drizzle_migrations WHERE hash = ${migrationHash}
 			)

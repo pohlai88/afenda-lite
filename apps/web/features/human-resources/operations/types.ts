@@ -5,22 +5,22 @@ import type {
 	ProjectedEmployeeCase,
 } from "@afenda/human-resources";
 
-export type HrOperationsCapabilities = {
-	canOnboard: boolean;
-	canOffboard: boolean;
-	canManageEmployment: boolean;
+export interface HrOperationsCapabilities {
 	canAdministerCompliance: boolean;
+	canManageEmployment: boolean;
+	canOffboard: boolean;
+	canOnboard: boolean;
 	canOpenCases: boolean;
+	canPrepareWorkforcePlans: boolean;
 	canReadCases: boolean;
 	canReadWorkforcePlans: boolean;
-	canPrepareWorkforcePlans: boolean;
 	canViewIntegrationHealth: boolean;
-};
+}
 
-export type HrOperationsData = {
-	missingRequirements: DocumentRequirement[];
-	expiringDocuments: EmployeeDocumentListItem[];
+export interface HrOperationsData {
 	cases: ProjectedEmployeeCase[];
-	plans: HeadcountPlan[];
 	errors: Partial<Record<"compliance" | "cases" | "plans", string>>;
-};
+	expiringDocuments: EmployeeDocumentListItem[];
+	missingRequirements: DocumentRequirement[];
+	plans: HeadcountPlan[];
+}

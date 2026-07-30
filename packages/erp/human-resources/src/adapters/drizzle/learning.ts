@@ -83,16 +83,16 @@ import type {
 	LearningSession,
 } from "../../types";
 
-type LearningHost = {
-	getEmployeeById: HumanResourcesStore["getEmployeeById"];
-	getCourseById: HumanResourcesStore["getCourseById"];
-	getSessionById: HumanResourcesStore["getSessionById"];
-	getLearningAssignmentById: HumanResourcesStore["getLearningAssignmentById"];
-	getCompletionById: HumanResourcesStore["getCompletionById"];
+interface LearningHost {
 	countActiveAssignmentsForCourse: HumanResourcesStore["countActiveAssignmentsForCourse"];
 	countEnrolledInSession: HumanResourcesStore["countEnrolledInSession"];
 	findCompletionByAssignmentId: HumanResourcesStore["findCompletionByAssignmentId"];
-};
+	getCompletionById: HumanResourcesStore["getCompletionById"];
+	getCourseById: HumanResourcesStore["getCourseById"];
+	getEmployeeById: HumanResourcesStore["getEmployeeById"];
+	getLearningAssignmentById: HumanResourcesStore["getLearningAssignmentById"];
+	getSessionById: HumanResourcesStore["getSessionById"];
+}
 
 function eventPayloadJson(value: Record<string, unknown>): string {
 	return JSON.stringify(value);
@@ -147,7 +147,9 @@ function mapCourse(
 	row: typeof hrLearningCourse.$inferSelect,
 ): Result<LearningCourse> {
 	const id = parseHumanResourcesCourseId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const status = courseStatusSchema.safeParse(row.status);
 	if (!status.success) {
 		return fail("INTERNAL_ERROR", "Invalid course status");
@@ -172,9 +174,13 @@ function mapSession(
 	row: typeof hrLearningSession.$inferSelect,
 ): Result<LearningSession> {
 	const id = parseHumanResourcesSessionId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const courseId = parseHumanResourcesCourseId(row.courseId);
-	if (!courseId.ok) return courseId;
+	if (!courseId.ok) {
+		return courseId;
+	}
 	const status = sessionStatusSchema.safeParse(row.status);
 	if (!status.success) {
 		return fail("INTERNAL_ERROR", "Invalid session status");
@@ -204,15 +210,23 @@ function mapLearningAssignment(
 	row: typeof hrLearningAssignment.$inferSelect,
 ): Result<LearningAssignment> {
 	const id = parseHumanResourcesLearningAssignmentId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const employeeId = parseHumanResourcesEmployeeId(row.employeeId);
-	if (!employeeId.ok) return employeeId;
+	if (!employeeId.ok) {
+		return employeeId;
+	}
 	const courseId = parseHumanResourcesCourseId(row.courseId);
-	if (!courseId.ok) return courseId;
+	if (!courseId.ok) {
+		return courseId;
+	}
 	let sessionId = null as LearningAssignment["sessionId"];
 	if (row.sessionId !== null) {
 		const parsed = parseHumanResourcesSessionId(row.sessionId);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		sessionId = parsed.data;
 	}
 	const status = assignmentStatusSchema.safeParse(row.status);
@@ -241,19 +255,29 @@ function mapCompletion(
 	row: typeof hrLearningCompletion.$inferSelect,
 ): Result<LearningCompletion> {
 	const id = parseHumanResourcesCompletionId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const employeeId = parseHumanResourcesEmployeeId(row.employeeId);
-	if (!employeeId.ok) return employeeId;
+	if (!employeeId.ok) {
+		return employeeId;
+	}
 	const courseId = parseHumanResourcesCourseId(row.courseId);
-	if (!courseId.ok) return courseId;
+	if (!courseId.ok) {
+		return courseId;
+	}
 	const assignmentId = parseHumanResourcesLearningAssignmentId(
 		row.assignmentId,
 	);
-	if (!assignmentId.ok) return assignmentId;
+	if (!assignmentId.ok) {
+		return assignmentId;
+	}
 	let sessionId = null as LearningCompletion["sessionId"];
 	if (row.sessionId !== null) {
 		const parsed = parseHumanResourcesSessionId(row.sessionId);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		sessionId = parsed.data;
 	}
 	const outcome = completionOutcomeSchema.safeParse(row.outcome);
@@ -283,13 +307,21 @@ function mapCertification(
 	row: typeof hrEmployeeCertification.$inferSelect,
 ): Result<EmployeeCertification> {
 	const id = parseHumanResourcesCertificationId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const employeeId = parseHumanResourcesEmployeeId(row.employeeId);
-	if (!employeeId.ok) return employeeId;
+	if (!employeeId.ok) {
+		return employeeId;
+	}
 	const courseId = parseHumanResourcesCourseId(row.courseId);
-	if (!courseId.ok) return courseId;
+	if (!courseId.ok) {
+		return courseId;
+	}
 	const completionId = parseHumanResourcesCompletionId(row.completionId);
-	if (!completionId.ok) return completionId;
+	if (!completionId.ok) {
+		return completionId;
+	}
 	const status = certificationStatusSchema.safeParse(row.status);
 	if (!status.success) {
 		return fail("INTERNAL_ERROR", "Invalid certification status");
@@ -300,7 +332,9 @@ function mapCertification(
 		const parsed = parseHumanResourcesCertificationId(
 			row.renewedFromCertificationId,
 		);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		renewedFromCertificationId = parsed.data;
 	}
 	return ok({
@@ -328,15 +362,23 @@ function mapLearningAttendance(
 	row: typeof hrLearningAttendance.$inferSelect,
 ): Result<LearningAttendance> {
 	const id = parseHumanResourcesLearningAttendanceId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const sessionId = parseHumanResourcesSessionId(row.sessionId);
-	if (!sessionId.ok) return sessionId;
+	if (!sessionId.ok) {
+		return sessionId;
+	}
 	const assignmentId = parseHumanResourcesLearningAssignmentId(
 		row.assignmentId,
 	);
-	if (!assignmentId.ok) return assignmentId;
+	if (!assignmentId.ok) {
+		return assignmentId;
+	}
 	const employeeId = parseHumanResourcesEmployeeId(row.employeeId);
-	if (!employeeId.ok) return employeeId;
+	if (!employeeId.ok) {
+		return employeeId;
+	}
 	const status = learningAttendanceStatusSchema.safeParse(row.status);
 	if (!status.success) {
 		return fail("INTERNAL_ERROR", "Invalid learning attendance status");
@@ -358,123 +400,123 @@ function mapLearningAttendance(
 	});
 }
 
-type CourseSqlRow = {
-	id: string;
-	organization_id: string;
+interface CourseSqlRow {
 	code: string;
-	title: string;
+	create_idempotency_key: string | null;
+	create_request_fingerprint: string | null;
+	created_at: Date;
+	created_by: string;
 	description: string | null;
 	duration_hours: string | null;
-	status: string;
-	create_idempotency_key: string | null;
-	create_request_fingerprint: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
-	updated_at: Date;
-};
-
-type SessionSqlRow = {
 	id: string;
 	organization_id: string;
-	course_id: string;
-	code: string;
+	status: string;
 	title: string;
-	scheduled_starts_at: Date;
-	scheduled_ends_at: Date;
-	actual_starts_at: Date | null;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+}
+
+interface SessionSqlRow {
 	actual_ends_at: Date | null;
+	actual_starts_at: Date | null;
 	capacity: number | null;
+	code: string;
+	course_id: string;
+	create_idempotency_key: string | null;
+	create_request_fingerprint: string | null;
+	created_at: Date;
+	created_by: string;
+	id: string;
+	organization_id: string;
 	primary_instructor_user_id: string | null;
+	scheduled_ends_at: Date;
+	scheduled_starts_at: Date;
 	status: string;
-	create_idempotency_key: string | null;
-	create_request_fingerprint: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
+	title: string;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+}
 
-type LearningAssignmentSqlRow = {
-	id: string;
-	organization_id: string;
-	employee_id: string;
-	course_id: string;
-	session_id: string | null;
-	status: string;
-	assigned_by: string;
+interface LearningAssignmentSqlRow {
 	assigned_at: Date;
+	assigned_by: string;
+	course_id: string;
+	create_idempotency_key: string | null;
+	create_request_fingerprint: string | null;
+	created_at: Date;
+	created_by: string;
 	due_on: string | null;
-	create_idempotency_key: string | null;
-	create_request_fingerprint: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
-	updated_at: Date;
-};
-
-type CompletionSqlRow = {
+	employee_id: string;
 	id: string;
 	organization_id: string;
-	employee_id: string;
-	course_id: string;
-	assignment_id: string;
 	session_id: string | null;
-	completed_at: Date;
-	outcome: string;
+	status: string;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+}
+
+interface CompletionSqlRow {
 	assessor_user_id: string | null;
-	notes: string | null;
+	assignment_id: string;
+	completed_at: Date;
+	course_id: string;
 	create_idempotency_key: string | null;
 	create_request_fingerprint: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
 	created_at: Date;
-	updated_at: Date;
-};
-
-type CertificationSqlRow = {
-	id: string;
-	organization_id: string;
+	created_by: string;
 	employee_id: string;
-	course_id: string;
-	completion_id: string;
+	id: string;
+	notes: string | null;
+	organization_id: string;
+	outcome: string;
+	session_id: string | null;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+}
+
+interface CertificationSqlRow {
 	certification_code: string;
-	issued_on: string;
+	completion_id: string;
+	course_id: string;
+	create_idempotency_key: string | null;
+	create_request_fingerprint: string | null;
+	created_at: Date;
+	created_by: string;
+	employee_id: string;
 	expires_on: string | null;
-	status: string;
+	id: string;
+	issued_on: string;
+	organization_id: string;
 	renewed_from_certification_id: string | null;
 	revoked_at: Date | null;
 	revoked_by: string | null;
+	status: string;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+}
+
+interface LearningAttendanceSqlRow {
+	assignment_id: string;
 	create_idempotency_key: string | null;
 	create_request_fingerprint: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
 	created_at: Date;
-	updated_at: Date;
-};
-
-type LearningAttendanceSqlRow = {
+	created_by: string;
+	employee_id: string;
 	id: string;
 	organization_id: string;
-	session_id: string;
-	assignment_id: string;
-	employee_id: string;
-	status: string;
 	recorded_at: Date;
 	recorded_by: string;
-	create_idempotency_key: string | null;
-	create_request_fingerprint: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
+	session_id: string;
+	status: string;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+}
 
 function mapCourseSql(row: CourseSqlRow): Result<LearningCourse> {
 	return mapCourse({
@@ -493,6 +535,29 @@ function mapCourseSql(row: CourseSqlRow): Result<LearningCourse> {
 		createdAt: row.created_at,
 		updatedAt: row.updated_at,
 	});
+}
+
+async function resolveCourseIdempotencyReplay(
+	host: Pick<HumanResourcesStore, "findCourseByIdempotencyKey">,
+	input: {
+		organizationId: string;
+		idempotencyKey: string;
+		expectedFingerprint: string;
+	},
+): Promise<Result<LearningCourse | null>> {
+	const existing = await host.findCourseByIdempotencyKey({
+		organizationId: input.organizationId,
+		idempotencyKey: input.idempotencyKey,
+	});
+	if (!existing.ok) {
+		return existing;
+	}
+	if (existing.data === null) {
+		return ok(null);
+	}
+	return existing.data.createRequestFingerprint === input.expectedFingerprint
+		? ok(existing.data.course)
+		: conflict("Idempotency key already used with different data");
 }
 
 function mapSessionSql(row: SessionSqlRow): Result<LearningSession> {
@@ -626,8 +691,10 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapCourse(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load course");
@@ -646,10 +713,14 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			const course = mapCourse(row);
-			if (!course.ok) return course;
+			if (!course.ok) {
+				return course;
+			}
 			if (
 				row.createIdempotencyKey === null ||
 				row.createRequestFingerprint === null
@@ -670,23 +741,22 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 	},
 
 	async createCourse(record, _ports, meta) {
-		const existing = await this.findCourseByIdempotencyKey({
+		const replay = await resolveCourseIdempotencyReplay(this, {
 			organizationId: record.organizationId,
 			idempotencyKey: record.createIdempotencyKey,
+			expectedFingerprint: record.createRequestFingerprint,
 		});
-		if (!existing.ok) return existing;
-		if (existing.data !== null) {
-			if (
-				existing.data.createRequestFingerprint ===
-				record.createRequestFingerprint
-			) {
-				return ok(existing.data.course);
-			}
-			return conflict("Idempotency key already used with different data");
+		if (!replay.ok) {
+			return replay;
+		}
+		if (replay.data !== null) {
+			return ok(replay.data);
 		}
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesCourseId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 
 		try {
@@ -727,26 +797,23 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return conflict("Course code already exists in organization");
 			}
 			return mapCourseSql(row);
 		} catch (error) {
 			if (isCreateIdempotencyUniqueViolation(error)) {
-				const replay = await this.findCourseByIdempotencyKey({
+				const replayAfterConflict = await resolveCourseIdempotencyReplay(this, {
 					organizationId: record.organizationId,
 					idempotencyKey: record.createIdempotencyKey,
+					expectedFingerprint: record.createRequestFingerprint,
 				});
-				if (!replay.ok) return replay;
-				if (replay.data !== null) {
-					if (
-						replay.data.createRequestFingerprint ===
-						record.createRequestFingerprint
-					) {
-						return ok(replay.data.course);
-					}
-					return conflict("Idempotency key already used with different data");
+				if (!replayAfterConflict.ok) {
+					return replayAfterConflict;
+				}
+				if (replayAfterConflict.data !== null) {
+					return ok(replayAfterConflict.data);
 				}
 			}
 			if (isPostgresUniqueViolation(error)) {
@@ -761,7 +828,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			organizationId: input.organizationId,
 			courseId: input.courseId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Course not found");
 		}
@@ -769,9 +838,13 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const activeCheck = assertCourseActive(existing.data.status);
-		if (!activeCheck.ok) return activeCheck;
+		if (!activeCheck.ok) {
+			return activeCheck;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -808,7 +881,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -826,7 +899,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			organizationId: input.organizationId,
 			courseId: input.courseId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Course not found");
 		}
@@ -834,12 +909,16 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const transition = assertCourseStatusTransition(
 			existing.data.status,
 			"active",
 		);
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -874,7 +953,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -892,7 +971,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			organizationId: input.organizationId,
 			courseId: input.courseId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Course not found");
 		}
@@ -900,19 +981,25 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const activeCount = await this.countActiveAssignmentsForCourse({
 			organizationId: input.organizationId,
 			courseId: input.courseId,
 		});
-		if (!activeCount.ok) return activeCount;
+		if (!activeCount.ok) {
+			return activeCount;
+		}
 
 		const archiveCheck = assertCourseCanArchive({
 			status: existing.data.status,
 			hasActiveAssignments: activeCount.data > 0,
 		});
-		if (!archiveCheck.ok) return archiveCheck;
+		if (!archiveCheck.ok) {
+			return archiveCheck;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -956,13 +1043,15 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				const recheck = await this.countActiveAssignmentsForCourse({
 					organizationId: input.organizationId,
 					courseId: input.courseId,
 				});
-				if (!recheck.ok) return recheck;
+				if (!recheck.ok) {
+					return recheck;
+				}
 				if (recheck.data > 0) {
 					return invalidState("Cannot archive course with active assignments");
 				}
@@ -997,7 +1086,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			const courses: LearningCourse[] = [];
 			for (const row of paged) {
 				const mapped = mapCourse(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				courses.push(mapped.data);
 			}
 
@@ -1044,8 +1135,10 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapSession(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load session");
@@ -1064,10 +1157,14 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			const session = mapSession(row);
-			if (!session.ok) return session;
+			if (!session.ok) {
+				return session;
+			}
 			if (
 				row.createIdempotencyKey === null ||
 				row.createRequestFingerprint === null
@@ -1095,7 +1192,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			organizationId: record.organizationId,
 			idempotencyKey: record.createIdempotencyKey,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data !== null) {
 			if (
 				existing.data.createRequestFingerprint ===
@@ -1109,7 +1208,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			organizationId: record.organizationId,
 			courseId: record.courseId,
 		});
-		if (!course.ok) return course;
+		if (!course.ok) {
+			return course;
+		}
 		if (course.data === null) {
 			return notFound(
 				"Course not found",
@@ -1124,11 +1225,15 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			scheduledStartsAt: record.scheduledStartsAt,
 			scheduledEndsAt: record.scheduledEndsAt,
 		});
-		if (!scheduleCheck.ok) return scheduleCheck;
+		if (!scheduleCheck.ok) {
+			return scheduleCheck;
+		}
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesSessionId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 
 		try {
@@ -1176,7 +1281,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return conflict("Unable to create session for inactive course");
 			}
@@ -1187,7 +1292,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					organizationId: record.organizationId,
 					idempotencyKey: record.createIdempotencyKey,
 				});
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (replay.data !== null) {
 					if (
 						replay.data.createRequestFingerprint ===
@@ -1210,7 +1317,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			organizationId: input.organizationId,
 			sessionId: input.sessionId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Session not found");
 		}
@@ -1218,12 +1327,16 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const transitionCheck = assertSessionStatusTransition(
 			existing.data.status,
 			"in_progress",
 		);
-		if (!transitionCheck.ok) return transitionCheck;
+		if (!transitionCheck.ok) {
+			return transitionCheck;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -1259,7 +1372,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -1277,7 +1390,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			organizationId: input.organizationId,
 			sessionId: input.sessionId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Session not found");
 		}
@@ -1285,12 +1400,16 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const transitionCheck = assertSessionStatusTransition(
 			existing.data.status,
 			"completed",
 		);
-		if (!transitionCheck.ok) return transitionCheck;
+		if (!transitionCheck.ok) {
+			return transitionCheck;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -1326,7 +1445,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -1344,7 +1463,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			organizationId: input.organizationId,
 			sessionId: input.sessionId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Session not found");
 		}
@@ -1352,12 +1473,16 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const transitionCheck = assertSessionStatusTransition(
 			existing.data.status,
 			"cancelled",
 		);
-		if (!transitionCheck.ok) return transitionCheck;
+		if (!transitionCheck.ok) {
+			return transitionCheck;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -1392,7 +1517,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -1410,7 +1535,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			organizationId: input.organizationId,
 			sessionId: input.sessionId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Session not found");
 		}
@@ -1418,7 +1545,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		if (
 			existing.data.status === "completed" ||
 			existing.data.status === "cancelled"
@@ -1459,7 +1588,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -1500,7 +1629,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			const sessions: LearningSession[] = [];
 			for (const row of paged) {
 				const mapped = mapSession(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				sessions.push(mapped.data);
 			}
 
@@ -1545,8 +1676,10 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapLearningAssignment(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load learning assignment");
@@ -1565,10 +1698,14 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			const assignment = mapLearningAssignment(row);
-			if (!assignment.ok) return assignment;
+			if (!assignment.ok) {
+				return assignment;
+			}
 			if (
 				row.createIdempotencyKey === null ||
 				row.createRequestFingerprint === null
@@ -1596,7 +1733,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			organizationId: record.organizationId,
 			idempotencyKey: record.createIdempotencyKey,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data !== null) {
 			if (
 				existing.data.createRequestFingerprint ===
@@ -1610,7 +1749,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			organizationId: record.organizationId,
 			employeeId: record.employeeId,
 		});
-		if (!employee.ok) return employee;
+		if (!employee.ok) {
+			return employee;
+		}
 		if (employee.data === null) {
 			return notFound(
 				"Employee not found",
@@ -1622,7 +1763,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			organizationId: record.organizationId,
 			courseId: record.courseId,
 		});
-		if (!course.ok) return course;
+		if (!course.ok) {
+			return course;
+		}
 		if (course.data === null) {
 			return notFound(
 				"Course not found",
@@ -1638,7 +1781,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				organizationId: record.organizationId,
 				sessionId: record.sessionId,
 			});
-			if (!session.ok) return session;
+			if (!session.ok) {
+				return session;
+			}
 			if (session.data === null) {
 				return notFound(
 					"Session not found",
@@ -1658,7 +1803,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesLearningAssignmentId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const payloadJson = eventPayloadJson({
@@ -1741,7 +1888,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return conflict("Unable to create assignment");
 			}
@@ -1752,7 +1899,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					organizationId: record.organizationId,
 					idempotencyKey: record.createIdempotencyKey,
 				});
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (replay.data !== null) {
 					if (
 						replay.data.createRequestFingerprint ===
@@ -1780,7 +1929,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			organizationId: input.organizationId,
 			assignmentId: input.assignmentId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Learning assignment not found");
 		}
@@ -1788,13 +1939,17 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const course = await this.getCourseById({
 			organizationId: input.organizationId,
 			courseId: existing.data.courseId,
 		});
-		if (!course.ok) return course;
+		if (!course.ok) {
+			return course;
+		}
 		if (course.data === null) {
 			return notFound("Course not found");
 		}
@@ -1808,20 +1963,23 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				organizationId: input.organizationId,
 				sessionId,
 			});
-			if (!session.ok) return session;
+			if (!session.ok) {
+				return session;
+			}
 			if (session.data === null) {
 				return notFound("Session not found");
 			}
 			if (session.data.courseId !== existing.data.courseId) {
 				return conflict("Session does not belong to the assignment course");
 			}
-			sessionStatus = session.data.status;
-			capacity = session.data.capacity;
+			({ status: sessionStatus, capacity } = session.data);
 			const enrolled = await this.countEnrolledInSession({
 				organizationId: input.organizationId,
 				sessionId,
 			});
-			if (!enrolled.ok) return enrolled;
+			if (!enrolled.ok) {
+				return enrolled;
+			}
 			enrolledCount = enrolled.data;
 		}
 
@@ -1832,7 +1990,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			maxParticipants: capacity,
 			enrolledCount,
 		});
-		if (!enrollCheck.ok) return enrollCheck;
+		if (!enrollCheck.ok) {
+			return enrollCheck;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -1892,14 +2052,16 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				if (existing.data.sessionId !== null) {
 					const recheckEnrolled = await this.countEnrolledInSession({
 						organizationId: input.organizationId,
 						sessionId: existing.data.sessionId,
 					});
-					if (!recheckEnrolled.ok) return recheckEnrolled;
+					if (!recheckEnrolled.ok) {
+						return recheckEnrolled;
+					}
 					// Only check capacity if there's a limit set
 					if (capacity !== null && recheckEnrolled.data >= capacity) {
 						return invalidState("Session is at capacity");
@@ -1924,7 +2086,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			organizationId: input.organizationId,
 			assignmentId: input.assignmentId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Learning assignment not found");
 		}
@@ -1932,9 +2096,13 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const waiveCheck = assertAssignmentWaivable(existing.data.status);
-		if (!waiveCheck.ok) return waiveCheck;
+		if (!waiveCheck.ok) {
+			return waiveCheck;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -1969,7 +2137,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -2013,7 +2181,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			const assignments: LearningAssignment[] = [];
 			for (const row of paged) {
 				const mapped = mapLearningAssignment(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				assignments.push(mapped.data);
 			}
 
@@ -2043,8 +2213,10 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapCompletion(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load completion");
@@ -2063,10 +2235,14 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			const completion = mapCompletion(row);
-			if (!completion.ok) return completion;
+			if (!completion.ok) {
+				return completion;
+			}
 			if (
 				row.createIdempotencyKey === null ||
 				row.createRequestFingerprint === null
@@ -2101,8 +2277,10 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapCompletion(row);
 		} catch (error) {
 			return mapPersistenceFailure(
@@ -2117,7 +2295,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			organizationId: record.organizationId,
 			idempotencyKey: record.createIdempotencyKey,
 		});
-		if (!existingByKey.ok) return existingByKey;
+		if (!existingByKey.ok) {
+			return existingByKey;
+		}
 		if (existingByKey.data !== null) {
 			if (
 				existingByKey.data.createRequestFingerprint ===
@@ -2131,7 +2311,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			organizationId: record.organizationId,
 			assignmentId: record.assignmentId,
 		});
-		if (!assignment.ok) return assignment;
+		if (!assignment.ok) {
+			return assignment;
+		}
 		if (assignment.data === null) {
 			return notFound(
 				"Learning assignment not found",
@@ -2147,7 +2329,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				organizationId: record.organizationId,
 				sessionId: assignment.data.sessionId,
 			});
-			if (!session.ok) return session;
+			if (!session.ok) {
+				return session;
+			}
 			if (session.data === null) {
 				return notFound(
 					"Session not found",
@@ -2161,7 +2345,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				organizationId: record.organizationId,
 				sessionId: record.sessionId,
 			});
-			if (!linkedSession.ok) return linkedSession;
+			if (!linkedSession.ok) {
+				return linkedSession;
+			}
 			if (linkedSession.data === null) {
 				return notFound(
 					"Session not found",
@@ -2175,22 +2361,30 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			sessionStatus,
 			completedAt: record.completedAt,
 		});
-		if (!recordCheck.ok) return recordCheck;
+		if (!recordCheck.ok) {
+			return recordCheck;
+		}
 
 		const existingCompletionCheck = await this.findCompletionByAssignmentId({
 			organizationId: record.organizationId,
 			assignmentId: record.assignmentId,
 		});
-		if (!existingCompletionCheck.ok) return existingCompletionCheck;
+		if (!existingCompletionCheck.ok) {
+			return existingCompletionCheck;
+		}
 
 		const duplicateCheck = assertNoDuplicateCompletion({
 			hasExistingCompletion: existingCompletionCheck.data !== null,
 		});
-		if (!duplicateCheck.ok) return duplicateCheck;
+		if (!duplicateCheck.ok) {
+			return duplicateCheck;
+		}
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesCompletionId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 		const nextAssignmentVersion = assignment.data.version + 1;
 		const eventId = randomUUID();
@@ -2286,13 +2480,15 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				const recheckCompletion = await this.findCompletionByAssignmentId({
 					organizationId: record.organizationId,
 					assignmentId: record.assignmentId,
 				});
-				if (!recheckCompletion.ok) return recheckCompletion;
+				if (!recheckCompletion.ok) {
+					return recheckCompletion;
+				}
 				if (recheckCompletion.data !== null) {
 					return conflict("Assignment already has a completion record");
 				}
@@ -2305,7 +2501,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					organizationId: record.organizationId,
 					idempotencyKey: record.createIdempotencyKey,
 				});
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (replay.data !== null) {
 					if (
 						replay.data.createRequestFingerprint ===
@@ -2348,7 +2546,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			const completions: LearningCompletion[] = [];
 			for (const row of paged) {
 				const mapped = mapCompletion(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				completions.push(mapped.data);
 			}
 
@@ -2375,7 +2575,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return ok(null);
 			}
@@ -2397,12 +2597,14 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return ok(null);
 			}
 			const mapped = mapLearningAttendance(row);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return ok({
 				attendance: mapped.data,
 				createIdempotencyKey: input.idempotencyKey,
@@ -2429,7 +2631,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return ok(null);
 			}
@@ -2447,7 +2649,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			organizationId: record.organizationId,
 			idempotencyKey: record.createIdempotencyKey,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data !== null) {
 			if (
 				existing.data.createRequestFingerprint ===
@@ -2462,7 +2666,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			organizationId: record.organizationId,
 			assignmentId: record.assignmentId,
 		});
-		if (!assignment.ok) return assignment;
+		if (!assignment.ok) {
+			return assignment;
+		}
 		if (assignment.data === null) {
 			return notFound(
 				"Assignment not found",
@@ -2480,7 +2686,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			organizationId: record.organizationId,
 			sessionId: record.sessionId,
 		});
-		if (!session.ok) return session;
+		if (!session.ok) {
+			return session;
+		}
 		if (session.data === null) {
 			return notFound(
 				"Session not found",
@@ -2494,22 +2702,30 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			assignmentSessionId: assignment.data.sessionId,
 			requestedSessionId: record.sessionId,
 		});
-		if (!recordableCheck.ok) return recordableCheck;
+		if (!recordableCheck.ok) {
+			return recordableCheck;
+		}
 
 		const duplicate = await this.findLearningAttendanceByAssignmentAndSession({
 			organizationId: record.organizationId,
 			assignmentId: record.assignmentId,
 			sessionId: record.sessionId,
 		});
-		if (!duplicate.ok) return duplicate;
+		if (!duplicate.ok) {
+			return duplicate;
+		}
 		const duplicateCheck = assertNoDuplicateLearningAttendance({
 			hasExistingAttendance: duplicate.data !== null,
 		});
-		if (!duplicateCheck.ok) return duplicateCheck;
+		if (!duplicateCheck.ok) {
+			return duplicateCheck;
+		}
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesLearningAttendanceId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 
 		try {
@@ -2571,7 +2787,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				const recheck = await this.findLearningAttendanceByAssignmentAndSession(
 					{
@@ -2580,7 +2796,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 						sessionId: record.sessionId,
 					},
 				);
-				if (!recheck.ok) return recheck;
+				if (!recheck.ok) {
+					return recheck;
+				}
 				if (recheck.data !== null) {
 					return conflict(
 						"Attendance already recorded for this assignment and session",
@@ -2595,7 +2813,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					organizationId: record.organizationId,
 					idempotencyKey: record.createIdempotencyKey,
 				});
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (replay.data !== null) {
 					if (
 						replay.data.createRequestFingerprint ===
@@ -2645,7 +2865,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			const attendance: LearningAttendance[] = [];
 			for (const row of paged) {
 				const mapped = mapLearningAttendance(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				attendance.push(mapped.data);
 			}
 
@@ -2672,8 +2894,10 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapCertification(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load certification");
@@ -2695,10 +2919,14 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			const certification = mapCertification(row);
-			if (!certification.ok) return certification;
+			if (!certification.ok) {
+				return certification;
+			}
 			if (
 				row.createIdempotencyKey === null ||
 				row.createRequestFingerprint === null
@@ -2726,7 +2954,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			organizationId: record.organizationId,
 			idempotencyKey: record.createIdempotencyKey,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data !== null) {
 			if (
 				existing.data.createRequestFingerprint ===
@@ -2740,7 +2970,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			organizationId: record.organizationId,
 			employeeId: record.employeeId,
 		});
-		if (!employee.ok) return employee;
+		if (!employee.ok) {
+			return employee;
+		}
 		if (employee.data === null) {
 			return notFound(
 				"Employee not found",
@@ -2752,7 +2984,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			organizationId: record.organizationId,
 			courseId: record.courseId,
 		});
-		if (!course.ok) return course;
+		if (!course.ok) {
+			return course;
+		}
 		if (course.data === null) {
 			return notFound(
 				"Course not found",
@@ -2764,7 +2998,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			organizationId: record.organizationId,
 			completionId: record.completionId,
 		});
-		if (!completion.ok) return completion;
+		if (!completion.ok) {
+			return completion;
+		}
 		if (completion.data === null) {
 			return notFound(
 				"Completion not found",
@@ -2778,11 +3014,15 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			expiresOn: record.expiresOn,
 			todayDate: new Date().toISOString().slice(0, 10),
 		});
-		if (!issuableCheck.ok) return issuableCheck;
+		if (!issuableCheck.ok) {
+			return issuableCheck;
+		}
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesCertificationId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const changesJson = fieldChangeJson("status", null, "active");
 		const newValueJson = valueSnapshotJson({
 			employeeId: record.employeeId,
@@ -2847,7 +3087,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return conflict("Unable to issue certification");
 			}
@@ -2858,7 +3098,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					organizationId: record.organizationId,
 					idempotencyKey: record.createIdempotencyKey,
 				});
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (replay.data !== null) {
 					if (
 						replay.data.createRequestFingerprint ===
@@ -2881,7 +3123,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			organizationId: input.organizationId,
 			certificationId: input.certificationId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Certification not found");
 		}
@@ -2889,9 +3133,13 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const revokeCheck = assertCertificationCanRevoke(existing.data.status);
-		if (!revokeCheck.ok) return revokeCheck;
+		if (!revokeCheck.ok) {
+			return revokeCheck;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const changesJson = fieldChangeJson(
@@ -2934,7 +3182,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -2952,7 +3200,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			organizationId: input.organizationId,
 			certificationId: input.certificationId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Certification not found");
 		}
@@ -2960,9 +3210,13 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const expireCheck = assertCertificationCanExpire(existing.data.status);
-		if (!expireCheck.ok) return expireCheck;
+		if (!expireCheck.ok) {
+			return expireCheck;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const changesJson = fieldChangeJson(
@@ -3024,7 +3278,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -3042,7 +3296,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			organizationId: record.organizationId,
 			idempotencyKey: record.createIdempotencyKey,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data !== null) {
 			if (
 				existing.data.createRequestFingerprint ===
@@ -3057,7 +3313,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			organizationId: record.organizationId,
 			certificationId: record.certificationId,
 		});
-		if (!prior.ok) return prior;
+		if (!prior.ok) {
+			return prior;
+		}
 		if (prior.data === null) {
 			return notFound(
 				"Certification not found",
@@ -3069,13 +3327,17 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			prior.data.version,
 			record.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const completion = await this.getCompletionById({
 			organizationId: record.organizationId,
 			completionId: record.completionId,
 		});
-		if (!completion.ok) return completion;
+		if (!completion.ok) {
+			return completion;
+		}
 		if (completion.data === null) {
 			return notFound(
 				"Completion not found",
@@ -3091,7 +3353,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			completionCourseId: completion.data.courseId,
 			completionOutcome: completion.data.outcome,
 		});
-		if (!renewableCheck.ok) return renewableCheck;
+		if (!renewableCheck.ok) {
+			return renewableCheck;
+		}
 
 		const issuableCheck = assertCertificationIssuable({
 			hasRequiredCompletion: completion.data.courseId === record.courseId,
@@ -3099,11 +3363,15 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			expiresOn: record.expiresOn,
 			todayDate: new Date().toISOString().slice(0, 10),
 		});
-		if (!issuableCheck.ok) return issuableCheck;
+		if (!issuableCheck.ok) {
+			return issuableCheck;
+		}
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesCertificationId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const changesJson = fieldChangeJson("status", null, "active");
 		const newValueJson = valueSnapshotJson({
 			employeeId: record.employeeId,
@@ -3191,7 +3459,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return conflict("Unable to renew certification");
 			}
@@ -3202,7 +3470,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					organizationId: record.organizationId,
 					idempotencyKey: record.createIdempotencyKey,
 				});
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (replay.data !== null) {
 					if (
 						replay.data.createRequestFingerprint ===
@@ -3247,7 +3517,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			const certifications: EmployeeCertification[] = [];
 			for (const row of paged) {
 				const mapped = mapCertification(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				certifications.push(mapped.data);
 			}
 
@@ -3291,7 +3563,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			const certifications: EmployeeCertification[] = [];
 			for (const row of paged) {
 				const mapped = mapCertification(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				certifications.push(mapped.data);
 			}
 

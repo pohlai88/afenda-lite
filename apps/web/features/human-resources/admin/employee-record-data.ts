@@ -60,37 +60,37 @@ type TimelineKind =
 	| "termination"
 	| "offboarding";
 
-export type EmployeeLifecycleTimelineEntry = {
+export interface EmployeeLifecycleTimelineEntry {
+	date: string;
+	detail: string;
 	id: string;
 	kind: TimelineKind;
-	title: string;
-	detail: string;
-	date: string;
 	status: string;
-};
+	title: string;
+}
 
-export type EmployeeAdminRecordData = {
-	employee: Employee;
-	profile: EmployeeProfile | null;
-	employments: Employment[];
-	currentEmployment: Employment | null;
-	contracts: EmploymentContract[];
-	statusHistory: EmploymentStatusHistory[];
+export interface EmployeeAdminRecordData {
 	assignments: WorkAssignment[];
-	currentAssignment: WorkAssignment | null;
-	probationReviews: ProbationReview[];
-	orgContext: EmployeeOrgContextAsOf | null;
-	position: Position | null;
-	manager: Employee | null;
-	directReports: Employee[];
 	availablePositions: Position[];
 	complianceSummary: EmployeeComplianceSummary | null;
+	contracts: EmploymentContract[];
+	currentAssignment: WorkAssignment | null;
+	currentEmployment: Employment | null;
+	directReports: Employee[];
 	documents: EmployeeDocumentListItem[];
-	workEligibility: WorkEligibility | null;
+	employee: Employee;
+	employments: Employment[];
+	manager: Employee | null;
+	orgContext: EmployeeOrgContextAsOf | null;
 	outstandingAcknowledgements: PolicyAcknowledgement[];
+	position: Position | null;
+	probationReviews: ProbationReview[];
+	profile: EmployeeProfile | null;
+	statusHistory: EmploymentStatusHistory[];
 	timeline: EmployeeLifecycleTimelineEntry[];
 	warnings: string[];
-};
+	workEligibility: WorkEligibility | null;
+}
 
 export type EmployeeAdminRecordLoadResult =
 	| { ok: true; data: EmployeeAdminRecordData }
@@ -105,7 +105,9 @@ function packageContext(session: Session, correlationId: string) {
 }
 
 function eventEntityId(payload: unknown): string | null {
-	if (typeof payload !== "object" || payload === null) return null;
+	if (typeof payload !== "object" || payload === null) {
+		return null;
+	}
 	const value = readProperty(payload, "entityId");
 	return typeof value === "string" ? value : null;
 }
@@ -113,7 +115,9 @@ function eventEntityId(payload: unknown): string | null {
 function eventEffectiveOn(payload: unknown, fallback: Date): string {
 	if (typeof payload === "object" && payload !== null) {
 		const value = readProperty(payload, "effectiveOn");
-		if (typeof value === "string") return value;
+		if (typeof value === "string") {
+			return value;
+		}
 	}
 	return fallback.toISOString().slice(0, 10);
 }
@@ -122,7 +126,7 @@ function readProperty(value: object, key: PropertyKey): unknown {
 	try {
 		return Reflect.get(value, key);
 	} catch {
-		return undefined;
+		return;
 	}
 }
 
@@ -220,6 +224,7 @@ function timelineFromProbation(reviews: readonly ProbationReview[]) {
 	);
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The loader preserves partial-failure handling for independent employee domains.
 export async function loadEmployeeAdminRecord(input: {
 	session: Session;
 	employeeId: HumanResourcesEmployeeId;
@@ -282,18 +287,22 @@ export async function loadEmployeeAdminRecord(input: {
 	]);
 
 	const warnings: string[] = [];
-	if (!profileResult.ok)
+	if (!profileResult.ok) {
 		warnings.push("Employee profile details are partially unavailable.");
+	}
 	if (
-		!summaryResult.ok ||
-		!documentsResult.ok ||
-		!eligibilityResult.ok ||
-		!acknowledgementsResult.ok
+		!(
+			summaryResult.ok &&
+			documentsResult.ok &&
+			eligibilityResult.ok &&
+			acknowledgementsResult.ok
+		)
 	) {
 		warnings.push("Some compliance facts are unavailable.");
 	}
-	if (!positionsResult.ok)
+	if (!positionsResult.ok) {
 		warnings.push("Active positions are unavailable for assignment changes.");
+	}
 
 	const employmentStarted =
 		events.get(HUMAN_RESOURCES_EMPLOYMENT_STARTED_EVENT) ?? [];
@@ -318,8 +327,9 @@ export async function loadEmployeeAdminRecord(input: {
 	const currentEmployment = currentEmploymentResult.ok
 		? currentEmploymentResult.data
 		: (employments[0] ?? null);
-	if (!currentEmploymentResult.ok)
+	if (!currentEmploymentResult.ok) {
 		warnings.push("Current employment could not be resolved.");
+	}
 
 	const employmentFacts = await Promise.all(
 		employments.map(async (employment) => {
@@ -351,7 +361,7 @@ export async function loadEmployeeAdminRecord(input: {
 	);
 	if (
 		employmentFacts.some(
-			(fact) => !fact.history.ok || !fact.contracts.ok || !fact.probation.ok,
+			(fact) => !(fact.history.ok && fact.contracts.ok && fact.probation.ok),
 		)
 	) {
 		warnings.push("Some employment history facts are unavailable.");
@@ -470,7 +480,9 @@ export async function loadEmployeeAdminRecord(input: {
 		caseEventEntries.map(
 			async (event): Promise<EmployeeLifecycleTimelineEntry | null> => {
 				const caseId = eventEntityId(event.payload);
-				if (!caseId) return null;
+				if (!caseId) {
+					return null;
+				}
 				const onboarding = event.type.startsWith("human-resources.onboarding");
 				const result = onboarding
 					? await getOnboardingCase(
@@ -481,8 +493,9 @@ export async function loadEmployeeAdminRecord(input: {
 							{ ...context, offboardingCaseId: caseId },
 							options,
 						);
-				if (!result.ok || result.data?.employeeId !== input.employeeId)
+				if (!result.ok || result.data?.employeeId !== input.employeeId) {
 					return null;
+				}
 				const completed = event.type.includes("completed");
 				return {
 					id: `${onboarding ? "onboarding" : "offboarding"}-${event.id}`,

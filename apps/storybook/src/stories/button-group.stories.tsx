@@ -32,15 +32,15 @@ function WorkbenchSection({
 	children,
 }: WorkbenchSectionProps) {
 	return (
-		<section className="grid gap-4" aria-labelledby={id}>
+		<section aria-labelledby={id} className="grid gap-4">
 			<div className="grid gap-1">
 				<h2
-					className="text-base font-semibold tracking-tight text-foreground"
+					className="font-semibold text-base text-foreground tracking-tight"
 					id={id}
 				>
 					{title}
 				</h2>
-				<p className="max-w-5xl text-sm leading-5 text-foreground-secondary">
+				<p className="max-w-5xl text-foreground-secondary text-sm leading-5">
 					{description}
 				</p>
 			</div>
@@ -81,16 +81,16 @@ export const Overview: Story = {
 	render: () => (
 		<div className="min-h-screen bg-canvas text-foreground">
 			<div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
-				<header className="grid gap-5 border-b border-border pb-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+				<header className="grid gap-5 border-border border-b pb-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
 					<div className="grid gap-2">
-						<p className="text-sm font-medium text-foreground-secondary">
+						<p className="font-medium text-foreground-secondary text-sm">
 							Accounts receivable
 						</p>
 						<div className="grid gap-1">
-							<h1 className="text-2xl font-semibold tracking-tight">
+							<h1 className="font-semibold text-2xl tracking-tight">
 								Invoice approval
 							</h1>
-							<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+							<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 								ButtonGroup makes the relationship between peer commands
 								explicit. It does not decide whether an action is permitted,
 								destructive, pending, or confirmed.
@@ -99,25 +99,25 @@ export const Overview: Story = {
 					</div>
 					<dl className="grid grid-cols-2 gap-x-8 gap-y-3 rounded-lg border bg-card p-4">
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Subject
 							</dt>
 							<dd className="text-sm">INV-1048</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Record
 							</dt>
 							<dd className="text-sm">Northwind Trading Sdn. Bhd.</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Amount
 							</dt>
 							<dd className="text-sm">MYR 18,420.00</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								State
 							</dt>
 							<dd className="text-sm">Awaiting approval</dd>
@@ -136,7 +136,7 @@ export const Overview: Story = {
 							</div>
 							<div className="flex flex-wrap items-center gap-2">
 								<Badge variant="outline">Malaysia</Badge>
-								<StatusBadge status="pending" label="Awaiting approval" />
+								<StatusBadge label="Awaiting approval" status="pending" />
 							</div>
 						</div>
 					</CardHeader>
@@ -176,9 +176,9 @@ export const Usage: Story = {
 	render: () => (
 		<div className="grid w-full max-w-5xl gap-6 sm:grid-cols-2">
 			<WorkbenchSection
+				description="Use ButtonGroup when the commands resolve the same subject and decision."
 				id="peer-decision"
 				title="Peer decision commands"
-				description="Use ButtonGroup when the commands resolve the same subject and decision."
 			>
 				<div className="grid gap-2">
 					<ButtonGroup aria-label="Purchase order approval decision">
@@ -188,16 +188,16 @@ export const Usage: Story = {
 							Return for revision
 						</Button>
 					</ButtonGroup>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						Both commands resolve the same purchase-order review.
 					</p>
 				</div>
 			</WorkbenchSection>
 
 			<WorkbenchSection
+				description="Keep format choices grouped when the target record stays the same."
 				id="alternate-representations"
 				title="Alternate representations of one record"
-				description="Keep format choices grouped when the target record stays the same."
 			>
 				<div className="grid gap-2">
 					<ButtonGroup aria-label="Invoice export format">
@@ -208,16 +208,16 @@ export const Usage: Story = {
 							Export CSV
 						</Button>
 					</ButtonGroup>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						The output format changes; the invoice subject does not.
 					</p>
 				</div>
 			</WorkbenchSection>
 
 			<WorkbenchSection
+				description="Use only when the controls stay local to the current record and share one context."
 				id="record-navigation"
 				title="Compact record-level navigation"
-				description="Use only when the controls stay local to the current record and share one context."
 			>
 				<div className="grid gap-2">
 					<ButtonGroup aria-label="Supplier record views">
@@ -231,7 +231,7 @@ export const Usage: Story = {
 							Remittances
 						</Button>
 					</ButtonGroup>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						Use only when these controls are local to the current supplier
 						record; use application navigation primitives for global
 						destinations.
@@ -255,13 +255,13 @@ export const VariantsAndSizes: Story = {
 	render: () => (
 		<div className="grid w-full max-w-5xl gap-6 md:grid-cols-2">
 			<WorkbenchSection
+				description="Use horizontal composition when labels fit without crowding."
 				id="horizontal"
 				title="Horizontal"
-				description="Use horizontal composition when labels fit without crowding."
 			>
 				<ButtonGroup
-					orientation="horizontal"
 					aria-label="Goods receipt decision"
+					orientation="horizontal"
 				>
 					<Button type="button" variant="outline">
 						Accept receipt
@@ -273,14 +273,14 @@ export const VariantsAndSizes: Story = {
 			</WorkbenchSection>
 
 			<WorkbenchSection
+				description="Use vertical composition when width or translation length would make the relation unclear."
 				id="vertical"
 				title="Vertical"
-				description="Use vertical composition when width or translation length would make the relation unclear."
 			>
 				<div className="w-full max-w-xs">
 					<ButtonGroup
-						orientation="vertical"
 						aria-label="Supplier exception actions"
+						orientation="vertical"
 					>
 						<Button type="button" variant="outline">
 							Request corrected invoice
@@ -365,7 +365,7 @@ export const StatesAndAccessibility: Story = {
 			<StorySection title="Authorized but temporarily unavailable">
 				<div className="grid gap-2">
 					<ButtonGroup aria-label="Payment release decision">
-						<Button type="button" disabled>
+						<Button disabled type="button">
 							Release payment
 						</Button>
 						<ButtonGroupSeparator />
@@ -373,7 +373,7 @@ export const StatesAndAccessibility: Story = {
 							Return to preparer
 						</Button>
 					</ButtonGroup>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						Release payment is unavailable until bank validation completes.
 					</p>
 				</div>
@@ -415,16 +415,16 @@ export const Composition: Story = {
 					</div>
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="secondary">Accounts payable</Badge>
-						<StatusBadge status="pending" label="Validation required" />
+						<StatusBadge label="Validation required" status="pending" />
 					</div>
 				</div>
 			</CardHeader>
 			<CardContent className="grid gap-4">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					The payment is balanced. Bank-account validation is still pending.
 				</p>
 				<ButtonGroup aria-label="Payment proposal actions">
-					<Button type="button" disabled>
+					<Button disabled type="button">
 						Release payment
 					</Button>
 					<ButtonGroupSeparator />
@@ -473,7 +473,7 @@ export const DoAndDoNot: Story = {
 							Sign out
 						</Button>
 					</ButtonGroup>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						Use Toolbar, navigation, or separate placements according to each
 						command's role.
 					</p>
@@ -495,11 +495,11 @@ export const DoAndDoNot: Story = {
 						<Button type="button" variant="outline">
 							Export PDF
 						</Button>
-						<Button type="button" variant="outline" disabled>
+						<Button disabled type="button" variant="outline">
 							3 attachments
 						</Button>
 					</ButtonGroup>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						A count is information, not an unavailable command.
 					</p>
 				</div>
@@ -515,7 +515,7 @@ export const DoAndDoNot: Story = {
 							Download invoice
 						</Button>
 					</ButtonGroup>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						The reviewer has no posting permission, so no posting command is
 						rendered.
 					</p>
@@ -523,7 +523,7 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do not: replace BulkActionBar">
-				<p className="text-sm leading-6 text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm leading-6">
 					ButtonGroup is local to one subject or decision. When actions apply to
 					a changing multi-row selection across a list, use BulkActionBar so
 					selection count, persistence, escape behavior, and batch authorization

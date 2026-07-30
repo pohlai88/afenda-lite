@@ -149,6 +149,8 @@ export async function runAuthorizedEmployeeCaseListQuery(
 			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
 		);
 	}
+	const actorEmployeeId = actorIdentity.data.employeeId;
+	const permission = requiredPermission;
 
 	const candidates = await loadCandidates();
 	if (!candidates.ok) {
@@ -162,31 +164,37 @@ export async function runAuthorizedEmployeeCaseListQuery(
 		.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
 	const authorizedProjected: ProjectedEmployeeCase[] = [];
-
-	for (const employeeCase of sorted) {
+	async function collectAuthorizedAtIndex(index: number): Promise<void> {
+		const employeeCase = sorted[index];
+		if (employeeCase === undefined) {
+			return;
+		}
 		const authResult = await authorizeHumanResourcesOperation(
 			{
 				operationId: data.queryId,
 				operationKind: "query",
-				requiredPermission,
+				requiredPermission: permission,
 				actor: {
 					organizationId: data.organizationId,
 					actorUserId: data.actorUserId,
 					correlationId: data.correlationId ?? "",
-					actorEmployeeId: actorIdentity.data.employeeId,
+					actorEmployeeId,
 				},
 				resource: employeeCaseToResourceContext(employeeCase),
 			},
 			options,
 		);
-		if (!authResult.ok || !authResult.data.allowed) {
-			continue;
+		if (authResult.ok && authResult.data.allowed) {
+			authorizedProjected.push(
+				projectEmployeeCaseFromDecision(
+					employeeCase,
+					authResult.data.projection,
+				),
+			);
 		}
-
-		authorizedProjected.push(
-			projectEmployeeCaseFromDecision(employeeCase, authResult.data.projection),
-		);
+		return collectAuthorizedAtIndex(index + 1);
 	}
+	await collectAuthorizedAtIndex(0);
 
 	const page = data.page ?? 1;
 	const pageSize = data.pageSize ?? 20;

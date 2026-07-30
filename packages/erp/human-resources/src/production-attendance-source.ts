@@ -42,7 +42,9 @@ async function observeAttendanceConnectorHealth(
 	health: "healthy" | "degraded" | "unavailable",
 	observability: HrObservabilityPorts | undefined,
 ): Promise<void> {
-	if (observability === undefined) return;
+	if (observability === undefined) {
+		return;
+	}
 	try {
 		await recordHrConnectorHealth(
 			{ connector: "attendance", health },
@@ -78,6 +80,7 @@ async function pullWithRetry(input: {
 
 	for (let attempt = 1; attempt <= input.retry.maxAttempts; attempt += 1) {
 		try {
+			// biome-ignore lint/performance/noAwaitInLoops: Connector retries must preserve attempt and backoff order.
 			const pulled = await input.pull.pull({
 				organizationId: input.organizationId,
 				...(input.pullCursor === undefined ? {} : { cursor: input.pullCursor }),

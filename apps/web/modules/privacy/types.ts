@@ -2,124 +2,115 @@ import type { Result } from "@afenda/errors/result";
 
 export type PrivacyModuleId = "human-resources" | (string & {});
 
-export type PrivacySubjectRecord = {
-	recordId: string;
+export interface PrivacySubjectRecord {
 	entity: string;
 	organizationId: string;
-};
+	recordId: string;
+}
 
-export type PrivacySubjectInventoryPort = {
-	listSubjectRecords(input: {
+export interface PrivacySubjectInventoryPort {
+	listSubjectRecords: (input: {
 		moduleId: PrivacyModuleId;
 		organizationId: string;
 		subjectId: string;
-	}): Promise<Result<readonly PrivacySubjectRecord[]>>;
-};
+	}) => Promise<Result<readonly PrivacySubjectRecord[]>>;
+}
 
-export type PrivacySubjectRequestContext = {
-	moduleId: PrivacyModuleId;
-	organizationId: string;
+export interface PrivacySubjectRequestContext {
 	actorUserId: string;
 	correlationId: string;
-	subjectId: string;
-	requestedAt: string;
 	legalBasis: string;
-};
+	moduleId: PrivacyModuleId;
+	organizationId: string;
+	requestedAt: string;
+	subjectId: string;
+}
 
-export type PrivacyExportResult = {
+export interface PrivacyExportResult {
 	exportReference: string;
 	recordCount: number;
 	records: readonly PrivacySubjectRecord[];
-};
+}
 
-export type PrivacySubjectCase = {
-	organizationId: string;
-	subjectId: string;
-	exports: readonly {
-		exportId: string;
-		exportReference: string;
-		recordCount: number;
-		createdAt: string;
-	}[];
+export interface PrivacySubjectCase {
 	activeLegalHolds: readonly {
 		legalHoldId: string;
 		holdReference: string;
 		classifications: readonly string[];
 		placedAt: string;
 	}[];
+	exports: readonly {
+		exportId: string;
+		exportReference: string;
+		recordCount: number;
+		createdAt: string;
+	}[];
+	organizationId: string;
 	recentOperations: readonly {
 		operationId: string;
 		kind: string;
 		affectedCount: number;
 		createdAt: string;
 	}[];
-};
+	subjectId: string;
+}
 
-export type PrivacyAnonymizationEvaluation = {
+export interface PrivacyAnonymizationEvaluation {
 	allowed: boolean;
 	reasonCode?: string;
-};
+}
 
-export type PrivacyRectifyResult = {
+export interface PrivacyRectifyResult {
 	rectifiedRecordCount: number;
-};
+}
 
-export type PrivacyAnonymizeResult = {
+export interface PrivacyAnonymizeResult {
 	anonymizedRecordCount: number;
-};
+}
 
-export type PrivacyLegalHoldResult = {
+export interface PrivacyLegalHoldResult {
 	legalHoldId: string;
-};
+}
 
-export type PrivacyRedactDownstreamResult = {
+export interface PrivacyRedactDownstreamResult {
 	redactedSystemCount: number;
-};
+}
 
-export type PrivacyAuditPort = {
-	record(
+export interface PrivacyAuditPort {
+	record: (
 		input: unknown,
-	): Promise<Result<{ id: string; organizationId: string }>>;
-};
+	) => Promise<Result<{ id: string; organizationId: string }>>;
+}
 
-export type PlatformPrivacyService = {
-	exportSubject(
-		input: PrivacySubjectRequestContext,
-	): Promise<Result<PrivacyExportResult>>;
-	getSubjectPrivacyCase(
-		input: PrivacySubjectRequestContext,
-	): Promise<Result<PrivacySubjectCase>>;
-	rectifySubject(
-		input: PrivacySubjectRequestContext & {
-			changes: Readonly<Record<string, unknown>>;
-		},
-	): Promise<Result<PrivacyRectifyResult>>;
-	anonymizeSubject(
+export interface PlatformPrivacyService {
+	anonymizeSubject: (
 		input: PrivacySubjectRequestContext & {
 			classifications: readonly string[];
 		},
-	): Promise<Result<PrivacyAnonymizeResult>>;
-	evaluateAnonymization(
+	) => Promise<Result<PrivacyAnonymizeResult>>;
+	evaluateAnonymization: (
 		input: PrivacySubjectRequestContext & {
 			classifications?: readonly string[];
 		},
-	): Promise<Result<PrivacyAnonymizationEvaluation>>;
-	placeLegalHold(
+	) => Promise<Result<PrivacyAnonymizationEvaluation>>;
+	exportSubject: (
+		input: PrivacySubjectRequestContext,
+	) => Promise<Result<PrivacyExportResult>>;
+	getSubjectPrivacyCase: (
+		input: PrivacySubjectRequestContext,
+	) => Promise<Result<PrivacySubjectCase>>;
+	placeLegalHold: (
 		input: PrivacySubjectRequestContext & {
 			holdReference: string;
 			classifications: readonly string[];
 		},
-	): Promise<Result<PrivacyLegalHoldResult>>;
-	releaseLegalHold(input: {
-		moduleId: PrivacyModuleId;
-		organizationId: string;
-		actorUserId: string;
-		correlationId: string;
-		legalHoldId: string;
-		reason: string;
-		releasedAt: string;
-	}): Promise<Result<void>>;
-	redactDownstream(input: {
+	) => Promise<Result<PrivacyLegalHoldResult>>;
+	rectifySubject: (
+		input: PrivacySubjectRequestContext & {
+			changes: Readonly<Record<string, unknown>>;
+		},
+	) => Promise<Result<PrivacyRectifyResult>>;
+	redactDownstream: (input: {
 		moduleId: PrivacyModuleId;
 		organizationId: string;
 		actorUserId: string;
@@ -127,5 +118,14 @@ export type PlatformPrivacyService = {
 		subjectId: string;
 		resourceTypes: readonly string[];
 		requestedAt: string;
-	}): Promise<Result<PrivacyRedactDownstreamResult>>;
-};
+	}) => Promise<Result<PrivacyRedactDownstreamResult>>;
+	releaseLegalHold: (input: {
+		moduleId: PrivacyModuleId;
+		organizationId: string;
+		actorUserId: string;
+		correlationId: string;
+		legalHoldId: string;
+		reason: string;
+		releasedAt: string;
+	}) => Promise<Result<void>>;
+}

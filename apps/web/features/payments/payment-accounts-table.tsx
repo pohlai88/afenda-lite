@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noJsxPropsBind: The enabled React Compiler stabilizes JSX callback props.
 "use client";
 
 import { Code, DataTable, type DataTableColumn } from "@afenda/ui-system";
@@ -37,10 +38,10 @@ export function PaymentAccountsTable({
 		<DataTable
 			columns={columns}
 			data={rows}
-			getRowId={(row) => row.id}
-			emptyTitle="No payment accounts yet"
-			emptyDescription="Create a payment account to hold receipts and disbursements."
 			density="comfortable"
+			emptyDescription="Create a payment account to hold receipts and disbursements."
+			emptyTitle="No payment accounts yet"
+			getRowId={(row) => row.id}
 		/>
 	);
 }

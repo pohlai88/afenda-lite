@@ -12,7 +12,7 @@ describe("app-shell utilities", () => {
 		const user = userEvent.setup();
 		render(
 			<NotificationDropdown
-				trigger={<Button type="button">Open notifications</Button>}
+				emptyMessage="No category notifications"
 				notifications={[
 					{
 						id: "close-ready",
@@ -24,7 +24,7 @@ describe("app-shell utilities", () => {
 						read: true,
 					},
 				]}
-				emptyMessage="No category notifications"
+				trigger={<Button type="button">Open notifications</Button>}
 			/>,
 		);
 
@@ -49,9 +49,9 @@ describe("app-shell utilities", () => {
 		const user = userEvent.setup();
 		render(
 			<ProfileDropdown
-				name="John Tan"
-				initials="JT"
 				actions={[{ id: "preferences", label: "Preferences" }]}
+				initials="JT"
+				name="John Tan"
 			/>,
 		);
 
@@ -68,9 +68,9 @@ describe("app-shell utilities", () => {
 		const onAction = vi.fn();
 		render(
 			<ProfileDropdown
-				name="John Tan"
-				initials="JT"
 				actions={[{ id: "preferences", label: "Preferences" }]}
+				initials="JT"
+				name="John Tan"
 				onAction={onAction}
 			/>,
 		);

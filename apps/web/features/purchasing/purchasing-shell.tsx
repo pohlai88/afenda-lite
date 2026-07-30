@@ -28,9 +28,9 @@ import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authori
 import { createPurchasingCommandOptions } from "@/lib/erp/purchasing-command-options";
 import { sessionHasPermission } from "@/modules/identity/domain/session-permission";
 
-type PurchasingShellProps = {
+interface PurchasingShellProps {
 	surface: "admin" | "client";
-};
+}
 
 /**
  * Purchasing console — RSC list via `@afenda/purchasing`; mutations via Actions.
@@ -110,13 +110,13 @@ export async function PurchasingShell({ surface }: PurchasingShellProps) {
 	return (
 		<section className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-10">
 			<div className="space-y-2">
-				<p className="text-sm text-muted-foreground">
+				<p className="text-muted-foreground text-sm">
 					{surface === "admin" ? "Operator" : "Client"} · Purchasing
 				</p>
-				<h1 className="text-2xl font-semibold tracking-tight">
+				<h1 className="font-semibold text-2xl tracking-tight">
 					Purchase orders
 				</h1>
-				<p className="max-w-2xl text-sm text-muted-foreground">
+				<p className="max-w-2xl text-muted-foreground text-sm">
 					Orders reference <Code>md_party</Code> / <Code>md_item</Code> (and
 					optional <Code>md_payment_term</Code> / <Code>md_warehouse</Code>)
 					with commercial pricing at create/line and totals frozen on post.
@@ -124,12 +124,12 @@ export async function PurchasingShell({ surface }: PurchasingShellProps) {
 				</p>
 			</div>
 
-			{!ordersResult.ok ? (
+			{ordersResult.ok ? null : (
 				<Alert>
 					<AlertTitle>Could not load orders</AlertTitle>
 					<AlertDescription>{ordersResult.message}</AlertDescription>
 				</Alert>
-			) : null}
+			)}
 
 			<Card>
 				<CardHeader>
@@ -144,7 +144,7 @@ export async function PurchasingShell({ surface }: PurchasingShellProps) {
 					) : (
 						<ul className="space-y-2">
 							{orders.map((order) => (
-								<li key={order.id} className="rounded-md border px-3 py-2">
+								<li className="rounded-md border px-3 py-2" key={order.id}>
 									<div className="font-medium">
 										{order.code} · {order.status} · {order.currencyCode} · v
 										{order.version}

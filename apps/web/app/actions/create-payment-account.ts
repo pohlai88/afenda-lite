@@ -29,7 +29,7 @@ export async function createPaymentAccountAction(
 	_prev: CreatePaymentAccountActionState,
 	formData: FormData,
 ): Promise<CreatePaymentAccountActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "createPaymentAccountAction",
 		permission: "payments.account.manage",
 		safeMessage:
@@ -41,12 +41,13 @@ export async function createPaymentAccountAction(
 				kind: formData.get("kind"),
 				currencyCode: formData.get("currencyCode"),
 			});
-			if (!parsed.success)
+			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
 					"Enter valid payment account details.",
 					parsed.details,
 				);
+			}
 			const mapped = mapPackageResult(
 				await createPaymentAccount(
 					{
@@ -59,7 +60,9 @@ export async function createPaymentAccountAction(
 					createPaymentsCommandOptions(),
 				),
 			);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePath("/admin/payments");
 			revalidatePath("/client/payments");
 			return { ok: true, data: { account: mapped.data } };

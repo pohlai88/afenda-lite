@@ -42,14 +42,14 @@ export const Overview: Story = {
 			<div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-5 border-b pb-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
 					<div className="grid gap-2">
-						<p className="text-sm font-medium text-foreground-secondary">
+						<p className="font-medium text-foreground-secondary text-sm">
 							Master data · Suppliers
 						</p>
 						<div className="grid gap-1">
-							<h1 className="text-2xl font-semibold tracking-tight">
+							<h1 className="font-semibold text-2xl tracking-tight">
 								Supplier classification
 							</h1>
-							<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+							<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 								Use Badge for category, region, source, and policy attributes.
 								Feature code owns the vocabulary. Lifecycle and approval state
 								remain on StatusBadge.
@@ -58,25 +58,25 @@ export const Overview: Story = {
 					</div>
 					<dl className="grid grid-cols-2 gap-x-8 gap-y-3 rounded-lg border bg-card p-4">
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Subject
 							</dt>
 							<dd className="text-sm">Supplier classification</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Scope
 							</dt>
 							<dd className="text-sm">Taxonomy labels</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Ownership
 							</dt>
 							<dd className="text-sm">Feature vocabulary</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Lifecycle
 							</dt>
 							<dd className="text-sm">Metadata, not status</dd>
@@ -95,11 +95,11 @@ export const Overview: Story = {
 					<CardContent className="grid gap-3">
 						<div className="flex items-start justify-between gap-4 rounded-lg border border-border px-4 py-3">
 							<div className="grid min-w-0 gap-1">
-								<p className="truncate text-sm font-medium text-foreground">
+								<p className="truncate font-medium text-foreground text-sm">
 									Northwind Trading Sdn. Bhd.
 								</p>
 
-								<p className="truncate text-sm text-foreground-secondary">
+								<p className="truncate text-foreground-secondary text-sm">
 									MY-TAX-1042 · Agricultural inputs
 								</p>
 
@@ -111,19 +111,19 @@ export const Overview: Story = {
 							</div>
 
 							<StatusBadge
-								status="active"
-								label="Active"
 								className="shrink-0"
+								label="Active"
+								status="active"
 							/>
 						</div>
 
 						<div className="flex items-start justify-between gap-4 rounded-lg border border-border px-4 py-3">
 							<div className="grid min-w-0 gap-1">
-								<p className="truncate text-sm font-medium text-foreground">
+								<p className="truncate font-medium text-foreground text-sm">
 									Contoso Logistics Pte. Ltd.
 								</p>
 
-								<p className="truncate text-sm text-foreground-secondary">
+								<p className="truncate text-foreground-secondary text-sm">
 									SG-TAX-2201 · Freight and customs
 								</p>
 
@@ -135,19 +135,19 @@ export const Overview: Story = {
 							</div>
 
 							<StatusBadge
-								status="pending"
-								label="Awaiting review"
 								className="shrink-0"
+								label="Awaiting review"
+								status="pending"
 							/>
 						</div>
 
 						<div className="flex items-start justify-between gap-4 rounded-lg border border-border px-4 py-3">
 							<div className="grid min-w-0 gap-1">
-								<p className="truncate text-sm font-medium text-foreground">
+								<p className="truncate font-medium text-foreground text-sm">
 									Fabrikam Packaging Co.
 								</p>
 
-								<p className="truncate text-sm text-foreground-secondary">
+								<p className="truncate text-foreground-secondary text-sm">
 									MY-TAX-0881 · Packaging materials
 								</p>
 
@@ -158,9 +158,9 @@ export const Overview: Story = {
 							</div>
 
 							<StatusBadge
-								status="active"
-								label="Active"
 								className="shrink-0"
+								label="Active"
+								status="active"
 							/>
 						</div>
 					</CardContent>
@@ -187,7 +187,7 @@ export const Usage: Story = {
 				<Badge variant="secondary">Preferred</Badge>
 				<Badge variant="outline">Malaysia</Badge>
 			</div>
-			<p className="text-sm leading-6 text-foreground-secondary">
+			<p className="text-foreground-secondary text-sm leading-6">
 				Feature code owns vocabulary and destinations. Badge only presents the
 				label chrome.
 			</p>
@@ -210,11 +210,11 @@ export const VocabularyAndHierarchy: Story = {
 			<StorySection title="Record classification">
 				<div className="grid gap-3 rounded-lg border border-border px-4 py-3">
 					<div className="grid gap-1">
-						<p className="text-sm font-medium text-foreground">
+						<p className="font-medium text-foreground text-sm">
 							Northwind Trading Sdn. Bhd.
 						</p>
 
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							Supplier MY-TAX-1042
 						</p>
 					</div>
@@ -234,7 +234,7 @@ export const VocabularyAndHierarchy: Story = {
 					<Badge variant="secondary">Logistics</Badge>
 				</div>
 
-				<p className="mt-3 text-sm leading-6 text-foreground-secondary">
+				<p className="mt-3 text-foreground-secondary text-sm leading-6">
 					Labels should come from governed feature vocabulary rather than
 					operator-authored decorative wording.
 				</p>
@@ -272,7 +272,7 @@ export const StatesAndAccessibility: Story = {
 					<Badge variant="destructive">Policy exception</Badge>
 				</div>
 
-				<p className="mt-3 text-sm leading-6 text-foreground-secondary">
+				<p className="mt-3 text-foreground-secondary text-sm leading-6">
 					Each label remains meaningful when color is unavailable or overridden
 					by a high-contrast theme.
 				</p>
@@ -289,7 +289,7 @@ export const StatesAndAccessibility: Story = {
 					</Badge>
 				</div>
 
-				<p className="mt-3 text-sm leading-6 text-foreground-secondary">
+				<p className="mt-3 text-foreground-secondary text-sm leading-6">
 					Use a real anchor when the label navigates. The destination remains
 					available to keyboard users and assistive technology.
 				</p>
@@ -297,7 +297,7 @@ export const StatesAndAccessibility: Story = {
 
 			<StorySection title="Long labels wrap safely">
 				<div className="max-w-xs">
-					<Badge variant="outline" className="whitespace-normal text-left">
+					<Badge className="whitespace-normal text-left" variant="outline">
 						Imported from externally managed procurement reference
 					</Badge>
 				</div>
@@ -329,7 +329,7 @@ export const VariantsAndSizes: Story = {
 				</Badge>
 			</div>
 
-			<p className="text-sm leading-6 text-foreground-secondary">
+			<p className="text-foreground-secondary text-sm leading-6">
 				Choose treatment according to information hierarchy and meaning, not to
 				decorate the interface. Destructive means risk or exception
 				classification — not lifecycle error.
@@ -358,7 +358,7 @@ export const Composition: Story = {
 							<CardDescription>Supplier profile · MY-TAX-1042</CardDescription>
 						</div>
 
-						<StatusBadge status="active" label="Active" className="shrink-0" />
+						<StatusBadge className="shrink-0" label="Active" status="active" />
 					</div>
 				</CardHeader>
 
@@ -378,9 +378,9 @@ export const Composition: Story = {
 						</div>
 
 						<StatusBadge
-							status="pending"
-							label="Awaiting review"
 							className="shrink-0"
+							label="Awaiting review"
+							status="pending"
 						/>
 					</div>
 				</CardHeader>
@@ -419,7 +419,7 @@ export const DoAndDoNot: Story = {
 				<div className="grid gap-2">
 					<Badge variant="destructive">Awaiting approval</Badge>
 
-					<p className="text-sm leading-6 text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm leading-6">
 						Approval and lifecycle state belong on StatusBadge and must come
 						from workflow truth.
 					</p>
@@ -430,7 +430,7 @@ export const DoAndDoNot: Story = {
 				<div className="flex flex-wrap items-center gap-2">
 					<Badge>Finance</Badge>
 					<Badge variant="outline">Malaysia</Badge>
-					<StatusBadge status="pending" label="Awaiting approval" />
+					<StatusBadge label="Awaiting approval" status="pending" />
 				</div>
 			</StorySection>
 
@@ -447,7 +447,7 @@ export const DoAndDoNot: Story = {
 						<Badge variant="secondary">Freight</Badge>
 					</div>
 
-					<p className="text-sm leading-6 text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm leading-6">
 						Show only labels needed for the current decision. Move remaining
 						attributes into structured fields or record details.
 					</p>
@@ -464,7 +464,7 @@ export const DoAndDoNot: Story = {
 				<div className="grid gap-2">
 					<Badge variant="link">Northwind Trading</Badge>
 
-					<p className="text-sm leading-6 text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm leading-6">
 						A linked treatment without an anchor has no navigation semantics.
 						Use `asChild` with a real destination.
 					</p>
@@ -482,7 +482,7 @@ export const DoAndDoNot: Story = {
 				<div className="grid gap-2">
 					<Badge variant="ghost">This supplier seems quite important</Badge>
 
-					<p className="text-sm leading-6 text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm leading-6">
 						Badge text should come from controlled vocabulary, not informal or
 						subjective commentary.
 					</p>
@@ -490,14 +490,14 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do: use Button for commands">
-				<p className="text-sm leading-6 text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm leading-6">
 					Approve, reject, remove, submit, and retry remain explicit Button
 					actions on the owning workflow surface.
 				</p>
 			</StorySection>
 
 			<StorySection title="Do not: make Badge a command">
-				<p className="text-sm leading-6 text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm leading-6">
 					Badge must not approve, reject, mutate, toggle, or submit a record.
 					Interactive commands belong to Button.
 				</p>

@@ -47,7 +47,7 @@ const setCompanyJurisdictionProfileActionSchema = z.object({
 export async function setCompanyJurisdictionProfileAction(
 	formData: FormData,
 ): Promise<ActionResult<{ jurisdictionProfileId: string }>> {
-	return runMemberPermissionAction({
+	return await runMemberPermissionAction({
 		path: "setCompanyJurisdictionProfileAction",
 		permission: "corporate_administration.company.manage",
 		safeMessage: "Could not set jurisdiction profile.",
@@ -88,7 +88,9 @@ export async function setCompanyJurisdictionProfileAction(
 				createCorporateAdministrationLegalCompanyDependencies(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 
 			revalidatePath("/client/corporate-administration");
 			revalidatePath("/admin/corporate-administration");
@@ -106,13 +108,15 @@ export async function setCompanyJurisdictionProfileFormAction(
 	_previousState: ActionResult<{ jurisdictionProfileId: string }> | null,
 	formData: FormData,
 ): Promise<ActionResult<{ jurisdictionProfileId: string }> | null> {
-	return setCompanyJurisdictionProfileAction(formData);
+	return await setCompanyJurisdictionProfileAction(formData);
 }
 
 function emptyToUndefined(
 	value: FormDataEntryValue | null,
 ): string | undefined {
-	if (typeof value !== "string") return undefined;
+	if (typeof value !== "string") {
+		return;
+	}
 	const trimmed = value.trim();
 	return trimmed.length === 0 ? undefined : trimmed;
 }

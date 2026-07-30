@@ -21,9 +21,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type PaymentTermLifecycleActionData = {
+export interface PaymentTermLifecycleActionData {
 	paymentTerm: PaymentTerm;
-};
+}
 
 export type PaymentTermLifecycleActionState =
 	ActionResult<PaymentTermLifecycleActionData> | null;

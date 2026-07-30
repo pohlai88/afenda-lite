@@ -12,18 +12,18 @@ export type PayrollRuleId =
 	| PayrollDeductionRuleId
 	| PayrollStatutoryRuleId;
 
-export type PayrollRuleFinalizedUsageInput = {
+export interface PayrollRuleFinalizedUsageInput {
 	organizationId: string;
-	ruleKind: PayrollRuleKind;
 	ruleId: PayrollRuleId;
+	ruleKind: PayrollRuleKind;
 	runId: PayrollRunId;
-};
+}
 
-export type PayrollRuleFinalizedUsageCheck = {
+export interface PayrollRuleFinalizedUsageCheck {
 	organizationId: string;
-	ruleKind: PayrollRuleKind;
 	ruleId: PayrollRuleId;
-};
+	ruleKind: PayrollRuleKind;
+}
 
 export function ruleFinalizedUsageKey(
 	input: PayrollRuleFinalizedUsageCheck,

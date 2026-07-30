@@ -1,80 +1,80 @@
 import type { Result } from "@afenda/errors/result";
 import type { ReceivablesEventType } from "@afenda/events/schemas";
 
-export type ReceivablesEvent = {
-	type: ReceivablesEventType;
-	organizationId: string;
+export interface ReceivablesEvent {
 	actorUserId: string;
 	correlationId: string;
+	organizationId: string;
 	payload: Record<string, unknown>;
-};
+	type: ReceivablesEventType;
+}
 
-export type ReceivablesEffects = {
-	emit(event: ReceivablesEvent): Promise<Result<void>>;
-};
+export interface ReceivablesEffects {
+	emit: (event: ReceivablesEvent) => Promise<Result<void>>;
+}
 
-export type InvoiceableSalesOrderLine = {
-	salesOrderLineId: string;
-	itemId: string;
-	itemCode: string;
-	itemName: string;
+export interface InvoiceableSalesOrderLine {
 	authorizedQuantity: string;
+	itemCode: string;
+	itemId: string;
+	itemName: string;
 	remainingInvoiceableQuantity: string;
-};
+	salesOrderLineId: string;
+}
 
-export type InvoiceableSalesOrder = {
+export interface InvoiceableSalesOrder {
+	currencyCode: string;
+	customerPartyCode: string;
+	customerPartyId: string;
+	customerPartyName: string;
+	lines: InvoiceableSalesOrderLine[];
 	salesOrderId: string;
 	status: string;
-	customerPartyId: string;
-	customerPartyCode: string;
-	customerPartyName: string;
-	currencyCode: string;
-	lines: InvoiceableSalesOrderLine[];
-};
+}
 
-export type InvoiceableDeliveryLine = {
-	deliveryLineId: string;
-	salesOrderLineId: string | null;
-	itemId: string;
-	itemCode: string;
-	itemName: string;
+export interface InvoiceableDeliveryLine {
 	authorizedQuantity: string;
+	deliveryLineId: string;
+	itemCode: string;
+	itemId: string;
+	itemName: string;
 	remainingInvoiceableQuantity: string;
-};
+	salesOrderLineId: string | null;
+}
 
-export type InvoiceableDelivery = {
-	deliveryId: string;
-	status: string;
-	salesOrderId: string | null;
-	customerPartyId: string;
+export interface InvoiceableDelivery {
 	customerPartyCode: string;
+	customerPartyId: string;
 	customerPartyName: string;
+	deliveryId: string;
 	lines: InvoiceableDeliveryLine[];
-};
+	salesOrderId: string | null;
+	status: string;
+}
 
-export type SalesInvoiceSourceQueryPort = {
-	getInvoiceableSalesOrder(input: {
+export interface SalesInvoiceSourceQueryPort {
+	getInvoiceableSalesOrder: (input: {
 		organizationId: string;
 		salesOrderId: string;
 		actorUserId: string;
-	}): Promise<Result<InvoiceableSalesOrder | null>>;
-};
+	}) => Promise<Result<InvoiceableSalesOrder | null>>;
+}
 
-export type DeliveryInvoiceSourceQueryPort = {
-	getInvoiceableDelivery(input: {
+export interface DeliveryInvoiceSourceQueryPort {
+	getInvoiceableDelivery: (input: {
 		organizationId: string;
 		deliveryId: string;
 		actorUserId: string;
-	}): Promise<Result<InvoiceableDelivery | null>>;
-};
+	}) => Promise<Result<InvoiceableDelivery | null>>;
+}
 
-export type PaymentApplicationQueryPort = {
-	getInstructionAvailability(input: {
+export interface PaymentApplicationQueryPort {
+	getInstructionAvailability: (input: {
 		organizationId: string;
 		paymentId: string;
 		paymentApplicationInstructionId: string;
 		actorUserId: string;
-	}): Promise<
+	}) => Promise<
 		Result<{
 			paymentStatus: string;
 			instructionStatus: string;
@@ -83,4 +83,4 @@ export type PaymentApplicationQueryPort = {
 			targetDocumentId: string;
 		} | null>
 	>;
-};
+}

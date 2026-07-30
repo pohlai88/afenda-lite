@@ -54,22 +54,32 @@ function toHumanResourcesOrganizationDimensions(
 		"legal_entity",
 		dimensions,
 	);
-	if (!legalEntity.ok) return legalEntity;
+	if (!legalEntity.ok) {
+		return legalEntity;
+	}
 
 	const businessUnit = requireHumanResourcesDimension(
 		"business_unit",
 		dimensions,
 	);
-	if (!businessUnit.ok) return businessUnit;
+	if (!businessUnit.ok) {
+		return businessUnit;
+	}
 
 	const location = requireHumanResourcesDimension("location", dimensions);
-	if (!location.ok) return location;
+	if (!location.ok) {
+		return location;
+	}
 
 	const costCentre = requireHumanResourcesDimension("cost_centre", dimensions);
-	if (!costCentre.ok) return costCentre;
+	if (!costCentre.ok) {
+		return costCentre;
+	}
 
 	const project = requireHumanResourcesDimension("project", dimensions);
-	if (!project.ok) return project;
+	if (!project.ok) {
+		return project;
+	}
 
 	return {
 		ok: true,
@@ -99,7 +109,9 @@ export function createHumanResourcesOrganizationDimensionPort(): OrganizationDim
 				},
 				{ authorization: createMasterDataAuthorizationPort() },
 			);
-			if (!result.ok) return result;
+			if (!result.ok) {
+				return result;
+			}
 			return toHumanResourcesOrganizationDimensions(result.data);
 		},
 	};

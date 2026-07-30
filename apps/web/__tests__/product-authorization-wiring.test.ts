@@ -18,8 +18,8 @@ const authMocks = vi.hoisted(() => ({
 }));
 
 const navigationMocks = vi.hoisted(() => ({
-	redirect: vi.fn((path: string) => {
-		throw new Error(`NEXT_REDIRECT:${path}`);
+	redirect: vi.fn((destination: string) => {
+		throw new Error(`NEXT_REDIRECT:${destination}`);
 	}),
 }));
 

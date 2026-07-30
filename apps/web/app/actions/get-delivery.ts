@@ -12,14 +12,16 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type GetDeliveryActionData = { delivery: Delivery };
+export interface GetDeliveryActionData {
+	delivery: Delivery;
+}
 
 const getDeliverySchema = z.string().uuid();
 
 export async function getDeliveryAction(
 	deliveryId: string,
 ): Promise<ActionResult<GetDeliveryActionData>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getDeliveryAction",
 		permission: "fulfillment.delivery.read",
 		safeMessage: "Could not load delivery. Try again or contact an admin.",
@@ -41,7 +43,9 @@ export async function getDeliveryAction(
 				createFulfillmentCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			if (mapped.data === null) {
 				return actionFail("NOT_FOUND", "Delivery not found");
 			}

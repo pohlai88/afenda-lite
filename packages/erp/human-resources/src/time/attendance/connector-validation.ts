@@ -165,7 +165,7 @@ function buildReconciliationKey(input: {
 		.digest("hex");
 }
 
-export type AttendanceConnectorArtifacts = {
+export interface AttendanceConnectorArtifacts {
 	batch: {
 		events: readonly AttendanceSourceEvent[];
 		nextCursor?: string | undefined;
@@ -173,7 +173,7 @@ export type AttendanceConnectorArtifacts = {
 		reconciliationKey: string;
 	};
 	preview: AttendanceSourcePreviewResult;
-};
+}
 
 export function buildAttendanceConnectorArtifacts(input: {
 	organizationId: string;

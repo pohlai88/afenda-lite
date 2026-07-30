@@ -58,53 +58,53 @@ import type {
 	RefUomDimension,
 } from "../../types";
 
-type RefCountryRow = {
-	id: string;
-	code: string;
+interface RefCountryRow {
+	active: boolean;
 	alpha3: string;
-	name: string;
-	active: boolean;
-};
-
-type RefCurrencyRow = {
-	id: string;
 	code: string;
+	id: string;
 	name: string;
+}
+
+interface RefCurrencyRow {
+	active: boolean;
+	code: string;
+	id: string;
 	minorUnits: number;
-	active: boolean;
-};
-
-type RefLanguageRow = {
-	id: string;
-	code: string;
 	name: string;
-	active: boolean;
-};
+}
 
-type RefTimeZoneRow = {
+interface RefLanguageRow {
+	active: boolean;
+	code: string;
 	id: string;
+	name: string;
+}
+
+interface RefTimeZoneRow {
+	active: boolean;
 	ianaName: string;
+	id: string;
 	name: string;
+}
+
+interface RefUomDimensionRow {
+	code: string;
+	id: string;
+	name: string;
+}
+
+interface RefUomRow {
 	active: boolean;
-};
-
-type RefUomDimensionRow = {
-	id: string;
 	code: string;
-	name: string;
-};
-
-type RefUomRow = {
+	dimensionId: string;
 	id: string;
-	code: string;
+	isBase: boolean;
 	name: string;
 	symbol: string;
-	dimensionId: string;
-	toBaseNumerator: string;
 	toBaseDenominator: string;
-	isBase: boolean;
-	active: boolean;
-};
+	toBaseNumerator: string;
+}
 
 const countryColumns = {
 	id: refCountry.id,
@@ -157,12 +157,16 @@ const uomColumns = {
 function activeForStatus(
 	status: "active" | "inactive" | "all",
 ): boolean | null {
-	if (status === "all") return null;
+	if (status === "all") {
+		return null;
+	}
 	return status === "active";
 }
 
 function cursorOffset(cursor?: string): number {
-	if (cursor === undefined) return 0;
+	if (cursor === undefined) {
+		return 0;
+	}
 	const parsed = Number.parseInt(cursor, 10);
 	return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
 }
@@ -274,9 +278,11 @@ export class DrizzlePlatformReferenceStore implements PlatformReferenceStore {
 	async listCountries(
 		input: ListRefCountriesInput,
 	): Promise<ListPage<RefCountry>> {
-		const predicates = [];
+		const predicates: ReturnType<typeof textSearch>[] = [];
 		const active = activeForStatus(input.status);
-		if (active !== null) predicates.push(eq(refCountry.active, active));
+		if (active !== null) {
+			predicates.push(eq(refCountry.active, active));
+		}
 		const search = searchPattern(input.search);
 		if (search !== null) {
 			predicates.push(
@@ -315,9 +321,11 @@ export class DrizzlePlatformReferenceStore implements PlatformReferenceStore {
 	async listCurrencies(
 		input: ListRefCurrenciesInput,
 	): Promise<ListPage<RefCurrency>> {
-		const predicates = [];
+		const predicates: ReturnType<typeof textSearch>[] = [];
 		const active = activeForStatus(input.status);
-		if (active !== null) predicates.push(eq(refCurrency.active, active));
+		if (active !== null) {
+			predicates.push(eq(refCurrency.active, active));
+		}
 		const search = searchPattern(input.search);
 		if (search !== null) {
 			predicates.push(
@@ -356,9 +364,11 @@ export class DrizzlePlatformReferenceStore implements PlatformReferenceStore {
 	async listLanguages(
 		input: ListRefLanguagesInput,
 	): Promise<ListPage<RefLanguage>> {
-		const predicates = [];
+		const predicates: ReturnType<typeof textSearch>[] = [];
 		const active = activeForStatus(input.status);
-		if (active !== null) predicates.push(eq(refLanguage.active, active));
+		if (active !== null) {
+			predicates.push(eq(refLanguage.active, active));
+		}
 		const search = searchPattern(input.search);
 		if (search !== null) {
 			predicates.push(
@@ -397,9 +407,11 @@ export class DrizzlePlatformReferenceStore implements PlatformReferenceStore {
 	async listTimeZones(
 		input: ListRefTimeZonesInput,
 	): Promise<ListPage<RefTimeZone>> {
-		const predicates = [];
+		const predicates: ReturnType<typeof textSearch>[] = [];
 		const active = activeForStatus(input.status);
-		if (active !== null) predicates.push(eq(refTimeZone.active, active));
+		if (active !== null) {
+			predicates.push(eq(refTimeZone.active, active));
+		}
 		const search = searchPattern(input.search);
 		if (search !== null) {
 			predicates.push(
@@ -481,9 +493,11 @@ export class DrizzlePlatformReferenceStore implements PlatformReferenceStore {
 	}
 
 	async listUoms(input: ListRefUomsInput): Promise<ListPage<RefUom>> {
-		const predicates = [];
+		const predicates: ReturnType<typeof textSearch>[] = [];
 		const active = activeForStatus(input.status);
-		if (active !== null) predicates.push(eq(refUom.active, active));
+		if (active !== null) {
+			predicates.push(eq(refUom.active, active));
+		}
 		const search = searchPattern(input.search);
 		if (search !== null) {
 			predicates.push(textSearchEither(refUom.code, refUom.name, search));
@@ -504,7 +518,9 @@ export class DrizzlePlatformReferenceStore implements PlatformReferenceStore {
 	): Promise<ListPage<RefUom>> {
 		const predicates = [eq(refUom.dimensionId, input.dimensionId)];
 		const active = activeForStatus(input.status);
-		if (active !== null) predicates.push(eq(refUom.active, active));
+		if (active !== null) {
+			predicates.push(eq(refUom.active, active));
+		}
 		const search = searchPattern(input.search);
 		if (search !== null) {
 			predicates.push(textSearchEither(refUom.code, refUom.name, search));

@@ -9,6 +9,9 @@ import { defineConfig } from "vitest/config";
 import type { TestingLaneId } from "./contracts.ts";
 import { getTestingLane } from "./lanes.ts";
 
+const LEADING_DOT_SLASH_PATTERN = /^\.\//;
+const TRAILING_SLASH_PATTERN = /\/$/;
+
 export type DefineAfendaVitestConfigOptions = Readonly<{
 	lane: TestingLaneId;
 	environment?: "node" | "jsdom";
@@ -23,7 +26,7 @@ export type ResolveVitestLanePatternsOptions = Readonly<{
 }>;
 
 function normalizePatternPath(pattern: string): string {
-	return pattern.replaceAll("\\", "/").replace(/^\.\//, "");
+	return pattern.replaceAll("\\", "/").replace(LEADING_DOT_SLASH_PATTERN, "");
 }
 
 export function resolveVitestLaneInclude(
@@ -31,7 +34,7 @@ export function resolveVitestLaneInclude(
 ): string[] {
 	const lane = getTestingLane(options.lane);
 	const projectPath = options.projectPath
-		? `${normalizePatternPath(options.projectPath).replace(/\/$/, "")}/`
+		? `${normalizePatternPath(options.projectPath).replace(TRAILING_SLASH_PATTERN, "")}/`
 		: undefined;
 
 	return lane.include.map((pattern) => {

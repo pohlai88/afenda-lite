@@ -49,7 +49,9 @@ let cachedEvidence:
 
 function deepFreeze<T>(value: T): T {
 	if (typeof value === "object" && value !== null && !Object.isFrozen(value)) {
-		for (const child of Object.values(value)) deepFreeze(child);
+		for (const child of Object.values(value)) {
+			deepFreeze(child);
+		}
 		Object.freeze(value);
 	}
 	return value;
@@ -58,7 +60,9 @@ function deepFreeze<T>(value: T): T {
 export function createStorybookEvidence(): Readonly<
 	Record<string, StorybookContractEvidence>
 > {
-	if (cachedEvidence) return cachedEvidence;
+	if (cachedEvidence) {
+		return cachedEvidence;
+	}
 	const serialized = execFileSync(
 		process.execPath,
 		["--import", "tsx", EVIDENCE_LOADER_PATH],
@@ -127,7 +131,9 @@ export function storybookEvidencePlugin(): Plugin {
 			return id === VIRTUAL_MODULE_ID ? RESOLVED_VIRTUAL_MODULE_ID : undefined;
 		},
 		load(id) {
-			if (id !== RESOLVED_VIRTUAL_MODULE_ID) return undefined;
+			if (id !== RESOLVED_VIRTUAL_MODULE_ID) {
+				return;
+			}
 			return `export const storybookEvidence=${frozenLiteral(createStorybookEvidence())};`;
 		},
 	};

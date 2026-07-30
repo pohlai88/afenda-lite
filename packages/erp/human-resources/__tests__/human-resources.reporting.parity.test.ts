@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import { createDrizzleHumanResourcesReportingSource } from "../src/adapters/drizzle/reporting";
 import { createMemoryHumanResourcesReportingSource } from "../src/adapters/memory/reporting";
 import { createMemoryHumanResourcesStore } from "../src/adapters/memory/store";
+import { runSequential } from "../src/shared/run-sequential";
 import { runDrizzleParity } from "./helpers/database-gate";
 
 const EMPTY_ORGANIZATION_ID = `reporting-empty-${crypto.randomUUID()}`;
@@ -23,7 +24,7 @@ describe("Human Resources reporting source parity", () => {
 			createMemoryHumanResourcesStore(),
 		);
 
-		for (const kind of HUMAN_RESOURCES_REPORTING_FACT_KINDS) {
+		await runSequential(HUMAN_RESOURCES_REPORTING_FACT_KINDS, async (kind) => {
 			const page = await source.listFacts({
 				organizationId: EMPTY_ORGANIZATION_ID,
 				kind,
@@ -34,7 +35,7 @@ describe("Human Resources reporting source parity", () => {
 				ok: true,
 				data: { entries: [], total: 0, page: 1, pageSize: 100 },
 			});
-		}
+		});
 	});
 
 	describe.runIf(runDrizzleParity)("Drizzle", () => {

@@ -29,9 +29,13 @@ export function createStoreWorkCalendarLookup(input: {
 			query,
 		): Promise<Result<ResolvedWorkCalendarContext>> {
 			const employeeId = parseHumanResourcesEmployeeId(query.employeeId);
-			if (!employeeId.ok) return employeeId;
+			if (!employeeId.ok) {
+				return employeeId;
+			}
 			const employmentId = parseHumanResourcesEmploymentId(query.employmentId);
-			if (!employmentId.ok) return employmentId;
+			if (!employmentId.ok) {
+				return employmentId;
+			}
 
 			const resolved = await resolveEmployeeWorkCalendar(
 				{
@@ -60,7 +64,9 @@ export function createStoreWorkCalendarLookup(input: {
 				organizationId: query.organizationId,
 				calendarId: resolved.data.calendarId,
 			});
-			if (!calendar.ok) return calendar;
+			if (!calendar.ok) {
+				return calendar;
+			}
 			if (calendar.data === null) {
 				return fail("NOT_FOUND", "Work calendar not found");
 			}
@@ -71,7 +77,9 @@ export function createStoreWorkCalendarLookup(input: {
 				fromDate: query.fromDate,
 				toDate: query.toDate,
 			});
-			if (!holidayRows.ok) return holidayRows;
+			if (!holidayRows.ok) {
+				return holidayRows;
+			}
 
 			const holidays: WorkCalendarHoliday[] = holidayRows.data.map((row) => ({
 				date: row.holidayDate,

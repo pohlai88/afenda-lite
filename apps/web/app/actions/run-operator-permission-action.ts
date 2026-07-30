@@ -9,20 +9,20 @@ import {
 	actionFailInternal,
 } from "@/modules/platform/schemas/action-result";
 
-export type OperatorPermissionActionInput<T> = {
-	path: string;
-	permission: ProductPermissionCode;
-	safeMessage: string;
+export interface OperatorPermissionActionInput<T> {
+	execute: (
+		session: Session,
+		correlationId: string,
+	) => Promise<ActionResult<T>>;
 	onPermissionDenied?: (input: {
 		session: Session;
 		correlationId: string;
 		permission: ProductPermissionCode;
 	}) => void | Promise<void>;
-	execute: (
-		session: Session,
-		correlationId: string,
-	) => Promise<ActionResult<T>>;
-};
+	path: string;
+	permission: ProductPermissionCode;
+	safeMessage: string;
+}
 
 /**
  * Shared operator session + permission + internal-error envelope for

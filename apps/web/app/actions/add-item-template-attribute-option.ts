@@ -19,9 +19,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type AddItemTemplateAttributeOptionActionData = {
+export interface AddItemTemplateAttributeOptionActionData {
 	option: ItemTemplateAttributeOption;
-};
+}
 
 export type AddItemTemplateAttributeOptionActionState =
 	ActionResult<AddItemTemplateAttributeOptionActionData> | null;

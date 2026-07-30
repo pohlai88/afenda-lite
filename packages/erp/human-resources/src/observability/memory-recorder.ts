@@ -5,7 +5,7 @@ import { assertSafeHrEvent, assertSafeHrMetric } from "./validation";
 export function createMemoryHrObservabilityRecorder(): HrObservabilityPort & {
 	metrics: HrMetricObservation[];
 	events: HrObservabilityEvent[];
-	clear(): void;
+	clear: () => void;
 } {
 	const metrics: HrMetricObservation[] = [];
 	const events: HrObservabilityEvent[] = [];

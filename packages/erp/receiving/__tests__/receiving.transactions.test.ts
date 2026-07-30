@@ -7,6 +7,7 @@ import {
 } from "../src/permissions";
 import type { MutationPorts, OutboxFactInput } from "../src/ports";
 import { createDraftGoodsReceipt, listGoodsReceipts } from "../src/receipt";
+import { resolveAsync } from "../src/resolve-async";
 import { createGrantingReceivingAuthorization } from "./helpers/memory-authorization";
 import {
 	createMemoryMasterLookup,
@@ -39,13 +40,15 @@ describe("@afenda/receiving transactions", () => {
 			});
 		const ports: MutationPorts = {
 			audit: {
-				async record() {
-					return ok({ id: "audit-1" });
+				record() {
+					return resolveAsync(() => ok({ id: "audit-1" }));
 				},
 			},
 			outbox: {
-				async append(_input: OutboxFactInput): Promise<Result<{ id: string }>> {
-					return fail("INTERNAL_ERROR", "forced outbox failure");
+				append(_input: OutboxFactInput): Promise<Result<{ id: string }>> {
+					return resolveAsync(() =>
+						fail("INTERNAL_ERROR", "forced outbox failure"),
+					);
 				},
 			},
 		};
@@ -76,7 +79,9 @@ describe("@afenda/receiving transactions", () => {
 			},
 		);
 		expect(listed.ok).toBe(true);
-		if (listed.ok) expect(listed.data).toEqual([]);
+		if (listed.ok) {
+			expect(listed.data).toEqual([]);
+		}
 		const retry = await createDraftGoodsReceipt(input, {
 			store,
 			ports: createMemoryMutationPorts(),

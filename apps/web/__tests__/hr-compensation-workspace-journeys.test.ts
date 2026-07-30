@@ -19,8 +19,9 @@ describe("HR compensation workspace journeys", () => {
 			"createBenefitPlanAction",
 			"listEmployeeCompensationsByEmployeeAction",
 			"getApprovedCompensationHandoffAction",
-		])
+		]) {
 			expect(forms).toContain(action);
+		}
 		expect(forms).not.toMatch(/@afenda\/human-resources/);
 	});
 
@@ -32,8 +33,9 @@ describe("HR compensation workspace journeys", () => {
 		expect(compensation).toContain("permission: COMPENSATION_READ");
 		expect(reviews).toContain("permission: COMPENSATION_MANAGE");
 		expect(benefits).toContain("permission: BENEFITS_MANAGE");
-		for (const file of [compensation, reviews, benefits])
+		for (const file of [compensation, reviews, benefits]) {
 			expect(file).toContain("runHrHumanResourcesAction");
+		}
 	});
 
 	it("keeps payroll delivery read-only and outside gross-to-net calculation", () => {

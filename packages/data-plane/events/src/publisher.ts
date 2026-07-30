@@ -4,13 +4,13 @@ import { isKnownEventType, publishEventCommandSchema } from "./schemas";
 import type { EventStore } from "./store";
 import type { DomainEvent } from "./types";
 
-export type CreateEventPublisherOptions = {
+export interface CreateEventPublisherOptions {
 	store?: EventStore;
-};
+}
 
-export type EventPublisher = {
-	publish(input: unknown): Promise<Result<DomainEvent>>;
-};
+export interface EventPublisher {
+	publish: (input: unknown) => Promise<Result<DomainEvent>>;
+}
 
 export function createEventPublisher(
 	options: CreateEventPublisherOptions = {},
@@ -18,18 +18,22 @@ export function createEventPublisher(
 	const store = resolveEventStore(options.store);
 
 	return {
-		async publish(input: unknown): Promise<Result<DomainEvent>> {
+		publish(input: unknown): Promise<Result<DomainEvent>> {
 			const parsed = publishEventCommandSchema.safeParse(input);
 			if (!parsed.success) {
-				return fail("BAD_REQUEST", "Invalid event publish input", {
-					fieldErrors: parsed.error.flatten().fieldErrors,
-				});
+				return Promise.resolve(
+					fail("BAD_REQUEST", "Invalid event publish input", {
+						fieldErrors: parsed.error.flatten().fieldErrors,
+					}),
+				);
 			}
 
 			const command = parsed.data;
 			// Catalog + payload already validated by publishEventCommandSchema.
 			if (!isKnownEventType(command.type)) {
-				return fail("BAD_REQUEST", `Unknown event type: ${command.type}`);
+				return Promise.resolve(
+					fail("BAD_REQUEST", `Unknown event type: ${command.type}`),
+				);
 			}
 
 			return store.append({

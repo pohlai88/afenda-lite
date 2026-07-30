@@ -19,7 +19,7 @@ function createJsonLineParityRecorder(): HrObservabilityPort {
 }
 
 /** Emits one low-cardinality failure signal for the dedicated live Drizzle parity gate. */
-export class HumanResourcesParityObservabilityReporter {
+class HumanResourcesParityObservabilityReporter {
 	readonly recorder: HrObservabilityPort;
 
 	constructor(recorder?: HrObservabilityPort) {
@@ -36,7 +36,9 @@ export class HumanResourcesParityObservabilityReporter {
 		unhandledErrors: readonly unknown[],
 		reason: ParityTestRunEndReason,
 	): Promise<void> {
-		if (reason !== "failed" && unhandledErrors.length === 0) return;
+		if (reason !== "failed" && unhandledErrors.length === 0) {
+			return;
+		}
 		await recordHrParityFailure(
 			{ area: "integration", adapter: "drizzle" },
 			{

@@ -6,15 +6,15 @@ import type { PAYROLL_PERMISSION_CODES } from "./permissions";
 
 export type PayrollPermission = (typeof PAYROLL_PERMISSION_CODES)[number];
 
-export type PayrollAuthorizationPort = {
-	can(input: {
+export interface PayrollAuthorizationPort {
+	can: (input: {
 		organizationId: string;
 		actorUserId: string;
 		permission: PayrollPermission;
-	}): Promise<boolean>;
-};
+	}) => Promise<boolean>;
+}
 
-export async function requirePayrollCommandPermission(
+export function requirePayrollCommandPermission(
 	authorization: PayrollAuthorizationPort | undefined,
 	input: {
 		organizationId: string;
@@ -31,7 +31,7 @@ export async function requirePayrollCommandPermission(
 	});
 }
 
-export async function requirePayrollQueryPermission(
+export function requirePayrollQueryPermission(
 	authorization: PayrollAuthorizationPort | undefined,
 	input: {
 		organizationId: string;

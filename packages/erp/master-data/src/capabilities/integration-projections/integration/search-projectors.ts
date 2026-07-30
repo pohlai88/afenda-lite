@@ -49,16 +49,16 @@ export type SearchProjectionRemoveOutcome =
 	(typeof SEARCH_PROJECTION_REMOVE_OUTCOMES)[number];
 
 export interface SearchProjectionPort {
-	upsert(
-		document: MasterSearchDocument,
-	): Promise<Result<SearchProjectionUpsertOutcome>>;
-	remove(
+	remove: (
 		input: RemoveMasterSearchDocumentInput,
-	): Promise<Result<SearchProjectionRemoveOutcome>>;
+	) => Promise<Result<SearchProjectionRemoveOutcome>>;
+	upsert: (
+		document: MasterSearchDocument,
+	) => Promise<Result<SearchProjectionUpsertOutcome>>;
 }
 
 export interface MasterSearchProjector {
-	project(
+	project: (
 		event: MasterDataEventEnvelope,
-	): Promise<Result<SearchProjectionDecision>>;
+	) => Promise<Result<SearchProjectionDecision>>;
 }

@@ -598,7 +598,7 @@ export async function drizzleCreateItemTemplate(
 				`,
 			],
 		);
-		const row = rows[0];
+		const [row] = rows;
 		if (row === undefined) {
 			return fail("INTERNAL_ERROR", "Item template create returned no row");
 		}
@@ -634,7 +634,9 @@ export async function drizzleUpdateItemTemplate(
 			} satisfies MasterFailureDetails);
 		}
 		const version = assertExpectedVersion(existing, record.expectedVersion);
-		if (!version.ok) return version;
+		if (!version.ok) {
+			return version;
+		}
 		const nextName = record.name ?? existing.name;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
@@ -689,7 +691,7 @@ export async function drizzleUpdateItemTemplate(
 				`,
 			],
 		);
-		const row = rows[0];
+		const [row] = rows;
 		if (row === undefined) {
 			return fail("CONFLICT", "Item template version conflict", {
 				reason: "MASTER_VERSION_CONFLICT",
@@ -733,7 +735,9 @@ export async function drizzleTransitionItemTemplate(
 			} satisfies MasterFailureDetails);
 		}
 		const version = assertExpectedVersion(existing, record.expectedVersion);
-		if (!version.ok) return version;
+		if (!version.ok) {
+			return version;
+		}
 		const lifecycle = assertLifecycleTransition(
 			mapItemTemplate(existing).status,
 			record.toStatus,
@@ -847,7 +851,7 @@ export async function drizzleTransitionItemTemplate(
 				`,
 			],
 		);
-		const row = rows[0];
+		const [row] = rows;
 		if (row === undefined) {
 			const [current] = await db
 				.select({ version: mdItemTemplate.version })
@@ -1154,7 +1158,7 @@ export async function drizzleAddItemTemplateAttribute(
 				`,
 			],
 		);
-		const row = rows[0];
+		const [row] = rows;
 		if (row === undefined) {
 			return fail(
 				"CONFLICT",
@@ -1324,7 +1328,7 @@ export async function drizzleAddItemTemplateAttributeOption(
 				`,
 			],
 		);
-		const row = rows[0];
+		const [row] = rows;
 		if (row === undefined) {
 			return fail("CONFLICT", "Template attribute option precondition failed", {
 				reason: "MASTER_INVALID_STATE",
@@ -1864,10 +1868,9 @@ export async function drizzleCreateItemVariant(
 			{ isolationLevel: "Serializable" },
 		);
 
-		const itemRows = results[0];
-		const variantRows = results[1];
-		const itemRow = itemRows[0];
-		const variantRow = variantRows[0];
+		const [itemRows, variantRows] = results;
+		const [itemRow] = itemRows;
+		const [variantRow] = variantRows;
 		if (itemRow === undefined || variantRow === undefined) {
 			return fail("CONFLICT", "Item variant create precondition failed", {
 				reason: "MASTER_INVALID_STATE",
@@ -2048,9 +2051,15 @@ export async function drizzleTransitionItemWithVariantSideEffect(
 		const eventId = randomUUID();
 		const variantEventId = randomUUID();
 		const variantAuditId = randomUUID();
-		const expectedVariantId = meta.variantExpectation?.id ?? null;
+		const variantExpectation:
+			| { id: string; expectedVersion: number }
+			| undefined = meta.variantExpectation;
+		const expectedVariantId =
+			variantExpectation === undefined ? null : variantExpectation.id;
 		const expectedVariantVersion =
-			meta.variantExpectation?.expectedVersion ?? null;
+			variantExpectation === undefined
+				? null
+				: variantExpectation.expectedVersion;
 		const activatedBy =
 			record.toStatus === "active"
 				? (existing.activatedBy ?? record.actorUserId)
@@ -2278,7 +2287,7 @@ export async function drizzleTransitionItemWithVariantSideEffect(
 			],
 			{ isolationLevel: "Serializable" },
 		);
-		const row = rows[0];
+		const [row] = rows;
 		if (row === undefined) {
 			return fail("CONFLICT", "Item version conflict", {
 				reason: "MASTER_VERSION_CONFLICT",

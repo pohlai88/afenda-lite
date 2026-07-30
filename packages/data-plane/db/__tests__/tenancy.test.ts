@@ -33,7 +33,9 @@ describe("@afenda/db hard tenant roots (N9 / ARCH-023)", () => {
 			},
 		);
 		expect(predicate).toBeDefined();
-		if (predicate === undefined) return;
+		if (predicate === undefined) {
+			return;
+		}
 
 		const query = new PgDialect().sqlToQuery(predicate);
 		expect(query.sql).toBe(

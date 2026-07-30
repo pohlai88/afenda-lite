@@ -54,7 +54,6 @@ async function seedActiveTemplate(options: {
 		},
 		options,
 	);
-	expect(template.ok).toBe(true);
 	if (!template.ok) {
 		throw new Error("template create failed");
 	}
@@ -71,7 +70,6 @@ async function seedActiveTemplate(options: {
 		},
 		options,
 	);
-	expect(color.ok).toBe(true);
 	if (!color.ok) {
 		throw new Error("color attr failed");
 	}
@@ -85,7 +83,6 @@ async function seedActiveTemplate(options: {
 		},
 		options,
 	);
-	expect(red.ok).toBe(true);
 	if (!red.ok) {
 		throw new Error("red option failed");
 	}
@@ -99,7 +96,6 @@ async function seedActiveTemplate(options: {
 		},
 		options,
 	);
-	expect(blue.ok).toBe(true);
 	if (!blue.ok) {
 		throw new Error("blue option failed");
 	}
@@ -111,7 +107,6 @@ async function seedActiveTemplate(options: {
 		},
 		options,
 	);
-	expect(activated.ok).toBe(true);
 	if (!activated.ok) {
 		throw new Error("activate failed");
 	}
@@ -123,7 +118,6 @@ async function seedActiveTemplate(options: {
 		},
 		options,
 	);
-	expect(group.ok).toBe(true);
 	if (!group.ok) {
 		throw new Error("group failed");
 	}
@@ -184,7 +178,9 @@ describe("@afenda/master-data item variants (R1)", () => {
 			options,
 		);
 		expect(template.ok).toBe(true);
-		if (!template.ok) return;
+		if (!template.ok) {
+			return;
+		}
 
 		const attribute = await addItemTemplateAttribute(
 			{
@@ -197,7 +193,9 @@ describe("@afenda/master-data item variants (R1)", () => {
 			{ store, ports, authorization },
 		);
 		expect(attribute.ok).toBe(true);
-		if (!attribute.ok) return;
+		if (!attribute.ok) {
+			return;
+		}
 		expect(attribute.data).toMatchObject({
 			isRequired: false,
 			isVariantDefining: false,
@@ -215,7 +213,9 @@ describe("@afenda/master-data item variants (R1)", () => {
 			options,
 		);
 		expect(template.ok).toBe(true);
-		if (!template.ok) return;
+		if (!template.ok) {
+			return;
+		}
 
 		const denied = await addItemTemplateAttribute(
 			{
@@ -243,7 +243,9 @@ describe("@afenda/master-data item variants (R1)", () => {
 		);
 		expect(firstTemplate.ok).toBe(true);
 		expect(secondTemplate.ok).toBe(true);
-		if (!firstTemplate.ok || !secondTemplate.ok) return;
+		if (!(firstTemplate.ok && secondTemplate.ok)) {
+			return;
+		}
 
 		const first = await addItemTemplateAttribute(
 			{
@@ -290,7 +292,9 @@ describe("@afenda/master-data item variants (R1)", () => {
 			options,
 		);
 		expect(listed.ok).toBe(true);
-		if (!listed.ok) return;
+		if (!listed.ok) {
+			return;
+		}
 		expect(listed.data.map((attribute) => attribute.normalizedCode)).toEqual([
 			"COLOR",
 			"SIZE",
@@ -304,7 +308,9 @@ describe("@afenda/master-data item variants (R1)", () => {
 			options,
 		);
 		expect(template.ok).toBe(true);
-		if (!template.ok) return;
+		if (!template.ok) {
+			return;
+		}
 
 		const text = await addItemTemplateAttribute(
 			{
@@ -422,14 +428,16 @@ describe("@afenda/master-data item variants (R1)", () => {
 		expect(multi.ok).toBe(true);
 		expect(reference.ok).toBe(true);
 		if (
-			!text.ok ||
-			!integer.ok ||
-			!decimal.ok ||
-			!flag.ok ||
-			!date.ok ||
-			!single.ok ||
-			!multi.ok ||
-			!reference.ok
+			!(
+				text.ok &&
+				integer.ok &&
+				decimal.ok &&
+				flag.ok &&
+				date.ok &&
+				single.ok &&
+				multi.ok &&
+				reference.ok
+			)
 		) {
 			return;
 		}
@@ -464,7 +472,9 @@ describe("@afenda/master-data item variants (R1)", () => {
 		expect(red.ok).toBe(true);
 		expect(web.ok).toBe(true);
 		expect(retail.ok).toBe(true);
-		if (!red.ok || !web.ok || !retail.ok) return;
+		if (!(red.ok && web.ok && retail.ok)) {
+			return;
+		}
 
 		const activated = await activateItemTemplate(
 			{
@@ -475,7 +485,9 @@ describe("@afenda/master-data item variants (R1)", () => {
 			options,
 		);
 		expect(activated.ok).toBe(true);
-		if (!activated.ok) return;
+		if (!activated.ok) {
+			return;
+		}
 		expect(activated.data.version).toBe(template.data.version + 1);
 
 		const group = await createItemGroup(
@@ -483,7 +495,9 @@ describe("@afenda/master-data item variants (R1)", () => {
 			options,
 		);
 		expect(group.ok).toBe(true);
-		if (!group.ok) return;
+		if (!group.ok) {
+			return;
+		}
 
 		const variant = await createItemVariant(
 			{
@@ -511,7 +525,9 @@ describe("@afenda/master-data item variants (R1)", () => {
 			options,
 		);
 		expect(variant.ok).toBe(true);
-		if (!variant.ok) return;
+		if (!variant.ok) {
+			return;
+		}
 		expect(variant.data.item.code).toBe("TYPED-RED");
 		expect(variant.data.item.status).toBe("draft");
 		expect(variant.data.values).toHaveLength(8);
@@ -548,7 +564,9 @@ describe("@afenda/master-data item variants (R1)", () => {
 			options,
 		);
 		expect(template.ok).toBe(true);
-		if (!template.ok) return;
+		if (!template.ok) {
+			return;
+		}
 
 		const textAttribute = await addItemTemplateAttribute(
 			{
@@ -561,7 +579,9 @@ describe("@afenda/master-data item variants (R1)", () => {
 			options,
 		);
 		expect(textAttribute.ok).toBe(true);
-		if (!textAttribute.ok) return;
+		if (!textAttribute.ok) {
+			return;
+		}
 
 		const addToText = await addItemTemplateAttributeOption(
 			{
@@ -638,7 +658,9 @@ describe("@afenda/master-data item variants (R1)", () => {
 			options,
 		);
 		expect(template.ok).toBe(true);
-		if (!template.ok) return;
+		if (!template.ok) {
+			return;
+		}
 
 		const color = await addItemTemplateAttribute(
 			{
@@ -663,7 +685,9 @@ describe("@afenda/master-data item variants (R1)", () => {
 		);
 		expect(color.ok).toBe(true);
 		expect(finish.ok).toBe(true);
-		if (!color.ok || !finish.ok) return;
+		if (!(color.ok && finish.ok)) {
+			return;
+		}
 
 		const blue = await addItemTemplateAttributeOption(
 			{
@@ -717,7 +741,9 @@ describe("@afenda/master-data item variants (R1)", () => {
 			options,
 		);
 		expect(listed.ok).toBe(true);
-		if (!listed.ok) return;
+		if (!listed.ok) {
+			return;
+		}
 		expect(listed.data.map((option) => option.normalizedCode)).toEqual([
 			"AMBER",
 			"BLUE",
@@ -941,7 +967,9 @@ describe("@afenda/master-data item variants (R1)", () => {
 			options,
 		);
 		expect(template.ok).toBe(true);
-		if (!template.ok) return;
+		if (!template.ok) {
+			return;
+		}
 
 		const archived = await archiveItemTemplate(
 			{
@@ -976,7 +1004,9 @@ describe("@afenda/master-data item variants (R1)", () => {
 			options,
 		);
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 
 		const archived = store.archiveItemTemplateAttributeOptionForTest(
 			"org-a",
@@ -1195,7 +1225,9 @@ describe("@afenda/master-data item variants (R1)", () => {
 			options,
 		);
 		expect(variant.ok).toBe(true);
-		if (!variant.ok) return;
+		if (!variant.ok) {
+			return;
+		}
 
 		const values = await listVariantAttributeValues(
 			{
@@ -1206,7 +1238,9 @@ describe("@afenda/master-data item variants (R1)", () => {
 			options,
 		);
 		expect(values.ok).toBe(true);
-		if (!values.ok) return;
+		if (!values.ok) {
+			return;
+		}
 		expect(values.data).toEqual(variant.data.values);
 
 		const configuration = await getVariantConfiguration(
@@ -1218,7 +1252,9 @@ describe("@afenda/master-data item variants (R1)", () => {
 			options,
 		);
 		expect(configuration.ok).toBe(true);
-		if (!configuration.ok) return;
+		if (!configuration.ok) {
+			return;
+		}
 		expect(configuration.data).toMatchObject({
 			id: variant.data.id,
 			itemId: variant.data.itemId,

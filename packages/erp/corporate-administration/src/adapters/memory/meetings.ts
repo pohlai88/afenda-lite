@@ -1,3 +1,5 @@
+// biome-ignore-all lint/suspicious/useAwait: The deterministic memory adapter implements asynchronous meeting ports.
+// biome-ignore-all lint/suspicious/noShadow: Domain-local callbacks intentionally mirror meeting records.
 import { randomUUID } from "node:crypto";
 import { fail, ok } from "@afenda/errors/result";
 
@@ -84,7 +86,9 @@ export function createMemoryCorporateAdministrationMeetingStore(): MeetingStore 
 			const current = meetings.get(
 				key(input.organizationId, input.governanceMeetingId),
 			);
-			if (current === undefined) return notFound();
+			if (current === undefined) {
+				return notFound();
+			}
 			if (current.version !== input.expectedVersion) {
 				return stale(input.expectedVersion, current.version);
 			}
@@ -157,7 +161,9 @@ export function createMemoryCorporateAdministrationMeetingStore(): MeetingStore 
 			const current = notices.get(
 				key(input.organizationId, input.meetingNoticeId),
 			);
-			if (current === undefined) return notFound();
+			if (current === undefined) {
+				return notFound();
+			}
 			if (current.version !== input.expectedVersion) {
 				return stale(input.expectedVersion, current.version);
 			}
@@ -181,7 +187,9 @@ export function createMemoryCorporateAdministrationMeetingStore(): MeetingStore 
 			const current = notices.get(
 				key(input.organizationId, input.meetingNoticeId),
 			);
-			if (current === undefined) return notFound();
+			if (current === undefined) {
+				return notFound();
+			}
 			if (current.version !== input.expectedVersion) {
 				return stale(input.expectedVersion, current.version);
 			}

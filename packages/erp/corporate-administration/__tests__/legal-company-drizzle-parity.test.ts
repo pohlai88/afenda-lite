@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/useAwait: Parity probes implement asynchronous production ports.
 import { randomUUID } from "node:crypto";
 
 import {
@@ -267,7 +268,9 @@ describe.skipIf(!RUN_CORPORATE_ADMINISTRATION_NEON_PARITY)(
 					dependencies(),
 				);
 				expect(registered).toMatchObject({ ok: true });
-				if (!registered.ok) return;
+				if (!registered.ok) {
+					return;
+				}
 
 				const [first, second] = await Promise.all([
 					setCompanyJurisdictionProfile(

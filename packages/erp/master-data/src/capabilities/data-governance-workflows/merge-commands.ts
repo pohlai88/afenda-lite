@@ -54,17 +54,17 @@ export const mergePartiesInputSchema = orgActorContextSchema.extend({
 
 export type MergePartiesInput = z.infer<typeof mergePartiesInputSchema>;
 
-export type MergePartiesResult = {
-	survivor: Party;
+export interface MergePartiesResult {
 	merged: Party;
-};
+	survivor: Party;
+}
 
-export type DuplicatePartyWarning = {
-	partyId: string;
+export interface DuplicatePartyWarning {
 	code: string;
-	signal: "registration" | "name";
 	message: string;
-};
+	partyId: string;
+	signal: "registration" | "name";
+}
 
 const duplicateWarningQuerySchema = orgQueryActorSchema.extend({
 	name: z.string().trim().min(1).max(200),

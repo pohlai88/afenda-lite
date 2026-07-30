@@ -95,10 +95,29 @@ export function assertMergeAuthorized(
 		return mergeNotAuthorized(input);
 	}
 
+	const requestValidation = validateMergeRequest(input, request);
+	if (!requestValidation.ok) {
+		return requestValidation;
+	}
+
+	const versionValidation = validateMergeVersions(input, request);
+	if (!versionValidation.ok) {
+		return versionValidation;
+	}
+
+	return validateMergeDomainConstraints(input, request);
+}
+
+function validateMergeRequest(
+	input: MergeAuthorizationInput,
+	request: ApprovedMergeRequestEvidence,
+): Result<true> {
 	if (
-		!isNonEmptyIdentifier(input.organizationId) ||
-		!isNonEmptyIdentifier(input.actorUserId) ||
-		!isValidDate(input.now)
+		!(
+			isNonEmptyIdentifier(input.organizationId) &&
+			isNonEmptyIdentifier(input.actorUserId) &&
+			isValidDate(input.now)
+		)
 	) {
 		return mergeNotAuthorized(input, request.id);
 	}
@@ -128,9 +147,18 @@ export function assertMergeAuthorized(
 		return mergeNotAuthorized(input, request.id);
 	}
 
+	return ok(true);
+}
+
+function validateMergeVersions(
+	input: MergeAuthorizationInput,
+	request: ApprovedMergeRequestEvidence,
+): Result<true> {
 	if (
-		!isPositiveVersion(input.expectedWorkflowVersion) ||
-		!isPositiveVersion(request.workflowVersion)
+		!(
+			isPositiveVersion(input.expectedWorkflowVersion) &&
+			isPositiveVersion(request.workflowVersion)
+		)
 	) {
 		return mergeNotAuthorized(input, request.id);
 	}
@@ -146,8 +174,10 @@ export function assertMergeAuthorized(
 	}
 
 	if (
-		!isPositiveVersion(input.source.version) ||
-		!isPositiveVersion(request.sourceExpectedVersion)
+		!(
+			isPositiveVersion(input.source.version) &&
+			isPositiveVersion(request.sourceExpectedVersion)
+		)
 	) {
 		return mergeNotAuthorized(input, request.id);
 	}
@@ -163,8 +193,10 @@ export function assertMergeAuthorized(
 	}
 
 	if (
-		!isPositiveVersion(input.target.version) ||
-		!isPositiveVersion(request.targetExpectedVersion)
+		!(
+			isPositiveVersion(input.target.version) &&
+			isPositiveVersion(request.targetExpectedVersion)
+		)
 	) {
 		return mergeNotAuthorized(input, request.id);
 	}
@@ -179,6 +211,13 @@ export function assertMergeAuthorized(
 		});
 	}
 
+	return ok(true);
+}
+
+function validateMergeDomainConstraints(
+	input: MergeAuthorizationInput,
+	request: ApprovedMergeRequestEvidence,
+): Result<true> {
 	if (!input.lifecycleCompatibility.compatible) {
 		return mergeNotAuthorized(input, request.id);
 	}

@@ -49,210 +49,209 @@ import type {
  * Persistence contract for setup — calendar, pay group, period, rules.
  * Slice of `PayrollStore`. Persistence only; orchestration stays in commands.
  */
-export type PayrollSetupStore = {
-	findCalendarByIdempotencyKey(input: {
-		organizationId: string;
-		idempotencyKey: string;
-	}): Promise<Result<IdempotentPayrollCalendarRecord | null>>;
-
-	createCalendar(
-		input: PayrollCalendarCreateRecord,
-		ports: MutationPorts,
-	): Promise<Result<PayrollCalendar>>;
-
-	getCalendar(input: {
-		organizationId: string;
-		calendarId: PayrollCalendarId;
-	}): Promise<Result<PayrollCalendar | null>>;
-
-	listCalendars(input: {
-		organizationId: string;
-		status?: "active" | "archived" | undefined;
-	}): Promise<Result<PayrollCalendar[]>>;
-
-	updateCalendar(
-		input: PayrollCalendarUpdateInput,
-		ports: MutationPorts,
-	): Promise<Result<PayrollCalendar>>;
-
-	archiveCalendar(
+export interface PayrollSetupStore {
+	archiveCalendar: (
 		input: PayrollCalendarArchiveInput,
 		ports: MutationPorts,
-	): Promise<Result<PayrollCalendar>>;
+	) => Promise<Result<PayrollCalendar>>;
 
-	createPayGroup(
-		input: PayrollPayGroupCreateRecord,
+	archiveDeductionRule: (
+		input: PayrollDeductionRuleArchiveInput,
 		ports: MutationPorts,
-	): Promise<Result<PayrollPayGroup>>;
+	) => Promise<Result<PayrollDeductionRule>>;
 
-	getPayGroup(input: {
-		organizationId: string;
-		payGroupId: PayrollPayGroupId;
-	}): Promise<Result<PayrollPayGroup | null>>;
-
-	listPayGroups(input: {
-		organizationId: string;
-		status?: "active" | "archived" | undefined;
-	}): Promise<Result<PayrollPayGroup[]>>;
-
-	updatePayGroup(
-		input: PayrollPayGroupUpdateInput,
+	archiveEarningRule: (
+		input: PayrollEarningRuleArchiveInput,
 		ports: MutationPorts,
-	): Promise<Result<PayrollPayGroup>>;
+	) => Promise<Result<PayrollEarningRule>>;
 
-	archivePayGroup(
+	archivePayGroup: (
 		input: PayrollPayGroupArchiveInput,
 		ports: MutationPorts,
-	): Promise<Result<PayrollPayGroup>>;
+	) => Promise<Result<PayrollPayGroup>>;
 
-	createPeriod(
+	archiveStatutoryRule: (
+		input: PayrollStatutoryRuleArchiveInput,
+		ports: MutationPorts,
+	) => Promise<Result<PayrollStatutoryRule>>;
+
+	closePeriod: (
+		input: PayrollPeriodCloseInput,
+		ports: MutationPorts,
+	) => Promise<Result<PayrollPeriod>>;
+
+	createCalendar: (
+		input: PayrollCalendarCreateRecord,
+		ports: MutationPorts,
+	) => Promise<Result<PayrollCalendar>>;
+
+	createDeductionRule: (
+		input: PayrollDeductionRuleCreateRecord,
+		ports: MutationPorts,
+	) => Promise<Result<PayrollDeductionRule>>;
+
+	createEarningRule: (
+		input: PayrollEarningRuleCreateRecord,
+		ports: MutationPorts,
+	) => Promise<Result<PayrollEarningRule>>;
+
+	createPayGroup: (
+		input: PayrollPayGroupCreateRecord,
+		ports: MutationPorts,
+	) => Promise<Result<PayrollPayGroup>>;
+
+	createPeriod: (
 		input: PayrollPeriodCreateRecord,
 		ports: MutationPorts,
-	): Promise<Result<PayrollPeriod>>;
+	) => Promise<Result<PayrollPeriod>>;
 
-	getPeriod(input: {
+	createStatutoryRule: (
+		input: PayrollStatutoryRuleCreateRecord,
+		ports: MutationPorts,
+	) => Promise<Result<PayrollStatutoryRule>>;
+	findCalendarByIdempotencyKey: (input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}) => Promise<Result<IdempotentPayrollCalendarRecord | null>>;
+
+	getCalendar: (input: {
+		organizationId: string;
+		calendarId: PayrollCalendarId;
+	}) => Promise<Result<PayrollCalendar | null>>;
+
+	getDeductionRule: (input: {
+		organizationId: string;
+		ruleId: PayrollDeductionRuleId;
+	}) => Promise<Result<PayrollDeductionRule | null>>;
+
+	getDeductionRuleAtEffectiveDate: (input: {
+		organizationId: string;
+		payGroupId: PayrollPayGroupId;
+		code: string;
+		effectiveDate: string;
+	}) => Promise<Result<PayrollDeductionRule | null>>;
+
+	getEarningRule: (input: {
+		organizationId: string;
+		ruleId: PayrollEarningRuleId;
+	}) => Promise<Result<PayrollEarningRule | null>>;
+
+	getEarningRuleAtEffectiveDate: (input: {
+		organizationId: string;
+		payGroupId: PayrollPayGroupId;
+		code: string;
+		effectiveDate: string;
+	}) => Promise<Result<PayrollEarningRule | null>>;
+
+	getPayGroup: (input: {
+		organizationId: string;
+		payGroupId: PayrollPayGroupId;
+	}) => Promise<Result<PayrollPayGroup | null>>;
+
+	getPeriod: (input: {
 		organizationId: string;
 		periodId: PayrollPeriodId;
-	}): Promise<Result<PayrollPeriod | null>>;
+	}) => Promise<Result<PayrollPeriod | null>>;
 
-	listPeriodsForPayGroup(input: {
+	getStatutoryRule: (input: {
+		organizationId: string;
+		ruleId: PayrollStatutoryRuleId;
+	}) => Promise<Result<PayrollStatutoryRule | null>>;
+
+	getStatutoryRuleAtEffectiveDate: (input: {
+		organizationId: string;
+		payGroupId: PayrollPayGroupId;
+		code: string;
+		effectiveDate: string;
+	}) => Promise<Result<PayrollStatutoryRule | null>>;
+
+	isRuleVersionUsedByFinalizedRun: (
+		input: PayrollRuleFinalizedUsageCheck,
+	) => Promise<Result<boolean>>;
+
+	listActiveDeductionRulesForPayGroup: (input: {
+		organizationId: string;
+		payGroupId: PayrollPayGroupId;
+		effectiveDate: string;
+	}) => Promise<Result<PayrollDeductionRule[]>>;
+
+	listActiveEarningRulesForPayGroup: (input: {
+		organizationId: string;
+		payGroupId: PayrollPayGroupId;
+		effectiveDate: string;
+	}) => Promise<Result<PayrollEarningRule[]>>;
+
+	listActiveStatutoryRulesForPayGroup: (input: {
+		organizationId: string;
+		payGroupId: PayrollPayGroupId;
+		effectiveDate: string;
+	}) => Promise<Result<PayrollStatutoryRule[]>>;
+
+	listCalendars: (input: {
+		organizationId: string;
+		status?: "active" | "archived" | undefined;
+	}) => Promise<Result<PayrollCalendar[]>>;
+
+	listPayGroups: (input: {
+		organizationId: string;
+		status?: "active" | "archived" | undefined;
+	}) => Promise<Result<PayrollPayGroup[]>>;
+
+	listPeriodsForPayGroup: (input: {
 		organizationId: string;
 		payGroupId: PayrollPayGroupId;
 		status?: "open" | "closed" | undefined;
-	}): Promise<Result<PayrollPeriod[]>>;
+	}) => Promise<Result<PayrollPeriod[]>>;
 
-	updatePeriod(
-		input: PayrollPeriodUpdateInput,
-		ports: MutationPorts,
-	): Promise<Result<PayrollPeriod>>;
+	recordRuleVersionUsedByFinalizedRun: (
+		input: PayrollRuleFinalizedUsageInput,
+	) => Promise<Result<{ recorded: true }>>;
 
-	closePeriod(
-		input: PayrollPeriodCloseInput,
-		ports: MutationPorts,
-	): Promise<Result<PayrollPeriod>>;
-
-	createEarningRule(
-		input: PayrollEarningRuleCreateRecord,
-		ports: MutationPorts,
-	): Promise<Result<PayrollEarningRule>>;
-
-	getEarningRule(input: {
-		organizationId: string;
-		ruleId: PayrollEarningRuleId;
-	}): Promise<Result<PayrollEarningRule | null>>;
-
-	updateEarningRule(
-		input: PayrollEarningRuleUpdateInput,
-		ports: MutationPorts,
-	): Promise<Result<PayrollEarningRule>>;
-
-	archiveEarningRule(
-		input: PayrollEarningRuleArchiveInput,
-		ports: MutationPorts,
-	): Promise<Result<PayrollEarningRule>>;
-
-	supersedeEarningRule(
-		input: PayrollEarningRuleSupersedeRecord,
-		ports: MutationPorts,
-	): Promise<Result<PayrollRuleSupersedeResult<PayrollEarningRule>>>;
-
-	createDeductionRule(
-		input: PayrollDeductionRuleCreateRecord,
-		ports: MutationPorts,
-	): Promise<Result<PayrollDeductionRule>>;
-
-	getDeductionRule(input: {
-		organizationId: string;
-		ruleId: PayrollDeductionRuleId;
-	}): Promise<Result<PayrollDeductionRule | null>>;
-
-	updateDeductionRule(
-		input: PayrollDeductionRuleUpdateInput,
-		ports: MutationPorts,
-	): Promise<Result<PayrollDeductionRule>>;
-
-	archiveDeductionRule(
-		input: PayrollDeductionRuleArchiveInput,
-		ports: MutationPorts,
-	): Promise<Result<PayrollDeductionRule>>;
-
-	supersedeDeductionRule(
+	supersedeDeductionRule: (
 		input: PayrollDeductionRuleSupersedeRecord,
 		ports: MutationPorts,
-	): Promise<Result<PayrollRuleSupersedeResult<PayrollDeductionRule>>>;
+	) => Promise<Result<PayrollRuleSupersedeResult<PayrollDeductionRule>>>;
 
-	createStatutoryRule(
-		input: PayrollStatutoryRuleCreateRecord,
+	supersedeEarningRule: (
+		input: PayrollEarningRuleSupersedeRecord,
 		ports: MutationPorts,
-	): Promise<Result<PayrollStatutoryRule>>;
+	) => Promise<Result<PayrollRuleSupersedeResult<PayrollEarningRule>>>;
 
-	getStatutoryRule(input: {
-		organizationId: string;
-		ruleId: PayrollStatutoryRuleId;
-	}): Promise<Result<PayrollStatutoryRule | null>>;
-
-	updateStatutoryRule(
-		input: PayrollStatutoryRuleUpdateInput,
-		ports: MutationPorts,
-	): Promise<Result<PayrollStatutoryRule>>;
-
-	archiveStatutoryRule(
-		input: PayrollStatutoryRuleArchiveInput,
-		ports: MutationPorts,
-	): Promise<Result<PayrollStatutoryRule>>;
-
-	supersedeStatutoryRule(
+	supersedeStatutoryRule: (
 		input: PayrollStatutoryRuleSupersedeRecord,
 		ports: MutationPorts,
-	): Promise<Result<PayrollRuleSupersedeResult<PayrollStatutoryRule>>>;
+	) => Promise<Result<PayrollRuleSupersedeResult<PayrollStatutoryRule>>>;
 
-	getEarningRuleAtEffectiveDate(input: {
-		organizationId: string;
-		payGroupId: PayrollPayGroupId;
-		code: string;
-		effectiveDate: string;
-	}): Promise<Result<PayrollEarningRule | null>>;
+	updateCalendar: (
+		input: PayrollCalendarUpdateInput,
+		ports: MutationPorts,
+	) => Promise<Result<PayrollCalendar>>;
 
-	getDeductionRuleAtEffectiveDate(input: {
-		organizationId: string;
-		payGroupId: PayrollPayGroupId;
-		code: string;
-		effectiveDate: string;
-	}): Promise<Result<PayrollDeductionRule | null>>;
+	updateDeductionRule: (
+		input: PayrollDeductionRuleUpdateInput,
+		ports: MutationPorts,
+	) => Promise<Result<PayrollDeductionRule>>;
 
-	getStatutoryRuleAtEffectiveDate(input: {
-		organizationId: string;
-		payGroupId: PayrollPayGroupId;
-		code: string;
-		effectiveDate: string;
-	}): Promise<Result<PayrollStatutoryRule | null>>;
+	updateEarningRule: (
+		input: PayrollEarningRuleUpdateInput,
+		ports: MutationPorts,
+	) => Promise<Result<PayrollEarningRule>>;
 
-	recordRuleVersionUsedByFinalizedRun(
-		input: PayrollRuleFinalizedUsageInput,
-	): Promise<Result<{ recorded: true }>>;
+	updatePayGroup: (
+		input: PayrollPayGroupUpdateInput,
+		ports: MutationPorts,
+	) => Promise<Result<PayrollPayGroup>>;
 
-	isRuleVersionUsedByFinalizedRun(
-		input: PayrollRuleFinalizedUsageCheck,
-	): Promise<Result<boolean>>;
+	updatePeriod: (
+		input: PayrollPeriodUpdateInput,
+		ports: MutationPorts,
+	) => Promise<Result<PayrollPeriod>>;
 
-	listActiveEarningRulesForPayGroup(input: {
-		organizationId: string;
-		payGroupId: PayrollPayGroupId;
-		effectiveDate: string;
-	}): Promise<Result<PayrollEarningRule[]>>;
-
-	listActiveDeductionRulesForPayGroup(input: {
-		organizationId: string;
-		payGroupId: PayrollPayGroupId;
-		effectiveDate: string;
-	}): Promise<Result<PayrollDeductionRule[]>>;
-
-	listActiveStatutoryRulesForPayGroup(input: {
-		organizationId: string;
-		payGroupId: PayrollPayGroupId;
-		effectiveDate: string;
-	}): Promise<Result<PayrollStatutoryRule[]>>;
-};
+	updateStatutoryRule: (
+		input: PayrollStatutoryRuleUpdateInput,
+		ports: MutationPorts,
+	) => Promise<Result<PayrollStatutoryRule>>;
+}
 
 export type {
 	PayrollCalendarId,

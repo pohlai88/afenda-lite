@@ -35,15 +35,15 @@ import type { HumanResourcesAuthorizedActorInput } from "./run-authorized-operat
 
 type ActorScoped = HumanResourcesAuthorizedActorInput;
 
-type CommandDeps = {
-	store: HumanResourcesStore;
-	ports: MutationPorts;
+interface CommandDeps {
 	currency: CurrencyLookupPort;
-};
-
-type QueryDeps = {
+	ports: MutationPorts;
 	store: HumanResourcesStore;
-};
+}
+
+interface QueryDeps {
+	store: HumanResourcesStore;
+}
 
 const COMPENSATION_RESOURCE_ID_FIELDS = [
 	"compensationId",
@@ -60,10 +60,10 @@ const COMPENSATION_RESOURCE_ID_FIELDS = [
 	"applicationId",
 ] as const;
 
-type CompensationSubjectResolution = {
+interface CompensationSubjectResolution {
 	organizationId: string;
 	subjectEmployeeId?: HumanResourcesEmployeeId | undefined;
-};
+}
 
 function readStringField(input: object, field: string): string | undefined {
 	const descriptor = Object.getOwnPropertyDescriptor(input, field);
@@ -76,7 +76,9 @@ function parseIdField<TSchema extends z.ZodType>(
 	schema: TSchema,
 ): z.output<TSchema> | undefined {
 	const value = readStringField(input, field);
-	if (value === undefined) return undefined;
+	if (value === undefined) {
+		return;
+	}
 	const parsed = schema.safeParse(value);
 	return parsed.success ? parsed.data : undefined;
 }
@@ -95,7 +97,9 @@ async function resolveCompensationSubject(
 			organizationId: input.organizationId,
 			compensationId,
 		});
-		if (!compensation.ok) return compensation;
+		if (!compensation.ok) {
+			return compensation;
+		}
 		if (compensation.data !== null) {
 			return ok({
 				organizationId: compensation.data.organizationId,
@@ -114,7 +118,9 @@ async function resolveCompensationSubject(
 			organizationId: input.organizationId,
 			reviewId,
 		});
-		if (!review.ok) return review;
+		if (!review.ok) {
+			return review;
+		}
 		if (review.data !== null) {
 			return ok({
 				organizationId: review.data.organizationId,
@@ -133,7 +139,9 @@ async function resolveCompensationSubject(
 			organizationId: input.organizationId,
 			enrollmentId,
 		});
-		if (!enrollment.ok) return enrollment;
+		if (!enrollment.ok) {
+			return enrollment;
+		}
 		if (enrollment.data !== null) {
 			return ok({
 				organizationId: enrollment.data.organizationId,
@@ -152,13 +160,17 @@ async function resolveCompensationSubject(
 			organizationId: input.organizationId,
 			dependentId,
 		});
-		if (!dependent.ok) return dependent;
+		if (!dependent.ok) {
+			return dependent;
+		}
 		if (dependent.data !== null) {
 			const enrollment = await store.getBenefitEnrollment({
 				organizationId: input.organizationId,
 				enrollmentId: dependent.data.enrollmentId,
 			});
-			if (!enrollment.ok) return enrollment;
+			if (!enrollment.ok) {
+				return enrollment;
+			}
 			if (enrollment.data !== null) {
 				return ok({
 					organizationId: enrollment.data.organizationId,
@@ -186,21 +198,25 @@ async function resolveManagerEmployeeId(input: {
 	subjectEmployeeId: HumanResourcesEmployeeId;
 }): Promise<Result<HumanResourcesEmployeeId | undefined>> {
 	const asOf = new Date().toISOString().slice(0, 10);
-	const identityResolver = input.options.identityResolver;
+	const { identityResolver } = input.options;
 	if (identityResolver !== undefined) {
 		const reports = await identityResolver.resolveManagerEmployeesForActor({
 			organizationId: input.data.organizationId,
 			actorUserId: input.data.actorUserId,
 			asOf,
 		});
-		if (!reports.ok) return reports;
+		if (!reports.ok) {
+			return reports;
+		}
 		if (reports.data.includes(input.subjectEmployeeId)) {
 			const identity = await identityResolver.resolveEmployeeForActor({
 				organizationId: input.data.organizationId,
 				actorUserId: input.data.actorUserId,
 				asOf,
 			});
-			if (!identity.ok) return identity;
+			if (!identity.ok) {
+				return identity;
+			}
 			if (identity.data !== null) {
 				return ok(identity.data.employeeId);
 			}
@@ -212,7 +228,9 @@ async function resolveManagerEmployeeId(input: {
 		employeeId: input.subjectEmployeeId,
 		asOf,
 	});
-	if (!primaryManager.ok) return primaryManager;
+	if (!primaryManager.ok) {
+		return primaryManager;
+	}
 	return ok(primaryManager.data ?? undefined);
 }
 
@@ -222,7 +240,9 @@ async function resolveCompensationResource(
 	store: HumanResourcesStore,
 ): Promise<Result<HumanResourcesResourceContext>> {
 	const subject = await resolveCompensationSubject(data, store);
-	if (!subject.ok) return subject;
+	if (!subject.ok) {
+		return subject;
+	}
 	const resourceId = COMPENSATION_RESOURCE_ID_FIELDS.map((field) =>
 		readStringField(data, field),
 	).find((value) => value !== undefined);
@@ -234,7 +254,9 @@ async function resolveCompensationResource(
 			store,
 			subjectEmployeeId: subject.data.subjectEmployeeId,
 		});
-		if (!manager.ok) return manager;
+		if (!manager.ok) {
+			return manager;
+		}
 		managerEmployeeId = manager.data;
 	}
 	return ok({
@@ -293,7 +315,9 @@ export async function projectCompensationRecord<
 		},
 		input.options,
 	);
-	if (!decision.ok) return decision;
+	if (!decision.ok) {
+		return decision;
+	}
 
 	const projected = applySensitivityProjection(
 		record,
@@ -337,7 +361,7 @@ export async function runCompensationCommand<
 		) => Promise<Result<TOut>>;
 	},
 ): Promise<Result<TOut>> {
-	return runParsedAuthorizedCommand(input, options, {
+	return await runParsedAuthorizedCommand(input, options, {
 		schema: config.schema,
 		invalidMessage: config.invalidMessage,
 		command: config.command,
@@ -374,7 +398,7 @@ export async function runCompensationQuery<
 		execute: (data: z.infer<TSchema>, deps: QueryDeps) => Promise<Result<TOut>>;
 	},
 ): Promise<Result<TProjected>> {
-	return runParsedAuthorizedQuery(input, options, {
+	return await runParsedAuthorizedQuery(input, options, {
 		schema: config.schema,
 		invalidMessage: config.invalidMessage,
 		query: config.query,

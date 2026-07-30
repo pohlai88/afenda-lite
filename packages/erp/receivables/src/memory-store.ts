@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { fail, ok, type Result } from "@afenda/errors/result";
 
+import { collectSequentially, resolveResult } from "./resolve-async";
 import { add, decimal, format, multiply, subtract } from "./shared/money";
 import type { ReceivablesStore } from "./store";
 import type {
@@ -84,7 +85,7 @@ export class MemoryReceivablesStore implements ReceivablesStore {
 		});
 	}
 
-	async createInvoice(
+	createInvoice(
 		record: Parameters<ReceivablesStore["createInvoice"]>[0],
 	): Promise<Result<SalesInvoice>> {
 		const key = this.orgKey(record.organizationId, record.idempotencyKey);
@@ -92,16 +93,20 @@ export class MemoryReceivablesStore implements ReceivablesStore {
 		if (existingId !== undefined) {
 			const existing = this.invoices.get(existingId);
 			if (existing === undefined) {
-				return fail("INTERNAL_ERROR", "Create idempotency target missing");
+				return resolveResult(
+					fail("INTERNAL_ERROR", "Create idempotency target missing"),
+				);
 			}
-			return ok(cloneInvoice(existing));
+			return resolveResult(ok(cloneInvoice(existing)));
 		}
 		for (const invoice of this.invoices.values()) {
 			if (
 				invoice.organizationId === record.organizationId &&
 				invoice.normalizedCode === record.normalizedCode
 			) {
-				return fail("CONFLICT", "Sales invoice code already exists");
+				return resolveResult(
+					fail("CONFLICT", "Sales invoice code already exists"),
+				);
 			}
 		}
 		const now = new Date();
@@ -141,10 +146,10 @@ export class MemoryReceivablesStore implements ReceivablesStore {
 		};
 		this.invoices.set(invoice.id, invoice);
 		this.createKeys.set(key, invoice.id);
-		return ok(cloneInvoice(invoice));
+		return resolveResult(ok(cloneInvoice(invoice)));
 	}
 
-	async addLine(
+	addLine(
 		record: Parameters<ReceivablesStore["addLine"]>[0],
 	): Promise<Result<SalesInvoiceLine>> {
 		const key = this.orgKey(record.organizationId, record.idempotencyKey);
@@ -152,19 +157,25 @@ export class MemoryReceivablesStore implements ReceivablesStore {
 		if (existingLineId !== undefined) {
 			for (const invoice of this.invoices.values()) {
 				const line = invoice.lines.find((row) => row.id === existingLineId);
-				if (line !== undefined) return ok({ ...line });
+				if (line !== undefined) {
+					return resolveResult(ok({ ...line }));
+				}
 			}
-			return fail("INTERNAL_ERROR", "Line idempotency target missing");
+			return resolveResult(
+				fail("INTERNAL_ERROR", "Line idempotency target missing"),
+			);
 		}
 		const invoice = this.invoices.get(record.invoiceId);
 		if (
 			invoice === undefined ||
 			invoice.organizationId !== record.organizationId
 		) {
-			return fail("NOT_FOUND", "Sales invoice not found");
+			return resolveResult(fail("NOT_FOUND", "Sales invoice not found"));
 		}
 		if (invoice.status !== "draft") {
-			return fail("CONFLICT", "Lines can only be added to draft invoices");
+			return resolveResult(
+				fail("CONFLICT", "Lines can only be added to draft invoices"),
+			);
 		}
 		const now = new Date();
 		const line: SalesInvoiceLine = {
@@ -192,7 +203,7 @@ export class MemoryReceivablesStore implements ReceivablesStore {
 		invoice.updatedBy = record.actorUserId;
 		invoice.updatedAt = now;
 		this.lineKeys.set(key, line.id);
-		return ok({ ...line });
+		return resolveResult(ok({ ...line }));
 	}
 
 	async postInvoice(
@@ -248,8 +259,12 @@ export class MemoryReceivablesStore implements ReceivablesStore {
 		invoice.updatedAt = now;
 		invoice.updatedBy = record.actorUserId;
 		invoice.version += 1;
-		if (invoice.invoiceDate === null) invoice.invoiceDate = now;
-		if (invoice.accountingDate === null) invoice.accountingDate = now;
+		if (invoice.invoiceDate === null) {
+			invoice.invoiceDate = now;
+		}
+		if (invoice.accountingDate === null) {
+			invoice.accountingDate = now;
+		}
 		this.adjustBalance(
 			invoice.organizationId,
 			invoice.customerId,
@@ -562,7 +577,7 @@ export class MemoryReceivablesStore implements ReceivablesStore {
 		return ok(cloneAllocation(allocation));
 	}
 
-	async reverseAllocationsByPayment(
+	reverseAllocationsByPayment(
 		record: Parameters<ReceivablesStore["reverseAllocationsByPayment"]>[0],
 	): Promise<Result<CustomerAllocation[]>> {
 		const active = [...this.allocations.values()].filter(
@@ -571,20 +586,16 @@ export class MemoryReceivablesStore implements ReceivablesStore {
 				allocation.paymentId === record.paymentId &&
 				allocation.status === "active",
 		);
-		const reversed: CustomerAllocation[] = [];
-		for (const allocation of active) {
-			const result = await this.reverseReceiptApplication({
+		return collectSequentially(active, (allocation) =>
+			this.reverseReceiptApplication({
 				organizationId: record.organizationId,
 				allocationId: allocation.id,
 				idempotencyKey: `${record.idempotencyKey}:${allocation.id}`,
 				actorUserId: record.actorUserId,
 				correlationId: record.correlationId,
 				effects: record.effects,
-			});
-			if (!result.ok) return result;
-			reversed.push(result.data);
-		}
-		return ok(reversed);
+			}),
+		);
 	}
 
 	async cancelDraft(
@@ -703,52 +714,59 @@ export class MemoryReceivablesStore implements ReceivablesStore {
 		return ok(cloneInvoice(invoice));
 	}
 
-	async getById(
+	getById(
 		organizationId: string,
 		id: string,
 	): Promise<Result<SalesInvoice | null>> {
 		const invoice = this.invoices.get(id);
-		return ok(
-			invoice !== undefined && invoice.organizationId === organizationId
-				? cloneInvoice(invoice)
-				: null,
+		return resolveResult(
+			ok(
+				invoice !== undefined && invoice.organizationId === organizationId
+					? cloneInvoice(invoice)
+					: null,
+			),
 		);
 	}
 
-	async list(
+	list(
 		filter: Parameters<ReceivablesStore["list"]>[0],
 	): Promise<Result<SalesInvoice[]>> {
 		const start = (filter.page - 1) * filter.pageSize;
-		return ok(
-			[...this.invoices.values()]
-				.filter((row) => row.organizationId === filter.organizationId)
-				.filter(
-					(row) => filter.status === undefined || row.status === filter.status,
-				)
-				.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
-				.slice(start, start + filter.pageSize)
-				.map(cloneInvoice),
+		return resolveResult(
+			ok(
+				[...this.invoices.values()]
+					.filter((row) => row.organizationId === filter.organizationId)
+					.filter(
+						(row) =>
+							filter.status === undefined || row.status === filter.status,
+					)
+					.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+					.slice(start, start + filter.pageSize)
+					.map(cloneInvoice),
+			),
 		);
 	}
 
-	async getBalance(
+	getBalance(
 		organizationId: string,
 		customerId: string,
 		currencyCode?: string,
 	): Promise<Result<CustomerBalance[]>> {
-		return ok(
-			[...this.balances.values()]
-				.filter((row) => row.organizationId === organizationId)
-				.filter((row) => row.customerId === customerId)
-				.filter(
-					(row) =>
-						currencyCode === undefined || row.currencyCode === currencyCode,
-				)
-				.map((row) => ({ ...row })),
+		return resolveResult(
+			ok(
+				[...this.balances.values()]
+					.filter((row) => row.organizationId === organizationId)
+					.filter((row) => row.customerId === customerId)
+					.filter(
+						(row) =>
+							currencyCode === undefined || row.currencyCode === currencyCode,
+					)
+					.map((row) => ({ ...row })),
+			),
 		);
 	}
 
-	async getAging(
+	getAging(
 		input: Parameters<ReceivablesStore["getAging"]>[0],
 	): Promise<Result<CustomerAging>> {
 		const asOf = new Date(`${input.asOfDate}T23:59:59.999Z`);
@@ -769,23 +787,31 @@ export class MemoryReceivablesStore implements ReceivablesStore {
 			const open = decimal(invoice.openAmount);
 			total += open;
 			const amount = format(open);
-			if (age <= 0) buckets.current = add(buckets.current, amount);
-			else if (age <= 30) buckets.days1to30 = add(buckets.days1to30, amount);
-			else if (age <= 60) buckets.days31to60 = add(buckets.days31to60, amount);
-			else if (age <= 90) buckets.days61to90 = add(buckets.days61to90, amount);
-			else buckets.over90 = add(buckets.over90, amount);
+			if (age <= 0) {
+				buckets.current = add(buckets.current, amount);
+			} else if (age <= 30) {
+				buckets.days1to30 = add(buckets.days1to30, amount);
+			} else if (age <= 60) {
+				buckets.days31to60 = add(buckets.days31to60, amount);
+			} else if (age <= 90) {
+				buckets.days61to90 = add(buckets.days61to90, amount);
+			} else {
+				buckets.over90 = add(buckets.over90, amount);
+			}
 		}
-		return ok({
-			organizationId: input.organizationId,
-			customerId: input.customerId,
-			currencyCode: input.currencyCode,
-			asOfDate: input.asOfDate,
-			buckets,
-			totalOpen: format(total),
-		});
+		return resolveResult(
+			ok({
+				organizationId: input.organizationId,
+				customerId: input.customerId,
+				currencyCode: input.currencyCode,
+				asOfDate: input.asOfDate,
+				buckets,
+				totalOpen: format(total),
+			}),
+		);
 	}
 
-	async sumPostedQuantityForSourceLine(
+	sumPostedQuantityForSourceLine(
 		input: Parameters<ReceivablesStore["sumPostedQuantityForSourceLine"]>[0],
 	): Promise<Result<string>> {
 		let total = 0n;
@@ -812,20 +838,11 @@ export class MemoryReceivablesStore implements ReceivablesStore {
 				}
 			}
 		}
-		for (const credit of this.credits.values()) {
-			if (
-				credit.organizationId !== input.organizationId ||
-				credit.status !== "posted"
-			) {
-				continue;
-			}
-			// Credit notes do not reopen quantity in this memory model unless tied to lines.
-			void credit;
-		}
-		return ok(format(total));
+		// Credit notes do not reopen quantity in this memory model unless tied to lines.
+		return resolveResult(ok(format(total)));
 	}
 
-	async listPostedFactsForReconcile(organizationId: string): Promise<
+	listPostedFactsForReconcile(organizationId: string): Promise<
 		Result<{
 			invoices: Array<{
 				id: string;
@@ -851,41 +868,43 @@ export class MemoryReceivablesStore implements ReceivablesStore {
 			balances: CustomerBalance[];
 		}>
 	> {
-		return ok({
-			invoices: [...this.invoices.values()]
-				.filter((row) => row.organizationId === organizationId)
-				.filter((row) => row.status === "posted" || row.status === "closed")
-				.map((row) => ({
-					id: row.id,
-					customerId: row.customerId,
-					currencyCode: row.currencyCode,
-					totalAmount: row.totalAmount,
-					status: row.status,
-				})),
-			credits: [...this.credits.values()]
-				.filter((row) => row.organizationId === organizationId)
-				.filter((row) => row.status === "posted")
-				.map((row) => ({
-					id: row.id,
-					customerId: row.customerId,
-					currencyCode: row.currencyCode,
-					amount: row.amount,
-					status: row.status,
-				})),
-			allocations: [...this.allocations.values()]
-				.filter((row) => row.organizationId === organizationId)
-				.filter((row) => row.status === "active")
-				.map((row) => ({
-					id: row.id,
-					customerId: row.customerId,
-					invoiceId: row.invoiceId,
-					amount: row.amount,
-					status: row.status,
-				})),
-			balances: [...this.balances.values()]
-				.filter((row) => row.organizationId === organizationId)
-				.map((row) => ({ ...row })),
-		});
+		return resolveResult(
+			ok({
+				invoices: [...this.invoices.values()]
+					.filter((row) => row.organizationId === organizationId)
+					.filter((row) => row.status === "posted" || row.status === "closed")
+					.map((row) => ({
+						id: row.id,
+						customerId: row.customerId,
+						currencyCode: row.currencyCode,
+						totalAmount: row.totalAmount,
+						status: row.status,
+					})),
+				credits: [...this.credits.values()]
+					.filter((row) => row.organizationId === organizationId)
+					.filter((row) => row.status === "posted")
+					.map((row) => ({
+						id: row.id,
+						customerId: row.customerId,
+						currencyCode: row.currencyCode,
+						amount: row.amount,
+						status: row.status,
+					})),
+				allocations: [...this.allocations.values()]
+					.filter((row) => row.organizationId === organizationId)
+					.filter((row) => row.status === "active")
+					.map((row) => ({
+						id: row.id,
+						customerId: row.customerId,
+						invoiceId: row.invoiceId,
+						amount: row.amount,
+						status: row.status,
+					})),
+				balances: [...this.balances.values()]
+					.filter((row) => row.organizationId === organizationId)
+					.map((row) => ({ ...row })),
+			}),
+		);
 	}
 }
 

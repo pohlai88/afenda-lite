@@ -4,6 +4,7 @@ import { requireAccountingPermission } from "./authorization";
 import type {
 	AccountingCommandOptions,
 	AccountingPeriod,
+	AccountingStore,
 	AccountRoleMapping,
 	ChartOfAccounts,
 	Journal,
@@ -12,9 +13,11 @@ import type {
 	LedgerAccount,
 	LedgerAccountActivityRow,
 	PostingException,
+	PostingProfileLine,
 	SourcePostingTrace,
 	TrialBalanceRow,
 } from "./model";
+import { collectSequentially } from "./resolve-async";
 
 export type {
 	AccountingAuthorizationPort,
@@ -54,6 +57,18 @@ function normalize(code: string): string {
 	return code.toUpperCase().replace(/[\s-]+/g, "");
 }
 
+function journalTypeForSourceModule(sourceModule: string): JournalType {
+	switch (sourceModule) {
+		case "receivables":
+		case "payables":
+		case "payments":
+		case "inventory":
+			return sourceModule;
+		default:
+			return "system";
+	}
+}
+
 function failInvalidAccountingInput(error: z.ZodError): Result<never> {
 	return fail("VALIDATION_ERROR", "Invalid accounting input", {
 		fieldErrors: error.flatten().fieldErrors,
@@ -68,11 +83,15 @@ function resolveOpts(options: AccountingCommandOptions | undefined): Result<{
 	authorization: NonNullable<AccountingCommandOptions["authorization"]>;
 	effects: NonNullable<AccountingCommandOptions["effects"]>;
 }> {
-	if (!options?.store)
+	if (!options?.store) {
 		return fail("BAD_REQUEST", "AccountingStore is required");
-	if (!options?.authorization)
+	}
+	if (!options?.authorization) {
 		return fail("BAD_REQUEST", "Authorization port is required");
-	if (!options?.effects) return fail("BAD_REQUEST", "Effects port is required");
+	}
+	if (!options?.effects) {
+		return fail("BAD_REQUEST", "Effects port is required");
+	}
 	return ok({
 		store: options.store,
 		authorization: options.authorization,
@@ -93,10 +112,14 @@ export async function createChartOfAccounts(
 	options?: AccountingCommandOptions,
 ): Promise<Result<ChartOfAccounts>> {
 	const parsed = CreateChartOfAccountsInput.safeParse(input);
-	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
+	if (!parsed.success) {
+		return failInvalidAccountingInput(parsed.error);
+	}
 
 	const opts = resolveOpts(options);
-	if (!opts.ok) return opts;
+	if (!opts.ok) {
+		return opts;
+	}
 
 	const authResult = await requireAccountingPermission(
 		opts.data.authorization,
@@ -106,7 +129,9 @@ export async function createChartOfAccounts(
 			permission: "accounting.account.manage",
 		},
 	);
-	if (!authResult.ok) return authResult;
+	if (!authResult.ok) {
+		return authResult;
+	}
 
 	return opts.data.store.createChartOfAccounts({
 		organizationId: parsed.data.organizationId,
@@ -133,10 +158,14 @@ export async function createLedgerAccount(
 	options?: AccountingCommandOptions,
 ): Promise<Result<LedgerAccount>> {
 	const parsed = CreateLedgerAccountInput.safeParse(input);
-	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
+	if (!parsed.success) {
+		return failInvalidAccountingInput(parsed.error);
+	}
 
 	const opts = resolveOpts(options);
-	if (!opts.ok) return opts;
+	if (!opts.ok) {
+		return opts;
+	}
 
 	const authResult = await requireAccountingPermission(
 		opts.data.authorization,
@@ -146,7 +175,9 @@ export async function createLedgerAccount(
 			permission: "accounting.account.manage",
 		},
 	);
-	if (!authResult.ok) return authResult;
+	if (!authResult.ok) {
+		return authResult;
+	}
 
 	return opts.data.store.createLedgerAccount({
 		organizationId: parsed.data.organizationId,
@@ -178,10 +209,14 @@ export async function updateLedgerAccount(
 	options?: AccountingCommandOptions,
 ): Promise<Result<LedgerAccount>> {
 	const parsed = UpdateLedgerAccountInput.safeParse(input);
-	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
+	if (!parsed.success) {
+		return failInvalidAccountingInput(parsed.error);
+	}
 
 	const opts = resolveOpts(options);
-	if (!opts.ok) return opts;
+	if (!opts.ok) {
+		return opts;
+	}
 
 	const authResult = await requireAccountingPermission(
 		opts.data.authorization,
@@ -191,7 +226,9 @@ export async function updateLedgerAccount(
 			permission: "accounting.account.manage",
 		},
 	);
-	if (!authResult.ok) return authResult;
+	if (!authResult.ok) {
+		return authResult;
+	}
 
 	return opts.data.store.updateLedgerAccount({
 		organizationId: parsed.data.organizationId,
@@ -218,10 +255,14 @@ export async function deactivateLedgerAccount(
 	options?: AccountingCommandOptions,
 ): Promise<Result<LedgerAccount>> {
 	const parsed = DeactivateLedgerAccountInput.safeParse(input);
-	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
+	if (!parsed.success) {
+		return failInvalidAccountingInput(parsed.error);
+	}
 
 	const opts = resolveOpts(options);
-	if (!opts.ok) return opts;
+	if (!opts.ok) {
+		return opts;
+	}
 
 	const authResult = await requireAccountingPermission(
 		opts.data.authorization,
@@ -231,7 +272,9 @@ export async function deactivateLedgerAccount(
 			permission: "accounting.account.manage",
 		},
 	);
-	if (!authResult.ok) return authResult;
+	if (!authResult.ok) {
+		return authResult;
+	}
 
 	return opts.data.store.deactivateLedgerAccount({
 		organizationId: parsed.data.organizationId,
@@ -253,10 +296,14 @@ export async function listLedgerAccounts(
 	options?: AccountingCommandOptions,
 ): Promise<Result<LedgerAccount[]>> {
 	const parsed = ListLedgerAccountsInput.safeParse(input);
-	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
+	if (!parsed.success) {
+		return failInvalidAccountingInput(parsed.error);
+	}
 
 	const opts = resolveOpts(options);
-	if (!opts.ok) return opts;
+	if (!opts.ok) {
+		return opts;
+	}
 
 	const authResult = await requireAccountingPermission(
 		opts.data.authorization,
@@ -266,7 +313,9 @@ export async function listLedgerAccounts(
 			permission: "accounting.account.read",
 		},
 	);
-	if (!authResult.ok) return authResult;
+	if (!authResult.ok) {
+		return authResult;
+	}
 
 	return opts.data.store.listLedgerAccounts({
 		organizationId: parsed.data.organizationId,
@@ -288,10 +337,14 @@ export async function mapAccountRole(
 	options?: AccountingCommandOptions,
 ): Promise<Result<AccountRoleMapping>> {
 	const parsed = MapAccountRoleInput.safeParse(input);
-	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
+	if (!parsed.success) {
+		return failInvalidAccountingInput(parsed.error);
+	}
 
 	const opts = resolveOpts(options);
-	if (!opts.ok) return opts;
+	if (!opts.ok) {
+		return opts;
+	}
 
 	const authResult = await requireAccountingPermission(
 		opts.data.authorization,
@@ -301,7 +354,9 @@ export async function mapAccountRole(
 			permission: "accounting.account.manage",
 		},
 	);
-	if (!authResult.ok) return authResult;
+	if (!authResult.ok) {
+		return authResult;
+	}
 
 	return opts.data.store.mapAccountRole({
 		organizationId: parsed.data.organizationId,
@@ -334,10 +389,14 @@ export async function upsertPostingProfile(
 	options?: AccountingCommandOptions,
 ): Promise<Result<import("./model").PostingProfile>> {
 	const parsed = UpsertPostingProfileInput.safeParse(input);
-	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
+	if (!parsed.success) {
+		return failInvalidAccountingInput(parsed.error);
+	}
 
 	const opts = resolveOpts(options);
-	if (!opts.ok) return opts;
+	if (!opts.ok) {
+		return opts;
+	}
 
 	const authResult = await requireAccountingPermission(
 		opts.data.authorization,
@@ -347,7 +406,9 @@ export async function upsertPostingProfile(
 			permission: "accounting.posting_rule.manage",
 		},
 	);
-	if (!authResult.ok) return authResult;
+	if (!authResult.ok) {
+		return authResult;
+	}
 
 	return opts.data.store.upsertPostingProfile({
 		organizationId: parsed.data.organizationId,
@@ -387,10 +448,14 @@ export async function createDraftJournal(
 	options?: AccountingCommandOptions,
 ): Promise<Result<Journal>> {
 	const parsed = CreateDraftJournalInput.safeParse(input);
-	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
+	if (!parsed.success) {
+		return failInvalidAccountingInput(parsed.error);
+	}
 
 	const opts = resolveOpts(options);
-	if (!opts.ok) return opts;
+	if (!opts.ok) {
+		return opts;
+	}
 
 	const authResult = await requireAccountingPermission(
 		opts.data.authorization,
@@ -400,7 +465,9 @@ export async function createDraftJournal(
 			permission: "accounting.journal.create",
 		},
 	);
-	if (!authResult.ok) return authResult;
+	if (!authResult.ok) {
+		return authResult;
+	}
 
 	return opts.data.store.createDraft({
 		organizationId: parsed.data.organizationId,
@@ -430,10 +497,14 @@ export async function addJournalLine(
 	options?: AccountingCommandOptions,
 ): Promise<Result<JournalLine>> {
 	const parsed = AddJournalLineInput.safeParse(input);
-	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
+	if (!parsed.success) {
+		return failInvalidAccountingInput(parsed.error);
+	}
 
 	const opts = resolveOpts(options);
-	if (!opts.ok) return opts;
+	if (!opts.ok) {
+		return opts;
+	}
 
 	const authResult = await requireAccountingPermission(
 		opts.data.authorization,
@@ -443,14 +514,18 @@ export async function addJournalLine(
 			permission: "accounting.journal.create",
 		},
 	);
-	if (!authResult.ok) return authResult;
+	if (!authResult.ok) {
+		return authResult;
+	}
 
 	const normalizedCode = normalize(parsed.data.accountCode);
 	const accountResult = await opts.data.store.resolveLedgerAccountByCode(
 		parsed.data.organizationId,
 		normalizedCode,
 	);
-	if (!accountResult.ok) return accountResult;
+	if (!accountResult.ok) {
+		return accountResult;
+	}
 
 	let ledgerAccountId: string | null = null;
 	if (accountResult.data) {
@@ -488,10 +563,14 @@ export async function postJournal(
 	options?: AccountingCommandOptions,
 ): Promise<Result<Journal>> {
 	const parsed = PostJournalInput.safeParse(input);
-	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
+	if (!parsed.success) {
+		return failInvalidAccountingInput(parsed.error);
+	}
 
 	const opts = resolveOpts(options);
-	if (!opts.ok) return opts;
+	if (!opts.ok) {
+		return opts;
+	}
 
 	const authResult = await requireAccountingPermission(
 		opts.data.authorization,
@@ -501,7 +580,9 @@ export async function postJournal(
 			permission: "accounting.journal.post",
 		},
 	);
-	if (!authResult.ok) return authResult;
+	if (!authResult.ok) {
+		return authResult;
+	}
 
 	return opts.data.store.post({
 		organizationId: parsed.data.organizationId,
@@ -527,10 +608,14 @@ export async function reverseJournal(
 	options?: AccountingCommandOptions,
 ): Promise<Result<Journal>> {
 	const parsed = ReverseJournalInput.safeParse(input);
-	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
+	if (!parsed.success) {
+		return failInvalidAccountingInput(parsed.error);
+	}
 
 	const opts = resolveOpts(options);
-	if (!opts.ok) return opts;
+	if (!opts.ok) {
+		return opts;
+	}
 
 	const authResult = await requireAccountingPermission(
 		opts.data.authorization,
@@ -540,7 +625,9 @@ export async function reverseJournal(
 			permission: "accounting.journal.reverse",
 		},
 	);
-	if (!authResult.ok) return authResult;
+	if (!authResult.ok) {
+		return authResult;
+	}
 
 	return opts.data.store.reverse({
 		organizationId: parsed.data.organizationId,
@@ -567,10 +654,14 @@ export async function openAccountingPeriod(
 	options?: AccountingCommandOptions,
 ): Promise<Result<AccountingPeriod>> {
 	const parsed = OpenAccountingPeriodInput.safeParse(input);
-	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
+	if (!parsed.success) {
+		return failInvalidAccountingInput(parsed.error);
+	}
 
 	const opts = resolveOpts(options);
-	if (!opts.ok) return opts;
+	if (!opts.ok) {
+		return opts;
+	}
 
 	const authResult = await requireAccountingPermission(
 		opts.data.authorization,
@@ -580,7 +671,9 @@ export async function openAccountingPeriod(
 			permission: "accounting.period.open",
 		},
 	);
-	if (!authResult.ok) return authResult;
+	if (!authResult.ok) {
+		return authResult;
+	}
 
 	return opts.data.store.openPeriod({
 		organizationId: parsed.data.organizationId,
@@ -605,10 +698,14 @@ export async function softCloseAccountingPeriod(
 	options?: AccountingCommandOptions,
 ): Promise<Result<AccountingPeriod>> {
 	const parsed = SoftCloseAccountingPeriodInput.safeParse(input);
-	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
+	if (!parsed.success) {
+		return failInvalidAccountingInput(parsed.error);
+	}
 
 	const opts = resolveOpts(options);
-	if (!opts.ok) return opts;
+	if (!opts.ok) {
+		return opts;
+	}
 
 	const authResult = await requireAccountingPermission(
 		opts.data.authorization,
@@ -618,7 +715,9 @@ export async function softCloseAccountingPeriod(
 			permission: "accounting.period.soft_close",
 		},
 	);
-	if (!authResult.ok) return authResult;
+	if (!authResult.ok) {
+		return authResult;
+	}
 
 	return opts.data.store.softClosePeriod({
 		organizationId: parsed.data.organizationId,
@@ -642,10 +741,14 @@ export async function closeAccountingPeriod(
 	options?: AccountingCommandOptions,
 ): Promise<Result<AccountingPeriod>> {
 	const parsed = CloseAccountingPeriodInput.safeParse(input);
-	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
+	if (!parsed.success) {
+		return failInvalidAccountingInput(parsed.error);
+	}
 
 	const opts = resolveOpts(options);
-	if (!opts.ok) return opts;
+	if (!opts.ok) {
+		return opts;
+	}
 
 	const authResult = await requireAccountingPermission(
 		opts.data.authorization,
@@ -655,7 +758,9 @@ export async function closeAccountingPeriod(
 			permission: "accounting.period.close",
 		},
 	);
-	if (!authResult.ok) return authResult;
+	if (!authResult.ok) {
+		return authResult;
+	}
 
 	return opts.data.store.closePeriod({
 		organizationId: parsed.data.organizationId,
@@ -680,10 +785,14 @@ export async function reopenAccountingPeriod(
 	options?: AccountingCommandOptions,
 ): Promise<Result<AccountingPeriod>> {
 	const parsed = ReopenAccountingPeriodInput.safeParse(input);
-	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
+	if (!parsed.success) {
+		return failInvalidAccountingInput(parsed.error);
+	}
 
 	const opts = resolveOpts(options);
-	if (!opts.ok) return opts;
+	if (!opts.ok) {
+		return opts;
+	}
 
 	const authResult = await requireAccountingPermission(
 		opts.data.authorization,
@@ -693,7 +802,9 @@ export async function reopenAccountingPeriod(
 			permission: "accounting.period.reopen",
 		},
 	);
-	if (!authResult.ok) return authResult;
+	if (!authResult.ok) {
+		return authResult;
+	}
 
 	return opts.data.store.reopenPeriod({
 		organizationId: parsed.data.organizationId,
@@ -719,15 +830,111 @@ const PostFinancialSourceEventInput = z.object({
 	amountByRole: z.record(z.string(), z.string()),
 });
 
+type FinancialSourceEvent = z.infer<typeof PostFinancialSourceEventInput>;
+
+interface ResolvedPostingLine {
+	accountCode: string;
+	amount: string;
+	ledgerAccountId: string;
+	side: "debit" | "credit";
+}
+
+async function recordSourcePostingException(
+	store: AccountingStore,
+	event: FinancialSourceEvent,
+	reasonCode: string,
+	message: string,
+): Promise<void> {
+	await store.createPostingException({
+		organizationId: event.organizationId,
+		sourceModule: event.sourceModule,
+		sourceAggregateId: event.sourceAggregateId,
+		sourceEventId: event.sourceEventId,
+		sourceEventVersion: event.sourceEventVersion,
+		postingRuleCode: event.postingRuleCode,
+		reasonCode,
+		message,
+		payload: event,
+		actorUserId: event.actorUserId,
+	});
+}
+
+async function resolvePostingProfileLine(
+	store: AccountingStore,
+	event: FinancialSourceEvent,
+	profileLine: PostingProfileLine,
+): Promise<Result<ResolvedPostingLine>> {
+	const amount = event.amountByRole[profileLine.accountRole];
+	if (!amount) {
+		const message = `No amount provided for account role '${profileLine.accountRole}'`;
+		await recordSourcePostingException(
+			store,
+			event,
+			"MISSING_AMOUNT_FOR_ROLE",
+			message,
+		);
+		return fail("VALIDATION_ERROR", message);
+	}
+
+	const roleMapping = await store.resolveAccountRole(
+		event.organizationId,
+		profileLine.accountRole,
+	);
+	if (!roleMapping.ok) {
+		return roleMapping;
+	}
+	if (!roleMapping.data) {
+		const message = `Account role '${profileLine.accountRole}' has no mapping`;
+		await recordSourcePostingException(
+			store,
+			event,
+			"ACCOUNT_ROLE_NOT_MAPPED",
+			message,
+		);
+		return fail("VALIDATION_ERROR", message);
+	}
+
+	const ledgerAccounts = await store.listLedgerAccounts({
+		organizationId: event.organizationId,
+	});
+	if (!ledgerAccounts.ok) {
+		return ledgerAccounts;
+	}
+	const targetAccount = ledgerAccounts.data.find(
+		(account) => account.id === roleMapping.data?.ledgerAccountId,
+	);
+	if (targetAccount?.status !== "active") {
+		const message = `Ledger account for role '${profileLine.accountRole}' is inactive or not found`;
+		await recordSourcePostingException(
+			store,
+			event,
+			"LEDGER_ACCOUNT_INACTIVE",
+			message,
+		);
+		return fail("VALIDATION_ERROR", message);
+	}
+
+	return ok({
+		accountCode: targetAccount.code,
+		ledgerAccountId: targetAccount.id,
+		side: profileLine.side,
+		amount,
+	});
+}
+
 export async function postFinancialSourceEvent(
 	input: z.infer<typeof PostFinancialSourceEventInput>,
 	options?: AccountingCommandOptions,
 ): Promise<Result<Journal>> {
 	const parsed = PostFinancialSourceEventInput.safeParse(input);
-	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
+	if (!parsed.success) {
+		return failInvalidAccountingInput(parsed.error);
+	}
 
 	const opts = resolveOpts(options);
-	if (!opts.ok) return opts;
+	if (!opts.ok) {
+		return opts;
+	}
 
 	const { store, effects } = opts.data;
 	const d = parsed.data;
@@ -736,7 +943,9 @@ export async function postFinancialSourceEvent(
 		d.organizationId,
 		d.postingRuleCode,
 	);
-	if (!profileResult.ok) return profileResult;
+	if (!profileResult.ok) {
+		return profileResult;
+	}
 	if (!profileResult.data) {
 		await store.createPostingException({
 			organizationId: d.organizationId,
@@ -766,124 +975,37 @@ export async function postFinancialSourceEvent(
 		sourceEventVersion: d.sourceEventVersion,
 		postingRuleVersion: profile.versionNumber,
 	});
-	if (!existingLink.ok) return existingLink;
+	if (!existingLink.ok) {
+		return existingLink;
+	}
 
 	if (existingLink.data) {
 		const existingJournal = await store.getById(
 			d.organizationId,
 			existingLink.data.journalId,
 		);
-		if (!existingJournal.ok) return existingJournal;
-		if (existingJournal.data) return ok(existingJournal.data);
+		if (!existingJournal.ok) {
+			return existingJournal;
+		}
+		if (existingJournal.data) {
+			return ok(existingJournal.data);
+		}
 		return fail(
 			"NOT_FOUND",
 			"Linked journal not found for existing source posting link",
 		);
 	}
 
-	type ResolvedLine = {
-		accountCode: string;
-		ledgerAccountId: string;
-		side: "debit" | "credit";
-		amount: string;
-	};
-
-	const resolvedLines: ResolvedLine[] = [];
-	for (const profileLine of profile.lines) {
-		const amount = d.amountByRole[profileLine.accountRole];
-		if (!amount) {
-			await store.createPostingException({
-				organizationId: d.organizationId,
-				sourceModule: d.sourceModule,
-				sourceAggregateId: d.sourceAggregateId,
-				sourceEventId: d.sourceEventId,
-				sourceEventVersion: d.sourceEventVersion,
-				postingRuleCode: d.postingRuleCode,
-				reasonCode: "MISSING_AMOUNT_FOR_ROLE",
-				message: `No amount provided for account role '${profileLine.accountRole}'`,
-				payload: d,
-				actorUserId: d.actorUserId,
-			});
-			return fail(
-				"VALIDATION_ERROR",
-				`No amount provided for account role '${profileLine.accountRole}'`,
-			);
-		}
-
-		const roleMapping = await store.resolveAccountRole(
-			d.organizationId,
-			profileLine.accountRole,
-		);
-		if (!roleMapping.ok) return roleMapping;
-		if (!roleMapping.data) {
-			await store.createPostingException({
-				organizationId: d.organizationId,
-				sourceModule: d.sourceModule,
-				sourceAggregateId: d.sourceAggregateId,
-				sourceEventId: d.sourceEventId,
-				sourceEventVersion: d.sourceEventVersion,
-				postingRuleCode: d.postingRuleCode,
-				reasonCode: "ACCOUNT_ROLE_NOT_MAPPED",
-				message: `Account role '${profileLine.accountRole}' has no mapping`,
-				payload: d,
-				actorUserId: d.actorUserId,
-			});
-			return fail(
-				"VALIDATION_ERROR",
-				`Account role '${profileLine.accountRole}' has no mapping`,
-			);
-		}
-
-		const ledgerAccounts = await store.listLedgerAccounts({
-			organizationId: d.organizationId,
-		});
-		if (!ledgerAccounts.ok) return ledgerAccounts;
-
-		const accountRoleMapping = roleMapping.data;
-		const targetAccount = ledgerAccounts.data.find(
-			(a) => a.id === accountRoleMapping.ledgerAccountId,
-		);
-		if (targetAccount?.status !== "active") {
-			await store.createPostingException({
-				organizationId: d.organizationId,
-				sourceModule: d.sourceModule,
-				sourceAggregateId: d.sourceAggregateId,
-				sourceEventId: d.sourceEventId,
-				sourceEventVersion: d.sourceEventVersion,
-				postingRuleCode: d.postingRuleCode,
-				reasonCode: "LEDGER_ACCOUNT_INACTIVE",
-				message: `Ledger account for role '${profileLine.accountRole}' is inactive or not found`,
-				payload: d,
-				actorUserId: d.actorUserId,
-			});
-			return fail(
-				"VALIDATION_ERROR",
-				`Ledger account for role '${profileLine.accountRole}' is inactive or not found`,
-			);
-		}
-
-		resolvedLines.push({
-			accountCode: targetAccount.code,
-			ledgerAccountId: targetAccount.id,
-			side: profileLine.side,
-			amount,
-		});
+	const resolvedLines = await collectSequentially(
+		profile.lines,
+		(profileLine) => resolvePostingProfileLine(store, d, profileLine),
+	);
+	if (!resolvedLines.ok) {
+		return resolvedLines;
 	}
 
-	const journalCode = `SYS-${d.sourceModule}-${d.sourceEventId}`.substring(
-		0,
-		50,
-	);
-	const journalType: JournalType =
-		d.sourceModule === "receivables"
-			? "receivables"
-			: d.sourceModule === "payables"
-				? "payables"
-				: d.sourceModule === "payments"
-					? "payments"
-					: d.sourceModule === "inventory"
-						? "inventory"
-						: "system";
+	const journalCode = `SYS-${d.sourceModule}-${d.sourceEventId}`.slice(0, 50);
+	const journalType = journalTypeForSourceModule(d.sourceModule);
 
 	const draftResult = await store.createDraft({
 		organizationId: d.organizationId,
@@ -895,12 +1017,14 @@ export async function postFinancialSourceEvent(
 		journalType,
 		actorUserId: d.actorUserId,
 	});
-	if (!draftResult.ok) return draftResult;
+	if (!draftResult.ok) {
+		return draftResult;
+	}
 
 	const journal = draftResult.data;
 
-	for (const line of resolvedLines) {
-		const lineResult = await store.addLine({
+	const lineResults = await collectSequentially(resolvedLines.data, (line) =>
+		store.addLine({
 			organizationId: d.organizationId,
 			journalId: journal.id,
 			accountCode: line.accountCode,
@@ -909,8 +1033,10 @@ export async function postFinancialSourceEvent(
 			debit: line.side === "debit" ? line.amount : "0.00",
 			credit: line.side === "credit" ? line.amount : "0.00",
 			actorUserId: d.actorUserId,
-		});
-		if (!lineResult.ok) return lineResult;
+		}),
+	);
+	if (!lineResults.ok) {
+		return lineResults;
 	}
 
 	const postResult = await store.post({
@@ -964,10 +1090,14 @@ export async function getJournalById(
 	options?: AccountingCommandOptions,
 ): Promise<Result<Journal | null>> {
 	const parsed = GetJournalByIdInput.safeParse(input);
-	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
+	if (!parsed.success) {
+		return failInvalidAccountingInput(parsed.error);
+	}
 
 	const opts = resolveOpts(options);
-	if (!opts.ok) return opts;
+	if (!opts.ok) {
+		return opts;
+	}
 
 	const authResult = await requireAccountingPermission(
 		opts.data.authorization,
@@ -977,7 +1107,9 @@ export async function getJournalById(
 			permission: "accounting.journal.read",
 		},
 	);
-	if (!authResult.ok) return authResult;
+	if (!authResult.ok) {
+		return authResult;
+	}
 
 	return opts.data.store.getById(
 		parsed.data.organizationId,
@@ -999,10 +1131,14 @@ export async function listJournals(
 	options?: AccountingCommandOptions,
 ): Promise<Result<Journal[]>> {
 	const parsed = ListJournalsInput.safeParse(input);
-	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
+	if (!parsed.success) {
+		return failInvalidAccountingInput(parsed.error);
+	}
 
 	const opts = resolveOpts(options);
-	if (!opts.ok) return opts;
+	if (!opts.ok) {
+		return opts;
+	}
 
 	const authResult = await requireAccountingPermission(
 		opts.data.authorization,
@@ -1012,7 +1148,9 @@ export async function listJournals(
 			permission: "accounting.journal.read",
 		},
 	);
-	if (!authResult.ok) return authResult;
+	if (!authResult.ok) {
+		return authResult;
+	}
 
 	return opts.data.store.list({
 		organizationId: parsed.data.organizationId,
@@ -1034,10 +1172,14 @@ export async function getTrialBalance(
 	options?: AccountingCommandOptions,
 ): Promise<Result<TrialBalanceRow[]>> {
 	const parsed = GetTrialBalanceInput.safeParse(input);
-	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
+	if (!parsed.success) {
+		return failInvalidAccountingInput(parsed.error);
+	}
 
 	const opts = resolveOpts(options);
-	if (!opts.ok) return opts;
+	if (!opts.ok) {
+		return opts;
+	}
 
 	const authResult = await requireAccountingPermission(
 		opts.data.authorization,
@@ -1047,7 +1189,9 @@ export async function getTrialBalance(
 			permission: "accounting.trial_balance.read",
 		},
 	);
-	if (!authResult.ok) return authResult;
+	if (!authResult.ok) {
+		return authResult;
+	}
 
 	return opts.data.store.trialBalance({
 		organizationId: parsed.data.organizationId,
@@ -1067,10 +1211,14 @@ export async function getLedgerAccountActivity(
 	options?: AccountingCommandOptions,
 ): Promise<Result<LedgerAccountActivityRow[]>> {
 	const parsed = GetLedgerAccountActivityInput.safeParse(input);
-	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
+	if (!parsed.success) {
+		return failInvalidAccountingInput(parsed.error);
+	}
 
 	const opts = resolveOpts(options);
-	if (!opts.ok) return opts;
+	if (!opts.ok) {
+		return opts;
+	}
 
 	const authResult = await requireAccountingPermission(
 		opts.data.authorization,
@@ -1080,7 +1228,9 @@ export async function getLedgerAccountActivity(
 			permission: "accounting.ledger.read",
 		},
 	);
-	if (!authResult.ok) return authResult;
+	if (!authResult.ok) {
+		return authResult;
+	}
 
 	return opts.data.store.getLedgerAccountActivity({
 		organizationId: parsed.data.organizationId,
@@ -1103,10 +1253,14 @@ export async function getSourcePostingTrace(
 	options?: AccountingCommandOptions,
 ): Promise<Result<SourcePostingTrace[]>> {
 	const parsed = GetSourcePostingTraceInput.safeParse(input);
-	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
+	if (!parsed.success) {
+		return failInvalidAccountingInput(parsed.error);
+	}
 
 	const opts = resolveOpts(options);
-	if (!opts.ok) return opts;
+	if (!opts.ok) {
+		return opts;
+	}
 
 	const authResult = await requireAccountingPermission(
 		opts.data.authorization,
@@ -1116,7 +1270,9 @@ export async function getSourcePostingTrace(
 			permission: "accounting.journal.read",
 		},
 	);
-	if (!authResult.ok) return authResult;
+	if (!authResult.ok) {
+		return authResult;
+	}
 
 	return opts.data.store.getSourcePostingTrace({
 		organizationId: parsed.data.organizationId,
@@ -1138,10 +1294,14 @@ export async function listPostingExceptions(
 	options?: AccountingCommandOptions,
 ): Promise<Result<PostingException[]>> {
 	const parsed = ListPostingExceptionsInput.safeParse(input);
-	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
+	if (!parsed.success) {
+		return failInvalidAccountingInput(parsed.error);
+	}
 
 	const opts = resolveOpts(options);
-	if (!opts.ok) return opts;
+	if (!opts.ok) {
+		return opts;
+	}
 
 	const authResult = await requireAccountingPermission(
 		opts.data.authorization,
@@ -1151,7 +1311,9 @@ export async function listPostingExceptions(
 			permission: "accounting.exception.read",
 		},
 	);
-	if (!authResult.ok) return authResult;
+	if (!authResult.ok) {
+		return authResult;
+	}
 
 	return opts.data.store.listPostingExceptions({
 		organizationId: parsed.data.organizationId,
@@ -1173,10 +1335,14 @@ export async function resolvePostingException(
 	options?: AccountingCommandOptions,
 ): Promise<Result<PostingException>> {
 	const parsed = ResolvePostingExceptionInput.safeParse(input);
-	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
+	if (!parsed.success) {
+		return failInvalidAccountingInput(parsed.error);
+	}
 
 	const opts = resolveOpts(options);
-	if (!opts.ok) return opts;
+	if (!opts.ok) {
+		return opts;
+	}
 
 	const authResult = await requireAccountingPermission(
 		opts.data.authorization,
@@ -1186,7 +1352,9 @@ export async function resolvePostingException(
 			permission: "accounting.exception.manage",
 		},
 	);
-	if (!authResult.ok) return authResult;
+	if (!authResult.ok) {
+		return authResult;
+	}
 
 	return opts.data.store.resolvePostingException({
 		organizationId: parsed.data.organizationId,

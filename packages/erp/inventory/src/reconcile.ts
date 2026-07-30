@@ -1,24 +1,24 @@
 import { parseQuantity } from "./store";
 import type { StockBalance } from "./types";
 
-type ReconcileLedgerEntry = {
-	warehouseId: string;
+interface ReconcileLedgerEntry {
 	itemId: string;
 	quantityDelta: string;
-};
-
-type ReconcileReservation = {
 	warehouseId: string;
+}
+
+interface ReconcileReservation {
+	consumedQuantity: string;
 	itemId: string;
 	quantity: string;
-	consumedQuantity: string;
-};
+	warehouseId: string;
+}
 
-type ReconcileInput = {
-	ledgerEntries: ReconcileLedgerEntry[];
-	balances: StockBalance[];
+interface ReconcileInput {
 	activeReservations: ReconcileReservation[];
-};
+	balances: StockBalance[];
+	ledgerEntries: ReconcileLedgerEntry[];
+}
 
 type ReconcileResult = { ok: true } | { ok: false; findings: string[] };
 
@@ -41,6 +41,46 @@ function addQuantity(
 	delta: string,
 ): void {
 	map.set(key, (map.get(key) ?? 0) + parseQuantity(delta));
+}
+
+function findBalanceDrift(
+	key: string,
+	balance: StockBalance | undefined,
+	ledgerTotal: number,
+	reservedTotal: number,
+): string[] {
+	if (balance === undefined) {
+		return ledgerTotal === 0 && reservedTotal === 0
+			? []
+			: [
+					`Missing balance for ${formatKey(key)} (ledger=${ledgerTotal}, reserved=${reservedTotal})`,
+				];
+	}
+
+	const findings: string[] = [];
+	const expectedOnHand = String(ledgerTotal);
+	if (!sameNumericString(balance.onHand, expectedOnHand)) {
+		findings.push(
+			`On-hand mismatch for ${formatKey(key)} (balance=${balance.onHand}, ledger=${expectedOnHand})`,
+		);
+	}
+
+	const expectedReserved = String(reservedTotal);
+	if (!sameNumericString(balance.reserved, expectedReserved)) {
+		findings.push(
+			`Reserved mismatch for ${formatKey(key)} (balance=${balance.reserved}, reservations=${expectedReserved})`,
+		);
+	}
+
+	const expectedAvailable = String(
+		parseQuantity(balance.onHand) - parseQuantity(balance.reserved),
+	);
+	if (!sameNumericString(balance.available, expectedAvailable)) {
+		findings.push(
+			`Available mismatch for ${formatKey(key)} (balance=${balance.available}, expected=${expectedAvailable})`,
+		);
+	}
+	return findings;
 }
 
 export function reconcileInventory(input: ReconcileInput): ReconcileResult {
@@ -75,40 +115,14 @@ export function reconcileInventory(input: ReconcileInput): ReconcileResult {
 
 	const findings: string[] = [];
 	for (const key of [...keys].sort()) {
-		const balance = balanceByKey.get(key);
-		if (balance === undefined) {
-			const ledgerTotal = ledgerTotals.get(key) ?? 0;
-			const reservedTotal = reservationTotals.get(key) ?? 0;
-			if (ledgerTotal !== 0 || reservedTotal !== 0) {
-				findings.push(
-					`Missing balance for ${formatKey(key)} (ledger=${ledgerTotal}, reserved=${reservedTotal})`,
-				);
-			}
-			continue;
-		}
-
-		const expectedOnHand = String(ledgerTotals.get(key) ?? 0);
-		if (!sameNumericString(balance.onHand, expectedOnHand)) {
-			findings.push(
-				`On-hand mismatch for ${formatKey(key)} (balance=${balance.onHand}, ledger=${expectedOnHand})`,
-			);
-		}
-
-		const expectedReserved = String(reservationTotals.get(key) ?? 0);
-		if (!sameNumericString(balance.reserved, expectedReserved)) {
-			findings.push(
-				`Reserved mismatch for ${formatKey(key)} (balance=${balance.reserved}, reservations=${expectedReserved})`,
-			);
-		}
-
-		const expectedAvailable = String(
-			parseQuantity(balance.onHand) - parseQuantity(balance.reserved),
+		findings.push(
+			...findBalanceDrift(
+				key,
+				balanceByKey.get(key),
+				ledgerTotals.get(key) ?? 0,
+				reservationTotals.get(key) ?? 0,
+			),
 		);
-		if (!sameNumericString(balance.available, expectedAvailable)) {
-			findings.push(
-				`Available mismatch for ${formatKey(key)} (balance=${balance.available}, expected=${expectedAvailable})`,
-			);
-		}
 	}
 
 	return findings.length === 0 ? { ok: true } : { ok: false, findings };

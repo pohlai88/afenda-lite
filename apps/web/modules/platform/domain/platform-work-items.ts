@@ -30,83 +30,85 @@ export type PlatformWorkItemStatus =
 	| "dismissed"
 	| "cancelled";
 
-export type PlatformWorkItem = {
+export interface PlatformWorkItem {
+	completedAt: Date | null;
+	correlationId: string;
+	createdAt: Date;
+	createdBy: string;
+	deduplicationKey: string;
+	dueOn: string | null;
+	entityId: string;
+	entityType: string;
+	factVersion: number;
 	id: string;
-	organizationId: string;
 	kind: PlatformWorkItemKind;
+	organizationId: string;
+	priority: "MEDIUM" | "HIGH";
+	sourceEventId: string;
 	status: PlatformWorkItemStatus;
 	targetUserId: string;
-	entityType: string;
-	entityId: string;
 	title: string;
-	priority: "MEDIUM" | "HIGH";
-	dueOn: string | null;
-	sourceEventId: string;
-	deduplicationKey: string;
-	factVersion: number;
-	version: number;
-	correlationId: string;
-	createdBy: string;
-	updatedBy: string;
-	completedAt: Date | null;
-	createdAt: Date;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type PlatformWorkItemActivity = {
-	id: string;
-	organizationId: string;
-	workItemId: string;
-	fromStatus: PlatformWorkItemStatus | null;
-	toStatus: PlatformWorkItemStatus;
-	resultingVersion: number;
+export interface PlatformWorkItemActivity {
 	action: "recorded" | "transitioned";
 	actorUserId: string;
 	correlationId: string;
-	reason: string | null;
 	createdAt: Date;
-};
-
-export type RecordPlatformWorkItemInput = {
+	fromStatus: PlatformWorkItemStatus | null;
+	id: string;
 	organizationId: string;
-	kind: PlatformWorkItemKind;
-	targetUserId: string;
-	entityType: string;
-	entityId: string;
-	title: string;
-	priority: "MEDIUM" | "HIGH";
-	dueOn: string | null;
-	sourceEventId: string;
-	deduplicationKey: string;
-	factVersion: number;
-	correlationId: string;
-	actorUserId: string;
-};
-
-export type TransitionPlatformWorkItemInput = {
-	organizationId: string;
-	workItemId: string;
-	expectedVersion: number;
+	reason: string | null;
+	resultingVersion: number;
 	toStatus: PlatformWorkItemStatus;
+	workItemId: string;
+}
+
+export interface RecordPlatformWorkItemInput {
 	actorUserId: string;
 	correlationId: string;
-	reason?: string;
-};
+	deduplicationKey: string;
+	dueOn: string | null;
+	entityId: string;
+	entityType: string;
+	factVersion: number;
+	kind: PlatformWorkItemKind;
+	organizationId: string;
+	priority: "MEDIUM" | "HIGH";
+	sourceEventId: string;
+	targetUserId: string;
+	title: string;
+}
 
-export type PlatformWorkItemStore = {
-	record(input: RecordPlatformWorkItemInput): Promise<Result<PlatformWorkItem>>;
-	find(input: {
+export interface TransitionPlatformWorkItemInput {
+	actorUserId: string;
+	correlationId: string;
+	expectedVersion: number;
+	organizationId: string;
+	reason?: string;
+	toStatus: PlatformWorkItemStatus;
+	workItemId: string;
+}
+
+export interface PlatformWorkItemStore {
+	find: (input: {
 		organizationId: string;
 		workItemId: string;
-	}): Promise<Result<PlatformWorkItem | null>>;
-	transition(
+	}) => Promise<Result<PlatformWorkItem | null>>;
+	listActivity: (input: {
+		organizationId: string;
+		workItemId: string;
+	}) => Promise<Result<readonly PlatformWorkItemActivity[]>>;
+	record: (
+		input: RecordPlatformWorkItemInput,
+	) => Promise<Result<PlatformWorkItem>>;
+	transition: (
 		input: TransitionPlatformWorkItemInput,
-	): Promise<Result<PlatformWorkItem>>;
-	listActivity(input: {
-		organizationId: string;
-		workItemId: string;
-	}): Promise<Result<readonly PlatformWorkItemActivity[]>>;
-};
+	) => Promise<Result<PlatformWorkItem>>;
+}
 
 const WORK_ITEM_KINDS = new Set<string>([
 	"approval",
@@ -189,8 +191,9 @@ function validateRecord(input: RecordPlatformWorkItemInput): Result<void> {
 		input.actorUserId.trim().length === 0 ||
 		!Number.isSafeInteger(input.factVersion) ||
 		input.factVersion < 1
-	)
+	) {
 		return fail("VALIDATION_ERROR", "Invalid platform work-item input");
+	}
 	return ok(undefined);
 }
 
@@ -224,10 +227,12 @@ function canTransition(
 function mapRow(
 	row: typeof platformWorkItem.$inferSelect,
 ): Result<PlatformWorkItem> {
-	if (!isKind(row.kind) || !isStatus(row.status))
+	if (!(isKind(row.kind) && isStatus(row.status))) {
 		return fail("INTERNAL_ERROR", "Platform work-item row is invalid");
-	if (row.priority !== "MEDIUM" && row.priority !== "HIGH")
+	}
+	if (row.priority !== "MEDIUM" && row.priority !== "HIGH") {
 		return fail("INTERNAL_ERROR", "Platform work-item priority is invalid");
+	}
 	return ok({
 		...row,
 		kind: row.kind,
@@ -243,8 +248,9 @@ function mapActivityRow(
 		!isStatus(row.toStatus) ||
 		(row.fromStatus !== null && !isStatus(row.fromStatus)) ||
 		(row.action !== "recorded" && row.action !== "transitioned")
-	)
+	) {
 		return fail("INTERNAL_ERROR", "Platform work-item activity row is invalid");
+	}
 	return ok({
 		...row,
 		toStatus: row.toStatus,
@@ -270,17 +276,20 @@ export function createMemoryPlatformWorkItemStore(): PlatformWorkItemStore {
 	return {
 		async record(input) {
 			const validated = validateRecord(input);
-			if (!validated.ok) return validated;
+			if (!validated.ok) {
+				return await validated;
+			}
 			const dedupeKey = `${input.organizationId}:${input.deduplicationKey}`;
 			const existingId = idsByDedupe.get(dedupeKey);
 			if (existingId !== undefined) {
 				const existing = items.get(existingId);
-				if (existing === undefined)
-					return fail(
+				if (existing === undefined) {
+					return await fail(
 						"INTERNAL_ERROR",
 						"Platform work-item index is inconsistent",
 					);
-				return recordMatches(existing, input)
+				}
+				return (await recordMatches(existing, input))
 					? ok(existing)
 					: fail("CONFLICT", "Platform work-item deduplication key was reused");
 			}
@@ -311,23 +320,31 @@ export function createMemoryPlatformWorkItemStore(): PlatformWorkItemStore {
 				reason: null,
 				createdAt: now,
 			});
-			return ok(item);
+			return await ok(item);
 		},
 		async find(input) {
 			const item = items.get(input.workItemId);
-			return ok(item?.organizationId === input.organizationId ? item : null);
+			return await ok(
+				item?.organizationId === input.organizationId ? item : null,
+			);
 		},
 		async transition(input) {
 			const current = items.get(input.workItemId);
 			if (
 				current === undefined ||
 				current.organizationId !== input.organizationId
-			)
-				return fail("NOT_FOUND", "Platform work item not found");
-			if (current.version !== input.expectedVersion)
-				return fail("CONFLICT", "Platform work-item version changed");
-			if (!canTransition(current, input.toStatus))
-				return fail("CONFLICT", "Platform work-item transition is not allowed");
+			) {
+				return await fail("NOT_FOUND", "Platform work item not found");
+			}
+			if (current.version !== input.expectedVersion) {
+				return await fail("CONFLICT", "Platform work-item version changed");
+			}
+			if (!canTransition(current, input.toStatus)) {
+				return await fail(
+					"CONFLICT",
+					"Platform work-item transition is not allowed",
+				);
+			}
 			const now = new Date();
 			const updated: PlatformWorkItem = {
 				...current,
@@ -358,10 +375,10 @@ export function createMemoryPlatformWorkItemStore(): PlatformWorkItemStore {
 				reason: input.reason ?? null,
 				createdAt: now,
 			});
-			return ok(updated);
+			return await ok(updated);
 		},
 		async listActivity(input) {
-			return ok(
+			return await ok(
 				activities.filter(
 					(row) =>
 						row.organizationId === input.organizationId &&
@@ -376,7 +393,9 @@ export function createDrizzlePlatformWorkItemStore(): PlatformWorkItemStore {
 	return {
 		async record(input) {
 			const validated = validateRecord(input);
-			if (!validated.ok) return validated;
+			if (!validated.ok) {
+				return validated;
+			}
 			try {
 				const inserted = await db
 					.insert(platformWorkItem)
@@ -421,14 +440,18 @@ export function createDrizzlePlatformWorkItemStore(): PlatformWorkItemStore {
 								)
 								.limit(1);
 				const mapped = rows[0] === undefined ? null : mapRow(rows[0]);
-				if (mapped === null)
+				if (mapped === null) {
 					return fail("INTERNAL_ERROR", "Platform work item was not persisted");
-				if (!mapped.ok) return mapped;
-				if (!recordMatches(mapped.data, input))
+				}
+				if (!mapped.ok) {
+					return mapped;
+				}
+				if (!recordMatches(mapped.data, input)) {
 					return fail(
 						"CONFLICT",
 						"Platform work-item deduplication key was reused",
 					);
+				}
 				await db
 					.insert(platformWorkItemActivity)
 					.values({
@@ -481,13 +504,18 @@ export function createDrizzlePlatformWorkItemStore(): PlatformWorkItemStore {
 				organizationId: input.organizationId,
 				workItemId: input.workItemId,
 			});
-			if (!found.ok) return found;
-			if (found.data === null)
+			if (!found.ok) {
+				return found;
+			}
+			if (found.data === null) {
 				return fail("NOT_FOUND", "Platform work item not found");
-			if (found.data.version !== input.expectedVersion)
+			}
+			if (found.data.version !== input.expectedVersion) {
 				return fail("CONFLICT", "Platform work-item version changed");
-			if (!canTransition(found.data, input.toStatus))
+			}
+			if (!canTransition(found.data, input.toStatus)) {
 				return fail("CONFLICT", "Platform work-item transition is not allowed");
+			}
 			try {
 				const now = new Date();
 				const terminal = !["pending", "in_progress"].includes(input.toStatus);
@@ -509,10 +537,13 @@ export function createDrizzlePlatformWorkItemStore(): PlatformWorkItemStore {
 						),
 					)
 					.returning();
-				if (rows[0] === undefined)
+				if (rows[0] === undefined) {
 					return fail("CONFLICT", "Platform work-item version changed");
+				}
 				const mapped = mapRow(rows[0]);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				await db.insert(platformWorkItemActivity).values({
 					organizationId: input.organizationId,
 					workItemId: input.workItemId,
@@ -547,7 +578,9 @@ export function createDrizzlePlatformWorkItemStore(): PlatformWorkItemStore {
 				const mapped: PlatformWorkItemActivity[] = [];
 				for (const row of rows) {
 					const item = mapActivityRow(row);
-					if (!item.ok) return item;
+					if (!item.ok) {
+						return item;
+					}
 					mapped.push(item.data);
 				}
 				return ok(mapped);

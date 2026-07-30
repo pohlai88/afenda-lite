@@ -56,7 +56,7 @@ export async function resolveAssignmentContextSnapshots(input: {
 
 	const assignmentContext: AssignmentContextQueryPort = {
 		async resolveAsOf() {
-			return ok({
+			return await ok({
 				employmentId: input.employmentId,
 				employeeId: input.employeeId,
 				departmentId,

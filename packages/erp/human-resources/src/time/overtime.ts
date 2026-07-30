@@ -48,7 +48,7 @@ async function resolveOvertimeOrganizationLocalWorkDate(
 		options: HumanResourcesCommandOptions;
 	},
 ): Promise<Result<{ workDate: string; timezone: string }>> {
-	return resolveEmploymentOrganizationLocalWorkDate(input, {
+	return await resolveEmploymentOrganizationLocalWorkDate(input, {
 		store: deps.store,
 		assignmentContext: resolveAssignmentContext(deps.options),
 	});
@@ -58,7 +58,7 @@ export async function createOvertimeRequest(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OvertimeRequest>> {
-	return runTimeCommand(input, options, {
+	return await runTimeCommand(input, options, {
 		schema: createOvertimeRequestInputSchema,
 		invalidMessage: "Invalid overtime request create input",
 		command: HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_CREATE,
@@ -71,7 +71,9 @@ export async function createOvertimeRequest(
 				employmentId: data.employmentId ?? null,
 				workDate: provisionalWorkDate,
 			});
-			if (!provisionalEmployment.ok) return provisionalEmployment;
+			if (!provisionalEmployment.ok) {
+				return provisionalEmployment;
+			}
 
 			const orgLocal = await resolveOvertimeOrganizationLocalWorkDate(
 				{
@@ -82,7 +84,9 @@ export async function createOvertimeRequest(
 				},
 				{ store, options },
 			);
-			if (!orgLocal.ok) return orgLocal;
+			if (!orgLocal.ok) {
+				return orgLocal;
+			}
 
 			const employment = await resolveActiveTimeEmployment(store, {
 				organizationId: data.organizationId,
@@ -90,7 +94,9 @@ export async function createOvertimeRequest(
 				employmentId: provisionalEmployment.data.id,
 				workDate: orgLocal.data.workDate,
 			});
-			if (!employment.ok) return employment;
+			if (!employment.ok) {
+				return employment;
+			}
 			const requestedEndsAt = new Date(data.requestedEndsAt);
 			const fingerprint = JSON.stringify({
 				employeeId: data.employeeId,
@@ -105,7 +111,9 @@ export async function createOvertimeRequest(
 				organizationId: data.organizationId,
 				idempotencyKey: data.idempotencyKey,
 			});
-			if (!existing.ok) return existing;
+			if (!existing.ok) {
+				return existing;
+			}
 			if (existing.data !== null) {
 				if (existing.data.createRequestFingerprint !== fingerprint) {
 					return fail(
@@ -142,7 +150,7 @@ export async function approveOvertimeRequest(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OvertimeRequest>> {
-	return runTimeCommand(input, options, {
+	return await runTimeCommand(input, options, {
 		schema: approveOvertimeRequestInputSchema,
 		invalidMessage: "Invalid overtime request approve input",
 		command: HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_APPROVE,
@@ -151,7 +159,9 @@ export async function approveOvertimeRequest(
 				organizationId: data.organizationId,
 				requestId: data.requestId,
 			});
-			if (!existing.ok) return existing;
+			if (!existing.ok) {
+				return existing;
+			}
 			if (existing.data === null) {
 				return notFound("Overtime request not found");
 			}
@@ -171,7 +181,9 @@ export async function approveOvertimeRequest(
 				},
 				{ store, options },
 			);
-			if (!orgLocal.ok) return orgLocal;
+			if (!orgLocal.ok) {
+				return orgLocal;
+			}
 			const asOf = orgLocal.data.workDate;
 			const resolvedAssignment = await store.resolveTimeApprovalAuthority({
 				organizationId: data.organizationId,
@@ -179,7 +191,9 @@ export async function approveOvertimeRequest(
 				authority: data.requestedAuthority,
 				asOf,
 			});
-			if (!resolvedAssignment.ok) return resolvedAssignment;
+			if (!resolvedAssignment.ok) {
+				return resolvedAssignment;
+			}
 			if (resolvedAssignment.data === null) {
 				return fail(
 					"FORBIDDEN",
@@ -208,7 +222,7 @@ export async function rejectOvertimeRequest(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OvertimeRequest>> {
-	return runTimeCommand(input, options, {
+	return await runTimeCommand(input, options, {
 		schema: rejectOvertimeRequestInputSchema,
 		invalidMessage: "Invalid overtime request reject input",
 		command: HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_REJECT,
@@ -221,7 +235,7 @@ export async function cancelOvertimeRequest(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OvertimeRequest>> {
-	return runTimeCommand(input, options, {
+	return await runTimeCommand(input, options, {
 		schema: cancelOvertimeRequestInputSchema,
 		invalidMessage: "Invalid overtime request cancel input",
 		command: HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_CANCEL,
@@ -234,7 +248,7 @@ export async function recordOvertimeActual(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OvertimeRequest>> {
-	return runTimeCommand(input, options, {
+	return await runTimeCommand(input, options, {
 		schema: recordOvertimeActualInputSchema,
 		invalidMessage: "Invalid overtime actual record input",
 		command: HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_RECORD_ACTUAL,
@@ -247,7 +261,7 @@ export async function verifyOvertimeRequest(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OvertimeRequest>> {
-	return runTimeCommand(input, options, {
+	return await runTimeCommand(input, options, {
 		schema: verifyOvertimeRequestInputSchema,
 		invalidMessage: "Invalid overtime request verify input",
 		command: HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_VERIFY,
@@ -260,7 +274,7 @@ export async function getOvertimeRequest(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OvertimeRequest | null>> {
-	return runTimeQuery(input, options, {
+	return await runTimeQuery(input, options, {
 		schema: getOvertimeRequestInputSchema,
 		invalidMessage: "Invalid overtime request get input",
 		query: HUMAN_RESOURCES_QUERY_OVERTIME_REQUEST_GET,
@@ -276,7 +290,7 @@ export async function listOvertimeRequests(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OvertimeRequest[]>> {
-	return runTimeQuery(input, options, {
+	return await runTimeQuery(input, options, {
 		schema: listOvertimeRequestsInputSchema,
 		invalidMessage: "Invalid overtime request list input",
 		query: HUMAN_RESOURCES_QUERY_OVERTIME_REQUEST_LIST,
@@ -288,7 +302,7 @@ export async function listPendingOvertimeApprovals(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OvertimeRequest[]>> {
-	return runTimeQuery(input, options, {
+	return await runTimeQuery(input, options, {
 		schema: listPendingOvertimeApprovalsInputSchema,
 		invalidMessage: "Invalid pending overtime approvals list input",
 		query: HUMAN_RESOURCES_QUERY_OVERTIME_REQUEST_LIST_PENDING_APPROVAL,

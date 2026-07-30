@@ -34,7 +34,7 @@ export function getRegistryDomainEventType(
 			`HR mutation ${commandId} is not classified as domain_event.`,
 		);
 	}
-	const eventType = definition.eventTypes[0];
+	const [eventType] = definition.eventTypes;
 	if (eventType === undefined) {
 		throw new Error(`HR mutation ${commandId} has no declared event types.`);
 	}

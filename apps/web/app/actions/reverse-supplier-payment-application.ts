@@ -28,7 +28,7 @@ export async function reverseSupplierPaymentApplicationAction(
 	_prev: ReverseSupplierPaymentApplicationActionState,
 	formData: FormData,
 ): Promise<ReverseSupplierPaymentApplicationActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "reverseSupplierPaymentApplicationAction",
 		permission: "payables.manage",
 		safeMessage:
@@ -38,12 +38,13 @@ export async function reverseSupplierPaymentApplicationAction(
 				paymentId: formData.get("paymentId"),
 				idempotencyKey: formData.get("idempotencyKey"),
 			});
-			if (!parsed.success)
+			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
 					"Enter a valid payment and idempotency key.",
 					parsed.details,
 				);
+			}
 			const mapped = mapPackageResult(
 				await reverseSupplierPaymentApplication(
 					{
@@ -55,7 +56,9 @@ export async function reverseSupplierPaymentApplicationAction(
 					createPayablesCommandOptions(session.userId),
 				),
 			);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePayablesPaths();
 			return { ok: true, data: { allocations: mapped.data } };
 		},

@@ -85,7 +85,9 @@ async function approvePlanPipeline(
 		},
 		ready,
 	);
-	if (!plan.ok) return plan;
+	if (!plan.ok) {
+		return plan;
+	}
 
 	const seeded = await seedDepartmentAndJob(ready, {
 		organizationId: input.organizationId,
@@ -109,7 +111,9 @@ async function approvePlanPipeline(
 		},
 		ready,
 	);
-	if (!line.ok) return line;
+	if (!line.ok) {
+		return line;
+	}
 
 	let current = plan.data;
 	const submitted = await submitHeadcountPlan(
@@ -122,7 +126,9 @@ async function approvePlanPipeline(
 		},
 		ready,
 	);
-	if (!submitted.ok) return submitted;
+	if (!submitted.ok) {
+		return submitted;
+	}
 	current = submitted.data;
 
 	const approved = await approveHeadcountPlan(
@@ -135,7 +141,9 @@ async function approvePlanPipeline(
 		},
 		ready,
 	);
-	if (!approved.ok) return approved;
+	if (!approved.ok) {
+		return approved;
+	}
 
 	return {
 		ok: true as const,
@@ -143,12 +151,12 @@ async function approvePlanPipeline(
 	};
 }
 
-type AcceptedOfferSeed = {
+interface AcceptedOfferSeed {
 	offerId: string;
-	requisitionId: string;
 	planLineId: string;
+	requisitionId: string;
 	tag: string;
-};
+}
 
 async function seedAcceptedOfferPipeline(
 	ready: ReturnType<typeof createHrParityHarness>,
@@ -223,7 +231,9 @@ async function seedAcceptedOfferPipeline(
 		},
 		ready,
 	);
-	if (!candidate.ok) return candidate;
+	if (!candidate.ok) {
+		return candidate;
+	}
 
 	const application = await createApplication(
 		{
@@ -235,7 +245,9 @@ async function seedAcceptedOfferPipeline(
 		},
 		ready,
 	);
-	if (!application.ok) return application;
+	if (!application.ok) {
+		return application;
+	}
 
 	const inReview = await moveApplicationToInReview(
 		{
@@ -247,7 +259,9 @@ async function seedAcceptedOfferPipeline(
 		},
 		ready,
 	);
-	if (!inReview.ok) return inReview;
+	if (!inReview.ok) {
+		return inReview;
+	}
 
 	const issued = await createAndIssueOffer(ready, {
 		organizationId: ORG,
@@ -257,7 +271,9 @@ async function seedAcceptedOfferPipeline(
 		expiresOn: "2026-12-31",
 		correlationPrefix: `corr-offer-${tag}`,
 	});
-	if (!issued.ok) return issued;
+	if (!issued.ok) {
+		return issued;
+	}
 
 	const accepted = await acceptOffer(
 		{
@@ -271,7 +287,9 @@ async function seedAcceptedOfferPipeline(
 		},
 		ready,
 	);
-	if (!accepted.ok) return accepted;
+	if (!accepted.ok) {
+		return accepted;
+	}
 
 	return {
 		ok: true,
@@ -311,11 +329,15 @@ describe("@afenda/human-resources hire orchestration (Slice 6.6)", () => {
 		const tag = suffix();
 		const seeded = await seedAcceptedOfferPipeline(ready, tag);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const hired = await hireFromAcceptedOffer(hireInput(seeded.data), ready);
 		expect(hired.ok).toBe(true);
-		if (!hired.ok) return;
+		if (!hired.ok) {
+			return;
+		}
 
 		expect(hired.data.attempt.status).toBe("completed");
 		expect(hired.data.handoff.offerId).toBe(seeded.data.offerId);
@@ -376,16 +398,22 @@ describe("@afenda/human-resources hire orchestration (Slice 6.6)", () => {
 		const tag = suffix();
 		const seeded = await seedAcceptedOfferPipeline(ready, tag);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const input = hireInput(seeded.data);
 		const first = await hireFromAcceptedOffer(input, ready);
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 
 		const replay = await hireFromAcceptedOffer(input, ready);
 		expect(replay.ok).toBe(true);
-		if (!replay.ok) return;
+		if (!replay.ok) {
+			return;
+		}
 
 		expect(replay.data.personId).toBe(first.data.personId);
 		expect(replay.data.employeeId).toBe(first.data.employeeId);
@@ -401,7 +429,9 @@ describe("@afenda/human-resources hire orchestration (Slice 6.6)", () => {
 		const tag = suffix();
 		const seeded = await seedAcceptedOfferPipeline(ready, tag);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const sagaKey = `idem-hire-${tag}`;
 		const first = await hireFromAcceptedOffer(
@@ -409,7 +439,9 @@ describe("@afenda/human-resources hire orchestration (Slice 6.6)", () => {
 			ready,
 		);
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 
 		const conflict = await hireFromAcceptedOffer(
 			hireInput(seeded.data, {
@@ -431,7 +463,9 @@ describe("@afenda/human-resources hire orchestration (Slice 6.6)", () => {
 		const tag = suffix();
 		const seeded = await seedAcceptedOfferPipeline(ready, tag);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const failed = await hireFromAcceptedOffer(hireInput(seeded.data), {
 			...ready,
@@ -444,7 +478,7 @@ describe("@afenda/human-resources hire orchestration (Slice 6.6)", () => {
 			);
 		}
 
-		const store = ready.store;
+		const { store } = ready;
 		if (store === undefined) {
 			throw new Error("Expected memory store on harness");
 		}
@@ -454,9 +488,11 @@ describe("@afenda/human-resources hire orchestration (Slice 6.6)", () => {
 			idempotencyKey: `idem-hire-${seeded.data.tag}`,
 		});
 		expect(attemptRecord.ok).toBe(true);
-		if (!attemptRecord.ok || attemptRecord.data === null) return;
+		if (!attemptRecord.ok || attemptRecord.data === null) {
+			return;
+		}
 
-		const attempt = attemptRecord.data.attempt;
+		const { attempt } = attemptRecord.data;
 		expect(attempt.status).toBe("failed_compensated");
 		expect(attempt.personId).not.toBeNull();
 		expect(attempt.employeeId).not.toBeNull();
@@ -503,9 +539,11 @@ describe("@afenda/human-resources hire orchestration (Slice 6.6)", () => {
 		const tag = suffix();
 		const seeded = await seedAcceptedOfferPipeline(ready, tag);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
-		const store = ready.store;
+		const { store } = ready;
 		if (store === undefined) {
 			throw new Error("Expected memory store on harness");
 		}
@@ -541,7 +579,9 @@ describe("@afenda/human-resources hire orchestration (Slice 6.6)", () => {
 			meta,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const person = await createPerson(
 			{
@@ -555,7 +595,9 @@ describe("@afenda/human-resources hire orchestration (Slice 6.6)", () => {
 			ready,
 		);
 		expect(person.ok).toBe(true);
-		if (!person.ok) return;
+		if (!person.ok) {
+			return;
+		}
 
 		const employee = await createEmployee(
 			{
@@ -569,7 +611,9 @@ describe("@afenda/human-resources hire orchestration (Slice 6.6)", () => {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const employment = await hireEmployment(
 			{
@@ -582,7 +626,9 @@ describe("@afenda/human-resources hire orchestration (Slice 6.6)", () => {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const worker = await createWorker(
 			{
@@ -598,7 +644,9 @@ describe("@afenda/human-resources hire orchestration (Slice 6.6)", () => {
 			ready,
 		);
 		expect(worker.ok).toBe(true);
-		if (!worker.ok) return;
+		if (!worker.ok) {
+			return;
+		}
 
 		const progressed = await store.updateHireAttemptProgress(
 			{
@@ -617,7 +665,9 @@ describe("@afenda/human-resources hire orchestration (Slice 6.6)", () => {
 			meta,
 		);
 		expect(progressed.ok).toBe(true);
-		if (!progressed.ok) return;
+		if (!progressed.ok) {
+			return;
+		}
 
 		const resumed = await hireFromAcceptedOffer(
 			{
@@ -634,7 +684,9 @@ describe("@afenda/human-resources hire orchestration (Slice 6.6)", () => {
 			ready,
 		);
 		expect(resumed.ok).toBe(true);
-		if (!resumed.ok) return;
+		if (!resumed.ok) {
+			return;
+		}
 
 		expect(resumed.data.attempt.status).toBe("completed");
 		expect(resumed.data.personId).toBe(person.data.id);

@@ -16,14 +16,26 @@ import {
 } from "../shared/talent-command";
 import type { HumanResourcesStore } from "../store";
 
-type TalentReadQueryConfig<
+interface TalentReadQueryConfig<
 	TSchema extends z.ZodType<HumanResourcesAuthorizedActorInput>,
 	TOut,
 	TProjected = TOut,
-> = {
-	schema: TSchema;
+> {
+	execute: (ctx: {
+		data: z.infer<TSchema>;
+		store: HumanResourcesStore;
+	}) => Promise<Result<TOut>>;
 	invalidMessage: string;
+	project?:
+		| ((
+				value: TOut,
+				projection: HumanResourcesFieldProjection | undefined,
+		  ) => TProjected)
+		| undefined;
 	query: HumanResourcesQueryId;
+	resolveRequestedFields?:
+		| ((data: z.infer<TSchema>) => readonly string[] | undefined)
+		| undefined;
 	resolveResource: (
 		data: z.infer<TSchema>,
 		options: HumanResourcesCommandOptions,
@@ -31,25 +43,13 @@ type TalentReadQueryConfig<
 		| import("../shared/authorization-types").HumanResourcesResourceContext
 		| undefined
 	>;
-	execute: (ctx: {
-		data: z.infer<TSchema>;
-		store: HumanResourcesStore;
-	}) => Promise<Result<TOut>>;
-	project?:
-		| ((
-				value: TOut,
-				projection: HumanResourcesFieldProjection | undefined,
-		  ) => TProjected)
-		| undefined;
-	resolveRequestedFields?:
-		| ((data: z.infer<TSchema>) => readonly string[] | undefined)
-		| undefined;
-};
+	schema: TSchema;
+}
 
 /**
  * Load resource facts → facade authorize → execute → optional field projection.
  */
-export async function runAuthorizedTalentReadQuery<
+export function runAuthorizedTalentReadQuery<
 	TSchema extends z.ZodType<HumanResourcesAuthorizedActorInput>,
 	TOut,
 	TProjected = TOut,
@@ -71,19 +71,32 @@ export async function runAuthorizedTalentReadQuery<
 	});
 }
 
-type TalentLoadedReadConfig<
+interface TalentLoadedReadConfig<
 	TSchema extends z.ZodType<HumanResourcesAuthorizedActorInput>,
 	TLoaded,
 	TOut,
 	TProjected = TOut,
-> = {
-	schema: TSchema;
+> {
+	execute: (ctx: {
+		data: z.infer<TSchema>;
+		loaded: TLoaded;
+		store: HumanResourcesStore;
+	}) => Promise<Result<TOut>>;
 	invalidMessage: string;
-	query: HumanResourcesQueryId;
 	load: (ctx: {
 		data: z.infer<TSchema>;
 		store: HumanResourcesStore;
 	}) => Promise<Result<TLoaded | null>>;
+	project?:
+		| ((
+				value: TOut,
+				projection: HumanResourcesFieldProjection | undefined,
+		  ) => TProjected)
+		| undefined;
+	query: HumanResourcesQueryId;
+	resolveRequestedFields?:
+		| ((data: z.infer<TSchema>) => readonly string[] | undefined)
+		| undefined;
 	resolveResourceFromLoaded: (
 		data: z.infer<TSchema>,
 		loaded: TLoaded,
@@ -92,21 +105,8 @@ type TalentLoadedReadConfig<
 		| import("../shared/authorization-types").HumanResourcesResourceContext
 		| undefined
 	>;
-	execute: (ctx: {
-		data: z.infer<TSchema>;
-		loaded: TLoaded;
-		store: HumanResourcesStore;
-	}) => Promise<Result<TOut>>;
-	project?:
-		| ((
-				value: TOut,
-				projection: HumanResourcesFieldProjection | undefined,
-		  ) => TProjected)
-		| undefined;
-	resolveRequestedFields?:
-		| ((data: z.infer<TSchema>) => readonly string[] | undefined)
-		| undefined;
-};
+	schema: TSchema;
+}
 
 /** Load-by-id talent read with NOT_FOUND when missing, then facade authorize. */
 export async function runAuthorizedTalentLoadedReadQuery<
@@ -159,7 +159,7 @@ export async function runAuthorizedTalentLoadedReadQuery<
 }
 
 /** Employee-scoped list: authorize once against subject resource, project each row. */
-export async function runAuthorizedTalentSubjectListQuery<
+export function runAuthorizedTalentSubjectListQuery<
 	TSchema extends z.ZodType<
 		HumanResourcesAuthorizedActorInput & { employeeId: string }
 	>,

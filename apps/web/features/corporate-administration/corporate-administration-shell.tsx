@@ -44,10 +44,11 @@ const LEGAL_COMPANY_LIFECYCLE_UNAVAILABLE_MESSAGE =
 const LEGAL_COMPANY_IDENTITY_UNAVAILABLE_MESSAGE =
 	"Company identity data is unavailable.";
 
-type CorporateAdministrationShellProps = {
+interface CorporateAdministrationShellProps {
 	surface: "admin" | "client";
-};
+}
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The RSC composes independently authorized corporate administration surfaces.
 export async function CorporateAdministrationShell({
 	surface,
 }: CorporateAdministrationShellProps) {
@@ -146,20 +147,20 @@ export async function CorporateAdministrationShell({
 	return (
 		<section className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-6 py-10">
 			<header className="space-y-2">
-				<p className="text-sm text-muted-foreground">
+				<p className="text-muted-foreground text-sm">
 					{surface === "admin" ? "Org admin" : "Client workspace"}
 				</p>
-				<h1 className="text-2xl font-semibold tracking-tight">
+				<h1 className="font-semibold text-2xl tracking-tight">
 					Corporate Administration
 				</h1>
-				<p className="max-w-2xl text-sm text-muted-foreground">
+				<p className="max-w-2xl text-muted-foreground text-sm">
 					Draft legal-company roots only. This does not activate a company or
 					claim incorporation.
 				</p>
 			</header>
 
 			{companiesResult.ok ? null : (
-				<Alert variant="destructive" role="alert">
+				<Alert role="alert" variant="destructive">
 					<AlertTitle>Legal companies unavailable</AlertTitle>
 					<AlertDescription>{companiesResult.message}</AlertDescription>
 				</Alert>
@@ -174,7 +175,7 @@ export async function CorporateAdministrationShell({
 			{selectedCompany === undefined ? null : (
 				<>
 					{identityState?.ok === false ? (
-						<Alert variant="destructive" role="alert">
+						<Alert role="alert" variant="destructive">
 							<AlertTitle>Company identity unavailable</AlertTitle>
 							<AlertDescription>{identityState.message}</AlertDescription>
 						</Alert>
@@ -203,7 +204,7 @@ export async function CorporateAdministrationShell({
 						organizationSlug="client"
 					/>
 					{legalPresenceState?.ok === false ? (
-						<Alert variant="destructive" role="alert">
+						<Alert role="alert" variant="destructive">
 							<AlertTitle>Legal presence unavailable</AlertTitle>
 							<AlertDescription>{legalPresenceState.message}</AlertDescription>
 						</Alert>
@@ -219,18 +220,18 @@ export async function CorporateAdministrationShell({
 								? legalPresenceState.establishments
 								: []
 						}
+						partyAddresses={partyAddresses}
+						premises={
+							legalPresenceState?.ok === true ? legalPresenceState.premises : []
+						}
 						registeredAddresses={
 							legalPresenceState?.ok === true
 								? legalPresenceState.registeredAddresses
 								: []
 						}
-						premises={
-							legalPresenceState?.ok === true ? legalPresenceState.premises : []
-						}
-						partyAddresses={partyAddresses}
 					/>
 					{lifecycleState?.ok === false ? (
-						<Alert variant="destructive" role="alert">
+						<Alert role="alert" variant="destructive">
 							<AlertTitle>Company lifecycle unavailable</AlertTitle>
 							<AlertDescription>{lifecycleState.message}</AlertDescription>
 						</Alert>
@@ -340,7 +341,9 @@ async function loadLegalPresence(input: {
 		input.queryOptions,
 		{ establishmentStore: input.dependencies.establishmentStore },
 	);
-	if (!establishments.ok) return establishments;
+	if (!establishments.ok) {
+		return establishments;
+	}
 	const addressTypes = [
 		"registered_office",
 		"service_address",
@@ -371,8 +374,12 @@ async function loadLegalPresence(input: {
 		),
 	]);
 	const failedAddress = addressResults.find((result) => !result.ok);
-	if (failedAddress !== undefined && !failedAddress.ok) return failedAddress;
-	if (!premises.ok) return premises;
+	if (failedAddress !== undefined && !failedAddress.ok) {
+		return failedAddress;
+	}
+	if (!premises.ok) {
+		return premises;
+	}
 	return {
 		ok: true as const,
 		establishments: establishments.data.map((item) => ({
@@ -501,11 +508,13 @@ async function loadLegalCompanyIdentity(input: {
 		return { ok: false, message: LEGAL_COMPANY_IDENTITY_UNAVAILABLE_MESSAGE };
 	}
 	if (
-		!names.ok ||
-		!legalForm.ok ||
-		!identifiers.ok ||
-		!financialYear.ok ||
-		!activities.ok
+		!(
+			names.ok &&
+			legalForm.ok &&
+			identifiers.ok &&
+			financialYear.ok &&
+			activities.ok
+		)
 	) {
 		return { ok: false, message: LEGAL_COMPANY_IDENTITY_UNAVAILABLE_MESSAGE };
 	}

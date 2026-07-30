@@ -22,13 +22,10 @@ async function filterShellNav(
 	session: PermissionSession,
 	items: readonly ShellNavItem[],
 ): Promise<ShellNavItem[]> {
-	const visible: ShellNavItem[] = [];
-	for (const item of items) {
-		if (await itemVisible(session, item)) {
-			visible.push(item);
-		}
-	}
-	return visible;
+	const visibility = await Promise.all(
+		items.map((item) => itemVisible(session, item)),
+	);
+	return items.filter((_, index) => visibility[index] === true);
 }
 
 /**
@@ -39,7 +36,7 @@ export async function resolveOperatorShellNav(
 	session: PermissionSession,
 	items: readonly ShellNavItem[] = OPERATOR_SHELL_NAV,
 ): Promise<ShellNavItem[]> {
-	return filterShellNav(session, items);
+	return await filterShellNav(session, items);
 }
 
 /**
@@ -49,5 +46,5 @@ export async function resolveClientShellNav(
 	session: PermissionSession,
 	items: readonly ShellNavItem[] = CLIENT_SHELL_NAV,
 ): Promise<ShellNavItem[]> {
-	return filterShellNav(session, items);
+	return await filterShellNav(session, items);
 }

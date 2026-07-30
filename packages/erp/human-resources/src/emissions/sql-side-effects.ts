@@ -32,7 +32,9 @@ export function plannedOutboxEventType(
 export function plannedOutboxPayloadJson(
 	planned: PlannedHumanResourcesMutationOutcome,
 ): string | undefined {
-	if (!planned.outboxInput) return undefined;
+	if (!planned.outboxInput) {
+		return;
+	}
 	return JSON.stringify(planned.outboxInput.payload);
 }
 

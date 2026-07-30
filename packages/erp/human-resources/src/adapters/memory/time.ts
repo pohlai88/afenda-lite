@@ -65,6 +65,11 @@ import { assertExpectedVersion } from "../../shared/concurrency";
 import { conflict, invalidState, notFound } from "../../shared/domain-guards";
 import { selectEffectiveLineageRecord } from "../../shared/effective-lineage";
 import {
+	runSequential,
+	sequentialContinue,
+	sequentialReturn,
+} from "../../shared/run-sequential";
+import {
 	assertAssignmentStatusTransition,
 	assertExceptionStatusTransition,
 	assertNoSelfApprove,
@@ -118,6 +123,7 @@ import {
 	applyAutomaticBreakPolicy,
 	resolveSessionFromEvents,
 } from "../../time/attendance/session-resolution";
+import { aggregatePayrollMinutes } from "../../time/payroll-minute-totals";
 import {
 	approvedLeaveMinutesForDate,
 	buildAttendanceTimesheetEntryPlans,
@@ -146,7 +152,6 @@ import type {
 	EmploymentCalendarAssignment,
 	IdempotentAttendanceImportBatchRecord,
 	OvertimeRequest,
-	OvertimeType,
 	Shift,
 	ShiftAssignment,
 	ShiftAssignmentSegment,
@@ -183,64 +188,32 @@ function resolveImportBatchStatus(input: {
 	skipped: number;
 	rejected: number;
 }): AttendanceImportBatchStatus {
-	if (input.rejected === 0) return "completed";
-	if (input.accepted === 0 && input.skipped === 0) return "failed";
+	if (input.rejected === 0) {
+		return "completed";
+	}
+	if (input.accepted === 0 && input.skipped === 0) {
+		return "failed";
+	}
 	return "partial";
 }
 
-const OVERTIME_TYPES = new Set<OvertimeType>([
-	"weekday_overtime",
-	"rest_day_overtime",
-	"public_holiday_overtime",
-	"night_overtime",
-	"call_back",
-	"emergency_overtime",
-]);
-
-export type TimeMemoryState = {
-	workCalendars: Map<HumanResourcesWorkCalendarId, WorkCalendar>;
-	workCalendarIdempotencyByKey: Map<string, IdempotentWorkCalendarRecord>;
-	workCalendarHolidays: Map<
-		HumanResourcesWorkCalendarHolidayId,
-		WorkCalendarHolidayRecord
+export interface TimeMemoryState {
+	attendanceAdjustments: AttendanceAdjustment[];
+	attendanceBreakWaiverDecisions: Map<
+		HumanResourcesAttendanceBreakWaiverDecisionId,
+		AttendanceBreakWaiverDecision
 	>;
-	employmentCalendarAssignments: Map<
-		HumanResourcesEmploymentCalendarAssignmentId,
-		EmploymentCalendarAssignment
-	>;
-	workCalendarScopeAssignments: Map<
-		HumanResourcesWorkCalendarScopeAssignmentId,
-		WorkCalendarScopeAssignment
-	>;
-	timePolicies: Map<HumanResourcesTimePolicyId, TimePolicy>;
-	timePolicyAssignments: Map<
-		HumanResourcesTimePolicyAssignmentId,
-		TimePolicyAssignment
-	>;
-	timeApprovalAuthorityAssignments: Map<
-		HumanResourcesTimeApprovalAuthorityAssignmentId,
-		TimeApprovalAuthorityAssignment
-	>;
-	timePolicyIdempotencyByKey: Map<
-		string,
-		{ policy: TimePolicy; createRequestFingerprint: string }
-	>;
-	shifts: Map<HumanResourcesShiftId, Shift>;
-	shiftIdempotencyByKey: Map<string, IdempotentShiftRecord>;
-	shiftBreaks: Map<HumanResourcesShiftBreakId, ShiftBreak>;
-	shiftAssignments: Map<HumanResourcesShiftAssignmentId, ShiftAssignment>;
-	shiftAssignmentSegments: Map<
-		HumanResourcesShiftAssignmentSegmentId,
-		ShiftAssignmentSegment
-	>;
-	shiftAssignmentIdempotencyByKey: Map<string, IdempotentShiftAssignmentRecord>;
-	attendanceEvents: Map<HumanResourcesAttendanceEventId, AttendanceEvent>;
 	attendanceCorrectionTails: Map<
 		HumanResourcesAttendanceEventId,
 		Promise<void>
 	>;
-	attendanceEventIdempotencyByKey: Map<string, IdempotentAttendanceEventRecord>;
 	attendanceEventBySourceRef: Map<string, IdempotentAttendanceEventRecord>;
+	attendanceEventIdempotencyByKey: Map<string, IdempotentAttendanceEventRecord>;
+	attendanceEvents: Map<HumanResourcesAttendanceEventId, AttendanceEvent>;
+	attendanceExceptions: Map<
+		HumanResourcesAttendanceExceptionId,
+		AttendanceException
+	>;
 	attendanceImportBatches: Map<string, IdempotentAttendanceImportBatchRecord>;
 	attendanceImportErrors: Array<{
 		id: string;
@@ -253,29 +226,15 @@ export type TimeMemoryState = {
 		payloadChecksum: string | null;
 		createdAt: Date;
 	}>;
-	attendanceAdjustments: AttendanceAdjustment[];
-	attendanceSessions: Map<HumanResourcesAttendanceSessionId, AttendanceSession>;
-	attendanceBreakWaiverDecisions: Map<
-		HumanResourcesAttendanceBreakWaiverDecisionId,
-		AttendanceBreakWaiverDecision
-	>;
 	attendanceSessionIdempotencyByKey: Map<
 		string,
 		IdempotentAttendanceSessionRecord
 	>;
-	attendanceExceptions: Map<
-		HumanResourcesAttendanceExceptionId,
-		AttendanceException
+	attendanceSessions: Map<HumanResourcesAttendanceSessionId, AttendanceSession>;
+	employmentCalendarAssignments: Map<
+		HumanResourcesEmploymentCalendarAssignmentId,
+		EmploymentCalendarAssignment
 	>;
-	timesheets: Map<HumanResourcesTimesheetId, Timesheet>;
-	timesheetApprovalDecisions: Map<
-		HumanResourcesTimesheetApprovalDecisionId,
-		TimesheetApprovalDecision
-	>;
-	timesheetIdempotencyByKey: Map<string, IdempotentTimesheetRecord>;
-	timesheetEntries: Map<HumanResourcesTimesheetEntryId, TimesheetEntry>;
-	overtimeRequests: Map<HumanResourcesOvertimeRequestId, OvertimeRequest>;
-	overtimeRequestIdempotencyByKey: Map<string, IdempotentOvertimeRequestRecord>;
 	overtimeApprovals: Array<{
 		id: string;
 		organizationId: string;
@@ -288,7 +247,48 @@ export type TimeMemoryState = {
 		decidedAt: Date;
 		versionApproved: number;
 	}>;
-};
+	overtimeRequestIdempotencyByKey: Map<string, IdempotentOvertimeRequestRecord>;
+	overtimeRequests: Map<HumanResourcesOvertimeRequestId, OvertimeRequest>;
+	shiftAssignmentIdempotencyByKey: Map<string, IdempotentShiftAssignmentRecord>;
+	shiftAssignmentSegments: Map<
+		HumanResourcesShiftAssignmentSegmentId,
+		ShiftAssignmentSegment
+	>;
+	shiftAssignments: Map<HumanResourcesShiftAssignmentId, ShiftAssignment>;
+	shiftBreaks: Map<HumanResourcesShiftBreakId, ShiftBreak>;
+	shiftIdempotencyByKey: Map<string, IdempotentShiftRecord>;
+	shifts: Map<HumanResourcesShiftId, Shift>;
+	timeApprovalAuthorityAssignments: Map<
+		HumanResourcesTimeApprovalAuthorityAssignmentId,
+		TimeApprovalAuthorityAssignment
+	>;
+	timePolicies: Map<HumanResourcesTimePolicyId, TimePolicy>;
+	timePolicyAssignments: Map<
+		HumanResourcesTimePolicyAssignmentId,
+		TimePolicyAssignment
+	>;
+	timePolicyIdempotencyByKey: Map<
+		string,
+		{ policy: TimePolicy; createRequestFingerprint: string }
+	>;
+	timesheetApprovalDecisions: Map<
+		HumanResourcesTimesheetApprovalDecisionId,
+		TimesheetApprovalDecision
+	>;
+	timesheetEntries: Map<HumanResourcesTimesheetEntryId, TimesheetEntry>;
+	timesheetIdempotencyByKey: Map<string, IdempotentTimesheetRecord>;
+	timesheets: Map<HumanResourcesTimesheetId, Timesheet>;
+	workCalendarHolidays: Map<
+		HumanResourcesWorkCalendarHolidayId,
+		WorkCalendarHolidayRecord
+	>;
+	workCalendarIdempotencyByKey: Map<string, IdempotentWorkCalendarRecord>;
+	workCalendarScopeAssignments: Map<
+		HumanResourcesWorkCalendarScopeAssignmentId,
+		WorkCalendarScopeAssignment
+	>;
+	workCalendars: Map<HumanResourcesWorkCalendarId, WorkCalendar>;
+}
 
 export function createTimeMemoryState(): TimeMemoryState {
 	return {
@@ -380,7 +380,7 @@ async function audit(
 		action: "CREATE" | "UPDATE" | "DELETE";
 	},
 ): Promise<Result<{ id: string }>> {
-	return ports.audit.record({
+	return await ports.audit.record({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId:
@@ -403,7 +403,7 @@ async function emitOutbox(
 		entityId: string;
 	},
 ): Promise<Result<{ id: string }>> {
-	return ports.outbox.append({
+	return await ports.outbox.append({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: input.correlationId,
@@ -427,6 +427,49 @@ function intervalsOverlap(
 	return aStart.getTime() < bEnd.getTime() && aEnd.getTime() > bStart.getTime();
 }
 
+function buildShiftAssignmentSegments(
+	input: ShiftAssignmentCreateRecord,
+	assignmentId: HumanResourcesShiftAssignmentId,
+	now: Date,
+): Result<ShiftAssignmentSegment[]> {
+	const segments: ShiftAssignmentSegment[] = [];
+	for (const segment of input.segments) {
+		const segmentId = parseHumanResourcesShiftAssignmentSegmentId(randomUUID());
+		if (!segmentId.ok) {
+			return segmentId;
+		}
+		segments.push({
+			id: segmentId.data,
+			organizationId: input.organizationId,
+			assignmentId,
+			segmentOrder: segment.segmentOrder,
+			startsAt: segment.startsAt,
+			endsAt: segment.endsAt,
+			createdAt: now,
+			updatedAt: now,
+		});
+	}
+	return ok(segments);
+}
+
+function setShiftAssignmentSegments(
+	state: TimeMemoryState,
+	segments: readonly ShiftAssignmentSegment[],
+): void {
+	for (const segment of segments) {
+		state.shiftAssignmentSegments.set(segment.id, segment);
+	}
+}
+
+function deleteShiftAssignmentSegments(
+	state: TimeMemoryState,
+	segments: readonly ShiftAssignmentSegment[],
+): void {
+	for (const segment of segments) {
+		state.shiftAssignmentSegments.delete(segment.id);
+	}
+}
+
 function recomputeTimesheetTotals(
 	state: TimeMemoryState,
 	timesheet: Timesheet,
@@ -444,13 +487,6 @@ function recomputeTimesheetTotals(
 		(sum, entry) => sum + entry.approvedMinutes,
 		0,
 	);
-}
-
-function parseOvertimeType(value: string | null): OvertimeType | null {
-	if (value === null) return null;
-	return OVERTIME_TYPES.has(value as OvertimeType)
-		? (value as OvertimeType)
-		: null;
 }
 
 function memoryExceptionDetectionHost(
@@ -475,10 +511,10 @@ function memoryExceptionDetectionHost(
 				existing === undefined ||
 				existing.organizationId !== input.organizationId
 			) {
-				return ok(undefined);
+				return await ok(undefined);
 			}
 			state.attendanceExceptions.delete(input.exceptionId);
-			return ok(undefined);
+			return await ok(undefined);
 		},
 	};
 }
@@ -492,17 +528,17 @@ export function createMemoryTimeMethods(
 			const record = state.workCalendarIdempotencyByKey.get(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
-			return ok(
+			return await ok(
 				record ? { ...record, calendar: { ...record.calendar } } : null,
 			);
 		},
 
 		async createWorkCalendar(input: WorkCalendarCreateRecord, ports) {
 			const duplicate = Array.from(state.workCalendars.values()).find(
-				(calendar) =>
-					calendar.organizationId === input.organizationId &&
-					calendar.code === input.code &&
-					calendar.effectiveFrom === input.effectiveFrom,
+				(calendarValue) =>
+					calendarValue.organizationId === input.organizationId &&
+					calendarValue.code === input.code &&
+					calendarValue.effectiveFrom === input.effectiveFrom,
 			);
 			if (duplicate) {
 				return fail(
@@ -512,7 +548,9 @@ export function createMemoryTimeMethods(
 				);
 			}
 			const idResult = parseHumanResourcesWorkCalendarId(randomUUID());
-			if (!idResult.ok) return idResult;
+			if (!idResult.ok) {
+				return idResult;
+			}
 			const now = new Date();
 			const calendar: WorkCalendar = {
 				id: idResult.data,
@@ -564,7 +602,9 @@ export function createMemoryTimeMethods(
 				predecessor.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			if (predecessor.status !== "active") {
 				return invalidState("Only active work calendars can be superseded");
 			}
@@ -578,7 +618,9 @@ export function createMemoryTimeMethods(
 				return conflict("Work calendar version already exists");
 			}
 			const successorId = parseHumanResourcesWorkCalendarId(randomUUID());
-			if (!successorId.ok) return successorId;
+			if (!successorId.ok) {
+				return successorId;
+			}
 			const previous = { ...predecessor };
 			const now = new Date();
 			predecessor.status = "superseded";
@@ -683,7 +725,9 @@ export function createMemoryTimeMethods(
 				calendar.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			const now = new Date();
 			const updated: WorkCalendar = {
 				...calendar,
@@ -694,9 +738,9 @@ export function createMemoryTimeMethods(
 				standardHoursPerDay:
 					input.standardHoursPerDay ?? calendar.standardHoursPerDay,
 				effectiveTo:
-					input.effectiveTo !== undefined
-						? input.effectiveTo
-						: calendar.effectiveTo,
+					input.effectiveTo === undefined
+						? calendar.effectiveTo
+						: input.effectiveTo,
 				version: calendar.version + 1,
 				updatedBy: input.actorUserId,
 				updatedAt: now,
@@ -726,7 +770,9 @@ export function createMemoryTimeMethods(
 				calendar.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			if (calendar.status === "archived") {
 				return invalidState("Work calendar is already archived");
 			}
@@ -753,9 +799,9 @@ export function createMemoryTimeMethods(
 		async getWorkCalendar(input) {
 			const calendar = state.workCalendars.get(input.calendarId);
 			if (!calendar || calendar.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...calendar });
+			return await ok({ ...calendar });
 		},
 
 		async listWorkCalendars(input) {
@@ -766,7 +812,7 @@ export function createMemoryTimeMethods(
 						(input.status === undefined || calendar.status === input.status),
 				)
 				.sort((a, b) => a.code.localeCompare(b.code));
-			return ok(
+			return await ok(
 				paginate(rows, input.page, input.pageSize).map((row) => ({ ...row })),
 			);
 		},
@@ -780,18 +826,20 @@ export function createMemoryTimeMethods(
 				return notFound("Work calendar not found");
 			}
 			const duplicate = Array.from(state.workCalendarHolidays.values()).find(
-				(holiday) =>
-					holiday.organizationId === input.organizationId &&
-					holiday.calendarId === input.calendarId &&
-					holiday.holidayDate === input.holidayDate &&
-					holiday.locationCode === input.locationCode &&
-					holiday.jurisdiction === input.jurisdiction,
+				(holidayValue) =>
+					holidayValue.organizationId === input.organizationId &&
+					holidayValue.calendarId === input.calendarId &&
+					holidayValue.holidayDate === input.holidayDate &&
+					holidayValue.locationCode === input.locationCode &&
+					holidayValue.jurisdiction === input.jurisdiction,
 			);
 			if (duplicate) {
 				return conflict("Work calendar holiday already exists");
 			}
 			const idResult = parseHumanResourcesWorkCalendarHolidayId(randomUUID());
-			if (!idResult.ok) return idResult;
+			if (!idResult.ok) {
+				return idResult;
+			}
 			const now = new Date();
 			const holiday: WorkCalendarHolidayRecord = {
 				id: idResult.data,
@@ -857,7 +905,7 @@ export function createMemoryTimeMethods(
 						(input.toDate === undefined || holiday.holidayDate <= input.toDate),
 				)
 				.sort((a, b) => a.holidayDate.localeCompare(b.holidayDate));
-			return ok(rows.map((row) => ({ ...row })));
+			return await ok(rows.map((row) => ({ ...row })));
 		},
 
 		async assignEmploymentCalendar(
@@ -871,7 +919,9 @@ export function createMemoryTimeMethods(
 			const idResult = parseHumanResourcesEmploymentCalendarAssignmentId(
 				randomUUID(),
 			);
-			if (!idResult.ok) return idResult;
+			if (!idResult.ok) {
+				return idResult;
+			}
 			const now = new Date();
 			const assignment: EmploymentCalendarAssignment = {
 				id: idResult.data,
@@ -916,7 +966,9 @@ export function createMemoryTimeMethods(
 				assignment.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			if (assignment.effectiveTo !== null) {
 				return invalidState("Employment calendar assignment is already ended");
 			}
@@ -955,10 +1007,14 @@ export function createMemoryTimeMethods(
 							assignment.effectiveTo >= input.asOf),
 				)
 				.sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom));
-			const match = matches[0];
-			if (!match) return ok(null);
+			const [match] = matches;
+			if (!match) {
+				return await ok(null);
+			}
 			const assignedCalendar = state.workCalendars.get(match.calendarId);
-			if (!assignedCalendar) return ok(null);
+			if (!assignedCalendar) {
+				return await ok(null);
+			}
 			const effectiveCalendar = selectEffectiveLineageRecord({
 				assignedId: assignedCalendar.id,
 				records: Array.from(state.workCalendars.values()).filter(
@@ -971,7 +1027,7 @@ export function createMemoryTimeMethods(
 				isEligible: (calendar) =>
 					calendar.status === "active" || calendar.status === "superseded",
 			});
-			return ok(
+			return await ok(
 				effectiveCalendar
 					? { ...match, calendarId: effectiveCalendar.id }
 					: null,
@@ -988,7 +1044,7 @@ export function createMemoryTimeMethods(
 					(assignment.effectiveTo === null ||
 						assignment.effectiveTo >= input.asOf),
 			);
-			return ok(rows.map((row) => ({ ...row })));
+			return await ok(rows.map((row) => ({ ...row })));
 		},
 
 		async assignWorkCalendarScope(input, ports) {
@@ -999,12 +1055,13 @@ export function createMemoryTimeMethods(
 			const overlap = Array.from(
 				state.workCalendarScopeAssignments.values(),
 			).some(
-				(assignment) =>
-					assignment.organizationId === input.organizationId &&
-					assignment.scopeType === input.scopeType &&
-					assignment.scopeKey === input.scopeKey &&
-					assignment.effectiveFrom <= (input.effectiveTo ?? "9999-12-31") &&
-					(assignment.effectiveTo ?? "9999-12-31") >= input.effectiveFrom,
+				(assignmentValue3) =>
+					assignmentValue3.organizationId === input.organizationId &&
+					assignmentValue3.scopeType === input.scopeType &&
+					assignmentValue3.scopeKey === input.scopeKey &&
+					assignmentValue3.effectiveFrom <=
+						(input.effectiveTo ?? "9999-12-31") &&
+					(assignmentValue3.effectiveTo ?? "9999-12-31") >= input.effectiveFrom,
 			);
 			if (overlap) {
 				return conflict("Work calendar scope assignment overlaps");
@@ -1012,7 +1069,9 @@ export function createMemoryTimeMethods(
 			const idResult = parseHumanResourcesWorkCalendarScopeAssignmentId(
 				randomUUID(),
 			);
-			if (!idResult.ok) return idResult;
+			if (!idResult.ok) {
+				return idResult;
+			}
 			const now = new Date();
 			const assignment: WorkCalendarScopeAssignment = {
 				id: idResult.data,
@@ -1055,7 +1114,9 @@ export function createMemoryTimeMethods(
 				assignment.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			if (assignment.effectiveTo !== null) {
 				return invalidState("Work calendar scope assignment is already ended");
 			}
@@ -1086,19 +1147,25 @@ export function createMemoryTimeMethods(
 			const record = state.timePolicyIdempotencyByKey.get(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
-			return ok(record ? { ...record, policy: { ...record.policy } } : null);
+			return await ok(
+				record ? { ...record, policy: { ...record.policy } } : null,
+			);
 		},
 
 		async createTimePolicy(input: TimePolicyCreateRecord, ports) {
 			const duplicate = Array.from(state.timePolicies.values()).some(
-				(policy) =>
-					policy.organizationId === input.organizationId &&
-					policy.code === input.code &&
-					policy.effectiveFrom === input.effectiveFrom,
+				(policyValue) =>
+					policyValue.organizationId === input.organizationId &&
+					policyValue.code === input.code &&
+					policyValue.effectiveFrom === input.effectiveFrom,
 			);
-			if (duplicate) return conflict("Time policy code already exists");
+			if (duplicate) {
+				return conflict("Time policy code already exists");
+			}
 			const id = parseHumanResourcesTimePolicyId(randomUUID());
-			if (!id.ok) return id;
+			if (!id.ok) {
+				return id;
+			}
 			const now = new Date();
 			const policy: TimePolicy = {
 				id: id.data,
@@ -1150,7 +1217,9 @@ export function createMemoryTimeMethods(
 				predecessor.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			if (predecessor.status !== "active") {
 				return invalidState("Only active time policies can be superseded");
 			}
@@ -1164,7 +1233,9 @@ export function createMemoryTimeMethods(
 				return conflict("A policy version already starts on this date");
 			}
 			const successorId = parseHumanResourcesTimePolicyId(randomUUID());
-			if (!successorId.ok) return successorId;
+			if (!successorId.ok) {
+				return successorId;
+			}
 			const previous = { ...predecessor };
 			const now = new Date();
 			predecessor.status = "superseded";
@@ -1226,7 +1297,9 @@ export function createMemoryTimeMethods(
 				policy.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			if (policy.status !== "draft") {
 				return invalidState("Only draft time policies can be activated");
 			}
@@ -1264,17 +1337,20 @@ export function createMemoryTimeMethods(
 				return notFound("Employment not found");
 			}
 			const overlapping = Array.from(state.timePolicyAssignments.values()).some(
-				(assignment) =>
-					assignment.organizationId === input.organizationId &&
-					assignment.employmentId === input.employmentId &&
-					assignment.effectiveFrom <= (input.effectiveTo ?? "9999-12-31") &&
-					(assignment.effectiveTo ?? "9999-12-31") >= input.effectiveFrom,
+				(assignmentValue2) =>
+					assignmentValue2.organizationId === input.organizationId &&
+					assignmentValue2.employmentId === input.employmentId &&
+					assignmentValue2.effectiveFrom <=
+						(input.effectiveTo ?? "9999-12-31") &&
+					(assignmentValue2.effectiveTo ?? "9999-12-31") >= input.effectiveFrom,
 			);
 			if (overlapping) {
 				return conflict("Time policy assignment overlaps an existing period");
 			}
 			const id = parseHumanResourcesTimePolicyAssignmentId(randomUUID());
-			if (!id.ok) return id;
+			if (!id.ok) {
+				return id;
+			}
 			const now = new Date();
 			const assignment: TimePolicyAssignment = {
 				id: id.data,
@@ -1308,13 +1384,13 @@ export function createMemoryTimeMethods(
 		async getTimePolicy(input) {
 			const policy = state.timePolicies.get(input.policyId);
 			if (!policy || policy.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...policy });
+			return await ok({ ...policy });
 		},
 
 		async resolveTimePolicy(input) {
-			const assignment = Array.from(state.timePolicyAssignments.values())
+			const [assignment] = Array.from(state.timePolicyAssignments.values())
 				.filter(
 					(candidate) =>
 						candidate.organizationId === input.organizationId &&
@@ -1323,10 +1399,14 @@ export function createMemoryTimeMethods(
 						(candidate.effectiveTo === null ||
 							candidate.effectiveTo >= input.asOf),
 				)
-				.sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))[0];
-			if (assignment === undefined) return ok(null);
+				.sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom));
+			if (assignment === undefined) {
+				return await ok(null);
+			}
 			const assignedPolicy = state.timePolicies.get(assignment.policyId);
-			if (assignedPolicy === undefined) return ok(null);
+			if (assignedPolicy === undefined) {
+				return await ok(null);
+			}
 			const policy = selectEffectiveLineageRecord({
 				assignedId: assignedPolicy.id,
 				records: Array.from(state.timePolicies.values()).filter(
@@ -1339,7 +1419,7 @@ export function createMemoryTimeMethods(
 				isEligible: (candidate) =>
 					candidate.status === "active" || candidate.status === "superseded",
 			});
-			return ok(policy === null ? null : { ...policy });
+			return await ok(policy === null ? null : { ...policy });
 		},
 
 		async assignTimeApprovalAuthority(input, ports) {
@@ -1359,7 +1439,9 @@ export function createMemoryTimeMethods(
 			const id = parseHumanResourcesTimeApprovalAuthorityAssignmentId(
 				randomUUID(),
 			);
-			if (!id.ok) return id;
+			if (!id.ok) {
+				return id;
+			}
 			const now = new Date();
 			const assignment: TimeApprovalAuthorityAssignment = {
 				id: id.data,
@@ -1404,7 +1486,9 @@ export function createMemoryTimeMethods(
 				assignment.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			if (input.effectiveTo < assignment.effectiveFrom) {
 				return invalidState("effectiveTo must be on or after effectiveFrom");
 			}
@@ -1429,7 +1513,7 @@ export function createMemoryTimeMethods(
 		},
 
 		async resolveTimeApprovalAuthority(input) {
-			const assignment = Array.from(
+			const [assignment] = Array.from(
 				state.timeApprovalAuthorityAssignments.values(),
 			)
 				.filter(
@@ -1443,20 +1527,24 @@ export function createMemoryTimeMethods(
 				)
 				.sort((left, right) =>
 					right.effectiveFrom.localeCompare(left.effectiveFrom),
-				)[0];
-			return ok(assignment === undefined ? null : { ...assignment });
+				);
+			return await ok(assignment === undefined ? null : { ...assignment });
 		},
 
 		async findShiftByIdempotencyKey(input) {
 			const record = state.shiftIdempotencyByKey.get(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
-			return ok(record ? { ...record, shift: { ...record.shift } } : null);
+			return await ok(
+				record ? { ...record, shift: { ...record.shift } } : null,
+			);
 		},
 
 		async createShift(input: ShiftCreateRecord, ports) {
 			const idResult = parseHumanResourcesShiftId(randomUUID());
-			if (!idResult.ok) return idResult;
+			if (!idResult.ok) {
+				return idResult;
+			}
 			const now = new Date();
 			const shift: Shift = {
 				id: idResult.data,
@@ -1518,7 +1606,9 @@ export function createMemoryTimeMethods(
 				predecessor.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			if (predecessor.status !== "active") {
 				return invalidState("Only active shifts can be superseded");
 			}
@@ -1528,9 +1618,13 @@ export function createMemoryTimeMethods(
 					shift.code === input.code &&
 					shift.effectiveFrom === input.effectiveFrom,
 			);
-			if (duplicate) return conflict("Shift version already exists");
+			if (duplicate) {
+				return conflict("Shift version already exists");
+			}
 			const successorId = parseHumanResourcesShiftId(randomUUID());
-			if (!successorId.ok) return successorId;
+			if (!successorId.ok) {
+				return successorId;
+			}
 			const previous = { ...predecessor };
 			const now = new Date();
 			predecessor.status = "superseded";
@@ -1580,7 +1674,9 @@ export function createMemoryTimeMethods(
 				if (!breakId.ok) {
 					state.shifts.set(predecessor.id, previous);
 					state.shifts.delete(successor.id);
-					for (const id of clonedBreakIds) state.shiftBreaks.delete(id);
+					for (const id of clonedBreakIds) {
+						state.shiftBreaks.delete(id);
+					}
 					return breakId;
 				}
 				state.shiftBreaks.set(breakId.data, {
@@ -1609,7 +1705,9 @@ export function createMemoryTimeMethods(
 				state.shifts.set(predecessor.id, previous);
 				state.shifts.delete(successor.id);
 				state.shiftIdempotencyByKey.delete(key);
-				for (const id of clonedBreakIds) state.shiftBreaks.delete(id);
+				for (const id of clonedBreakIds) {
+					state.shiftBreaks.delete(id);
+				}
 				return recorded;
 			}
 			return ok({
@@ -1630,7 +1728,9 @@ export function createMemoryTimeMethods(
 				shift.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			const previous = { ...shift };
 			Object.assign(shift, {
 				name: input.name ?? shift.name,
@@ -1642,32 +1742,32 @@ export function createMemoryTimeMethods(
 				graceEarlyMinutes: input.graceEarlyMinutes ?? shift.graceEarlyMinutes,
 				graceLateMinutes: input.graceLateMinutes ?? shift.graceLateMinutes,
 				minDurationMinutes:
-					input.minDurationMinutes !== undefined
-						? input.minDurationMinutes
-						: shift.minDurationMinutes,
+					input.minDurationMinutes === undefined
+						? shift.minDurationMinutes
+						: input.minDurationMinutes,
 				maxDurationMinutes:
-					input.maxDurationMinutes !== undefined
-						? input.maxDurationMinutes
-						: shift.maxDurationMinutes,
+					input.maxDurationMinutes === undefined
+						? shift.maxDurationMinutes
+						: input.maxDurationMinutes,
 				earliestClockInLocal:
-					input.earliestClockInLocal !== undefined
-						? input.earliestClockInLocal
-						: shift.earliestClockInLocal,
+					input.earliestClockInLocal === undefined
+						? shift.earliestClockInLocal
+						: input.earliestClockInLocal,
 				latestClockOutLocal:
-					input.latestClockOutLocal !== undefined
-						? input.latestClockOutLocal
-						: shift.latestClockOutLocal,
+					input.latestClockOutLocal === undefined
+						? shift.latestClockOutLocal
+						: input.latestClockOutLocal,
 				overtimeEligible: input.overtimeEligible ?? shift.overtimeEligible,
 				timezone:
-					input.timezone !== undefined ? input.timezone : shift.timezone,
+					input.timezone === undefined ? shift.timezone : input.timezone,
 				locationKey:
-					input.locationKey !== undefined
-						? input.locationKey
-						: shift.locationKey,
+					input.locationKey === undefined
+						? shift.locationKey
+						: input.locationKey,
 				effectiveTo:
-					input.effectiveTo !== undefined
-						? input.effectiveTo
-						: shift.effectiveTo,
+					input.effectiveTo === undefined
+						? shift.effectiveTo
+						: input.effectiveTo,
 				version: shift.version + 1,
 				updatedBy: input.actorUserId,
 				updatedAt: new Date(),
@@ -1696,9 +1796,13 @@ export function createMemoryTimeMethods(
 				shift.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			const transition = assertShiftStatusTransition(shift.status, "active");
-			if (!transition.ok) return transition;
+			if (!transition.ok) {
+				return transition;
+			}
 			const previous = { ...shift };
 			shift.status = "active";
 			shift.version += 1;
@@ -1728,9 +1832,13 @@ export function createMemoryTimeMethods(
 				shift.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			const transition = assertShiftStatusTransition(shift.status, "inactive");
-			if (!transition.ok) return transition;
+			if (!transition.ok) {
+				return transition;
+			}
 			const previous = { ...shift };
 			shift.status = "inactive";
 			shift.version += 1;
@@ -1754,9 +1862,9 @@ export function createMemoryTimeMethods(
 		async getShift(input) {
 			const shift = state.shifts.get(input.shiftId);
 			if (!shift || shift.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...shift });
+			return await ok({ ...shift });
 		},
 
 		async listShifts(input) {
@@ -1767,7 +1875,7 @@ export function createMemoryTimeMethods(
 						(input.status === undefined || shift.status === input.status),
 				)
 				.sort((a, b) => a.code.localeCompare(b.code));
-			return ok(
+			return await ok(
 				paginate(rows, input.page, input.pageSize).map((row) => ({ ...row })),
 			);
 		},
@@ -1778,7 +1886,9 @@ export function createMemoryTimeMethods(
 				return notFound("Shift not found");
 			}
 			const idResult = parseHumanResourcesShiftBreakId(randomUUID());
-			if (!idResult.ok) return idResult;
+			if (!idResult.ok) {
+				return idResult;
+			}
 			const now = new Date();
 			const breakRow: ShiftBreak = {
 				id: idResult.data,
@@ -1837,14 +1947,14 @@ export function createMemoryTimeMethods(
 						row.shiftId === input.shiftId,
 				)
 				.sort((a, b) => a.breakOrder - b.breakOrder);
-			return ok(rows.map((row) => ({ ...row })));
+			return await ok(rows.map((row) => ({ ...row })));
 		},
 
 		async findShiftAssignmentByIdempotencyKey(input) {
 			const record = state.shiftAssignmentIdempotencyByKey.get(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
-			return ok(
+			return await ok(
 				record ? { ...record, assignment: { ...record.assignment } } : null,
 			);
 		},
@@ -1858,22 +1968,24 @@ export function createMemoryTimeMethods(
 				return invalidState("Shift must be active to assign");
 			}
 			const overlaps = Array.from(state.shiftAssignments.values()).filter(
-				(assignment) =>
-					assignment.organizationId === input.organizationId &&
-					assignment.employeeId === input.employeeId &&
-					assignment.publicationStatus !== "cancelled" &&
+				(assignmentValue) =>
+					assignmentValue.organizationId === input.organizationId &&
+					assignmentValue.employeeId === input.employeeId &&
+					assignmentValue.publicationStatus !== "cancelled" &&
 					intervalsOverlap(
 						input.startsAt,
 						input.endsAt,
-						assignment.startsAt,
-						assignment.endsAt,
+						assignmentValue.startsAt,
+						assignmentValue.endsAt,
 					),
 			);
 			if (overlaps.length > 0) {
 				return conflict("Shift assignment overlaps an existing assignment");
 			}
 			const idResult = parseHumanResourcesShiftAssignmentId(randomUUID());
-			if (!idResult.ok) return idResult;
+			if (!idResult.ok) {
+				return idResult;
+			}
 			const now = new Date();
 			const assignment: ShiftAssignment = {
 				id: idResult.data,
@@ -1894,27 +2006,12 @@ export function createMemoryTimeMethods(
 				createdAt: now,
 				updatedAt: now,
 			};
-			const segments: ShiftAssignmentSegment[] = [];
-			for (const segment of input.segments) {
-				const segmentId = parseHumanResourcesShiftAssignmentSegmentId(
-					randomUUID(),
-				);
-				if (!segmentId.ok) return segmentId;
-				segments.push({
-					id: segmentId.data,
-					organizationId: input.organizationId,
-					assignmentId: assignment.id,
-					segmentOrder: segment.segmentOrder,
-					startsAt: segment.startsAt,
-					endsAt: segment.endsAt,
-					createdAt: now,
-					updatedAt: now,
-				});
+			const segments = buildShiftAssignmentSegments(input, assignment.id, now);
+			if (!segments.ok) {
+				return segments;
 			}
 			state.shiftAssignments.set(assignment.id, assignment);
-			for (const segment of segments) {
-				state.shiftAssignmentSegments.set(segment.id, segment);
-			}
+			setShiftAssignmentSegments(state, segments.data);
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			state.shiftAssignmentIdempotencyByKey.set(key, {
 				assignment: { ...assignment },
@@ -1930,9 +2027,7 @@ export function createMemoryTimeMethods(
 			});
 			if (!recorded.ok) {
 				state.shiftAssignments.delete(assignment.id);
-				for (const segment of segments) {
-					state.shiftAssignmentSegments.delete(segment.id);
-				}
+				deleteShiftAssignmentSegments(state, segments.data);
 				state.shiftAssignmentIdempotencyByKey.delete(key);
 				return recorded;
 			}
@@ -1951,7 +2046,9 @@ export function createMemoryTimeMethods(
 				input,
 				"published",
 			);
-			if (!published.ok) return published;
+			if (!published.ok) {
+				return published;
+			}
 
 			const session = Array.from(state.attendanceSessions.values()).find(
 				(row) =>
@@ -1995,10 +2092,10 @@ export function createMemoryTimeMethods(
 			return published;
 		},
 		async cancelShiftAssignment(input, ports) {
-			return transitionAssignment(state, ports, input, "cancelled");
+			return await transitionAssignment(state, ports, input, "cancelled");
 		},
 		async completeShiftAssignment(input, ports) {
-			return transitionAssignment(state, ports, input, "completed");
+			return await transitionAssignment(state, ports, input, "completed");
 		},
 
 		async changeShiftAssignment(input, ports) {
@@ -2010,7 +2107,9 @@ export function createMemoryTimeMethods(
 				assignment.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			const attendanceExists = Array.from(state.attendanceEvents.values()).some(
 				(event) =>
 					event.organizationId === input.organizationId &&
@@ -2028,7 +2127,9 @@ export function createMemoryTimeMethods(
 				assignment.publicationStatus,
 				"changed",
 			);
-			if (!transition.ok) return transition;
+			if (!transition.ok) {
+				return transition;
+			}
 			const nextStartsAt = input.startsAt ?? assignment.startsAt;
 			const nextEndsAt = input.endsAt ?? assignment.endsAt;
 			const overlaps = Array.from(state.shiftAssignments.values()).filter(
@@ -2049,9 +2150,9 @@ export function createMemoryTimeMethods(
 			assignment.startsAt = nextStartsAt;
 			assignment.endsAt = nextEndsAt;
 			assignment.locationKey =
-				input.locationKey !== undefined
-					? input.locationKey
-					: assignment.locationKey;
+				input.locationKey === undefined
+					? assignment.locationKey
+					: input.locationKey;
 			assignment.timezone = input.timezone ?? assignment.timezone;
 			assignment.publicationStatus = "changed";
 			assignment.version += 1;
@@ -2075,9 +2176,9 @@ export function createMemoryTimeMethods(
 		async getShiftAssignment(input) {
 			const assignment = state.shiftAssignments.get(input.assignmentId);
 			if (!assignment || assignment.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...assignment });
+			return await ok({ ...assignment });
 		},
 
 		async listShiftAssignments(input) {
@@ -2099,7 +2200,7 @@ export function createMemoryTimeMethods(
 							assignment.publicationStatus === input.publicationStatus),
 				)
 				.sort((a, b) => a.scheduledDate.localeCompare(b.scheduledDate));
-			return ok(
+			return await ok(
 				paginate(rows, input.page, input.pageSize).map((row) => ({ ...row })),
 			);
 		},
@@ -2107,7 +2208,7 @@ export function createMemoryTimeMethods(
 		async listShiftAssignmentSegments(input) {
 			const assignment = state.shiftAssignments.get(input.assignmentId);
 			if (!assignment || assignment.organizationId !== input.organizationId) {
-				return ok([]);
+				return await ok([]);
 			}
 			const segments = Array.from(state.shiftAssignmentSegments.values())
 				.filter(
@@ -2117,7 +2218,7 @@ export function createMemoryTimeMethods(
 				)
 				.sort((a, b) => a.segmentOrder - b.segmentOrder)
 				.map((segment) => ({ ...segment }));
-			return ok(segments);
+			return await ok(segments);
 		},
 
 		async getScheduledShiftForEmployeeDate(input) {
@@ -2138,12 +2239,12 @@ export function createMemoryTimeMethods(
 			rows.sort(
 				(a, b) => rank[b.publicationStatus] - rank[a.publicationStatus],
 			);
-			const match = rows[0];
-			return ok(match ? { ...match } : null);
+			const [match] = rows;
+			return await ok(match ? { ...match } : null);
 		},
 
 		async listLocationSchedule(input) {
-			return this.listShiftAssignments({
+			return await this.listShiftAssignments({
 				organizationId: input.organizationId,
 				locationKey: input.locationKey,
 				fromDate: input.fromDate,
@@ -2168,14 +2269,16 @@ export function createMemoryTimeMethods(
 						assignment.endsAt,
 					),
 			);
-			return ok(rows.map((row) => ({ ...row })));
+			return await ok(rows.map((row) => ({ ...row })));
 		},
 
 		async findAttendanceEventByIdempotencyKey(input) {
 			const record = state.attendanceEventIdempotencyByKey.get(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
-			return ok(record ? { ...record, event: { ...record.event } } : null);
+			return await ok(
+				record ? { ...record, event: { ...record.event } } : null,
+			);
 		},
 
 		async findAttendanceEventBySourceReference(input) {
@@ -2186,14 +2289,16 @@ export function createMemoryTimeMethods(
 					input.sourceReference,
 				),
 			);
-			return ok(record ? { ...record, event: { ...record.event } } : null);
+			return await ok(
+				record ? { ...record, event: { ...record.event } } : null,
+			);
 		},
 
 		async findAttendanceImportBatchByIdempotencyKey(input) {
 			const record = state.attendanceImportBatches.get(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
-			return ok(
+			return await ok(
 				record
 					? {
 							result: { ...record.result },
@@ -2209,7 +2314,9 @@ export function createMemoryTimeMethods(
 					organizationId: input.organizationId,
 					idempotencyKey: input.idempotencyKey,
 				});
-			if (!existingBatch.ok) return existingBatch;
+			if (!existingBatch.ok) {
+				return existingBatch;
+			}
 			if (existingBatch.data !== null) {
 				if (
 					existingBatch.data.createRequestFingerprint !==
@@ -2245,7 +2352,7 @@ export function createMemoryTimeMethods(
 				});
 			}
 
-			for (const [rowIndex, row] of input.events.entries()) {
+			await runSequential(input.events.entries(), async ([rowIndex, row]) => {
 				const outcomeRowIndex = input.sourceRowIndexes?.[rowIndex] ?? rowIndex;
 				if (!isValidIanaTimeZone(row.sourceTimezone)) {
 					const rejection: AttendanceImportRejectedRow = {
@@ -2266,7 +2373,7 @@ export function createMemoryTimeMethods(
 						payloadChecksum: row.payloadChecksum ?? null,
 						createdAt: now,
 					});
-					continue;
+					return sequentialContinue();
 				}
 
 				const employee = core.employees.get(row.employeeId);
@@ -2292,7 +2399,7 @@ export function createMemoryTimeMethods(
 						payloadChecksum: row.payloadChecksum ?? null,
 						createdAt: now,
 					});
-					continue;
+					return sequentialContinue();
 				}
 
 				const employment =
@@ -2334,7 +2441,7 @@ export function createMemoryTimeMethods(
 						payloadChecksum: row.payloadChecksum ?? null,
 						createdAt: now,
 					});
-					continue;
+					return sequentialContinue();
 				}
 
 				const fingerprint = buildImportEventFingerprint({
@@ -2362,7 +2469,7 @@ export function createMemoryTimeMethods(
 						errorCode: "STORE_ERROR",
 						errorMessage: ATTENDANCE_IMPORT_LOOKUP_FAILED_MESSAGE,
 					});
-					continue;
+					return sequentialContinue();
 				}
 				if (existingByRef.data !== null) {
 					if (existingByRef.data.createRequestFingerprint === fingerprint) {
@@ -2393,7 +2500,7 @@ export function createMemoryTimeMethods(
 							createdAt: now,
 						});
 					}
-					continue;
+					return sequentialContinue();
 				}
 
 				const recorded = await this.recordAttendanceEvent(
@@ -2439,14 +2546,14 @@ export function createMemoryTimeMethods(
 						payloadChecksum: row.payloadChecksum ?? null,
 						createdAt: now,
 					});
-					continue;
+					return sequentialContinue();
 				}
 				accepted.push({
 					rowIndex: outcomeRowIndex,
 					sourceReference: row.sourceReference,
 					eventId: recorded.data.id,
 				});
-			}
+			});
 
 			const status = resolveImportBatchStatus({
 				accepted: accepted.length,
@@ -2499,12 +2606,14 @@ export function createMemoryTimeMethods(
 
 		async recordAttendanceEvent(input: AttendanceEventRecordInput, ports) {
 			const idResult = parseHumanResourcesAttendanceEventId(randomUUID());
-			if (!idResult.ok) return idResult;
+			if (!idResult.ok) {
+				return idResult;
+			}
 			const existingForDay = Array.from(state.attendanceEvents.values()).filter(
-				(event) =>
-					event.organizationId === input.organizationId &&
-					event.employeeId === input.employeeId &&
-					event.localWorkDate === input.localWorkDate,
+				(eventValue) =>
+					eventValue.organizationId === input.organizationId &&
+					eventValue.employeeId === input.employeeId &&
+					eventValue.localWorkDate === input.localWorkDate,
 			);
 			const sourceSequence = resolveAttendanceEventSourceSequence({
 				explicit: input.sourceSequence,
@@ -2554,8 +2663,7 @@ export function createMemoryTimeMethods(
 				);
 				state.attendanceEventBySourceRef.set(sourceRefKey, idempotent);
 			}
-			const correlationId =
-				input.correlationId ?? `hr-time-hr_attendance_event-${event.id}`;
+			const { correlationId } = input;
 			const recorded = await audit(ports, {
 				organizationId: event.organizationId,
 				actorUserId: event.createdBy,
@@ -2613,8 +2721,10 @@ export function createMemoryTimeMethods(
 					event.version,
 					input.expectedVersion,
 				);
-				if (!versionCheck.ok) return versionCheck;
-				const nextNotes = input.notes !== undefined ? input.notes : event.notes;
+				if (!versionCheck.ok) {
+					return versionCheck;
+				}
+				const nextNotes = input.notes === undefined ? event.notes : input.notes;
 				const now = new Date();
 				const corrected: AttendanceEvent = {
 					...event,
@@ -2627,7 +2737,9 @@ export function createMemoryTimeMethods(
 				const adjustmentId = parseHumanResourcesAttendanceAdjustmentId(
 					randomUUID(),
 				);
-				if (!adjustmentId.ok) return adjustmentId;
+				if (!adjustmentId.ok) {
+					return adjustmentId;
+				}
 				const adjustment: AttendanceAdjustment = {
 					id: adjustmentId.data,
 					organizationId: event.organizationId,
@@ -2675,7 +2787,9 @@ export function createMemoryTimeMethods(
 						entityId: adjustment.id,
 						action: "DELETE",
 					});
-					if (!compensationAudit.ok) return compensationAudit;
+					if (!compensationAudit.ok) {
+						return compensationAudit;
+					}
 					return outbox;
 				}
 				state.attendanceEvents.set(event.id, corrected);
@@ -2698,7 +2812,9 @@ export function createMemoryTimeMethods(
 				event.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			if (event.voidedAt !== null) {
 				return invalidState("Attendance event is already voided");
 			}
@@ -2726,13 +2842,13 @@ export function createMemoryTimeMethods(
 		async getAttendanceEvent(input) {
 			const event = state.attendanceEvents.get(input.eventId);
 			if (!event || event.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...event });
+			return await ok({ ...event });
 		},
 
 		async listAttendanceAdjustments(input) {
-			return ok(
+			return await ok(
 				state.attendanceAdjustments
 					.filter(
 						(adjustment) =>
@@ -2765,7 +2881,7 @@ export function createMemoryTimeMethods(
 							event.eventType === input.eventType),
 				),
 			);
-			return ok(
+			return await ok(
 				paginate(rows, input.page, input.pageSize).map((row) => ({ ...row })),
 			);
 		},
@@ -2774,7 +2890,9 @@ export function createMemoryTimeMethods(
 			const record = state.attendanceSessionIdempotencyByKey.get(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
-			return ok(record ? { ...record, session: { ...record.session } } : null);
+			return await ok(
+				record ? { ...record, session: { ...record.session } } : null,
+			);
 		},
 
 		async resolveAttendanceSession(
@@ -2795,10 +2913,10 @@ export function createMemoryTimeMethods(
 				input.automaticBreakPolicy,
 			);
 			const existing = Array.from(state.attendanceSessions.values()).find(
-				(session) =>
-					session.organizationId === input.organizationId &&
-					session.employeeId === input.employeeId &&
-					session.localWorkDate === input.localWorkDate,
+				(sessionValue) =>
+					sessionValue.organizationId === input.organizationId &&
+					sessionValue.employeeId === input.employeeId &&
+					sessionValue.localWorkDate === input.localWorkDate,
 			);
 			const now = new Date();
 			if (existing) {
@@ -2873,7 +2991,9 @@ export function createMemoryTimeMethods(
 			}
 
 			const idResult = parseHumanResourcesAttendanceSessionId(randomUUID());
-			if (!idResult.ok) return idResult;
+			if (!idResult.ok) {
+				return idResult;
+			}
 			const session: AttendanceSession = {
 				id: idResult.data,
 				organizationId: input.organizationId,
@@ -2940,9 +3060,9 @@ export function createMemoryTimeMethods(
 		async getAttendanceSession(input) {
 			const session = state.attendanceSessions.get(input.sessionId);
 			if (!session || session.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...session });
+			return await ok({ ...session });
 		},
 
 		async approveAttendanceBreakWaiver(input, ports) {
@@ -2954,8 +3074,10 @@ export function createMemoryTimeMethods(
 				session.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
-			const automaticBreak = session.provenance.automaticBreak;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+			const { automaticBreak } = session.provenance;
 			if (
 				automaticBreak === null ||
 				!automaticBreak.applied ||
@@ -2968,10 +3090,10 @@ export function createMemoryTimeMethods(
 			const duplicate = Array.from(
 				state.attendanceBreakWaiverDecisions.values(),
 			).some(
-				(decision) =>
-					decision.organizationId === input.organizationId &&
-					decision.sessionId === input.sessionId &&
-					decision.sessionVersion === input.expectedVersion,
+				(decisionValue2) =>
+					decisionValue2.organizationId === input.organizationId &&
+					decisionValue2.sessionId === input.sessionId &&
+					decisionValue2.sessionVersion === input.expectedVersion,
 			);
 			if (duplicate) {
 				return conflict(
@@ -2996,7 +3118,9 @@ export function createMemoryTimeMethods(
 			const id = parseHumanResourcesAttendanceBreakWaiverDecisionId(
 				randomUUID(),
 			);
-			if (!id.ok) return id;
+			if (!id.ok) {
+				return id;
+			}
 			const now = new Date();
 			const decision: AttendanceBreakWaiverDecision = {
 				id: id.data,
@@ -3032,7 +3156,7 @@ export function createMemoryTimeMethods(
 		},
 
 		async listAttendanceBreakWaiverDecisions(input) {
-			return ok(
+			return await ok(
 				Array.from(state.attendanceBreakWaiverDecisions.values())
 					.filter(
 						(decision) =>
@@ -3060,7 +3184,7 @@ export function createMemoryTimeMethods(
 							session.localWorkDate <= input.toDate),
 				)
 				.sort((a, b) => a.localWorkDate.localeCompare(b.localWorkDate));
-			return ok(
+			return await ok(
 				paginate(rows, input.page, input.pageSize).map((row) => ({ ...row })),
 			);
 		},
@@ -3081,7 +3205,7 @@ export function createMemoryTimeMethods(
 							(b.finalClockOutAt?.getTime() ?? 0) -
 							(a.finalClockOutAt?.getTime() ?? 0),
 					)[0] ?? null;
-			return ok(previous === null ? null : { ...previous });
+			return await ok(previous === null ? null : { ...previous });
 		},
 
 		async createAttendanceException(
@@ -3089,7 +3213,9 @@ export function createMemoryTimeMethods(
 			ports,
 		) {
 			const idResult = parseHumanResourcesAttendanceExceptionId(randomUUID());
-			if (!idResult.ok) return idResult;
+			if (!idResult.ok) {
+				return idResult;
+			}
 			const now = new Date();
 			const exception: AttendanceException = {
 				id: idResult.data,
@@ -3112,9 +3238,7 @@ export function createMemoryTimeMethods(
 				updatedAt: now,
 			};
 			state.attendanceExceptions.set(exception.id, exception);
-			const correlationId =
-				input.correlationId ??
-				`hr-time-hr_attendance_exception-${exception.id}`;
+			const { correlationId } = input;
 			const recorded = await audit(ports, {
 				organizationId: exception.organizationId,
 				actorUserId: exception.createdBy,
@@ -3143,10 +3267,10 @@ export function createMemoryTimeMethods(
 		},
 
 		async reviewAttendanceException(input, ports) {
-			return transitionException(state, ports, input, "in_review");
+			return await transitionException(state, ports, input, "in_review");
 		},
 		async excuseAttendanceException(input, ports) {
-			return transitionException(state, ports, input, "excused", {
+			return await transitionException(state, ports, input, "excused", {
 				resolution: input.resolution,
 				...(input.evidenceReference === undefined
 					? {}
@@ -3154,12 +3278,12 @@ export function createMemoryTimeMethods(
 			});
 		},
 		async rejectAttendanceException(input, ports) {
-			return transitionException(state, ports, input, "rejected", {
+			return await transitionException(state, ports, input, "rejected", {
 				resolution: input.resolution,
 			});
 		},
 		async resolveAttendanceException(input, ports) {
-			return transitionException(state, ports, input, "resolved", {
+			return await transitionException(state, ports, input, "resolved", {
 				resolution: input.resolution,
 			});
 		},
@@ -3167,9 +3291,9 @@ export function createMemoryTimeMethods(
 		async getAttendanceException(input) {
 			const exception = state.attendanceExceptions.get(input.exceptionId);
 			if (!exception || exception.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...exception });
+			return await ok({ ...exception });
 		},
 
 		async listAttendanceExceptions(input) {
@@ -3183,7 +3307,7 @@ export function createMemoryTimeMethods(
 							exception.reviewStatus === input.reviewStatus),
 				)
 				.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-			return ok(
+			return await ok(
 				paginate(rows, input.page, input.pageSize).map((row) => ({ ...row })),
 			);
 		},
@@ -3199,7 +3323,7 @@ export function createMemoryTimeMethods(
 							exception.reviewStatus === "in_review"),
 				)
 				.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-			return ok(
+			return await ok(
 				paginate(rows, input.page, input.pageSize).map((row) => ({ ...row })),
 			);
 		},
@@ -3210,7 +3334,9 @@ export function createMemoryTimeMethods(
 				employeeId: input.employeeId,
 				scheduledDate: input.localWorkDate,
 			});
-			if (!scheduled.ok) return scheduled;
+			if (!scheduled.ok) {
+				return scheduled;
+			}
 			const sessions = await this.listAttendanceSessions({
 				organizationId: input.organizationId,
 				employeeId: input.employeeId,
@@ -3219,7 +3345,9 @@ export function createMemoryTimeMethods(
 				page: 1,
 				pageSize: 100,
 			});
-			if (!sessions.ok) return sessions;
+			if (!sessions.ok) {
+				return sessions;
+			}
 			const session =
 				sessions.data.find((row) => row.timezone === input.timezone) ??
 				sessions.data[0] ??
@@ -3232,14 +3360,18 @@ export function createMemoryTimeMethods(
 				page: 1,
 				pageSize: 500,
 			});
-			if (!events.ok) return events;
+			if (!events.ok) {
+				return events;
+			}
 			const unresolved = await this.listUnresolvedAttendanceExceptions({
 				organizationId: input.organizationId,
 				employeeId: input.employeeId,
 				page: 1,
 				pageSize: 500,
 			});
-			if (!unresolved.ok) return unresolved;
+			if (!unresolved.ok) {
+				return unresolved;
+			}
 			const unresolvedForDate = unresolved.data.filter((exception) => {
 				if (exception.sessionId !== null && session !== null) {
 					return exception.sessionId === session.id;
@@ -3270,14 +3402,16 @@ export function createMemoryTimeMethods(
 			const record = state.timesheetIdempotencyByKey.get(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
-			return ok(
+			return await ok(
 				record ? { ...record, timesheet: { ...record.timesheet } } : null,
 			);
 		},
 
 		async createTimesheet(input: TimesheetCreateRecord, ports) {
 			const idResult = parseHumanResourcesTimesheetId(randomUUID());
-			if (!idResult.ok) return idResult;
+			if (!idResult.ok) {
+				return idResult;
+			}
 			const now = new Date();
 			const timesheet: Timesheet = {
 				id: idResult.data,
@@ -3340,7 +3474,9 @@ export function createMemoryTimeMethods(
 				timesheet.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			if (timesheet.status !== "draft" && timesheet.status !== "returned") {
 				return invalidState("Timesheet is not editable for entry generation");
 			}
@@ -3352,7 +3488,9 @@ export function createMemoryTimeMethods(
 					periodStart: timesheet.periodStart,
 					periodEnd: timesheet.periodEnd,
 				});
-			if (!leaveFacts.ok) return leaveFacts;
+			if (!leaveFacts.ok) {
+				return leaveFacts;
+			}
 
 			const sessions = Array.from(state.attendanceSessions.values()).filter(
 				(session) =>
@@ -3376,14 +3514,18 @@ export function createMemoryTimeMethods(
 						continue;
 					}
 					const already = Array.from(state.timesheetEntries.values()).some(
-						(entry) =>
-							entry.timesheetId === timesheet.id &&
-							entry.sourceType === "attendance" &&
-							entry.sourceReference === plan.sourceReference,
+						(entryValue2) =>
+							entryValue2.timesheetId === timesheet.id &&
+							entryValue2.sourceType === "attendance" &&
+							entryValue2.sourceReference === plan.sourceReference,
 					);
-					if (already) continue;
+					if (already) {
+						continue;
+					}
 					const idResult = parseHumanResourcesTimesheetEntryId(randomUUID());
-					if (!idResult.ok) return idResult;
+					if (!idResult.ok) {
+						return idResult;
+					}
 					const now = new Date();
 					const entry: TimesheetEntry = {
 						id: idResult.data,
@@ -3418,12 +3560,14 @@ export function createMemoryTimeMethods(
 
 			for (const fact of leaveFacts.data) {
 				const already = Array.from(state.timesheetEntries.values()).some(
-					(entry) =>
-						entry.timesheetId === timesheet.id &&
-						entry.sourceType === "leave" &&
-						entry.sourceReference === fact.segmentId,
+					(entryValue) =>
+						entryValue.timesheetId === timesheet.id &&
+						entryValue.sourceType === "leave" &&
+						entryValue.sourceReference === fact.segmentId,
 				);
-				if (already) continue;
+				if (already) {
+					continue;
+				}
 				const mapped = mapApprovedLeaveFactToEntryInput({
 					fact,
 					timesheet,
@@ -3431,7 +3575,9 @@ export function createMemoryTimeMethods(
 					correlationId: input.correlationId,
 				});
 				const idResult = parseHumanResourcesTimesheetEntryId(randomUUID());
-				if (!idResult.ok) return idResult;
+				if (!idResult.ok) {
+					return idResult;
+				}
 				const now = new Date();
 				const entry: TimesheetEntry = {
 					id: idResult.data,
@@ -3473,20 +3619,24 @@ export function createMemoryTimeMethods(
 			> extends Result<infer T>
 				? T
 				: never;
-			if (timesheet.employmentId !== null) {
-				const employmentResult = await fullStore.getEmploymentById({
-					organizationId: input.organizationId,
-					employmentId: timesheet.employmentId,
-				});
-				if (!employmentResult.ok) return employmentResult;
-				employment = employmentResult.data;
-			} else {
+			if (timesheet.employmentId === null) {
 				const found = await fullStore.findOpenEmploymentByEmployee({
 					organizationId: input.organizationId,
 					employeeId: timesheet.employeeId,
 				});
-				if (!found.ok) return found;
+				if (!found.ok) {
+					return found;
+				}
 				employment = found.data;
+			} else {
+				const employmentResult = await fullStore.getEmploymentById({
+					organizationId: input.organizationId,
+					employmentId: timesheet.employmentId,
+				});
+				if (!employmentResult.ok) {
+					return employmentResult;
+				}
+				employment = employmentResult.data;
 			}
 
 			const existingExceptions = Array.from(
@@ -3497,82 +3647,87 @@ export function createMemoryTimeMethods(
 					exception.employeeId === timesheet.employeeId,
 			);
 
-			for (const workDate of iterDatesInclusive(
-				timesheet.periodStart,
-				timesheet.periodEnd,
-			)) {
-				const expected = await resolveExpectedWorkMinutes({
-					host,
-					organizationId: input.organizationId,
-					employeeId: timesheet.employeeId,
-					employmentId: timesheet.employmentId ?? employment?.id ?? null,
-					workDate,
-				});
-				if (!expected.ok) return expected;
-
-				const leaveMinutes = approvedLeaveMinutesForDate(
-					workDate,
-					leaveFacts.data,
-				);
-				const workedMinutes = qualifyingWorkedMinutesForDate(
-					workDate,
-					sessions,
-					periodEntries,
-				);
-
-				if (
-					!isBasicFullDayAbsence({
-						activeEmployment: isActiveEmploymentOnDate(employment, workDate),
-						expectedWorkMinutes: expected.data.expectedWorkMinutes,
-						qualifyingWorkedMinutes: workedMinutes,
-						approvedLeaveCoveredMinutes: leaveMinutes,
-					})
-				) {
-					continue;
-				}
-
-				if (
-					hasExistingTimesheetGenerationAbsence({
-						exceptions: existingExceptions,
-						employeeId: timesheet.employeeId,
-						workDate,
-					})
-				) {
-					continue;
-				}
-
-				const created = await host.createAttendanceException(
-					{
+			const sequentialOutcome2 = await runSequential(
+				iterDatesInclusive(timesheet.periodStart, timesheet.periodEnd),
+				async (workDate) => {
+					const expected = await resolveExpectedWorkMinutes({
+						host,
 						organizationId: input.organizationId,
 						employeeId: timesheet.employeeId,
-						sessionId: null,
-						eventId: null,
-						shiftAssignmentId: expected.data.shiftAssignmentId,
-						exceptionType: "absence",
-						severity: "warning",
-						remarks: encodeAbsenceDetectionRemarks({
+						employmentId: timesheet.employmentId ?? employment?.id ?? null,
+						workDate,
+					});
+					if (!expected.ok) {
+						return sequentialReturn(expected);
+					}
+
+					const leaveMinutes = approvedLeaveMinutesForDate(
+						workDate,
+						leaveFacts.data,
+					);
+					const workedMinutes = qualifyingWorkedMinutesForDate(
+						workDate,
+						sessions,
+						periodEntries,
+					);
+
+					if (
+						!isBasicFullDayAbsence({
+							activeEmployment: isActiveEmploymentOnDate(employment, workDate),
+							expectedWorkMinutes: expected.data.expectedWorkMinutes,
+							qualifyingWorkedMinutes: workedMinutes,
+							approvedLeaveCoveredMinutes: leaveMinutes,
+						})
+					) {
+						return sequentialContinue();
+					}
+
+					if (
+						hasExistingTimesheetGenerationAbsence({
+							exceptions: existingExceptions,
+							employeeId: timesheet.employeeId,
 							workDate,
-							expectedMinutes: expected.data.expectedWorkMinutes,
-							detectionSource: TIMESHEET_GENERATION_ABSENCE_SOURCE,
+						})
+					) {
+						return sequentialContinue();
+					}
+
+					const created = await host.createAttendanceException(
+						{
+							organizationId: input.organizationId,
+							employeeId: timesheet.employeeId,
+							sessionId: null,
+							eventId: null,
 							shiftAssignmentId: expected.data.shiftAssignmentId,
-							timesheetId: timesheet.id,
-						}),
-						createdBy: input.actorUserId,
-						correlationId: input.correlationId,
-					},
-					ports,
-				);
-				if (!created.ok) {
-					for (const entry of createdEntries) {
-						state.timesheetEntries.delete(entry.id);
+							exceptionType: "absence",
+							severity: "warning",
+							remarks: encodeAbsenceDetectionRemarks({
+								workDate,
+								expectedMinutes: expected.data.expectedWorkMinutes,
+								detectionSource: TIMESHEET_GENERATION_ABSENCE_SOURCE,
+								shiftAssignmentId: expected.data.shiftAssignmentId,
+								timesheetId: timesheet.id,
+							}),
+							createdBy: input.actorUserId,
+							correlationId: input.correlationId,
+						},
+						ports,
+					);
+					if (!created.ok) {
+						for (const entry of createdEntries) {
+							state.timesheetEntries.delete(entry.id);
+						}
+						for (const exceptionId of createdExceptionIds) {
+							state.attendanceExceptions.delete(exceptionId);
+						}
+						return sequentialReturn(created);
 					}
-					for (const exceptionId of createdExceptionIds) {
-						state.attendanceExceptions.delete(exceptionId);
-					}
-					return created;
-				}
-				createdExceptionIds.push(created.data.id);
-				existingExceptions.push(created.data);
+					createdExceptionIds.push(created.data.id);
+					existingExceptions.push(created.data);
+				},
+			);
+			if (sequentialOutcome2.kind === "return") {
+				return sequentialOutcome2.value;
 			}
 
 			const previous = { ...timesheet };
@@ -3613,7 +3768,9 @@ export function createMemoryTimeMethods(
 				return invalidState("Timesheet is not editable");
 			}
 			const idResult = parseHumanResourcesTimesheetEntryId(randomUUID());
-			if (!idResult.ok) return idResult;
+			if (!idResult.ok) {
+				return idResult;
+			}
 			const now = new Date();
 			const entry: TimesheetEntry = {
 				id: idResult.data,
@@ -3667,7 +3824,9 @@ export function createMemoryTimeMethods(
 				return notFound("Timesheet entry not found");
 			}
 			const timesheet = state.timesheets.get(entry.timesheetId);
-			if (!timesheet) return notFound("Timesheet not found");
+			if (!timesheet) {
+				return notFound("Timesheet not found");
+			}
 			if (timesheet.status !== "draft" && timesheet.status !== "returned") {
 				return invalidState("Timesheet is not editable");
 			}
@@ -3675,19 +3834,29 @@ export function createMemoryTimeMethods(
 				entry.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			const previous = { ...entry };
 			entry.workDate = input.workDate ?? entry.workDate;
 			entry.timeType = input.timeType ?? entry.timeType;
-			if (input.startedAt !== undefined) entry.startedAt = input.startedAt;
-			if (input.endedAt !== undefined) entry.endedAt = input.endedAt;
+			if (input.startedAt !== undefined) {
+				entry.startedAt = input.startedAt;
+			}
+			if (input.endedAt !== undefined) {
+				entry.endedAt = input.endedAt;
+			}
 			entry.recordedMinutes = input.recordedMinutes ?? entry.recordedMinutes;
 			entry.approvedMinutes = input.approvedMinutes ?? entry.approvedMinutes;
 			if (input.costCenterId !== undefined) {
 				entry.costCenterId = input.costCenterId;
 			}
-			if (input.projectId !== undefined) entry.projectId = input.projectId;
-			if (input.locationId !== undefined) entry.locationId = input.locationId;
+			if (input.projectId !== undefined) {
+				entry.projectId = input.projectId;
+			}
+			if (input.locationId !== undefined) {
+				entry.locationId = input.locationId;
+			}
 			if (input.departmentId !== undefined) {
 				entry.departmentId = input.departmentId;
 			}
@@ -3725,9 +3894,13 @@ export function createMemoryTimeMethods(
 				entry.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			const timesheet = state.timesheets.get(entry.timesheetId);
-			if (!timesheet) return notFound("Timesheet not found");
+			if (!timesheet) {
+				return notFound("Timesheet not found");
+			}
 			if (timesheet.status !== "draft" && timesheet.status !== "returned") {
 				return invalidState("Timesheet is not editable");
 			}
@@ -3749,7 +3922,7 @@ export function createMemoryTimeMethods(
 		},
 
 		async submitTimesheet(input, ports) {
-			return transitionTimesheet(state, ports, input, "submitted", {
+			return await transitionTimesheet(state, ports, input, "submitted", {
 				submittedAt: new Date(),
 				submissionReference: input.submissionReference,
 				approvalPolicyId: input.approvalPolicyId,
@@ -3760,7 +3933,7 @@ export function createMemoryTimeMethods(
 			});
 		},
 		async returnTimesheet(input, ports) {
-			return transitionTimesheet(state, ports, input, "returned", {
+			return await transitionTimesheet(state, ports, input, "returned", {
 				approverNotes: input.approverNotes ?? null,
 			});
 		},
@@ -3773,12 +3946,16 @@ export function createMemoryTimeMethods(
 				actorUserId: input.actorUserId,
 				createdBy: timesheet.createdBy,
 			});
-			if (!selfCheck.ok) return selfCheck;
+			if (!selfCheck.ok) {
+				return selfCheck;
+			}
 			const versionCheck = assertExpectedVersion(
 				timesheet.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			if (timesheet.status !== "submitted") {
 				return invalidState("Timesheet must be submitted for approval");
 			}
@@ -3796,16 +3973,18 @@ export function createMemoryTimeMethods(
 				);
 			}
 			const duplicate = [...state.timesheetApprovalDecisions.values()].some(
-				(decision) =>
-					decision.organizationId === input.organizationId &&
-					decision.submissionReference === timesheet.submissionReference &&
-					decision.stepIndex === timesheet.completedApprovalSteps,
+				(decisionValue) =>
+					decisionValue.organizationId === input.organizationId &&
+					decisionValue.submissionReference === timesheet.submissionReference &&
+					decisionValue.stepIndex === timesheet.completedApprovalSteps,
 			);
 			if (duplicate) {
 				return conflict("Timesheet approval step already decided");
 			}
 			const id = parseHumanResourcesTimesheetApprovalDecisionId(randomUUID());
-			if (!id.ok) return id;
+			if (!id.ok) {
+				return id;
+			}
 			const now = new Date();
 			const completedApprovalSteps = timesheet.completedApprovalSteps + 1;
 			const isFinal =
@@ -3870,13 +4049,15 @@ export function createMemoryTimeMethods(
 					entityId: decision.id,
 					action: "DELETE",
 				});
-				if (!compensationAudit.ok) return compensationAudit;
+				if (!compensationAudit.ok) {
+					return compensationAudit;
+				}
 				return event;
 			}
 			return ok({ ...timesheet });
 		},
 		async listTimesheetApprovalDecisions(input) {
-			return ok(
+			return await ok(
 				[...state.timesheetApprovalDecisions.values()]
 					.filter(
 						(decision) =>
@@ -3890,12 +4071,12 @@ export function createMemoryTimeMethods(
 			);
 		},
 		async rejectTimesheet(input, ports) {
-			return transitionTimesheet(state, ports, input, "rejected", {
+			return await transitionTimesheet(state, ports, input, "rejected", {
 				rejectionReason: input.rejectionReason,
 			});
 		},
 		async reopenTimesheet(input, ports) {
-			return transitionTimesheet(
+			return await transitionTimesheet(
 				state,
 				ports,
 				input,
@@ -3904,7 +4085,7 @@ export function createMemoryTimeMethods(
 			);
 		},
 		async lockTimesheet(input, ports) {
-			return transitionTimesheet(state, ports, input, "locked", {
+			return await transitionTimesheet(state, ports, input, "locked", {
 				lockedAt: new Date(),
 			});
 		},
@@ -3918,12 +4099,16 @@ export function createMemoryTimeMethods(
 				timesheet.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			const transition = assertTimesheetStatusTransition(
 				timesheet.status,
 				"superseded",
 			);
-			if (!transition.ok) return transition;
+			if (!transition.ok) {
+				return transition;
+			}
 			const previous = { ...timesheet };
 			timesheet.status = "superseded";
 			timesheet.version += 1;
@@ -4003,9 +4188,9 @@ export function createMemoryTimeMethods(
 		async getTimesheet(input) {
 			const timesheet = state.timesheets.get(input.timesheetId);
 			if (!timesheet || timesheet.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...timesheet });
+			return await ok({ ...timesheet });
 		},
 
 		async findTimesheetForEmployeePeriod(input) {
@@ -4017,7 +4202,7 @@ export function createMemoryTimeMethods(
 					timesheet.periodEnd === input.periodEnd &&
 					timesheet.status !== "superseded",
 			);
-			return ok(match ? { ...match } : null);
+			return await ok(match ? { ...match } : null);
 		},
 
 		async listTimesheets(input) {
@@ -4032,7 +4217,7 @@ export function createMemoryTimeMethods(
 							timesheet.periodStart === input.periodStart),
 				)
 				.sort((a, b) => b.periodStart.localeCompare(a.periodStart));
-			return ok(
+			return await ok(
 				paginate(rows, input.page, input.pageSize).map((row) => ({ ...row })),
 			);
 		},
@@ -4045,20 +4230,20 @@ export function createMemoryTimeMethods(
 						entry.timesheetId === input.timesheetId,
 				)
 				.sort((a, b) => a.workDate.localeCompare(b.workDate));
-			return ok(rows.map((row) => ({ ...row })));
+			return await ok(rows.map((row) => ({ ...row })));
 		},
 
 		async getTimesheetTotals(input) {
 			const timesheet = state.timesheets.get(input.timesheetId);
 			if (!timesheet || timesheet.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
 			const entries = Array.from(state.timesheetEntries.values()).filter(
 				(entry) =>
 					entry.organizationId === input.organizationId &&
 					entry.timesheetId === input.timesheetId,
 			);
-			return ok({
+			return await ok({
 				timesheetId: timesheet.id,
 				totalRecordedMinutes: timesheet.totalRecordedMinutes,
 				totalApprovedMinutes: timesheet.totalApprovedMinutes,
@@ -4069,70 +4254,26 @@ export function createMemoryTimeMethods(
 		async getApprovedTimeHandoff(input) {
 			const timesheet = state.timesheets.get(input.timesheetId);
 			if (!timesheet || timesheet.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
 			if (timesheet.status !== "approved" && timesheet.status !== "locked") {
-				return ok(null);
+				return await ok(null);
 			}
 			const entries = Array.from(state.timesheetEntries.values()).filter(
 				(entry) =>
 					entry.organizationId === input.organizationId &&
 					entry.timesheetId === timesheet.id,
 			);
-			const overtimeMap = new Map<OvertimeType, number>();
-			let regularMinutes = 0;
-			let publicHolidayMinutes = 0;
-			let restDayMinutes = 0;
-			let nightMinutes = 0;
-			let unpaidMinutes = 0;
-			let paidLeaveMinutes = 0;
-			let unpaidLeaveMinutes = 0;
-			for (const entry of entries) {
-				const minutes = entry.approvedMinutes;
-				switch (entry.timeType) {
-					case "regular":
-						regularMinutes += minutes;
-						break;
-					case "overtime": {
-						const type =
-							parseOvertimeType(entry.sourceReference) ?? "weekday_overtime";
-						overtimeMap.set(type, (overtimeMap.get(type) ?? 0) + minutes);
-						break;
-					}
-					case "public_holiday":
-						publicHolidayMinutes += minutes;
-						break;
-					case "rest_day":
-						restDayMinutes += minutes;
-						break;
-					case "night":
-						nightMinutes += minutes;
-						break;
-					case "unpaid":
-						unpaidMinutes += minutes;
-						if (entry.sourceType === "leave") {
-							unpaidLeaveMinutes += minutes;
-						}
-						break;
-					case "call_back":
-						overtimeMap.set(
-							"call_back",
-							(overtimeMap.get("call_back") ?? 0) + minutes,
-						);
-						break;
-					case "training":
-					case "travel":
-					case "standby":
-						if (entry.sourceType === "leave") {
-							paidLeaveMinutes += minutes;
-						}
-						break;
-					default: {
-						const _exhaustive: never = entry.timeType;
-						void _exhaustive;
-					}
-				}
-			}
+			const {
+				nightMinutes,
+				overtime,
+				paidLeaveMinutes,
+				publicHolidayMinutes,
+				regularMinutes,
+				restDayMinutes,
+				unpaidLeaveMinutes,
+				unpaidMinutes,
+			} = aggregatePayrollMinutes(entries);
 			const handoff: ApprovedTimeHandoff = {
 				organizationId: timesheet.organizationId,
 				employeeId: timesheet.employeeId,
@@ -4140,7 +4281,7 @@ export function createMemoryTimeMethods(
 				periodStart: timesheet.periodStart,
 				periodEnd: timesheet.periodEnd,
 				regularMinutes,
-				overtime: Array.from(overtimeMap.entries()).map(([type, minutes]) => ({
+				overtime: Array.from(overtime.entries()).map(([type, minutes]) => ({
 					type,
 					minutes,
 				})),
@@ -4155,19 +4296,23 @@ export function createMemoryTimeMethods(
 				approvedAt: (timesheet.approvedAt ?? timesheet.updatedAt).toISOString(),
 				approvalReference: timesheet.approvedBy ?? timesheet.id,
 			};
-			return ok(handoff);
+			return await ok(handoff);
 		},
 
 		async findOvertimeRequestByIdempotencyKey(input) {
 			const record = state.overtimeRequestIdempotencyByKey.get(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
-			return ok(record ? { ...record, request: { ...record.request } } : null);
+			return await ok(
+				record ? { ...record, request: { ...record.request } } : null,
+			);
 		},
 
 		async createOvertimeRequest(input: OvertimeRequestCreateRecord, ports) {
 			const idResult = parseHumanResourcesOvertimeRequestId(randomUUID());
-			if (!idResult.ok) return idResult;
+			if (!idResult.ok) {
+				return idResult;
+			}
 			const now = new Date();
 			const request: OvertimeRequest = {
 				id: idResult.data,
@@ -4221,12 +4366,16 @@ export function createMemoryTimeMethods(
 				actorUserId: input.actorUserId,
 				createdBy: request.createdBy,
 			});
-			if (!selfCheck.ok) return selfCheck;
+			if (!selfCheck.ok) {
+				return selfCheck;
+			}
 			const versionCheck = assertExpectedVersion(
 				request.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			if (request.status === "approved") {
 				if (request.approvedMaximumMinutes === input.approvedMaximumMinutes) {
 					return ok({ ...request });
@@ -4239,7 +4388,9 @@ export function createMemoryTimeMethods(
 				request.status,
 				"approved",
 			);
-			if (!transition.ok) return transition;
+			if (!transition.ok) {
+				return transition;
+			}
 			const previous = { ...request };
 			request.status = "approved";
 			request.approvedMaximumMinutes = input.approvedMaximumMinutes;
@@ -4290,12 +4441,12 @@ export function createMemoryTimeMethods(
 		},
 
 		async rejectOvertimeRequest(input, ports) {
-			return transitionOvertime(state, ports, input, "rejected", {
+			return await transitionOvertime(state, ports, input, "rejected", {
 				comment: input.comment,
 			});
 		},
 		async cancelOvertimeRequest(input, ports) {
-			return transitionOvertime(state, ports, input, "cancelled");
+			return await transitionOvertime(state, ports, input, "cancelled");
 		},
 		async recordOvertimeActual(input, ports) {
 			const request = state.overtimeRequests.get(input.requestId);
@@ -4306,12 +4457,16 @@ export function createMemoryTimeMethods(
 				request.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			const transition = assertOvertimeStatusTransition(
 				request.status,
 				"worked",
 			);
-			if (!transition.ok) return transition;
+			if (!transition.ok) {
+				return transition;
+			}
 			const previous = { ...request };
 			request.status = "worked";
 			request.actualMinutes = input.actualMinutes;
@@ -4341,12 +4496,16 @@ export function createMemoryTimeMethods(
 				request.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			const transition = assertOvertimeStatusTransition(
 				request.status,
 				"verified",
 			);
-			if (!transition.ok) return transition;
+			if (!transition.ok) {
+				return transition;
+			}
 			const previous = { ...request };
 			request.status = "verified";
 			request.payrollApprovedMinutes = input.payrollApprovedMinutes;
@@ -4384,9 +4543,9 @@ export function createMemoryTimeMethods(
 		async getOvertimeRequest(input) {
 			const request = state.overtimeRequests.get(input.requestId);
 			if (!request || request.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...request });
+			return await ok({ ...request });
 		},
 
 		async listOvertimeRequests(input) {
@@ -4402,7 +4561,7 @@ export function createMemoryTimeMethods(
 					(a, b) =>
 						b.requestedStartsAt.getTime() - a.requestedStartsAt.getTime(),
 				);
-			return ok(
+			return await ok(
 				paginate(rows, input.page, input.pageSize).map((row) => ({ ...row })),
 			);
 		},
@@ -4429,12 +4588,16 @@ async function transitionAssignment(
 		assignment.version,
 		input.expectedVersion,
 	);
-	if (!versionCheck.ok) return versionCheck;
+	if (!versionCheck.ok) {
+		return versionCheck;
+	}
 	const transition = assertAssignmentStatusTransition(
 		assignment.publicationStatus,
 		next,
 	);
-	if (!transition.ok) return transition;
+	if (!transition.ok) {
+		return transition;
+	}
 	const previous = { ...assignment };
 	assignment.publicationStatus = next;
 	assignment.version += 1;
@@ -4495,16 +4658,22 @@ async function transitionException(
 		exception.version,
 		input.expectedVersion,
 	);
-	if (!versionCheck.ok) return versionCheck;
+	if (!versionCheck.ok) {
+		return versionCheck;
+	}
 	const transition = assertExceptionStatusTransition(
 		exception.reviewStatus,
 		next,
 	);
-	if (!transition.ok) return transition;
+	if (!transition.ok) {
+		return transition;
+	}
 	const previous = { ...exception };
 	exception.reviewStatus = next;
 	exception.reviewerUserId = input.actorUserId;
-	if (extra?.resolution !== undefined) exception.resolution = extra.resolution;
+	if (extra?.resolution !== undefined) {
+		exception.resolution = extra.resolution;
+	}
 	if (extra?.evidenceReference !== undefined) {
 		exception.evidenceReference = extra.evidenceReference;
 	}
@@ -4547,12 +4716,18 @@ async function transitionTimesheet(
 		timesheet.version,
 		input.expectedVersion,
 	);
-	if (!versionCheck.ok) return versionCheck;
+	if (!versionCheck.ok) {
+		return versionCheck;
+	}
 	const transition = assertTimesheetStatusTransition(timesheet.status, next);
-	if (!transition.ok) return transition;
+	if (!transition.ok) {
+		return transition;
+	}
 	const previous = { ...timesheet };
 	timesheet.status = next;
-	if (extra) Object.assign(timesheet, extra);
+	if (extra) {
+		Object.assign(timesheet, extra);
+	}
 	timesheet.version += 1;
 	timesheet.updatedBy = input.actorUserId;
 	timesheet.updatedAt = new Date();
@@ -4583,19 +4758,25 @@ async function transitionTimesheet(
 			HUMAN_RESOURCES_TIME_PAYROLL_HANDOFF_READY_EVENT,
 		);
 	}
-	for (const eventType of eventTypes) {
-		const event = await emitOutbox(ports, {
-			organizationId: timesheet.organizationId,
-			actorUserId: input.actorUserId,
-			correlationId,
-			eventType,
-			entityType: "hr_timesheet",
-			entityId: timesheet.id,
-		});
-		if (!event.ok) {
-			state.timesheets.set(timesheet.id, previous);
-			return event;
-		}
+	const sequentialOutcome3 = await runSequential(
+		eventTypes,
+		async (eventType) => {
+			const event = await emitOutbox(ports, {
+				organizationId: timesheet.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId,
+				eventType,
+				entityType: "hr_timesheet",
+				entityId: timesheet.id,
+			});
+			if (!event.ok) {
+				state.timesheets.set(timesheet.id, previous);
+				return sequentialReturn(event);
+			}
+		},
+	);
+	if (sequentialOutcome3.kind === "return") {
+		return sequentialOutcome3.value;
 	}
 	return ok({ ...timesheet });
 }
@@ -4622,9 +4803,13 @@ async function transitionOvertime(
 		request.version,
 		input.expectedVersion,
 	);
-	if (!versionCheck.ok) return versionCheck;
+	if (!versionCheck.ok) {
+		return versionCheck;
+	}
 	const transition = assertOvertimeStatusTransition(request.status, next);
-	if (!transition.ok) return transition;
+	if (!transition.ok) {
+		return transition;
+	}
 	const previous = { ...request };
 	request.status = next;
 	request.version += 1;

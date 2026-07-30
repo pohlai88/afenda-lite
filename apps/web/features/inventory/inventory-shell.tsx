@@ -36,10 +36,10 @@ import { createInventoryCommandOptions } from "@/lib/erp/inventory-command-optio
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
 import { sessionHasPermission } from "@/modules/identity/domain/session-permission";
 
-type InventoryShellProps = {
-	surface: "admin" | "client";
+interface InventoryShellProps {
 	movementId?: string;
-};
+	surface: "admin" | "client";
+}
 
 function warehouseLabel(movement: {
 	warehouseCode: string | null;
@@ -55,6 +55,7 @@ function warehouseLabel(movement: {
 /**
  * Inventory console — RSC list via `@afenda/inventory`; mutations via Actions (admin only).
  */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The RSC composes independently authorized inventory workflows.
 export async function InventoryShell({
 	surface,
 	movementId,
@@ -202,24 +203,24 @@ export async function InventoryShell({
 			reservation.status === "partially_consumed",
 	);
 	const reservationDefaults =
-		activeReservation !== undefined
-			? {
+		activeReservation === undefined
+			? undefined
+			: {
 					reservationId: activeReservation.id,
 					version: activeReservation.version,
-				}
-			: undefined;
+				};
 
 	return (
 		<section className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-10">
 			<div className="space-y-2">
-				<p className="text-sm text-muted-foreground">
+				<p className="text-muted-foreground text-sm">
 					{surface === "admin" ? "Operator" : "Client"} · Inventory
 					{mutationsEnabled ? "" : " · read-only"}
 				</p>
-				<h1 className="text-2xl font-semibold tracking-tight">
+				<h1 className="font-semibold text-2xl tracking-tight">
 					Stock movements
 				</h1>
-				<p className="max-w-2xl text-sm text-muted-foreground">
+				<p className="max-w-2xl text-muted-foreground text-sm">
 					{mutationsEnabled ? (
 						<>
 							Sole mutator of <Code>on_hand</Code> / <Code>available</Code> /{" "}
@@ -237,12 +238,12 @@ export async function InventoryShell({
 				</p>
 			</div>
 
-			{!movementsResult.ok ? (
+			{movementsResult.ok ? null : (
 				<Alert>
 					<AlertTitle>Could not load movements</AlertTitle>
 					<AlertDescription>{movementsResult.message}</AlertDescription>
 				</Alert>
-			) : null}
+			)}
 
 			{detailLoadFailed ? (
 				<Alert>
@@ -250,8 +251,8 @@ export async function InventoryShell({
 					<AlertDescription>
 						No movement matches <Code>{movementId}</Code> in this organization.{" "}
 						<Link
-							href={detailHrefBase}
 							className="underline underline-offset-4"
+							href={detailHrefBase}
 						>
 							Clear selection
 						</Link>
@@ -259,7 +260,7 @@ export async function InventoryShell({
 				</Alert>
 			) : null}
 
-			{detail !== null ? (
+			{detail === null ? null : (
 				<Card>
 					<CardHeader>
 						<CardTitle>
@@ -270,8 +271,8 @@ export async function InventoryShell({
 							line(s) · id <Code>{detail.id}</Code>
 							{" · "}
 							<Link
-								href={detailHrefBase}
 								className="underline underline-offset-4"
+								href={detailHrefBase}
 							>
 								Clear selection
 							</Link>
@@ -297,7 +298,7 @@ export async function InventoryShell({
 						)}
 					</CardContent>
 				</Card>
-			) : null}
+			)}
 
 			<Card>
 				<CardHeader>
@@ -334,7 +335,24 @@ export async function InventoryShell({
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
-					{!canReadAvailability ? (
+					{canReadAvailability ? (
+						availabilityResult !== null && !availabilityResult.ok ? (
+							<p className="text-muted-foreground text-sm">
+								{availabilityResult.message}
+							</p>
+						) : (
+							<StockAvailabilityTable
+								rows={availability.map((row) => ({
+									id: `${row.warehouseId}:${row.itemId}`,
+									warehouseCode: row.warehouseCode,
+									itemCode: row.itemCode,
+									onHandQuantity: row.onHandQuantity,
+									reservedQuantity: row.reservedQuantity,
+									availableQuantity: row.availableQuantity,
+								}))}
+							/>
+						)
+					) : (
 						<Alert role="status">
 							<AlertTitle>Availability unavailable</AlertTitle>
 							<AlertDescription>
@@ -342,21 +360,6 @@ export async function InventoryShell({
 								reserved, and available quantities.
 							</AlertDescription>
 						</Alert>
-					) : availabilityResult !== null && !availabilityResult.ok ? (
-						<p className="text-sm text-muted-foreground">
-							{availabilityResult.message}
-						</p>
-					) : (
-						<StockAvailabilityTable
-							rows={availability.map((row) => ({
-								id: `${row.warehouseId}:${row.itemId}`,
-								warehouseCode: row.warehouseCode,
-								itemCode: row.itemCode,
-								onHandQuantity: row.onHandQuantity,
-								reservedQuantity: row.reservedQuantity,
-								availableQuantity: row.availableQuantity,
-							}))}
-						/>
 					)}
 				</CardContent>
 			</Card>
@@ -369,11 +372,7 @@ export async function InventoryShell({
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
-					{!reservationsResult.ok ? (
-						<p className="text-sm text-muted-foreground">
-							{reservationsResult.message}
-						</p>
-					) : (
+					{reservationsResult.ok ? (
 						<StockReservationsTable
 							rows={reservations.map((reservation) => ({
 								id: reservation.id,
@@ -386,6 +385,10 @@ export async function InventoryShell({
 								version: reservation.version,
 							}))}
 						/>
+					) : (
+						<p className="text-muted-foreground text-sm">
+							{reservationsResult.message}
+						</p>
 					)}
 				</CardContent>
 			</Card>
@@ -402,8 +405,8 @@ export async function InventoryShell({
 						</CardHeader>
 						<CardContent>
 							<CreateStockMovementForm
-								canCreate={canCreate}
 								canAdjust={canAdjust}
+								canCreate={canCreate}
 								warehouses={masterWarehouseOptions}
 							/>
 						</CardContent>
@@ -416,9 +419,9 @@ export async function InventoryShell({
 						<CardContent>
 							<AddStockMovementLineForm
 								canCreate={canCreate}
-								items={masterItemOptions}
-								defaultMovementId={draftDefaults?.movementId}
 								defaultExpectedVersion={draftDefaults?.version}
+								defaultMovementId={draftDefaults?.movementId}
+								items={masterItemOptions}
 							/>
 						</CardContent>
 					</Card>
@@ -433,8 +436,8 @@ export async function InventoryShell({
 						<CardContent>
 							<PostStockMovementForm
 								canPost={canPost}
-								defaultMovementId={draftDefaults?.movementId}
 								defaultExpectedVersion={draftDefaults?.version}
+								defaultMovementId={draftDefaults?.movementId}
 							/>
 						</CardContent>
 					</Card>
@@ -446,8 +449,8 @@ export async function InventoryShell({
 						<CardContent>
 							<CancelStockMovementForm
 								canCancel={canCancel}
-								defaultMovementId={draftDefaults?.movementId}
 								defaultExpectedVersion={draftDefaults?.version}
+								defaultMovementId={draftDefaults?.movementId}
 							/>
 						</CardContent>
 					</Card>
@@ -462,8 +465,8 @@ export async function InventoryShell({
 						<CardContent>
 							<CreateReversalMovementForm
 								canPost={canPost}
-								defaultMovementId={postedDefaults?.movementId}
 								defaultExpectedVersion={postedDefaults?.version}
+								defaultMovementId={postedDefaults?.movementId}
 							/>
 						</CardContent>
 					</Card>
@@ -475,8 +478,8 @@ export async function InventoryShell({
 						<CardContent>
 							<ReserveStockForm
 								canReserve={canReserve}
-								warehouses={masterWarehouseOptions}
 								items={masterItemOptions}
+								warehouses={masterWarehouseOptions}
 							/>
 						</CardContent>
 					</Card>
@@ -488,8 +491,8 @@ export async function InventoryShell({
 						<CardContent>
 							<ReleaseReservationForm
 								canRelease={canRelease}
-								defaultReservationId={reservationDefaults?.reservationId}
 								defaultExpectedVersion={reservationDefaults?.version}
+								defaultReservationId={reservationDefaults?.reservationId}
 							/>
 						</CardContent>
 					</Card>
@@ -504,8 +507,8 @@ export async function InventoryShell({
 						<CardContent>
 							<ExpireReservationForm
 								canRelease={canRelease}
-								defaultReservationId={reservationDefaults?.reservationId}
 								defaultExpectedVersion={reservationDefaults?.version}
+								defaultReservationId={reservationDefaults?.reservationId}
 							/>
 						</CardContent>
 					</Card>
@@ -520,8 +523,8 @@ export async function InventoryShell({
 						<CardContent>
 							<CancelReservationForm
 								canRelease={canRelease}
-								defaultReservationId={reservationDefaults?.reservationId}
 								defaultExpectedVersion={reservationDefaults?.version}
+								defaultReservationId={reservationDefaults?.reservationId}
 							/>
 						</CardContent>
 					</Card>
@@ -530,3 +533,4 @@ export async function InventoryShell({
 		</section>
 	);
 }
+// biome-ignore-all lint/style/noNestedTernary: Exhaustive status and tri-state view mappings remain explicit at their use sites.

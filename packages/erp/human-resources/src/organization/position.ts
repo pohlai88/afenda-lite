@@ -32,7 +32,7 @@ import {
 import type { Position, PositionOccupancyAsOf } from "../types";
 import type { PositionDefinitionAtAsOf } from "./organization-structure-lineage";
 
-export async function createPosition(
+export function createPosition(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Position>> {
@@ -60,7 +60,7 @@ export async function createPosition(
 	});
 }
 
-export async function updatePosition(
+export function updatePosition(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Position>> {
@@ -91,7 +91,7 @@ export async function updatePosition(
 	});
 }
 
-export async function activatePosition(
+export function activatePosition(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Position>> {
@@ -117,7 +117,7 @@ export async function activatePosition(
 	});
 }
 
-export async function freezePosition(
+export function freezePosition(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Position>> {
@@ -143,7 +143,7 @@ export async function freezePosition(
 	});
 }
 
-export async function closePosition(
+export function closePosition(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Position>> {
@@ -169,7 +169,7 @@ export async function closePosition(
 	});
 }
 
-export async function getPosition(
+export function getPosition(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Position>> {
@@ -197,7 +197,7 @@ export async function getPosition(
 	});
 }
 
-export async function getPositionAsOf(
+export function getPositionAsOf(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PositionDefinitionAtAsOf>> {
@@ -226,7 +226,7 @@ export async function getPositionAsOf(
 	});
 }
 
-export async function getPositionOccupancyAsOf(
+export function getPositionOccupancyAsOf(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PositionOccupancyAsOf>> {
@@ -255,7 +255,7 @@ export async function getPositionOccupancyAsOf(
 	});
 }
 
-export async function listPositions(
+export function listPositions(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<{ positions: Position[]; totalCount: number }>> {

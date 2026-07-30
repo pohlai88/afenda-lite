@@ -46,7 +46,9 @@ describe("@afenda/human-resources workforce foundation commands (memory)", () =>
 			ready,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const loaded = await getPersonById(
 			{
@@ -76,7 +78,9 @@ describe("@afenda/human-resources workforce foundation commands (memory)", () =>
 			ready,
 		);
 		expect(person.ok).toBe(true);
-		if (!person.ok) return;
+		if (!person.ok) {
+			return;
+		}
 
 		const worker = await createWorker(
 			{
@@ -91,7 +95,9 @@ describe("@afenda/human-resources workforce foundation commands (memory)", () =>
 			ready,
 		);
 		expect(worker.ok).toBe(true);
-		if (!worker.ok) return;
+		if (!worker.ok) {
+			return;
+		}
 
 		const loaded = await getWorkerById(
 			{

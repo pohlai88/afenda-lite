@@ -28,7 +28,7 @@ export async function createAttendanceException(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceException>> {
-	return runTimeCommand(input, options, {
+	return await runTimeCommand(input, options, {
 		schema: createAttendanceExceptionInputSchema,
 		invalidMessage: "Invalid attendance exception create input",
 		command: HUMAN_RESOURCES_COMMAND_ATTENDANCE_EXCEPTION_CREATE,
@@ -55,7 +55,7 @@ export async function reviewAttendanceException(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceException>> {
-	return runTimeCommand(input, options, {
+	return await runTimeCommand(input, options, {
 		schema: reviewAttendanceExceptionInputSchema,
 		invalidMessage: "Invalid attendance exception review input",
 		command: HUMAN_RESOURCES_COMMAND_ATTENDANCE_EXCEPTION_REVIEW,
@@ -68,7 +68,7 @@ export async function excuseAttendanceException(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceException>> {
-	return runTimeCommand(input, options, {
+	return await runTimeCommand(input, options, {
 		schema: excuseAttendanceExceptionInputSchema,
 		invalidMessage: "Invalid attendance exception excuse input",
 		command: HUMAN_RESOURCES_COMMAND_ATTENDANCE_EXCEPTION_EXCUSE,
@@ -92,7 +92,7 @@ export async function rejectAttendanceException(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceException>> {
-	return runTimeCommand(input, options, {
+	return await runTimeCommand(input, options, {
 		schema: rejectAttendanceExceptionInputSchema,
 		invalidMessage: "Invalid attendance exception reject input",
 		command: HUMAN_RESOURCES_COMMAND_ATTENDANCE_EXCEPTION_REJECT,
@@ -105,7 +105,7 @@ export async function resolveAttendanceException(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceException>> {
-	return runTimeCommand(input, options, {
+	return await runTimeCommand(input, options, {
 		schema: resolveAttendanceExceptionInputSchema,
 		invalidMessage: "Invalid attendance exception resolve input",
 		command: HUMAN_RESOURCES_COMMAND_ATTENDANCE_EXCEPTION_RESOLVE,
@@ -118,7 +118,7 @@ export async function getAttendanceException(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceException | null>> {
-	return runTimeQuery(input, options, {
+	return await runTimeQuery(input, options, {
 		schema: getAttendanceExceptionInputSchema,
 		invalidMessage: "Invalid attendance exception get input",
 		query: HUMAN_RESOURCES_QUERY_ATTENDANCE_EXCEPTION_GET,
@@ -134,7 +134,7 @@ export async function listAttendanceExceptions(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceException[]>> {
-	return runTimeQuery(input, options, {
+	return await runTimeQuery(input, options, {
 		schema: listAttendanceExceptionsInputSchema,
 		invalidMessage: "Invalid attendance exception list input",
 		query: HUMAN_RESOURCES_QUERY_ATTENDANCE_EXCEPTION_LIST,
@@ -146,7 +146,7 @@ export async function listUnresolvedAttendanceExceptions(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceException[]>> {
-	return runTimeQuery(input, options, {
+	return await runTimeQuery(input, options, {
 		schema: listUnresolvedAttendanceExceptionsInputSchema,
 		invalidMessage: "Invalid unresolved attendance exception list input",
 		query: HUMAN_RESOURCES_QUERY_ATTENDANCE_EXCEPTION_LIST_UNRESOLVED,

@@ -21,16 +21,16 @@ import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 
 const initialState: CreatePartyRoleActionState = null;
 
-type PartyOption = {
+interface PartyOption {
 	id: string;
 	label: string;
-};
+}
 
-type CreatePartyRoleFormProps = {
+interface CreatePartyRoleFormProps {
 	canManage: boolean;
 	parties: PartyOption[];
 	roleCodes: readonly string[];
-};
+}
 
 /**
  * Party role create — closed catalog passed from RSC (package is server-only).
@@ -86,11 +86,11 @@ export function CreatePartyRoleForm({
 			{showFormError && state?.ok === false ? (
 				<FormError>{state.message}</FormError>
 			) : null}
-			<FormField label="Party" required fieldId="role-party" error={partyError}>
+			<FormField error={partyError} fieldId="role-party" label="Party" required>
 				<NativeSelect
-					name="partyId"
-					disabled={pending}
 					defaultValue={parties[0]?.id}
+					disabled={pending}
+					name="partyId"
 				>
 					{parties.map((party) => (
 						<NativeSelectOption key={party.id} value={party.id}>
@@ -99,11 +99,11 @@ export function CreatePartyRoleForm({
 					))}
 				</NativeSelect>
 			</FormField>
-			<FormField label="Role" required fieldId="role-code" error={roleError}>
+			<FormField error={roleError} fieldId="role-code" label="Role" required>
 				<NativeSelect
-					name="roleCode"
-					disabled={pending}
 					defaultValue={roleCodes[0]}
+					disabled={pending}
+					name="roleCode"
 				>
 					{roleCodes.map((code) => (
 						<NativeSelectOption key={code} value={code}>
@@ -112,7 +112,7 @@ export function CreatePartyRoleForm({
 					))}
 				</NativeSelect>
 			</FormField>
-			<Button type="submit" disabled={pending}>
+			<Button disabled={pending} type="submit">
 				{pending ? <Spinner /> : null}
 				Add role
 			</Button>

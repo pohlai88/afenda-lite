@@ -28,7 +28,7 @@ export async function softCloseAccountingPeriodAction(
 	_prev: SoftCloseAccountingPeriodActionState,
 	formData: FormData,
 ): Promise<SoftCloseAccountingPeriodActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "softCloseAccountingPeriodAction",
 		permission: "accounting.period.soft_close",
 		safeMessage:
@@ -38,12 +38,13 @@ export async function softCloseAccountingPeriodAction(
 				periodId: formData.get("periodId"),
 				expectedVersion: formData.get("expectedVersion"),
 			});
-			if (!parsed.success)
+			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
 					"Enter a valid period and version.",
 					parsed.details,
 				);
+			}
 			const mapped = mapPackageResult(
 				await softCloseAccountingPeriod(
 					{
@@ -55,7 +56,9 @@ export async function softCloseAccountingPeriodAction(
 					createAccountingCommandOptions(),
 				),
 			);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePath("/admin/accounting");
 			revalidatePath("/client/accounting");
 			return { ok: true, data: { period: mapped.data } };

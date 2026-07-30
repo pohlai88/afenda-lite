@@ -16,14 +16,14 @@ import type {
 	HumanResourcesResourceAwareAuthorizationPort,
 } from "./shared/authorization-types";
 
+export type { HumanResourcesPermission } from "./permissions";
 export type {
 	HumanResourcesAuthorizationDecisionInput,
 	HumanResourcesAuthorizationPort,
 	HumanResourcesResourceAwareAuthorizationPort,
 } from "./shared/authorization-types";
-export type { HumanResourcesPermission };
 
-export async function requireHumanResourcesCommandPermission(
+export function requireHumanResourcesCommandPermission(
 	authorization: HumanResourcesAuthorizationPort | undefined,
 	input: {
 		organizationId: string;
@@ -40,7 +40,7 @@ export async function requireHumanResourcesCommandPermission(
 	});
 }
 
-export async function requireHumanResourcesQueryPermission(
+export function requireHumanResourcesQueryPermission(
 	authorization: HumanResourcesAuthorizationPort | undefined,
 	input: {
 		organizationId: string;

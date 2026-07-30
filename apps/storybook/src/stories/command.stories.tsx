@@ -26,7 +26,7 @@ import {
 	ShieldAlertIcon,
 	UserIcon,
 } from "lucide-react";
-import * as React from "react";
+import { useCallback, useState } from "react";
 import { expect, within } from "storybook/test";
 import { contractDocsParameters } from "./contract-docs";
 import { contractEvidence, StorySection } from "./evidence";
@@ -61,8 +61,8 @@ function OperatorCommandCatalogue({
 	return (
 		<Command className={className}>
 			<CommandInput
-				placeholder="Search navigation and commands..."
 				aria-label="Search operator commands"
+				placeholder="Search navigation and commands..."
 			/>
 			<CommandList>
 				<CommandEmpty>No commands match this search.</CommandEmpty>
@@ -88,7 +88,7 @@ function OperatorCommandCatalogue({
 						<FileTextIcon aria-hidden="true" />
 						Submit invoice for approval
 					</CommandItem>
-					<CommandItem value="escalate-exception" disabled>
+					<CommandItem disabled value="escalate-exception">
 						<ShieldAlertIcon aria-hidden="true" />
 						Escalate payment exception
 						<CommandShortcut>Unavailable</CommandShortcut>
@@ -100,28 +100,29 @@ function OperatorCommandCatalogue({
 }
 
 function CommandPaletteDialogDemo() {
-	const [open, setOpen] = React.useState(false);
+	const [open, setOpen] = useState(false);
+	const openCommand = useCallback(() => setOpen(true), []);
 
 	return (
 		<div className="grid gap-4">
 			<div className="flex items-center justify-between gap-3 rounded-lg border p-4">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					CommandDialog hosts the same catalogue in modal chrome for global
 					palette entry.
 				</p>
-				<Button type="button" variant="outline" onClick={() => setOpen(true)}>
+				<Button onClick={openCommand} type="button" variant="outline">
 					Open command palette
 				</Button>
 			</div>
 			<CommandDialog
-				open={open}
-				onOpenChange={setOpen}
-				title="Operator command palette"
 				description="Search navigation destinations and mutating commands."
+				onOpenChange={setOpen}
+				open={open}
+				title="Operator command palette"
 			>
 				<CommandInput
-					placeholder="Type a command or search..."
 					aria-label="Search operator commands"
+					placeholder="Type a command or search..."
 				/>
 				<CommandList>
 					<CommandEmpty>No commands match this search.</CommandEmpty>
@@ -164,18 +165,18 @@ export const Overview: Story = {
 		<div className="min-h-screen bg-canvas text-foreground">
 			<div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-2 border-b pb-6">
-					<p className="text-sm font-medium text-foreground-secondary">
+					<p className="font-medium text-foreground-secondary text-sm">
 						Platform · operator workspace
 					</p>
-					<h1 className="text-2xl font-semibold tracking-tight">
+					<h1 className="font-semibold text-2xl tracking-tight">
 						Command discovery
 					</h1>
-					<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+					<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 						Command searches a bounded catalogue of destinations and governed
 						actions. Shortcuts and icons reinforce labels; required workflow
 						actions remain visible on the record surface.
 					</p>
-					<p className="max-w-5xl text-xs leading-5 text-foreground-tertiary">
+					<p className="max-w-5xl text-foreground-tertiary text-xs leading-5">
 						Operational standard: search, grouping, active-item focus, empty
 						results, and dismissal must remain coherent in keyboard-only and
 						high-contrast use.
@@ -186,7 +187,7 @@ export const Overview: Story = {
 					<CardHeader>
 						<div className="flex flex-wrap items-center gap-2">
 							<Badge variant="outline">Keyboard</Badge>
-							<StatusBadge size="sm" status="active" label="Operational" />
+							<StatusBadge label="Operational" size="sm" status="active" />
 						</div>
 						<CardTitle>Workspace command catalogue</CardTitle>
 						<CardDescription>
@@ -227,8 +228,8 @@ export const Usage: Story = {
 			<StorySection title="Navigation-only group">
 				<Command className="rounded-lg border shadow-none">
 					<CommandInput
-						placeholder="Jump to..."
 						aria-label="Jump to destination"
+						placeholder="Jump to..."
 					/>
 					<CommandList>
 						<CommandEmpty>No destinations match this search.</CommandEmpty>
@@ -251,15 +252,15 @@ export const Usage: Story = {
 };
 
 function EmptyResultsCommand() {
-	const [query, setQuery] = React.useState("zzzz-no-match");
+	const [query, setQuery] = useState("zzzz-no-match");
 
 	return (
 		<Command className="rounded-lg border shadow-none">
 			<CommandInput
-				value={query}
-				onValueChange={setQuery}
 				aria-label="Search with no matches"
+				onValueChange={setQuery}
 				placeholder="Search commands..."
+				value={query}
 			/>
 			<CommandList>
 				<CommandEmpty>No commands match this search.</CommandEmpty>
@@ -290,8 +291,8 @@ export const StatesAndAccessibility: Story = {
 			<StorySection title="Unavailable mutating command">
 				<Command className="rounded-lg border shadow-none">
 					<CommandInput
-						placeholder="Search commands..."
 						aria-label="Search including unavailable commands"
+						placeholder="Search commands..."
 					/>
 					<CommandList>
 						<CommandEmpty>No commands match this search.</CommandEmpty>
@@ -299,7 +300,7 @@ export const StatesAndAccessibility: Story = {
 							<CommandItem value="submit-approval">
 								Submit invoice for approval
 							</CommandItem>
-							<CommandItem value="escalate-exception" disabled>
+							<CommandItem disabled value="escalate-exception">
 								Escalate payment exception
 							</CommandItem>
 						</CommandGroup>
@@ -335,7 +336,7 @@ export const Composition: Story = {
 				<CardHeader>
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="outline">Receivables</Badge>
-						<StatusBadge size="sm" status="pending" label="Awaiting approval" />
+						<StatusBadge label="Awaiting approval" size="sm" status="pending" />
 					</div>
 					<CardTitle>Invoice INV-1048</CardTitle>
 					<CardDescription>
@@ -357,7 +358,7 @@ export const Composition: Story = {
 				<CardHeader>
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="secondary">Global palette</Badge>
-						<StatusBadge size="sm" status="active" label="Operational" />
+						<StatusBadge label="Operational" size="sm" status="active" />
 					</div>
 					<CardTitle>CommandDialog entry</CardTitle>
 					<CardDescription>
@@ -387,8 +388,8 @@ export const DoAndDoNot: Story = {
 			<StorySection title="Do: separate navigation from mutations">
 				<Command className="rounded-lg border shadow-none">
 					<CommandInput
-						placeholder="Search..."
 						aria-label="Separated command groups"
+						placeholder="Search..."
 					/>
 					<CommandList>
 						<CommandEmpty>No commands match this search.</CommandEmpty>
@@ -406,7 +407,7 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do not: hide required primary actions">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Approve, Submit, and blocking corrections must remain visible Buttons
 					on the record surface. Command is discovery — not a substitute for
 					required actions.
@@ -414,7 +415,7 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do: treat shortcuts as supplemental">
-				<div className="rounded-lg border p-4 text-sm text-foreground-secondary">
+				<div className="rounded-lg border p-4 text-foreground-secondary text-sm">
 					Labels carry the instruction (“Search invoices”). Shortcuts such as ⌘K
 					are optional accelerators, never the only way to understand the
 					command.
@@ -422,7 +423,7 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do not: execute from list presence alone">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					A listed “Escalate payment exception” item does not grant permission.
 					Feature code must authorize and confirm before mutation — listing is
 					not StatusBadge lifecycle.
@@ -430,14 +431,14 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do: keep labels meaningful without icons">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					“Submit invoice for approval” remains understandable when the icon,
 					shortcut, and colour treatment are unavailable.
 				</p>
 			</StorySection>
 
 			<StorySection title="Do not: use ambiguous command nouns">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Labels such as “Invoice” or “Approval” do not tell the operator
 					whether the command opens, searches, submits, or approves.
 				</p>

@@ -46,7 +46,7 @@ export const HUMAN_RESOURCES_AGGREGATE_OFFBOARDING = "offboarding" as const;
 export type HumanResourcesOffboardingAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_OFFBOARDING;
 
-export async function startOffboarding(
+export function startOffboarding(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OffboardingCase>> {
@@ -79,7 +79,7 @@ export async function startOffboarding(
 	});
 }
 
-export async function completeOffboardingTask(
+export function completeOffboardingTask(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OffboardingCase>> {
@@ -105,7 +105,7 @@ export async function completeOffboardingTask(
 	});
 }
 
-export async function recordExitInterview(
+export function recordExitInterview(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OffboardingCase>> {
@@ -132,7 +132,7 @@ export async function recordExitInterview(
 	});
 }
 
-export async function recordClearance(
+export function recordClearance(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OffboardingCase>> {
@@ -158,7 +158,7 @@ export async function recordClearance(
 	});
 }
 
-export async function recordOffboardingAccessRevocation(
+export function recordOffboardingAccessRevocation(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OffboardingCase>> {
@@ -186,7 +186,7 @@ export async function recordOffboardingAccessRevocation(
 	});
 }
 
-export async function recordOffboardingPayrollHandoff(
+export function recordOffboardingPayrollHandoff(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OffboardingCase>> {
@@ -214,7 +214,7 @@ export async function recordOffboardingPayrollHandoff(
 	});
 }
 
-export async function completeOffboarding(
+export function completeOffboarding(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OffboardingCase>> {
@@ -239,7 +239,7 @@ export async function completeOffboarding(
 	});
 }
 
-export async function getOffboardingCase(
+export function getOffboardingCase(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OffboardingCase | null>> {
@@ -255,7 +255,7 @@ export async function getOffboardingCase(
 	});
 }
 
-export async function listOffboardingTasks(
+export function listOffboardingTasks(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OffboardingTask[]>> {
@@ -271,7 +271,7 @@ export async function listOffboardingTasks(
 	});
 }
 
-export async function getClearanceByOffboardingCase(
+export function getClearanceByOffboardingCase(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Clearance | null>> {
@@ -287,7 +287,7 @@ export async function getClearanceByOffboardingCase(
 	});
 }
 
-export async function getOffboardingAccessRevocationByCase(
+export function getOffboardingAccessRevocationByCase(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OffboardingAccessRevocation | null>> {
@@ -303,7 +303,7 @@ export async function getOffboardingAccessRevocationByCase(
 	});
 }
 
-export async function getOffboardingPayrollHandoffByCase(
+export function getOffboardingPayrollHandoffByCase(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OffboardingPayrollHandoff | null>> {

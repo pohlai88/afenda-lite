@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noJsxPropsBind: The enabled React Compiler stabilizes JSX callback props.
 "use client";
 
 import {
@@ -30,7 +31,9 @@ function ActionResult({
 }: {
 	state: { ok: boolean; message?: string } | null;
 }) {
-	if (!state) return null;
+	if (!state) {
+		return null;
+	}
 	return state.ok ? (
 		<Alert role="status">
 			<AlertTitle>Journey completed</AlertTitle>
@@ -64,10 +67,10 @@ export function OnboardingLaunchForm() {
 		null,
 	);
 	return (
-		<form action={action} className="space-y-4" aria-busy={pending}>
+		<form action={action} aria-busy={pending} className="space-y-4">
 			<EmploymentFields prefix="onboard" />
 			<ActionResult state={state} />
-			<Button type="submit" disabled={pending}>
+			<Button disabled={pending} type="submit">
 				{pending ? <Spinner /> : null}Start onboarding
 			</Button>
 		</form>
@@ -80,10 +83,10 @@ export function OffboardingLaunchForm() {
 		null,
 	);
 	return (
-		<form action={action} className="space-y-4" aria-busy={pending}>
+		<form action={action} aria-busy={pending} className="space-y-4">
 			<EmploymentFields prefix="offboard" />
 			<ActionResult state={state} />
-			<Button type="submit" variant="destructive" disabled={pending}>
+			<Button disabled={pending} type="submit" variant="destructive">
 				{pending ? <Spinner /> : null}Start offboarding
 			</Button>
 		</form>
@@ -96,8 +99,8 @@ export function TransferLaunchForm() {
 		null,
 	);
 	return (
-		<form action={action} className="space-y-4" aria-busy={pending}>
-			<input type="hidden" name="intent" value="transfer" />
+		<form action={action} aria-busy={pending} className="space-y-4">
+			<input name="intent" type="hidden" value="transfer" />
 			<EmploymentFields prefix="transfer" />
 			<div className="grid gap-4 sm:grid-cols-2">
 				<div className="space-y-2">
@@ -109,17 +112,17 @@ export function TransferLaunchForm() {
 					<Input
 						id="transfer-effective"
 						name="effectiveOn"
-						type="date"
 						required
+						type="date"
 					/>
 				</div>
 			</div>
 			<div className="space-y-2">
 				<Label htmlFor="transfer-reason">Reason</Label>
-				<Textarea id="transfer-reason" name="reason" required maxLength={500} />
+				<Textarea id="transfer-reason" maxLength={500} name="reason" required />
 			</div>
 			<ActionResult state={state} />
-			<Button type="submit" disabled={pending}>
+			<Button disabled={pending} type="submit">
 				{pending ? <Spinner /> : null}Transfer assignment
 			</Button>
 		</form>
@@ -132,8 +135,8 @@ export function TerminationLaunchForm() {
 		null,
 	);
 	return (
-		<form action={action} className="space-y-4" aria-busy={pending}>
-			<input type="hidden" name="intent" value="propose_termination" />
+		<form action={action} aria-busy={pending} className="space-y-4">
+			<input name="intent" type="hidden" value="propose_termination" />
 			<EmploymentFields prefix="termination" />
 			<div className="grid gap-4 sm:grid-cols-2">
 				<div className="space-y-2">
@@ -141,8 +144,8 @@ export function TerminationLaunchForm() {
 					<Input
 						id="termination-date"
 						name="effectiveOn"
-						type="date"
 						required
+						type="date"
 					/>
 				</div>
 				<div className="space-y-2">
@@ -154,16 +157,16 @@ export function TerminationLaunchForm() {
 				<Label htmlFor="termination-detail">Reason detail</Label>
 				<Textarea
 					id="termination-detail"
+					maxLength={2000}
 					name="reasonDetail"
 					required
-					maxLength={2000}
 				/>
 			</div>
 			<Label>
-				<input type="checkbox" name="rehireEligible" /> Rehire eligible
+				<input name="rehireEligible" type="checkbox" /> Rehire eligible
 			</Label>
 			<ActionResult state={state} />
-			<Button type="submit" variant="destructive" disabled={pending}>
+			<Button disabled={pending} type="submit" variant="destructive">
 				{pending ? <Spinner /> : null}Propose termination
 			</Button>
 		</form>
@@ -192,7 +195,9 @@ function useJsonJourney() {
 						? success
 						: (result.message ?? "The journey could not be completed."),
 				});
-				if (result.ok) router.refresh();
+				if (result.ok) {
+					router.refresh();
+				}
 			});
 		},
 	};
@@ -204,8 +209,6 @@ export function ComplianceScanForm() {
 		<div className="space-y-3">
 			<ActionResult state={state.feedback} />
 			<Button
-				type="button"
-				variant="outline"
 				disabled={state.pending}
 				onClick={() =>
 					state.run(
@@ -217,6 +220,8 @@ export function ComplianceScanForm() {
 						"Compliance expiry scan completed.",
 					)
 				}
+				type="button"
+				variant="outline"
 			>
 				{state.pending ? <Spinner /> : null}Run expiry scan
 			</Button>
@@ -250,7 +255,7 @@ export function CaseOpenForm() {
 		>
 			<EmploymentFields prefix="case" />
 			<div className="grid gap-4 sm:grid-cols-2">
-				<NativeSelect name="caseType" aria-label="Case type">
+				<NativeSelect aria-label="Case type" name="caseType">
 					<NativeSelectOption value="grievance">Grievance</NativeSelectOption>
 					<NativeSelectOption value="conduct">Conduct</NativeSelectOption>
 					<NativeSelectOption value="workplace_conflict">
@@ -264,7 +269,7 @@ export function CaseOpenForm() {
 						Disciplinary review
 					</NativeSelectOption>
 				</NativeSelect>
-				<NativeSelect name="severity" aria-label="Severity">
+				<NativeSelect aria-label="Severity" name="severity">
 					<NativeSelectOption value="low">Low</NativeSelectOption>
 					<NativeSelectOption value="medium">Medium</NativeSelectOption>
 					<NativeSelectOption value="high">High</NativeSelectOption>
@@ -272,26 +277,26 @@ export function CaseOpenForm() {
 				</NativeSelect>
 			</div>
 			<Input
-				name="classificationCode"
 				aria-label="Classification code"
+				name="classificationCode"
 				placeholder="Classification code"
 				required
 			/>
 			<Input
-				name="ownerActorUserId"
 				aria-label="Owner user ID"
+				name="ownerActorUserId"
 				placeholder="Owner user ID"
 				required
 			/>
 			<Textarea
-				name="allegationSummary"
 				aria-label="Allegation summary"
+				maxLength={500}
+				name="allegationSummary"
 				placeholder="Allegation summary"
 				required
-				maxLength={500}
 			/>
 			<ActionResult state={state.feedback} />
-			<Button type="submit" disabled={state.pending}>
+			<Button disabled={state.pending} type="submit">
 				{state.pending ? <Spinner /> : null}Open case
 			</Button>
 		</form>
@@ -322,33 +327,33 @@ export function WorkforcePlanCreateForm() {
 		>
 			<div className="grid gap-4 sm:grid-cols-2">
 				<Input
-					name="code"
 					aria-label="Plan code"
+					name="code"
 					placeholder="Plan code"
 					required
 				/>
 				<Input
-					name="title"
 					aria-label="Plan title"
+					name="title"
 					placeholder="Plan title"
 					required
 				/>
 				<Input
-					name="planningScopeKey"
 					aria-label="Planning scope key"
+					name="planningScopeKey"
 					placeholder="Planning scope key"
 					required
 				/>
 				<Input
-					name="periodStart"
 					aria-label="Period start"
-					type="date"
+					name="periodStart"
 					required
+					type="date"
 				/>
-				<Input name="periodEnd" aria-label="Period end" type="date" required />
+				<Input aria-label="Period end" name="periodEnd" required type="date" />
 			</div>
 			<ActionResult state={state.feedback} />
-			<Button type="submit" disabled={state.pending}>
+			<Button disabled={state.pending} type="submit">
 				{state.pending ? <Spinner /> : null}Create workforce plan
 			</Button>
 		</form>

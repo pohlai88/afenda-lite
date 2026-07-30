@@ -44,18 +44,18 @@ export const Overview: Story = {
 		<div className="min-h-screen bg-canvas text-foreground">
 			<div className="mx-auto grid w-full max-w-5xl gap-6 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-2 border-b pb-6">
-					<p className="text-sm font-medium text-foreground-secondary">
+					<p className="font-medium text-foreground-secondary text-sm">
 						Accounts payable
 					</p>
-					<h1 className="text-2xl font-semibold tracking-tight">
+					<h1 className="font-semibold text-2xl tracking-tight">
 						Invoice workspace
 					</h1>
-					<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+					<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 						Drag or use the keyboard-operable handle to allocate space. Feature
 						code owns minimum sizes, persistence, responsive fallback, and
 						selection.
 					</p>
-					<p className="max-w-5xl text-xs leading-5 text-foreground-tertiary">
+					<p className="max-w-5xl text-foreground-tertiary text-xs leading-5">
 						Operational standard: separator purpose, focus, pane relationships,
 						and required controls must remain usable at minimum size, zoom, and
 						high contrast.
@@ -63,12 +63,12 @@ export const Overview: Story = {
 				</header>
 
 				<ResizablePanelGroup
-					orientation="horizontal"
 					className="h-[28rem] rounded-lg border bg-card"
+					orientation="horizontal"
 				>
 					<ResizablePanel defaultSize="36%" minSize="24%">
 						<div className="flex h-full flex-col gap-3 bg-muted/40 p-4">
-							<p className="text-sm font-medium text-foreground">
+							<p className="font-medium text-foreground text-sm">
 								Open invoices
 							</p>
 							<ul className="grid gap-2 text-sm">
@@ -87,11 +87,11 @@ export const Overview: Story = {
 					<ResizableHandle withHandle />
 					<ResizablePanel defaultSize="64%" minSize="40%">
 						<div className="flex h-full flex-col gap-2 p-5">
-							<p className="text-lg font-semibold tracking-tight">INV-1048</p>
-							<p className="text-sm text-foreground-secondary">
+							<p className="font-semibold text-lg tracking-tight">INV-1048</p>
+							<p className="text-foreground-secondary text-sm">
 								Northwind Trading Sdn. Bhd. · MYR 18,420.00 · Due 15 Aug 2026
 							</p>
-							<p className="mt-4 text-sm text-foreground-secondary">
+							<p className="mt-4 text-foreground-secondary text-sm">
 								Detail pane content stays reachable at the declared minimum
 								size.
 							</p>
@@ -117,12 +117,12 @@ export const SemanticUsage: Story = {
 		<div className="grid w-full max-w-4xl gap-8">
 			<StorySection title="Horizontal · list and detail">
 				<ResizablePanelGroup
-					orientation="horizontal"
 					className="h-56 rounded-lg border"
+					orientation="horizontal"
 				>
 					<ResizablePanel defaultSize="40%" minSize="25%">
 						<div className="flex h-full items-center justify-center bg-muted/40 p-4 text-sm">
-							<button type="button" className="sr-only">
+							<button className="sr-only" type="button">
 								Focus master list pane
 							</button>
 							Master list
@@ -131,7 +131,7 @@ export const SemanticUsage: Story = {
 					<ResizableHandle withHandle />
 					<ResizablePanel defaultSize="60%" minSize="35%">
 						<div className="flex h-full items-center justify-center p-4 text-sm">
-							<button type="button" className="sr-only">
+							<button className="sr-only" type="button">
 								Focus record detail pane
 							</button>
 							Record detail
@@ -141,12 +141,12 @@ export const SemanticUsage: Story = {
 			</StorySection>
 			<StorySection title="Vertical · preview and evidence">
 				<ResizablePanelGroup
-					orientation="vertical"
 					className="h-64 rounded-lg border"
+					orientation="vertical"
 				>
 					<ResizablePanel defaultSize="55%" minSize="30%">
 						<div className="flex h-full items-center justify-center p-4 text-sm">
-							<button type="button" className="sr-only">
+							<button className="sr-only" type="button">
 								Focus document preview pane
 							</button>
 							Document preview · invoice-1048.pdf
@@ -155,7 +155,7 @@ export const SemanticUsage: Story = {
 					<ResizableHandle withHandle />
 					<ResizablePanel defaultSize="45%" minSize="25%">
 						<div className="flex h-full items-center justify-center bg-muted/40 p-4 text-sm">
-							<button type="button" className="sr-only">
+							<button className="sr-only" type="button">
 								Focus evidence notes pane
 							</button>
 							Evidence notes
@@ -179,8 +179,8 @@ export const Usage: Story = {
 	},
 	render: () => (
 		<ResizablePanelGroup
-			orientation="horizontal"
 			className="h-48 w-full max-w-5xl rounded-lg border"
+			orientation="horizontal"
 		>
 			<ResizablePanel defaultSize="30%" minSize="20%">
 				<div className="flex h-full items-center justify-center bg-muted/40 text-sm">
@@ -209,13 +209,13 @@ export const StatesAndAccessibility: Story = {
 	},
 	render: () => (
 		<ResizablePanelGroup
-			orientation="horizontal"
 			className="h-52 w-full max-w-5xl rounded-lg border"
+			orientation="horizontal"
 		>
 			<ResizablePanel defaultSize="45%" minSize="30%">
 				<div className="grid h-full gap-2 p-4">
-					<p className="text-sm font-medium">Supplier list</p>
-					<p className="text-sm text-foreground-secondary">
+					<p className="font-medium text-sm">Supplier list</p>
+					<p className="text-foreground-secondary text-sm">
 						Required controls stay usable at minSize.
 					</p>
 				</div>
@@ -223,8 +223,8 @@ export const StatesAndAccessibility: Story = {
 			<ResizableHandle withHandle />
 			<ResizablePanel defaultSize="55%" minSize="35%">
 				<div className="grid h-full gap-2 p-4">
-					<p className="text-sm font-medium">Supplier detail</p>
-					<p className="text-sm text-foreground-secondary">
+					<p className="font-medium text-sm">Supplier detail</p>
+					<p className="text-foreground-secondary text-sm">
 						Panel size is layout preference only.
 					</p>
 				</div>
@@ -245,20 +245,20 @@ export const Composition: Story = {
 	},
 	render: () => (
 		<div className="grid w-full max-w-4xl gap-3">
-			<p className="text-sm text-foreground-secondary">
+			<p className="text-foreground-secondary text-sm">
 				Goods receipt GRN-2201 · document and checklist
 			</p>
 			<ResizablePanelGroup
-				orientation="vertical"
 				className="h-72 rounded-lg border bg-card"
+				orientation="vertical"
 			>
 				<ResizablePanel defaultSize="60%" minSize="35%">
 					<div className="flex h-full flex-col justify-center gap-1 p-5">
-						<button type="button" className="sr-only">
+						<button className="sr-only" type="button">
 							Focus packing list preview pane
 						</button>
-						<p className="text-sm font-medium">Packing list preview</p>
-						<p className="text-sm text-foreground-secondary">
+						<p className="font-medium text-sm">Packing list preview</p>
+						<p className="text-foreground-secondary text-sm">
 							grn-2201-packing-list.pdf
 						</p>
 					</div>
@@ -266,11 +266,11 @@ export const Composition: Story = {
 				<ResizableHandle withHandle />
 				<ResizablePanel defaultSize="40%" minSize="25%">
 					<div className="flex h-full flex-col justify-center gap-1 bg-muted/40 p-5">
-						<button type="button" className="sr-only">
+						<button className="sr-only" type="button">
 							Focus receiving checklist pane
 						</button>
-						<p className="text-sm font-medium">Receiving checklist</p>
-						<p className="text-sm text-foreground-secondary">
+						<p className="font-medium text-sm">Receiving checklist</p>
+						<p className="text-foreground-secondary text-sm">
 							Quantity, lot, and damage checks
 						</p>
 					</div>
@@ -294,8 +294,8 @@ export const DoAndDoNot: Story = {
 		<div className="grid gap-6 sm:grid-cols-2">
 			<StorySection title="Do: peer panes with minSize">
 				<ResizablePanelGroup
-					orientation="horizontal"
 					className="h-40 rounded-lg border"
+					orientation="horizontal"
 				>
 					<ResizablePanel defaultSize="40%" minSize="25%">
 						<div className="flex h-full items-center justify-center text-sm">
@@ -311,21 +311,21 @@ export const DoAndDoNot: Story = {
 				</ResizablePanelGroup>
 			</StorySection>
 			<StorySection title="Do not: decorative page gutters">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Margins, section spacing, and Card gaps are layout primitives — not
 					Resizable panels. Do not encode approval priority in panel width.
 				</p>
 			</StorySection>
 
 			<StorySection title="Do: test minimum-size content">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					At minSize, pane headings, required controls, and local scrolling must
 					remain operable without overlapping the separator.
 				</p>
 			</StorySection>
 
 			<StorySection title="Do not: persist dimensions as domain data">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					A 70% detail pane is a user preference, not evidence that an invoice
 					is selected, important, approved, or authorized.
 				</p>

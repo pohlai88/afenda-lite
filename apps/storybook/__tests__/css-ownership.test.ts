@@ -40,7 +40,9 @@ const testOnlySentinelClass = "w-[1379px]";
 function sourceFiles(directory: string): string[] {
 	return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
 		const entryPath = path.join(directory, entry.name);
-		if (entry.isDirectory()) return sourceFiles(entryPath);
+		if (entry.isDirectory()) {
+			return sourceFiles(entryPath);
+		}
 		return /\.(?:ts|tsx)$/.test(entry.name) ? [entryPath] : [];
 	});
 }

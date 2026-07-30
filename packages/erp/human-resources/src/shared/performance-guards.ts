@@ -58,7 +58,9 @@ export function canTransitionCycleStatus(
 	current: PerformanceCycleStatus,
 	next: PerformanceCycleStatus,
 ): boolean {
-	if (current === next) return false;
+	if (current === next) {
+		return false;
+	}
 	if (current === "draft" && (next === "published" || next === "cancelled")) {
 		return true;
 	}
@@ -173,7 +175,9 @@ export function canTransitionGoalStatus(
 	current: PerformanceGoalStatus,
 	next: PerformanceGoalStatus,
 ): boolean {
-	if (current === next) return false;
+	if (current === next) {
+		return false;
+	}
 	const transitions: Record<PerformanceGoalStatus, PerformanceGoalStatus[]> = {
 		draft: ["submitted", "cancelled"],
 		submitted: ["approved", "rejected", "cancelled"],
@@ -228,7 +232,9 @@ export function canTransitionReviewStatus(
 	current: PerformanceReviewStatus,
 	next: PerformanceReviewStatus,
 ): boolean {
-	if (current === next) return false;
+	if (current === next) {
+		return false;
+	}
 	const transitions: Record<
 		PerformanceReviewStatus,
 		PerformanceReviewStatus[]
@@ -270,7 +276,9 @@ export function canTransitionImprovementPlanStatus(
 	current: PerformanceImprovementPlanStatus,
 	next: PerformanceImprovementPlanStatus,
 ): boolean {
-	if (current === next) return false;
+	if (current === next) {
+		return false;
+	}
 	const transitions: Record<
 		PerformanceImprovementPlanStatus,
 		PerformanceImprovementPlanStatus[]
@@ -455,7 +463,7 @@ export function assertImprovementPlanMilestones(input: {
 	for (let index = 1; index < input.milestones.length; index += 1) {
 		const previous = input.milestones[index - 1];
 		const current = input.milestones[index];
-		if (!previous || !current) {
+		if (!(previous && current)) {
 			continue;
 		}
 		if (current.dueDate < previous.dueDate) {

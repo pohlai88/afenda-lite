@@ -42,7 +42,9 @@ export async function addCompanyName(
 		addCompanyNameInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 
 	const authorized = await requireCorporateAdministrationPermission(
 		options.authorization,
@@ -52,7 +54,9 @@ export async function addCompanyName(
 			permission: CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS.addCompanyName,
 		},
 	);
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 
 	const identity = createCorporateAdministrationCommandFingerprint({
 		schema: addCompanyNameInputSchema,
@@ -60,7 +64,9 @@ export async function addCompanyName(
 		commandId: "corporate-administration.legal-company.add-company-name",
 		input: parsed.data,
 	});
-	if (!identity.ok) return identity;
+	if (!identity.ok) {
+		return identity;
+	}
 	const approved = await requireCorporateAdministrationApprovalIfConfigured(
 		dependencies,
 		{
@@ -71,15 +77,21 @@ export async function addCompanyName(
 			commandFingerprint: identity.data.fingerprint,
 		},
 	);
-	if (!approved.ok) return approved;
+	if (!approved.ok) {
+		return approved;
+	}
 
 	const language = validateCompanyNameLanguage(parsed.data.languageCode);
-	if (!language.ok) return language;
+	if (!language.ok) {
+		return language;
+	}
 	const languageReference = await dependencies.referenceData.resolveLanguage({
 		organizationId: options.organizationId,
 		languageCode: language.data,
 	});
-	if (!languageReference.ok) return languageReference;
+	if (!languageReference.ok) {
+		return languageReference;
+	}
 	if (languageReference.data === null) {
 		return fail(
 			"VALIDATION_ERROR",
@@ -105,14 +117,18 @@ export async function addCompanyName(
 		options,
 		dependencies,
 	});
-	if (!sourceDocument.ok) return sourceDocument;
+	if (!sourceDocument.ok) {
+		return sourceDocument;
+	}
 
 	const current = await dependencies.store.lockLegalCompany({
 		organizationId: options.organizationId,
 		legalCompanyId: parsed.data.legalCompanyId,
 		expectedVersion: parsed.data.expectedCompanyVersion,
 	});
-	if (!current.ok) return current;
+	if (!current.ok) {
+		return current;
+	}
 	if (current.data === null) {
 		return fail(
 			"NOT_FOUND",
@@ -150,7 +166,9 @@ export async function addCompanyName(
 		normalizedName,
 		effectivePeriod,
 	});
-	if (!overlap.ok) return overlap;
+	if (!overlap.ok) {
+		return overlap;
+	}
 	if (overlap.data !== null) {
 		return fail(
 			"CONFLICT",
@@ -223,12 +241,16 @@ async function validateOptionalSourceDocument(input: {
 	options: CorporateAdministrationCommandOptions;
 	dependencies: AddCompanyNameDependencies;
 }): Promise<Result<string | null>> {
-	if (input.sourceDocumentId === null) return { ok: true, data: null };
+	if (input.sourceDocumentId === null) {
+		return { ok: true, data: null };
+	}
 	const source = await input.dependencies.referenceData.validateSourceDocument({
 		organizationId: input.options.organizationId,
 		sourceDocumentId: input.sourceDocumentId,
 	});
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	if (source.data === null) {
 		return fail(
 			"NOT_FOUND",

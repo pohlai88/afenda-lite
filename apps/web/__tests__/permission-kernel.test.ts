@@ -132,3 +132,4 @@ describe.skipIf(!hasDatabase)("permission kernel product wiring (N10)", () => {
 		}
 	});
 });
+// biome-ignore-all lint/performance/noAwaitInLoops: Cases run serially to isolate mutable test state and ordered transitions.

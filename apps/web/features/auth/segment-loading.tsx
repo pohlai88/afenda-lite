@@ -3,14 +3,14 @@
 import { Spinner } from "@afenda/ui-system";
 import type { ElementType } from "react";
 
-type SegmentLoadingProps = {
-	className?: string;
+interface SegmentLoadingProps {
 	/**
 	 * When false, render a div so a parent layout can own the sole `<main>`
 	 * (auth/join island under AuthIslandLayout).
 	 */
 	asLandmark?: boolean;
-};
+	className?: string;
+}
 
 /** Shared segment loading chrome — instant fallback, no fetch (scaffold rule). */
 export function SegmentLoading({
@@ -24,7 +24,7 @@ export function SegmentLoading({
 				className ?? "flex min-h-dvh items-center justify-center gap-3 p-4"
 			}
 		>
-			<Spinner size="md" variant="secondary" label="Loading" />
+			<Spinner label="Loading" size="md" variant="secondary" />
 		</Root>
 	);
 }

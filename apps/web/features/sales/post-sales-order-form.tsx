@@ -20,9 +20,9 @@ import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 
 const initialState: PostSalesOrderActionState = null;
 
-type PostSalesOrderFormProps = {
+interface PostSalesOrderFormProps {
 	canPost: boolean;
-};
+}
 
 /**
  * Post draft sales order — freezes party/item/payment snapshots.
@@ -73,45 +73,45 @@ export function PostSalesOrderForm({ canPost }: PostSalesOrderFormProps) {
 				<FormError>{state.message}</FormError>
 			) : null}
 			<FormField
+				error={orderError}
+				fieldId="sales-post-order"
 				label="Order id"
 				required
-				fieldId="sales-post-order"
-				error={orderError}
 			>
 				<Input
+					autoComplete="off"
+					disabled={pending}
 					id="sales-post-order"
 					name="orderId"
 					required
-					autoComplete="off"
-					disabled={pending}
 				/>
 			</FormField>
 			<FormField
+				error={versionError}
+				fieldId="sales-post-version"
 				label="Expected version"
 				required
-				fieldId="sales-post-version"
-				error={versionError}
 			>
 				<Input
+					disabled={pending}
 					id="sales-post-version"
-					name="expectedVersion"
-					type="number"
 					min="1"
+					name="expectedVersion"
 					required
-					disabled={pending}
-				/>
-			</FormField>
-			<FormField label="Tax total (optional)" fieldId="sales-post-tax">
-				<Input
-					id="sales-post-tax"
-					name="taxTotal"
 					type="number"
-					step="any"
-					min="0"
-					disabled={pending}
 				/>
 			</FormField>
-			<Button type="submit" disabled={pending}>
+			<FormField fieldId="sales-post-tax" label="Tax total (optional)">
+				<Input
+					disabled={pending}
+					id="sales-post-tax"
+					min="0"
+					name="taxTotal"
+					step="any"
+					type="number"
+				/>
+			</FormField>
+			<Button disabled={pending} type="submit">
 				{pending ? <Spinner /> : null}
 				Post order
 			</Button>

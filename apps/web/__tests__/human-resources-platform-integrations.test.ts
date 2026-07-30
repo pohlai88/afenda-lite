@@ -99,7 +99,9 @@ function createFactPublisher() {
 			command.deduplicationKey ?? "",
 		].join(":");
 		const existing = entries.get(key);
-		if (existing !== undefined) return ok(existing);
+		if (existing !== undefined) {
+			return await ok(existing);
+		}
 		sequence += 1;
 		const created: DomainEvent = {
 			id: `derived-${sequence}`,
@@ -119,7 +121,7 @@ function createFactPublisher() {
 			processedAt: null,
 		};
 		entries.set(key, created);
-		return ok(created);
+		return await ok(created);
 	});
 	return { entries, publish };
 }
@@ -133,14 +135,16 @@ function createWorkItemSink() {
 		}) => {
 			const key = `${input.workItem.organizationId}:${input.workItem.deduplicationKey}`;
 			const existing = entries.get(key);
-			if (existing !== undefined) return ok(existing);
+			if (existing !== undefined) {
+				return await ok(existing);
+			}
 			const created = {
 				id: `work-item-${entries.size + 1}`,
 				organizationId: input.workItem.organizationId,
 				deduplicationKey: input.workItem.deduplicationKey,
 			};
 			entries.set(key, created);
-			return ok(created);
+			return await ok(created);
 		},
 	);
 	return { entries, record };
@@ -341,7 +345,9 @@ describe("Human Resources platform integrations", () => {
 		);
 
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 		expect(result.data.platformEvents.map((entry) => entry.type)).toEqual([
 			"identity.human-resources.lifecycle-fact.recorded.v1",
 			"platform.human-resources.reporting-fact.recorded.v1",
@@ -465,7 +471,9 @@ describe("Human Resources platform integrations", () => {
 			entity: "human_resources_employee",
 			documentId: "stale-employee",
 		});
-		if (result.ok) expect(result.data.pruned).toBe(1);
+		if (result.ok) {
+			expect(result.data.pruned).toBe(1);
+		}
 	});
 
 	it("fails closed when a list adapter returns another tenant", async () => {

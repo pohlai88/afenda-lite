@@ -1,10 +1,10 @@
 export type DependencyHealth = "healthy" | "degraded" | "unavailable";
 
-export type OutageDependency = {
+export interface OutageDependency {
+	health: DependencyHealth;
 	name: string;
 	required: boolean;
-	health: DependencyHealth;
-};
+}
 
 export type PartialOutageDecision =
 	| { action: "proceed"; unavailableOptional: readonly string[] }

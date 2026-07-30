@@ -78,6 +78,10 @@ import {
 	HUMAN_RESOURCES_PERMISSION_CODES,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
 } from "../src/permissions";
+import {
+	runSequential,
+	sequentialContinue,
+} from "../src/shared/run-sequential";
 import { createMemoryHumanResourcesStore } from "../src/testing";
 import {
 	assignEmploymentCalendar,
@@ -133,7 +137,9 @@ async function seedActiveEmployment(
 		},
 		ready,
 	);
-	if (!employee.ok) return employee;
+	if (!employee.ok) {
+		return employee;
+	}
 
 	const employment = await createEmployment(
 		{
@@ -145,7 +151,9 @@ async function seedActiveEmployment(
 		},
 		ready,
 	);
-	if (!employment.ok) return employment;
+	if (!employment.ok) {
+		return employment;
+	}
 
 	return {
 		ok: true as const,
@@ -159,7 +167,9 @@ async function seedEmploymentWithAssignment(
 	input: { organizationId: string; suffix: string },
 ) {
 	const seeded = await seedActiveEmployment(ready, input);
-	if (!seeded.ok) return seeded;
+	if (!seeded.ok) {
+		return seeded;
+	}
 
 	const orgSeed = await seedDepartmentAndJob(ready, {
 		organizationId: input.organizationId,
@@ -182,7 +192,9 @@ async function seedEmploymentWithAssignment(
 		},
 		ready,
 	);
-	if (!positionA.ok) return positionA;
+	if (!positionA.ok) {
+		return positionA;
+	}
 
 	const positionB = await createPosition(
 		{
@@ -196,7 +208,9 @@ async function seedEmploymentWithAssignment(
 		},
 		ready,
 	);
-	if (!positionB.ok) return positionB;
+	if (!positionB.ok) {
+		return positionB;
+	}
 
 	const assignment = await createAssignment(
 		{
@@ -210,7 +224,9 @@ async function seedEmploymentWithAssignment(
 		},
 		ready,
 	);
-	if (!assignment.ok) return assignment;
+	if (!assignment.ok) {
+		return assignment;
+	}
 
 	return {
 		ok: true as const,
@@ -230,7 +246,9 @@ describe("human-resources lifecycle", () => {
 			suffix: "happy",
 		});
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const onboarding = await completeOnboardingPath(ready, {
 			organizationId: ORG_A,
@@ -243,7 +261,9 @@ describe("human-resources lifecycle", () => {
 			expect.fail(`${onboarding.code}: ${onboarding.message}`);
 		}
 		expect(onboarding.ok).toBe(true);
-		if (!onboarding.ok) return;
+		if (!onboarding.ok) {
+			return;
+		}
 		expect(onboarding.data.status).toBe("completed");
 
 		const probation = await openProbation(
@@ -259,7 +279,9 @@ describe("human-resources lifecycle", () => {
 			ready,
 		);
 		expect(probation.ok).toBe(true);
-		if (!probation.ok) return;
+		if (!probation.ok) {
+			return;
+		}
 
 		const outcome = await recordProbationOutcome(
 			{
@@ -289,7 +311,9 @@ describe("human-resources lifecycle", () => {
 			ready,
 		);
 		expect(confirmation.ok).toBe(true);
-		if (!confirmation.ok) return;
+		if (!confirmation.ok) {
+			return;
+		}
 
 		const employmentAfterConfirm = await ready.store.getEmploymentById({
 			organizationId: ORG_A,
@@ -318,7 +342,9 @@ describe("human-resources lifecycle", () => {
 			ready,
 		);
 		expect(transfer.ok).toBe(true);
-		if (!transfer.ok) return;
+		if (!transfer.ok) {
+			return;
+		}
 		expect(transfer.data.toPositionId).toBe(seeded.positionB.id);
 
 		const termination = await finalizeEmploymentTermination(ready, {
@@ -332,7 +358,9 @@ describe("human-resources lifecycle", () => {
 			effectiveOn: "2025-06-01",
 		});
 		expect(termination.ok).toBe(true);
-		if (!termination.ok) return;
+		if (!termination.ok) {
+			return;
+		}
 		expect(termination.data.status).toBe("finalized");
 
 		const employmentAfterTerm = await ready.store.getEmploymentById({
@@ -360,7 +388,9 @@ describe("human-resources lifecycle", () => {
 			ready,
 		);
 		expect(offboarding.ok).toBe(true);
-		if (!offboarding.ok) return;
+		if (!offboarding.ok) {
+			return;
+		}
 
 		const offTasks = await listOffboardingTasks(
 			{
@@ -372,10 +402,14 @@ describe("human-resources lifecycle", () => {
 			ready,
 		);
 		expect(offTasks.ok).toBe(true);
-		if (!offTasks.ok) return;
-		const offTask = offTasks.data[0];
+		if (!offTasks.ok) {
+			return;
+		}
+		const [offTask] = offTasks.data;
 		expect(offTask).toBeDefined();
-		if (!offTask) return;
+		if (!offTask) {
+			return;
+		}
 
 		const offTaskDone = await completeOffboardingTask(
 			{
@@ -413,7 +447,9 @@ describe("human-resources lifecycle", () => {
 			ready,
 		);
 		expect(clearance.ok).toBe(true);
-		if (!clearance.ok || !clearance.data) return;
+		if (!(clearance.ok && clearance.data)) {
+			return;
+		}
 
 		const cleared = await recordClearance(
 			{
@@ -438,7 +474,9 @@ describe("human-resources lifecycle", () => {
 			ready,
 		);
 		expect(accessRevocation.ok).toBe(true);
-		if (!accessRevocation.ok || !accessRevocation.data) return;
+		if (!(accessRevocation.ok && accessRevocation.data)) {
+			return;
+		}
 
 		const accessRecorded = await recordOffboardingAccessRevocation(
 			{
@@ -464,7 +502,9 @@ describe("human-resources lifecycle", () => {
 			ready,
 		);
 		expect(payrollHandoff.ok).toBe(true);
-		if (!payrollHandoff.ok || !payrollHandoff.data) return;
+		if (!(payrollHandoff.ok && payrollHandoff.data)) {
+			return;
+		}
 
 		const payrollRecorded = await recordOffboardingPayrollHandoff(
 			{
@@ -491,7 +531,9 @@ describe("human-resources lifecycle", () => {
 			ready,
 		);
 		expect(completedOffboarding.ok).toBe(true);
-		if (!completedOffboarding.ok) return;
+		if (!completedOffboarding.ok) {
+			return;
+		}
 		expect(completedOffboarding.data.status).toBe("completed");
 
 		const eventTypes = ready.ports.outbox.calls.map((call) => call.type);
@@ -528,7 +570,9 @@ describe("human-resources lifecycle", () => {
 			suffix: "bad-onb",
 		});
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		await amendEmployment(
 			{
@@ -565,7 +609,9 @@ describe("human-resources lifecycle", () => {
 			suffix: "bad-onb-2",
 		});
 		expect(active.ok).toBe(true);
-		if (!active.ok) return;
+		if (!active.ok) {
+			return;
+		}
 
 		const started = await startOnboarding(
 			{
@@ -579,7 +625,9 @@ describe("human-resources lifecycle", () => {
 			ready,
 		);
 		expect(started.ok).toBe(true);
-		if (!started.ok) return;
+		if (!started.ok) {
+			return;
+		}
 
 		const earlyComplete = await completeOnboarding(
 			{
@@ -606,7 +654,9 @@ describe("human-resources lifecycle", () => {
 			suffix: "dup-onb",
 		});
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const first = await startOnboarding(
 			{
@@ -644,7 +694,9 @@ describe("human-resources lifecycle", () => {
 			suffix: "dup-off",
 		});
 		expect(withAssignment.ok).toBe(true);
-		if (!withAssignment.ok) return;
+		if (!withAssignment.ok) {
+			return;
+		}
 
 		const term = await finalizeEmploymentTermination(ready, {
 			organizationId: ORG_A,
@@ -657,7 +709,9 @@ describe("human-resources lifecycle", () => {
 			effectiveOn: "2025-07-01",
 		});
 		expect(term.ok).toBe(true);
-		if (!term.ok) return;
+		if (!term.ok) {
+			return;
+		}
 
 		const off1 = await startOffboarding(
 			{
@@ -700,7 +754,9 @@ describe("human-resources lifecycle", () => {
 			suffix: "prob-overlap",
 		});
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const first = await openProbation(
 			{
@@ -715,7 +771,9 @@ describe("human-resources lifecycle", () => {
 			ready,
 		);
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 
 		const overlap = await openProbation(
 			{
@@ -758,7 +816,9 @@ describe("human-resources lifecycle", () => {
 			startsOn: "2025-06-01",
 		});
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const beforeStart = await proposeTermination(
 			{
@@ -817,7 +877,9 @@ describe("human-resources lifecycle", () => {
 			suffix: "off-active",
 		});
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const result = await startOffboarding(
 			{
@@ -845,7 +907,9 @@ describe("human-resources lifecycle", () => {
 			suffix: "stale",
 		});
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const started = await startOnboarding(
 			{
@@ -859,7 +923,9 @@ describe("human-resources lifecycle", () => {
 			ready,
 		);
 		expect(started.ok).toBe(true);
-		if (!started.ok) return;
+		if (!started.ok) {
+			return;
+		}
 
 		const tasks = await listOnboardingTasks(
 			{
@@ -871,11 +937,15 @@ describe("human-resources lifecycle", () => {
 			ready,
 		);
 		expect(tasks.ok).toBe(true);
-		if (!tasks.ok) return;
+		if (!tasks.ok) {
+			return;
+		}
 		const task = tasks.data.find(
 			(row) => row.code === ONBOARDING_TASK_CODE_ORIENTATION,
 		);
-		if (!task) return;
+		if (!task) {
+			return;
+		}
 
 		const stale = await completeOnboardingTask(
 			{
@@ -903,7 +973,9 @@ describe("human-resources lifecycle", () => {
 			suffix: "xorg",
 		});
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const result = await startOnboarding(
 			{
@@ -931,7 +1003,9 @@ describe("human-resources lifecycle", () => {
 			suffix: "idem",
 		});
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const first = await startOnboarding(
 			{
@@ -945,7 +1019,9 @@ describe("human-resources lifecycle", () => {
 			ready,
 		);
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 
 		const replay = await startOnboarding(
 			{
@@ -959,7 +1035,9 @@ describe("human-resources lifecycle", () => {
 			ready,
 		);
 		expect(replay.ok).toBe(true);
-		if (!replay.ok) return;
+		if (!replay.ok) {
+			return;
+		}
 		expect(replay.data.id).toBe(first.data.id);
 
 		const otherEmployment = await seedActiveEmployment(ready, {
@@ -967,7 +1045,9 @@ describe("human-resources lifecycle", () => {
 			suffix: "idem-b",
 		});
 		expect(otherEmployment.ok).toBe(true);
-		if (!otherEmployment.ok) return;
+		if (!otherEmployment.ok) {
+			return;
+		}
 
 		const conflict = await startOnboarding(
 			{
@@ -995,7 +1075,9 @@ describe("human-resources lifecycle", () => {
 			suffix: "rollback",
 		});
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const portsFail = createMemoryMutationPorts({ outboxFailAfter: 0 });
 		const readyFail = {
@@ -1034,7 +1116,9 @@ describe("human-resources lifecycle", () => {
 			suffix: "forbid",
 		});
 		expect(active.ok).toBe(true);
-		if (!active.ok) return;
+		if (!active.ok) {
+			return;
+		}
 
 		const restricted = {
 			store: full.store,
@@ -1070,7 +1154,9 @@ describe("human-resources lifecycle", () => {
 				suffix: "s68-happy",
 			});
 			expect(seeded.ok).toBe(true);
-			if (!seeded.ok) return;
+			if (!seeded.ok) {
+				return;
+			}
 
 			const outboxBefore = ready.ports.outbox.calls.length;
 
@@ -1087,7 +1173,9 @@ describe("human-resources lifecycle", () => {
 				ready,
 			);
 			expect(probation.ok).toBe(true);
-			if (!probation.ok) return;
+			if (!probation.ok) {
+				return;
+			}
 
 			const assessment = await recordProbationAssessment(
 				{
@@ -1103,7 +1191,9 @@ describe("human-resources lifecycle", () => {
 				ready,
 			);
 			expect(assessment.ok).toBe(true);
-			if (!assessment.ok) return;
+			if (!assessment.ok) {
+				return;
+			}
 
 			const stillOpen = await ready.store.getProbationReview({
 				organizationId: ORG_A,
@@ -1129,7 +1219,9 @@ describe("human-resources lifecycle", () => {
 				ready,
 			);
 			expect(extended.ok).toBe(true);
-			if (!extended.ok) return;
+			if (!extended.ok) {
+				return;
+			}
 
 			const passed = await recordProbationOutcome(
 				{
@@ -1146,7 +1238,9 @@ describe("human-resources lifecycle", () => {
 				ready,
 			);
 			expect(passed.ok).toBe(true);
-			if (!passed.ok) return;
+			if (!passed.ok) {
+				return;
+			}
 
 			const confirmation = await confirmEmployment(
 				{
@@ -1222,7 +1316,9 @@ describe("human-resources lifecycle", () => {
 				suffix: "s68-failed",
 			});
 			expect(seeded.ok).toBe(true);
-			if (!seeded.ok) return;
+			if (!seeded.ok) {
+				return;
+			}
 
 			const probation = await openProbation(
 				{
@@ -1237,7 +1333,9 @@ describe("human-resources lifecycle", () => {
 				ready,
 			);
 			expect(probation.ok).toBe(true);
-			if (!probation.ok) return;
+			if (!probation.ok) {
+				return;
+			}
 
 			await recordProbationOutcome(
 				{
@@ -1280,7 +1378,9 @@ describe("human-resources lifecycle", () => {
 				suffix: "s68-dates",
 			});
 			expect(seeded.ok).toBe(true);
-			if (!seeded.ok) return;
+			if (!seeded.ok) {
+				return;
+			}
 
 			const probation = await openProbation(
 				{
@@ -1295,7 +1395,9 @@ describe("human-resources lifecycle", () => {
 				ready,
 			);
 			expect(probation.ok).toBe(true);
-			if (!probation.ok) return;
+			if (!probation.ok) {
+				return;
+			}
 
 			const outsideOutcome = await recordProbationOutcome(
 				{
@@ -1331,7 +1433,9 @@ describe("human-resources lifecycle", () => {
 				ready,
 			);
 			expect(passed.ok).toBe(true);
-			if (!passed.ok) return;
+			if (!passed.ok) {
+				return;
+			}
 
 			const earlyConfirm = await confirmEmployment(
 				{
@@ -1378,7 +1482,9 @@ describe("human-resources lifecycle", () => {
 				suffix: "s69-happy",
 			});
 			expect(seeded.ok).toBe(true);
-			if (!seeded.ok) return;
+			if (!seeded.ok) {
+				return;
+			}
 
 			const auditBefore = ready.ports.audit.calls.length;
 			const outboxBefore = ready.ports.outbox.calls.length;
@@ -1398,7 +1504,9 @@ describe("human-resources lifecycle", () => {
 				ready,
 			);
 			expect(transfer.ok).toBe(true);
-			if (!transfer.ok) return;
+			if (!transfer.ok) {
+				return;
+			}
 
 			expect(transfer.data.movementKind).toBe("transfer");
 			expect(transfer.data.fromAssignmentId).toBeDefined();
@@ -1416,10 +1524,7 @@ describe("human-resources lifecycle", () => {
 			expect(predecessor.ok).toBe(true);
 			expect(successor.ok).toBe(true);
 			if (
-				!predecessor.ok ||
-				!successor.ok ||
-				!predecessor.data ||
-				!successor.data
+				!(predecessor.ok && successor.ok && predecessor.data && successor.data)
 			) {
 				return;
 			}
@@ -1459,7 +1564,9 @@ describe("human-resources lifecycle", () => {
 				suffix: "s69-snap",
 			});
 			expect(seeded.ok).toBe(true);
-			if (!seeded.ok) return;
+			if (!seeded.ok) {
+				return;
+			}
 
 			const orgSeed = await seedDepartmentAndJob(ready, {
 				organizationId: ORG_A,
@@ -1467,7 +1574,9 @@ describe("human-resources lifecycle", () => {
 				correlationId: "corr-org-s69-snap",
 			});
 			expect(orgSeed).not.toBeNull();
-			if (!orgSeed) return;
+			if (!orgSeed) {
+				return;
+			}
 
 			const positionA = await createPosition(
 				{
@@ -1482,7 +1591,9 @@ describe("human-resources lifecycle", () => {
 				ready,
 			);
 			expect(positionA.ok).toBe(true);
-			if (!positionA.ok) return;
+			if (!positionA.ok) {
+				return;
+			}
 
 			const positionB = await createPosition(
 				{
@@ -1497,7 +1608,9 @@ describe("human-resources lifecycle", () => {
 				ready,
 			);
 			expect(positionB.ok).toBe(true);
-			if (!positionB.ok) return;
+			if (!positionB.ok) {
+				return;
+			}
 
 			const managerOne = await createEmployee(
 				{
@@ -1511,7 +1624,9 @@ describe("human-resources lifecycle", () => {
 				ready,
 			);
 			expect(managerOne.ok).toBe(true);
-			if (!managerOne.ok) return;
+			if (!managerOne.ok) {
+				return;
+			}
 
 			const managerTwo = await createEmployee(
 				{
@@ -1525,7 +1640,9 @@ describe("human-resources lifecycle", () => {
 				ready,
 			);
 			expect(managerTwo.ok).toBe(true);
-			if (!managerTwo.ok) return;
+			if (!managerTwo.ok) {
+				return;
+			}
 
 			const reportingOne = await assignPrimaryReportingLine(
 				{
@@ -1539,7 +1656,9 @@ describe("human-resources lifecycle", () => {
 				ready,
 			);
 			expect(reportingOne.ok).toBe(true);
-			if (!reportingOne.ok) return;
+			if (!reportingOne.ok) {
+				return;
+			}
 
 			const calendarOne = await createWorkCalendar(
 				{
@@ -1558,7 +1677,9 @@ describe("human-resources lifecycle", () => {
 				ready,
 			);
 			expect(calendarOne.ok).toBe(true);
-			if (!calendarOne.ok) return;
+			if (!calendarOne.ok) {
+				return;
+			}
 
 			const calendarAssignOne = await assignEmploymentCalendar(
 				{
@@ -1573,7 +1694,9 @@ describe("human-resources lifecycle", () => {
 				ready,
 			);
 			expect(calendarAssignOne.ok).toBe(true);
-			if (!calendarAssignOne.ok) return;
+			if (!calendarAssignOne.ok) {
+				return;
+			}
 
 			const openAssignment = await createAssignment(
 				{
@@ -1589,7 +1712,9 @@ describe("human-resources lifecycle", () => {
 				ready,
 			);
 			expect(openAssignment.ok).toBe(true);
-			if (!openAssignment.ok) return;
+			if (!openAssignment.ok) {
+				return;
+			}
 			expect(openAssignment.data.managerEmployeeIdSnapshot).toBe(
 				managerOne.data.id,
 			);
@@ -1610,7 +1735,9 @@ describe("human-resources lifecycle", () => {
 				ready,
 			);
 			expect(reportingTwo.ok).toBe(true);
-			if (!reportingTwo.ok) return;
+			if (!reportingTwo.ok) {
+				return;
+			}
 
 			const calendarTwo = await createWorkCalendar(
 				{
@@ -1629,7 +1756,9 @@ describe("human-resources lifecycle", () => {
 				ready,
 			);
 			expect(calendarTwo.ok).toBe(true);
-			if (!calendarTwo.ok) return;
+			if (!calendarTwo.ok) {
+				return;
+			}
 
 			const calendarOneEnded = await endWorkCalendarAssignment(
 				{
@@ -1643,7 +1772,9 @@ describe("human-resources lifecycle", () => {
 				ready,
 			);
 			expect(calendarOneEnded.ok).toBe(true);
-			if (!calendarOneEnded.ok) return;
+			if (!calendarOneEnded.ok) {
+				return;
+			}
 
 			const calendarAssignTwo = await assignEmploymentCalendar(
 				{
@@ -1658,7 +1789,9 @@ describe("human-resources lifecycle", () => {
 				ready,
 			);
 			expect(calendarAssignTwo.ok).toBe(true);
-			if (!calendarAssignTwo.ok) return;
+			if (!calendarAssignTwo.ok) {
+				return;
+			}
 
 			const transfer = await transferAssignment(
 				{
@@ -1675,7 +1808,9 @@ describe("human-resources lifecycle", () => {
 				ready,
 			);
 			expect(transfer.ok).toBe(true);
-			if (!transfer.ok) return;
+			if (!transfer.ok) {
+				return;
+			}
 
 			const predecessor = await ready.store.getAssignmentById({
 				organizationId: ORG_A,
@@ -1688,10 +1823,7 @@ describe("human-resources lifecycle", () => {
 			expect(predecessor.ok).toBe(true);
 			expect(successor.ok).toBe(true);
 			if (
-				!predecessor.ok ||
-				!successor.ok ||
-				!predecessor.data ||
-				!successor.data
+				!(predecessor.ok && successor.ok && predecessor.data && successor.data)
 			) {
 				return;
 			}
@@ -1727,7 +1859,9 @@ describe("human-resources lifecycle", () => {
 				suffix: "s69-reject",
 			});
 			expect(seeded.ok).toBe(true);
-			if (!seeded.ok) return;
+			if (!seeded.ok) {
+				return;
+			}
 
 			const same = await transferAssignment(
 				{
@@ -1750,7 +1884,9 @@ describe("human-resources lifecycle", () => {
 				actorUserId: ACTOR,
 			});
 			expect(orgSeed).not.toBeNull();
-			if (!orgSeed) return;
+			if (!orgSeed) {
+				return;
+			}
 
 			const target = await createPosition(
 				{
@@ -1765,7 +1901,9 @@ describe("human-resources lifecycle", () => {
 				ready,
 			);
 			expect(target.ok).toBe(true);
-			if (!target.ok) return;
+			if (!target.ok) {
+				return;
+			}
 
 			const frozen = await freezePosition(
 				{
@@ -1778,7 +1916,9 @@ describe("human-resources lifecycle", () => {
 				ready,
 			);
 			expect(frozen.ok).toBe(true);
-			if (!frozen.ok) return;
+			if (!frozen.ok) {
+				return;
+			}
 
 			const toFrozen = await transferAssignment(
 				{
@@ -1811,7 +1951,9 @@ describe("human-resources lifecycle", () => {
 				ready,
 			);
 			expect(accepted.ok).toBe(true);
-			if (!accepted.ok) return;
+			if (!accepted.ok) {
+				return;
+			}
 
 			const mismatch = await transferAssignment(
 				{
@@ -1844,7 +1986,9 @@ describe("human-resources lifecycle", () => {
 				suffix: "s67-gate",
 			});
 			expect(seeded.ok).toBe(true);
-			if (!seeded.ok) return;
+			if (!seeded.ok) {
+				return;
+			}
 
 			const started = await startOnboarding(
 				{
@@ -1864,7 +2008,9 @@ describe("human-resources lifecycle", () => {
 				ready,
 			);
 			expect(started.ok).toBe(true);
-			if (!started.ok) return;
+			if (!started.ok) {
+				return;
+			}
 
 			const tasks = await listOnboardingTasks(
 				{
@@ -1876,7 +2022,9 @@ describe("human-resources lifecycle", () => {
 				ready,
 			);
 			expect(tasks.ok).toBe(true);
-			if (!tasks.ok) return;
+			if (!tasks.ok) {
+				return;
+			}
 			expect(tasks.data).toHaveLength(GOVERNED_ONBOARDING_CHECKLIST.length);
 
 			const blockedComplete = await completeOnboarding(
@@ -1895,7 +2043,9 @@ describe("human-resources lifecycle", () => {
 				(row) => row.code === ONBOARDING_TASK_CODE_WORK_ELIGIBILITY,
 			);
 			expect(workEligibilityTask).toBeDefined();
-			if (!workEligibilityTask) return;
+			if (!workEligibilityTask) {
+				return;
+			}
 
 			const blockedTask = await completeOnboardingTask(
 				{
@@ -1920,7 +2070,9 @@ describe("human-resources lifecycle", () => {
 				suffix: "s67-happy",
 			});
 			expect(happySeed.ok).toBe(true);
-			if (!happySeed.ok) return;
+			if (!happySeed.ok) {
+				return;
+			}
 
 			const completed = await completeOnboardingPath(ready, {
 				organizationId: ORG_A,
@@ -1930,7 +2082,9 @@ describe("human-resources lifecycle", () => {
 				suffix: "s67-happy-complete",
 			});
 			expect(completed.ok).toBe(true);
-			if (!completed.ok) return;
+			if (!completed.ok) {
+				return;
+			}
 			expect(completed.data.status).toBe("completed");
 		});
 	});
@@ -1943,7 +2097,9 @@ describe("human-resources lifecycle", () => {
 				suffix: "s610-gates",
 			});
 			expect(seeded.ok).toBe(true);
-			if (!seeded.ok) return;
+			if (!seeded.ok) {
+				return;
+			}
 
 			const proposed = await proposeTermination(
 				{
@@ -1960,7 +2116,9 @@ describe("human-resources lifecycle", () => {
 				ready,
 			);
 			expect(proposed.ok).toBe(true);
-			if (!proposed.ok) return;
+			if (!proposed.ok) {
+				return;
+			}
 
 			const finalizeWithoutApprove = await finalizeTermination(
 				{
@@ -1990,7 +2148,9 @@ describe("human-resources lifecycle", () => {
 				ready,
 			);
 			expect(approved.ok).toBe(true);
-			if (!approved.ok) return;
+			if (!approved.ok) {
+				return;
+			}
 
 			const doubleApprove = await approveTermination(
 				{
@@ -2017,7 +2177,9 @@ describe("human-resources lifecycle", () => {
 				suffix: "s610-draft",
 			});
 			expect(seeded.ok).toBe(true);
-			if (!seeded.ok) return;
+			if (!seeded.ok) {
+				return;
+			}
 
 			const firstDraft = await proposeTermination(
 				{
@@ -2034,7 +2196,9 @@ describe("human-resources lifecycle", () => {
 				ready,
 			);
 			expect(firstDraft.ok).toBe(true);
-			if (!firstDraft.ok) return;
+			if (!firstDraft.ok) {
+				return;
+			}
 
 			const secondDraft = await proposeTermination(
 				{
@@ -2068,7 +2232,9 @@ describe("human-resources lifecycle", () => {
 				ready,
 			);
 			expect(approved.ok).toBe(true);
-			if (!approved.ok) return;
+			if (!approved.ok) {
+				return;
+			}
 
 			const finalized = await finalizeTermination(
 				{
@@ -2081,7 +2247,9 @@ describe("human-resources lifecycle", () => {
 				ready,
 			);
 			expect(finalized.ok).toBe(true);
-			if (!finalized.ok) return;
+			if (!finalized.ok) {
+				return;
+			}
 			expect(finalized.data.status).toBe("finalized");
 			expect(finalized.data.rehireEligible).toBe(true);
 
@@ -2110,7 +2278,9 @@ describe("human-resources lifecycle", () => {
 				suffix: "s610-off-facts",
 			});
 			expect(seeded.ok).toBe(true);
-			if (!seeded.ok) return;
+			if (!seeded.ok) {
+				return;
+			}
 
 			const termination = await finalizeEmploymentTermination(ready, {
 				organizationId: ORG_A,
@@ -2123,7 +2293,9 @@ describe("human-resources lifecycle", () => {
 				effectiveOn: "2025-10-01",
 			});
 			expect(termination.ok).toBe(true);
-			if (!termination.ok) return;
+			if (!termination.ok) {
+				return;
+			}
 
 			const offboarding = await startOffboarding(
 				{
@@ -2140,7 +2312,9 @@ describe("human-resources lifecycle", () => {
 				ready,
 			);
 			expect(offboarding.ok).toBe(true);
-			if (!offboarding.ok) return;
+			if (!offboarding.ok) {
+				return;
+			}
 
 			const accessSeed = await getOffboardingAccessRevocationByCase(
 				{
@@ -2152,7 +2326,9 @@ describe("human-resources lifecycle", () => {
 				ready,
 			);
 			expect(accessSeed.ok).toBe(true);
-			if (!accessSeed.ok || accessSeed.data === null) return;
+			if (!accessSeed.ok || accessSeed.data === null) {
+				return;
+			}
 			expect(accessSeed.data.status).toBe("pending");
 
 			const payrollSeed = await getOffboardingPayrollHandoffByCase(
@@ -2165,7 +2341,9 @@ describe("human-resources lifecycle", () => {
 				ready,
 			);
 			expect(payrollSeed.ok).toBe(true);
-			if (!payrollSeed.ok || payrollSeed.data === null) return;
+			if (!payrollSeed.ok || payrollSeed.data === null) {
+				return;
+			}
 			expect(payrollSeed.data.status).toBe("pending");
 
 			const tasks = await listOffboardingTasks(
@@ -2178,10 +2356,14 @@ describe("human-resources lifecycle", () => {
 				ready,
 			);
 			expect(tasks.ok).toBe(true);
-			if (!tasks.ok) return;
-			const task = tasks.data[0];
+			if (!tasks.ok) {
+				return;
+			}
+			const [task] = tasks.data;
 			expect(task).toBeDefined();
-			if (!task) return;
+			if (!task) {
+				return;
+			}
 
 			const taskDone = await completeOffboardingTask(
 				{
@@ -2219,7 +2401,9 @@ describe("human-resources lifecycle", () => {
 				ready,
 			);
 			expect(clearance.ok).toBe(true);
-			if (!clearance.ok || clearance.data === null) return;
+			if (!clearance.ok || clearance.data === null) {
+				return;
+			}
 
 			const cleared = await recordClearance(
 				{
@@ -2264,12 +2448,14 @@ describe("human-resources lifecycle", () => {
 			"lifecycle",
 		);
 		const files = await fs.readdir(lifecycleDir);
-		for (const file of files) {
-			if (!file.endsWith(".ts")) continue;
+		await runSequential(files, async (file) => {
+			if (!file.endsWith(".ts")) {
+				return sequentialContinue();
+			}
 			const body = await fs.readFile(path.join(lifecycleDir, file), "utf8");
 			expect(body).not.toMatch(/@afenda\/auth/);
 			expect(body).not.toMatch(/@afenda\/payroll/);
 			expect(body).not.toMatch(/@afenda\/admin/);
-		}
+		});
 	});
 });

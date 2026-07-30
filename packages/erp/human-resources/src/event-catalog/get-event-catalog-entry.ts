@@ -21,7 +21,7 @@ export function tryGetEventCatalogEntry(
 	eventType: HumanResourcesEventType,
 ): EventCatalogEntry | undefined {
 	if (!isClassifiedHumanResourcesDomainEventType(eventType)) {
-		return undefined;
+		return;
 	}
 	return HUMAN_RESOURCES_EVENT_CATALOG[eventType];
 }

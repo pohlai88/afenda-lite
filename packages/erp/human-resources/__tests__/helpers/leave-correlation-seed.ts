@@ -1,4 +1,3 @@
-import { expect } from "vitest";
 import type { HumanResourcesCommandOptions } from "../../src/command-options";
 import { createEmployee } from "../../src/core/employee";
 import { createEmployment } from "../../src/core/employment";
@@ -15,6 +14,7 @@ import {
 	HUMAN_RESOURCES_PERMISSION_LEAVE_POLICY_READ,
 	HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_OWN,
 } from "../../src/permissions";
+import { helperAssert as assert } from "./helper-assert";
 import { mapActorToEmployee } from "./identity-resolver";
 import { createGrantingHumanResourcesAuthorization } from "./memory-authorization";
 
@@ -50,7 +50,7 @@ export async function seedLeaveCorrelationFixture(input: {
 		},
 		seedReady,
 	);
-	expect(employee.ok).toBe(true);
+	assert.strictEqual(employee.ok, true);
 	if (!employee.ok) {
 		throw employee.error;
 	}
@@ -73,7 +73,7 @@ export async function seedLeaveCorrelationFixture(input: {
 		},
 		seedReady,
 	);
-	expect(employment.ok).toBe(true);
+	assert.strictEqual(employment.ok, true);
 	if (!employment.ok) {
 		throw employment.error;
 	}
@@ -95,7 +95,7 @@ export async function seedLeaveCorrelationFixture(input: {
 		},
 		seedReady,
 	);
-	expect(policy.ok).toBe(true);
+	assert.strictEqual(policy.ok, true);
 	if (!policy.ok) {
 		throw policy.error;
 	}
@@ -110,7 +110,7 @@ export async function seedLeaveCorrelationFixture(input: {
 		},
 		seedReady,
 	);
-	expect(published.ok).toBe(true);
+	assert.strictEqual(published.ok, true);
 	if (!published.ok) {
 		throw published.error;
 	}
@@ -130,7 +130,7 @@ export async function seedLeaveCorrelationFixture(input: {
 		},
 		seedReady,
 	);
-	expect(entitlement.ok).toBe(true);
+	assert.strictEqual(entitlement.ok, true);
 	if (!entitlement.ok) {
 		throw entitlement.error;
 	}

@@ -2,10 +2,10 @@ import { env, isDevelopmentRuntimeNow } from "@afenda/env";
 
 export type LocalDevLoginRole = "operator" | "client";
 
-export type LocalDevLoginAvailability = {
-	operator: boolean;
+export interface LocalDevLoginAvailability {
 	client: boolean;
-};
+	operator: boolean;
+}
 
 /**
  * Local `next dev` only — never Vercel, never production NODE_ENV.

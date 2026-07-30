@@ -2,7 +2,7 @@
  * Item templates + concrete variant items (DNA §7.3 / R1).
  * Sellable identity = md_item; attribute values are typed rows — never JSON bag.
  */
-import { fail, type Result } from "@afenda/errors/result";
+import { fail, ok, type Result } from "@afenda/errors/result";
 
 import {
 	requireMasterCommandPermission,
@@ -26,10 +26,24 @@ import {
 	type MasterCommandId,
 } from "../../module-ids";
 import { parseMasterInput } from "../../parse-input";
-import type { ItemTemplate, ItemVariant } from "../../types";
+import type {
+	DependencyInspector,
+	ItemTemplate,
+	ItemTemplateAttribute,
+	ItemTemplateAttributeOption,
+	ItemVariant,
+} from "../../types";
 import { resolveItemVariantExtensionDeps } from "../extensions/extension-deps";
 import { isOptionCompatibleAttributeDataType } from "../extensions/template-attribute-policy";
-import { normalizeVariantAttributeValue } from "../extensions/variant-attribute-value-policy";
+import type {
+	ItemVariantAttributeValueCreateRecord,
+	ItemVariantExtensionStore,
+} from "../extensions/template-store";
+import {
+	type NormalizedVariantAttributeValue,
+	normalizeVariantAttributeValue,
+	type VariantAttributeValueInput,
+} from "../extensions/variant-attribute-value-policy";
 import { assertNoLifecycleControlledFieldMutation } from "../lifecycle-governance";
 import type { ItemTemplateLifecycleEventSuffix } from "./core-master-events";
 import { assertLifecycleTransition } from "./lifecycle";
@@ -66,6 +80,15 @@ export {
 
 function masterIdKey(value: string): string {
 	return value;
+}
+
+type ItemVariantAttributeInput = VariantAttributeValueInput & {
+	attributeId: string;
+};
+
+interface CombinationEntry {
+	attrNormalizedCode: string;
+	valueNormalized: string;
 }
 
 export async function createItemTemplate(
@@ -199,70 +222,23 @@ async function transitionItemTemplateStatus(
 		return transition;
 	}
 	if (toStatus === "active") {
-		const attrs = await store.listItemTemplateAttributes(
+		const activation = await validateItemTemplateActivation(
+			store,
 			parsed.data.organizationId,
 			parsed.data.id,
 		);
-		if (!attrs.ok) {
-			return attrs;
-		}
-		const activeAttributes = attrs.data.filter(
-			(attribute) =>
-				attribute.status === "active" && attribute.archivedAt === null,
-		);
-		if (activeAttributes.length === 0) {
-			return fail(
-				"CONFLICT",
-				"Activate requires at least one template attribute",
-				{ reason: "MASTER_INVALID_STATE" } satisfies MasterFailureDetails,
-			);
-		}
-		if (!activeAttributes.some((attribute) => attribute.isVariantDefining)) {
-			return fail(
-				"CONFLICT",
-				"Activate requires at least one variant-defining attribute",
-				{ reason: "MASTER_INVALID_STATE" } satisfies MasterFailureDetails,
-			);
-		}
-		const optionsResult =
-			await store.listItemTemplateAttributeOptionsByTemplate(
-				parsed.data.organizationId,
-				parsed.data.id,
-			);
-		if (!optionsResult.ok) {
-			return optionsResult;
-		}
-		const optionAttributeIds = new Set(
-			optionsResult.data
-				.filter(
-					(option) => option.status === "active" && option.archivedAt === null,
-				)
-				.map((option) => masterIdKey(option.attributeId)),
-		);
-		for (const attr of activeAttributes) {
-			if (!isOptionCompatibleAttributeDataType(attr.dataType)) {
-				continue;
-			}
-			if (!optionAttributeIds.has(attr.id)) {
-				return fail(
-					"CONFLICT",
-					`Option attribute ${attr.code} requires at least one option`,
-					{ reason: "MASTER_INVALID_STATE" } satisfies MasterFailureDetails,
-				);
-			}
+		if (!activation.ok) {
+			return activation;
 		}
 	}
 	if (toStatus === "retired") {
-		const blockers = await dependencyInspector.listBlockers({
-			organizationId: parsed.data.organizationId,
-			entityType: "item_template",
-			entityId: parsed.data.id,
-		});
-		if (blockers.length > 0) {
-			return fail("CONFLICT", "Item template has dependency blockers", {
-				reason: "MASTER_DEPENDENCY_BLOCKED",
-				blockers,
-			} satisfies MasterFailureDetails);
+		const retirement = await validateItemTemplateRetirement(
+			dependencyInspector,
+			parsed.data.organizationId,
+			parsed.data.id,
+		);
+		if (!retirement.ok) {
+			return retirement;
 		}
 	}
 	return store.transitionItemTemplate(
@@ -278,7 +254,90 @@ async function transitionItemTemplateStatus(
 	);
 }
 
-export async function activateItemTemplate(
+async function validateItemTemplateActivation(
+	store: Pick<
+		ItemVariantExtensionStore,
+		"listItemTemplateAttributes" | "listItemTemplateAttributeOptionsByTemplate"
+	>,
+	organizationId: string,
+	templateId: string,
+): Promise<Result<true>> {
+	const attrs = await store.listItemTemplateAttributes(
+		organizationId,
+		templateId,
+	);
+	if (!attrs.ok) {
+		return attrs;
+	}
+	const activeAttributes = attrs.data.filter(
+		(attribute) =>
+			attribute.status === "active" && attribute.archivedAt === null,
+	);
+	if (activeAttributes.length === 0) {
+		return fail(
+			"CONFLICT",
+			"Activate requires at least one template attribute",
+			{
+				reason: "MASTER_INVALID_STATE",
+			} satisfies MasterFailureDetails,
+		);
+	}
+	if (!activeAttributes.some((attribute) => attribute.isVariantDefining)) {
+		return fail(
+			"CONFLICT",
+			"Activate requires at least one variant-defining attribute",
+			{ reason: "MASTER_INVALID_STATE" } satisfies MasterFailureDetails,
+		);
+	}
+	const optionsResult = await store.listItemTemplateAttributeOptionsByTemplate(
+		organizationId,
+		templateId,
+	);
+	if (!optionsResult.ok) {
+		return optionsResult;
+	}
+	const optionAttributeIds = new Set(
+		optionsResult.data
+			.filter(
+				(option) => option.status === "active" && option.archivedAt === null,
+			)
+			.map((option) => masterIdKey(option.attributeId)),
+	);
+	const missingOptionAttribute = activeAttributes.find(
+		(attribute) =>
+			isOptionCompatibleAttributeDataType(attribute.dataType) &&
+			!optionAttributeIds.has(attribute.id),
+	);
+	if (missingOptionAttribute !== undefined) {
+		return fail(
+			"CONFLICT",
+			`Option attribute ${missingOptionAttribute.code} requires at least one option`,
+			{ reason: "MASTER_INVALID_STATE" } satisfies MasterFailureDetails,
+		);
+	}
+	return ok(true);
+}
+
+async function validateItemTemplateRetirement(
+	dependencyInspector: DependencyInspector,
+	organizationId: string,
+	templateId: string,
+): Promise<Result<true>> {
+	const blockers = await dependencyInspector.listBlockers({
+		organizationId,
+		entityType: "item_template",
+		entityId: templateId,
+	});
+	if (blockers.length > 0) {
+		return fail("CONFLICT", "Item template has dependency blockers", {
+			reason: "MASTER_DEPENDENCY_BLOCKED",
+			blockers,
+		} satisfies MasterFailureDetails);
+	}
+	return ok(true);
+}
+
+export function activateItemTemplate(
 	input: unknown,
 	options: MasterCommandOptions = {},
 ): Promise<Result<ItemTemplate>> {
@@ -291,7 +350,7 @@ export async function activateItemTemplate(
 	);
 }
 
-export async function inactiveItemTemplate(
+export function inactiveItemTemplate(
 	input: unknown,
 	options: MasterCommandOptions = {},
 ): Promise<Result<ItemTemplate>> {
@@ -304,7 +363,7 @@ export async function inactiveItemTemplate(
 	);
 }
 
-export async function retireItemTemplate(
+export function retireItemTemplate(
 	input: unknown,
 	options: MasterCommandOptions = {},
 ): Promise<Result<ItemTemplate>> {
@@ -470,33 +529,13 @@ export async function createItemVariant(
 		(attribute) =>
 			attribute.status === "active" && attribute.archivedAt === null,
 	);
-	const attrById = new Map(
-		activeAttributes.map((attr) => [masterIdKey(attr.id), attr] as const),
+	const providedAttributeValidation = validateProvidedVariantAttributes(
+		activeAttributes,
+		parsed.data.attributeValues,
 	);
-	const seenAttributeIds = new Set<string>();
-	for (const value of parsed.data.attributeValues) {
-		if (seenAttributeIds.has(value.attributeId)) {
-			return fail("BAD_REQUEST", "Duplicate template attribute value", {
-				reason: "MASTER_VALIDATION_FAILED",
-				attributeId: value.attributeId,
-			} satisfies MasterFailureDetails);
-		}
-		seenAttributeIds.add(value.attributeId);
+	if (!providedAttributeValidation.ok) {
+		return providedAttributeValidation;
 	}
-	const providedIds = new Set(
-		parsed.data.attributeValues.map((value) => masterIdKey(value.attributeId)),
-	);
-	for (const attr of activeAttributes) {
-		if (attr.isRequired && !providedIds.has(attr.id)) {
-			return fail("BAD_REQUEST", `Missing required attribute ${attr.code}`, {
-				reason: "MASTER_VALIDATION_FAILED",
-			} satisfies MasterFailureDetails);
-		}
-	}
-	const combinationEntries: Array<{
-		attrNormalizedCode: string;
-		valueNormalized: string;
-	}> = [];
 	const optionsResult = await store.listItemTemplateAttributeOptionsByTemplate(
 		parsed.data.organizationId,
 		parsed.data.templateId,
@@ -504,75 +543,15 @@ export async function createItemVariant(
 	if (!optionsResult.ok) {
 		return optionsResult;
 	}
-	const optionById = new Map(
-		optionsResult.data
-			.filter(
-				(option) => option.status === "active" && option.archivedAt === null,
-			)
-			.map((option) => [masterIdKey(option.id), option] as const),
+	const valueRecordsResult = buildVariantAttributeRecords(
+		activeAttributes,
+		optionsResult.data,
+		parsed.data.attributeValues,
 	);
-	const valueRecords = [];
-	for (const value of parsed.data.attributeValues) {
-		const attr = attrById.get(value.attributeId);
-		if (attr === undefined) {
-			return fail("BAD_REQUEST", "Unknown template attribute", {
-				reason: "MASTER_VALIDATION_FAILED",
-			} satisfies MasterFailureDetails);
-		}
-		const normalized = normalizeVariantAttributeValue({
-			dataType: attr.dataType,
-			validationRules: attr.validationRules,
-			value,
-		});
-		if (!normalized.ok) return normalized;
-		let normalizedValue = normalized.data.normalizedValue;
-		if (attr.dataType === "single_option") {
-			const option = optionById.get(normalized.data.optionId ?? "");
-			if (option === undefined || option.attributeId !== attr.id) {
-				return fail(
-					"BAD_REQUEST",
-					`Option does not belong to attribute ${attr.code}`,
-					{
-						reason: "MASTER_VALIDATION_FAILED",
-					} satisfies MasterFailureDetails,
-				);
-			}
-			normalizedValue = option.normalizedCode;
-		}
-		if (attr.dataType === "multiple_option") {
-			const options = normalized.data.optionIds.map((optionId) =>
-				optionById.get(optionId),
-			);
-			if (
-				options.some(
-					(option) => option === undefined || option.attributeId !== attr.id,
-				)
-			) {
-				return fail(
-					"BAD_REQUEST",
-					`Option does not belong to attribute ${attr.code}`,
-					{
-						reason: "MASTER_VALIDATION_FAILED",
-					} satisfies MasterFailureDetails,
-				);
-			}
-			normalizedValue = options
-				.map((option) => option?.normalizedCode ?? "")
-				.sort()
-				.join(",");
-		}
-		if (attr.isVariantDefining) {
-			combinationEntries.push({
-				attrNormalizedCode: attr.normalizedCode,
-				valueNormalized: normalizedValue,
-			});
-		}
-		valueRecords.push({
-			attributeId: attr.id,
-			...normalized.data,
-			normalizedValue,
-		});
+	if (!valueRecordsResult.ok) {
+		return valueRecordsResult;
 	}
+	const { combinationEntries, valueRecords } = valueRecordsResult.data;
 	return store.createItemVariant(
 		{
 			organizationId: parsed.data.organizationId,
@@ -589,6 +568,135 @@ export async function createItemVariant(
 		},
 		ports,
 		{ correlationId: parsed.data.correlationId },
+	);
+}
+
+function validateProvidedVariantAttributes(
+	activeAttributes: readonly ItemTemplateAttribute[],
+	values: readonly ItemVariantAttributeInput[],
+): Result<true> {
+	const seenAttributeIds = new Set<string>();
+	for (const value of values) {
+		if (seenAttributeIds.has(value.attributeId)) {
+			return fail("BAD_REQUEST", "Duplicate template attribute value", {
+				reason: "MASTER_VALIDATION_FAILED",
+				attributeId: value.attributeId,
+			} satisfies MasterFailureDetails);
+		}
+		seenAttributeIds.add(value.attributeId);
+	}
+	const providedIds = new Set(
+		values.map((value) => masterIdKey(value.attributeId)),
+	);
+	const missingRequired = activeAttributes.find(
+		(attribute) => attribute.isRequired && !providedIds.has(attribute.id),
+	);
+	if (missingRequired !== undefined) {
+		return fail(
+			"BAD_REQUEST",
+			`Missing required attribute ${missingRequired.code}`,
+			{ reason: "MASTER_VALIDATION_FAILED" } satisfies MasterFailureDetails,
+		);
+	}
+	return ok(true);
+}
+
+function buildVariantAttributeRecords(
+	activeAttributes: readonly ItemTemplateAttribute[],
+	options: readonly ItemTemplateAttributeOption[],
+	values: readonly ItemVariantAttributeInput[],
+): Result<{
+	combinationEntries: CombinationEntry[];
+	valueRecords: ItemVariantAttributeValueCreateRecord[];
+}> {
+	const attrById = new Map(
+		activeAttributes.map((attr) => [masterIdKey(attr.id), attr] as const),
+	);
+	const optionById = new Map(
+		options
+			.filter(
+				(option) => option.status === "active" && option.archivedAt === null,
+			)
+			.map((option) => [masterIdKey(option.id), option] as const),
+	);
+	const combinationEntries: CombinationEntry[] = [];
+	const valueRecords: ItemVariantAttributeValueCreateRecord[] = [];
+	for (const value of values) {
+		const attr = attrById.get(value.attributeId);
+		if (attr === undefined) {
+			return fail("BAD_REQUEST", "Unknown template attribute", {
+				reason: "MASTER_VALIDATION_FAILED",
+			} satisfies MasterFailureDetails);
+		}
+		const normalized = normalizeVariantAttributeValue({
+			dataType: attr.dataType,
+			validationRules: attr.validationRules,
+			value,
+		});
+		if (!normalized.ok) {
+			return normalized;
+		}
+		const normalizedValue = resolveVariantOptionValue(
+			attr,
+			normalized.data,
+			optionById,
+		);
+		if (!normalizedValue.ok) {
+			return normalizedValue;
+		}
+		if (attr.isVariantDefining) {
+			combinationEntries.push({
+				attrNormalizedCode: attr.normalizedCode,
+				valueNormalized: normalizedValue.data,
+			});
+		}
+		valueRecords.push({
+			attributeId: attr.id,
+			...normalized.data,
+			normalizedValue: normalizedValue.data,
+		});
+	}
+	return ok({ combinationEntries, valueRecords });
+}
+
+function resolveVariantOptionValue(
+	attribute: ItemTemplateAttribute,
+	normalized: NormalizedVariantAttributeValue,
+	optionById: ReadonlyMap<string, ItemTemplateAttributeOption>,
+): Result<string> {
+	if (attribute.dataType === "single_option") {
+		const option = optionById.get(normalized.optionId ?? "");
+		if (option === undefined || option.attributeId !== attribute.id) {
+			return invalidVariantOption(attribute);
+		}
+		return ok(option.normalizedCode);
+	}
+	if (attribute.dataType === "multiple_option") {
+		const selectedOptions = normalized.optionIds.map((optionId) =>
+			optionById.get(optionId),
+		);
+		if (
+			selectedOptions.some(
+				(option) => option === undefined || option.attributeId !== attribute.id,
+			)
+		) {
+			return invalidVariantOption(attribute);
+		}
+		return ok(
+			selectedOptions
+				.map((option) => option?.normalizedCode ?? "")
+				.sort((left, right) => left.localeCompare(right))
+				.join(","),
+		);
+	}
+	return ok(normalized.normalizedValue);
+}
+
+function invalidVariantOption(attribute: ItemTemplateAttribute): Result<never> {
+	return fail(
+		"BAD_REQUEST",
+		`Option does not belong to attribute ${attribute.code}`,
+		{ reason: "MASTER_VALIDATION_FAILED" } satisfies MasterFailureDetails,
 	);
 }
 
@@ -642,7 +750,9 @@ export async function retireItemVariant(
 		current.data,
 		parsed.data.expectedVersion,
 	);
-	if (!version.ok) return version;
+	if (!version.ok) {
+		return version;
+	}
 	const lifecycle = assertLifecycleTransition(
 		current.data.item.status,
 		"retired",

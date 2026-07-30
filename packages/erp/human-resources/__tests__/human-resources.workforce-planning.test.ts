@@ -249,7 +249,7 @@ async function approvePlanPipeline(
 		return draft;
 	}
 
-	let plan = draft.data.plan;
+	let { plan } = draft.data;
 	const submitted = await submitHeadcountPlan(
 		{
 			organizationId: input.organizationId,
@@ -295,7 +295,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			tag,
 		});
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 		expect(created.data.plan.status).toBe("draft");
 		expect(created.data.line.plannedFte).toBe("2.0000");
 	});
@@ -329,7 +331,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			tag: `dup-a-${tag}`,
 		});
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 
 		const second = await approvePlanPipeline(ready, {
 			organizationId: ORG,
@@ -357,7 +361,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			ready,
 		);
 		expect(plan.ok).toBe(true);
-		if (!plan.ok) return;
+		if (!plan.ok) {
+			return;
+		}
 
 		const line = await addHeadcountPlanLine(
 			{
@@ -384,7 +390,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			plannedHeadcount: 1,
 		});
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 
 		const requisition = await seedRequisitionPipeline(ready, {
 			organizationId: ORG,
@@ -393,7 +401,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			targetStatus: "open",
 		});
 		expect(requisition.ok).toBe(true);
-		if (!requisition.ok) return;
+		if (!requisition.ok) {
+			return;
+		}
 
 		const reserved = await reserveHeadcount(
 			{
@@ -425,7 +435,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			tag,
 		});
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 
 		const requisition = await seedRequisitionPipeline(ready, {
 			organizationId: ORG,
@@ -434,7 +446,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			targetStatus: "open",
 		});
 		expect(requisition.ok).toBe(true);
-		if (!requisition.ok) return;
+		if (!requisition.ok) {
+			return;
+		}
 
 		const base = {
 			organizationId: ORG,
@@ -451,7 +465,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			ready,
 		);
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 
 		const replay = await reserveHeadcount(
 			{ ...base, correlationId: `corr-res-2-${tag}` },
@@ -487,7 +503,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			tag,
 		});
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 
 		const requisition = await seedRequisitionPipeline(ready, {
 			organizationId: ORG,
@@ -496,7 +514,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			targetStatus: "open",
 		});
 		expect(requisition.ok).toBe(true);
-		if (!requisition.ok) return;
+		if (!requisition.ok) {
+			return;
+		}
 
 		const reserved = await reserveHeadcount(
 			{
@@ -512,7 +532,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			ready,
 		);
 		expect(reserved.ok).toBe(true);
-		if (!reserved.ok) return;
+		if (!reserved.ok) {
+			return;
+		}
 
 		const cancelled = await cancelRequisition(
 			{
@@ -566,7 +588,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			plannedHeadcount: 2,
 		});
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 
 		const employee = await createEmployee(
 			{
@@ -580,7 +604,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const employment = await createEmployment(
 			{
@@ -593,7 +619,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const position = await createPosition(
 			{
@@ -609,7 +637,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			ready,
 		);
 		expect(position.ok).toBe(true);
-		if (!position.ok) return;
+		if (!position.ok) {
+			return;
+		}
 
 		const assignment = await createAssignment(
 			{
@@ -628,7 +658,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			ready,
 		);
 		expect(assignment.ok).toBe(true);
-		if (!assignment.ok) return;
+		if (!assignment.ok) {
+			return;
+		}
 
 		const variance = await getWorkforcePlanVariance(
 			{
@@ -641,7 +673,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			ready,
 		);
 		expect(variance.ok).toBe(true);
-		if (!variance.ok) return;
+		if (!variance.ok) {
+			return;
+		}
 		expect(variance.data.asOf).toBe("2026-07-01");
 		expect(variance.data.lines[0]?.actualHeadcount).toBe(1);
 		expect(variance.data.lines[0]?.actualFte).toBe("1.0000");
@@ -659,7 +693,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			tag,
 		});
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 
 		const requisition = await seedRequisitionPipeline(ready, {
 			organizationId: ORG,
@@ -668,7 +704,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			targetStatus: "open",
 		});
 		expect(requisition.ok).toBe(true);
-		if (!requisition.ok) return;
+		if (!requisition.ok) {
+			return;
+		}
 
 		const reserved = await reserveHeadcount(
 			{
@@ -684,7 +722,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			ready,
 		);
 		expect(reserved.ok).toBe(true);
-		if (!reserved.ok) return;
+		if (!reserved.ok) {
+			return;
+		}
 
 		const candidate = await createCandidate(
 			{
@@ -699,7 +739,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			ready,
 		);
 		expect(candidate.ok).toBe(true);
-		if (!candidate.ok) return;
+		if (!candidate.ok) {
+			return;
+		}
 
 		const application = await createApplication(
 			{
@@ -712,7 +754,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			ready,
 		);
 		expect(application.ok).toBe(true);
-		if (!application.ok) return;
+		if (!application.ok) {
+			return;
+		}
 
 		const inReview = await moveApplicationToInReview(
 			{
@@ -725,7 +769,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			ready,
 		);
 		expect(inReview.ok).toBe(true);
-		if (!inReview.ok) return;
+		if (!inReview.ok) {
+			return;
+		}
 
 		const issued = await createAndIssueOffer(ready, {
 			organizationId: ORG,
@@ -736,7 +782,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			correlationPrefix: `corr-offer-${tag}`,
 		});
 		expect(issued.ok).toBe(true);
-		if (!issued.ok) return;
+		if (!issued.ok) {
+			return;
+		}
 
 		const accepted = await acceptOffer(
 			{
@@ -751,7 +799,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			ready,
 		);
 		expect(accepted.ok).toBe(true);
-		if (!accepted.ok) return;
+		if (!accepted.ok) {
+			return;
+		}
 
 		const listed = await listHeadcountReservations(
 			{
@@ -775,7 +825,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 		const tag = suffix();
 		const seeded = await seedReservedIssuedOffer(ready, tag);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const declined = await declineOffer(
 			{
@@ -788,7 +840,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			ready,
 		);
 		expect(declined.ok).toBe(true);
-		if (!declined.ok) return;
+		if (!declined.ok) {
+			return;
+		}
 
 		const listed = await listHeadcountReservations(
 			{
@@ -810,7 +864,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 		const tag = suffix();
 		const seeded = await seedReservedIssuedOffer(ready, tag);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const withdrawn = await withdrawOffer(
 			{
@@ -823,7 +879,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			ready,
 		);
 		expect(withdrawn.ok).toBe(true);
-		if (!withdrawn.ok) return;
+		if (!withdrawn.ok) {
+			return;
+		}
 
 		const listed = await listHeadcountReservations(
 			{
@@ -845,7 +903,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 		const tag = suffix();
 		const seeded = await seedReservedIssuedOffer(ready, tag);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const expired = await expireOffer(
 			{
@@ -858,7 +918,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			ready,
 		);
 		expect(expired.ok).toBe(true);
-		if (!expired.ok) return;
+		if (!expired.ok) {
+			return;
+		}
 
 		const listed = await listHeadcountReservations(
 			{
@@ -884,7 +946,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			tag,
 		});
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 
 		const requisition = await seedRequisitionPipeline(ready, {
 			organizationId: ORG,
@@ -893,7 +957,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			targetStatus: "open",
 		});
 		expect(requisition.ok).toBe(true);
-		if (!requisition.ok) return;
+		if (!requisition.ok) {
+			return;
+		}
 
 		const reserved = await reserveHeadcount(
 			{
@@ -909,7 +975,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			ready,
 		);
 		expect(reserved.ok).toBe(true);
-		if (!reserved.ok) return;
+		if (!reserved.ok) {
+			return;
+		}
 
 		const first = await consumeHeadcountReservation(
 			{
@@ -922,7 +990,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			ready,
 		);
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 		expect(first.data.status).toBe("consumed");
 
 		const duplicate = await consumeHeadcountReservation(
@@ -952,7 +1022,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			tag,
 		});
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 
 		const requisition = await seedRequisitionPipeline(ready, {
 			organizationId: ORG,
@@ -961,7 +1033,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			targetStatus: "open",
 		});
 		expect(requisition.ok).toBe(true);
-		if (!requisition.ok) return;
+		if (!requisition.ok) {
+			return;
+		}
 
 		const reserved = await reserveHeadcount(
 			{
@@ -977,7 +1051,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			ready,
 		);
 		expect(reserved.ok).toBe(true);
-		if (!reserved.ok) return;
+		if (!reserved.ok) {
+			return;
+		}
 
 		const released = await releaseHeadcountReservation(
 			{
@@ -990,7 +1066,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			ready,
 		);
 		expect(released.ok).toBe(true);
-		if (!released.ok) return;
+		if (!released.ok) {
+			return;
+		}
 		expect(released.data.status).toBe("released");
 
 		const consumed = await consumeHeadcountReservation(
@@ -1020,7 +1098,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			tag,
 		});
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 
 		const requisition = await seedRequisitionPipeline(ready, {
 			organizationId: ORG,
@@ -1029,7 +1109,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			targetStatus: "open",
 		});
 		expect(requisition.ok).toBe(true);
-		if (!requisition.ok) return;
+		if (!requisition.ok) {
+			return;
+		}
 
 		const reserved = await reserveHeadcount(
 			{
@@ -1045,7 +1127,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			ready,
 		);
 		expect(reserved.ok).toBe(true);
-		if (!reserved.ok) return;
+		if (!reserved.ok) {
+			return;
+		}
 
 		const crossTenant = await consumeHeadcountReservation(
 			{
@@ -1074,7 +1158,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			tag,
 		});
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 
 		const submitted = await submitHeadcountPlan(
 			{
@@ -1087,7 +1173,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			ready,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 
 		const stale = await approveHeadcountPlan(
 			{
@@ -1111,7 +1199,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			tag,
 		});
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 
 		const requisition = await seedRequisitionPipeline(ready, {
 			organizationId: ORG_B,
@@ -1120,7 +1210,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			targetStatus: "open",
 		});
 		expect(requisition.ok).toBe(true);
-		if (!requisition.ok) return;
+		if (!requisition.ok) {
+			return;
+		}
 
 		const reserved = await reserveHeadcount(
 			{
@@ -1153,7 +1245,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			tag,
 		});
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 
 		const submitted = await submitHeadcountPlan(
 			{
@@ -1166,7 +1260,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			ready,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 
 		const limitedAuth = createGrantingHumanResourcesAuthorization([
 			HUMAN_RESOURCES_PERMISSION_WORKFORCE_PLAN_READ,
@@ -1194,7 +1290,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			tag,
 		});
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 
 		const headerEdit = await updateHeadcountPlan(
 			{
@@ -1224,7 +1322,7 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 	});
 
 	it("rolls back plan create when audit fails", async () => {
-		const store = createHrParityHarness("memory").store;
+		const { store } = createHrParityHarness("memory");
 		const portsFail = createMemoryMutationPorts({ auditFailAfter: 0 });
 		const portsOk = createMemoryMutationPorts();
 		const authorization = createGrantingHumanResourcesAuthorization([
@@ -1275,7 +1373,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			tag,
 		});
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 
 		const requisition = await seedRequisitionPipeline(ready, {
 			organizationId: ORG,
@@ -1284,7 +1384,9 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			targetStatus: "open",
 		});
 		expect(requisition.ok).toBe(true);
-		if (!requisition.ok) return;
+		if (!requisition.ok) {
+			return;
+		}
 
 		await reserveHeadcount(
 			{
@@ -1327,7 +1429,9 @@ describe("@afenda/human-resources headcount reservation status gate (Slice 6.1)"
 			tag,
 		});
 		expect(approvedPlan.ok).toBe(true);
-		if (!approvedPlan.ok) return;
+		if (!approvedPlan.ok) {
+			return;
+		}
 
 		const approvedReq = await seedRequisitionPipeline(ready, {
 			organizationId: ORG,
@@ -1338,7 +1442,9 @@ describe("@afenda/human-resources headcount reservation status gate (Slice 6.1)"
 			code: `REQ-APPR-${tag}`,
 		});
 		expect(approvedReq.ok).toBe(true);
-		if (!approvedReq.ok) return;
+		if (!approvedReq.ok) {
+			return;
+		}
 
 		const onApproved = await reserveHeadcount(
 			{
@@ -1362,7 +1468,9 @@ describe("@afenda/human-resources headcount reservation status gate (Slice 6.1)"
 			targetStatus: "open",
 		});
 		expect(openReq.ok).toBe(true);
-		if (!openReq.ok) return;
+		if (!openReq.ok) {
+			return;
+		}
 
 		const onOpen = await reserveHeadcount(
 			{
@@ -1389,7 +1497,9 @@ describe("@afenda/human-resources headcount reservation status gate (Slice 6.1)"
 			tag,
 		});
 		expect(approvedPlan.ok).toBe(true);
-		if (!approvedPlan.ok) return;
+		if (!approvedPlan.ok) {
+			return;
+		}
 
 		const manager = await seedDefaultHiringManager(ready, {
 			organizationId: ORG,
@@ -1397,7 +1507,9 @@ describe("@afenda/human-resources headcount reservation status gate (Slice 6.1)"
 			tag: `gate-${tag}`,
 		});
 		expect(manager.ok).toBe(true);
-		if (!manager.ok) return;
+		if (!manager.ok) {
+			return;
+		}
 
 		const draft = await createDraftRequisition(
 			{
@@ -1412,7 +1524,9 @@ describe("@afenda/human-resources headcount reservation status gate (Slice 6.1)"
 			ready,
 		);
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 
 		const draftReserve = await reserveHeadcount(
 			{
@@ -1445,7 +1559,9 @@ describe("@afenda/human-resources headcount reservation status gate (Slice 6.1)"
 			ready,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 
 		const submittedReserve = await reserveHeadcount(
 			{
@@ -1474,7 +1590,9 @@ describe("@afenda/human-resources headcount reservation status gate (Slice 6.1)"
 			targetStatus: "open",
 		});
 		expect(openReq.ok).toBe(true);
-		if (!openReq.ok) return;
+		if (!openReq.ok) {
+			return;
+		}
 
 		const onHold = await placeRequisitionOnHold(
 			{
@@ -1487,7 +1605,9 @@ describe("@afenda/human-resources headcount reservation status gate (Slice 6.1)"
 			ready,
 		);
 		expect(onHold.ok).toBe(true);
-		if (!onHold.ok) return;
+		if (!onHold.ok) {
+			return;
+		}
 
 		const holdReserve = await reserveHeadcount(
 			{
@@ -1519,7 +1639,9 @@ describe("@afenda/human-resources headcount reservation status gate (Slice 6.1)"
 			tag,
 		});
 		expect(approvedPlan.ok).toBe(true);
-		if (!approvedPlan.ok) return;
+		if (!approvedPlan.ok) {
+			return;
+		}
 
 		const requisition = await seedRequisitionPipeline(ready, {
 			organizationId: ORG,
@@ -1528,7 +1650,9 @@ describe("@afenda/human-resources headcount reservation status gate (Slice 6.1)"
 			targetStatus: "open",
 		});
 		expect(requisition.ok).toBe(true);
-		if (!requisition.ok) return;
+		if (!requisition.ok) {
+			return;
+		}
 
 		const reserved = await reserveHeadcount(
 			{
@@ -1544,7 +1668,9 @@ describe("@afenda/human-resources headcount reservation status gate (Slice 6.1)"
 			ready,
 		);
 		expect(reserved.ok).toBe(true);
-		if (!reserved.ok) return;
+		if (!reserved.ok) {
+			return;
+		}
 
 		const closed = await closeRequisition(
 			{
@@ -1582,7 +1708,9 @@ describe("@afenda/human-resources headcount reservation status gate (Slice 6.1)"
 			tag,
 		});
 		expect(approvedPlan.ok).toBe(true);
-		if (!approvedPlan.ok) return;
+		if (!approvedPlan.ok) {
+			return;
+		}
 
 		const requisition = await seedRequisitionPipeline(ready, {
 			organizationId: ORG,
@@ -1591,7 +1719,9 @@ describe("@afenda/human-resources headcount reservation status gate (Slice 6.1)"
 			targetStatus: "open",
 		});
 		expect(requisition.ok).toBe(true);
-		if (!requisition.ok) return;
+		if (!requisition.ok) {
+			return;
+		}
 
 		const first = await reserveHeadcount(
 			{
@@ -1607,7 +1737,9 @@ describe("@afenda/human-resources headcount reservation status gate (Slice 6.1)"
 			ready,
 		);
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 
 		const duplicate = await reserveHeadcount(
 			{
@@ -1639,7 +1771,9 @@ describe("@afenda/human-resources headcount reservation status gate (Slice 6.1)"
 			tag,
 		});
 		expect(approvedPlan.ok).toBe(true);
-		if (!approvedPlan.ok) return;
+		if (!approvedPlan.ok) {
+			return;
+		}
 
 		const requisitionB = await seedRequisitionPipeline(ready, {
 			organizationId: ORG_B,
@@ -1648,7 +1782,9 @@ describe("@afenda/human-resources headcount reservation status gate (Slice 6.1)"
 			targetStatus: "open",
 		});
 		expect(requisitionB.ok).toBe(true);
-		if (!requisitionB.ok) return;
+		if (!requisitionB.ok) {
+			return;
+		}
 
 		const denied = await reserveHeadcount(
 			{

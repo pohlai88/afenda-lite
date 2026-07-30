@@ -2,14 +2,15 @@ import type {
 	ReceivingAuthorizationPort,
 	ReceivingPermission,
 } from "../../src/authorization";
+import { resolveAsync } from "../../src/resolve-async";
 
 export function createGrantingReceivingAuthorization(
 	permissions: readonly ReceivingPermission[],
 ): ReceivingAuthorizationPort {
 	const grants = new Set(permissions);
 	return {
-		async can(input) {
-			return grants.has(input.permission);
+		can(input) {
+			return resolveAsync(() => grants.has(input.permission));
 		},
 	};
 }

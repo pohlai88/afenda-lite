@@ -20,11 +20,11 @@ import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 
 const initialState: CreateReversalMovementActionState = null;
 
-type CreateReversalMovementFormProps = {
+interface CreateReversalMovementFormProps {
 	canPost: boolean;
-	defaultMovementId?: string | undefined;
 	defaultExpectedVersion?: number | undefined;
-};
+	defaultMovementId?: string | undefined;
+}
 
 export function CreateReversalMovementForm({
 	canPost,
@@ -35,6 +35,7 @@ export function CreateReversalMovementForm({
 		createReversalMovementAction,
 		initialState,
 	);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: Rotate the key after each completed action state.
 	const idempotencyKey = useMemo(
 		() => `reversal:${crypto.randomUUID()}`,
 		[state],
@@ -81,61 +82,61 @@ export function CreateReversalMovementForm({
 				<FormError>{state.message}</FormError>
 			) : null}
 			<input
-				type="hidden"
 				name="idempotencyKey"
-				value={idempotencyKey}
 				readOnly
+				type="hidden"
+				value={idempotencyKey}
 			/>
 			<FormField
+				error={movementError}
+				fieldId="stock-reversal-movement"
 				label="Posted movement id"
 				required
-				fieldId="stock-reversal-movement"
-				error={movementError}
 			>
 				<Input
+					autoComplete="off"
+					defaultValue={defaultMovementId ?? ""}
+					disabled={pending}
 					id="stock-reversal-movement"
 					name="movementId"
 					required
-					autoComplete="off"
-					disabled={pending}
-					defaultValue={defaultMovementId ?? ""}
 				/>
 			</FormField>
 			<FormField
+				error={codeError}
+				fieldId="stock-reversal-code"
 				label="Reversal code"
 				required
-				fieldId="stock-reversal-code"
-				error={codeError}
 			>
 				<Input
+					autoComplete="off"
+					disabled={pending}
 					id="stock-reversal-code"
 					name="code"
 					required
-					autoComplete="off"
-					disabled={pending}
 				/>
 			</FormField>
 			<FormField
+				error={versionError}
+				fieldId="stock-reversal-version"
 				label="Expected version"
 				required
-				fieldId="stock-reversal-version"
-				error={versionError}
 			>
 				<Input
-					id="stock-reversal-version"
-					name="expectedVersion"
-					type="number"
-					min="1"
-					required
-					disabled={pending}
 					defaultValue={
-						defaultExpectedVersion !== undefined
-							? String(defaultExpectedVersion)
-							: undefined
+						defaultExpectedVersion === undefined
+							? undefined
+							: String(defaultExpectedVersion)
 					}
+					disabled={pending}
+					id="stock-reversal-version"
+					min="1"
+					name="expectedVersion"
+					required
+					type="number"
 				/>
 			</FormField>
-			<Button type="submit" disabled={pending}>
+			<Button disabled={pending} type="submit">
 				{pending ? <Spinner /> : null}
 				Create reversal movement
 			</Button>

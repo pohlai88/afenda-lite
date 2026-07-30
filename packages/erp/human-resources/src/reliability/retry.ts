@@ -1,13 +1,13 @@
-export type ExponentialRetryPolicy = {
-	maxAttempts: number;
+export interface ExponentialRetryPolicy {
 	baseDelayMs: number;
+	maxAttempts: number;
 	maxDelayMs: number;
 	multiplier: number;
-};
+}
 
 export const DEFAULT_EXPONENTIAL_RETRY_POLICY: ExponentialRetryPolicy = {
 	maxAttempts: 5,
-	baseDelayMs: 1_000,
+	baseDelayMs: 1000,
 	maxDelayMs: 60_000,
 	multiplier: 2,
 };

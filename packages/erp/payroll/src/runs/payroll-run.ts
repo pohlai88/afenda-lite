@@ -26,7 +26,7 @@ import { loadPayrollRun } from "./run-helpers";
 export const PAYROLL_AGGREGATE_PAYROLL_RUN = "payroll-run" as const;
 export type PayrollPayrollRunAggregate = typeof PAYROLL_AGGREGATE_PAYROLL_RUN;
 
-export async function createPayrollRun(
+export function createPayrollRun(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollRun>> {
@@ -88,7 +88,7 @@ export async function createPayrollRun(
 	});
 }
 
-export async function getPayrollRun(
+export function getPayrollRun(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollRun>> {

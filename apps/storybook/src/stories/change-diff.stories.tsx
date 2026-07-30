@@ -34,15 +34,15 @@ function WorkbenchSection({
 	children,
 }: WorkbenchSectionProps) {
 	return (
-		<section className="grid gap-4" aria-labelledby={id}>
+		<section aria-labelledby={id} className="grid gap-4">
 			<div className="grid gap-1">
 				<h2
-					className="text-base font-semibold tracking-tight text-foreground"
+					className="font-semibold text-base text-foreground tracking-tight"
 					id={id}
 				>
 					{title}
 				</h2>
-				<p className="max-w-5xl text-sm leading-5 text-foreground-secondary">
+				<p className="max-w-5xl text-foreground-secondary text-sm leading-5">
 					{description}
 				</p>
 			</div>
@@ -89,18 +89,18 @@ export const Overview: Story = {
 					<div className="grid gap-2">
 						<div className="flex flex-wrap items-center gap-2">
 							<Badge variant="outline">Master data</Badge>
-							<StatusBadge size="sm" status="pending" label="Awaiting review" />
+							<StatusBadge label="Awaiting review" size="sm" status="pending" />
 						</div>
 						<div className="grid gap-1">
-							<h1 className="text-2xl font-semibold tracking-tight">
+							<h1 className="font-semibold text-2xl tracking-tight">
 								Supplier amendment SUP-004821
 							</h1>
-							<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+							<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 								Review labelled previous and new values from the authoritative
 								change record. The surrounding workflow owns actor, timestamp,
 								authorization, redaction, completeness, and approval policy.
 							</p>
-							<p className="max-w-5xl text-xs leading-5 text-foreground-tertiary">
+							<p className="max-w-5xl text-foreground-tertiary text-xs leading-5">
 								Operational standard: meaning must survive keyboard-only use,
 								high-contrast presentation, narrow layouts, and the absence of
 								colour.
@@ -109,25 +109,25 @@ export const Overview: Story = {
 					</div>
 					<dl className="grid grid-cols-2 gap-x-8 gap-y-3 rounded-lg border bg-card p-4">
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Subject
 							</dt>
 							<dd className="text-sm">Supplier amendment review</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Area
 							</dt>
 							<dd className="text-sm">Master data governance</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Scope
 							</dt>
 							<dd className="text-sm">Before-and-after field review</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								State
 							</dt>
 							<dd className="text-sm">Awaiting approval</dd>
@@ -136,17 +136,17 @@ export const Overview: Story = {
 				</header>
 
 				<section
-					className="grid gap-3"
 					aria-labelledby="change-diff-material-title"
+					className="grid gap-3"
 				>
 					<div className="grid gap-1">
 						<h2
-							className="text-base font-semibold tracking-tight text-foreground"
+							className="font-semibold text-base text-foreground tracking-tight"
 							id="change-diff-material-title"
 						>
 							Material changes
 						</h2>
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							Amended fields ordered by review importance.
 						</p>
 					</div>
@@ -160,36 +160,36 @@ export const Overview: Story = {
 							</CardDescription>
 							<CardAction>
 								<StatusBadge
+									label="Requires review"
 									size="sm"
 									status="warning"
-									label="Requires review"
 								/>
 							</CardAction>
 						</CardHeader>
 						<CardContent>
 							<ChangeDiff aria-labelledby="change-diff-material-card-title">
 								<ChangeDiffRow
-									label="Supplier legal name"
-									before="Northwind Trading"
 									after="Northwind Trading Sdn. Bhd."
+									before="Northwind Trading"
+									label="Supplier legal name"
 								/>
 								<ChangeDiffRow
-									label="Remittance address"
-									before="Use the legacy remittance address until banking verification completes."
 									after="Banking verification complete. Use the registered Kuala Lumpur remittance address for all future settlements."
+									before="Use the legacy remittance address until banking verification completes."
+									label="Remittance address"
 								/>
 								<ChangeDiffRow
-									label="Tax identifier"
-									before="C1234567890"
 									after="C1234567890-T"
+									before="C1234567890"
+									label="Tax identifier"
 								/>
 							</ChangeDiff>
 						</CardContent>
 						<CardFooter className="justify-end gap-2 border-t">
-							<Button type="button" size="sm" variant="outline">
+							<Button size="sm" type="button" variant="outline">
 								Reject amendment
 							</Button>
-							<Button type="button" size="sm">
+							<Button size="sm" type="button">
 								Approve amendment
 							</Button>
 						</CardFooter>
@@ -197,49 +197,49 @@ export const Overview: Story = {
 				</section>
 
 				<section
-					className="grid gap-3"
 					aria-labelledby="change-diff-unchanged-title"
+					className="grid gap-3"
 				>
 					<div className="grid gap-1">
 						<h2
-							className="text-base font-semibold tracking-tight text-foreground"
+							className="font-semibold text-base text-foreground tracking-tight"
 							id="change-diff-unchanged-title"
 						>
 							Reviewed unchanged
 						</h2>
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							Intentionally identical values confirm no drift on commercial
 							terms.
 						</p>
 					</div>
 					<ChangeDiff>
 						<ChangeDiffRow
-							label="Payment terms"
-							before="Net 30"
 							after="Net 30"
+							before="Net 30"
 							changed={false}
+							label="Payment terms"
 						/>
 						<ChangeDiffRow
-							label="Settlement currency"
-							before="MYR"
 							after="MYR"
+							before="MYR"
 							changed={false}
+							label="Settlement currency"
 						/>
 					</ChangeDiff>
 				</section>
 
 				<section
-					className="grid gap-3"
 					aria-labelledby="change-diff-complete-title"
+					className="grid gap-3"
 				>
 					<div className="grid gap-1">
 						<h2
-							className="text-base font-semibold tracking-tight text-foreground"
+							className="font-semibold text-base text-foreground tracking-tight"
 							id="change-diff-complete-title"
 						>
 							Posted amendment
 						</h2>
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							Quiet completion — values remain readable without intervention
 							theatre.
 						</p>
@@ -251,15 +251,15 @@ export const Overview: Story = {
 								Posted to the commercial register at 11:02 MYT
 							</CardDescription>
 							<CardAction>
-								<StatusBadge size="sm" status="success" label="Posted" />
+								<StatusBadge label="Posted" size="sm" status="success" />
 							</CardAction>
 						</CardHeader>
 						<CardContent>
 							<ChangeDiff>
 								<ChangeDiffRow
-									label="Credit limit"
-									before="MYR 50,000.00"
 									after="MYR 75,000.00"
+									before="MYR 50,000.00"
+									label="Credit limit"
 								/>
 							</ChangeDiff>
 						</CardContent>
@@ -302,11 +302,11 @@ export const Usage: Story = {
 		<div className="grid max-w-5xl gap-6">
 			<StorySection title="Amended commercial fields">
 				<ChangeDiff>
-					<ChangeDiffRow label="Payment terms" before="Net 15" after="Net 30" />
+					<ChangeDiffRow after="Net 30" before="Net 15" label="Payment terms" />
 					<ChangeDiffRow
-						label="Credit limit"
-						before="MYR 50,000.00"
 						after="MYR 75,000.00"
+						before="MYR 50,000.00"
+						label="Credit limit"
 					/>
 				</ChangeDiff>
 			</StorySection>
@@ -314,15 +314,15 @@ export const Usage: Story = {
 			<StorySection title="Reviewed with unchanged terms">
 				<ChangeDiff>
 					<ChangeDiffRow
-						label="Supplier code"
-						before="SUP-004821"
 						after="SUP-004821"
+						before="SUP-004821"
 						changed={false}
+						label="Supplier code"
 					/>
 					<ChangeDiffRow
-						label="Legal name"
-						before="Northwind Trading"
 						after="Northwind Trading Sdn. Bhd."
+						before="Northwind Trading"
+						label="Legal name"
 					/>
 				</ChangeDiff>
 			</StorySection>
@@ -345,31 +345,31 @@ export const StatesAndAccessibility: Story = {
 			<StorySection title="Changed, unchanged, missing, and redacted">
 				<ChangeDiff>
 					<ChangeDiffRow
-						label="Bank account name"
-						before="Northwind Ops"
 						after="Northwind Trading Sdn. Bhd."
+						before="Northwind Ops"
+						label="Bank account name"
 					/>
 					<ChangeDiffRow
-						label="Payment terms"
-						before="Net 30"
 						after="Net 30"
+						before="Net 30"
 						changed={false}
+						label="Payment terms"
 					/>
 					<ChangeDiffRow
-						label="Secondary contact"
-						before="Not provided"
 						after="finance@northwind.example"
+						before="Not provided"
+						label="Secondary contact"
 					/>
 					<ChangeDiffRow
-						label="Bank account number"
-						before="•••• 4218"
 						after="•••• 4218"
+						before="•••• 4218"
 						changed={false}
+						label="Bank account number"
 					/>
 				</ChangeDiff>
 			</StorySection>
 
-			<p className="max-w-5xl text-sm text-foreground-secondary">
+			<p className="max-w-5xl text-foreground-secondary text-sm">
 				Labels remain visible text. Strike-through and info fill reinforce
 				change but do not replace the labelled previous and new values.
 			</p>
@@ -401,15 +401,15 @@ export const ResponsiveAndContrast: Story = {
 				<div className="max-w-sm rounded-lg border bg-card p-4">
 					<ChangeDiff>
 						<ChangeDiffRow
-							label="Registered remittance address"
-							before="Level 8, Legacy Commerce Centre, Kuala Lumpur"
 							after="Level 16, Northwind Tower, Kuala Lumpur"
+							before="Level 8, Legacy Commerce Centre, Kuala Lumpur"
+							label="Registered remittance address"
 						/>
 						<ChangeDiffRow
-							label="Settlement currency"
-							before="MYR"
 							after="MYR"
+							before="MYR"
 							changed={false}
+							label="Settlement currency"
 						/>
 					</ChangeDiff>
 				</div>
@@ -419,18 +419,18 @@ export const ResponsiveAndContrast: Story = {
 				<div className="rounded-lg border bg-surface-sunken p-4">
 					<ChangeDiff>
 						<ChangeDiffRow
-							label="Approval threshold"
-							before="MYR 50,000.00"
 							after="MYR 75,000.00"
+							before="MYR 50,000.00"
+							label="Approval threshold"
 						/>
 						<ChangeDiffRow
-							label="Review route"
-							before="Finance manager"
 							after="Finance director"
+							before="Finance manager"
+							label="Review route"
 						/>
 					</ChangeDiff>
 				</div>
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Labels and explicit previous/new semantics carry the meaning; colour
 					is only reinforcement.
 				</p>
@@ -451,9 +451,9 @@ export const Composition: Story = {
 	},
 	render: () => (
 		<WorkbenchSection
+			description="Compose ChangeDiff inside a persistent review context that names the amendment subject. StatusBadge owns lifecycle meaning; Button children own commands; feature policy owns who may approve, reject, or view sensitive values."
 			id="invoice-header-amendment"
 			title="Invoice header amendment · INV-1042"
-			description="Compose ChangeDiff inside a persistent review context that names the amendment subject. StatusBadge owns lifecycle meaning; Button children own commands; feature policy owns who may approve, reject, or view sensitive values."
 		>
 			<Card className="shadow-none">
 				<CardHeader>
@@ -462,34 +462,34 @@ export const Composition: Story = {
 						Change set CS-77904 · Actor Aisha Rahman
 					</CardDescription>
 					<CardAction>
-						<StatusBadge size="sm" status="pending" label="Awaiting approval" />
+						<StatusBadge label="Awaiting approval" size="sm" status="pending" />
 					</CardAction>
 				</CardHeader>
 				<CardContent>
 					<ChangeDiff>
 						<ChangeDiffRow
-							label="Due date"
-							before="23 Aug 2026"
 							after="30 Aug 2026"
+							before="23 Aug 2026"
+							label="Due date"
 						/>
 						<ChangeDiffRow
-							label="Invoice amount"
-							before="MYR 18,420.00"
 							after="MYR 18,420.00"
+							before="MYR 18,420.00"
 							changed={false}
+							label="Invoice amount"
 						/>
 						<ChangeDiffRow
-							label="Internal note"
-							before="Hold for tax evidence."
 							after="Tax evidence attached. Ready for posting review."
+							before="Hold for tax evidence."
+							label="Internal note"
 						/>
 					</ChangeDiff>
 				</CardContent>
 				<CardFooter className="justify-end gap-2 border-t">
-					<Button type="button" size="sm" variant="outline">
+					<Button size="sm" type="button" variant="outline">
 						Reject
 					</Button>
-					<Button type="button" size="sm">
+					<Button size="sm" type="button">
 						Approve
 					</Button>
 				</CardFooter>
@@ -513,21 +513,21 @@ export const DoAndDoNot: Story = {
 			<StorySection title="Do: label changed and unchanged fields">
 				<ChangeDiff>
 					<ChangeDiffRow
-						label="Legal name"
-						before="Northwind Trading"
 						after="Northwind Trading Sdn. Bhd."
+						before="Northwind Trading"
+						label="Legal name"
 					/>
 					<ChangeDiffRow
-						label="Currency"
-						before="MYR"
 						after="MYR"
+						before="MYR"
 						changed={false}
+						label="Currency"
 					/>
 				</ChangeDiff>
 			</StorySection>
 
 			<StorySection title="Do not: invent provenance inside the diff">
-				<div className="rounded-md border border-dashed p-4 text-sm text-foreground-tertiary">
+				<div className="rounded-md border border-dashed p-4 text-foreground-tertiary text-sm">
 					Actor, timestamp, and authorization belong on the surrounding Card or
 					audit header — not fabricated inside ChangeDiffRow values.
 				</div>
@@ -536,43 +536,43 @@ export const DoAndDoNot: Story = {
 			<StorySection title="Do: keep redacted values explicit">
 				<ChangeDiff>
 					<ChangeDiffRow
-						label="Bank account number"
-						before="•••• 4218"
 						after="•••• 8831"
+						before="•••• 4218"
+						label="Bank account number"
 					/>
 				</ChangeDiff>
 			</StorySection>
 
 			<StorySection title="Do not: expose unauthorized secrets">
-				<div className="rounded-md border border-dashed p-4 text-sm text-foreground-tertiary">
+				<div className="rounded-md border border-dashed p-4 text-foreground-tertiary text-sm">
 					Never render full account numbers or tokens the operator is not
 					authorized to see.
 				</div>
 			</StorySection>
 
 			<StorySection title="Do: state when the set is partial">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					If only commercial fields are shown, the surrounding copy must say so.
 					Omitted tax fields must not imply no tax change occurred.
 				</p>
 			</StorySection>
 
 			<StorySection title="Do not: present a partial set as complete">
-				<div className="rounded-md border border-dashed p-4 text-sm text-foreground-tertiary">
+				<div className="rounded-md border border-dashed p-4 text-foreground-tertiary text-sm">
 					A three-row Diff is not an audit certificate. Completeness is
 					consumer-owned.
 				</div>
 			</StorySection>
 
 			<StorySection title="Do: keep authority outside presentation">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					The surrounding workflow determines whether the current operator may
 					view, approve, reject, or reveal sensitive values.
 				</p>
 			</StorySection>
 
 			<StorySection title="Do not: imply permission through styling">
-				<div className="rounded-md border border-dashed p-4 text-sm text-foreground-tertiary">
+				<div className="rounded-md border border-dashed p-4 text-foreground-tertiary text-sm">
 					A highlighted row communicates review emphasis, not permission,
 					approval state, or policy outcome.
 				</div>

@@ -247,7 +247,7 @@ describe("@afenda/master-data change requests (MDG v1)", () => {
 			options,
 		);
 		expect(source.ok && target.ok).toBe(true);
-		if (!source.ok || !target.ok) {
+		if (!(source.ok && target.ok)) {
 			return;
 		}
 

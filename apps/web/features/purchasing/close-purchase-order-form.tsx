@@ -20,9 +20,9 @@ import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 
 const initialState: ClosePurchaseOrderActionState = null;
 
-type ClosePurchaseOrderFormProps = {
+interface ClosePurchaseOrderFormProps {
 	canClose: boolean;
-};
+}
 
 /**
  * Close posted purchase order — CAPABLE when `purchasing.order.close` is granted.
@@ -74,35 +74,35 @@ export function ClosePurchaseOrderForm({
 				<FormError>{state.message}</FormError>
 			) : null}
 			<FormField
+				error={orderError}
+				fieldId="purchase-close-order"
 				label="Order id"
 				required
-				fieldId="purchase-close-order"
-				error={orderError}
 			>
 				<Input
+					autoComplete="off"
+					disabled={pending}
 					id="purchase-close-order"
 					name="orderId"
 					required
-					autoComplete="off"
-					disabled={pending}
 				/>
 			</FormField>
 			<FormField
+				error={versionError}
+				fieldId="purchase-close-version"
 				label="Expected version"
 				required
-				fieldId="purchase-close-version"
-				error={versionError}
 			>
 				<Input
-					id="purchase-close-version"
-					name="expectedVersion"
-					type="number"
-					min="1"
-					required
 					disabled={pending}
+					id="purchase-close-version"
+					min="1"
+					name="expectedVersion"
+					required
+					type="number"
 				/>
 			</FormField>
-			<Button type="submit" disabled={pending}>
+			<Button disabled={pending} type="submit">
 				{pending ? <Spinner /> : null}
 				Close posted order
 			</Button>

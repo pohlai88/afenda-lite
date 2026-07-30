@@ -140,14 +140,14 @@ import type {
 	TalentProfileMobilityListPage,
 } from "../../types";
 
-type TalentHost = {
+interface TalentHost {
+	findOpenEmploymentByEmployee: HumanResourcesStore["findOpenEmploymentByEmployee"];
 	getEmployeeById: HumanResourcesStore["getEmployeeById"];
 	getEmploymentById: HumanResourcesStore["getEmploymentById"];
 	getJobById: HumanResourcesStore["getJobById"];
-	getPositionById: HumanResourcesStore["getPositionById"];
 	getLearningAssignmentById: HumanResourcesStore["getLearningAssignmentById"];
-	findOpenEmploymentByEmployee: HumanResourcesStore["findOpenEmploymentByEmployee"];
-};
+	getPositionById: HumanResourcesStore["getPositionById"];
+}
 
 export type DrizzleTalentMethods = Pick<
 	HumanResourcesStore,
@@ -241,244 +241,246 @@ function paginate<T extends { createdAt: Date }>(
 	};
 }
 
-type CompetencySqlRow = {
-	id: string;
-	organization_id: string;
-	code: string;
-	name: string;
-	description: string | null;
+interface CompetencySqlRow {
 	category: string | null;
-	scale_code: string;
-	status: string;
+	code: string;
 	create_idempotency_key: string | null;
 	create_request_fingerprint: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
 	created_at: Date;
-	updated_at: Date;
-};
-
-type JobCompetencySqlRow = {
+	created_by: string;
+	description: string | null;
 	id: string;
+	name: string;
 	organization_id: string;
-	job_id: string;
+	scale_code: string;
+	status: string;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+}
+
+interface JobCompetencySqlRow {
 	competency_id: string;
+	created_at: Date;
+	created_by: string;
+	id: string;
+	job_id: string;
+	organization_id: string;
 	required_level: number;
 	status: string;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+}
 
-type CompetencyAssessmentSqlRow = {
-	id: string;
-	organization_id: string;
-	employee_id: string;
+interface CompetencyAssessmentSqlRow {
+	assessor_user_id: string;
 	competency_id: string;
-	assessor_user_id: string;
-	evidence_source: string;
-	scale_code: string;
-	level: number;
+	create_idempotency_key: string | null;
+	create_request_fingerprint: string | null;
+	created_at: Date;
+	created_by: string;
 	effective_on: string;
-	expires_on: string | null;
-	status: string;
-	supersedes_assessment_id: string | null;
-	superseded_by_assessment_id: string | null;
-	create_idempotency_key: string | null;
-	create_request_fingerprint: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
-	updated_at: Date;
-};
-
-type TalentProfileSqlRow = {
-	id: string;
-	organization_id: string;
 	employee_id: string;
-	summary: string | null;
-	current_classification: string | null;
+	evidence_source: string;
+	expires_on: string | null;
+	id: string;
+	level: number;
+	organization_id: string;
+	scale_code: string;
 	status: string;
+	superseded_by_assessment_id: string | null;
+	supersedes_assessment_id: string | null;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+}
+
+interface TalentProfileSqlRow {
 	create_idempotency_key: string | null;
 	create_request_fingerprint: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
 	created_at: Date;
-	updated_at: Date;
-};
-
-type TalentProfileAssessmentSqlRow = {
+	created_by: string;
+	current_classification: string | null;
+	employee_id: string;
 	id: string;
 	organization_id: string;
-	talent_profile_id: string;
-	method_code: string;
-	classification: string;
-	evidence_summary: string;
-	assessor_user_id: string;
 	status: string;
-	confirmed_at: Date | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
+	summary: string | null;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+}
 
-type TalentProfileMobilitySqlRow = {
-	id: string;
-	organization_id: string;
-	talent_profile_id: string;
-	dimension: string;
-	preference_code: string;
-	scope_detail: string | null;
+interface TalentProfileAssessmentSqlRow {
+	assessor_user_id: string;
+	classification: string;
+	confirmed_at: Date | null;
+	created_at: Date;
+	created_by: string;
 	evidence_summary: string;
+	id: string;
+	method_code: string;
+	organization_id: string;
+	status: string;
+	talent_profile_id: string;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+}
+
+interface TalentProfileMobilitySqlRow {
+	create_idempotency_key: string | null;
+	create_request_fingerprint: string | null;
+	created_at: Date;
+	created_by: string;
+	dimension: string;
 	effective_from: string;
 	effective_to: string | null;
-	status: string;
-	create_idempotency_key: string | null;
-	create_request_fingerprint: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
-	updated_at: Date;
-};
-
-type TalentCriticalRoleReadinessSqlRow = {
+	evidence_summary: string;
 	id: string;
 	organization_id: string;
+	preference_code: string;
+	scope_detail: string | null;
+	status: string;
 	talent_profile_id: string;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+}
+
+interface TalentCriticalRoleReadinessSqlRow {
+	assessor_user_id: string;
+	create_idempotency_key: string | null;
+	create_request_fingerprint: string | null;
+	created_at: Date;
+	created_by: string;
+	evidence_summary: string;
+	id: string;
+	organization_id: string;
 	position_id: string;
 	readiness: string;
 	readiness_effective_on: string;
-	evidence_summary: string;
-	assessor_user_id: string;
 	status: string;
-	create_idempotency_key: string | null;
-	create_request_fingerprint: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
+	talent_profile_id: string;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+}
 
-type TalentPoolSqlRow = {
-	id: string;
-	organization_id: string;
+interface TalentPoolSqlRow {
 	code: string;
-	name: string;
-	description: string | null;
-	status: string;
 	create_idempotency_key: string | null;
 	create_request_fingerprint: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
 	created_at: Date;
-	updated_at: Date;
-};
-
-type TalentPoolMemberSqlRow = {
+	created_by: string;
+	description: string | null;
 	id: string;
+	name: string;
 	organization_id: string;
-	pool_id: string;
-	employee_id: string;
-	nominator_user_id: string;
 	status: string;
-	nominated_at: Date;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+}
+
+interface TalentPoolMemberSqlRow {
 	approved_at: Date | null;
-	removed_at: Date | null;
 	approver_user_id: string | null;
 	create_idempotency_key: string | null;
 	create_request_fingerprint: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
 	created_at: Date;
-	updated_at: Date;
-};
-
-type CareerPlanSqlRow = {
-	id: string;
-	organization_id: string;
+	created_by: string;
 	employee_id: string;
-	owner_user_id: string;
-	code: string;
-	title: string;
+	id: string;
+	nominated_at: Date;
+	nominator_user_id: string;
+	organization_id: string;
+	pool_id: string;
+	removed_at: Date | null;
 	status: string;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+}
+
+interface CareerPlanSqlRow {
 	acknowledged_at: Date | null;
+	code: string;
 	create_idempotency_key: string | null;
 	create_request_fingerprint: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
 	created_at: Date;
-	updated_at: Date;
-};
-
-type CareerPlanActionSqlRow = {
+	created_by: string;
+	employee_id: string;
 	id: string;
 	organization_id: string;
-	career_plan_id: string;
-	title: string;
-	due_on: string | null;
+	owner_user_id: string;
 	status: string;
-	learning_assignment_id: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
+	title: string;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+}
 
-type SuccessionPlanSqlRow = {
+interface CareerPlanActionSqlRow {
+	career_plan_id: string;
+	created_at: Date;
+	created_by: string;
+	due_on: string | null;
+	id: string;
+	learning_assignment_id: string | null;
+	organization_id: string;
+	status: string;
+	title: string;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+}
+
+interface SuccessionPlanSqlRow {
+	allows_external_candidates: boolean;
+	code: string;
+	create_idempotency_key: string | null;
+	create_request_fingerprint: string | null;
+	created_at: Date;
+	created_by: string;
 	id: string;
 	organization_id: string;
-	code: string;
-	title: string;
 	position_id: string;
 	status: string;
-	allows_external_candidates: boolean;
+	title: string;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+}
+
+interface SuccessionCandidateSqlRow {
 	create_idempotency_key: string | null;
 	create_request_fingerprint: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
 	created_at: Date;
-	updated_at: Date;
-};
-
-type SuccessionCandidateSqlRow = {
-	id: string;
-	organization_id: string;
-	succession_plan_id: string;
+	created_by: string;
 	employee_id: string | null;
+	evidence_summary: string;
 	external_candidate_ref: string | null;
+	id: string;
 	nominator_user_id: string;
+	organization_id: string;
 	readiness: string;
 	readiness_effective_on: string;
-	evidence_summary: string;
 	status: string;
-	create_idempotency_key: string | null;
-	create_request_fingerprint: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
+	succession_plan_id: string;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+}
 
 function mapCompetency(
 	row: typeof hrCompetency.$inferSelect,
 ): Result<Competency> {
 	const id = parseHumanResourcesCompetencyId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const scaleCode = competencyScaleCodeSchema.safeParse(row.scaleCode);
 	if (!scaleCode.success) {
 		return fail("INTERNAL_ERROR", "Invalid competency scale code");
@@ -528,11 +530,17 @@ function mapJobCompetency(
 	row: typeof hrJobCompetency.$inferSelect,
 ): Result<JobCompetency> {
 	const id = parseHumanResourcesJobCompetencyId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const jobId = parseHumanResourcesJobId(row.jobId);
-	if (!jobId.ok) return jobId;
+	if (!jobId.ok) {
+		return jobId;
+	}
 	const competencyId = parseHumanResourcesCompetencyId(row.competencyId);
-	if (!competencyId.ok) return competencyId;
+	if (!competencyId.ok) {
+		return competencyId;
+	}
 	const status = jobCompetencyStatusSchema.safeParse(row.status);
 	if (!status.success) {
 		return fail("INTERNAL_ERROR", "Invalid job competency status");
@@ -572,11 +580,17 @@ function mapCompetencyAssessment(
 	row: typeof hrCompetencyAssessment.$inferSelect,
 ): Result<CompetencyAssessment> {
 	const id = parseHumanResourcesCompetencyAssessmentId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const employeeId = parseHumanResourcesEmployeeId(row.employeeId);
-	if (!employeeId.ok) return employeeId;
+	if (!employeeId.ok) {
+		return employeeId;
+	}
 	const competencyId = parseHumanResourcesCompetencyId(row.competencyId);
-	if (!competencyId.ok) return competencyId;
+	if (!competencyId.ok) {
+		return competencyId;
+	}
 	const scaleCode = competencyScaleCodeSchema.safeParse(row.scaleCode);
 	if (!scaleCode.success) {
 		return fail("INTERNAL_ERROR", "Invalid competency assessment scale code");
@@ -591,7 +605,9 @@ function mapCompetencyAssessment(
 		const parsed = parseHumanResourcesCompetencyAssessmentId(
 			row.supersedesAssessmentId,
 		);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		supersedesAssessmentId = parsed.data;
 	}
 	let supersededByAssessmentId =
@@ -600,7 +616,9 @@ function mapCompetencyAssessment(
 		const parsed = parseHumanResourcesCompetencyAssessmentId(
 			row.supersededByAssessmentId,
 		);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		supersededByAssessmentId = parsed.data;
 	}
 	return ok({
@@ -656,9 +674,13 @@ function mapTalentProfile(
 	row: typeof hrTalentProfile.$inferSelect,
 ): Result<TalentProfile> {
 	const id = parseHumanResourcesTalentProfileId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const employeeId = parseHumanResourcesEmployeeId(row.employeeId);
-	if (!employeeId.ok) return employeeId;
+	if (!employeeId.ok) {
+		return employeeId;
+	}
 	const status = talentProfileStatusSchema.safeParse(row.status);
 	if (!status.success) {
 		return fail("INTERNAL_ERROR", "Invalid talent profile status");
@@ -700,11 +722,15 @@ function mapTalentProfileAssessment(
 	row: typeof hrTalentProfileAssessment.$inferSelect,
 ): Result<TalentProfileAssessment> {
 	const id = parseHumanResourcesTalentProfileAssessmentId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const talentProfileId = parseHumanResourcesTalentProfileId(
 		row.talentProfileId,
 	);
-	if (!talentProfileId.ok) return talentProfileId;
+	if (!talentProfileId.ok) {
+		return talentProfileId;
+	}
 	const methodCode = talentProfileAssessmentMethodCodeSchema.safeParse(
 		row.methodCode,
 	);
@@ -758,11 +784,15 @@ function mapTalentProfileMobility(
 	row: typeof hrTalentProfileMobility.$inferSelect,
 ): Result<TalentProfileMobility> {
 	const id = parseHumanResourcesTalentProfileMobilityId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const talentProfileId = parseHumanResourcesTalentProfileId(
 		row.talentProfileId,
 	);
-	if (!talentProfileId.ok) return talentProfileId;
+	if (!talentProfileId.ok) {
+		return talentProfileId;
+	}
 	const dimension = talentMobilityDimensionSchema.safeParse(row.dimension);
 	if (!dimension.success) {
 		return fail("INTERNAL_ERROR", "Invalid talent profile mobility dimension");
@@ -824,13 +854,19 @@ function mapCriticalRoleReadiness(
 	row: typeof hrTalentCriticalRoleReadiness.$inferSelect,
 ): Result<TalentCriticalRoleReadiness> {
 	const id = parseHumanResourcesTalentCriticalRoleReadinessId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const talentProfileId = parseHumanResourcesTalentProfileId(
 		row.talentProfileId,
 	);
-	if (!talentProfileId.ok) return talentProfileId;
+	if (!talentProfileId.ok) {
+		return talentProfileId;
+	}
 	const positionId = parseHumanResourcesPositionId(row.positionId);
-	if (!positionId.ok) return positionId;
+	if (!positionId.ok) {
+		return positionId;
+	}
 	const readiness = successionReadinessCodeSchema.safeParse(row.readiness);
 	if (!readiness.success) {
 		return fail("INTERNAL_ERROR", "Invalid critical role readiness code");
@@ -884,7 +920,9 @@ function mapTalentPool(
 	row: typeof hrTalentPool.$inferSelect,
 ): Result<TalentPool> {
 	const id = parseHumanResourcesTalentPoolId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const status = talentPoolStatusSchema.safeParse(row.status);
 	if (!status.success) {
 		return fail("INTERNAL_ERROR", "Invalid talent pool status");
@@ -926,11 +964,17 @@ function mapTalentPoolMember(
 	row: typeof hrTalentPoolMember.$inferSelect,
 ): Result<TalentPoolMember> {
 	const id = parseHumanResourcesTalentPoolMemberId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const poolId = parseHumanResourcesTalentPoolId(row.poolId);
-	if (!poolId.ok) return poolId;
+	if (!poolId.ok) {
+		return poolId;
+	}
 	const employeeId = parseHumanResourcesEmployeeId(row.employeeId);
-	if (!employeeId.ok) return employeeId;
+	if (!employeeId.ok) {
+		return employeeId;
+	}
 	const status = talentPoolMemberStatusSchema.safeParse(row.status);
 	if (!status.success) {
 		return fail("INTERNAL_ERROR", "Invalid talent pool member status");
@@ -982,9 +1026,13 @@ function mapCareerPlan(
 	row: typeof hrCareerPlan.$inferSelect,
 ): Result<CareerPlan> {
 	const id = parseHumanResourcesCareerPlanId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const employeeId = parseHumanResourcesEmployeeId(row.employeeId);
-	if (!employeeId.ok) return employeeId;
+	if (!employeeId.ok) {
+		return employeeId;
+	}
 	const status = careerPlanStatusSchema.safeParse(row.status);
 	if (!status.success) {
 		return fail("INTERNAL_ERROR", "Invalid career plan status");
@@ -1030,15 +1078,21 @@ function mapCareerPlanAction(
 	row: typeof hrCareerPlanAction.$inferSelect,
 ): Result<CareerPlanAction> {
 	const id = parseHumanResourcesCareerPlanActionId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const careerPlanId = parseHumanResourcesCareerPlanId(row.careerPlanId);
-	if (!careerPlanId.ok) return careerPlanId;
+	if (!careerPlanId.ok) {
+		return careerPlanId;
+	}
 	let learningAssignmentId = null as CareerPlanAction["learningAssignmentId"];
 	if (row.learningAssignmentId !== null) {
 		const parsed = parseHumanResourcesLearningAssignmentId(
 			row.learningAssignmentId,
 		);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		learningAssignmentId = parsed.data;
 	}
 	const status = careerPlanActionStatusSchema.safeParse(row.status);
@@ -1084,9 +1138,13 @@ function mapSuccessionPlan(
 	row: typeof hrSuccessionPlan.$inferSelect,
 ): Result<SuccessionPlan> {
 	const id = parseHumanResourcesSuccessionPlanId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const positionId = parseHumanResourcesPositionId(row.positionId);
-	if (!positionId.ok) return positionId;
+	if (!positionId.ok) {
+		return positionId;
+	}
 	const status = successionPlanStatusSchema.safeParse(row.status);
 	if (!status.success) {
 		return fail("INTERNAL_ERROR", "Invalid succession plan status");
@@ -1132,15 +1190,21 @@ function mapSuccessionCandidate(
 	row: typeof hrSuccessionCandidate.$inferSelect,
 ): Result<SuccessionCandidate> {
 	const id = parseHumanResourcesSuccessionCandidateId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const successionPlanId = parseHumanResourcesSuccessionPlanId(
 		row.successionPlanId,
 	);
-	if (!successionPlanId.ok) return successionPlanId;
+	if (!successionPlanId.ok) {
+		return successionPlanId;
+	}
 	let employeeId = null as SuccessionCandidate["employeeId"];
 	if (row.employeeId !== null) {
 		const parsed = parseHumanResourcesEmployeeId(row.employeeId);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		employeeId = parsed.data;
 	}
 	const readiness = successionReadinessCodeSchema.safeParse(row.readiness);
@@ -1208,8 +1272,10 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapCompetency(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load competency");
@@ -1228,10 +1294,14 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			const competency = mapCompetency(row);
-			if (!competency.ok) return competency;
+			if (!competency.ok) {
+				return competency;
+			}
 			if (
 				row.createIdempotencyKey === null ||
 				row.createRequestFingerprint === null
@@ -1258,7 +1328,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: record.organizationId,
 			idempotencyKey: record.createIdempotencyKey,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data !== null) {
 			if (
 				existing.data.createRequestFingerprint ===
@@ -1271,7 +1343,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesCompetencyId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 
 		try {
@@ -1312,7 +1386,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return conflict("Competency with this code already exists");
 			}
@@ -1323,7 +1397,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					organizationId: record.organizationId,
 					idempotencyKey: record.createIdempotencyKey,
 				});
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (replay.data !== null) {
 					if (
 						replay.data.createRequestFingerprint ===
@@ -1346,7 +1422,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: input.organizationId,
 			competencyId: input.competencyId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Competency not found");
 		}
@@ -1354,15 +1432,17 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const nextName = input.name ?? existing.data.name;
 		const nextDescription =
-			input.description !== undefined
-				? input.description
-				: existing.data.description;
+			input.description === undefined
+				? existing.data.description
+				: input.description;
 		const nextCategory =
-			input.category !== undefined ? input.category : existing.data.category;
+			input.category === undefined ? existing.data.category : input.category;
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
 
@@ -1398,7 +1478,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -1416,7 +1496,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: input.organizationId,
 			competencyId: input.competencyId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Competency not found");
 		}
@@ -1424,12 +1506,16 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			existing.data.status,
 			"retired",
 		);
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 		const versionCheck = assertExpectedVersion(
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -1465,7 +1551,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -1496,7 +1582,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			const competencies: Competency[] = [];
 			for (const row of rows) {
 				const mapped = mapCompetency(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				competencies.push(mapped.data);
 			}
 			const { items, totalCount } = paginate(competencies, page, pageSize);
@@ -1511,7 +1599,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: input.organizationId,
 			jobId: input.jobId,
 		});
-		if (!job.ok) return job;
+		if (!job.ok) {
+			return job;
+		}
 		if (job.data === null) {
 			return notFound("Job not found");
 		}
@@ -1519,7 +1609,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: input.organizationId,
 			competencyId: input.competencyId,
 		});
-		if (!competency.ok) return competency;
+		if (!competency.ok) {
+			return competency;
+		}
 		if (competency.data === null) {
 			return notFound("Competency not found");
 		}
@@ -1550,7 +1642,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				competencyStatus: competency.data.status,
 				existingMappingStatus,
 			});
-			if (!mappable.ok) return mappable;
+			if (!mappable.ok) {
+				return mappable;
+			}
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -1560,7 +1654,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesJobCompetencyId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 
 		try {
@@ -1606,7 +1702,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return conflict("Competency is already mapped to this job");
 			}
@@ -1631,19 +1727,25 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					),
 				)
 				.limit(1);
-			const row = existingRows[0];
+			const [row] = existingRows;
 			if (!row) {
 				return notFound("Job competency mapping not found");
 			}
 			const mapped = mapJobCompetency(row);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			const removable = assertJobCompetencyRemovable(mapped.data.status);
-			if (!removable.ok) return removable;
+			if (!removable.ok) {
+				return removable;
+			}
 			const versionCheck = assertExpectedVersion(
 				mapped.data.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 
 			const nextVersion = input.expectedVersion + 1;
 			const auditId = randomUUID();
@@ -1677,7 +1779,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					`,
 				],
 			);
-			const updated = rows[0];
+			const [updated] = rows;
 			if (!updated) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -1710,7 +1812,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			const jobCompetencies: JobCompetency[] = [];
 			for (const row of rows) {
 				const mapped = mapJobCompetency(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				jobCompetencies.push(mapped.data);
 			}
 			const { items, totalCount } = paginate(jobCompetencies, page, pageSize);
@@ -1732,8 +1836,10 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapCompetencyAssessment(row);
 		} catch (error) {
 			return mapPersistenceFailure(
@@ -1757,8 +1863,10 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapCompetencyAssessment(row);
 		} catch (error) {
 			return mapPersistenceFailure(
@@ -1783,10 +1891,14 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			const assessment = mapCompetencyAssessment(row);
-			if (!assessment.ok) return assessment;
+			if (!assessment.ok) {
+				return assessment;
+			}
 			if (
 				row.createIdempotencyKey === null ||
 				row.createRequestFingerprint === null
@@ -1813,7 +1925,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: record.organizationId,
 			idempotencyKey: record.createIdempotencyKey,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data !== null) {
 			if (
 				existing.data.createRequestFingerprint ===
@@ -1828,7 +1942,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: record.organizationId,
 			competencyId: record.competencyId,
 		});
-		if (!competency.ok) return competency;
+		if (!competency.ok) {
+			return competency;
+		}
 		if (competency.data === null) {
 			return notFound("Competency not found");
 		}
@@ -1843,14 +1959,18 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			expiresOn: record.expiresOn,
 			todayDate: todayIsoDate(),
 		});
-		if (!validInput.ok) return validInput;
+		if (!validInput.ok) {
+			return validInput;
+		}
 
 		const current = await this.findCurrentCompetencyAssessment({
 			organizationId: record.organizationId,
 			employeeId: record.employeeId,
 			competencyId: record.competencyId,
 		});
-		if (!current.ok) return current;
+		if (!current.ok) {
+			return current;
+		}
 		if (current.data !== null) {
 			return conflict(
 				"A current assessment already exists for this employee and competency; use supersede",
@@ -1859,7 +1979,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesCompetencyAssessmentId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const payloadJson = eventPayloadJson({
@@ -1934,7 +2056,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					SELECT mutated.* FROM mutated, audited, outboxed
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return conflict(
 					"A current assessment already exists for this employee and competency; use supersede",
@@ -1947,7 +2069,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					organizationId: record.organizationId,
 					idempotencyKey: record.createIdempotencyKey,
 				});
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (replay.data !== null) {
 					if (
 						replay.data.createRequestFingerprint ===
@@ -1970,7 +2094,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: record.organizationId,
 			idempotencyKey: record.createIdempotencyKey,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data !== null) {
 			if (
 				existing.data.createRequestFingerprint ===
@@ -1985,24 +2111,32 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: record.organizationId,
 			assessmentId: record.sourceAssessmentId,
 		});
-		if (!sourceResult.ok) return sourceResult;
+		if (!sourceResult.ok) {
+			return sourceResult;
+		}
 		if (sourceResult.data === null) {
 			return notFound("Competency assessment not found");
 		}
 		const source = sourceResult.data;
 		const supersedable = assertAssessmentSupersedable(source.status);
-		if (!supersedable.ok) return supersedable;
+		if (!supersedable.ok) {
+			return supersedable;
+		}
 		const versionCheck = assertExpectedVersion(
 			source.version,
 			record.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const competency = await this.getCompetencyById({
 			organizationId: record.organizationId,
 			competencyId: source.competencyId,
 		});
-		if (!competency.ok) return competency;
+		if (!competency.ok) {
+			return competency;
+		}
 		if (competency.data === null) {
 			return notFound("Competency not found");
 		}
@@ -2017,11 +2151,15 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			expiresOn: record.expiresOn,
 			todayDate: todayIsoDate(),
 		});
-		if (!validInput.ok) return validInput;
+		if (!validInput.ok) {
+			return validInput;
+		}
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesCompetencyAssessmentId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const payloadJson = eventPayloadJson({
@@ -2102,7 +2240,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					SELECT mutated.* FROM mutated, audited, outboxed
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -2116,7 +2254,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					organizationId: record.organizationId,
 					idempotencyKey: record.createIdempotencyKey,
 				});
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (replay.data !== null) {
 					if (
 						replay.data.createRequestFingerprint ===
@@ -2139,7 +2279,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: input.organizationId,
 			assessmentId: input.assessmentId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Competency assessment not found");
 		}
@@ -2147,9 +2289,13 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const expireCheck = assertAssessmentCanExpire(existing.data.status);
-		if (!expireCheck.ok) return expireCheck;
+		if (!expireCheck.ok) {
+			return expireCheck;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const changesJson = fieldChangeJson(
@@ -2211,7 +2357,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					SELECT mutated.* FROM mutated, audited, outboxed
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -2232,7 +2378,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: input.organizationId,
 			employeeId: input.employeeId,
 		});
-		if (!employee.ok) return employee;
+		if (!employee.ok) {
+			return employee;
+		}
 		if (employee.data === null) {
 			return notFound("Employee not found");
 		}
@@ -2250,7 +2398,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			const assessments: CompetencyAssessment[] = [];
 			for (const row of rows) {
 				const mapped = mapCompetencyAssessment(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				assessments.push(mapped.data);
 			}
 			return ok({
@@ -2278,8 +2428,10 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapTalentProfile(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load talent profile");
@@ -2287,7 +2439,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 	},
 
 	async findTalentProfileByEmployeeId(input) {
-		return this.getTalentProfileByEmployee(input);
+		return await this.getTalentProfileByEmployee(input);
 	},
 
 	async findTalentProfileByIdempotencyKey(input) {
@@ -2302,10 +2454,14 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			const profile = mapTalentProfile(row);
-			if (!profile.ok) return profile;
+			if (!profile.ok) {
+				return profile;
+			}
 			if (
 				row.createIdempotencyKey === null ||
 				row.createRequestFingerprint === null
@@ -2332,7 +2488,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: record.organizationId,
 			idempotencyKey: record.createIdempotencyKey,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data !== null) {
 			if (
 				existing.data.createRequestFingerprint ===
@@ -2347,14 +2505,18 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: record.organizationId,
 			employeeId: record.employeeId,
 		});
-		if (!employee.ok) return employee;
+		if (!employee.ok) {
+			return employee;
+		}
 		if (employee.data === null) {
 			return notFound("Employee not found");
 		}
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesTalentProfileId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const payloadJson = eventPayloadJson({
@@ -2415,7 +2577,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return conflict("Talent profile already exists for this employee");
 			}
@@ -2426,7 +2588,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					organizationId: record.organizationId,
 					idempotencyKey: record.createIdempotencyKey,
 				});
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (replay.data !== null) {
 					if (
 						replay.data.createRequestFingerprint ===
@@ -2449,20 +2613,26 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: input.organizationId,
 			talentProfileId: input.talentProfileId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Talent profile not found");
 		}
 		const active = assertTalentProfileActive(existing.data.status);
-		if (!active.ok) return active;
+		if (!active.ok) {
+			return active;
+		}
 		const versionCheck = assertExpectedVersion(
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const nextSummary =
-			input.summary !== undefined ? input.summary : existing.data.summary;
+			input.summary === undefined ? existing.data.summary : input.summary;
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
@@ -2518,7 +2688,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -2536,17 +2706,23 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: input.organizationId,
 			talentProfileId: input.talentProfileId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Talent profile not found");
 		}
 		const archivable = assertTalentProfileArchivable(existing.data.status);
-		if (!archivable.ok) return archivable;
+		if (!archivable.ok) {
+			return archivable;
+		}
 		const versionCheck = assertExpectedVersion(
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -2582,7 +2758,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -2607,8 +2783,10 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapTalentProfile(row);
 		} catch (error) {
 			return mapPersistenceFailure(
@@ -2623,21 +2801,29 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: input.organizationId,
 			talentProfileId: input.talentProfileId,
 		});
-		if (!profile.ok) return profile;
+		if (!profile.ok) {
+			return profile;
+		}
 		if (profile.data === null) {
 			return notFound("Talent profile not found");
 		}
 		const active = assertTalentProfileActive(profile.data.status);
-		if (!active.ok) return active;
+		if (!active.ok) {
+			return active;
+		}
 		const draftable = assertProfileAssessmentDraftable({
 			methodCode: input.methodCode,
 			evidenceSummary: input.evidenceSummary,
 		});
-		if (!draftable.ok) return draftable;
+		if (!draftable.ok) {
+			return draftable;
+		}
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesTalentProfileAssessmentId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 
 		try {
@@ -2678,7 +2864,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					SELECT mutated.* FROM mutated, audited
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return notFound("Talent profile not found");
 			}
@@ -2703,21 +2889,27 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					),
 				)
 				.limit(1);
-			const existingRow = existingRows[0];
+			const [existingRow] = existingRows;
 			if (!existingRow) {
 				return notFound("Talent profile assessment not found");
 			}
 			const loaded = mapTalentProfileAssessment(existingRow);
-			if (!loaded.ok) return loaded;
+			if (!loaded.ok) {
+				return loaded;
+			}
 			const confirmable = assertProfileAssessmentConfirmable(
 				loaded.data.status,
 			);
-			if (!confirmable.ok) return confirmable;
+			if (!confirmable.ok) {
+				return confirmable;
+			}
 			const versionCheck = assertExpectedVersion(
 				loaded.data.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 
 			const nextVersion = input.expectedVersion + 1;
 			const auditId = randomUUID();
@@ -2782,7 +2974,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					SELECT confirmed.* FROM confirmed, profile_updated, audited
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -2816,7 +3008,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			const assessments: TalentProfileAssessment[] = [];
 			for (const row of rows) {
 				const mapped = mapTalentProfileAssessment(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				assessments.push(mapped.data);
 			}
 			return ok({ assessments } satisfies TalentProfileAssessmentListPage);
@@ -2843,10 +3037,14 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			const mobility = mapTalentProfileMobility(row);
-			if (!mobility.ok) return mobility;
+			if (!mobility.ok) {
+				return mobility;
+			}
 			if (
 				row.createIdempotencyKey === null ||
 				row.createRequestFingerprint === null
@@ -2873,7 +3071,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: record.organizationId,
 			idempotencyKey: record.createIdempotencyKey,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data !== null) {
 			if (
 				existing.data.createRequestFingerprint ===
@@ -2888,22 +3088,30 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: record.organizationId,
 			talentProfileId: record.talentProfileId,
 		});
-		if (!profile.ok) return profile;
+		if (!profile.ok) {
+			return profile;
+		}
 		if (profile.data === null) {
 			return notFound("Talent profile not found");
 		}
 		const active = assertTalentProfileActive(profile.data.status);
-		if (!active.ok) return active;
+		if (!active.ok) {
+			return active;
+		}
 		const recordable = assertTalentProfileMobilityRecordable({
 			evidenceSummary: record.evidenceSummary,
 			effectiveFrom: record.effectiveFrom,
 			effectiveTo: record.effectiveTo,
 		});
-		if (!recordable.ok) return recordable;
+		if (!recordable.ok) {
+			return recordable;
+		}
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesTalentProfileMobilityId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 
 		try {
@@ -2964,7 +3172,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					SELECT mutated.* FROM mutated, audited
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return notFound("Talent profile not found or not active");
 			}
@@ -2975,7 +3183,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					organizationId: record.organizationId,
 					idempotencyKey: record.createIdempotencyKey,
 				});
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (replay.data === null) {
 					return mapPersistenceFailure(
 						error,
@@ -3012,7 +3222,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			const mobilities: TalentProfileMobility[] = [];
 			for (const row of rows) {
 				const mapped = mapTalentProfileMobility(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				mobilities.push(mapped.data);
 			}
 			return ok({ mobilities } satisfies TalentProfileMobilityListPage);
@@ -3042,10 +3254,14 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			const readiness = mapCriticalRoleReadiness(row);
-			if (!readiness.ok) return readiness;
+			if (!readiness.ok) {
+				return readiness;
+			}
 			if (
 				row.createIdempotencyKey === null ||
 				row.createRequestFingerprint === null
@@ -3072,7 +3288,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: record.organizationId,
 			idempotencyKey: record.createIdempotencyKey,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data !== null) {
 			if (
 				existing.data.createRequestFingerprint ===
@@ -3087,17 +3305,23 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: record.organizationId,
 			talentProfileId: record.talentProfileId,
 		});
-		if (!profile.ok) return profile;
+		if (!profile.ok) {
+			return profile;
+		}
 		if (profile.data === null) {
 			return notFound("Talent profile not found");
 		}
 		const active = assertTalentProfileActive(profile.data.status);
-		if (!active.ok) return active;
+		if (!active.ok) {
+			return active;
+		}
 		const position = await this.getPositionById({
 			organizationId: record.organizationId,
 			positionId: record.positionId,
 		});
-		if (!position.ok) return position;
+		if (!position.ok) {
+			return position;
+		}
 		if (position.data === null) {
 			return notFound("Position not found");
 		}
@@ -3106,11 +3330,15 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			assessorUserId: record.assessorUserId,
 			readinessEffectiveOn: record.readinessEffectiveOn,
 		});
-		if (!recordable.ok) return recordable;
+		if (!recordable.ok) {
+			return recordable;
+		}
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesTalentCriticalRoleReadinessId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 
 		try {
@@ -3177,7 +3405,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					SELECT mutated.* FROM mutated, audited
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return notFound("Talent profile or position not found");
 			}
@@ -3188,7 +3416,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					organizationId: record.organizationId,
 					idempotencyKey: record.createIdempotencyKey,
 				});
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (replay.data === null) {
 					return mapPersistenceFailure(
 						error,
@@ -3231,7 +3461,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			const readinessRecords: TalentCriticalRoleReadiness[] = [];
 			for (const row of rows) {
 				const mapped = mapCriticalRoleReadiness(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				readinessRecords.push(mapped.data);
 			}
 			return ok({
@@ -3257,8 +3489,10 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapTalentPool(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load talent pool");
@@ -3277,10 +3511,14 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			const pool = mapTalentPool(row);
-			if (!pool.ok) return pool;
+			if (!pool.ok) {
+				return pool;
+			}
 			if (
 				row.createIdempotencyKey === null ||
 				row.createRequestFingerprint === null
@@ -3307,7 +3545,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: record.organizationId,
 			idempotencyKey: record.createIdempotencyKey,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data !== null) {
 			if (
 				existing.data.createRequestFingerprint ===
@@ -3320,7 +3560,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesTalentPoolId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 
 		try {
@@ -3360,7 +3602,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return conflict("Talent pool with this code already exists");
 			}
@@ -3371,7 +3613,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					organizationId: record.organizationId,
 					idempotencyKey: record.createIdempotencyKey,
 				});
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (replay.data !== null) {
 					if (
 						replay.data.createRequestFingerprint ===
@@ -3394,23 +3638,29 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: input.organizationId,
 			poolId: input.poolId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Talent pool not found");
 		}
 		const open = assertTalentPoolOpen(existing.data.status);
-		if (!open.ok) return open;
+		if (!open.ok) {
+			return open;
+		}
 		const versionCheck = assertExpectedVersion(
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const nextName = input.name ?? existing.data.name;
 		const nextDescription =
-			input.description !== undefined
-				? input.description
-				: existing.data.description;
+			input.description === undefined
+				? existing.data.description
+				: input.description;
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
 
@@ -3446,7 +3696,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -3464,17 +3714,23 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: input.organizationId,
 			poolId: input.poolId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Talent pool not found");
 		}
 		const closable = assertTalentPoolClosable(existing.data.status);
-		if (!closable.ok) return closable;
+		if (!closable.ok) {
+			return closable;
+		}
 		const versionCheck = assertExpectedVersion(
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -3510,7 +3766,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -3535,10 +3791,14 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			const member = mapTalentPoolMember(row);
-			if (!member.ok) return member;
+			if (!member.ok) {
+				return member;
+			}
 			if (
 				row.createIdempotencyKey === null ||
 				row.createRequestFingerprint === null
@@ -3565,7 +3825,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: record.organizationId,
 			idempotencyKey: record.createIdempotencyKey,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data !== null) {
 			if (
 				existing.data.createRequestFingerprint ===
@@ -3580,7 +3842,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: record.organizationId,
 			poolId: record.poolId,
 		});
-		if (!pool.ok) return pool;
+		if (!pool.ok) {
+			return pool;
+		}
 		if (pool.data === null) {
 			return notFound("Talent pool not found");
 		}
@@ -3588,7 +3852,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: record.organizationId,
 			employeeId: record.employeeId,
 		});
-		if (!employee.ok) return employee;
+		if (!employee.ok) {
+			return employee;
+		}
 		if (employee.data === null) {
 			return notFound("Employee not found");
 		}
@@ -3620,14 +3886,18 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				existingMemberStatus,
 				nominatorUserId: record.nominatorUserId,
 			});
-			if (!nominatable.ok) return nominatable;
+			if (!nominatable.ok) {
+				return nominatable;
+			}
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to check talent pool member");
 		}
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesTalentPoolMemberId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 
 		try {
@@ -3679,7 +3949,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return conflict("Employee is already an active member of this pool");
 			}
@@ -3690,7 +3960,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					organizationId: record.organizationId,
 					idempotencyKey: record.createIdempotencyKey,
 				});
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (replay.data !== null) {
 					if (
 						replay.data.createRequestFingerprint ===
@@ -3723,22 +3995,28 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					),
 				)
 				.limit(1);
-			const existingRow = existingRows[0];
+			const [existingRow] = existingRows;
 			if (!existingRow) {
 				return notFound("Talent pool member not found");
 			}
 			const loaded = mapTalentPoolMember(existingRow);
-			if (!loaded.ok) return loaded;
+			if (!loaded.ok) {
+				return loaded;
+			}
 			const approvable = assertTalentPoolMemberApprovable({
 				status: loaded.data.status,
 				approverUserId: input.approverUserId,
 			});
-			if (!approvable.ok) return approvable;
+			if (!approvable.ok) {
+				return approvable;
+			}
 			const versionCheck = assertExpectedVersion(
 				loaded.data.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 
 			const nextVersion = input.expectedVersion + 1;
 			const auditId = randomUUID();
@@ -3796,7 +4074,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -3824,19 +4102,25 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					),
 				)
 				.limit(1);
-			const existingRow = existingRows[0];
+			const [existingRow] = existingRows;
 			if (!existingRow) {
 				return notFound("Talent pool member not found");
 			}
 			const loaded = mapTalentPoolMember(existingRow);
-			if (!loaded.ok) return loaded;
+			if (!loaded.ok) {
+				return loaded;
+			}
 			const removable = assertTalentPoolMemberRemovable(loaded.data.status);
-			if (!removable.ok) return removable;
+			if (!removable.ok) {
+				return removable;
+			}
 			const versionCheck = assertExpectedVersion(
 				loaded.data.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 
 			const nextVersion = input.expectedVersion + 1;
 			const auditId = randomUUID();
@@ -3893,7 +4177,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -3928,7 +4212,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			const members: TalentPoolMember[] = [];
 			for (const row of rows) {
 				const mapped = mapTalentPoolMember(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				members.push(mapped.data);
 			}
 			const { items, totalCount } = paginate(members, page, pageSize);
@@ -3950,10 +4236,14 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			const careerPlan = mapCareerPlan(row);
-			if (!careerPlan.ok) return careerPlan;
+			if (!careerPlan.ok) {
+				return careerPlan;
+			}
 			if (
 				row.createIdempotencyKey === null ||
 				row.createRequestFingerprint === null
@@ -3980,7 +4270,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: record.organizationId,
 			idempotencyKey: record.createIdempotencyKey,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data !== null) {
 			if (
 				existing.data.createRequestFingerprint ===
@@ -3995,14 +4287,18 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: record.organizationId,
 			employeeId: record.employeeId,
 		});
-		if (!employee.ok) return employee;
+		if (!employee.ok) {
+			return employee;
+		}
 		if (employee.data === null) {
 			return notFound("Employee not found");
 		}
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesCareerPlanId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 
 		try {
@@ -4042,7 +4338,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return conflict("Career plan with this code already exists");
 			}
@@ -4053,7 +4349,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					organizationId: record.organizationId,
 					idempotencyKey: record.createIdempotencyKey,
 				});
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (replay.data !== null) {
 					if (
 						replay.data.createRequestFingerprint ===
@@ -4076,17 +4374,23 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: input.organizationId,
 			careerPlanId: input.careerPlanId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Career plan not found");
 		}
 		const open = assertCareerPlanOpen(existing.data.status);
-		if (!open.ok) return open;
+		if (!open.ok) {
+			return open;
+		}
 		const versionCheck = assertExpectedVersion(
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const nextTitle = input.title ?? existing.data.title;
 		const nextVersion = input.expectedVersion + 1;
@@ -4123,7 +4427,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -4141,19 +4445,25 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: input.organizationId,
 			careerPlanId: input.careerPlanId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Career plan not found");
 		}
 		const acknowledgeable = assertCareerPlanAcknowledgeable(
 			existing.data.status,
 		);
-		if (!acknowledgeable.ok) return acknowledgeable;
+		if (!acknowledgeable.ok) {
+			return acknowledgeable;
+		}
 		const versionCheck = assertExpectedVersion(
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -4211,7 +4521,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -4229,7 +4539,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: input.organizationId,
 			careerPlanId: input.careerPlanId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Career plan not found");
 		}
@@ -4237,12 +4549,16 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			existing.data.status,
 			"closed",
 		);
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 		const versionCheck = assertExpectedVersion(
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -4278,7 +4594,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -4303,10 +4619,14 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			const plan = mapCareerPlan(row);
-			if (!plan.ok) return plan;
+			if (!plan.ok) {
+				return plan;
+			}
 
 			const actionRows = await db
 				.select()
@@ -4321,7 +4641,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			const actions: CareerPlanAction[] = [];
 			for (const actionRow of actionRows) {
 				const mapped = mapCareerPlanAction(actionRow);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				actions.push(mapped.data);
 			}
 			const withActions: CareerPlanWithActions = {
@@ -4353,7 +4675,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			const careerPlans: CareerPlan[] = [];
 			for (const row of rows) {
 				const mapped = mapCareerPlan(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				careerPlans.push(mapped.data);
 			}
 			const { items, totalCount } = paginate(careerPlans, page, pageSize);
@@ -4371,19 +4695,25 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: input.organizationId,
 			careerPlanId: input.careerPlanId,
 		});
-		if (!plan.ok) return plan;
+		if (!plan.ok) {
+			return plan;
+		}
 		if (plan.data === null) {
 			return notFound("Career plan not found");
 		}
 		const addable = assertCareerPlanActionAddable(plan.data.status);
-		if (!addable.ok) return addable;
+		if (!addable.ok) {
+			return addable;
+		}
 
 		if (input.learningAssignmentId !== null) {
 			const assignment = await this.getLearningAssignmentById({
 				organizationId: input.organizationId,
 				assignmentId: input.learningAssignmentId,
 			});
-			if (!assignment.ok) return assignment;
+			if (!assignment.ok) {
+				return assignment;
+			}
 			if (assignment.data === null) {
 				return notFound("Learning assignment not found");
 			}
@@ -4391,7 +4721,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesCareerPlanActionId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 
 		try {
@@ -4441,7 +4773,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return notFound("Career plan not found");
 			}
@@ -4463,19 +4795,25 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					),
 				)
 				.limit(1);
-			const existingRow = existingRows[0];
+			const [existingRow] = existingRows;
 			if (!existingRow) {
 				return notFound("Career plan action not found");
 			}
 			const loaded = mapCareerPlanAction(existingRow);
-			if (!loaded.ok) return loaded;
+			if (!loaded.ok) {
+				return loaded;
+			}
 			const completable = assertCareerPlanActionCompletable(loaded.data.status);
-			if (!completable.ok) return completable;
+			if (!completable.ok) {
+				return completable;
+			}
 			const versionCheck = assertExpectedVersion(
 				loaded.data.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 
 			const nextVersion = input.expectedVersion + 1;
 			const auditId = randomUUID();
@@ -4510,7 +4848,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -4538,8 +4876,10 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapCareerPlanAction(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load career plan action");
@@ -4558,10 +4898,14 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			const successionPlan = mapSuccessionPlan(row);
-			if (!successionPlan.ok) return successionPlan;
+			if (!successionPlan.ok) {
+				return successionPlan;
+			}
 			if (
 				row.createIdempotencyKey === null ||
 				row.createRequestFingerprint === null
@@ -4588,7 +4932,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: record.organizationId,
 			idempotencyKey: record.createIdempotencyKey,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data !== null) {
 			if (
 				existing.data.createRequestFingerprint ===
@@ -4603,14 +4949,18 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: record.organizationId,
 			positionId: record.positionId,
 		});
-		if (!position.ok) return position;
+		if (!position.ok) {
+			return position;
+		}
 		if (position.data === null) {
 			return notFound("Position not found");
 		}
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesSuccessionPlanId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 
 		try {
@@ -4651,7 +5001,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return conflict("Succession plan with this code already exists");
 			}
@@ -4662,7 +5012,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					organizationId: record.organizationId,
 					idempotencyKey: record.createIdempotencyKey,
 				});
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (replay.data !== null) {
 					if (
 						replay.data.createRequestFingerprint ===
@@ -4685,7 +5037,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: input.organizationId,
 			successionPlanId: input.successionPlanId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Succession plan not found");
 		}
@@ -4696,7 +5050,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const nextTitle = input.title ?? existing.data.title;
 		const nextAllowsExternal =
@@ -4736,7 +5092,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -4754,7 +5110,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: input.organizationId,
 			successionPlanId: input.successionPlanId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Succession plan not found");
 		}
@@ -4762,12 +5120,16 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			existing.data.status,
 			"closed",
 		);
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 		const versionCheck = assertExpectedVersion(
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -4803,7 +5165,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -4828,8 +5190,10 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapSuccessionPlan(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load succession plan");
@@ -4857,7 +5221,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			const successionPlans: SuccessionPlan[] = [];
 			for (const row of rows) {
 				const mapped = mapSuccessionPlan(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				successionPlans.push(mapped.data);
 			}
 			const { items, totalCount } = paginate(successionPlans, page, pageSize);
@@ -4882,10 +5248,14 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			const candidate = mapSuccessionCandidate(row);
-			if (!candidate.ok) return candidate;
+			if (!candidate.ok) {
+				return candidate;
+			}
 			if (
 				row.createIdempotencyKey === null ||
 				row.createRequestFingerprint === null
@@ -4912,7 +5282,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: record.organizationId,
 			idempotencyKey: record.createIdempotencyKey,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data !== null) {
 			if (
 				existing.data.createRequestFingerprint ===
@@ -4927,7 +5299,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			organizationId: record.organizationId,
 			successionPlanId: record.successionPlanId,
 		});
-		if (!plan.ok) return plan;
+		if (!plan.ok) {
+			return plan;
+		}
 		if (plan.data === null) {
 			return notFound("Succession plan not found");
 		}
@@ -4938,7 +5312,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				organizationId: record.organizationId,
 				employeeId: record.employeeId,
 			});
-			if (!employee.ok) return employee;
+			if (!employee.ok) {
+				return employee;
+			}
 			if (employee.data === null) {
 				return notFound("Employee not found");
 			}
@@ -4946,7 +5322,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				organizationId: record.organizationId,
 				employeeId: record.employeeId,
 			});
-			if (!employment.ok) return employment;
+			if (!employment.ok) {
+				return employment;
+			}
 			employmentStatus = employment.data?.status ?? null;
 		}
 
@@ -4958,11 +5336,15 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			employmentStatus,
 			nominatorUserId: record.nominatorUserId,
 		});
-		if (!nominatable.ok) return nominatable;
+		if (!nominatable.ok) {
+			return nominatable;
+		}
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesSuccessionCandidateId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const payloadJson = eventPayloadJson({
@@ -5031,7 +5413,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return invalidState("Succession plan is closed");
 			}
@@ -5042,7 +5424,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					organizationId: record.organizationId,
 					idempotencyKey: record.createIdempotencyKey,
 				});
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (replay.data !== null) {
 					if (
 						replay.data.createRequestFingerprint ===
@@ -5072,27 +5456,35 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					),
 				)
 				.limit(1);
-			const existingRow = existingRows[0];
+			const [existingRow] = existingRows;
 			if (!existingRow) {
 				return notFound("Succession candidate not found");
 			}
 			const loaded = mapSuccessionCandidate(existingRow);
-			if (!loaded.ok) return loaded;
+			if (!loaded.ok) {
+				return loaded;
+			}
 			const candidateActive = assertSuccessionCandidateActive(
 				loaded.data.status,
 			);
-			if (!candidateActive.ok) return candidateActive;
+			if (!candidateActive.ok) {
+				return candidateActive;
+			}
 			const validAssessment = assertReadinessAssessmentValid({
 				evidenceSummary: input.evidenceSummary,
 				effectiveOn: input.readinessEffectiveOn,
 				todayDate: todayIsoDate(),
 			});
-			if (!validAssessment.ok) return validAssessment;
+			if (!validAssessment.ok) {
+				return validAssessment;
+			}
 			const versionCheck = assertExpectedVersion(
 				loaded.data.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 
 			const nextVersion = input.expectedVersion + 1;
 			const auditId = randomUUID();
@@ -5150,7 +5542,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -5178,21 +5570,27 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					),
 				)
 				.limit(1);
-			const existingRow = existingRows[0];
+			const [existingRow] = existingRows;
 			if (!existingRow) {
 				return notFound("Succession candidate not found");
 			}
 			const loaded = mapSuccessionCandidate(existingRow);
-			if (!loaded.ok) return loaded;
+			if (!loaded.ok) {
+				return loaded;
+			}
 			const approvable = assertSuccessionCandidateApprovable(
 				loaded.data.status,
 			);
-			if (!approvable.ok) return approvable;
+			if (!approvable.ok) {
+				return approvable;
+			}
 			const versionCheck = assertExpectedVersion(
 				loaded.data.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 
 			const nextVersion = input.expectedVersion + 1;
 			const auditId = randomUUID();
@@ -5248,7 +5646,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -5276,19 +5674,25 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					),
 				)
 				.limit(1);
-			const existingRow = existingRows[0];
+			const [existingRow] = existingRows;
 			if (!existingRow) {
 				return notFound("Succession candidate not found");
 			}
 			const loaded = mapSuccessionCandidate(existingRow);
-			if (!loaded.ok) return loaded;
+			if (!loaded.ok) {
+				return loaded;
+			}
 			const removable = assertSuccessionCandidateRemovable(loaded.data.status);
-			if (!removable.ok) return removable;
+			if (!removable.ok) {
+				return removable;
+			}
 			const versionCheck = assertExpectedVersion(
 				loaded.data.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 
 			const nextVersion = input.expectedVersion + 1;
 			const auditId = randomUUID();
@@ -5323,7 +5727,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						SELECT mutated.* FROM mutated, audited
 					`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -5358,7 +5762,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			const candidates: SuccessionCandidate[] = [];
 			for (const row of rows) {
 				const mapped = mapSuccessionCandidate(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				candidates.push(mapped.data);
 			}
 			const { items, totalCount } = paginate(candidates, page, pageSize);
@@ -5385,7 +5791,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			const successionPlans: SuccessionPlan[] = [];
 			for (const row of planRows) {
 				const mapped = mapSuccessionPlan(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				successionPlans.push(mapped.data);
 			}
 			const planIds = successionPlans.map((plan) => plan.id);
@@ -5416,7 +5824,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 			for (const row of candidateRows) {
 				const mapped = mapSuccessionCandidate(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				const candidate = mapped.data;
 				if (
 					candidate.status !== "nominated" &&

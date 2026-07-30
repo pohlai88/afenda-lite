@@ -16,9 +16,9 @@ export interface DrizzleMasterMutationTransactionExecutor
 	extends MasterMutationTransactionExecutor {}
 
 export interface DrizzleTransactionalAuditFactWriter {
-	insert(fact: MasterDataAuditFact): Promise<void>;
+	insert: (fact: MasterDataAuditFact) => Promise<void>;
 }
 
 export interface DrizzleTransactionalOutboxRecordWriter {
-	insert(record: MasterDataOutboxRecord): Promise<void>;
+	insert: (record: MasterDataOutboxRecord) => Promise<void>;
 }

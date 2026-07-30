@@ -88,15 +88,15 @@ describe("@afenda/openapi document helpers", () => {
 	});
 
 	it("throws when metadata uses a non-HTTP method key", () => {
+		const methods = {};
+		Reflect.set(methods, "trace", {
+			operationId: "bad",
+			status: "api-now",
+		});
 		expect(() =>
 			stampOperationMetadata(
 				{ paths: { "/api/x": { get: {} } } },
-				{
-					"/api/x": {
-						// @ts-expect-error — runtime guard for invalid method keys
-						trace: { operationId: "bad", status: "api-now" },
-					},
-				},
+				{ "/api/x": methods },
 			),
 		).toThrow(/Invalid OpenAPI method metadata TRACE \/api\/x/);
 	});

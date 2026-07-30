@@ -9,6 +9,8 @@ import { parseExactDecimal } from "../../shared/exact-decimal";
 import type { SuccessionCandidate } from "../../types";
 import type { MemoryHumanResourcesStore } from "./store";
 
+const HR_REGEX_1 = /0+$/;
+
 const STANDARD_DAY_MINUTES = 480;
 
 function isoDate(value: Date): string {
@@ -20,25 +22,33 @@ export function annualizeCompensation(
 	frequency: string,
 ): Result<string> {
 	const parsed = parseExactDecimal(amount);
-	if (parsed === null)
+	if (parsed === null) {
 		return fail("VALIDATION_ERROR", "Compensation amount is invalid");
-	const factor =
-		frequency === "weekly"
-			? 52n
-			: frequency === "biweekly"
-				? 26n
-				: frequency === "semimonthly"
-					? 24n
-					: frequency === "monthly"
-						? 12n
-						: 1n;
+	}
+	const factor = (() => {
+		if (frequency === "weekly") {
+			return 52n;
+		}
+		if (frequency === "biweekly") {
+			return 26n;
+		}
+		if (frequency === "semimonthly") {
+			return 24n;
+		}
+		if (frequency === "monthly") {
+			return 12n;
+		}
+		return 1n;
+	})();
 	const coefficient = parsed.coefficient * factor;
 	const negative = coefficient < 0n;
 	const magnitude = negative ? -coefficient : coefficient;
-	if (parsed.scale === 0) return ok(`${negative ? "-" : ""}${magnitude}`);
+	if (parsed.scale === 0) {
+		return ok(`${negative ? "-" : ""}${magnitude}`);
+	}
 	const digits = magnitude.toString().padStart(parsed.scale + 1, "0");
 	const integer = digits.slice(0, -parsed.scale);
-	const fraction = digits.slice(-parsed.scale).replace(/0+$/, "");
+	const fraction = digits.slice(-parsed.scale).replace(HR_REGEX_1, "");
 	return ok(
 		`${negative ? "-" : ""}${integer}${fraction.length > 0 ? `.${fraction}` : ""}`,
 	);
@@ -47,9 +57,15 @@ export function annualizeCompensation(
 function leaveStatus(
 	status: string,
 ): "requested" | "approved" | "rejected" | "cancelled" {
-	if (status === "approved") return "approved";
-	if (status === "rejected") return "rejected";
-	if (status === "withdrawn" || status === "cancelled") return "cancelled";
+	if (status === "approved") {
+		return "approved";
+	}
+	if (status === "rejected") {
+		return "rejected";
+	}
+	if (status === "withdrawn" || status === "cancelled") {
+		return "cancelled";
+	}
 	return "requested";
 }
 
@@ -58,7 +74,7 @@ function factsForKind(
 	organizationId: string,
 	kind: HumanResourcesReportingFactKind,
 ): Result<HumanResourcesReadModelFact[]> {
-	const state = store.state;
+	const { state } = store;
 	switch (kind) {
 		case "employment":
 			return ok(
@@ -77,8 +93,9 @@ function factsForKind(
 		case "recruitment": {
 			const facts: HumanResourcesReadModelFact[] = [];
 			for (const row of state.recruitment.requisitions.values()) {
-				if (row.organizationId !== organizationId || row.status !== "open")
+				if (row.organizationId !== organizationId || row.status !== "open") {
 					continue;
+				}
 				facts.push({
 					id: `requisition-opened:${row.id}`,
 					kind,
@@ -90,7 +107,9 @@ function factsForKind(
 				});
 			}
 			for (const row of state.recruitment.applications.values()) {
-				if (row.organizationId !== organizationId) continue;
+				if (row.organizationId !== organizationId) {
+					continue;
+				}
 				facts.push({
 					id: `application-received:${row.id}`,
 					kind,
@@ -113,16 +132,21 @@ function factsForKind(
 				}
 			}
 			for (const row of state.recruitment.offers.values()) {
-				if (row.organizationId !== organizationId || row.status !== "accepted")
+				if (
+					row.organizationId !== organizationId ||
+					row.status !== "accepted"
+				) {
 					continue;
+				}
 				const application = state.recruitment.applications.get(
 					row.applicationId,
 				);
 				if (
 					application === undefined ||
 					application.organizationId !== organizationId
-				)
+				) {
 					continue;
+				}
 				facts.push({
 					id: `offer-accepted:${row.id}`,
 					kind,
@@ -138,10 +162,13 @@ function factsForKind(
 		case "leave": {
 			const facts: HumanResourcesReadModelFact[] = [];
 			for (const row of state.leave.leaveRequests.values()) {
-				if (row.organizationId !== organizationId) continue;
+				if (row.organizationId !== organizationId) {
+					continue;
+				}
 				const parsed = parseExactDecimal(row.requestedQuantity);
-				if (parsed === null)
+				if (parsed === null) {
 					return fail("VALIDATION_ERROR", "Leave quantity is invalid");
+				}
 				const scaleFactor = 10n ** BigInt(parsed.scale);
 				const minuteFactor = BigInt(
 					row.unit === "hours" ? 60 : STANDARD_DAY_MINUTES,
@@ -167,8 +194,9 @@ function factsForKind(
 				if (
 					exception.organizationId !== organizationId ||
 					exception.sessionId === null
-				)
+				) {
 					continue;
+				}
 				exceptionCountBySession.set(
 					exception.sessionId,
 					(exceptionCountBySession.get(exception.sessionId) ?? 0) + 1,
@@ -209,12 +237,16 @@ function factsForKind(
 		case "compensation": {
 			const facts: HumanResourcesReadModelFact[] = [];
 			for (const row of state.compensationBenefits.employeeCompensations.values()) {
-				if (row.organizationId !== organizationId) continue;
+				if (row.organizationId !== organizationId) {
+					continue;
+				}
 				const annualized = annualizeCompensation(
 					row.baseAmount,
 					row.payFrequency,
 				);
-				if (!annualized.ok) return annualized;
+				if (!annualized.ok) {
+					return annualized;
+				}
 				facts.push({
 					id: row.id,
 					kind,
@@ -231,16 +263,19 @@ function factsForKind(
 		case "compliance": {
 			const employeeIds = new Set<string>();
 			for (const row of state.compliance.employeeDocuments.values()) {
-				if (row.organizationId === organizationId)
+				if (row.organizationId === organizationId) {
 					employeeIds.add(row.employeeId);
+				}
 			}
 			for (const row of state.compliance.workEligibilities.values()) {
-				if (row.organizationId === organizationId)
+				if (row.organizationId === organizationId) {
 					employeeIds.add(row.employeeId);
+				}
 			}
 			for (const row of state.compliance.policyAcknowledgements.values()) {
-				if (row.organizationId === organizationId)
+				if (row.organizationId === organizationId) {
 					employeeIds.add(row.employeeId);
+				}
 			}
 			return ok(
 				[...employeeIds].map((employeeId) => {
@@ -295,11 +330,15 @@ function factsForKind(
 						organizationId,
 						employeeId,
 						assessedOn: isoDate(latest),
-						status: nonCompliant
-							? "non_compliant"
-							: outstanding > 0
-								? "at_risk"
-								: "compliant",
+						status: (() => {
+							if (nonCompliant) {
+								return "non_compliant";
+							}
+							if (outstanding > 0) {
+								return "at_risk";
+							}
+							return "compliant";
+						})(),
 						outstandingRequirementCount: outstanding,
 					};
 				}),
@@ -349,8 +388,9 @@ function factsForKind(
 				if (
 					goal.organizationId !== organizationId ||
 					["completed", "cancelled"].includes(goal.status)
-				)
+				) {
 					continue;
+				}
 				goalsByEmployee.set(
 					goal.employeeId,
 					(goalsByEmployee.get(goal.employeeId) ?? 0) + 1,
@@ -361,8 +401,12 @@ function factsForKind(
 					.filter((row) => row.organizationId === organizationId)
 					.flatMap((row) => {
 						const cycle = state.performance.cycles.get(row.cycleId);
-						if (cycle === undefined || cycle.organizationId !== organizationId)
+						if (
+							cycle === undefined ||
+							cycle.organizationId !== organizationId
+						) {
 							return [];
+						}
 						return [
 							{
 								id: row.id,
@@ -387,8 +431,9 @@ function factsForKind(
 				if (
 					candidate.organizationId !== organizationId ||
 					candidate.status === "removed"
-				)
+				) {
 					continue;
+				}
 				const entries = candidatesByPlan.get(candidate.successionPlanId) ?? [];
 				entries.push(candidate);
 				candidatesByPlan.set(candidate.successionPlanId, entries);
@@ -426,10 +471,13 @@ function factsForKind(
 		case "workforce_plan": {
 			const facts: HumanResourcesReadModelFact[] = [];
 			for (const line of state.workforcePlanning.headcountPlanLines.values()) {
-				if (line.organizationId !== organizationId) continue;
-				const plan = state.workforcePlanning.headcountPlans.get(line.planId);
-				if (plan === undefined || plan.organizationId !== organizationId)
+				if (line.organizationId !== organizationId) {
 					continue;
+				}
+				const plan = state.workforcePlanning.headcountPlans.get(line.planId);
+				if (plan === undefined || plan.organizationId !== organizationId) {
+					continue;
+				}
 				const actuals = [...state.core.assignments.values()].filter(
 					(row) =>
 						row.organizationId === organizationId &&
@@ -451,6 +499,8 @@ function factsForKind(
 			}
 			return ok(facts);
 		}
+		default:
+			return fail("INTERNAL_ERROR", "Unsupported reporting fact kind");
 	}
 }
 
@@ -460,12 +510,14 @@ export function createMemoryHumanResourcesReportingSource(
 	return {
 		async listFacts(input): Promise<Result<HumanResourcesReportingFactPage>> {
 			const facts = factsForKind(store, input.organizationId, input.kind);
-			if (!facts.ok) return facts;
+			if (!facts.ok) {
+				return await facts;
+			}
 			const ordered = [...facts.data].sort((left, right) =>
 				left.id.localeCompare(right.id),
 			);
 			const offset = (input.page - 1) * input.pageSize;
-			return ok({
+			return await ok({
 				entries: ordered.slice(offset, offset + input.pageSize),
 				total: ordered.length,
 				page: input.page,

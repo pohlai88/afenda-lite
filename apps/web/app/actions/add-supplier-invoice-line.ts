@@ -31,7 +31,7 @@ export async function addSupplierInvoiceLineAction(
 	_prev: AddSupplierInvoiceLineActionState,
 	formData: FormData,
 ): Promise<AddSupplierInvoiceLineActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "addSupplierInvoiceLineAction",
 		permission: "payables.manage",
 		safeMessage:
@@ -44,12 +44,13 @@ export async function addSupplierInvoiceLineAction(
 				quantity: formData.get("quantity"),
 				unitPrice: formData.get("unitPrice"),
 			});
-			if (!parsed.success)
+			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
 					"Enter a valid invoice, item, quantity, and unit price.",
 					parsed.details,
 				);
+			}
 			const mapped = mapPackageResult(
 				await addSupplierInvoiceLine(
 					{
@@ -61,7 +62,9 @@ export async function addSupplierInvoiceLineAction(
 					createPayablesCommandOptions(session.userId),
 				),
 			);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePayablesPaths();
 			return { ok: true, data: { line: mapped.data } };
 		},

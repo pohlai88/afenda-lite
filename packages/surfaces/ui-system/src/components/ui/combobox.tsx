@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckIcon, ChevronDownIcon, XIcon } from "lucide-react";
-import * as React from "react";
+import { type MouseEvent, useCallback, useState } from "react";
 import { cn } from "../../lib/utils";
 import { Badge } from "./badge";
 import { Button } from "./button";
@@ -16,29 +16,29 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "./popover";
 
 interface ComboboxOption {
-	value: string;
-	label: string;
 	disabled?: boolean;
+	label: string;
+	value: string;
 }
 
-type ComboboxBaseProps = {
+interface ComboboxBaseProps {
+	"aria-describedby"?: string;
+	"aria-invalid"?: boolean | "true" | "false";
+	"aria-label"?: string;
+	"aria-labelledby"?: string;
+	className?: string;
+	disabled?: boolean;
+	emptyMessage?: string;
+	/** `client` (default) filters labels locally; `none` shows `options` as-is. */
+	filterMode?: "client" | "none";
+	id?: string;
+	name?: string;
+	/** Fires on search input change (after local state updates). */
+	onSearchChange?: (query: string) => void;
 	options: ComboboxOption[];
 	placeholder?: string;
 	searchPlaceholder?: string;
-	emptyMessage?: string;
-	disabled?: boolean;
-	className?: string;
-	id?: string;
-	name?: string;
-	/** `client` (default) filters labels locally; `none` shows `options` as-is. */
-	filterMode?: "client" | "none";
-	/** Fires on search input change (after local state updates). */
-	onSearchChange?: (query: string) => void;
-	"aria-label"?: string;
-	"aria-labelledby"?: string;
-	"aria-invalid"?: boolean | "true" | "false";
-	"aria-describedby"?: string;
-};
+}
 
 type ComboboxSingleProps = ComboboxBaseProps & {
 	multiple?: false;
@@ -54,6 +54,8 @@ type ComboboxMultipleProps = ComboboxBaseProps & {
 
 type ComboboxProps = ComboboxSingleProps | ComboboxMultipleProps;
 
+// The discriminated single/multiple control flow stays colocated so callback payloads remain type-safe.
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Splitting this renderer would erase the union narrowing that governs value updates.
 function Combobox(props: ComboboxProps) {
 	const {
 		options,
@@ -73,13 +75,16 @@ function Combobox(props: ComboboxProps) {
 	} = props;
 
 	const multiple = props.multiple === true;
-	const [open, setOpen] = React.useState(false);
-	const [searchValue, setSearchValue] = React.useState("");
+	const [open, setOpen] = useState(false);
+	const [searchValue, setSearchValue] = useState("");
 
-	const handleSearchChange = (next: string) => {
-		setSearchValue(next);
-		onSearchChange?.(next);
-	};
+	const handleSearchChange = useCallback(
+		(next: string) => {
+			setSearchValue(next);
+			onSearchChange?.(next);
+		},
+		[onSearchChange],
+	);
 
 	const visibleOptions =
 		filterMode === "none"
@@ -88,65 +93,87 @@ function Combobox(props: ComboboxProps) {
 					option.label.toLowerCase().includes(searchValue.toLowerCase()),
 				);
 
-	const selectedValues = multiple
-		? (props.value ?? [])
-		: props.value
-			? [props.value]
-			: [];
+	let selectedValues: string[];
+	if (multiple) {
+		selectedValues = props.value ?? [];
+	} else {
+		selectedValues = props.value ? [props.value] : [];
+	}
 
 	const selectedOptions = options.filter((option) =>
 		selectedValues.includes(option.value),
 	);
 
-	const handleSelect = (optionValue: string) => {
-		if (multiple) {
-			const current = props.value ?? [];
-			const next = current.includes(optionValue)
-				? current.filter((item) => item !== optionValue)
-				: [...current, optionValue];
+	const handleSelect = useCallback(
+		(optionValue: string) => {
+			if (multiple) {
+				const current = props.value ?? [];
+				const next = current.includes(optionValue)
+					? current.filter((item) => item !== optionValue)
+					: [...current, optionValue];
+				props.onValueChange?.(next);
+				handleSearchChange("");
+				return;
+			}
+
+			const next = optionValue === props.value ? "" : optionValue;
 			props.onValueChange?.(next);
+			setOpen(false);
 			handleSearchChange("");
-			return;
-		}
+		},
+		[handleSearchChange, multiple, props],
+	);
 
-		const next = optionValue === props.value ? "" : optionValue;
-		props.onValueChange?.(next);
-		setOpen(false);
-		handleSearchChange("");
-	};
+	const removeValue = useCallback(
+		(optionValue: string) => {
+			if (!multiple) {
+				return;
+			}
+			const current = props.value ?? [];
+			props.onValueChange?.(current.filter((item) => item !== optionValue));
+		},
+		[multiple, props],
+	);
+	const handleRemoveClick = useCallback(
+		(event: MouseEvent<HTMLElement>) => {
+			event.preventDefault();
+			event.stopPropagation();
+			const optionValue = event.currentTarget.dataset.value;
+			if (optionValue !== undefined) {
+				removeValue(optionValue);
+			}
+		},
+		[removeValue],
+	);
 
-	const removeValue = (optionValue: string) => {
-		if (!multiple) return;
-		const current = props.value ?? [];
-		props.onValueChange?.(current.filter((item) => item !== optionValue));
-	};
-
-	const triggerLabel = multiple
-		? selectedOptions.length > 0
-			? `${selectedOptions.length} selected`
-			: placeholder
-		: (selectedOptions[0]?.label ?? placeholder);
+	let triggerLabel = selectedOptions[0]?.label ?? placeholder;
+	if (multiple) {
+		triggerLabel =
+			selectedOptions.length > 0
+				? `${selectedOptions.length} selected`
+				: placeholder;
+	}
 
 	const hasExplicitAccessibleName =
 		(typeof ariaLabel === "string" && ariaLabel.trim().length > 0) ||
 		(typeof ariaLabelledBy === "string" && ariaLabelledBy.trim().length > 0);
 
 	return (
-		<Popover open={open} onOpenChange={setOpen}>
+		<Popover onOpenChange={setOpen} open={open}>
 			{name ? (
 				<input
-					type="hidden"
 					name={name}
-					value={multiple ? selectedValues.join(",") : (props.value ?? "")}
 					readOnly
+					type="hidden"
+					value={multiple ? selectedValues.join(",") : (props.value ?? "")}
 				/>
 			) : null}
 			<PopoverTrigger asChild>
 				<Button
-					id={id}
-					type="button"
-					variant="outline"
-					role="combobox"
+					aria-describedby={ariaDescribedBy}
+					aria-expanded={open}
+					aria-haspopup="listbox"
+					aria-invalid={ariaInvalid}
 					aria-label={
 						hasExplicitAccessibleName
 							? ariaLabel?.trim() || undefined
@@ -157,49 +184,46 @@ function Combobox(props: ComboboxProps) {
 							? ariaLabelledBy?.trim() || undefined
 							: undefined
 					}
-					aria-expanded={open}
-					aria-haspopup="listbox"
-					aria-invalid={ariaInvalid}
-					aria-describedby={ariaDescribedBy}
-					disabled={disabled}
 					className={cn(
 						"h-auto min-h-(--control-height) w-full justify-between",
 						selectedOptions.length === 0 && "text-muted-foreground",
 						className,
 					)}
+					disabled={disabled}
+					id={id}
+					role="combobox"
+					type="button"
+					variant="outline"
 				>
 					<span className="flex flex-1 flex-wrap items-center gap-1 text-left">
 						{multiple && selectedOptions.length > 0
 							? selectedOptions.map((option) => (
 									<Badge
-										key={option.value}
-										variant="secondary"
 										className="gap-1"
-										onClick={(event) => {
-											event.preventDefault();
-											event.stopPropagation();
-											removeValue(option.value);
-										}}
+										data-value={option.value}
+										key={option.value}
+										onClick={handleRemoveClick}
+										variant="secondary"
 									>
 										{option.label}
-										<XIcon className="size-3" aria-hidden="true" />
+										<XIcon aria-hidden="true" className="size-3" />
 										<span className="sr-only">Remove {option.label}</span>
 									</Badge>
 								))
-							: triggerLabel}
+							: triggerLabel || null}
 					</span>
 					<ChevronDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent
-				className="w-(--radix-popover-trigger-width) p-0"
 				align="start"
+				className="w-(--radix-popover-trigger-width) p-0"
 			>
 				<Command shouldFilter={false}>
 					<CommandInput
+						onValueChange={handleSearchChange}
 						placeholder={searchPlaceholder}
 						value={searchValue}
-						onValueChange={handleSearchChange}
 					/>
 					<CommandList aria-multiselectable={multiple || undefined}>
 						<CommandEmpty>{emptyMessage}</CommandEmpty>
@@ -213,7 +237,7 @@ function Combobox(props: ComboboxProps) {
 										{...(option.disabled === undefined
 											? {}
 											: { disabled: option.disabled })}
-										onSelect={() => handleSelect(option.value)}
+										onSelect={handleSelect}
 									>
 										<CheckIcon
 											className={cn(

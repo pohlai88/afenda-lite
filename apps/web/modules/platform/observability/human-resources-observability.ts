@@ -10,13 +10,13 @@ import {
 
 import { logProductEvent } from "@/modules/platform/observability/product-log";
 
-export type HrTelemetrySinkPort = {
-	write(input: {
+export interface HrTelemetrySinkPort {
+	write: (input: {
 		level: "info" | "warn" | "error";
 		event: string;
 		code: string;
-	}): void;
-};
+	}) => void;
+}
 
 function labelCode(values: Record<string, string>): string {
 	return Object.values(values).join(":");

@@ -52,9 +52,15 @@ export function canTransitionCourseStatus(
 	current: CourseStatus,
 	next: CourseStatus,
 ): boolean {
-	if (current === next) return false;
-	if (current === "active" && next === "archived") return true;
-	if (current === "archived" && next === "active") return true;
+	if (current === next) {
+		return false;
+	}
+	if (current === "active" && next === "archived") {
+		return true;
+	}
+	if (current === "archived" && next === "active") {
+		return true;
+	}
 	return false;
 }
 
@@ -101,7 +107,9 @@ export function canTransitionSessionStatus(
 	current: SessionStatus,
 	next: SessionStatus,
 ): boolean {
-	if (current === next) return false;
+	if (current === next) {
+		return false;
+	}
 	if (
 		current === "scheduled" &&
 		(next === "in_progress" || next === "cancelled")
@@ -201,8 +209,12 @@ export function canTransitionAssignmentStatus(
 	current: AssignmentStatus,
 	next: AssignmentStatus,
 ): boolean {
-	if (current === next) return false;
-	if (isAssignmentTerminal(current)) return false;
+	if (current === next) {
+		return false;
+	}
+	if (isAssignmentTerminal(current)) {
+		return false;
+	}
 	if (
 		current === "pending" &&
 		(next === "in_progress" || next === "withdrawn")
@@ -298,7 +310,9 @@ export function canTransitionCertificationStatus(
 	current: CertificationStatus,
 	next: CertificationStatus,
 ): boolean {
-	if (current === next) return false;
+	if (current === next) {
+		return false;
+	}
 	if (current === "active" && (next === "expired" || next === "revoked")) {
 		return true;
 	}

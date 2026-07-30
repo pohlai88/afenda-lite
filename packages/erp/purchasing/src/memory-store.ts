@@ -15,6 +15,7 @@ import {
 	purchasingErrorDetails,
 } from "./error-codes";
 import type { MutationPorts } from "./ports";
+import { resolveAsync } from "./resolve-async";
 import type {
 	OrderCancelRecord,
 	OrderCloseRecord,
@@ -157,7 +158,8 @@ export class MemoryPurchasingStore implements PurchasingStore {
 			);
 		}
 		const replay = order.lines.find(
-			(line) => line.lineIdempotencyKey === record.lineIdempotencyKey,
+			(existingLine) =>
+				existingLine.lineIdempotencyKey === record.lineIdempotencyKey,
 		);
 		if (replay !== undefined) {
 			return ok({ ...replay });
@@ -549,42 +551,48 @@ export class MemoryPurchasingStore implements PurchasingStore {
 		return ok(cloneOrder(order));
 	}
 
-	async getOrderById(
+	getOrderById(
 		organizationId: string,
 		id: string,
 	): Promise<Result<PurchaseOrder | null>> {
-		const order = this.orders.get(id);
-		if (order === undefined || order.organizationId !== organizationId) {
-			return ok(null);
-		}
-		return ok(cloneOrder(order));
+		return resolveAsync(() => {
+			const order = this.orders.get(id);
+			if (order === undefined || order.organizationId !== organizationId) {
+				return ok(null);
+			}
+			return ok(cloneOrder(order));
+		});
 	}
 
-	async getOrderByCreateIdempotencyKey(
+	getOrderByCreateIdempotencyKey(
 		organizationId: string,
 		createIdempotencyKey: string,
 	): Promise<Result<PurchaseOrder | null>> {
-		for (const order of this.orders.values()) {
-			if (
-				order.organizationId === organizationId &&
-				order.createIdempotencyKey === createIdempotencyKey
-			) {
-				return ok(cloneOrder(order));
+		return resolveAsync(() => {
+			for (const order of this.orders.values()) {
+				if (
+					order.organizationId === organizationId &&
+					order.createIdempotencyKey === createIdempotencyKey
+				) {
+					return ok(cloneOrder(order));
+				}
 			}
-		}
-		return ok(null);
+			return ok(null);
+		});
 	}
 
-	async listOrders(filter: OrderListFilter): Promise<Result<PurchaseOrder[]>> {
-		const rows = [...this.orders.values()]
-			.filter((order) => order.organizationId === filter.organizationId)
-			.filter(
-				(order) =>
-					filter.status === undefined || order.status === filter.status,
-			)
-			.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
-			.map(cloneOrder);
-		return ok(paginate(rows, filter.page, filter.pageSize));
+	listOrders(filter: OrderListFilter): Promise<Result<PurchaseOrder[]>> {
+		return resolveAsync(() => {
+			const rows = [...this.orders.values()]
+				.filter((order) => order.organizationId === filter.organizationId)
+				.filter(
+					(order) =>
+						filter.status === undefined || order.status === filter.status,
+				)
+				.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+				.map(cloneOrder);
+			return ok(paginate(rows, filter.page, filter.pageSize));
+		});
 	}
 }
 

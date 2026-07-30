@@ -22,7 +22,6 @@ function upstashCredentials(): { url: string; token: string } | undefined {
 	) {
 		return { url, token };
 	}
-	return undefined;
 }
 
 function memoryStore(): RateLimitStore {

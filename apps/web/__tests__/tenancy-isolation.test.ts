@@ -59,3 +59,4 @@ describe.skipIf(!hasDatabase)("tenancy isolation two-org (N9)", () => {
 		expect(forB.some((item) => item.id === row.id)).toBe(false);
 	});
 });
+// biome-ignore-all lint/performance/noAwaitInLoops: Cases run serially to isolate mutable test state and ordered transitions.

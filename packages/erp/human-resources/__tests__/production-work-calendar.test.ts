@@ -18,7 +18,9 @@ describe("createProductionWorkCalendar", () => {
 			unit: "days",
 		});
 		expect(expanded.ok).toBe(true);
-		if (!expanded.ok) return;
+		if (!expanded.ok) {
+			return;
+		}
 		expect(expanded.data.map((s) => s.date)).toEqual([
 			"2025-01-03",
 			"2025-01-06",
@@ -54,7 +56,9 @@ describe("createProductionWorkCalendar", () => {
 			unit: "days",
 		});
 		expect(expanded.ok).toBe(true);
-		if (!expanded.ok) return;
+		if (!expanded.ok) {
+			return;
+		}
 		expect(expanded.data.map((s) => s.date)).toEqual(["2025-01-07"]);
 	});
 
@@ -81,7 +85,9 @@ describe("createProductionWorkCalendar", () => {
 			toDate: "2025-01-07",
 		});
 		expect(context.ok).toBe(true);
-		if (!context.ok) return;
+		if (!context.ok) {
+			return;
+		}
 		const day = resolveWorkCalendarCivilDay(context.data, "2025-01-07");
 		expect(day.isWorkingDay).toBe(true);
 		expect(day.expectedMinutes).toBe(240);
@@ -95,7 +101,9 @@ describe("createProductionWorkCalendar", () => {
 			date: "2025-01-07",
 		});
 		expect(working.ok).toBe(true);
-		if (!working.ok) return;
+		if (!working.ok) {
+			return;
+		}
 		expect(working.data).toBe(true);
 	});
 
@@ -122,7 +130,9 @@ describe("createProductionWorkCalendar", () => {
 			toDate: "2025-01-11",
 		});
 		expect(context.ok).toBe(true);
-		if (!context.ok) return;
+		if (!context.ok) {
+			return;
+		}
 		const day = resolveWorkCalendarCivilDay(context.data, "2025-01-11");
 		expect(day.isWorkingDay).toBe(true);
 		expect(day.overrideKind).toBe("replacement_workday");
@@ -138,7 +148,9 @@ describe("createProductionWorkCalendar", () => {
 			unit: "days",
 		});
 		expect(expanded.ok).toBe(true);
-		if (!expanded.ok) return;
+		if (!expanded.ok) {
+			return;
+		}
 		expect(expanded.data.map((s) => s.date)).toEqual(["2025-01-11"]);
 	});
 
@@ -209,7 +221,9 @@ describe("createProductionWorkCalendar", () => {
 			unit: "days",
 		});
 		expect(expanded.ok).toBe(true);
-		if (!expanded.ok) return;
+		if (!expanded.ok) {
+			return;
+		}
 		// Fri(5), Sat(6), Sun(0) are working in this pattern
 		expect(expanded.data.map((s) => s.date)).toEqual([
 			"2025-01-03",
@@ -235,7 +249,9 @@ describe("createProductionWorkCalendar", () => {
 			partialDay: "morning",
 		});
 		expect(half.ok).toBe(true);
-		if (!half.ok) return;
+		if (!half.ok) {
+			return;
+		}
 		expect(half.data[0]?.quantity).toBe("0.5");
 
 		const hours = await calendar.expandLeaveSegments({
@@ -248,7 +264,9 @@ describe("createProductionWorkCalendar", () => {
 			partialDay: "full",
 		});
 		expect(hours.ok).toBe(true);
-		if (!hours.ok) return;
+		if (!hours.ok) {
+			return;
+		}
 		expect(hours.data[0]?.quantity).toBe("8");
 	});
 });

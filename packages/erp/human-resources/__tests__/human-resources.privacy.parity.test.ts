@@ -4,6 +4,7 @@ import {
 	evaluateHumanResourcesAnonymization,
 	exportHumanResourcesSubjectData,
 } from "../src/privacy/operations";
+import { runSequential } from "../src/shared/run-sequential";
 import { runDrizzleParity } from "./helpers/database-gate";
 import {
 	createDualTenantPrivacyRecords,
@@ -41,7 +42,7 @@ describe("human-resources privacy adapter parity", () => {
 			}),
 		];
 
-		for (const privacy of adapters) {
+		await runSequential(adapters, async (privacy) => {
 			const result = await exportHumanResourcesSubjectData(
 				createValidPrivacyExportInput({ personId: employee.id }),
 				createHumanResourcesTestOptions({ privacy, store }),
@@ -59,7 +60,7 @@ describe("human-resources privacy adapter parity", () => {
 			expect(JSON.stringify(result.data.records)).not.toContain(
 				PRIVACY_TEST_PERSON_B,
 			);
-		}
+		});
 	});
 
 	it("blocks anonymization while legal hold is active across adapters", async () => {
@@ -79,7 +80,7 @@ describe("human-resources privacy adapter parity", () => {
 			}),
 		];
 
-		for (const privacy of adapters) {
+		await runSequential(adapters, async (privacy) => {
 			const result = await evaluateHumanResourcesAnonymization(
 				createValidPrivacyAnonymizeInput(),
 				createHumanResourcesTestOptions({ privacy }),
@@ -91,7 +92,7 @@ describe("human-resources privacy adapter parity", () => {
 			}
 			expect(result.data.allowed).toBe(false);
 			expect(result.data.reasonCode).toBe("employee_relations_case");
-		}
+		});
 	});
 });
 

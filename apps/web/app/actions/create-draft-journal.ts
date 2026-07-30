@@ -31,7 +31,7 @@ export async function createDraftJournalAction(
 	_prev: CreateDraftJournalActionState,
 	formData: FormData,
 ): Promise<CreateDraftJournalActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "createDraftJournalAction",
 		permission: "accounting.journal.create",
 		safeMessage: "Could not create journal. Try again or contact an admin.",
@@ -42,12 +42,13 @@ export async function createDraftJournalAction(
 				currencyCode: formData.get("currencyCode"),
 				description: formData.get("description"),
 			});
-			if (!parsed.success)
+			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
 					"Enter valid journal details.",
 					parsed.details,
 				);
+			}
 			const mapped = mapPackageResult(
 				await createDraftJournal(
 					{
@@ -61,7 +62,9 @@ export async function createDraftJournalAction(
 					createAccountingCommandOptions(),
 				),
 			);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePath("/admin/accounting");
 			revalidatePath("/client/accounting");
 			return { ok: true, data: { journal: mapped.data } };

@@ -48,7 +48,9 @@ describe("dryRunAttendanceImport", () => {
 
 		expect(first.ok).toBe(true);
 		expect(second.ok).toBe(true);
-		if (!first.ok || !second.ok) return;
+		if (!(first.ok && second.ok)) {
+			return;
+		}
 		expect(first.data.mode).toBe("dry_run");
 		expect(first.data.totals).toEqual({ accepted: 1, rejected: 2 });
 		expect(first.data.rows.map((row) => row.status)).toEqual([

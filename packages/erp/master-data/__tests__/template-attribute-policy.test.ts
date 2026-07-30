@@ -6,10 +6,10 @@ import {
 } from "../src/capabilities/extensions/template-attribute-policy";
 import { normalizeVariantAttributeValue } from "../src/capabilities/extensions/variant-attribute-value-policy";
 
-type ValidationIssue = {
-	path: string;
+interface ValidationIssue {
 	message: string;
-};
+	path: string;
+}
 
 function issuePaths(result: { ok: false; details?: unknown }): string[] {
 	const details = result.details as {
@@ -119,7 +119,9 @@ describe("template attribute validation policy", () => {
 			scale: 0,
 		});
 		expect(rules.ok).toBe(true);
-		if (!rules.ok) return;
+		if (!rules.ok) {
+			return;
+		}
 
 		expect(
 			normalizeVariantAttributeValue({

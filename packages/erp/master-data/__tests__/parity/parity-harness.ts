@@ -9,6 +9,7 @@ import type { MasterDataStore } from "../../src/capabilities/core-organization-m
 import type { MasterCommandOptions } from "../../src/command-options";
 import { createDrizzleMasterDataStore } from "../../src/drizzle-store";
 import { MASTER_DATA_PERMISSION_CODES } from "../../src/permissions";
+import { resolveAsync } from "../../src/resolve-async";
 import { createGrantingMasterAuthorization } from "../helpers/memory-authorization";
 import {
 	createMemoryMasterDataStore,
@@ -19,47 +20,47 @@ import { createMemoryMutationPorts } from "../helpers/memory-ports";
 export const EA_UOM_ID = "b1000000-0000-4000-8000-000000000001";
 export const COUNTRY_ID = "c1000000-0000-4000-8000-000000000001";
 
-export type ParityHarness = {
-	store: MasterDataStore;
-	options: MasterCommandOptions;
-	organizationId: string;
-	otherOrganizationId: string;
+export interface ParityHarness {
 	actorUserId: string;
-	uomId: string;
-	countryId: string;
-	context(): {
+	cleanup: () => Promise<void>;
+	context: () => {
 		organizationId: string;
 		actorUserId: string;
 		correlationId: string;
 	};
-	queryContext(organizationId?: string): {
+	countryId: string;
+	options: MasterCommandOptions;
+	organizationId: string;
+	otherOrganizationId: string;
+	queryContext: (organizationId?: string) => {
 		organizationId: string;
 		actorUserId: string;
 	};
-	cleanup(): Promise<void>;
-};
+	store: MasterDataStore;
+	uomId: string;
+}
 
 export type StoreFactory = () => Promise<ParityHarness>;
 
-export type VersionedPublicRoot = {
+export interface VersionedPublicRoot {
 	id: string;
 	organizationId: string;
 	version: number;
-};
+}
 
-export type RootParityContract<T extends VersionedPublicRoot> = {
-	create(harness: ParityHarness): Promise<Result<T>>;
-	get(
+export interface RootParityContract<T extends VersionedPublicRoot> {
+	create: (harness: ParityHarness) => Promise<Result<T>>;
+	get: (
 		harness: ParityHarness,
 		id: string,
 		organizationId?: string,
-	): Promise<Result<T | null>>;
-	update(
+	) => Promise<Result<T | null>>;
+	update: (
 		harness: ParityHarness,
 		row: T,
 		expectedVersion: number,
-	): Promise<Result<T>>;
-};
+	) => Promise<Result<T>>;
+}
 
 function createHarness(
 	store: MasterDataStore,
@@ -95,12 +96,14 @@ function createHarness(
 	};
 }
 
-export async function createMemoryHarness(): Promise<ParityHarness> {
-	const store = createMemoryMasterDataStore();
-	seedDefaultPlatformRefs(store);
-	return createHarness(store, async () => undefined, {
-		uomId: EA_UOM_ID,
-		countryId: COUNTRY_ID,
+export function createMemoryHarness(): Promise<ParityHarness> {
+	return resolveAsync(() => {
+		const store = createMemoryMasterDataStore();
+		seedDefaultPlatformRefs(store);
+		return createHarness(store, () => resolveAsync(() => undefined), {
+			uomId: EA_UOM_ID,
+			countryId: COUNTRY_ID,
+		});
 	});
 }
 
@@ -196,7 +199,7 @@ export async function createDrizzleHarness(): Promise<ParityHarness> {
 		},
 		{ uomId, countryId },
 	);
-	organizationId = harness.organizationId;
+	({ organizationId } = harness);
 	return harness;
 }
 
@@ -219,7 +222,9 @@ export function defineRootParityTests<T extends VersionedPublicRoot>(
 		it("returns the same tenant-safe public miss", async () => {
 			const created = await contract.create(harness);
 			expect(created.ok, JSON.stringify(created)).toBe(true);
-			if (!created.ok) return;
+			if (!created.ok) {
+				return;
+			}
 
 			const result = await contract.get(
 				harness,
@@ -232,7 +237,9 @@ export function defineRootParityTests<T extends VersionedPublicRoot>(
 		it("returns the same stale-version code and public projection", async () => {
 			const created = await contract.create(harness);
 			expect(created.ok, JSON.stringify(created)).toBe(true);
-			if (!created.ok) return;
+			if (!created.ok) {
+				return;
+			}
 
 			const updated = await contract.update(
 				harness,
@@ -240,7 +247,9 @@ export function defineRootParityTests<T extends VersionedPublicRoot>(
 				created.data.version,
 			);
 			expect(updated.ok, JSON.stringify(updated)).toBe(true);
-			if (!updated.ok) return;
+			if (!updated.ok) {
+				return;
+			}
 			expect(updated.data).toMatchObject({
 				id: created.data.id,
 				organizationId: harness.organizationId,
@@ -253,7 +262,9 @@ export function defineRootParityTests<T extends VersionedPublicRoot>(
 				created.data.version,
 			);
 			expect(stale.ok).toBe(false);
-			if (stale.ok) return;
+			if (stale.ok) {
+				return;
+			}
 			expect(stale.code).toBe("CONFLICT");
 			expect(stale.details).toMatchObject({
 				reason: "MASTER_VERSION_CONFLICT",

@@ -38,6 +38,7 @@ import {
 import { buildAttendanceTimesheetEntryPlans } from "../src/time/timesheet-generation";
 import type { AttendanceSession, Employee, Employment } from "../src/types";
 import { runDrizzleParity } from "./helpers/database-gate";
+import { helperAssert as assert } from "./helpers/helper-assert";
 import {
 	createHrParityHarness,
 	type WorkforceStoreAdapter,
@@ -70,11 +71,11 @@ function uniqueSuffix(adapter: WorkforceStoreAdapter): string {
 	return `${adapter}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-type OvernightSessionSeed = {
+interface OvernightSessionSeed {
 	employee: Employee;
 	employment: Employment;
 	session: AttendanceSession;
-};
+}
 
 async function seedOvernightMultiBreakSession(input: {
 	ready: HumanResourcesCommandOptions;
@@ -96,7 +97,7 @@ async function seedOvernightMultiBreakSession(input: {
 		},
 		ready,
 	);
-	expect(employee.ok).toBe(true);
+	assert.strictEqual(employee.ok, true);
 	if (!employee.ok) {
 		throw new Error(`employee seed failed: ${employee.message}`);
 	}
@@ -111,7 +112,7 @@ async function seedOvernightMultiBreakSession(input: {
 		},
 		ready,
 	);
-	expect(employment.ok).toBe(true);
+	assert.strictEqual(employment.ok, true);
 	if (!employment.ok) {
 		throw new Error("employment seed failed");
 	}
@@ -132,7 +133,7 @@ async function seedOvernightMultiBreakSession(input: {
 		},
 		ready,
 	);
-	expect(calendar.ok).toBe(true);
+	assert.strictEqual(calendar.ok, true);
 	if (!calendar.ok) {
 		throw new Error(`calendar seed failed: ${calendar.message}`);
 	}
@@ -149,7 +150,7 @@ async function seedOvernightMultiBreakSession(input: {
 		},
 		ready,
 	);
-	expect(calendarAssignment.ok).toBe(true);
+	assert.strictEqual(calendarAssignment.ok, true);
 	if (!calendarAssignment.ok) {
 		throw new Error("calendar assignment seed failed");
 	}
@@ -167,7 +168,7 @@ async function seedOvernightMultiBreakSession(input: {
 			},
 			ready,
 		);
-		expect(holiday.ok).toBe(true);
+		assert.strictEqual(holiday.ok, true);
 		if (!holiday.ok) {
 			throw new Error("holiday override seed failed");
 		}
@@ -238,7 +239,10 @@ async function seedOvernightMultiBreakSession(input: {
 			ready,
 		),
 	];
-	expect(events.every((event) => event.ok)).toBe(true);
+	assert.strictEqual(
+		events.every((event) => event.ok),
+		true,
+	);
 
 	const resolved = await resolveAttendanceSession(
 		{
@@ -252,7 +256,7 @@ async function seedOvernightMultiBreakSession(input: {
 		},
 		ready,
 	);
-	expect(resolved.ok).toBe(true);
+	assert.strictEqual(resolved.ok, true);
 	if (!resolved.ok) {
 		throw new Error("session resolve failed");
 	}
@@ -318,7 +322,9 @@ function defineLegalMinuteAllocationParitySuite(
 			ready,
 		);
 		expect(reloaded.ok).toBe(true);
-		if (!reloaded.ok) return;
+		if (!reloaded.ok) {
+			return;
+		}
 		expect(reloaded.data?.provenance.breakIntervals).toEqual([
 			{ startedAt: BREAK_ONE_START, endedAt: BREAK_ONE_END },
 			{ startedAt: BREAK_TWO_START, endedAt: BREAK_TWO_END },
@@ -345,7 +351,7 @@ function defineLegalMinuteAllocationParitySuite(
 		const { firstClockInAt, finalClockOutAt } = seeded.session;
 		expect(firstClockInAt).toBeDefined();
 		expect(finalClockOutAt).toBeDefined();
-		if (!firstClockInAt || !finalClockOutAt) {
+		if (!(firstClockInAt && finalClockOutAt)) {
 			throw new Error("Expected closed attendance session timestamps");
 		}
 
@@ -418,7 +424,9 @@ function defineLegalMinuteAllocationParitySuite(
 			toDate: CIVIL_DATE_AFTER_MIDNIGHT,
 		});
 		expect(context.ok).toBe(true);
-		if (!context.ok) return;
+		if (!context.ok) {
+			return;
+		}
 
 		const beforeMidnight = resolveWorkCalendarCivilDay(
 			context.data,
@@ -444,7 +452,9 @@ function defineLegalMinuteAllocationParitySuite(
 			date: CIVIL_DATE_BEFORE_MIDNIGHT,
 		});
 		expect(firstDateWorking.ok).toBe(true);
-		if (!firstDateWorking.ok) return;
+		if (!firstDateWorking.ok) {
+			return;
+		}
 		expect(firstDateWorking.data).toBe(true);
 
 		const secondDateWorking = await production.isWorkingDay({
@@ -454,7 +464,9 @@ function defineLegalMinuteAllocationParitySuite(
 			date: CIVIL_DATE_AFTER_MIDNIGHT,
 		});
 		expect(secondDateWorking.ok).toBe(true);
-		if (!secondDateWorking.ok) return;
+		if (!secondDateWorking.ok) {
+			return;
+		}
 		expect(secondDateWorking.data).toBe(false);
 	});
 
@@ -482,7 +494,9 @@ function defineLegalMinuteAllocationParitySuite(
 			ready,
 		);
 		expect(timesheet.ok).toBe(true);
-		if (!timesheet.ok) return;
+		if (!timesheet.ok) {
+			return;
+		}
 
 		const lookup = createStoreWorkCalendarLookup({ store: ready.store });
 		const generated = await generateTimesheetEntries(
@@ -499,7 +513,9 @@ function defineLegalMinuteAllocationParitySuite(
 			},
 		);
 		expect(generated.ok).toBe(true);
-		if (!generated.ok) return;
+		if (!generated.ok) {
+			return;
+		}
 
 		const listed = await listTimesheetEntries(
 			{
@@ -511,7 +527,9 @@ function defineLegalMinuteAllocationParitySuite(
 			ready,
 		);
 		expect(listed.ok).toBe(true);
-		if (!listed.ok) return;
+		if (!listed.ok) {
+			return;
+		}
 
 		const attendanceEntries = listed.data
 			.filter((entry) => entry.sourceType === "attendance")

@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/useAwait: The deterministic memory adapter implements asynchronous payroll run ports.
 import { randomUUID } from "node:crypto";
 import type { Change } from "@afenda/audit";
 import { ok, type Result } from "@afenda/errors/result";
@@ -175,6 +176,7 @@ export function createMemoryRunsMethods(
 			return ok(cloneRun(run));
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors versioned transition validation and explicit rollback behavior.
 		async updateRunWithVersion(
 			input: PayrollRunUpdateInput,
 			ports: MutationPorts,
@@ -195,12 +197,10 @@ export function createMemoryRunsMethods(
 				return versionCheck;
 			}
 
-			if (latest.status === "finalized") {
-				if (input.status !== "reversed") {
-					return mapInvalidState(
-						"Finalized payroll runs cannot be updated except to reversed",
-					);
-				}
+			if (latest.status === "finalized" && input.status !== "reversed") {
+				return mapInvalidState(
+					"Finalized payroll runs cannot be updated except to reversed",
+				);
 			}
 			if (latest.status === "reversed") {
 				return mapInvalidState("Reversed payroll runs cannot be updated");
@@ -222,25 +222,25 @@ export function createMemoryRunsMethods(
 				...latest,
 				status: nextStatus,
 				calculationSnapshotHash:
-					input.calculationSnapshotHash !== undefined
-						? input.calculationSnapshotHash
-						: latest.calculationSnapshotHash,
+					input.calculationSnapshotHash === undefined
+						? latest.calculationSnapshotHash
+						: input.calculationSnapshotHash,
 				calculationVersion:
-					input.calculationVersion !== undefined
-						? input.calculationVersion
-						: latest.calculationVersion,
+					input.calculationVersion === undefined
+						? latest.calculationVersion
+						: input.calculationVersion,
 				roundingPolicyJson:
-					input.roundingPolicyJson !== undefined
-						? input.roundingPolicyJson
-						: latest.roundingPolicyJson,
+					input.roundingPolicyJson === undefined
+						? latest.roundingPolicyJson
+						: input.roundingPolicyJson,
 				finalizedAt:
-					input.finalizedAt !== undefined
-						? input.finalizedAt
-						: latest.finalizedAt,
+					input.finalizedAt === undefined
+						? latest.finalizedAt
+						: input.finalizedAt,
 				finalizedBy:
-					input.finalizedBy !== undefined
-						? input.finalizedBy
-						: latest.finalizedBy,
+					input.finalizedBy === undefined
+						? latest.finalizedBy
+						: input.finalizedBy,
 				version: latest.version + 1,
 				updatedBy: input.actorUserId,
 				updatedAt: now,

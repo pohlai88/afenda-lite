@@ -17,6 +17,7 @@ import {
 	type WarehouseExtensionRootReader,
 } from "../src/capabilities/extensions";
 import { isSameNullablePrimaryScope } from "../src/capabilities/extensions/primary-record-policy";
+import { resolveAsync } from "../src/resolve-async";
 import type { Item, MasterStatus, Party, Warehouse } from "../src/types";
 
 const now = new Date("2026-01-01T00:00:00.000Z");
@@ -83,8 +84,8 @@ function partyReader(
 	rows: Record<string, Party | null>,
 ): PartyExtensionRootReader {
 	return {
-		async getPartyById(_organizationId, id): Promise<Result<Party | null>> {
-			return ok(rows[id] ?? null);
+		getPartyById(_organizationId, id): Promise<Result<Party | null>> {
+			return resolveAsync(() => ok(rows[id] ?? null));
 		},
 	};
 }
@@ -128,8 +129,8 @@ describe("extension aggregate-root policies", () => {
 
 	it("propagates root reader failures", async () => {
 		const reader: ItemExtensionRootReader = {
-			async getItemById(): Promise<Result<Item | null>> {
-				return fail("INTERNAL", "Reader failed");
+			getItemById(): Promise<Result<Item | null>> {
+				return resolveAsync(() => fail("INTERNAL", "Reader failed"));
 			},
 		};
 
@@ -144,8 +145,8 @@ describe("extension aggregate-root policies", () => {
 
 	it("returns typed missing-parent and invalid-state failures", async () => {
 		const missingReader: WarehouseExtensionRootReader = {
-			async getWarehouseById(): Promise<Result<Warehouse | null>> {
-				return ok(null);
+			getWarehouseById(): Promise<Result<Warehouse | null>> {
+				return resolveAsync(() => ok(null));
 			},
 		};
 		await expect(
@@ -156,8 +157,8 @@ describe("extension aggregate-root policies", () => {
 		});
 
 		const retiredReader: ItemExtensionRootReader = {
-			async getItemById(): Promise<Result<Item | null>> {
-				return ok(item("retired"));
+			getItemById(): Promise<Result<Item | null>> {
+				return resolveAsync(() => ok(item("retired")));
 			},
 		};
 		await expect(
@@ -174,8 +175,8 @@ describe("extension aggregate-root policies", () => {
 
 	it("enforces operation-specific parent requirements", async () => {
 		const reader: ItemExtensionRootReader = {
-			async getItemById(): Promise<Result<Item | null>> {
-				return ok(item("draft"));
+			getItemById(): Promise<Result<Item | null>> {
+				return resolveAsync(() => ok(item("draft")));
 			},
 		};
 

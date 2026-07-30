@@ -4,21 +4,21 @@ import type {
 	AttendanceSessionResolveInput,
 } from "../../types";
 
-export type AttendanceBreakInterval = {
-	startedAt: Date;
+export interface AttendanceBreakInterval {
 	endedAt: Date;
-};
+	startedAt: Date;
+}
 
-export type ResolvedSessionMinutes = {
-	firstClockInAt: Date | null;
-	finalClockOutAt: Date | null;
-	breakMinutes: number;
-	workedMinutes: number;
-	grossMinutes: number;
+export interface ResolvedSessionMinutes {
 	breakIntervals: readonly AttendanceBreakInterval[];
-	resolutionStatus: AttendanceSession["resolutionStatus"];
+	breakMinutes: number;
+	finalClockOutAt: Date | null;
+	firstClockInAt: Date | null;
+	grossMinutes: number;
 	requiresReview: boolean;
-};
+	resolutionStatus: AttendanceSession["resolutionStatus"];
+	workedMinutes: number;
+}
 
 function serializeBreakIntervals(
 	intervals: readonly AttendanceBreakInterval[],
@@ -81,51 +81,34 @@ export function resolveSessionFromEvents(
 	const breakIntervals: AttendanceBreakInterval[] = [];
 
 	for (const event of active) {
-		switch (event.eventType) {
-			case "clock_in": {
-				if (firstClockInAt === null) {
-					firstClockInAt = event.occurredAt;
-				}
-				break;
+		if (event.eventType === "clock_in") {
+			firstClockInAt ??= event.occurredAt;
+		} else if (event.eventType === "clock_out") {
+			finalClockOutAt = event.occurredAt;
+		} else if (event.eventType === "break_start") {
+			if (openBreakAt !== null) {
+				missingPair = true;
 			}
-			case "clock_out": {
-				finalClockOutAt = event.occurredAt;
-				break;
+			openBreakAt = event.occurredAt;
+		} else if (event.eventType === "break_end") {
+			if (openBreakAt === null) {
+				missingPair = true;
+				continue;
 			}
-			case "break_start": {
-				if (openBreakAt !== null) {
-					missingPair = true;
-				}
-				openBreakAt = event.occurredAt;
-				break;
+			const intervalMinutes = Math.max(
+				0,
+				Math.round(
+					(event.occurredAt.getTime() - openBreakAt.getTime()) / 60_000,
+				),
+			);
+			breakMinutes += intervalMinutes;
+			if (intervalMinutes > 0) {
+				breakIntervals.push({
+					startedAt: openBreakAt,
+					endedAt: event.occurredAt,
+				});
 			}
-			case "break_end": {
-				if (openBreakAt === null) {
-					missingPair = true;
-					break;
-				}
-				const intervalMinutes = Math.max(
-					0,
-					Math.round(
-						(event.occurredAt.getTime() - openBreakAt.getTime()) / 60_000,
-					),
-				);
-				breakMinutes += intervalMinutes;
-				if (intervalMinutes > 0) {
-					breakIntervals.push({
-						startedAt: openBreakAt,
-						endedAt: event.occurredAt,
-					});
-				}
-				openBreakAt = null;
-				break;
-			}
-			case "manual_adjustment":
-				break;
-			default: {
-				const _exhaustive: never = event.eventType;
-				void _exhaustive;
-			}
+			openBreakAt = null;
 		}
 	}
 

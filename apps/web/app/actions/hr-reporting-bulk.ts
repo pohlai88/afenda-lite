@@ -99,23 +99,23 @@ const bulkRecoveryInputSchema = z
 	})
 	.strict();
 
-type BulkActionInput<Row> = {
+interface BulkActionInput<Row> {
 	batchId: string;
-	mode: "dry_run" | "commit";
+	expectedCheckpointVersion?: number | undefined;
 	idempotencyKey: string;
 	maxRowsPerRun?: number | undefined;
-	expectedCheckpointVersion?: number | undefined;
-	rows: Array<{ sourceReference: string; payload: Row }>;
-};
-
-type CompactBulkActionInput<Row> = {
-	batchId: string;
 	mode: "dry_run" | "commit";
+	rows: Array<{ sourceReference: string; payload: Row }>;
+}
+
+interface CompactBulkActionInput<Row> {
+	batchId: string;
+	expectedCheckpointVersion?: number;
 	idempotencyKey: string;
 	maxRowsPerRun?: number;
-	expectedCheckpointVersion?: number;
+	mode: "dry_run" | "commit";
 	rows: Array<{ sourceReference: string; payload: Row }>;
-};
+}
 
 type BulkWorkerRequest<
 	Row,
@@ -161,7 +161,7 @@ async function runBulkAction<
 		request: BulkWorkerRequest<Row, Entity>,
 	) => Promise<Result<BulkImportResult<BulkCommandOutput>>>;
 }): Promise<ActionResult<BulkActionResult>> {
-	return runOperatorPermissionAction<BulkActionResult>({
+	return await runOperatorPermissionAction<BulkActionResult>({
 		path: input.path,
 		permission: input.permission,
 		safeMessage: "Could not run the Human Resources bulk operation.",
@@ -223,7 +223,7 @@ async function runBulkAction<
 export async function buildHumanResourcesReportingSnapshotAction(
 	input: z.input<typeof reportingInputSchema>,
 ): Promise<ActionResult<{ snapshot: HumanResourcesReportingSnapshot }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "buildHumanResourcesReportingSnapshotAction",
 		permission: "human-resources.employee.read",
 		safeMessage: "Could not build the Human Resources reporting snapshot.",
@@ -334,7 +334,7 @@ export async function loadHumanResourcesBulkStatusAction(input: {
 		auditEvents: readonly BulkAuditEvent[];
 	}>
 > {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "loadHumanResourcesBulkStatusAction",
 		permission: "human-resources.privacy.export",
 		safeMessage: "Could not load the Human Resources bulk status.",
@@ -360,7 +360,7 @@ export async function loadHumanResourcesBulkStatusAction(input: {
 export async function loadHumanResourcesBulkErrorArtifactAction(input: {
 	idempotencyKey: string;
 }): Promise<ActionResult<{ artifact: BulkErrorArtifact | null }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "loadHumanResourcesBulkErrorArtifactAction",
 		permission: "human-resources.privacy.export",
 		safeMessage: "Could not load the Human Resources bulk error artifact.",

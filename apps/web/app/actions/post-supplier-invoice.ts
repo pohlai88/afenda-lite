@@ -14,7 +14,7 @@ export async function postSupplierInvoiceAction(
 	_prev: PostSupplierInvoiceActionState,
 	formData: FormData,
 ): Promise<PostSupplierInvoiceActionState> {
-	return runVersionedSupplierInvoiceMutation({
+	return await runVersionedSupplierInvoiceMutation({
 		path: "postSupplierInvoiceAction",
 		permission: "payables.manage",
 		safeMessage:

@@ -48,14 +48,14 @@ export const Overview: Story = {
 			<main className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-5 border-b pb-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
 					<div className="grid gap-2">
-						<p className="text-sm font-medium text-foreground-secondary">
+						<p className="font-medium text-foreground-secondary text-sm">
 							Supplier master data
 						</p>
 						<div className="grid gap-1">
-							<h1 className="text-2xl font-semibold tracking-tight">
+							<h1 className="font-semibold text-2xl tracking-tight">
 								Onboarding guidance
 							</h1>
-							<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+							<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 								Review supporting requirements while completing the supplier
 								record. Required fields and activation actions remain visible on
 								the primary work surface.
@@ -64,25 +64,25 @@ export const Overview: Story = {
 					</div>
 					<dl className="grid grid-cols-2 gap-x-8 gap-y-3 rounded-lg border bg-card p-4">
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Subject
 							</dt>
 							<dd className="text-sm">Northwind Trading Sdn. Bhd.</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Area
 							</dt>
 							<dd className="text-sm">Supplier activation</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Focus
 							</dt>
 							<dd className="text-sm">Evidence guidance</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								State
 							</dt>
 							<dd className="text-sm">Open review</dd>
@@ -100,7 +100,7 @@ export const Overview: Story = {
 
 					<CardContent>
 						<h2 className="sr-only">Supplier evidence topics</h2>
-						<Accordion type="single" defaultValue="bank-evidence" collapsible>
+						<Accordion collapsible defaultValue="bank-evidence" type="single">
 							<AccordionItem value="bank-evidence">
 								<AccordionTrigger>Bank evidence requirements</AccordionTrigger>
 
@@ -152,7 +152,7 @@ export const SemanticUsage: Story = {
 	render: () => (
 		<div className="grid w-full max-w-2xl gap-6">
 			<StorySection title="Optional supporting guidance">
-				<Accordion type="single" collapsible>
+				<Accordion collapsible type="single">
 					<AccordionItem value="remittance">
 						<AccordionTrigger>
 							When is remittance advice issued?
@@ -186,7 +186,7 @@ export const SemanticUsage: Story = {
 							remittance details stay on the page.
 						</CardDescription>
 					</CardHeader>
-					<CardContent className="text-sm leading-6 text-foreground-secondary">
+					<CardContent className="text-foreground-secondary text-sm leading-6">
 						Accordion can add optional context, but it must not hide the only
 						copy of required information or validation state.
 					</CardContent>
@@ -209,7 +209,7 @@ export const DisclosureModes: Story = {
 	render: () => (
 		<div className="grid w-full max-w-5xl gap-6 lg:grid-cols-2">
 			<StorySection title="Single: preferred default">
-				<Accordion type="single" defaultValue="name-matching" collapsible>
+				<Accordion collapsible defaultValue="name-matching" type="single">
 					<AccordionItem value="name-matching">
 						<AccordionTrigger>Supplier-name matching</AccordionTrigger>
 
@@ -232,8 +232,8 @@ export const DisclosureModes: Story = {
 
 			<StorySection title="Multiple: comparison exception">
 				<Accordion
-					type="multiple"
 					defaultValue={["standard-review", "enhanced-review"]}
+					type="multiple"
 				>
 					<AccordionItem value="standard-review">
 						<AccordionTrigger>Standard review</AccordionTrigger>
@@ -270,12 +270,12 @@ export const StatesAndAccessibility: Story = {
 	},
 	render: () => (
 		<div className="grid w-full max-w-xl gap-4">
-			<p className="text-sm leading-6 text-foreground-secondary">
+			<p className="text-foreground-secondary text-sm leading-6">
 				Use Tab to enter the Accordion, arrow keys to move between triggers, and
 				Enter or Space to expand or collapse a section.
 			</p>
 
-			<Accordion type="single" defaultValue="open-section" collapsible>
+			<Accordion collapsible defaultValue="open-section" type="single">
 				<AccordionItem value="open-section">
 					<AccordionTrigger>Open by default</AccordionTrigger>
 
@@ -294,7 +294,7 @@ export const StatesAndAccessibility: Story = {
 					</AccordionContent>
 				</AccordionItem>
 
-				<AccordionItem value="disabled-section" disabled>
+				<AccordionItem disabled value="disabled-section">
 					<AccordionTrigger>Unavailable guidance</AccordionTrigger>
 
 					<AccordionContent>
@@ -336,11 +336,11 @@ export const DashboardUsage: Story = {
 			</CardHeader>
 
 			<CardContent className="grid gap-4">
-				<p className="text-sm leading-6 text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm leading-6">
 					Thirty-two customer invoices are past their contractual due dates.
 				</p>
 
-				<Accordion type="single" collapsible>
+				<Accordion collapsible type="single">
 					<AccordionItem value="calculation">
 						<AccordionTrigger>
 							How is overdue value calculated?
@@ -387,7 +387,7 @@ export const Composition: Story = {
 				</CardHeader>
 
 				<CardContent>
-					<Accordion type="single" collapsible>
+					<Accordion collapsible type="single">
 						<AccordionItem value="posting-effects">
 							<AccordionTrigger>What changes after posting?</AccordionTrigger>
 
@@ -439,7 +439,7 @@ export const DoAndDoNot: Story = {
 	render: () => (
 		<div className="grid max-w-5xl gap-6 sm:grid-cols-2">
 			<StorySection title="Do: reveal optional explanation">
-				<Accordion type="single" collapsible>
+				<Accordion collapsible type="single">
 					<AccordionItem value="bank-purpose">
 						<AccordionTrigger>Why is bank evidence required?</AccordionTrigger>
 
@@ -452,14 +452,14 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do not: bury required work">
-				<p className="text-sm leading-6 text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm leading-6">
 					Legal name, tax registration, validation errors, acknowledgements, and
 					activation actions must remain directly visible.
 				</p>
 			</StorySection>
 
 			<StorySection title="Do: use descriptive triggers">
-				<Accordion type="single" collapsible>
+				<Accordion collapsible type="single">
 					<AccordionItem value="expired-document">
 						<AccordionTrigger>
 							How are expired documents handled?
@@ -473,14 +473,14 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do not: use vague labels">
-				<p className="text-sm leading-6 text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm leading-6">
 					Avoid labels such as “More”, “Details”, “Information”, or “Click
 					here”. The trigger must identify the content being disclosed.
 				</p>
 			</StorySection>
 
 			<StorySection title="Do: group peer topics">
-				<Accordion type="single" collapsible>
+				<Accordion collapsible type="single">
 					<AccordionItem value="payment-rules">
 						<AccordionTrigger>Payment evidence rules</AccordionTrigger>
 
@@ -493,28 +493,28 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do not: encode workflow status">
-				<p className="text-sm leading-6 text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm leading-6">
 					Open and closed states must never mean approved, rejected, posted,
 					authorized, completed, or pending.
 				</p>
 			</StorySection>
 
 			<StorySection title="Do: keep content concise">
-				<p className="text-sm leading-6 text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm leading-6">
 					Use short explanations, compact lists, or supporting references that
 					can be understood independently.
 				</p>
 			</StorySection>
 
 			<StorySection title="Do not: hide complex operations">
-				<p className="text-sm leading-6 text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm leading-6">
 					Do not place large tables, multi-step forms, nested Accordions,
 					primary actions, or complete workflows inside AccordionContent.
 				</p>
 			</StorySection>
 
 			<StorySection title="Do: preserve the primary record surface">
-				<p className="text-sm leading-6 text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm leading-6">
 					Keep the governing title, required fields, and action buttons outside
 					the disclosure so operators do not need to expand Accordion to finish
 					the task.
@@ -522,7 +522,7 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do not: turn Accordion into a status badge">
-				<p className="text-sm leading-6 text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm leading-6">
 					Open or closed state should not imply posted, approved, blocked, or
 					completed. Use the proper lifecycle component for status semantics.
 				</p>

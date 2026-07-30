@@ -1,3 +1,4 @@
+// biome-ignore-all lint/style/noNestedTernary: Fixture selection mirrors the three-state compliance contract.
 import {
 	calculateOfficerEligibilityAsOf,
 	canonicalDateSchema,
@@ -128,7 +129,9 @@ describe("CA-2.3 memory officer compliance store", () => {
 			expectedAppointmentVersion: 1,
 		});
 		expect(declaration.ok).toBe(true);
-		if (!declaration.ok) return;
+		if (!declaration.ok) {
+			return;
+		}
 
 		const crossTenant = await store.getOfficerDeclaration({
 			organizationId: otherOrganizationId,
@@ -182,7 +185,9 @@ describe("CA-2.3 memory officer compliance store", () => {
 			expectedAppointmentVersion: 1,
 		});
 		expect(conflict.ok).toBe(true);
-		if (!conflict.ok) return;
+		if (!conflict.ok) {
+			return;
+		}
 		const recused = await store.recordRecusal({
 			organizationId,
 			conflictDisclosureId: conflict.data.id,

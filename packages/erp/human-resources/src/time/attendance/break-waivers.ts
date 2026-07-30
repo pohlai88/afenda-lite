@@ -21,7 +21,7 @@ export async function approveAttendanceBreakWaiver(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceBreakWaiverDecision>> {
-	return runTimeCommand(input, options, {
+	return await runTimeCommand(input, options, {
 		schema: approveAttendanceBreakWaiverInputSchema,
 		invalidMessage: "Invalid attendance break waiver approval input",
 		command: HUMAN_RESOURCES_COMMAND_ATTENDANCE_BREAK_WAIVER_APPROVE,
@@ -30,11 +30,13 @@ export async function approveAttendanceBreakWaiver(
 				organizationId: data.organizationId,
 				sessionId: data.sessionId,
 			});
-			if (!session.ok) return session;
+			if (!session.ok) {
+				return session;
+			}
 			if (session.data === null) {
 				return notFound("Attendance session not found");
 			}
-			const automaticBreak = session.data.provenance.automaticBreak;
+			const { automaticBreak } = session.data.provenance;
 			if (automaticBreak === null || !automaticBreak.applied) {
 				return invalidState(
 					"Attendance session has no applied automatic break deduction",
@@ -44,7 +46,9 @@ export async function approveAttendanceBreakWaiver(
 				organizationId: data.organizationId,
 				policyId: automaticBreak.policyId,
 			});
-			if (!policy.ok) return policy;
+			if (!policy.ok) {
+				return policy;
+			}
 			if (policy.data === null) {
 				return invalidState("Automatic break policy was not found");
 			}
@@ -61,7 +65,9 @@ export async function approveAttendanceBreakWaiver(
 				authority: data.authority,
 				asOf: new Date().toISOString().slice(0, 10),
 			});
-			if (!authority.ok) return authority;
+			if (!authority.ok) {
+				return authority;
+			}
 			if (authority.data === null) {
 				return fail(
 					"FORBIDDEN",
@@ -92,7 +98,7 @@ export async function listAttendanceBreakWaiverDecisions(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceBreakWaiverDecision[]>> {
-	return runTimeQuery(input, options, {
+	return await runTimeQuery(input, options, {
 		schema: listAttendanceBreakWaiverDecisionsInputSchema,
 		invalidMessage: "Invalid attendance break waiver decision list input",
 		query: HUMAN_RESOURCES_QUERY_ATTENDANCE_BREAK_WAIVER_DECISION_LIST,

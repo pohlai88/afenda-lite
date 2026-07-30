@@ -1,3 +1,5 @@
+// biome-ignore-all lint/complexity/noExcessiveCognitiveComplexity: Status changes coordinate policy, CAS, idempotency, audit, and outbox atomically.
+// biome-ignore-all lint/style/useDestructuring: Explicit company state access keeps lifecycle evidence visible.
 import { fail, type Result } from "@afenda/errors/result";
 import type { z } from "zod";
 
@@ -220,7 +222,9 @@ async function changeLegalCompanyStatus(
 		config.inputSchema,
 		config.input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 
 	const authorized = await requireCorporateAdministrationPermission(
 		config.options.authorization,
@@ -231,7 +235,9 @@ async function changeLegalCompanyStatus(
 				CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS[config.permissionKey],
 		},
 	);
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 
 	const identity = createCorporateAdministrationCommandFingerprint({
 		schema: config.inputSchema,
@@ -239,7 +245,9 @@ async function changeLegalCompanyStatus(
 		commandId: config.commandId,
 		input: parsed.data,
 	});
-	if (!identity.ok) return identity;
+	if (!identity.ok) {
+		return identity;
+	}
 
 	if (legalCompanyStatusRequiresApproval(config.targetStatus)) {
 		const approved = await requireCorporateAdministrationApprovalIfConfigured(
@@ -252,7 +260,9 @@ async function changeLegalCompanyStatus(
 				commandFingerprint: identity.data.fingerprint,
 			},
 		);
-		if (!approved.ok) return approved;
+		if (!approved.ok) {
+			return approved;
+		}
 	}
 
 	const current = await config.dependencies.store.lockLegalCompany({
@@ -260,8 +270,12 @@ async function changeLegalCompanyStatus(
 		legalCompanyId: parsed.data.legalCompanyId,
 		expectedVersion: parsed.data.expectedCompanyVersion,
 	});
-	if (!current.ok) return current;
-	if (current.data === null) return legalCompanyNotFound();
+	if (!current.ok) {
+		return current;
+	}
+	if (current.data === null) {
+		return legalCompanyNotFound();
+	}
 	if (current.data.version !== parsed.data.expectedCompanyVersion) {
 		return staleCompanyVersion(
 			parsed.data.expectedCompanyVersion,
@@ -273,7 +287,9 @@ async function changeLegalCompanyStatus(
 		from: current.data.state,
 		to: config.targetStatus,
 	});
-	if (!transition.ok) return transition;
+	if (!transition.ok) {
+		return transition;
+	}
 
 	if (config.targetStatus === "active") {
 		const completeness = await getActivationCompleteness({
@@ -282,7 +298,9 @@ async function changeLegalCompanyStatus(
 			legalCompanyId: parsed.data.legalCompanyId,
 			asOf: parsed.data.effectiveFrom,
 		});
-		if (!completeness.ok) return completeness;
+		if (!completeness.ok) {
+			return completeness;
+		}
 		if (!completeness.data.complete) {
 			return fail(
 				"VALIDATION_ERROR",
@@ -301,7 +319,9 @@ async function changeLegalCompanyStatus(
 			sourceDocumentId: parsed.data.sourceDocumentId,
 		},
 	);
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	if (source.data === null || !source.data.active) {
 		return fail(
 			source.data === null ? "VALIDATION_ERROR" : "CONFLICT",
@@ -375,8 +395,12 @@ async function getActivationCompleteness(
 			legalCompanyId: input.legalCompanyId,
 			asOf: input.asOf,
 		});
-	if (!jurisdiction.ok) return jurisdiction;
-	if (jurisdiction.data === null) missing.push("jurisdictionProfile");
+	if (!jurisdiction.ok) {
+		return jurisdiction;
+	}
+	if (jurisdiction.data === null) {
+		missing.push("jurisdictionProfile");
+	}
 
 	const name = await input.dependencies.nameStore.findCompanyNameAsOf({
 		organizationId: input.organizationId,
@@ -385,8 +409,12 @@ async function getActivationCompleteness(
 		languageCode: "en",
 		asOf: input.asOf,
 	});
-	if (!name.ok) return name;
-	if (name.data === null) missing.push("legalName");
+	if (!name.ok) {
+		return name;
+	}
+	if (name.data === null) {
+		missing.push("legalName");
+	}
 
 	const legalForm =
 		await input.dependencies.legalFormStore.findCompanyLegalFormAsOf({
@@ -394,8 +422,12 @@ async function getActivationCompleteness(
 			legalCompanyId: input.legalCompanyId,
 			asOf: input.asOf,
 		});
-	if (!legalForm.ok) return legalForm;
-	if (legalForm.data === null) missing.push("legalForm");
+	if (!legalForm.ok) {
+		return legalForm;
+	}
+	if (legalForm.data === null) {
+		missing.push("legalForm");
+	}
 
 	const identifier =
 		await input.dependencies.identifierStore.findCompanyIdentifierAsOf({
@@ -404,8 +436,12 @@ async function getActivationCompleteness(
 			identifierType: "company_registration",
 			asOf: input.asOf,
 		});
-	if (!identifier.ok) return identifier;
-	if (identifier.data === null) missing.push("companyIdentifier");
+	if (!identifier.ok) {
+		return identifier;
+	}
+	if (identifier.data === null) {
+		missing.push("companyIdentifier");
+	}
 
 	const financialYear =
 		await input.dependencies.financialYearStore.findCompanyFinancialYearAsOf({
@@ -413,8 +449,12 @@ async function getActivationCompleteness(
 			legalCompanyId: input.legalCompanyId,
 			asOf: input.asOf,
 		});
-	if (!financialYear.ok) return financialYear;
-	if (financialYear.data === null) missing.push("financialYear");
+	if (!financialYear.ok) {
+		return financialYear;
+	}
+	if (financialYear.data === null) {
+		missing.push("financialYear");
+	}
 
 	const activities =
 		await input.dependencies.activityStore.listCompanyActivitiesAsOf({
@@ -422,8 +462,12 @@ async function getActivationCompleteness(
 			legalCompanyId: input.legalCompanyId,
 			asOf: input.asOf,
 		});
-	if (!activities.ok) return activities;
-	if (activities.data.length === 0) missing.push("registeredActivity");
+	if (!activities.ok) {
+		return activities;
+	}
+	if (activities.data.length === 0) {
+		missing.push("registeredActivity");
+	}
 
 	const registeredAddress =
 		await input.dependencies.establishmentStore.findRegisteredAddressAsOf({
@@ -433,8 +477,12 @@ async function getActivationCompleteness(
 			addressType: "registered_office",
 			asOf: input.asOf,
 		});
-	if (!registeredAddress.ok) return registeredAddress;
-	if (registeredAddress.data === null) missing.push("registeredAddress");
+	if (!registeredAddress.ok) {
+		return registeredAddress;
+	}
+	if (registeredAddress.data === null) {
+		missing.push("registeredAddress");
+	}
 
 	return { ok: true, data: { complete: missing.length === 0, missing } };
 }

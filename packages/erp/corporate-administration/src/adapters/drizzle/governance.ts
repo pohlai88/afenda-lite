@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/useAwait: Drizzle governance wrappers expose uniform asynchronous store contracts.
 import {
 	and,
 	asc,
@@ -153,8 +154,12 @@ class DrizzleCorporateAdministrationGovernanceStore implements GovernanceStore {
 		input: Parameters<GovernanceStore["amendGovernanceBody"]>[0],
 	) {
 		const current = await this.getGovernanceBody(input);
-		if (!current.ok) return current;
-		if (current.data === null) return notFound();
+		if (!current.ok) {
+			return current;
+		}
+		if (current.data === null) {
+			return notFound();
+		}
 		if (current.data.version !== input.expectedVersion) {
 			return stale(input.expectedVersion, current.data.version);
 		}
@@ -203,8 +208,12 @@ class DrizzleCorporateAdministrationGovernanceStore implements GovernanceStore {
 		input: Parameters<GovernanceStore["retireGovernanceBody"]>[0],
 	) {
 		const current = await this.getGovernanceBody(input);
-		if (!current.ok) return current;
-		if (current.data === null) return notFound();
+		if (!current.ok) {
+			return current;
+		}
+		if (current.data === null) {
+			return notFound();
+		}
 		if (current.data.version !== input.expectedVersion) {
 			return stale(input.expectedVersion, current.data.version);
 		}
@@ -290,7 +299,9 @@ class DrizzleCorporateAdministrationGovernanceStore implements GovernanceStore {
 		input: Parameters<GovernanceStore["listGovernanceMembershipsAsOf"]>[0],
 	) {
 		const listed = await this.listGovernanceMemberships(input);
-		if (!listed.ok) return listed;
+		if (!listed.ok) {
+			return listed;
+		}
 		return ok(
 			listed.data
 				.filter(
@@ -354,8 +365,12 @@ class DrizzleCorporateAdministrationGovernanceStore implements GovernanceStore {
 		input: Parameters<GovernanceStore["changeGovernanceMembership"]>[0],
 	) {
 		const current = await this.getGovernanceMembership(input);
-		if (!current.ok) return current;
-		if (current.data === null) return notFound();
+		if (!current.ok) {
+			return current;
+		}
+		if (current.data === null) {
+			return notFound();
+		}
 		if (current.data.version !== input.expectedVersion) {
 			return stale(input.expectedVersion, current.data.version);
 		}
@@ -412,8 +427,12 @@ class DrizzleCorporateAdministrationGovernanceStore implements GovernanceStore {
 		input: Parameters<GovernanceStore["endGovernanceMembership"]>[0],
 	) {
 		const current = await this.getGovernanceMembership(input);
-		if (!current.ok) return current;
-		if (current.data === null) return notFound();
+		if (!current.ok) {
+			return current;
+		}
+		if (current.data === null) {
+			return notFound();
+		}
 		if (current.data.version !== input.expectedVersion) {
 			return stale(input.expectedVersion, current.data.version);
 		}
@@ -466,7 +485,9 @@ class DrizzleCorporateAdministrationGovernanceStore implements GovernanceStore {
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}

@@ -10,16 +10,17 @@ import {
 	PAYROLL_CALCULATION_VERSION,
 } from "../shared/rounding-policy";
 
-export type TestPayrollRunCalculatorOptions = {
-	snapshotHash?: string;
+export interface TestPayrollRunCalculatorOptions {
 	exceptions?: PayrollRunCalculatorResult["exceptions"];
 	failWith?: Result<never>;
-};
+	snapshotHash?: string;
+}
 
 export function createTestPayrollRunCalculator(
 	options: TestPayrollRunCalculatorOptions = {},
 ): PayrollRunCalculatorPort {
 	return {
+		// biome-ignore lint/suspicious/useAwait: This deterministic test calculator implements the asynchronous calculator port contract.
 		async calculate(input, _ports: MutationPorts) {
 			if (options.failWith) {
 				return options.failWith;

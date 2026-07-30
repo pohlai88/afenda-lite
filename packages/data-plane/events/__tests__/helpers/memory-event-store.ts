@@ -21,6 +21,10 @@ function assertOk<T>(result: Result<T>): T {
 	return result.data;
 }
 
+function okAsync<T>(data: T): Promise<Result<T>> {
+	return Promise.resolve(ok(data));
+}
+
 export { assertOk };
 
 /** In-memory EventStore for Vitest only — not a production export. */
@@ -31,7 +35,7 @@ export class MemoryEventStore implements EventStore {
 		return [...this.entries];
 	}
 
-	async append(entry: DomainEventWriteInput): Promise<Result<DomainEvent>> {
+	append(entry: DomainEventWriteInput): Promise<Result<DomainEvent>> {
 		if (
 			entry.deduplicationKey !== undefined &&
 			entry.deduplicationKey !== null
@@ -43,7 +47,9 @@ export class MemoryEventStore implements EventStore {
 					row.type === entry.type &&
 					row.deduplicationKey === entry.deduplicationKey,
 			);
-			if (existing !== undefined) return ok({ ...existing });
+			if (existing !== undefined) {
+				return okAsync({ ...existing });
+			}
 		}
 		const created: DomainEvent = {
 			id: randomUUID(),
@@ -63,24 +69,22 @@ export class MemoryEventStore implements EventStore {
 			processedAt: null,
 		};
 		this.entries.push(created);
-		return ok(created);
+		return okAsync(created);
 	}
 
-	async query(
-		options: DomainEventQueryOptions,
-	): Promise<Result<DomainEvent[]>> {
+	query(options: DomainEventQueryOptions): Promise<Result<DomainEvent[]>> {
 		const filtered = this.filter(options).toSorted(
 			(a, b) => b.occurredAt.getTime() - a.occurredAt.getTime(),
 		);
 		const offset = (options.page - 1) * options.pageSize;
-		return ok(filtered.slice(offset, offset + options.pageSize));
+		return okAsync(filtered.slice(offset, offset + options.pageSize));
 	}
 
-	async count(options: DomainEventQueryOptions): Promise<Result<number>> {
-		return ok(this.filter(options).length);
+	count(options: DomainEventQueryOptions): Promise<Result<number>> {
+		return okAsync(this.filter(options).length);
 	}
 
-	async claimPending(
+	claimPending(
 		options: DomainEventClaimOptions,
 	): Promise<Result<DomainEvent[]>> {
 		const pending = this.entries
@@ -91,10 +95,12 @@ export class MemoryEventStore implements EventStore {
 						entry.organizationId === options.organizationId),
 			)
 			.toSorted((a, b) => a.occurredAt.getTime() - b.occurredAt.getTime());
-		return ok(pending.slice(0, options.limit).map((entry) => ({ ...entry })));
+		return okAsync(
+			pending.slice(0, options.limit).map((entry) => ({ ...entry })),
+		);
 	}
 
-	async markProcessed(
+	markProcessed(
 		input: DomainEventMarkProcessedInput,
 	): Promise<Result<DomainEvent | null>> {
 		const entry = this.entries.find(
@@ -102,15 +108,15 @@ export class MemoryEventStore implements EventStore {
 				row.id === input.id && row.organizationId === input.organizationId,
 		);
 		if (!entry) {
-			return ok(null);
+			return okAsync<DomainEvent | null>(null);
 		}
 		entry.status = "processed";
 		entry.processedAt = input.processedAt ?? new Date();
 		entry.lastError = null;
-		return ok({ ...entry });
+		return okAsync({ ...entry });
 	}
 
-	async markFailed(
+	markFailed(
 		input: DomainEventMarkFailedInput,
 	): Promise<Result<DomainEvent | null>> {
 		const entry = this.entries.find(
@@ -118,17 +124,15 @@ export class MemoryEventStore implements EventStore {
 				row.id === input.id && row.organizationId === input.organizationId,
 		);
 		if (!entry) {
-			return ok(null);
+			return okAsync<DomainEvent | null>(null);
 		}
 		entry.status = "failed";
 		entry.attempts += 1;
 		entry.lastError = input.lastError;
-		return ok({ ...entry });
+		return okAsync({ ...entry });
 	}
 
-	async requeue(
-		input: DomainEventRequeueInput,
-	): Promise<Result<DomainEvent | null>> {
+	requeue(input: DomainEventRequeueInput): Promise<Result<DomainEvent | null>> {
 		const entry = this.entries.find(
 			(row) =>
 				row.id === input.id &&
@@ -136,17 +140,15 @@ export class MemoryEventStore implements EventStore {
 				row.status === input.fromStatus,
 		);
 		if (!entry) {
-			return ok(null);
+			return okAsync<DomainEvent | null>(null);
 		}
 		entry.status = "pending";
 		entry.lastError = null;
 		entry.processedAt = null;
-		return ok({ ...entry });
+		return okAsync({ ...entry });
 	}
 
-	async purgeProcessed(
-		options: DomainEventPurgeOptions,
-	): Promise<Result<number>> {
+	purgeProcessed(options: DomainEventPurgeOptions): Promise<Result<number>> {
 		const before = this.entries.length;
 		const kept = this.entries.filter(
 			(entry) =>
@@ -158,7 +160,7 @@ export class MemoryEventStore implements EventStore {
 		);
 		this.entries.length = 0;
 		this.entries.push(...kept);
-		return ok(before - kept.length);
+		return okAsync(before - kept.length);
 	}
 
 	private filter(options: DomainEventQueryOptions): DomainEvent[] {

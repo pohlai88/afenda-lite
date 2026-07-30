@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noJsxPropsBind: The enabled React Compiler stabilizes JSX callback props.
 "use client";
 
 import { Code, DataTable, type DataTableColumn } from "@afenda/ui-system";
@@ -49,10 +50,10 @@ export function JournalsTable({ rows }: { rows: JournalTableRow[] }) {
 		<DataTable
 			columns={journalColumns}
 			data={rows}
-			getRowId={(row) => row.id}
-			emptyTitle="No journals yet"
-			emptyDescription="Open a period and create a draft journal to begin."
 			density="comfortable"
+			emptyDescription="Open a period and create a draft journal to begin."
+			emptyTitle="No journals yet"
+			getRowId={(row) => row.id}
 		/>
 	);
 }
@@ -62,10 +63,10 @@ export function TrialBalanceTable({ rows }: { rows: TrialBalanceTableRow[] }) {
 		<DataTable
 			columns={trialBalanceColumns}
 			data={rows}
-			getRowId={(row) => row.accountCode}
-			emptyTitle="No posted balances"
-			emptyDescription="Posted journal lines will appear in the trial balance."
 			density="comfortable"
+			emptyDescription="Posted journal lines will appear in the trial balance."
+			emptyTitle="No posted balances"
+			getRowId={(row) => row.accountCode}
 		/>
 	);
 }

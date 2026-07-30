@@ -67,9 +67,8 @@ describe("@afenda/events dispatcher", () => {
 		const dispatcher = createEventDispatcher({
 			store,
 			handlers: {
-				"identity.org_role.assigned": async () => {
-					throw new Error("handler boom");
-				},
+				"identity.org_role.assigned": () =>
+					Promise.reject(new Error("handler boom")),
 			},
 		});
 

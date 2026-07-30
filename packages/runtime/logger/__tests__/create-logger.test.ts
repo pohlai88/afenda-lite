@@ -95,7 +95,7 @@ describe("createEdgeLogger", () => {
 	});
 
 	it("merges child bindings into every line", () => {
-		const info = vi.spyOn(console, "info").mockImplementation(() => {});
+		const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
 
 		const log = createEdgeLogger({ service: "afenda-web" }).child({
 			correlationId: "55555555-5555-4555-8555-555555555555",

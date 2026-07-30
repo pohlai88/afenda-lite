@@ -1,10 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { HUMAN_RESOURCES_EMPLOYEE_REHIRED_EVENT } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
-
 import type { MemoryHumanResourcesStore } from "../src/adapters/memory/store";
 import { parseHumanResourcesAssignmentId } from "../src/brands";
-
 import {
 	createAssignment,
 	endAssignment,
@@ -73,6 +71,7 @@ import {
 } from "../src/time/calendar";
 import { TEST_ORGANIZATION_DIMENSION_KEYS } from "./helpers/command-options";
 import { createFailingOrganizationDimensionDirectory } from "./helpers/failing-organization-dimension-directory";
+import { helperAssert as assert } from "./helpers/helper-assert";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
@@ -112,7 +111,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(created.ok).toBe(true);
-			if (!created.ok) return;
+			if (!created.ok) {
+				return;
+			}
 
 			const updated = await updateEmployee(
 				{
@@ -168,7 +169,9 @@ describe("@afenda/human-resources core operations", () => {
 				harness(),
 			);
 			expect(created.ok).toBe(true);
-			if (!created.ok) return;
+			if (!created.ok) {
+				return;
+			}
 
 			const updated = await updateEmployee(
 				{
@@ -224,7 +227,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(created.ok).toBe(true);
-			if (!created.ok) return;
+			if (!created.ok) {
+				return;
+			}
 
 			const updated = await updateEmployee(
 				{
@@ -259,7 +264,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(created.ok).toBe(true);
-			if (!created.ok) return;
+			if (!created.ok) {
+				return;
+			}
 
 			const updated = await updateEmployee(
 				{
@@ -404,7 +411,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employee.ok).toBe(true);
-			if (!employee.ok) return;
+			if (!employee.ok) {
+				return;
+			}
 
 			const employment = await createEmployment(
 				{
@@ -459,7 +468,9 @@ describe("@afenda/human-resources core operations", () => {
 				harness(),
 			);
 			expect(employee.ok).toBe(true);
-			if (!employee.ok) return;
+			if (!employee.ok) {
+				return;
+			}
 
 			ready.authorization = createGrantingHumanResourcesAuthorization([]);
 			const employment = await createEmployment(
@@ -514,7 +525,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employee.ok).toBe(true);
-			if (!employee.ok) return;
+			if (!employee.ok) {
+				return;
+			}
 
 			const employment = await createEmployment(
 				{
@@ -550,7 +563,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employee.ok).toBe(true);
-			if (!employee.ok) return;
+			if (!employee.ok) {
+				return;
+			}
 
 			const first = await createEmployment(
 				{
@@ -598,7 +613,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employee.ok).toBe(true);
-			if (!employee.ok) return;
+			if (!employee.ok) {
+				return;
+			}
 
 			const employment = await createEmployment(
 				{
@@ -635,7 +652,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employee.ok).toBe(true);
-			if (!employee.ok) return;
+			if (!employee.ok) {
+				return;
+			}
 
 			const employment = await createEmployment(
 				{
@@ -649,7 +668,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employment.ok).toBe(true);
-			if (!employment.ok) return;
+			if (!employment.ok) {
+				return;
+			}
 
 			const amended = await amendEmployment(
 				{
@@ -683,7 +704,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employee.ok).toBe(true);
-			if (!employee.ok) return;
+			if (!employee.ok) {
+				return;
+			}
 
 			const employment = await createEmployment(
 				{
@@ -697,7 +720,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employment.ok).toBe(true);
-			if (!employment.ok) return;
+			if (!employment.ok) {
+				return;
+			}
 			expect(employment.data.status).toBe("active");
 
 			const notice = await amendEmployment(
@@ -712,7 +737,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(notice.ok).toBe(true);
-			if (!notice.ok) return;
+			if (!notice.ok) {
+				return;
+			}
 			expect(notice.data.status).toBe("notice");
 
 			const terminated = await amendEmployment(
@@ -760,7 +787,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employee.ok).toBe(true);
-			if (!employee.ok) return;
+			if (!employee.ok) {
+				return;
+			}
 
 			const employment = await createEmployment(
 				{
@@ -774,7 +803,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employment.ok).toBe(true);
-			if (!employment.ok) return;
+			if (!employment.ok) {
+				return;
+			}
 
 			const terminated = await amendEmployment(
 				{
@@ -788,7 +819,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(terminated.ok).toBe(true);
-			if (!terminated.ok) return;
+			if (!terminated.ok) {
+				return;
+			}
 
 			const reactivate = await amendEmployment(
 				{
@@ -823,7 +856,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employee.ok).toBe(true);
-			if (!employee.ok) return;
+			if (!employee.ok) {
+				return;
+			}
 
 			const employment = await createEmployment(
 				{
@@ -837,7 +872,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employment.ok).toBe(true);
-			if (!employment.ok) return;
+			if (!employment.ok) {
+				return;
+			}
 
 			const amended = await amendEmployment(
 				{
@@ -864,7 +901,7 @@ describe("@afenda/human-resources core operations", () => {
 			ready: ReturnType<typeof harness>,
 			suffix: string,
 		) {
-			return createEmployee(
+			return await createEmployee(
 				{
 					organizationId: ORG_A,
 					actorUserId: ACTOR,
@@ -881,7 +918,9 @@ describe("@afenda/human-resources core operations", () => {
 			const ready = harness();
 			const employee = await seedEmployee(ready, "hire");
 			expect(employee.ok).toBe(true);
-			if (!employee.ok) return;
+			if (!employee.ok) {
+				return;
+			}
 
 			const hired = await hireEmployment(
 				{
@@ -904,7 +943,9 @@ describe("@afenda/human-resources core operations", () => {
 			const ready = harness();
 			const employee = await seedEmployee(ready, "block-rehire");
 			expect(employee.ok).toBe(true);
-			if (!employee.ok) return;
+			if (!employee.ok) {
+				return;
+			}
 
 			const first = await createEmployment(
 				{
@@ -918,7 +959,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(first.ok).toBe(true);
-			if (!first.ok) return;
+			if (!first.ok) {
+				return;
+			}
 
 			const blocked = await rehireEmployment(
 				{
@@ -943,7 +986,9 @@ describe("@afenda/human-resources core operations", () => {
 			const ready = harness();
 			const employee = await seedEmployee(ready, "rehire");
 			expect(employee.ok).toBe(true);
-			if (!employee.ok) return;
+			if (!employee.ok) {
+				return;
+			}
 
 			const first = await createEmployment(
 				{
@@ -957,7 +1002,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(first.ok).toBe(true);
-			if (!first.ok) return;
+			if (!first.ok) {
+				return;
+			}
 
 			const terminated = await terminateEmployment(
 				{
@@ -970,7 +1017,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(terminated.ok).toBe(true);
-			if (!terminated.ok) return;
+			if (!terminated.ok) {
+				return;
+			}
 
 			const priorHistory = await listEmploymentStatusHistory(
 				{
@@ -982,7 +1031,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(priorHistory.ok).toBe(true);
-			if (!priorHistory.ok) return;
+			if (!priorHistory.ok) {
+				return;
+			}
 			expect(priorHistory.data.history.length).toBeGreaterThan(0);
 
 			const rehired = await rehireEmployment(
@@ -997,7 +1048,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(rehired.ok).toBe(true);
-			if (!rehired.ok) return;
+			if (!rehired.ok) {
+				return;
+			}
 			expect(rehired.data.id).not.toBe(first.data.id);
 			expect(rehired.data.status).toBe("active");
 		});
@@ -1006,7 +1059,9 @@ describe("@afenda/human-resources core operations", () => {
 			const ready = harness();
 			const employee = await seedEmployee(ready, "suspend");
 			expect(employee.ok).toBe(true);
-			if (!employee.ok) return;
+			if (!employee.ok) {
+				return;
+			}
 
 			const employment = await createEmployment(
 				{
@@ -1020,7 +1075,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employment.ok).toBe(true);
-			if (!employment.ok) return;
+			if (!employment.ok) {
+				return;
+			}
 
 			const suspended = await suspendEmployment(
 				{
@@ -1034,7 +1091,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(suspended.ok).toBe(true);
-			if (!suspended.ok) return;
+			if (!suspended.ok) {
+				return;
+			}
 			expect(suspended.data.status).toBe("notice");
 
 			const reactivated = await reactivateEmployment(
@@ -1073,7 +1132,9 @@ describe("@afenda/human-resources core operations", () => {
 			const ready = harness();
 			const employee = await seedEmployee(ready, "terminate");
 			expect(employee.ok).toBe(true);
-			if (!employee.ok) return;
+			if (!employee.ok) {
+				return;
+			}
 
 			const employment = await createEmployment(
 				{
@@ -1087,7 +1148,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employment.ok).toBe(true);
-			if (!employment.ok) return;
+			if (!employment.ok) {
+				return;
+			}
 
 			const terminated = await terminateEmployment(
 				{
@@ -1122,7 +1185,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employee.ok).toBe(true);
-			if (!employee.ok) return;
+			if (!employee.ok) {
+				return;
+			}
 
 			const employment = await createEmployment(
 				{
@@ -1136,7 +1201,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employment.ok).toBe(true);
-			if (!employment.ok) return;
+			if (!employment.ok) {
+				return;
+			}
 			expect(employment.data.status).toBe("active");
 
 			const beforeStart = await getEmploymentAsOf(
@@ -1184,7 +1251,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employee.ok).toBe(true);
-			if (!employee.ok) return;
+			if (!employee.ok) {
+				return;
+			}
 
 			const employment = await createEmployment(
 				{
@@ -1198,7 +1267,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employment.ok).toBe(true);
-			if (!employment.ok) return;
+			if (!employment.ok) {
+				return;
+			}
 
 			const terminated = await amendEmployment(
 				{
@@ -1213,7 +1284,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(terminated.ok).toBe(true);
-			if (!terminated.ok) return;
+			if (!terminated.ok) {
+				return;
+			}
 
 			const history = await listEmploymentStatusHistory(
 				{
@@ -1225,7 +1298,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(history.ok).toBe(true);
-			if (!history.ok) return;
+			if (!history.ok) {
+				return;
+			}
 			expect(
 				history.data.history.some(
 					(row) => row.changeKind === "create" && row.toStatus === "active",
@@ -1255,7 +1330,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employee.ok).toBe(true);
-			if (!employee.ok) return;
+			if (!employee.ok) {
+				return;
+			}
 
 			const first = await createEmployment(
 				{
@@ -1269,7 +1346,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(first.ok).toBe(true);
-			if (!first.ok) return;
+			if (!first.ok) {
+				return;
+			}
 
 			const terminated = await amendEmployment(
 				{
@@ -1284,7 +1363,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(terminated.ok).toBe(true);
-			if (!terminated.ok) return;
+			if (!terminated.ok) {
+				return;
+			}
 
 			ready.ports.outbox.calls.length = 0;
 
@@ -1300,7 +1381,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(rehire.ok).toBe(true);
-			if (!rehire.ok) return;
+			if (!rehire.ok) {
+				return;
+			}
 			expect(rehire.data.id).not.toBe(first.data.id);
 			expect(
 				ready.ports.outbox.calls.some(
@@ -1323,7 +1406,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employee.ok).toBe(true);
-			if (!employee.ok) return;
+			if (!employee.ok) {
+				return;
+			}
 
 			const closed = await createEmployment(
 				{
@@ -1337,7 +1422,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(closed.ok).toBe(true);
-			if (!closed.ok) return;
+			if (!closed.ok) {
+				return;
+			}
 
 			const overlappingCreate = await createEmployment(
 				{
@@ -1370,7 +1457,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(terminated.ok).toBe(true);
-			if (!terminated.ok) return;
+			if (!terminated.ok) {
+				return;
+			}
 
 			const second = await createEmployment(
 				{
@@ -1384,7 +1473,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(second.ok).toBe(true);
-			if (!second.ok) return;
+			if (!second.ok) {
+				return;
+			}
 
 			const overlappingCorrect = await correctEmployment(
 				{
@@ -1420,7 +1511,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employee.ok).toBe(true);
-			if (!employee.ok) return;
+			if (!employee.ok) {
+				return;
+			}
 
 			const employment = await createEmployment(
 				{
@@ -1434,7 +1527,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employment.ok).toBe(true);
-			if (!employment.ok) return;
+			if (!employment.ok) {
+				return;
+			}
 
 			const terminated = await amendEmployment(
 				{
@@ -1449,7 +1544,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(terminated.ok).toBe(true);
-			if (!terminated.ok) return;
+			if (!terminated.ok) {
+				return;
+			}
 
 			const reopen = await correctEmployment(
 				{
@@ -1485,7 +1582,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employee.ok).toBe(true);
-			if (!employee.ok) return;
+			if (!employee.ok) {
+				return;
+			}
 
 			const employment = await createEmployment(
 				{
@@ -1499,7 +1598,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employment.ok).toBe(true);
-			if (!employment.ok) return;
+			if (!employment.ok) {
+				return;
+			}
 
 			const corrected = await correctEmployment(
 				{
@@ -1515,7 +1616,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(corrected.ok).toBe(true);
-			if (!corrected.ok) return;
+			if (!corrected.ok) {
+				return;
+			}
 			expect(corrected.data.startsOn).toBe("2024-12-15");
 
 			const history = await listEmploymentStatusHistory(
@@ -1528,7 +1631,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(history.ok).toBe(true);
-			if (!history.ok) return;
+			if (!history.ok) {
+				return;
+			}
 			const correction = history.data.history.find(
 				(row) => row.changeKind === "correction",
 			);
@@ -1551,7 +1656,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employee.ok).toBe(true);
-			if (!employee.ok) return;
+			if (!employee.ok) {
+				return;
+			}
 
 			const employment = await createEmployment(
 				{
@@ -1565,7 +1672,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employment.ok).toBe(true);
-			if (!employment.ok) return;
+			if (!employment.ok) {
+				return;
+			}
 
 			const notice = await amendEmployment(
 				{
@@ -1580,7 +1689,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(notice.ok).toBe(true);
-			if (!notice.ok) return;
+			if (!notice.ok) {
+				return;
+			}
 
 			const terminated = await amendEmployment(
 				{
@@ -1596,7 +1707,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(terminated.ok).toBe(true);
-			if (!terminated.ok) return;
+			if (!terminated.ok) {
+				return;
+			}
 
 			const history = await listEmploymentStatusHistory(
 				{
@@ -1609,7 +1722,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(history.ok).toBe(true);
-			if (!history.ok) return;
+			if (!history.ok) {
+				return;
+			}
 			expect(history.data.statusAsOf).toEqual({
 				status: "notice",
 				startsOn: "2025-01-01",
@@ -1634,7 +1749,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employee.ok).toBe(true);
-			if (!employee.ok) return;
+			if (!employee.ok) {
+				return;
+			}
 
 			const employment = await createEmployment(
 				{
@@ -1648,7 +1765,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employment.ok).toBe(true);
-			if (!employment.ok) return;
+			if (!employment.ok) {
+				return;
+			}
 
 			const contract = await createEmploymentContract(
 				{
@@ -1683,7 +1802,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employee.ok).toBe(true);
-			if (!employee.ok) return;
+			if (!employee.ok) {
+				return;
+			}
 
 			const employment = await createEmployment(
 				{
@@ -1697,7 +1818,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employment.ok).toBe(true);
-			if (!employment.ok) return;
+			if (!employment.ok) {
+				return;
+			}
 
 			const first = await createEmploymentContract(
 				{
@@ -1749,7 +1872,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employee.ok).toBe(true);
-			if (!employee.ok) return;
+			if (!employee.ok) {
+				return;
+			}
 
 			const employment = await createEmployment(
 				{
@@ -1763,7 +1888,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employment.ok).toBe(true);
-			if (!employment.ok) return;
+			if (!employment.ok) {
+				return;
+			}
 
 			const contract = await createEmploymentContract(
 				{
@@ -1804,8 +1931,10 @@ describe("@afenda/human-resources core operations", () => {
 				},
 				ready,
 			);
-			expect(employee.ok).toBe(true);
-			if (!employee.ok) return null;
+			assert.strictEqual(employee.ok, true);
+			if (!employee.ok) {
+				return null;
+			}
 			const employment = await createEmployment(
 				{
 					organizationId: ORG_A,
@@ -1817,15 +1946,19 @@ describe("@afenda/human-resources core operations", () => {
 				},
 				ready,
 			);
-			expect(employment.ok).toBe(true);
-			if (!employment.ok) return null;
+			assert.strictEqual(employment.ok, true);
+			if (!employment.ok) {
+				return null;
+			}
 			return { employee: employee.data, employment: employment.data };
 		}
 
 		it("resolves future contract as-of before start as null", async () => {
 			const ready = harness();
 			const seeded = await seedEmployment(ready);
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 			const created = await createEmploymentContract(
 				{
 					organizationId: ORG_A,
@@ -1840,7 +1973,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(created.ok).toBe(true);
-			if (!created.ok) return;
+			if (!created.ok) {
+				return;
+			}
 
 			const beforeStart = await getEmploymentContractAsOf(
 				{
@@ -1861,7 +1996,9 @@ describe("@afenda/human-resources core operations", () => {
 		it("corrects contract with reason and source reference", async () => {
 			const ready = harness();
 			const seeded = await seedEmployment(ready);
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 			const created = await createEmploymentContract(
 				{
 					organizationId: ORG_A,
@@ -1876,7 +2013,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(created.ok).toBe(true);
-			if (!created.ok) return;
+			if (!created.ok) {
+				return;
+			}
 
 			const corrected = await correctEmploymentContract(
 				{
@@ -1903,7 +2042,9 @@ describe("@afenda/human-resources core operations", () => {
 		it("supersedes contract preserving predecessor lineage", async () => {
 			const ready = harness();
 			const seeded = await seedEmployment(ready);
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 			const created = await createEmploymentContract(
 				{
 					organizationId: ORG_A,
@@ -1918,7 +2059,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(created.ok).toBe(true);
-			if (!created.ok) return;
+			if (!created.ok) {
+				return;
+			}
 
 			const superseded = await supersedeEmploymentContract(
 				{
@@ -1935,7 +2078,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(superseded.ok).toBe(true);
-			if (!superseded.ok) return;
+			if (!superseded.ok) {
+				return;
+			}
 			expect(superseded.data.superseded.lineageStatus).toBe("superseded");
 			expect(superseded.data.superseded.endsOn).toBe("2026-06-30");
 			expect(superseded.data.superseded.supersededByContractId).toBe(
@@ -1950,7 +2095,9 @@ describe("@afenda/human-resources core operations", () => {
 		it("rejects overlapping active contracts", async () => {
 			const ready = harness();
 			const seeded = await seedEmployment(ready);
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 			const first = await createEmploymentContract(
 				{
 					organizationId: ORG_A,
@@ -1965,7 +2112,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(first.ok).toBe(true);
-			if (!first.ok) return;
+			if (!first.ok) {
+				return;
+			}
 
 			const overlap = await createEmploymentContract(
 				{
@@ -1991,7 +2140,9 @@ describe("@afenda/human-resources core operations", () => {
 		it("allows sequential non-overlapping contracts", async () => {
 			const ready = harness();
 			const seeded = await seedEmployment(ready);
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 			const first = await createEmploymentContract(
 				{
 					organizationId: ORG_A,
@@ -2006,7 +2157,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(first.ok).toBe(true);
-			if (!first.ok) return;
+			if (!first.ok) {
+				return;
+			}
 
 			const second = await createEmploymentContract(
 				{
@@ -2027,7 +2180,9 @@ describe("@afenda/human-resources core operations", () => {
 		it("rejects contract outside employment tenure", async () => {
 			const ready = harness();
 			const seeded = await seedEmployment(ready, "2026-01-01", "2026-06-30");
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 			const outside = await createEmploymentContract(
 				{
 					organizationId: ORG_A,
@@ -2052,7 +2207,9 @@ describe("@afenda/human-resources core operations", () => {
 		it("resolves contract as-of on boundary dates", async () => {
 			const ready = harness();
 			const seeded = await seedEmployment(ready);
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 			const created = await createEmploymentContract(
 				{
 					organizationId: ORG_A,
@@ -2067,7 +2224,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(created.ok).toBe(true);
-			if (!created.ok) return;
+			if (!created.ok) {
+				return;
+			}
 
 			const atStart = await getEmploymentContractAsOf(
 				{
@@ -2103,7 +2262,9 @@ describe("@afenda/human-resources core operations", () => {
 		it("rejects correct without required source reference", async () => {
 			const ready = harness();
 			const seeded = await seedEmployment(ready);
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 			const created = await createEmploymentContract(
 				{
 					organizationId: ORG_A,
@@ -2118,7 +2279,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(created.ok).toBe(true);
-			if (!created.ok) return;
+			if (!created.ok) {
+				return;
+			}
 
 			const corrected = await correctEmploymentContract(
 				{
@@ -2138,7 +2301,9 @@ describe("@afenda/human-resources core operations", () => {
 		it("rejects overlapping correct on active contract", async () => {
 			const ready = harness();
 			const seeded = await seedEmployment(ready);
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 			const first = await createEmploymentContract(
 				{
 					organizationId: ORG_A,
@@ -2153,7 +2318,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(first.ok).toBe(true);
-			if (!first.ok) return;
+			if (!first.ok) {
+				return;
+			}
 
 			const second = await createEmploymentContract(
 				{
@@ -2169,7 +2336,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(second.ok).toBe(true);
-			if (!second.ok) return;
+			if (!second.ok) {
+				return;
+			}
 
 			const overlappingCorrect = await correctEmploymentContract(
 				{
@@ -2206,8 +2375,10 @@ describe("@afenda/human-resources core operations", () => {
 				},
 				ready,
 			);
-			expect(employee.ok).toBe(true);
-			if (!employee.ok) return null;
+			assert.strictEqual(employee.ok, true);
+			if (!employee.ok) {
+				return null;
+			}
 			const employment = await createEmployment(
 				{
 					organizationId: ORG_A,
@@ -2219,15 +2390,19 @@ describe("@afenda/human-resources core operations", () => {
 				},
 				ready,
 			);
-			expect(employment.ok).toBe(true);
-			if (!employment.ok) return null;
+			assert.strictEqual(employment.ok, true);
+			if (!employment.ok) {
+				return null;
+			}
 			return { employee: employee.data, employment: employment.data };
 		}
 
 		it("amends contract via amendEmploymentContract alias", async () => {
 			const ready = harness();
 			const seeded = await seedEmployment(ready);
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 			const created = await createEmploymentContract(
 				{
 					organizationId: ORG_A,
@@ -2242,7 +2417,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(created.ok).toBe(true);
-			if (!created.ok) return;
+			if (!created.ok) {
+				return;
+			}
 
 			const amended = await amendEmploymentContract(
 				{
@@ -2267,7 +2444,9 @@ describe("@afenda/human-resources core operations", () => {
 		it("renews contract via renewEmploymentContract alias (supersede)", async () => {
 			const ready = harness();
 			const seeded = await seedEmployment(ready);
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 			const created = await createEmploymentContract(
 				{
 					organizationId: ORG_A,
@@ -2282,7 +2461,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(created.ok).toBe(true);
-			if (!created.ok) return;
+			if (!created.ok) {
+				return;
+			}
 
 			const renewed = await renewEmploymentContract(
 				{
@@ -2299,7 +2480,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(renewed.ok).toBe(true);
-			if (!renewed.ok) return;
+			if (!renewed.ok) {
+				return;
+			}
 			expect(renewed.data.superseded.lineageStatus).toBe("superseded");
 			expect(renewed.data.successor.lineageStatus).toBe("active");
 			expect(renewed.data.successor.supersedesContractId).toBe(
@@ -2310,7 +2493,9 @@ describe("@afenda/human-resources core operations", () => {
 		it("ends contract non-destructively with endsOn", async () => {
 			const ready = harness();
 			const seeded = await seedEmployment(ready);
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 			const created = await createEmploymentContract(
 				{
 					organizationId: ORG_A,
@@ -2325,7 +2510,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(created.ok).toBe(true);
-			if (!created.ok) return;
+			if (!created.ok) {
+				return;
+			}
 
 			const ended = await endEmploymentContract(
 				{
@@ -2341,7 +2528,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(ended.ok).toBe(true);
-			if (!ended.ok) return;
+			if (!ended.ok) {
+				return;
+			}
 			expect(ended.data.endsOn).toBe("2026-06-30");
 			expect(ended.data.lineageStatus).toBe("active");
 			expect(ended.data.version).toBe(2);
@@ -2380,7 +2569,9 @@ describe("@afenda/human-resources core operations", () => {
 		it("rejects end on superseded contract", async () => {
 			const ready = harness();
 			const seeded = await seedEmployment(ready);
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 			const created = await createEmploymentContract(
 				{
 					organizationId: ORG_A,
@@ -2395,7 +2586,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(created.ok).toBe(true);
-			if (!created.ok) return;
+			if (!created.ok) {
+				return;
+			}
 
 			const superseded = await supersedeEmploymentContract(
 				{
@@ -2412,7 +2605,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(superseded.ok).toBe(true);
-			if (!superseded.ok) return;
+			if (!superseded.ok) {
+				return;
+			}
 
 			const endAttempt = await endEmploymentContract(
 				{
@@ -2438,7 +2633,9 @@ describe("@afenda/human-resources core operations", () => {
 		it("rejects stale expectedVersion on end", async () => {
 			const ready = harness();
 			const seeded = await seedEmployment(ready);
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 			const created = await createEmploymentContract(
 				{
 					organizationId: ORG_A,
@@ -2453,7 +2650,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(created.ok).toBe(true);
-			if (!created.ok) return;
+			if (!created.ok) {
+				return;
+			}
 
 			const stale = await endEmploymentContract(
 				{
@@ -2479,7 +2678,9 @@ describe("@afenda/human-resources core operations", () => {
 		it("rejects stale expectedVersion on correct", async () => {
 			const ready = harness();
 			const seeded = await seedEmployment(ready);
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 			const created = await createEmploymentContract(
 				{
 					organizationId: ORG_A,
@@ -2494,7 +2695,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(created.ok).toBe(true);
-			if (!created.ok) return;
+			if (!created.ok) {
+				return;
+			}
 
 			const stale = await correctEmploymentContract(
 				{
@@ -2519,7 +2722,9 @@ describe("@afenda/human-resources core operations", () => {
 		it("resolves current contract via getCurrentEmploymentContract", async () => {
 			const ready = harness();
 			const seeded = await seedEmployment(ready);
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 			const created = await createEmploymentContract(
 				{
 					organizationId: ORG_A,
@@ -2534,7 +2739,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(created.ok).toBe(true);
-			if (!created.ok) return;
+			if (!created.ok) {
+				return;
+			}
 
 			const [current, asOf] = await Promise.all([
 				getCurrentEmploymentContract(
@@ -2569,7 +2776,9 @@ describe("@afenda/human-resources core operations", () => {
 		it("lists employment contract lineage history", async () => {
 			const ready = harness();
 			const seeded = await seedEmployment(ready);
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 			const created = await createEmploymentContract(
 				{
 					organizationId: ORG_A,
@@ -2584,7 +2793,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(created.ok).toBe(true);
-			if (!created.ok) return;
+			if (!created.ok) {
+				return;
+			}
 
 			const renewed = await renewEmploymentContract(
 				{
@@ -2601,7 +2812,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(renewed.ok).toBe(true);
-			if (!renewed.ok) return;
+			if (!renewed.ok) {
+				return;
+			}
 
 			const listed = await listEmploymentContracts(
 				{
@@ -2625,7 +2838,9 @@ describe("@afenda/human-resources core operations", () => {
 		it("rejects stale expectedVersion on supersede", async () => {
 			const ready = harness();
 			const seeded = await seedEmployment(ready);
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 			const created = await createEmploymentContract(
 				{
 					organizationId: ORG_A,
@@ -2640,7 +2855,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(created.ok).toBe(true);
-			if (!created.ok) return;
+			if (!created.ok) {
+				return;
+			}
 
 			const stale = await supersedeEmploymentContract(
 				{
@@ -2667,7 +2884,9 @@ describe("@afenda/human-resources core operations", () => {
 		it("loads contract by id via getEmploymentContract", async () => {
 			const ready = harness();
 			const seeded = await seedEmployment(ready);
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 			const created = await createEmploymentContract(
 				{
 					organizationId: ORG_A,
@@ -2682,7 +2901,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(created.ok).toBe(true);
-			if (!created.ok) return;
+			if (!created.ok) {
+				return;
+			}
 
 			const loaded = await getEmploymentContract(
 				{
@@ -2722,8 +2943,10 @@ describe("@afenda/human-resources core operations", () => {
 				},
 				ready,
 			);
-			expect(employee.ok).toBe(true);
-			if (!employee.ok) return null;
+			assert.strictEqual(employee.ok, true);
+			if (!employee.ok) {
+				return null;
+			}
 
 			const manager = await createEmployee(
 				{
@@ -2736,8 +2959,10 @@ describe("@afenda/human-resources core operations", () => {
 				},
 				ready,
 			);
-			expect(manager.ok).toBe(true);
-			if (!manager.ok) return null;
+			assert.strictEqual(manager.ok, true);
+			if (!manager.ok) {
+				return null;
+			}
 
 			const employment = await createEmployment(
 				{
@@ -2750,15 +2975,18 @@ describe("@afenda/human-resources core operations", () => {
 				},
 				ready,
 			);
-			expect(employment.ok).toBe(true);
-			if (!employment.ok) return null;
+			assert.strictEqual(employment.ok, true);
+			if (!employment.ok) {
+				return null;
+			}
 
 			const seeded = await seedDepartmentAndJob(ready, {
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
 			});
-			expect(seeded).not.toBeNull();
-			if (!seeded) return null;
+			if (!seeded) {
+				return null;
+			}
 
 			const position = await createPosition(
 				{
@@ -2772,8 +3000,10 @@ describe("@afenda/human-resources core operations", () => {
 				},
 				ready,
 			);
-			expect(position.ok).toBe(true);
-			if (!position.ok) return null;
+			assert.strictEqual(position.ok, true);
+			if (!position.ok) {
+				return null;
+			}
 
 			const positionB = await createPosition(
 				{
@@ -2787,8 +3017,10 @@ describe("@afenda/human-resources core operations", () => {
 				},
 				ready,
 			);
-			expect(positionB.ok).toBe(true);
-			if (!positionB.ok) return null;
+			assert.strictEqual(positionB.ok, true);
+			if (!positionB.ok) {
+				return null;
+			}
 
 			return {
 				employee: employee.data,
@@ -2802,7 +3034,9 @@ describe("@afenda/human-resources core operations", () => {
 		it("resolves future assignment as-of before start as null", async () => {
 			const ready = harness();
 			const seeded = await seedAssignmentEmployment(ready);
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 
 			const first = await createAssignment(
 				{
@@ -2818,7 +3052,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(first.ok).toBe(true);
-			if (!first.ok) return;
+			if (!first.ok) {
+				return;
+			}
 
 			const future = await createAssignment(
 				{
@@ -2834,7 +3070,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(future.ok).toBe(true);
-			if (!future.ok) return;
+			if (!future.ok) {
+				return;
+			}
 
 			const beforeStart = await getAssignmentAsOf(
 				{
@@ -2870,7 +3108,9 @@ describe("@afenda/human-resources core operations", () => {
 		it("honors inclusive assignment as-of boundaries", async () => {
 			const ready = harness();
 			const seeded = await seedAssignmentEmployment(ready);
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 
 			const bounded = await createAssignment(
 				{
@@ -2886,7 +3126,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(bounded.ok).toBe(true);
-			if (!bounded.ok) return;
+			if (!bounded.ok) {
+				return;
+			}
 
 			const atStart = await getAssignmentAsOf(
 				{
@@ -2937,7 +3179,9 @@ describe("@afenda/human-resources core operations", () => {
 		it("returns NOT_FOUND for org context during assignment gap", async () => {
 			const ready = harness();
 			const seeded = await seedAssignmentEmployment(ready);
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 
 			const first = await createAssignment(
 				{
@@ -2953,7 +3197,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(first.ok).toBe(true);
-			if (!first.ok) return;
+			if (!first.ok) {
+				return;
+			}
 
 			const second = await createAssignment(
 				{
@@ -2969,7 +3215,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(second.ok).toBe(true);
-			if (!second.ok) return;
+			if (!second.ok) {
+				return;
+			}
 
 			const gapAssignment = await getAssignmentAsOf(
 				{
@@ -3007,7 +3255,9 @@ describe("@afenda/human-resources core operations", () => {
 		it("wires transfer lineage on predecessor and successor rows", async () => {
 			const ready = harness();
 			const seeded = await seedAssignmentEmployment(ready);
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 
 			const open = await createAssignment(
 				{
@@ -3023,7 +3273,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(open.ok).toBe(true);
-			if (!open.ok) return;
+			if (!open.ok) {
+				return;
+			}
 
 			const transfer = await transferAssignment(
 				{
@@ -3040,7 +3292,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(transfer.ok).toBe(true);
-			if (!transfer.ok) return;
+			if (!transfer.ok) {
+				return;
+			}
 
 			const predecessor = await ready.store.getAssignmentById({
 				organizationId: ORG_A,
@@ -3053,10 +3307,7 @@ describe("@afenda/human-resources core operations", () => {
 			expect(predecessor.ok).toBe(true);
 			expect(successor.ok).toBe(true);
 			if (
-				!predecessor.ok ||
-				!successor.ok ||
-				!predecessor.data ||
-				!successor.data
+				!(predecessor.ok && successor.ok && predecessor.data && successor.data)
 			) {
 				return;
 			}
@@ -3086,7 +3337,9 @@ describe("@afenda/human-resources core operations", () => {
 		it("rejects overlapping closed assignment ranges", async () => {
 			const ready = harness();
 			const seeded = await seedAssignmentEmployment(ready);
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 
 			const first = await createAssignment(
 				{
@@ -3102,7 +3355,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(first.ok).toBe(true);
-			if (!first.ok) return;
+			if (!first.ok) {
+				return;
+			}
 
 			const overlap = await createAssignment(
 				{
@@ -3128,7 +3383,9 @@ describe("@afenda/human-resources core operations", () => {
 		it("rejects ambiguous overlapping assignments at as-of", async () => {
 			const ready = harness();
 			const seeded = await seedAssignmentEmployment(ready);
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 
 			const first = await createAssignment(
 				{
@@ -3144,11 +3401,15 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(first.ok).toBe(true);
-			if (!first.ok) return;
+			if (!first.ok) {
+				return;
+			}
 
 			const duplicateId = parseHumanResourcesAssignmentId(randomUUID());
 			expect(duplicateId.ok).toBe(true);
-			if (!duplicateId.ok) return;
+			if (!duplicateId.ok) {
+				return;
+			}
 
 			const memoryStore = ready.store as MemoryHumanResourcesStore;
 			memoryStore.state.core.assignments.set(
@@ -3183,7 +3444,9 @@ describe("@afenda/human-resources core operations", () => {
 		it("freezes manager and calendar snapshots for historical org context", async () => {
 			const ready = harness();
 			const seeded = await seedAssignmentEmployment(ready);
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 
 			await assignPrimaryReportingLine(
 				{
@@ -3214,7 +3477,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(calendar.ok).toBe(true);
-			if (!calendar.ok) return;
+			if (!calendar.ok) {
+				return;
+			}
 
 			await assignEmploymentCalendar(
 				{
@@ -3243,7 +3508,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(assignment.ok).toBe(true);
-			if (!assignment.ok) return;
+			if (!assignment.ok) {
+				return;
+			}
 			expect(assignment.data.managerEmployeeIdSnapshot).toBe(seeded.manager.id);
 			expect(assignment.data.workCalendarIdSnapshot).toBe(calendar.data.id);
 
@@ -3259,7 +3526,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(managerTwo.ok).toBe(true);
-			if (!managerTwo.ok) return;
+			if (!managerTwo.ok) {
+				return;
+			}
 
 			await assignPrimaryReportingLine(
 				{
@@ -3290,7 +3559,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(calendarTwo.ok).toBe(true);
-			if (!calendarTwo.ok) return;
+			if (!calendarTwo.ok) {
+				return;
+			}
 
 			await assignEmploymentCalendar(
 				{
@@ -3337,8 +3608,10 @@ describe("@afenda/human-resources core operations", () => {
 				},
 				ready,
 			);
-			expect(employee.ok).toBe(true);
-			if (!employee.ok) return null;
+			assert.strictEqual(employee.ok, true);
+			if (!employee.ok) {
+				return null;
+			}
 
 			const employment = await createEmployment(
 				{
@@ -3351,15 +3624,18 @@ describe("@afenda/human-resources core operations", () => {
 				},
 				ready,
 			);
-			expect(employment.ok).toBe(true);
-			if (!employment.ok) return null;
+			assert.strictEqual(employment.ok, true);
+			if (!employment.ok) {
+				return null;
+			}
 
 			const seeded = await seedDepartmentAndJob(ready, {
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
 			});
-			expect(seeded).not.toBeNull();
-			if (!seeded) return null;
+			if (!seeded) {
+				return null;
+			}
 
 			const position = await createPosition(
 				{
@@ -3373,8 +3649,10 @@ describe("@afenda/human-resources core operations", () => {
 				},
 				ready,
 			);
-			expect(position.ok).toBe(true);
-			if (!position.ok) return null;
+			assert.strictEqual(position.ok, true);
+			if (!position.ok) {
+				return null;
+			}
 
 			return {
 				employee: employee.data,
@@ -3386,7 +3664,9 @@ describe("@afenda/human-resources core operations", () => {
 		it("rejects assignment outside employment range", async () => {
 			const ready = harness();
 			const seeded = await seedSlice56Employment(ready);
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 
 			const outside = await createAssignment(
 				{
@@ -3412,7 +3692,9 @@ describe("@afenda/human-resources core operations", () => {
 		it("rejects create when organization dimensions cannot be resolved", async () => {
 			const ready = harness();
 			const seeded = await seedSlice56Employment(ready);
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 
 			const rejected = await createAssignment(
 				{
@@ -3441,7 +3723,9 @@ describe("@afenda/human-resources core operations", () => {
 		it("rejects transfer when organization dimensions cannot be resolved", async () => {
 			const ready = harness();
 			const seeded = await seedSlice56Employment(ready);
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 
 			const open = await createAssignment(
 				{
@@ -3457,7 +3741,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(open.ok).toBe(true);
-			if (!open.ok) return;
+			if (!open.ok) {
+				return;
+			}
 
 			const positionB = await createPosition(
 				{
@@ -3473,7 +3759,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(positionB.ok).toBe(true);
-			if (!positionB.ok) return;
+			if (!positionB.ok) {
+				return;
+			}
 
 			const rejected = await transferAssignment(
 				{
@@ -3503,7 +3791,9 @@ describe("@afenda/human-resources core operations", () => {
 		it("resolves primary assignment at as-of via facade alias", async () => {
 			const ready = harness();
 			const seeded = await seedSlice56Employment(ready);
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 
 			const open = await createAssignment(
 				{
@@ -3519,7 +3809,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(open.ok).toBe(true);
-			if (!open.ok) return;
+			if (!open.ok) {
+				return;
+			}
 
 			const primary = await resolvePrimaryAssignmentAsOf(
 				{
@@ -3546,7 +3838,9 @@ describe("@afenda/human-resources core operations", () => {
 				actorUserId: ACTOR,
 			});
 			expect(seeded).not.toBeNull();
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 
 			const position = await createPosition(
 				{
@@ -3574,7 +3868,9 @@ describe("@afenda/human-resources core operations", () => {
 				actorUserId: ACTOR,
 			});
 			expect(seeded).not.toBeNull();
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 
 			const position = await createPosition(
 				{
@@ -3603,7 +3899,9 @@ describe("@afenda/human-resources core operations", () => {
 				actorUserId: ACTOR,
 			});
 			expect(seeded).not.toBeNull();
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 
 			ready.authorization = createGrantingHumanResourcesAuthorization([]);
 			const position = await createPosition(
@@ -3642,7 +3940,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employee.ok).toBe(true);
-			if (!employee.ok) return;
+			if (!employee.ok) {
+				return;
+			}
 
 			const employment = await createEmployment(
 				{
@@ -3656,14 +3956,18 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employment.ok).toBe(true);
-			if (!employment.ok) return;
+			if (!employment.ok) {
+				return;
+			}
 
 			const seeded = await seedDepartmentAndJob(ready, {
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
 			});
 			expect(seeded).not.toBeNull();
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 
 			const position = await createPosition(
 				{
@@ -3678,7 +3982,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(position.ok).toBe(true);
-			if (!position.ok) return;
+			if (!position.ok) {
+				return;
+			}
 
 			const assignment = await createAssignment(
 				{
@@ -3713,7 +4019,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employee.ok).toBe(true);
-			if (!employee.ok) return;
+			if (!employee.ok) {
+				return;
+			}
 
 			const employment = await createEmployment(
 				{
@@ -3727,14 +4035,18 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employment.ok).toBe(true);
-			if (!employment.ok) return;
+			if (!employment.ok) {
+				return;
+			}
 
 			const seeded = await seedDepartmentAndJob(ready, {
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
 			});
 			expect(seeded).not.toBeNull();
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 
 			const position = await createPosition(
 				{
@@ -3749,7 +4061,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(position.ok).toBe(true);
-			if (!position.ok) return;
+			if (!position.ok) {
+				return;
+			}
 
 			const first = await createAssignment(
 				{
@@ -3801,7 +4115,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employee.ok).toBe(true);
-			if (!employee.ok) return;
+			if (!employee.ok) {
+				return;
+			}
 
 			const employment = await createEmployment(
 				{
@@ -3815,14 +4131,18 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employment.ok).toBe(true);
-			if (!employment.ok) return;
+			if (!employment.ok) {
+				return;
+			}
 
 			const seeded = await seedDepartmentAndJob(ready, {
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
 			});
 			expect(seeded).not.toBeNull();
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 
 			const position = await createPosition(
 				{
@@ -3837,7 +4157,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(position.ok).toBe(true);
-			if (!position.ok) return;
+			if (!position.ok) {
+				return;
+			}
 
 			const assignment = await createAssignment(
 				{
@@ -3876,7 +4198,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employee.ok).toBe(true);
-			if (!employee.ok) return;
+			if (!employee.ok) {
+				return;
+			}
 
 			const employment = await createEmployment(
 				{
@@ -3890,14 +4214,18 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employment.ok).toBe(true);
-			if (!employment.ok) return;
+			if (!employment.ok) {
+				return;
+			}
 
 			const seeded = await seedDepartmentAndJob(ready, {
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
 			});
 			expect(seeded).not.toBeNull();
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 
 			const position = await createPosition(
 				{
@@ -3912,7 +4240,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(position.ok).toBe(true);
-			if (!position.ok) return;
+			if (!position.ok) {
+				return;
+			}
 
 			const assignment = await createAssignment(
 				{
@@ -3928,7 +4258,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(assignment.ok).toBe(true);
-			if (!assignment.ok) return;
+			if (!assignment.ok) {
+				return;
+			}
 
 			const ended = await endAssignment(
 				{
@@ -3962,7 +4294,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employee.ok).toBe(true);
-			if (!employee.ok) return;
+			if (!employee.ok) {
+				return;
+			}
 
 			const employment = await createEmployment(
 				{
@@ -3976,14 +4310,18 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employment.ok).toBe(true);
-			if (!employment.ok) return;
+			if (!employment.ok) {
+				return;
+			}
 
 			const seeded = await seedDepartmentAndJob(ready, {
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
 			});
 			expect(seeded).not.toBeNull();
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 
 			const position = await createPosition(
 				{
@@ -3998,7 +4336,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(position.ok).toBe(true);
-			if (!position.ok) return;
+			if (!position.ok) {
+				return;
+			}
 
 			const assignment = await createAssignment(
 				{
@@ -4014,7 +4354,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(assignment.ok).toBe(true);
-			if (!assignment.ok) return;
+			if (!assignment.ok) {
+				return;
+			}
 
 			const ended = await endAssignment(
 				{
@@ -4049,7 +4391,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employee.ok).toBe(true);
-			if (!employee.ok) return;
+			if (!employee.ok) {
+				return;
+			}
 
 			const employment = await createEmployment(
 				{
@@ -4063,14 +4407,18 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(employment.ok).toBe(true);
-			if (!employment.ok) return;
+			if (!employment.ok) {
+				return;
+			}
 
 			const seeded = await seedDepartmentAndJob(ready, {
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
 			});
 			expect(seeded).not.toBeNull();
-			if (!seeded) return;
+			if (!seeded) {
+				return;
+			}
 
 			const positionA = await createPosition(
 				{
@@ -4085,7 +4433,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(positionA.ok).toBe(true);
-			if (!positionA.ok) return;
+			if (!positionA.ok) {
+				return;
+			}
 
 			const positionB = await createPosition(
 				{
@@ -4100,7 +4450,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(positionB.ok).toBe(true);
-			if (!positionB.ok) return;
+			if (!positionB.ok) {
+				return;
+			}
 
 			const first = await createAssignment(
 				{
@@ -4116,7 +4468,9 @@ describe("@afenda/human-resources core operations", () => {
 				ready,
 			);
 			expect(first.ok).toBe(true);
-			if (!first.ok) return;
+			if (!first.ok) {
+				return;
+			}
 
 			const ended = await endAssignment(
 				{

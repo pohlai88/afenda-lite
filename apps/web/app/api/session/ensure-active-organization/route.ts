@@ -6,5 +6,5 @@ import { handleEnsureActiveOrganizationRequest } from "@afenda/auth";
  * Neon `organization.setActive` must run in a Route Handler (not RSC).
  */
 export async function GET(request: Request): Promise<Response> {
-	return handleEnsureActiveOrganizationRequest(request);
+	return await handleEnsureActiveOrganizationRequest(request);
 }

@@ -38,7 +38,7 @@ export type AssembleApprovedPayrollHandoffInput = z.infer<
 	typeof assembleApprovedPayrollHandoffInputSchema
 >;
 
-export async function assembleApprovedPayrollHandoff(
+export function assembleApprovedPayrollHandoff(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ApprovedPayrollHandoff | null>> {
@@ -84,7 +84,14 @@ export async function assembleApprovedPayrollHandoff(
 			}
 
 			const leaveHandoffs: import("../types").ApprovedLeaveHandoff[] = [];
-			for (const requestId of data.leaveRequestIds ?? []) {
+			const leaveRequestIds = data.leaveRequestIds ?? [];
+			async function collectLeaveHandoffs(
+				index: number,
+			): Promise<Result<void>> {
+				const requestId = leaveRequestIds[index];
+				if (requestId === undefined) {
+					return { ok: true, data: undefined };
+				}
 				const leaveHandoff = await store.getApprovedLeaveHandoff({
 					organizationId: data.organizationId,
 					requestId,
@@ -96,6 +103,11 @@ export async function assembleApprovedPayrollHandoff(
 				if (leaveHandoff.data) {
 					leaveHandoffs.push(leaveHandoff.data);
 				}
+				return collectLeaveHandoffs(index + 1);
+			}
+			const collectedLeaveHandoffs = await collectLeaveHandoffs(0);
+			if (!collectedLeaveHandoffs.ok) {
+				return collectedLeaveHandoffs;
 			}
 
 			let timeHandoff: import("../types").ApprovedTimeHandoff | null = null;

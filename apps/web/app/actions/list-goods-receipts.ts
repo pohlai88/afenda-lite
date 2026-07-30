@@ -12,7 +12,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type ListGoodsReceiptsActionData = { receipts: GoodsReceipt[] };
+export interface ListGoodsReceiptsActionData {
+	receipts: GoodsReceipt[];
+}
 
 const listGoodsReceiptsActionSchema = z
 	.object({
@@ -29,7 +31,7 @@ export async function listGoodsReceiptsAction(input?: {
 	status?: GoodsReceipt["status"];
 	sourceType?: GoodsReceipt["sourceType"];
 }): Promise<ActionResult<ListGoodsReceiptsActionData>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listGoodsReceiptsAction",
 		permission: "receiving.receipt.read",
 		safeMessage:
@@ -52,7 +54,9 @@ export async function listGoodsReceiptsAction(input?: {
 				createReceivingCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { receipts: mapped.data } };
 		},
 	});

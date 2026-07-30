@@ -53,7 +53,9 @@ describe("Human Resources accounting and provisioning facts", () => {
 		);
 
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 		expect(result.data).toEqual([
 			expect.objectContaining({
 				kind: expectedKind,

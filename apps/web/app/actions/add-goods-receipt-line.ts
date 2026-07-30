@@ -13,7 +13,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type AddGoodsReceiptLineActionData = { line: GoodsReceiptLine };
+export interface AddGoodsReceiptLineActionData {
+	line: GoodsReceiptLine;
+}
 export type AddGoodsReceiptLineActionState =
 	ActionResult<AddGoodsReceiptLineActionData> | null;
 
@@ -51,7 +53,7 @@ export async function addGoodsReceiptLineAction(
 	_prev: AddGoodsReceiptLineActionState,
 	formData: FormData,
 ): Promise<AddGoodsReceiptLineActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "addGoodsReceiptLineAction",
 		permission: "receiving.receipt.update",
 		safeMessage:
@@ -86,7 +88,9 @@ export async function addGoodsReceiptLineAction(
 				createReceivingCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidateReceivingPaths();
 			return { ok: true, data: { line: mapped.data } };
 		},

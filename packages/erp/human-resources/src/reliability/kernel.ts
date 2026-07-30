@@ -24,12 +24,12 @@ import type {
 const RELIABILITY_EXECUTION_FAILED_MESSAGE =
 	"Reliability work execution failed";
 
-export type ReliabilityKernelPorts = {
-	store: ReliabilityStorePort;
+export interface ReliabilityKernelPorts {
 	clock: ReliabilityClockPort;
 	executor: ReliabilityExecutorPort;
 	failureClassifier: ReliabilityFailureClassifierPort;
-};
+	store: ReliabilityStorePort;
+}
 
 export async function registerReliabilityWork(
 	input: {
@@ -52,7 +52,9 @@ export async function registerReliabilityWork(
 		);
 	}
 	const replay = await ports.store.findByIdempotencyKey(input);
-	if (!replay.ok) return replay;
+	if (!replay.ok) {
+		return replay;
+	}
 	if (replay.data) {
 		return replay.data.requestFingerprint === input.requestFingerprint
 			? ok(replay.data)
@@ -98,7 +100,7 @@ export function claimDueReliabilityWork(
 	if (
 		input.workerId.trim().length === 0 ||
 		!Number.isInteger(input.leaseDurationMs) ||
-		input.leaseDurationMs < 1_000 ||
+		input.leaseDurationMs < 1000 ||
 		!Number.isInteger(input.limit) ||
 		input.limit < 1 ||
 		!Number.isInteger(input.perOrganizationLimit) ||
@@ -132,10 +134,16 @@ export async function executeReliabilityWork(
 		return fail("VALIDATION_ERROR", "Invalid exponential retry policy");
 	}
 	const found = await ports.store.getWorkItem(input);
-	if (!found.ok) return found;
-	if (!found.data) return fail("NOT_FOUND", "Reliability work item not found");
+	if (!found.ok) {
+		return found;
+	}
+	if (!found.data) {
+		return fail("NOT_FOUND", "Reliability work item not found");
+	}
 	const current = found.data;
-	if (current.status !== "processing") return ok(current);
+	if (current.status !== "processing") {
+		return ok(current);
+	}
 	const now = ports.clock.now();
 	if (
 		current.leaseOwner !== input.leaseOwner ||
@@ -241,9 +249,12 @@ export async function acknowledgeReliabilityWork(
 	ports: Pick<ReliabilityKernelPorts, "store" | "clock">,
 ): Promise<Result<ReliabilityWorkItem>> {
 	const found = await ports.store.getWorkItem(input);
-	if (!found.ok) return found;
-	if (found.data === null)
+	if (!found.ok) {
+		return found;
+	}
+	if (found.data === null) {
 		return fail("NOT_FOUND", "Reliability work item not found");
+	}
 	const current = found.data;
 	if (current.receiptId !== input.receiptId) {
 		return fail("CONFLICT", "Reliability acknowledgement receipt mismatch");
@@ -294,9 +305,12 @@ export async function replayDeadLetter(
 	ports: Pick<ReliabilityKernelPorts, "store" | "clock">,
 ): Promise<Result<ReliabilityWorkItem>> {
 	const deadLetter = await ports.store.getDeadLetter(input);
-	if (!deadLetter.ok) return deadLetter;
-	if (!deadLetter.data)
+	if (!deadLetter.ok) {
+		return deadLetter;
+	}
+	if (!deadLetter.data) {
 		return fail("NOT_FOUND", "Reliability dead letter not found");
+	}
 	if (deadLetter.data.replayedByWorkItemId) {
 		const replay = await ports.store.getWorkItem({
 			organizationId: input.organizationId,
@@ -311,7 +325,9 @@ export async function replayDeadLetter(
 		connector: deadLetter.data.connector,
 		idempotencyKey: input.idempotencyKey,
 	});
-	if (!replay.ok) return replay;
+	if (!replay.ok) {
+		return replay;
+	}
 	if (replay.data) {
 		return replay.data.requestFingerprint === input.requestFingerprint
 			? ok(replay.data)
@@ -347,14 +363,14 @@ export async function replayDeadLetter(
 	});
 }
 
-export async function recoverConnectorCursor(
+export function recoverConnectorCursor(
 	input: { organizationId: string; connector: string; stream: string },
 	store: ReliabilityStorePort,
 ): Promise<Result<ConnectorCursor | null>> {
 	return store.getCursor(input);
 }
 
-export async function checkpointConnectorCursor(
+export function checkpointConnectorCursor(
 	input: {
 		organizationId: string;
 		connector: string;

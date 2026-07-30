@@ -28,14 +28,14 @@ import {
 
 import { createHumanResourcesCommandOptions } from "@/lib/erp/human-resources-command-options";
 
-export type HumanResourcesReportingWorkerInput = {
-	organizationId: string;
+export interface HumanResourcesReportingWorkerInput {
 	actorUserId: string;
-	correlationId: string;
 	asOf: string;
-	periodStart: string;
+	correlationId: string;
+	organizationId: string;
 	periodEnd: string;
-};
+	periodStart: string;
+}
 
 export function buildHumanResourcesReportingSnapshotWorker(
 	input: HumanResourcesReportingWorkerInput,
@@ -110,9 +110,13 @@ export async function loadHumanResourcesBulkStatusWorker(input: {
 > {
 	const checkpoints = createDrizzleBulkCheckpointPort<BulkCommandOutput>();
 	const checkpoint = await checkpoints.load(input);
-	if (!checkpoint.ok) return checkpoint;
+	if (!checkpoint.ok) {
+		return checkpoint;
+	}
 	const auditEvents = await checkpoints.listAuditEvents(input);
-	if (!auditEvents.ok) return auditEvents;
+	if (!auditEvents.ok) {
+		return auditEvents;
+	}
 	return {
 		ok: true,
 		data: { checkpoint: checkpoint.data, auditEvents: auditEvents.data },

@@ -55,7 +55,9 @@ describe("createProductionAttendanceSource", () => {
 			organizationId: ORG_A,
 		});
 		expect(fetched.ok).toBe(false);
-		if (fetched.ok) return;
+		if (fetched.ok) {
+			return;
+		}
 		expect(fetched.code).toBe("CONFLICT");
 
 		const preview = await source.previewEvents({
@@ -82,7 +84,9 @@ describe("createProductionAttendanceSource", () => {
 			cursor: foreignCursor,
 		});
 		expect(fetched.ok).toBe(false);
-		if (fetched.ok) return;
+		if (fetched.ok) {
+			return;
+		}
 		expect(fetched.code).toBe("CONFLICT");
 	});
 
@@ -90,7 +94,7 @@ describe("createProductionAttendanceSource", () => {
 		const pull = vi.fn(
 			async (input: { organizationId: string; cursor?: string }) => {
 				if (input.cursor === undefined) {
-					return {
+					return await {
 						ok: true as const,
 						data: {
 							events: [validEvent({ sourceReference: "page-1" })],
@@ -99,14 +103,14 @@ describe("createProductionAttendanceSource", () => {
 					};
 				}
 				if (input.cursor === "page-2") {
-					return {
+					return await {
 						ok: true as const,
 						data: {
 							events: [validEvent({ sourceReference: "page-2-row" })],
 						},
 					};
 				}
-				return {
+				return await {
 					ok: false as const,
 					code: "CONFLICT" as const,
 					message: "unexpected cursor",
@@ -120,7 +124,9 @@ describe("createProductionAttendanceSource", () => {
 
 		const first = await source.fetchEvents({ organizationId: ORG_A });
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 		expect(first.data.events).toHaveLength(1);
 		expect(first.data.nextCursor).toBeDefined();
 
@@ -129,7 +135,9 @@ describe("createProductionAttendanceSource", () => {
 			cursor: first.data.nextCursor,
 		});
 		expect(second.ok).toBe(true);
-		if (!second.ok) return;
+		if (!second.ok) {
+			return;
+		}
 		expect(second.data.events[0]?.sourceReference).toBe("page-2-row");
 		expect(pull).toHaveBeenCalledWith({
 			organizationId: ORG_A,
@@ -156,7 +164,9 @@ describe("createProductionAttendanceSource", () => {
 		const second = await source.fetchEvents({ organizationId: ORG_A });
 		expect(first.ok).toBe(true);
 		expect(second.ok).toBe(true);
-		if (!first.ok || !second.ok) return;
+		if (!(first.ok && second.ok)) {
+			return;
+		}
 
 		expect(first.data.events.map((row) => row.sourceReference)).toEqual(
 			second.data.events.map((row) => row.sourceReference),
@@ -185,7 +195,9 @@ describe("createProductionAttendanceSource", () => {
 		const second = await source.previewEvents({ organizationId: ORG_A });
 		expect(first.ok).toBe(true);
 		expect(second.ok).toBe(true);
-		if (!first.ok || !second.ok) return;
+		if (!(first.ok && second.ok)) {
+			return;
+		}
 
 		expect(first.data.mode).toBe("preview");
 		expect(first.data.totals).toEqual({ accepted: 1, rejected: 2 });
@@ -213,7 +225,9 @@ describe("createProductionAttendanceSource", () => {
 
 		const fetched = await source.fetchEvents({ organizationId: ORG_A });
 		expect(fetched.ok).toBe(true);
-		if (!fetched.ok) return;
+		if (!fetched.ok) {
+			return;
+		}
 		expect(fetched.data.events.map((row) => row.sourceSequence)).toEqual([
 			0, 5,
 		]);
@@ -237,7 +251,9 @@ describe("createProductionAttendanceSource", () => {
 
 		const fetched = await source.fetchEvents({ organizationId: ORG_A });
 		expect(fetched.ok).toBe(true);
-		if (!fetched.ok) return;
+		if (!fetched.ok) {
+			return;
+		}
 		expect(fetched.data.events).toHaveLength(1);
 		expect(fetched.data.rejectedRows).toHaveLength(1);
 		expect(fetched.data.rejectedRows?.[0]?.errorCode).toBe("INVALID_TIMEZONE");
@@ -249,13 +265,13 @@ describe("createProductionAttendanceSource", () => {
 			pull: createPull(async () => {
 				attempts += 1;
 				if (attempts < 3) {
-					return {
+					return await {
 						ok: false as const,
 						code: "SERVICE_UNAVAILABLE" as const,
 						message: "temporary outage",
 					};
 				}
-				return {
+				return await {
 					ok: true as const,
 					data: { events: [validEvent({ sourceReference: "after-retry" })] },
 				};
@@ -265,7 +281,9 @@ describe("createProductionAttendanceSource", () => {
 
 		const fetched = await source.fetchEvents({ organizationId: ORG_A });
 		expect(fetched.ok).toBe(true);
-		if (!fetched.ok) return;
+		if (!fetched.ok) {
+			return;
+		}
 		expect(attempts).toBe(3);
 		expect(fetched.data.events[0]?.sourceReference).toBe("after-retry");
 	});
@@ -288,7 +306,9 @@ describe("createProductionAttendanceSource", () => {
 
 		const fetched = await source.fetchEvents({ organizationId: ORG_A });
 		expect(fetched.ok).toBe(false);
-		if (fetched.ok) return;
+		if (fetched.ok) {
+			return;
+		}
 		expect(fetched.code).toBe("SERVICE_UNAVAILABLE");
 		expect(recorder.metrics).toContainEqual({
 			name: "hr.connector.health",
@@ -324,7 +344,9 @@ describe("createProductionAttendanceSource", () => {
 		const preview = await source.previewEvents({ organizationId: ORG_A });
 		expect(fetched.ok).toBe(true);
 		expect(preview.ok).toBe(true);
-		if (!fetched.ok || !preview.ok) return;
+		if (!(fetched.ok && preview.ok)) {
+			return;
+		}
 
 		expect(fetched.data.events).toHaveLength(1);
 		expect(preview.data.totals).toEqual({ accepted: 1, rejected: 1 });
@@ -352,7 +374,9 @@ describe("createHttpAttendanceConnectorPull", () => {
 		});
 		const pulled = await pull.pull({ organizationId: ORG_A });
 		expect(pulled.ok).toBe(true);
-		if (!pulled.ok) return;
+		if (!pulled.ok) {
+			return;
+		}
 		expect(pulled.data.events[0]?.sourceReference).toBe("http-row");
 		expect(pulled.data.nextCursor).toBe("http-next");
 	});
@@ -373,7 +397,9 @@ describe("createHttpAttendanceConnectorPull", () => {
 		});
 		const pulled = await pull.pull({ organizationId: ORG_A });
 		expect(pulled.ok).toBe(false);
-		if (pulled.ok) return;
+		if (pulled.ok) {
+			return;
+		}
 		expect(pulled.code).toBe("VALIDATION_ERROR");
 	});
 });
@@ -385,7 +411,9 @@ describe("resolveAttendanceConnectorPullCursor", () => {
 			cursor: "not-valid-base64url",
 		});
 		expect(resolved.ok).toBe(false);
-		if (resolved.ok) return;
+		if (resolved.ok) {
+			return;
+		}
 		expect(resolved.code).toBe("VALIDATION_ERROR");
 	});
 
@@ -401,7 +429,9 @@ describe("resolveAttendanceConnectorPullCursor", () => {
 			cursor,
 		});
 		expect(resolved.ok).toBe(true);
-		if (!resolved.ok) return;
+		if (!resolved.ok) {
+			return;
+		}
 		expect(resolved.data.pullCursor).toBe("page-3");
 	});
 });
@@ -431,7 +461,9 @@ describe("production attendance source import integration", () => {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const employment = await createEmployment(
 			{
@@ -444,7 +476,9 @@ describe("production attendance source import integration", () => {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const attendanceSource = createProductionAttendanceSource({
 			pull: createPull(async () => ({
@@ -481,7 +515,9 @@ describe("production attendance source import integration", () => {
 			{ ...ready, attendanceSource },
 		);
 		expect(imported.ok).toBe(true);
-		if (!imported.ok) return;
+		if (!imported.ok) {
+			return;
+		}
 		expect(imported.data.status).toBe("partial");
 		expect(imported.data.totals).toEqual({
 			accepted: 1,
@@ -556,7 +592,9 @@ describe("production attendance source import integration", () => {
 		);
 
 		expect(imported.ok).toBe(true);
-		if (!imported.ok) return;
+		if (!imported.ok) {
+			return;
+		}
 		expect(imported.data.status).toBe("failed");
 		expect(imported.data.accepted).toEqual([]);
 		expect(imported.data.totals).toEqual({

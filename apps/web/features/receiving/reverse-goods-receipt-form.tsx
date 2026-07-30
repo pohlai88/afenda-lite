@@ -69,47 +69,47 @@ export function ReverseGoodsReceiptForm({
 				<FormError>{state.message}</FormError>
 			) : null}
 			<FormField
+				error={receiptError}
+				fieldId="receipt-reverse-id"
 				label="Posted receipt id"
 				required
-				fieldId="receipt-reverse-id"
-				error={receiptError}
 			>
 				<Input
+					disabled={pending}
 					id="receipt-reverse-id"
 					name="receiptId"
 					required
-					disabled={pending}
 				/>
 			</FormField>
 			<FormField
+				error={versionError}
+				fieldId="receipt-reverse-version"
 				label="Expected version"
 				required
-				fieldId="receipt-reverse-version"
-				error={versionError}
 			>
 				<Input
-					id="receipt-reverse-version"
-					name="expectedVersion"
-					type="number"
-					min="1"
-					required
 					disabled={pending}
+					id="receipt-reverse-version"
+					min="1"
+					name="expectedVersion"
+					required
+					type="number"
 				/>
 			</FormField>
 			<FormField
+				error={reasonError}
+				fieldId="receipt-reverse-reason"
 				label="Reason"
 				required
-				fieldId="receipt-reverse-reason"
-				error={reasonError}
 			>
 				<Input
+					disabled={pending}
 					id="receipt-reverse-reason"
 					name="reason"
 					required
-					disabled={pending}
 				/>
 			</FormField>
-			<Button type="submit" disabled={pending}>
+			<Button disabled={pending} type="submit">
 				{pending ? <Spinner /> : null}
 				Reverse posted receipt
 			</Button>

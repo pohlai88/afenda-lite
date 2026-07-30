@@ -17,13 +17,16 @@ import {
 	HUMAN_RESOURCES_HEADCOUNT_RESERVED_EVENT,
 } from "@afenda/events/schemas";
 
-type IntegrationFactBase = {
-	factVersion: 1;
-	eventId: string;
-	organizationId: string;
+const ALLOCATION_PERCENTAGE_PATTERN =
+	/^(?:100(?:\.0{1,4})?|[0-9]{1,2}(?:\.[0-9]{1,4})?)$/;
+
+interface IntegrationFactBase {
 	correlationId: string;
+	eventId: string;
+	factVersion: 1;
 	idempotencyKey: string;
-};
+	organizationId: string;
+}
 
 export type HumanResourcesPayrollPostingFact = IntegrationFactBase & {
 	kind: "payroll_posting";
@@ -122,7 +125,9 @@ export function projectHumanResourcesAccountingProvisioningFacts(
 			event,
 			"approvalEvidenceId",
 		);
-		if (!approvalEvidenceId.ok) return approvalEvidenceId;
+		if (!approvalEvidenceId.ok) {
+			return approvalEvidenceId;
+		}
 		return ok([
 			{
 				...baseFact(event, "payroll-posting"),
@@ -138,17 +143,17 @@ export function projectHumanResourcesAccountingProvisioningFacts(
 		event.type === HUMAN_RESOURCES_EMPLOYEE_TRANSFERRED_EVENT
 	) {
 		const costCentreId = requiredMetadataString(event, "costCentreId");
-		if (!costCentreId.ok) return costCentreId;
+		if (!costCentreId.ok) {
+			return costCentreId;
+		}
 		const allocationPercentage = requiredMetadataString(
 			event,
 			"allocationPercentage",
 		);
-		if (!allocationPercentage.ok) return allocationPercentage;
-		if (
-			!/^(?:100(?:\.0{1,4})?|[0-9]{1,2}(?:\.[0-9]{1,4})?)$/.test(
-				allocationPercentage.data,
-			)
-		) {
+		if (!allocationPercentage.ok) {
+			return allocationPercentage;
+		}
+		if (!ALLOCATION_PERCENTAGE_PATTERN.test(allocationPercentage.data)) {
 			return fail(
 				"VALIDATION_ERROR",
 				"Cost-centre allocation percentage is invalid",

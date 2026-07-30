@@ -30,47 +30,47 @@ export const HIRE_SAGA_STEPS = [
 
 export type HireSagaStep = (typeof HIRE_SAGA_STEPS)[number];
 
-export type HireCompensationLogEntry = {
-	step: HireSagaStep | "compensation";
+export interface HireCompensationLogEntry {
 	action: string;
 	entityId?: string;
-	success: boolean;
 	onboardingOrphaned?: boolean;
-};
+	step: HireSagaStep | "compensation";
+	success: boolean;
+}
 
-export type HireAttempt = {
-	id: HumanResourcesHireAttemptId;
-	organizationId: string;
-	offerId: HumanResourcesOfferId;
+export interface HireAttempt {
+	assignmentId: HumanResourcesAssignmentId | null;
+	compensationLog: readonly HireCompensationLogEntry[];
 	correlationId: string;
-	idempotencyKey: string;
-	requestFingerprint: string;
-	status: HireAttemptStatus;
+	createdAt: Date;
+	createdBy: string;
 	currentStep: HireSagaStep | null;
-	personId: HumanResourcesPersonId | null;
 	employeeId: HumanResourcesEmployeeId | null;
 	employmentId: HumanResourcesEmploymentId | null;
-	workerId: HumanResourcesWorkerId | null;
-	assignmentId: HumanResourcesAssignmentId | null;
+	id: HumanResourcesHireAttemptId;
+	idempotencyKey: string;
+	offerId: HumanResourcesOfferId;
 	onboardingCaseId: HumanResourcesOnboardingCaseId | null;
-	compensationLog: readonly HireCompensationLogEntry[];
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
+	organizationId: string;
+	personId: HumanResourcesPersonId | null;
+	requestFingerprint: string;
+	status: HireAttemptStatus;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+	workerId: HumanResourcesWorkerId | null;
+}
 
-export type HireFromAcceptedOfferResult = {
+export interface HireFromAcceptedOfferResult {
+	assignmentId: HumanResourcesAssignmentId;
 	attempt: HireAttempt;
-	handoff: OfferAcceptanceHandoff;
-	personId: HumanResourcesPersonId;
 	employeeId: HumanResourcesEmployeeId;
 	employmentId: HumanResourcesEmploymentId;
-	workerId: HumanResourcesWorkerId;
-	assignmentId: HumanResourcesAssignmentId;
+	handoff: OfferAcceptanceHandoff;
 	onboardingCaseId: HumanResourcesOnboardingCaseId;
-};
+	personId: HumanResourcesPersonId;
+	workerId: HumanResourcesWorkerId;
+}
 
 export function hireStepIdempotencyKey(
 	sagaIdempotencyKey: string,

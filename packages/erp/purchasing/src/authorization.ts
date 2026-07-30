@@ -5,15 +5,15 @@ import type { PURCHASING_PERMISSION_CODES } from "./permissions";
 
 export type PurchasingPermission = (typeof PURCHASING_PERMISSION_CODES)[number];
 
-export type PurchasingAuthorizationPort = {
-	can(input: {
+export interface PurchasingAuthorizationPort {
+	can: (input: {
 		organizationId: string;
 		actorUserId: string;
 		permission: PurchasingPermission;
-	}): Promise<boolean>;
-};
+	}) => Promise<boolean>;
+}
 
-export async function requirePurchasingCommandPermission(
+export function requirePurchasingCommandPermission(
 	authorization: PurchasingAuthorizationPort | undefined,
 	input: {
 		organizationId: string;
@@ -30,7 +30,7 @@ export async function requirePurchasingCommandPermission(
 	});
 }
 
-export async function requirePurchasingQueryPermission(
+export function requirePurchasingQueryPermission(
 	authorization: PurchasingAuthorizationPort | undefined,
 	input: {
 		organizationId: string;

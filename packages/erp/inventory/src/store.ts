@@ -13,80 +13,80 @@ import type {
 	StockReservationStatus,
 } from "./types";
 
-export type MovementCreateRecord = {
-	organizationId: string;
+export interface MovementCreateRecord {
+	adjustmentNote: string | null;
+	adjustmentReasonCode: string | null;
 	code: string;
-	normalizedCode: string;
-	movementType: StockMovementType;
-	source: InventoryMovementSource;
-	warehouseId: string | null;
-	warehouseCode: string | null;
-	warehouseName: string | null;
-	fromWarehouseId: string | null;
+	createdBy: string;
+	createIdempotencyKey: string;
 	fromWarehouseCode: string | null;
+	fromWarehouseId: string | null;
 	fromWarehouseName: string | null;
-	toWarehouseId: string | null;
-	toWarehouseCode: string | null;
-	toWarehouseName: string | null;
+	movementType: StockMovementType;
+	normalizedCode: string;
+	organizationId: string;
 	reservationId: string | null;
 	reversesMovementId: string | null;
-	adjustmentReasonCode: string | null;
-	adjustmentNote: string | null;
-	sourceModule: string | null;
+	source: InventoryMovementSource;
 	sourceAggregateId: string | null;
 	sourceEventId: string | null;
 	sourceEventVersion: number | null;
 	sourceLineId: string | null;
-	createIdempotencyKey: string;
-	createdBy: string;
-};
+	sourceModule: string | null;
+	toWarehouseCode: string | null;
+	toWarehouseId: string | null;
+	toWarehouseName: string | null;
+	warehouseCode: string | null;
+	warehouseId: string | null;
+	warehouseName: string | null;
+}
 
-export type MovementLineCreateRecord = {
-	organizationId: string;
-	movementId: string;
-	itemId: string;
-	itemCode: string;
-	itemName: string;
-	baseUomId: string;
+export interface MovementLineCreateRecord {
 	baseUomCode: string;
-	quantity: string;
-	lineIdempotencyKey: string;
-	expectedVersion: number;
+	baseUomId: string;
 	createdBy: string;
-};
-
-export type MovementPostRecord = {
-	organizationId: string;
-	movementId: string;
 	expectedVersion: number;
+	itemCode: string;
+	itemId: string;
+	itemName: string;
+	lineIdempotencyKey: string;
+	movementId: string;
+	organizationId: string;
+	quantity: string;
+}
+
+export interface MovementPostRecord {
 	actorUserId: string;
-	postIdempotencyKey: string;
-};
-
-export type MovementCancelRecord = {
-	organizationId: string;
-	movementId: string;
 	expectedVersion: number;
+	movementId: string;
+	organizationId: string;
+	postIdempotencyKey: string;
+}
+
+export interface MovementCancelRecord {
 	actorUserId: string;
 	cancelIdempotencyKey: string;
-};
-
-export type ReservationCreateRecord = {
+	expectedVersion: number;
+	movementId: string;
 	organizationId: string;
-	code: string;
-	normalizedCode: string;
-	warehouseId: string;
-	warehouseCode: string;
-	warehouseName: string;
-	itemId: string;
-	itemCode: string;
-	itemName: string;
-	baseUomId: string;
+}
+
+export interface ReservationCreateRecord {
 	baseUomCode: string;
-	quantity: string;
-	createIdempotencyKey: string;
+	baseUomId: string;
+	code: string;
 	createdBy: string;
-};
+	createIdempotencyKey: string;
+	itemCode: string;
+	itemId: string;
+	itemName: string;
+	normalizedCode: string;
+	organizationId: string;
+	quantity: string;
+	warehouseCode: string;
+	warehouseId: string;
+	warehouseName: string;
+}
 
 export type ReservationTerminalStatus = "released" | "expired" | "cancelled";
 
@@ -112,106 +112,77 @@ export function reservationTerminalEventType(
 	}
 }
 
-export type ReservationReleaseRecord = {
-	organizationId: string;
-	reservationId: string;
-	expectedVersion: number;
+export interface ReservationReleaseRecord {
 	actorUserId: string;
+	expectedVersion: number;
+	organizationId: string;
 	releaseIdempotencyKey: string;
+	reservationId: string;
 	/** Balance-freeing terminal; release / expire / cancel share one store path. */
 	terminalStatus: ReservationTerminalStatus;
-};
+}
 
-export type MovementListFilter = {
+export interface MovementListFilter {
+	movementType?: StockMovementType | undefined;
 	organizationId: string;
 	page: number;
 	pageSize: number;
 	status?: StockMovementStatus | undefined;
-	movementType?: StockMovementType | undefined;
-};
+}
 
-export type ReservationListFilter = {
+export interface ReservationListFilter {
+	itemId?: string | undefined;
 	organizationId: string;
 	page: number;
 	pageSize: number;
 	status?: StockReservationStatus | undefined;
 	warehouseId?: string | undefined;
-	itemId?: string | undefined;
-};
+}
 
-export type AvailabilityFilter = {
+export interface AvailabilityFilter {
+	itemId?: string | undefined;
 	organizationId: string;
 	warehouseId?: string | undefined;
-	itemId?: string | undefined;
-};
+}
 
-export type InventoryStore = {
-	createMovement(
-		record: MovementCreateRecord,
-		ports: MutationPorts,
-		meta: { correlationId: string },
-	): Promise<Result<StockMovement>>;
-	addLine(
+export interface InventoryStore {
+	addLine: (
 		record: MovementLineCreateRecord,
 		ports: MutationPorts,
 		meta: { correlationId: string },
-	): Promise<Result<StockMovementLine>>;
-	postMovement(
-		record: MovementPostRecord,
-		ports: MutationPorts,
-		meta: { correlationId: string },
-	): Promise<Result<StockMovement>>;
-	cancelMovement(
+	) => Promise<Result<StockMovementLine>>;
+	cancelMovement: (
 		record: MovementCancelRecord,
 		ports: MutationPorts,
 		meta: { correlationId: string },
-	): Promise<Result<StockMovement>>;
-	reserveStock(
-		record: ReservationCreateRecord,
+	) => Promise<Result<StockMovement>>;
+	createMovement: (
+		record: MovementCreateRecord,
 		ports: MutationPorts,
 		meta: { correlationId: string },
-	): Promise<Result<StockReservation>>;
-	releaseReservation(
-		record: ReservationReleaseRecord,
-		ports: MutationPorts,
-		meta: { correlationId: string },
-	): Promise<Result<StockReservation>>;
-	getMovementById(
-		organizationId: string,
-		id: string,
-	): Promise<Result<StockMovement | null>>;
-	getMovementByCreateIdempotencyKey(
-		organizationId: string,
-		createIdempotencyKey: string,
-	): Promise<Result<StockMovement | null>>;
-	listMovements(filter: MovementListFilter): Promise<Result<StockMovement[]>>;
-	listReservations(
-		filter: ReservationListFilter,
-	): Promise<Result<StockReservation[]>>;
-	getAvailability(
+	) => Promise<Result<StockMovement>>;
+	getAvailability: (
 		filter: AvailabilityFilter,
-	): Promise<Result<StockAvailability[]>>;
-	getReservationById(
-		organizationId: string,
-		id: string,
-	): Promise<Result<StockReservation | null>>;
-	getReservationByCreateIdempotencyKey(
+	) => Promise<Result<StockAvailability[]>>;
+	/** Ledger row count for availability asOfLedgerSequence (org-scoped). */
+	getLedgerSequence: (organizationId: string) => Promise<Result<number>>;
+	getMovementByCreateIdempotencyKey: (
 		organizationId: string,
 		createIdempotencyKey: string,
-	): Promise<Result<StockReservation | null>>;
-	/** Ledger row count for availability asOfLedgerSequence (org-scoped). */
-	getLedgerSequence(organizationId: string): Promise<Result<number>>;
-	listLedgerEntries(organizationId: string): Promise<
-		Result<
-			Array<{
-				warehouseId: string;
-				itemId: string;
-				quantityDelta: string;
-			}>
-		>
-	>;
-	listBalances(organizationId: string): Promise<Result<StockBalance[]>>;
-	listActiveReservations(organizationId: string): Promise<
+	) => Promise<Result<StockMovement | null>>;
+	getMovementById: (
+		organizationId: string,
+		id: string,
+	) => Promise<Result<StockMovement | null>>;
+	getReservationByCreateIdempotencyKey: (
+		organizationId: string,
+		createIdempotencyKey: string,
+	) => Promise<Result<StockReservation | null>>;
+	getReservationById: (
+		organizationId: string,
+		id: string,
+	) => Promise<Result<StockReservation | null>>;
+	listActiveReservations: (organizationId: string) => Promise<
 		Result<
 			Array<{
 				warehouseId: string;
@@ -221,7 +192,38 @@ export type InventoryStore = {
 			}>
 		>
 	>;
-};
+	listBalances: (organizationId: string) => Promise<Result<StockBalance[]>>;
+	listLedgerEntries: (organizationId: string) => Promise<
+		Result<
+			Array<{
+				warehouseId: string;
+				itemId: string;
+				quantityDelta: string;
+			}>
+		>
+	>;
+	listMovements: (
+		filter: MovementListFilter,
+	) => Promise<Result<StockMovement[]>>;
+	listReservations: (
+		filter: ReservationListFilter,
+	) => Promise<Result<StockReservation[]>>;
+	postMovement: (
+		record: MovementPostRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	) => Promise<Result<StockMovement>>;
+	releaseReservation: (
+		record: ReservationReleaseRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	) => Promise<Result<StockReservation>>;
+	reserveStock: (
+		record: ReservationCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	) => Promise<Result<StockReservation>>;
+}
 
 export function parseQuantity(value: string): number {
 	const n = Number(value);
@@ -241,19 +243,19 @@ export function balanceKey(warehouseId: string, itemId: string): BalanceKey {
 	return `${warehouseId}:${itemId}`;
 }
 
-export type BalanceEffect = {
-	warehouseId: string;
-	warehouseCode: string;
-	itemId: string;
-	itemCode: string;
-	baseUomId: string | null;
-	baseUomCode: string | null;
-	onHandDelta: number;
-	reservedDelta: number;
+export interface BalanceEffect {
 	availableDelta: number;
-	quantityDelta: number;
+	baseUomCode: string | null;
+	baseUomId: string | null;
+	itemCode: string;
+	itemId: string;
 	movementLineId: string | null;
-};
+	onHandDelta: number;
+	quantityDelta: number;
+	reservedDelta: number;
+	warehouseCode: string;
+	warehouseId: string;
+}
 
 /**
  * Compute per-warehouse balance deltas for a posted physical movement.

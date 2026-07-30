@@ -12,9 +12,9 @@ import {
 	actionFailInternal,
 } from "@/modules/platform/schemas/action-result";
 
-export type ListPaymentTermsActionData = {
+export interface ListPaymentTermsActionData {
 	paymentTerms: PaymentTerm[];
-};
+}
 
 /**
  * Master-data payment term list — session org stamp + `master_data.read`.

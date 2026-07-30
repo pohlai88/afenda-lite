@@ -39,7 +39,7 @@ export const Overview: Story = {
 			</CardHeader>
 			<CardContent className="flex items-center gap-3">
 				<Spinner {...args} />
-				<span className="text-sm text-foreground-secondary">
+				<span className="text-foreground-secondary text-sm">
 					Refreshing posted invoices…
 				</span>
 			</CardContent>
@@ -50,7 +50,7 @@ export const Usage: Story = {
 	render: () => (
 		<StorySection title="Named indeterminate activity">
 			<div className="flex items-center gap-2">
-				<Spinner size="sm" label="Saving invoice" />
+				<Spinner label="Saving invoice" size="sm" />
 				<span className="text-sm">Saving invoice…</span>
 			</div>
 		</StorySection>
@@ -60,8 +60,8 @@ export const StatesAndAccessibility: Story = {
 	render: () => (
 		<div className="flex flex-wrap items-center gap-6">
 			<Spinner label="Loading remittance match" />
-			<Spinner variant="secondary" label="Refreshing register" />
-			<Spinner variant="destructive" label="Voiding invoice" />
+			<Spinner label="Refreshing register" variant="secondary" />
+			<Spinner label="Voiding invoice" variant="destructive" />
 		</div>
 	),
 };
@@ -73,9 +73,9 @@ export const VariantsAndSizes: Story = {
 					{spinnerSizes.map((size) => (
 						<Spinner
 							key={size}
-							variant={variant}
-							size={size}
 							label={`${variant} ${size} loading`}
+							size={size}
+							variant={variant}
 						/>
 					))}
 				</div>
@@ -86,7 +86,7 @@ export const VariantsAndSizes: Story = {
 export const Composition: Story = {
 	render: () => (
 		<Button disabled>
-			<Spinner size="sm" variant="secondary" label="Saving supplier" />
+			<Spinner label="Saving supplier" size="sm" variant="secondary" />
 			Saving supplier…
 		</Button>
 	),
@@ -95,12 +95,12 @@ export const DoAndDoNot: Story = {
 	render: () => (
 		<div className="grid gap-6 sm:grid-cols-2">
 			<StorySection title="Do: identify the operation">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Use “Saving invoice…” and transition to ready, empty, or error.
 				</p>
 			</StorySection>
 			<StorySection title="Do not: leave an endless spinner">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Timeout, cancellation, and failure remain consumer-owned.
 				</p>
 			</StorySection>

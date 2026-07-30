@@ -1,5 +1,4 @@
 import { randomUUID } from "node:crypto";
-
 import { ok, type Result } from "@afenda/errors/result";
 import {
 	HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_EXPIRED_EVENT,
@@ -15,7 +14,6 @@ import {
 	HUMAN_RESOURCES_WORK_ELIGIBILITY_VERIFIED_EVENT,
 	type HumanResourcesEventType,
 } from "@afenda/events/schemas";
-
 import {
 	type HumanResourcesDocumentRequirementId,
 	type HumanResourcesEmployeeDocumentId,
@@ -56,6 +54,8 @@ import { assertExpectedVersion } from "../../shared/concurrency";
 import { conflict, invalidState, notFound } from "../../shared/domain-guards";
 import { buildHumanResourcesEntityEventPayload } from "../../shared/event-payload";
 import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
+import { runRollbacks } from "../../shared/rollback";
+import { runSequential, sequentialReturn } from "../../shared/run-sequential";
 import type { HumanResourcesStore } from "../../store";
 import type {
 	DocumentRequirement,
@@ -74,27 +74,27 @@ import type {
 import type { CoreMemoryState } from "./core";
 import { idempotencyMapKey } from "./shared";
 
-export type ComplianceMemoryState = {
+export interface ComplianceMemoryState {
 	documentRequirements: Map<
 		HumanResourcesDocumentRequirementId,
 		DocumentRequirement
 	>;
-	employeeDocuments: Map<HumanResourcesEmployeeDocumentId, EmployeeDocument>;
 	employeeDocumentIdempotencyByKey: Map<
 		string,
 		IdempotentEmployeeDocumentRecord
 	>;
-	workEligibilities: Map<HumanResourcesWorkEligibilityId, WorkEligibility>;
-	workEligibilityIdempotencyByKey: Map<string, IdempotentWorkEligibilityRecord>;
-	policyAcknowledgements: Map<
-		HumanResourcesPolicyAcknowledgementId,
-		PolicyAcknowledgement
-	>;
+	employeeDocuments: Map<HumanResourcesEmployeeDocumentId, EmployeeDocument>;
 	policyAcknowledgementIdempotencyByKey: Map<
 		string,
 		IdempotentPolicyAcknowledgementRecord
 	>;
-};
+	policyAcknowledgements: Map<
+		HumanResourcesPolicyAcknowledgementId,
+		PolicyAcknowledgement
+	>;
+	workEligibilities: Map<HumanResourcesWorkEligibilityId, WorkEligibility>;
+	workEligibilityIdempotencyByKey: Map<string, IdempotentWorkEligibilityRecord>;
+}
 
 export type ComplianceMemoryHost = Pick<HumanResourcesStore, "getEmployeeById">;
 
@@ -188,11 +188,11 @@ async function recordComplianceAudit(
 		entity: string;
 		entityId: string;
 		action: "CREATE" | "UPDATE";
-		oldValue?: Record<string, unknown> | null;
-		newValue?: Record<string, unknown> | null;
-		statusField?: string;
-		oldStatus?: string | null;
-		newStatus?: string;
+		oldValue?: Record<string, unknown> | null | undefined;
+		newValue?: Record<string, unknown> | null | undefined;
+		statusField?: string | undefined;
+		oldStatus?: string | null | undefined;
+		newStatus?: string | undefined;
 	},
 ): Promise<Result<{ id: string }>> {
 	const context = {
@@ -207,7 +207,7 @@ async function recordComplianceAudit(
 		input.oldStatus !== undefined &&
 		input.newStatus !== undefined
 	) {
-		return ports.audit.record(
+		return await ports.audit.record(
 			buildStatusTransitionAuditFact({
 				context,
 				field: input.statusField,
@@ -219,14 +219,14 @@ async function recordComplianceAudit(
 		);
 	}
 	if (input.action === "CREATE") {
-		return ports.audit.record(
+		return await ports.audit.record(
 			buildCreateAuditFact({
 				context,
 				newValue: input.newValue ?? { id: input.entityId },
 			}),
 		);
 	}
-	return ports.audit.record(
+	return await ports.audit.record(
 		buildUpdateAuditFact({
 			context,
 			oldValue: input.oldValue ?? {},
@@ -247,19 +247,49 @@ async function appendComplianceOutbox(
 		entityId: string;
 	},
 ): Promise<Result<{ id: string }>> {
-	return ports.outbox.append({
+	return await ports.outbox.append({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: meta.correlationId,
 		type: input.type,
-		payload: buildHumanResourcesEntityEventPayload({
-			organizationId: input.organizationId,
-			entityType: input.entityType,
-			entityId: input.entityId,
-			actorUserId: input.actorUserId,
-			meta,
-		}),
+		payload: {
+			...buildHumanResourcesEntityEventPayload({
+				organizationId: input.organizationId,
+				entityType: input.entityType,
+				entityId: input.entityId,
+				actorUserId: input.actorUserId,
+				meta,
+			}),
+		},
 	});
+}
+
+async function emitDocumentNearingExpiryIfNeeded(
+	state: ComplianceMemoryState,
+	ports: MutationPorts,
+	meta: HumanResourcesMutationMeta,
+	input: {
+		document: EmployeeDocument;
+		actorUserId: string;
+		asOf: string;
+	},
+): Promise<Result<void>> {
+	if (
+		!isNearingExpiry({
+			expiresOn: input.document.expiresOn,
+			asOf: input.asOf,
+		})
+	) {
+		return ok(undefined);
+	}
+	const outbox = await appendComplianceOutbox(state, ports, meta, {
+		organizationId: input.document.organizationId,
+		actorUserId: input.actorUserId,
+		type: HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_NEARING_EXPIRY_EVENT,
+		entityType: "hr_employee_document",
+		entityId: input.document.id,
+	});
+	return outbox.ok ? ok(undefined) : outbox;
 }
 
 async function transitionDocumentRequirementStatus(
@@ -350,7 +380,7 @@ async function transitionEmployeeDocumentStatus(
 				| "metadata"
 			>
 		>;
-		events?: HumanResourcesEventType[];
+		events?: HumanResourcesEventType[] | undefined;
 		ports: MutationPorts;
 		meta: HumanResourcesMutationMeta;
 	},
@@ -422,27 +452,33 @@ async function transitionEmployeeDocumentStatus(
 		},
 	});
 	if (!audit.ok) {
-		for (const undo of rollback) undo();
+		runRollbacks(rollback);
 		return audit;
 	}
 
-	for (const eventType of input.events ?? []) {
-		const outbox = await appendComplianceOutbox(
-			state,
-			input.ports,
-			input.meta,
-			{
-				organizationId: updated.organizationId,
-				actorUserId: input.actorUserId,
-				type: eventType,
-				entityType: "hr_employee_document",
-				entityId: updated.id,
-			},
-		);
-		if (!outbox.ok) {
-			for (const undo of rollback) undo();
-			return outbox;
-		}
+	const sequentialOutcome1 = await runSequential(
+		input.events ?? [],
+		async (eventType) => {
+			const outbox = await appendComplianceOutbox(
+				state,
+				input.ports,
+				input.meta,
+				{
+					organizationId: updated.organizationId,
+					actorUserId: input.actorUserId,
+					type: eventType,
+					entityType: "hr_employee_document",
+					entityId: updated.id,
+				},
+			);
+			if (!outbox.ok) {
+				runRollbacks(rollback);
+				return sequentialReturn(outbox);
+			}
+		},
+	);
+	if (sequentialOutcome1.kind === "return") {
+		return sequentialOutcome1.value;
 	}
 
 	return ok({ ...updated });
@@ -462,7 +498,7 @@ async function transitionWorkEligibilityStatus(
 				"issuedOn" | "expiresOn" | "documentRef" | "verifiedBy" | "verifiedAt"
 			>
 		>;
-		events?: HumanResourcesEventType[];
+		events?: HumanResourcesEventType[] | undefined;
 		ports: MutationPorts;
 		meta: HumanResourcesMutationMeta;
 	},
@@ -522,27 +558,33 @@ async function transitionWorkEligibilityStatus(
 		newValue: { status: updated.status, version: updated.version },
 	});
 	if (!audit.ok) {
-		for (const undo of rollback) undo();
+		runRollbacks(rollback);
 		return audit;
 	}
 
-	for (const eventType of input.events ?? []) {
-		const outbox = await appendComplianceOutbox(
-			state,
-			input.ports,
-			input.meta,
-			{
-				organizationId: updated.organizationId,
-				actorUserId: input.actorUserId,
-				type: eventType,
-				entityType: "hr_work_eligibility",
-				entityId: updated.id,
-			},
-		);
-		if (!outbox.ok) {
-			for (const undo of rollback) undo();
-			return outbox;
-		}
+	const sequentialOutcome2 = await runSequential(
+		input.events ?? [],
+		async (eventType) => {
+			const outbox = await appendComplianceOutbox(
+				state,
+				input.ports,
+				input.meta,
+				{
+					organizationId: updated.organizationId,
+					actorUserId: input.actorUserId,
+					type: eventType,
+					entityType: "hr_work_eligibility",
+					entityId: updated.id,
+				},
+			);
+			if (!outbox.ok) {
+				runRollbacks(rollback);
+				return sequentialReturn(outbox);
+			}
+		},
+	);
+	if (sequentialOutcome2.kind === "return") {
+		return sequentialOutcome2.value;
 	}
 
 	return ok({ ...updated });
@@ -634,27 +676,33 @@ async function transitionPolicyAcknowledgementStatus(
 		},
 	});
 	if (!audit.ok) {
-		for (const undo of rollback) undo();
+		runRollbacks(rollback);
 		return audit;
 	}
 
-	for (const eventType of input.events ?? []) {
-		const outbox = await appendComplianceOutbox(
-			state,
-			input.ports,
-			input.meta,
-			{
-				organizationId: updated.organizationId,
-				actorUserId: input.actorUserId,
-				type: eventType,
-				entityType: "hr_policy_acknowledgement",
-				entityId: updated.id,
-			},
-		);
-		if (!outbox.ok) {
-			for (const undo of rollback) undo();
-			return outbox;
-		}
+	const sequentialOutcome3 = await runSequential(
+		input.events ?? [],
+		async (eventType) => {
+			const outbox = await appendComplianceOutbox(
+				state,
+				input.ports,
+				input.meta,
+				{
+					organizationId: updated.organizationId,
+					actorUserId: input.actorUserId,
+					type: eventType,
+					entityType: "hr_policy_acknowledgement",
+					entityId: updated.id,
+				},
+			);
+			if (!outbox.ok) {
+				runRollbacks(rollback);
+				return sequentialReturn(outbox);
+			}
+		},
+	);
+	if (sequentialOutcome3.kind === "return") {
+		return sequentialOutcome3.value;
 	}
 
 	return ok({ ...updated });
@@ -674,9 +722,9 @@ export function createMemoryComplianceMethods(
 		}): Promise<Result<DocumentRequirement | null>> {
 			const requirement = state.documentRequirements.get(input.requirementId);
 			if (!requirement || requirement.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...requirement });
+			return await ok({ ...requirement });
 		},
 
 		async findDocumentRequirementByCode(input: {
@@ -689,7 +737,7 @@ export function createMemoryComplianceMethods(
 						row.organizationId === input.organizationId &&
 						row.code === input.code,
 				) ?? null;
-			return ok(requirement === null ? null : { ...requirement });
+			return await ok(requirement === null ? null : { ...requirement });
 		},
 
 		async createDocumentRequirement(
@@ -759,11 +807,11 @@ export function createMemoryComplianceMethods(
 			input: {
 				organizationId: string;
 				requirementId: HumanResourcesDocumentRequirementId;
-				name?: string;
-				documentType?: string;
-				issuingJurisdiction?: string | null;
-				appliesToNote?: string | null;
-				applicability?: DocumentRequirementApplicability;
+				name?: string | undefined;
+				documentType?: string | undefined;
+				issuingJurisdiction?: string | null | undefined;
+				appliesToNote?: string | null | undefined;
+				applicability?: DocumentRequirementApplicability | undefined;
 				expectedVersion: number;
 				actorUserId: string;
 			},
@@ -800,13 +848,13 @@ export function createMemoryComplianceMethods(
 				name: input.name ?? requirement.name,
 				documentType: input.documentType ?? requirement.documentType,
 				issuingJurisdiction:
-					input.issuingJurisdiction !== undefined
-						? input.issuingJurisdiction
-						: requirement.issuingJurisdiction,
+					input.issuingJurisdiction === undefined
+						? requirement.issuingJurisdiction
+						: input.issuingJurisdiction,
 				appliesToNote:
-					input.appliesToNote !== undefined
-						? input.appliesToNote
-						: requirement.appliesToNote,
+					input.appliesToNote === undefined
+						? requirement.appliesToNote
+						: input.appliesToNote,
 				applicability: input.applicability ?? requirement.applicability,
 				version: requirement.version + 1,
 				updatedBy: input.actorUserId,
@@ -839,7 +887,7 @@ export function createMemoryComplianceMethods(
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<DocumentRequirement>> {
-			return transitionDocumentRequirementStatus(state, {
+			return await transitionDocumentRequirementStatus(state, {
 				organizationId: input.organizationId,
 				requirementId: input.requirementId,
 				expectedVersion: input.expectedVersion,
@@ -860,7 +908,7 @@ export function createMemoryComplianceMethods(
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<DocumentRequirement>> {
-			return transitionDocumentRequirementStatus(state, {
+			return await transitionDocumentRequirementStatus(state, {
 				organizationId: input.organizationId,
 				requirementId: input.requirementId,
 				expectedVersion: input.expectedVersion,
@@ -890,7 +938,7 @@ export function createMemoryComplianceMethods(
 				.slice(start, start + input.pageSize)
 				.map((row) => ({ ...row }));
 
-			return ok({
+			return await ok({
 				requirements,
 				totalCount,
 				page: input.page,
@@ -906,9 +954,9 @@ export function createMemoryComplianceMethods(
 		}): Promise<Result<EmployeeDocument | null>> {
 			const document = state.employeeDocuments.get(input.documentId);
 			if (!document || document.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...document });
+			return await ok({ ...document });
 		},
 
 		async findEmployeeDocumentByIdempotencyKey(input: {
@@ -918,9 +966,9 @@ export function createMemoryComplianceMethods(
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = state.employeeDocumentIdempotencyByKey.get(key);
 			if (!record) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...record, document: { ...record.document } });
+			return await ok({ ...record, document: { ...record.document } });
 		},
 
 		async registerEmployeeDocument(
@@ -1054,7 +1102,7 @@ export function createMemoryComplianceMethods(
 				newValue: { id: document.id },
 			});
 			if (!audit.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return audit;
 			}
 
@@ -1071,18 +1119,24 @@ export function createMemoryComplianceMethods(
 				events.push(HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_NEARING_EXPIRY_EVENT);
 			}
 
-			for (const eventType of events) {
-				const outbox = await appendComplianceOutbox(state, ports, meta, {
-					organizationId: document.organizationId,
-					actorUserId: record.createdBy,
-					type: eventType,
-					entityType: "hr_employee_document",
-					entityId: document.id,
-				});
-				if (!outbox.ok) {
-					for (const undo of rollback) undo();
-					return outbox;
-				}
+			const sequentialOutcome4 = await runSequential(
+				events,
+				async (eventType) => {
+					const outbox = await appendComplianceOutbox(state, ports, meta, {
+						organizationId: document.organizationId,
+						actorUserId: record.createdBy,
+						type: eventType,
+						entityType: "hr_employee_document",
+						entityId: document.id,
+					});
+					if (!outbox.ok) {
+						runRollbacks(rollback);
+						return sequentialReturn(outbox);
+					}
+				},
+			);
+			if (sequentialOutcome4.kind === "return") {
+				return sequentialOutcome4.value;
 			}
 
 			return ok({ ...document });
@@ -1092,9 +1146,9 @@ export function createMemoryComplianceMethods(
 			input: {
 				organizationId: string;
 				documentId: HumanResourcesEmployeeDocumentId;
-				issuingJurisdiction?: string | null;
-				expiresOn?: string | null;
-				metadata?: Record<string, unknown> | null;
+				issuingJurisdiction?: string | null | undefined;
+				expiresOn?: string | null | undefined;
+				metadata?: Record<string, unknown> | null | undefined;
 				expectedVersion: number;
 				actorUserId: string;
 			},
@@ -1121,7 +1175,7 @@ export function createMemoryComplianceMethods(
 			}
 
 			const nextExpiresOn =
-				input.expiresOn !== undefined ? input.expiresOn : document.expiresOn;
+				input.expiresOn === undefined ? document.expiresOn : input.expiresOn;
 			const dateRange = assertValidDocumentDateRange({
 				issuedOn: document.issuedOn,
 				expiresOn: nextExpiresOn,
@@ -1135,12 +1189,12 @@ export function createMemoryComplianceMethods(
 			const updated: EmployeeDocument = {
 				...document,
 				issuingJurisdiction:
-					input.issuingJurisdiction !== undefined
-						? input.issuingJurisdiction
-						: document.issuingJurisdiction,
+					input.issuingJurisdiction === undefined
+						? document.issuingJurisdiction
+						: input.issuingJurisdiction,
 				expiresOn: nextExpiresOn,
 				metadata:
-					input.metadata !== undefined ? input.metadata : document.metadata,
+					input.metadata === undefined ? document.metadata : input.metadata,
 				version: document.version + 1,
 				updatedBy: input.actorUserId,
 				updatedAt: now,
@@ -1159,28 +1213,23 @@ export function createMemoryComplianceMethods(
 				action: "UPDATE",
 			});
 			if (!audit.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return audit;
 			}
 
-			const asOf = now.toISOString().slice(0, 10);
-			if (
-				isNearingExpiry({
-					expiresOn: updated.expiresOn,
-					asOf,
-				})
-			) {
-				const outbox = await appendComplianceOutbox(state, ports, meta, {
-					organizationId: updated.organizationId,
+			const nearingExpiry = await emitDocumentNearingExpiryIfNeeded(
+				state,
+				ports,
+				meta,
+				{
+					document: updated,
 					actorUserId: input.actorUserId,
-					type: HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_NEARING_EXPIRY_EVENT,
-					entityType: "hr_employee_document",
-					entityId: updated.id,
-				});
-				if (!outbox.ok) {
-					for (const undo of rollback) undo();
-					return outbox;
-				}
+					asOf: now.toISOString().slice(0, 10),
+				},
+			);
+			if (!nearingExpiry.ok) {
+				runRollbacks(rollback);
+				return nearingExpiry;
 			}
 
 			return ok({ ...updated });
@@ -1197,7 +1246,7 @@ export function createMemoryComplianceMethods(
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<EmployeeDocument>> {
-			return transitionEmployeeDocumentStatus(state, {
+			return await transitionEmployeeDocumentStatus(state, {
 				organizationId: input.organizationId,
 				documentId: input.documentId,
 				expectedVersion: input.expectedVersion,
@@ -1227,10 +1276,10 @@ export function createMemoryComplianceMethods(
 		): Promise<Result<EmployeeDocument>> {
 			const reasonCheck = assertRejectionReasonProvided(input.rejectionReason);
 			if (!reasonCheck.ok) {
-				return reasonCheck;
+				return await reasonCheck;
 			}
 
-			return transitionEmployeeDocumentStatus(state, {
+			return await transitionEmployeeDocumentStatus(state, {
 				organizationId: input.organizationId,
 				documentId: input.documentId,
 				expectedVersion: input.expectedVersion,
@@ -1257,7 +1306,7 @@ export function createMemoryComplianceMethods(
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<EmployeeDocument>> {
-			return transitionEmployeeDocumentStatus(state, {
+			return await transitionEmployeeDocumentStatus(state, {
 				organizationId: input.organizationId,
 				documentId: input.documentId,
 				expectedVersion: input.expectedVersion,
@@ -1278,7 +1327,7 @@ export function createMemoryComplianceMethods(
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<EmployeeDocument>> {
-			return transitionEmployeeDocumentStatus(state, {
+			return await transitionEmployeeDocumentStatus(state, {
 				organizationId: input.organizationId,
 				documentId: input.documentId,
 				expectedVersion: input.expectedVersion,
@@ -1294,8 +1343,8 @@ export function createMemoryComplianceMethods(
 			organizationId: string;
 			page: number;
 			pageSize: number;
-			employeeId?: HumanResourcesEmployeeId;
-			verificationStatus?: EmployeeDocument["verificationStatus"];
+			employeeId?: HumanResourcesEmployeeId | undefined;
+			verificationStatus?: EmployeeDocument["verificationStatus"] | undefined;
 		}): Promise<Result<EmployeeDocumentListPage>> {
 			let filtered = Array.from(state.employeeDocuments.values()).filter(
 				(row) => row.organizationId === input.organizationId,
@@ -1320,7 +1369,7 @@ export function createMemoryComplianceMethods(
 				.slice(start, start + input.pageSize)
 				.map((row) => toEmployeeDocumentListItem(row));
 
-			return ok({
+			return await ok({
 				documents,
 				totalCount,
 				page: input.page,
@@ -1332,7 +1381,7 @@ export function createMemoryComplianceMethods(
 			organizationId: string;
 			page: number;
 			pageSize: number;
-			employeeId?: HumanResourcesEmployeeId;
+			employeeId?: HumanResourcesEmployeeId | undefined;
 		}): Promise<Result<DocumentRequirementListPage>> {
 			const published = Array.from(state.documentRequirements.values()).filter(
 				(row) =>
@@ -1372,7 +1421,7 @@ export function createMemoryComplianceMethods(
 				.slice(start, start + input.pageSize)
 				.map((row) => ({ ...row }));
 
-			return ok({
+			return await ok({
 				requirements,
 				totalCount,
 				page: input.page,
@@ -1386,7 +1435,7 @@ export function createMemoryComplianceMethods(
 			withinDays: number;
 			page: number;
 			pageSize: number;
-			employeeId?: HumanResourcesEmployeeId;
+			employeeId?: HumanResourcesEmployeeId | undefined;
 		}): Promise<Result<EmployeeDocumentListPage>> {
 			let filtered = Array.from(state.employeeDocuments.values()).filter(
 				(row) =>
@@ -1421,7 +1470,7 @@ export function createMemoryComplianceMethods(
 				.slice(start, start + input.pageSize)
 				.map((row) => toEmployeeDocumentListItem(row));
 
-			return ok({
+			return await ok({
 				documents,
 				totalCount,
 				page: input.page,
@@ -1437,9 +1486,9 @@ export function createMemoryComplianceMethods(
 		}): Promise<Result<WorkEligibility | null>> {
 			const eligibility = state.workEligibilities.get(input.eligibilityId);
 			if (!eligibility || eligibility.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...eligibility });
+			return await ok({ ...eligibility });
 		},
 
 		async getActiveWorkEligibilityForEmployee(input: {
@@ -1456,7 +1505,7 @@ export function createMemoryComplianceMethods(
 				.sort((a, b) => b.issuedOn.localeCompare(a.issuedOn));
 
 			const eligibility = active[0] ?? null;
-			return ok(eligibility === null ? null : { ...eligibility });
+			return await ok(eligibility === null ? null : { ...eligibility });
 		},
 
 		async findWorkEligibilityByIdempotencyKey(input: {
@@ -1466,9 +1515,9 @@ export function createMemoryComplianceMethods(
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = state.workEligibilityIdempotencyByKey.get(key);
 			if (!record) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...record, eligibility: { ...record.eligibility } });
+			return await ok({ ...record, eligibility: { ...record.eligibility } });
 		},
 
 		async recordWorkEligibility(
@@ -1575,7 +1624,7 @@ export function createMemoryComplianceMethods(
 				newValue: { id: eligibility.id },
 			});
 			if (!audit.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return audit;
 			}
 
@@ -1593,7 +1642,7 @@ export function createMemoryComplianceMethods(
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<WorkEligibility>> {
-			return transitionWorkEligibilityStatus(state, {
+			return await transitionWorkEligibilityStatus(state, {
 				organizationId: input.organizationId,
 				eligibilityId: input.eligibilityId,
 				expectedVersion: input.expectedVersion,
@@ -1619,7 +1668,7 @@ export function createMemoryComplianceMethods(
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<WorkEligibility>> {
-			return transitionWorkEligibilityStatus(state, {
+			return await transitionWorkEligibilityStatus(state, {
 				organizationId: input.organizationId,
 				eligibilityId: input.eligibilityId,
 				expectedVersion: input.expectedVersion,
@@ -1746,7 +1795,7 @@ export function createMemoryComplianceMethods(
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<WorkEligibility>> {
-			return transitionWorkEligibilityStatus(state, {
+			return await transitionWorkEligibilityStatus(state, {
 				organizationId: input.organizationId,
 				eligibilityId: input.eligibilityId,
 				expectedVersion: input.expectedVersion,
@@ -1788,9 +1837,9 @@ export function createMemoryComplianceMethods(
 						return expiresCompare;
 					}
 					const issuedCompare = b.issuedOn.localeCompare(a.issuedOn);
-					return issuedCompare !== 0
-						? issuedCompare
-						: a.employeeId.localeCompare(b.employeeId);
+					return issuedCompare === 0
+						? a.employeeId.localeCompare(b.employeeId)
+						: issuedCompare;
 				});
 
 			const totalCount = filtered.length;
@@ -1799,7 +1848,7 @@ export function createMemoryComplianceMethods(
 				.slice(start, start + input.pageSize)
 				.map((row) => ({ ...row }));
 
-			return ok({
+			return await ok({
 				eligibilities,
 				totalCount,
 				page: input.page,
@@ -1820,9 +1869,9 @@ export function createMemoryComplianceMethods(
 				!acknowledgement ||
 				acknowledgement.organizationId !== input.organizationId
 			) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...acknowledgement });
+			return await ok({ ...acknowledgement });
 		},
 
 		async findPolicyAcknowledgementByIdempotencyKey(input: {
@@ -1832,9 +1881,9 @@ export function createMemoryComplianceMethods(
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = state.policyAcknowledgementIdempotencyByKey.get(key);
 			if (!record) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({
+			return await ok({
 				...record,
 				acknowledgement: { ...record.acknowledgement },
 			});
@@ -1946,7 +1995,7 @@ export function createMemoryComplianceMethods(
 				newValue: { id: acknowledgement.id },
 			});
 			if (!audit.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return audit;
 			}
 
@@ -1958,7 +2007,7 @@ export function createMemoryComplianceMethods(
 				entityId: acknowledgement.id,
 			});
 			if (!outbox.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return outbox;
 			}
 
@@ -1976,7 +2025,7 @@ export function createMemoryComplianceMethods(
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PolicyAcknowledgement>> {
 			const now = new Date();
-			return transitionPolicyAcknowledgementStatus(state, {
+			return await transitionPolicyAcknowledgementStatus(state, {
 				organizationId: input.organizationId,
 				acknowledgementId: input.acknowledgementId,
 				expectedVersion: input.expectedVersion,
@@ -2002,7 +2051,7 @@ export function createMemoryComplianceMethods(
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PolicyAcknowledgement>> {
-			return transitionPolicyAcknowledgementStatus(state, {
+			return await transitionPolicyAcknowledgementStatus(state, {
 				organizationId: input.organizationId,
 				acknowledgementId: input.acknowledgementId,
 				expectedVersion: input.expectedVersion,
@@ -2101,7 +2150,7 @@ export function createMemoryComplianceMethods(
 				newValue: { id: replacement.id },
 			});
 			if (!audit.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return audit;
 			}
 
@@ -2113,7 +2162,7 @@ export function createMemoryComplianceMethods(
 				entityId: replacement.id,
 			});
 			if (!outbox.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return outbox;
 			}
 
@@ -2124,7 +2173,7 @@ export function createMemoryComplianceMethods(
 			organizationId: string;
 			employeeId: HumanResourcesEmployeeId;
 			policyCode: string;
-			policyVersion?: string;
+			policyVersion?: string | undefined;
 		}): Promise<Result<PolicyAcknowledgement | null>> {
 			let matches = Array.from(state.policyAcknowledgements.values()).filter(
 				(row) =>
@@ -2140,22 +2189,22 @@ export function createMemoryComplianceMethods(
 			}
 
 			if (matches.length === 0) {
-				return ok(null);
+				return await ok(null);
 			}
 
 			matches.sort((a, b) => b.issuedAt.getTime() - a.issuedAt.getTime());
-			const latest = matches[0];
+			const [latest] = matches;
 			if (!latest) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...latest });
+			return await ok({ ...latest });
 		},
 
 		async listOutstandingPolicyAcknowledgements(input: {
 			organizationId: string;
 			page: number;
 			pageSize: number;
-			employeeId?: HumanResourcesEmployeeId;
+			employeeId?: HumanResourcesEmployeeId | undefined;
 		}): Promise<Result<PolicyAcknowledgementListPage>> {
 			let filtered = Array.from(state.policyAcknowledgements.values()).filter(
 				(row) =>
@@ -2177,7 +2226,7 @@ export function createMemoryComplianceMethods(
 				.slice(start, start + input.pageSize)
 				.map((row) => ({ ...row }));
 
-			return ok({
+			return await ok({
 				acknowledgements,
 				totalCount,
 				page: input.page,
@@ -2190,7 +2239,7 @@ export function createMemoryComplianceMethods(
 			asOf: string;
 			page: number;
 			pageSize: number;
-			employeeId?: HumanResourcesEmployeeId;
+			employeeId?: HumanResourcesEmployeeId | undefined;
 		}): Promise<Result<PolicyAcknowledgementListPage>> {
 			let filtered = Array.from(state.policyAcknowledgements.values()).filter(
 				(row) =>
@@ -2205,13 +2254,13 @@ export function createMemoryComplianceMethods(
 			}
 			filtered.sort((a, b) => {
 				const dueCompare = a.dueOn.localeCompare(b.dueOn);
-				return dueCompare !== 0
-					? dueCompare
-					: b.issuedAt.getTime() - a.issuedAt.getTime();
+				return dueCompare === 0
+					? b.issuedAt.getTime() - a.issuedAt.getTime()
+					: dueCompare;
 			});
 			const totalCount = filtered.length;
 			const start = (input.page - 1) * input.pageSize;
-			return ok({
+			return await ok({
 				acknowledgements: filtered
 					.slice(start, start + input.pageSize)
 					.map((row) => ({ ...row })),
@@ -2226,7 +2275,7 @@ export function createMemoryComplianceMethods(
 		async getEmployeeComplianceSummary(input: {
 			organizationId: string;
 			employeeId: HumanResourcesEmployeeId;
-			asOf?: string;
+			asOf?: string | undefined;
 		}): Promise<Result<EmployeeComplianceSummary>> {
 			const employeeResult = await this.getEmployeeById({
 				organizationId: input.organizationId,

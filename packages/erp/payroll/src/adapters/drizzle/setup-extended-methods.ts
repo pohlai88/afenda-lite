@@ -43,7 +43,7 @@ import type {
 	PayrollStatutoryRule,
 } from "../../types";
 
-async function recordAudit(
+function recordAudit(
 	ports: MutationPorts,
 	input: {
 		organizationId: string;
@@ -359,7 +359,7 @@ export function createDrizzleSetupExtendedMethods(
 					),
 				)
 				.returning();
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return mapConflict("Payroll calendar version is stale");
 			}
@@ -418,7 +418,7 @@ export function createDrizzleSetupExtendedMethods(
 			}
 		},
 
-		async archiveCalendar(calendarInput, ports) {
+		archiveCalendar(calendarInput, ports) {
 			return transitionCalendarStatus(calendarInput, "archived", ports);
 		},
 
@@ -464,7 +464,7 @@ export function createDrizzleSetupExtendedMethods(
 						),
 					)
 					.returning();
-				const row = rows[0];
+				const [row] = rows;
 				if (row === undefined) {
 					return mapConflict("Payroll pay group version is stale");
 				}
@@ -535,7 +535,7 @@ export function createDrizzleSetupExtendedMethods(
 						),
 					)
 					.returning();
-				const row = rows[0];
+				const [row] = rows;
 				if (row === undefined) {
 					return mapConflict("Payroll pay group version is stale");
 				}
@@ -606,7 +606,7 @@ export function createDrizzleSetupExtendedMethods(
 						),
 					)
 					.returning();
-				const row = rows[0];
+				const [row] = rows;
 				if (row === undefined) {
 					return mapConflict("Payroll period version is stale");
 				}
@@ -674,7 +674,7 @@ export function createDrizzleSetupExtendedMethods(
 						),
 					)
 					.returning();
-				const row = rows[0];
+				const [row] = rows;
 				if (row === undefined) {
 					return mapConflict("Payroll period version is stale");
 				}
@@ -714,7 +714,7 @@ export function createDrizzleSetupExtendedMethods(
 						),
 					)
 					.limit(1);
-				const row = rows[0];
+				const [row] = rows;
 				if (row === undefined) {
 					return ok(null);
 				}
@@ -727,6 +727,7 @@ export function createDrizzleSetupExtendedMethods(
 			}
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Versioned rule mutation keeps lock, conflict, audit, and persistence checks together.
 		async updateEarningRule(ruleInput, ports) {
 			const locked = await assertRuleNotLockedByFinalizedRun(ruleLockStore, {
 				organizationId: ruleInput.organizationId,
@@ -765,15 +766,15 @@ export function createDrizzleSetupExtendedMethods(
 					.set({
 						name: ruleInput.name ?? current.data.name,
 						amount:
-							ruleInput.amount !== undefined
-								? ruleInput.amount
-								: current.data.amount,
+							ruleInput.amount === undefined
+								? current.data.amount
+								: ruleInput.amount,
 						rate:
-							ruleInput.rate !== undefined ? ruleInput.rate : current.data.rate,
+							ruleInput.rate === undefined ? current.data.rate : ruleInput.rate,
 						effectiveTo:
-							ruleInput.effectiveTo !== undefined
-								? ruleInput.effectiveTo
-								: current.data.effectiveTo,
+							ruleInput.effectiveTo === undefined
+								? current.data.effectiveTo
+								: ruleInput.effectiveTo,
 						version: current.data.version + 1,
 						updatedBy: ruleInput.actorUserId,
 						updatedAt: new Date(),
@@ -786,7 +787,7 @@ export function createDrizzleSetupExtendedMethods(
 						),
 					)
 					.returning();
-				const row = rows[0];
+				const [row] = rows;
 				if (row === undefined) {
 					return mapConflict("Payroll earning rule version is stale");
 				}
@@ -866,7 +867,7 @@ export function createDrizzleSetupExtendedMethods(
 						),
 					)
 					.returning();
-				const row = rows[0];
+				const [row] = rows;
 				if (row === undefined) {
 					return mapConflict("Payroll earning rule version is stale");
 				}
@@ -897,6 +898,7 @@ export function createDrizzleSetupExtendedMethods(
 			}
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Rule supersession is one lock-checked, versioned persistence transaction.
 		async supersedeEarningRule(record, ports) {
 			const locked = await assertRuleNotLockedByFinalizedRun(ruleLockStore, {
 				organizationId: record.organizationId,
@@ -948,7 +950,7 @@ export function createDrizzleSetupExtendedMethods(
 						),
 					)
 					.returning();
-				supersededRow = rows[0];
+				[supersededRow] = rows;
 				if (supersededRow === undefined) {
 					return mapConflict("Payroll earning rule version is stale");
 				}
@@ -971,8 +973,8 @@ export function createDrizzleSetupExtendedMethods(
 					code: existing.code,
 					name: record.name ?? existing.name,
 					ruleType: record.ruleType ?? existing.ruleType,
-					amount: record.amount !== undefined ? record.amount : existing.amount,
-					rate: record.rate !== undefined ? record.rate : existing.rate,
+					amount: record.amount === undefined ? existing.amount : record.amount,
+					rate: record.rate === undefined ? existing.rate : record.rate,
 					currencyCode: record.currencyCode ?? existing.currencyCode,
 					ruleVersion: record.ruleVersion,
 					effectiveFrom: record.effectiveFrom,
@@ -1027,7 +1029,7 @@ export function createDrizzleSetupExtendedMethods(
 						),
 					)
 					.limit(1);
-				const row = rows[0];
+				const [row] = rows;
 				if (row === undefined) {
 					return ok(null);
 				}
@@ -1040,6 +1042,7 @@ export function createDrizzleSetupExtendedMethods(
 			}
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Versioned rule mutation keeps lock, conflict, audit, and persistence checks together.
 		async updateDeductionRule(ruleInput, ports) {
 			const locked = await assertRuleNotLockedByFinalizedRun(ruleLockStore, {
 				organizationId: ruleInput.organizationId,
@@ -1078,19 +1081,19 @@ export function createDrizzleSetupExtendedMethods(
 					.set({
 						name: ruleInput.name ?? current.data.name,
 						amount:
-							ruleInput.amount !== undefined
-								? ruleInput.amount
-								: current.data.amount,
+							ruleInput.amount === undefined
+								? current.data.amount
+								: ruleInput.amount,
 						rate:
-							ruleInput.rate !== undefined ? ruleInput.rate : current.data.rate,
+							ruleInput.rate === undefined ? current.data.rate : ruleInput.rate,
 						taxTiming:
-							ruleInput.taxTiming !== undefined
-								? ruleInput.taxTiming
-								: current.data.taxTiming,
+							ruleInput.taxTiming === undefined
+								? current.data.taxTiming
+								: ruleInput.taxTiming,
 						effectiveTo:
-							ruleInput.effectiveTo !== undefined
-								? ruleInput.effectiveTo
-								: current.data.effectiveTo,
+							ruleInput.effectiveTo === undefined
+								? current.data.effectiveTo
+								: ruleInput.effectiveTo,
 						version: current.data.version + 1,
 						updatedBy: ruleInput.actorUserId,
 						updatedAt: new Date(),
@@ -1103,7 +1106,7 @@ export function createDrizzleSetupExtendedMethods(
 						),
 					)
 					.returning();
-				const row = rows[0];
+				const [row] = rows;
 				if (row === undefined) {
 					return mapConflict("Payroll deduction rule version is stale");
 				}
@@ -1183,7 +1186,7 @@ export function createDrizzleSetupExtendedMethods(
 						),
 					)
 					.returning();
-				const row = rows[0];
+				const [row] = rows;
 				if (row === undefined) {
 					return mapConflict("Payroll deduction rule version is stale");
 				}
@@ -1214,6 +1217,7 @@ export function createDrizzleSetupExtendedMethods(
 			}
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Rule supersession is one lock-checked, versioned persistence transaction.
 		async supersedeDeductionRule(record, ports) {
 			const locked = await assertRuleNotLockedByFinalizedRun(ruleLockStore, {
 				organizationId: record.organizationId,
@@ -1265,7 +1269,7 @@ export function createDrizzleSetupExtendedMethods(
 						),
 					)
 					.returning();
-				supersededRow = rows[0];
+				[supersededRow] = rows;
 				if (supersededRow === undefined) {
 					return mapConflict("Payroll deduction rule version is stale");
 				}
@@ -1288,8 +1292,8 @@ export function createDrizzleSetupExtendedMethods(
 					code: existing.code,
 					name: record.name ?? existing.name,
 					ruleType: record.ruleType ?? existing.ruleType,
-					amount: record.amount !== undefined ? record.amount : existing.amount,
-					rate: record.rate !== undefined ? record.rate : existing.rate,
+					amount: record.amount === undefined ? existing.amount : record.amount,
+					rate: record.rate === undefined ? existing.rate : record.rate,
 					currencyCode: record.currencyCode ?? existing.currencyCode,
 					taxTiming: record.taxTiming ?? existing.taxTiming,
 					ruleVersion: record.ruleVersion,
@@ -1345,7 +1349,7 @@ export function createDrizzleSetupExtendedMethods(
 						),
 					)
 					.limit(1);
-				const row = rows[0];
+				const [row] = rows;
 				if (row === undefined) {
 					return ok(null);
 				}
@@ -1358,6 +1362,7 @@ export function createDrizzleSetupExtendedMethods(
 			}
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Versioned rule mutation keeps lock, conflict, audit, and persistence checks together.
 		async updateStatutoryRule(ruleInput, ports) {
 			const locked = await assertRuleNotLockedByFinalizedRun(ruleLockStore, {
 				organizationId: ruleInput.organizationId,
@@ -1399,9 +1404,9 @@ export function createDrizzleSetupExtendedMethods(
 							ruleInput.jurisdictionCode ?? current.data.jurisdictionCode,
 						configJson: ruleInput.configJson ?? current.data.configJson,
 						effectiveTo:
-							ruleInput.effectiveTo !== undefined
-								? ruleInput.effectiveTo
-								: current.data.effectiveTo,
+							ruleInput.effectiveTo === undefined
+								? current.data.effectiveTo
+								: ruleInput.effectiveTo,
 						version: current.data.version + 1,
 						updatedBy: ruleInput.actorUserId,
 						updatedAt: new Date(),
@@ -1414,7 +1419,7 @@ export function createDrizzleSetupExtendedMethods(
 						),
 					)
 					.returning();
-				const row = rows[0];
+				const [row] = rows;
 				if (row === undefined) {
 					return mapConflict("Payroll statutory rule version is stale");
 				}
@@ -1494,7 +1499,7 @@ export function createDrizzleSetupExtendedMethods(
 						),
 					)
 					.returning();
-				const row = rows[0];
+				const [row] = rows;
 				if (row === undefined) {
 					return mapConflict("Payroll statutory rule version is stale");
 				}
@@ -1525,6 +1530,7 @@ export function createDrizzleSetupExtendedMethods(
 			}
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Rule supersession is one lock-checked, versioned persistence transaction.
 		async supersedeStatutoryRule(record, ports) {
 			const locked = await assertRuleNotLockedByFinalizedRun(ruleLockStore, {
 				organizationId: record.organizationId,
@@ -1576,7 +1582,7 @@ export function createDrizzleSetupExtendedMethods(
 						),
 					)
 					.returning();
-				supersededRow = rows[0];
+				[supersededRow] = rows;
 				if (supersededRow === undefined) {
 					return mapConflict("Payroll statutory rule version is stale");
 				}
@@ -1667,7 +1673,7 @@ export function createDrizzleSetupExtendedMethods(
 			}
 		},
 
-		async isRuleVersionUsedByFinalizedRun(checkInput) {
+		isRuleVersionUsedByFinalizedRun(checkInput) {
 			return queryRuleFinalizedUsage(checkInput);
 		},
 	};

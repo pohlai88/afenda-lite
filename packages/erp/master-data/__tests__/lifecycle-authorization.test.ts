@@ -103,7 +103,7 @@ describe("lifecycle authorization policy", () => {
 	});
 
 	it("maps root lifecycle commands to distinct lifecycle permissions", () => {
-		const commands = masterDataModuleManifest.authorization.commands;
+		const { commands } = masterDataModuleManifest.authorization;
 
 		expect(commands[MASTER_COMMAND_ITEM_ACTIVATE]).toBe(
 			"master_data.item_activate",

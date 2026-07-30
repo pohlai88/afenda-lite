@@ -22,9 +22,9 @@ import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authori
 import { createSalesCommandOptions } from "@/lib/erp/sales-command-options";
 import { sessionHasPermission } from "@/modules/identity/domain/session-permission";
 
-type SalesShellProps = {
+interface SalesShellProps {
 	surface: "admin" | "client";
-};
+}
 
 /**
  * Sales console — RSC list via `@afenda/sales`; mutations via Actions.
@@ -86,23 +86,23 @@ export async function SalesShell({ surface }: SalesShellProps) {
 	return (
 		<section className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-10">
 			<div className="space-y-2">
-				<p className="text-sm text-muted-foreground">
+				<p className="text-muted-foreground text-sm">
 					{surface === "admin" ? "Operator" : "Client"} · Sales
 				</p>
-				<h1 className="text-2xl font-semibold tracking-tight">Sales orders</h1>
-				<p className="max-w-2xl text-sm text-muted-foreground">
+				<h1 className="font-semibold text-2xl tracking-tight">Sales orders</h1>
+				<p className="max-w-2xl text-muted-foreground text-sm">
 					Orders reference <Code>md_party</Code> / <Code>md_item</Code> (and
 					optional <Code>md_payment_term</Code>) with snapshots at create and
 					post.
 				</p>
 			</div>
 
-			{!ordersResult.ok ? (
+			{ordersResult.ok ? null : (
 				<Alert>
 					<AlertTitle>Could not load orders</AlertTitle>
 					<AlertDescription>{ordersResult.message}</AlertDescription>
 				</Alert>
-			) : null}
+			)}
 
 			<Card>
 				<CardHeader>
@@ -117,7 +117,7 @@ export async function SalesShell({ surface }: SalesShellProps) {
 					) : (
 						<ul className="space-y-2">
 							{orders.map((order) => (
-								<li key={order.id} className="rounded-md border px-3 py-2">
+								<li className="rounded-md border px-3 py-2" key={order.id}>
 									<div className="font-medium">
 										{order.code} · {order.status} · v{order.version}
 									</div>

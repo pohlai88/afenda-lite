@@ -1,6 +1,7 @@
 "use client";
 
 import { Columns3Icon } from "lucide-react";
+import { useCallback } from "react";
 import { Button } from "./button";
 import {
 	DropdownMenu,
@@ -12,16 +13,43 @@ import {
 } from "./dropdown-menu";
 
 interface ColumnVisibilityOption {
+	disabled?: boolean;
 	id: string;
 	label: string;
 	visible: boolean;
-	disabled?: boolean;
 }
 
 interface ColumnVisibilityMenuProps {
 	columns: readonly ColumnVisibilityOption[];
-	onVisibilityChange: (id: string, visible: boolean) => void;
 	label?: string;
+	onVisibilityChange: (id: string, visible: boolean) => void;
+}
+
+function ColumnVisibilityItem({
+	column,
+	onVisibilityChange,
+}: Readonly<{
+	column: ColumnVisibilityOption;
+	onVisibilityChange: ColumnVisibilityMenuProps["onVisibilityChange"];
+}>) {
+	const handleCheckedChange = useCallback(
+		(checked: boolean) => onVisibilityChange(column.id, checked === true),
+		[column.id, onVisibilityChange],
+	);
+	const preventClose = useCallback(
+		(event: Event) => event.preventDefault(),
+		[],
+	);
+	return (
+		<DropdownMenuCheckboxItem
+			checked={column.visible}
+			{...(column.disabled === undefined ? {} : { disabled: column.disabled })}
+			onCheckedChange={handleCheckedChange}
+			onSelect={preventClose}
+		>
+			{column.label}
+		</DropdownMenuCheckboxItem>
+	);
 }
 
 function ColumnVisibilityMenu({
@@ -32,7 +60,7 @@ function ColumnVisibilityMenu({
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
-				<Button variant="outline" size="sm">
+				<Button size="sm" variant="outline">
 					<Columns3Icon aria-hidden="true" />
 					{label}
 				</Button>
@@ -41,19 +69,11 @@ function ColumnVisibilityMenu({
 				<DropdownMenuLabel>Visible columns</DropdownMenuLabel>
 				<DropdownMenuSeparator />
 				{columns.map((column) => (
-					<DropdownMenuCheckboxItem
+					<ColumnVisibilityItem
+						column={column}
 						key={column.id}
-						checked={column.visible}
-						{...(column.disabled === undefined
-							? {}
-							: { disabled: column.disabled })}
-						onCheckedChange={(checked) =>
-							onVisibilityChange(column.id, checked === true)
-						}
-						onSelect={(event) => event.preventDefault()}
-					>
-						{column.label}
-					</DropdownMenuCheckboxItem>
+						onVisibilityChange={onVisibilityChange}
+					/>
 				))}
 			</DropdownMenuContent>
 		</DropdownMenu>

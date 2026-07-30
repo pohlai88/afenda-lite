@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noJsxPropsBind: The enabled React Compiler stabilizes JSX callback props.
 "use client";
 
 import {
@@ -24,14 +25,14 @@ import type {
 
 const initialState: DevLoginActionState = null;
 
-type DevLoginRoleOption = {
-	role: LocalDevLoginRole;
+interface DevLoginRoleOption {
 	label: string;
-};
+	role: LocalDevLoginRole;
+}
 
-type DevLoginFabProps = {
+interface DevLoginFabProps {
 	availability: LocalDevLoginAvailability;
-};
+}
 
 function roleOptionsFromAvailability(
 	availability: LocalDevLoginAvailability,
@@ -82,23 +83,23 @@ export function DevLoginFab({ availability }: DevLoginFabProps) {
 		return (
 			<div className="fixed right-5 bottom-5 z-[100]">
 				<Button
-					type="button"
-					size="icon-lg"
-					className="size-14 rounded-full shadow-(--shadow-raised)"
 					aria-label={`Local dev login as ${onlyRole.label}`}
+					className="size-14 rounded-full shadow-(--shadow-raised)"
 					disabled={busy}
 					onClick={() => submitRole(onlyRole.role)}
+					size="icon-lg"
+					type="button"
 				>
 					{busy ? (
-						<Spinner size="sm" className="text-primary-foreground" />
+						<Spinner className="text-primary-foreground" size="sm" />
 					) : (
 						<LogIn aria-hidden />
 					)}
 				</Button>
 				{state?.ok === false ? (
 					<p
+						className="mt-2 max-w-48 rounded-md border border-border bg-popover px-2 py-1 text-destructive text-xs"
 						role="alert"
-						className="mt-2 max-w-48 rounded-md border border-border bg-popover px-2 py-1 text-xs text-destructive"
 					>
 						{state.message}
 					</p>
@@ -109,23 +110,23 @@ export function DevLoginFab({ availability }: DevLoginFabProps) {
 
 	return (
 		<div className="fixed right-5 bottom-5 z-[100]">
-			<Popover open={open} onOpenChange={setOpen}>
+			<Popover onOpenChange={setOpen} open={open}>
 				<PopoverTrigger asChild>
 					<Button
-						type="button"
-						size="icon-lg"
-						className="size-14 rounded-full shadow-(--shadow-raised)"
 						aria-label="Local dev login"
+						className="size-14 rounded-full shadow-(--shadow-raised)"
 						disabled={busy}
+						size="icon-lg"
+						type="button"
 					>
 						{busy ? (
-							<Spinner size="sm" className="text-primary-foreground" />
+							<Spinner className="text-primary-foreground" size="sm" />
 						) : (
 							<LogIn aria-hidden />
 						)}
 					</Button>
 				</PopoverTrigger>
-				<PopoverContent align="end" side="top" className="w-56">
+				<PopoverContent align="end" className="w-56" side="top">
 					<PopoverHeader>
 						<PopoverTitle>Local dev login</PopoverTitle>
 						<PopoverDescription>
@@ -135,17 +136,17 @@ export function DevLoginFab({ availability }: DevLoginFabProps) {
 					<div className="flex flex-col gap-2 pt-2">
 						{roles.map((entry) => (
 							<Button
+								disabled={busy}
 								key={entry.role}
+								onClick={() => submitRole(entry.role)}
 								type="button"
 								variant="secondary"
-								disabled={busy}
-								onClick={() => submitRole(entry.role)}
 							>
 								{entry.label}
 							</Button>
 						))}
 						{state?.ok === false ? (
-							<p role="alert" className="text-xs text-destructive">
+							<p className="text-destructive text-xs" role="alert">
 								{state.message}
 							</p>
 						) : null}

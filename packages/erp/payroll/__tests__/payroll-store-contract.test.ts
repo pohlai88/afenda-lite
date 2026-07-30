@@ -43,14 +43,18 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				harnessA.ports,
 			);
 			expect(created.ok).toBe(true);
-			if (!created.ok) return;
+			if (!created.ok) {
+				return;
+			}
 
 			const crossOrg = await harnessB.store.getCalendar({
 				organizationId: harnessB.organizationId,
 				calendarId: created.data.id,
 			});
 			expect(crossOrg.ok).toBe(true);
-			if (!crossOrg.ok) return;
+			if (!crossOrg.ok) {
+				return;
+			}
 			expect(crossOrg.data).toBeNull();
 		});
 
@@ -73,7 +77,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 			const second = await harness.store.createCalendar(input, harness.ports);
 			expect(first.ok).toBe(true);
 			expect(second.ok).toBe(true);
-			if (!first.ok || !second.ok) return;
+			if (!(first.ok && second.ok)) {
+				return;
+			}
 			expect(second.data.id).toBe(first.data.id);
 		});
 
@@ -95,7 +101,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				harness.ports,
 			);
 			expect(created.ok).toBe(true);
-			if (!created.ok) return;
+			if (!created.ok) {
+				return;
+			}
 
 			const stale = await harness.store.updateCalendar(
 				{
@@ -109,7 +117,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				harness.ports,
 			);
 			expect(stale.ok).toBe(false);
-			if (stale.ok) return;
+			if (stale.ok) {
+				return;
+			}
 			expect(stale.code).toBe("CONFLICT");
 		});
 
@@ -139,7 +149,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				harness.ports,
 			);
 			expect(first.ok).toBe(true);
-			if (!first.ok) return;
+			if (!first.ok) {
+				return;
+			}
 
 			const overlap = await harness.store.createEarningRule(
 				{
@@ -162,7 +174,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				harness.ports,
 			);
 			expect(overlap.ok).toBe(false);
-			if (overlap.ok) return;
+			if (overlap.ok) {
+				return;
+			}
 			expect(overlap.code).toBe("CONFLICT");
 			expect(overlap.details).toEqual({
 				payrollCode: PAYROLL_ERROR_EFFECTIVE_RANGE_OVERLAP,
@@ -191,7 +205,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				harness.ports,
 			);
 			expect(first.ok).toBe(true);
-			if (!first.ok) return;
+			if (!first.ok) {
+				return;
+			}
 
 			const duplicate = await harness.store.createRun(
 				{
@@ -202,7 +218,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				harness.ports,
 			);
 			expect(duplicate.ok).toBe(false);
-			if (duplicate.ok) return;
+			if (duplicate.ok) {
+				return;
+			}
 			expect(duplicate.code).toBe("CONFLICT");
 		});
 
@@ -232,7 +250,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				harness.ports,
 			);
 			expect(first.ok).toBe(true);
-			if (!first.ok) return;
+			if (!first.ok) {
+				return;
+			}
 
 			const overlap = await harness.store.createDeductionRule(
 				{
@@ -256,7 +276,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				harness.ports,
 			);
 			expect(overlap.ok).toBe(false);
-			if (overlap.ok) return;
+			if (overlap.ok) {
+				return;
+			}
 			expect(overlap.code).toBe("CONFLICT");
 			expect(overlap.details).toEqual({
 				payrollCode: PAYROLL_ERROR_EFFECTIVE_RANGE_OVERLAP,
@@ -287,7 +309,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				harness.ports,
 			);
 			expect(first.ok).toBe(true);
-			if (!first.ok) return;
+			if (!first.ok) {
+				return;
+			}
 
 			const overlap = await harness.store.createStatutoryRule(
 				{
@@ -308,7 +332,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				harness.ports,
 			);
 			expect(overlap.ok).toBe(false);
-			if (overlap.ok) return;
+			if (overlap.ok) {
+				return;
+			}
 			expect(overlap.code).toBe("CONFLICT");
 			expect(overlap.details).toEqual({
 				payrollCode: PAYROLL_ERROR_EFFECTIVE_RANGE_OVERLAP,
@@ -334,7 +360,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 			const second = await harness.store.createPayGroup(input, harness.ports);
 			expect(first.ok).toBe(true);
 			expect(second.ok).toBe(true);
-			if (!first.ok || !second.ok) return;
+			if (!(first.ok && second.ok)) {
+				return;
+			}
 			expect(second.data.id).toBe(first.data.id);
 		});
 
@@ -357,7 +385,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 			const second = await harness.store.createPeriod(input, harness.ports);
 			expect(first.ok).toBe(true);
 			expect(second.ok).toBe(true);
-			if (!first.ok || !second.ok) return;
+			if (!(first.ok && second.ok)) {
+				return;
+			}
 			expect(second.data.id).toBe(first.data.id);
 		});
 
@@ -393,14 +423,18 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 			);
 			expect(blocking.ok).toBe(true);
 			expect(warning.ok).toBe(true);
-			if (!blocking.ok || !warning.ok) return;
+			if (!(blocking.ok && warning.ok)) {
+				return;
+			}
 
 			const listed = await harness.store.listExceptionsForRun({
 				organizationId: harness.organizationId,
 				runId: seeded.run.id,
 			});
 			expect(listed.ok).toBe(true);
-			if (!listed.ok) return;
+			if (!listed.ok) {
+				return;
+			}
 			expect(listed.data).toHaveLength(2);
 			expect(listed.data.map((item) => item.severity).sort()).toEqual([
 				"blocking",
@@ -412,7 +446,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				runId: seeded.run.id,
 			});
 			expect(crossOrg.ok).toBe(true);
-			if (!crossOrg.ok) return;
+			if (!crossOrg.ok) {
+				return;
+			}
 			expect(crossOrg.data).toEqual([]);
 		});
 
@@ -442,7 +478,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				harness.ports,
 			);
 			expect(created.ok).toBe(true);
-			if (!created.ok) return;
+			if (!created.ok) {
+				return;
+			}
 
 			const hit = await harness.store.getEarningRuleAtEffectiveDate({
 				organizationId: harness.organizationId,
@@ -451,7 +489,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				effectiveDate: "2025-02-15",
 			});
 			expect(hit.ok).toBe(true);
-			if (!hit.ok) return;
+			if (!hit.ok) {
+				return;
+			}
 			expect(hit.data?.id).toBe(created.data.id);
 
 			const missRange = await harness.store.getEarningRuleAtEffectiveDate({
@@ -461,7 +501,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				effectiveDate: "2025-04-01",
 			});
 			expect(missRange.ok).toBe(true);
-			if (!missRange.ok) return;
+			if (!missRange.ok) {
+				return;
+			}
 			expect(missRange.data).toBeNull();
 
 			const missCode = await harness.store.getEarningRuleAtEffectiveDate({
@@ -471,7 +513,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				effectiveDate: "2025-02-15",
 			});
 			expect(missCode.ok).toBe(true);
-			if (!missCode.ok) return;
+			if (!missCode.ok) {
+				return;
+			}
 			expect(missCode.data).toBeNull();
 		});
 
@@ -501,7 +545,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				harness.ports,
 			);
 			expect(created.ok).toBe(true);
-			if (!created.ok) return;
+			if (!created.ok) {
+				return;
+			}
 
 			const hit = await harness.store.getDeductionRuleAtEffectiveDate({
 				organizationId: harness.organizationId,
@@ -510,7 +556,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				effectiveDate: "2025-06-01",
 			});
 			expect(hit.ok).toBe(true);
-			if (!hit.ok) return;
+			if (!hit.ok) {
+				return;
+			}
 			expect(hit.data?.id).toBe(created.data.id);
 
 			const miss = await harness.store.getDeductionRuleAtEffectiveDate({
@@ -520,7 +568,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				effectiveDate: "2025-06-01",
 			});
 			expect(miss.ok).toBe(true);
-			if (!miss.ok) return;
+			if (!miss.ok) {
+				return;
+			}
 			expect(miss.data).toBeNull();
 		});
 
@@ -548,7 +598,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				harness.ports,
 			);
 			expect(created.ok).toBe(true);
-			if (!created.ok) return;
+			if (!created.ok) {
+				return;
+			}
 
 			const hit = await harness.store.getStatutoryRuleAtEffectiveDate({
 				organizationId: harness.organizationId,
@@ -557,7 +609,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				effectiveDate: "2025-07-01",
 			});
 			expect(hit.ok).toBe(true);
-			if (!hit.ok) return;
+			if (!hit.ok) {
+				return;
+			}
 			expect(hit.data?.id).toBe(created.data.id);
 
 			const miss = await harness.store.getStatutoryRuleAtEffectiveDate({
@@ -567,7 +621,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				effectiveDate: "2026-01-01",
 			});
 			expect(miss.ok).toBe(true);
-			if (!miss.ok) return;
+			if (!miss.ok) {
+				return;
+			}
 			expect(miss.data).toBeNull();
 		});
 
@@ -586,7 +642,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				harness.ports,
 			);
 			expect(archivedCalendar.ok).toBe(true);
-			if (!archivedCalendar.ok) return;
+			if (!archivedCalendar.ok) {
+				return;
+			}
 			expect(archivedCalendar.data.status).toBe("archived");
 
 			const archivedPayGroup = await harness.store.archivePayGroup(
@@ -600,7 +658,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				harness.ports,
 			);
 			expect(archivedPayGroup.ok).toBe(true);
-			if (!archivedPayGroup.ok) return;
+			if (!archivedPayGroup.ok) {
+				return;
+			}
 			expect(archivedPayGroup.data.status).toBe("archived");
 		});
 
@@ -619,7 +679,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				harness.ports,
 			);
 			expect(closed.ok).toBe(true);
-			if (!closed.ok) return;
+			if (!closed.ok) {
+				return;
+			}
 			expect(closed.data.status).toBe("closed");
 		});
 
@@ -649,7 +711,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				harness.ports,
 			);
 			expect(created.ok).toBe(true);
-			if (!created.ok) return;
+			if (!created.ok) {
+				return;
+			}
 
 			const superseded = await harness.store.supersedeEarningRule(
 				{
@@ -667,7 +731,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				harness.ports,
 			);
 			expect(superseded.ok).toBe(true);
-			if (!superseded.ok) return;
+			if (!superseded.ok) {
+				return;
+			}
 			expect(superseded.data.superseded.status).toBe("superseded");
 			expect(superseded.data.successor.ruleVersion).toBe("2");
 
@@ -686,7 +752,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				ruleId: created.data.id,
 			});
 			expect(locked.ok).toBe(true);
-			if (!locked.ok) return;
+			if (!locked.ok) {
+				return;
+			}
 			expect(locked.data).toBe(true);
 
 			const blocked = await harness.store.archiveEarningRule(
@@ -721,7 +789,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				harness.ports,
 			);
 			expect(created.ok).toBe(true);
-			if (!created.ok) return;
+			if (!created.ok) {
+				return;
+			}
 
 			const finalized = await harness.store.updateRunWithVersion(
 				{
@@ -735,7 +805,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				harness.ports,
 			);
 			expect(finalized.ok).toBe(true);
-			if (!finalized.ok) return;
+			if (!finalized.ok) {
+				return;
+			}
 
 			const calculated = await harness.store.updateRunWithVersion(
 				{
@@ -750,7 +822,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				harness.ports,
 			);
 			expect(calculated.ok).toBe(true);
-			if (!calculated.ok) return;
+			if (!calculated.ok) {
+				return;
+			}
 
 			const finalizedRun = await harness.store.updateRunWithVersion(
 				{
@@ -766,7 +840,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				harness.ports,
 			);
 			expect(finalizedRun.ok).toBe(true);
-			if (!finalizedRun.ok) return;
+			if (!finalizedRun.ok) {
+				return;
+			}
 
 			const blocked = await harness.store.updateRunWithVersion(
 				{
@@ -780,7 +856,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				harness.ports,
 			);
 			expect(blocked.ok).toBe(false);
-			if (blocked.ok) return;
+			if (blocked.ok) {
+				return;
+			}
 			expect(blocked.code).toBe("CONFLICT");
 		});
 
@@ -788,14 +866,16 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 			const harness = createPayrollParityHarness(adapter);
 			const seeded = await seedPayrollRunChain(harness);
 			const seededChain = await seedDraftRun(harness, seeded);
-			const run = seededChain.run;
+			const { run } = seededChain;
 			const employeeId = `emp-calc-${adapter}`;
 
 			const runEmployeeId = parsePayrollRunEmployeeId(crypto.randomUUID());
 			const resultLineId = parsePayrollResultLineId(crypto.randomUUID());
 			expect(runEmployeeId.ok).toBe(true);
 			expect(resultLineId.ok).toBe(true);
-			if (!runEmployeeId.ok || !resultLineId.ok) return;
+			if (!(runEmployeeId.ok && resultLineId.ok)) {
+				return;
+			}
 
 			const persisted = await harness.store.replaceRunCalculationOutputs(
 				{
@@ -842,14 +922,18 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				harness.ports,
 			);
 			expect(persisted.ok).toBe(true);
-			if (!persisted.ok) return;
+			if (!persisted.ok) {
+				return;
+			}
 
 			const listed = await harness.store.listRunEmployeesForRun({
 				organizationId: harness.organizationId,
 				runId: run.id,
 			});
 			expect(listed.ok).toBe(true);
-			if (!listed.ok) return;
+			if (!listed.ok) {
+				return;
+			}
 			expect(listed.data).toHaveLength(1);
 			expect(listed.data[0]?.net).toBe("4130");
 
@@ -858,7 +942,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				runId: run.id,
 			});
 			expect(lines.ok).toBe(true);
-			if (!lines.ok) return;
+			if (!lines.ok) {
+				return;
+			}
 			expect(lines.data).toHaveLength(1);
 
 			const crossOrg = await createPayrollParityHarness(
@@ -868,7 +954,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				runId: run.id,
 			});
 			expect(crossOrg.ok).toBe(true);
-			if (!crossOrg.ok) return;
+			if (!crossOrg.ok) {
+				return;
+			}
 			expect(crossOrg.data).toHaveLength(0);
 
 			const replaced = await harness.store.replaceRunCalculationOutputs(
@@ -899,14 +987,18 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				harness.ports,
 			);
 			expect(replaced.ok).toBe(true);
-			if (!replaced.ok) return;
+			if (!replaced.ok) {
+				return;
+			}
 
 			const relisted = await harness.store.listRunEmployeesForRun({
 				organizationId: harness.organizationId,
 				runId: run.id,
 			});
 			expect(relisted.ok).toBe(true);
-			if (!relisted.ok) return;
+			if (!relisted.ok) {
+				return;
+			}
 			expect(relisted.data[0]?.gross).toBe("5300");
 		});
 
@@ -937,7 +1029,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				harness.ports,
 			);
 			expect(earningRule.ok).toBe(true);
-			if (!earningRule.ok) return;
+			if (!earningRule.ok) {
+				return;
+			}
 
 			const assignment = await harness.store.createEmployeeAssignment(
 				{
@@ -954,7 +1048,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				harness.ports,
 			);
 			expect(assignment.ok).toBe(true);
-			if (!assignment.ok) return;
+			if (!assignment.ok) {
+				return;
+			}
 
 			const recurring = await harness.store.createRecurringEarning(
 				{
@@ -974,7 +1070,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				harness.ports,
 			);
 			expect(recurring.ok).toBe(true);
-			if (!recurring.ok) return;
+			if (!recurring.ok) {
+				return;
+			}
 
 			const variableInput = {
 				organizationId: harness.organizationId,
@@ -1007,7 +1105,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 			);
 			expect(firstInput.ok).toBe(true);
 			expect(replayInput.ok).toBe(true);
-			if (!firstInput.ok || !replayInput.ok) return;
+			if (!(firstInput.ok && replayInput.ok)) {
+				return;
+			}
 			expect(replayInput.data.id).toBe(firstInput.data.id);
 
 			const crossOrg = await createPayrollParityHarness(
@@ -1017,7 +1117,9 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				assignmentId: assignment.data.id,
 			});
 			expect(crossOrg.ok).toBe(true);
-			if (!crossOrg.ok) return;
+			if (!crossOrg.ok) {
+				return;
+			}
 			expect(crossOrg.data).toBeNull();
 		});
 	});

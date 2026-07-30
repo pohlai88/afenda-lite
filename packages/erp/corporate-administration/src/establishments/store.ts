@@ -107,61 +107,63 @@ export type EndPremiseStoreInput = TransactionalWrite &
 	}>;
 
 export interface EstablishmentStore {
-	getLegalEstablishment(input: {
+	endPremise: (input: EndPremiseStoreInput) => Promise<Result<Premise>>;
+	findRegisteredAddressAsOf: (input: {
+		organizationId: OrganizationId;
+		legalCompanyId: LegalCompanyId;
+		legalEstablishmentId: LegalEstablishmentId | null;
+		addressType: RegisteredAddressType;
+		asOf: CanonicalDate;
+		knownAt?: CanonicalInstant | undefined;
+	}) => Promise<Result<RegisteredAddress | null>>;
+	getLegalEstablishment: (input: {
 		organizationId: OrganizationId;
 		legalEstablishmentId: LegalEstablishmentId;
-	}): Promise<Result<LegalEstablishment | null>>;
-	listLegalEstablishmentsAsOf(input: {
+	}) => Promise<Result<LegalEstablishment | null>>;
+	getPremise: (input: {
+		organizationId: OrganizationId;
+		premiseId: PremiseId;
+	}) => Promise<Result<Premise | null>>;
+	listEstablishmentStatusHistory: (input: {
+		organizationId: OrganizationId;
+		legalEstablishmentId: LegalEstablishmentId;
+	}) => Promise<Result<readonly EstablishmentStatusHistory[]>>;
+	listLegalEstablishmentsAsOf: (input: {
 		organizationId: OrganizationId;
 		legalCompanyId: LegalCompanyId;
 		asOf: CanonicalDate;
 		knownAt?: CanonicalInstant | undefined;
 		status?: LegalEstablishmentStatus | undefined;
-	}): Promise<Result<readonly LegalEstablishment[]>>;
-	listEstablishmentStatusHistory(input: {
-		organizationId: OrganizationId;
-		legalEstablishmentId: LegalEstablishmentId;
-	}): Promise<Result<readonly EstablishmentStatusHistory[]>>;
-	registerLegalEstablishment(
-		input: RegisterLegalEstablishmentStoreInput,
-	): Promise<Result<LegalEstablishment>>;
-	updateLegalEstablishment(
-		input: UpdateLegalEstablishmentStoreInput,
-	): Promise<Result<LegalEstablishment>>;
-	transitionLegalEstablishment(
-		input: TransitionLegalEstablishmentStoreInput,
-	): Promise<Result<LegalEstablishment>>;
-	findRegisteredAddressAsOf(input: {
-		organizationId: OrganizationId;
-		legalCompanyId: LegalCompanyId;
-		legalEstablishmentId: LegalEstablishmentId | null;
-		addressType: RegisteredAddressType;
-		asOf: CanonicalDate;
-		knownAt?: CanonicalInstant | undefined;
-	}): Promise<Result<RegisteredAddress | null>>;
-	listRegisteredAddresses(input: {
-		organizationId: OrganizationId;
-		legalCompanyId: LegalCompanyId;
-		legalEstablishmentId: LegalEstablishmentId | null;
-		addressType: RegisteredAddressType;
-	}): Promise<Result<readonly RegisteredAddress[]>>;
-	setRegisteredAddress(
-		input: SetRegisteredAddressStoreInput,
-	): Promise<Result<RegisteredAddress>>;
-	getPremise(input: {
-		organizationId: OrganizationId;
-		premiseId: PremiseId;
-	}): Promise<Result<Premise | null>>;
-	listPremisesAsOf(input: {
+	}) => Promise<Result<readonly LegalEstablishment[]>>;
+	listPremisesAsOf: (input: {
 		organizationId: OrganizationId;
 		legalCompanyId: LegalCompanyId;
 		legalEstablishmentId?: LegalEstablishmentId | undefined;
 		premiseType?: PremiseType | undefined;
 		asOf: CanonicalDate;
 		knownAt?: CanonicalInstant | undefined;
-	}): Promise<Result<readonly Premise[]>>;
-	registerPremise(input: RegisterPremiseStoreInput): Promise<Result<Premise>>;
-	endPremise(input: EndPremiseStoreInput): Promise<Result<Premise>>;
+	}) => Promise<Result<readonly Premise[]>>;
+	listRegisteredAddresses: (input: {
+		organizationId: OrganizationId;
+		legalCompanyId: LegalCompanyId;
+		legalEstablishmentId: LegalEstablishmentId | null;
+		addressType: RegisteredAddressType;
+	}) => Promise<Result<readonly RegisteredAddress[]>>;
+	registerLegalEstablishment: (
+		input: RegisterLegalEstablishmentStoreInput,
+	) => Promise<Result<LegalEstablishment>>;
+	registerPremise: (
+		input: RegisterPremiseStoreInput,
+	) => Promise<Result<Premise>>;
+	setRegisteredAddress: (
+		input: SetRegisteredAddressStoreInput,
+	) => Promise<Result<RegisteredAddress>>;
+	transitionLegalEstablishment: (
+		input: TransitionLegalEstablishmentStoreInput,
+	) => Promise<Result<LegalEstablishment>>;
+	updateLegalEstablishment: (
+		input: UpdateLegalEstablishmentStoreInput,
+	) => Promise<Result<LegalEstablishment>>;
 }
 
 export type AddressReference = StatutoryAddressSnapshot &
@@ -172,12 +174,12 @@ export type AddressReference = StatutoryAddressSnapshot &
 	}>;
 
 export interface AddressReferencePort {
-	getPartyAddress(input: {
+	getPartyAddress: (input: {
 		organizationId: OrganizationId;
 		partyId: string;
 		partyAddressId: string;
 		asOf: CanonicalDate;
-	}): Promise<Result<AddressReference | null>>;
+	}) => Promise<Result<AddressReference | null>>;
 }
 
 export type EstablishmentCommandDependencies = Readonly<{
@@ -185,15 +187,15 @@ export type EstablishmentCommandDependencies = Readonly<{
 	establishmentStore: EstablishmentStore;
 	addressReferences: AddressReferencePort;
 	referenceData: Readonly<{
-		resolveCountry(input: {
+		resolveCountry: (input: {
 			organizationId: OrganizationId;
 			countryCode: string;
 			effectiveDate?: CanonicalDate | undefined;
-		}): Promise<Result<{ code: string; active: boolean } | null>>;
-		validateSourceDocument(input: {
+		}) => Promise<Result<{ code: string; active: boolean } | null>>;
+		validateSourceDocument: (input: {
 			organizationId: OrganizationId;
 			sourceDocumentId: string;
-		}): Promise<Result<{ sourceDocumentId: string; active: boolean } | null>>;
+		}) => Promise<Result<{ sourceDocumentId: string; active: boolean } | null>>;
 	}>;
 }>;
 

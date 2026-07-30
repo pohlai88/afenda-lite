@@ -10,45 +10,45 @@ import type {
 import type { ApprovedPayrollHandoffParsed } from "./inputs/parse-approved-payroll-handoff";
 import type { PayrollExceptionSeverity, PayrollRunType } from "./types";
 
-export type PayrollRunCalculatorException = {
-	severity: PayrollExceptionSeverity;
+export interface PayrollRunCalculatorException {
+	employeeRef: string | null;
 	exceptionCode: string;
 	message: string;
-	employeeRef: string | null;
-};
+	severity: PayrollExceptionSeverity;
+}
 
-export type PayrollRunCalculatorResult = {
+export interface PayrollRunCalculatorResult {
 	calculationSnapshotHash: string;
 	calculationVersion: string;
-	roundingPolicyJson: Record<string, unknown>;
 	exceptions: PayrollRunCalculatorException[];
-};
+	roundingPolicyJson: Record<string, unknown>;
+}
 
-export type PayrollRunCalculatorInput = {
-	organizationId: string;
-	runId: PayrollRunId;
-	payGroupId: PayrollPayGroupId;
-	periodId: PayrollPeriodId;
-	runType: PayrollRunType;
-	sequence: number;
+export interface PayrollRunCalculatorInput {
 	actorUserId: string;
 	correlationId: string;
 	employeeIds?: string[];
-};
+	organizationId: string;
+	payGroupId: PayrollPayGroupId;
+	periodId: PayrollPeriodId;
+	runId: PayrollRunId;
+	runType: PayrollRunType;
+	sequence: number;
+}
 
-export type PayrollRunCalculatorPort = {
-	calculate(
+export interface PayrollRunCalculatorPort {
+	calculate: (
 		input: PayrollRunCalculatorInput,
 		ports: MutationPorts,
-	): Promise<Result<PayrollRunCalculatorResult>>;
-};
+	) => Promise<Result<PayrollRunCalculatorResult>>;
+}
 
-export type PayrollEmployeeQueryPort = {
-	getPayrollEmployee(input: {
+export interface PayrollEmployeeQueryPort {
+	getPayrollEmployee: (input: {
 		organizationId: string;
 		employeeId: string;
 		effectiveDate: string;
-	}): Promise<{
+	}) => Promise<{
 		employeeId: string;
 		employmentStatus: "active" | "notice" | "terminated";
 		payGroupId: string;
@@ -63,10 +63,10 @@ export type PayrollEmployeeQueryPort = {
 			amount: string;
 		}>;
 	} | null>;
-};
+}
 
-export type PayrollHrHandoffInputPort = {
-	getApprovedPayrollHandoff(input: {
+export interface PayrollHrHandoffInputPort {
+	getApprovedPayrollHandoff: (input: {
 		organizationId: string;
 		employeeId: string;
 		effectiveDate: string;
@@ -74,38 +74,38 @@ export type PayrollHrHandoffInputPort = {
 		periodEnd?: string;
 		timesheetId?: string;
 		leaveRequestIds?: readonly string[];
-	}): Promise<Result<ApprovedPayrollHandoffParsed | null>>;
-};
+	}) => Promise<Result<ApprovedPayrollHandoffParsed | null>>;
+}
 
-export type AuditFactInput = {
-	organizationId: string;
+export interface AuditFactInput {
+	action: "CREATE" | "UPDATE" | "DELETE";
 	actorUserId: string;
+	changes: Change[];
 	correlationId: string;
 	entity: string;
 	entityId: string;
-	action: "CREATE" | "UPDATE" | "DELETE";
-	changes: Change[];
-	oldValue?: Record<string, unknown> | null;
 	newValue?: Record<string, unknown> | null;
-};
-
-export type AuditFactPort = {
-	record(input: AuditFactInput): Promise<Result<{ id: string }>>;
-};
-
-export type OutboxFactInput = {
+	oldValue?: Record<string, unknown> | null;
 	organizationId: string;
+}
+
+export interface AuditFactPort {
+	record: (input: AuditFactInput) => Promise<Result<{ id: string }>>;
+}
+
+export interface OutboxFactInput {
 	actorUserId: string;
 	correlationId: string;
-	type: PayrollEventType;
+	organizationId: string;
 	payload: Record<string, unknown>;
-};
+	type: PayrollEventType;
+}
 
-export type OutboxPort = {
-	append(input: OutboxFactInput): Promise<Result<{ id: string }>>;
-};
+export interface OutboxPort {
+	append: (input: OutboxFactInput) => Promise<Result<{ id: string }>>;
+}
 
-export type MutationPorts = {
+export interface MutationPorts {
 	audit: AuditFactPort;
 	outbox: OutboxPort;
-};
+}

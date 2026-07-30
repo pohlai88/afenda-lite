@@ -43,7 +43,9 @@ function defineImportContractTests(
 
 			const first = await upsertPartiesByCode(input, harness.options);
 			expect(first.ok).toBe(true);
-			if (!first.ok) return;
+			if (!first.ok) {
+				return;
+			}
 			expect(first.data).toMatchObject({ created: 1, updated: 0 });
 
 			const replay = await upsertPartiesByCode(
@@ -61,7 +63,9 @@ function defineImportContractTests(
 				harness.options,
 			);
 			expect(conflict.ok).toBe(false);
-			if (conflict.ok) return;
+			if (conflict.ok) {
+				return;
+			}
 			expect(conflict.details).toMatchObject({
 				reason: "MASTER_IDEMPOTENCY_CONFLICT",
 				errorCode: "MASTER_DATA_IDEMPOTENCY_CONFLICT",

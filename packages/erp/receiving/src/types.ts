@@ -6,10 +6,10 @@ export const GOODS_RECEIPT_SOURCE_TYPES = ["purchase_order"] as const;
 export type GoodsReceiptSourceType =
 	(typeof GOODS_RECEIPT_SOURCE_TYPES)[number];
 
-export type GoodsReceiptSource = {
+export interface GoodsReceiptSource {
 	kind: "purchase_order";
 	purchaseOrderId: string;
-};
+}
 
 export const INVENTORY_APPLICATION_STATUSES = [
 	"not_applicable",
@@ -38,83 +38,83 @@ export const RECEIVING_DISCREPANCY_STATUSES = ["open", "resolved"] as const;
 export type ReceivingDiscrepancyStatus =
 	(typeof RECEIVING_DISCREPANCY_STATUSES)[number];
 
-export type GoodsReceiptLine = {
-	id: string;
-	organizationId: string;
-	receiptId: string;
-	lineNo: number;
-	itemId: string;
-	itemCode: string;
-	itemName: string;
-	baseUomId: string;
+export interface GoodsReceiptLine {
 	baseUomCode: string;
-	quantityOrdered: string | null;
-	quantityExpected: string | null;
-	quantityReceived: string;
-	quantityAccepted: string;
-	quantityRejected: string;
-	quantityDamaged: string;
-	purchaseOrderLineId: string | null;
-	lineIdempotencyKey: string | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
+	baseUomId: string;
 	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type ReceivingDiscrepancy = {
+	createdBy: string;
 	id: string;
+	itemCode: string;
+	itemId: string;
+	itemName: string;
+	lineIdempotencyKey: string | null;
+	lineNo: number;
 	organizationId: string;
+	purchaseOrderLineId: string | null;
+	quantityAccepted: string;
+	quantityDamaged: string;
+	quantityExpected: string | null;
+	quantityOrdered: string | null;
+	quantityReceived: string;
+	quantityRejected: string;
+	receiptId: string;
+	updatedAt: Date;
+	updatedBy: string;
+	version: number;
+}
+
+export interface ReceivingDiscrepancy {
+	createdAt: Date;
+	createdBy: string;
+	discrepancyType: ReceivingDiscrepancyType;
+	id: string;
+	notes: string | null;
+	organizationId: string;
+	quantity: string;
 	receiptId: string;
 	receiptLineId: string | null;
-	discrepancyType: ReceivingDiscrepancyType;
-	quantity: string;
-	notes: string | null;
-	status: ReceivingDiscrepancyStatus;
+	recordIdempotencyKey: string | null;
 	resolution: string | null;
 	resolvedAt: Date | null;
 	resolvedBy: string | null;
-	recordIdempotencyKey: string | null;
 	resolveIdempotencyKey: string | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
+	status: ReceivingDiscrepancyStatus;
 	updatedAt: Date;
-};
-
-export type GoodsReceipt = {
-	id: string;
-	organizationId: string;
-	code: string;
-	normalizedCode: string;
-	status: GoodsReceiptStatus;
-	sourceType: GoodsReceiptSourceType;
-	sourceId: string | null;
-	warehouseId: string;
-	warehouseCode: string;
-	warehouseName: string;
-	notes: string | null;
-	reversesReceiptId: string | null;
-	reversedByReceiptId: string | null;
-	reverseReason: string | null;
-	inventoryApplicationStatus: InventoryApplicationStatus;
-	inventoryMovementId: string | null;
-	inventoryApplicationError: string | null;
-	createIdempotencyKey: string | null;
-	postIdempotencyKey: string | null;
-	cancelIdempotencyKey: string | null;
-	reverseIdempotencyKey: string | null;
-	version: number;
-	createdBy: string;
 	updatedBy: string;
-	postedAt: Date | null;
-	postedBy: string | null;
+	version: number;
+}
+
+export interface GoodsReceipt {
+	cancelIdempotencyKey: string | null;
 	cancelledAt: Date | null;
 	cancelledBy: string | null;
+	code: string;
 	createdAt: Date;
-	updatedAt: Date;
-	lines: GoodsReceiptLine[];
+	createdBy: string;
+	createIdempotencyKey: string | null;
 	discrepancies: ReceivingDiscrepancy[];
-};
+	id: string;
+	inventoryApplicationError: string | null;
+	inventoryApplicationStatus: InventoryApplicationStatus;
+	inventoryMovementId: string | null;
+	lines: GoodsReceiptLine[];
+	normalizedCode: string;
+	notes: string | null;
+	organizationId: string;
+	postedAt: Date | null;
+	postedBy: string | null;
+	postIdempotencyKey: string | null;
+	reversedByReceiptId: string | null;
+	reverseIdempotencyKey: string | null;
+	reverseReason: string | null;
+	reversesReceiptId: string | null;
+	sourceId: string | null;
+	sourceType: GoodsReceiptSourceType;
+	status: GoodsReceiptStatus;
+	updatedAt: Date;
+	updatedBy: string;
+	version: number;
+	warehouseCode: string;
+	warehouseId: string;
+	warehouseName: string;
+}

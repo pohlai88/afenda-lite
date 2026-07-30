@@ -14,6 +14,17 @@ const DEFAULT_CONFIG: CacheConfig = {
 	l1MaxSize: 1000,
 };
 
+function runSequentially<T>(
+	items: readonly T[],
+	operation: (item: T) => Promise<unknown>,
+): Promise<void> {
+	return items.reduce(
+		(pending, item) =>
+			pending.then(() => operation(item)).then(() => undefined),
+		Promise.resolve(),
+	);
+}
+
 export class CacheManager {
 	private readonly l1 = new Map<string, CacheEntry>();
 	private readonly tagIndex = new Map<string, Set<string>>();
@@ -85,11 +96,10 @@ export class CacheManager {
 
 		this.writeL1(key, entry);
 
-		if (this.l2) {
-			await this.l2.set(key, entry, ttl);
-			for (const tag of tags) {
-				await this.l2.addToTag(tag, key);
-			}
+		const { l2 } = this;
+		if (l2) {
+			await l2.set(key, entry, ttl);
+			await runSequentially(tags, (tag) => l2.addToTag(tag, key));
 		}
 	}
 
@@ -100,21 +110,20 @@ export class CacheManager {
 			this.removeL1(key, existing);
 		}
 
-		if (!this.l2) {
+		const { l2 } = this;
+		if (!l2) {
 			return;
 		}
 
 		if (!existing) {
-			const remote = await this.l2.get(key);
+			const remote = await l2.get(key);
 			if (remote) {
-				tags = remote.tags;
+				({ tags } = remote);
 			}
 		}
 
-		await this.l2.delete(key);
-		for (const tag of tags) {
-			await this.l2.removeFromTag(tag, key);
-		}
+		await l2.delete(key);
+		await runSequentially(tags, (tag) => l2.removeFromTag(tag, key));
 	}
 
 	async invalidateByTag(tag: string): Promise<number> {
@@ -168,9 +177,7 @@ export class CacheManager {
 			}
 		}
 
-		for (const key of matched) {
-			await this.delete(key);
-		}
+		await runSequentially([...matched], (key) => this.delete(key));
 
 		return matched.size;
 	}
@@ -195,8 +202,8 @@ export class CacheManager {
 			case "stale-while-revalidate": {
 				const cached = await this.get<T>(key);
 				if (cached !== null) {
-					void factory()
-						.then((value) => this.set(key, value, options))
+					factory()
+						.then((refreshedValue) => this.set(key, refreshedValue, options))
 						.catch(() => {
 							/* background revalidate failures stay silent */
 						});
@@ -228,9 +235,9 @@ export class CacheManager {
 
 	async mget<T>(keys: string[]): Promise<Map<string, T | null>> {
 		const results = new Map<string, T | null>();
-		for (const key of keys) {
+		await runSequentially(keys, async (key) => {
 			results.set(key, await this.get<T>(key));
-		}
+		});
 		return results;
 	}
 
@@ -242,12 +249,12 @@ export class CacheManager {
 			tags?: string[];
 		}>,
 	): Promise<void> {
-		for (const entry of entries) {
-			await this.set(entry.key, entry.value, {
+		await runSequentially(entries, (entry) =>
+			this.set(entry.key, entry.value, {
 				...(entry.ttl === undefined ? {} : { ttl: entry.ttl }),
 				...(entry.tags === undefined ? {} : { tags: entry.tags }),
-			});
-		}
+			}),
+		);
 	}
 
 	getStats(): CacheStats {

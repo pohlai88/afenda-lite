@@ -93,6 +93,12 @@ import {
 	isPostgresUniqueViolation,
 	mapPersistenceFailure,
 } from "../../shared/persistence-errors";
+import { isResultFailure } from "../../shared/result-guards";
+import {
+	runSequential,
+	sequentialContinue,
+	sequentialReturn,
+} from "../../shared/run-sequential";
 import {
 	assertAssignmentStatusTransition,
 	assertExceptionStatusTransition,
@@ -130,6 +136,7 @@ import {
 	applyAutomaticBreakPolicy,
 	resolveSessionFromEvents,
 } from "../../time/attendance/session-resolution";
+import { aggregatePayrollMinutes } from "../../time/payroll-minute-totals";
 import {
 	approvedLeaveMinutesForDate,
 	buildAttendanceTimesheetEntryPlans,
@@ -197,6 +204,8 @@ import {
 	workCalendarFromSql,
 } from "./time-transactions";
 
+const HR_REGEX_1 = /hr_attendance_event_org_source_ref_uidx|source_reference/i;
+
 const ATTENDANCE_IMPORT_LOOKUP_FAILED_MESSAGE =
 	"Attendance import source reference lookup failed";
 const ATTENDANCE_IMPORT_RECORD_FAILED_MESSAGE =
@@ -207,26 +216,18 @@ function resolveImportBatchStatus(input: {
 	skipped: number;
 	rejected: number;
 }): AttendanceImportBatchStatus {
-	if (input.rejected === 0) return "completed";
-	if (input.accepted === 0 && input.skipped === 0) return "failed";
+	if (input.rejected === 0) {
+		return "completed";
+	}
+	if (input.accepted === 0 && input.skipped === 0) {
+		return "failed";
+	}
 	return "partial";
 }
 
 function isAttendanceSourceRefUniqueViolation(error: unknown): boolean {
-	return isPostgresUniqueConstraint(
-		error,
-		/hr_attendance_event_org_source_ref_uidx|source_reference/i,
-	);
+	return isPostgresUniqueConstraint(error, HR_REGEX_1);
 }
-
-const OVERTIME_TYPES = new Set<OvertimeType>([
-	"weekday_overtime",
-	"rest_day_overtime",
-	"public_holiday_overtime",
-	"night_overtime",
-	"call_back",
-	"emergency_overtime",
-]);
 
 const attendanceCorrectionTails = new Map<string, Promise<void>>();
 
@@ -248,7 +249,7 @@ async function audit(
 		action: "CREATE" | "UPDATE" | "DELETE";
 	},
 ): Promise<Result<{ id: string }>> {
-	return ports.audit.record({
+	return await ports.audit.record({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId:
@@ -271,7 +272,7 @@ async function emitOutbox(
 		entityId: string;
 	},
 ): Promise<Result<{ id: string }>> {
-	return ports.outbox.append({
+	return await ports.outbox.append({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: input.correlationId,
@@ -347,12 +348,16 @@ function mapCalendar(
 	row: typeof hrWorkCalendar.$inferSelect,
 ): Result<WorkCalendar> {
 	const id = parseHumanResourcesWorkCalendarId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const supersedesCalendarId =
 		row.supersedesCalendarId === null
 			? ok(null)
 			: parseHumanResourcesWorkCalendarId(row.supersedesCalendarId);
-	if (!supersedesCalendarId.ok) return supersedesCalendarId;
+	if (isResultFailure(supersedesCalendarId)) {
+		return supersedesCalendarId;
+	}
 	if (
 		row.status !== "active" &&
 		row.status !== "superseded" &&
@@ -400,11 +405,17 @@ function mapHoliday(
 	row: typeof hrWorkCalendarHoliday.$inferSelect,
 ): Result<WorkCalendarHolidayRecord> {
 	const id = parseHumanResourcesWorkCalendarHolidayId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const calendarId = parseHumanResourcesWorkCalendarId(row.calendarId);
-	if (!calendarId.ok) return calendarId;
+	if (!calendarId.ok) {
+		return calendarId;
+	}
 	const overrideKind = mapHolidayOverrideKind(row.overrideKind);
-	if (!overrideKind.ok) return overrideKind;
+	if (!overrideKind.ok) {
+		return overrideKind;
+	}
 	return ok({
 		id: id.data,
 		organizationId: row.organizationId,
@@ -427,13 +438,21 @@ function mapEmploymentCalendar(
 	row: typeof hrEmploymentCalendarAssignment.$inferSelect,
 ): Result<EmploymentCalendarAssignment> {
 	const id = parseHumanResourcesEmploymentCalendarAssignmentId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const employeeId = parseHumanResourcesEmployeeId(row.employeeId);
-	if (!employeeId.ok) return employeeId;
+	if (!employeeId.ok) {
+		return employeeId;
+	}
 	const employmentId = parseHumanResourcesEmploymentId(row.employmentId);
-	if (!employmentId.ok) return employmentId;
+	if (!employmentId.ok) {
+		return employmentId;
+	}
 	const calendarId = parseHumanResourcesWorkCalendarId(row.calendarId);
-	if (!calendarId.ok) return calendarId;
+	if (!calendarId.ok) {
+		return calendarId;
+	}
 	return ok({
 		id: id.data,
 		organizationId: row.organizationId,
@@ -477,7 +496,9 @@ function mapTimePolicy(
 	row: typeof hrTimePolicy.$inferSelect,
 ): Result<TimePolicy> {
 	const id = parseHumanResourcesTimePolicyId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	if (
 		row.status !== "draft" &&
 		row.status !== "active" &&
@@ -487,11 +508,15 @@ function mapTimePolicy(
 		return fail("INTERNAL_ERROR", "Invalid time policy status");
 	}
 	const approvalSteps = parseTimeApprovalSteps(row.approvalSteps);
-	if (!approvalSteps.ok) return approvalSteps;
+	if (!approvalSteps.ok) {
+		return approvalSteps;
+	}
 	let supersedesPolicyId = null as TimePolicy["supersedesPolicyId"];
 	if (row.supersedesPolicyId !== null) {
 		const parsed = parseHumanResourcesTimePolicyId(row.supersedesPolicyId);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		supersedesPolicyId = parsed.data;
 	}
 	return ok({
@@ -519,11 +544,17 @@ function mapTimePolicyAssignment(
 	row: typeof hrTimePolicyAssignment.$inferSelect,
 ): Result<TimePolicyAssignment> {
 	const id = parseHumanResourcesTimePolicyAssignmentId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const policyId = parseHumanResourcesTimePolicyId(row.policyId);
-	if (!policyId.ok) return policyId;
+	if (!policyId.ok) {
+		return policyId;
+	}
 	const employmentId = parseHumanResourcesEmploymentId(row.employmentId);
-	if (!employmentId.ok) return employmentId;
+	if (!employmentId.ok) {
+		return employmentId;
+	}
 	return ok({
 		id: id.data,
 		organizationId: row.organizationId,
@@ -543,7 +574,9 @@ function mapTimeApprovalAuthorityAssignment(
 	row: typeof hrTimeApprovalAuthorityAssignment.$inferSelect,
 ): Result<TimeApprovalAuthorityAssignment> {
 	const id = parseHumanResourcesTimeApprovalAuthorityAssignmentId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	if (
 		row.authority !== "line_manager" &&
 		row.authority !== "department" &&
@@ -580,9 +613,13 @@ function mapWorkCalendarScopeAssignment(
 	row: typeof hrWorkCalendarScopeAssignment.$inferSelect,
 ): Result<WorkCalendarScopeAssignment> {
 	const id = parseHumanResourcesWorkCalendarScopeAssignmentId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const calendarId = parseHumanResourcesWorkCalendarId(row.calendarId);
-	if (!calendarId.ok) return calendarId;
+	if (!calendarId.ok) {
+		return calendarId;
+	}
 	if (!WORK_CALENDAR_SCOPE_TYPES.has(row.scopeType as WorkCalendarScopeType)) {
 		return invalidState("Work calendar scope type is invalid");
 	}
@@ -604,12 +641,16 @@ function mapWorkCalendarScopeAssignment(
 
 function mapShift(row: typeof hrShift.$inferSelect): Result<Shift> {
 	const id = parseHumanResourcesShiftId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const supersedesShiftId =
 		row.supersedesShiftId === null
 			? ok(null)
 			: parseHumanResourcesShiftId(row.supersedesShiftId);
-	if (!supersedesShiftId.ok) return supersedesShiftId;
+	if (isResultFailure(supersedesShiftId)) {
+		return supersedesShiftId;
+	}
 	if (
 		row.shiftKind !== "fixed" &&
 		row.shiftKind !== "flexible" &&
@@ -662,9 +703,13 @@ function mapShiftBreak(
 	row: typeof hrShiftBreak.$inferSelect,
 ): Result<ShiftBreak> {
 	const id = parseHumanResourcesShiftBreakId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const shiftId = parseHumanResourcesShiftId(row.shiftId);
-	if (!shiftId.ok) return shiftId;
+	if (!shiftId.ok) {
+		return shiftId;
+	}
 	return ok({
 		id: id.data,
 		organizationId: row.organizationId,
@@ -683,17 +728,25 @@ function mapAssignment(
 	row: typeof hrShiftAssignment.$inferSelect,
 ): Result<ShiftAssignment> {
 	const id = parseHumanResourcesShiftAssignmentId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const employeeId = parseHumanResourcesEmployeeId(row.employeeId);
-	if (!employeeId.ok) return employeeId;
+	if (!employeeId.ok) {
+		return employeeId;
+	}
 	let employmentId = null as ShiftAssignment["employmentId"];
 	if (row.employmentId !== null) {
 		const parsed = parseHumanResourcesEmploymentId(row.employmentId);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		employmentId = parsed.data;
 	}
 	const shiftId = parseHumanResourcesShiftId(row.shiftId);
-	if (!shiftId.ok) return shiftId;
+	if (!shiftId.ok) {
+		return shiftId;
+	}
 	if (
 		row.publicationStatus !== "planned" &&
 		row.publicationStatus !== "published" &&
@@ -728,9 +781,13 @@ function mapAssignmentSegment(
 	row: typeof hrShiftAssignmentSegment.$inferSelect,
 ): Result<ShiftAssignmentSegment> {
 	const id = parseHumanResourcesShiftAssignmentSegmentId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const assignmentId = parseHumanResourcesShiftAssignmentId(row.assignmentId);
-	if (!assignmentId.ok) return assignmentId;
+	if (!assignmentId.ok) {
+		return assignmentId;
+	}
 	return ok({
 		id: id.data,
 		organizationId: row.organizationId,
@@ -747,19 +804,27 @@ function mapEvent(
 	row: typeof hrAttendanceEvent.$inferSelect,
 ): Result<AttendanceEvent> {
 	const id = parseHumanResourcesAttendanceEventId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const employeeId = parseHumanResourcesEmployeeId(row.employeeId);
-	if (!employeeId.ok) return employeeId;
+	if (!employeeId.ok) {
+		return employeeId;
+	}
 	let employmentId = null as AttendanceEvent["employmentId"];
 	if (row.employmentId !== null) {
 		const parsed = parseHumanResourcesEmploymentId(row.employmentId);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		employmentId = parsed.data;
 	}
 	let shiftAssignmentId = null as AttendanceEvent["shiftAssignmentId"];
 	if (row.shiftAssignmentId !== null) {
 		const parsed = parseHumanResourcesShiftAssignmentId(row.shiftAssignmentId);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		shiftAssignmentId = parsed.data;
 	}
 	if (
@@ -819,9 +884,13 @@ function mapAttendanceAdjustment(
 	row: typeof hrAttendanceAdjustment.$inferSelect,
 ): Result<AttendanceAdjustment> {
 	const id = parseHumanResourcesAttendanceAdjustmentId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const eventId = parseHumanResourcesAttendanceEventId(row.eventId);
-	if (!eventId.ok) return eventId;
+	if (!eventId.ok) {
+		return eventId;
+	}
 	return ok({
 		id: id.data,
 		organizationId: row.organizationId,
@@ -845,19 +914,27 @@ function mapSession(
 	row: typeof hrAttendanceSession.$inferSelect,
 ): Result<AttendanceSession> {
 	const id = parseHumanResourcesAttendanceSessionId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const employeeId = parseHumanResourcesEmployeeId(row.employeeId);
-	if (!employeeId.ok) return employeeId;
+	if (!employeeId.ok) {
+		return employeeId;
+	}
 	let employmentId = null as AttendanceSession["employmentId"];
 	if (row.employmentId !== null) {
 		const parsed = parseHumanResourcesEmploymentId(row.employmentId);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		employmentId = parsed.data;
 	}
 	let shiftAssignmentId = null as AttendanceSession["shiftAssignmentId"];
 	if (row.shiftAssignmentId !== null) {
 		const parsed = parseHumanResourcesShiftAssignmentId(row.shiftAssignmentId);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		shiftAssignmentId = parsed.data;
 	}
 	if (
@@ -895,7 +972,9 @@ function mapSession(
 		const policyId = parseHumanResourcesTimePolicyId(
 			provenanceResult.data.automaticBreak.policyId,
 		);
-		if (!policyId.ok) return policyId;
+		if (!policyId.ok) {
+			return policyId;
+		}
 		automaticBreak = {
 			...provenanceResult.data.automaticBreak,
 			policyId: policyId.data,
@@ -932,16 +1011,24 @@ function mapAttendanceBreakWaiverDecision(
 	row: typeof hrAttendanceBreakWaiverDecision.$inferSelect,
 ): Result<AttendanceBreakWaiverDecision> {
 	const id = parseHumanResourcesAttendanceBreakWaiverDecisionId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const sessionId = parseHumanResourcesAttendanceSessionId(row.sessionId);
-	if (!sessionId.ok) return sessionId;
+	if (!sessionId.ok) {
+		return sessionId;
+	}
 	const policyId = parseHumanResourcesTimePolicyId(row.policyId);
-	if (!policyId.ok) return policyId;
+	if (!policyId.ok) {
+		return policyId;
+	}
 	const authorityAssignmentId =
 		parseHumanResourcesTimeApprovalAuthorityAssignmentId(
 			row.authorityAssignmentId,
 		);
-	if (!authorityAssignmentId.ok) return authorityAssignmentId;
+	if (!authorityAssignmentId.ok) {
+		return authorityAssignmentId;
+	}
 	if (
 		row.authority !== "line_manager" &&
 		row.authority !== "department" &&
@@ -973,25 +1060,35 @@ function mapException(
 	row: typeof hrAttendanceException.$inferSelect,
 ): Result<AttendanceException> {
 	const id = parseHumanResourcesAttendanceExceptionId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const employeeId = parseHumanResourcesEmployeeId(row.employeeId);
-	if (!employeeId.ok) return employeeId;
+	if (!employeeId.ok) {
+		return employeeId;
+	}
 	let sessionId = null as AttendanceException["sessionId"];
 	if (row.sessionId !== null) {
 		const parsed = parseHumanResourcesAttendanceSessionId(row.sessionId);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		sessionId = parsed.data;
 	}
 	let eventId = null as AttendanceException["eventId"];
 	if (row.eventId !== null) {
 		const parsed = parseHumanResourcesAttendanceEventId(row.eventId);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		eventId = parsed.data;
 	}
 	let shiftAssignmentId = null as AttendanceException["shiftAssignmentId"];
 	if (row.shiftAssignmentId !== null) {
 		const parsed = parseHumanResourcesShiftAssignmentId(row.shiftAssignmentId);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		shiftAssignmentId = parsed.data;
 	}
 	if (
@@ -1034,13 +1131,19 @@ function mapException(
 
 function mapTimesheet(row: typeof hrTimesheet.$inferSelect): Result<Timesheet> {
 	const id = parseHumanResourcesTimesheetId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const employeeId = parseHumanResourcesEmployeeId(row.employeeId);
-	if (!employeeId.ok) return employeeId;
+	if (!employeeId.ok) {
+		return employeeId;
+	}
 	let employmentId = null as Timesheet["employmentId"];
 	if (row.employmentId !== null) {
 		const parsed = parseHumanResourcesEmploymentId(row.employmentId);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		employmentId = parsed.data;
 	}
 	if (
@@ -1057,13 +1160,17 @@ function mapTimesheet(row: typeof hrTimesheet.$inferSelect): Result<Timesheet> {
 	let approvalPolicyId = null as Timesheet["approvalPolicyId"];
 	if (row.approvalPolicyId !== null) {
 		const parsed = parseHumanResourcesTimePolicyId(row.approvalPolicyId);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		approvalPolicyId = parsed.data;
 	}
 	const requiredApprovalSteps = parseTimeApprovalSteps(
 		row.requiredApprovalSteps,
 	);
-	if (!requiredApprovalSteps.ok) return requiredApprovalSteps;
+	if (!requiredApprovalSteps.ok) {
+		return requiredApprovalSteps;
+	}
 	return ok({
 		id: id.data,
 		organizationId: row.organizationId,
@@ -1096,20 +1203,28 @@ function mapTimesheetApprovalDecision(
 	row: typeof hrTimesheetApprovalDecision.$inferSelect,
 ): Result<TimesheetApprovalDecision> {
 	const id = parseHumanResourcesTimesheetApprovalDecisionId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const timesheetId = parseHumanResourcesTimesheetId(row.timesheetId);
-	if (!timesheetId.ok) return timesheetId;
+	if (!timesheetId.ok) {
+		return timesheetId;
+	}
 	let policyId = null as TimesheetApprovalDecision["policyId"];
 	if (row.policyId !== null) {
 		const parsed = parseHumanResourcesTimePolicyId(row.policyId);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		policyId = parsed.data;
 	}
 	const authorityAssignmentId =
 		parseHumanResourcesTimeApprovalAuthorityAssignmentId(
 			row.authorityAssignmentId,
 		);
-	if (!authorityAssignmentId.ok) return authorityAssignmentId;
+	if (!authorityAssignmentId.ok) {
+		return authorityAssignmentId;
+	}
 	if (
 		row.authority !== "line_manager" &&
 		row.authority !== "department" &&
@@ -1140,11 +1255,17 @@ function mapEntry(
 	row: typeof hrTimesheetEntry.$inferSelect,
 ): Result<TimesheetEntry> {
 	const id = parseHumanResourcesTimesheetEntryId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const timesheetId = parseHumanResourcesTimesheetId(row.timesheetId);
-	if (!timesheetId.ok) return timesheetId;
+	if (!timesheetId.ok) {
+		return timesheetId;
+	}
 	const employeeId = parseHumanResourcesEmployeeId(row.employeeId);
-	if (!employeeId.ok) return employeeId;
+	if (!employeeId.ok) {
+		return employeeId;
+	}
 	return ok({
 		id: id.data,
 		organizationId: row.organizationId,
@@ -1177,13 +1298,19 @@ function mapOvertime(
 	row: typeof hrOvertimeRequest.$inferSelect,
 ): Result<OvertimeRequest> {
 	const id = parseHumanResourcesOvertimeRequestId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const employeeId = parseHumanResourcesEmployeeId(row.employeeId);
-	if (!employeeId.ok) return employeeId;
+	if (!employeeId.ok) {
+		return employeeId;
+	}
 	let employmentId = null as OvertimeRequest["employmentId"];
 	if (row.employmentId !== null) {
 		const parsed = parseHumanResourcesEmploymentId(row.employmentId);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		employmentId = parsed.data;
 	}
 	if (
@@ -1219,13 +1346,6 @@ function mapOvertime(
 	});
 }
 
-function parseOvertimeType(value: string | null): OvertimeType | null {
-	if (value === null) return null;
-	return OVERTIME_TYPES.has(value as OvertimeType)
-		? (value as OvertimeType)
-		: null;
-}
-
 function pageOffset(
 	page?: number,
 	pageSize?: number,
@@ -1248,10 +1368,14 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.limit(1);
-			if (rows.length === 0) return ok(null);
+			if (rows.length === 0) {
+				return ok(null);
+			}
 			const sourceRow = requirePersistenceRow(rows[0]);
 			const mapped = mapCalendar(sourceRow);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return ok({
 				calendar: mapped.data,
 				createRequestFingerprint: sourceRow.createRequestFingerprint,
@@ -1289,7 +1413,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				})
 				.returning();
 			const mapped = mapCalendar(requirePersistenceRow(row));
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			const recorded = await audit(ports, {
 				organizationId: input.organizationId,
 				actorUserId: input.createdBy,
@@ -1298,7 +1424,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				entityId: mapped.data.id,
 				action: "CREATE",
 			});
-			if (!recorded.ok) return recorded;
+			if (!recorded.ok) {
+				return recorded;
+			}
 			return ok(mapped.data);
 		} catch (error) {
 			if (isCreateIdempotencyUniqueViolation(error)) {
@@ -1306,7 +1434,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					organizationId: input.organizationId,
 					idempotencyKey: input.idempotencyKey,
 				});
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (
 					replay.data !== null &&
 					replay.data.createRequestFingerprint ===
@@ -1333,14 +1463,20 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				organizationId: input.organizationId,
 				calendarId: input.calendarId,
 			});
-			if (!predecessor.ok) return predecessor;
-			if (predecessor.data === null) return notFound("Work calendar not found");
+			if (!predecessor.ok) {
+				return predecessor;
+			}
+			if (predecessor.data === null) {
+				return notFound("Work calendar not found");
+			}
 			const predecessorCalendar = predecessor.data;
 			const versionCheck = assertExpectedVersion(
 				predecessorCalendar.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			if (predecessorCalendar.status !== "active") {
 				return invalidState("Only active work calendars can be superseded");
 			}
@@ -1443,9 +1579,13 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				successorRow: workCalendarFromSql(successorSql),
 			};
 			const superseded = mapCalendar(rows.supersededRow);
-			if (!superseded.ok) return superseded;
+			if (!superseded.ok) {
+				return superseded;
+			}
 			const successor = mapCalendar(rows.successorRow);
-			if (!successor.ok) return successor;
+			if (!successor.ok) {
+				return successor;
+			}
 			const recorded = await audit(ports, {
 				organizationId: input.organizationId,
 				actorUserId: input.createdBy,
@@ -1500,8 +1640,12 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				organizationId: input.organizationId,
 				calendarId: input.calendarId,
 			});
-			if (!existing.ok) return existing;
-			if (existing.data === null) return notFound("Work calendar not found");
+			if (!existing.ok) {
+				return existing;
+			}
+			if (existing.data === null) {
+				return notFound("Work calendar not found");
+			}
 			if (
 				input.timezone !== undefined ||
 				input.calendarVersion !== undefined ||
@@ -1517,7 +1661,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				existing.data.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			const [row] = await db
 				.update(hrWorkCalendar)
 				.set({
@@ -1529,9 +1675,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					standardHoursPerDay:
 						input.standardHoursPerDay ?? existing.data.standardHoursPerDay,
 					effectiveTo:
-						input.effectiveTo !== undefined
-							? input.effectiveTo
-							: existing.data.effectiveTo,
+						input.effectiveTo === undefined
+							? existing.data.effectiveTo
+							: input.effectiveTo,
 					version: existing.data.version + 1,
 					updatedBy: input.actorUserId,
 					updatedAt: new Date(),
@@ -1544,9 +1690,13 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.returning();
-			if (!row) return notFound("Work calendar not found");
+			if (!row) {
+				return notFound("Work calendar not found");
+			}
 			const mapped = mapCalendar(row);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			const recorded = await audit(ports, {
 				organizationId: input.organizationId,
 				actorUserId: input.actorUserId,
@@ -1555,7 +1705,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				entityId: mapped.data.id,
 				action: "UPDATE",
 			});
-			if (!recorded.ok) return recorded;
+			if (!recorded.ok) {
+				return recorded;
+			}
 			return ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to update work calendar");
@@ -1568,13 +1720,19 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				organizationId: input.organizationId,
 				calendarId: input.calendarId,
 			});
-			if (!existing.ok) return existing;
-			if (existing.data === null) return notFound("Work calendar not found");
+			if (!existing.ok) {
+				return existing;
+			}
+			if (existing.data === null) {
+				return notFound("Work calendar not found");
+			}
 			const versionCheck = assertExpectedVersion(
 				existing.data.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			if (existing.data.status === "archived") {
 				return invalidState("Work calendar is already archived");
 			}
@@ -1594,9 +1752,13 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.returning();
-			if (!row) return notFound("Work calendar not found");
+			if (!row) {
+				return notFound("Work calendar not found");
+			}
 			const mapped = mapCalendar(row);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			const recorded = await audit(ports, {
 				organizationId: input.organizationId,
 				actorUserId: input.actorUserId,
@@ -1605,7 +1767,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				entityId: mapped.data.id,
 				action: "UPDATE",
 			});
-			if (!recorded.ok) return recorded;
+			if (!recorded.ok) {
+				return recorded;
+			}
 			return ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to archive work calendar");
@@ -1624,7 +1788,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.limit(1);
-			if (rows.length === 0) return ok(null);
+			if (rows.length === 0) {
+				return ok(null);
+			}
 			return mapCalendar(requirePersistenceRow(rows[0]));
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to get work calendar");
@@ -1649,7 +1815,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			const mapped: WorkCalendar[] = [];
 			for (const row of rows) {
 				const item = mapCalendar(row);
-				if (!item.ok) return item;
+				if (!item.ok) {
+					return item;
+				}
 				mapped.push(item.data);
 			}
 			return ok(mapped);
@@ -1664,8 +1832,12 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				organizationId: input.organizationId,
 				calendarId: input.calendarId,
 			});
-			if (!calendar.ok) return calendar;
-			if (calendar.data === null) return notFound("Work calendar not found");
+			if (!calendar.ok) {
+				return calendar;
+			}
+			if (calendar.data === null) {
+				return notFound("Work calendar not found");
+			}
 			const id = randomUUID();
 			const now = new Date();
 			const [row] = await db
@@ -1688,7 +1860,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				})
 				.returning();
 			const mapped = mapHoliday(requirePersistenceRow(row));
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			const recorded = await audit(ports, {
 				organizationId: input.organizationId,
 				actorUserId: input.createdBy,
@@ -1697,7 +1871,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				entityId: mapped.data.id,
 				action: "CREATE",
 			});
-			if (!recorded.ok) return recorded;
+			if (!recorded.ok) {
+				return recorded;
+			}
 			return ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(
@@ -1718,8 +1894,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.returning({ id: hrWorkCalendarHoliday.id });
-			if (deleted.length === 0)
+			if (deleted.length === 0) {
 				return notFound("Work calendar holiday not found");
+			}
 			const recorded = await audit(ports, {
 				organizationId: input.organizationId,
 				actorUserId: input.actorUserId,
@@ -1728,7 +1905,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				entityId: requirePersistenceRow(deleted[0]).id,
 				action: "DELETE",
 			});
-			if (!recorded.ok) return recorded;
+			if (!recorded.ok) {
+				return recorded;
+			}
 			return ok(undefined);
 		} catch (error) {
 			return mapPersistenceFailure(
@@ -1757,7 +1936,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			const mapped: WorkCalendarHolidayRecord[] = [];
 			for (const row of rows) {
 				const item = mapHoliday(row);
-				if (!item.ok) return item;
+				if (!item.ok) {
+					return item;
+				}
 				mapped.push(item.data);
 			}
 			return ok(mapped);
@@ -1775,8 +1956,12 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				organizationId: input.organizationId,
 				calendarId: input.calendarId,
 			});
-			if (!calendar.ok) return calendar;
-			if (calendar.data === null) return notFound("Work calendar not found");
+			if (!calendar.ok) {
+				return calendar;
+			}
+			if (calendar.data === null) {
+				return notFound("Work calendar not found");
+			}
 			const id = randomUUID();
 			const now = new Date();
 			const [row] = await db
@@ -1799,7 +1984,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				})
 				.returning();
 			const mapped = mapEmploymentCalendar(requirePersistenceRow(row));
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			const recorded = await audit(ports, {
 				organizationId: input.organizationId,
 				actorUserId: input.createdBy,
@@ -1808,7 +1995,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				entityId: mapped.data.id,
 				action: "CREATE",
 			});
-			if (!recorded.ok) return recorded;
+			if (!recorded.ok) {
+				return recorded;
+			}
 			return ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(
@@ -1837,12 +2026,16 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				return notFound("Employment calendar assignment not found");
 			}
 			const existing = mapEmploymentCalendar(requirePersistenceRow(rows[0]));
-			if (!existing.ok) return existing;
+			if (!existing.ok) {
+				return existing;
+			}
 			const versionCheck = assertExpectedVersion(
 				existing.data.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			if (existing.data.effectiveTo !== null) {
 				return invalidState("Employment calendar assignment is already ended");
 			}
@@ -1868,9 +2061,13 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.returning();
-			if (!row) return notFound("Employment calendar assignment not found");
+			if (!row) {
+				return notFound("Employment calendar assignment not found");
+			}
 			const mapped = mapEmploymentCalendar(row);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			const recorded = await audit(ports, {
 				organizationId: input.organizationId,
 				actorUserId: input.actorUserId,
@@ -1879,7 +2076,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				entityId: mapped.data.id,
 				action: "UPDATE",
 			});
-			if (!recorded.ok) return recorded;
+			if (!recorded.ok) {
+				return recorded;
+			}
 			return ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(
@@ -1910,7 +2109,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			const mapped: WorkCalendarScopeAssignment[] = [];
 			for (const row of rows) {
 				const item = mapWorkCalendarScopeAssignment(row);
-				if (!item.ok) return item;
+				if (!item.ok) {
+					return item;
+				}
 				mapped.push(item.data);
 			}
 			return ok(mapped);
@@ -1933,8 +2134,12 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				organizationId: input.organizationId,
 				calendarId: input.calendarId,
 			});
-			if (!calendar.ok) return calendar;
-			if (calendar.data === null) return notFound("Work calendar not found");
+			if (!calendar.ok) {
+				return calendar;
+			}
+			if (calendar.data === null) {
+				return notFound("Work calendar not found");
+			}
 
 			const overlapRows = await db
 				.select({ id: hrWorkCalendarScopeAssignment.id })
@@ -1985,7 +2190,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				})
 				.returning();
 			const mapped = mapWorkCalendarScopeAssignment(requirePersistenceRow(row));
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			const recorded = await audit(ports, {
 				organizationId: input.organizationId,
 				actorUserId: input.createdBy,
@@ -1994,7 +2201,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				entityId: mapped.data.id,
 				action: "CREATE",
 			});
-			if (!recorded.ok) return recorded;
+			if (!recorded.ok) {
+				return recorded;
+			}
 			return ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(
@@ -2025,12 +2234,16 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			const existing = mapWorkCalendarScopeAssignment(
 				requirePersistenceRow(rows[0]),
 			);
-			if (!existing.ok) return existing;
+			if (!existing.ok) {
+				return existing;
+			}
 			const versionCheck = assertExpectedVersion(
 				existing.data.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			if (existing.data.effectiveTo !== null) {
 				return invalidState("Work calendar scope assignment is already ended");
 			}
@@ -2060,7 +2273,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				return notFound("Work calendar scope assignment not found");
 			}
 			const mapped = mapWorkCalendarScopeAssignment(row);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			const recorded = await audit(ports, {
 				organizationId: input.organizationId,
 				actorUserId: input.actorUserId,
@@ -2069,7 +2284,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				entityId: mapped.data.id,
 				action: "UPDATE",
 			});
-			if (!recorded.ok) return recorded;
+			if (!recorded.ok) {
+				return recorded;
+			}
 			return ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(
@@ -2095,12 +2312,14 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 						lte(hrEmploymentCalendarAssignment.effectiveFrom, input.asOf),
 					),
 				);
-			const match = rows
+			const [match] = rows
 				.filter(
 					(row) => row.effectiveTo === null || row.effectiveTo >= input.asOf,
 				)
-				.sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))[0];
-			if (!match) return ok(null);
+				.sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom));
+			if (!match) {
+				return ok(null);
+			}
 			const assignedCalendarRows = await db
 				.select()
 				.from(hrWorkCalendar)
@@ -2111,7 +2330,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.limit(1);
-			if (assignedCalendarRows.length === 0) return ok(null);
+			if (assignedCalendarRows.length === 0) {
+				return ok(null);
+			}
 			const assignedCalendar = requirePersistenceRow(assignedCalendarRows[0]);
 			const calendarFamily = await db
 				.select()
@@ -2130,7 +2351,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				isEligible: (calendar) =>
 					calendar.status === "active" || calendar.status === "superseded",
 			});
-			if (effectiveCalendar === null) return ok(null);
+			if (effectiveCalendar === null) {
+				return ok(null);
+			}
 			return mapEmploymentCalendar({
 				...match,
 				calendarId: effectiveCalendar.id,
@@ -2155,10 +2378,14 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.limit(1);
-			if (rows.length === 0) return ok(null);
+			if (rows.length === 0) {
+				return ok(null);
+			}
 			const sourceRow = requirePersistenceRow(rows[0]);
 			const policy = mapTimePolicy(sourceRow);
-			if (!policy.ok) return policy;
+			if (!policy.ok) {
+				return policy;
+			}
 			return ok({
 				policy: policy.data,
 				createRequestFingerprint: sourceRow.createRequestFingerprint,
@@ -2196,7 +2423,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				})
 				.returning();
 			const mapped = mapTimePolicy(requirePersistenceRow(row));
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			const recorded = await audit(ports, {
 				organizationId: input.organizationId,
 				actorUserId: input.createdBy,
@@ -2231,14 +2460,20 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				organizationId: input.organizationId,
 				policyId: input.policyId,
 			});
-			if (!predecessor.ok) return predecessor;
-			if (predecessor.data === null) return notFound("Time policy not found");
+			if (!predecessor.ok) {
+				return predecessor;
+			}
+			if (predecessor.data === null) {
+				return notFound("Time policy not found");
+			}
 			const predecessorPolicy = predecessor.data;
 			const versionCheck = assertExpectedVersion(
 				predecessorPolicy.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			if (predecessorPolicy.status !== "active") {
 				return invalidState("Only active time policies can be superseded");
 			}
@@ -2307,9 +2542,13 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				successorRow: timePolicyFromSql(successorSql),
 			};
 			const superseded = mapTimePolicy(rows.supersededRow);
-			if (!superseded.ok) return superseded;
+			if (!superseded.ok) {
+				return superseded;
+			}
 			const successor = mapTimePolicy(rows.successorRow);
-			if (!successor.ok) return successor;
+			if (!successor.ok) {
+				return successor;
+			}
 			const recorded = await audit(ports, {
 				organizationId: input.organizationId,
 				actorUserId: input.createdBy,
@@ -2359,13 +2598,19 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				organizationId: input.organizationId,
 				policyId: input.policyId,
 			});
-			if (!existing.ok) return existing;
-			if (existing.data === null) return notFound("Time policy not found");
+			if (!existing.ok) {
+				return existing;
+			}
+			if (existing.data === null) {
+				return notFound("Time policy not found");
+			}
 			const versionCheck = assertExpectedVersion(
 				existing.data.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			if (existing.data.status !== "draft") {
 				return invalidState("Only draft time policies can be activated");
 			}
@@ -2385,9 +2630,13 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.returning();
-			if (!row) return notFound("Time policy not found");
+			if (!row) {
+				return notFound("Time policy not found");
+			}
 			const mapped = mapTimePolicy(row);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			const recorded = await audit(ports, {
 				organizationId: input.organizationId,
 				actorUserId: input.actorUserId,
@@ -2425,7 +2674,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				organizationId: input.organizationId,
 				policyId: input.policyId,
 			});
-			if (!policy.ok) return policy;
+			if (!policy.ok) {
+				return policy;
+			}
 			if (policy.data === null || policy.data.status !== "active") {
 				return invalidState("Active time policy not found");
 			}
@@ -2439,7 +2690,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.limit(1);
-			if (employmentRows.length === 0) return notFound("Employment not found");
+			if (employmentRows.length === 0) {
+				return notFound("Employment not found");
+			}
 			const now = new Date();
 			const assignmentId = randomUUID();
 			const [[insertionRow]] = await runTimeTransaction<
@@ -2492,7 +2745,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			const mapped = mapTimePolicyAssignment(
 				timePolicyAssignmentFromSql(insertionRow.row),
 			);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			const recorded = await audit(ports, {
 				organizationId: input.organizationId,
 				actorUserId: input.actorUserId,
@@ -2530,7 +2785,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.limit(1);
-			if (rows.length === 0) return ok(null);
+			if (rows.length === 0) {
+				return ok(null);
+			}
 			return mapTimePolicy(requirePersistenceRow(rows[0]));
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to get time policy");
@@ -2549,22 +2806,30 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 						lte(hrTimePolicyAssignment.effectiveFrom, input.asOf),
 					),
 				);
-			const assignment = assignments
+			const [assignment] = assignments
 				.filter(
 					(candidate) =>
 						candidate.effectiveTo === null ||
 						candidate.effectiveTo >= input.asOf,
 				)
-				.sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))[0];
-			if (assignment === undefined) return ok(null);
+				.sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom));
+			if (assignment === undefined) {
+				return ok(null);
+			}
 			const policyId = parseHumanResourcesTimePolicyId(assignment.policyId);
-			if (!policyId.ok) return policyId;
+			if (!policyId.ok) {
+				return policyId;
+			}
 			const assignedPolicy = await this.getTimePolicy({
 				organizationId: input.organizationId,
 				policyId: policyId.data,
 			});
-			if (!assignedPolicy.ok) return assignedPolicy;
-			if (assignedPolicy.data === null) return ok(null);
+			if (!assignedPolicy.ok) {
+				return assignedPolicy;
+			}
+			if (assignedPolicy.data === null) {
+				return ok(null);
+			}
 			const policies = await db
 				.select()
 				.from(hrTimePolicy)
@@ -2651,7 +2916,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			const mapped = mapTimeApprovalAuthorityAssignment(
 				timeApprovalAuthorityAssignmentFromSql(insertionRow.row),
 			);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			const recorded = await audit(ports, {
 				organizationId: input.organizationId,
 				actorUserId: input.createdBy,
@@ -2704,12 +2971,16 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			const current = mapTimeApprovalAuthorityAssignment(
 				requirePersistenceRow(rows[0]),
 			);
-			if (!current.ok) return current;
+			if (!current.ok) {
+				return current;
+			}
 			const versionCheck = assertExpectedVersion(
 				current.data.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			if (input.effectiveTo < current.data.effectiveFrom) {
 				return invalidState("effectiveTo must be on or after effectiveFrom");
 			}
@@ -2739,7 +3010,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				return conflict("Approval authority assignment changed concurrently");
 			}
 			const mapped = mapTimeApprovalAuthorityAssignment(row);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			const recorded = await audit(ports, {
 				organizationId: input.organizationId,
 				actorUserId: input.actorUserId,
@@ -2829,10 +3102,14 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.limit(1);
-			if (rows.length === 0) return ok(null);
+			if (rows.length === 0) {
+				return ok(null);
+			}
 			const sourceRow = requirePersistenceRow(rows[0]);
 			const mapped = mapShift(sourceRow);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return ok({
 				shift: mapped.data,
 				createRequestFingerprint: sourceRow.createRequestFingerprint,
@@ -2880,7 +3157,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				})
 				.returning();
 			const mapped = mapShift(requirePersistenceRow(row));
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			const recorded = await audit(ports, {
 				organizationId: input.organizationId,
 				actorUserId: input.createdBy,
@@ -2889,7 +3168,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				entityId: mapped.data.id,
 				action: "CREATE",
 			});
-			if (!recorded.ok) return recorded;
+			if (!recorded.ok) {
+				return recorded;
+			}
 			return ok(mapped.data);
 		} catch (error) {
 			if (isCreateIdempotencyUniqueViolation(error)) {
@@ -2897,7 +3178,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					organizationId: input.organizationId,
 					idempotencyKey: input.idempotencyKey,
 				});
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (
 					replay.data !== null &&
 					replay.data.createRequestFingerprint ===
@@ -2924,14 +3207,20 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				organizationId: input.organizationId,
 				shiftId: input.shiftId,
 			});
-			if (!predecessor.ok) return predecessor;
-			if (predecessor.data === null) return notFound("Shift not found");
+			if (!predecessor.ok) {
+				return predecessor;
+			}
+			if (predecessor.data === null) {
+				return notFound("Shift not found");
+			}
 			const predecessorShift = predecessor.data;
 			const versionCheck = assertExpectedVersion(
 				predecessorShift.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			if (predecessorShift.status !== "active") {
 				return invalidState("Only active shifts can be superseded");
 			}
@@ -3034,9 +3323,13 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				successorRow: shiftFromSql(successorSql),
 			};
 			const superseded = mapShift(rows.supersededRow);
-			if (!superseded.ok) return superseded;
+			if (!superseded.ok) {
+				return superseded;
+			}
 			const successor = mapShift(rows.successorRow);
-			if (!successor.ok) return successor;
+			if (!successor.ok) {
+				return successor;
+			}
 			const recorded = await audit(ports, {
 				organizationId: input.organizationId,
 				actorUserId: input.createdBy,
@@ -3089,8 +3382,12 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				organizationId: input.organizationId,
 				shiftId: input.shiftId,
 			});
-			if (!existing.ok) return existing;
-			if (existing.data === null) return notFound("Shift not found");
+			if (!existing.ok) {
+				return existing;
+			}
+			if (existing.data === null) {
+				return notFound("Shift not found");
+			}
 			if (existing.data.status !== "draft") {
 				return invalidState("Only draft shifts can be updated");
 			}
@@ -3098,7 +3395,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				existing.data.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			const [row] = await db
 				.update(hrShift)
 				.set({
@@ -3114,35 +3413,35 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					graceLateMinutes:
 						input.graceLateMinutes ?? existing.data.graceLateMinutes,
 					minDurationMinutes:
-						input.minDurationMinutes !== undefined
-							? input.minDurationMinutes
-							: existing.data.minDurationMinutes,
+						input.minDurationMinutes === undefined
+							? existing.data.minDurationMinutes
+							: input.minDurationMinutes,
 					maxDurationMinutes:
-						input.maxDurationMinutes !== undefined
-							? input.maxDurationMinutes
-							: existing.data.maxDurationMinutes,
+						input.maxDurationMinutes === undefined
+							? existing.data.maxDurationMinutes
+							: input.maxDurationMinutes,
 					earliestClockInLocal:
-						input.earliestClockInLocal !== undefined
-							? input.earliestClockInLocal
-							: existing.data.earliestClockInLocal,
+						input.earliestClockInLocal === undefined
+							? existing.data.earliestClockInLocal
+							: input.earliestClockInLocal,
 					latestClockOutLocal:
-						input.latestClockOutLocal !== undefined
-							? input.latestClockOutLocal
-							: existing.data.latestClockOutLocal,
+						input.latestClockOutLocal === undefined
+							? existing.data.latestClockOutLocal
+							: input.latestClockOutLocal,
 					overtimeEligible:
 						input.overtimeEligible ?? existing.data.overtimeEligible,
 					timezone:
-						input.timezone !== undefined
-							? input.timezone
-							: existing.data.timezone,
+						input.timezone === undefined
+							? existing.data.timezone
+							: input.timezone,
 					locationKey:
-						input.locationKey !== undefined
-							? input.locationKey
-							: existing.data.locationKey,
+						input.locationKey === undefined
+							? existing.data.locationKey
+							: input.locationKey,
 					effectiveTo:
-						input.effectiveTo !== undefined
-							? input.effectiveTo
-							: existing.data.effectiveTo,
+						input.effectiveTo === undefined
+							? existing.data.effectiveTo
+							: input.effectiveTo,
 					version: existing.data.version + 1,
 					updatedBy: input.actorUserId,
 					updatedAt: new Date(),
@@ -3155,9 +3454,13 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.returning();
-			if (!row) return notFound("Shift not found");
+			if (!row) {
+				return notFound("Shift not found");
+			}
 			const mapped = mapShift(row);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			const recorded = await audit(ports, {
 				organizationId: input.organizationId,
 				actorUserId: input.actorUserId,
@@ -3166,7 +3469,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				entityId: mapped.data.id,
 				action: "UPDATE",
 			});
-			if (!recorded.ok) return recorded;
+			if (!recorded.ok) {
+				return recorded;
+			}
 			return ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to update shift");
@@ -3174,10 +3479,10 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 	},
 
 	async activateShift(input, ports) {
-		return transitionShiftStatus(this, ports, input, "active");
+		return await transitionShiftStatus(this, ports, input, "active");
 	},
 	async deactivateShift(input, ports) {
-		return transitionShiftStatus(this, ports, input, "inactive");
+		return await transitionShiftStatus(this, ports, input, "inactive");
 	},
 
 	async getShift(input) {
@@ -3192,7 +3497,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.limit(1);
-			if (rows.length === 0) return ok(null);
+			if (rows.length === 0) {
+				return ok(null);
+			}
 			return mapShift(requirePersistenceRow(rows[0]));
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to get shift");
@@ -3215,7 +3522,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			const mapped: Shift[] = [];
 			for (const row of rows) {
 				const item = mapShift(row);
-				if (!item.ok) return item;
+				if (!item.ok) {
+					return item;
+				}
 				mapped.push(item.data);
 			}
 			return ok(mapped);
@@ -3230,8 +3539,12 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				organizationId: input.organizationId,
 				shiftId: input.shiftId,
 			});
-			if (!shift.ok) return shift;
-			if (shift.data === null) return notFound("Shift not found");
+			if (!shift.ok) {
+				return shift;
+			}
+			if (shift.data === null) {
+				return notFound("Shift not found");
+			}
 			const id = randomUUID();
 			const now = new Date();
 			const [row] = await db
@@ -3250,7 +3563,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				})
 				.returning();
 			const mapped = mapShiftBreak(requirePersistenceRow(row));
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			const recorded = await audit(ports, {
 				organizationId: input.organizationId,
 				actorUserId: shift.data.updatedBy,
@@ -3259,7 +3574,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				entityId: mapped.data.id,
 				action: "CREATE",
 			});
-			if (!recorded.ok) return recorded;
+			if (!recorded.ok) {
+				return recorded;
+			}
 			return ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to add shift break");
@@ -3277,7 +3594,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.returning({ id: hrShiftBreak.id });
-			if (deleted.length === 0) return notFound("Shift break not found");
+			if (deleted.length === 0) {
+				return notFound("Shift break not found");
+			}
 			const recorded = await audit(ports, {
 				organizationId: input.organizationId,
 				actorUserId: input.actorUserId,
@@ -3286,7 +3605,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				entityId: requirePersistenceRow(deleted[0]).id,
 				action: "DELETE",
 			});
-			if (!recorded.ok) return recorded;
+			if (!recorded.ok) {
+				return recorded;
+			}
 			return ok(undefined);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to remove shift break");
@@ -3307,7 +3628,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			const mapped: ShiftBreak[] = [];
 			for (const row of rows) {
 				const item = mapShiftBreak(row);
-				if (!item.ok) return item;
+				if (!item.ok) {
+					return item;
+				}
 				mapped.push(item.data);
 			}
 			return ok(mapped);
@@ -3328,10 +3651,14 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.limit(1);
-			if (rows.length === 0) return ok(null);
+			if (rows.length === 0) {
+				return ok(null);
+			}
 			const sourceRow = requirePersistenceRow(rows[0]);
 			const mapped = mapAssignment(sourceRow);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return ok({
 				assignment: mapped.data,
 				createRequestFingerprint: sourceRow.createRequestFingerprint,
@@ -3347,8 +3674,12 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				organizationId: input.organizationId,
 				shiftId: input.shiftId,
 			});
-			if (!shift.ok) return shift;
-			if (shift.data === null) return notFound("Shift not found");
+			if (!shift.ok) {
+				return shift;
+			}
+			if (shift.data === null) {
+				return notFound("Shift not found");
+			}
 			if (shift.data.status !== "active") {
 				return invalidState("Shift must be active to assign");
 			}
@@ -3358,7 +3689,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				startsAt: input.startsAt,
 				endsAt: input.endsAt,
 			});
-			if (!overlaps.ok) return overlaps;
+			if (!overlaps.ok) {
+				return overlaps;
+			}
 			if (overlaps.data.length > 0) {
 				return conflict("Shift assignment overlaps an existing assignment");
 			}
@@ -3416,12 +3749,14 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 						SELECT created.* FROM created
 					`,
 			]);
-			const assignmentRow = assignmentRows[0];
+			const [assignmentRow] = assignmentRows;
 			if (assignmentRow === undefined) {
 				throw new Error("Shift assignment insert returned no row");
 			}
 			const mapped = mapAssignment(shiftAssignmentFromSql(assignmentRow));
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			const recorded = await audit(ports, {
 				organizationId: input.organizationId,
 				actorUserId: input.createdBy,
@@ -3452,7 +3787,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					organizationId: input.organizationId,
 					idempotencyKey: input.idempotencyKey,
 				});
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (
 					replay.data !== null &&
 					replay.data.createRequestFingerprint ===
@@ -3471,7 +3808,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			organizationId: input.organizationId,
 			assignmentId: input.assignmentId,
 		});
-		if (!before.ok) return before;
+		if (!before.ok) {
+			return before;
+		}
 		const previous = before.data;
 
 		const published = await transitionAssignment(
@@ -3480,7 +3819,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			input,
 			"published",
 		);
-		if (!published.ok) return published;
+		if (!published.ok) {
+			return published;
+		}
 
 		const sessions = await this.listAttendanceSessions({
 			organizationId: input.organizationId,
@@ -3496,7 +3837,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			}
 			return sessions;
 		}
-		const session = sessions.data[0];
+		const [session] = sessions.data;
 		if (session === undefined) {
 			return published;
 		}
@@ -3538,10 +3879,10 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		return published;
 	},
 	async cancelShiftAssignment(input, ports) {
-		return transitionAssignment(this, ports, input, "cancelled");
+		return await transitionAssignment(this, ports, input, "cancelled");
 	},
 	async completeShiftAssignment(input, ports) {
-		return transitionAssignment(this, ports, input, "completed");
+		return await transitionAssignment(this, ports, input, "completed");
 	},
 
 	async changeShiftAssignment(input, ports) {
@@ -3550,13 +3891,19 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				organizationId: input.organizationId,
 				assignmentId: input.assignmentId,
 			});
-			if (!existing.ok) return existing;
-			if (existing.data === null) return notFound("Shift assignment not found");
+			if (!existing.ok) {
+				return existing;
+			}
+			if (existing.data === null) {
+				return notFound("Shift assignment not found");
+			}
 			const versionCheck = assertExpectedVersion(
 				existing.data.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			const attendance = await db
 				.select({ id: hrAttendanceEvent.id })
 				.from(hrAttendanceEvent)
@@ -3586,7 +3933,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				existing.data.publicationStatus,
 				"changed",
 			);
-			if (!transition.ok) return transition;
+			if (!transition.ok) {
+				return transition;
+			}
 			const startsAt = input.startsAt ?? existing.data.startsAt;
 			const endsAt = input.endsAt ?? existing.data.endsAt;
 			const overlaps = await this.findOverlappingShiftAssignments({
@@ -3596,7 +3945,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				endsAt,
 				excludeAssignmentId: existing.data.id,
 			});
-			if (!overlaps.ok) return overlaps;
+			if (!overlaps.ok) {
+				return overlaps;
+			}
 			if (overlaps.data.length > 0) {
 				return conflict("Shift assignment overlaps an existing assignment");
 			}
@@ -3608,9 +3959,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					startsAt,
 					endsAt,
 					locationKey:
-						input.locationKey !== undefined
-							? input.locationKey
-							: existing.data.locationKey,
+						input.locationKey === undefined
+							? existing.data.locationKey
+							: input.locationKey,
 					timezone: input.timezone ?? existing.data.timezone,
 					publicationStatus: "changed",
 					version: existing.data.version + 1,
@@ -3625,9 +3976,13 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.returning();
-			if (!row) return notFound("Shift assignment not found");
+			if (!row) {
+				return notFound("Shift assignment not found");
+			}
 			const mapped = mapAssignment(row);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			const recorded = await audit(ports, {
 				organizationId: input.organizationId,
 				actorUserId: input.actorUserId,
@@ -3636,7 +3991,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				entityId: mapped.data.id,
 				action: "UPDATE",
 			});
-			if (!recorded.ok) return recorded;
+			if (!recorded.ok) {
+				return recorded;
+			}
 			return ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to change shift assignment");
@@ -3655,7 +4012,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.limit(1);
-			if (rows.length === 0) return ok(null);
+			if (rows.length === 0) {
+				return ok(null);
+			}
 			return mapAssignment(requirePersistenceRow(rows[0]));
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to get shift assignment");
@@ -3699,7 +4058,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			const mapped: ShiftAssignment[] = [];
 			for (const row of rows) {
 				const item = mapAssignment(row);
-				if (!item.ok) return item;
+				if (!item.ok) {
+					return item;
+				}
 				mapped.push(item.data);
 			}
 			return ok(mapped);
@@ -3711,8 +4072,12 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 	async listShiftAssignmentSegments(input) {
 		try {
 			const assignment = await this.getShiftAssignment(input);
-			if (!assignment.ok) return assignment;
-			if (assignment.data === null) return ok([]);
+			if (!assignment.ok) {
+				return assignment;
+			}
+			if (assignment.data === null) {
+				return ok([]);
+			}
 			const rows = await db
 				.select()
 				.from(hrShiftAssignmentSegment)
@@ -3726,7 +4091,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			const segments: ShiftAssignmentSegment[] = [];
 			for (const row of rows) {
 				const mapped = mapAssignmentSegment(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				segments.push(mapped.data);
 			}
 			return ok(segments);
@@ -3754,7 +4121,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			const mapped: ShiftAssignment[] = [];
 			for (const row of rows) {
 				const item = mapAssignment(row);
-				if (!item.ok) return item;
+				if (!item.ok) {
+					return item;
+				}
 				mapped.push(item.data);
 			}
 			const rank: Record<ShiftAssignment["publicationStatus"], number> = {
@@ -3777,7 +4146,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 	},
 
 	async listLocationSchedule(input) {
-		return this.listShiftAssignments({
+		return await this.listShiftAssignments({
 			organizationId: input.organizationId,
 			locationKey: input.locationKey,
 			...(input.fromDate === undefined ? {} : { fromDate: input.fromDate }),
@@ -3809,7 +4178,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			const mapped: ShiftAssignment[] = [];
 			for (const row of rows) {
 				const item = mapAssignment(row);
-				if (!item.ok) return item;
+				if (!item.ok) {
+					return item;
+				}
 				mapped.push(item.data);
 			}
 			return ok(mapped);
@@ -3833,10 +4204,14 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.limit(1);
-			if (rows.length === 0) return ok(null);
+			if (rows.length === 0) {
+				return ok(null);
+			}
 			const sourceRow = requirePersistenceRow(rows[0]);
 			const mapped = mapEvent(sourceRow);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return ok({
 				event: mapped.data,
 				createRequestFingerprint: sourceRow.createRequestFingerprint,
@@ -3859,10 +4234,14 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.limit(1);
-			if (rows.length === 0) return ok(null);
+			if (rows.length === 0) {
+				return ok(null);
+			}
 			const sourceRow = requirePersistenceRow(rows[0]);
 			const mapped = mapEvent(sourceRow);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return ok({
 				event: mapped.data,
 				createRequestFingerprint: sourceRow.createRequestFingerprint,
@@ -3890,7 +4269,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.limit(1);
-			if (rows.length === 0) return ok(null);
+			if (rows.length === 0) {
+				return ok(null);
+			}
 			const sourceRow = requirePersistenceRow(rows[0]);
 			const snapshot = sourceRow.resultSnapshot;
 			if (
@@ -3919,7 +4300,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					organizationId: input.organizationId,
 					idempotencyKey: input.idempotencyKey,
 				});
-			if (!existingBatch.ok) return existingBatch;
+			if (!existingBatch.ok) {
+				return existingBatch;
+			}
 			if (existingBatch.data !== null) {
 				if (
 					existingBatch.data.createRequestFingerprint !==
@@ -3959,148 +4342,18 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				createdAt: now,
 			}));
 
-			for (let rowIndex = 0; rowIndex < input.events.length; rowIndex += 1) {
-				const row = requirePersistenceRow(input.events[rowIndex]);
-				const outcomeRowIndex = input.sourceRowIndexes?.[rowIndex] ?? rowIndex;
-				if (!isValidIanaTimeZone(row.sourceTimezone)) {
-					const rejection: AttendanceImportRejectedRow = {
-						rowIndex: outcomeRowIndex,
-						sourceReference: row.sourceReference,
-						errorCode: "INVALID_TIMEZONE",
-						errorMessage: "Invalid IANA timezone",
-					};
-					rejected.push(rejection);
-					errorRows.push({
-						id: randomUUID(),
-						organizationId: input.organizationId,
-						importBatchId,
-						rowIndex: outcomeRowIndex,
-						sourceReference: row.sourceReference,
-						errorCode: rejection.errorCode,
-						errorMessage: rejection.errorMessage,
-						payloadChecksum: row.payloadChecksum ?? null,
-						createdAt: now,
-					});
-					continue;
-				}
-
-				const employeeRows = await db
-					.select({ id: hrEmployee.id })
-					.from(hrEmployee)
-					.where(
-						and(
-							eq(hrEmployee.organizationId, input.organizationId),
-							eq(hrEmployee.id, row.employeeId),
-						),
-					)
-					.limit(1);
-				if (employeeRows.length === 0) {
-					const rejection: AttendanceImportRejectedRow = {
-						rowIndex: outcomeRowIndex,
-						sourceReference: row.sourceReference,
-						errorCode: "UNKNOWN_EMPLOYEE",
-						errorMessage: "Employee not found in organization",
-					};
-					rejected.push(rejection);
-					errorRows.push({
-						id: randomUUID(),
-						organizationId: input.organizationId,
-						importBatchId,
-						rowIndex: outcomeRowIndex,
-						sourceReference: row.sourceReference,
-						errorCode: rejection.errorCode,
-						errorMessage: rejection.errorMessage,
-						payloadChecksum: row.payloadChecksum ?? null,
-						createdAt: now,
-					});
-					continue;
-				}
-
-				const employmentConditions = [
-					eq(hrEmployment.organizationId, input.organizationId),
-					eq(hrEmployment.employeeId, row.employeeId),
-					inArray(hrEmployment.status, ["active", "notice"]),
-					lte(hrEmployment.startsOn, row.localWorkDate),
-					or(
-						isNull(hrEmployment.endsOn),
-						gte(hrEmployment.endsOn, row.localWorkDate),
-					),
-				];
-				if (row.employmentId !== null && row.employmentId !== undefined) {
-					employmentConditions.push(eq(hrEmployment.id, row.employmentId));
-				}
-				const employmentRows = await db
-					.select({ id: hrEmployment.id })
-					.from(hrEmployment)
-					.where(and(...employmentConditions))
-					.limit(1);
-				const employmentRow = employmentRows[0];
-				if (employmentRow === undefined) {
-					const rejection: AttendanceImportRejectedRow = {
-						rowIndex: outcomeRowIndex,
-						sourceReference: row.sourceReference,
-						errorCode: "INVALID_EMPLOYMENT",
-						errorMessage: "Active employment not found for attendance event",
-					};
-					rejected.push(rejection);
-					errorRows.push({
-						id: randomUUID(),
-						organizationId: input.organizationId,
-						importBatchId,
-						rowIndex: outcomeRowIndex,
-						sourceReference: row.sourceReference,
-						errorCode: rejection.errorCode,
-						errorMessage: rejection.errorMessage,
-						payloadChecksum: row.payloadChecksum ?? null,
-						createdAt: now,
-					});
-					continue;
-				}
-				const employmentId = parseHumanResourcesEmploymentId(employmentRow.id);
-				if (!employmentId.ok) return employmentId;
-
-				const fingerprint = buildImportEventFingerprint({
-					employeeId: row.employeeId,
-					employmentId: employmentId.data,
-					shiftAssignmentId: row.shiftAssignmentId ?? null,
-					eventType: row.eventType,
-					occurredAtIso: row.occurredAt.toISOString(),
-					sourceTimezone: row.sourceTimezone,
-					localWorkDate: row.localWorkDate,
-					sourceKey: input.sourceKey,
-					sourceReference: row.sourceReference,
-					payloadChecksum: row.payloadChecksum ?? null,
-				});
-
-				const existingByRef = await this.findAttendanceEventBySourceReference({
-					organizationId: input.organizationId,
-					source: "import",
-					sourceReference: row.sourceReference,
-				});
-				if (!existingByRef.ok) {
-					rejected.push({
-						rowIndex: outcomeRowIndex,
-						sourceReference: row.sourceReference,
-						errorCode: "STORE_ERROR",
-						errorMessage: ATTENDANCE_IMPORT_LOOKUP_FAILED_MESSAGE,
-					});
-					continue;
-				}
-				if (existingByRef.data !== null) {
-					if (existingByRef.data.createRequestFingerprint === fingerprint) {
-						skipped.push({
-							rowIndex: outcomeRowIndex,
-							sourceReference: row.sourceReference,
-							eventId: existingByRef.data.event.id,
-							reason: "already_imported",
-						});
-					} else {
+			const importOutcome = await runSequential(
+				input.events.map((_, rowIndex) => rowIndex),
+				async (rowIndex) => {
+					const row = requirePersistenceRow(input.events[rowIndex]);
+					const outcomeRowIndex =
+						input.sourceRowIndexes?.[rowIndex] ?? rowIndex;
+					if (!isValidIanaTimeZone(row.sourceTimezone)) {
 						const rejection: AttendanceImportRejectedRow = {
 							rowIndex: outcomeRowIndex,
 							sourceReference: row.sourceReference,
-							errorCode: "SOURCE_REFERENCE_CONFLICT",
-							errorMessage:
-								"Source reference already used with different payload",
+							errorCode: "INVALID_TIMEZONE",
+							errorMessage: "Invalid IANA timezone",
 						};
 						rejected.push(rejection);
 						errorRows.push({
@@ -4114,60 +4367,203 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 							payloadChecksum: row.payloadChecksum ?? null,
 							createdAt: now,
 						});
+						return sequentialContinue();
 					}
-					continue;
-				}
 
-				const recorded = await this.recordAttendanceEvent(
-					{
-						organizationId: input.organizationId,
+					const employeeRows = await db
+						.select({ id: hrEmployee.id })
+						.from(hrEmployee)
+						.where(
+							and(
+								eq(hrEmployee.organizationId, input.organizationId),
+								eq(hrEmployee.id, row.employeeId),
+							),
+						)
+						.limit(1);
+					if (employeeRows.length === 0) {
+						const rejection: AttendanceImportRejectedRow = {
+							rowIndex: outcomeRowIndex,
+							sourceReference: row.sourceReference,
+							errorCode: "UNKNOWN_EMPLOYEE",
+							errorMessage: "Employee not found in organization",
+						};
+						rejected.push(rejection);
+						errorRows.push({
+							id: randomUUID(),
+							organizationId: input.organizationId,
+							importBatchId,
+							rowIndex: outcomeRowIndex,
+							sourceReference: row.sourceReference,
+							errorCode: rejection.errorCode,
+							errorMessage: rejection.errorMessage,
+							payloadChecksum: row.payloadChecksum ?? null,
+							createdAt: now,
+						});
+						return sequentialContinue();
+					}
+
+					const employmentConditions = [
+						eq(hrEmployment.organizationId, input.organizationId),
+						eq(hrEmployment.employeeId, row.employeeId),
+						inArray(hrEmployment.status, ["active", "notice"]),
+						lte(hrEmployment.startsOn, row.localWorkDate),
+						or(
+							isNull(hrEmployment.endsOn),
+							gte(hrEmployment.endsOn, row.localWorkDate),
+						),
+					];
+					if (row.employmentId !== null && row.employmentId !== undefined) {
+						employmentConditions.push(eq(hrEmployment.id, row.employmentId));
+					}
+					const employmentRows = await db
+						.select({ id: hrEmployment.id })
+						.from(hrEmployment)
+						.where(and(...employmentConditions))
+						.limit(1);
+					const [employmentRow] = employmentRows;
+					if (employmentRow === undefined) {
+						const rejection: AttendanceImportRejectedRow = {
+							rowIndex: outcomeRowIndex,
+							sourceReference: row.sourceReference,
+							errorCode: "INVALID_EMPLOYMENT",
+							errorMessage: "Active employment not found for attendance event",
+						};
+						rejected.push(rejection);
+						errorRows.push({
+							id: randomUUID(),
+							organizationId: input.organizationId,
+							importBatchId,
+							rowIndex: outcomeRowIndex,
+							sourceReference: row.sourceReference,
+							errorCode: rejection.errorCode,
+							errorMessage: rejection.errorMessage,
+							payloadChecksum: row.payloadChecksum ?? null,
+							createdAt: now,
+						});
+						return sequentialContinue();
+					}
+					const employmentId = parseHumanResourcesEmploymentId(
+						employmentRow.id,
+					);
+					if (!employmentId.ok) {
+						return sequentialReturn(employmentId);
+					}
+
+					const fingerprint = buildImportEventFingerprint({
 						employeeId: row.employeeId,
 						employmentId: employmentId.data,
 						shiftAssignmentId: row.shiftAssignmentId ?? null,
 						eventType: row.eventType,
-						occurredAt: row.occurredAt,
-						sourceSequence: resolveImportRowSourceSequence(row, rowIndex),
+						occurredAtIso: row.occurredAt.toISOString(),
 						sourceTimezone: row.sourceTimezone,
 						localWorkDate: row.localWorkDate,
-						source: "import",
+						sourceKey: input.sourceKey,
 						sourceReference: row.sourceReference,
-						locationKey: row.locationKey ?? null,
-						deviceMetadata: row.deviceMetadata ?? null,
 						payloadChecksum: row.payloadChecksum ?? null,
-						notes: row.notes ?? null,
-						idempotencyKey: `import:${row.sourceReference}`,
-						createRequestFingerprint: fingerprint,
-						createdBy: input.createdBy,
-						correlationId: input.correlationId ?? input.batchId,
-					},
-					ports,
-				);
-				if (!recorded.ok) {
-					const rejection: AttendanceImportRejectedRow = {
-						rowIndex: outcomeRowIndex,
-						sourceReference: row.sourceReference,
-						errorCode: recorded.code,
-						errorMessage: ATTENDANCE_IMPORT_RECORD_FAILED_MESSAGE,
-					};
-					rejected.push(rejection);
-					errorRows.push({
-						id: randomUUID(),
-						organizationId: input.organizationId,
-						importBatchId,
-						rowIndex: outcomeRowIndex,
-						sourceReference: row.sourceReference,
-						errorCode: rejection.errorCode,
-						errorMessage: rejection.errorMessage,
-						payloadChecksum: row.payloadChecksum ?? null,
-						createdAt: now,
 					});
-					continue;
-				}
-				accepted.push({
-					rowIndex: outcomeRowIndex,
-					sourceReference: row.sourceReference,
-					eventId: recorded.data.id,
-				});
+
+					const existingByRef = await this.findAttendanceEventBySourceReference(
+						{
+							organizationId: input.organizationId,
+							source: "import",
+							sourceReference: row.sourceReference,
+						},
+					);
+					if (!existingByRef.ok) {
+						rejected.push({
+							rowIndex: outcomeRowIndex,
+							sourceReference: row.sourceReference,
+							errorCode: "STORE_ERROR",
+							errorMessage: ATTENDANCE_IMPORT_LOOKUP_FAILED_MESSAGE,
+						});
+						return sequentialContinue();
+					}
+					if (existingByRef.data !== null) {
+						if (existingByRef.data.createRequestFingerprint === fingerprint) {
+							skipped.push({
+								rowIndex: outcomeRowIndex,
+								sourceReference: row.sourceReference,
+								eventId: existingByRef.data.event.id,
+								reason: "already_imported",
+							});
+						} else {
+							const rejection: AttendanceImportRejectedRow = {
+								rowIndex: outcomeRowIndex,
+								sourceReference: row.sourceReference,
+								errorCode: "SOURCE_REFERENCE_CONFLICT",
+								errorMessage:
+									"Source reference already used with different payload",
+							};
+							rejected.push(rejection);
+							errorRows.push({
+								id: randomUUID(),
+								organizationId: input.organizationId,
+								importBatchId,
+								rowIndex: outcomeRowIndex,
+								sourceReference: row.sourceReference,
+								errorCode: rejection.errorCode,
+								errorMessage: rejection.errorMessage,
+								payloadChecksum: row.payloadChecksum ?? null,
+								createdAt: now,
+							});
+						}
+						return sequentialContinue();
+					}
+
+					const recorded = await this.recordAttendanceEvent(
+						{
+							organizationId: input.organizationId,
+							employeeId: row.employeeId,
+							employmentId: employmentId.data,
+							shiftAssignmentId: row.shiftAssignmentId ?? null,
+							eventType: row.eventType,
+							occurredAt: row.occurredAt,
+							sourceSequence: resolveImportRowSourceSequence(row, rowIndex),
+							sourceTimezone: row.sourceTimezone,
+							localWorkDate: row.localWorkDate,
+							source: "import",
+							sourceReference: row.sourceReference,
+							locationKey: row.locationKey ?? null,
+							deviceMetadata: row.deviceMetadata ?? null,
+							payloadChecksum: row.payloadChecksum ?? null,
+							notes: row.notes ?? null,
+							idempotencyKey: `import:${row.sourceReference}`,
+							createRequestFingerprint: fingerprint,
+							createdBy: input.createdBy,
+							correlationId: input.correlationId ?? input.batchId,
+						},
+						ports,
+					);
+					if (!recorded.ok) {
+						const rejection: AttendanceImportRejectedRow = {
+							rowIndex: outcomeRowIndex,
+							sourceReference: row.sourceReference,
+							errorCode: recorded.code,
+							errorMessage: ATTENDANCE_IMPORT_RECORD_FAILED_MESSAGE,
+						};
+						rejected.push(rejection);
+						errorRows.push({
+							id: randomUUID(),
+							organizationId: input.organizationId,
+							importBatchId,
+							rowIndex: outcomeRowIndex,
+							sourceReference: row.sourceReference,
+							errorCode: rejection.errorCode,
+							errorMessage: rejection.errorMessage,
+							payloadChecksum: row.payloadChecksum ?? null,
+							createdAt: now,
+						});
+						return sequentialContinue();
+					}
+					accepted.push({
+						rowIndex: outcomeRowIndex,
+						sourceReference: row.sourceReference,
+						eventId: recorded.data.id,
+					});
+				},
+			);
+			if (importOutcome.kind === "return") {
+				return importOutcome.value;
 			}
 
 			const status = resolveImportBatchStatus({
@@ -4216,7 +4612,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 						organizationId: input.organizationId,
 						idempotencyKey: input.idempotencyKey,
 					});
-					if (!replay.ok) return replay;
+					if (!replay.ok) {
+						return replay;
+					}
 					if (
 						replay.data !== null &&
 						replay.data.createRequestFingerprint ===
@@ -4243,7 +4641,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				entityId: importBatchId,
 				action: "CREATE",
 			});
-			if (!audited.ok) return audited;
+			if (!audited.ok) {
+				return audited;
+			}
 			return ok(result);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to import attendance events");
@@ -4265,8 +4665,8 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				);
 			const sourceSequence = resolveAttendanceEventSourceSequence({
-				existingEvents: maxRows.map((row) => ({
-					sourceSequence: row.maxSequence,
+				existingEvents: maxRows.map((rowValue) => ({
+					sourceSequence: rowValue.maxSequence,
 				})),
 				...(input.sourceSequence === undefined
 					? {}
@@ -4307,7 +4707,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				})
 				.returning();
 			const mapped = mapEvent(requirePersistenceRow(row));
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			const correlationId =
 				input.correlationId ?? `hr-time-hr_attendance_event-${mapped.data.id}`;
 			const recorded = await audit(ports, {
@@ -4318,7 +4720,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				entityId: mapped.data.id,
 				action: "CREATE",
 			});
-			if (!recorded.ok) return recorded;
+			if (!recorded.ok) {
+				return recorded;
+			}
 			const event = await emitOutbox(ports, {
 				organizationId: input.organizationId,
 				actorUserId: input.createdBy,
@@ -4327,7 +4731,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				entityType: "hr_attendance_event",
 				entityId: mapped.data.id,
 			});
-			if (!event.ok) return event;
+			if (!event.ok) {
+				return event;
+			}
 			return ok(mapped.data);
 		} catch (error) {
 			if (isCreateIdempotencyUniqueViolation(error)) {
@@ -4335,7 +4741,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					organizationId: input.organizationId,
 					idempotencyKey: input.idempotencyKey,
 				});
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (
 					replay.data !== null &&
 					replay.data.createRequestFingerprint ===
@@ -4355,7 +4763,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					source: input.source,
 					sourceReference: input.sourceReference,
 				});
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (
 					replay.data !== null &&
 					replay.data.createRequestFingerprint ===
@@ -4387,8 +4797,12 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				organizationId: input.organizationId,
 				eventId: input.eventId,
 			});
-			if (!existing.ok) return existing;
-			if (existing.data === null) return notFound("Attendance event not found");
+			if (!existing.ok) {
+				return existing;
+			}
+			if (existing.data === null) {
+				return notFound("Attendance event not found");
+			}
 			const current = existing.data;
 			if (current.voidedAt !== null) {
 				return invalidState("Cannot correct a voided attendance event");
@@ -4397,10 +4811,12 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				current.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			const adjustmentId = randomUUID();
 			const now = new Date();
-			const nextNotes = input.notes !== undefined ? input.notes : current.notes;
+			const nextNotes = input.notes === undefined ? current.notes : input.notes;
 			const correlationId =
 				input.correlationId ?? `hr-time-hr_attendance_event-${current.id}`;
 			const recorded = await audit(ports, {
@@ -4431,7 +4847,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					entityId: adjustmentId,
 					action: "DELETE",
 				});
-				if (!compensationAudit.ok) return compensationAudit;
+				if (!compensationAudit.ok) {
+					return compensationAudit;
+				}
 				return event;
 			}
 			const [correctionRows] = await runTimeTransaction<
@@ -4478,12 +4896,14 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					FROM corrected, adjustment
 				`,
 			]);
-			const correctionRow = correctionRows[0];
+			const [correctionRow] = correctionRows;
 			if (correctionRow === undefined) {
 				throw new Error("Concurrent attendance correction");
 			}
 			const mapped = mapEvent(attendanceEventFromSql(correctionRow));
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to correct attendance event");
@@ -4501,13 +4921,19 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				organizationId: input.organizationId,
 				eventId: input.eventId,
 			});
-			if (!existing.ok) return existing;
-			if (existing.data === null) return notFound("Attendance event not found");
+			if (!existing.ok) {
+				return existing;
+			}
+			if (existing.data === null) {
+				return notFound("Attendance event not found");
+			}
 			const versionCheck = assertExpectedVersion(
 				existing.data.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			if (existing.data.voidedAt !== null) {
 				return invalidState("Attendance event is already voided");
 			}
@@ -4528,9 +4954,13 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.returning();
-			if (!row) return notFound("Attendance event not found");
+			if (!row) {
+				return notFound("Attendance event not found");
+			}
 			const mapped = mapEvent(row);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			const recorded = await audit(ports, {
 				organizationId: input.organizationId,
 				actorUserId: input.actorUserId,
@@ -4539,7 +4969,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				entityId: mapped.data.id,
 				action: "UPDATE",
 			});
-			if (!recorded.ok) return recorded;
+			if (!recorded.ok) {
+				return recorded;
+			}
 			return ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to void attendance event");
@@ -4558,7 +4990,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.limit(1);
-			if (rows.length === 0) return ok(null);
+			if (rows.length === 0) {
+				return ok(null);
+			}
 			return mapEvent(requirePersistenceRow(rows[0]));
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to get attendance event");
@@ -4584,7 +5018,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			const adjustments: AttendanceAdjustment[] = [];
 			for (const row of rows) {
 				const mapped = mapAttendanceAdjustment(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				adjustments.push(mapped.data);
 			}
 			return ok(adjustments);
@@ -4629,7 +5065,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			const mapped: AttendanceEvent[] = [];
 			for (const row of rows) {
 				const item = mapEvent(row);
-				if (!item.ok) return item;
+				if (!item.ok) {
+					return item;
+				}
 				mapped.push(item.data);
 			}
 			return ok(sortAttendanceEventsForSession(mapped));
@@ -4650,10 +5088,14 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.limit(1);
-			if (rows.length === 0) return ok(null);
+			if (rows.length === 0) {
+				return ok(null);
+			}
 			const sourceRow = requirePersistenceRow(rows[0]);
 			const mapped = mapSession(sourceRow);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return ok({
 				session: mapped.data,
 				createRequestFingerprint: sourceRow.createRequestFingerprint,
@@ -4683,7 +5125,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			const events: AttendanceEvent[] = [];
 			for (const row of eventRows) {
 				const mapped = mapEvent(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				events.push(mapped.data);
 			}
 			const orderedEvents = filterAttendanceEventsForWorkDay(events, {
@@ -4711,7 +5155,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 			if (existingRows.length > 0) {
 				const current = mapSession(requirePersistenceRow(existingRows[0]));
-				if (!current.ok) return current;
+				if (!current.ok) {
+					return current;
+				}
 				const previous = current.data;
 				const [row] = await db
 					.update(hrAttendanceSession)
@@ -4740,7 +5186,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					)
 					.returning();
 				const mapped = mapSession(requirePersistenceRow(row));
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				const recorded = await audit(ports, {
 					organizationId: input.organizationId,
 					actorUserId: input.createdBy,
@@ -4749,7 +5197,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					entityId: mapped.data.id,
 					action: "UPDATE",
 				});
-				if (!recorded.ok) return recorded;
+				if (!recorded.ok) {
+					return recorded;
+				}
 				const detected = await runAttendanceExceptionDetection(
 					drizzleExceptionDetectionHost(this),
 					{
@@ -4800,7 +5250,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				})
 				.returning();
 			const mapped = mapSession(requirePersistenceRow(row));
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			const recorded = await audit(ports, {
 				organizationId: input.organizationId,
 				actorUserId: input.createdBy,
@@ -4809,7 +5261,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				entityId: mapped.data.id,
 				action: "CREATE",
 			});
-			if (!recorded.ok) return recorded;
+			if (!recorded.ok) {
+				return recorded;
+			}
 			const detected = await runAttendanceExceptionDetection(
 				drizzleExceptionDetectionHost(this),
 				{
@@ -4841,7 +5295,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					organizationId: input.organizationId,
 					idempotencyKey: input.idempotencyKey,
 				});
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (
 					replay.data !== null &&
 					replay.data.createRequestFingerprint ===
@@ -4870,7 +5326,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.limit(1);
-			if (rows.length === 0) return ok(null);
+			if (rows.length === 0) {
+				return ok(null);
+			}
 			return mapSession(requirePersistenceRow(rows[0]));
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to get attendance session");
@@ -4883,7 +5341,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				organizationId: input.organizationId,
 				sessionId: input.sessionId,
 			});
-			if (!sessionResult.ok) return sessionResult;
+			if (!sessionResult.ok) {
+				return sessionResult;
+			}
 			if (sessionResult.data === null) {
 				return notFound("Attendance session not found");
 			}
@@ -4892,8 +5352,10 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				session.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
-			const automaticBreak = session.provenance.automaticBreak;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+			const { automaticBreak } = session.provenance;
 			if (
 				automaticBreak === null ||
 				!automaticBreak.applied ||
@@ -4951,7 +5413,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			const events: AttendanceEvent[] = [];
 			for (const row of eventRows) {
 				const mapped = mapEvent(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				events.push(mapped.data);
 			}
 			const orderedEvents = filterAttendanceEventsForWorkDay(events, {
@@ -5009,7 +5473,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			const mapped = mapAttendanceBreakWaiverDecision(
 				requirePersistenceRow(row),
 			);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			const recorded = await audit(ports, {
 				organizationId: input.organizationId,
 				actorUserId: input.actorUserId,
@@ -5064,7 +5530,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			const mapped: AttendanceBreakWaiverDecision[] = [];
 			for (const row of rows) {
 				const decision = mapAttendanceBreakWaiverDecision(row);
-				if (!decision.ok) return decision;
+				if (!decision.ok) {
+					return decision;
+				}
 				mapped.push(decision.data);
 			}
 			return ok(mapped);
@@ -5100,7 +5568,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			const mapped: AttendanceSession[] = [];
 			for (const row of rows) {
 				const item = mapSession(row);
-				if (!item.ok) return item;
+				if (!item.ok) {
+					return item;
+				}
 				mapped.push(item.data);
 			}
 			return ok(mapped);
@@ -5124,7 +5594,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				)
 				.orderBy(desc(hrAttendanceSession.finalClockOutAt))
 				.limit(1);
-			if (rows.length === 0) return ok(null);
+			if (rows.length === 0) {
+				return ok(null);
+			}
 			return mapSession(requirePersistenceRow(rows[0]));
 		} catch (error) {
 			return mapPersistenceFailure(
@@ -5162,7 +5634,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				})
 				.returning();
 			const mapped = mapException(requirePersistenceRow(row));
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			const correlationId =
 				input.correlationId ??
 				`hr-time-hr_attendance_exception-${mapped.data.id}`;
@@ -5174,7 +5648,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				entityId: mapped.data.id,
 				action: "CREATE",
 			});
-			if (!recorded.ok) return recorded;
+			if (!recorded.ok) {
+				return recorded;
+			}
 			const event = await emitOutbox(ports, {
 				organizationId: input.organizationId,
 				actorUserId: input.createdBy,
@@ -5183,7 +5659,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				entityType: "hr_attendance_exception",
 				entityId: mapped.data.id,
 			});
-			if (!event.ok) return event;
+			if (!event.ok) {
+				return event;
+			}
 			return ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(
@@ -5194,10 +5672,10 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 	},
 
 	async reviewAttendanceException(input, ports) {
-		return transitionException(this, ports, input, "in_review");
+		return await transitionException(this, ports, input, "in_review");
 	},
 	async excuseAttendanceException(input, ports) {
-		return transitionException(this, ports, input, "excused", {
+		return await transitionException(this, ports, input, "excused", {
 			resolution: input.resolution,
 			...(input.evidenceReference === undefined
 				? {}
@@ -5205,12 +5683,12 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		});
 	},
 	async rejectAttendanceException(input, ports) {
-		return transitionException(this, ports, input, "rejected", {
+		return await transitionException(this, ports, input, "rejected", {
 			resolution: input.resolution,
 		});
 	},
 	async resolveAttendanceException(input, ports) {
-		return transitionException(this, ports, input, "resolved", {
+		return await transitionException(this, ports, input, "resolved", {
 			resolution: input.resolution,
 		});
 	},
@@ -5227,7 +5705,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.limit(1);
-			if (rows.length === 0) return ok(null);
+			if (rows.length === 0) {
+				return ok(null);
+			}
 			return mapException(requirePersistenceRow(rows[0]));
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to get attendance exception");
@@ -5257,7 +5737,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			const mapped: AttendanceException[] = [];
 			for (const row of rows) {
 				const item = mapException(row);
-				if (!item.ok) return item;
+				if (!item.ok) {
+					return item;
+				}
 				mapped.push(item.data);
 			}
 			return ok(mapped);
@@ -5288,7 +5770,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			const mapped: AttendanceException[] = [];
 			for (const row of rows) {
 				const item = mapException(row);
-				if (!item.ok) return item;
+				if (!item.ok) {
+					return item;
+				}
 				mapped.push(item.data);
 			}
 			return ok(mapped);
@@ -5307,7 +5791,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				employeeId: input.employeeId,
 				scheduledDate: input.localWorkDate,
 			});
-			if (!scheduled.ok) return scheduled;
+			if (!scheduled.ok) {
+				return scheduled;
+			}
 			const sessions = await this.listAttendanceSessions({
 				organizationId: input.organizationId,
 				employeeId: input.employeeId,
@@ -5316,7 +5802,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				page: 1,
 				pageSize: 100,
 			});
-			if (!sessions.ok) return sessions;
+			if (!sessions.ok) {
+				return sessions;
+			}
 			const session =
 				sessions.data.find((row) => row.timezone === input.timezone) ??
 				sessions.data[0] ??
@@ -5329,14 +5817,18 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				page: 1,
 				pageSize: 500,
 			});
-			if (!events.ok) return events;
+			if (!events.ok) {
+				return events;
+			}
 			const unresolved = await this.listUnresolvedAttendanceExceptions({
 				organizationId: input.organizationId,
 				employeeId: input.employeeId,
 				page: 1,
 				pageSize: 500,
 			});
-			if (!unresolved.ok) return unresolved;
+			if (!unresolved.ok) {
+				return unresolved;
+			}
 			const unresolvedForDate = unresolved.data.filter((exception) => {
 				if (exception.sessionId !== null && session !== null) {
 					return exception.sessionId === session.id;
@@ -5381,10 +5873,14 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.limit(1);
-			if (rows.length === 0) return ok(null);
+			if (rows.length === 0) {
+				return ok(null);
+			}
 			const sourceRow = requirePersistenceRow(rows[0]);
 			const mapped = mapTimesheet(sourceRow);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return ok({
 				timesheet: mapped.data,
 				createRequestFingerprint: sourceRow.createRequestFingerprint,
@@ -5420,7 +5916,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				})
 				.returning();
 			const mapped = mapTimesheet(requirePersistenceRow(row));
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			const recorded = await audit(ports, {
 				organizationId: input.organizationId,
 				actorUserId: input.createdBy,
@@ -5429,7 +5927,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				entityId: mapped.data.id,
 				action: "CREATE",
 			});
-			if (!recorded.ok) return recorded;
+			if (!recorded.ok) {
+				return recorded;
+			}
 			return ok(mapped.data);
 		} catch (error) {
 			if (isCreateIdempotencyUniqueViolation(error)) {
@@ -5437,7 +5937,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					organizationId: input.organizationId,
 					idempotencyKey: input.idempotencyKey,
 				});
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (
 					replay.data !== null &&
 					replay.data.createRequestFingerprint ===
@@ -5457,16 +5959,23 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				organizationId: input.organizationId,
 				timesheetId: input.timesheetId,
 			});
-			if (!existing.ok) return existing;
-			if (existing.data === null) return notFound("Timesheet not found");
+			if (!existing.ok) {
+				return existing;
+			}
+			if (existing.data === null) {
+				return notFound("Timesheet not found");
+			}
+			const currentTimesheet = existing.data;
 			const versionCheck = assertExpectedVersion(
-				existing.data.version,
+				currentTimesheet.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			if (
-				existing.data.status !== "draft" &&
-				existing.data.status !== "returned"
+				currentTimesheet.status !== "draft" &&
+				currentTimesheet.status !== "returned"
 			) {
 				return invalidState("Timesheet is not editable for entry generation");
 			}
@@ -5474,26 +5983,32 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			const leaveFacts =
 				await deps.approvedLeave.listApprovedLeaveForEmployeePeriod({
 					organizationId: input.organizationId,
-					employeeId: existing.data.employeeId,
-					periodStart: existing.data.periodStart,
-					periodEnd: existing.data.periodEnd,
+					employeeId: currentTimesheet.employeeId,
+					periodStart: currentTimesheet.periodStart,
+					periodEnd: currentTimesheet.periodEnd,
 				});
-			if (!leaveFacts.ok) return leaveFacts;
+			if (!leaveFacts.ok) {
+				return leaveFacts;
+			}
 
 			const sessions = await this.listAttendanceSessions({
 				organizationId: input.organizationId,
-				employeeId: existing.data.employeeId,
-				fromDate: existing.data.periodStart,
-				toDate: existing.data.periodEnd,
+				employeeId: currentTimesheet.employeeId,
+				fromDate: currentTimesheet.periodStart,
+				toDate: currentTimesheet.periodEnd,
 				page: 1,
 				pageSize: 500,
 			});
-			if (!sessions.ok) return sessions;
+			if (!sessions.ok) {
+				return sessions;
+			}
 			const currentEntries = await this.listTimesheetEntries({
 				organizationId: input.organizationId,
 				timesheetId: input.timesheetId,
 			});
-			if (!currentEntries.ok) return currentEntries;
+			if (!currentEntries.ok) {
+				return currentEntries;
+			}
 			const existingAttendanceRefs = new Set(
 				currentEntries.data
 					.filter((entry) => entry.sourceType === "attendance")
@@ -5504,28 +6019,30 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					.filter((entry) => entry.sourceType === "leave")
 					.map((entry) => entry.sourceReference),
 			);
-			let totalRecorded = existing.data.totalRecordedMinutes;
-			let totalApproved = existing.data.totalApprovedMinutes;
+			let totalRecorded = currentTimesheet.totalRecordedMinutes;
+			let totalApproved = currentTimesheet.totalApprovedMinutes;
 			const resolvedSessions = sessions.data.filter(
 				(session) => session.resolutionStatus === "resolved",
 			);
-			for (const session of resolvedSessions) {
+			await runSequential(resolvedSessions, async (session) => {
 				const entryPlans = buildAttendanceTimesheetEntryPlans(session);
-				for (const plan of entryPlans) {
+				await runSequential(entryPlans, async (plan) => {
 					if (
-						plan.workDate < existing.data.periodStart ||
-						plan.workDate > existing.data.periodEnd
+						plan.workDate < currentTimesheet.periodStart ||
+						plan.workDate > currentTimesheet.periodEnd
 					) {
-						continue;
+						return sequentialContinue();
 					}
-					if (existingAttendanceRefs.has(plan.sourceReference)) continue;
+					if (existingAttendanceRefs.has(plan.sourceReference)) {
+						return sequentialContinue();
+					}
 					const id = randomUUID();
 					const now = new Date();
 					await db.insert(hrTimesheetEntry).values({
 						id,
 						organizationId: input.organizationId,
 						timesheetId: input.timesheetId,
-						employeeId: existing.data.employeeId,
+						employeeId: currentTimesheet.employeeId,
 						workDate: plan.workDate,
 						timezone: session.timezone,
 						sourceType: "attendance",
@@ -5544,14 +6061,16 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					totalRecorded += plan.recordedMinutes;
 					totalApproved += plan.approvedMinutes;
 					existingAttendanceRefs.add(plan.sourceReference);
-				}
-			}
+				});
+			});
 
-			for (const fact of leaveFacts.data) {
-				if (existingLeaveRefs.has(fact.segmentId)) continue;
+			await runSequential(leaveFacts.data, async (fact) => {
+				if (existingLeaveRefs.has(fact.segmentId)) {
+					return sequentialContinue();
+				}
 				const mapped = mapApprovedLeaveFactToEntryInput({
 					fact,
-					timesheet: existing.data,
+					timesheet: currentTimesheet,
 					actorUserId: input.actorUserId,
 					correlationId: input.correlationId,
 				});
@@ -5579,13 +6098,15 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				});
 				totalRecorded += mapped.recordedMinutes;
 				totalApproved += mapped.approvedMinutes;
-			}
+			});
 
 			const periodEntries = await this.listTimesheetEntries({
 				organizationId: input.organizationId,
 				timesheetId: input.timesheetId,
 			});
-			if (!periodEntries.ok) return periodEntries;
+			if (!periodEntries.ok) {
+				return periodEntries;
+			}
 
 			const fullStore = this as HumanResourcesStore;
 			let employment = null as Awaited<
@@ -5593,98 +6114,115 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			> extends Result<infer T>
 				? T
 				: never;
-			if (existing.data.employmentId !== null) {
-				const employmentResult = await fullStore.getEmploymentById({
-					organizationId: input.organizationId,
-					employmentId: existing.data.employmentId,
-				});
-				if (!employmentResult.ok) return employmentResult;
-				employment = employmentResult.data;
-			} else {
+			if (currentTimesheet.employmentId === null) {
 				const found = await fullStore.findOpenEmploymentByEmployee({
 					organizationId: input.organizationId,
-					employeeId: existing.data.employeeId,
+					employeeId: currentTimesheet.employeeId,
 				});
-				if (!found.ok) return found;
+				if (!found.ok) {
+					return found;
+				}
 				employment = found.data;
+			} else {
+				const employmentResult = await fullStore.getEmploymentById({
+					organizationId: input.organizationId,
+					employmentId: currentTimesheet.employmentId,
+				});
+				if (!employmentResult.ok) {
+					return employmentResult;
+				}
+				employment = employmentResult.data;
 			}
 
 			const existingExceptions = await this.listAttendanceExceptions({
 				organizationId: input.organizationId,
-				employeeId: existing.data.employeeId,
+				employeeId: currentTimesheet.employeeId,
 				page: 1,
 				pageSize: 500,
 			});
-			if (!existingExceptions.ok) return existingExceptions;
+			if (!existingExceptions.ok) {
+				return existingExceptions;
+			}
 			const exceptionBucket = [...existingExceptions.data];
 
-			for (const workDate of iterDatesInclusive(
-				existing.data.periodStart,
-				existing.data.periodEnd,
-			)) {
-				const expected = await resolveExpectedWorkMinutes({
-					host: this,
-					organizationId: input.organizationId,
-					employeeId: existing.data.employeeId,
-					employmentId: existing.data.employmentId ?? employment?.id ?? null,
-					workDate,
-				});
-				if (!expected.ok) return expected;
-
-				const leaveMinutes = approvedLeaveMinutesForDate(
-					workDate,
-					leaveFacts.data,
-				);
-				const workedMinutes = qualifyingWorkedMinutesForDate(
-					workDate,
-					resolvedSessions,
-					periodEntries.data,
-				);
-
-				if (
-					!isBasicFullDayAbsence({
-						activeEmployment: isActiveEmploymentOnDate(employment, workDate),
-						expectedWorkMinutes: expected.data.expectedWorkMinutes,
-						qualifyingWorkedMinutes: workedMinutes,
-						approvedLeaveCoveredMinutes: leaveMinutes,
-					})
-				) {
-					continue;
-				}
-
-				if (
-					hasExistingTimesheetGenerationAbsence({
-						exceptions: exceptionBucket,
-						employeeId: existing.data.employeeId,
-						workDate,
-					})
-				) {
-					continue;
-				}
-
-				const created = await this.createAttendanceException(
-					{
+			const sequentialOutcome4 = await runSequential(
+				iterDatesInclusive(
+					currentTimesheet.periodStart,
+					currentTimesheet.periodEnd,
+				),
+				async (workDate) => {
+					const expected = await resolveExpectedWorkMinutes({
+						host: this,
 						organizationId: input.organizationId,
-						employeeId: existing.data.employeeId,
-						sessionId: null,
-						eventId: null,
-						shiftAssignmentId: expected.data.shiftAssignmentId,
-						exceptionType: "absence",
-						severity: "warning",
-						remarks: encodeAbsenceDetectionRemarks({
+						employeeId: currentTimesheet.employeeId,
+						employmentId:
+							currentTimesheet.employmentId ?? employment?.id ?? null,
+						workDate,
+					});
+					if (!expected.ok) {
+						return sequentialReturn(expected);
+					}
+
+					const leaveMinutes = approvedLeaveMinutesForDate(
+						workDate,
+						leaveFacts.data,
+					);
+					const workedMinutes = qualifyingWorkedMinutesForDate(
+						workDate,
+						resolvedSessions,
+						periodEntries.data,
+					);
+
+					if (
+						!isBasicFullDayAbsence({
+							activeEmployment: isActiveEmploymentOnDate(employment, workDate),
+							expectedWorkMinutes: expected.data.expectedWorkMinutes,
+							qualifyingWorkedMinutes: workedMinutes,
+							approvedLeaveCoveredMinutes: leaveMinutes,
+						})
+					) {
+						return sequentialContinue();
+					}
+
+					if (
+						hasExistingTimesheetGenerationAbsence({
+							exceptions: exceptionBucket,
+							employeeId: currentTimesheet.employeeId,
 							workDate,
-							expectedMinutes: expected.data.expectedWorkMinutes,
-							detectionSource: TIMESHEET_GENERATION_ABSENCE_SOURCE,
+						})
+					) {
+						return sequentialContinue();
+					}
+
+					const created = await this.createAttendanceException(
+						{
+							organizationId: input.organizationId,
+							employeeId: currentTimesheet.employeeId,
+							sessionId: null,
+							eventId: null,
 							shiftAssignmentId: expected.data.shiftAssignmentId,
-							timesheetId: existing.data.id,
-						}),
-						createdBy: input.actorUserId,
-						correlationId: input.correlationId,
-					},
-					ports,
-				);
-				if (!created.ok) return created;
-				exceptionBucket.push(created.data);
+							exceptionType: "absence",
+							severity: "warning",
+							remarks: encodeAbsenceDetectionRemarks({
+								workDate,
+								expectedMinutes: expected.data.expectedWorkMinutes,
+								detectionSource: TIMESHEET_GENERATION_ABSENCE_SOURCE,
+								shiftAssignmentId: expected.data.shiftAssignmentId,
+								timesheetId: currentTimesheet.id,
+							}),
+							createdBy: input.actorUserId,
+							correlationId: input.correlationId,
+						},
+						ports,
+					);
+					if (!created.ok) {
+						return sequentialReturn(created);
+					}
+					exceptionBucket.push(created.data);
+				},
+			);
+			if (sequentialOutcome4.kind === "return") {
+				return sequentialOutcome4.value;
 			}
 
 			const [row] = await db
@@ -5692,7 +6230,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				.set({
 					totalRecordedMinutes: totalRecorded,
 					totalApprovedMinutes: totalApproved,
-					version: existing.data.version + 1,
+					version: currentTimesheet.version + 1,
 					updatedBy: input.actorUserId,
 					updatedAt: new Date(),
 				})
@@ -5704,14 +6242,20 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.returning();
-			if (!row) return notFound("Timesheet not found");
+			if (!row) {
+				return notFound("Timesheet not found");
+			}
 			const timesheet = mapTimesheet(row);
-			if (!timesheet.ok) return timesheet;
+			if (!timesheet.ok) {
+				return timesheet;
+			}
 			const entries = await this.listTimesheetEntries({
 				organizationId: input.organizationId,
 				timesheetId: input.timesheetId,
 			});
-			if (!entries.ok) return entries;
+			if (!entries.ok) {
+				return entries;
+			}
 			const recorded = await audit(ports, {
 				organizationId: input.organizationId,
 				actorUserId: input.actorUserId,
@@ -5720,7 +6264,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				entityId: timesheet.data.id,
 				action: "UPDATE",
 			});
-			if (!recorded.ok) return recorded;
+			if (!recorded.ok) {
+				return recorded;
+			}
 			return ok({ timesheet: timesheet.data, entries: entries.data });
 		} catch (error) {
 			return mapPersistenceFailure(
@@ -5736,8 +6282,12 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				organizationId: input.organizationId,
 				timesheetId: input.timesheetId,
 			});
-			if (!timesheet.ok) return timesheet;
-			if (timesheet.data === null) return notFound("Timesheet not found");
+			if (!timesheet.ok) {
+				return timesheet;
+			}
+			if (timesheet.data === null) {
+				return notFound("Timesheet not found");
+			}
 			if (
 				timesheet.data.status !== "draft" &&
 				timesheet.data.status !== "returned"
@@ -5793,7 +6343,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				);
 			const mapped = mapEntry(requirePersistenceRow(row));
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			const recorded = await audit(ports, {
 				organizationId: input.organizationId,
 				actorUserId: input.createdBy,
@@ -5802,7 +6354,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				entityId: mapped.data.id,
 				action: "CREATE",
 			});
-			if (!recorded.ok) return recorded;
+			if (!recorded.ok) {
+				return recorded;
+			}
 			return ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to add timesheet entry");
@@ -5821,20 +6375,30 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.limit(1);
-			if (rows.length === 0) return notFound("Timesheet entry not found");
+			if (rows.length === 0) {
+				return notFound("Timesheet entry not found");
+			}
 			const existing = mapEntry(requirePersistenceRow(rows[0]));
-			if (!existing.ok) return existing;
+			if (!existing.ok) {
+				return existing;
+			}
 			const versionCheck = assertExpectedVersion(
 				existing.data.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			const timesheet = await this.getTimesheet({
 				organizationId: input.organizationId,
 				timesheetId: existing.data.timesheetId,
 			});
-			if (!timesheet.ok) return timesheet;
-			if (timesheet.data === null) return notFound("Timesheet not found");
+			if (!timesheet.ok) {
+				return timesheet;
+			}
+			if (timesheet.data === null) {
+				return notFound("Timesheet not found");
+			}
 			if (
 				timesheet.data.status !== "draft" &&
 				timesheet.data.status !== "returned"
@@ -5847,39 +6411,39 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					workDate: input.workDate ?? existing.data.workDate,
 					timeType: input.timeType ?? existing.data.timeType,
 					startedAt:
-						input.startedAt !== undefined
-							? input.startedAt
-							: existing.data.startedAt,
+						input.startedAt === undefined
+							? existing.data.startedAt
+							: input.startedAt,
 					endedAt:
-						input.endedAt !== undefined ? input.endedAt : existing.data.endedAt,
+						input.endedAt === undefined ? existing.data.endedAt : input.endedAt,
 					recordedMinutes:
 						input.recordedMinutes ?? existing.data.recordedMinutes,
 					approvedMinutes:
 						input.approvedMinutes ?? existing.data.approvedMinutes,
 					costCenterId:
-						input.costCenterId !== undefined
-							? input.costCenterId
-							: existing.data.costCenterId,
+						input.costCenterId === undefined
+							? existing.data.costCenterId
+							: input.costCenterId,
 					projectId:
-						input.projectId !== undefined
-							? input.projectId
-							: existing.data.projectId,
+						input.projectId === undefined
+							? existing.data.projectId
+							: input.projectId,
 					locationId:
-						input.locationId !== undefined
-							? input.locationId
-							: existing.data.locationId,
+						input.locationId === undefined
+							? existing.data.locationId
+							: input.locationId,
 					departmentId:
-						input.departmentId !== undefined
-							? input.departmentId
-							: existing.data.departmentId,
+						input.departmentId === undefined
+							? existing.data.departmentId
+							: input.departmentId,
 					approvalReference:
-						input.approvalReference !== undefined
-							? input.approvalReference
-							: existing.data.approvalReference,
+						input.approvalReference === undefined
+							? existing.data.approvalReference
+							: input.approvalReference,
 					evidenceReference:
-						input.evidenceReference !== undefined
-							? input.evidenceReference
-							: existing.data.evidenceReference,
+						input.evidenceReference === undefined
+							? existing.data.evidenceReference
+							: input.evidenceReference,
 					version: existing.data.version + 1,
 					updatedBy: input.actorUserId,
 					updatedAt: new Date(),
@@ -5892,13 +6456,17 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.returning();
-			if (!row) return notFound("Timesheet entry not found");
+			if (!row) {
+				return notFound("Timesheet entry not found");
+			}
 			await recomputeTimesheetTotals(
 				input.organizationId,
 				existing.data.timesheetId,
 			);
 			const mapped = mapEntry(row);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			const recordedAudit = await audit(ports, {
 				organizationId: input.organizationId,
 				actorUserId: input.actorUserId,
@@ -5907,7 +6475,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				entityId: mapped.data.id,
 				action: "UPDATE",
 			});
-			if (!recordedAudit.ok) return recordedAudit;
+			if (!recordedAudit.ok) {
+				return recordedAudit;
+			}
 			return ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to update timesheet entry");
@@ -5926,20 +6496,30 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.limit(1);
-			if (rows.length === 0) return notFound("Timesheet entry not found");
+			if (rows.length === 0) {
+				return notFound("Timesheet entry not found");
+			}
 			const existing = mapEntry(requirePersistenceRow(rows[0]));
-			if (!existing.ok) return existing;
+			if (!existing.ok) {
+				return existing;
+			}
 			const versionCheck = assertExpectedVersion(
 				existing.data.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			const timesheet = await this.getTimesheet({
 				organizationId: input.organizationId,
 				timesheetId: existing.data.timesheetId,
 			});
-			if (!timesheet.ok) return timesheet;
-			if (timesheet.data === null) return notFound("Timesheet not found");
+			if (!timesheet.ok) {
+				return timesheet;
+			}
+			if (timesheet.data === null) {
+				return notFound("Timesheet not found");
+			}
 			if (
 				timesheet.data.status !== "draft" &&
 				timesheet.data.status !== "returned"
@@ -5966,7 +6546,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				entityId: existing.data.id,
 				action: "DELETE",
 			});
-			if (!recordedAudit.ok) return recordedAudit;
+			if (!recordedAudit.ok) {
+				return recordedAudit;
+			}
 			return ok(undefined);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to remove timesheet entry");
@@ -5974,7 +6556,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 	},
 
 	async submitTimesheet(input, ports) {
-		return transitionTimesheet(this, ports, input, "submitted", {
+		return await transitionTimesheet(this, ports, input, "submitted", {
 			submittedAt: new Date(),
 			submissionReference: input.submissionReference,
 			approvalPolicyId: input.approvalPolicyId,
@@ -5985,7 +6567,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		});
 	},
 	async returnTimesheet(input, ports) {
-		return transitionTimesheet(this, ports, input, "returned", {
+		return await transitionTimesheet(this, ports, input, "returned", {
 			approverNotes: input.approverNotes ?? null,
 		});
 	},
@@ -5994,26 +6576,34 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			organizationId: input.organizationId,
 			timesheetId: input.timesheetId,
 		});
-		if (!existing.ok) return existing;
-		if (existing.data === null) return notFound("Timesheet not found");
+		if (!existing.ok) {
+			return existing;
+		}
+		if (existing.data === null) {
+			return notFound("Timesheet not found");
+		}
 		const current = existing.data;
 		const selfCheck = assertNoSelfApprove({
 			actorUserId: input.actorUserId,
 			createdBy: current.createdBy,
 		});
-		if (!selfCheck.ok) return selfCheck;
+		if (!selfCheck.ok) {
+			return selfCheck;
+		}
 		const versionCheck = assertExpectedVersion(
 			current.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		if (current.status !== "submitted") {
 			return invalidState("Timesheet must be submitted for approval");
 		}
 		if (current.submissionReference === null) {
 			return invalidState("Timesheet approval snapshot is missing");
 		}
-		const submissionReference = current.submissionReference;
+		const { submissionReference } = current;
 		const expectedAuthority =
 			current.requiredApprovalSteps[current.completedApprovalSteps];
 		if (expectedAuthority === undefined) {
@@ -6084,11 +6674,15 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				throw new Error("Concurrent timesheet approval");
 			}
 			const mapped = mapTimesheet(timesheetFromSql(approvalRow.timesheet));
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			const decision = mapTimesheetApprovalDecision(
 				timesheetApprovalDecisionFromSql(approvalRow.decision),
 			);
-			if (!decision.ok) return decision;
+			if (!decision.ok) {
+				return decision;
+			}
 			const compensate = async () => {
 				await runTimeTransaction((sqlTag) => [
 					sqlTag`
@@ -6144,7 +6738,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					entityId: decision.data.id,
 					action: "DELETE",
 				});
-				if (!compensationAudit.ok) return compensationAudit;
+				if (!compensationAudit.ok) {
+					return compensationAudit;
+				}
 				return event;
 			}
 			return ok(mapped.data);
@@ -6181,7 +6777,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			const mapped: TimesheetApprovalDecision[] = [];
 			for (const row of rows) {
 				const item = mapTimesheetApprovalDecision(row);
-				if (!item.ok) return item;
+				if (!item.ok) {
+					return item;
+				}
 				mapped.push(item.data);
 			}
 			return ok(mapped);
@@ -6193,17 +6791,17 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 	async rejectTimesheet(input, ports) {
-		return transitionTimesheet(this, ports, input, "rejected", {
+		return await transitionTimesheet(this, ports, input, "rejected", {
 			rejectionReason: input.rejectionReason,
 		});
 	},
 	async reopenTimesheet(input, ports) {
-		return transitionTimesheet(this, ports, input, "draft", {
+		return await transitionTimesheet(this, ports, input, "draft", {
 			...timesheetReopenSnapshot(),
 		});
 	},
 	async lockTimesheet(input, ports) {
-		return transitionTimesheet(this, ports, input, "locked", {
+		return await transitionTimesheet(this, ports, input, "locked", {
 			lockedAt: new Date(),
 		});
 	},
@@ -6214,18 +6812,26 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				organizationId: input.organizationId,
 				timesheetId: input.timesheetId,
 			});
-			if (!existing.ok) return existing;
-			if (existing.data === null) return notFound("Timesheet not found");
+			if (!existing.ok) {
+				return existing;
+			}
+			if (existing.data === null) {
+				return notFound("Timesheet not found");
+			}
 			const versionCheck = assertExpectedVersion(
 				existing.data.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			const transition = assertTimesheetStatusTransition(
 				existing.data.status,
 				"superseded",
 			);
-			if (!transition.ok) return transition;
+			if (!transition.ok) {
+				return transition;
+			}
 			await db
 				.update(hrTimesheet)
 				.set({
@@ -6272,7 +6878,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.limit(1);
-			if (rows.length === 0) return ok(null);
+			if (rows.length === 0) {
+				return ok(null);
+			}
 			return mapTimesheet(requirePersistenceRow(rows[0]));
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to get timesheet");
@@ -6294,7 +6902,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.limit(1);
-			if (rows.length === 0) return ok(null);
+			if (rows.length === 0) {
+				return ok(null);
+			}
 			return mapTimesheet(requirePersistenceRow(rows[0]));
 		} catch (error) {
 			return mapPersistenceFailure(
@@ -6326,7 +6936,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			const mapped: Timesheet[] = [];
 			for (const row of rows) {
 				const item = mapTimesheet(row);
-				if (!item.ok) return item;
+				if (!item.ok) {
+					return item;
+				}
 				mapped.push(item.data);
 			}
 			return ok(mapped);
@@ -6349,7 +6961,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			const mapped: TimesheetEntry[] = [];
 			for (const row of rows) {
 				const item = mapEntry(row);
-				if (!item.ok) return item;
+				if (!item.ok) {
+					return item;
+				}
 				mapped.push(item.data);
 			}
 			return ok(mapped);
@@ -6361,10 +6975,16 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 	async getTimesheetTotals(input) {
 		try {
 			const timesheet = await this.getTimesheet(input);
-			if (!timesheet.ok) return timesheet;
-			if (timesheet.data === null) return ok(null);
+			if (!timesheet.ok) {
+				return timesheet;
+			}
+			if (timesheet.data === null) {
+				return ok(null);
+			}
 			const entries = await this.listTimesheetEntries(input);
-			if (!entries.ok) return entries;
+			if (!entries.ok) {
+				return entries;
+			}
 			return ok({
 				timesheetId: timesheet.data.id,
 				totalRecordedMinutes: timesheet.data.totalRecordedMinutes,
@@ -6379,8 +6999,12 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 	async getApprovedTimeHandoff(input) {
 		try {
 			const timesheet = await this.getTimesheet(input);
-			if (!timesheet.ok) return timesheet;
-			if (timesheet.data === null) return ok(null);
+			if (!timesheet.ok) {
+				return timesheet;
+			}
+			if (timesheet.data === null) {
+				return ok(null);
+			}
 			if (
 				timesheet.data.status !== "approved" &&
 				timesheet.data.status !== "locked"
@@ -6391,57 +7015,19 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				organizationId: input.organizationId,
 				timesheetId: input.timesheetId,
 			});
-			if (!entries.ok) return entries;
-			const overtimeMap = new Map<OvertimeType, number>();
-			let regularMinutes = 0;
-			let publicHolidayMinutes = 0;
-			let restDayMinutes = 0;
-			let nightMinutes = 0;
-			let unpaidMinutes = 0;
-			let paidLeaveMinutes = 0;
-			let unpaidLeaveMinutes = 0;
-			for (const entry of entries.data) {
-				const minutes = entry.approvedMinutes;
-				switch (entry.timeType) {
-					case "regular":
-						regularMinutes += minutes;
-						break;
-					case "overtime": {
-						const type =
-							parseOvertimeType(entry.sourceReference) ?? "weekday_overtime";
-						overtimeMap.set(type, (overtimeMap.get(type) ?? 0) + minutes);
-						break;
-					}
-					case "public_holiday":
-						publicHolidayMinutes += minutes;
-						break;
-					case "rest_day":
-						restDayMinutes += minutes;
-						break;
-					case "night":
-						nightMinutes += minutes;
-						break;
-					case "unpaid":
-						unpaidMinutes += minutes;
-						if (entry.sourceType === "leave") unpaidLeaveMinutes += minutes;
-						break;
-					case "call_back":
-						overtimeMap.set(
-							"call_back",
-							(overtimeMap.get("call_back") ?? 0) + minutes,
-						);
-						break;
-					case "training":
-					case "travel":
-					case "standby":
-						if (entry.sourceType === "leave") paidLeaveMinutes += minutes;
-						break;
-					default: {
-						const _exhaustive: never = entry.timeType;
-						void _exhaustive;
-					}
-				}
+			if (!entries.ok) {
+				return entries;
 			}
+			const {
+				nightMinutes,
+				overtime,
+				paidLeaveMinutes,
+				publicHolidayMinutes,
+				regularMinutes,
+				restDayMinutes,
+				unpaidLeaveMinutes,
+				unpaidMinutes,
+			} = aggregatePayrollMinutes(entries.data);
 			const handoff: ApprovedTimeHandoff = {
 				organizationId: timesheet.data.organizationId,
 				employeeId: timesheet.data.employeeId,
@@ -6449,7 +7035,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				periodStart: timesheet.data.periodStart,
 				periodEnd: timesheet.data.periodEnd,
 				regularMinutes,
-				overtime: Array.from(overtimeMap.entries()).map(([type, minutes]) => ({
+				overtime: Array.from(overtime.entries()).map(([type, minutes]) => ({
 					type,
 					minutes,
 				})),
@@ -6487,10 +7073,14 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.limit(1);
-			if (rows.length === 0) return ok(null);
+			if (rows.length === 0) {
+				return ok(null);
+			}
 			const sourceRow = requirePersistenceRow(rows[0]);
 			const mapped = mapOvertime(sourceRow);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return ok({
 				request: mapped.data,
 				createRequestFingerprint: sourceRow.createRequestFingerprint,
@@ -6528,7 +7118,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				})
 				.returning();
 			const mapped = mapOvertime(requirePersistenceRow(row));
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			const recordedAudit = await audit(ports, {
 				organizationId: input.organizationId,
 				actorUserId: input.createdBy,
@@ -6537,7 +7129,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				entityId: mapped.data.id,
 				action: "CREATE",
 			});
-			if (!recordedAudit.ok) return recordedAudit;
+			if (!recordedAudit.ok) {
+				return recordedAudit;
+			}
 			return ok(mapped.data);
 		} catch (error) {
 			if (isCreateIdempotencyUniqueViolation(error)) {
@@ -6545,7 +7139,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					organizationId: input.organizationId,
 					idempotencyKey: input.idempotencyKey,
 				});
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (
 					replay.data !== null &&
 					replay.data.createRequestFingerprint ===
@@ -6565,18 +7161,26 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				organizationId: input.organizationId,
 				requestId: input.requestId,
 			});
-			if (!existing.ok) return existing;
-			if (existing.data === null) return notFound("Overtime request not found");
+			if (!existing.ok) {
+				return existing;
+			}
+			if (existing.data === null) {
+				return notFound("Overtime request not found");
+			}
 			const selfCheck = assertNoSelfApprove({
 				actorUserId: input.actorUserId,
 				createdBy: existing.data.createdBy,
 			});
-			if (!selfCheck.ok) return selfCheck;
+			if (!selfCheck.ok) {
+				return selfCheck;
+			}
 			const versionCheck = assertExpectedVersion(
 				existing.data.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			if (existing.data.status === "approved") {
 				if (
 					existing.data.approvedMaximumMinutes === input.approvedMaximumMinutes
@@ -6591,7 +7195,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				existing.data.status,
 				"approved",
 			);
-			if (!transition.ok) return transition;
+			if (!transition.ok) {
+				return transition;
+			}
 			const [row] = await db
 				.update(hrOvertimeRequest)
 				.set({
@@ -6609,7 +7215,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.returning();
-			if (!row) return notFound("Overtime request not found");
+			if (!row) {
+				return notFound("Overtime request not found");
+			}
 			await db.insert(hrOvertimeApproval).values({
 				id: randomUUID(),
 				organizationId: input.organizationId,
@@ -6623,7 +7231,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				versionApproved: existing.data.version + 1,
 			});
 			const mapped = mapOvertime(row);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			const correlationId =
 				input.correlationId ?? `hr-time-hr_overtime_request-${mapped.data.id}`;
 			const recordedAudit = await audit(ports, {
@@ -6634,7 +7244,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				entityId: mapped.data.id,
 				action: "UPDATE",
 			});
-			if (!recordedAudit.ok) return recordedAudit;
+			if (!recordedAudit.ok) {
+				return recordedAudit;
+			}
 			const event = await emitOutbox(ports, {
 				organizationId: input.organizationId,
 				actorUserId: input.actorUserId,
@@ -6643,7 +7255,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				entityType: "hr_overtime_request",
 				entityId: mapped.data.id,
 			});
-			if (!event.ok) return event;
+			if (!event.ok) {
+				return event;
+			}
 			return ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to approve overtime request");
@@ -6651,12 +7265,12 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 	},
 
 	async rejectOvertimeRequest(input, ports) {
-		return transitionOvertime(this, ports, input, "rejected", {
+		return await transitionOvertime(this, ports, input, "rejected", {
 			comment: input.comment,
 		});
 	},
 	async cancelOvertimeRequest(input, ports) {
-		return transitionOvertime(this, ports, input, "cancelled");
+		return await transitionOvertime(this, ports, input, "cancelled");
 	},
 
 	async recordOvertimeActual(input, ports) {
@@ -6665,18 +7279,26 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				organizationId: input.organizationId,
 				requestId: input.requestId,
 			});
-			if (!existing.ok) return existing;
-			if (existing.data === null) return notFound("Overtime request not found");
+			if (!existing.ok) {
+				return existing;
+			}
+			if (existing.data === null) {
+				return notFound("Overtime request not found");
+			}
 			const versionCheck = assertExpectedVersion(
 				existing.data.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			const transition = assertOvertimeStatusTransition(
 				existing.data.status,
 				"worked",
 			);
-			if (!transition.ok) return transition;
+			if (!transition.ok) {
+				return transition;
+			}
 			const [row] = await db
 				.update(hrOvertimeRequest)
 				.set({
@@ -6694,9 +7316,13 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.returning();
-			if (!row) return notFound("Overtime request not found");
+			if (!row) {
+				return notFound("Overtime request not found");
+			}
 			const mapped = mapOvertime(row);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			const recordedAudit = await audit(ports, {
 				organizationId: input.organizationId,
 				actorUserId: input.actorUserId,
@@ -6705,7 +7331,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				entityId: mapped.data.id,
 				action: "UPDATE",
 			});
-			if (!recordedAudit.ok) return recordedAudit;
+			if (!recordedAudit.ok) {
+				return recordedAudit;
+			}
 			return ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to record overtime actual");
@@ -6718,18 +7346,26 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				organizationId: input.organizationId,
 				requestId: input.requestId,
 			});
-			if (!existing.ok) return existing;
-			if (existing.data === null) return notFound("Overtime request not found");
+			if (!existing.ok) {
+				return existing;
+			}
+			if (existing.data === null) {
+				return notFound("Overtime request not found");
+			}
 			const versionCheck = assertExpectedVersion(
 				existing.data.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			const transition = assertOvertimeStatusTransition(
 				existing.data.status,
 				"verified",
 			);
-			if (!transition.ok) return transition;
+			if (!transition.ok) {
+				return transition;
+			}
 			const [row] = await db
 				.update(hrOvertimeRequest)
 				.set({
@@ -6747,7 +7383,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.returning();
-			if (!row) return notFound("Overtime request not found");
+			if (!row) {
+				return notFound("Overtime request not found");
+			}
 			await db.insert(hrOvertimeApproval).values({
 				id: randomUUID(),
 				organizationId: input.organizationId,
@@ -6760,7 +7398,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				versionApproved: existing.data.version + 1,
 			});
 			const mapped = mapOvertime(row);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			const recordedAudit = await audit(ports, {
 				organizationId: input.organizationId,
 				actorUserId: input.actorUserId,
@@ -6769,7 +7409,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				entityId: mapped.data.id,
 				action: "UPDATE",
 			});
-			if (!recordedAudit.ok) return recordedAudit;
+			if (!recordedAudit.ok) {
+				return recordedAudit;
+			}
 			return ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to verify overtime request");
@@ -6788,7 +7430,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				)
 				.limit(1);
-			if (rows.length === 0) return ok(null);
+			if (rows.length === 0) {
+				return ok(null);
+			}
 			return mapOvertime(requirePersistenceRow(rows[0]));
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to get overtime request");
@@ -6816,7 +7460,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			const mapped: OvertimeRequest[] = [];
 			for (const row of rows) {
 				const item = mapOvertime(row);
-				if (!item.ok) return item;
+				if (!item.ok) {
+					return item;
+				}
 				mapped.push(item.data);
 			}
 			return ok(mapped);
@@ -6890,15 +7536,23 @@ async function transitionShiftStatus(
 		organizationId: input.organizationId,
 		shiftId: input.shiftId,
 	});
-	if (!existing.ok) return existing;
-	if (existing.data === null) return notFound("Shift not found");
+	if (!existing.ok) {
+		return existing;
+	}
+	if (existing.data === null) {
+		return notFound("Shift not found");
+	}
 	const versionCheck = assertExpectedVersion(
 		existing.data.version,
 		input.expectedVersion,
 	);
-	if (!versionCheck.ok) return versionCheck;
+	if (!versionCheck.ok) {
+		return versionCheck;
+	}
 	const transition = assertShiftStatusTransition(existing.data.status, next);
-	if (!transition.ok) return transition;
+	if (!transition.ok) {
+		return transition;
+	}
 	try {
 		const [row] = await db
 			.update(hrShift)
@@ -6916,9 +7570,13 @@ async function transitionShiftStatus(
 				),
 			)
 			.returning();
-		if (!row) return notFound("Shift not found");
+		if (!row) {
+			return notFound("Shift not found");
+		}
 		const mapped = mapShift(row);
-		if (!mapped.ok) return mapped;
+		if (!mapped.ok) {
+			return mapped;
+		}
 		const recorded = await audit(ports, {
 			organizationId: input.organizationId,
 			actorUserId: input.actorUserId,
@@ -6927,7 +7585,9 @@ async function transitionShiftStatus(
 			entityId: mapped.data.id,
 			action: "UPDATE",
 		});
-		if (!recorded.ok) return recorded;
+		if (!recorded.ok) {
+			return recorded;
+		}
 		return ok(mapped.data);
 	} catch (error) {
 		return mapPersistenceFailure(error, "Failed to transition shift status");
@@ -7031,18 +7691,26 @@ async function transitionAssignment(
 		organizationId: input.organizationId,
 		assignmentId: input.assignmentId,
 	});
-	if (!existing.ok) return existing;
-	if (existing.data === null) return notFound("Shift assignment not found");
+	if (!existing.ok) {
+		return existing;
+	}
+	if (existing.data === null) {
+		return notFound("Shift assignment not found");
+	}
 	const versionCheck = assertExpectedVersion(
 		existing.data.version,
 		input.expectedVersion,
 	);
-	if (!versionCheck.ok) return versionCheck;
+	if (!versionCheck.ok) {
+		return versionCheck;
+	}
 	const transition = assertAssignmentStatusTransition(
 		existing.data.publicationStatus,
 		next,
 	);
-	if (!transition.ok) return transition;
+	if (!transition.ok) {
+		return transition;
+	}
 	try {
 		const [row] = await db
 			.update(hrShiftAssignment)
@@ -7060,9 +7728,13 @@ async function transitionAssignment(
 				),
 			)
 			.returning();
-		if (!row) return notFound("Shift assignment not found");
+		if (!row) {
+			return notFound("Shift assignment not found");
+		}
 		const mapped = mapAssignment(row);
-		if (!mapped.ok) return mapped;
+		if (!mapped.ok) {
+			return mapped;
+		}
 		const correlationId =
 			input.correlationId ?? `hr-time-hr_shift_assignment-${mapped.data.id}`;
 		const recorded = await audit(ports, {
@@ -7073,7 +7745,9 @@ async function transitionAssignment(
 			entityId: mapped.data.id,
 			action: "UPDATE",
 		});
-		if (!recorded.ok) return recorded;
+		if (!recorded.ok) {
+			return recorded;
+		}
 		if (next === "published") {
 			const event = await emitOutbox(ports, {
 				organizationId: input.organizationId,
@@ -7083,7 +7757,9 @@ async function transitionAssignment(
 				entityType: "hr_shift_assignment",
 				entityId: mapped.data.id,
 			});
-			if (!event.ok) return event;
+			if (!event.ok) {
+				return event;
+			}
 		}
 		return ok(mapped.data);
 	} catch (error) {
@@ -7111,18 +7787,26 @@ async function transitionException(
 		organizationId: input.organizationId,
 		exceptionId: input.exceptionId,
 	});
-	if (!existing.ok) return existing;
-	if (existing.data === null) return notFound("Attendance exception not found");
+	if (!existing.ok) {
+		return existing;
+	}
+	if (existing.data === null) {
+		return notFound("Attendance exception not found");
+	}
 	const versionCheck = assertExpectedVersion(
 		existing.data.version,
 		input.expectedVersion,
 	);
-	if (!versionCheck.ok) return versionCheck;
+	if (!versionCheck.ok) {
+		return versionCheck;
+	}
 	const transition = assertExceptionStatusTransition(
 		existing.data.reviewStatus,
 		next,
 	);
-	if (!transition.ok) return transition;
+	if (!transition.ok) {
+		return transition;
+	}
 	try {
 		const [row] = await db
 			.update(hrAttendanceException)
@@ -7131,9 +7815,9 @@ async function transitionException(
 				reviewerUserId: input.actorUserId,
 				resolution: extra?.resolution ?? existing.data.resolution,
 				evidenceReference:
-					extra?.evidenceReference !== undefined
-						? extra.evidenceReference
-						: existing.data.evidenceReference,
+					extra?.evidenceReference === undefined
+						? existing.data.evidenceReference
+						: extra.evidenceReference,
 				version: existing.data.version + 1,
 				updatedBy: input.actorUserId,
 				updatedAt: new Date(),
@@ -7146,9 +7830,13 @@ async function transitionException(
 				),
 			)
 			.returning();
-		if (!row) return notFound("Attendance exception not found");
+		if (!row) {
+			return notFound("Attendance exception not found");
+		}
 		const mapped = mapException(row);
-		if (!mapped.ok) return mapped;
+		if (!mapped.ok) {
+			return mapped;
+		}
 		const recorded = await audit(ports, {
 			organizationId: input.organizationId,
 			actorUserId: input.actorUserId,
@@ -7157,7 +7845,9 @@ async function transitionException(
 			entityId: mapped.data.id,
 			action: "UPDATE",
 		});
-		if (!recorded.ok) return recorded;
+		if (!recorded.ok) {
+			return recorded;
+		}
 		return ok(mapped.data);
 	} catch (error) {
 		return mapPersistenceFailure(error, "Failed to transition exception");
@@ -7192,18 +7882,26 @@ async function transitionTimesheet(
 		organizationId: input.organizationId,
 		timesheetId: input.timesheetId,
 	});
-	if (!existing.ok) return existing;
-	if (existing.data === null) return notFound("Timesheet not found");
+	if (!existing.ok) {
+		return existing;
+	}
+	if (existing.data === null) {
+		return notFound("Timesheet not found");
+	}
 	const versionCheck = assertExpectedVersion(
 		existing.data.version,
 		input.expectedVersion,
 	);
-	if (!versionCheck.ok) return versionCheck;
+	if (!versionCheck.ok) {
+		return versionCheck;
+	}
 	const transition = assertTimesheetStatusTransition(
 		existing.data.status,
 		next,
 	);
-	if (!transition.ok) return transition;
+	if (!transition.ok) {
+		return transition;
+	}
 	try {
 		const [row] = await db
 			.update(hrTimesheet)
@@ -7213,28 +7911,28 @@ async function transitionTimesheet(
 				submissionReference:
 					extra?.submissionReference ?? existing.data.submissionReference,
 				approvalPolicyId:
-					extra?.approvalPolicyId !== undefined
-						? extra.approvalPolicyId
-						: existing.data.approvalPolicyId,
+					extra?.approvalPolicyId === undefined
+						? existing.data.approvalPolicyId
+						: extra.approvalPolicyId,
 				requiredApprovalSteps:
-					extra?.requiredApprovalSteps !== undefined
-						? [...extra.requiredApprovalSteps]
-						: [...existing.data.requiredApprovalSteps],
+					extra?.requiredApprovalSteps === undefined
+						? [...existing.data.requiredApprovalSteps]
+						: [...extra.requiredApprovalSteps],
 				completedApprovalSteps:
 					extra?.completedApprovalSteps ?? existing.data.completedApprovalSteps,
 				approvedAt: extra?.approvedAt ?? existing.data.approvedAt,
 				approvedBy:
-					extra?.approvedBy !== undefined
-						? extra.approvedBy
-						: existing.data.approvedBy,
+					extra?.approvedBy === undefined
+						? existing.data.approvedBy
+						: extra.approvedBy,
 				approverNotes:
-					extra?.approverNotes !== undefined
-						? extra.approverNotes
-						: existing.data.approverNotes,
+					extra?.approverNotes === undefined
+						? existing.data.approverNotes
+						: extra.approverNotes,
 				rejectionReason:
-					extra?.rejectionReason !== undefined
-						? extra.rejectionReason
-						: existing.data.rejectionReason,
+					extra?.rejectionReason === undefined
+						? existing.data.rejectionReason
+						: extra.rejectionReason,
 				lockedAt: extra?.lockedAt ?? existing.data.lockedAt,
 				version: existing.data.version + 1,
 				updatedBy: input.actorUserId,
@@ -7248,9 +7946,13 @@ async function transitionTimesheet(
 				),
 			)
 			.returning();
-		if (!row) return notFound("Timesheet not found");
+		if (!row) {
+			return notFound("Timesheet not found");
+		}
 		const mapped = mapTimesheet(row);
-		if (!mapped.ok) return mapped;
+		if (!mapped.ok) {
+			return mapped;
+		}
 		const correlationId =
 			input.correlationId ?? `hr-time-hr_timesheet-${mapped.data.id}`;
 		const recorded = await audit(ports, {
@@ -7261,7 +7963,9 @@ async function transitionTimesheet(
 			entityId: mapped.data.id,
 			action: "UPDATE",
 		});
-		if (!recorded.ok) return recorded;
+		if (!recorded.ok) {
+			return recorded;
+		}
 		const eventTypes: HumanResourcesEventType[] = [];
 		if (next === "submitted") {
 			eventTypes.push(HUMAN_RESOURCES_TIME_TIMESHEET_SUBMITTED_EVENT);
@@ -7275,16 +7979,24 @@ async function transitionTimesheet(
 				HUMAN_RESOURCES_TIME_PAYROLL_HANDOFF_READY_EVENT,
 			);
 		}
-		for (const eventType of eventTypes) {
-			const event = await emitOutbox(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId,
-				eventType,
-				entityType: "hr_timesheet",
-				entityId: mapped.data.id,
-			});
-			if (!event.ok) return event;
+		const sequentialOutcome1 = await runSequential(
+			eventTypes,
+			async (eventType) => {
+				const event = await emitOutbox(ports, {
+					organizationId: input.organizationId,
+					actorUserId: input.actorUserId,
+					correlationId,
+					eventType,
+					entityType: "hr_timesheet",
+					entityId: mapped.data.id,
+				});
+				if (!event.ok) {
+					return sequentialReturn(event);
+				}
+			},
+		);
+		if (sequentialOutcome1.kind === "return") {
+			return sequentialOutcome1.value;
 		}
 		return ok(mapped.data);
 	} catch (error) {
@@ -7310,15 +8022,23 @@ async function transitionOvertime(
 		organizationId: input.organizationId,
 		requestId: input.requestId,
 	});
-	if (!existing.ok) return existing;
-	if (existing.data === null) return notFound("Overtime request not found");
+	if (!existing.ok) {
+		return existing;
+	}
+	if (existing.data === null) {
+		return notFound("Overtime request not found");
+	}
 	const versionCheck = assertExpectedVersion(
 		existing.data.version,
 		input.expectedVersion,
 	);
-	if (!versionCheck.ok) return versionCheck;
+	if (!versionCheck.ok) {
+		return versionCheck;
+	}
 	const transition = assertOvertimeStatusTransition(existing.data.status, next);
-	if (!transition.ok) return transition;
+	if (!transition.ok) {
+		return transition;
+	}
 	try {
 		const [row] = await db
 			.update(hrOvertimeRequest)
@@ -7336,7 +8056,9 @@ async function transitionOvertime(
 				),
 			)
 			.returning();
-		if (!row) return notFound("Overtime request not found");
+		if (!row) {
+			return notFound("Overtime request not found");
+		}
 		if (next === "rejected" || next === "cancelled") {
 			await db.insert(hrOvertimeApproval).values({
 				id: randomUUID(),
@@ -7351,7 +8073,9 @@ async function transitionOvertime(
 			});
 		}
 		const mapped = mapOvertime(row);
-		if (!mapped.ok) return mapped;
+		if (!mapped.ok) {
+			return mapped;
+		}
 		const recorded = await audit(ports, {
 			organizationId: input.organizationId,
 			actorUserId: input.actorUserId,
@@ -7360,7 +8084,9 @@ async function transitionOvertime(
 			entityId: mapped.data.id,
 			action: "UPDATE",
 		});
-		if (!recorded.ok) return recorded;
+		if (!recorded.ok) {
+			return recorded;
+		}
 		return ok(mapped.data);
 	} catch (error) {
 		return mapPersistenceFailure(

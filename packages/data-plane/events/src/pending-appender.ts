@@ -24,12 +24,12 @@ export type PendingDomainEventTransactionExecutor = (
 ) => Promise<unknown>;
 
 export type PendingDomainEventAppender = Readonly<{
-	append(
+	append: (
 		events: readonly PendingDomainEventWriteInput[],
-	): Promise<Result<void>>;
-	createStatement(
+	) => Promise<Result<void>>;
+	createStatement: (
 		event: PendingDomainEventWriteInput,
-	): PendingDomainEventTransactionStatement;
+	) => PendingDomainEventTransactionStatement;
 }>;
 
 export function createPendingDomainEventAppender(dependencies: {
@@ -81,7 +81,9 @@ export function createPendingDomainEventAppender(dependencies: {
 		async append(
 			events: readonly PendingDomainEventWriteInput[],
 		): Promise<Result<void>> {
-			if (events.length === 0) return ok(undefined);
+			if (events.length === 0) {
+				return ok(undefined);
+			}
 			await dependencies.executeTransaction(
 				(sql) =>
 					events.map((event) =>

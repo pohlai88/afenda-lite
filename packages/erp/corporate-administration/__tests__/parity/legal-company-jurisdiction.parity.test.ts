@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/noMisplacedAssertion: Shared parity assertions are invoked only from test cases.
 import {
 	findCompanyJurisdictionProfileAsOf,
 	getLegalCompany,

@@ -44,86 +44,86 @@ export function idempotencyMapKey(
 	return `${organizationId}:${idempotencyKey}`;
 }
 
-export type IdempotentEntityRecord<TEntity> = {
-	entity: TEntity;
+export interface IdempotentEntityRecord<TEntity> {
 	createRequestFingerprint: string;
-};
+	entity: TEntity;
+}
 
-export type SetupMemoryState = {
-	calendars: Map<PayrollCalendarId, PayrollCalendar>;
+export interface SetupMemoryState {
 	calendarIdempotency: Map<string, IdempotentPayrollCalendarRecord>;
-	payGroups: Map<PayrollPayGroupId, PayrollPayGroup>;
-	payGroupIdempotency: Map<string, IdempotentEntityRecord<PayrollPayGroup>>;
-	periods: Map<PayrollPeriodId, PayrollPeriod>;
-	periodIdempotency: Map<string, IdempotentEntityRecord<PayrollPeriod>>;
-	earningRules: Map<PayrollEarningRuleId, PayrollEarningRule>;
-	earningRuleIdempotency: Map<
-		string,
-		IdempotentEntityRecord<PayrollEarningRule>
-	>;
-	deductionRules: Map<PayrollDeductionRuleId, PayrollDeductionRule>;
+	calendars: Map<PayrollCalendarId, PayrollCalendar>;
 	deductionRuleIdempotency: Map<
 		string,
 		IdempotentEntityRecord<PayrollDeductionRule>
 	>;
-	statutoryRules: Map<PayrollStatutoryRuleId, PayrollStatutoryRule>;
+	deductionRules: Map<PayrollDeductionRuleId, PayrollDeductionRule>;
+	earningRuleIdempotency: Map<
+		string,
+		IdempotentEntityRecord<PayrollEarningRule>
+	>;
+	earningRules: Map<PayrollEarningRuleId, PayrollEarningRule>;
+	payGroupIdempotency: Map<string, IdempotentEntityRecord<PayrollPayGroup>>;
+	payGroups: Map<PayrollPayGroupId, PayrollPayGroup>;
+	periodIdempotency: Map<string, IdempotentEntityRecord<PayrollPeriod>>;
+	periods: Map<PayrollPeriodId, PayrollPeriod>;
+	ruleFinalizedUsage: Set<string>;
 	statutoryRuleIdempotency: Map<
 		string,
 		IdempotentEntityRecord<PayrollStatutoryRule>
 	>;
-	ruleFinalizedUsage: Set<string>;
-};
+	statutoryRules: Map<PayrollStatutoryRuleId, PayrollStatutoryRule>;
+}
 
-export type RunsMemoryState = {
-	runs: Map<PayrollRunId, PayrollRun>;
-	runIdempotency: Map<string, IdempotentPayrollRunRecord>;
+export interface RunsMemoryState {
 	exceptions: Map<PayrollExceptionId, PayrollException>;
-};
+	runIdempotency: Map<string, IdempotentPayrollRunRecord>;
+	runs: Map<PayrollRunId, PayrollRun>;
+}
 
-export type AssignmentsMemoryState = {
-	assignments: Map<PayrollEmployeeAssignmentId, PayrollEmployeeAssignment>;
+export interface AssignmentsMemoryState {
 	assignmentIdempotency: Map<
 		string,
 		IdempotentEntityRecord<PayrollEmployeeAssignment>
 	>;
-	recurringEarnings: Map<PayrollRecurringEarningId, PayrollRecurringEarning>;
-	recurringEarningIdempotency: Map<
+	assignments: Map<PayrollEmployeeAssignmentId, PayrollEmployeeAssignment>;
+	recurringDeductionIdempotency: Map<
 		string,
-		IdempotentEntityRecord<PayrollRecurringEarning>
+		IdempotentEntityRecord<PayrollRecurringDeduction>
 	>;
 	recurringDeductions: Map<
 		PayrollRecurringDeductionId,
 		PayrollRecurringDeduction
 	>;
-	recurringDeductionIdempotency: Map<
+	recurringEarningIdempotency: Map<
 		string,
-		IdempotentEntityRecord<PayrollRecurringDeduction>
+		IdempotentEntityRecord<PayrollRecurringEarning>
 	>;
-};
+	recurringEarnings: Map<PayrollRecurringEarningId, PayrollRecurringEarning>;
+}
 
-export type InputsMemoryState = {
-	variableInputs: Map<PayrollVariableInputId, PayrollVariableInput>;
+export interface InputsMemoryState {
 	variableInputBySource: Map<string, IdempotentPayrollVariableInputRecord>;
 	variableInputIdempotency: Map<string, IdempotentPayrollVariableInputRecord>;
-};
+	variableInputs: Map<PayrollVariableInputId, PayrollVariableInput>;
+}
 
-export type OutputsMemoryState = {
-	runEmployees: Map<PayrollRunEmployeeId, PayrollRunEmployee>;
+export interface OutputsMemoryState {
 	resultLines: Map<PayrollResultLineId, PayrollResultLine>;
-};
+	runEmployees: Map<PayrollRunEmployeeId, PayrollRunEmployee>;
+}
 
-export type StatutoryMemoryState = {
+export interface StatutoryMemoryState {
 	statutoryResults: Map<PayrollStatutoryResultId, PayrollStatutoryResult>;
-};
+}
 
-export type MemoryPayrollStoreState = {
-	setup: SetupMemoryState;
+export interface MemoryPayrollStoreState {
 	assignments: AssignmentsMemoryState;
 	inputs: InputsMemoryState;
-	runs: RunsMemoryState;
 	outputs: OutputsMemoryState;
+	runs: RunsMemoryState;
+	setup: SetupMemoryState;
 	statutory: StatutoryMemoryState;
-};
+}
 
 export function createSetupMemoryState(): SetupMemoryState {
 	return {

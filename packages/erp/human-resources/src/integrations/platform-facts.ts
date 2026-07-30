@@ -23,6 +23,7 @@ import {
 const HUMAN_RESOURCES_EVENT_TYPE_SET = new Set<string>(
 	HUMAN_RESOURCES_EVENT_IDS,
 );
+const ISO_DATE_PATTERN = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/;
 
 const WORKFLOW_TRANSITIONS: Partial<
 	Record<
@@ -174,79 +175,79 @@ const WORK_ITEM_DEFINITIONS: Partial<
 	},
 };
 
-export type HumanResourcesWorkflowFact = {
-	kind: "workflow_transition";
-	eventId: string;
-	organizationId: string;
-	correlationId: string;
-	aggregateType: string;
+export interface HumanResourcesWorkflowFact {
 	aggregateId: string;
-	workflow: "onboarding" | "offboarding";
-	transition: "started" | "completed";
+	aggregateType: string;
+	correlationId: string;
+	eventId: string;
+	kind: "workflow_transition";
+	organizationId: string;
 	outcome: "in_progress" | "completed";
 	policySnapshot: {
 		operation: string | null;
 		idempotencyKey: string | null;
 	};
-};
+	transition: "started" | "completed";
+	workflow: "onboarding" | "offboarding";
+}
 
-export type HumanResourcesIdentityLifecycleFact = {
-	kind: "identity_lifecycle";
-	eventId: string;
-	organizationId: string;
+export interface HumanResourcesIdentityLifecycleFact {
 	correlationId: string;
-	employeeEntityId: string;
-	lifecycle: "joiner" | "mover" | "leaver";
 	effectiveFactVersion: 1;
-};
-
-export type HumanResourcesNotificationIntent = {
-	kind: "notification_intent";
+	employeeEntityId: string;
 	eventId: string;
+	kind: "identity_lifecycle";
+	lifecycle: "joiner" | "mover" | "leaver";
 	organizationId: string;
-	recipientUserId: string;
-	type: "INFO" | "WARNING" | "SUCCESS" | "ACTION_REQUIRED";
-	priority: "MEDIUM" | "HIGH";
-	title: string;
+}
+
+export interface HumanResourcesNotificationIntent {
 	body: string;
 	deduplicationKey: string;
-};
+	eventId: string;
+	kind: "notification_intent";
+	organizationId: string;
+	priority: "MEDIUM" | "HIGH";
+	recipientUserId: string;
+	title: string;
+	type: "INFO" | "WARNING" | "SUCCESS" | "ACTION_REQUIRED";
+}
 
-export type HumanResourcesReportingFact = {
-	kind: "reporting_fact";
-	factVersion: 1;
+export interface HumanResourcesReportingFact {
+	correlationId: string;
+	entityId: string;
+	entityType: string;
 	eventId: string;
 	eventType: HumanResourcesEventType;
-	organizationId: string;
-	correlationId: string;
-	entityType: string;
-	entityId: string;
-	occurredAt: string;
-	requiredPermission: "human-resources.employee.read";
-};
-
-export type HumanResourcesWorkItemFact = {
-	kind: "approval" | "task" | "reminder" | "escalation";
 	factVersion: 1;
-	eventId: string;
+	kind: "reporting_fact";
+	occurredAt: string;
 	organizationId: string;
-	correlationId: string;
-	targetUserId: string;
-	entityType: string;
-	entityId: string;
-	title: string;
-	priority: "MEDIUM" | "HIGH";
-	dueOn: string | null;
-	deduplicationKey: string;
-};
+	requiredPermission: "human-resources.employee.read";
+}
 
-export type HumanResourcesPlatformFacts = {
-	workflow: HumanResourcesWorkflowFact | null;
+export interface HumanResourcesWorkItemFact {
+	correlationId: string;
+	deduplicationKey: string;
+	dueOn: string | null;
+	entityId: string;
+	entityType: string;
+	eventId: string;
+	factVersion: 1;
+	kind: "approval" | "task" | "reminder" | "escalation";
+	organizationId: string;
+	priority: "MEDIUM" | "HIGH";
+	targetUserId: string;
+	title: string;
+}
+
+export interface HumanResourcesPlatformFacts {
 	identity: HumanResourcesIdentityLifecycleFact | null;
 	notification: HumanResourcesNotificationIntent | null;
-	workItems: readonly HumanResourcesWorkItemFact[];
 	reporting: HumanResourcesReportingFact;
-};
+	workflow: HumanResourcesWorkflowFact | null;
+	workItems: readonly HumanResourcesWorkItemFact[];
+}
 
 function isHumanResourcesEventType(
 	value: string,
@@ -273,10 +274,12 @@ function recipientFromEvent(
 
 function dueOnFromEvent(event: DomainEvent): Result<string | null> {
 	const candidate = event.metadata?.dueOn;
-	if (candidate === undefined) return ok(null);
+	if (candidate === undefined) {
+		return ok(null);
+	}
 	if (
 		typeof candidate !== "string" ||
-		!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(candidate) ||
+		!ISO_DATE_PATTERN.test(candidate) ||
 		Number.isNaN(Date.parse(`${candidate}T00:00:00.000Z`))
 	) {
 		return fail(
@@ -341,9 +344,13 @@ export function projectHumanResourcesPlatformFacts(
 	const workItemDefinition = WORK_ITEM_DEFINITIONS[eventType];
 	if (workItemDefinition !== undefined) {
 		const target = recipientFromEvent(event, parsed.data.actorId);
-		if (!target.ok) return target;
+		if (!target.ok) {
+			return target;
+		}
 		const dueOn = dueOnFromEvent(event);
-		if (!dueOn.ok) return dueOn;
+		if (!dueOn.ok) {
+			return dueOn;
+		}
 		workItems.push({
 			kind: workItemDefinition.kind,
 			factVersion: 1,

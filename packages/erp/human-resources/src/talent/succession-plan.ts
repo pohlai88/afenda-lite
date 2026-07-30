@@ -56,7 +56,7 @@ export const HUMAN_RESOURCES_AGGREGATE_SUCCESSION_PLAN =
 export type HumanResourcesSuccessionPlanAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_SUCCESSION_PLAN;
 
-export async function createSuccessionPlan(
+export function createSuccessionPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<SuccessionPlan>> {
@@ -91,7 +91,7 @@ export async function createSuccessionPlan(
 				return ok(existingByKey.data.successionPlan);
 			}
 
-			return await store.createSuccessionPlan(
+			return store.createSuccessionPlan(
 				{
 					organizationId: data.organizationId,
 					code: data.code,
@@ -112,7 +112,7 @@ export async function createSuccessionPlan(
 	});
 }
 
-export async function updateSuccessionPlan(
+export function updateSuccessionPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<SuccessionPlan>> {
@@ -120,8 +120,8 @@ export async function updateSuccessionPlan(
 		schema: updateSuccessionPlanInputSchema,
 		invalidMessage: "Invalid succession plan update input",
 		command: HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_UPDATE,
-		execute: async (data, { store, ports }) => {
-			return await store.updateSuccessionPlan(
+		execute: async (data, { store, ports }) =>
+			await store.updateSuccessionPlan(
 				{
 					organizationId: data.organizationId,
 					successionPlanId: data.successionPlanId,
@@ -135,12 +135,11 @@ export async function updateSuccessionPlan(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_UPDATE,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function nominateSuccessionCandidate(
+export function nominateSuccessionCandidate(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<SuccessionCandidate>> {
@@ -180,7 +179,7 @@ export async function nominateSuccessionCandidate(
 				return ok(existingByKey.data.candidate);
 			}
 
-			return await store.nominateSuccessionCandidate(
+			return store.nominateSuccessionCandidate(
 				{
 					organizationId: data.organizationId,
 					successionPlanId: data.successionPlanId,
@@ -204,7 +203,7 @@ export async function nominateSuccessionCandidate(
 	});
 }
 
-export async function assessSuccessionReadiness(
+export function assessSuccessionReadiness(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<SuccessionCandidate>> {
@@ -212,8 +211,8 @@ export async function assessSuccessionReadiness(
 		schema: assessSuccessionReadinessInputSchema,
 		invalidMessage: "Invalid succession readiness assessment input",
 		command: HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_ASSESS_READINESS,
-		execute: async (data, { store, ports }) => {
-			return await store.assessSuccessionReadiness(
+		execute: async (data, { store, ports }) =>
+			await store.assessSuccessionReadiness(
 				{
 					organizationId: data.organizationId,
 					candidateId: data.candidateId,
@@ -229,12 +228,11 @@ export async function assessSuccessionReadiness(
 					operationId:
 						HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_ASSESS_READINESS,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function approveSuccessionCandidate(
+export function approveSuccessionCandidate(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<SuccessionCandidate>> {
@@ -242,8 +240,8 @@ export async function approveSuccessionCandidate(
 		schema: approveSuccessionCandidateInputSchema,
 		invalidMessage: "Invalid succession candidate approval input",
 		command: HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_APPROVE,
-		execute: async (data, { store, ports }) => {
-			return await store.approveSuccessionCandidate(
+		execute: async (data, { store, ports }) =>
+			await store.approveSuccessionCandidate(
 				{
 					organizationId: data.organizationId,
 					candidateId: data.candidateId,
@@ -255,12 +253,11 @@ export async function approveSuccessionCandidate(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_APPROVE,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function removeSuccessionCandidate(
+export function removeSuccessionCandidate(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<SuccessionCandidate>> {
@@ -268,8 +265,8 @@ export async function removeSuccessionCandidate(
 		schema: removeSuccessionCandidateInputSchema,
 		invalidMessage: "Invalid succession candidate removal input",
 		command: HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_REMOVE,
-		execute: async (data, { store, ports }) => {
-			return await store.removeSuccessionCandidate(
+		execute: async (data, { store, ports }) =>
+			await store.removeSuccessionCandidate(
 				{
 					organizationId: data.organizationId,
 					candidateId: data.candidateId,
@@ -281,12 +278,11 @@ export async function removeSuccessionCandidate(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_REMOVE,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function closeSuccessionPlan(
+export function closeSuccessionPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<SuccessionPlan>> {
@@ -294,8 +290,8 @@ export async function closeSuccessionPlan(
 		schema: successionPlanStatusTransitionInputSchema,
 		invalidMessage: "Invalid succession plan close input",
 		command: HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_CLOSE,
-		execute: async (data, { store, ports }) => {
-			return await store.closeSuccessionPlan(
+		execute: async (data, { store, ports }) =>
+			await store.closeSuccessionPlan(
 				{
 					organizationId: data.organizationId,
 					successionPlanId: data.successionPlanId,
@@ -307,12 +303,11 @@ export async function closeSuccessionPlan(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_CLOSE,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function getSuccessionPlanById(
+export function getSuccessionPlanById(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<SuccessionPlan | null>> {
@@ -320,16 +315,15 @@ export async function getSuccessionPlanById(
 		schema: getSuccessionPlanByIdInputSchema,
 		invalidMessage: "Invalid succession plan get input",
 		query: HUMAN_RESOURCES_QUERY_SUCCESSION_PLAN_GET,
-		execute: async (data, { store }) => {
-			return await store.getSuccessionPlanById({
+		execute: async (data, { store }) =>
+			await store.getSuccessionPlanById({
 				organizationId: data.organizationId,
 				successionPlanId: data.successionPlanId,
-			});
-		},
+			}),
 	});
 }
 
-export async function listSuccessionPlans(
+export function listSuccessionPlans(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<SuccessionPlanListPage>> {
@@ -337,19 +331,18 @@ export async function listSuccessionPlans(
 		schema: listSuccessionPlansInputSchema,
 		invalidMessage: "Invalid succession plan list input",
 		query: HUMAN_RESOURCES_QUERY_SUCCESSION_PLAN_LIST,
-		execute: async (data, { store }) => {
-			return await store.listSuccessionPlans({
+		execute: async (data, { store }) =>
+			await store.listSuccessionPlans({
 				organizationId: data.organizationId,
 				page: data.page ?? 1,
 				pageSize: data.pageSize ?? 20,
 				positionId: data.positionId,
 				status: data.status,
-			});
-		},
+			}),
 	});
 }
 
-export async function listSuccessionCandidates(
+export function listSuccessionCandidates(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ProjectedSuccessionCandidateListPage>> {
@@ -364,19 +357,18 @@ export async function listSuccessionCandidates(
 			]),
 		project: (value: SuccessionCandidateListPage, projection) =>
 			projectSuccessionCandidateListFromDecision(value, projection),
-		execute: async (data, { store }) => {
-			return await store.listSuccessionCandidates({
+		execute: async (data, { store }) =>
+			await store.listSuccessionCandidates({
 				organizationId: data.organizationId,
 				successionPlanId: data.successionPlanId,
 				page: data.page ?? 1,
 				pageSize: data.pageSize ?? 20,
 				status: data.status,
-			});
-		},
+			}),
 	});
 }
 
-export async function getPositionSuccessionCoverage(
+export function getPositionSuccessionCoverage(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PositionSuccessionCoverage>> {
@@ -384,11 +376,10 @@ export async function getPositionSuccessionCoverage(
 		schema: getPositionSuccessionCoverageInputSchema,
 		invalidMessage: "Invalid position succession coverage get input",
 		query: HUMAN_RESOURCES_QUERY_POSITION_SUCCESSION_COVERAGE_GET,
-		execute: async (data, { store }) => {
-			return await store.getPositionSuccessionCoverage({
+		execute: async (data, { store }) =>
+			await store.getPositionSuccessionCoverage({
 				organizationId: data.organizationId,
 				positionId: data.positionId,
-			});
-		},
+			}),
 	});
 }

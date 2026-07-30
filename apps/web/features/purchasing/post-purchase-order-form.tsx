@@ -20,9 +20,9 @@ import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 
 const initialState: PostPurchaseOrderActionState = null;
 
-type PostPurchaseOrderFormProps = {
+interface PostPurchaseOrderFormProps {
 	canPost: boolean;
-};
+}
 
 /**
  * Post draft purchase order — CAPABLE when `purchasing.order.post` is granted.
@@ -73,45 +73,45 @@ export function PostPurchaseOrderForm({ canPost }: PostPurchaseOrderFormProps) {
 				<FormError>{state.message}</FormError>
 			) : null}
 			<FormField
+				error={orderError}
+				fieldId="purchase-post-order"
 				label="Order id"
 				required
-				fieldId="purchase-post-order"
-				error={orderError}
 			>
 				<Input
+					autoComplete="off"
+					disabled={pending}
 					id="purchase-post-order"
 					name="orderId"
 					required
-					autoComplete="off"
-					disabled={pending}
 				/>
 			</FormField>
 			<FormField
+				error={versionError}
+				fieldId="purchase-post-version"
 				label="Expected version"
 				required
-				fieldId="purchase-post-version"
-				error={versionError}
 			>
 				<Input
+					disabled={pending}
 					id="purchase-post-version"
-					name="expectedVersion"
-					type="number"
 					min="1"
+					name="expectedVersion"
 					required
-					disabled={pending}
-				/>
-			</FormField>
-			<FormField label="Tax total (optional)" fieldId="purchase-post-tax">
-				<Input
-					id="purchase-post-tax"
-					name="taxTotal"
 					type="number"
-					step="any"
-					min="0"
-					disabled={pending}
 				/>
 			</FormField>
-			<Button type="submit" disabled={pending}>
+			<FormField fieldId="purchase-post-tax" label="Tax total (optional)">
+				<Input
+					disabled={pending}
+					id="purchase-post-tax"
+					min="0"
+					name="taxTotal"
+					step="any"
+					type="number"
+				/>
+			</FormField>
+			<Button disabled={pending} type="submit">
 				{pending ? <Spinner /> : null}
 				Post order
 			</Button>

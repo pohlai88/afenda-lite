@@ -79,7 +79,6 @@ async function createOpeningReceipt(
 		},
 		ctx,
 	);
-	expect(created.ok).toBe(true);
 	if (!created.ok) {
 		throw new Error(created.message);
 	}
@@ -97,7 +96,6 @@ async function createOpeningReceipt(
 		},
 		ctx,
 	);
-	expect(line.ok).toBe(true);
 	if (!line.ok) {
 		throw new Error(line.message);
 	}
@@ -113,7 +111,6 @@ async function createOpeningReceipt(
 		},
 		ctx,
 	);
-	expect(posted.ok).toBe(true);
 	if (!posted.ok) {
 		throw new Error(posted.message);
 	}
@@ -134,12 +131,14 @@ async function getAvailabilityRow(
 		},
 		ctx,
 	);
-	expect(availability.ok).toBe(true);
 	if (!availability.ok) {
 		throw new Error(availability.message);
 	}
-	expect(availability.data).toHaveLength(1);
-	return availability.data[0];
+	const [row] = availability.data;
+	if (!row) {
+		throw new Error("Expected one inventory availability row");
+	}
+	return row;
 }
 
 describe("@afenda/inventory domain", () => {
@@ -342,7 +341,9 @@ describe("@afenda/inventory domain", () => {
 			ctx,
 		);
 		expect(toExpire.ok).toBe(true);
-		if (!toExpire.ok) return;
+		if (!toExpire.ok) {
+			return;
+		}
 
 		const expired = await expireReservation(
 			{
@@ -356,7 +357,9 @@ describe("@afenda/inventory domain", () => {
 			ctx,
 		);
 		expect(expired.ok).toBe(true);
-		if (!expired.ok) return;
+		if (!expired.ok) {
+			return;
+		}
 		expect(expired.data.status).toBe("expired");
 
 		const toCancel = await reserveStock(
@@ -373,7 +376,9 @@ describe("@afenda/inventory domain", () => {
 			ctx,
 		);
 		expect(toCancel.ok).toBe(true);
-		if (!toCancel.ok) return;
+		if (!toCancel.ok) {
+			return;
+		}
 
 		const cancelled = await cancelReservation(
 			{
@@ -387,7 +392,9 @@ describe("@afenda/inventory domain", () => {
 			ctx,
 		);
 		expect(cancelled.ok).toBe(true);
-		if (!cancelled.ok) return;
+		if (!cancelled.ok) {
+			return;
+		}
 		expect(cancelled.data.status).toBe("cancelled");
 
 		const availability = await getAvailabilityRow(ctx, WH_A);

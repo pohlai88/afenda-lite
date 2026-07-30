@@ -5,6 +5,8 @@
 
 import { describe, expect, it } from "vitest";
 
+// The governance assertion intentionally inspects the complete public export surface.
+// biome-ignore lint/performance/noNamespaceImport: Named imports cannot validate unknown future barrel exports.
 import * as ui from "../src/index";
 
 /** Exact export names banned — compounds like DropdownMenuItem are allowed. */

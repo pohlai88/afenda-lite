@@ -23,14 +23,14 @@ import { postRefundAction } from "@/app/actions/post-refund";
 import { reversePaymentAction } from "@/app/actions/reverse-payment";
 import type { ActionResult } from "@/modules/platform/schemas/action-result";
 
-type Field = {
-	name: string;
+interface Field {
 	label: string;
-	type?: ComponentProps<"input">["type"];
+	min?: string;
+	name: string;
 	required?: boolean;
 	step?: string;
-	min?: string;
-};
+	type?: ComponentProps<"input">["type"];
+}
 
 function ManageUnavailable({ operation }: { operation: string }) {
 	return (
@@ -79,25 +79,25 @@ function PaymentsActionForm({
 				const id = `payments-${field.name}`;
 				return (
 					<FormField
+						fieldId={id}
 						key={field.name}
 						label={field.label}
 						required={field.required}
-						fieldId={id}
 					>
 						<Input
-							id={id}
-							name={field.name}
-							type={field.type}
-							required={field.required}
-							step={field.step}
-							min={field.min}
 							autoComplete="off"
 							disabled={pending}
+							id={id}
+							min={field.min}
+							name={field.name}
+							required={field.required}
+							step={field.step}
+							type={field.type}
 						/>
 					</FormField>
 				);
 			})}
-			<Button type="submit" disabled={pending}>
+			<Button disabled={pending} type="submit">
 				{pending ? <Spinner /> : null}
 				{submitLabel}
 			</Button>
@@ -116,19 +116,21 @@ const versionFields = [
 	},
 ] as const satisfies readonly Field[];
 
-type ActionFormProps = { canManage: boolean };
+interface ActionFormProps {
+	canManage: boolean;
+}
 
 export function CreateDraftPaymentForm({ canManage }: ActionFormProps) {
 	const [state, action, pending] = useActionState(
 		createDraftPaymentAction,
 		null,
 	);
-	if (!canManage) return <ManageUnavailable operation="Create payment" />;
+	if (!canManage) {
+		return <ManageUnavailable operation="Create payment" />;
+	}
 	return (
 		<PaymentsActionForm
 			action={action}
-			pending={pending}
-			state={state}
 			fields={[
 				{ name: "code", label: "Payment code", required: true },
 				{
@@ -154,6 +156,8 @@ export function CreateDraftPaymentForm({ canManage }: ActionFormProps) {
 				},
 				{ name: "reference", label: "Reference" },
 			]}
+			pending={pending}
+			state={state}
 			submitLabel="Create draft payment"
 			successTitle="Payment created"
 		/>
@@ -167,13 +171,12 @@ export function AddPaymentApplicationInstructionForm({
 		addPaymentApplicationInstructionAction,
 		null,
 	);
-	if (!canManage)
+	if (!canManage) {
 		return <ManageUnavailable operation="Add application instruction" />;
+	}
 	return (
 		<PaymentsActionForm
 			action={action}
-			pending={pending}
-			state={state}
 			fields={[
 				{ name: "paymentId", label: "Payment id", required: true },
 				{
@@ -201,6 +204,8 @@ export function AddPaymentApplicationInstructionForm({
 				},
 				{ name: "currencyCode", label: "Currency code", required: true },
 			]}
+			pending={pending}
+			state={state}
 			submitLabel="Add application instruction"
 			successTitle="Application instruction added"
 		/>
@@ -212,13 +217,12 @@ export function CreatePaymentAccountForm({ canManage }: ActionFormProps) {
 		createPaymentAccountAction,
 		null,
 	);
-	if (!canManage)
+	if (!canManage) {
 		return <ManageUnavailable operation="Create payment account" />;
+	}
 	return (
 		<PaymentsActionForm
 			action={action}
-			pending={pending}
-			state={state}
 			fields={[
 				{ name: "code", label: "Account code", required: true },
 				{ name: "name", label: "Account name", required: true },
@@ -229,6 +233,8 @@ export function CreatePaymentAccountForm({ canManage }: ActionFormProps) {
 				},
 				{ name: "currencyCode", label: "Currency code", required: true },
 			]}
+			pending={pending}
+			state={state}
 			submitLabel="Create payment account"
 			successTitle="Payment account created"
 		/>
@@ -242,13 +248,12 @@ export function CreateAndPostPaymentTransferForm({
 		createAndPostPaymentTransferAction,
 		null,
 	);
-	if (!canManage)
+	if (!canManage) {
 		return <ManageUnavailable operation="Create payment transfer" />;
+	}
 	return (
 		<PaymentsActionForm
 			action={action}
-			pending={pending}
-			state={state}
 			fields={[
 				{ name: "code", label: "Transfer code", required: true },
 				{
@@ -272,6 +277,8 @@ export function CreateAndPostPaymentTransferForm({
 				},
 				{ name: "reference", label: "Reference" },
 			]}
+			pending={pending}
+			state={state}
 			submitLabel="Create and post transfer"
 			successTitle="Payment transfer posted"
 		/>
@@ -280,13 +287,15 @@ export function CreateAndPostPaymentTransferForm({
 
 export function PostPaymentForm({ canManage }: ActionFormProps) {
 	const [state, action, pending] = useActionState(postPaymentAction, null);
-	if (!canManage) return <ManageUnavailable operation="Post payment" />;
+	if (!canManage) {
+		return <ManageUnavailable operation="Post payment" />;
+	}
 	return (
 		<PaymentsActionForm
 			action={action}
+			fields={versionFields}
 			pending={pending}
 			state={state}
-			fields={versionFields}
 			submitLabel="Post payment"
 			successTitle="Payment posted"
 		/>
@@ -295,16 +304,18 @@ export function PostPaymentForm({ canManage }: ActionFormProps) {
 
 export function ReversePaymentForm({ canManage }: ActionFormProps) {
 	const [state, action, pending] = useActionState(reversePaymentAction, null);
-	if (!canManage) return <ManageUnavailable operation="Reverse payment" />;
+	if (!canManage) {
+		return <ManageUnavailable operation="Reverse payment" />;
+	}
 	return (
 		<PaymentsActionForm
 			action={action}
-			pending={pending}
-			state={state}
 			fields={[
 				...versionFields,
 				{ name: "reason", label: "Reversal reason", required: true },
 			]}
+			pending={pending}
+			state={state}
 			submitLabel="Reverse payment"
 			successTitle="Payment reversed"
 		/>
@@ -313,12 +324,12 @@ export function ReversePaymentForm({ canManage }: ActionFormProps) {
 
 export function PostRefundForm({ canManage }: ActionFormProps) {
 	const [state, action, pending] = useActionState(postRefundAction, null);
-	if (!canManage) return <ManageUnavailable operation="Post refund" />;
+	if (!canManage) {
+		return <ManageUnavailable operation="Post refund" />;
+	}
 	return (
 		<PaymentsActionForm
 			action={action}
-			pending={pending}
-			state={state}
 			fields={[
 				{ name: "code", label: "Refund code", required: true },
 				{
@@ -342,6 +353,8 @@ export function PostRefundForm({ canManage }: ActionFormProps) {
 				},
 				{ name: "reference", label: "Reference" },
 			]}
+			pending={pending}
+			state={state}
 			submitLabel="Post refund"
 			successTitle="Refund posted"
 		/>
@@ -362,16 +375,16 @@ export function GetPaymentApplicationAvailabilityForm({
 	return (
 		<PaymentsActionForm
 			action={action}
+			fields={[{ name: "paymentId", label: "Payment id", required: true }]}
 			pending={pending}
 			state={state}
-			fields={[{ name: "paymentId", label: "Payment id", required: true }]}
 			submitLabel="Load availability"
-			successTitle="Availability loaded"
 			successDescription={
 				availability === null
 					? "Availability loaded."
 					: `Posted ${availability.currencyCode} ${availability.postedAmount} · intended ${availability.intendedAmount} · refunded ${availability.refundedAmount} · available ${availability.availableToApply}`
 			}
+			successTitle="Availability loaded"
 		/>
 	);
 }

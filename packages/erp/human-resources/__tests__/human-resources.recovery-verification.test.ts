@@ -5,6 +5,7 @@ import {
 	type LocalRecoveryDrillEvidence,
 	runLocalRecoveryDrill,
 } from "../src/recovery-verification";
+import { runSequential } from "../src/shared/run-sequential";
 
 describe("HR local recovery-drill verification", () => {
 	it("executes all eight injected-failure recovery drills", async () => {
@@ -20,9 +21,9 @@ describe("HR local recovery-drill verification", () => {
 			"rollback_compatibility",
 		]);
 		const evidence: LocalRecoveryDrillEvidence[] = [];
-		for (const drill of drills) {
+		await runSequential(drills, async (drill) => {
 			evidence.push(await runLocalRecoveryDrill(drill));
-		}
+		});
 		expect(evidence).toHaveLength(8);
 		for (const result of evidence) {
 			expect(result.scope).toBe("local_recovery_drill_only");

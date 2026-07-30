@@ -117,61 +117,66 @@ export function defineMutationCommit<T>(
 function assertOperationInvariants(fact: MasterDataAuditFact): void {
 	switch (fact.operation) {
 		case "create":
-			if (fact.previousVersion !== null) {
-				throw new Error("create audit facts must not have a previousVersion");
-			}
-			if (fact.resultingVersion !== 1) {
-				throw new Error("create audit facts must result in version 1");
-			}
+			assertCreateOperation(fact);
 			break;
 		case "update":
 		case "apply_change_request":
 		case "apply_import_row":
-			if (fact.previousVersion === null) {
-				throw new Error(
-					`${fact.operation} audit facts require previousVersion`,
-				);
-			}
+			assertPreviousVersion(fact);
 			break;
 		case "activate":
 		case "block":
 		case "retire":
 		case "archive":
-			if (fact.previousVersion === null) {
-				throw new Error(
-					`${fact.operation} audit facts require previousVersion`,
-				);
-			}
-			if (
-				fact.previousState === undefined ||
-				fact.resultingState === undefined
-			) {
-				throw new Error(
-					`${fact.operation} audit facts require previousState and resultingState`,
-				);
-			}
-			if (fact.previousState === fact.resultingState) {
-				throw new Error("previousState and resultingState must differ");
-			}
+			assertLifecycleOperation(fact);
 			break;
 		case "merge":
-			if (fact.previousVersion === null) {
-				throw new Error("merge audit facts require previousVersion");
-			}
-			if (
-				fact.sourceEntityId === undefined ||
-				fact.canonicalTargetId === undefined
-			) {
-				throw new Error(
-					"merge audit facts require sourceEntityId and canonicalTargetId",
-				);
-			}
-			if (fact.sourceEntityId === fact.canonicalTargetId) {
-				throw new Error("sourceEntityId and canonicalTargetId must differ");
-			}
+			assertMergeOperation(fact);
 			break;
 		default:
 			assertNever(fact.operation);
+	}
+}
+
+function assertCreateOperation(fact: MasterDataAuditFact): void {
+	if (fact.previousVersion !== null) {
+		throw new Error("create audit facts must not have a previousVersion");
+	}
+	if (fact.resultingVersion !== 1) {
+		throw new Error("create audit facts must result in version 1");
+	}
+}
+
+function assertPreviousVersion(fact: MasterDataAuditFact): void {
+	if (fact.previousVersion === null) {
+		throw new Error(`${fact.operation} audit facts require previousVersion`);
+	}
+}
+
+function assertLifecycleOperation(fact: MasterDataAuditFact): void {
+	assertPreviousVersion(fact);
+	if (fact.previousState === undefined || fact.resultingState === undefined) {
+		throw new Error(
+			`${fact.operation} audit facts require previousState and resultingState`,
+		);
+	}
+	if (fact.previousState === fact.resultingState) {
+		throw new Error("previousState and resultingState must differ");
+	}
+}
+
+function assertMergeOperation(fact: MasterDataAuditFact): void {
+	assertPreviousVersion(fact);
+	if (
+		fact.sourceEntityId === undefined ||
+		fact.canonicalTargetId === undefined
+	) {
+		throw new Error(
+			"merge audit facts require sourceEntityId and canonicalTargetId",
+		);
+	}
+	if (fact.sourceEntityId === fact.canonicalTargetId) {
+		throw new Error("sourceEntityId and canonicalTargetId must differ");
 	}
 }
 

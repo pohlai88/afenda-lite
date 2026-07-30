@@ -104,19 +104,19 @@ import type {
 	WorkAssignment,
 } from "../../types";
 
-type EmployeeSqlRow = {
-	id: string;
-	organization_id: string;
-	employee_number: string;
-	legal_name: string;
+interface EmployeeSqlRow {
 	create_idempotency_key: string;
 	create_request_fingerprint: string;
-	version: number;
-	created_by: string;
-	updated_by: string;
 	created_at: Date;
+	created_by: string;
+	employee_number: string;
+	id: string;
+	legal_name: string;
+	organization_id: string;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+}
 
 function mapEmployeeFields(input: {
 	id: HumanResourcesEmployeeId;
@@ -177,8 +177,12 @@ function mapEmployment(
 ): Result<Employment> {
 	const id = parseHumanResourcesEmploymentId(row.id);
 	const employeeId = parseHumanResourcesEmployeeId(row.employeeId);
-	if (!id.ok) return id;
-	if (!employeeId.ok) return employeeId;
+	if (!id.ok) {
+		return id;
+	}
+	if (!employeeId.ok) {
+		return employeeId;
+	}
 	const status = employmentStatusSchema.safeParse(row.status);
 	if (!status.success) {
 		return fail(
@@ -207,8 +211,12 @@ function mapEmploymentStatusHistory(
 ): Result<EmploymentStatusHistory> {
 	const employmentId = parseHumanResourcesEmploymentId(row.employmentId);
 	const employeeId = parseHumanResourcesEmployeeId(row.employeeId);
-	if (!employmentId.ok) return employmentId;
-	if (!employeeId.ok) return employeeId;
+	if (!employmentId.ok) {
+		return employmentId;
+	}
+	if (!employeeId.ok) {
+		return employeeId;
+	}
 	const toStatus = employmentStatusSchema.safeParse(row.toStatus);
 	if (!toStatus.success) {
 		return fail(
@@ -254,15 +262,23 @@ function mapEmploymentContract(
 	const id = parseHumanResourcesEmploymentContractId(row.id);
 	const employmentId = parseHumanResourcesEmploymentId(row.employmentId);
 	const employeeId = parseHumanResourcesEmployeeId(row.employeeId);
-	if (!id.ok) return id;
-	if (!employmentId.ok) return employmentId;
-	if (!employeeId.ok) return employeeId;
+	if (!id.ok) {
+		return id;
+	}
+	if (!employmentId.ok) {
+		return employmentId;
+	}
+	if (!employeeId.ok) {
+		return employeeId;
+	}
 	let supersedesContractId = null as EmploymentContract["supersedesContractId"];
 	if (row.supersedesContractId !== null) {
 		const parsed = parseHumanResourcesEmploymentContractId(
 			row.supersedesContractId,
 		);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		supersedesContractId = parsed.data;
 	}
 	let supersededByContractId =
@@ -271,7 +287,9 @@ function mapEmploymentContract(
 		const parsed = parseHumanResourcesEmploymentContractId(
 			row.supersededByContractId,
 		);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		supersededByContractId = parsed.data;
 	}
 	const lineageStatus =
@@ -297,25 +315,25 @@ function mapEmploymentContract(
 	});
 }
 
-type EmploymentContractSqlRow = {
-	id: string;
-	organization_id: string;
-	employment_id: string;
-	employee_id: string;
-	reference_code: string;
-	starts_on: string;
-	ends_on: string | null;
-	lineage_status: string;
-	supersedes_contract_id: string | null;
-	superseded_by_contract_id: string | null;
-	reason_code: string;
-	source_reference: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
+interface EmploymentContractSqlRow {
 	created_at: Date | string;
+	created_by: string;
+	employee_id: string;
+	employment_id: string;
+	ends_on: string | null;
+	id: string;
+	lineage_status: string;
+	organization_id: string;
+	reason_code: string;
+	reference_code: string;
+	source_reference: string | null;
+	starts_on: string;
+	superseded_by_contract_id: string | null;
+	supersedes_contract_id: string | null;
 	updated_at: Date | string;
-};
+	updated_by: string;
+	version: number;
+}
 
 function mapEmploymentContractSqlRow(
 	row: EmploymentContractSqlRow,
@@ -354,12 +372,22 @@ function mapAssignment(
 	const employmentId = parseHumanResourcesEmploymentId(row.employmentId);
 	const employeeId = parseHumanResourcesEmployeeId(row.employeeId);
 	const positionId = parseHumanResourcesPositionId(row.positionId);
-	if (!id.ok) return id;
-	if (!employmentId.ok) return employmentId;
-	if (!employeeId.ok) return employeeId;
-	if (!positionId.ok) return positionId;
+	if (!id.ok) {
+		return id;
+	}
+	if (!employmentId.ok) {
+		return employmentId;
+	}
+	if (!employeeId.ok) {
+		return employeeId;
+	}
+	if (!positionId.ok) {
+		return positionId;
+	}
 	const lineage = mapAssignmentLineageFields(row);
-	if (!lineage.ok) return lineage;
+	if (!lineage.ok) {
+		return lineage;
+	}
 	return ok({
 		id: id.data,
 		organizationId: row.organizationId,
@@ -426,40 +454,40 @@ function mapAssignment(
 	});
 }
 
-type AssignmentSqlRow = {
-	id: string;
-	organization_id: string;
-	employment_id: string;
-	employee_id: string;
-	position_id: string;
-	legal_entity_dimension_id: string | null;
-	legal_entity_key_snapshot: string | null;
-	legal_entity_name_snapshot: string | null;
+interface AssignmentSqlRow {
 	business_unit_dimension_id: string | null;
 	business_unit_key_snapshot: string | null;
 	business_unit_name_snapshot: string | null;
-	location_dimension_id: string | null;
-	location_key_snapshot: string | null;
-	location_name_snapshot: string | null;
 	cost_centre_dimension_id: string | null;
 	cost_centre_key_snapshot: string | null;
 	cost_centre_name_snapshot: string | null;
+	created_at: Date;
+	created_by: string;
+	employee_id: string;
+	employment_id: string;
+	ends_on: string | null;
+	id: string;
+	legal_entity_dimension_id: string | null;
+	legal_entity_key_snapshot: string | null;
+	legal_entity_name_snapshot: string | null;
+	location_dimension_id: string | null;
+	location_key_snapshot: string | null;
+	location_name_snapshot: string | null;
+	manager_employee_id_snapshot: string | null;
+	organization_id: string;
+	position_id: string;
+	predecessor_assignment_id: string | null;
 	project_dimension_id: string | null;
 	project_key_snapshot: string | null;
 	project_name_snapshot: string | null;
-	predecessor_assignment_id: string | null;
+	starts_on: string;
 	successor_assignment_id: string | null;
 	transfer_movement_id: string | null;
-	manager_employee_id_snapshot: string | null;
-	work_calendar_id_snapshot: string | null;
-	starts_on: string;
-	ends_on: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+	work_calendar_id_snapshot: string | null;
+}
 
 function mapAssignmentSqlRow(
 	row: AssignmentSqlRow,
@@ -468,11 +496,19 @@ function mapAssignmentSqlRow(
 	const employmentId = parseHumanResourcesEmploymentId(row.employment_id);
 	const employeeId = parseHumanResourcesEmployeeId(row.employee_id);
 	const positionId = parseHumanResourcesPositionId(row.position_id);
-	if (!employmentId.ok) return employmentId;
-	if (!employeeId.ok) return employeeId;
-	if (!positionId.ok) return positionId;
+	if (!employmentId.ok) {
+		return employmentId;
+	}
+	if (!employeeId.ok) {
+		return employeeId;
+	}
+	if (!positionId.ok) {
+		return positionId;
+	}
 	const lineage = mapAssignmentLineageFields(row);
-	if (!lineage.ok) return lineage;
+	if (!lineage.ok) {
+		return lineage;
+	}
 	return ok({
 		id,
 		organizationId: row.organization_id,
@@ -596,7 +632,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 					),
 				)
 				.limit(1);
-			const row = result[0];
+			const [row] = result;
 			if (row === undefined) {
 				return ok(null);
 			}
@@ -621,7 +657,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 					),
 				)
 				.limit(1);
-			const row = result[0];
+			const [row] = result;
 			if (row === undefined) {
 				return ok(null);
 			}
@@ -670,8 +706,9 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction<[EmployeeSqlRow[]]>((sql) => [
-				sql`
+			const [rows] = await runNeonHttpTransaction<[EmployeeSqlRow[]]>(
+				(sqlValue10) => [
+					sqlValue10`
 						WITH mutated AS (
 							INSERT INTO hr_employee (
 								id, organization_id, employee_number, normalized_employee_number,
@@ -709,8 +746,9 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-			]);
-			const row = rows[0];
+				],
+			);
+			const [row] = rows;
 			if (row === undefined) {
 				return fail("INTERNAL_ERROR", "Employee create returned no row");
 			}
@@ -749,8 +787,9 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 		const auditId = randomUUID();
 		const nextVersion = input.expectedVersion + 1;
 		try {
-			const [rows] = await runNeonHttpTransaction<[EmployeeSqlRow[]]>((sql) => [
-				sql`
+			const [rows] = await runNeonHttpTransaction<[EmployeeSqlRow[]]>(
+				(sqlValue9) => [
+					sqlValue9`
 						WITH mutated AS (
 							UPDATE hr_employee
 							SET legal_name = ${input.legalName},
@@ -775,14 +814,17 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-			]);
-			const row = rows[0];
+				],
+			);
+			const [row] = rows;
 			if (row === undefined) {
 				const existing = await this.getEmployeeById({
 					organizationId: input.organizationId,
 					employeeId: input.employeeId,
 				});
-				if (!existing.ok) return existing;
+				if (!existing.ok) {
+					return existing;
+				}
 				return missAfterOptimisticUpdate({
 					found: existing.data !== null,
 					entityLabel: "Employee",
@@ -899,9 +941,13 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 					),
 				)
 				.limit(1);
-			if (result.length === 0) return ok(null);
-			const record = result[0];
-			if (!record) return ok(null);
+			if (result.length === 0) {
+				return ok(null);
+			}
+			const [record] = result;
+			if (!record) {
+				return ok(null);
+			}
 			return mapEmployment(record);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load employment");
@@ -924,9 +970,13 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 					),
 				)
 				.limit(1);
-			if (result.length === 0) return ok(null);
-			const record = result[0];
-			if (!record) return ok(null);
+			if (result.length === 0) {
+				return ok(null);
+			}
+			const [record] = result;
+			if (!record) {
+				return ok(null);
+			}
 			return mapEmployment(record);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to find open employment");
@@ -999,7 +1049,9 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 			}> = [];
 			for (const row of rows) {
 				const id = parseHumanResourcesEmploymentId(row.id);
-				if (!id.ok) return id;
+				if (!id.ok) {
+					return id;
+				}
 				employments.push({
 					id: id.data,
 					startsOn: row.startsOn,
@@ -1033,7 +1085,9 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 			const history: EmploymentStatusHistory[] = [];
 			for (const row of rows) {
 				const mapped = mapEmploymentStatusHistory(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				history.push(mapped.data);
 			}
 			return ok(history);
@@ -1094,7 +1148,9 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 		}
 		const entityId = randomUUID();
 		const brandedId = parseHumanResourcesEmploymentId(entityId);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const historyId = randomUUID();
@@ -1123,8 +1179,8 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 						updated_at: Date;
 					}[],
 				]
-			>((sql) => [
-				sql`
+			>((sqlValue8) => [
+				sqlValue8`
 						WITH parent AS (
 							SELECT id, organization_id
 							FROM hr_employee
@@ -1201,13 +1257,15 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 						SELECT mutated.* FROM mutated, audited, history_inserted, outboxed
 					`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				const employee = await this.getEmployeeById({
 					organizationId: record.organizationId,
 					employeeId: record.employeeId,
 				});
-				if (!employee.ok) return employee;
+				if (!employee.ok) {
+					return employee;
+				}
 				if (employee.data === null) {
 					return fail(
 						"NOT_FOUND",
@@ -1220,7 +1278,9 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 				return rehireRequiresEndedEmployment();
 			}
 			const employeeId = parseHumanResourcesEmployeeId(row.employee_id);
-			if (!employeeId.ok) return employeeId;
+			if (!employeeId.ok) {
+				return employeeId;
+			}
 			const status = employmentStatusSchema.safeParse(row.status);
 			if (!status.success) {
 				return fail(
@@ -1265,7 +1325,9 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 			organizationId: input.organizationId,
 			employmentId: input.employmentId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return fail(
 				"NOT_FOUND",
@@ -1288,7 +1350,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 		try {
 			const statusValue = input.status ?? null;
 			const startsOnValue = input.startsOn ?? null;
-			const endsOnProvidedFlag = input.endsOn !== undefined ? 1 : 0;
+			const endsOnProvidedFlag = input.endsOn === undefined ? 0 : 1;
 			const endsOnValue = input.endsOn ?? null;
 			const emitTerminatedFlag = input.status === "terminated" ? 1 : 0;
 			const lifecycleEffectiveOn = input.lifecycleEffectiveOn ?? null;
@@ -1310,8 +1372,8 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 						updated_at: Date;
 					}[],
 				]
-			>((sql) => [
-				sql`
+			>((sqlValue7) => [
+				sqlValue7`
 						WITH mutated AS (
 							UPDATE hr_employment
 							SET status = COALESCE(${statusValue}::text, status),
@@ -1389,20 +1451,24 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
-				const existing = await this.getEmploymentById({
+				const existingValue2 = await this.getEmploymentById({
 					organizationId: input.organizationId,
 					employmentId: input.employmentId,
 				});
-				if (!existing.ok) return existing;
+				if (!existingValue2.ok) {
+					return existingValue2;
+				}
 				return missAfterOptimisticUpdate({
-					found: existing.data !== null,
+					found: existingValue2.data !== null,
 					entityLabel: "Employment",
 				});
 			}
 			const employeeId = parseHumanResourcesEmployeeId(row.employee_id);
-			if (!employeeId.ok) return employeeId;
+			if (!employeeId.ok) {
+				return employeeId;
+			}
 			const status = employmentStatusSchema.safeParse(row.status);
 			if (!status.success) {
 				return fail(
@@ -1433,12 +1499,12 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 		input: {
 			organizationId: string;
 			employmentId: HumanResourcesEmploymentId;
-			status?: EmploymentStatus;
-			startsOn?: string;
-			endsOn?: string | null;
+			status?: EmploymentStatus | undefined;
+			startsOn?: string | undefined;
+			endsOn?: string | null | undefined;
 			reason: string;
 			evidenceReference: string | null;
-			effectiveOn?: string;
+			effectiveOn?: string | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -1449,7 +1515,9 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 			organizationId: input.organizationId,
 			employmentId: input.employmentId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return fail(
 				"NOT_FOUND",
@@ -1473,7 +1541,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 		try {
 			const statusValue = input.status ?? null;
 			const startsOnValue = input.startsOn ?? null;
-			const endsOnProvidedFlag = input.endsOn !== undefined ? 1 : 0;
+			const endsOnProvidedFlag = input.endsOn === undefined ? 0 : 1;
 			const endsOnValue = input.endsOn ?? null;
 
 			const [rows] = await runNeonHttpTransaction<
@@ -1492,8 +1560,8 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 						updated_at: Date;
 					}[],
 				]
-			>((sql) => [
-				sql`
+			>((sqlValue6) => [
+				sqlValue6`
 						WITH mutated AS (
 							UPDATE hr_employment
 							SET status = COALESCE(${statusValue}::text, status),
@@ -1549,7 +1617,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 						SELECT mutated.* FROM mutated, audited, history_inserted, outboxed
 					`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -1557,7 +1625,9 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 				});
 			}
 			const employeeId = parseHumanResourcesEmployeeId(row.employee_id);
-			if (!employeeId.ok) return employeeId;
+			if (!employeeId.ok) {
+				return employeeId;
+			}
 			const status = employmentStatusSchema.safeParse(row.status);
 			if (!status.success) {
 				return fail(
@@ -1600,7 +1670,9 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 				)
 				.limit(1);
 			const [contract] = result;
-			if (!contract) return ok(null);
+			if (!contract) {
+				return ok(null);
+			}
 			return mapEmploymentContract(contract);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load employment contract");
@@ -1626,7 +1698,9 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 				)
 				.limit(1);
 			const [contract] = result;
-			if (!contract) return ok(null);
+			if (!contract) {
+				return ok(null);
+			}
 			return mapEmploymentContract(contract);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to find employment contract");
@@ -1652,10 +1726,16 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 						eq(hrEmploymentContract.lineageStatus, "active"),
 					),
 				);
-			const mapped = [];
+			const mapped: Array<{
+				id: HumanResourcesEmploymentContractId;
+				startsOn: string;
+				endsOn: string | null;
+			}> = [];
 			for (const row of rows) {
 				const id = parseHumanResourcesEmploymentContractId(row.id);
-				if (!id.ok) return id;
+				if (!id.ok) {
+					return id;
+				}
 				mapped.push({
 					id: id.data,
 					startsOn: row.startsOn,
@@ -1721,7 +1801,9 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 			const contracts: EmploymentContract[] = [];
 			for (const row of rows) {
 				const mapped = mapEmploymentContract(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				contracts.push(mapped.data);
 			}
 			const resolution = resolveUniqueEffectiveRangeRecordBy({
@@ -1758,7 +1840,9 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 		}
 		const entityId = randomUUID();
 		const brandedId = parseHumanResourcesEmploymentContractId(entityId);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const payloadJson = eventPayloadJson({
@@ -1791,8 +1875,8 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 						updated_at: Date;
 					}[],
 				]
-			>((sql) => [
-				sql`
+			>((sqlValue5) => [
+				sqlValue5`
 						WITH parent AS (
 							SELECT id, organization_id, employee_id
 							FROM hr_employment
@@ -1839,7 +1923,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return fail(
 					"NOT_FOUND",
@@ -1880,9 +1964,9 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 		input: {
 			organizationId: string;
 			employmentContractId: HumanResourcesEmploymentContractId;
-			referenceCode: string;
-			startsOn: string;
-			endsOn: string | null;
+			referenceCode?: string | undefined;
+			startsOn?: string | undefined;
+			endsOn?: string | null | undefined;
 			reasonCode: string;
 			sourceReference: string;
 			expectedVersion: number;
@@ -1902,14 +1986,17 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 		});
 		try {
 			const [rows] = await runNeonHttpTransaction<[EmploymentContractSqlRow[]]>(
-				(sql) => [
-					sql`
+				(sqlValue4) => [
+					sqlValue4`
 					WITH updated AS (
 						UPDATE hr_employment_contract
 						SET
-							reference_code = ${input.referenceCode},
-							starts_on = ${input.startsOn},
-							ends_on = ${input.endsOn},
+							reference_code = COALESCE(${input.referenceCode}, reference_code),
+							starts_on = COALESCE(${input.startsOn}, starts_on),
+							ends_on = CASE
+								WHEN ${input.endsOn === undefined} THEN ends_on
+								ELSE ${input.endsOn}
+							END,
 							reason_code = ${input.reasonCode},
 							source_reference = ${input.sourceReference},
 							version = version + 1,
@@ -1947,7 +2034,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 				`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: false,
@@ -1984,7 +2071,9 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 		const successorId = randomUUID();
 		const brandedSuccessorId =
 			parseHumanResourcesEmploymentContractId(successorId);
-		if (!brandedSuccessorId.ok) return brandedSuccessorId;
+		if (!brandedSuccessorId.ok) {
+			return brandedSuccessorId;
+		}
 		const predecessorAuditId = randomUUID();
 		const successorAuditId = randomUUID();
 		const supersededEventId = randomUUID();
@@ -2011,8 +2100,8 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 						successor: EmploymentContractSqlRow;
 					}[],
 				]
-			>((sql) => [
-				sql`
+			>((sqlValue3) => [
+				sqlValue3`
 					WITH predecessor AS (
 						UPDATE hr_employment_contract
 						SET
@@ -2092,17 +2181,21 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 					FROM predecessor, successor, predecessor_audit, superseded_outbox, successor_audit, created_outbox
 				`,
 			]);
-			const row = rows[0];
-			if (!row?.predecessor || !row?.successor) {
+			const [row] = rows;
+			if (!(row?.predecessor && row?.successor)) {
 				return missAfterOptimisticUpdate({
 					found: false,
 					entityLabel: "Employment contract",
 				});
 			}
 			const superseded = mapEmploymentContractSqlRow(row.predecessor);
-			if (!superseded.ok) return superseded;
+			if (!superseded.ok) {
+				return superseded;
+			}
 			const successor = mapEmploymentContractSqlRow(row.successor);
-			if (!successor.ok) return successor;
+			if (!successor.ok) {
+				return successor;
+			}
 			return ok({
 				superseded: superseded.data,
 				successor: successor.data,
@@ -2151,7 +2244,9 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 		if (!current.ok) {
 			return current;
 		}
-		if (current.data === null) return ok(null);
+		if (current.data === null) {
+			return ok(null);
+		}
 
 		const asOfDefinition = await this.findPositionAsOf({
 			organizationId: input.organizationId,
@@ -2161,7 +2256,9 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 		if (!asOfDefinition.ok) {
 			return asOfDefinition;
 		}
-		if (asOfDefinition.data === null) return ok(null);
+		if (asOfDefinition.data === null) {
+			return ok(null);
+		}
 
 		const position: Position = {
 			...current.data,
@@ -2194,7 +2291,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 				);
 			}
 
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return ok({
 					position,
@@ -2237,7 +2334,9 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 				)
 				.limit(1);
 			const [assignment] = result;
-			if (!assignment) return ok(null);
+			if (!assignment) {
+				return ok(null);
+			}
 			return mapAssignment(assignment);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load assignment");
@@ -2261,7 +2360,9 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 				)
 				.limit(1);
 			const [assignment] = result;
-			if (!assignment) return ok(null);
+			if (!assignment) {
+				return ok(null);
+			}
 			return mapAssignment(assignment);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to find open assignment");
@@ -2390,7 +2491,9 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 				}
 
 				const assignment = mapAssignment(row);
-				if (!assignment.ok) return assignment;
+				if (!assignment.ok) {
+					return assignment;
+				}
 				const parsedEmploymentStatus = employmentStatusSchema.safeParse(
 					employment.status,
 				);
@@ -2398,21 +2501,31 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 					return fail("INTERNAL_ERROR", "Invalid employment status");
 				}
 				const employmentId = parseHumanResourcesEmploymentId(employment.id);
-				if (!employmentId.ok) return employmentId;
+				if (!employmentId.ok) {
+					return employmentId;
+				}
 				const employeeId = parseHumanResourcesEmployeeId(employment.employeeId);
-				if (!employeeId.ok) return employeeId;
+				if (!employeeId.ok) {
+					return employeeId;
+				}
 				const positionId = parseHumanResourcesPositionId(row.positionId);
-				if (!positionId.ok) return positionId;
+				if (!positionId.ok) {
+					return positionId;
+				}
 				const departmentId =
 					position.departmentId === null
 						? null
 						: parseHumanResourcesDepartmentId(position.departmentId);
-				if (departmentId !== null && !departmentId.ok) return departmentId;
+				if (departmentId !== null && !departmentId.ok) {
+					return departmentId;
+				}
 				const jobId =
 					position.jobId === null
 						? null
 						: parseHumanResourcesJobId(position.jobId);
-				if (jobId !== null && !jobId.ok) return jobId;
+				if (jobId !== null && !jobId.ok) {
+					return jobId;
+				}
 
 				actuals.push({
 					employmentId: employmentId.data,
@@ -2454,7 +2567,9 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 			organizationId: record.organizationId,
 			employmentId: record.employmentId,
 		});
-		if (!employment.ok) return employment;
+		if (!employment.ok) {
+			return employment;
+		}
 		if (employment.data === null) {
 			return fail(
 				"NOT_FOUND",
@@ -2479,7 +2594,9 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 			organizationId: record.organizationId,
 			employmentId: record.employmentId,
 		});
-		if (!siblings.ok) return siblings;
+		if (!siblings.ok) {
+			return siblings;
+		}
 
 		const overlap = assertNoAssignmentOverlap({
 			candidateStartsOn: record.startsOn,
@@ -2492,7 +2609,9 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 
 		const entityId = randomUUID();
 		const brandedId = parseHumanResourcesAssignmentId(entityId);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const payloadJson = eventPayloadJson({
@@ -2504,8 +2623,8 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 		});
 		try {
 			const [rows] = await runNeonHttpTransaction<[AssignmentSqlRow[]]>(
-				(sql) => [
-					sql`
+				(sqlValue2) => [
+					sqlValue2`
 						WITH employment AS (
 							SELECT id, organization_id, employee_id
 							FROM hr_employment
@@ -2625,14 +2744,16 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
-				const employment = await this.getEmploymentById({
+				const employmentValue = await this.getEmploymentById({
 					organizationId: record.organizationId,
 					employmentId: record.employmentId,
 				});
-				if (!employment.ok) return employment;
-				if (employment.data === null) {
+				if (!employmentValue.ok) {
+					return employmentValue;
+				}
+				if (employmentValue.data === null) {
 					return fail(
 						"NOT_FOUND",
 						"Employment not found",
@@ -2645,7 +2766,9 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 					organizationId: record.organizationId,
 					positionId: record.positionId,
 				});
-				if (!position.ok) return position;
+				if (!position.ok) {
+					return position;
+				}
 				if (position.data === null) {
 					return fail(
 						"NOT_FOUND",
@@ -2719,8 +2842,8 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 		});
 		try {
 			const [rows] = await runNeonHttpTransaction<[AssignmentSqlRow[]]>(
-				(sql) => [
-					sql`
+				(sqlValue) => [
+					sqlValue`
 						WITH mutated AS (
 							UPDATE hr_work_assignment
 							SET ends_on = ${input.endsOn},
@@ -2758,15 +2881,17 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
-				const existing = await this.getAssignmentById({
+				const existingValue = await this.getAssignmentById({
 					organizationId: input.organizationId,
 					assignmentId: input.assignmentId,
 				});
-				if (!existing.ok) return existing;
+				if (!existingValue.ok) {
+					return existingValue;
+				}
 				return missAfterOptimisticUpdate({
-					found: existing.data !== null,
+					found: existingValue.data !== null,
 					entityLabel: "Assignment",
 				});
 			}

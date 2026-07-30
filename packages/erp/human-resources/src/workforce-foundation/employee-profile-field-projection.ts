@@ -129,8 +129,29 @@ const EMPLOYEE_PROFILE_PROJECTION_PERMISSIONS = [
 	HUMAN_RESOURCES_PERMISSION_IDENTITY_DOCUMENT_SENSITIVE_READ,
 ] as const satisfies readonly HumanResourcesPermission[];
 
+async function probeEmployeeProfilePermissionAtIndex(
+	authRequest: Parameters<typeof actorHoldsAnyPermission>[0],
+	options: HumanResourcesCommandOptions,
+	permissions: Set<HumanResourcesPermission>,
+	index: number,
+): Promise<ReadonlySet<HumanResourcesPermission>> {
+	const permission = EMPLOYEE_PROFILE_PROJECTION_PERMISSIONS[index];
+	if (permission === undefined) {
+		return permissions;
+	}
+	if (await actorHoldsAnyPermission(authRequest, options, [permission])) {
+		permissions.add(permission);
+	}
+	return probeEmployeeProfilePermissionAtIndex(
+		authRequest,
+		options,
+		permissions,
+		index + 1,
+	);
+}
+
 /** Probe supplemental sensitive-read permissions for tier projection. */
-export async function resolveEmployeeProfileActorPermissions(
+export function resolveEmployeeProfileActorPermissions(
 	request: {
 		actor: HumanResourcesActorContext;
 		requiredPermission: HumanResourcesPermission;
@@ -143,12 +164,12 @@ export async function resolveEmployeeProfileActorPermissions(
 		operationKind: "query" as const,
 	};
 	const permissions = new Set(resolveActorPermissions(authRequest));
-	for (const permission of EMPLOYEE_PROFILE_PROJECTION_PERMISSIONS) {
-		if (await actorHoldsAnyPermission(authRequest, options, [permission])) {
-			permissions.add(permission);
-		}
-	}
-	return permissions;
+	return probeEmployeeProfilePermissionAtIndex(
+		authRequest,
+		options,
+		permissions,
+		0,
+	);
 }
 
 function redactNestedIdentifiers(

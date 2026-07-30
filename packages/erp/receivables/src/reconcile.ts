@@ -2,21 +2,7 @@ import { expectedOpenBalance } from "./invoice";
 import { add, decimal, format } from "./shared/money";
 import type { CustomerBalance } from "./types";
 
-export type ReceivablesReconcileFacts = {
-	invoices: Array<{
-		id: string;
-		customerId: string;
-		currencyCode: string;
-		totalAmount: string;
-		status: string;
-	}>;
-	credits: Array<{
-		id: string;
-		customerId: string;
-		currencyCode: string;
-		amount: string;
-		status: string;
-	}>;
+export interface ReceivablesReconcileFacts {
 	allocations: Array<{
 		id: string;
 		customerId: string;
@@ -25,7 +11,21 @@ export type ReceivablesReconcileFacts = {
 		status: string;
 	}>;
 	balances: CustomerBalance[];
-};
+	credits: Array<{
+		id: string;
+		customerId: string;
+		currencyCode: string;
+		amount: string;
+		status: string;
+	}>;
+	invoices: Array<{
+		id: string;
+		customerId: string;
+		currencyCode: string;
+		totalAmount: string;
+		status: string;
+	}>;
+}
 
 export type ReceivablesReconcileResult =
 	| { ok: true }
@@ -59,7 +59,9 @@ export function reconcileReceivables(
 
 	for (const key of keys) {
 		const [customerId = "", currencyCode = ""] = key.split(":");
-		if (customerId.length === 0 || currencyCode.length === 0) continue;
+		if (customerId.length === 0 || currencyCode.length === 0) {
+			continue;
+		}
 
 		const invoiceTotal = facts.invoices
 			.filter(

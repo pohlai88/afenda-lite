@@ -90,7 +90,9 @@ function collectSourceFiles(dir: string): string[] {
 	}
 	const files: string[] = [];
 	for (const entry of readdirSync(dir)) {
-		if (SKIP_DIRS.has(entry)) continue;
+		if (SKIP_DIRS.has(entry)) {
+			continue;
+		}
 		const fullPath = path.join(dir, entry);
 		const stats = statSync(fullPath);
 		if (stats.isDirectory()) {
@@ -150,7 +152,9 @@ function extractLocalSpecifiers(source: string): string[] {
 	const specs: string[] = [];
 	for (const match of source.matchAll(LOCAL_IMPORT)) {
 		const specifier = match[1] ?? match[2];
-		if (specifier) specs.push(specifier);
+		if (specifier) {
+			specs.push(specifier);
+		}
 	}
 	return specs;
 }
@@ -165,9 +169,13 @@ function collectReachableFromRoots(roots: readonly string[]): string[] {
 
 	while (queue.length > 0) {
 		const file = queue.pop();
-		if (!file) break;
+		if (!file) {
+			break;
+		}
 		const key = path.normalize(file);
-		if (seen.has(key)) continue;
+		if (seen.has(key)) {
+			continue;
+		}
 		seen.add(key);
 		reachable.push(file);
 
@@ -215,7 +223,9 @@ function collectPgTableNames(dir: string): string[] {
 	for (const file of collectSourceFiles(dir)) {
 		const source = readFileSync(file, "utf-8");
 		for (const match of source.matchAll(/\bpgTable\(\s*["']([^"']+)["']/g)) {
-			if (match[1]) names.push(match[1]);
+			if (match[1]) {
+				names.push(match[1]);
+			}
 		}
 	}
 	return names;

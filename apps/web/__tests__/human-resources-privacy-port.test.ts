@@ -33,7 +33,7 @@ function createOrgScopedInventory(
 ): PrivacySubjectInventoryPort {
 	return {
 		async listSubjectRecords(input) {
-			return ok(recordsByOrg.get(input.organizationId) ?? []);
+			return await ok(recordsByOrg.get(input.organizationId) ?? []);
 		},
 	};
 }
@@ -64,7 +64,7 @@ describe("Human Resources privacy composition port", () => {
 			): Promise<Result<{ id: string; organizationId: string }>> {
 				auditCalls.push(input);
 				const command = input as { organizationId: string };
-				return ok({
+				return await ok({
 					id: randomUUID(),
 					organizationId: command.organizationId,
 				});
@@ -110,7 +110,9 @@ describe("Human Resources privacy composition port", () => {
 		});
 
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 		expect(result.data.recordCount).toBe(1);
 		expect(result.data.exportReference).toBe(
 			`privacy://organizations/${organizationA}/exports/export-1`,
@@ -168,7 +170,9 @@ describe("Human Resources privacy composition port", () => {
 		});
 
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 		expect(result.data.subjectEmployeeId).toBe(subjectEmployeeId);
 		expect(result.data.exports.length).toBeGreaterThan(0);
 		expect(result.data.activeLegalHolds).toEqual([
@@ -232,7 +236,9 @@ describe("Human Resources privacy composition port", () => {
 		});
 
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 		expect(result.data.allowed).toBe(false);
 		expect(result.data.reasonCode).toBe("employee_relations_case");
 	});

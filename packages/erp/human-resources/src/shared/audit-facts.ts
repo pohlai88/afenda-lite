@@ -24,17 +24,27 @@ function isHrPiiField(field: string): boolean {
 }
 
 function maskHrValue(value: unknown, sensitive: boolean): unknown {
-	if (!sensitive) return value;
-	if (value === null || value === undefined) return value;
-	if (typeof value === "string" && value.length > 0) return MASKED;
-	if (typeof value === "object") return MASKED;
+	if (!sensitive) {
+		return value;
+	}
+	if (value === null || value === undefined) {
+		return value;
+	}
+	if (typeof value === "string" && value.length > 0) {
+		return MASKED;
+	}
+	if (typeof value === "object") {
+		return MASKED;
+	}
 	return value;
 }
 
 function maskHrSnapshot(
 	value: Record<string, unknown> | null | undefined,
 ): Record<string, unknown> | null {
-	if (value === undefined || value === null) return null;
+	if (value === undefined || value === null) {
+		return null;
+	}
 	const auditMasked = maskSensitiveData(value);
 	const out: Record<string, unknown> = {};
 	for (const [key, fieldValue] of Object.entries(auditMasked)) {
@@ -92,13 +102,13 @@ function computeHrDiff(
 	return maskHrChanges(raw);
 }
 
-export type AuditFactContext = {
-	organizationId: string;
+export interface AuditFactContext {
 	actorUserId: string;
 	entity: string;
 	entityId: string;
 	meta: HumanResourcesMutationMeta;
-};
+	organizationId: string;
+}
 
 export function buildCreateAuditFact(input: {
 	context: AuditFactContext;
@@ -107,9 +117,9 @@ export function buildCreateAuditFact(input: {
 }): AuditFactInput {
 	const newValue = maskHrSnapshot(input.newValue);
 	const changes =
-		input.changes !== undefined
-			? maskHrChanges(input.changes)
-			: computeHrDiff(null, input.newValue);
+		input.changes === undefined
+			? computeHrDiff(null, input.newValue)
+			: maskHrChanges(input.changes);
 	return {
 		organizationId: input.context.organizationId,
 		actorUserId: input.context.actorUserId,
@@ -132,9 +142,9 @@ export function buildUpdateAuditFact(input: {
 	const oldValue = maskHrSnapshot(input.oldValue);
 	const newValue = maskHrSnapshot(input.newValue);
 	const changes =
-		input.changes !== undefined
-			? maskHrChanges(input.changes)
-			: computeHrDiff(input.oldValue, input.newValue);
+		input.changes === undefined
+			? computeHrDiff(input.oldValue, input.newValue)
+			: maskHrChanges(input.changes);
 	return {
 		organizationId: input.context.organizationId,
 		actorUserId: input.context.actorUserId,
@@ -201,13 +211,13 @@ export function eventPayloadJson(value: Record<string, unknown>): string {
 	return JSON.stringify(value);
 }
 
-export type HumanResourcesEntityEventPayloadInput = {
-	organizationId: string;
-	entityType: string;
-	entityId: string;
+export interface HumanResourcesEntityEventPayloadInput {
 	actorId: string;
 	correlationId: string;
-};
+	entityId: string;
+	entityType: string;
+	organizationId: string;
+}
 
 export function buildHumanResourcesEntityEventPayload(
 	input: HumanResourcesEntityEventPayloadInput,

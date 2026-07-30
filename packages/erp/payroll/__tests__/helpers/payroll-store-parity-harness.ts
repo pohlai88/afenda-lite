@@ -6,13 +6,13 @@ import { createMemoryMutationPorts } from "./memory-ports";
 
 export type PayrollStoreAdapter = "memory" | "drizzle";
 
-export type PayrollParityHarness = {
-	adapter: PayrollStoreAdapter;
-	store: PayrollStore;
-	ports: MutationPorts;
-	organizationId: string;
+export interface PayrollParityHarness {
 	actorUserId: string;
-};
+	adapter: PayrollStoreAdapter;
+	organizationId: string;
+	ports: MutationPorts;
+	store: PayrollStore;
+}
 
 function uniqueSuffix(adapter: PayrollStoreAdapter): string {
 	return `${adapter}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;

@@ -37,7 +37,9 @@ describe("compensation payroll handoff parity (Slice 8.8)", () => {
 			idempotencySuffix: "map",
 		});
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const compensationHandoff = await getApprovedCompensationHandoff(
 			{
@@ -49,7 +51,9 @@ describe("compensation payroll handoff parity (Slice 8.8)", () => {
 			ready,
 		);
 		expect(compensationHandoff.ok).toBe(true);
-		if (!compensationHandoff.ok || !compensationHandoff.data) return;
+		if (!(compensationHandoff.ok && compensationHandoff.data)) {
+			return;
+		}
 
 		const mapped = mapApprovedPayrollHandoff({
 			compensationHandoff: compensationHandoff.data,
@@ -65,7 +69,9 @@ describe("compensation payroll handoff parity (Slice 8.8)", () => {
 		});
 
 		expect(mapped.ok).toBe(true);
-		if (!mapped.ok) return;
+		if (!mapped.ok) {
+			return;
+		}
 
 		expect(mapped.data.contractVersion).toBe(HANDOFF_PAYROLL_CONTRACT_VERSION);
 		expect(mapped.data.baseAmount).toBe("85000.50");
@@ -89,7 +95,9 @@ describe("compensation payroll handoff parity (Slice 8.8)", () => {
 			idempotencySuffix: "benefits",
 		});
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const plan = await createBenefitPlan(
 			{
@@ -102,7 +110,9 @@ describe("compensation payroll handoff parity (Slice 8.8)", () => {
 			ready,
 		);
 		expect(plan.ok).toBe(true);
-		if (!plan.ok) return;
+		if (!plan.ok) {
+			return;
+		}
 
 		const enrollment = await enrolBenefit(
 			{
@@ -122,7 +132,9 @@ describe("compensation payroll handoff parity (Slice 8.8)", () => {
 			ready,
 		);
 		expect(enrollment.ok).toBe(true);
-		if (!enrollment.ok) return;
+		if (!enrollment.ok) {
+			return;
+		}
 
 		const compensationHandoff = await getApprovedCompensationHandoff(
 			{
@@ -134,7 +146,9 @@ describe("compensation payroll handoff parity (Slice 8.8)", () => {
 			ready,
 		);
 		expect(compensationHandoff.ok).toBe(true);
-		if (!compensationHandoff.ok || !compensationHandoff.data) return;
+		if (!(compensationHandoff.ok && compensationHandoff.data)) {
+			return;
+		}
 
 		const mapped = mapApprovedPayrollHandoff({
 			compensationHandoff: compensationHandoff.data,
@@ -149,7 +163,9 @@ describe("compensation payroll handoff parity (Slice 8.8)", () => {
 			correlationId: "corr-map-handoff-benefits",
 		});
 		expect(mapped.ok).toBe(true);
-		if (!mapped.ok) return;
+		if (!mapped.ok) {
+			return;
+		}
 
 		const employeeContribution = mapped.data.components.find(
 			(c) => c.kind === "benefit_employee_contribution",
@@ -171,7 +187,9 @@ describe("compensation payroll handoff parity (Slice 8.8)", () => {
 			idempotencySuffix: "chain",
 		});
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const compensationHandoff = await getApprovedCompensationHandoff(
 			{
@@ -183,7 +201,9 @@ describe("compensation payroll handoff parity (Slice 8.8)", () => {
 			ready,
 		);
 		expect(compensationHandoff.ok).toBe(true);
-		if (!compensationHandoff.ok || !compensationHandoff.data) return;
+		if (!(compensationHandoff.ok && compensationHandoff.data)) {
+			return;
+		}
 
 		const mapped = mapApprovedPayrollHandoff({
 			compensationHandoff: compensationHandoff.data,
@@ -198,11 +218,15 @@ describe("compensation payroll handoff parity (Slice 8.8)", () => {
 			correlationId: "corr-chain-map",
 		});
 		expect(mapped.ok).toBe(true);
-		if (!mapped.ok) return;
+		if (!mapped.ok) {
+			return;
+		}
 
 		const parsed = parseApprovedPayrollHandoffInput(mapped.data);
 		expect(parsed.ok).toBe(true);
-		if (!parsed.ok) return;
+		if (!parsed.ok) {
+			return;
+		}
 
 		expect(parsed.data.effectiveDate).toBe(mapped.data.effectiveDate);
 		expect(parsed.data.baseAmount).toBe(mapped.data.baseAmount);

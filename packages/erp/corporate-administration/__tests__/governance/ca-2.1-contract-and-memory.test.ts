@@ -148,7 +148,9 @@ describe("CA-2.1 memory governance store", () => {
 			expectedCompanyVersion: 1,
 		});
 		expect(body.ok).toBe(true);
-		if (!body.ok) return;
+		if (!body.ok) {
+			return;
+		}
 
 		const duplicate = await store.createGovernanceBody({
 			organizationId,
@@ -191,7 +193,9 @@ describe("CA-2.1 memory governance store", () => {
 			expectedBodyVersion: 1,
 		});
 		expect(appointed.ok).toBe(true);
-		if (!appointed.ok) return;
+		if (!appointed.ok) {
+			return;
+		}
 
 		const before = await store.listGovernanceMembershipsAsOf({
 			organizationId,

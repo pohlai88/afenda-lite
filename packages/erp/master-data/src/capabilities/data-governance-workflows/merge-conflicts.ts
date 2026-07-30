@@ -253,51 +253,61 @@ export function buildMergeConflictKey(
 function validateMergeConflictResolution(
 	resolution: MergeConflictResolution,
 ): Result<true> {
+	const validationReason =
+		validateConflictIdentityAndValues(resolution) ??
+		validateConflictDecision(resolution) ??
+		validateConflictEvidence(resolution);
+	if (validationReason !== null) {
+		return invalidResolution(resolution, validationReason);
+	}
+	return ok(true);
+}
+
+function validateConflictIdentityAndValues(
+	resolution: MergeConflictResolution,
+): string | null {
 	if (!resolution.id.trim()) {
-		return invalidResolution(resolution, "conflict_id_required");
+		return "conflict_id_required";
 	}
 
 	if (
-		!resolution.field.trim() ||
-		!DOMAIN_FIELD_PATTERN.test(resolution.field)
+		!(resolution.field.trim() && DOMAIN_FIELD_PATTERN.test(resolution.field))
 	) {
-		return invalidResolution(resolution, "invalid_domain_field_identifier");
+		return "invalid_domain_field_identifier";
 	}
 
 	if (resolution.sourceValue === null && resolution.targetValue === null) {
-		return invalidResolution(resolution, "source_or_target_value_required");
+		return "source_or_target_value_required";
 	}
 
 	const sourceValidation = validateValueReference(resolution.sourceValue);
 	if (sourceValidation !== null) {
-		return invalidResolution(resolution, sourceValidation);
+		return sourceValidation;
 	}
 
-	const targetValidation = validateValueReference(resolution.targetValue);
-	if (targetValidation !== null) {
-		return invalidResolution(resolution, targetValidation);
-	}
+	return validateValueReference(resolution.targetValue);
+}
 
+function validateConflictDecision(
+	resolution: MergeConflictResolution,
+): string | null {
 	const allowedDecisions = ALLOWED_DECISIONS_BY_AREA[resolution.area];
 	if (!allowedDecisions.has(resolution.decision)) {
-		return invalidResolution(
-			resolution,
-			"decision_not_allowed_for_conflict_area",
-		);
+		return "decision_not_allowed_for_conflict_area";
 	}
 
 	if (
 		resolution.valueKind === "unique" &&
 		resolution.decision === "retain_both"
 	) {
-		return invalidResolution(resolution, "unique_value_cannot_retain_both");
+		return "unique_value_cannot_retain_both";
 	}
 
 	if (
 		resolution.area === "tax_registrations" &&
 		resolution.decision === "retain_both"
 	) {
-		return invalidResolution(resolution, "tax_registration_cannot_retain_both");
+		return "tax_registration_cannot_retain_both";
 	}
 
 	if (
@@ -305,10 +315,7 @@ function validateMergeConflictResolution(
 		resolution.valueKind === "unique" &&
 		resolution.decision === "retain_both"
 	) {
-		return invalidResolution(
-			resolution,
-			"unique_external_identifier_cannot_retain_both",
-		);
+		return "unique_external_identifier_cannot_retain_both";
 	}
 
 	const reasonRequired =
@@ -316,44 +323,46 @@ function validateMergeConflictResolution(
 		DECISIONS_REQUIRING_REASON.has(resolution.decision);
 
 	if (reasonRequired && !resolution.reason?.trim()) {
-		return invalidResolution(resolution, "resolution_reason_required");
+		return "resolution_reason_required";
 	}
+	return null;
+}
 
+function validateConflictEvidence(
+	resolution: MergeConflictResolution,
+): string | null {
 	const hasResolvedBy = resolution.resolvedBy !== null;
 	const hasResolvedAt = resolution.resolvedAt !== null;
 	if (hasResolvedBy !== hasResolvedAt) {
-		return invalidResolution(resolution, "resolution_actor_timestamp_mismatch");
+		return "resolution_actor_timestamp_mismatch";
 	}
 
 	if (resolution.resolvedBy !== null && !resolution.resolvedBy.trim()) {
-		return invalidResolution(resolution, "resolved_by_must_not_be_blank");
+		return "resolved_by_must_not_be_blank";
 	}
 
 	if (
 		resolution.resolvedAt !== null &&
 		!Number.isFinite(resolution.resolvedAt.getTime())
 	) {
-		return invalidResolution(resolution, "invalid_resolved_at");
+		return "invalid_resolved_at";
 	}
 
 	if (
 		resolution.decision === "manual_resolution_required" &&
 		(resolution.resolvedBy !== null || resolution.resolvedAt !== null)
 	) {
-		return invalidResolution(
-			resolution,
-			"manual_resolution_must_remain_unresolved",
-		);
+		return "manual_resolution_must_remain_unresolved";
 	}
 
 	if (
 		resolution.decision !== "manual_resolution_required" &&
 		(resolution.resolvedBy === null || resolution.resolvedAt === null)
 	) {
-		return invalidResolution(resolution, "resolution_evidence_required");
+		return "resolution_evidence_required";
 	}
 
-	return ok(true);
+	return null;
 }
 
 function validateValueReference(

@@ -38,12 +38,12 @@ function WorkbenchSection({
 	children,
 }: WorkbenchSectionProps) {
 	return (
-		<section className="grid gap-4" aria-labelledby={id}>
+		<section aria-labelledby={id} className="grid gap-4">
 			<div className="grid gap-1">
-				<h2 className="text-base font-semibold tracking-tight" id={id}>
+				<h2 className="font-semibold text-base tracking-tight" id={id}>
 					{title}
 				</h2>
-				<p className="max-w-5xl text-sm leading-5 text-foreground-secondary">
+				<p className="max-w-5xl text-foreground-secondary text-sm leading-5">
 					{description}
 				</p>
 			</div>
@@ -81,14 +81,14 @@ export const Overview: Story = {
 			<div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-5 border-b pb-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
 					<div className="grid gap-2">
-						<p className="text-sm font-medium text-foreground-secondary">
+						<p className="font-medium text-foreground-secondary text-sm">
 							Accounts receivable
 						</p>
 						<div className="grid gap-1">
-							<h1 className="text-2xl font-semibold tracking-tight">
+							<h1 className="font-semibold text-2xl tracking-tight">
 								Posted invoice controls
 							</h1>
-							<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+							<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 								Use blocking confirmation only when continuing may cause
 								permanent or difficult-to-recover operational harm.
 								Authorization and command execution remain feature-owned.
@@ -97,25 +97,25 @@ export const Overview: Story = {
 					</div>
 					<dl className="grid grid-cols-2 gap-x-8 gap-y-3 rounded-lg border bg-card p-4">
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Subject
 							</dt>
 							<dd className="text-sm">Posted invoice</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Scope
 							</dt>
 							<dd className="text-sm">Destructive confirmation</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Ownership
 							</dt>
 							<dd className="text-sm">Irreversible consequence</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Lifecycle
 							</dt>
 							<dd className="text-sm">Open, cancel, confirm</dd>
@@ -133,9 +133,9 @@ export const Overview: Story = {
 
 					<CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 						<div className="grid gap-1">
-							<p className="text-sm font-medium">Delete receivables record</p>
+							<p className="font-medium text-sm">Delete receivables record</p>
 
-							<p className="max-w-xl text-sm leading-6 text-foreground-secondary">
+							<p className="max-w-xl text-foreground-secondary text-sm leading-6">
 								Deletion removes this record from the current register and
 								cannot be restored from this surface.
 							</p>
@@ -186,34 +186,34 @@ export const SemanticUsage: Story = {
 	},
 	render: () => (
 		<WorkbenchSection
+			description="AlertDialog is for irreversible or difficult-to-recover consequences."
 			id="alert-dialog-semantic-usage-title"
 			title="Destructive confirmation only"
-			description="AlertDialog is for irreversible or difficult-to-recover consequences."
 		>
 			<div className="grid w-full max-w-5xl gap-6 sm:grid-cols-2">
 				<StorySection title="Delete a durable record">
-					<p className="text-sm leading-6 text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm leading-6">
 						Use when the record will be permanently removed and normal recovery
 						is not available from the current workflow.
 					</p>
 				</StorySection>
 
 				<StorySection title="Permanently void an entry">
-					<p className="text-sm leading-6 text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm leading-6">
 						Use when the operation creates a permanent ledger consequence that
 						requires explicit operator acknowledgement.
 					</p>
 				</StorySection>
 
 				<StorySection title="Not for reversible review">
-					<p className="text-sm leading-6 text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm leading-6">
 						Posting review, editable confirmation, and correctable decisions
 						belong in Dialog or on the page surface.
 					</p>
 				</StorySection>
 
 				<StorySection title="Not for normal approval">
-					<p className="text-sm leading-6 text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm leading-6">
 						Approval is a governed workflow decision. Use a page action or
 						Dialog unless approval itself creates irreversible harm.
 					</p>
@@ -355,8 +355,8 @@ export const StatesAndAccessibility: Story = {
 					</AlertDialogHeader>
 
 					<p
+						className="text-foreground-secondary text-sm leading-6"
 						id="void-invoice-progress"
-						className="text-sm leading-6 text-foreground-secondary"
 					>
 						Submitting ledger reversal.
 					</p>
@@ -365,10 +365,10 @@ export const StatesAndAccessibility: Story = {
 						<AlertDialogCancel disabled>Keep posted</AlertDialogCancel>
 
 						<AlertDialogAction
-							variant="destructive"
-							disabled
 							aria-busy="true"
 							aria-describedby="void-invoice-progress"
+							disabled
+							variant="destructive"
 						>
 							<Spinner aria-hidden="true" size="sm" />
 							Void invoice
@@ -428,7 +428,7 @@ export const Composition: Story = {
 				</CardHeader>
 
 				<CardContent className="grid gap-4">
-					<p className="text-sm leading-6 text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm leading-6">
 						Use only when the record should be permanently removed from the
 						current register.
 					</p>
@@ -473,7 +473,7 @@ export const Composition: Story = {
 				</CardHeader>
 
 				<CardContent className="grid gap-4">
-					<p className="text-sm leading-6 text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm leading-6">
 						Use when policy requires a permanent reversal and the operator must
 						acknowledge the ledger impact.
 					</p>
@@ -558,7 +558,7 @@ export const DoAndDoNot: Story = {
 						Confirm
 					</Button>
 
-					<p className="text-sm leading-6 text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm leading-6">
 						“Are you sure?” and “Confirm” do not explain the affected object,
 						action, or consequence.
 					</p>
@@ -566,7 +566,7 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do: keep one destructive action">
-				<p className="text-sm leading-6 text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm leading-6">
 					Provide one action-specific destructive control and one clearly safe
 					cancel path.
 				</p>
@@ -584,7 +584,7 @@ export const DoAndDoNot: Story = {
 						</Button>
 					</div>
 
-					<p className="text-sm leading-6 text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm leading-6">
 						Separate harmful outcomes into separate workflows. Do not force the
 						operator to compare them inside one confirmation.
 					</p>
@@ -592,28 +592,28 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do: preserve the safe path">
-				<p className="text-sm leading-6 text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm leading-6">
 					Use contextual labels such as “Keep invoice”, “Keep posted”, or “Keep
 					draft” when they make the safe outcome clearer than “Cancel”.
 				</p>
 			</StorySection>
 
 			<StorySection title="Do not: confirm ordinary approval">
-				<p className="text-sm leading-6 text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm leading-6">
 					Approval, submission, posting review, and other reversible workflow
 					decisions belong on the page or in Dialog.
 				</p>
 			</StorySection>
 
 			<StorySection title="Do: retain action wording while pending">
-				<p className="text-sm leading-6 text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm leading-6">
 					Keep “Delete invoice” or “Void invoice” visible with a Spinner,
 					`disabled`, and `aria-busy="true"`.
 				</p>
 			</StorySection>
 
 			<StorySection title="Do not: place forms inside">
-				<p className="text-sm leading-6 text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm leading-6">
 					Do not place editable fields, reason collection, or multi-step
 					workflows inside AlertDialog. Collect required information before the
 					final confirmation.

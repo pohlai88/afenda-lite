@@ -111,7 +111,7 @@ describe("@afenda/ui-system — ERP status/table chrome (UI-CAP-05 consume)", ()
 	});
 
 	it("DataTable stripes odd rows with bg-table-stripe; header uses surface-sunken", () => {
-		expect(dataTable).toContain("bg-surface-sunken sticky top-0 z-10");
+		expect(dataTable).toContain("sticky top-0 z-10 bg-surface-sunken");
 		expect(dataTable).toContain("bg-table-stripe");
 		expect(dataTable).toMatch(
 			/index % 2 === 1 &&\s*!resolvedSelected\.has\(rowId\) &&\s*"bg-table-stripe"/,

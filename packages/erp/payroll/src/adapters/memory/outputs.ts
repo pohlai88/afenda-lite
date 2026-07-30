@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/useAwait: The deterministic memory adapter implements asynchronous payroll output ports.
 import { ok, type Result } from "@afenda/errors/result";
 
 import type { PayrollRunId } from "../../brands";
@@ -66,14 +67,12 @@ export function createMemoryOutputsMethods(input: {
 				return allowed;
 			}
 
-			let deletedLines = 0;
 			for (const [id, line] of outputs.resultLines.entries()) {
 				if (
 					line.organizationId === deleteInput.organizationId &&
 					line.runId === deleteInput.runId
 				) {
 					outputs.resultLines.delete(id);
-					deletedLines += 1;
 				}
 			}
 			for (const [id, employee] of outputs.runEmployees.entries()) {
@@ -84,8 +83,6 @@ export function createMemoryOutputsMethods(input: {
 					outputs.runEmployees.delete(id);
 				}
 			}
-			void deletedLines;
-
 			const audit = await recordAudit(ports, {
 				organizationId: deleteInput.organizationId,
 				actorUserId: deleteInput.actorUserId,

@@ -38,7 +38,7 @@ export async function createTimePolicy(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TimePolicy>> {
-	return runTimeCommand(input, options, {
+	return await runTimeCommand(input, options, {
 		schema: createTimePolicyInputSchema,
 		invalidMessage: "Invalid time policy create input",
 		command: HUMAN_RESOURCES_COMMAND_TIME_POLICY_CREATE,
@@ -76,7 +76,9 @@ export async function createTimePolicy(
 				organizationId: data.organizationId,
 				idempotencyKey: data.idempotencyKey,
 			});
-			if (!existing.ok) return existing;
+			if (!existing.ok) {
+				return existing;
+			}
 			if (existing.data !== null) {
 				if (existing.data.createRequestFingerprint !== fingerprint) {
 					return fail(
@@ -113,7 +115,7 @@ export async function activateTimePolicy(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TimePolicy>> {
-	return runTimeCommand(input, options, {
+	return await runTimeCommand(input, options, {
 		schema: activateTimePolicyInputSchema,
 		invalidMessage: "Invalid time policy activate input",
 		command: HUMAN_RESOURCES_COMMAND_TIME_POLICY_ACTIVATE,
@@ -126,7 +128,7 @@ export async function supersedeTimePolicy(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<{ superseded: TimePolicy; successor: TimePolicy }>> {
-	return runTimeCommand(input, options, {
+	return await runTimeCommand(input, options, {
 		schema: supersedeTimePolicyInputSchema,
 		invalidMessage: "Invalid time policy supersede input",
 		command: HUMAN_RESOURCES_COMMAND_TIME_POLICY_SUPERSEDE,
@@ -135,7 +137,9 @@ export async function supersedeTimePolicy(
 				organizationId: data.organizationId,
 				policyId: data.policyId,
 			});
-			if (!predecessor.ok) return predecessor;
+			if (!predecessor.ok) {
+				return predecessor;
+			}
 			if (predecessor.data === null) {
 				return invalidInput("Time policy to supersede was not found");
 			}
@@ -178,7 +182,9 @@ export async function supersedeTimePolicy(
 				organizationId: data.organizationId,
 				idempotencyKey: data.idempotencyKey,
 			});
-			if (!replay.ok) return replay;
+			if (!replay.ok) {
+				return replay;
+			}
 			if (replay.data !== null) {
 				if (replay.data.createRequestFingerprint !== fingerprint) {
 					return fail(
@@ -195,7 +201,9 @@ export async function supersedeTimePolicy(
 					organizationId: data.organizationId,
 					policyId: supersededId,
 				});
-				if (!superseded.ok) return superseded;
+				if (!superseded.ok) {
+					return superseded;
+				}
 				if (superseded.data === null) {
 					return invalidInput("Stored predecessor was not found");
 				}
@@ -233,7 +241,7 @@ export async function assignTimePolicy(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TimePolicyAssignment>> {
-	return runTimeCommand(input, options, {
+	return await runTimeCommand(input, options, {
 		schema: assignTimePolicyInputSchema,
 		invalidMessage: "Invalid time policy assignment input",
 		command: HUMAN_RESOURCES_COMMAND_TIME_POLICY_ASSIGN,
@@ -243,9 +251,11 @@ export async function assignTimePolicy(
 				data.effectiveTo !== null &&
 				data.effectiveTo < data.effectiveFrom
 			) {
-				return invalidInput("effectiveTo must be on or after effectiveFrom");
+				return await invalidInput(
+					"effectiveTo must be on or after effectiveFrom",
+				);
 			}
-			return store.assignTimePolicy(
+			return await store.assignTimePolicy(
 				{
 					...data,
 					effectiveTo: data.effectiveTo ?? null,
@@ -260,7 +270,7 @@ export async function assignTimeApprovalAuthority(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TimeApprovalAuthorityAssignment>> {
-	return runTimeCommand(input, options, {
+	return await runTimeCommand(input, options, {
 		schema: assignTimeApprovalAuthorityInputSchema,
 		invalidMessage: "Invalid time approval authority assignment input",
 		command: HUMAN_RESOURCES_COMMAND_TIME_APPROVAL_AUTHORITY_ASSIGN,
@@ -270,9 +280,11 @@ export async function assignTimeApprovalAuthority(
 				data.effectiveTo !== null &&
 				data.effectiveTo < data.effectiveFrom
 			) {
-				return invalidInput("effectiveTo must be on or after effectiveFrom");
+				return await invalidInput(
+					"effectiveTo must be on or after effectiveFrom",
+				);
 			}
-			return store.assignTimeApprovalAuthority(
+			return await store.assignTimeApprovalAuthority(
 				{
 					organizationId: data.organizationId,
 					targetActorUserId: data.targetActorUserId,
@@ -292,7 +304,7 @@ export async function endTimeApprovalAuthorityAssignment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TimeApprovalAuthorityAssignment>> {
-	return runTimeCommand(input, options, {
+	return await runTimeCommand(input, options, {
 		schema: endTimeApprovalAuthorityAssignmentInputSchema,
 		invalidMessage: "Invalid time approval authority end input",
 		command: HUMAN_RESOURCES_COMMAND_TIME_APPROVAL_AUTHORITY_END,
@@ -305,7 +317,7 @@ export async function getTimePolicy(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TimePolicy | null>> {
-	return runTimeQuery(input, options, {
+	return await runTimeQuery(input, options, {
 		schema: getTimePolicyInputSchema,
 		invalidMessage: "Invalid time policy get input",
 		query: HUMAN_RESOURCES_QUERY_TIME_POLICY_GET,
@@ -317,7 +329,7 @@ export async function resolveTimePolicy(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TimePolicy | null>> {
-	return runTimeQuery(input, options, {
+	return await runTimeQuery(input, options, {
 		schema: resolveTimePolicyInputSchema,
 		invalidMessage: "Invalid time policy resolve input",
 		query: HUMAN_RESOURCES_QUERY_TIME_POLICY_RESOLVE,

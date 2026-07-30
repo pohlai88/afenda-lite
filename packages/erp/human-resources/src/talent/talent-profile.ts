@@ -51,7 +51,7 @@ export const HUMAN_RESOURCES_AGGREGATE_TALENT_PROFILE =
 export type HumanResourcesTalentProfileAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_TALENT_PROFILE;
 
-export async function createTalentProfile(
+export function createTalentProfile(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TalentProfile>> {
@@ -93,7 +93,7 @@ export async function createTalentProfile(
 				return ok(existingByKey.data.profile);
 			}
 
-			return await store.createTalentProfile(
+			return store.createTalentProfile(
 				{
 					organizationId: data.organizationId,
 					employeeId: data.employeeId,
@@ -112,7 +112,7 @@ export async function createTalentProfile(
 	});
 }
 
-export async function updateTalentProfile(
+export function updateTalentProfile(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TalentProfile>> {
@@ -122,8 +122,8 @@ export async function updateTalentProfile(
 		command: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_UPDATE,
 		resolveResource: (data, opts) =>
 			resolveTalentProfileResourceFromTalentProfile(data, opts),
-		execute: async (data, { store, ports }) => {
-			return await store.updateTalentProfile(
+		execute: async (data, { store, ports }) =>
+			await store.updateTalentProfile(
 				{
 					organizationId: data.organizationId,
 					talentProfileId: data.talentProfileId,
@@ -136,12 +136,11 @@ export async function updateTalentProfile(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_UPDATE,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function recordTalentProfileAssessment(
+export function recordTalentProfileAssessment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TalentProfileAssessment>> {
@@ -151,8 +150,8 @@ export async function recordTalentProfileAssessment(
 		command: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ASSESSMENT_RECORD,
 		resolveResource: (data, opts) =>
 			resolveTalentProfileResourceFromTalentProfile(data, opts),
-		execute: async (data, { store, ports }) => {
-			return await store.recordTalentProfileAssessment(
+		execute: async (data, { store, ports }) =>
+			await store.recordTalentProfileAssessment(
 				{
 					organizationId: data.organizationId,
 					talentProfileId: data.talentProfileId,
@@ -167,12 +166,11 @@ export async function recordTalentProfileAssessment(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ASSESSMENT_RECORD,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function confirmTalentProfileAssessment(
+export function confirmTalentProfileAssessment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TalentProfileAssessment>> {
@@ -182,8 +180,8 @@ export async function confirmTalentProfileAssessment(
 		command: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ASSESSMENT_CONFIRM,
 		resolveResource: (data, opts) =>
 			resolveActorTalentProfileResource(data, opts),
-		execute: async (data, { store, ports }) => {
-			return await store.confirmTalentProfileAssessment(
+		execute: async (data, { store, ports }) =>
+			await store.confirmTalentProfileAssessment(
 				{
 					organizationId: data.organizationId,
 					assessmentId: data.assessmentId,
@@ -196,12 +194,11 @@ export async function confirmTalentProfileAssessment(
 					operationId:
 						HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ASSESSMENT_CONFIRM,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function archiveTalentProfile(
+export function archiveTalentProfile(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TalentProfile>> {
@@ -211,8 +208,8 @@ export async function archiveTalentProfile(
 		command: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ARCHIVE,
 		resolveResource: (data, opts) =>
 			resolveTalentProfileResourceFromTalentProfile(data, opts),
-		execute: async (data, { store, ports }) => {
-			return await store.archiveTalentProfile(
+		execute: async (data, { store, ports }) =>
+			await store.archiveTalentProfile(
 				{
 					organizationId: data.organizationId,
 					talentProfileId: data.talentProfileId,
@@ -224,12 +221,11 @@ export async function archiveTalentProfile(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ARCHIVE,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function getTalentProfileByEmployee(
+export function getTalentProfileByEmployee(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TalentProfile | null>> {
@@ -239,9 +235,9 @@ export async function getTalentProfileByEmployee(
 		"Invalid talent profile get by employee input",
 	);
 	if (!parsed.ok) {
-		return parsed;
+		return Promise.resolve(parsed);
 	}
-	const includeSensitive = parsed.data.includeSensitive;
+	const { includeSensitive } = parsed.data;
 
 	return runTalentEmployeeScopedQuery(parsed.data, options, {
 		schema: getTalentProfileByEmployeeInputSchema,
@@ -261,7 +257,7 @@ export async function getTalentProfileByEmployee(
 	});
 }
 
-export async function listTalentProfileAssessments(
+export function listTalentProfileAssessments(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ProjectedTalentProfileAssessmentListPage>> {
@@ -271,9 +267,9 @@ export async function listTalentProfileAssessments(
 		"Invalid talent profile assessment list input",
 	);
 	if (!parsed.ok) {
-		return parsed;
+		return Promise.resolve(parsed);
 	}
-	const includeSensitive = parsed.data.includeSensitive;
+	const { includeSensitive } = parsed.data;
 
 	return runTalentQuery(parsed.data, options, {
 		schema: listTalentProfileAssessmentsInputSchema,

@@ -14,9 +14,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type ExpireReservationActionData = {
+export interface ExpireReservationActionData {
 	reservation: StockReservation;
-};
+}
 
 export type ExpireReservationActionState =
 	ActionResult<ExpireReservationActionData> | null;
@@ -40,7 +40,7 @@ export async function expireReservationAction(
 	_prev: ExpireReservationActionState,
 	formData: FormData,
 ): Promise<ExpireReservationActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "expireReservationAction",
 		permission: "inventory.reservation.release",
 		safeMessage: "Could not expire reservation. Try again or contact an admin.",

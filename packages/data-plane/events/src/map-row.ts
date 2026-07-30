@@ -1,28 +1,28 @@
 import { domainEventSchema } from "./schemas";
 import type { DomainEvent } from "./types";
 
-export type DomainEventRow = {
-	id: string;
-	organizationId: string;
-	type: string;
-	sourceModule: string;
-	deduplicationKey?: string | null;
-	correlationId: string;
-	causationId: string | null;
+export interface DomainEventRow {
 	actorUserId: string;
-	payload: unknown;
-	metadata: unknown;
-	status: string;
 	attempts: number;
-	lastError: string | null;
-	processedAt: Date | null;
+	causationId: string | null;
+	correlationId: string;
 	createdAt: Date;
-};
+	deduplicationKey?: string | null;
+	id: string;
+	lastError: string | null;
+	metadata: unknown;
+	organizationId: string;
+	payload: unknown;
+	processedAt: Date | null;
+	sourceModule: string;
+	status: string;
+	type: string;
+}
 
-export type MapDomainEventRowFailure = {
+export interface MapDomainEventRowFailure {
 	ok: false;
 	reason: "invalid_payload" | "invalid_metadata" | "invalid_event";
-};
+}
 
 export type MapDomainEventRowResult =
 	| { ok: true; data: DomainEvent }

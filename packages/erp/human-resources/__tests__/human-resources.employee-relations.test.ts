@@ -186,7 +186,7 @@ async function openCase(
 		idempotencyKey?: string;
 	},
 ) {
-	return openEmployeeCase(
+	return await openEmployeeCase(
 		{
 			organizationId: ORG,
 			actorUserId: OWNER,
@@ -216,7 +216,9 @@ describe("Employee relations case lifecycle", () => {
 			employmentId: employment.id,
 		});
 		expect(opened.ok).toBe(true);
-		if (!opened.ok) return;
+		if (!opened.ok) {
+			return;
+		}
 		expect(opened.data.status).toBe("open");
 		expect(opened.data.allegationSummary).toBe("Alleged policy breach");
 		expect(opened.data.findingCode).toBeNull();
@@ -255,7 +257,9 @@ describe("Employee relations case lifecycle", () => {
 			ready,
 		);
 		expect(finding.ok).toBe(true);
-		if (!finding.ok) return;
+		if (!finding.ok) {
+			return;
+		}
 		expect(finding.data.status).toBe("finding_recorded");
 		expect(finding.data.findingCode).toBe("SUBSTANTIATED");
 
@@ -272,7 +276,9 @@ describe("Employee relations case lifecycle", () => {
 			ready,
 		);
 		expect(recommended.ok).toBe(true);
-		if (!recommended.ok) return;
+		if (!recommended.ok) {
+			return;
+		}
 
 		const approved = await approveEmployeeCaseAction(
 			{
@@ -287,14 +293,18 @@ describe("Employee relations case lifecycle", () => {
 			ready,
 		);
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 
 		const employmentBefore = await ready.store.getEmploymentById({
 			organizationId: ORG,
 			employmentId: employment.id,
 		});
 		expect(employmentBefore.ok).toBe(true);
-		if (!employmentBefore.ok || !employmentBefore.data) return;
+		if (!(employmentBefore.ok && employmentBefore.data)) {
+			return;
+		}
 		expect(employmentBefore.data.status).toBe("active");
 
 		const closed = await closeEmployeeCase(
@@ -309,7 +319,9 @@ describe("Employee relations case lifecycle", () => {
 			ready,
 		);
 		expect(closed.ok).toBe(true);
-		if (!closed.ok) return;
+		if (!closed.ok) {
+			return;
+		}
 		expect(closed.data.status).toBe("closed");
 
 		const employmentAfter = await ready.store.getEmploymentById({
@@ -317,7 +329,9 @@ describe("Employee relations case lifecycle", () => {
 			employmentId: employment.id,
 		});
 		expect(employmentAfter.ok).toBe(true);
-		if (!employmentAfter.ok || !employmentAfter.data) return;
+		if (!(employmentAfter.ok && employmentAfter.data)) {
+			return;
+		}
 		expect(employmentAfter.data.status).toBe("active");
 	});
 
@@ -328,7 +342,9 @@ describe("Employee relations case lifecycle", () => {
 			employeeId: employee.id,
 			employmentId: employment.id,
 		});
-		if (!opened.ok) return;
+		if (!opened.ok) {
+			return;
+		}
 
 		const outsiderRead = await getEmployeeCaseById(
 			{
@@ -368,7 +384,9 @@ describe("Employee relations case lifecycle", () => {
 			employeeId: employee.id,
 			employmentId: employment.id,
 		});
-		if (!opened.ok) return;
+		if (!opened.ok) {
+			return;
+		}
 
 		const denied = await getEmployeeCaseById(
 			{
@@ -398,7 +416,9 @@ describe("Employee relations case lifecycle", () => {
 			employmentId: employment.id,
 			conflictedActorUserIds: [PARTICIPANT],
 		});
-		if (!opened.ok) return;
+		if (!opened.ok) {
+			return;
+		}
 
 		const assign = await assignEmployeeCaseOwner(
 			{
@@ -424,7 +444,9 @@ describe("Employee relations case lifecycle", () => {
 			employeeId: employee.id,
 			employmentId: employment.id,
 		});
-		if (!opened.ok) return;
+		if (!opened.ok) {
+			return;
+		}
 
 		const evidence = await addEmployeeCaseEvidenceReference(
 			{
@@ -448,7 +470,9 @@ describe("Employee relations case lifecycle", () => {
 			ready,
 		);
 		expect(timeline.ok).toBe(true);
-		if (!timeline.ok) return;
+		if (!timeline.ok) {
+			return;
+		}
 		expect(
 			timeline.data.events.some(
 				(e) => e.eventKind === "evidence_reference_added",
@@ -463,7 +487,9 @@ describe("Employee relations case lifecycle", () => {
 			employeeId: employee.id,
 			employmentId: employment.id,
 		});
-		if (!opened.ok) return;
+		if (!opened.ok) {
+			return;
+		}
 
 		const interim = await issueInterimEmployeeMeasure(
 			{
@@ -492,7 +518,9 @@ describe("Employee relations case lifecycle", () => {
 			employeeId: employee.id,
 			employmentId: employment.id,
 		});
-		if (!opened.ok) return;
+		if (!opened.ok) {
+			return;
+		}
 
 		await recordEmployeeCaseEvent(
 			{
@@ -517,7 +545,9 @@ describe("Employee relations case lifecycle", () => {
 			},
 			ready,
 		);
-		if (!finding.ok) return;
+		if (!finding.ok) {
+			return;
+		}
 
 		const recommended = await recommendEmployeeCaseAction(
 			{
@@ -531,7 +561,9 @@ describe("Employee relations case lifecycle", () => {
 			},
 			ready,
 		);
-		if (!recommended.ok) return;
+		if (!recommended.ok) {
+			return;
+		}
 
 		const approved = await approveEmployeeCaseAction(
 			{
@@ -545,7 +577,9 @@ describe("Employee relations case lifecycle", () => {
 			},
 			ready,
 		);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 
 		const appeal = await recordEmployeeCaseAppeal(
 			{
@@ -560,7 +594,9 @@ describe("Employee relations case lifecycle", () => {
 			ready,
 		);
 		expect(appeal.ok).toBe(true);
-		if (!appeal.ok) return;
+		if (!appeal.ok) {
+			return;
+		}
 		expect(appeal.data.originalFindingCode).toBe("SUBSTANTIATED");
 
 		const resolved = await resolveEmployeeCaseAppeal(
@@ -576,7 +612,9 @@ describe("Employee relations case lifecycle", () => {
 			ready,
 		);
 		expect(resolved.ok).toBe(true);
-		if (!resolved.ok) return;
+		if (!resolved.ok) {
+			return;
+		}
 
 		const after = await getEmployeeCaseById(
 			{
@@ -588,7 +626,9 @@ describe("Employee relations case lifecycle", () => {
 			ready,
 		);
 		expect(after.ok).toBe(true);
-		if (!after.ok) return;
+		if (!after.ok) {
+			return;
+		}
 		expect(after.data.status).toBe("action_approved");
 		expect(after.data.findingCode).toBe("SUBSTANTIATED");
 	});
@@ -600,7 +640,9 @@ describe("Employee relations case lifecycle", () => {
 			employeeId: employee.id,
 			employmentId: employment.id,
 		});
-		if (!opened.ok) return;
+		if (!opened.ok) {
+			return;
+		}
 
 		await recordEmployeeCaseEvent(
 			{
@@ -625,7 +667,9 @@ describe("Employee relations case lifecycle", () => {
 			},
 			ready,
 		);
-		if (!finding.ok) return;
+		if (!finding.ok) {
+			return;
+		}
 
 		const closed = await closeEmployeeCase(
 			{
@@ -638,7 +682,9 @@ describe("Employee relations case lifecycle", () => {
 			},
 			ready,
 		);
-		if (!closed.ok) return;
+		if (!closed.ok) {
+			return;
+		}
 
 		const blocked = await recordEmployeeCaseEvent(
 			{
@@ -667,7 +713,9 @@ describe("Employee relations case lifecycle", () => {
 			ready,
 		);
 		expect(reopened.ok).toBe(true);
-		if (!reopened.ok) return;
+		if (!reopened.ok) {
+			return;
+		}
 		expect(reopened.data.status).toBe("open");
 	});
 
@@ -678,7 +726,9 @@ describe("Employee relations case lifecycle", () => {
 			employeeId: employee.id,
 			employmentId: employment.id,
 		});
-		if (!opened.ok) return;
+		if (!opened.ok) {
+			return;
+		}
 
 		await recordEmployeeCaseEvent(
 			{
@@ -703,7 +753,9 @@ describe("Employee relations case lifecycle", () => {
 			},
 			ready,
 		);
-		if (!finding.ok) return;
+		if (!finding.ok) {
+			return;
+		}
 
 		const recommended = await recommendEmployeeCaseAction(
 			{
@@ -717,7 +769,9 @@ describe("Employee relations case lifecycle", () => {
 			},
 			ready,
 		);
-		if (!recommended.ok) return;
+		if (!recommended.ok) {
+			return;
+		}
 
 		const approved = await approveEmployeeCaseAction(
 			{
@@ -732,7 +786,9 @@ describe("Employee relations case lifecycle", () => {
 			ready,
 		);
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 
 		const outcome = await getEmployeeCaseOutcome(
 			{
@@ -744,7 +800,9 @@ describe("Employee relations case lifecycle", () => {
 			ready,
 		);
 		expect(outcome.ok).toBe(true);
-		if (!outcome.ok) return;
+		if (!outcome.ok) {
+			return;
+		}
 		expect(outcome.data.terminationHandoff).toMatchObject({
 			caseId: finding.data.id,
 			actionId: recommended.data.id,
@@ -765,7 +823,9 @@ describe("Employee relations case lifecycle", () => {
 			employeeId: employee.id,
 			employmentId: employment.id,
 		});
-		if (!opened.ok) return;
+		if (!opened.ok) {
+			return;
+		}
 
 		const crossOrg = await getEmployeeCaseById(
 			{
@@ -803,7 +863,9 @@ describe("Employee relations case lifecycle", () => {
 				]),
 			},
 		);
-		if (!adminEmployee.ok) return;
+		if (!adminEmployee.ok) {
+			return;
+		}
 		const mappedAdmin = await mapActorToEmployee(ready.store, {
 			organizationId: ORG,
 			userId: OUTSIDER,
@@ -811,13 +873,17 @@ describe("Employee relations case lifecycle", () => {
 			actorUserId: OWNER,
 			effectiveFrom: "2025-01-01",
 		});
-		if (!mappedAdmin.ok) return;
+		if (!mappedAdmin.ok) {
+			return;
+		}
 
 		const opened = await openCase(ready, {
 			employeeId: employee.id,
 			employmentId: employment.id,
 		});
-		if (!opened.ok) return;
+		if (!opened.ok) {
+			return;
+		}
 
 		const history = await getEmployeeRelationsHistoryByEmployee(
 			{
@@ -829,7 +895,9 @@ describe("Employee relations case lifecycle", () => {
 			ready,
 		);
 		expect(history.ok).toBe(true);
-		if (!history.ok) return;
+		if (!history.ok) {
+			return;
+		}
 		expect(history.data.totalCount).toBeGreaterThanOrEqual(1);
 	});
 });

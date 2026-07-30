@@ -10,88 +10,88 @@ import type {
 } from "@afenda/master-data";
 
 /** Same-TX audit fact — production adapter writes `platform_audit_log`. */
-export type AuditFactInput = {
-	organizationId: string;
+export interface AuditFactInput {
+	action: "CREATE" | "UPDATE" | "DELETE";
 	actorUserId: string;
+	changes: Change[];
 	correlationId: string;
 	entity: string;
 	entityId: string;
-	action: "CREATE" | "UPDATE" | "DELETE";
-	changes: Change[];
-	oldValue?: Record<string, unknown> | null;
 	newValue?: Record<string, unknown> | null;
-};
-
-export type AuditFactPort = {
-	record(input: AuditFactInput): Promise<Result<{ id: string }>>;
-};
-
-export type OutboxFactInput = {
+	oldValue?: Record<string, unknown> | null;
 	organizationId: string;
+}
+
+export interface AuditFactPort {
+	record: (input: AuditFactInput) => Promise<Result<{ id: string }>>;
+}
+
+export interface OutboxFactInput {
 	actorUserId: string;
 	correlationId: string;
-	type: PurchasingEventType;
+	organizationId: string;
 	payload: Record<string, unknown>;
-};
+	type: PurchasingEventType;
+}
 
-export type OutboxPort = {
-	append(input: OutboxFactInput): Promise<Result<{ id: string }>>;
-};
+export interface OutboxPort {
+	append: (input: OutboxFactInput) => Promise<Result<{ id: string }>>;
+}
 
-export type MutationPorts = {
+export interface MutationPorts {
 	audit: AuditFactPort;
 	outbox: OutboxPort;
-};
+}
 
 /**
  * Downstream commitment snapshot for close — adapters live in apps/web.
  * Package must NOT import receiving/payables.
  */
-export type PurchaseOrderCommitmentStatus = {
-	orderedQuantity: string;
-	receivedQuantity: string;
-	invoicedQuantity: string;
+export interface PurchaseOrderCommitmentStatus {
 	hasPostedReceipt: boolean;
 	hasPostedSupplierInvoice: boolean;
-};
+	invoicedQuantity: string;
+	orderedQuantity: string;
+	receivedQuantity: string;
+}
 
-export type PurchaseOrderCommitmentQueryPort = {
-	getCommitmentStatus(input: {
+export interface PurchaseOrderCommitmentQueryPort {
+	getCommitmentStatus: (input: {
 		organizationId: string;
 		purchaseOrderId: string;
-	}): Promise<Result<PurchaseOrderCommitmentStatus>>;
-};
+	}) => Promise<Result<PurchaseOrderCommitmentStatus>>;
+}
 
 /** Resolve Authority B masters — never dual-write `md_*`. */
-export type MasterLookupPort = {
-	getPartyById(
+export interface MasterLookupPort {
+	getItemById: (
 		organizationId: string,
 		id: string,
 		actorUserId: string,
-	): Promise<Result<Party | null>>;
-	getItemById(
+	) => Promise<Result<Item | null>>;
+	getPartyById: (
 		organizationId: string,
 		id: string,
 		actorUserId: string,
-	): Promise<Result<Item | null>>;
-	getPaymentTermById(
+	) => Promise<Result<Party | null>>;
+	getPaymentTermById: (
 		organizationId: string,
 		id: string,
 		actorUserId: string,
-	): Promise<Result<PaymentTerm | null>>;
-	getRefUomById(
+	) => Promise<Result<PaymentTerm | null>>;
+	getRefUomById: (
 		organizationId: string,
 		id: string,
 		actorUserId: string,
-	): Promise<Result<RefUom | null>>;
-	hasActiveSupplierRole(
+	) => Promise<Result<RefUom | null>>;
+	getWarehouseById: (
+		organizationId: string,
+		id: string,
+		actorUserId: string,
+	) => Promise<Result<Warehouse | null>>;
+	hasActiveSupplierRole: (
 		organizationId: string,
 		partyId: string,
 		actorUserId: string,
-	): Promise<Result<boolean>>;
-	getWarehouseById(
-		organizationId: string,
-		id: string,
-		actorUserId: string,
-	): Promise<Result<Warehouse | null>>;
-};
+	) => Promise<Result<boolean>>;
+}

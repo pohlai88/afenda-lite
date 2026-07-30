@@ -8,14 +8,14 @@ export default function OperatorNotFound() {
 	return (
 		<PublicMessageShell
 			asLandmark={false}
-			title="Not found"
 			footer={
-				<Button asChild variant="outline" className="mt-2">
+				<Button asChild className="mt-2" variant="outline">
 					<Link href={OPERATOR_ADMIN_PATH}>Back to admin</Link>
 				</Button>
 			}
+			title="Page not found"
 		>
-			<p className="max-w-sm text-sm text-foreground-secondary">
+			<p className="max-w-sm text-foreground-secondary text-sm">
 				That operator page does not exist.
 			</p>
 		</PublicMessageShell>

@@ -1,5 +1,3 @@
-import { expect } from "vitest";
-
 import type { HumanResourcesCommandOptions } from "../../src/command-options";
 import { createEmployee } from "../../src/core/employee";
 import { createEmployment } from "../../src/core/employment";
@@ -24,6 +22,7 @@ import {
 	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_MANAGER_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_OWN_READ,
 } from "../../src/permissions";
+import { helperAssert as assert } from "./helper-assert";
 import { mapActorToEmployee } from "./identity-resolver";
 import { createGrantingHumanResourcesAuthorization } from "./memory-authorization";
 import { publishAndOpenPerformanceCycle } from "./performance-cycle-harness";
@@ -61,7 +60,7 @@ export async function seedPerformanceCorrelationWorker(input: {
 		},
 		perfReady,
 	);
-	expect(employee.ok).toBe(true);
+	assert.strictEqual(employee.ok, true);
 	if (!employee.ok) {
 		throw employee.error;
 	}
@@ -84,7 +83,7 @@ export async function seedPerformanceCorrelationWorker(input: {
 		},
 		perfReady,
 	);
-	expect(employment.ok).toBe(true);
+	assert.strictEqual(employment.ok, true);
 	if (!employment.ok) {
 		throw employment.error;
 	}
@@ -117,7 +116,7 @@ export async function seedDraftPerformanceCycle(input: {
 		},
 		input.perfReady,
 	);
-	expect(cycle.ok).toBe(true);
+	assert.strictEqual(cycle.ok, true);
 	if (!cycle.ok) {
 		throw cycle.error;
 	}
@@ -142,7 +141,7 @@ export async function seedOpenPerformanceCycleWithParticipant(input: {
 			employmentId: input.worker.employmentId,
 		},
 	});
-	expect(opened.ok).toBe(true);
+	assert.strictEqual(opened.ok, true);
 	if (!opened.ok) {
 		throw opened.error;
 	}
@@ -156,11 +155,11 @@ export async function seedOpenPerformanceCycleWithParticipant(input: {
 		},
 		input.perfReady,
 	);
-	expect(participants.ok).toBe(true);
+	assert.strictEqual(participants.ok, true);
 	if (!participants.ok) {
 		throw participants.error;
 	}
-	const participant = participants.data[0];
+	const [participant] = participants.data;
 	if (!participant) {
 		throw new Error("Expected cycle participant after open");
 	}
@@ -194,7 +193,7 @@ export async function seedSubmittedPerformanceGoal(input: {
 		},
 		input.perfReady,
 	);
-	expect(goal.ok).toBe(true);
+	assert.strictEqual(goal.ok, true);
 	if (!goal.ok) {
 		throw goal.error;
 	}
@@ -209,7 +208,7 @@ export async function seedSubmittedPerformanceGoal(input: {
 		},
 		input.perfReady,
 	);
-	expect(submitted.ok).toBe(true);
+	assert.strictEqual(submitted.ok, true);
 	if (!submitted.ok) {
 		throw submitted.error;
 	}
@@ -239,7 +238,7 @@ export async function seedManagerSubmittedPerformanceReview(input: {
 		},
 		input.perfReady,
 	);
-	expect(review.ok).toBe(true);
+	assert.strictEqual(review.ok, true);
 	if (!review.ok) {
 		throw review.error;
 	}
@@ -256,7 +255,7 @@ export async function seedManagerSubmittedPerformanceReview(input: {
 		},
 		input.perfReady,
 	);
-	expect(self.ok).toBe(true);
+	assert.strictEqual(self.ok, true);
 	if (!self.ok) {
 		throw self.error;
 	}
@@ -273,7 +272,7 @@ export async function seedManagerSubmittedPerformanceReview(input: {
 		},
 		input.perfReady,
 	);
-	expect(managerAssessment.ok).toBe(true);
+	assert.strictEqual(managerAssessment.ok, true);
 	if (!managerAssessment.ok) {
 		throw managerAssessment.error;
 	}

@@ -26,8 +26,12 @@ export const HUMAN_RESOURCES_AGGREGATE_DOCUMENT_REQUIREMENT =
 	"document_requirement" as const;
 export type HumanResourcesDocumentRequirementAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_DOCUMENT_REQUIREMENT;
+type EmployeeSpecificApplicability = Extract<
+	DocumentRequirementApplicability,
+	{ kind: "employee_ids" }
+>;
 
-async function validateApplicabilityReferences(
+function validateApplicabilityReferences(
 	store: Pick<HumanResourcesStore, "getEmployeeById">,
 	input: {
 		organizationId: string;
@@ -35,28 +39,50 @@ async function validateApplicabilityReferences(
 	},
 ): Promise<Result<void>> {
 	if (input.applicability.kind === "all_employees") {
-		return { ok: true, data: undefined };
+		return Promise.resolve({ ok: true, data: undefined });
 	}
-	for (const employeeId of input.applicability.employeeIds) {
-		const employee = await store.getEmployeeById({
-			organizationId: input.organizationId,
-			employeeId,
-		});
-		if (!employee.ok) return employee;
-		if (employee.data === null) {
-			return fail(
-				"NOT_FOUND",
-				"Applicability employee not found",
-				humanResourcesErrorDetails(
-					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
-				),
-			);
-		}
-	}
-	return { ok: true, data: undefined };
+	return validateApplicabilityEmployeeAtIndex(store, {
+		organizationId: input.organizationId,
+		employeeIds: input.applicability.employeeIds,
+		index: 0,
+	});
 }
 
-export async function createDocumentRequirement(
+async function validateApplicabilityEmployeeAtIndex(
+	store: Pick<HumanResourcesStore, "getEmployeeById">,
+	input: {
+		organizationId: string;
+		employeeIds: EmployeeSpecificApplicability["employeeIds"];
+		index: number;
+	},
+): Promise<Result<void>> {
+	const employeeId = input.employeeIds[input.index];
+	if (employeeId === undefined) {
+		return { ok: true, data: undefined };
+	}
+	const employee = await store.getEmployeeById({
+		organizationId: input.organizationId,
+		employeeId,
+	});
+	if (!employee.ok) {
+		return employee;
+	}
+	if (employee.data === null) {
+		return fail(
+			"NOT_FOUND",
+			"Applicability employee not found",
+			humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			),
+		);
+	}
+	return validateApplicabilityEmployeeAtIndex(store, {
+		...input,
+		index: input.index + 1,
+	});
+}
+
+export function createDocumentRequirement(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<DocumentRequirement>> {
@@ -69,7 +95,9 @@ export async function createDocumentRequirement(
 				organizationId: data.organizationId,
 				applicability: data.applicability,
 			});
-			if (!applicability.ok) return applicability;
+			if (!applicability.ok) {
+				return applicability;
+			}
 
 			const existing = await store.findDocumentRequirementByCode({
 				organizationId: data.organizationId,
@@ -107,7 +135,7 @@ export async function createDocumentRequirement(
 	});
 }
 
-export async function updateDocumentRequirement(
+export function updateDocumentRequirement(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<DocumentRequirement>> {
@@ -121,7 +149,9 @@ export async function updateDocumentRequirement(
 					organizationId: data.organizationId,
 					applicability: data.applicability,
 				});
-				if (!applicability.ok) return applicability;
+				if (!applicability.ok) {
+					return applicability;
+				}
 			}
 			return store.updateDocumentRequirement(
 				{
@@ -145,7 +175,7 @@ export async function updateDocumentRequirement(
 	});
 }
 
-export async function publishDocumentRequirement(
+export function publishDocumentRequirement(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<DocumentRequirement>> {
@@ -170,7 +200,7 @@ export async function publishDocumentRequirement(
 	});
 }
 
-export async function retireDocumentRequirement(
+export function retireDocumentRequirement(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<DocumentRequirement>> {

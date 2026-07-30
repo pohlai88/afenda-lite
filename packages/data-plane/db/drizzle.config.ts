@@ -10,7 +10,7 @@ import { requireMigrationDatabaseUrl } from "./src/env";
  */
 function migrationCredentials(): { url: string } | undefined {
 	if (!process.env.DATABASE_URL) {
-		return undefined;
+		return;
 	}
 	return { url: requireMigrationDatabaseUrl() };
 }

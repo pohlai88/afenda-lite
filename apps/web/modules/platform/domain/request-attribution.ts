@@ -8,10 +8,10 @@ import { headers } from "next/headers";
 const MAX_ATTRIBUTION_IP_ADDRESS_LENGTH = 128;
 const MAX_ATTRIBUTION_USER_AGENT_LENGTH = 512;
 
-export type RequestAttribution = {
+export interface RequestAttribution {
 	ipAddress: string | undefined;
 	userAgent: string | undefined;
-};
+}
 
 function truncate(value: string, max: number): string {
 	return value.length <= max ? value : value.slice(0, max);

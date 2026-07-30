@@ -15,6 +15,8 @@ import { expect, userEvent, within } from "storybook/test";
 import { contractDocsParameters } from "./contract-docs";
 import { contractEvidence, StorySection } from "./evidence";
 
+const ignoreDateChange = () => undefined;
+
 const evidence = contractEvidence("ui.date-picker");
 
 /** Fixed July 2026 surface for stable visual and docs evidence. */
@@ -56,14 +58,14 @@ export const Overview: Story = {
 			<main className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-5 border-b pb-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
 					<div className="grid gap-2">
-						<p className="text-sm font-medium text-foreground-secondary">
+						<p className="font-medium text-foreground-secondary text-sm">
 							Accounts receivable
 						</p>
 						<div className="grid gap-1">
-							<h1 className="text-2xl font-semibold tracking-tight">
+							<h1 className="font-semibold text-2xl tracking-tight">
 								July period close dates
 							</h1>
-							<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+							<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 								DatePicker composes labelled single-date and range selection
 								with calendar disclosure. Feature code owns availability, time
 								zone, and validation — visible days are not eligibility.
@@ -72,25 +74,25 @@ export const Overview: Story = {
 					</div>
 					<dl className="grid grid-cols-2 gap-x-8 gap-y-3 rounded-lg border bg-card p-4">
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Subject
 							</dt>
 							<dd className="text-sm">Period close dates</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Area
 							</dt>
 							<dd className="text-sm">Accounts receivable</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Scope
 							</dt>
 							<dd className="text-sm">Single and range selection</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								State
 							</dt>
 							<dd className="text-sm">July 2026 close</dd>
@@ -109,32 +111,32 @@ export const Overview: Story = {
 							</div>
 							<div className="flex flex-wrap items-center gap-2">
 								<Badge variant="outline">Period close</Badge>
-								<StatusBadge status="pending" label="Awaiting confirmation" />
+								<StatusBadge label="Awaiting confirmation" status="pending" />
 							</div>
 						</div>
 					</CardHeader>
 					<CardContent className="grid gap-6 sm:grid-cols-2">
 						<FormField
-							label="Posting cut-off"
 							description="Single calendar date for the July batch."
+							label="Posting cut-off"
 							required
 						>
 							<DatePicker
 								id="overview-cutoff"
-								value={periodCloseDate}
-								onChange={() => undefined}
+								onChange={ignoreDateChange}
 								placeholder="Select cut-off date"
+								value={periodCloseDate}
 							/>
 						</FormField>
 						<FormField
-							label="Collection window"
 							description="Inclusive from/to range for follow-up."
+							label="Collection window"
 						>
 							<DateRangePicker
 								id="overview-window"
-								value={{ from: rangeStart, to: rangeEnd }}
-								onChange={() => undefined}
+								onChange={ignoreDateChange}
 								placeholder="Select collection window"
+								value={{ from: rangeStart, to: rangeEnd }}
 							/>
 						</FormField>
 					</CardContent>
@@ -160,8 +162,8 @@ export const SemanticUsage: Story = {
 				<FormField label="Posting cut-off" required>
 					<DatePicker
 						id="semantic-cutoff"
+						onChange={ignoreDateChange}
 						value={periodCloseDate}
-						onChange={() => undefined}
 					/>
 				</FormField>
 			</StorySection>
@@ -169,21 +171,21 @@ export const SemanticUsage: Story = {
 				<FormField label="Collection window">
 					<DateRangePicker
 						id="semantic-window"
+						onChange={ignoreDateChange}
 						value={{ from: rangeStart, to: rangeEnd }}
-						onChange={() => undefined}
 					/>
 				</FormField>
 			</StorySection>
 			<StorySection title="Invoice due date">
 				<FormField
-					label="Due date"
 					description="Displayed as a calendar date — not an instant."
+					label="Due date"
 				>
 					<DatePicker
 						id="semantic-due"
-						value={periodCloseDate}
-						onChange={() => undefined}
+						onChange={ignoreDateChange}
 						placeholder="Select due date"
+						value={periodCloseDate}
 					/>
 				</FormField>
 			</StorySection>
@@ -206,12 +208,12 @@ export const ControlledUsage: Story = {
 			<FormField label="Invoice due date" required>
 				<DatePicker
 					id="usage-due"
-					value={periodCloseDate}
-					onChange={() => undefined}
+					onChange={ignoreDateChange}
 					placeholder="Select due date"
+					value={periodCloseDate}
 				/>
 			</FormField>
-			<p className="text-sm text-foreground-secondary">
+			<p className="text-foreground-secondary text-sm">
 				Locale and week-start stay with the feature. The control formats the
 				selected day for display only.
 			</p>
@@ -232,15 +234,15 @@ export const AdaptiveLayout: Story = {
 	render: () => (
 		<div className="grid w-full max-w-5xl gap-8">
 			<StorySection title="Narrow invoice drawer">
-				<div className="w-full max-w-xs rounded-xl border border-dashed border-border p-4">
+				<div className="w-full max-w-xs rounded-xl border border-border border-dashed p-4">
 					<FormField
-						label="Contractual payment due date"
 						description="Calendar date under the supplier payment terms."
+						label="Contractual payment due date"
 					>
 						<DatePicker
 							id="adaptive-due"
+							onChange={ignoreDateChange}
 							value={periodCloseDate}
-							onChange={() => undefined}
 						/>
 					</FormField>
 				</div>
@@ -248,13 +250,13 @@ export const AdaptiveLayout: Story = {
 			<StorySection title="Range inside a constrained filter panel">
 				<div className="w-full max-w-sm">
 					<FormField
-						label="Inclusive collection follow-up window"
 						description="Both boundary dates remain visible and independently validated."
+						label="Inclusive collection follow-up window"
 					>
 						<DateRangePicker
 							id="adaptive-range"
+							onChange={ignoreDateChange}
 							value={{ from: rangeStart, to: rangeEnd }}
-							onChange={() => undefined}
 						/>
 					</FormField>
 				</div>
@@ -276,51 +278,51 @@ export const StatesAndAccessibility: Story = {
 	render: () => (
 		<div className="grid w-full max-w-md gap-6">
 			<FormField
-				label="Due date"
 				description="No value yet — placeholder remains."
+				label="Due date"
 			>
 				<DatePicker
 					id="a11y-empty"
-					onChange={() => undefined}
+					onChange={ignoreDateChange}
 					placeholder="Select due date"
 				/>
 			</FormField>
-			<FormField label="Due date" description="Ready for selection.">
+			<FormField description="Ready for selection." label="Due date">
 				<DatePicker
 					id="a11y-ready"
+					onChange={ignoreDateChange}
 					value={periodCloseDate}
-					onChange={() => undefined}
 				/>
 			</FormField>
 			<FormField
-				label="Closed period"
 				description="Selection locked by policy."
+				label="Closed period"
 			>
 				<DatePicker
-					id="a11y-disabled"
-					value={periodCloseDate}
-					onChange={() => undefined}
 					disabled
+					id="a11y-disabled"
+					onChange={ignoreDateChange}
+					value={periodCloseDate}
 				/>
 			</FormField>
 			<FormField
-				label="Cut-off date"
 				error="Enter a cut-off date within the open ledger window."
+				label="Cut-off date"
 			>
 				<DatePicker
-					onChange={() => undefined}
+					onChange={ignoreDateChange}
 					placeholder="Select cut-off date"
 				/>
 			</FormField>
 			<FormField
-				label="Collection window"
 				description="Partial range — from selected, to still open."
+				label="Collection window"
 			>
 				<DateRangePicker
 					id="a11y-partial"
-					value={{ from: rangeStart }}
-					onChange={() => undefined}
+					onChange={ignoreDateChange}
 					placeholder="Select collection window"
+					value={{ from: rangeStart }}
 				/>
 			</FormField>
 		</div>
@@ -330,7 +332,9 @@ export const StatesAndAccessibility: Story = {
 		const [emptyTrigger] = canvas.getAllByLabelText("Due date", {
 			selector: "button",
 		});
-		if (!emptyTrigger) throw new Error("Expected the empty due-date trigger.");
+		if (!emptyTrigger) {
+			throw new Error("Expected the empty due-date trigger.");
+		}
 		const disabledTrigger = canvas.getByLabelText("Closed period", {
 			selector: "button",
 		});
@@ -355,26 +359,26 @@ export const VariantsAndSizes: Story = {
 	render: () => (
 		<div className="grid w-full max-w-5xl gap-6 sm:grid-cols-2">
 			<div className="grid gap-2">
-				<p className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+				<p className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 					DatePicker
 				</p>
 				<FormField label="Single date">
 					<DatePicker
 						id="variant-single"
+						onChange={ignoreDateChange}
 						value={periodCloseDate}
-						onChange={() => undefined}
 					/>
 				</FormField>
 			</div>
 			<div className="grid gap-2">
-				<p className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+				<p className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 					DateRangePicker
 				</p>
 				<FormField label="Date range">
 					<DateRangePicker
 						id="variant-range"
+						onChange={ignoreDateChange}
 						value={{ from: rangeStart, to: rangeEnd }}
-						onChange={() => undefined}
 					/>
 				</FormField>
 			</div>
@@ -402,7 +406,7 @@ export const Composition: Story = {
 					</div>
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="secondary">Finance</Badge>
-						<StatusBadge status="pending" label="Awaiting approval" />
+						<StatusBadge label="Awaiting approval" status="pending" />
 					</div>
 				</div>
 			</CardHeader>
@@ -410,15 +414,15 @@ export const Composition: Story = {
 				<FormField label="Invoice date" required>
 					<DatePicker
 						id="composition-invoice"
+						onChange={ignoreDateChange}
 						value={periodCloseDate}
-						onChange={() => undefined}
 					/>
 				</FormField>
 				<FormField label="Collection window">
 					<DateRangePicker
 						id="composition-window"
+						onChange={ignoreDateChange}
 						value={{ from: rangeStart, to: rangeEnd }}
-						onChange={() => undefined}
 					/>
 				</FormField>
 			</CardContent>
@@ -442,16 +446,16 @@ export const DoAndDoNot: Story = {
 				<FormField label="Posting cut-off" required>
 					<DatePicker
 						id="do-label"
+						onChange={ignoreDateChange}
 						value={periodCloseDate}
-						onChange={() => undefined}
 					/>
 				</FormField>
 			</StorySection>
 
 			<StorySection title="Do not: leave an unlabeled trigger">
 				<div className="grid gap-2">
-					<DatePicker value={periodCloseDate} onChange={() => undefined} />
-					<p className="text-sm text-foreground-secondary">
+					<DatePicker onChange={ignoreDateChange} value={periodCloseDate} />
+					<p className="text-foreground-secondary text-sm">
 						Without a FormField label, operators cannot tell what the date
 						governs.
 					</p>
@@ -462,21 +466,21 @@ export const DoAndDoNot: Story = {
 				<FormField label="Collection window">
 					<DateRangePicker
 						id="do-range"
+						onChange={ignoreDateChange}
 						value={{ from: rangeStart, to: rangeEnd }}
-						onChange={() => undefined}
 					/>
 				</FormField>
 			</StorySection>
 
 			<StorySection title="Do not: use DatePicker for date-time instants">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Posting timestamps and scheduled run instants belong on
 					DateTimePicker. DatePicker only selects a calendar day.
 				</p>
 			</StorySection>
 
 			<StorySection title="Do: keep Calendar for embedded panels">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					When the layout needs an always-visible grid without field chrome, use
 					Calendar. Prefer DatePicker when operators need a labelled trigger and
 					popover.
@@ -484,7 +488,7 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do not: silently complete a partial range">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					If only from is selected, keep the trigger showing the open range.
 					Feature validation rejects incomplete windows — the control must not
 					invent to.
@@ -492,7 +496,7 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do not: infer eligibility from enabled days">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Closed ledgers and policy windows are validated in feature Actions.
 					Calendar cells do not authorize posting.
 				</p>

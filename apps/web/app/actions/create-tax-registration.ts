@@ -20,9 +20,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type CreateTaxRegistrationActionData = {
+export interface CreateTaxRegistrationActionData {
 	taxRegistration: TaxRegistrationProjection;
-};
+}
 
 export type CreateTaxRegistrationActionState =
 	ActionResult<CreateTaxRegistrationActionData> | null;
@@ -105,9 +105,9 @@ export async function createTaxRegistrationAction(
 				registrationNumber: parsed.data.registrationNumber,
 				name: parsed.data.name,
 				validFrom:
-					parsed.data.validFrom !== undefined
-						? new Date(parsed.data.validFrom)
-						: undefined,
+					parsed.data.validFrom === undefined
+						? undefined
+						: new Date(parsed.data.validFrom),
 			},
 			{ authorization: createMasterDataAuthorizationPort() },
 		);

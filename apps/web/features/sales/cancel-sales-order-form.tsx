@@ -20,9 +20,9 @@ import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 
 const initialState: CancelSalesOrderActionState = null;
 
-type CancelSalesOrderFormProps = {
+interface CancelSalesOrderFormProps {
 	canCancel: boolean;
-};
+}
 
 /**
  * Cancel draft or posted sales order — optimistic version check.
@@ -72,35 +72,35 @@ export function CancelSalesOrderForm({ canCancel }: CancelSalesOrderFormProps) {
 				<FormError>{state.message}</FormError>
 			) : null}
 			<FormField
+				error={orderError}
+				fieldId="sales-cancel-order"
 				label="Order id"
 				required
-				fieldId="sales-cancel-order"
-				error={orderError}
 			>
 				<Input
+					disabled={pending}
 					id="sales-cancel-order"
 					name="orderId"
-					required
-					disabled={pending}
 					placeholder="UUID"
+					required
 				/>
 			</FormField>
 			<FormField
+				error={versionError}
+				fieldId="sales-cancel-version"
 				label="Expected version"
 				required
-				fieldId="sales-cancel-version"
-				error={versionError}
 			>
 				<Input
-					id="sales-cancel-version"
-					name="expectedVersion"
-					type="number"
-					min={1}
-					required
 					disabled={pending}
+					id="sales-cancel-version"
+					min={1}
+					name="expectedVersion"
+					required
+					type="number"
 				/>
 			</FormField>
-			<Button type="submit" disabled={pending}>
+			<Button disabled={pending} type="submit">
 				{pending ? (
 					<>
 						<Spinner className="size-4" />

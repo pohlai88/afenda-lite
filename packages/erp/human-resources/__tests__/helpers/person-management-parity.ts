@@ -39,7 +39,9 @@ export function definePersonManagementParity(
 			ready,
 		);
 		expect(person.ok).toBe(true);
-		if (!person.ok) return;
+		if (!person.ok) {
+			return;
+		}
 
 		const contact = await addPersonContact(
 			{

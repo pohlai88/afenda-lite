@@ -52,15 +52,25 @@ function mapRow(row: PayrollDeliveryRow): Result<PayrollDeliveryRecord> {
 		return fail("INTERNAL_ERROR", "Payroll delivery status is invalid");
 	}
 	const createdAt = parseDate(row.createdAt, "createdAt");
-	if (!createdAt.ok) return createdAt;
+	if (!createdAt.ok) {
+		return createdAt;
+	}
 	const updatedAt = parseDate(row.updatedAt, "updatedAt");
-	if (!updatedAt.ok) return updatedAt;
+	if (!updatedAt.ok) {
+		return updatedAt;
+	}
 	const lastAttemptAt = parseNullableDate(row.lastAttemptAt, "lastAttemptAt");
-	if (!lastAttemptAt.ok) return lastAttemptAt;
+	if (!lastAttemptAt.ok) {
+		return lastAttemptAt;
+	}
 	const deliveredAt = parseNullableDate(row.deliveredAt, "deliveredAt");
-	if (!deliveredAt.ok) return deliveredAt;
+	if (!deliveredAt.ok) {
+		return deliveredAt;
+	}
 	const feedbackAt = parseNullableDate(row.feedbackAt, "feedbackAt");
-	if (!feedbackAt.ok) return feedbackAt;
+	if (!feedbackAt.ok) {
+		return feedbackAt;
+	}
 	return ok({
 		id: row.id,
 		organizationId: row.organizationId,
@@ -140,8 +150,10 @@ function mutableValues(record: PayrollDeliveryRecord) {
 async function mapOptional(
 	row: PayrollDeliveryRow | undefined,
 ): Promise<Result<PayrollDeliveryRecord | null>> {
-	if (row === undefined) return ok(null);
-	return mapRow(row);
+	if (row === undefined) {
+		return await ok(null);
+	}
+	return await mapRow(row);
 }
 
 export function createDrizzlePayrollDeliveryStore(): PayrollDeliveryStorePort {
@@ -206,7 +218,9 @@ export function createDrizzlePayrollDeliveryStore(): PayrollDeliveryStorePort {
 				const mapped: PayrollDeliveryRecord[] = [];
 				for (const row of rows) {
 					const record = mapRow(row);
-					if (!record.ok) return record;
+					if (!record.ok) {
+						return record;
+					}
 					mapped.push(record.data);
 				}
 				return ok(mapped);
@@ -223,7 +237,7 @@ export function createDrizzlePayrollDeliveryStore(): PayrollDeliveryStorePort {
 					.insert(hrPayrollHandoffDelivery)
 					.values(values(record))
 					.returning();
-				const row = rows[0];
+				const [row] = rows;
 				return row
 					? mapRow(row)
 					: fail("INTERNAL_ERROR", "Payroll delivery insert returned no row");
@@ -234,7 +248,7 @@ export function createDrizzlePayrollDeliveryStore(): PayrollDeliveryStorePort {
 			}
 		},
 		async createCorrection(input) {
-			const correction = input.correction;
+			const { correction } = input;
 			try {
 				const [rows] = await runNeonHttpTransaction<[Array<{ id: string }>]>(
 					(sqlTag) => [
@@ -293,7 +307,7 @@ export function createDrizzlePayrollDeliveryStore(): PayrollDeliveryStorePort {
 						),
 					)
 					.limit(1);
-				const row = inserted[0];
+				const [row] = inserted;
 				return row
 					? mapRow(row)
 					: fail("INTERNAL_ERROR", "Payroll correction readback failed");
@@ -324,7 +338,7 @@ export function createDrizzlePayrollDeliveryStore(): PayrollDeliveryStorePort {
 						),
 					)
 					.returning();
-				const row = rows[0];
+				const [row] = rows;
 				return row
 					? mapRow(row)
 					: fail("CONFLICT", "Payroll delivery version conflict");

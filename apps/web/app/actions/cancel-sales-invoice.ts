@@ -16,7 +16,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type CancelSalesInvoiceActionData = { invoice: SalesInvoice };
+export interface CancelSalesInvoiceActionData {
+	invoice: SalesInvoice;
+}
 export type CancelSalesInvoiceActionState =
 	ActionResult<CancelSalesInvoiceActionData> | null;
 
@@ -30,7 +32,7 @@ export async function cancelSalesInvoiceAction(
 	_prev: CancelSalesInvoiceActionState,
 	formData: FormData,
 ): Promise<CancelSalesInvoiceActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "cancelSalesInvoiceAction",
 		permission: "receivables.invoice.cancel",
 		safeMessage:
@@ -58,7 +60,9 @@ export async function cancelSalesInvoiceAction(
 				createReceivablesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePath("/admin/receivables");
 			revalidatePath("/client/receivables");
 			return { ok: true, data: { invoice: mapped.data } };

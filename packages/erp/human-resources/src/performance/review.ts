@@ -49,7 +49,7 @@ export const HUMAN_RESOURCES_AGGREGATE_REVIEW = "review" as const;
 export type HumanResourcesReviewAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_REVIEW;
 
-export async function startPerformanceReview(
+export function startPerformanceReview(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceReview>> {
@@ -76,7 +76,7 @@ export async function startPerformanceReview(
 	});
 }
 
-export async function submitSelfAssessment(
+export function submitSelfAssessment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceReview>> {
@@ -105,7 +105,7 @@ export async function submitSelfAssessment(
 	});
 }
 
-export async function submitManagerAssessment(
+export function submitManagerAssessment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceReview>> {
@@ -135,7 +135,7 @@ export async function submitManagerAssessment(
 	});
 }
 
-export async function addDelegatedReviewer(
+export function addDelegatedReviewer(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceReview>> {
@@ -162,7 +162,7 @@ export async function addDelegatedReviewer(
 	});
 }
 
-export async function submitDelegatedAssessment(
+export function submitDelegatedAssessment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceReview>> {
@@ -193,7 +193,7 @@ export async function submitDelegatedAssessment(
 	});
 }
 
-export async function calibratePerformanceReview(
+export function calibratePerformanceReview(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceReview>> {
@@ -220,7 +220,7 @@ export async function calibratePerformanceReview(
 	});
 }
 
-export async function returnPerformanceReviewForCorrection(
+export function returnPerformanceReviewForCorrection(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceReview>> {
@@ -246,7 +246,7 @@ export async function returnPerformanceReviewForCorrection(
 	});
 }
 
-export async function acknowledgePerformanceReview(
+export function acknowledgePerformanceReview(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceReview>> {
@@ -272,7 +272,7 @@ export async function acknowledgePerformanceReview(
 	});
 }
 
-export async function finalizePerformanceReview(
+export function finalizePerformanceReview(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceReview>> {
@@ -280,7 +280,7 @@ export async function finalizePerformanceReview(
 		schema: finalizePerformanceReviewInputSchema,
 		invalidMessage: "Invalid performance review finalize input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_FINALIZE,
-		execute: async (data, { store, ports }) => {
+		execute: (data, { store, ports }) => {
 			const requestFingerprint = fingerprintPerformanceReviewFinalize({
 				reviewId: data.reviewId,
 			});
@@ -305,7 +305,7 @@ export async function finalizePerformanceReview(
 	});
 }
 
-export async function reopenPerformanceReview(
+export function reopenPerformanceReview(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceReview>> {
@@ -331,7 +331,7 @@ export async function reopenPerformanceReview(
 	});
 }
 
-export async function getPerformanceReviewById(
+export function getPerformanceReviewById(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceReviewDetail | null>> {
@@ -356,7 +356,7 @@ export async function getPerformanceReviewById(
 	});
 }
 
-export async function listEmployeePerformanceReviews(
+export function listEmployeePerformanceReviews(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceReviewListPage>> {
@@ -383,7 +383,7 @@ export async function listEmployeePerformanceReviews(
 	});
 }
 
-export async function listReviewsPendingManagerAction(
+export function listReviewsPendingManagerAction(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceReviewListPage>> {
@@ -401,7 +401,7 @@ export async function listReviewsPendingManagerAction(
 	});
 }
 
-export async function getEmployeePerformanceHistory(
+export function getEmployeePerformanceHistory(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeePerformanceHistory>> {

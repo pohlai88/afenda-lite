@@ -18,43 +18,52 @@ export type CanonicalIdentityResolution = Readonly<{
 	lineage: readonly string[];
 }>;
 
-export async function resolveCanonicalIdentityWithLineage(
+async function resolveCanonicalStep(
+	requestedId: string,
+	currentId: string,
+	load: CanonicalIdentityResolver,
+	maxHops: number,
+	hops: number,
+	seen: Set<string>,
+	lineage: readonly string[],
+): Promise<Result<CanonicalIdentityResolution>> {
+	if (hops >= maxHops || seen.has(currentId)) {
+		return lifecycleMergeCycle({
+			entityType: "canonical_identity",
+			entityId: requestedId,
+		});
+	}
+	seen.add(currentId);
+	const nextLineage = [...lineage, currentId];
+	const current = await load(currentId);
+	if (!current.ok) {
+		return current;
+	}
+	if (current.data === null || current.data.mergedIntoId === null) {
+		return ok({
+			requestedId,
+			canonicalId: current.data?.id ?? currentId,
+			hops,
+			lineage: nextLineage,
+		});
+	}
+	return resolveCanonicalStep(
+		requestedId,
+		current.data.mergedIntoId,
+		load,
+		maxHops,
+		hops + 1,
+		seen,
+		nextLineage,
+	);
+}
+
+export function resolveCanonicalIdentityWithLineage(
 	id: string,
 	load: CanonicalIdentityResolver,
 	maxHops = 16,
 ): Promise<Result<CanonicalIdentityResolution>> {
-	let currentId = id;
-	const seen = new Set<string>();
-	let lineage: readonly string[] = [];
-	let hops = 0;
-	while (hops < maxHops) {
-		if (seen.has(currentId)) {
-			return lifecycleMergeCycle({
-				entityType: "canonical_identity",
-				entityId: id,
-			});
-		}
-		seen.add(currentId);
-		lineage = [...lineage, currentId];
-		const current = await load(currentId);
-		if (!current.ok) {
-			return current;
-		}
-		if (current.data === null || current.data.mergedIntoId === null) {
-			return ok({
-				requestedId: id,
-				canonicalId: current.data?.id ?? currentId,
-				hops,
-				lineage,
-			});
-		}
-		currentId = current.data.mergedIntoId;
-		hops += 1;
-	}
-	return lifecycleMergeCycle({
-		entityType: "canonical_identity",
-		entityId: id,
-	});
+	return resolveCanonicalStep(id, id, load, maxHops, 0, new Set<string>(), []);
 }
 
 export async function resolveCanonicalIdentity(

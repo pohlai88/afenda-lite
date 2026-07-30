@@ -20,9 +20,9 @@ import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 
 const initialState: CreatePurchaseOrderActionState = null;
 
-type CreatePurchaseOrderFormProps = {
+interface CreatePurchaseOrderFormProps {
 	canCreate: boolean;
-};
+}
 
 /**
  * Draft purchase order create — CAPABLE when `purchasing.order.create` is granted.
@@ -77,82 +77,82 @@ export function CreatePurchaseOrderForm({
 				<FormError>{state.message}</FormError>
 			) : null}
 			<FormField
+				error={codeError}
+				fieldId="purchase-order-code"
 				label="Code"
 				required
-				fieldId="purchase-order-code"
-				error={codeError}
 			>
 				<Input
+					autoComplete="off"
+					disabled={pending}
 					id="purchase-order-code"
 					name="code"
 					required
-					autoComplete="off"
-					disabled={pending}
 				/>
 			</FormField>
 			<FormField
+				error={partyError}
+				fieldId="purchase-order-party"
 				label="Party id"
 				required
-				fieldId="purchase-order-party"
-				error={partyError}
 			>
 				<Input
+					autoComplete="off"
+					disabled={pending}
 					id="purchase-order-party"
 					name="partyId"
 					required
-					autoComplete="off"
-					disabled={pending}
 				/>
 			</FormField>
 			<FormField
+				error={currencyError}
+				fieldId="purchase-order-currency"
 				label="Currency code"
 				required
-				fieldId="purchase-order-currency"
-				error={currencyError}
 			>
 				<Input
-					id="purchase-order-currency"
-					name="currencyCode"
-					required
-					maxLength={3}
 					autoComplete="off"
 					disabled={pending}
+					id="purchase-order-currency"
+					maxLength={3}
+					name="currencyCode"
 					placeholder="USD"
+					required
 				/>
 			</FormField>
-			<FormField label="Exchange rate (optional)" fieldId="purchase-order-fx">
+			<FormField fieldId="purchase-order-fx" label="Exchange rate (optional)">
 				<Input
-					id="purchase-order-fx"
-					name="exchangeRate"
-					type="number"
-					step="any"
-					min="0"
 					disabled={pending}
+					id="purchase-order-fx"
+					min="0"
+					name="exchangeRate"
+					step="any"
+					type="number"
 				/>
 			</FormField>
 			<FormField
-				label="Payment term id (optional)"
 				fieldId="purchase-order-term"
+				label="Payment term id (optional)"
 			>
 				<Input
+					autoComplete="off"
+					disabled={pending}
 					id="purchase-order-term"
 					name="paymentTermId"
-					autoComplete="off"
-					disabled={pending}
 				/>
 			</FormField>
 			<FormField
-				label="Warehouse id (optional)"
 				fieldId="purchase-order-warehouse"
+				label="Warehouse id (optional)"
 			>
 				<Input
-					id="purchase-order-warehouse"
-					name="warehouseId"
 					autoComplete="off"
 					disabled={pending}
+					id="purchase-order-warehouse"
+					name="warehouseId"
 				/>
 			</FormField>
-			<Button type="submit" disabled={pending}>
+			<Button disabled={pending} type="submit">
 				{pending ? <Spinner /> : null}
 				Create draft order
 			</Button>

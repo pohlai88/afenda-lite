@@ -113,9 +113,9 @@ export function masterDataErrorCodeForFailureDetails(
 	return masterDataErrorCodeForReason(details.reason);
 }
 
-export type MasterFailureDetails = {
-	reason: MasterReason;
+export interface MasterFailureDetails {
 	errorCode?: MasterDataErrorCode;
 	fieldErrors?: Record<string, string[] | undefined>;
+	reason: MasterReason;
 	[key: string]: unknown;
-};
+}

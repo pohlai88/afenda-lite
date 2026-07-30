@@ -1,6 +1,6 @@
-export type CspDirectives = {
+export interface CspDirectives {
 	readonly [directive: string]: readonly string[];
-};
+}
 
 /**
  * Build a Content-Security-Policy header value from typed directives.

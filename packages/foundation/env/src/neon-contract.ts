@@ -6,6 +6,8 @@
 
 import { z } from "zod";
 
+const TRAILING_DOT_PATTERN = /\.$/;
+
 /**
  * Neon / Neon Auth product environment contract (N1).
  * Living authority: ARCH-027 · ARCH-023 · ARCH-026 · AGENTS.md.
@@ -157,7 +159,7 @@ export function redactEnvValue(_value: string | undefined): string {
 }
 
 function normalizeHostname(hostname: string): string {
-	return hostname.trim().toLowerCase().replace(/\.$/, "");
+	return hostname.trim().toLowerCase().replace(TRAILING_DOT_PATTERN, "");
 }
 
 function isLocalHostname(hostname: string): boolean {
@@ -237,8 +239,7 @@ export function assertAppUrl(
 			});
 		}
 		if (
-			!isProductionDeployment(ctx) &&
-			!isLocalHostname(parsed.hostname) &&
+			!(isProductionDeployment(ctx) || isLocalHostname(parsed.hostname)) &&
 			parsed.protocol !== "https:"
 		) {
 			issues.push({
@@ -281,7 +282,7 @@ export function assertAppUrl(
 			issues.push({
 				variable: "APP_URL",
 				message:
-					`hostname must be one of the approved development, preview, or production hosts: ` +
+					"hostname must be one of the approved development, preview, or production hosts: " +
 					APPROVED_APP_HOSTS.join(", "),
 			});
 		}
@@ -539,7 +540,7 @@ export function evaluateProdBranchBaselineMigratePosture(
 		baselineMigrateAllowed: false,
 		issues: [],
 		detail:
-			`production branch identity confirmed; baseline migration ` +
+			"production branch identity confirmed; baseline migration " +
 			`is prohibited on ${APPROVED_NEON_BRANCH_ID}`,
 	};
 }

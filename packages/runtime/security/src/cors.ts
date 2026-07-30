@@ -28,34 +28,34 @@ const DEFAULT_ALLOWED_HEADERS = [
 ] as const;
 const DEFAULT_MAX_AGE_SECONDS = 600;
 
-export type CorsConfig = {
-	readonly origins: readonly string[];
-	readonly methods?: readonly string[];
+export interface CorsConfig {
 	readonly allowedHeaders?: readonly string[];
-	readonly exposedHeaders?: readonly string[];
 	readonly credentials?: boolean;
+	readonly exposedHeaders?: readonly string[];
 	readonly maxAgeSeconds?: number;
-};
+	readonly methods?: readonly string[];
+	readonly origins: readonly string[];
+}
 
 /** CorsConfig after origin validation and default fill. */
-export type ResolvedCorsConfig = {
-	readonly origins: readonly string[];
-	readonly methods: readonly string[];
+export interface ResolvedCorsConfig {
 	readonly allowedHeaders: readonly string[];
-	readonly maxAgeSeconds: number;
 	readonly credentials?: boolean;
 	readonly exposedHeaders?: readonly string[];
-};
+	readonly maxAgeSeconds: number;
+	readonly methods: readonly string[];
+	readonly origins: readonly string[];
+}
 
-export type BuildCorsHeadersInput = {
+export interface BuildCorsHeadersInput {
 	readonly config: CorsConfig;
 	readonly requestOrigin: string | null;
-};
+}
 
-export type HandleCorsPreflightInput = {
-	readonly request: Request;
+export interface HandleCorsPreflightInput {
 	readonly config: CorsConfig;
-};
+	readonly request: Request;
+}
 
 function normalizeOrigins(origins: readonly string[]): string[] {
 	const normalized: string[] = [];
@@ -96,12 +96,12 @@ export function createCorsConfig(config: CorsConfig): ResolvedCorsConfig {
 		methods: config.methods ?? DEFAULT_METHODS,
 		allowedHeaders: config.allowedHeaders ?? DEFAULT_ALLOWED_HEADERS,
 		maxAgeSeconds: config.maxAgeSeconds ?? DEFAULT_MAX_AGE_SECONDS,
-		...(config.credentials !== undefined
-			? { credentials: config.credentials }
-			: {}),
-		...(config.exposedHeaders !== undefined
-			? { exposedHeaders: config.exposedHeaders }
-			: {}),
+		...(config.credentials === undefined
+			? {}
+			: { credentials: config.credentials }),
+		...(config.exposedHeaders === undefined
+			? {}
+			: { exposedHeaders: config.exposedHeaders }),
 	};
 }
 

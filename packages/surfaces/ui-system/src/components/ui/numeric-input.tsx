@@ -19,18 +19,18 @@ function NumberInput({
 	return (
 		<div className="relative flex items-center">
 			{prefix ? (
-				<span className="pointer-events-none absolute left-3 text-sm text-muted-foreground">
+				<span className="pointer-events-none absolute left-3 text-muted-foreground text-sm">
 					{prefix}
 				</span>
 			) : null}
 			<Input
-				type="number"
-				inputMode="decimal"
 				className={cn(prefix && "pl-9", suffix && "pr-12", className)}
+				inputMode="decimal"
+				type="number"
 				{...props}
 			/>
 			{suffix ? (
-				<span className="pointer-events-none absolute right-3 text-sm text-muted-foreground">
+				<span className="pointer-events-none absolute right-3 text-muted-foreground text-sm">
 					{suffix}
 				</span>
 			) : null}
@@ -42,7 +42,7 @@ function MoneyInput({
 	currency = "USD",
 	...props
 }: NumericInputProps & { currency?: string }) {
-	return <NumberInput step="0.01" prefix={currency} {...props} />;
+	return <NumberInput prefix={currency} step="0.01" {...props} />;
 }
 
 function QuantityInput({
@@ -53,7 +53,7 @@ function QuantityInput({
 }
 
 function PercentInput(props: NumericInputProps) {
-	return <NumberInput min="0" max="100" step="0.01" suffix="%" {...props} />;
+	return <NumberInput max="100" min="0" step="0.01" suffix="%" {...props} />;
 }
 
 export {

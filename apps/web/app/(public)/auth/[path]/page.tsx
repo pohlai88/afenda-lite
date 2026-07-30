@@ -9,9 +9,9 @@ import { notFound } from "next/navigation";
 
 import { AuthPathShell } from "@/features/auth/auth-path-shell";
 
-type AuthPageProps = {
+interface AuthPageProps {
 	params: Promise<{ path: string }>;
-};
+}
 
 const AUTH_TITLES: Record<PublicAuthPath, string> = {
 	[AFENDA_AUTH_VIEW_PATHS.SIGN_IN]: "Sign in",

@@ -21,7 +21,7 @@ import {
 const now = new Date("2026-07-28T00:00:00.000Z");
 
 async function claimOne(ports: ReliabilityKernelPorts) {
-	return claimDueReliabilityWork(
+	return await claimDueReliabilityWork(
 		{
 			workerId: "worker-1",
 			now,
@@ -119,7 +119,9 @@ describe("HR reliability runtime composition", () => {
 			ports,
 		);
 		expect(registered.ok).toBe(true);
-		if (!registered.ok) return;
+		if (!registered.ok) {
+			return;
+		}
 		expect(await claimOne(ports)).toMatchObject({ ok: true });
 
 		const processed = await processReliabilityWork(
@@ -183,7 +185,9 @@ describe("HR reliability runtime composition", () => {
 			ports,
 		);
 		expect(registered.ok).toBe(true);
-		if (!registered.ok) return;
+		if (!registered.ok) {
+			return;
+		}
 		expect(await claimOne(ports)).toMatchObject({ ok: true });
 		const result = await processReliabilityWork(
 			{
@@ -227,7 +231,9 @@ describe("HR reliability runtime composition", () => {
 			ports,
 		);
 		expect(registered.ok).toBe(true);
-		if (!registered.ok) return;
+		if (!registered.ok) {
+			return;
+		}
 		expect(await claimOne(ports)).toMatchObject({ ok: true });
 		const processed = await processReliabilityWork(
 			{

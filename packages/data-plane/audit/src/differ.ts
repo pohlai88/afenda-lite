@@ -89,7 +89,7 @@ function deepEqual(a: unknown, b: unknown): boolean {
 		return false;
 	}
 
-	if (!isPlainObject(a) || !isPlainObject(b)) {
+	if (!(isPlainObject(a) && isPlainObject(b))) {
 		return false;
 	}
 

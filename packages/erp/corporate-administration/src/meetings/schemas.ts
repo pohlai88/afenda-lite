@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+function isNullish(value: unknown): value is null | undefined {
+	return value === null || value === undefined;
+}
+
 import {
 	governanceBodyIdSchema,
 	governanceMeetingIdSchema,
@@ -84,7 +88,7 @@ export const governanceMeetingSchema = z
 	.strict()
 	.refine(
 		(value) =>
-			value.scheduledEndAt === null ||
+			isNullish(value.scheduledEndAt) ||
 			value.scheduledStartAt < value.scheduledEndAt,
 		{
 			path: ["scheduledEndAt"],
@@ -134,7 +138,10 @@ export const meetingNoticeSchema = z
 	.strict()
 	.refine(
 		(value) =>
-			value.recipientMembershipId !== null || value.recipientPartyId !== null,
+			!(
+				isNullish(value.recipientMembershipId) &&
+				isNullish(value.recipientPartyId)
+			),
 		{
 			path: ["recipientPartyId"],
 			message: "recipient membership or party is required",
@@ -250,7 +257,7 @@ export const scheduleGovernanceMeetingInputSchema = z
 	.strict()
 	.refine(
 		(value) =>
-			value.scheduledEndAt == null ||
+			isNullish(value.scheduledEndAt) ||
 			value.scheduledStartAt < value.scheduledEndAt,
 		{
 			path: ["scheduledEndAt"],
@@ -272,7 +279,10 @@ export const issueMeetingNoticeInputSchema = z
 	.strict()
 	.refine(
 		(value) =>
-			value.recipientMembershipId != null || value.recipientPartyId != null,
+			!(
+				isNullish(value.recipientMembershipId) &&
+				isNullish(value.recipientPartyId)
+			),
 		{
 			path: ["recipientPartyId"],
 			message: "recipient membership or party is required",

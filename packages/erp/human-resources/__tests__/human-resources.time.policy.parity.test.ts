@@ -45,7 +45,9 @@ function defineTimePolicyParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 		const employment = await createEmployment(
 			{
 				organizationId: ORG,
@@ -57,7 +59,9 @@ function defineTimePolicyParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 		const policy = await createTimePolicy(
 			{
 				organizationId: ORG,
@@ -75,7 +79,9 @@ function defineTimePolicyParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(policy.ok).toBe(true);
-		if (!policy.ok) return;
+		if (!policy.ok) {
+			return;
+		}
 		const activePolicy = await activateTimePolicy(
 			{
 				organizationId: ORG,
@@ -87,7 +93,9 @@ function defineTimePolicyParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(activePolicy.ok).toBe(true);
-		if (!activePolicy.ok) return;
+		if (!activePolicy.ok) {
+			return;
+		}
 		const policyAssignment = await assignTimePolicy(
 			{
 				organizationId: ORG,
@@ -135,7 +143,9 @@ function defineTimePolicyParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(successor.ok).toBe(true);
-		if (!successor.ok) return;
+		if (!successor.ok) {
+			return;
+		}
 		expect(successor.data.superseded).toMatchObject({
 			id: activePolicy.data.id,
 			status: "superseded",
@@ -157,7 +167,9 @@ function defineTimePolicyParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(historicalPolicy.ok).toBe(true);
-		if (!historicalPolicy.ok) return;
+		if (!historicalPolicy.ok) {
+			return;
+		}
 		expect(historicalPolicy.data?.id).toBe(activePolicy.data.id);
 		const futurePolicy = await resolveTimePolicy(
 			{
@@ -170,7 +182,9 @@ function defineTimePolicyParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(futurePolicy.ok).toBe(true);
-		if (!futurePolicy.ok) return;
+		if (!futurePolicy.ok) {
+			return;
+		}
 		expect(futurePolicy.data?.id).toBe(successor.data.successor.id);
 		const unrelatedPolicy = await createTimePolicy(
 			{
@@ -188,7 +202,9 @@ function defineTimePolicyParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(unrelatedPolicy.ok).toBe(true);
-		if (!unrelatedPolicy.ok) return;
+		if (!unrelatedPolicy.ok) {
+			return;
+		}
 		const activeUnrelatedPolicy = await activateTimePolicy(
 			{
 				organizationId: ORG,
@@ -211,7 +227,9 @@ function defineTimePolicyParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(isolatedPolicy.ok).toBe(true);
-		if (!isolatedPolicy.ok) return;
+		if (!isolatedPolicy.ok) {
+			return;
+		}
 		expect(isolatedPolicy.data?.id).toBe(successor.data.successor.id);
 	});
 }

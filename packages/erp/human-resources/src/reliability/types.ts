@@ -11,30 +11,30 @@ export type ReliabilityWorkStatus =
 	| "succeeded"
 	| "dead_lettered";
 
-export type ReliabilityWorkItem = {
-	id: string;
-	organizationId: string;
-	connector: ReliabilityConnector;
-	operation: ReliabilityOperation;
-	targetType: ReliabilityTargetType;
-	targetId: string;
-	correlationId: string;
-	idempotencyKey: string;
-	requestFingerprint: string;
-	status: ReliabilityWorkStatus;
-	version: number;
+export interface ReliabilityWorkItem {
+	acknowledgementDeadlineAt: Date | null;
 	attemptCount: number;
-	nextAttemptAt: Date | null;
+	connector: ReliabilityConnector;
+	correlationId: string;
+	createdAt: Date;
+	id: string;
+	idempotencyKey: string;
 	lastAttemptAt: Date | null;
 	lastErrorCode: string | null;
 	lastErrorMessage: string | null;
-	receiptId: string | null;
-	acknowledgementDeadlineAt: Date | null;
-	leaseOwner: string | null;
 	leaseExpiresAt: Date | null;
-	createdAt: Date;
+	leaseOwner: string | null;
+	nextAttemptAt: Date | null;
+	operation: ReliabilityOperation;
+	organizationId: string;
+	receiptId: string | null;
+	requestFingerprint: string;
+	status: ReliabilityWorkStatus;
+	targetId: string;
+	targetType: ReliabilityTargetType;
 	updatedAt: Date;
-};
+	version: number;
+}
 
 export type ReliabilityExecutionOutcome =
 	| { kind: "acknowledged"; receiptId: string }
@@ -44,29 +44,29 @@ export type ReliabilityExecutionOutcome =
 			acknowledgementDeadlineAt: Date;
 	  };
 
-export type ReliabilityDeadLetterRecord = {
-	id: string;
-	organizationId: string;
-	workItemId: string;
-	connector: ReliabilityConnector;
-	operation: ReliabilityOperation;
-	targetType: ReliabilityTargetType;
-	targetId: string;
-	correlationId: string;
-	idempotencyKey: string;
-	requestFingerprint: string;
+export interface ReliabilityDeadLetterRecord {
 	attemptCount: number;
+	connector: ReliabilityConnector;
+	correlationId: string;
 	errorCode: string;
 	errorMessage: string;
 	failedAt: Date;
-	replayedByWorkItemId: string | null;
-};
-
-export type ConnectorCursor = {
+	id: string;
+	idempotencyKey: string;
+	operation: ReliabilityOperation;
 	organizationId: string;
+	replayedByWorkItemId: string | null;
+	requestFingerprint: string;
+	targetId: string;
+	targetType: ReliabilityTargetType;
+	workItemId: string;
+}
+
+export interface ConnectorCursor {
 	connector: string;
-	stream: string;
 	cursor: string | null;
-	version: number;
+	organizationId: string;
+	stream: string;
 	updatedAt: Date;
-};
+	version: number;
+}

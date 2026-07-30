@@ -30,7 +30,7 @@ export const MASTER_DATA_EVENT_TYPES = [
 	"master_data.import_row.applied",
 ] as const satisfies readonly MasterDataEventType[];
 
-export type { MasterDataEventType };
+export type { MasterDataEventType } from "./event-payloads";
 
 type RegisteredMasterDataEventType = (typeof MASTER_DATA_EVENT_TYPES)[number];
 type MissingEventPayloadMappings = Exclude<

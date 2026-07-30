@@ -10,17 +10,17 @@ import { describe, expect, it, vi } from "vitest";
 const ORGANIZATION_ID = "org-reporting";
 
 function createSource(
-	facts: readonly HumanResourcesReadModelFact[],
+	sourceFacts: readonly HumanResourcesReadModelFact[],
 ): HumanResourcesReportingSourcePort {
 	return {
 		listFacts: vi.fn(async (input) => {
-			const matching = facts.filter(
+			const matching = sourceFacts.filter(
 				(fact) =>
 					fact.kind === input.kind &&
 					fact.organizationId === input.organizationId,
 			);
 			const offset = (input.page - 1) * input.pageSize;
-			return ok({
+			return await ok({
 				entries: matching.slice(offset, offset + input.pageSize),
 				total: matching.length,
 				page: input.page,
@@ -200,7 +200,9 @@ describe("Human Resources reporting reconciliation", () => {
 		);
 
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 		expect(result.data.workforceHeadcount).toEqual({
 			headcount: 1,
 			fullTimeEquivalent: "1",
@@ -336,7 +338,9 @@ describe("Human Resources reporting reconciliation", () => {
 		);
 
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 		expect(result.data.workforceHeadcount.headcount).toBe(101);
 		expect(source.listFacts).toHaveBeenCalledWith(
 			expect.objectContaining({

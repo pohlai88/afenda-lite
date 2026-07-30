@@ -26,15 +26,15 @@ function WorkbenchSection({
 	children,
 }: WorkbenchSectionProps) {
 	return (
-		<section className="grid gap-4" aria-labelledby={id}>
+		<section aria-labelledby={id} className="grid gap-4">
 			<div className="grid gap-1">
 				<h2
-					className="text-base font-semibold tracking-tight text-foreground"
+					className="font-semibold text-base text-foreground tracking-tight"
 					id={id}
 				>
 					{title}
 				</h2>
-				<p className="max-w-5xl text-sm leading-5 text-foreground-secondary">
+				<p className="max-w-5xl text-foreground-secondary text-sm leading-5">
 					{description}
 				</p>
 			</div>
@@ -71,14 +71,14 @@ export const Overview: Story = {
 			<div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-5 border-b pb-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
 					<div className="grid gap-2">
-						<p className="text-sm font-medium text-foreground-secondary">
+						<p className="font-medium text-foreground-secondary text-sm">
 							Accounts receivable
 						</p>
 						<div className="grid gap-1">
-							<h1 className="text-2xl font-semibold tracking-tight">
+							<h1 className="font-semibold text-2xl tracking-tight">
 								Invoice review
 							</h1>
-							<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+							<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 								Use Separator when adjacent groups need a visible boundary
 								beyond spacing. Prefer headings for major hierarchy.
 							</p>
@@ -86,25 +86,25 @@ export const Overview: Story = {
 					</div>
 					<dl className="grid grid-cols-2 gap-x-8 gap-y-3 rounded-lg border bg-card p-4">
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Subject
 							</dt>
 							<dd className="text-sm">Invoice INV-1042</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Record
 							</dt>
 							<dd className="text-sm">Northwind Trading</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Boundary
 							</dt>
 							<dd className="text-sm">Identity / terms</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Use
 							</dt>
 							<dd className="text-sm">Visible divider</dd>
@@ -155,22 +155,22 @@ export const SemanticUsage: Story = {
 	render: () => (
 		<div className="grid w-full max-w-5xl gap-6 sm:grid-cols-2">
 			<WorkbenchSection
+				description="Use the horizontal separator to split adjacent blocks within one subject."
 				id="horizontal"
 				title="Horizontal · stacked groups"
-				description="Use the horizontal separator to split adjacent blocks within one subject."
 			>
 				<div className="grid gap-3 rounded-lg border bg-card p-4">
-					<p className="text-sm font-medium">Supplier identity</p>
+					<p className="font-medium text-sm">Supplier identity</p>
 					<Separator />
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						Bank and remittance details
 					</p>
 				</div>
 			</WorkbenchSection>
 			<WorkbenchSection
+				description="Use the vertical separator to divide peer labels in a compact row."
 				id="vertical"
 				title="Vertical · toolbar peers"
-				description="Use the vertical separator to divide peer labels in a compact row."
 			>
 				<div className="flex h-10 items-center gap-3 rounded-lg border px-3 text-sm">
 					<span>Sales</span>
@@ -281,9 +281,9 @@ export const DoAndDoNot: Story = {
 	render: () => (
 		<div className="grid gap-6 sm:grid-cols-2">
 			<WorkbenchSection
+				description="Use one divider where a content group change is already obvious from the surrounding labels."
 				id="clear-boundary"
 				title="Do: one clear content boundary"
-				description="Use one divider where a content group change is already obvious from the surrounding labels."
 			>
 				<div className="grid gap-3 rounded-lg border bg-card p-4 text-sm">
 					<p className="font-medium">Legal identity</p>
@@ -292,11 +292,11 @@ export const DoAndDoNot: Story = {
 				</div>
 			</WorkbenchSection>
 			<WorkbenchSection
+				description="Stacked separators should not replace whitespace or section headings."
 				id="line-heavy-spacing"
 				title="Do not: line-heavy spacing"
-				description="Stacked separators should not replace whitespace or section headings."
 			>
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Stacked separators between every field create noise. Prefer whitespace
 					and SectionHeader for hierarchy.
 				</p>
@@ -320,22 +320,22 @@ export const AdaptiveAndHighContrast: Story = {
 			<StorySection title="Responsive stacked content">
 				<div className="grid gap-4 rounded-lg border bg-card p-4 sm:grid-cols-[1fr_auto_1fr] sm:items-stretch">
 					<section className="grid gap-1">
-						<p className="text-sm font-medium">Invoice identity</p>
-						<p className="text-sm text-foreground-secondary">INV-1042</p>
+						<p className="font-medium text-sm">Invoice identity</p>
+						<p className="text-foreground-secondary text-sm">INV-1042</p>
 					</section>
 					<Separator className="hidden sm:block" orientation="vertical" />
 					<Separator className="sm:hidden" />
 					<section className="grid gap-1">
-						<p className="text-sm font-medium">Commercial terms</p>
-						<p className="text-sm text-foreground-secondary">MYR · Net 30</p>
+						<p className="font-medium text-sm">Commercial terms</p>
+						<p className="text-foreground-secondary text-sm">MYR · Net 30</p>
 					</section>
 				</div>
 			</StorySection>
 			<StorySection title="Major hierarchy still needs a heading">
 				<div className="grid gap-3 rounded-lg border bg-card p-4">
-					<h3 className="text-sm font-semibold">Settlement instructions</h3>
+					<h3 className="font-semibold text-sm">Settlement instructions</h3>
 					<Separator />
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						The heading communicates the section meaning; the line only
 						reinforces its boundary.
 					</p>

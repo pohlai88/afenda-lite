@@ -10,7 +10,6 @@ import {
 } from "@afenda/db";
 import { fail, ok } from "@afenda/errors/result";
 import { describe, expect, it } from "vitest";
-
 import { createDrizzleBulkCheckpointPort } from "../src/adapters/drizzle/bulk-checkpoint";
 import { createDrizzleReliabilityStore } from "../src/adapters/drizzle/reliability";
 import {
@@ -31,9 +30,14 @@ import {
 	replayDeadLetter,
 } from "../src/reliability";
 import { runDrizzleParity } from "./helpers/database-gate";
+import { helperAssert as assert } from "./helpers/helper-assert";
 
-type BulkRow = { value: string };
-type BulkOutput = { imported: string };
+interface BulkRow {
+	value: string;
+}
+interface BulkOutput {
+	imported: string;
+}
 
 async function exerciseBulk(store: BulkCheckpointPort<BulkOutput>) {
 	const organizationId = `bulk-parity-${crypto.randomUUID()}`;
@@ -63,7 +67,9 @@ async function exerciseBulk(store: BulkCheckpointPort<BulkOutput>) {
 				: { status: "applied", output: { imported: sourceReference } },
 	};
 	const first = await runHumanResourcesBulkImport(request, ports);
-	if (!first.ok) throw new Error(first.message);
+	if (!first.ok) {
+		throw new Error(first.message);
+	}
 	const completed = await runHumanResourcesBulkImport(
 		{
 			...request,
@@ -71,7 +77,9 @@ async function exerciseBulk(store: BulkCheckpointPort<BulkOutput>) {
 		},
 		ports,
 	);
-	if (!completed.ok) throw new Error(completed.message);
+	if (!completed.ok) {
+		throw new Error(completed.message);
+	}
 	const replay = await runHumanResourcesBulkImport(request, ports);
 	const audit = await store.listAuditEvents({
 		organizationId,
@@ -122,7 +130,9 @@ async function exerciseReliability(
 		},
 		ports,
 	);
-	if (!created.ok) throw new Error(created.message);
+	if (!created.ok) {
+		throw new Error(created.message);
+	}
 	const claimed = await claimDueReliabilityWork(
 		{
 			workerId: "parity-worker",
@@ -144,12 +154,14 @@ async function exerciseReliability(
 		},
 		ports,
 	);
-	if (!terminal.ok) throw new Error(terminal.message);
+	if (!terminal.ok) {
+		throw new Error(terminal.message);
+	}
 	const deadLetter = await store.findDeadLetterByWorkItem({
 		organizationId,
 		workItemId: created.data.id,
 	});
-	if (!deadLetter.ok || !deadLetter.data) {
+	if (!(deadLetter.ok && deadLetter.data)) {
 		throw new Error("Dead letter was not persisted");
 	}
 	now = new Date("2026-07-28T00:01:00.000Z");
@@ -211,49 +223,53 @@ async function exerciseReliability(
 }
 
 function assertBulk(result: Awaited<ReturnType<typeof exerciseBulk>>) {
-	expect(result.completed).toMatchObject({
+	assert.deepInclude(result.completed, {
 		ok: true,
 		data: { status: "completed_with_rejections", checkpointVersion: 2 },
 	});
-	expect(result.replay).toEqual(result.completed);
-	expect(result.audit).toMatchObject({ ok: true, data: expect.any(Array) });
+	assert.deepEqual(result.replay, result.completed);
+	assert.deepInclude(result.audit, { ok: true, data: expect.any(Array) });
 	if (result.audit.ok) {
-		expect(result.audit.data.map((event) => event.event)).toEqual([
-			"BATCH_STARTED",
-			"ROW_ACCEPTED",
-			"BATCH_CHECKPOINTED",
-			"ROW_REJECTED",
-			"BATCH_COMPLETED",
-		]);
+		assert.deepEqual(
+			result.audit.data.map((event) => event.event),
+			[
+				"BATCH_STARTED",
+				"ROW_ACCEPTED",
+				"BATCH_CHECKPOINTED",
+				"ROW_REJECTED",
+				"BATCH_COMPLETED",
+			],
+		);
 	}
-	expect(result.artifact).toMatchObject({
+	assert.deepInclude(result.artifact, {
 		ok: true,
 		data: { checkpointVersion: 2, contentType: "text/csv" },
 	});
-	if (result.artifact.ok)
-		expect(result.artifact.data?.content).toContain("REJECTED");
-	expect(result.wrongTenant).toEqual(ok(null));
+	if (result.artifact.ok) {
+		assert.include(result.artifact.data?.content, "REJECTED");
+	}
+	assert.deepEqual(result.wrongTenant, ok(null));
 }
 
 function assertReliability(
 	result: Awaited<ReturnType<typeof exerciseReliability>>,
 ) {
-	expect(result.terminal).toMatchObject({
+	assert.deepInclude(result.terminal, {
 		ok: true,
 		data: { status: "dead_lettered", version: 3, attemptCount: 1 },
 	});
-	expect(result.deadLetter).toMatchObject({
+	assert.deepInclude(result.deadLetter, {
 		ok: true,
 		data: { errorCode: "VALIDATION_ERROR", replayedByWorkItemId: null },
 	});
-	expect(result.replay).toMatchObject({
+	assert.deepInclude(result.replay, {
 		ok: true,
 		data: { status: "pending" },
 	});
-	expect(result.replayAgain).toEqual(result.replay);
-	expect(result.cursor).toMatchObject({ ok: true, data: { version: 1 } });
-	expect(result.staleCursor).toMatchObject({ ok: false, code: "CONFLICT" });
-	expect(result.wrongTenant).toEqual(ok(null));
+	assert.deepEqual(result.replayAgain, result.replay);
+	assert.deepInclude(result.cursor, { ok: true, data: { version: 1 } });
+	assert.deepInclude(result.staleCursor, { ok: false, code: "CONFLICT" });
+	assert.deepEqual(result.wrongTenant, ok(null));
 }
 
 describe("HR bulk and reliability store parity", () => {

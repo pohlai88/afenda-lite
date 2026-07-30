@@ -101,6 +101,14 @@ const statusBadgeStoryExports = [
 	"StatesAndAccessibility",
 	"Variants",
 ] as const;
+const benchmarkStoryExportOverrides: Partial<
+	Record<(typeof benchmarkComponents)[number], readonly string[]>
+> = {
+	button: buttonStoryExports,
+	card: cardStoryExports,
+	"data-table": dataTableStoryExports,
+	"status-badge": statusBadgeStoryExports,
+};
 const foundationStories: ReadonlySet<string> = new Set(["app-shell", "tokens"]);
 
 function moduleNames(directory: string, suffix: string): string[] {
@@ -121,7 +129,9 @@ function publicComponentNames(): string[] {
 }
 
 function propertyName(node: ts.PropertyName, source: ts.SourceFile): string {
-	if (ts.isIdentifier(node) || ts.isStringLiteral(node)) return node.text;
+	if (ts.isIdentifier(node) || ts.isStringLiteral(node)) {
+		return node.text;
+	}
 	return node.getText(source).replaceAll('"', "");
 }
 
@@ -198,7 +208,7 @@ function exportedStoryInitializers(
 ): ReadonlyMap<string, ts.ObjectLiteralExpression> {
 	const stories = new Map<string, ts.ObjectLiteralExpression>();
 	for (const statement of source.statements) {
-		if (!ts.isVariableStatement(statement) || !hasExportModifier(statement)) {
+		if (!(ts.isVariableStatement(statement) && hasExportModifier(statement))) {
 			continue;
 		}
 		for (const declaration of statement.declarationList.declarations) {
@@ -217,11 +227,14 @@ function exportedStoryInitializers(
 function namedExportNames(source: ts.SourceFile): readonly string[] {
 	const names: string[] = [];
 	for (const statement of source.statements) {
-		if (!hasExportModifier(statement)) continue;
+		if (!hasExportModifier(statement)) {
+			continue;
+		}
 		if (ts.isVariableStatement(statement)) {
 			for (const declaration of statement.declarationList.declarations) {
-				if (ts.isIdentifier(declaration.name))
+				if (ts.isIdentifier(declaration.name)) {
 					names.push(declaration.name.text);
+				}
 			}
 		} else if (
 			(ts.isFunctionDeclaration(statement) ||
@@ -234,7 +247,7 @@ function namedExportNames(source: ts.SourceFile): readonly string[] {
 			names.push(statement.name.text);
 		}
 	}
-	return names.sort();
+	return names.sort((left, right) => left.localeCompare(right));
 }
 
 function objectProperty(
@@ -253,8 +266,9 @@ function stringArrayProperty(
 	name: string,
 ): readonly string[] {
 	const property = objectProperty(object, name);
-	if (!property || !ts.isArrayLiteralExpression(property.initializer))
+	if (!(property && ts.isArrayLiteralExpression(property.initializer))) {
 		return [];
+	}
 	return property.initializer.elements
 		.filter(ts.isStringLiteral)
 		.map((element) => element.text);
@@ -350,7 +364,9 @@ describe("Storybook UI-system coverage", () => {
 				"utf8",
 			);
 			const title = text.match(/title:\s*"(UI System\/[^"]+)"/)?.[1];
-			if (!title) throw new Error(`Missing UI System title for ${story}.`);
+			if (!title) {
+				throw new Error(`Missing UI System title for ${story}.`);
+			}
 			expect(title.split("/")).toHaveLength(2);
 			return title;
 		});
@@ -445,9 +461,9 @@ describe("Storybook UI-system coverage", () => {
 			expect(story).not.toContain("layout:");
 		}
 
-		expect(contractDocs).toContain("text-2xl font-semibold tracking-tight");
-		expect(contractDocs).toContain("text-lg font-medium");
-		expect(contractDocs).not.toContain("text-xl font-semibold");
+		expect(contractDocs).toContain("font-semibold text-2xl tracking-tight");
+		expect(contractDocs).toContain("font-medium text-lg");
+		expect(contractDocs).not.toContain("font-semibold text-xl");
 		expect(contractDocs).toContain('<Section title="Public API">');
 		expect(contractDocs).toContain('<Section title="Required states">');
 		expect(contractDocs).toContain("<Unstyled>");
@@ -476,8 +492,8 @@ describe("Storybook UI-system coverage", () => {
 		expect(stylesheet).toContain(
 			'.afenda-contract-api-table > [data-slot="table-container"]',
 		);
-		expect(tokens).toContain("text-2xl font-semibold tracking-tight");
-		expect(tokens).not.toContain("text-3xl font-bold tracking-tight");
+		expect(tokens).toContain("font-semibold text-2xl tracking-tight");
+		expect(tokens).not.toContain("font-bold text-3xl tracking-tight");
 		const visualSpec = fs.readFileSync(
 			path.join(appRoot, "visual-tests/storybook.visual.spec.ts"),
 			"utf8",
@@ -550,7 +566,9 @@ describe("Storybook UI-system coverage", () => {
 		}
 
 		const button = evidence["ui.button"];
-		if (!button) throw new Error("Missing Button contract evidence.");
+		if (!button) {
+			throw new Error("Missing Button contract evidence.");
+		}
 		expect(button.publicExports).toEqual(["Button", "buttonVariants"]);
 		expect(Object.keys(button.approvedVariants).sort()).toEqual(
 			[
@@ -599,20 +617,13 @@ describe("Storybook UI-system coverage", () => {
 				"utf8",
 			);
 			const componentEvidence = evidence[`ui.${component}`];
-			if (!componentEvidence)
+			if (!componentEvidence) {
 				throw new Error(`Missing evidence for ui.${component}.`);
+			}
 
 			expect(text).toContain(`contractEvidence("ui.${component}")`);
 			const requiredExports =
-				component === "button"
-					? buttonStoryExports
-					: component === "status-badge"
-						? statusBadgeStoryExports
-						: component === "card"
-							? cardStoryExports
-							: component === "data-table"
-								? dataTableStoryExports
-								: standardBenchmarkExports;
+				benchmarkStoryExportOverrides[component] ?? standardBenchmarkExports;
 			for (const storyExport of requiredExports) {
 				expect(text).toContain(`export const ${storyExport}`);
 			}
@@ -643,7 +654,9 @@ describe("Storybook UI-system coverage", () => {
 		const source = sourceFile(buttonFile);
 		const stories = exportedStoryInitializers(source);
 		const evidence = (await createStorybookEvidence())["ui.button"];
-		if (!evidence) throw new Error("Missing Storybook evidence for ui.button.");
+		if (!evidence) {
+			throw new Error("Missing Storybook evidence for ui.button.");
+		}
 
 		expect([...stories.keys()].sort()).toEqual([...buttonStoryExports]);
 		expect(namedExportNames(source)).toEqual([...buttonStoryExports]);
@@ -663,9 +676,11 @@ describe("Storybook UI-system coverage", () => {
 					ts.isIdentifier(declaration.name) && declaration.name.text === "meta",
 			);
 		if (
-			!metaDeclaration?.initializer ||
-			!ts.isSatisfiesExpression(metaDeclaration.initializer) ||
-			!ts.isObjectLiteralExpression(metaDeclaration.initializer.expression)
+			!(
+				metaDeclaration?.initializer &&
+				ts.isSatisfiesExpression(metaDeclaration.initializer) &&
+				ts.isObjectLiteralExpression(metaDeclaration.initializer.expression)
+			)
 		) {
 			throw new Error(
 				"Button story meta must use an object satisfies expression.",
@@ -688,7 +703,9 @@ describe("Storybook UI-system coverage", () => {
 			expect(effectiveTags.has("test")).toBe(true);
 			expect(effectiveTags.has("visual")).toBe(name === "Overview");
 		}
-		if (!title) throw new Error("Button story title is required.");
+		if (!title) {
+			throw new Error("Button story title is required.");
+		}
 		const titleId = title
 			.toLowerCase()
 			.replaceAll(/[^a-z0-9]+/g, "-")
@@ -702,12 +719,14 @@ describe("Storybook UI-system coverage", () => {
 		const navigation = stories.get("Navigation");
 		const composition = stories.get("Composition");
 		if (
-			!variants ||
-			!sizes ||
-			!semanticUsage ||
-			!states ||
-			!navigation ||
-			!composition
+			!(
+				variants &&
+				sizes &&
+				semanticUsage &&
+				states &&
+				navigation &&
+				composition
+			)
 		) {
 			throw new Error("Button governance stories are incomplete.");
 		}
@@ -741,7 +760,9 @@ describe("Storybook UI-system coverage", () => {
 
 		for (const component of publicComponentNames()) {
 			const axes = cvaAxes(path.join(componentRoot, `${component}.tsx`));
-			if (Object.keys(axes).length > 0) discovered[component] = axes;
+			if (Object.keys(axes).length > 0) {
+				discovered[component] = axes;
+			}
 		}
 
 		expect(Object.keys(expected).sort()).toEqual(

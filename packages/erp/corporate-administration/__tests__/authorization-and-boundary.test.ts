@@ -164,7 +164,7 @@ describe("Corporate Administration authorization and boundary contracts", () => 
 
 		expect(missing.ok).toBe(false);
 		expect(rejected.ok).toBe(false);
-		if (!missing.ok && !rejected.ok) {
+		if (!(missing.ok || rejected.ok)) {
 			expect(missing).toEqual(rejected);
 		}
 	});

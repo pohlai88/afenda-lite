@@ -52,6 +52,8 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
+const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
 export async function createCourseAction(input: {
 	correlationId?: string;
 	idempotencyKey: string;
@@ -60,7 +62,7 @@ export async function createCourseAction(input: {
 	description?: string | null;
 	durationHours?: number | null;
 }): Promise<ActionResult<{ course: LearningCourse }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "createCourseAction",
 		permission: "human-resources.learning.manage",
 		safeMessage: "Could not create course.",
@@ -87,7 +89,9 @@ export async function createCourseAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { course: mapped.data } };
 		},
 	});
@@ -98,7 +102,7 @@ export async function archiveCourseAction(input: {
 	courseId: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ course: LearningCourse }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "archiveCourseAction",
 		permission: "human-resources.learning.manage",
 		safeMessage: "Could not archive course.",
@@ -122,7 +126,9 @@ export async function archiveCourseAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { course: mapped.data } };
 		},
 	});
@@ -133,7 +139,7 @@ export async function activateCourseAction(input: {
 	courseId: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ course: LearningCourse }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "activateCourseAction",
 		permission: "human-resources.learning.manage",
 		safeMessage: "Could not activate course.",
@@ -157,7 +163,9 @@ export async function activateCourseAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { course: mapped.data } };
 		},
 	});
@@ -169,7 +177,7 @@ export async function listCoursesAction(input?: {
 	pageSize?: number;
 	status?: LearningCourse["status"];
 }): Promise<ActionResult<{ page: CourseListPage }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listCoursesAction",
 		permission: "human-resources.learning.manage",
 		safeMessage: "Could not list courses.",
@@ -196,7 +204,9 @@ export async function listCoursesAction(input?: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { page: mapped.data } };
 		},
 	});
@@ -212,7 +222,7 @@ export async function createSessionAction(input: {
 	scheduledEndsAt: string;
 	capacity?: number | null;
 }): Promise<ActionResult<{ session: LearningSession }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "createSessionAction",
 		permission: "human-resources.learning.manage",
 		safeMessage: "Could not create learning session.",
@@ -241,7 +251,9 @@ export async function createSessionAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { session: mapped.data } };
 		},
 	});
@@ -254,7 +266,7 @@ export async function listSessionsAction(input?: {
 	courseId?: string;
 	status?: LearningSession["status"];
 }): Promise<ActionResult<{ page: SessionListPage }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listSessionsAction",
 		permission: "human-resources.learning.manage",
 		safeMessage: "Could not list learning sessions.",
@@ -284,7 +296,9 @@ export async function listSessionsAction(input?: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { page: mapped.data } };
 		},
 	});
@@ -296,7 +310,7 @@ export async function startSessionAction(input: {
 	expectedVersion: number;
 	actualStartsAt?: string;
 }): Promise<ActionResult<{ session: LearningSession }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "startSessionAction",
 		permission: "human-resources.learning.manage",
 		safeMessage: "Could not start learning session.",
@@ -321,7 +335,9 @@ export async function startSessionAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { session: mapped.data } };
 		},
 	});
@@ -333,7 +349,7 @@ export async function completeSessionAction(input: {
 	expectedVersion: number;
 	actualEndsAt?: string;
 }): Promise<ActionResult<{ session: LearningSession }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "completeSessionAction",
 		permission: "human-resources.learning.manage",
 		safeMessage: "Could not complete learning session.",
@@ -358,7 +374,9 @@ export async function completeSessionAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { session: mapped.data } };
 		},
 	});
@@ -369,7 +387,7 @@ export async function cancelSessionAction(input: {
 	sessionId: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ session: LearningSession }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "cancelSessionAction",
 		permission: "human-resources.learning.manage",
 		safeMessage: "Could not cancel learning session.",
@@ -393,7 +411,9 @@ export async function cancelSessionAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { session: mapped.data } };
 		},
 	});
@@ -407,7 +427,7 @@ export async function assignLearningAction(input: {
 	sessionId?: string | null;
 	dueOn?: string | null;
 }): Promise<ActionResult<{ assignment: LearningAssignment }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "assignLearningAction",
 		permission: "human-resources.learning.manage",
 		safeMessage: "Could not assign learning.",
@@ -418,11 +438,7 @@ export async function assignLearningAction(input: {
 					employeeId: z.string().uuid(),
 					courseId: z.string().uuid(),
 					sessionId: z.string().uuid().nullable().optional(),
-					dueOn: z
-						.string()
-						.regex(/^\d{4}-\d{2}-\d{2}$/)
-						.nullable()
-						.optional(),
+					dueOn: z.string().regex(ISO_DATE_PATTERN).nullable().optional(),
 				}),
 				input,
 			);
@@ -438,7 +454,9 @@ export async function assignLearningAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { assignment: mapped.data } };
 		},
 	});
@@ -450,7 +468,7 @@ export async function enrolLearningAssignmentAction(input: {
 	sessionId?: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ assignment: LearningAssignment }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "enrolLearningAssignmentAction",
 		permission: "human-resources.learning.manage",
 		safeMessage: "Could not enrol learning assignment.",
@@ -475,7 +493,9 @@ export async function enrolLearningAssignmentAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { assignment: mapped.data } };
 		},
 	});
@@ -486,7 +506,7 @@ export async function waiveLearningAssignmentAction(input: {
 	assignmentId: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ assignment: LearningAssignment }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "waiveLearningAssignmentAction",
 		permission: "human-resources.learning.manage",
 		safeMessage: "Could not waive learning assignment.",
@@ -510,7 +530,9 @@ export async function waiveLearningAssignmentAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { assignment: mapped.data } };
 		},
 	});
@@ -524,7 +546,7 @@ export async function listLearningAssignmentsAction(input?: {
 	courseId?: string;
 	status?: LearningAssignment["status"];
 }): Promise<ActionResult<{ page: LearningAssignmentListPage }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listLearningAssignmentsAction",
 		permission: "human-resources.learning.manage",
 		safeMessage: "Could not list learning assignments.",
@@ -555,7 +577,9 @@ export async function listLearningAssignmentsAction(input?: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { page: mapped.data } };
 		},
 	});
@@ -573,7 +597,7 @@ export async function recordLearningCompletionAction(input: {
 	assessorUserId?: string | null;
 	notes?: string | null;
 }): Promise<ActionResult<{ completion: LearningCompletion }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "recordLearningCompletionAction",
 		permission: "human-resources.learning.manage",
 		safeMessage: "Could not record learning completion.",
@@ -604,7 +628,9 @@ export async function recordLearningCompletionAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { completion: mapped.data } };
 		},
 	});
@@ -617,7 +643,7 @@ export async function listLearningCompletionsAction(input?: {
 	employeeId?: string;
 	courseId?: string;
 }): Promise<ActionResult<{ page: CompletionListPage }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listLearningCompletionsAction",
 		permission: "human-resources.learning.manage",
 		safeMessage: "Could not list learning completions.",
@@ -645,7 +671,9 @@ export async function listLearningCompletionsAction(input?: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { page: mapped.data } };
 		},
 	});
@@ -661,7 +689,7 @@ export async function issueCertificationAction(input: {
 	issuedOn: string;
 	expiresOn?: string | null;
 }): Promise<ActionResult<{ certification: EmployeeCertification }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "issueCertificationAction",
 		permission: "human-resources.certification.manage",
 		safeMessage: "Could not issue certification.",
@@ -673,12 +701,8 @@ export async function issueCertificationAction(input: {
 					courseId: z.string().uuid(),
 					completionId: z.string().uuid(),
 					certificationCode: z.string().trim().min(1).max(64),
-					issuedOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-					expiresOn: z
-						.string()
-						.regex(/^\d{4}-\d{2}-\d{2}$/)
-						.nullable()
-						.optional(),
+					issuedOn: z.string().regex(ISO_DATE_PATTERN),
+					expiresOn: z.string().regex(ISO_DATE_PATTERN).nullable().optional(),
 				}),
 				input,
 			);
@@ -694,7 +718,9 @@ export async function issueCertificationAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { certification: mapped.data } };
 		},
 	});
@@ -705,7 +731,7 @@ export async function revokeCertificationAction(input: {
 	certificationId: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ certification: EmployeeCertification }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "revokeCertificationAction",
 		permission: "human-resources.certification.manage",
 		safeMessage: "Could not revoke certification.",
@@ -729,7 +755,9 @@ export async function revokeCertificationAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { certification: mapped.data } };
 		},
 	});
@@ -740,7 +768,7 @@ export async function expireCertificationAction(input: {
 	certificationId: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ certification: EmployeeCertification }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "expireCertificationAction",
 		permission: "human-resources.certification.manage",
 		safeMessage: "Could not expire certification.",
@@ -764,7 +792,9 @@ export async function expireCertificationAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { certification: mapped.data } };
 		},
 	});
@@ -776,7 +806,7 @@ export async function assignSessionInstructorAction(input: {
 	primaryInstructorUserId: string | null;
 	expectedVersion: number;
 }): Promise<ActionResult<{ session: LearningSession }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "assignSessionInstructorAction",
 		permission: "human-resources.learning.manage",
 		safeMessage: "Could not assign session instructor.",
@@ -801,7 +831,9 @@ export async function assignSessionInstructorAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { session: mapped.data } };
 		},
 	});
@@ -816,7 +848,7 @@ export async function recordLearningAttendanceAction(input: {
 	status: LearningAttendance["status"];
 	recordedAt: string;
 }): Promise<ActionResult<{ attendance: LearningAttendance }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "recordLearningAttendanceAction",
 		permission: "human-resources.learning.manage",
 		safeMessage: "Could not record learning attendance.",
@@ -844,7 +876,9 @@ export async function recordLearningAttendanceAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { attendance: mapped.data } };
 		},
 	});
@@ -857,7 +891,7 @@ export async function listLearningAttendanceAction(input?: {
 	sessionId?: string;
 	employeeId?: string;
 }): Promise<ActionResult<{ page: LearningAttendanceListPage }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listLearningAttendanceAction",
 		permission: "human-resources.learning.manage",
 		safeMessage: "Could not list learning attendance.",
@@ -885,7 +919,9 @@ export async function listLearningAttendanceAction(input?: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { page: mapped.data } };
 		},
 	});
@@ -901,7 +937,7 @@ export async function renewCertificationAction(input: {
 	expiresOn?: string | null;
 	expectedVersion: number;
 }): Promise<ActionResult<{ certification: EmployeeCertification }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "renewCertificationAction",
 		permission: "human-resources.certification.manage",
 		safeMessage: "Could not renew certification.",
@@ -930,7 +966,9 @@ export async function renewCertificationAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { certification: mapped.data } };
 		},
 	});
@@ -944,7 +982,7 @@ export async function listCertificationsAction(input?: {
 	courseId?: string;
 	status?: EmployeeCertification["status"];
 }): Promise<ActionResult<{ page: CertificationListPage }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listCertificationsAction",
 		permission: "human-resources.certification.manage",
 		safeMessage: "Could not list certifications.",
@@ -973,7 +1011,9 @@ export async function listCertificationsAction(input?: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { page: mapped.data } };
 		},
 	});

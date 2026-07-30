@@ -132,49 +132,49 @@ export type RecordQuorumStoreInput = TransactionalWrite &
 	}>;
 
 export interface MeetingStore {
-	getGovernanceMeeting(input: {
+	changeMeetingStatus: (
+		input: ChangeMeetingStatusStoreInput,
+	) => Promise<Result<GovernanceMeeting>>;
+	getGovernanceMeeting: (input: {
 		organizationId: OrganizationId;
 		governanceMeetingId: GovernanceMeetingId;
-	}): Promise<Result<GovernanceMeeting | null>>;
-	listGovernanceMeetings(input: {
+	}) => Promise<Result<GovernanceMeeting | null>>;
+	getLatestQuorumResult: (input: {
+		organizationId: OrganizationId;
+		governanceMeetingId: GovernanceMeetingId;
+	}) => Promise<Result<MeetingQuorumResult | null>>;
+	getMeetingNotice: (input: {
+		organizationId: OrganizationId;
+		meetingNoticeId: MeetingNoticeId;
+	}) => Promise<Result<MeetingNotice | null>>;
+	issueMeetingNotice: (
+		input: IssueMeetingNoticeStoreInput,
+	) => Promise<Result<MeetingNotice>>;
+	listGovernanceMeetings: (input: {
 		organizationId: OrganizationId;
 		legalCompanyId: LegalCompanyId;
 		governanceBodyId?: GovernanceBodyId | undefined;
 		status?: GovernanceMeetingStatus | undefined;
-	}): Promise<Result<readonly GovernanceMeeting[]>>;
-	scheduleGovernanceMeeting(
-		input: ScheduleGovernanceMeetingStoreInput,
-	): Promise<Result<GovernanceMeeting>>;
-	changeMeetingStatus(
-		input: ChangeMeetingStatusStoreInput,
-	): Promise<Result<GovernanceMeeting>>;
-	getMeetingNotice(input: {
-		organizationId: OrganizationId;
-		meetingNoticeId: MeetingNoticeId;
-	}): Promise<Result<MeetingNotice | null>>;
-	listMeetingNotices(input: {
+	}) => Promise<Result<readonly GovernanceMeeting[]>>;
+	listMeetingNotices: (input: {
 		organizationId: OrganizationId;
 		governanceMeetingId: GovernanceMeetingId;
-	}): Promise<Result<readonly MeetingNotice[]>>;
-	issueMeetingNotice(
-		input: IssueMeetingNoticeStoreInput,
-	): Promise<Result<MeetingNotice>>;
-	recordNoticeDelivery(
-		input: RecordNoticeDeliveryStoreInput,
-	): Promise<Result<MeetingNotice>>;
-	waiveNotice(input: WaiveNoticeStoreInput): Promise<Result<MeetingNotice>>;
-	listMeetingParticipants(input: {
+	}) => Promise<Result<readonly MeetingNotice[]>>;
+	listMeetingParticipants: (input: {
 		organizationId: OrganizationId;
 		governanceMeetingId: GovernanceMeetingId;
-	}): Promise<Result<readonly MeetingParticipant[]>>;
-	recordMeetingParticipant(
+	}) => Promise<Result<readonly MeetingParticipant[]>>;
+	recordMeetingParticipant: (
 		input: RecordMeetingParticipantStoreInput,
-	): Promise<Result<MeetingParticipant>>;
-	getLatestQuorumResult(input: {
-		organizationId: OrganizationId;
-		governanceMeetingId: GovernanceMeetingId;
-	}): Promise<Result<MeetingQuorumResult | null>>;
-	recordQuorum(
+	) => Promise<Result<MeetingParticipant>>;
+	recordNoticeDelivery: (
+		input: RecordNoticeDeliveryStoreInput,
+	) => Promise<Result<MeetingNotice>>;
+	recordQuorum: (
 		input: RecordQuorumStoreInput,
-	): Promise<Result<MeetingQuorumResult>>;
+	) => Promise<Result<MeetingQuorumResult>>;
+	scheduleGovernanceMeeting: (
+		input: ScheduleGovernanceMeetingStoreInput,
+	) => Promise<Result<GovernanceMeeting>>;
+	waiveNotice: (input: WaiveNoticeStoreInput) => Promise<Result<MeetingNotice>>;
 }

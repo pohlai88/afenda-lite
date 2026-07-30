@@ -39,6 +39,10 @@ import {
 	createProductionHrObservabilityPorts,
 } from "@/modules/platform/observability/human-resources-observability";
 
+const AUTHORIZATION_OPERATION_PATTERN = /permission|authorization/;
+const PRIVACY_OPERATION_PATTERN = /privacy|erase|rectify/;
+const BULK_OPERATION_PATTERN = /bulk|import|export/;
+
 export type ReliabilityOperationHandler = (
 	item: ReliabilityWorkItem,
 ) => Promise<Result<ReliabilityExecutionOutcome>>;
@@ -80,7 +84,9 @@ export function createProductionReliabilityOperationHandlers(): ReliabilityOpera
 				deliveryId: item.targetId,
 				actorUserId: "system",
 			});
-			if (!delivered.ok) return delivered;
+			if (!delivered.ok) {
+				return delivered;
+			}
 			if (delivered.data.producerReceiptId === null) {
 				return fail(
 					"INTERNAL_ERROR",
@@ -96,14 +102,16 @@ export function createProductionReliabilityOperationHandlers(): ReliabilityOpera
 			return ok({
 				kind: "accepted",
 				receiptId: delivered.data.producerReceiptId,
-				acknowledgementDeadlineAt: new Date(Date.now() + 24 * 60 * 60 * 1_000),
+				acknowledgementDeadlineAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
 			});
 		},
 		"platform.dispatch-events": async (item) => {
 			const dispatched = await createEventDispatcher({
 				handlers: createHumanResourcesPlatformEventHandlers(),
 			}).dispatchPending({ organizationId: item.organizationId, limit: 25 });
-			if (!dispatched.ok) return dispatched;
+			if (!dispatched.ok) {
+				return dispatched;
+			}
 			if (dispatched.data.failed > 0) {
 				return fail(
 					"SERVICE_UNAVAILABLE",
@@ -137,7 +145,7 @@ export function createReliabilityOperationExecutor(
 	return {
 		async execute(item) {
 			const handler = handlers[reliabilityOperationKey(item)];
-			return handler === undefined
+			return (await handler) === undefined
 				? fail("VALIDATION_ERROR", "Reliability operation is not composed")
 				: handler(item);
 		},
@@ -169,19 +177,19 @@ async function recordFailureSurface(
 		{ eventFamily: "integration_event", reason },
 		observability,
 	);
-	if (/permission|authorization/.test(item.operation)) {
+	if (AUTHORIZATION_OPERATION_PATTERN.test(item.operation)) {
 		await recordHrAuthorizationDenial(
 			{ area: "integration", reason: "policy_denied" },
 			observability,
 		);
 	}
-	if (/privacy|erase|rectify/.test(item.operation)) {
+	if (PRIVACY_OPERATION_PATTERN.test(item.operation)) {
 		await recordHrPrivacyOperation(
 			{ operation: "rectify", outcome: "failure", failureReason: reason },
 			observability,
 		);
 	}
-	if (/bulk|import|export/.test(item.operation)) {
+	if (BULK_OPERATION_PATTERN.test(item.operation)) {
 		await recordHrBulkError({ stage: "commit", reason }, observability);
 	}
 	if (item.connector === "payroll") {
@@ -203,9 +211,12 @@ export async function processReliabilityWork(
 ): Promise<Result<ReliabilityWorkItem>> {
 	const startedAt = Date.now();
 	const found = await ports.store.getWorkItem(input);
-	if (!found.ok) return found;
-	if (found.data === null)
+	if (!found.ok) {
+		return found;
+	}
+	if (found.data === null) {
 		return fail("NOT_FOUND", "Reliability work item not found");
+	}
 	const result = await executeReliabilityWork(input, ports);
 	const failureCode = result.ok ? result.data.lastErrorCode : result.code;
 	const failed = failureCode !== null;
@@ -219,8 +230,9 @@ export async function processReliabilityWork(
 		},
 		observability,
 	);
-	if (failed)
+	if (failed) {
 		await recordFailureSurface(found.data, failureCode, observability);
+	}
 	await recordHrConnectorHealth(
 		{
 			connector:
@@ -234,15 +246,15 @@ export async function processReliabilityWork(
 	return result;
 }
 
-export type ReliabilitySchedulerSummary = {
-	claimed: number;
-	succeeded: number;
+export interface ReliabilitySchedulerSummary {
 	awaitingAcknowledgement: number;
-	retried: number;
+	claimed: number;
 	deadLettered: number;
 	failed: number;
+	retried: number;
+	succeeded: number;
 	timedOut: boolean;
-};
+}
 
 export async function runProductionReliabilityScheduler(
 	input: {
@@ -267,7 +279,9 @@ export async function runProductionReliabilityScheduler(
 		},
 		ports.store,
 	);
-	if (!claimed.ok) return claimed;
+	if (!claimed.ok) {
+		return claimed;
+	}
 	const claimedItems = claimed.data;
 	const summary: ReliabilitySchedulerSummary = {
 		claimed: claimedItems.length,
@@ -287,7 +301,10 @@ export async function runProductionReliabilityScheduler(
 			}
 			const item = claimedItems[cursor];
 			cursor += 1;
-			if (item === undefined) return;
+			if (item === undefined) {
+				return;
+			}
+			// biome-ignore lint/performance/noAwaitInLoops: Each consumer is serial; bounded parallelism is provided by the worker pool below.
 			const result = await processReliabilityWork(
 				{
 					organizationId: item.organizationId,
@@ -301,6 +318,7 @@ export async function runProductionReliabilityScheduler(
 				summary.failed += 1;
 				continue;
 			}
+			// biome-ignore lint/style/useDefaultSwitchClause: Reliability statuses are exhaustively accounted for.
 			switch (result.data.status) {
 				case "succeeded":
 					summary.succeeded += 1;

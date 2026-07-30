@@ -8,11 +8,9 @@ import type { HumanResourcesMutationExecutionMeta } from "../shared/mutation-met
 
 import { getHumanResourcesMutationEmission } from "./resolve-emission";
 
-export type HumanResourcesMutationOutcome = {
-	commandId: HumanResourcesCommandId;
-	meta: HumanResourcesMutationExecutionMeta;
-	aggregateType: string;
+export interface HumanResourcesMutationOutcome {
 	aggregateId: string;
+	aggregateType: string;
 	audit: {
 		entity: string;
 		entityId?: string | undefined;
@@ -21,6 +19,9 @@ export type HumanResourcesMutationOutcome = {
 		oldValue?: Record<string, unknown> | null | undefined;
 		newValue?: Record<string, unknown> | null | undefined;
 	};
+	commandId: HumanResourcesCommandId;
+	/** Runtime-conditional paths that audit without emitting a declared domain event. */
+	conditionalEventSuppressed?: boolean | undefined;
 	event?:
 		| {
 				type: HumanResourcesEventType;
@@ -29,12 +30,10 @@ export type HumanResourcesMutationOutcome = {
 				entityType?: string | undefined;
 		  }
 		| undefined;
-	/** Runtime-conditional paths that audit without emitting a declared domain event. */
-	conditionalEventSuppressed?: boolean | undefined;
-};
+	meta: HumanResourcesMutationExecutionMeta;
+}
 
-export type PlannedHumanResourcesMutationOutcome = {
-	definition: ReturnType<typeof getHumanResourcesMutationEmission>;
+export interface PlannedHumanResourcesMutationOutcome {
 	auditInput: {
 		organizationId: string;
 		actorUserId: string;
@@ -46,6 +45,7 @@ export type PlannedHumanResourcesMutationOutcome = {
 		oldValue?: Record<string, unknown> | null | undefined;
 		newValue?: Record<string, unknown> | null | undefined;
 	};
+	definition: ReturnType<typeof getHumanResourcesMutationEmission>;
 	outboxInput?:
 		| {
 				organizationId: string;
@@ -55,7 +55,7 @@ export type PlannedHumanResourcesMutationOutcome = {
 				payload: Record<string, unknown>;
 		  }
 		| undefined;
-};
+}
 
 const AGGREGATE_ENTITY_MAP: Record<string, string> = {
 	leave_policy: "hr_leave_policy",

@@ -1,22 +1,43 @@
 "use client";
 
 import { ChevronRightIcon } from "lucide-react";
-import * as React from "react";
+import {
+	type ComponentProps,
+	type MouseEvent,
+	type ReactNode,
+	useCallback,
+	useState,
+} from "react";
 import { cn } from "../../lib/utils";
 
 interface TreeNode {
-	id: string;
-	label: React.ReactNode;
 	children?: readonly TreeNode[];
 	disabled?: boolean;
+	id: string;
+	label: ReactNode;
 }
 
-interface TreeViewProps extends Omit<React.ComponentProps<"div">, "onSelect"> {
-	nodes: readonly TreeNode[];
-	selectedId?: string;
+interface TreeViewProps extends Omit<ComponentProps<"div">, "onSelect"> {
 	expandedIds?: ReadonlySet<string>;
+	nodes: readonly TreeNode[];
 	onExpandedChange?: (ids: ReadonlySet<string>) => void;
 	onSelect?: (node: TreeNode) => void;
+	selectedId?: string;
+}
+
+function findTreeNode(
+	items: readonly TreeNode[],
+	id: string,
+): TreeNode | undefined {
+	for (const item of items) {
+		if (item.id === id) {
+			return item;
+		}
+		const child = findTreeNode(item.children ?? [], id);
+		if (child !== undefined) {
+			return child;
+		}
+	}
 }
 
 function TreeView({
@@ -28,51 +49,73 @@ function TreeView({
 	className,
 	...props
 }: TreeViewProps) {
-	const [internalExpanded, setInternalExpanded] = React.useState<
-		ReadonlySet<string>
-	>(new Set());
+	const [internalExpanded, setInternalExpanded] = useState<ReadonlySet<string>>(
+		new Set(),
+	);
 	const expanded = expandedIds ?? internalExpanded;
-	const toggle = (id: string) => {
-		const next = new Set(expanded);
-		if (next.has(id)) next.delete(id);
-		else next.add(id);
-		if (!expandedIds) setInternalExpanded(next);
-		onExpandedChange?.(next);
-	};
+	const toggle = useCallback(
+		(id: string) => {
+			const next = new Set(expanded);
+			if (next.has(id)) {
+				next.delete(id);
+			} else {
+				next.add(id);
+			}
+			if (!expandedIds) {
+				setInternalExpanded(next);
+			}
+			onExpandedChange?.(next);
+		},
+		[expanded, expandedIds, onExpandedChange],
+	);
+	const handleToggle = useCallback(
+		(event: MouseEvent<HTMLButtonElement>) => toggle(event.currentTarget.value),
+		[toggle],
+	);
+	const handleSelect = useCallback(
+		(event: MouseEvent<HTMLButtonElement>) => {
+			const node = findTreeNode(nodes, event.currentTarget.value);
+			if (node !== undefined) {
+				onSelect?.(node);
+			}
+		},
+		[nodes, onSelect],
+	);
 	const renderNodes = (
 		items: readonly TreeNode[],
 		level: number,
-	): React.ReactNode => (
+	): ReactNode => (
 		<ul
-			role={level === 1 ? "tree" : "group"}
 			className={cn(level > 1 && "ml-5 border-l pl-1")}
+			role={level === 1 ? "tree" : "group"}
 		>
 			{items.map((node) => {
 				const hasChildren = Boolean(node.children?.length);
 				const isExpanded = expanded.has(node.id);
 				return (
 					<li
-						key={node.id}
-						role="treeitem"
+						aria-disabled={node.disabled}
+						aria-expanded={hasChildren ? isExpanded : undefined}
 						aria-level={level}
 						aria-selected={selectedId === node.id}
-						aria-expanded={hasChildren ? isExpanded : undefined}
-						aria-disabled={node.disabled}
+						key={node.id}
+						role="treeitem"
 					>
 						<div className="flex items-center gap-1">
 							<button
-								type="button"
-								tabIndex={-1}
-								className={cn(
-									"flex size-7 items-center justify-center rounded-sm text-muted-foreground",
-									!hasChildren && "invisible",
-								)}
-								onClick={() => toggle(node.id)}
 								aria-label={
 									isExpanded
 										? `Collapse ${String(node.label)}`
 										: `Expand ${String(node.label)}`
 								}
+								className={cn(
+									"flex size-7 items-center justify-center rounded-sm text-muted-foreground",
+									!hasChildren && "invisible",
+								)}
+								onClick={handleToggle}
+								tabIndex={-1}
+								type="button"
+								value={node.id}
 							>
 								<ChevronRightIcon
 									className={cn(
@@ -82,13 +125,14 @@ function TreeView({
 								/>
 							</button>
 							<button
-								type="button"
-								disabled={node.disabled}
-								onClick={() => onSelect?.(node)}
 								className={cn(
 									"min-w-0 flex-1 rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
 									selectedId === node.id && "bg-accent text-accent-foreground",
 								)}
+								disabled={node.disabled}
+								onClick={handleSelect}
+								type="button"
+								value={node.id}
 							>
 								{node.label}
 							</button>

@@ -14,97 +14,97 @@ import type { OutboxFactInput } from "../../ports";
 /**
  * Common SQL row types for leave operations
  */
-export type LeaveRequestSqlRow = {
-	id: string;
-	organization_id: string;
-	employee_id: string;
-	employment_id: string;
-	entitlement_id: string;
-	policy_id: string;
-	start_date: string;
-	end_date: string;
-	requested_quantity: string;
-	unit: string;
-	status: string;
-	is_backdated: boolean;
-	backdate_justification: string | null;
+export interface LeaveRequestSqlRow {
 	approved_at: Date | null;
+	backdate_justification: string | null;
 	create_idempotency_key: string;
 	create_request_fingerprint: string;
-	version: number;
-	created_by: string;
-	updated_by: string;
 	created_at: Date;
-	updated_at: Date;
-};
-
-export type LeaveAdjustmentSqlRow = {
-	id: string;
-	organization_id: string;
+	created_by: string;
+	employee_id: string;
+	employment_id: string;
+	end_date: string;
 	entitlement_id: string;
-	source_request_id: string | null;
-	kind: string;
+	id: string;
+	is_backdated: boolean;
+	organization_id: string;
+	policy_id: string;
+	requested_quantity: string;
+	start_date: string;
+	status: string;
+	unit: string;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+}
+
+export interface LeaveAdjustmentSqlRow {
+	create_idempotency_key: string;
+	create_request_fingerprint: string;
+	created_at: Date;
+	created_by: string;
 	delta: string;
+	entitlement_id: string;
+	id: string;
+	kind: string;
+	organization_id: string;
 	reason: string;
 	source: string;
+	source_request_id: string | null;
 	status: string;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+}
+
+export interface LeaveEntitlementSqlRow {
 	create_idempotency_key: string;
 	create_request_fingerprint: string;
-	version: number;
-	created_by: string;
-	updated_by: string;
 	created_at: Date;
-	updated_at: Date;
-};
-
-export type LeaveEntitlementSqlRow = {
-	id: string;
-	organization_id: string;
+	created_by: string;
 	employee_id: string;
 	employment_id: string;
-	policy_id: string;
-	period_start: string;
-	period_end: string;
-	opening_quantity: string;
-	status: string;
-	create_idempotency_key: string;
-	create_request_fingerprint: string;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
-	updated_at: Date;
-};
-
-export type LeavePolicySqlRow = {
 	id: string;
+	opening_quantity: string;
 	organization_id: string;
-	code: string;
-	name: string;
-	leave_type: string;
-	unit: string;
-	paid: boolean;
-	sensitive: boolean;
-	allows_negative_balance: boolean;
-	allow_self_approval: boolean;
-	allows_partial_day: boolean;
+	period_end: string;
+	period_start: string;
+	policy_id: string;
+	status: string;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+}
+
+export interface LeavePolicySqlRow {
 	accrual_basis: string;
 	accrual_frequency: string | null;
 	accrual_quantity_per_period: string | null;
+	allow_self_approval: boolean;
+	allows_negative_balance: boolean;
+	allows_partial_day: boolean;
 	carry_forward_enabled: boolean;
 	carry_forward_max_quantity: string | null;
-	entitlement_expiry_rule: string;
-	entitlement_expiry_days: number | null;
+	code: string;
+	created_at: Date;
+	created_by: string;
 	effective_from: string;
 	effective_to: string | null;
+	entitlement_expiry_days: number | null;
+	entitlement_expiry_rule: string;
+	id: string;
+	leave_type: string;
+	name: string;
+	organization_id: string;
+	paid: boolean;
+	sensitive: boolean;
 	status: string;
 	supersedes_policy_id: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
+	unit: string;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+}
 
 /**
  * Audit and outbox JSON builders — SSOT in shared/audit-facts.
@@ -235,9 +235,9 @@ export function buildBalanceCheckCte(params: {
 }): string {
 	const fromClause = params.fromCte ?? "hr_leave_entitlement ent";
 	const idFilter =
-		params.entitlementId !== undefined
-			? `AND ent.id = '${params.entitlementId}'`
-			: "";
+		params.entitlementId === undefined
+			? ""
+			: `AND ent.id = '${params.entitlementId}'`;
 	return `
 		balance_check AS (
 			SELECT 
@@ -274,7 +274,7 @@ export async function runLeaveTransaction<T extends unknown[]>(
 	queriesOrFn: Parameters<typeof runNeonHttpTransaction<T>>[0],
 	options?: Parameters<typeof runNeonHttpTransaction<T>>[1],
 ): Promise<T> {
-	return runNeonHttpTransaction<T>(queriesOrFn, {
+	return await runNeonHttpTransaction<T>(queriesOrFn, {
 		isolationLevel: "ReadCommitted",
 		...options,
 	});
@@ -284,14 +284,14 @@ export async function runLeaveTransaction<T extends unknown[]>(
  * After a create-idempotency unique violation, wait briefly for the winning
  * transaction to commit and return the existing row when fingerprints match.
  */
-export async function resolveIdempotentCreateReplay<T>(params: {
+export function resolveIdempotentCreateReplay<T>(params: {
 	find: () => Promise<Result<{ fingerprint: string; value: T } | null>>;
 	expectedFingerprint: string;
 	mismatchMessage?: string;
 	conflictMessage?: string;
 }): Promise<Result<T>> {
 	const maxAttempts = 8;
-	for (let attempt = 0; attempt < maxAttempts; attempt++) {
+	const resolveAttempt = async (attempt: number): Promise<Result<T>> => {
 		const replay = await params.find();
 		if (!replay.ok) {
 			return replay;
@@ -308,9 +308,14 @@ export async function resolveIdempotentCreateReplay<T>(params: {
 		}
 		if (attempt < maxAttempts - 1) {
 			await new Promise((resolve) => setTimeout(resolve, 25 * (attempt + 1)));
+			return resolveAttempt(attempt + 1);
 		}
-	}
-	return fail("CONFLICT", params.conflictMessage ?? "Idempotency key conflict");
+		return fail(
+			"CONFLICT",
+			params.conflictMessage ?? "Idempotency key conflict",
+		);
+	};
+	return resolveAttempt(0);
 }
 
 /**

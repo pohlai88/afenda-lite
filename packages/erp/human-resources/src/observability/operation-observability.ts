@@ -117,13 +117,27 @@ export function resolveHrOperationArea(
 	operationId: HumanResourcesOperationId,
 ): HrObservabilityArea {
 	const subject = operationSubject(operationId);
-	if (PAYROLL_DELIVERY_SUBJECTS.has(subject)) return "payroll_delivery";
-	if (COMPENSATION_SUBJECTS.has(subject)) return "compensation";
-	if (LEAVE_SUBJECTS.has(subject)) return "leave";
-	if (TIME_SUBJECTS.has(subject)) return "time";
-	if (TALENT_SUBJECTS.has(subject)) return "talent";
-	if (COMPLIANCE_SUBJECTS.has(subject)) return "compliance";
-	if (subject === "privacy") return "privacy";
+	if (PAYROLL_DELIVERY_SUBJECTS.has(subject)) {
+		return "payroll_delivery";
+	}
+	if (COMPENSATION_SUBJECTS.has(subject)) {
+		return "compensation";
+	}
+	if (LEAVE_SUBJECTS.has(subject)) {
+		return "leave";
+	}
+	if (TIME_SUBJECTS.has(subject)) {
+		return "time";
+	}
+	if (TALENT_SUBJECTS.has(subject)) {
+		return "talent";
+	}
+	if (COMPLIANCE_SUBJECTS.has(subject)) {
+		return "compliance";
+	}
+	if (subject === "privacy") {
+		return "privacy";
+	}
 	return "workforce";
 }
 
@@ -152,7 +166,9 @@ export function classifyHrOperationFailure(code: string): HrFailureReason {
 function denyCodeFromDetails(
 	details: unknown,
 ): HumanResourcesAuthorizationDenyCode | undefined {
-	if (details === null || typeof details !== "object") return undefined;
+	if (details === null || typeof details !== "object") {
+		return;
+	}
 	const value = readProperty(details, "denyCode");
 	switch (value) {
 		case "permission_denied":
@@ -164,7 +180,7 @@ function denyCodeFromDetails(
 		case "field_access_denied":
 			return value;
 		default:
-			return undefined;
+			return;
 	}
 }
 
@@ -172,7 +188,7 @@ function readProperty(value: object, key: PropertyKey): unknown {
 	try {
 		return Reflect.get(value, key);
 	} catch {
-		return undefined;
+		// Authorization details are untrusted and may expose throwing accessors.
 	}
 }
 
@@ -188,9 +204,7 @@ export function classifyHrAuthorizationDenial(
 		case "subject_scope_denied":
 		case "field_access_denied":
 			return "sensitive_scope_missing";
-		case "policy_not_registered":
-		case "ambiguous_policy":
-		case undefined:
+		default:
 			return "policy_denied";
 	}
 }
@@ -199,7 +213,9 @@ export function authorizationReasonFromFailure(
 	result: Extract<Result<unknown>, { ok: false }>,
 ): HrAuthorizationReason {
 	const denyCode = denyCodeFromDetails(result.details);
-	if (denyCode !== undefined) return classifyHrAuthorizationDenial(denyCode);
+	if (denyCode !== undefined) {
+		return classifyHrAuthorizationDenial(denyCode);
+	}
 	return result.code === "UNAUTHORIZED" || result.code === "FORBIDDEN"
 		? "permission_missing"
 		: "policy_denied";
@@ -224,10 +240,11 @@ export async function recordAuthorizedOperationTelemetry(input: {
 	failureReason?: HrFailureReason;
 	authorizationReason?: HrAuthorizationReason;
 }): Promise<void> {
-	const observability = input.observability;
-	if (observability === undefined) return;
+	const { authorizationReason, observability } = input;
+	if (observability === undefined) {
+		return;
+	}
 	const area = resolveHrOperationArea(input.operationId);
-	const authorizationReason = input.authorizationReason;
 	if (authorizationReason !== undefined) {
 		await ignoreTelemetryFailure(() =>
 			recordHrAuthorizationDenial(
@@ -236,7 +253,9 @@ export async function recordAuthorizedOperationTelemetry(input: {
 			),
 		);
 	}
-	if (input.operationKind !== "command") return;
+	if (input.operationKind !== "command") {
+		return;
+	}
 	await ignoreTelemetryFailure(() =>
 		recordHrCommand(
 			{
@@ -281,8 +300,10 @@ export async function observeHrPrivacyOperationResult<T>(input: {
 	observability: HrObservabilityPorts | undefined;
 	result: Result<T>;
 }): Promise<Result<T>> {
-	const observability = input.observability;
-	if (observability === undefined) return input.result;
+	const { observability } = input;
+	if (observability === undefined) {
+		return input.result;
+	}
 	await ignoreTelemetryFailure(() =>
 		recordHrPrivacyOperation(
 			input.result.ok

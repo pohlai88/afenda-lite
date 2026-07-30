@@ -28,7 +28,9 @@ import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authori
 import { createReceivingCommandOptions } from "@/lib/erp/receiving-command-options";
 import { sessionHasPermission } from "@/modules/identity/domain/session-permission";
 
-type ReceivingShellProps = { surface: "admin" | "client" };
+interface ReceivingShellProps {
+	surface: "admin" | "client";
+}
 
 /** Receiving console — RSC reads via `@afenda/receiving`; mutations via Actions. */
 export async function ReceivingShell({ surface }: ReceivingShellProps) {
@@ -98,24 +100,24 @@ export async function ReceivingShell({ surface }: ReceivingShellProps) {
 	return (
 		<section className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-10">
 			<div className="space-y-2">
-				<p className="text-sm text-muted-foreground">
+				<p className="text-muted-foreground text-sm">
 					{surface === "admin" ? "Operator" : "Client"} · Receiving
 				</p>
-				<h1 className="text-2xl font-semibold tracking-tight">
+				<h1 className="font-semibold text-2xl tracking-tight">
 					Goods receipts
 				</h1>
-				<p className="max-w-2xl text-sm text-muted-foreground">
+				<p className="max-w-2xl text-muted-foreground text-sm">
 					Record inbound goods against purchase orders, post accepted quantity
 					to inventory, reverse posted receipts, and manage discrepancies.
 				</p>
 			</div>
 
-			{!receiptsResult.ok ? (
+			{receiptsResult.ok ? null : (
 				<Alert>
 					<AlertTitle>Could not load receipts</AlertTitle>
 					<AlertDescription>{receiptsResult.message}</AlertDescription>
 				</Alert>
-			) : null}
+			)}
 
 			{exceptions.length > 0 ? (
 				<Card>
@@ -129,7 +131,7 @@ export async function ReceivingShell({ surface }: ReceivingShellProps) {
 					<CardContent className="space-y-2 text-sm">
 						<ul className="space-y-2">
 							{exceptions.map((receipt) => (
-								<li key={receipt.id} className="rounded-md border px-3 py-2">
+								<li className="rounded-md border px-3 py-2" key={receipt.id}>
 									<div className="font-medium">
 										{receipt.code} · {receipt.inventoryApplicationStatus}
 									</div>
@@ -159,7 +161,7 @@ export async function ReceivingShell({ surface }: ReceivingShellProps) {
 					) : (
 						<ul className="space-y-2">
 							{receipts.map((receipt) => (
-								<li key={receipt.id} className="rounded-md border px-3 py-2">
+								<li className="rounded-md border px-3 py-2" key={receipt.id}>
 									<div className="font-medium">
 										{receipt.code} · {receipt.status} · v{receipt.version}
 										{receipt.reversesReceiptId ? " · reverse" : null}

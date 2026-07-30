@@ -28,7 +28,9 @@ import { requirePermission } from "@/features/auth/require-permission";
 import { createAccountingCommandOptions } from "@/lib/erp/accounting-command-options";
 import { sessionHasPermission } from "@/modules/identity/domain/session-permission";
 
-type AccountingShellProps = { surface: "admin" | "client" };
+interface AccountingShellProps {
+	surface: "admin" | "client";
+}
 
 const formSections = [
 	["Open accounting period", OpenAccountingPeriodForm],
@@ -75,28 +77,28 @@ export async function AccountingShell({ surface }: AccountingShellProps) {
 	return (
 		<section className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-10">
 			<div className="space-y-2">
-				<p className="text-sm text-muted-foreground">
+				<p className="text-muted-foreground text-sm">
 					{surface === "admin" ? "Operator" : "Client"} · Accounting
 				</p>
-				<h1 className="text-2xl font-semibold tracking-tight">Accounting</h1>
-				<p className="max-w-2xl text-sm text-muted-foreground">
+				<h1 className="font-semibold text-2xl tracking-tight">Accounting</h1>
+				<p className="max-w-2xl text-muted-foreground text-sm">
 					Manage accounting periods and journals, post balanced entries, reverse
 					posted journals, and review the organization trial balance.
 				</p>
 			</div>
 
-			{!journalsResult.ok ? (
+			{journalsResult.ok ? null : (
 				<Alert>
 					<AlertTitle>Could not load journals</AlertTitle>
 					<AlertDescription>{journalsResult.message}</AlertDescription>
 				</Alert>
-			) : null}
-			{!trialBalanceResult.ok ? (
+			)}
+			{trialBalanceResult.ok ? null : (
 				<Alert>
 					<AlertTitle>Could not load trial balance</AlertTitle>
 					<AlertDescription>{trialBalanceResult.message}</AlertDescription>
 				</Alert>
-			) : null}
+			)}
 
 			<Card>
 				<CardHeader>
@@ -128,7 +130,7 @@ export async function AccountingShell({ surface }: AccountingShellProps) {
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<TrialBalanceTable rows={trialBalance} />
+					<TrialBalanceTable rows={trialBalance.map((row) => ({ ...row }))} />
 				</CardContent>
 			</Card>
 

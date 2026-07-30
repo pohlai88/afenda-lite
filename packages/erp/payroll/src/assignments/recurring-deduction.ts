@@ -21,7 +21,7 @@ import type { PayrollRecurringDeduction } from "../types";
 export const PAYROLL_AGGREGATE_RECURRING_DEDUCTION =
 	"recurring-deduction" as const;
 
-export async function createPayrollRecurringDeduction(
+export function createPayrollRecurringDeduction(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollRecurringDeduction>> {
@@ -29,6 +29,7 @@ export async function createPayrollRecurringDeduction(
 		schema: createPayrollRecurringDeductionInputSchema,
 		invalidMessage: "Invalid payroll recurring deduction create input",
 		command: PAYROLL_COMMAND_ASSIGNMENT_RECURRING_DEDUCTION_CREATE,
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The command boundary validates employee, assignment, rule, currency, and idempotency invariants before mutation.
 		execute: async (data, { store, ports, employees }) => {
 			const assignment = await store.getEmployeeAssignment({
 				organizationId: data.organizationId,

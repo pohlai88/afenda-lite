@@ -6,14 +6,14 @@ import type {
 import type { HumanResourcesRetentionClassification } from "../privacy";
 import type { NonEmployeeWorkerType, WorkerStatus } from "./classification";
 
-type WorkforceFoundationRecord = {
-	organizationId: string;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
+interface WorkforceFoundationRecord {
 	createdAt: Date;
+	createdBy: string;
+	organizationId: string;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
 export type Person = WorkforceFoundationRecord & {
 	id: HumanResourcesPersonId;
@@ -44,98 +44,98 @@ export type PersonContact = WorkforceFoundationRecord & {
 
 export type PersonIdentifierStatus = "active" | "retired";
 
-export type PersonIdentifier = {
-	id: string;
-	organizationId: string;
-	personId: HumanResourcesPersonId;
-	identifierType: string;
-	identifierFingerprint: string;
-	identifierLast4: string;
+export interface PersonIdentifier {
+	createdAt: Date;
+	createdBy: string;
 	documentRef: string | null;
 	effectiveFrom: string;
 	effectiveTo: string | null;
+	id: string;
+	identifierFingerprint: string;
+	identifierLast4: string;
+	identifierType: string;
+	organizationId: string;
+	personId: HumanResourcesPersonId;
 	status: PersonIdentifierStatus;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
 export type PersonDuplicateMatchReason =
 	| "legal_name"
 	| "email"
 	| "identifier_fingerprint";
 
-export type PersonDuplicateCandidate = {
-	personId: HumanResourcesPersonId;
-	matchReasons: readonly PersonDuplicateMatchReason[];
+export interface PersonDuplicateCandidate {
 	legalName: string;
+	matchReasons: readonly PersonDuplicateMatchReason[];
+	personId: HumanResourcesPersonId;
 	preferredName: string | null;
-};
+}
 
 export type LineageSegmentStatus = "active" | "superseded";
 
-export type PersonIdentityVersion = {
-	id: string;
-	organizationId: string;
-	personId: HumanResourcesPersonId;
-	legalName: string;
+export interface PersonIdentityVersion {
+	createdAt: Date;
+	createdBy: string;
 	effectiveFrom: string;
 	effectiveTo: string | null;
-	supersedesIdentityVersionId: string | null;
-	lineageStatus: LineageSegmentStatus;
-	reasonCode: string;
 	evidenceRef: string | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type PersonIdentityAtAsOf = {
-	personId: HumanResourcesPersonId;
-	organizationId: string;
+	id: string;
 	legalName: string;
+	lineageStatus: LineageSegmentStatus;
+	organizationId: string;
+	personId: HumanResourcesPersonId;
+	reasonCode: string;
+	supersedesIdentityVersionId: string | null;
+	updatedAt: Date;
+	updatedBy: string;
+	version: number;
+}
+
+export interface PersonIdentityAtAsOf {
 	asOf: string;
 	effectiveFrom: string;
 	effectiveTo: string | null;
 	identityVersionId: string;
-};
-
-export type WorkerClassificationVersion = {
-	id: string;
-	organizationId: string;
-	workerId: HumanResourcesWorkerId;
-	workerType: "employee" | NonEmployeeWorkerType;
-	employeeId: HumanResourcesEmployeeId | null;
-	workerStatus: WorkerStatus;
-	effectiveFrom: string;
-	effectiveTo: string | null;
-	supersedesClassificationVersionId: string | null;
-	lineageStatus: LineageSegmentStatus;
-	reasonCode: string;
-	evidenceRef: string | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type WorkerClassificationAtAsOf = {
-	workerId: HumanResourcesWorkerId;
+	legalName: string;
 	organizationId: string;
 	personId: HumanResourcesPersonId;
-	workerType: "employee" | NonEmployeeWorkerType;
-	employeeId: HumanResourcesEmployeeId | null;
-	status: WorkerStatus;
-	asOf: string;
+}
+
+export interface WorkerClassificationVersion {
+	createdAt: Date;
+	createdBy: string;
 	effectiveFrom: string;
 	effectiveTo: string | null;
+	employeeId: HumanResourcesEmployeeId | null;
+	evidenceRef: string | null;
+	id: string;
+	lineageStatus: LineageSegmentStatus;
+	organizationId: string;
+	reasonCode: string;
+	supersedesClassificationVersionId: string | null;
+	updatedAt: Date;
+	updatedBy: string;
+	version: number;
+	workerId: HumanResourcesWorkerId;
+	workerStatus: WorkerStatus;
+	workerType: "employee" | NonEmployeeWorkerType;
+}
+
+export interface WorkerClassificationAtAsOf {
+	asOf: string;
 	classificationVersionId: string;
-};
+	effectiveFrom: string;
+	effectiveTo: string | null;
+	employeeId: HumanResourcesEmployeeId | null;
+	organizationId: string;
+	personId: HumanResourcesPersonId;
+	status: WorkerStatus;
+	workerId: HumanResourcesWorkerId;
+	workerType: "employee" | NonEmployeeWorkerType;
+}
 
 type WorkerBase = WorkforceFoundationRecord & {
 	id: HumanResourcesWorkerId;
@@ -161,37 +161,37 @@ export type NonEmployeeWorker = WorkerBase & {
 
 export type Worker = EmployeeWorker | NonEmployeeWorker;
 
-export type EmployeeOrganizationEntry = {
-	enteredOn: string;
+export interface EmployeeOrganizationEntry {
 	employmentId: import("../brands").HumanResourcesEmploymentId;
+	enteredOn: string;
 	orgContext: import("../schemas/org-context").EmployeeOrgContextAsOf | null;
-};
+}
 
 /** Composite employee profile for manager / self / HR reads (Slice 5.3). */
-export type EmployeeProfile = {
+export interface EmployeeProfile {
+	bankAccount: string | null;
+	contacts: readonly PersonContact[] | null;
+	documentRef: string | null;
+	emergencyContacts: readonly PersonContact[] | null;
 	employeeId: HumanResourcesEmployeeId;
 	employeeNumber: string;
-	legalName: string;
+	employmentId: import("../brands").HumanResourcesEmploymentId | null;
 	employmentStatus:
 		| import("../shared/employment-status").EmploymentStatus
 		| null;
-	employmentId: import("../brands").HumanResourcesEmploymentId | null;
-	personId: HumanResourcesPersonId | null;
-	personDisplayName: string | null;
-	preferredName: string | null;
-	workerType: "employee" | NonEmployeeWorkerType | null;
-	workerStatus: WorkerStatus | null;
+	homeAddress: string | null;
+	identifierFingerprint: string | null;
+	identifierLast4: string | null;
+	identifiers: readonly PersonIdentifier[] | null;
+	legalName: string;
 	organizationEntry: EmployeeOrganizationEntry | null;
 	personalPhoneNumber: string | null;
-	homeAddress: string | null;
-	emergencyContacts: readonly PersonContact[] | null;
-	contacts: readonly PersonContact[] | null;
-	identifiers: readonly PersonIdentifier[] | null;
+	personDisplayName: string | null;
+	personId: HumanResourcesPersonId | null;
+	preferredName: string | null;
+	socialSecurityNumber: string | null;
 	ssn: string | null;
 	taxId: string | null;
-	socialSecurityNumber: string | null;
-	identifierLast4: string | null;
-	identifierFingerprint: string | null;
-	documentRef: string | null;
-	bankAccount: string | null;
-};
+	workerStatus: WorkerStatus | null;
+	workerType: "employee" | NonEmployeeWorkerType | null;
+}

@@ -47,8 +47,9 @@ describe("pending domain event appender", () => {
 			values,
 		})) as unknown as NeonHttpSql;
 		const executeTransaction = vi.fn(
-			async (buildQueries: (database: NeonHttpSql) => unknown[]) => {
+			(buildQueries: (database: NeonHttpSql) => unknown[]) => {
 				builtQueries.push(...(buildQueries(sql) as typeof builtQueries));
+				return Promise.resolve();
 			},
 		);
 		const appender = createPendingDomainEventAppender({
@@ -87,9 +88,7 @@ describe("pending domain event appender", () => {
 	it("keeps unexpected executor failures observable", async () => {
 		const unexpected = new TypeError("transaction executor defect");
 		const appender = createPendingDomainEventAppender({
-			executeTransaction: async () => {
-				throw unexpected;
-			},
+			executeTransaction: () => Promise.reject(unexpected),
 		});
 
 		await expect(appender.append([pendingEvent()])).rejects.toBe(unexpected);

@@ -7,11 +7,11 @@ import {
 
 export type ProductPermissionCode = PlatformPermissionCodeV1;
 
-export type PermissionSession = {
+export interface PermissionSession {
 	orgId: string;
-	userId: string;
 	role: PermissionBootstrapRole;
-};
+	userId: string;
+}
 
 export const PERMISSION_DENIED_MESSAGE: Record<
 	PlatformPermissionCodeV1,

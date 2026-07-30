@@ -58,7 +58,7 @@ import type {
 } from "../../types";
 import { createDrizzleSetupExtendedMethods } from "./setup-extended-methods";
 
-async function recordAudit(
+function recordAudit(
 	ports: MutationPorts,
 	input: {
 		organizationId: string;
@@ -411,7 +411,7 @@ const drizzleSetupCore = {
 					),
 				)
 				.limit(1);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return ok(null);
 			}
@@ -431,6 +431,7 @@ const drizzleSetupCore = {
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Calendar creation keeps idempotency, persistence, audit, and outbox rollback together.
 	async createCalendar(
 		record: PayrollCalendarCreateRecord,
 		ports: MutationPorts,
@@ -476,7 +477,7 @@ const drizzleSetupCore = {
 					updatedBy: record.createdBy,
 				})
 				.returning();
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return mapPersistenceFailure(
 					new Error("Missing returning row"),
@@ -540,7 +541,7 @@ const drizzleSetupCore = {
 					),
 				)
 				.limit(1);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return ok(null);
 			}
@@ -580,9 +581,9 @@ const drizzleSetupCore = {
 					name: input.name ?? current.data.name,
 					timezone: input.timezone ?? current.data.timezone,
 					effectiveTo:
-						input.effectiveTo !== undefined
-							? input.effectiveTo
-							: current.data.effectiveTo,
+						input.effectiveTo === undefined
+							? current.data.effectiveTo
+							: input.effectiveTo,
 					version: current.data.version + 1,
 					updatedBy: input.actorUserId,
 					updatedAt: new Date(),
@@ -595,7 +596,7 @@ const drizzleSetupCore = {
 					),
 				)
 				.returning();
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return mapConflict("Payroll calendar version is stale");
 			}
@@ -623,7 +624,7 @@ const drizzleSetupCore = {
 		}
 	},
 
-	async createPayGroup(
+	createPayGroup(
 		record: PayrollPayGroupCreateRecord,
 		ports: MutationPorts,
 	): Promise<Result<PayrollPayGroup>> {
@@ -640,7 +641,7 @@ const drizzleSetupCore = {
 							),
 						)
 						.limit(1);
-					const row = rows[0];
+					const [row] = rows;
 					if (row === undefined) {
 						return ok(null);
 					}
@@ -661,6 +662,7 @@ const drizzleSetupCore = {
 			},
 			record.createRequestFingerprint,
 			mapPayGroupRow,
+			// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The create callback validates dependencies and commits one idempotent setup aggregate.
 			async () => {
 				const calendar = await this.getCalendar({
 					organizationId: record.organizationId,
@@ -696,7 +698,7 @@ const drizzleSetupCore = {
 							updatedBy: record.createdBy,
 						})
 						.returning();
-					const row = rows[0];
+					const [row] = rows;
 					if (row === undefined) {
 						return mapPersistenceFailure(
 							new Error("Missing returning row"),
@@ -737,7 +739,7 @@ const drizzleSetupCore = {
 								),
 							)
 							.limit(1);
-						const row = rows[0];
+						const [row] = rows;
 						if (row !== undefined) {
 							if (
 								row.createRequestFingerprint !== record.createRequestFingerprint
@@ -771,7 +773,7 @@ const drizzleSetupCore = {
 					),
 				)
 				.limit(1);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return ok(null);
 			}
@@ -783,7 +785,7 @@ const drizzleSetupCore = {
 
 	async listPayGroups(input: {
 		organizationId: string;
-		status?: "active" | "archived";
+		status?: "active" | "archived" | undefined;
 	}): Promise<Result<PayrollPayGroup[]>> {
 		try {
 			const rows = await db
@@ -811,7 +813,7 @@ const drizzleSetupCore = {
 		}
 	},
 
-	async createPeriod(
+	createPeriod(
 		record: PayrollPeriodCreateRecord,
 		ports: MutationPorts,
 	): Promise<Result<PayrollPeriod>> {
@@ -828,7 +830,7 @@ const drizzleSetupCore = {
 							),
 						)
 						.limit(1);
-					const row = rows[0];
+					const [row] = rows;
 					if (row === undefined) {
 						return ok(null);
 					}
@@ -849,6 +851,7 @@ const drizzleSetupCore = {
 			},
 			record.createRequestFingerprint,
 			mapPeriodRow,
+			// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The create callback validates dependencies and commits one idempotent setup aggregate.
 			async () => {
 				const payGroup = await this.getPayGroup({
 					organizationId: record.organizationId,
@@ -884,7 +887,7 @@ const drizzleSetupCore = {
 							updatedBy: record.createdBy,
 						})
 						.returning();
-					const row = rows[0];
+					const [row] = rows;
 					if (row === undefined) {
 						return mapPersistenceFailure(
 							new Error("Missing returning row"),
@@ -922,7 +925,7 @@ const drizzleSetupCore = {
 								),
 							)
 							.limit(1);
-						const row = rows[0];
+						const [row] = rows;
 						if (row !== undefined) {
 							if (
 								row.createRequestFingerprint !== record.createRequestFingerprint
@@ -956,7 +959,7 @@ const drizzleSetupCore = {
 					),
 				)
 				.limit(1);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return ok(null);
 			}
@@ -969,7 +972,7 @@ const drizzleSetupCore = {
 	async listPeriodsForPayGroup(input: {
 		organizationId: string;
 		payGroupId: PayrollPayGroupId;
-		status?: "open" | "closed";
+		status?: "open" | "closed" | undefined;
 	}): Promise<Result<PayrollPeriod[]>> {
 		try {
 			const rows = await db
@@ -1004,7 +1007,7 @@ const drizzleSetupCore = {
 		}
 	},
 
-	async createEarningRule(
+	createEarningRule(
 		record: PayrollEarningRuleCreateRecord,
 		ports: MutationPorts,
 	): Promise<Result<PayrollEarningRule>> {
@@ -1024,7 +1027,7 @@ const drizzleSetupCore = {
 							),
 						)
 						.limit(1);
-					const row = rows[0];
+					const [row] = rows;
 					if (row === undefined) {
 						return ok(null);
 					}
@@ -1045,6 +1048,7 @@ const drizzleSetupCore = {
 			},
 			record.createRequestFingerprint,
 			mapEarningRuleRow,
+			// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The create callback validates dependencies and commits one idempotent setup aggregate.
 			async () => {
 				const payGroup = await this.getPayGroup({
 					organizationId: record.organizationId,
@@ -1105,7 +1109,7 @@ const drizzleSetupCore = {
 							updatedBy: record.createdBy,
 						})
 						.returning();
-					const row = rows[0];
+					const [row] = rows;
 					if (row === undefined) {
 						return mapPersistenceFailure(
 							new Error("Missing returning row"),
@@ -1146,7 +1150,7 @@ const drizzleSetupCore = {
 								),
 							)
 							.limit(1);
-						const row = rows[0];
+						const [row] = rows;
 						if (row !== undefined) {
 							if (
 								row.createRequestFingerprint !== record.createRequestFingerprint
@@ -1165,7 +1169,7 @@ const drizzleSetupCore = {
 		);
 	},
 
-	async createDeductionRule(
+	createDeductionRule(
 		record: PayrollDeductionRuleCreateRecord,
 		ports: MutationPorts,
 	): Promise<Result<PayrollDeductionRule>> {
@@ -1185,7 +1189,7 @@ const drizzleSetupCore = {
 							),
 						)
 						.limit(1);
-					const row = rows[0];
+					const [row] = rows;
 					if (row === undefined) {
 						return ok(null);
 					}
@@ -1206,6 +1210,7 @@ const drizzleSetupCore = {
 			},
 			record.createRequestFingerprint,
 			mapDeductionRuleRow,
+			// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The create callback validates dependencies and commits one idempotent setup aggregate.
 			async () => {
 				const payGroup = await this.getPayGroup({
 					organizationId: record.organizationId,
@@ -1267,7 +1272,7 @@ const drizzleSetupCore = {
 							updatedBy: record.createdBy,
 						})
 						.returning();
-					const row = rows[0];
+					const [row] = rows;
 					if (row === undefined) {
 						return mapPersistenceFailure(
 							new Error("Missing returning row"),
@@ -1311,7 +1316,7 @@ const drizzleSetupCore = {
 								),
 							)
 							.limit(1);
-						const row = rows[0];
+						const [row] = rows;
 						if (row !== undefined) {
 							if (
 								row.createRequestFingerprint !== record.createRequestFingerprint
@@ -1330,7 +1335,7 @@ const drizzleSetupCore = {
 		);
 	},
 
-	async createStatutoryRule(
+	createStatutoryRule(
 		record: PayrollStatutoryRuleCreateRecord,
 		ports: MutationPorts,
 	): Promise<Result<PayrollStatutoryRule>> {
@@ -1350,7 +1355,7 @@ const drizzleSetupCore = {
 							),
 						)
 						.limit(1);
-					const row = rows[0];
+					const [row] = rows;
 					if (row === undefined) {
 						return ok(null);
 					}
@@ -1371,6 +1376,7 @@ const drizzleSetupCore = {
 			},
 			record.createRequestFingerprint,
 			mapStatutoryRuleRow,
+			// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The create callback validates dependencies and commits one idempotent setup aggregate.
 			async () => {
 				const payGroup = await this.getPayGroup({
 					organizationId: record.organizationId,
@@ -1429,7 +1435,7 @@ const drizzleSetupCore = {
 							updatedBy: record.createdBy,
 						})
 						.returning();
-					const row = rows[0];
+					const [row] = rows;
 					if (row === undefined) {
 						return mapPersistenceFailure(
 							new Error("Missing returning row"),
@@ -1473,7 +1479,7 @@ const drizzleSetupCore = {
 								),
 							)
 							.limit(1);
-						const row = rows[0];
+						const [row] = rows;
 						if (row !== undefined) {
 							if (
 								row.createRequestFingerprint !== record.createRequestFingerprint

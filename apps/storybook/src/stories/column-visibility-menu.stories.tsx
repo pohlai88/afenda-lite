@@ -16,7 +16,7 @@ import {
 	TableRow,
 } from "@afenda/ui-system";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import * as React from "react";
+import { useCallback, useState } from "react";
 import { contractDocsParameters } from "./contract-docs";
 import { contractEvidence, StorySection } from "./evidence";
 import { interactionFor } from "./interactions";
@@ -118,33 +118,37 @@ function InvoiceColumnMenu({
 	initialColumns?: readonly ColumnVisibilityOption[];
 	label?: string;
 }) {
-	const [columns, setColumns] = React.useState(() => [...initialColumns]);
+	const [columns, setColumns] = useState(() => [...initialColumns]);
+	const handleVisibilityChange = useCallback((id: string, visible: boolean) => {
+		setColumns((current) => applyVisibility(current, id, visible));
+	}, []);
 
 	return (
 		<ColumnVisibilityMenu
-			label={label}
 			columns={columns}
-			onVisibilityChange={(id, visible) =>
-				setColumns((current) => applyVisibility(current, id, visible))
-			}
+			label={label}
+			onVisibilityChange={handleVisibilityChange}
 		/>
 	);
 }
 
 function ReceivablesColumnWorkbench() {
-	const [columns, setColumns] = React.useState(() => [...INVOICE_COLUMNS]);
+	const [columns, setColumns] = useState(() => [...INVOICE_COLUMNS]);
+	const handleVisibilityChange = useCallback((id: string, visible: boolean) => {
+		setColumns((current) => applyVisibility(current, id, visible));
+	}, []);
 
 	return (
 		<div className="min-h-screen bg-canvas text-foreground">
 			<div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-2 border-b pb-6">
-					<p className="text-sm font-medium text-foreground-secondary">
+					<p className="font-medium text-foreground-secondary text-sm">
 						Accounts receivable · open invoices
 					</p>
-					<h1 className="text-2xl font-semibold tracking-tight">
+					<h1 className="font-semibold text-2xl tracking-tight">
 						Invoice workbench
 					</h1>
-					<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+					<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 						ColumnVisibilityMenu densifies optional columns on this list.
 						Invoice and Amount stay non-hideable. Hiding Due date does not
 						revoke access to due-date data.
@@ -161,9 +165,7 @@ function ReceivablesColumnWorkbench() {
 						</div>
 						<ColumnVisibilityMenu
 							columns={columns}
-							onVisibilityChange={(id, visible) =>
-								setColumns((current) => applyVisibility(current, id, visible))
-							}
+							onVisibilityChange={handleVisibilityChange}
 						/>
 					</CardHeader>
 					<CardContent>
@@ -212,9 +214,9 @@ function ReceivablesColumnWorkbench() {
 										) : null}
 										<TableCell>
 											<StatusBadge
+												label={row.statusLabel}
 												size="sm"
 												status={row.status}
-												label={row.statusLabel}
 											/>
 										</TableCell>
 									</TableRow>
@@ -287,7 +289,7 @@ export const AuthorizationAndPersistence: Story = {
 					<div className="flex justify-end">
 						<InvoiceColumnMenu />
 					</div>
-					<p className="text-sm leading-6 text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm leading-6">
 						Customer, Due date, and Owner are already authorized fields. The
 						menu changes presentation only.
 					</p>
@@ -299,7 +301,7 @@ export const AuthorizationAndPersistence: Story = {
 					<div className="flex justify-end">
 						<InvoiceColumnMenu />
 					</div>
-					<p className="text-sm leading-6 text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm leading-6">
 						Invoice and Amount are disabled because the receivables view
 						requires record identity and material value for every usable row.
 					</p>
@@ -307,7 +309,7 @@ export const AuthorizationAndPersistence: Story = {
 			</StorySection>
 
 			<StorySection title="Saved state is feature-owned">
-				<p className="text-sm leading-6 text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm leading-6">
 					A saved view may persist optional visibility choices. On restore, the
 					feature must discard unknown IDs and reassert newly required columns
 					before passing controlled options to ColumnVisibilityMenu.
@@ -330,13 +332,13 @@ export const AdaptiveLayout: Story = {
 	render: () => (
 		<div className="grid w-full max-w-4xl gap-8">
 			<StorySection title="Narrow table toolbar">
-				<div className="w-full max-w-sm rounded-xl border border-dashed border-border p-4">
+				<div className="w-full max-w-sm rounded-xl border border-border border-dashed p-4">
 					<div className="flex flex-wrap items-start justify-between gap-3">
 						<div className="min-w-0">
-							<p className="text-sm font-medium text-foreground">
+							<p className="font-medium text-foreground text-sm">
 								Open receivables
 							</p>
-							<p className="text-sm text-foreground-secondary">
+							<p className="text-foreground-secondary text-sm">
 								128 invoice records
 							</p>
 						</div>
@@ -348,7 +350,6 @@ export const AdaptiveLayout: Story = {
 			<StorySection title="Long operational column labels">
 				<div className="flex justify-end rounded-lg border p-4">
 					<InvoiceColumnMenu
-						label="Visible fields"
 						initialColumns={[
 							{
 								id: "invoice",
@@ -373,6 +374,7 @@ export const AdaptiveLayout: Story = {
 								visible: false,
 							},
 						]}
+						label="Visible fields"
 					/>
 				</div>
 			</StorySection>
@@ -451,9 +453,9 @@ export const Composition: Story = {
 						<div className="flex flex-wrap items-center gap-2">
 							<Badge variant="outline">Receivables</Badge>
 							<StatusBadge
+								label="Close in progress"
 								size="sm"
 								status="pending"
-								label="Close in progress"
 							/>
 						</div>
 						<CardTitle>Priority invoices</CardTitle>
@@ -461,7 +463,7 @@ export const Composition: Story = {
 					</div>
 					<InvoiceColumnMenu />
 				</CardHeader>
-				<CardContent className="text-sm text-foreground-secondary">
+				<CardContent className="text-foreground-secondary text-sm">
 					Operators densify Customer and Owner for review. Invoice identity and
 					Amount remain required columns under feature policy.
 				</CardContent>
@@ -472,13 +474,12 @@ export const Composition: Story = {
 					<div className="grid gap-1">
 						<div className="flex flex-wrap items-center gap-2">
 							<Badge variant="secondary">Payables</Badge>
-							<StatusBadge size="sm" status="active" label="Operational" />
+							<StatusBadge label="Operational" size="sm" status="active" />
 						</div>
 						<CardTitle>Supplier payment runs</CardTitle>
 						<CardDescription>July remittance batch</CardDescription>
 					</div>
 					<InvoiceColumnMenu
-						label="Visible fields"
 						initialColumns={[
 							{
 								id: "run",
@@ -491,9 +492,10 @@ export const Composition: Story = {
 							{ id: "due", label: "Due date", visible: false },
 							{ id: "bank", label: "Bank account", visible: true },
 						]}
+						label="Visible fields"
 					/>
 				</CardHeader>
-				<CardContent className="text-sm text-foreground-secondary">
+				<CardContent className="text-foreground-secondary text-sm">
 					Payment run and Total stay non-hideable. Due date remains optional
 					density, not authorization.
 				</CardContent>
@@ -533,7 +535,7 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do not: use hiding as authorization">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Hiding Amount must never substitute for permission checks. Operators
 					who lack field access must not receive values through another column
 					or export path.
@@ -543,12 +545,12 @@ export const DoAndDoNot: Story = {
 			<StorySection title="Do: place the menu beside the controlled table">
 				<div className="grid gap-3 rounded-lg border p-4">
 					<div className="flex items-center justify-between gap-3">
-						<p className="text-sm font-medium text-foreground">
+						<p className="font-medium text-foreground text-sm">
 							Open receivables
 						</p>
 						<InvoiceColumnMenu />
 					</div>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						The trigger stays adjacent to the list it densifies so operators
 						know which surface changes.
 					</p>
@@ -556,7 +558,7 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do not: persist preferences inside the menu">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Visibility persistence belongs to the owning view or SavedViewSelect
 					policy. The reusable menu only emits controlled callbacks.
 				</p>

@@ -27,8 +27,8 @@ export function AppShellHeader({
 
 	return (
 		<header
-			data-slot="app-shell-header"
 			className="flex min-h-14 items-center gap-3 rounded-xl border bg-card px-4"
+			data-slot="app-shell-header"
 		>
 			<SidebarTrigger />
 			<Breadcrumb />
@@ -36,41 +36,41 @@ export function AppShellHeader({
 				{header.title}
 			</h1>
 			<div
-				data-slot="app-shell-command-area"
 				className="flex items-center gap-1"
+				data-slot="app-shell-command-area"
 			>
 				<Button
+					aria-label="Open command menu"
+					size="icon-sm"
 					type="button"
 					variant="ghost"
-					size="icon-sm"
-					aria-label="Open command menu"
 				>
 					<SearchIcon />
 				</Button>
 				<Button
+					aria-label={`Open notifications (${unreadCount} unread)`}
+					size="icon-sm"
 					type="button"
 					variant="ghost"
-					size="icon-sm"
-					aria-label={`Open notifications (${unreadCount} unread)`}
 				>
 					<BellIcon />
 				</Button>
 				{showModeToggle ? (
 					<Button
+						aria-label="Toggle color mode"
+						size="icon-sm"
 						type="button"
 						variant="ghost"
-						size="icon-sm"
-						aria-label="Toggle color mode"
 					>
 						<MoonIcon />
 					</Button>
 				) : null}
 				{showThemeCustomiser ? <ThemeCustomiser /> : null}
 				<Button
+					aria-label={`Open profile menu for ${profileName ?? "account"}`}
+					size="icon-sm"
 					type="button"
 					variant="ghost"
-					size="icon-sm"
-					aria-label={`Open profile menu for ${profileName ?? "account"}`}
 				>
 					<UserCircleIcon />
 				</Button>

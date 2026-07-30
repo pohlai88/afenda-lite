@@ -273,6 +273,183 @@ function versionConflict(message: string): Result<never> {
 	} satisfies MasterFailureDetails);
 }
 
+function resolveWarehouseUpdateState(
+	record: WarehouseUpdateRecord,
+	existing: Warehouse,
+) {
+	return {
+		name: record.name ?? existing.name,
+		locationType: record.locationType ?? existing.locationType,
+		addressCountryId:
+			record.addressCountryId === undefined
+				? existing.addressCountryId
+				: record.addressCountryId,
+		addressLine1:
+			record.addressLine1 === undefined
+				? existing.addressLine1
+				: record.addressLine1,
+		addressLine2:
+			record.addressLine2 === undefined
+				? existing.addressLine2
+				: record.addressLine2,
+		addressCity:
+			record.addressCity === undefined
+				? existing.addressCity
+				: record.addressCity,
+		addressRegion:
+			record.addressRegion === undefined
+				? existing.addressRegion
+				: record.addressRegion,
+		addressPostalCode:
+			record.addressPostalCode === undefined
+				? existing.addressPostalCode
+				: record.addressPostalCode,
+	};
+}
+
+function normalizePaymentTermUpdateRule(
+	record: PaymentTermUpdateRecord,
+	existing: PaymentTerm,
+) {
+	return normalizePaymentTermRule({
+		netDays: record.netDays ?? existing.netDays,
+		discountDays:
+			record.discountDays === undefined
+				? existing.discountDays
+				: record.discountDays,
+		discountPercent:
+			record.discountPercent === undefined
+				? existing.discountPercent
+				: record.discountPercent,
+		dueDayRule: record.dueDayRule ?? existing.dueDayRule,
+		endOfMonth: record.endOfMonth ?? existing.endOfMonth,
+		installmentPolicy: record.installmentPolicy ?? existing.installmentPolicy,
+		installmentCount:
+			record.installmentCount === undefined
+				? existing.installmentCount
+				: record.installmentCount,
+		validFrom:
+			record.validFrom === undefined ? existing.validFrom : record.validFrom,
+		validTo: record.validTo === undefined ? existing.validTo : record.validTo,
+		currencyRestrictionId:
+			record.currencyRestrictionId === undefined
+				? existing.currencyRestrictionId
+				: record.currencyRestrictionId,
+	});
+}
+
+function resolveItemUpdateState(record: ItemUpdateRecord, existing: Item) {
+	const itemType = record.itemType ?? existing.itemType;
+	const itemTypeChanged = itemType !== existing.itemType;
+	return {
+		name: record.name ?? existing.name,
+		description:
+			record.description === undefined
+				? existing.description
+				: record.description,
+		itemType,
+		baseUomId: record.baseUomId ?? existing.baseUomId,
+		itemGroupId: record.itemGroupId ?? existing.itemGroupId,
+		profile: resolveItemOperationalProfile({
+			itemType,
+			trackingPolicy:
+				record.trackingPolicy ??
+				(itemTypeChanged ? undefined : existing.trackingPolicy),
+			sellable:
+				record.sellable ?? (itemTypeChanged ? undefined : existing.sellable),
+			purchasable:
+				record.purchasable ??
+				(itemTypeChanged ? undefined : existing.purchasable),
+			stocked:
+				record.stocked ?? (itemTypeChanged ? undefined : existing.stocked),
+			serviceIndicator:
+				record.serviceIndicator ??
+				(itemTypeChanged ? undefined : existing.serviceIndicator),
+		}),
+	};
+}
+
+function buildItemUpdateChangesJson(
+	existing: Item,
+	state: ReturnType<typeof resolveItemUpdateState>,
+): string {
+	return JSON.stringify([
+		{ field: "name", oldValue: existing.name, newValue: state.name },
+		...(state.description === existing.description
+			? []
+			: [
+					{
+						field: "description",
+						oldValue: existing.description,
+						newValue: state.description,
+					},
+				]),
+		...(state.itemType === existing.itemType
+			? []
+			: [
+					{
+						field: "itemType",
+						oldValue: existing.itemType,
+						newValue: state.itemType,
+					},
+				]),
+		...(state.itemGroupId === existing.itemGroupId
+			? []
+			: [
+					{
+						field: "itemGroupId",
+						oldValue: existing.itemGroupId,
+						newValue: state.itemGroupId,
+					},
+				]),
+		...(state.profile.trackingPolicy === existing.trackingPolicy
+			? []
+			: [
+					{
+						field: "trackingPolicy",
+						oldValue: existing.trackingPolicy,
+						newValue: state.profile.trackingPolicy,
+					},
+				]),
+		...(state.profile.sellable === existing.sellable
+			? []
+			: [
+					{
+						field: "sellable",
+						oldValue: existing.sellable,
+						newValue: state.profile.sellable,
+					},
+				]),
+		...(state.profile.purchasable === existing.purchasable
+			? []
+			: [
+					{
+						field: "purchasable",
+						oldValue: existing.purchasable,
+						newValue: state.profile.purchasable,
+					},
+				]),
+		...(state.profile.stocked === existing.stocked
+			? []
+			: [
+					{
+						field: "stocked",
+						oldValue: existing.stocked,
+						newValue: state.profile.stocked,
+					},
+				]),
+		...(state.profile.serviceIndicator === existing.serviceIndicator
+			? []
+			: [
+					{
+						field: "serviceIndicator",
+						oldValue: existing.serviceIndicator,
+						newValue: state.profile.serviceIndicator,
+					},
+				]),
+	]);
+}
+
 function notFound(message: string): Result<never> {
 	return fail("NOT_FOUND", message, {
 		reason: "MASTER_NOT_FOUND",
@@ -291,160 +468,160 @@ function invalidState(message: string): Result<never> {
 	} satisfies MasterFailureDetails);
 }
 
-type PartySqlRow = {
-	id: string;
-	organization_id: string;
-	code: string;
-	normalized_code: string;
-	name: string;
-	party_kind: string;
-	status: string;
-	version: number;
-	legal_name: string | null;
-	trading_name: string | null;
-	registration_number: string | null;
-	registration_country_id: string | null;
-	preferred_language_id: string | null;
-	default_currency_id: string | null;
-	merged_into_id: string | null;
-	created_by: string;
-	updated_by: string;
+interface PartySqlRow {
 	activated_at: string | Date | null;
 	activated_by: string | null;
 	blocked_at: string | Date | null;
 	blocked_by: string | null;
+	code: string;
+	created_at: string | Date;
+	created_by: string;
+	default_currency_id: string | null;
+	id: string;
+	legal_name: string | null;
+	merged_into_id: string | null;
+	name: string;
+	normalized_code: string;
+	organization_id: string;
+	party_kind: string;
+	preferred_language_id: string | null;
+	registration_country_id: string | null;
+	registration_number: string | null;
 	retired_at: string | Date | null;
 	retired_by: string | null;
-	created_at: string | Date;
-	updated_at: string | Date;
-};
-
-type ItemGroupSqlRow = {
-	id: string;
-	organization_id: string;
-	code: string;
-	normalized_code: string;
-	name: string;
-	parent_id: string | null;
 	status: string;
-	version: number;
-	created_by: string;
+	trading_name: string | null;
+	updated_at: string | Date;
 	updated_by: string;
+	version: number;
+}
+
+interface ItemGroupSqlRow {
 	activated_at: string | Date | null;
 	activated_by: string | null;
+	code: string;
+	created_at: string | Date;
+	created_by: string;
+	id: string;
+	name: string;
+	normalized_code: string;
+	organization_id: string;
+	parent_id: string | null;
 	retired_at: string | Date | null;
 	retired_by: string | null;
-	created_at: string | Date;
+	status: string;
 	updated_at: string | Date;
-};
+	updated_by: string;
+	version: number;
+}
 
-type ItemSqlRow = {
-	id: string;
-	organization_id: string;
+interface ItemSqlRow {
+	activated_at: string | Date | null;
+	activated_by: string | null;
+	base_uom_id: string;
 	code: string;
-	normalized_code: string;
-	name: string;
-	item_type: string;
+	created_at: string | Date;
+	created_by: string;
 	description: string | null;
-	tracking_policy: string;
-	sellable: boolean;
+	id: string;
+	item_group_id: string;
+	item_type: string;
+	name: string;
+	normalized_code: string;
+	organization_id: string;
 	purchasable: boolean;
-	stocked: boolean;
+	retired_at: string | Date | null;
+	retired_by: string | null;
+	sellable: boolean;
 	service_indicator: boolean;
 	status: string;
-	version: number;
-	base_uom_id: string;
-	item_group_id: string;
-	created_by: string;
+	stocked: boolean;
+	tracking_policy: string;
+	updated_at: string | Date;
 	updated_by: string;
+	version: number;
+}
+
+interface WarehouseSqlRow {
 	activated_at: string | Date | null;
 	activated_by: string | null;
-	retired_at: string | Date | null;
-	retired_by: string | null;
-	created_at: string | Date;
-	updated_at: string | Date;
-};
-
-type WarehouseSqlRow = {
-	id: string;
-	organization_id: string;
-	code: string;
-	normalized_code: string;
-	name: string;
-	location_type: string;
-	parent_id: string | null;
+	address_city: string | null;
 	address_country_id: string | null;
 	address_line1: string | null;
 	address_line2: string | null;
-	address_city: string | null;
-	address_region: string | null;
 	address_postal_code: string | null;
-	status: string;
-	version: number;
+	address_region: string | null;
+	code: string;
+	created_at: string | Date;
 	created_by: string;
-	updated_by: string;
-	activated_at: string | Date | null;
-	activated_by: string | null;
+	id: string;
+	location_type: string;
+	name: string;
+	normalized_code: string;
+	organization_id: string;
+	parent_id: string | null;
 	retired_at: string | Date | null;
 	retired_by: string | null;
-	created_at: string | Date;
+	status: string;
 	updated_at: string | Date;
-};
+	updated_by: string;
+	version: number;
+}
 
-type PaymentTermSqlRow = {
-	id: string;
-	organization_id: string;
+interface PaymentTermSqlRow {
+	activated_at: string | Date | null;
+	activated_by: string | null;
 	code: string;
-	normalized_code: string;
-	name: string;
-	net_days: number;
+	created_at: string | Date;
+	created_by: string;
+	currency_restriction_id: string | null;
 	discount_days: number | null;
 	discount_percent: string | null;
 	due_day_rule: string;
 	end_of_month: boolean;
-	installment_policy: string;
+	id: string;
 	installment_count: number | null;
-	valid_from: string | Date | null;
-	valid_to: string | Date | null;
-	currency_restriction_id: string | null;
-	status: string;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	activated_at: string | Date | null;
-	activated_by: string | null;
+	installment_policy: string;
+	name: string;
+	net_days: number;
+	normalized_code: string;
+	organization_id: string;
 	retired_at: string | Date | null;
 	retired_by: string | null;
-	created_at: string | Date;
-	updated_at: string | Date;
-};
-
-type TaxRegistrationSqlRow = {
-	id: string;
-	organization_id: string;
-	party_id: string;
-	jurisdiction_country_id: string;
-	registration_type: string;
-	registration_number: string;
-	normalized_registration_number: string;
-	name: string | null;
 	status: string;
-	version: number;
+	updated_at: string | Date;
+	updated_by: string;
 	valid_from: string | Date | null;
 	valid_to: string | Date | null;
-	created_by: string;
-	updated_by: string;
+	version: number;
+}
+
+interface TaxRegistrationSqlRow {
 	activated_at: string | Date | null;
 	activated_by: string | null;
 	blocked_at: string | Date | null;
 	blocked_by: string | null;
-	retired_at: string | Date | null;
-	retired_by: string | null;
+	created_at: string | Date;
+	created_by: string;
 	deleted_at: string | Date | null;
 	deleted_by: string | null;
-	created_at: string | Date;
+	id: string;
+	jurisdiction_country_id: string;
+	name: string | null;
+	normalized_registration_number: string;
+	organization_id: string;
+	party_id: string;
+	registration_number: string;
+	registration_type: string;
+	retired_at: string | Date | null;
+	retired_by: string | null;
+	status: string;
 	updated_at: string | Date;
-};
+	updated_by: string;
+	valid_from: string | Date | null;
+	valid_to: string | Date | null;
+	version: number;
+}
 
 function toDate(value: string | Date | null | undefined): Date | null {
 	if (value === null || value === undefined) {
@@ -701,8 +878,10 @@ function importJsonObject(
 }
 
 function isImportClaimResult(value: unknown): boolean {
-	if (!Array.isArray(value) || value.length === 0) return false;
-	const first = value[0];
+	if (!Array.isArray(value) || value.length === 0) {
+		return false;
+	}
+	const [first] = value;
 	return (
 		typeof first === "object" &&
 		first !== null &&
@@ -785,20 +964,21 @@ function mapImportBatchRowRecord(
 	};
 }
 
-async function assertItemGroupParent(
+function assertItemGroupParent(
 	organizationId: string,
 	selfId: string | null,
 	parentId: string | null,
 ): Promise<Result<true>> {
 	if (parentId === null) {
-		return ok(true);
+		return Promise.resolve(ok(true));
 	}
 	if (selfId !== null && parentId === selfId) {
-		return validationFailed("Item group cannot parent itself");
+		return Promise.resolve(validationFailed("Item group cannot parent itself"));
 	}
-	let cursor: string | null = parentId;
-	const seen = new Set<string>();
-	while (cursor !== null) {
+	const inspectParent = async (
+		cursor: string,
+		seen: Set<string>,
+	): Promise<Result<true>> => {
 		if (selfId !== null && cursor === selfId) {
 			return invalidState("Item group parent would create a cycle");
 		}
@@ -831,26 +1011,27 @@ async function assertItemGroupParent(
 		) {
 			return invalidState("Item group parent must be active");
 		}
-		cursor = row.parentId;
-	}
-	return ok(true);
+		return row.parentId === null ? ok(true) : inspectParent(row.parentId, seen);
+	};
+	return inspectParent(parentId, new Set<string>());
 }
 
-async function assertWarehouseParent(
+function assertWarehouseParent(
 	organizationId: string,
 	selfId: string | null,
 	parentId: string | null,
 	childLocationType: WarehouseLocationType,
 ): Promise<Result<true>> {
 	if (parentId === null) {
-		return ok(true);
+		return Promise.resolve(ok(true));
 	}
 	if (selfId !== null && parentId === selfId) {
-		return validationFailed("Warehouse cannot parent itself");
+		return Promise.resolve(validationFailed("Warehouse cannot parent itself"));
 	}
-	let cursor: string | null = parentId;
-	const seen = new Set<string>();
-	while (cursor !== null) {
+	const inspectParent = async (
+		cursor: string,
+		seen: Set<string>,
+	): Promise<Result<true>> => {
 		if (selfId !== null && cursor === selfId) {
 			return validationFailed("Warehouse parent would create a cycle");
 		}
@@ -884,9 +1065,9 @@ async function assertWarehouseParent(
 				);
 			}
 		}
-		cursor = row.parentId;
-	}
-	return ok(true);
+		return row.parentId === null ? ok(true) : inspectParent(row.parentId, seen);
+	};
+	return inspectParent(parentId, new Set<string>());
 }
 
 /**
@@ -1277,8 +1458,8 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 
 		try {
 			const [rows] = await runNeonHttpTransaction<[PartySqlRow[], unknown[]]>(
-				(sql) => [
-					sql`
+				(transactionSql) => [
+					transactionSql`
 					WITH mutated AS (
 						INSERT INTO md_party (
 							id, organization_id, code, normalized_code, name, party_kind,
@@ -1380,7 +1561,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 							AND EXISTS (SELECT 1 FROM external_id_outboxed)
 						)
 				`,
-					importRowAppliedQuery(sql, meta, {
+					importRowAppliedQuery(transactionSql, meta, {
 						auditId,
 						eventId,
 						resultEntityId: partyId,
@@ -1388,7 +1569,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					}),
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return fail("INTERNAL_ERROR", "Party create returned no row");
 			}
@@ -1418,27 +1599,27 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const existing = existingResult.data;
 		const nextName = record.name ?? existing.name;
 		const nextLegalName =
-			record.legalName !== undefined ? record.legalName : existing.legalName;
+			record.legalName === undefined ? existing.legalName : record.legalName;
 		const nextTradingName =
-			record.tradingName !== undefined
-				? record.tradingName
-				: existing.tradingName;
+			record.tradingName === undefined
+				? existing.tradingName
+				: record.tradingName;
 		const nextRegistrationNumber =
-			record.registrationNumber !== undefined
-				? record.registrationNumber
-				: existing.registrationNumber;
+			record.registrationNumber === undefined
+				? existing.registrationNumber
+				: record.registrationNumber;
 		const nextRegistrationCountryId =
-			record.registrationCountryId !== undefined
-				? record.registrationCountryId
-				: existing.registrationCountryId;
+			record.registrationCountryId === undefined
+				? existing.registrationCountryId
+				: record.registrationCountryId;
 		const nextPreferredLanguageId =
-			record.preferredLanguageId !== undefined
-				? record.preferredLanguageId
-				: existing.preferredLanguageId;
+			record.preferredLanguageId === undefined
+				? existing.preferredLanguageId
+				: record.preferredLanguageId;
 		const nextDefaultCurrencyId =
-			record.defaultCurrencyId !== undefined
-				? record.defaultCurrencyId
-				: existing.defaultCurrencyId;
+			record.defaultCurrencyId === undefined
+				? existing.defaultCurrencyId
+				: record.defaultCurrencyId;
 		const nextVersion = existing.version + 1;
 		const changesJson = fieldChangeJson("name", existing.name, nextName);
 		const oldValueJson = valueSnapshotJson({
@@ -1463,8 +1644,8 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 
 		try {
 			const [rows] = await runNeonHttpTransaction<[PartySqlRow[], unknown[]]>(
-				(sql) => [
-					sql`
+				(transactionSql) => [
+					transactionSql`
 					WITH mutated AS (
 						UPDATE md_party
 						SET
@@ -1508,7 +1689,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					)
 					SELECT mutated.* FROM mutated, audited, outboxed
 				`,
-					importRowAppliedQuery(sql, meta, {
+					importRowAppliedQuery(transactionSql, meta, {
 						auditId,
 						eventId,
 						resultEntityId: record.id,
@@ -1516,7 +1697,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					}),
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return versionConflict("Party version conflict");
 			}
@@ -1603,8 +1784,8 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			// it cannot observe the pre-commit snapshot of a final-role transition.
 			const [, rows] = await runNeonHttpTransaction<
 				[Record<string, unknown>[], PartySqlRow[]]
-			>((sql) => [
-				sql`
+			>((transactionSql) => [
+				transactionSql`
 					SELECT id
 					FROM md_party
 					WHERE id = ${record.id}
@@ -1614,7 +1795,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					FOR UPDATE
 				`,
 				crId === null
-					? sql`
+					? transactionSql`
 					WITH mutated AS (
 						UPDATE md_party
 						SET
@@ -1690,7 +1871,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					)
 					SELECT mutated.* FROM mutated, audited, outboxed
 				`
-					: sql`
+					: transactionSql`
 					WITH claimed AS (
 						UPDATE md_change_request
 						SET
@@ -1813,7 +1994,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					SELECT mutated.* FROM mutated, audited, outboxed, claimed, cr_audited, cr_outboxed
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return versionConflict("Party version conflict");
 			}
@@ -1940,8 +2121,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const crChangesJson = fieldChangeJson("status", "approved", "applied");
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[PartySqlRow[]]>((sql) => [
-				sql`
+			const [rows] = await runNeonHttpTransaction<[PartySqlRow[]]>(
+				(transactionSql) => [
+					transactionSql`
 					WITH claimed AS (
 						UPDATE md_change_request
 						SET
@@ -2158,8 +2340,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					)
 					SELECT survivor.* FROM survivor, merged, audited, outboxed, claimed, cr_audited, cr_outboxed
 				`,
-			]);
-			const survivorRow = rows[0];
+				],
+			);
+			const [survivorRow] = rows;
 			if (survivorRow === undefined) {
 				return versionConflict("Party version conflict on merge");
 			}
@@ -2282,8 +2465,8 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		try {
 			const [rows] = await runNeonHttpTransaction<
 				[ItemGroupSqlRow[], unknown[]]
-			>((sql) => [
-				sql`
+			>((transactionSql) => [
+				transactionSql`
 						WITH eligible_parent AS (
 							SELECT 1
 							WHERE ${record.parentId ?? null}::uuid IS NULL
@@ -2332,14 +2515,14 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-				importRowAppliedQuery(sql, meta, {
+				importRowAppliedQuery(transactionSql, meta, {
 					auditId,
 					eventId,
 					resultEntityId: entityId,
 					resultVersion: 1,
 				}),
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return invalidState("Item group parent must be active");
 			}
@@ -2369,7 +2552,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const existing = existingResult.data;
 		const nextName = record.name ?? existing.name;
 		const nextParentId =
-			record.parentId !== undefined ? record.parentId : existing.parentId;
+			record.parentId === undefined ? existing.parentId : record.parentId;
 		const parentCheck = await assertItemGroupParent(
 			record.organizationId,
 			existing.id,
@@ -2420,8 +2603,8 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		try {
 			const [rows] = await runNeonHttpTransaction<
 				[ItemGroupSqlRow[], unknown[]]
-			>((sql) => [
-				sql`
+			>((transactionSql) => [
+				transactionSql`
 						WITH RECURSIVE ancestor AS (
 							SELECT id, parent_id, ARRAY[id] AS path
 							FROM md_item_group
@@ -2490,14 +2673,14 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-				importRowAppliedQuery(sql, meta, {
+				importRowAppliedQuery(transactionSql, meta, {
 					auditId,
 					eventId,
 					resultEntityId: record.id,
 					resultVersion: nextVersion,
 				}),
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return versionConflict("Item group version conflict");
 			}
@@ -2564,8 +2747,8 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const retiredBy = record.toStatus === "retired" ? record.actorUserId : null;
 		try {
 			const [rows] = await runNeonHttpTransaction<[ItemGroupSqlRow[]]>(
-				(sql) => [
-					sql`
+				(transactionSql) => [
+					transactionSql`
 						WITH mutated AS (
 							UPDATE md_item_group
 							SET
@@ -2653,7 +2836,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return versionConflict("Item group version conflict");
 			}
@@ -2793,8 +2976,8 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		});
 		try {
 			const [rows] = await runNeonHttpTransaction<[ItemSqlRow[], unknown[]]>(
-				(sql) => [
-					sql`
+				(transactionSql) => [
+					transactionSql`
 					WITH eligible_references AS (
 						SELECT 1
 						WHERE EXISTS (
@@ -2864,7 +3047,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					)
 					SELECT mutated.* FROM mutated, base_uom, audited, outboxed
 				`,
-					importRowAppliedQuery(sql, meta, {
+					importRowAppliedQuery(transactionSql, meta, {
 						auditId,
 						eventId,
 						resultEntityId: entityId,
@@ -2872,7 +3055,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					}),
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return invalidState(
 					"Item requires an active item group and active platform UoM",
@@ -2902,31 +3085,13 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			return existingResult;
 		}
 		const existing = existingResult.data;
-		const nextName = record.name ?? existing.name;
-		const nextDescription =
-			record.description !== undefined
-				? record.description
-				: existing.description;
-		const nextItemType = record.itemType ?? existing.itemType;
-		const nextBaseUomId = record.baseUomId ?? existing.baseUomId;
-		const nextGroupId = record.itemGroupId ?? existing.itemGroupId;
-		const itemTypeChanged = nextItemType !== existing.itemType;
-		const nextProfile = resolveItemOperationalProfile({
-			itemType: nextItemType,
-			trackingPolicy:
-				record.trackingPolicy ??
-				(itemTypeChanged ? undefined : existing.trackingPolicy),
-			sellable:
-				record.sellable ?? (itemTypeChanged ? undefined : existing.sellable),
-			purchasable:
-				record.purchasable ??
-				(itemTypeChanged ? undefined : existing.purchasable),
-			stocked:
-				record.stocked ?? (itemTypeChanged ? undefined : existing.stocked),
-			serviceIndicator:
-				record.serviceIndicator ??
-				(itemTypeChanged ? undefined : existing.serviceIndicator),
-		});
+		const state = resolveItemUpdateState(record, existing);
+		const nextName = state.name;
+		const nextDescription = state.description;
+		const nextItemType = state.itemType;
+		const nextBaseUomId = state.baseUomId;
+		const nextGroupId = state.itemGroupId;
+		const nextProfile = state.profile;
 		if (nextBaseUomId !== existing.baseUomId) {
 			return invalidState(
 				"Base UoM changes require a governed item conversion operation",
@@ -2961,81 +3126,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			return invalidState("itemGroupId must reference an active item group");
 		}
 		const nextVersion = existing.version + 1;
-		const changesJson = JSON.stringify([
-			{ field: "name", oldValue: existing.name, newValue: nextName },
-			...(nextDescription !== existing.description
-				? [
-						{
-							field: "description",
-							oldValue: existing.description,
-							newValue: nextDescription,
-						},
-					]
-				: []),
-			...(nextItemType !== existing.itemType
-				? [
-						{
-							field: "itemType",
-							oldValue: existing.itemType,
-							newValue: nextItemType,
-						},
-					]
-				: []),
-			...(nextGroupId !== existing.itemGroupId
-				? [
-						{
-							field: "itemGroupId",
-							oldValue: existing.itemGroupId,
-							newValue: nextGroupId,
-						},
-					]
-				: []),
-			...(nextProfile.trackingPolicy !== existing.trackingPolicy
-				? [
-						{
-							field: "trackingPolicy",
-							oldValue: existing.trackingPolicy,
-							newValue: nextProfile.trackingPolicy,
-						},
-					]
-				: []),
-			...(nextProfile.sellable !== existing.sellable
-				? [
-						{
-							field: "sellable",
-							oldValue: existing.sellable,
-							newValue: nextProfile.sellable,
-						},
-					]
-				: []),
-			...(nextProfile.purchasable !== existing.purchasable
-				? [
-						{
-							field: "purchasable",
-							oldValue: existing.purchasable,
-							newValue: nextProfile.purchasable,
-						},
-					]
-				: []),
-			...(nextProfile.stocked !== existing.stocked
-				? [
-						{
-							field: "stocked",
-							oldValue: existing.stocked,
-							newValue: nextProfile.stocked,
-						},
-					]
-				: []),
-			...(nextProfile.serviceIndicator !== existing.serviceIndicator
-				? [
-						{
-							field: "serviceIndicator",
-							oldValue: existing.serviceIndicator,
-							newValue: nextProfile.serviceIndicator,
-						},
-					]
-				: []),
-		]);
+		const changesJson = buildItemUpdateChangesJson(existing, state);
 		const oldValueJson = valueSnapshotJson({
 			name: existing.name,
 			description: existing.description,
@@ -3075,8 +3166,8 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const eventId = randomUUID();
 		try {
 			const [rows] = await runNeonHttpTransaction<[ItemSqlRow[], unknown[]]>(
-				(sql) => [
-					sql`
+				(transactionSql) => [
+					transactionSql`
 					WITH mutated AS (
 						UPDATE md_item
 						SET
@@ -3172,7 +3263,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					)
 					SELECT mutated.* FROM mutated, audited, outboxed
 				`,
-					importRowAppliedQuery(sql, meta, {
+					importRowAppliedQuery(transactionSql, meta, {
 						auditId,
 						eventId,
 						resultEntityId: record.id,
@@ -3180,7 +3271,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					}),
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return versionConflict("Item version conflict");
 			}
@@ -3269,7 +3360,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			record.addressCountryId !== null
 		) {
 			const country = await this.getRefCountryById(record.addressCountryId);
-			if (!country.ok) return country;
+			if (!country.ok) {
+				return country;
+			}
 			if (country.data === null || !country.data.active) {
 				return validationFailed("Warehouse address country must be active");
 			}
@@ -3304,8 +3397,8 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		try {
 			const [rows] = await runNeonHttpTransaction<
 				[WarehouseSqlRow[], unknown[]]
-			>((sql) => [
-				sql`
+			>((transactionSql) => [
+				transactionSql`
 						WITH eligible_parent AS (
 							SELECT 1
 							WHERE ${record.parentId ?? null}::uuid IS NULL
@@ -3367,14 +3460,14 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-				importRowAppliedQuery(sql, meta, {
+				importRowAppliedQuery(transactionSql, meta, {
 					auditId,
 					eventId,
 					resultEntityId: entityId,
 					resultVersion: 1,
 				}),
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return invalidState("Warehouse parent is not usable or compatible");
 			}
@@ -3402,35 +3495,21 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			return existingResult;
 		}
 		const existing = existingResult.data;
-		const nextName = record.name ?? existing.name;
-		const nextLocationType = record.locationType ?? existing.locationType;
-		const nextAddressCountryId =
-			record.addressCountryId !== undefined
-				? record.addressCountryId
-				: existing.addressCountryId;
-		const nextAddressLine1 =
-			record.addressLine1 !== undefined
-				? record.addressLine1
-				: existing.addressLine1;
-		const nextAddressLine2 =
-			record.addressLine2 !== undefined
-				? record.addressLine2
-				: existing.addressLine2;
-		const nextAddressCity =
-			record.addressCity !== undefined
-				? record.addressCity
-				: existing.addressCity;
-		const nextAddressRegion =
-			record.addressRegion !== undefined
-				? record.addressRegion
-				: existing.addressRegion;
-		const nextAddressPostalCode =
-			record.addressPostalCode !== undefined
-				? record.addressPostalCode
-				: existing.addressPostalCode;
+		const {
+			name: nextName,
+			locationType: nextLocationType,
+			addressCountryId: nextAddressCountryId,
+			addressLine1: nextAddressLine1,
+			addressLine2: nextAddressLine2,
+			addressCity: nextAddressCity,
+			addressRegion: nextAddressRegion,
+			addressPostalCode: nextAddressPostalCode,
+		} = resolveWarehouseUpdateState(record, existing);
 		if (nextAddressCountryId !== null) {
 			const country = await this.getRefCountryById(nextAddressCountryId);
-			if (!country.ok) return country;
+			if (!country.ok) {
+				return country;
+			}
 			if (country.data === null || !country.data.active) {
 				return validationFailed("Warehouse address country must be active");
 			}
@@ -3448,7 +3527,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				existing.parentId,
 				nextLocationType,
 			);
-			if (!parentCheck.ok) return parentCheck;
+			if (!parentCheck.ok) {
+				return parentCheck;
+			}
 		}
 		const nextVersion = existing.version + 1;
 		const changesJson = JSON.stringify([
@@ -3489,8 +3570,8 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		try {
 			const [rows] = await runNeonHttpTransaction<
 				[WarehouseSqlRow[], unknown[]]
-			>((sql) => [
-				sql`
+			>((transactionSql) => [
+				transactionSql`
 						WITH mutated AS (
 							UPDATE md_warehouse
 							SET
@@ -3578,14 +3659,14 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-				importRowAppliedQuery(sql, meta, {
+				importRowAppliedQuery(transactionSql, meta, {
 					auditId,
 					eventId,
 					resultEntityId: record.id,
 					resultVersion: nextVersion,
 				}),
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return versionConflict("Warehouse version conflict");
 			}
@@ -3650,8 +3731,8 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const eventId = randomUUID();
 		try {
 			const [rows] = await runNeonHttpTransaction<[WarehouseSqlRow[]]>(
-				(sql) => [
-					sql`
+				(transactionSql) => [
+					transactionSql`
 						WITH RECURSIVE ancestor AS (
 							SELECT id, parent_id, ARRAY[id] AS path
 							FROM md_warehouse
@@ -3731,7 +3812,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return versionConflict("Warehouse version conflict");
 			}
@@ -3762,7 +3843,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			existing.status,
 			record.toStatus,
 		);
-		if (!lifecycle.ok) return lifecycle;
+		if (!lifecycle.ok) {
+			return lifecycle;
+		}
 		const eventType = `master_data.warehouse.${meta.eventSuffix}.v1`;
 		const nextVersion = existing.version + 1;
 		const changesJson = fieldChangeJson(
@@ -3796,8 +3879,8 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const retiredBy = record.toStatus === "retired" ? record.actorUserId : null;
 		try {
 			const [rows] = await runNeonHttpTransaction<[WarehouseSqlRow[]]>(
-				(sql) => [
-					sql`
+				(transactionSql) => [
+					transactionSql`
 						WITH mutated AS (
 							UPDATE md_warehouse
 							SET
@@ -3881,7 +3964,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return versionConflict("Warehouse version conflict");
 			}
@@ -3966,13 +4049,17 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		meta: { correlationId: string },
 	): Promise<Result<PaymentTerm>> {
 		const ruleResult = normalizePaymentTermRule(record);
-		if (!ruleResult.ok) return ruleResult;
+		if (!ruleResult.ok) {
+			return ruleResult;
+		}
 		const rule = ruleResult.data;
 		if (rule.currencyRestrictionId !== null) {
 			const currency = await this.getRefCurrencyById(
 				rule.currencyRestrictionId,
 			);
-			if (!currency.ok) return currency;
+			if (!currency.ok) {
+				return currency;
+			}
 			if (currency.data === null || !currency.data.active) {
 				return validationFailed(
 					"Payment term currency restriction must be active",
@@ -3999,8 +4086,8 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		});
 		try {
 			const [rows] = await runNeonHttpTransaction<[PaymentTermSqlRow[]]>(
-				(sql) => [
-					sql`
+				(transactionSql) => [
+					transactionSql`
 						WITH mutated AS (
 							INSERT INTO md_payment_term (
 								id, organization_id, code, normalized_code, name, net_days,
@@ -4045,7 +4132,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return validationFailed(
 					`netDays must be between 0 and ${MAX_PAYMENT_TERM_NET_DAYS}`,
@@ -4079,38 +4166,18 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			return invalidState("Retired payment terms are immutable");
 		}
 		const nextName = record.name ?? existing.name;
-		const ruleResult = normalizePaymentTermRule({
-			netDays: record.netDays ?? existing.netDays,
-			discountDays:
-				record.discountDays !== undefined
-					? record.discountDays
-					: existing.discountDays,
-			discountPercent:
-				record.discountPercent !== undefined
-					? record.discountPercent
-					: existing.discountPercent,
-			dueDayRule: record.dueDayRule ?? existing.dueDayRule,
-			endOfMonth: record.endOfMonth ?? existing.endOfMonth,
-			installmentPolicy: record.installmentPolicy ?? existing.installmentPolicy,
-			installmentCount:
-				record.installmentCount !== undefined
-					? record.installmentCount
-					: existing.installmentCount,
-			validFrom:
-				record.validFrom !== undefined ? record.validFrom : existing.validFrom,
-			validTo: record.validTo !== undefined ? record.validTo : existing.validTo,
-			currencyRestrictionId:
-				record.currencyRestrictionId !== undefined
-					? record.currencyRestrictionId
-					: existing.currencyRestrictionId,
-		});
-		if (!ruleResult.ok) return ruleResult;
+		const ruleResult = normalizePaymentTermUpdateRule(record, existing);
+		if (!ruleResult.ok) {
+			return ruleResult;
+		}
 		const rule = ruleResult.data;
 		if (rule.currencyRestrictionId !== null) {
 			const currency = await this.getRefCurrencyById(
 				rule.currencyRestrictionId,
 			);
-			if (!currency.ok) return currency;
+			if (!currency.ok) {
+				return currency;
+			}
 			if (currency.data === null || !currency.data.active) {
 				return validationFailed(
 					"Payment term currency restriction must be active",
@@ -4120,15 +4187,15 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const nextVersion = existing.version + 1;
 		const changesJson = JSON.stringify([
 			{ field: "name", oldValue: existing.name, newValue: nextName },
-			...(rule.netDays !== existing.netDays
-				? [
+			...(rule.netDays === existing.netDays
+				? []
+				: [
 						{
 							field: "netDays",
 							oldValue: existing.netDays,
 							newValue: rule.netDays,
 						},
-					]
-				: []),
+					]),
 		]);
 		const oldValueJson = valueSnapshotJson({
 			name: existing.name,
@@ -4162,8 +4229,8 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const eventId = randomUUID();
 		try {
 			const [rows] = await runNeonHttpTransaction<[PaymentTermSqlRow[]]>(
-				(sql) => [
-					sql`
+				(transactionSql) => [
+					transactionSql`
 						WITH mutated AS (
 							UPDATE md_payment_term
 							SET
@@ -4215,7 +4282,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return versionConflict("Payment term version conflict");
 			}
@@ -4246,7 +4313,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			existing.status,
 			record.toStatus,
 		);
-		if (!lifecycle.ok) return lifecycle;
+		if (!lifecycle.ok) {
+			return lifecycle;
+		}
 		const eventType = `master_data.payment_term.${meta.eventSuffix}.v1`;
 		const nextVersion = existing.version + 1;
 		const changesJson = fieldChangeJson(
@@ -4280,8 +4349,8 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const retiredBy = record.toStatus === "retired" ? record.actorUserId : null;
 		try {
 			const [rows] = await runNeonHttpTransaction<[PaymentTermSqlRow[]]>(
-				(sql) => [
-					sql`
+				(transactionSql) => [
+					transactionSql`
 						WITH mutated AS (
 							UPDATE md_payment_term
 							SET
@@ -4338,7 +4407,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return versionConflict("Payment term version conflict");
 			}
@@ -4403,7 +4472,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		}
 	}
 
-	async findTaxRegistrationsByParty(
+	findTaxRegistrationsByParty(
 		organizationId: string,
 		partyId: string,
 	): Promise<Result<TaxRegistration[]>> {
@@ -4493,8 +4562,8 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		});
 		try {
 			const [rows] = await runNeonHttpTransaction<[TaxRegistrationSqlRow[]]>(
-				(sql) => [
-					sql`
+				(transactionSql) => [
+					transactionSql`
 						WITH mutated AS (
 							INSERT INTO md_tax_registration (
 								id, organization_id, party_id, jurisdiction_country_id,
@@ -4542,7 +4611,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return taxRegistrationValidityFailure(
 					"Party or active jurisdiction country is unavailable",
@@ -4575,11 +4644,11 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		if (existing.status === "retired") {
 			return invalidState("Retired tax registrations are immutable");
 		}
-		const nextName = record.name !== undefined ? record.name : existing.name;
+		const nextName = record.name === undefined ? existing.name : record.name;
 		const nextValidFrom =
-			record.validFrom !== undefined ? record.validFrom : existing.validFrom;
+			record.validFrom === undefined ? existing.validFrom : record.validFrom;
 		const nextValidTo =
-			record.validTo !== undefined ? record.validTo : existing.validTo;
+			record.validTo === undefined ? existing.validTo : record.validTo;
 		if (
 			isInvalidValidityRange({
 				validFrom: nextValidFrom,
@@ -4601,8 +4670,12 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				validTo: nextValidTo,
 				excludeId: existing.id,
 			});
-			if (!overlap.ok) return overlap;
-			if (overlap.data !== null) return taxRegistrationOverlapConflict();
+			if (!overlap.ok) {
+				return overlap;
+			}
+			if (overlap.data !== null) {
+				return taxRegistrationOverlapConflict();
+			}
 		}
 		const nextVersion = existing.version + 1;
 		const changesJson = JSON.stringify([
@@ -4647,8 +4720,8 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const eventId = randomUUID();
 		try {
 			const [rows] = await runNeonHttpTransaction<[TaxRegistrationSqlRow[]]>(
-				(sql) => [
-					sql`
+				(transactionSql) => [
+					transactionSql`
 						WITH mutated AS (
 							UPDATE md_tax_registration
 							SET
@@ -4724,7 +4797,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				],
 				{ isolationLevel: "Serializable" },
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return versionConflict("Tax registration version conflict");
 			}
@@ -4735,6 +4808,35 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			}
 			return failFromPersistence(error, "Failed to update tax registration");
 		}
+	}
+
+	private async assertTaxRegistrationActivation(
+		existing: TaxRegistration,
+	): Promise<Result<true>> {
+		if (existing.validFrom === null) {
+			return invalidState("Active tax registration requires validFrom");
+		}
+		if (
+			isInvalidValidityRange({
+				validFrom: existing.validFrom,
+				validTo: existing.validTo,
+			})
+		) {
+			return taxRegistrationValidityFailure("validTo must be after validFrom");
+		}
+		const overlap = await this.findOverlappingActiveTaxRegistration({
+			organizationId: existing.organizationId,
+			partyId: existing.partyId,
+			jurisdictionCountryId: existing.jurisdictionCountryId,
+			registrationType: existing.registrationType,
+			validFrom: existing.validFrom,
+			validTo: existing.validTo,
+			excludeId: existing.id,
+		});
+		if (!overlap.ok) {
+			return overlap;
+		}
+		return overlap.data === null ? ok(true) : taxRegistrationOverlapConflict();
 	}
 
 	async transitionTaxRegistration(
@@ -4761,32 +4863,14 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 						existing.status,
 						record.toStatus,
 					);
-		if (!lifecycle.ok) return lifecycle;
+		if (!lifecycle.ok) {
+			return lifecycle;
+		}
 		if (record.toStatus === "active") {
-			if (existing.validFrom === null) {
-				return invalidState("Active tax registration requires validFrom");
+			const activatable = await this.assertTaxRegistrationActivation(existing);
+			if (!activatable.ok) {
+				return activatable;
 			}
-			if (
-				isInvalidValidityRange({
-					validFrom: existing.validFrom,
-					validTo: existing.validTo,
-				})
-			) {
-				return taxRegistrationValidityFailure(
-					"validTo must be after validFrom",
-				);
-			}
-			const overlap = await this.findOverlappingActiveTaxRegistration({
-				organizationId: existing.organizationId,
-				partyId: existing.partyId,
-				jurisdictionCountryId: existing.jurisdictionCountryId,
-				registrationType: existing.registrationType,
-				validFrom: existing.validFrom,
-				validTo: existing.validTo,
-				excludeId: existing.id,
-			});
-			if (!overlap.ok) return overlap;
-			if (overlap.data !== null) return taxRegistrationOverlapConflict();
 		}
 		const eventType = `master_data.tax_registration.${meta.eventSuffix}.v1`;
 		const nextVersion = existing.version + 1;
@@ -4827,8 +4911,8 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const retiredBy = record.toStatus === "retired" ? record.actorUserId : null;
 		try {
 			const [rows] = await runNeonHttpTransaction<[TaxRegistrationSqlRow[]]>(
-				(sql) => [
-					sql`
+				(transactionSql) => [
+					transactionSql`
 						WITH mutated AS (
 							UPDATE md_tax_registration
 							SET
@@ -4926,7 +5010,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				],
 				{ isolationLevel: "Serializable" },
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return versionConflict("Tax registration version conflict");
 			}
@@ -5220,8 +5304,8 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 	): Promise<Result<ImportBatchClaimResult>> {
 		try {
 			const transactionResults = await runNeonHttpTransaction<unknown[]>(
-				(sql) => [
-					sql`
+				(transactionSql) => [
+					transactionSql`
 						INSERT INTO md_import_batch (
 							id, organization_id, idempotency_key, payload_hash,
 							operation_type, entity_type, source_system, mode, status,
@@ -5236,7 +5320,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 						RETURNING id
 					`,
 					...record.rows.map(
-						(row) => sql`
+						(row) => transactionSql`
 							INSERT INTO md_import_batch_row (
 								id, organization_id, batch_id, source_row_number,
 								payload_hash, normalized_payload, status
@@ -5262,7 +5346,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				record.organizationId,
 				record.idempotencyKey,
 			);
-			if (!batch.ok) return batch;
+			if (!batch.ok) {
+				return batch;
+			}
 			if (batch.data === null) {
 				return fail("INTERNAL_ERROR", "Import batch claim returned no row");
 			}
@@ -5308,7 +5394,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				record.organizationId,
 				record.batchId,
 			);
-			if (!current.ok) return current;
+			if (!current.ok) {
+				return current;
+			}
 			if (current.data === null) {
 				return notFound("Import batch not found");
 			}
@@ -5347,9 +5435,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 	): Promise<Result<ImportBatchRecord>> {
 		try {
 			const transactionResults = await runNeonHttpTransaction<unknown[]>(
-				(sql) => [
+				(transactionSql) => [
 					...record.rows.map(
-						(row) => sql`
+						(row) => transactionSql`
 						UPDATE md_import_batch_row
 						SET
 							intended_operation = ${row.intendedOperation},
@@ -5379,7 +5467,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 							)
 					`,
 					),
-					sql`
+					transactionSql`
 					UPDATE md_import_batch
 					SET
 						status = ${record.status},
@@ -5402,7 +5490,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				record.organizationId,
 				record.batchId,
 			);
-			if (!completed.ok) return completed;
+			if (!completed.ok) {
+				return completed;
+			}
 			if (completed.data === null) {
 				return notFound("Import batch not found");
 			}
@@ -5437,10 +5527,10 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 	}
 }
 
-export type DrizzleMasterDataStoreOptions = {
+export interface DrizzleMasterDataStoreOptions {
 	/** Injectable UUID source for deterministic transaction-failure verification. */
 	generateId?: () => string;
-};
+}
 
 export function createDrizzleMasterDataStore(
 	options: DrizzleMasterDataStoreOptions = {},

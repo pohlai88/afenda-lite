@@ -32,10 +32,15 @@ export async function loadHrOperations(
 			: null,
 	]);
 	const errors: HrOperationsData["errors"] = {};
-	if ((missing && !missing.ok) || (expiring && !expiring.ok))
+	if ((missing && !missing.ok) || (expiring && !expiring.ok)) {
 		errors.compliance = LOAD_ERROR;
-	if (cases && !cases.ok) errors.cases = LOAD_ERROR;
-	if (plans && !plans.ok) errors.plans = LOAD_ERROR;
+	}
+	if (cases && !cases.ok) {
+		errors.cases = LOAD_ERROR;
+	}
+	if (plans && !plans.ok) {
+		errors.plans = LOAD_ERROR;
+	}
 	return {
 		missingRequirements: missing?.ok ? missing.data.page.requirements : [],
 		expiringDocuments: expiring?.ok ? expiring.data.page.documents : [],

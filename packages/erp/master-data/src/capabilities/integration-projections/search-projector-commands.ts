@@ -22,6 +22,7 @@ import {
 	MASTER_QUERY_SEARCH_QUERY,
 } from "../../module-ids";
 import { parseMasterInput } from "../../parse-input";
+import { runSequentiallyUntil } from "../../resolve-async";
 import type {
 	Item,
 	ItemGroup,
@@ -34,6 +35,7 @@ import {
 	createDrizzleOrganizationDimensionStore,
 	type OrganizationDimension,
 } from "../core-organization-masters/organization-dimension";
+import type { MasterDataStore } from "../core-organization-masters/store";
 
 /** Search entity keys for Authority B roots (derived; rebuildable). */
 export const MASTER_SEARCH_ENTITY = {
@@ -185,11 +187,11 @@ const searchQueryInputSchema = orgQueryActorSchema.extend({
 	limit: z.number().int().min(1).max(100).optional(),
 });
 
-export type RebuildMasterDataSearchResult = {
-	upserted: number;
-	pruned: number;
+export interface RebuildMasterDataSearchResult {
 	entities: MasterSearchEntity[];
-};
+	pruned: number;
+	upserted: number;
+}
 
 async function rebuildOneEntity(
 	organizationId: string,
@@ -218,23 +220,66 @@ async function rebuildOneEntity(
 
 	const liveIds = new Set(live.map((root) => root.id));
 	let pruned = 0;
-	for (const documentId of listed.data) {
-		if (liveIds.has(documentId)) {
-			continue;
-		}
-		const deleted = await deleteSearchDocument(
-			{ organizationId, entity, documentId },
-			searchStore,
-		);
-		if (!deleted.ok) {
-			return deleted;
-		}
-		if (deleted.data.deleted) {
-			pruned += 1;
-		}
+	const failedDelete = await runSequentiallyUntil(
+		listed.data,
+		async (documentId) => {
+			if (liveIds.has(documentId)) {
+				return;
+			}
+			const deleted = await deleteSearchDocument(
+				{ organizationId, entity, documentId },
+				searchStore,
+			);
+			if (!deleted.ok) {
+				return deleted;
+			}
+			if (deleted.data.deleted) {
+				pruned += 1;
+			}
+		},
+	);
+	if (failedDelete !== undefined) {
+		return failedDelete;
 	}
 
 	return ok({ upserted: live.length, pruned });
+}
+
+async function listSearchRoots(
+	organizationId: string,
+	entity: MasterSearchEntity,
+	store: MasterDataStore,
+	options: MasterCommandOptions,
+): Promise<Result<MasterRoot[]>> {
+	const page = { organizationId, page: 1, pageSize: 100 };
+	switch (entity) {
+		case MASTER_SEARCH_ENTITY.party:
+			return store.listParties(page);
+		case MASTER_SEARCH_ENTITY.item:
+			return store.listItems(page);
+		case MASTER_SEARCH_ENTITY.itemGroup:
+			return store.listItemGroups(page);
+		case MASTER_SEARCH_ENTITY.warehouse:
+			return store.listWarehouses(page);
+		case MASTER_SEARCH_ENTITY.organizationDimension: {
+			const organizationDimensionStore =
+				options.organizationDimensionStore ??
+				createDrizzleOrganizationDimensionStore();
+			const listed = await organizationDimensionStore.list({
+				...page,
+				status: "all",
+			});
+			return listed.ok ? ok(listed.data.items) : listed;
+		}
+		case MASTER_SEARCH_ENTITY.paymentTerm:
+			return store.listPaymentTerms(page);
+		default:
+			return unsupportedSearchEntity(entity);
+	}
+}
+
+function unsupportedSearchEntity(value: never): never {
+	throw new TypeError(`Unsupported master search entity: ${value}`);
 }
 
 /**
@@ -263,7 +308,7 @@ export async function rebuildMasterDataSearchIndex(
 	if (!authorized.ok) {
 		return authorized;
 	}
-	const searchStore = options.searchStore;
+	const { searchStore } = options;
 	const entities: MasterSearchEntity[] = parsed.data.entity
 		? [parsed.data.entity]
 		: [...MASTER_SEARCH_ENTITY_VALUES];
@@ -271,78 +316,20 @@ export async function rebuildMasterDataSearchIndex(
 	let upserted = 0;
 	let pruned = 0;
 
-	for (const entity of entities) {
-		let roots: MasterRoot[] = [];
-		if (entity === MASTER_SEARCH_ENTITY.party) {
-			const listed = await store.listParties({
-				organizationId: parsed.data.organizationId,
-				page: 1,
-				pageSize: 100,
-			});
-			if (!listed.ok) {
-				return listed;
-			}
-			roots = listed.data;
-		} else if (entity === MASTER_SEARCH_ENTITY.item) {
-			const listed = await store.listItems({
-				organizationId: parsed.data.organizationId,
-				page: 1,
-				pageSize: 100,
-			});
-			if (!listed.ok) {
-				return listed;
-			}
-			roots = listed.data;
-		} else if (entity === MASTER_SEARCH_ENTITY.itemGroup) {
-			const listed = await store.listItemGroups({
-				organizationId: parsed.data.organizationId,
-				page: 1,
-				pageSize: 100,
-			});
-			if (!listed.ok) {
-				return listed;
-			}
-			roots = listed.data;
-		} else if (entity === MASTER_SEARCH_ENTITY.warehouse) {
-			const listed = await store.listWarehouses({
-				organizationId: parsed.data.organizationId,
-				page: 1,
-				pageSize: 100,
-			});
-			if (!listed.ok) {
-				return listed;
-			}
-			roots = listed.data;
-		} else if (entity === MASTER_SEARCH_ENTITY.organizationDimension) {
-			const organizationDimensionStore =
-				options.organizationDimensionStore ??
-				createDrizzleOrganizationDimensionStore();
-			const listed = await organizationDimensionStore.list({
-				organizationId: parsed.data.organizationId,
-				status: "all",
-				page: 1,
-				pageSize: 100,
-			});
-			if (!listed.ok) {
-				return listed;
-			}
-			roots = listed.data.items;
-		} else {
-			const listed = await store.listPaymentTerms({
-				organizationId: parsed.data.organizationId,
-				page: 1,
-				pageSize: 100,
-			});
-			if (!listed.ok) {
-				return listed;
-			}
-			roots = listed.data;
+	const failedRebuild = await runSequentiallyUntil(entities, async (entity) => {
+		const listed = await listSearchRoots(
+			parsed.data.organizationId,
+			entity,
+			store,
+			options,
+		);
+		if (!listed.ok) {
+			return listed;
 		}
-
 		const rebuilt = await rebuildOneEntity(
 			parsed.data.organizationId,
 			entity,
-			roots,
+			listed.data,
 			searchStore,
 		);
 		if (!rebuilt.ok) {
@@ -350,6 +337,9 @@ export async function rebuildMasterDataSearchIndex(
 		}
 		upserted += rebuilt.data.upserted;
 		pruned += rebuilt.data.pruned;
+	});
+	if (failedRebuild !== undefined) {
+		return failedRebuild;
 	}
 
 	return ok({ upserted, pruned, entities });

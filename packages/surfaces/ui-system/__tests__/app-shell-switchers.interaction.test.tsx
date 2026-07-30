@@ -32,7 +32,7 @@ function TestLink({
 	target?: "_blank" | "_self";
 }) {
 	return (
-		<a href={href} aria-current={ariaCurrent} rel={rel} target={target}>
+		<a aria-current={ariaCurrent} href={href} rel={rel} target={target}>
 			{children}
 		</a>
 	);
@@ -46,12 +46,12 @@ describe("app-shell switchers", () => {
 		render(
 			<SidebarProvider>
 				<TeamSwitcher
+					onCreateTeam={onCreateTeam}
+					onTeamChange={onTeamChange}
 					teams={[
 						{ id: "finance", name: "Finance", logo: TestLogo },
 						{ id: "operations", name: "Operations", logo: TestLogo },
 					]}
-					onTeamChange={onTeamChange}
-					onCreateTeam={onCreateTeam}
 				/>
 			</SidebarProvider>,
 		);
@@ -85,11 +85,11 @@ describe("app-shell switchers", () => {
 		render(
 			<SidebarProvider>
 				<OrgSwitcher
+					onOrganizationChange={onOrganizationChange}
 					organizations={[
 						{ id: "afenda", name: "Afenda" },
 						{ id: "northwind", name: "Northwind" },
 					]}
-					onOrganizationChange={onOrganizationChange}
 				/>
 			</SidebarProvider>,
 		);
@@ -112,9 +112,6 @@ describe("app-shell switchers", () => {
 		render(
 			<AppShell
 				header={{ title: "Dashboard" }}
-				themeConfig={{
-					brand: { name: "Afenda", homeHref: "/" },
-				}}
 				navConfig={{
 					currentPath: "/dashboard",
 					linkComponent: TestLink,
@@ -133,6 +130,9 @@ describe("app-shell switchers", () => {
 					],
 				}}
 				showScrollToTop={false}
+				themeConfig={{
+					brand: { name: "Afenda", homeHref: "/" },
+				}}
 			>
 				<p>Workspace content</p>
 			</AppShell>,
@@ -163,13 +163,6 @@ describe("app-shell switchers", () => {
 		const user = userEvent.setup();
 		render(
 			<AppShell
-				header={{ title: "Dashboard" }}
-				themeConfig={{ brand: { name: "Afenda", homeHref: "/" } }}
-				navConfig={{
-					currentPath: "/dashboard",
-					linkComponent: TestLink,
-					sections: [],
-				}}
 				defaultSettings={{
 					mode: "dark",
 					layout: "compact",
@@ -177,7 +170,14 @@ describe("app-shell switchers", () => {
 					sidebarCollapsible: "offcanvas",
 					sidebarOpen: false,
 				}}
+				header={{ title: "Dashboard" }}
+				navConfig={{
+					currentPath: "/dashboard",
+					linkComponent: TestLink,
+					sections: [],
+				}}
 				showScrollToTop={false}
+				themeConfig={{ brand: { name: "Afenda", homeHref: "/" } }}
 			>
 				<p>Controlled defaults</p>
 			</AppShell>,
@@ -206,16 +206,13 @@ describe("app-shell switchers", () => {
 	it("keeps command access responsive and orders shell utilities consistently", () => {
 		render(
 			<AppShell
+				commandMenu={{ groups: [], onCommand: vi.fn() }}
 				header={{ title: "Dashboard" }}
-				themeConfig={{
-					brand: { name: "Afenda", homeHref: "/" },
-				}}
 				navConfig={{
 					currentPath: "/dashboard",
 					linkComponent: TestLink,
 					sections: [],
 				}}
-				commandMenu={{ groups: [], onCommand: vi.fn() }}
 				notifications={{
 					notifications: [
 						{
@@ -230,6 +227,9 @@ describe("app-shell switchers", () => {
 				}}
 				profile={{ name: "John Doe", initials: "JD" }}
 				showScrollToTop={false}
+				themeConfig={{
+					brand: { name: "Afenda", homeHref: "/" },
+				}}
 			>
 				<p>Workspace content</p>
 			</AppShell>,
@@ -259,10 +259,6 @@ describe("app-shell switchers", () => {
 		render(
 			<AppShell
 				header={{ title: "Reports" }}
-				themeConfig={{
-					brand: { name: "Afenda", homeHref: "/" },
-					sidebar: { groupLabelStyle: "uppercase" },
-				}}
 				navConfig={{
 					currentPath: "/reports?period=2026-07&status=open",
 					linkComponent: TestLink,
@@ -288,6 +284,10 @@ describe("app-shell switchers", () => {
 					],
 				}}
 				showScrollToTop={false}
+				themeConfig={{
+					brand: { name: "Afenda", homeHref: "/" },
+					sidebar: { groupLabelStyle: "uppercase" },
+				}}
 			>
 				<p>Reports workspace</p>
 			</AppShell>,
@@ -322,7 +322,6 @@ describe("app-shell switchers", () => {
 					showModeToggle: false,
 					showThemeCustomiser: false,
 				}}
-				themeConfig={{ brand: { name: "Afenda", homeHref: "/" } }}
 				navConfig={{
 					currentPath,
 					linkComponent: TestLink,
@@ -362,6 +361,7 @@ describe("app-shell switchers", () => {
 					],
 				}}
 				showScrollToTop={false}
+				themeConfig={{ brand: { name: "Afenda", homeHref: "/" } }}
 			>
 				<p>Settings content</p>
 			</AppShell>

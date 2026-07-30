@@ -1,3 +1,5 @@
+// biome-ignore-all lint/complexity/noExcessiveCognitiveComplexity: Legal-form supersession coordinates policy, CAS, idempotency, audit, and outbox atomically.
+// biome-ignore-all lint/style/useDestructuring: Explicit predecessor access keeps supersession evidence visible.
 import { fail, type Result } from "@afenda/errors/result";
 import {
 	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
@@ -49,7 +51,9 @@ export async function supersedeCompanyLegalForm(
 		supersedeCompanyLegalFormInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 
 	const authorized = await requireCorporateAdministrationPermission(
 		options.authorization,
@@ -60,7 +64,9 @@ export async function supersedeCompanyLegalForm(
 				CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS.supersedeCompanyLegalForm,
 		},
 	);
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 
 	const identity = createCorporateAdministrationCommandFingerprint({
 		schema: supersedeCompanyLegalFormInputSchema,
@@ -69,7 +75,9 @@ export async function supersedeCompanyLegalForm(
 			"corporate-administration.legal-company.supersede-company-legal-form",
 		input: parsed.data,
 	});
-	if (!identity.ok) return identity;
+	if (!identity.ok) {
+		return identity;
+	}
 	const approved = await requireCorporateAdministrationApprovalIfConfigured(
 		dependencies,
 		{
@@ -80,14 +88,18 @@ export async function supersedeCompanyLegalForm(
 			commandFingerprint: identity.data.fingerprint,
 		},
 	);
-	if (!approved.ok) return approved;
+	if (!approved.ok) {
+		return approved;
+	}
 
 	const sourceDocument =
 		await dependencies.referenceData.validateSourceDocument({
 			organizationId: options.organizationId,
 			sourceDocumentId: parsed.data.replacement.sourceDocumentId,
 		});
-	if (!sourceDocument.ok) return sourceDocument;
+	if (!sourceDocument.ok) {
+		return sourceDocument;
+	}
 	if (sourceDocument.data === null) {
 		return fail(
 			"NOT_FOUND",
@@ -115,18 +127,24 @@ export async function supersedeCompanyLegalForm(
 		legalCompanyId: parsed.data.legalCompanyId,
 		companyLegalFormHistoryId: parsed.data.companyLegalFormHistoryId,
 	});
-	if (!existing.ok) return existing;
+	if (!existing.ok) {
+		return existing;
+	}
 	const eligible = validateLegalFormSupersession({
 		legalForm: existing.data,
 		expectedVersion: parsed.data.expectedLegalFormVersion,
 	});
-	if (!eligible.ok) return eligible;
+	if (!eligible.ok) {
+		return eligible;
+	}
 
 	const company = await dependencies.store.getLegalCompany({
 		organizationId: options.organizationId,
 		legalCompanyId: parsed.data.legalCompanyId,
 	});
-	if (!company.ok) return company;
+	if (!company.ok) {
+		return company;
+	}
 	const jurisdictionProfile = company.data?.currentJurisdictionProfile ?? null;
 	if (
 		jurisdictionProfile === null ||
@@ -148,7 +166,9 @@ export async function supersedeCompanyLegalForm(
 		legalFormCode: parsed.data.replacement.legalFormCode,
 		effectiveDate: parsed.data.replacement.effectiveFrom,
 	});
-	if (!legalForm.ok) return legalForm;
+	if (!legalForm.ok) {
+		return legalForm;
+	}
 	if (legalForm.data === null) {
 		return fail(
 			"VALIDATION_ERROR",
@@ -178,7 +198,9 @@ export async function supersedeCompanyLegalForm(
 			legalFormCode: parsed.data.replacement.legalFormCode,
 			effectiveDate: parsed.data.replacement.effectiveFrom,
 		});
-	if (!compatible.ok) return compatible;
+	if (!compatible.ok) {
+		return compatible;
+	}
 	if (!compatible.data.active) {
 		return fail(
 			"CONFLICT",
@@ -209,7 +231,9 @@ export async function supersedeCompanyLegalForm(
 			},
 			ignoreCompanyLegalFormId: parsed.data.companyLegalFormHistoryId,
 		});
-	if (!overlap.ok) return overlap;
+	if (!overlap.ok) {
+		return overlap;
+	}
 	if (overlap.data !== null) {
 		return fail(
 			"CONFLICT",

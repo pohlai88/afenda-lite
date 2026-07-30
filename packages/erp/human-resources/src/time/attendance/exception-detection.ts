@@ -9,6 +9,11 @@ import type {
 	HumanResourcesShiftId,
 } from "../../brands";
 import type { MutationPorts } from "../../ports";
+import {
+	runSequential,
+	sequentialContinue,
+	sequentialReturn,
+} from "../../shared/run-sequential";
 import type { AttendanceExceptionCreateRecord } from "../../store/time";
 import type {
 	AttendanceEvent,
@@ -30,61 +35,61 @@ export type ExceptionDetectionSource =
 	| typeof ATTENDANCE_SESSION_DETECTION_SOURCE
 	| typeof SCHEDULE_PUBLISH_DETECTION_SOURCE;
 
-export type ExceptionDetectionRemarks = {
+export interface ExceptionDetectionRemarks {
 	detectionSource: ExceptionDetectionSource;
-	workDate: string;
-	sessionId: string;
 	exceptionType: AttendanceExceptionType;
+	sessionId: string;
 	shiftAssignmentId: string | null;
-};
+	workDate: string;
+}
 
-export type DetectedExceptionCandidate = {
+export interface DetectedExceptionCandidate {
 	exceptionType: AttendanceExceptionType;
 	severity: "info" | "warning" | "critical";
 	shiftAssignmentId: HumanResourcesShiftAssignmentId | null;
-};
+}
 
-export type ExceptionDetectionHost = {
-	getScheduledShiftForEmployeeDate(input: {
+export interface ExceptionDetectionHost {
+	createAttendanceException: (
+		input: AttendanceExceptionCreateRecord,
+		ports: MutationPorts,
+	) => Promise<Result<AttendanceException>>;
+	/** Optional: adapters that can delete a just-created exception on detection failure. */
+	deleteAttendanceExceptionForRollback?: (input: {
 		organizationId: string;
-		employeeId: HumanResourcesEmployeeId;
-		scheduledDate: string;
-	}): Promise<Result<ShiftAssignment | null>>;
-	getShift(input: {
-		organizationId: string;
-		shiftId: HumanResourcesShiftId;
-	}): Promise<Result<Shift | null>>;
-	listShiftBreaks(input: {
-		organizationId: string;
-		shiftId: HumanResourcesShiftId;
-	}): Promise<Result<ShiftBreak[]>>;
-	getPreviousCompletedAttendanceSession(input: {
+		exceptionId: AttendanceException["id"];
+	}) => Promise<Result<void>>;
+	getPreviousCompletedAttendanceSession: (input: {
 		organizationId: string;
 		employeeId: HumanResourcesEmployeeId;
 		before: Date;
 		excludeSessionId: HumanResourcesAttendanceSessionId;
-	}): Promise<Result<AttendanceSession | null>>;
-	resolveTimePolicy(input: {
+	}) => Promise<Result<AttendanceSession | null>>;
+	getScheduledShiftForEmployeeDate: (input: {
 		organizationId: string;
-		employmentId: HumanResourcesEmploymentId;
-		asOf: string;
-	}): Promise<Result<TimePolicy | null>>;
-	listUnresolvedAttendanceExceptions(input: {
+		employeeId: HumanResourcesEmployeeId;
+		scheduledDate: string;
+	}) => Promise<Result<ShiftAssignment | null>>;
+	getShift: (input: {
+		organizationId: string;
+		shiftId: HumanResourcesShiftId;
+	}) => Promise<Result<Shift | null>>;
+	listShiftBreaks: (input: {
+		organizationId: string;
+		shiftId: HumanResourcesShiftId;
+	}) => Promise<Result<ShiftBreak[]>>;
+	listUnresolvedAttendanceExceptions: (input: {
 		organizationId: string;
 		employeeId?: HumanResourcesEmployeeId;
 		page?: number;
 		pageSize?: number;
-	}): Promise<Result<AttendanceException[]>>;
-	createAttendanceException(
-		input: AttendanceExceptionCreateRecord,
-		ports: MutationPorts,
-	): Promise<Result<AttendanceException>>;
-	/** Optional: adapters that can delete a just-created exception on detection failure. */
-	deleteAttendanceExceptionForRollback?(input: {
+	}) => Promise<Result<AttendanceException[]>>;
+	resolveTimePolicy: (input: {
 		organizationId: string;
-		exceptionId: AttendanceException["id"];
-	}): Promise<Result<void>>;
-};
+		employmentId: HumanResourcesEmploymentId;
+		asOf: string;
+	}) => Promise<Result<TimePolicy | null>>;
+}
 
 function isPublishedOrChanged(
 	assignment: ShiftAssignment | null,
@@ -137,7 +142,9 @@ export function detectAttendanceExceptionsForSession(input: {
 	let overlappingAttendance = false;
 	for (const event of activeEvents) {
 		if (event.eventType === "clock_in") {
-			if (clockedIn) overlappingAttendance = true;
+			if (clockedIn) {
+				overlappingAttendance = true;
+			}
 			clockedIn = true;
 		}
 		if (event.eventType === "clock_out") {
@@ -302,7 +309,7 @@ export function parseExceptionDetectionRemarks(
 			return null;
 		}
 		const record = parsed as Record<string, unknown>;
-		const detectionSource = record.detectionSource;
+		const { detectionSource } = record;
 		if (
 			detectionSource !== ATTENDANCE_SESSION_DETECTION_SOURCE &&
 			detectionSource !== SCHEDULE_PUBLISH_DETECTION_SOURCE
@@ -321,12 +328,15 @@ export function parseExceptionDetectionRemarks(
 			workDate: record.workDate,
 			sessionId: record.sessionId,
 			exceptionType: record.exceptionType as AttendanceExceptionType,
-			shiftAssignmentId:
-				typeof record.shiftAssignmentId === "string"
-					? record.shiftAssignmentId
-					: record.shiftAssignmentId === null
-						? null
-						: null,
+			shiftAssignmentId: (() => {
+				if (typeof record.shiftAssignmentId === "string") {
+					return record.shiftAssignmentId;
+				}
+				if (record.shiftAssignmentId === null) {
+					return null;
+				}
+				return null;
+			})(),
 		};
 	} catch {
 		return null;
@@ -341,9 +351,15 @@ export function hasExistingAutoDetectedException(input: {
 	detectionSource: ExceptionDetectionSource;
 }): boolean {
 	return input.exceptions.some((exception) => {
-		if (exception.employeeId !== input.employeeId) return false;
-		if (exception.exceptionType !== input.exceptionType) return false;
-		if (exception.sessionId !== input.sessionId) return false;
+		if (exception.employeeId !== input.employeeId) {
+			return false;
+		}
+		if (exception.exceptionType !== input.exceptionType) {
+			return false;
+		}
+		if (exception.sessionId !== input.sessionId) {
+			return false;
+		}
 		if (
 			exception.reviewStatus !== "open" &&
 			exception.reviewStatus !== "in_review"
@@ -378,7 +394,9 @@ export async function runAttendanceExceptionDetection(
 		employeeId: input.employeeId,
 		scheduledDate: input.session.localWorkDate,
 	});
-	if (!scheduled.ok) return scheduled;
+	if (!scheduled.ok) {
+		return scheduled;
+	}
 
 	let shift: Shift | null = null;
 	let shiftBreaks: ShiftBreak[] = [];
@@ -393,13 +411,17 @@ export async function runAttendanceExceptionDetection(
 			organizationId: input.organizationId,
 			shiftId: scheduled.data.shiftId,
 		});
-		if (!shiftResult.ok) return shiftResult;
+		if (!shiftResult.ok) {
+			return shiftResult;
+		}
 		shift = shiftResult.data;
 		const breaksResult = await host.listShiftBreaks({
 			organizationId: input.organizationId,
 			shiftId: scheduled.data.shiftId,
 		});
-		if (!breaksResult.ok) return breaksResult;
+		if (!breaksResult.ok) {
+			return breaksResult;
+		}
 		shiftBreaks = breaksResult.data;
 	}
 	if (input.session.employmentId !== null) {
@@ -408,7 +430,9 @@ export async function runAttendanceExceptionDetection(
 			employmentId: input.session.employmentId,
 			asOf: input.session.localWorkDate,
 		});
-		if (!policy.ok) return policy;
+		if (!policy.ok) {
+			return policy;
+		}
 		minimumRestMinutes = policy.data?.minimumRestMinutes ?? null;
 	}
 	const currentClockIn = input.session.firstClockInAt;
@@ -419,7 +443,9 @@ export async function runAttendanceExceptionDetection(
 			before: currentClockIn,
 			excludeSessionId: input.session.id,
 		});
-		if (!preceding.ok) return preceding;
+		if (!preceding.ok) {
+			return preceding;
+		}
 		previousSession = preceding.data;
 	}
 
@@ -429,7 +455,9 @@ export async function runAttendanceExceptionDetection(
 		page: 1,
 		pageSize: 500,
 	});
-	if (!existing.ok) return existing;
+	if (!existing.ok) {
+		return existing;
+	}
 
 	const candidates = detectAttendanceExceptionsForSession({
 		session: input.session,
@@ -443,53 +471,60 @@ export async function runAttendanceExceptionDetection(
 
 	const known = [...existing.data];
 	const createdIds: AttendanceException["id"][] = [];
-	for (const candidate of candidates) {
-		if (
-			hasExistingAutoDetectedException({
-				exceptions: known,
-				employeeId: input.employeeId,
-				sessionId: input.session.id,
-				exceptionType: candidate.exceptionType,
-				detectionSource: input.detectionSource,
-			})
-		) {
-			continue;
-		}
-
-		const created = await host.createAttendanceException(
-			{
-				organizationId: input.organizationId,
-				employeeId: input.employeeId,
-				sessionId: input.session.id,
-				eventId: null,
-				shiftAssignmentId: candidate.shiftAssignmentId,
-				exceptionType: candidate.exceptionType,
-				severity: candidate.severity,
-				remarks: encodeExceptionDetectionRemarks({
-					detectionSource: input.detectionSource,
-					workDate: input.session.localWorkDate,
+	const sequentialOuterOutcome1 = await runSequential(
+		candidates,
+		async (candidate) => {
+			if (
+				hasExistingAutoDetectedException({
+					exceptions: known,
+					employeeId: input.employeeId,
 					sessionId: input.session.id,
 					exceptionType: candidate.exceptionType,
+					detectionSource: input.detectionSource,
+				})
+			) {
+				return sequentialContinue();
+			}
+
+			const created = await host.createAttendanceException(
+				{
+					organizationId: input.organizationId,
+					employeeId: input.employeeId,
+					sessionId: input.session.id,
+					eventId: null,
 					shiftAssignmentId: candidate.shiftAssignmentId,
-				}),
-				createdBy: input.actorUserId,
-				correlationId: input.correlationId,
-			},
-			ports,
-		);
-		if (!created.ok) {
-			if (host.deleteAttendanceExceptionForRollback !== undefined) {
-				for (const exceptionId of createdIds) {
-					await host.deleteAttendanceExceptionForRollback({
-						organizationId: input.organizationId,
-						exceptionId,
+					exceptionType: candidate.exceptionType,
+					severity: candidate.severity,
+					remarks: encodeExceptionDetectionRemarks({
+						detectionSource: input.detectionSource,
+						workDate: input.session.localWorkDate,
+						sessionId: input.session.id,
+						exceptionType: candidate.exceptionType,
+						shiftAssignmentId: candidate.shiftAssignmentId,
+					}),
+					createdBy: input.actorUserId,
+					correlationId: input.correlationId,
+				},
+				ports,
+			);
+			if (!created.ok) {
+				if (host.deleteAttendanceExceptionForRollback !== undefined) {
+					const deleteForRollback = host.deleteAttendanceExceptionForRollback;
+					await runSequential(createdIds, async (exceptionId) => {
+						await deleteForRollback({
+							organizationId: input.organizationId,
+							exceptionId,
+						});
 					});
 				}
+				return sequentialReturn(created);
 			}
-			return created;
-		}
-		createdIds.push(created.data.id);
-		known.push(created.data);
+			createdIds.push(created.data.id);
+			known.push(created.data);
+		},
+	);
+	if (sequentialOuterOutcome1.kind === "return") {
+		return sequentialOuterOutcome1.value;
 	}
 
 	return ok(undefined);

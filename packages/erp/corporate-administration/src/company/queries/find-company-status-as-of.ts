@@ -24,7 +24,9 @@ export async function findCompanyStatusAsOf(
 		findCompanyStatusAsOfInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 
 	const authorized = await requireCorporateAdministrationPermission(
 		options.authorization,
@@ -35,13 +37,17 @@ export async function findCompanyStatusAsOf(
 				CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS.findCompanyStatusAsOf,
 		},
 	);
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 
 	const current = await dependencies.store.getLegalCompany({
 		organizationId: options.organizationId,
 		legalCompanyId: parsed.data.legalCompanyId,
 	});
-	if (!current.ok) return current;
+	if (!current.ok) {
+		return current;
+	}
 	if (current.data === null) {
 		return fail(
 			"NOT_FOUND",

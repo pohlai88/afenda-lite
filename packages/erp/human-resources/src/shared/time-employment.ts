@@ -33,7 +33,9 @@ export async function resolveActiveTimeEmployment(
 					organizationId: input.organizationId,
 					employmentId: input.employmentId,
 				});
-	if (!loaded.ok) return loaded;
+	if (!loaded.ok) {
+		return loaded;
+	}
 	if (loaded.data === null) {
 		return notFound("Active employment not found for Time fact");
 	}

@@ -15,7 +15,7 @@ import {
 } from "@afenda/ui-system";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { InboxIcon, ShieldAlertIcon } from "lucide-react";
-import { useState } from "react";
+import { type MouseEvent, useCallback, useState } from "react";
 import { contractDocsParameters } from "./contract-docs";
 import { contractEvidence, StorySection } from "./evidence";
 
@@ -33,15 +33,15 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-type InvoiceRow = {
-	id: string;
-	customer: string;
+interface InvoiceRow {
 	amount: string;
+	customer: string;
 	due: string;
+	id: string;
 	owner: string;
 	status: "pending" | "active";
 	statusLabel: string;
-};
+}
 
 const OPEN_INVOICES: InvoiceRow[] = [
 	{
@@ -79,22 +79,26 @@ function InvoiceWorkbench({
 	initialId?: string | null;
 }) {
 	const [selectedId, setSelectedId] = useState<string | null>(initialId);
+	const handleSelect = useCallback((event: MouseEvent<HTMLButtonElement>) => {
+		setSelectedId(event.currentTarget.value);
+	}, []);
 	const selected =
 		OPEN_INVOICES.find((invoice) => invoice.id === selectedId) ?? null;
 
 	return (
-		<MasterDetail className="min-h-80" aria-label="Invoice master and detail">
+		<MasterDetail aria-label="Invoice master and detail" className="min-h-80">
 			<MasterDetailPrimary aria-label="Open invoices">
 				<div className="grid h-full gap-2 bg-muted/40 p-3">
-					<p className="text-sm font-medium text-foreground">Open invoices</p>
+					<p className="font-medium text-foreground text-sm">Open invoices</p>
 					{OPEN_INVOICES.map((invoice) => (
 						<Button
-							key={invoice.id}
-							type="button"
-							className="w-full justify-start"
-							variant={invoice.id === selectedId ? "secondary" : "ghost"}
 							aria-current={invoice.id === selectedId ? "true" : undefined}
-							onClick={() => setSelectedId(invoice.id)}
+							className="w-full justify-start"
+							key={invoice.id}
+							onClick={handleSelect}
+							type="button"
+							value={invoice.id}
+							variant={invoice.id === selectedId ? "secondary" : "ghost"}
 						>
 							{invoice.id}
 						</Button>
@@ -105,19 +109,19 @@ function InvoiceWorkbench({
 				{selected ? (
 					<div className="grid h-full content-start gap-4 p-5">
 						<div className="flex flex-wrap items-center gap-2">
-							<span className="font-mono text-sm text-foreground-tertiary">
+							<span className="font-mono text-foreground-tertiary text-sm">
 								{selected.id}
 							</span>
 							<StatusBadge
+								label={selected.statusLabel}
 								size="sm"
 								status={selected.status}
-								label={selected.statusLabel}
 							/>
 						</div>
-						<h2 className="text-xl font-semibold tracking-tight">
+						<h2 className="font-semibold text-xl tracking-tight">
 							{selected.customer}
 						</h2>
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							{selected.amount} · Due {selected.due} · Owner {selected.owner}
 						</p>
 						<div className="flex flex-wrap gap-2 pt-2">
@@ -130,10 +134,10 @@ function InvoiceWorkbench({
 				) : (
 					<div className="grid h-full place-items-center p-5">
 						<Empty
-							size="sm"
-							icon={<InboxIcon className="size-6" />}
-							title="No invoice selected"
 							description="Choose an invoice from the list to inspect amounts, due date, and approval actions."
+							icon={<InboxIcon className="size-6" />}
+							size="sm"
+							title="No invoice selected"
 						/>
 					</div>
 				)}
@@ -157,13 +161,13 @@ export const Overview: Story = {
 		<div className="min-h-screen bg-canvas text-foreground">
 			<div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-2 border-b pb-6">
-					<p className="text-sm font-medium text-foreground-secondary">
+					<p className="font-medium text-foreground-secondary text-sm">
 						Accounts receivable · open invoices
 					</p>
-					<h1 className="text-2xl font-semibold tracking-tight">
+					<h1 className="font-semibold text-2xl tracking-tight">
 						Invoice workbench
 					</h1>
-					<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+					<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 						MasterDetail keeps the collection and the selected invoice on one
 						surface. Selection identity and authorization stay in feature code.
 					</p>
@@ -173,7 +177,7 @@ export const Overview: Story = {
 					<CardHeader>
 						<div className="flex flex-wrap items-center gap-2">
 							<Badge variant="outline">Receivables</Badge>
-							<StatusBadge size="sm" status="active" label="Operational" />
+							<StatusBadge label="Operational" size="sm" status="active" />
 						</div>
 						<CardTitle>Open invoices</CardTitle>
 						<CardDescription>
@@ -209,17 +213,17 @@ export const Usage: Story = {
 
 			<StorySection title="Supplier master beside remittance facts">
 				<MasterDetail
-					className="min-h-72"
 					aria-label="Supplier master and detail"
+					className="min-h-72"
 				>
 					<MasterDetailPrimary aria-label="Suppliers">
 						<div className="grid h-full gap-2 bg-muted/40 p-3">
-							<p className="text-sm font-medium text-foreground">Suppliers</p>
+							<p className="font-medium text-foreground text-sm">Suppliers</p>
 							{["SUP-0142", "SUP-0201", "SUP-0310"].map((id, index) => (
 								<Button
+									className="w-full justify-start"
 									key={id}
 									type="button"
-									className="w-full justify-start"
 									variant={index === 0 ? "secondary" : "ghost"}
 								>
 									{id}
@@ -230,15 +234,15 @@ export const Usage: Story = {
 					<MasterDetailSecondary aria-label="Supplier detail">
 						<div className="grid h-full content-start gap-3 p-5">
 							<div className="flex flex-wrap items-center gap-2">
-								<span className="font-mono text-sm text-foreground-tertiary">
+								<span className="font-mono text-foreground-tertiary text-sm">
 									SUP-0142
 								</span>
-								<StatusBadge size="sm" status="active" label="Preferred" />
+								<StatusBadge label="Preferred" size="sm" status="active" />
 							</div>
-							<h2 className="text-xl font-semibold tracking-tight">
+							<h2 className="font-semibold text-xl tracking-tight">
 								Northwind Trading Sdn. Bhd.
 							</h2>
-							<p className="text-sm text-foreground-secondary">
+							<p className="text-foreground-secondary text-sm">
 								MYR settlement · Maybank · remittance advice enabled
 							</p>
 						</div>
@@ -269,17 +273,17 @@ export const StatesAndAccessibility: Story = {
 
 			<StorySection title="Permission-limited detail">
 				<MasterDetail
-					className="min-h-72"
 					aria-label="Restricted invoice master and detail"
+					className="min-h-72"
 				>
 					<MasterDetailPrimary aria-label="Open invoices">
 						<div className="grid h-full gap-2 bg-muted/40 p-3">
-							<p className="text-sm font-medium text-foreground">
+							<p className="font-medium text-foreground text-sm">
 								Open invoices
 							</p>
 							<Button
-								type="button"
 								className="w-full justify-start"
+								type="button"
 								variant="secondary"
 							>
 								INV-1048
@@ -289,10 +293,10 @@ export const StatesAndAccessibility: Story = {
 					<MasterDetailSecondary aria-label="Invoice detail unavailable">
 						<div className="grid h-full place-items-center p-5">
 							<Empty
-								size="sm"
-								icon={<ShieldAlertIcon className="size-6" />}
-								title="Invoice detail restricted"
 								description="Your role cannot read invoice INV-1048 in this organization. Ask finance-control for access — do not keep stale detail visible."
+								icon={<ShieldAlertIcon className="size-6" />}
+								size="sm"
+								title="Invoice detail restricted"
 							/>
 						</div>
 					</MasterDetailSecondary>
@@ -318,7 +322,7 @@ export const Composition: Story = {
 				<CardHeader>
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="outline">Receivables</Badge>
-						<StatusBadge size="sm" status="active" label="Operational" />
+						<StatusBadge label="Operational" size="sm" status="active" />
 					</div>
 					<CardTitle>Invoice master-detail</CardTitle>
 					<CardDescription>
@@ -355,9 +359,9 @@ export const DoAndDoNot: Story = {
 				<div className="rounded-lg border p-3">
 					<div className="flex flex-wrap items-center gap-2">
 						<span className="font-mono text-sm">INV-1048</span>
-						<StatusBadge size="sm" status="pending" label="Awaiting approval" />
+						<StatusBadge label="Awaiting approval" size="sm" status="pending" />
 					</div>
-					<p className="mt-2 text-sm text-foreground-secondary">
+					<p className="mt-2 text-foreground-secondary text-sm">
 						Selection keyed by invoice id. Lifecycle comes from StatusBadge, not
 						from which list row looks active.
 					</p>
@@ -365,7 +369,7 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do not: treat row highlight as lifecycle">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					A secondary list-row style means “selected in this session,” not
 					Approved or Posted. Use StatusBadge for authoritative state.
 				</p>
@@ -373,17 +377,17 @@ export const DoAndDoNot: Story = {
 
 			<StorySection title="Do: primary actions in the detail pane">
 				<div className="flex flex-wrap gap-2 rounded-lg border p-3">
-					<Button type="button" variant="outline" size="sm">
+					<Button size="sm" type="button" variant="outline">
 						Open audit trail
 					</Button>
-					<Button type="button" size="sm">
+					<Button size="sm" type="button">
 						Approve
 					</Button>
 				</div>
 			</StorySection>
 
 			<StorySection title="Do not: use MasterDetail for unrelated peers">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Two side-by-side dashboards with no list→subject relationship should
 					use Resizable (or separate Cards), not MasterDetail. MasterDetail
 					implies a selectable collection and its current subject.

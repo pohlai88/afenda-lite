@@ -31,7 +31,7 @@ export async function createDraftSupplierCreditNoteAction(
 	_prev: CreateDraftSupplierCreditNoteActionState,
 	formData: FormData,
 ): Promise<CreateDraftSupplierCreditNoteActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "createDraftSupplierCreditNoteAction",
 		permission: "payables.manage",
 		safeMessage:
@@ -44,12 +44,13 @@ export async function createDraftSupplierCreditNoteAction(
 				supplierName: formData.get("supplierName"),
 				currencyCode: formData.get("currencyCode"),
 			});
-			if (!parsed.success)
+			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
 					"Enter a valid credit note code, supplier, and currency.",
 					parsed.details,
 				);
+			}
 			const mapped = mapPackageResult(
 				await createDraftSupplierCreditNote(
 					{
@@ -61,7 +62,9 @@ export async function createDraftSupplierCreditNoteAction(
 					createPayablesCommandOptions(session.userId),
 				),
 			);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePayablesPaths();
 			return { ok: true, data: { creditNote: mapped.data } };
 		},

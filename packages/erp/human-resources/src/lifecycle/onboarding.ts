@@ -116,12 +116,24 @@ async function loadOnboardingCompletionContext(
 		}),
 	]);
 
-	if (!tasks.ok) return tasks;
-	if (!orientation.ok) return orientation;
-	if (!equipmentHandoff.ok) return equipmentHandoff;
-	if (!accessHandoff.ok) return accessHandoff;
-	if (!missingDocs.ok) return missingDocs;
-	if (!eligibility.ok) return eligibility;
+	if (!tasks.ok) {
+		return tasks;
+	}
+	if (!orientation.ok) {
+		return orientation;
+	}
+	if (!equipmentHandoff.ok) {
+		return equipmentHandoff;
+	}
+	if (!accessHandoff.ok) {
+		return accessHandoff;
+	}
+	if (!missingDocs.ok) {
+		return missingDocs;
+	}
+	if (!eligibility.ok) {
+		return eligibility;
+	}
 
 	return {
 		ok: true,
@@ -194,7 +206,7 @@ async function assertOnboardingTaskCompliance(
 	return { ok: true, data: undefined };
 }
 
-export async function startOnboarding(
+export function startOnboarding(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OnboardingCase>> {
@@ -228,7 +240,7 @@ export async function startOnboarding(
 	});
 }
 
-export async function completeOnboardingTask(
+export function completeOnboardingTask(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OnboardingCase>> {
@@ -275,7 +287,7 @@ export async function completeOnboardingTask(
 	});
 }
 
-export async function recordOnboardingOrientation(
+export function recordOnboardingOrientation(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OnboardingCase>> {
@@ -302,7 +314,7 @@ export async function recordOnboardingOrientation(
 	});
 }
 
-export async function recordOnboardingEquipmentHandoff(
+export function recordOnboardingEquipmentHandoff(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OnboardingCase>> {
@@ -330,7 +342,7 @@ export async function recordOnboardingEquipmentHandoff(
 	});
 }
 
-export async function recordOnboardingAccessHandoff(
+export function recordOnboardingAccessHandoff(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OnboardingCase>> {
@@ -357,7 +369,7 @@ export async function recordOnboardingAccessHandoff(
 	});
 }
 
-export async function completeOnboarding(
+export function completeOnboarding(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OnboardingCase>> {
@@ -405,7 +417,7 @@ export async function completeOnboarding(
 	});
 }
 
-export async function getOnboardingCase(
+export function getOnboardingCase(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OnboardingCase | null>> {
@@ -421,7 +433,7 @@ export async function getOnboardingCase(
 	});
 }
 
-export async function listOnboardingTasks(
+export function listOnboardingTasks(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OnboardingTask[]>> {
@@ -437,7 +449,7 @@ export async function listOnboardingTasks(
 	});
 }
 
-export async function getOnboardingOrientationByCase(
+export function getOnboardingOrientationByCase(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OnboardingOrientation | null>> {
@@ -453,7 +465,7 @@ export async function getOnboardingOrientationByCase(
 	});
 }
 
-export async function getOnboardingEquipmentHandoffByCase(
+export function getOnboardingEquipmentHandoffByCase(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OnboardingEquipmentHandoff | null>> {
@@ -469,7 +481,7 @@ export async function getOnboardingEquipmentHandoffByCase(
 	});
 }
 
-export async function getOnboardingAccessHandoffByCase(
+export function getOnboardingAccessHandoffByCase(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OnboardingAccessHandoff | null>> {

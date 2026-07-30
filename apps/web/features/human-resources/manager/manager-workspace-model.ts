@@ -10,136 +10,136 @@ export type ManagerCapability =
 
 export type ManagerCapabilities = Record<ManagerCapability, boolean>;
 
-export type ManagerTeamMember = {
+export interface ManagerTeamMember {
+	businessUnitKey: string | null;
+	departmentId: string | null;
+	displayName: string;
 	employeeId: string;
 	employeeNumber: string;
-	displayName: string;
 	employmentId: string | null;
 	employmentStatus: string | null;
-	positionId: string | null;
-	departmentId: string | null;
 	locationKey: string | null;
-	businessUnitKey: string | null;
 	planningScopeKeys: string[];
-};
+	positionId: string | null;
+}
 
-export type ManagerLeaveRow = {
-	id: string;
-	employeeId: string;
+export interface ManagerLeaveRow {
 	displayName: string;
-	startDate: string;
+	employeeId: string;
 	endDate: string;
-	requestedQuantity: string;
-	unit: string;
-	status: string;
-	version: number;
-};
-
-export type ManagerTimesheetRow = {
 	id: string;
-	employeeId: string;
-	displayName: string;
-	periodStart: string;
-	periodEnd: string;
-	totalRecordedMinutes: number;
+	requestedQuantity: string;
+	startDate: string;
+	status: string;
+	unit: string;
+	version: number;
+}
+
+export interface ManagerTimesheetRow {
 	completedApprovalSteps: number;
+	displayName: string;
+	employeeId: string;
+	id: string;
+	periodEnd: string;
+	periodStart: string;
 	requiredApprovalSteps: number;
 	status: string;
+	totalRecordedMinutes: number;
 	version: number;
-};
+}
 
-export type ManagerAttendanceRow = {
-	id: string;
-	employeeId: string;
+export interface ManagerAttendanceRow {
 	displayName: string;
+	employeeId: string;
 	exceptionType: string;
-	severity: string;
-	reviewStatus: string;
-	remarks: string | null;
-	version: number;
-};
-
-export type ManagerProbationRow = {
 	id: string;
+	remarks: string | null;
+	reviewStatus: string;
+	severity: string;
+	version: number;
+}
+
+export interface ManagerProbationRow {
+	displayName: string;
 	employeeId: string;
 	employmentId: string;
-	displayName: string;
-	startsOn: string;
 	endsOn: string;
-	status: string;
+	id: string;
 	outcome: string | null;
-	version: number;
-};
-
-export type ManagerPerformanceReviewRow = {
-	id: string;
-	employeeId: string;
-	displayName: string;
+	startsOn: string;
 	status: string;
-	overallRating: string | null;
 	version: number;
-};
+}
 
-export type ManagerGoalRow = {
-	id: string;
-	employeeId: string;
+export interface ManagerPerformanceReviewRow {
 	displayName: string;
-	title: string;
+	employeeId: string;
+	id: string;
+	overallRating: string | null;
+	status: string;
+	version: number;
+}
+
+export interface ManagerGoalRow {
+	displayName: string;
+	employeeId: string;
+	id: string;
 	periodEnd: string;
 	status: string;
+	title: string;
 	version: number;
-};
+}
 
-export type ManagerTalentRow = {
-	id: string;
-	employeeId: string;
-	displayName: string;
+export interface ManagerTalentRow {
 	classification: string | null;
+	displayName: string;
+	employeeId: string;
+	id: string;
 	status: string;
 	version: number;
-};
+}
 
-export type ManagerSuccessionRow = {
-	id: string;
-	employeeId: string;
+export interface ManagerSuccessionRow {
 	displayName: string;
+	employeeId: string;
+	id: string;
 	planId: string;
 	planTitle: string;
 	readiness: string | null;
 	readinessEffectiveOn: string | null;
 	status: string;
 	version: number;
-};
+}
 
-export type ManagerStaffingGapRow = {
-	planId: string;
-	planTitle: string;
-	planningScopeKey: string;
-	planLineId: string;
+export interface ManagerStaffingGapRow {
 	actualHeadcount: number;
-	plannedHeadcount: number;
-	varianceHeadcount: number;
-	availableHeadcount: number;
-	varianceFte: string;
 	availableFte: string;
-};
+	availableHeadcount: number;
+	planId: string;
+	planLineId: string;
+	plannedHeadcount: number;
+	planningScopeKey: string;
+	planTitle: string;
+	varianceFte: string;
+	varianceHeadcount: number;
+}
 
-export type ManagerWorkspaceData = {
+export interface ManagerWorkspaceData {
 	asOf: string;
-	managerEmployeeId: string;
-	capabilities: ManagerCapabilities;
-	team: ManagerTeamMember[];
-	leave: ManagerLeaveRow[];
-	timesheets: ManagerTimesheetRow[];
 	attendance: ManagerAttendanceRow[];
-	probation: ManagerProbationRow[];
-	performanceReviews: ManagerPerformanceReviewRow[];
-	goals: ManagerGoalRow[];
-	talent: ManagerTalentRow[];
-	succession: ManagerSuccessionRow[];
-	staffingGaps: ManagerStaffingGapRow[];
+	capabilities: ManagerCapabilities;
 	errors: string[];
-};
+	goals: ManagerGoalRow[];
+	leave: ManagerLeaveRow[];
+	managerEmployeeId: string;
+	performanceReviews: ManagerPerformanceReviewRow[];
+	probation: ManagerProbationRow[];
+	staffingGaps: ManagerStaffingGapRow[];
+	succession: ManagerSuccessionRow[];
+	talent: ManagerTalentRow[];
+	team: ManagerTeamMember[];
+	timesheets: ManagerTimesheetRow[];
+}
 
 export function managerStatusTone(
 	status: string,

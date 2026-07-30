@@ -52,26 +52,26 @@ export const Overview: Story = {
 				<header className="grid gap-2 border-b pb-6">
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="outline">Accounts receivable</Badge>
-						<StatusBadge size="sm" status="active" label="July open items" />
+						<StatusBadge label="July open items" size="sm" status="active" />
 					</div>
-					<h1 className="text-2xl font-semibold tracking-tight">
+					<h1 className="font-semibold text-2xl tracking-tight">
 						Invoice register
 					</h1>
-					<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+					<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 						Table presents row-and-column relationships. Use DataTable when
 						governed sorting, filtering, selection, or pagination is required.
 					</p>
 				</header>
 
-				<section className="grid gap-3" aria-labelledby="table-register-title">
+				<section aria-labelledby="table-register-title" className="grid gap-3">
 					<div className="grid gap-1">
 						<h2
-							className="text-base font-semibold tracking-tight text-foreground"
+							className="font-semibold text-base text-foreground tracking-tight"
 							id="table-register-title"
 						>
 							Open invoices
 						</h2>
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							Caption and headers keep the relationship understandable without
 							surrounding copy alone.
 						</p>
@@ -108,7 +108,7 @@ export const Overview: Story = {
 							</Table>
 						</CardContent>
 						<CardFooter className="justify-end border-t">
-							<Button type="button" size="sm" variant="outline">
+							<Button size="sm" type="button" variant="outline">
 								Export CSV
 							</Button>
 						</CardFooter>
@@ -163,8 +163,8 @@ export const StatesAndAccessibility: Story = {
 	render: () => (
 		<div className="grid w-full max-w-2xl gap-6">
 			<StorySection
-				title="Selected row"
 				description="data-state selected styles the row without inventing selection policy."
+				title="Selected row"
 			>
 				<Table>
 					<TableHeader>
@@ -236,10 +236,10 @@ export const Composition: Story = {
 				</Table>
 			</CardContent>
 			<CardFooter className="justify-end gap-2 border-t">
-				<Button type="button" variant="outline" size="sm">
+				<Button size="sm" type="button" variant="outline">
 					Adjust
 				</Button>
-				<Button type="button" size="sm">
+				<Button size="sm" type="button">
 					Confirm allocation
 				</Button>
 			</CardFooter>
@@ -259,8 +259,8 @@ export const DoAndDoNot: Story = {
 	render: () => (
 		<div className="grid w-full max-w-5xl gap-6 md:grid-cols-2">
 			<StorySection
-				title="Do"
 				description="Captioned table with clear column headers."
+				title="Do"
 			>
 				<Table>
 					<TableCaption>Open AP</TableCaption>
@@ -279,8 +279,8 @@ export const DoAndDoNot: Story = {
 				</Table>
 			</StorySection>
 			<StorySection
-				title="Do not"
 				description="Do not drop headers or treat Table as CSS grid chrome."
+				title="Do not"
 			>
 				<div className="grid gap-2 rounded-md border border-destructive/40 p-3">
 					<Table>
@@ -291,7 +291,7 @@ export const DoAndDoNot: Story = {
 							</TableRow>
 						</TableBody>
 					</Table>
-					<p className="text-xs text-destructive">
+					<p className="text-destructive text-xs">
 						Headerless rows hide the column relationship from assistive tech.
 					</p>
 				</div>

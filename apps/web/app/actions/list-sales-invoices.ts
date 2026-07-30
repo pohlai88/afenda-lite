@@ -12,7 +12,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type ListSalesInvoicesActionData = { invoices: SalesInvoice[] };
+export interface ListSalesInvoicesActionData {
+	invoices: SalesInvoice[];
+}
 
 const schema = z
 	.object({
@@ -27,7 +29,7 @@ export async function listSalesInvoicesAction(input?: {
 	pageSize?: number;
 	status?: SalesInvoice["status"];
 }): Promise<ActionResult<ListSalesInvoicesActionData>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listSalesInvoicesAction",
 		permission: "receivables.invoice.read",
 		safeMessage:
@@ -50,7 +52,9 @@ export async function listSalesInvoicesAction(input?: {
 				createReceivablesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { invoices: mapped.data } };
 		},
 	});

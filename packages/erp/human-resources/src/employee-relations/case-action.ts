@@ -22,7 +22,7 @@ export const HUMAN_RESOURCES_AGGREGATE_EMPLOYEE_CASE_ACTION =
 export type HumanResourcesEmployeeCaseActionAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_EMPLOYEE_CASE_ACTION;
 
-export async function recommendEmployeeCaseAction(
+export function recommendEmployeeCaseAction(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCaseAction>> {
@@ -73,7 +73,7 @@ export async function recommendEmployeeCaseAction(
 	});
 }
 
-export async function approveEmployeeCaseAction(
+export function approveEmployeeCaseAction(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCaseAction>> {

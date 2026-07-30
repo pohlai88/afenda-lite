@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/useAwait: Drizzle resolution wrappers expose uniform asynchronous store contracts.
 import {
 	and,
 	asc,
@@ -203,8 +204,12 @@ class DrizzleCorporateAdministrationResolutionStore implements ResolutionStore {
 		input: Parameters<ResolutionStore["supersedeResolution"]>[0],
 	) {
 		const current = await this.getResolution(input);
-		if (!current.ok) return current;
-		if (current.data === null) return notFound();
+		if (!current.ok) {
+			return current;
+		}
+		if (current.data === null) {
+			return notFound();
+		}
 		if (current.data.version !== input.expectedVersion) {
 			return stale(input.expectedVersion, current.data.version);
 		}
@@ -255,8 +260,12 @@ class DrizzleCorporateAdministrationResolutionStore implements ResolutionStore {
 		input: Parameters<ResolutionStore["recordMinutesDocument"]>[0],
 	) {
 		const current = await this.getResolution(input);
-		if (!current.ok) return current;
-		if (current.data === null) return notFound();
+		if (!current.ok) {
+			return current;
+		}
+		if (current.data === null) {
+			return notFound();
+		}
 		if (current.data.version !== input.expectedVersion) {
 			return stale(input.expectedVersion, current.data.version);
 		}
@@ -398,8 +407,12 @@ class DrizzleCorporateAdministrationResolutionStore implements ResolutionStore {
 		input: Parameters<ResolutionStore["completeResolutionAction"]>[0],
 	) {
 		const current = await this.getResolutionAction(input);
-		if (!current.ok) return current;
-		if (current.data === null) return notFound();
+		if (!current.ok) {
+			return current;
+		}
+		if (current.data === null) {
+			return notFound();
+		}
 		if (current.data.version !== input.expectedVersion) {
 			return stale(input.expectedVersion, current.data.version);
 		}

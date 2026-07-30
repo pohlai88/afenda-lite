@@ -11,9 +11,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type GetStockMovementActionData = {
+export interface GetStockMovementActionData {
 	movement: StockMovement | null;
-};
+}
 
 /**
  * Get stock movement by id — `inventory.movement.read`.
@@ -21,7 +21,7 @@ export type GetStockMovementActionData = {
 export async function getStockMovementAction(
 	input: unknown,
 ): Promise<ActionResult<GetStockMovementActionData>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getStockMovementAction",
 		permission: "inventory.movement.read",
 		safeMessage:

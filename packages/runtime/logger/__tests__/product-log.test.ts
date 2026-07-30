@@ -72,7 +72,7 @@ describe("logProductEvent (edge)", () => {
 	});
 
 	it("writes closed JSON fields via console", () => {
-		const info = vi.spyOn(console, "info").mockImplementation(() => {});
+		const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
 
 		logProductEventEdge({
 			level: "info",

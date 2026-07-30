@@ -61,21 +61,21 @@ export type SearchRebuildPage = Readonly<{
 }>;
 
 export interface SearchRebuildSource {
-	readPage(
+	readPage: (
 		input: Readonly<{
 			plan: SearchRebuildPlan;
 			cursor: string | null;
 		}>,
-	): Promise<Result<SearchRebuildPage>>;
+	) => Promise<Result<SearchRebuildPage>>;
 }
 
 export interface SearchRebuildStore {
-	loadCheckpoint(
+	loadCheckpoint: (
 		input: SearchRebuildIdentity,
-	): Promise<Result<SearchRebuildCheckpoint | null>>;
-	saveCheckpoint(
+	) => Promise<Result<SearchRebuildCheckpoint | null>>;
+	saveCheckpoint: (
 		input: SaveSearchRebuildCheckpointInput,
-	): Promise<Result<SearchRebuildCheckpoint>>;
+	) => Promise<Result<SearchRebuildCheckpoint>>;
 }
 
 export function defineSearchRebuildCheckpoint(

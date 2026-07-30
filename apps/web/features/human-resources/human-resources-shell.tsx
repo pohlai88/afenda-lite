@@ -39,10 +39,10 @@ import { RetryEventForm } from "@/features/human-resources/retry-event-form";
 import { createHumanResourcesCommandOptions } from "@/lib/erp/human-resources-command-options";
 import { sessionHasPermission } from "@/modules/identity/domain/session-permission";
 
-type ShellProps = {
+interface ShellProps {
 	page: number;
 	preferences: HrDisplayPreferences;
-};
+}
 
 function HrHeader({
 	eyebrow,
@@ -55,16 +55,16 @@ function HrHeader({
 }) {
 	return (
 		<header className="space-y-2">
-			<p className="text-sm text-muted-foreground">{eyebrow}</p>
-			<h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-			<p className="max-w-3xl text-sm text-muted-foreground">{description}</p>
+			<p className="text-muted-foreground text-sm">{eyebrow}</p>
+			<h1 className="font-semibold text-2xl tracking-tight">{title}</h1>
+			<p className="max-w-3xl text-muted-foreground text-sm">{description}</p>
 		</header>
 	);
 }
 
 function LoadAlert({ message }: { message: string }) {
 	return (
-		<Alert variant="destructive" role="alert">
+		<Alert role="alert" variant="destructive">
 			<AlertTitle>Unable to load HR data</AlertTitle>
 			<AlertDescription>{message}</AlertDescription>
 		</Alert>
@@ -86,21 +86,21 @@ function PageControls({
 		`${path}?page=${target}&locale=${preferences.locale}&timeZone=${encodeURIComponent(preferences.timeZone)}`;
 	return (
 		<nav aria-label="Pagination" className="flex items-center justify-between">
-			<Button asChild variant="outline" disabled={page <= 1}>
+			<Button asChild disabled={page <= 1} variant="outline">
 				<Link
-					href={href(Math.max(1, page - 1))}
 					aria-disabled={page <= 1}
+					href={href(Math.max(1, page - 1))}
 					tabIndex={page <= 1 ? -1 : undefined}
 				>
 					Previous
 				</Link>
 			</Button>
-			<span className="text-sm text-muted-foreground">Page {page}</span>
-			<Button asChild variant="outline" disabled={!hasNext}>
+			<span className="text-muted-foreground text-sm">Page {page}</span>
+			<Button asChild disabled={!hasNext} variant="outline">
 				<Link
-					href={href(page + 1)}
 					aria-disabled={!hasNext}
-					tabIndex={!hasNext ? -1 : undefined}
+					href={href(page + 1)}
+					tabIndex={hasNext ? undefined : -1}
 				>
 					Next
 				</Link>
@@ -130,11 +130,11 @@ export async function EmployeeHrShell({ page, preferences }: ShellProps) {
 	return (
 		<section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-10">
 			<HrHeader
+				description="Review your leave history and record attendance. Employee identity is resolved from your signed-in account; employee IDs are never accepted from this page."
 				eyebrow={`Employee self-service · ${preferences.timeZone}`}
 				title={messages.employeeTitle}
-				description="Review your leave history and record attendance. Employee identity is resolved from your signed-in account; employee IDs are never accepted from this page."
 			/>
-			{!result.ok ? <LoadAlert message={messages.loadFailed} /> : null}
+			{result.ok ? null : <LoadAlert message={messages.loadFailed} />}
 			<div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
 				<Card>
 					<CardHeader>
@@ -181,12 +181,12 @@ export async function EmployeeHrShell({ page, preferences }: ShellProps) {
 							</Table>
 						</div>
 						<PageControls
-							path="/client/human-resources"
-							page={page}
 							hasNext={
 								result.ok &&
 								page * result.data.pageSize < result.data.totalCount
 							}
+							page={page}
+							path="/client/human-resources"
 							preferences={preferences}
 						/>
 					</CardContent>
@@ -202,7 +202,7 @@ export async function EmployeeHrShell({ page, preferences }: ShellProps) {
 						{canRecordAttendance ? (
 							<AttendanceControl timeZone={preferences.timeZone} />
 						) : (
-							<p className="text-sm text-muted-foreground">
+							<p className="text-muted-foreground text-sm">
 								Attendance recording is not enabled for your role.
 							</p>
 						)}
@@ -243,11 +243,11 @@ export async function ManagerHrShell({ page, preferences }: ShellProps) {
 	return (
 		<section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-10">
 			<HrHeader
+				description="Review leave awaiting action for employees in your reporting scope. Team membership is resolved server-side from the signed-in manager."
 				eyebrow="Manager self-service"
 				title={messages.managerTitle}
-				description="Review leave awaiting action for employees in your reporting scope. Team membership is resolved server-side from the signed-in manager."
 			/>
-			{!result.ok ? <LoadAlert message={messages.loadFailed} /> : null}
+			{result.ok ? null : <LoadAlert message={messages.loadFailed} />}
 			<Card>
 				<CardHeader>
 					<CardTitle>Pending team leave</CardTitle>
@@ -291,11 +291,11 @@ export async function ManagerHrShell({ page, preferences }: ShellProps) {
 						</Table>
 					</div>
 					<PageControls
-						path="/client/human-resources/manager"
-						page={page}
 						hasNext={
 							result.ok && page * result.data.pageSize < result.data.totalCount
 						}
+						page={page}
+						path="/client/human-resources/manager"
 						preferences={preferences}
 					/>
 				</CardContent>
@@ -325,11 +325,11 @@ export async function AdminHrShell({ page, preferences }: ShellProps) {
 	return (
 		<section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-10">
 			<HrHeader
+				description="Tenant-scoped employee administration with separate candidate and operational recovery workspaces."
 				eyebrow="Operator · Human resources"
 				title={messages.adminTitle}
-				description="Tenant-scoped employee administration with separate candidate and operational recovery workspaces."
 			/>
-			{!employees.ok ? <LoadAlert message={messages.loadFailed} /> : null}
+			{employees.ok ? null : <LoadAlert message={messages.loadFailed} />}
 			<div className="flex flex-wrap gap-3">
 				{canViewCandidates ? (
 					<Button asChild variant="outline">
@@ -380,12 +380,12 @@ export async function AdminHrShell({ page, preferences }: ShellProps) {
 						</Table>
 					</div>
 					<PageControls
-						path="/admin/human-resources"
-						page={page}
 						hasNext={
 							employees.ok &&
 							page * employees.data.pageSize < employees.data.totalCount
 						}
+						page={page}
+						path="/admin/human-resources"
 						preferences={preferences}
 					/>
 				</CardContent>
@@ -411,11 +411,11 @@ export async function CandidateHrShell({ page, preferences }: ShellProps) {
 	return (
 		<section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-10">
 			<HrHeader
+				description="Permission-gated candidate records for the organization. Contact details remain confined to recruitment operators."
 				eyebrow="Recruitment operations"
 				title={messages.candidateTitle}
-				description="Permission-gated candidate records for the organization. Contact details remain confined to recruitment operators."
 			/>
-			{!result.ok ? <LoadAlert message={messages.loadFailed} /> : null}
+			{result.ok ? null : <LoadAlert message={messages.loadFailed} />}
 			<Card>
 				<CardHeader>
 					<CardTitle>Candidates</CardTitle>
@@ -455,11 +455,11 @@ export async function CandidateHrShell({ page, preferences }: ShellProps) {
 						</Table>
 					</div>
 					<PageControls
-						path="/admin/human-resources/candidates"
-						page={page}
 						hasNext={
 							result.ok && page * result.data.pageSize < result.data.totalCount
 						}
+						page={page}
+						path="/admin/human-resources/candidates"
 						preferences={preferences}
 					/>
 				</CardContent>
@@ -493,8 +493,12 @@ export async function OperationsHrShell({ page, preferences }: ShellProps) {
 			page: 1,
 		}),
 	]);
-	const loadFailed =
-		!pending.ok || !failed.ok || !processed.ok || !stalePending.ok;
+	const loadFailed = !(
+		pending.ok &&
+		failed.ok &&
+		processed.ok &&
+		stalePending.ok
+	);
 	const health = reconcileHrQueueHealth({
 		pending: pending.ok ? pending.data : null,
 		failed: failed.ok ? failed.data : null,
@@ -506,24 +510,24 @@ export async function OperationsHrShell({ page, preferences }: ShellProps) {
 	return (
 		<section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-10">
 			<HrHeader
+				description="Organization-isolated HR outbox health, SLO evaluation, and explicitly confirmed failed-event recovery."
 				eyebrow="Operator · Reliability"
 				title={messages.operationsTitle}
-				description="Organization-isolated HR outbox health, SLO evaluation, and explicitly confirmed failed-event recovery."
 			/>
 			{loadFailed ? <LoadAlert message={messages.loadFailed} /> : null}
-			{!health.sloHealthy ? (
-				<Alert variant="destructive" role="alert">
-					<AlertTitle>HR integration SLO breached</AlertTitle>
-					<AlertDescription>
-						Target: zero failed events, no events pending over 15 minutes, and
-						no more than 10 pending events. Investigate before retrying.
-					</AlertDescription>
-				</Alert>
-			) : (
+			{health.sloHealthy ? (
 				<Alert role="status">
 					<AlertTitle>HR integration SLO healthy</AlertTitle>
 					<AlertDescription>
 						No failed-event breach or pending-queue saturation detected.
+					</AlertDescription>
+				</Alert>
+			) : (
+				<Alert role="alert" variant="destructive">
+					<AlertTitle>HR integration SLO breached</AlertTitle>
+					<AlertDescription>
+						Target: zero failed events, no events pending over 15 minutes, and
+						no more than 10 pending events. Investigate before retrying.
 					</AlertDescription>
 				</Alert>
 			)}
@@ -559,7 +563,7 @@ export async function OperationsHrShell({ page, preferences }: ShellProps) {
 				</CardHeader>
 				<CardContent>
 					{health.reconciliationIssues.length === 0 ? (
-						<p className="text-sm text-muted-foreground" role="status">
+						<p className="text-muted-foreground text-sm" role="status">
 							All sampled queue rows match the HR module and expected state.
 						</p>
 					) : (
@@ -605,7 +609,7 @@ export async function OperationsHrShell({ page, preferences }: ShellProps) {
 												{canRepair ? (
 													<RetryEventForm eventId={event.id} />
 												) : (
-													<span className="text-sm text-muted-foreground">
+													<span className="text-muted-foreground text-sm">
 														Read only
 													</span>
 												)}
@@ -621,11 +625,11 @@ export async function OperationsHrShell({ page, preferences }: ShellProps) {
 						</Table>
 					</div>
 					<PageControls
-						path="/admin/human-resources/operations"
-						page={page}
 						hasNext={
 							failed.ok && page * failed.data.pageSize < failed.data.total
 						}
+						page={page}
+						path="/admin/human-resources/operations"
 						preferences={preferences}
 					/>
 				</CardContent>

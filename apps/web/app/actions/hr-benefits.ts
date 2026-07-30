@@ -75,7 +75,7 @@ const BENEFITS_MANAGE = "human-resources.benefits.manage" as const;
 export async function createBenefitPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: BenefitPlan }>> {
-	return runHrHumanResourcesAction<BenefitPlan, { plan: BenefitPlan }>({
+	return await runHrHumanResourcesAction<BenefitPlan, { plan: BenefitPlan }>({
 		path: "createBenefitPlanAction",
 		permission: BENEFITS_MANAGE,
 		safeMessage: "Could not create benefit plan.",
@@ -90,7 +90,7 @@ export async function createBenefitPlanAction(
 export async function updateBenefitPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: BenefitPlan }>> {
-	return runHrHumanResourcesAction<BenefitPlan, { plan: BenefitPlan }>({
+	return await runHrHumanResourcesAction<BenefitPlan, { plan: BenefitPlan }>({
 		path: "updateBenefitPlanAction",
 		permission: BENEFITS_MANAGE,
 		safeMessage: "Could not update benefit plan.",
@@ -105,7 +105,7 @@ export async function updateBenefitPlanAction(
 export async function archiveBenefitPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: BenefitPlan }>> {
-	return runHrHumanResourcesAction<BenefitPlan, { plan: BenefitPlan }>({
+	return await runHrHumanResourcesAction<BenefitPlan, { plan: BenefitPlan }>({
 		path: "archiveBenefitPlanAction",
 		permission: BENEFITS_MANAGE,
 		safeMessage: "Could not archive benefit plan.",
@@ -120,7 +120,7 @@ export async function archiveBenefitPlanAction(
 export async function setBenefitPlanEligibilityAction(
 	input: unknown,
 ): Promise<ActionResult<{ eligibility: BenefitPlanEligibility }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		BenefitPlanEligibility,
 		{ eligibility: BenefitPlanEligibility }
 	>({
@@ -138,7 +138,7 @@ export async function setBenefitPlanEligibilityAction(
 export async function getBenefitPlanEligibilityAction(
 	input: unknown,
 ): Promise<ActionResult<{ eligibility: BenefitPlanEligibility | null }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		BenefitPlanEligibility | null,
 		{ eligibility: BenefitPlanEligibility | null }
 	>({
@@ -156,7 +156,7 @@ export async function getBenefitPlanEligibilityAction(
 export async function enrolBenefitAction(
 	input: unknown,
 ): Promise<ActionResult<{ enrollment: BenefitEnrollment }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		BenefitEnrollment,
 		{ enrollment: BenefitEnrollment }
 	>({
@@ -174,7 +174,7 @@ export async function enrolBenefitAction(
 export async function waiveBenefitAction(
 	input: unknown,
 ): Promise<ActionResult<{ enrollment: BenefitEnrollment }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		BenefitEnrollment,
 		{ enrollment: BenefitEnrollment }
 	>({
@@ -192,7 +192,7 @@ export async function waiveBenefitAction(
 export async function endBenefitEnrollmentAction(
 	input: unknown,
 ): Promise<ActionResult<{ enrollment: BenefitEnrollment }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		BenefitEnrollment,
 		{ enrollment: BenefitEnrollment }
 	>({
@@ -210,7 +210,7 @@ export async function endBenefitEnrollmentAction(
 export async function cancelBenefitEnrollmentAction(
 	input: unknown,
 ): Promise<ActionResult<{ enrollment: BenefitEnrollment }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		BenefitEnrollment,
 		{ enrollment: BenefitEnrollment }
 	>({
@@ -228,7 +228,7 @@ export async function cancelBenefitEnrollmentAction(
 export async function addBenefitEnrollmentDependentAction(
 	input: unknown,
 ): Promise<ActionResult<{ dependent: BenefitEnrollmentDependent }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		BenefitEnrollmentDependent,
 		{ dependent: BenefitEnrollmentDependent }
 	>({
@@ -246,7 +246,7 @@ export async function addBenefitEnrollmentDependentAction(
 export async function endBenefitEnrollmentDependentAction(
 	input: unknown,
 ): Promise<ActionResult<{ dependent: BenefitEnrollmentDependent }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		BenefitEnrollmentDependent,
 		{ dependent: BenefitEnrollmentDependent }
 	>({

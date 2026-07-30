@@ -9,7 +9,9 @@ describe("lineage segment guards", () => {
 	it("rejects mutation of superseded lineage segments", () => {
 		const result = assertLineageSegmentMutable({ lineageStatus: "superseded" });
 		expect(result.ok).toBe(false);
-		if (result.ok) return;
+		if (result.ok) {
+			return;
+		}
 		expect(result.code).toBe("CONFLICT");
 	});
 
@@ -24,7 +26,9 @@ describe("lineage segment guards", () => {
 			effectiveOn: "2026-01-01",
 		});
 		expect(result.ok).toBe(false);
-		if (result.ok) return;
+		if (result.ok) {
+			return;
+		}
 		expect(result.code).toBe("VALIDATION_ERROR");
 	});
 

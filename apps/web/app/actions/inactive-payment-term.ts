@@ -17,5 +17,5 @@ export async function inactivePaymentTermAction(
 	_prev: PaymentTermLifecycleActionState,
 	formData: FormData,
 ): Promise<PaymentTermLifecycleActionState> {
-	return runPaymentTermLifecycle("inactive", formData);
+	return await runPaymentTermLifecycle("inactive", formData);
 }

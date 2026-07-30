@@ -4,25 +4,25 @@ import type {
 	LeavePolicyEntitlementExpiryRule,
 } from "./leave-status";
 
-export type LeavePolicyBalanceRuleInput = {
+export interface LeavePolicyBalanceRuleInput {
 	accrualBasis?: LeavePolicyAccrualBasis | undefined;
 	accrualFrequency?: LeavePolicyAccrualFrequency | null | undefined;
 	accrualQuantityPerPeriod?: string | null | undefined;
 	carryForwardEnabled?: boolean | undefined;
 	carryForwardMaxQuantity?: string | null | undefined;
-	entitlementExpiryRule?: LeavePolicyEntitlementExpiryRule | undefined;
 	entitlementExpiryDays?: number | null | undefined;
-};
+	entitlementExpiryRule?: LeavePolicyEntitlementExpiryRule | undefined;
+}
 
-export type ResolvedLeavePolicyBalanceRules = {
+export interface ResolvedLeavePolicyBalanceRules {
 	accrualBasis: LeavePolicyAccrualBasis;
 	accrualFrequency: LeavePolicyAccrualFrequency | null;
 	accrualQuantityPerPeriod: string | null;
 	carryForwardEnabled: boolean;
 	carryForwardMaxQuantity: string | null;
-	entitlementExpiryRule: LeavePolicyEntitlementExpiryRule;
 	entitlementExpiryDays: number | null;
-};
+	entitlementExpiryRule: LeavePolicyEntitlementExpiryRule;
+}
 
 export const DEFAULT_LEAVE_POLICY_BALANCE_RULES: ResolvedLeavePolicyBalanceRules =
 	{
@@ -61,24 +61,24 @@ export function mergeLeavePolicyBalanceRules(
 	return resolveLeavePolicyBalanceRulesFromInput({
 		accrualBasis: input.accrualBasis ?? existing.accrualBasis,
 		accrualFrequency:
-			input.accrualFrequency !== undefined
-				? input.accrualFrequency
-				: existing.accrualFrequency,
+			input.accrualFrequency === undefined
+				? existing.accrualFrequency
+				: input.accrualFrequency,
 		accrualQuantityPerPeriod:
-			input.accrualQuantityPerPeriod !== undefined
-				? input.accrualQuantityPerPeriod
-				: existing.accrualQuantityPerPeriod,
+			input.accrualQuantityPerPeriod === undefined
+				? existing.accrualQuantityPerPeriod
+				: input.accrualQuantityPerPeriod,
 		carryForwardEnabled:
 			input.carryForwardEnabled ?? existing.carryForwardEnabled,
 		carryForwardMaxQuantity:
-			input.carryForwardMaxQuantity !== undefined
-				? input.carryForwardMaxQuantity
-				: existing.carryForwardMaxQuantity,
+			input.carryForwardMaxQuantity === undefined
+				? existing.carryForwardMaxQuantity
+				: input.carryForwardMaxQuantity,
 		entitlementExpiryRule:
 			input.entitlementExpiryRule ?? existing.entitlementExpiryRule,
 		entitlementExpiryDays:
-			input.entitlementExpiryDays !== undefined
-				? input.entitlementExpiryDays
-				: existing.entitlementExpiryDays,
+			input.entitlementExpiryDays === undefined
+				? existing.entitlementExpiryDays
+				: input.entitlementExpiryDays,
 	});
 }

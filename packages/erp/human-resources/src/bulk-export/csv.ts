@@ -3,9 +3,14 @@ import { createHash } from "node:crypto";
 import type { HumanResourcesBulkExportArtifactChunk } from "../bulk-jobs/types";
 import type { HumanResourcesBulkExportRow } from "./types";
 
+const CSV_ESCAPE_PATTERN = /[",\r\n]/;
+const CSV_HEADER_PATTERN = /^[^\r\n]*\r\n/;
+
 function csvCell(value: unknown): string {
 	const text = value === null || value === undefined ? "" : String(value);
-	return /[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+	return CSV_ESCAPE_PATTERN.test(text)
+		? `"${text.replaceAll('"', '""')}"`
+		: text;
 }
 
 export function createHumanResourcesBulkExportCsv(
@@ -35,10 +40,14 @@ export function createHumanResourcesBulkExportArtifactChunk(input: {
 		offset += 200
 	) {
 		const page = input.rows.slice(offset, offset + 200);
-		const content = createHumanResourcesBulkExportCsv(
+		const contentWithHeader = createHumanResourcesBulkExportCsv(
 			input.fields,
 			page,
-		).replace(offset === 0 ? /$^/ : /^[^\r\n]*\r\n/, "");
+		);
+		const content =
+			offset === 0
+				? contentWithHeader
+				: contentWithHeader.replace(CSV_HEADER_PATTERN, "");
 		output.push({
 			organizationId: input.organizationId,
 			jobId: input.jobId,

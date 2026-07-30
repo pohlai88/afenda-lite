@@ -50,18 +50,19 @@ export async function queuePayrollDeliveryAction(input: {
 	maxAttempts?: number;
 	supersedesDeliveryId?: string;
 }): Promise<ActionResult<PayrollDeliveryRecord>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "queuePayrollDeliveryAction",
 		permission: "payroll.input.manage",
 		safeMessage: "Could not queue the payroll delivery.",
 		execute: async (session) => {
 			const parsed = parseSchema(queueSchema, input);
-			if (!parsed.success)
+			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
 					"Enter a valid payroll delivery.",
 					parsed.details,
 				);
+			}
 			const result = await queuePayrollDelivery(
 				{
 					idempotencyKey: parsed.data.idempotencyKey,
@@ -86,18 +87,19 @@ export async function queuePayrollDeliveryAction(input: {
 export async function publishPayrollDeliveryAction(input: {
 	deliveryId: string;
 }): Promise<ActionResult<PayrollDeliveryRecord>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "publishPayrollDeliveryAction",
 		permission: "payroll.input.manage",
 		safeMessage: "Could not publish the payroll delivery.",
 		execute: async (session) => {
 			const parsed = parseSchema(deliverySchema, input);
-			if (!parsed.success)
+			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
 					"Enter a valid payroll delivery.",
 					parsed.details,
 				);
+			}
 			return mapPackageResult(
 				await publishPayrollDelivery(
 					{
@@ -118,18 +120,19 @@ export async function queuePayrollDeliveryCorrectionAction(input: {
 	supersedesDeliveryId: string;
 	maxAttempts?: number;
 }): Promise<ActionResult<PayrollDeliveryRecord>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "queuePayrollDeliveryCorrectionAction",
 		permission: "payroll.input.manage",
 		safeMessage: "Could not queue the corrected payroll delivery.",
 		execute: async (session) => {
 			const parsed = parseSchema(correctionSchema, input);
-			if (!parsed.success)
+			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
 					"Enter a valid corrected payroll delivery.",
 					parsed.details,
 				);
+			}
 			return mapPackageResult(
 				await queuePayrollDelivery(
 					{
@@ -155,18 +158,19 @@ export async function recordPayrollDeliveryFeedbackAction(input: {
 	status: "acknowledged" | "rejected" | "correction_required";
 	reason?: string;
 }): Promise<ActionResult<PayrollDeliveryRecord>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "recordPayrollDeliveryFeedbackAction",
 		permission: "payroll.input.manage",
 		safeMessage: "Could not record payroll delivery feedback.",
 		execute: async (session) => {
 			const parsed = parseSchema(feedbackSchema, input);
-			if (!parsed.success)
+			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
 					"Enter valid payroll feedback.",
 					parsed.details,
 				);
+			}
 			return mapPackageResult(
 				await recordPayrollDeliveryFeedback(
 					{
@@ -188,18 +192,19 @@ export async function recordPayrollDeliveryFeedbackAction(input: {
 export async function recoverPayrollDeliveriesAction(input?: {
 	limit?: number;
 }): Promise<ActionResult<{ deliveries: readonly PayrollDeliveryRecord[] }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "recoverPayrollDeliveriesAction",
 		permission: "payroll.input.manage",
 		safeMessage: "Could not recover pending payroll deliveries.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(recoverySchema, input ?? {});
-			if (!parsed.success)
+			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
 					"Enter a valid recovery limit.",
 					parsed.details,
 				);
+			}
 			const result = await recoverPendingPayrollDeliveries({
 				organizationId: session.orgId,
 				actorUserId: session.userId,

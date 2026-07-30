@@ -25,7 +25,9 @@ describe("company status memory contract", () => {
 			createdAt: canonicalInstantSchema.parse("2026-07-28T00:00:00.000Z"),
 		});
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const activated = await store.changeLegalCompanyStatus({
 			organizationId,
@@ -40,7 +42,9 @@ describe("company status memory contract", () => {
 			correlationId: "corr-ca-status-memory",
 		});
 		expect(activated.ok).toBe(true);
-		if (!activated.ok) return;
+		if (!activated.ok) {
+			return;
+		}
 		expect(activated.data.status).toBe("active");
 		expect(activated.data.version).toBe(2);
 
@@ -49,7 +53,9 @@ describe("company status memory contract", () => {
 			legalCompanyId: created.data.legalCompanyId,
 		});
 		expect(company.ok).toBe(true);
-		if (!company.ok) return;
+		if (!company.ok) {
+			return;
+		}
 		expect(company.data?.state).toBe("active");
 		expect(company.data?.version).toBe(2);
 
@@ -59,7 +65,9 @@ describe("company status memory contract", () => {
 			asOf: canonicalDateSchema.parse("2026-07-28"),
 		});
 		expect(status.ok).toBe(true);
-		if (!status.ok) return;
+		if (!status.ok) {
+			return;
+		}
 		expect(status.data?.status).toBe("active");
 
 		const listed = await store.listCompaniesByStatus({
@@ -68,7 +76,9 @@ describe("company status memory contract", () => {
 			pagination: { limit: 25 },
 		});
 		expect(listed.ok).toBe(true);
-		if (!listed.ok) return;
+		if (!listed.ok) {
+			return;
+		}
 		expect(listed.data.items).toHaveLength(1);
 		expect(listed.data.items[0]?.state).toBe("active");
 	});

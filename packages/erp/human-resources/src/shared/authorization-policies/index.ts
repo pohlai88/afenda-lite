@@ -20,26 +20,26 @@ import {
 import { timePolicy } from "./time";
 import { workforcePlanningPolicy } from "./workforce-planning";
 
+export { compensationPolicy } from "./compensation";
+export { compliancePolicy } from "./compliance";
+export { employeeProfilePolicy } from "./employee-profile";
+export { employeeRelationsCasePolicy } from "./employee-relations";
+export { employeeSubjectPolicy } from "./employee-subject";
+export { learningPolicy } from "./learning";
+export { leavePolicy } from "./leave";
+export { lifecyclePolicy } from "./lifecycle";
+export { manifestOnlyPolicy } from "./manifest-only";
+export { organizationPolicy } from "./organization";
+export { performancePolicy } from "./performance";
+export { privacyPolicy } from "./privacy";
+export { recruitmentPolicy } from "./recruitment";
 export {
-	compensationPolicy,
-	compliancePolicy,
-	employeeProfilePolicy,
-	employeeRelationsCasePolicy,
-	employeeSubjectPolicy,
-	learningPolicy,
-	leavePolicy,
-	lifecyclePolicy,
-	manifestOnlyPolicy,
-	organizationPolicy,
-	performancePolicy,
-	privacyPolicy,
-	recruitmentPolicy,
 	successionPolicy,
 	talentAssessmentPolicy,
 	talentProfilePolicy,
-	timePolicy,
-	workforcePlanningPolicy,
-};
+} from "./talent";
+export { timePolicy } from "./time";
+export { workforcePlanningPolicy } from "./workforce-planning";
 
 export const HUMAN_RESOURCES_AUTHORIZATION_POLICIES = [
 	manifestOnlyPolicy,

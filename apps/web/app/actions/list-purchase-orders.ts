@@ -7,9 +7,9 @@ import { runOperatorPermissionAction } from "@/app/actions/run-operator-permissi
 import { createPurchasingCommandOptions } from "@/lib/erp/purchasing-command-options";
 import type { ActionResult } from "@/modules/platform/schemas/action-result";
 
-export type ListPurchaseOrdersActionData = {
+export interface ListPurchaseOrdersActionData {
 	orders: PurchaseOrder[];
-};
+}
 
 /**
  * Purchase order list — session org stamp + `purchasing.order.list`.
@@ -19,7 +19,7 @@ export async function listPurchaseOrdersAction(input?: {
 	pageSize?: number;
 	status?: PurchaseOrder["status"];
 }): Promise<ActionResult<ListPurchaseOrdersActionData>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listPurchaseOrdersAction",
 		permission: "purchasing.order.list",
 		safeMessage:

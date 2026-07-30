@@ -9,15 +9,15 @@ function isAuditAction(value: string): value is AuditAction {
 	return AUDIT_ACTION_SET.has(value);
 }
 
-export type MapAuditRowFailure = {
+export interface MapAuditRowFailure {
 	ok: false;
 	reason: "invalid_action" | "invalid_changes" | "invalid_snapshot";
-};
+}
 
-export type MapAuditRowSuccess = {
-	ok: true;
+export interface MapAuditRowSuccess {
 	data: AuditEntry;
-};
+	ok: true;
+}
 
 export type MapAuditRowResult = MapAuditRowSuccess | MapAuditRowFailure;
 

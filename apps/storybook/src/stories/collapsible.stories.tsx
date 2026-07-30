@@ -35,15 +35,15 @@ function WorkbenchSection({
 	children,
 }: WorkbenchSectionProps) {
 	return (
-		<section className="grid gap-4" aria-labelledby={id}>
+		<section aria-labelledby={id} className="grid gap-4">
 			<div className="grid gap-1">
 				<h2
-					className="text-base font-semibold tracking-tight text-foreground"
+					className="font-semibold text-base text-foreground tracking-tight"
 					id={id}
 				>
 					{title}
 				</h2>
-				<p className="max-w-5xl text-sm leading-5 text-foreground-secondary">
+				<p className="max-w-5xl text-foreground-secondary text-sm leading-5">
 					{description}
 				</p>
 			</div>
@@ -86,14 +86,14 @@ export const Overview: Story = {
 			<main className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-5 border-b pb-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
 					<div className="grid gap-2">
-						<p className="text-sm font-medium text-foreground-secondary">
+						<p className="font-medium text-foreground-secondary text-sm">
 							Accounts receivable · invoice review
 						</p>
 						<div className="grid gap-1">
-							<h1 className="text-2xl font-semibold tracking-tight">
+							<h1 className="font-semibold text-2xl tracking-tight">
 								Invoice INV-1048
 							</h1>
-							<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+							<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 								Collapsible reveals one subordinate audit region. Required
 								posting actions and lifecycle stay on the Card surface, not
 								inside the collapsed panel.
@@ -102,25 +102,25 @@ export const Overview: Story = {
 					</div>
 					<dl className="grid grid-cols-2 gap-x-8 gap-y-3 rounded-lg border bg-card p-4">
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Subject
 							</dt>
 							<dd className="text-sm">Invoice review</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Area
 							</dt>
 							<dd className="text-sm">Accounts receivable</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Scope
 							</dt>
 							<dd className="text-sm">One optional audit region</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								State
 							</dt>
 							<dd className="text-sm">Approval pending</dd>
@@ -132,13 +132,13 @@ export const Overview: Story = {
 					<CardHeader className="gap-2">
 						<div className="flex flex-wrap items-center gap-2">
 							<Badge variant="outline">Invoice</Badge>
-							<span className="font-mono text-xs text-foreground-tertiary">
+							<span className="font-mono text-foreground-tertiary text-xs">
 								INV-1048
 							</span>
 							<StatusBadge
+								label="Awaiting approval"
 								size="sm"
 								status="pending"
-								label="Awaiting approval"
 							/>
 						</div>
 						<CardTitle>Northwind Trading Sdn. Bhd.</CardTitle>
@@ -149,13 +149,13 @@ export const Overview: Story = {
 					<CardContent className="grid gap-4">
 						<dl className="grid gap-3 text-sm sm:grid-cols-2">
 							<div className="grid gap-1">
-								<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+								<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 									Owner
 								</dt>
 								<dd className="text-foreground">Aisha Rahman</dd>
 							</div>
 							<div className="grid gap-1">
-								<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+								<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 									Due date
 								</dt>
 								<dd className="text-foreground">15 Aug 2026</dd>
@@ -165,15 +165,15 @@ export const Overview: Story = {
 						<Collapsible defaultOpen>
 							<CollapsibleTrigger asChild>
 								<Button
+									className="w-full justify-between"
 									type="button"
 									variant="outline"
-									className="w-full justify-between"
 								>
 									Toggle details
 									<ChevronsUpDownIcon aria-hidden="true" className="size-4" />
 								</Button>
 							</CollapsibleTrigger>
-							<CollapsibleContent className="mt-3 rounded-md border p-4 text-sm text-foreground-secondary">
+							<CollapsibleContent className="mt-3 rounded-md border p-4 text-foreground-secondary text-sm">
 								Additional audit evidence appears here. Bank letter dated 12 Jul
 								2026 matches the remittance account on the supplier record.
 								Approval remains governed by StatusBadge and the feature
@@ -206,9 +206,9 @@ export const Usage: Story = {
 	},
 	render: () => (
 		<WorkbenchSection
+			description="One Collapsible owns one subordinate optional region. Keep the trigger adjacent and descriptive of the content it reveals."
 			id="optional-remittance-notice"
 			title="Optional remittance notice depth"
-			description="One Collapsible owns one subordinate optional region. Keep the trigger adjacent and descriptive of the content it reveals."
 		>
 			<Collapsible>
 				<CollapsibleTrigger asChild>
@@ -216,7 +216,7 @@ export const Usage: Story = {
 						Show remittance notice rules
 					</Button>
 				</CollapsibleTrigger>
-				<CollapsibleContent className="mt-3 rounded-md border p-4 text-sm text-foreground-secondary">
+				<CollapsibleContent className="mt-3 rounded-md border p-4 text-foreground-secondary text-sm">
 					Finance contacts receive remittance advice after each posted payment
 					run for this supplier. Primary remittance fields stay on the form
 					surface.
@@ -238,9 +238,9 @@ export const Composition: Story = {
 	},
 	render: () => (
 		<WorkbenchSection
+			description="Card owns the record surface and primary actions. Collapsible owns one optional disclosure region inside that Card — Accordion remains the peer-section list."
 			id="composition-workbench"
 			title="Composition"
-			description="Card owns the record surface and primary actions. Collapsible owns one optional disclosure region inside that Card — Accordion remains the peer-section list."
 		>
 			<div className="grid w-full max-w-5xl gap-6 lg:grid-cols-2">
 				<Card className="shadow-none">
@@ -249,7 +249,7 @@ export const Composition: Story = {
 						<CardDescription>SUP-1042 · Northwind Trading</CardDescription>
 					</CardHeader>
 					<CardContent className="grid gap-4">
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							Tax and ownership evidence passed validation. Optional policy
 							depth stays behind one Collapsible trigger.
 						</p>
@@ -259,7 +259,7 @@ export const Composition: Story = {
 									Why bank evidence is required
 								</Button>
 							</CollapsibleTrigger>
-							<CollapsibleContent className="mt-3 rounded-md border p-4 text-sm text-foreground-secondary">
+							<CollapsibleContent className="mt-3 rounded-md border p-4 text-foreground-secondary text-sm">
 								Bank letters prevent remittance to unverified accounts after
 								supplier activation. Activation itself stays on StatusBadge and
 								feature-owned workflow state.
@@ -282,20 +282,20 @@ export const Composition: Story = {
 					<CardContent className="grid gap-4">
 						<div className="flex flex-wrap items-center gap-2">
 							<Badge variant="secondary">Unapplied</Badge>
-							<StatusBadge size="sm" status="pending" label="Needs matching" />
+							<StatusBadge label="Needs matching" size="sm" status="pending" />
 						</div>
 						<Collapsible defaultOpen>
 							<CollapsibleTrigger asChild>
 								<Button
+									className="h-auto w-full justify-between px-0 py-1 font-medium"
 									type="button"
 									variant="ghost"
-									className="h-auto w-full justify-between px-0 py-1 font-medium"
 								>
 									Matching guidance
 									<ChevronsUpDownIcon aria-hidden="true" className="size-4" />
 								</Button>
 							</CollapsibleTrigger>
-							<CollapsibleContent className="mt-2 text-sm text-foreground-secondary">
+							<CollapsibleContent className="mt-2 text-foreground-secondary text-sm">
 								Match the MYR 24,600.00 receipt to an open invoice or customer
 								credit before clearing the exception queue.
 							</CollapsibleContent>
@@ -326,22 +326,22 @@ export const AdaptiveLayout: Story = {
 	render: () => (
 		<div className="grid w-full max-w-4xl gap-8">
 			<StorySection title="Narrow record panel">
-				<div className="w-full max-w-xs rounded-xl border border-dashed border-border p-4">
+				<div className="w-full max-w-xs rounded-xl border border-border border-dashed p-4">
 					<div className="grid gap-4">
 						<div className="grid gap-1">
-							<p className="text-sm font-medium text-foreground">
+							<p className="font-medium text-foreground text-sm">
 								Supplier bank validation
 							</p>
-							<p className="text-sm leading-5 text-foreground-secondary">
+							<p className="text-foreground-secondary text-sm leading-5">
 								Legal name and remittance account remain visible.
 							</p>
 						</div>
 						<Collapsible>
 							<CollapsibleTrigger asChild>
 								<Button
+									className="h-auto w-full justify-between whitespace-normal text-left"
 									type="button"
 									variant="outline"
-									className="h-auto w-full justify-between whitespace-normal text-left"
 								>
 									Show supporting bank-ownership evidence
 									<ChevronsUpDownIcon
@@ -350,7 +350,7 @@ export const AdaptiveLayout: Story = {
 									/>
 								</Button>
 							</CollapsibleTrigger>
-							<CollapsibleContent className="mt-3 rounded-md border p-4 text-sm leading-5 text-foreground-secondary">
+							<CollapsibleContent className="mt-3 rounded-md border p-4 text-foreground-secondary text-sm leading-5">
 								The bank letter must match the registered supplier name and
 								approved remittance account.
 							</CollapsibleContent>
@@ -382,7 +382,7 @@ export const StatesAndAccessibility: Story = {
 							Ledger write effects
 						</Button>
 					</CollapsibleTrigger>
-					<CollapsibleContent className="mt-3 rounded-md border p-4 text-sm text-foreground-secondary">
+					<CollapsibleContent className="mt-3 rounded-md border p-4 text-foreground-secondary text-sm">
 						Posting writes MYR 18,420.00 to the July receivables ledger and
 						remains correctable through the governed reversal workflow.
 					</CollapsibleContent>
@@ -396,7 +396,7 @@ export const StatesAndAccessibility: Story = {
 							Escalation mailbox
 						</Button>
 					</CollapsibleTrigger>
-					<CollapsibleContent className="mt-3 rounded-md border p-4 text-sm text-foreground-secondary">
+					<CollapsibleContent className="mt-3 rounded-md border p-4 text-foreground-secondary text-sm">
 						Unresolved approval alerts go to finance-control@example.com until
 						the invoice is posted or rejected.
 					</CollapsibleContent>
@@ -418,9 +418,9 @@ export const CompositionExamples: Story = {
 	},
 	render: () => (
 		<WorkbenchSection
+			description="Card owns the record surface and primary actions. Collapsible owns one optional disclosure region inside that Card — Accordion remains the peer-section list."
 			id="composition-workbench"
 			title="Composition"
-			description="Card owns the record surface and primary actions. Collapsible owns one optional disclosure region inside that Card — Accordion remains the peer-section list."
 		>
 			<div className="grid w-full max-w-5xl gap-6 lg:grid-cols-2">
 				<Card className="shadow-none">
@@ -429,7 +429,7 @@ export const CompositionExamples: Story = {
 						<CardDescription>SUP-1042 · Northwind Trading</CardDescription>
 					</CardHeader>
 					<CardContent className="grid gap-4">
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							Tax and ownership evidence passed validation. Optional policy
 							depth stays behind one Collapsible trigger.
 						</p>
@@ -439,7 +439,7 @@ export const CompositionExamples: Story = {
 									Why bank evidence is required
 								</Button>
 							</CollapsibleTrigger>
-							<CollapsibleContent className="mt-3 rounded-md border p-4 text-sm text-foreground-secondary">
+							<CollapsibleContent className="mt-3 rounded-md border p-4 text-foreground-secondary text-sm">
 								Bank letters prevent remittance to unverified accounts after
 								supplier activation. Activation itself stays on StatusBadge and
 								feature-owned workflow state.
@@ -462,20 +462,20 @@ export const CompositionExamples: Story = {
 					<CardContent className="grid gap-4">
 						<div className="flex flex-wrap items-center gap-2">
 							<Badge variant="secondary">Unapplied</Badge>
-							<StatusBadge size="sm" status="pending" label="Needs matching" />
+							<StatusBadge label="Needs matching" size="sm" status="pending" />
 						</div>
 						<Collapsible defaultOpen>
 							<CollapsibleTrigger asChild>
 								<Button
+									className="h-auto w-full justify-between px-0 py-1 font-medium"
 									type="button"
 									variant="ghost"
-									className="h-auto w-full justify-between px-0 py-1 font-medium"
 								>
 									Matching guidance
 									<ChevronsUpDownIcon aria-hidden="true" className="size-4" />
 								</Button>
 							</CollapsibleTrigger>
-							<CollapsibleContent className="mt-2 text-sm text-foreground-secondary">
+							<CollapsibleContent className="mt-2 text-foreground-secondary text-sm">
 								Match the MYR 24,600.00 receipt to an open invoice or customer
 								credit before clearing the exception queue.
 							</CollapsibleContent>
@@ -512,7 +512,7 @@ export const DoAndDoNot: Story = {
 							Show audit trail details
 						</Button>
 					</CollapsibleTrigger>
-					<CollapsibleContent className="mt-3 rounded-md border p-4 text-sm text-foreground-secondary">
+					<CollapsibleContent className="mt-3 rounded-md border p-4 text-foreground-secondary text-sm">
 						Operator Aisha Rahman requested finance-control review at 09:14 on
 						28 Jul 2026.
 					</CollapsibleContent>
@@ -520,7 +520,7 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do not: bury required fields or primary actions">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Required tax registration, legal name, and Approve/Submit controls
 					must remain visible on the record surface — not only inside a
 					collapsed region.
@@ -529,16 +529,16 @@ export const DoAndDoNot: Story = {
 
 			<StorySection title="Do: keep the trigger adjacent and descriptive">
 				<div className="grid gap-2 rounded-md border p-4">
-					<p className="text-sm font-medium text-foreground">
+					<p className="font-medium text-foreground text-sm">
 						Remittance account ownership
 					</p>
 					<Collapsible>
 						<CollapsibleTrigger asChild>
-							<Button type="button" size="sm" variant="outline">
+							<Button size="sm" type="button" variant="outline">
 								Show ownership evidence rules
 							</Button>
 						</CollapsibleTrigger>
-						<CollapsibleContent className="mt-3 text-sm text-foreground-secondary">
+						<CollapsibleContent className="mt-3 text-foreground-secondary text-sm">
 							The bank letter must show the same legal name as the supplier
 							master record.
 						</CollapsibleContent>
@@ -547,7 +547,7 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do not: encode workflow status in open state">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Open versus closed Collapsible state must not mean “approved”,
 					“posted”, or “authorized”. Use StatusBadge and feature-owned workflow
 					state. Prefer Accordion when several peer optional sections share one

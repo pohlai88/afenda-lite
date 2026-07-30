@@ -1,10 +1,10 @@
-import { expect } from "vitest";
 import type { HumanResourcesCommandOptions } from "../../src/command-options";
 import {
 	createCompensationReviewCycle,
 	openCompensationReviewCycle,
 } from "../../src/compensation-benefits/compensation-review-cycle";
 import type { CompensationReviewCycle } from "../../src/types";
+import { helperAssert as assert } from "./helper-assert";
 import { resultFailureMessage } from "./result-details";
 
 export async function seedOpenCompensationReviewCycle(input: {
@@ -31,7 +31,7 @@ export async function seedOpenCompensationReviewCycle(input: {
 		},
 		input.ready,
 	);
-	expect(created.ok, resultFailureMessage(created)).toBe(true);
+	assert.strictEqual(created.ok, true, resultFailureMessage(created));
 	if (!created.ok) {
 		throw new Error(resultFailureMessage(created));
 	}
@@ -46,7 +46,7 @@ export async function seedOpenCompensationReviewCycle(input: {
 		},
 		input.ready,
 	);
-	expect(opened.ok, resultFailureMessage(opened)).toBe(true);
+	assert.strictEqual(opened.ok, true, resultFailureMessage(opened));
 	if (!opened.ok) {
 		throw new Error(resultFailureMessage(opened));
 	}

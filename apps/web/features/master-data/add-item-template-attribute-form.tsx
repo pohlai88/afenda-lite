@@ -22,11 +22,11 @@ import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 
 const initialState: AddItemTemplateAttributeActionState = null;
 
-type AddItemTemplateAttributeFormProps = {
+interface AddItemTemplateAttributeFormProps {
 	canManage: boolean;
 	draftTemplates: Array<{ id: string; label: string }>;
 	valueKinds: readonly string[];
-};
+}
 
 /** Add attribute while template is draft. */
 export function AddItemTemplateAttributeForm({
@@ -45,7 +45,7 @@ export function AddItemTemplateAttributeForm({
 
 	if (draftTemplates.length === 0) {
 		return (
-			<p className="text-sm text-muted-foreground">
+			<p className="text-muted-foreground text-sm">
 				No draft templates — create a template before adding attributes.
 			</p>
 		);
@@ -76,8 +76,8 @@ export function AddItemTemplateAttributeForm({
 			{showFormError && state?.ok === false ? (
 				<FormError>{state.message}</FormError>
 			) : null}
-			<FormField label="Draft template" required fieldId="attr-template">
-				<NativeSelect name="templateId" required disabled={pending}>
+			<FormField fieldId="attr-template" label="Draft template" required>
+				<NativeSelect disabled={pending} name="templateId" required>
 					{draftTemplates.map((template) => (
 						<NativeSelectOption key={template.id} value={template.id}>
 							{template.label}
@@ -85,14 +85,14 @@ export function AddItemTemplateAttributeForm({
 					))}
 				</NativeSelect>
 			</FormField>
-			<FormField label="Code" required fieldId="attr-code" error={codeError}>
-				<Input name="code" required autoComplete="off" disabled={pending} />
+			<FormField error={codeError} fieldId="attr-code" label="Code" required>
+				<Input autoComplete="off" disabled={pending} name="code" required />
 			</FormField>
-			<FormField label="Name" required fieldId="attr-name" error={nameError}>
-				<Input name="name" required autoComplete="off" disabled={pending} />
+			<FormField error={nameError} fieldId="attr-name" label="Name" required>
+				<Input autoComplete="off" disabled={pending} name="name" required />
 			</FormField>
-			<FormField label="Value kind" required fieldId="attr-kind">
-				<NativeSelect name="valueKind" required disabled={pending}>
+			<FormField fieldId="attr-kind" label="Value kind" required>
+				<NativeSelect disabled={pending} name="valueKind" required>
 					{valueKinds.map((kind) => (
 						<NativeSelectOption key={kind} value={kind}>
 							{kind}
@@ -100,7 +100,7 @@ export function AddItemTemplateAttributeForm({
 					))}
 				</NativeSelect>
 			</FormField>
-			<Button type="submit" disabled={pending}>
+			<Button disabled={pending} type="submit">
 				{pending ? (
 					<>
 						<Spinner className="size-4" /> Adding…

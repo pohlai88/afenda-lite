@@ -12,7 +12,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type CreateItemActionData = { item: Item };
+export interface CreateItemActionData {
+	item: Item;
+}
 export type CreateItemActionState = ActionResult<CreateItemActionData> | null;
 
 const schema = z.object({
@@ -41,7 +43,7 @@ export async function createItemAction(
 			parsed.details,
 		);
 	}
-	return runMemberPermissionAction({
+	return await runMemberPermissionAction({
 		path: "createItemAction",
 		permission: "master_data.manage",
 		safeMessage: "Could not create item. Try again or contact an admin.",

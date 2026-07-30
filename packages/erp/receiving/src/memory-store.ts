@@ -9,6 +9,7 @@ import {
 } from "./error-codes";
 import { assertAcceptedWithinPoCeilings } from "./po-receiving-guard";
 import type { MutationPorts } from "./ports";
+import { resolveAsync } from "./resolve-async";
 import type {
 	DiscrepancyCreateRecord,
 	DiscrepancyResolveRecord,
@@ -61,6 +62,46 @@ function consumesPo(receipt: GoodsReceipt): boolean {
 		receipt.reversedByReceiptId === null &&
 		receipt.reversesReceiptId === null
 	);
+}
+
+function decideMemoryReceiptPost(
+	receipt: GoodsReceipt,
+	record: ReceiptPostRecord,
+): Result<"proceed" | "replay"> {
+	if (receipt.postIdempotencyKey === record.postIdempotencyKey) {
+		return ok("replay");
+	}
+	if (receipt.status !== "draft") {
+		return fail("CONFLICT", "Goods receipt is not in draft status");
+	}
+	if (receipt.version !== record.expectedVersion) {
+		return fail("CONFLICT", "Goods receipt version conflict");
+	}
+	if (receipt.lines.length === 0) {
+		return fail("CONFLICT", "Cannot post goods receipt without lines");
+	}
+	return ok("proceed");
+}
+
+function accumulateAcceptedPoLines(
+	totals: Map<string, number>,
+	lines: readonly GoodsReceiptLine[],
+): void {
+	for (const line of lines) {
+		if (
+			line.purchaseOrderLineId === null ||
+			!totals.has(line.purchaseOrderLineId)
+		) {
+			continue;
+		}
+		const quantity = Number(line.quantityAccepted);
+		if (Number.isFinite(quantity)) {
+			totals.set(
+				line.purchaseOrderLineId,
+				(totals.get(line.purchaseOrderLineId) ?? 0) + quantity,
+			);
+		}
+	}
 }
 
 export class MemoryReceivingStore implements ReceivingStore {
@@ -191,7 +232,8 @@ export class MemoryReceivingStore implements ReceivingStore {
 			return fail("NOT_FOUND", "Goods receipt not found");
 		}
 		const existingLine = receipt.lines.find(
-			(line) => line.lineIdempotencyKey === record.lineIdempotencyKey,
+			(receiptLine) =>
+				receiptLine.lineIdempotencyKey === record.lineIdempotencyKey,
 		);
 		if (existingLine !== undefined) {
 			return ok({ ...existingLine });
@@ -268,7 +310,34 @@ export class MemoryReceivingStore implements ReceivingStore {
 		return ok({ ...line });
 	}
 
-	async postReceipt(
+	private async validateMemoryPoConsumption(
+		record: ReceiptPostRecord,
+	): Promise<Result<true>> {
+		if (record.poConsumptionGuard === undefined) {
+			return ok(true);
+		}
+		const lineIds = record.poConsumptionGuard.lines.map(
+			(line) => line.purchaseOrderLineId,
+		);
+		const owning = await this.sumPostedAcceptedByPoLines(
+			record.organizationId,
+			record.poConsumptionGuard.purchaseOrderId,
+			lineIds,
+			record.receiptId,
+		);
+		if (!owning.ok) {
+			return owning;
+		}
+		const alreadyAcceptedByLine = new Map(
+			owning.data.map((row) => [row.purchaseOrderLineId, row.acceptedQuantity]),
+		);
+		return assertAcceptedWithinPoCeilings(
+			record.poConsumptionGuard,
+			alreadyAcceptedByLine,
+		);
+	}
+
+	postReceipt(
 		record: ReceiptPostRecord,
 		ports: MutationPorts,
 		meta: { correlationId: string },
@@ -278,42 +347,19 @@ export class MemoryReceivingStore implements ReceivingStore {
 			if (
 				receipt === undefined ||
 				receipt.organizationId !== record.organizationId
-			)
+			) {
 				return fail("NOT_FOUND", "Goods receipt not found");
-			if (receipt.postIdempotencyKey === record.postIdempotencyKey) {
+			}
+			const decision = decideMemoryReceiptPost(receipt, record);
+			if (!decision.ok) {
+				return decision;
+			}
+			if (decision.data === "replay") {
 				return ok(cloneReceipt(receipt));
 			}
-			if (receipt.status !== "draft") {
-				return fail("CONFLICT", "Goods receipt is not in draft status");
-			}
-			if (receipt.version !== record.expectedVersion) {
-				return fail("CONFLICT", "Goods receipt version conflict");
-			}
-			if (receipt.lines.length === 0) {
-				return fail("CONFLICT", "Cannot post goods receipt without lines");
-			}
-			if (record.poConsumptionGuard !== undefined) {
-				const lineIds = record.poConsumptionGuard.lines.map(
-					(line) => line.purchaseOrderLineId,
-				);
-				const owning = await this.sumPostedAcceptedByPoLines(
-					record.organizationId,
-					record.poConsumptionGuard.purchaseOrderId,
-					lineIds,
-					record.receiptId,
-				);
-				if (!owning.ok) return owning;
-				const alreadyAcceptedByLine = new Map(
-					owning.data.map((row) => [
-						row.purchaseOrderLineId,
-						row.acceptedQuantity,
-					]),
-				);
-				const within = assertAcceptedWithinPoCeilings(
-					record.poConsumptionGuard,
-					alreadyAcceptedByLine,
-				);
-				if (!within.ok) return within;
+			const consumptionValid = await this.validateMemoryPoConsumption(record);
+			if (!consumptionValid.ok) {
+				return consumptionValid;
 			}
 			const previous = cloneReceipt(receipt);
 			const now = new Date();
@@ -384,8 +430,9 @@ export class MemoryReceivingStore implements ReceivingStore {
 		if (
 			receipt === undefined ||
 			receipt.organizationId !== record.organizationId
-		)
+		) {
 			return fail("NOT_FOUND", "Goods receipt not found");
+		}
 		if (receipt.cancelIdempotencyKey === record.cancelIdempotencyKey) {
 			return ok(cloneReceipt(receipt));
 		}
@@ -570,22 +617,24 @@ export class MemoryReceivingStore implements ReceivingStore {
 		return ok(cloneReceipt(reverseReceipt));
 	}
 
-	async setInventoryApplication(
+	setInventoryApplication(
 		record: ReceiptInventoryApplicationRecord,
 	): Promise<Result<GoodsReceipt>> {
-		const receipt = this.receipts.get(record.receiptId);
-		if (
-			receipt === undefined ||
-			receipt.organizationId !== record.organizationId
-		) {
-			return fail("NOT_FOUND", "Goods receipt not found");
-		}
-		receipt.inventoryApplicationStatus = record.status;
-		receipt.inventoryMovementId = record.inventoryMovementId;
-		receipt.inventoryApplicationError = record.errorMessage;
-		receipt.updatedBy = record.actorUserId;
-		receipt.updatedAt = new Date();
-		return ok(cloneReceipt(receipt));
+		return resolveAsync(() => {
+			const receipt = this.receipts.get(record.receiptId);
+			if (
+				receipt === undefined ||
+				receipt.organizationId !== record.organizationId
+			) {
+				return fail("NOT_FOUND", "Goods receipt not found");
+			}
+			receipt.inventoryApplicationStatus = record.status;
+			receipt.inventoryMovementId = record.inventoryMovementId;
+			receipt.inventoryApplicationError = record.errorMessage;
+			receipt.updatedBy = record.actorUserId;
+			receipt.updatedAt = new Date();
+			return ok(cloneReceipt(receipt));
+		});
 	}
 
 	async recordDiscrepancy(
@@ -597,8 +646,9 @@ export class MemoryReceivingStore implements ReceivingStore {
 		if (
 			receipt === undefined ||
 			receipt.organizationId !== record.organizationId
-		)
+		) {
 			return fail("NOT_FOUND", "Goods receipt not found");
+		}
 		const existing = receipt.discrepancies.find(
 			(row) => row.recordIdempotencyKey === record.recordIdempotencyKey,
 		);
@@ -752,105 +802,106 @@ export class MemoryReceivingStore implements ReceivingStore {
 		return ok({ ...discrepancy });
 	}
 
-	async sumPostedAcceptedByPoLines(
+	sumPostedAcceptedByPoLines(
 		organizationId: string,
 		purchaseOrderId: string,
 		purchaseOrderLineIds: readonly string[],
 		excludeReceiptId?: string,
 	): Promise<Result<PostedAcceptedByPoLine[]>> {
-		const totals = new Map<string, number>();
-		for (const lineId of purchaseOrderLineIds) {
-			totals.set(lineId, 0);
-		}
-		for (const receipt of this.receipts.values()) {
-			if (receipt.organizationId !== organizationId) continue;
-			if (receipt.sourceId !== purchaseOrderId) continue;
-			if (!consumesPo(receipt)) continue;
-			if (excludeReceiptId !== undefined && receipt.id === excludeReceiptId) {
-				continue;
+		return resolveAsync(() => {
+			const totals = new Map(
+				purchaseOrderLineIds.map((lineId) => [lineId, 0] as const),
+			);
+			for (const receipt of this.receipts.values()) {
+				if (
+					receipt.organizationId === organizationId &&
+					receipt.sourceId === purchaseOrderId &&
+					consumesPo(receipt) &&
+					receipt.id !== excludeReceiptId
+				) {
+					accumulateAcceptedPoLines(totals, receipt.lines);
+				}
 			}
-			for (const line of receipt.lines) {
-				if (line.purchaseOrderLineId === null) continue;
-				if (!totals.has(line.purchaseOrderLineId)) continue;
-				const qty = Number(line.quantityAccepted);
-				if (!Number.isFinite(qty)) continue;
-				totals.set(
-					line.purchaseOrderLineId,
-					(totals.get(line.purchaseOrderLineId) ?? 0) + qty,
-				);
-			}
-		}
-		return ok(
-			[...totals.entries()].map(([purchaseOrderLineId, acceptedQuantity]) => ({
-				purchaseOrderLineId,
-				acceptedQuantity,
-			})),
-		);
+			return ok(
+				[...totals.entries()].map(
+					([purchaseOrderLineId, acceptedQuantity]) => ({
+						purchaseOrderLineId,
+						acceptedQuantity,
+					}),
+				),
+			);
+		});
 	}
 
-	async getReceiptById(
+	getReceiptById(
 		organizationId: string,
 		id: string,
 	): Promise<Result<GoodsReceipt | null>> {
-		const receipt = this.receipts.get(id);
-		return ok(
-			receipt === undefined || receipt.organizationId !== organizationId
-				? null
-				: cloneReceipt(receipt),
-		);
+		return resolveAsync(() => {
+			const receipt = this.receipts.get(id);
+			return ok(
+				receipt === undefined || receipt.organizationId !== organizationId
+					? null
+					: cloneReceipt(receipt),
+			);
+		});
 	}
 
-	async getReceiptByCreateIdempotencyKey(
+	getReceiptByCreateIdempotencyKey(
 		organizationId: string,
 		idempotencyKey: string,
 	): Promise<Result<GoodsReceipt | null>> {
-		for (const receipt of this.receipts.values()) {
-			if (
-				receipt.organizationId === organizationId &&
-				receipt.createIdempotencyKey === idempotencyKey
-			) {
-				return ok(cloneReceipt(receipt));
+		return resolveAsync(() => {
+			for (const receipt of this.receipts.values()) {
+				if (
+					receipt.organizationId === organizationId &&
+					receipt.createIdempotencyKey === idempotencyKey
+				) {
+					return ok(cloneReceipt(receipt));
+				}
 			}
-		}
-		return ok(null);
+			return ok(null);
+		});
 	}
 
-	async listReceipts(
-		filter: ReceiptListFilter,
-	): Promise<Result<GoodsReceipt[]>> {
-		const start = (filter.page - 1) * filter.pageSize;
-		const rows = [...this.receipts.values()]
-			.filter((row) => row.organizationId === filter.organizationId)
-			.filter(
-				(row) => filter.status === undefined || row.status === filter.status,
-			)
-			.filter(
-				(row) =>
-					filter.sourceType === undefined ||
-					row.sourceType === filter.sourceType,
-			)
-			.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
-			.slice(start, start + filter.pageSize)
-			.map(cloneReceipt);
-		return ok(rows);
+	listReceipts(filter: ReceiptListFilter): Promise<Result<GoodsReceipt[]>> {
+		return resolveAsync(() => {
+			const start = (filter.page - 1) * filter.pageSize;
+			const rows = [...this.receipts.values()]
+				.filter((row) => row.organizationId === filter.organizationId)
+				.filter(
+					(row) => filter.status === undefined || row.status === filter.status,
+				)
+				.filter(
+					(row) =>
+						filter.sourceType === undefined ||
+						row.sourceType === filter.sourceType,
+				)
+				.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+				.slice(start, start + filter.pageSize)
+				.map(cloneReceipt);
+			return ok(rows);
+		});
 	}
 
-	async listInventoryExceptions(
+	listInventoryExceptions(
 		filter: ReceiptListFilter,
 	): Promise<Result<GoodsReceipt[]>> {
-		const start = (filter.page - 1) * filter.pageSize;
-		const rows = [...this.receipts.values()]
-			.filter((row) => row.organizationId === filter.organizationId)
-			.filter((row) => row.status === "posted")
-			.filter(
-				(row) =>
-					row.inventoryApplicationStatus === "pending" ||
-					row.inventoryApplicationStatus === "failed",
-			)
-			.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
-			.slice(start, start + filter.pageSize)
-			.map(cloneReceipt);
-		return ok(rows);
+		return resolveAsync(() => {
+			const start = (filter.page - 1) * filter.pageSize;
+			const rows = [...this.receipts.values()]
+				.filter((row) => row.organizationId === filter.organizationId)
+				.filter((row) => row.status === "posted")
+				.filter(
+					(row) =>
+						row.inventoryApplicationStatus === "pending" ||
+						row.inventoryApplicationStatus === "failed",
+				)
+				.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+				.slice(start, start + filter.pageSize)
+				.map(cloneReceipt);
+			return ok(rows);
+		});
 	}
 }
 

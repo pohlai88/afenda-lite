@@ -170,7 +170,9 @@ describe("Corporate Administration Phase 1 real package journey", () => {
 			dependencies,
 		);
 		expect(completeness.ok).toBe(true);
-		if (!completeness.ok) return;
+		if (!completeness.ok) {
+			return;
+		}
 		expect(completeness.data.complete).toBe(true);
 
 		const beforeActivation: LegalCompanyLifecycleCompany = {
@@ -219,10 +221,14 @@ describe("Corporate Administration Phase 1 real package journey", () => {
 			legalCompanyId: seeded.legalCompanyId,
 		});
 		expect(persisted.ok).toBe(true);
-		if (!persisted.ok) return;
+		if (!persisted.ok) {
+			return;
+		}
 		expect(persisted.data?.state).toBe("active");
 		expect(persisted.data?.version).toBe(seeded.version + 1);
-		if (persisted.data === null) throw new Error("Expected persisted company");
+		if (persisted.data === null) {
+			throw new Error("Expected persisted company");
+		}
 
 		const reloadMarkup = renderToStaticMarkup(
 			createElement(LegalCompanyLifecycleWorkspace, {
@@ -248,7 +254,7 @@ describe("Corporate Administration Phase 1 real package journey", () => {
 async function seedCompletePhaseOneCompany(
 	dependencies: RealPackageDependencies,
 ): Promise<{ legalCompanyId: SeededLegalCompanyId; version: number }> {
-	const options = (idempotencyKey: string) =>
+	const commandOptions = (idempotencyKey: string) =>
 		createOptions({
 			organizationId: session.orgId,
 			actorUserId: session.userId,
@@ -264,14 +270,17 @@ async function seedCompletePhaseOneCompany(
 			homeJurisdictionCountryCode: "MY",
 			sourceReference: "doc-ca-real-draft",
 		},
-		options("idem-ca-real-draft"),
+		commandOptions("idem-ca-real-draft"),
 		dependencies,
 	);
+	// biome-ignore lint/suspicious/noMisplacedAssertion: Shared journey helper is invoked only by test cases.
 	expect(company.ok).toBe(true);
-	if (!company.ok) throw new Error("Could not seed legal company");
+	if (!company.ok) {
+		throw new Error("Could not seed legal company");
+	}
 
-	const legalCompanyId = company.data.legalCompanyId;
-	let version = company.data.version;
+	const { legalCompanyId } = company.data;
+	let { version } = company.data;
 
 	version = await expectSuccessAndRefreshCompanyVersion(
 		setCompanyJurisdictionProfile(
@@ -284,7 +293,7 @@ async function seedCompletePhaseOneCompany(
 				sourceReference: "doc-ca-real-jurisdiction",
 				expectedCompanyVersion: version,
 			},
-			options("idem-ca-real-jurisdiction"),
+			commandOptions("idem-ca-real-jurisdiction"),
 			dependencies,
 		),
 		dependencies,
@@ -302,7 +311,7 @@ async function seedCompletePhaseOneCompany(
 				sourceDocumentId: "doc-ca-real-name",
 				expectedCompanyVersion: version,
 			},
-			options("idem-ca-real-name"),
+			commandOptions("idem-ca-real-name"),
 			dependencies,
 		),
 		dependencies,
@@ -320,7 +329,7 @@ async function seedCompletePhaseOneCompany(
 				sourceDocumentId: "doc-ca-real-legal-form",
 				expectedCompanyVersion: version,
 			},
-			options("idem-ca-real-legal-form"),
+			commandOptions("idem-ca-real-legal-form"),
 			dependencies,
 		),
 		dependencies,
@@ -339,7 +348,7 @@ async function seedCompletePhaseOneCompany(
 				sourceDocumentId: "doc-ca-real-identifier",
 				expectedCompanyVersion: version,
 			},
-			options("idem-ca-real-identifier"),
+			commandOptions("idem-ca-real-identifier"),
 			dependencies,
 		),
 		dependencies,
@@ -357,7 +366,7 @@ async function seedCompletePhaseOneCompany(
 				sourceDocumentId: "doc-ca-real-financial-year",
 				expectedCompanyVersion: version,
 			},
-			options("idem-ca-real-financial-year"),
+			commandOptions("idem-ca-real-financial-year"),
 			dependencies,
 		),
 		dependencies,
@@ -377,7 +386,7 @@ async function seedCompletePhaseOneCompany(
 				sourceDocumentId: "doc-ca-real-activity",
 				expectedCompanyVersion: version,
 			},
-			options("idem-ca-real-activity"),
+			commandOptions("idem-ca-real-activity"),
 			dependencies,
 		),
 		dependencies,
@@ -394,7 +403,7 @@ async function seedCompletePhaseOneCompany(
 				sourceDocumentId: "doc-ca-real-address",
 				expectedCompanyVersion: version,
 			},
-			options("idem-ca-real-address"),
+			commandOptions("idem-ca-real-address"),
 			dependencies,
 		),
 		dependencies,
@@ -415,6 +424,7 @@ async function expectSuccessAndRefreshCompanyVersion(
 			`${result.code}: ${result.message} ${JSON.stringify(result.details)}`,
 		);
 	}
+	// biome-ignore lint/suspicious/noMisplacedAssertion: Shared journey helper is invoked only by test cases.
 	expect(result.ok).toBe(true);
 	const company = await dependencies.store.getLegalCompany({
 		organizationId: organizationIdSchema.parse(session.orgId),
@@ -634,15 +644,15 @@ function createMemoryIdempotencyPort(): CorporateAdministrationIdempotencyPort {
 			const existing = records.get(key);
 			if (existing !== undefined) {
 				if (existing.fingerprint !== input.fingerprint) {
-					return ok({
+					return await ok({
 						status: "conflict",
 						existingFingerprint: existing.fingerprint,
 					});
 				}
 				if (existing.status === "completed") {
-					return ok({ status: "replay", result: existing.result });
+					return await ok({ status: "replay", result: existing.result });
 				}
-				return ok({ status: "in_progress" });
+				return await ok({ status: "in_progress" });
 			}
 			nextReservation += 1;
 			const token = idempotencyReservationTokenSchema.parse(
@@ -653,7 +663,7 @@ function createMemoryIdempotencyPort(): CorporateAdministrationIdempotencyPort {
 				fingerprint: input.fingerprint,
 				token,
 			});
-			return ok({ status: "acquired", reservationToken: token });
+			return await ok({ status: "acquired", reservationToken: token });
 		},
 		async complete(
 			input: CorporateAdministrationIdempotencyCompletionInput,
@@ -663,13 +673,13 @@ function createMemoryIdempotencyPort(): CorporateAdministrationIdempotencyPort {
 				fingerprint: input.fingerprint,
 				result: input.result,
 			});
-			return ok(undefined);
+			return await ok(undefined);
 		},
 		async release(
 			input: CorporateAdministrationIdempotencyReleaseInput,
 		): Promise<Result<void>> {
 			records.delete(idempotencyKey(input));
-			return ok(undefined);
+			return await ok(undefined);
 		},
 	};
 }
@@ -764,6 +774,8 @@ function toLifecycleCompleteness(input: {
 
 function toFormData(values: Readonly<Record<string, string>>): FormData {
 	const formData = new FormData();
-	for (const [key, value] of Object.entries(values)) formData.set(key, value);
+	for (const [key, value] of Object.entries(values)) {
+		formData.set(key, value);
+	}
 	return formData;
 }

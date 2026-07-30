@@ -19,6 +19,7 @@ import {
 	inventoryErrorDetails,
 } from "./error-codes";
 import type { MutationPorts } from "./ports";
+import { resolveAsync } from "./resolve-async";
 import {
 	type AvailabilityFilter,
 	type BalanceEffect,
@@ -49,6 +50,39 @@ import type {
 
 type BalanceRollback = Map<string, StockBalance | null>;
 
+interface MemoryPostProceed {
+	effects: BalanceEffect[];
+	kind: "proceed";
+}
+
+interface MemoryPostReplay {
+	kind: "replay";
+}
+
+type MemoryPostDecision = MemoryPostProceed | MemoryPostReplay;
+
+interface MemoryPostReservation {
+	consumedQuantity: number;
+	effects: BalanceEffect[];
+	reservation: StockReservation | undefined;
+}
+
+interface MemoryPostMutation {
+	ledgerSnapshot: number;
+	previousMovement: StockMovement;
+	previousReservation: StockReservation | undefined;
+}
+
+interface MemoryPostMutationInput {
+	balanceRollback: BalanceRollback;
+	consumedQuantity: number;
+	correlationId: string;
+	effects: BalanceEffect[];
+	movement: StockMovement;
+	record: MovementPostRecord;
+	reservation: StockReservation | undefined;
+}
+
 function cloneMovement(movement: StockMovement): StockMovement {
 	return {
 		...movement,
@@ -62,6 +96,65 @@ function cloneBalance(balance: StockBalance): StockBalance {
 
 function cloneReservation(reservation: StockReservation): StockReservation {
 	return { ...reservation };
+}
+
+function decideMemoryMovementPost(
+	movement: StockMovement,
+	record: MovementPostRecord,
+): Result<MemoryPostDecision> {
+	if (movement.status === "posted") {
+		return movement.postIdempotencyKey === record.postIdempotencyKey
+			? ok({ kind: "replay" })
+			: fail(
+					"CONFLICT",
+					"Stock movement is already posted",
+					inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_ALREADY_POSTED),
+				);
+	}
+	if (movement.status === "cancelled") {
+		return fail(
+			"CONFLICT",
+			"Cancelled stock movements cannot be posted",
+			inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_ALREADY_CANCELLED),
+		);
+	}
+	if (movement.status !== "draft") {
+		return fail(
+			"CONFLICT",
+			"Stock movement is not in draft status",
+			inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_NOT_DRAFT),
+		);
+	}
+	if (movement.version !== record.expectedVersion) {
+		return fail(
+			"CONFLICT",
+			"Stock movement version conflict",
+			inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_VERSION_CONFLICT),
+		);
+	}
+	if (movement.lines.length === 0) {
+		return fail(
+			"CONFLICT",
+			"Cannot post stock movement without lines",
+			inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_EMPTY_LINES),
+		);
+	}
+	if (movement.reservationId !== null && movement.movementType !== "issue") {
+		return fail(
+			"CONFLICT",
+			"Only issue movements may consume reservations",
+			inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_NOT_DRAFT),
+		);
+	}
+	try {
+		return ok({ effects: computeBalanceEffects(movement), kind: "proceed" });
+	} catch {
+		return fail(
+			"CONFLICT",
+			"Stock movement warehouses are invalid",
+			inventoryErrorDetails(INVENTORY_ERROR_INVALID_TRANSFER),
+		);
+	}
 }
 
 function movementNotFound(): Result<never> {
@@ -232,7 +325,7 @@ export class MemoryInventoryStore implements InventoryStore {
 		}
 
 		const replay = movement.lines.find(
-			(line) => line.lineIdempotencyKey === record.lineIdempotencyKey,
+			(candidate) => candidate.lineIdempotencyKey === record.lineIdempotencyKey,
 		);
 		if (replay !== undefined) {
 			return ok({ ...replay });
@@ -330,103 +423,22 @@ export class MemoryInventoryStore implements InventoryStore {
 			return movementNotFound();
 		}
 
-		if (movement.status === "posted") {
-			if (movement.postIdempotencyKey === record.postIdempotencyKey) {
-				return ok(cloneMovement(movement));
-			}
-			return fail(
-				"CONFLICT",
-				"Stock movement is already posted",
-				inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_ALREADY_POSTED),
-			);
+		const decision = decideMemoryMovementPost(movement, record);
+		if (!decision.ok) {
+			return decision;
 		}
-		if (movement.status === "cancelled") {
-			return fail(
-				"CONFLICT",
-				"Cancelled stock movements cannot be posted",
-				inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_ALREADY_CANCELLED),
-			);
+		if (decision.data.kind === "replay") {
+			return ok(cloneMovement(movement));
 		}
-		if (movement.status !== "draft") {
-			return fail(
-				"CONFLICT",
-				"Stock movement is not in draft status",
-				inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_NOT_DRAFT),
-			);
+		const reservationResult = await this.resolveMemoryPostReservation(
+			record.organizationId,
+			movement,
+			decision.data.effects,
+		);
+		if (!reservationResult.ok) {
+			return reservationResult;
 		}
-		if (movement.version !== record.expectedVersion) {
-			return fail(
-				"CONFLICT",
-				"Stock movement version conflict",
-				inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_VERSION_CONFLICT),
-			);
-		}
-		if (movement.lines.length === 0) {
-			return fail(
-				"CONFLICT",
-				"Cannot post stock movement without lines",
-				inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_EMPTY_LINES),
-			);
-		}
-		if (movement.reservationId !== null && movement.movementType !== "issue") {
-			return fail(
-				"CONFLICT",
-				"Only issue movements may consume reservations",
-				inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_NOT_DRAFT),
-			);
-		}
-
-		let effects: BalanceEffect[];
-		try {
-			effects = computeBalanceEffects(movement);
-		} catch {
-			return fail(
-				"CONFLICT",
-				"Stock movement warehouses are invalid",
-				inventoryErrorDetails(INVENTORY_ERROR_INVALID_TRANSFER),
-			);
-		}
-
-		let reservation: StockReservation | undefined;
-		let consumedQuantity = 0;
-		if (movement.reservationId !== null) {
-			const reservationResult = await this.getReservationById(
-				record.organizationId,
-				movement.reservationId,
-			);
-			if (!reservationResult.ok) {
-				return reservationResult;
-			}
-			if (reservationResult.data === null) {
-				return reservationNotFound();
-			}
-			reservation = this.reservations.get(reservationResult.data.id);
-			if (reservation === undefined) {
-				return reservationNotFound();
-			}
-			if (
-				reservation.status === "released" ||
-				reservation.status === "expired" ||
-				reservation.status === "cancelled"
-			) {
-				return fail(
-					"CONFLICT",
-					"Stock reservation cannot be consumed",
-					inventoryErrorDetails(INVENTORY_ERROR_RESERVATION_ALREADY_RELEASED),
-				);
-			}
-
-			const adjustedEffects = this.applyReservationConsumption(
-				effects,
-				movement,
-				reservation,
-			);
-			if (!adjustedEffects.ok) {
-				return adjustedEffects;
-			}
-			effects = adjustedEffects.data.effects;
-			consumedQuantity = adjustedEffects.data.consumedQuantity;
-		}
+		const { consumedQuantity, effects, reservation } = reservationResult.data;
 
 		const balanceApply = this.applyEffects(
 			record.organizationId,
@@ -437,76 +449,20 @@ export class MemoryInventoryStore implements InventoryStore {
 			return balanceApply;
 		}
 
-		const previousMovement = cloneMovement(movement);
-		const previousReservation =
-			reservation === undefined ? undefined : cloneReservation(reservation);
-		const ledgerSnapshot = this.ledger.length;
-		const now = new Date();
-
-		movement.status = "posted";
-		movement.postIdempotencyKey = record.postIdempotencyKey;
-		movement.postedAt = now;
-		movement.postedBy = record.actorUserId;
-		movement.updatedBy = record.actorUserId;
-		movement.updatedAt = now;
-		movement.version += 1;
-
-		if (reservation !== undefined && consumedQuantity > 0) {
-			const nextConsumedQuantity =
-				parseQuantity(reservation.consumedQuantity) + consumedQuantity;
-			const reservationQuantity = parseQuantity(reservation.quantity);
-			reservation.consumedQuantity = formatQuantity(nextConsumedQuantity);
-			reservation.status =
-				nextConsumedQuantity >= reservationQuantity
-					? "consumed"
-					: "partially_consumed";
-			reservation.updatedBy = record.actorUserId;
-			reservation.updatedAt = now;
-			reservation.version += 1;
+		const mutation = this.applyMemoryPostMutation({
+			balanceRollback: balanceApply.data,
+			consumedQuantity,
+			correlationId: meta.correlationId,
+			effects,
+			movement,
+			record,
+			reservation,
+		});
+		if (!mutation.ok) {
+			return mutation;
 		}
-
-		let nextLedgerSequence = this.getLedgerSequenceValue(record.organizationId);
-		for (const effect of effects) {
-			const key = this.balanceMapKey(
-				record.organizationId,
-				effect.warehouseId,
-				effect.itemId,
-			);
-			const balance = this.balances.get(key);
-			if (balance === undefined) {
-				this.restorePostMutationState(
-					balanceApply.data,
-					ledgerSnapshot,
-					movement,
-					previousMovement,
-					reservation,
-					previousReservation,
-				);
-				return fail("INTERNAL_ERROR", "Balance missing after movement post");
-			}
-
-			nextLedgerSequence += 1;
-			this.ledger.push({
-				id: randomUUID(),
-				organizationId: record.organizationId,
-				movementId: movement.id,
-				movementLineId: effect.movementLineId,
-				movementCode: movement.code,
-				movementType: movement.movementType,
-				warehouseId: effect.warehouseId,
-				warehouseCode: effect.warehouseCode,
-				itemId: effect.itemId,
-				itemCode: effect.itemCode,
-				quantityDelta: formatQuantity(effect.quantityDelta),
-				onHandAfter: balance.onHand,
-				reservedAfter: balance.reserved,
-				availableAfter: balance.available,
-				ledgerSequence: nextLedgerSequence,
-				actorUserId: record.actorUserId,
-				correlationId: meta.correlationId,
-				createdAt: now,
-			});
-		}
+		const { ledgerSnapshot, previousMovement, previousReservation } =
+			mutation.data;
 
 		const movementAudit = await ports.audit.record({
 			organizationId: movement.organizationId,
@@ -888,24 +844,12 @@ export class MemoryInventoryStore implements InventoryStore {
 			);
 		}
 
-		const balanceApply =
-			remainingQuantity === 0
-				? ok(new Map<string, StockBalance | null>())
-				: this.applyEffects(record.organizationId, record.actorUserId, [
-						{
-							warehouseId: reservation.warehouseId,
-							warehouseCode: reservation.warehouseCode,
-							itemId: reservation.itemId,
-							itemCode: reservation.itemCode,
-							baseUomId: reservation.baseUomId,
-							baseUomCode: reservation.baseUomCode,
-							onHandDelta: 0,
-							reservedDelta: -remainingQuantity,
-							availableDelta: remainingQuantity,
-							quantityDelta: 0,
-							movementLineId: null,
-						},
-					]);
+		const balanceApply = this.applyReservationReleaseBalance(
+			record.organizationId,
+			record.actorUserId,
+			reservation,
+			remainingQuantity,
+		);
 		if (!balanceApply.ok) {
 			return balanceApply;
 		}
@@ -971,191 +915,117 @@ export class MemoryInventoryStore implements InventoryStore {
 		return ok(cloneReservation(reservation));
 	}
 
-	async getMovementById(
+	getMovementById(
 		organizationId: string,
 		id: string,
 	): Promise<Result<StockMovement | null>> {
-		const movement = this.movements.get(id);
-		if (movement === undefined || movement.organizationId !== organizationId) {
-			return ok(null);
-		}
-		return ok(cloneMovement(movement));
+		return resolveAsync(() => {
+			const movement = this.movements.get(id);
+			if (
+				movement === undefined ||
+				movement.organizationId !== organizationId
+			) {
+				return ok(null);
+			}
+			return ok(cloneMovement(movement));
+		});
 	}
 
-	async getMovementByCreateIdempotencyKey(
+	getMovementByCreateIdempotencyKey(
 		organizationId: string,
 		createIdempotencyKey: string,
 	): Promise<Result<StockMovement | null>> {
-		for (const movement of this.movements.values()) {
-			if (
-				movement.organizationId === organizationId &&
-				movement.createIdempotencyKey === createIdempotencyKey
-			) {
-				return ok(cloneMovement(movement));
-			}
-		}
-		return ok(null);
-	}
-
-	async listMovements(
-		filter: MovementListFilter,
-	): Promise<Result<StockMovement[]>> {
-		const rows = [...this.movements.values()]
-			.filter((movement) => movement.organizationId === filter.organizationId)
-			.filter(
-				(movement) =>
-					filter.status === undefined || movement.status === filter.status,
-			)
-			.filter(
-				(movement) =>
-					filter.movementType === undefined ||
-					movement.movementType === filter.movementType,
-			)
-			.sort((left, right) => {
-				const updatedAtDelta =
-					right.updatedAt.getTime() - left.updatedAt.getTime();
-				if (updatedAtDelta !== 0) {
-					return updatedAtDelta;
+		return resolveAsync(() => {
+			for (const movement of this.movements.values()) {
+				if (
+					movement.organizationId === organizationId &&
+					movement.createIdempotencyKey === createIdempotencyKey
+				) {
+					return ok(cloneMovement(movement));
 				}
-				return right.id.localeCompare(left.id);
-			})
-			.map(cloneMovement);
-		return ok(paginate(rows, filter.page, filter.pageSize));
+			}
+			return ok(null);
+		});
 	}
 
-	async listReservations(
+	listMovements(filter: MovementListFilter): Promise<Result<StockMovement[]>> {
+		return resolveAsync(() => {
+			const rows = [...this.movements.values()]
+				.filter((movement) => movement.organizationId === filter.organizationId)
+				.filter(
+					(movement) =>
+						filter.status === undefined || movement.status === filter.status,
+				)
+				.filter(
+					(movement) =>
+						filter.movementType === undefined ||
+						movement.movementType === filter.movementType,
+				)
+				.sort((left, right) => {
+					const updatedAtDelta =
+						right.updatedAt.getTime() - left.updatedAt.getTime();
+					if (updatedAtDelta !== 0) {
+						return updatedAtDelta;
+					}
+					return right.id.localeCompare(left.id);
+				})
+				.map(cloneMovement);
+			return ok(paginate(rows, filter.page, filter.pageSize));
+		});
+	}
+
+	listReservations(
 		filter: ReservationListFilter,
 	): Promise<Result<StockReservation[]>> {
-		const rows = [...this.reservations.values()]
-			.filter(
-				(reservation) => reservation.organizationId === filter.organizationId,
-			)
-			.filter(
-				(reservation) =>
-					filter.status === undefined || reservation.status === filter.status,
-			)
-			.filter(
-				(reservation) =>
-					filter.warehouseId === undefined ||
-					reservation.warehouseId === filter.warehouseId,
-			)
-			.filter(
-				(reservation) =>
-					filter.itemId === undefined || reservation.itemId === filter.itemId,
-			)
-			.sort((left, right) => {
-				const updatedDelta =
-					right.updatedAt.getTime() - left.updatedAt.getTime();
-				if (updatedDelta !== 0) {
-					return updatedDelta;
-				}
-				return right.id.localeCompare(left.id);
-			})
-			.map(cloneReservation);
-		return ok(paginate(rows, filter.page, filter.pageSize));
+		return resolveAsync(() => {
+			const rows = [...this.reservations.values()]
+				.filter(
+					(reservation) => reservation.organizationId === filter.organizationId,
+				)
+				.filter(
+					(reservation) =>
+						filter.status === undefined || reservation.status === filter.status,
+				)
+				.filter(
+					(reservation) =>
+						filter.warehouseId === undefined ||
+						reservation.warehouseId === filter.warehouseId,
+				)
+				.filter(
+					(reservation) =>
+						filter.itemId === undefined || reservation.itemId === filter.itemId,
+				)
+				.sort((left, right) => {
+					const updatedDelta =
+						right.updatedAt.getTime() - left.updatedAt.getTime();
+					if (updatedDelta !== 0) {
+						return updatedDelta;
+					}
+					return right.id.localeCompare(left.id);
+				})
+				.map(cloneReservation);
+			return ok(paginate(rows, filter.page, filter.pageSize));
+		});
 	}
 
-	async getAvailability(
+	getAvailability(
 		filter: AvailabilityFilter,
 	): Promise<Result<StockAvailability[]>> {
-		const asOfLedgerSequence = this.getLedgerSequenceValue(
-			filter.organizationId,
-		);
-		const rows = [...this.balances.values()]
-			.filter((balance) => balance.organizationId === filter.organizationId)
-			.filter(
-				(balance) =>
-					filter.warehouseId === undefined ||
-					balance.warehouseId === filter.warehouseId,
-			)
-			.filter(
-				(balance) =>
-					filter.itemId === undefined || balance.itemId === filter.itemId,
-			)
-			.sort((left, right) => {
-				const warehouseDelta = left.warehouseCode.localeCompare(
-					right.warehouseCode,
-				);
-				if (warehouseDelta !== 0) {
-					return warehouseDelta;
-				}
-				return left.itemCode.localeCompare(right.itemCode);
-			})
-			.map((balance) => ({
-				organizationId: balance.organizationId,
-				warehouseId: balance.warehouseId,
-				warehouseCode: balance.warehouseCode,
-				itemId: balance.itemId,
-				itemCode: balance.itemCode,
-				baseUomId: balance.baseUomId,
-				baseUomCode: balance.baseUomCode,
-				onHandQuantity: balance.onHand,
-				reservedQuantity: balance.reserved,
-				availableQuantity: balance.available,
-				asOfLedgerSequence,
-				balanceVersion: balance.version,
-			}));
-		return ok(rows);
-	}
-
-	async getReservationById(
-		organizationId: string,
-		id: string,
-	): Promise<Result<StockReservation | null>> {
-		const reservation = this.reservations.get(id);
-		if (
-			reservation === undefined ||
-			reservation.organizationId !== organizationId
-		) {
-			return ok(null);
-		}
-		return ok(cloneReservation(reservation));
-	}
-
-	async getReservationByCreateIdempotencyKey(
-		organizationId: string,
-		createIdempotencyKey: string,
-	): Promise<Result<StockReservation | null>> {
-		for (const reservation of this.reservations.values()) {
-			if (
-				reservation.organizationId === organizationId &&
-				reservation.createIdempotencyKey === createIdempotencyKey
-			) {
-				return ok(cloneReservation(reservation));
-			}
-		}
-		return ok(null);
-	}
-
-	async getLedgerSequence(organizationId: string): Promise<Result<number>> {
-		return ok(this.getLedgerSequenceValue(organizationId));
-	}
-
-	async listLedgerEntries(organizationId: string): Promise<
-		Result<
-			Array<{
-				warehouseId: string;
-				itemId: string;
-				quantityDelta: string;
-			}>
-		>
-	> {
-		return ok(
-			this.ledger
-				.filter((entry) => entry.organizationId === organizationId)
-				.sort((left, right) => left.ledgerSequence - right.ledgerSequence)
-				.map((entry) => ({
-					warehouseId: entry.warehouseId,
-					itemId: entry.itemId,
-					quantityDelta: entry.quantityDelta,
-				})),
-		);
-	}
-
-	async listBalances(organizationId: string): Promise<Result<StockBalance[]>> {
-		return ok(
-			[...this.balances.values()]
-				.filter((balance) => balance.organizationId === organizationId)
+		return resolveAsync(() => {
+			const asOfLedgerSequence = this.getLedgerSequenceValue(
+				filter.organizationId,
+			);
+			const rows = [...this.balances.values()]
+				.filter((balance) => balance.organizationId === filter.organizationId)
+				.filter(
+					(balance) =>
+						filter.warehouseId === undefined ||
+						balance.warehouseId === filter.warehouseId,
+				)
+				.filter(
+					(balance) =>
+						filter.itemId === undefined || balance.itemId === filter.itemId,
+				)
 				.sort((left, right) => {
 					const warehouseDelta = left.warehouseCode.localeCompare(
 						right.warehouseCode,
@@ -1165,11 +1035,104 @@ export class MemoryInventoryStore implements InventoryStore {
 					}
 					return left.itemCode.localeCompare(right.itemCode);
 				})
-				.map(cloneBalance),
+				.map((balance) => ({
+					organizationId: balance.organizationId,
+					warehouseId: balance.warehouseId,
+					warehouseCode: balance.warehouseCode,
+					itemId: balance.itemId,
+					itemCode: balance.itemCode,
+					baseUomId: balance.baseUomId,
+					baseUomCode: balance.baseUomCode,
+					onHandQuantity: balance.onHand,
+					reservedQuantity: balance.reserved,
+					availableQuantity: balance.available,
+					asOfLedgerSequence,
+					balanceVersion: balance.version,
+				}));
+			return ok(rows);
+		});
+	}
+
+	getReservationById(
+		organizationId: string,
+		id: string,
+	): Promise<Result<StockReservation | null>> {
+		return resolveAsync(() => {
+			const reservation = this.reservations.get(id);
+			if (
+				reservation === undefined ||
+				reservation.organizationId !== organizationId
+			) {
+				return ok(null);
+			}
+			return ok(cloneReservation(reservation));
+		});
+	}
+
+	getReservationByCreateIdempotencyKey(
+		organizationId: string,
+		createIdempotencyKey: string,
+	): Promise<Result<StockReservation | null>> {
+		return resolveAsync(() => {
+			for (const reservation of this.reservations.values()) {
+				if (
+					reservation.organizationId === organizationId &&
+					reservation.createIdempotencyKey === createIdempotencyKey
+				) {
+					return ok(cloneReservation(reservation));
+				}
+			}
+			return ok(null);
+		});
+	}
+
+	getLedgerSequence(organizationId: string): Promise<Result<number>> {
+		return resolveAsync(() => ok(this.getLedgerSequenceValue(organizationId)));
+	}
+
+	listLedgerEntries(organizationId: string): Promise<
+		Result<
+			Array<{
+				warehouseId: string;
+				itemId: string;
+				quantityDelta: string;
+			}>
+		>
+	> {
+		return resolveAsync(() =>
+			ok(
+				this.ledger
+					.filter((entry) => entry.organizationId === organizationId)
+					.sort((left, right) => left.ledgerSequence - right.ledgerSequence)
+					.map((entry) => ({
+						warehouseId: entry.warehouseId,
+						itemId: entry.itemId,
+						quantityDelta: entry.quantityDelta,
+					})),
+			),
 		);
 	}
 
-	async listActiveReservations(organizationId: string): Promise<
+	listBalances(organizationId: string): Promise<Result<StockBalance[]>> {
+		return resolveAsync(() =>
+			ok(
+				[...this.balances.values()]
+					.filter((balance) => balance.organizationId === organizationId)
+					.sort((left, right) => {
+						const warehouseDelta = left.warehouseCode.localeCompare(
+							right.warehouseCode,
+						);
+						if (warehouseDelta !== 0) {
+							return warehouseDelta;
+						}
+						return left.itemCode.localeCompare(right.itemCode);
+					})
+					.map(cloneBalance),
+			),
+		);
+	}
+
+	listActiveReservations(organizationId: string): Promise<
 		Result<
 			Array<{
 				warehouseId: string;
@@ -1179,31 +1142,35 @@ export class MemoryInventoryStore implements InventoryStore {
 			}>
 		>
 	> {
-		return ok(
-			[...this.reservations.values()]
-				.filter((reservation) => reservation.organizationId === organizationId)
-				.filter((reservation) =>
-					isReleasableReservationStatus(reservation.status),
-				)
-				.sort((left, right) => {
-					const warehouseDelta = left.warehouseCode.localeCompare(
-						right.warehouseCode,
-					);
-					if (warehouseDelta !== 0) {
-						return warehouseDelta;
-					}
-					const itemDelta = left.itemCode.localeCompare(right.itemCode);
-					if (itemDelta !== 0) {
-						return itemDelta;
-					}
-					return left.id.localeCompare(right.id);
-				})
-				.map((reservation) => ({
-					warehouseId: reservation.warehouseId,
-					itemId: reservation.itemId,
-					quantity: reservation.quantity,
-					consumedQuantity: reservation.consumedQuantity,
-				})),
+		return resolveAsync(() =>
+			ok(
+				[...this.reservations.values()]
+					.filter(
+						(reservation) => reservation.organizationId === organizationId,
+					)
+					.filter((reservation) =>
+						isReleasableReservationStatus(reservation.status),
+					)
+					.sort((left, right) => {
+						const warehouseDelta = left.warehouseCode.localeCompare(
+							right.warehouseCode,
+						);
+						if (warehouseDelta !== 0) {
+							return warehouseDelta;
+						}
+						const itemDelta = left.itemCode.localeCompare(right.itemCode);
+						if (itemDelta !== 0) {
+							return itemDelta;
+						}
+						return left.id.localeCompare(right.id);
+					})
+					.map((reservation) => ({
+						warehouseId: reservation.warehouseId,
+						itemId: reservation.itemId,
+						quantity: reservation.quantity,
+						consumedQuantity: reservation.consumedQuantity,
+					})),
+			),
 		);
 	}
 
@@ -1290,6 +1257,155 @@ export class MemoryInventoryStore implements InventoryStore {
 				};
 			}),
 		});
+	}
+
+	private async resolveMemoryPostReservation(
+		organizationId: string,
+		movement: StockMovement,
+		effects: BalanceEffect[],
+	): Promise<Result<MemoryPostReservation>> {
+		if (movement.reservationId === null) {
+			return ok({ consumedQuantity: 0, effects, reservation: undefined });
+		}
+		const reservationResult = await this.getReservationById(
+			organizationId,
+			movement.reservationId,
+		);
+		if (!reservationResult.ok) {
+			return reservationResult;
+		}
+		if (reservationResult.data === null) {
+			return reservationNotFound();
+		}
+		const reservation = this.reservations.get(reservationResult.data.id);
+		if (reservation === undefined) {
+			return reservationNotFound();
+		}
+		if (
+			reservation.status === "released" ||
+			reservation.status === "expired" ||
+			reservation.status === "cancelled"
+		) {
+			return fail(
+				"CONFLICT",
+				"Stock reservation cannot be consumed",
+				inventoryErrorDetails(INVENTORY_ERROR_RESERVATION_ALREADY_RELEASED),
+			);
+		}
+		const adjustedEffects = this.applyReservationConsumption(
+			effects,
+			movement,
+			reservation,
+		);
+		return adjustedEffects.ok
+			? ok({ ...adjustedEffects.data, reservation })
+			: adjustedEffects;
+	}
+
+	private applyMemoryPostMutation(
+		input: MemoryPostMutationInput,
+	): Result<MemoryPostMutation> {
+		const previousMovement = cloneMovement(input.movement);
+		const previousReservation =
+			input.reservation === undefined
+				? undefined
+				: cloneReservation(input.reservation);
+		const ledgerSnapshot = this.ledger.length;
+		const now = new Date();
+
+		input.movement.status = "posted";
+		input.movement.postIdempotencyKey = input.record.postIdempotencyKey;
+		input.movement.postedAt = now;
+		input.movement.postedBy = input.record.actorUserId;
+		input.movement.updatedBy = input.record.actorUserId;
+		input.movement.updatedAt = now;
+		input.movement.version += 1;
+
+		if (input.reservation !== undefined && input.consumedQuantity > 0) {
+			const nextConsumedQuantity =
+				parseQuantity(input.reservation.consumedQuantity) +
+				input.consumedQuantity;
+			const reservationQuantity = parseQuantity(input.reservation.quantity);
+			input.reservation.consumedQuantity = formatQuantity(nextConsumedQuantity);
+			input.reservation.status =
+				nextConsumedQuantity >= reservationQuantity
+					? "consumed"
+					: "partially_consumed";
+			input.reservation.updatedBy = input.record.actorUserId;
+			input.reservation.updatedAt = now;
+			input.reservation.version += 1;
+		}
+
+		let nextLedgerSequence = this.getLedgerSequenceValue(
+			input.record.organizationId,
+		);
+		for (const effect of input.effects) {
+			const key = this.balanceMapKey(
+				input.record.organizationId,
+				effect.warehouseId,
+				effect.itemId,
+			);
+			const balance = this.balances.get(key);
+			if (balance === undefined) {
+				this.restorePostMutationState(
+					input.balanceRollback,
+					ledgerSnapshot,
+					input.movement,
+					previousMovement,
+					input.reservation,
+					previousReservation,
+				);
+				return fail("INTERNAL_ERROR", "Balance missing after movement post");
+			}
+			nextLedgerSequence += 1;
+			this.ledger.push({
+				id: randomUUID(),
+				organizationId: input.record.organizationId,
+				movementId: input.movement.id,
+				movementLineId: effect.movementLineId,
+				movementCode: input.movement.code,
+				movementType: input.movement.movementType,
+				warehouseId: effect.warehouseId,
+				warehouseCode: effect.warehouseCode,
+				itemId: effect.itemId,
+				itemCode: effect.itemCode,
+				quantityDelta: formatQuantity(effect.quantityDelta),
+				onHandAfter: balance.onHand,
+				reservedAfter: balance.reserved,
+				availableAfter: balance.available,
+				ledgerSequence: nextLedgerSequence,
+				actorUserId: input.record.actorUserId,
+				correlationId: input.correlationId,
+				createdAt: now,
+			});
+		}
+		return ok({ ledgerSnapshot, previousMovement, previousReservation });
+	}
+
+	private applyReservationReleaseBalance(
+		organizationId: string,
+		actorUserId: string,
+		reservation: StockReservation,
+		remainingQuantity: number,
+	): Result<BalanceRollback> {
+		if (remainingQuantity === 0) {
+			return ok(new Map<string, StockBalance | null>());
+		}
+		return this.applyEffects(organizationId, actorUserId, [
+			{
+				warehouseId: reservation.warehouseId,
+				warehouseCode: reservation.warehouseCode,
+				itemId: reservation.itemId,
+				itemCode: reservation.itemCode,
+				baseUomId: reservation.baseUomId,
+				baseUomCode: reservation.baseUomCode,
+				onHandDelta: 0,
+				reservedDelta: -remainingQuantity,
+				availableDelta: remainingQuantity,
+				quantityDelta: 0,
+				movementLineId: null,
+			},
+		]);
 	}
 
 	private applyEffects(

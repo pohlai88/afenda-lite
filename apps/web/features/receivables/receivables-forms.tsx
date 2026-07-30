@@ -39,14 +39,14 @@ import {
 } from "@/app/actions/post-sales-invoice";
 import type { ActionResult } from "@/modules/platform/schemas/action-result";
 
-type Field = {
-	name: string;
+interface Field {
 	label: string;
-	type?: ComponentProps<"input">["type"];
+	min?: string;
+	name: string;
 	required?: boolean;
 	step?: string;
-	min?: string;
-};
+	type?: ComponentProps<"input">["type"];
+}
 
 function ManageUnavailable({ operation }: { operation: string }) {
 	return (
@@ -95,25 +95,25 @@ function ReceivablesActionForm({
 				const id = `receivables-${field.name}`;
 				return (
 					<FormField
+						fieldId={id}
 						key={field.name}
 						label={field.label}
 						required={field.required}
-						fieldId={id}
 					>
 						<Input
-							id={id}
-							name={field.name}
-							type={field.type}
-							required={field.required}
-							step={field.step}
-							min={field.min}
 							autoComplete="off"
 							disabled={pending}
+							id={id}
+							min={field.min}
+							name={field.name}
+							required={field.required}
+							step={field.step}
+							type={field.type}
 						/>
 					</FormField>
 				);
 			})}
-			<Button type="submit" disabled={pending}>
+			<Button disabled={pending} type="submit">
 				{pending ? <Spinner /> : null}
 				{submitLabel}
 			</Button>
@@ -151,16 +151,18 @@ export function CreateDraftSalesInvoiceForm({
 		createDraftSalesInvoiceAction,
 		null satisfies CreateDraftSalesInvoiceActionState,
 	);
-	if (!canManage) return <ManageUnavailable operation="Create invoice" />;
+	if (!canManage) {
+		return <ManageUnavailable operation="Create invoice" />;
+	}
 	return (
 		<ReceivablesActionForm
 			action={action}
-			pending={pending}
-			state={state}
 			fields={[
 				...customerFields,
 				{ name: "manualReason", label: "Manual reason" },
 			]}
+			pending={pending}
+			state={state}
 			submitLabel="Create draft sales invoice"
 			successTitle="Sales invoice created"
 		/>
@@ -172,12 +174,12 @@ export function AddSalesInvoiceLineForm({ canManage }: { canManage: boolean }) {
 		addSalesInvoiceLineAction,
 		null satisfies AddSalesInvoiceLineActionState,
 	);
-	if (!canManage) return <ManageUnavailable operation="Add invoice line" />;
+	if (!canManage) {
+		return <ManageUnavailable operation="Add invoice line" />;
+	}
 	return (
 		<ReceivablesActionForm
 			action={action}
-			pending={pending}
-			state={state}
 			fields={[
 				{ name: "invoiceId", label: "Invoice id", required: true },
 				{ name: "itemId", label: "Item id", required: true },
@@ -202,6 +204,8 @@ export function AddSalesInvoiceLineForm({ canManage }: { canManage: boolean }) {
 					required: true,
 				},
 			]}
+			pending={pending}
+			state={state}
 			submitLabel="Add sales invoice line"
 			successTitle="Invoice line added"
 		/>
@@ -213,13 +217,15 @@ export function PostSalesInvoiceForm({ canManage }: { canManage: boolean }) {
 		postSalesInvoiceAction,
 		null satisfies PostSalesInvoiceActionState,
 	);
-	if (!canManage) return <ManageUnavailable operation="Post invoice" />;
+	if (!canManage) {
+		return <ManageUnavailable operation="Post invoice" />;
+	}
 	return (
 		<ReceivablesActionForm
 			action={action}
+			fields={invoiceVersionFields}
 			pending={pending}
 			state={state}
-			fields={invoiceVersionFields}
 			submitLabel="Post sales invoice"
 			successTitle="Sales invoice posted"
 		/>
@@ -231,12 +237,12 @@ export function IssueCreditNoteForm({ canManage }: { canManage: boolean }) {
 		issueCreditNoteAction,
 		null satisfies IssueCreditNoteActionState,
 	);
-	if (!canManage) return <ManageUnavailable operation="Issue credit note" />;
+	if (!canManage) {
+		return <ManageUnavailable operation="Issue credit note" />;
+	}
 	return (
 		<ReceivablesActionForm
 			action={action}
-			pending={pending}
-			state={state}
 			fields={[
 				...customerFields,
 				{ name: "salesInvoiceId", label: "Sales invoice id", required: true },
@@ -249,6 +255,8 @@ export function IssueCreditNoteForm({ canManage }: { canManage: boolean }) {
 					required: true,
 				},
 			]}
+			pending={pending}
+			state={state}
 			submitLabel="Issue credit note"
 			successTitle="Credit note issued"
 		/>
@@ -264,12 +272,12 @@ export function ApplyCustomerReceiptForm({
 		applyCustomerReceiptAction,
 		null satisfies ApplyCustomerReceiptActionState,
 	);
-	if (!canManage) return <ManageUnavailable operation="Apply receipt" />;
+	if (!canManage) {
+		return <ManageUnavailable operation="Apply receipt" />;
+	}
 	return (
 		<ReceivablesActionForm
 			action={action}
-			pending={pending}
-			state={state}
 			fields={[
 				{ name: "paymentId", label: "Payment id", required: true },
 				{
@@ -295,6 +303,8 @@ export function ApplyCustomerReceiptForm({
 				},
 				{ name: "idempotencyKey", label: "Idempotency key", required: true },
 			]}
+			pending={pending}
+			state={state}
 			submitLabel="Apply customer receipt"
 			successTitle="Customer receipt applied"
 		/>
@@ -306,13 +316,15 @@ export function CancelSalesInvoiceForm({ canManage }: { canManage: boolean }) {
 		cancelSalesInvoiceAction,
 		null satisfies CancelSalesInvoiceActionState,
 	);
-	if (!canManage) return <ManageUnavailable operation="Cancel invoice" />;
+	if (!canManage) {
+		return <ManageUnavailable operation="Cancel invoice" />;
+	}
 	return (
 		<ReceivablesActionForm
 			action={action}
+			fields={invoiceVersionFields}
 			pending={pending}
 			state={state}
-			fields={invoiceVersionFields}
 			submitLabel="Cancel sales invoice"
 			successTitle="Sales invoice cancelled"
 		/>

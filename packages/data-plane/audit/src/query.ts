@@ -9,10 +9,14 @@ import {
 	auditQueryOptionsSchema,
 } from "./schemas";
 import type { AuditStore } from "./store";
-import type { AuditAction, AuditEntry } from "./types";
+import type { AuditAction } from "./types";
 
 function resolveStore(store?: AuditStore): AuditStore {
 	return store ?? createDrizzleAuditStore();
+}
+
+function onPromiseBoundary<T>(operation: () => T | PromiseLike<T>): Promise<T> {
+	return Promise.resolve().then(operation);
 }
 
 /**
@@ -57,7 +61,7 @@ export async function queryAuditLog(
 /**
  * Entity history — filters entity + entityId at the store (org-scoped).
  */
-export async function getEntityHistory(
+export function getEntityHistory(
 	input: {
 		organizationId: string;
 		entity: string;
@@ -67,22 +71,24 @@ export async function getEntityHistory(
 	},
 	store?: AuditStore,
 ): Promise<Result<AuditPage>> {
-	return queryAuditLog(
-		{
-			organizationId: input.organizationId,
-			entity: input.entity,
-			entityId: input.entityId,
-			page: input.page,
-			pageSize: input.pageSize,
-		},
-		store,
+	return onPromiseBoundary(() =>
+		queryAuditLog(
+			{
+				organizationId: input.organizationId,
+				entity: input.entity,
+				entityId: input.entityId,
+				page: input.page,
+				pageSize: input.pageSize,
+			},
+			store,
+		),
 	);
 }
 
 /**
  * Actor activity within an organization.
  */
-export async function getUserActivity(
+export function getUserActivity(
 	input: {
 		organizationId: string;
 		actorUserId: string;
@@ -91,21 +97,23 @@ export async function getUserActivity(
 	},
 	store?: AuditStore,
 ): Promise<Result<AuditPage>> {
-	return queryAuditLog(
-		{
-			organizationId: input.organizationId,
-			actorUserId: input.actorUserId,
-			page: input.page,
-			pageSize: input.pageSize,
-		},
-		store,
+	return onPromiseBoundary(() =>
+		queryAuditLog(
+			{
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				page: input.page,
+				pageSize: input.pageSize,
+			},
+			store,
+		),
 	);
 }
 
 /**
  * Count rows for one action within an organization (and optional filters).
  */
-export async function countByAction(
+export function countByAction(
 	input: {
 		organizationId: string;
 		action: AuditAction;
@@ -115,50 +123,57 @@ export async function countByAction(
 	},
 	store?: AuditStore,
 ): Promise<Result<number>> {
-	const parsed = auditQueryOptionsSchema.safeParse({
-		organizationId: input.organizationId,
-		action: input.action,
-		module: input.module,
-		from: input.from,
-		to: input.to,
-		page: 1,
-		pageSize: 1,
-	});
-	if (!parsed.success) {
-		return fail("BAD_REQUEST", "Invalid audit count input", {
-			fieldErrors: parsed.error.flatten().fieldErrors,
+	return onPromiseBoundary(() => {
+		const parsed = auditQueryOptionsSchema.safeParse({
+			organizationId: input.organizationId,
+			action: input.action,
+			module: input.module,
+			from: input.from,
+			to: input.to,
+			page: 1,
+			pageSize: 1,
 		});
-	}
+		if (!parsed.success) {
+			return fail("BAD_REQUEST", "Invalid audit count input", {
+				fieldErrors: parsed.error.flatten().fieldErrors,
+			});
+		}
 
-	return resolveStore(store).count(parsed.data);
+		return resolveStore(store).count(parsed.data);
+	});
 }
 
-export async function exportAuditLog(
+export function exportAuditLog(
 	input: unknown,
 	store?: AuditStore,
 ): Promise<Result<string>> {
-	const parsed = auditExportOptionsSchema.safeParse(input);
-	if (!parsed.success) {
-		return fail("BAD_REQUEST", "Invalid audit export input", {
-			fieldErrors: parsed.error.flatten().fieldErrors,
-		});
-	}
+	return onPromiseBoundary(() => {
+		const parsed = auditExportOptionsSchema.safeParse(input);
+		if (!parsed.success) {
+			return fail("BAD_REQUEST", "Invalid audit export input", {
+				fieldErrors: parsed.error.flatten().fieldErrors,
+			});
+		}
 
-	return resolveStore(store).export(parsed.data);
+		return resolveStore(store).export(parsed.data);
+	});
 }
 
-export async function purgeOldEntries(
+export function purgeOldEntries(
 	input: unknown,
 	store?: AuditStore,
 ): Promise<Result<number>> {
-	const parsed = auditPurgeOptionsSchema.safeParse(input);
-	if (!parsed.success) {
-		return fail("BAD_REQUEST", "Invalid audit purge input", {
-			fieldErrors: parsed.error.flatten().fieldErrors,
-		});
-	}
+	return onPromiseBoundary(() => {
+		const parsed = auditPurgeOptionsSchema.safeParse(input);
+		if (!parsed.success) {
+			return fail("BAD_REQUEST", "Invalid audit purge input", {
+				fieldErrors: parsed.error.flatten().fieldErrors,
+			});
+		}
 
-	return resolveStore(store).purge(parsed.data);
+		return resolveStore(store).purge(parsed.data);
+	});
 }
 
-export type { AuditEntry, AuditPage };
+export type { AuditPage } from "./schemas";
+export type { AuditEntry } from "./types";

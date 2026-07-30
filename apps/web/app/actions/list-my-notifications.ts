@@ -11,9 +11,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type ListMyNotificationsActionData = {
+export interface ListMyNotificationsActionData {
 	notifications: Notification[];
-};
+}
 
 /** `null` = form idle (`useActionState`); otherwise API-002 `ActionResult`. */
 export type ListMyNotificationsActionState =
@@ -26,7 +26,7 @@ export async function listMyNotificationsAction(
 	_prev: ListMyNotificationsActionState,
 	formData: FormData,
 ): Promise<ListMyNotificationsActionState> {
-	return runMemberSessionAction({
+	return await runMemberSessionAction({
 		path: "listMyNotificationsAction",
 		safeMessage: "Could not load notifications. Try again or contact an admin.",
 		execute: async (session) => {

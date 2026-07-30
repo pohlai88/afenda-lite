@@ -45,7 +45,7 @@ function idsFromReferenceTables(src: string, prefix: "F" | "C"): string[] {
 	const re = new RegExp(`^\\|\\s*(${prefix}\\d+)\\s*\\|`, "gm");
 	const found = new Set<string>();
 	for (const match of src.matchAll(re)) {
-		const id = match[1];
+		const [, id] = match;
 		if (id) {
 			found.add(id);
 		}
@@ -58,7 +58,7 @@ function idsFromTestTitles(src: string, prefix: "F" | "C"): string[] {
 	const re = new RegExp(`\\bit\\(\\s*["'\`](${prefix}\\d+)\\b`, "g");
 	const found = new Set<string>();
 	for (const match of src.matchAll(re)) {
-		const id = match[1];
+		const [, id] = match;
 		if (id) {
 			found.add(id);
 		}

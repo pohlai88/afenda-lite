@@ -1,13 +1,18 @@
-import { createHrLocalBenchmarkWorkloads, runLocalBenchmark } from "./index";
+import {
+	createHrLocalBenchmarkWorkloads,
+	type LocalBenchmarkEvidence,
+	runLocalBenchmark,
+} from "./index";
 
 const CONTROLLED_WARMUP_RUNS = 3;
 const CONTROLLED_SAMPLE_RUNS = 9;
 
 const workloads = await createHrLocalBenchmarkWorkloads();
-const evidence = [];
+const evidence: LocalBenchmarkEvidence[] = [];
 
 for (const workload of workloads) {
 	evidence.push(
+		// biome-ignore lint/performance/noAwaitInLoops: Controlled workloads run serially so one workload cannot distort another's evidence.
 		await runLocalBenchmark(workload, {
 			warmupRuns: CONTROLLED_WARMUP_RUNS,
 			sampleRuns: CONTROLLED_SAMPLE_RUNS,

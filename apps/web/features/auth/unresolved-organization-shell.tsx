@@ -12,7 +12,6 @@ import { PublicMessageShell } from "@/features/auth/public-message-shell";
 export function UnresolvedOrganizationShell() {
 	return (
 		<PublicMessageShell
-			title="Organization required"
 			footer={
 				<div className="mt-2 flex flex-wrap items-center justify-center gap-3">
 					<Button asChild variant="outline">
@@ -23,6 +22,7 @@ export function UnresolvedOrganizationShell() {
 					</Button>
 				</div>
 			}
+			title="Organization required"
 		>
 			<p>
 				Your account is signed in, but it is not a member of an organization

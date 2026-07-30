@@ -17,5 +17,5 @@ export async function retireTaxRegistrationAction(
 	_prev: TaxRegistrationLifecycleActionState,
 	formData: FormData,
 ): Promise<TaxRegistrationLifecycleActionState> {
-	return runTaxRegistrationLifecycle("retire", formData);
+	return await runTaxRegistrationLifecycle("retire", formData);
 }

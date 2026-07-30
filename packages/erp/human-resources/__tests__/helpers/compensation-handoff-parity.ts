@@ -46,7 +46,7 @@ export function syntheticWorkAssignment(input: {
 	const positionId = parseHumanResourcesPositionId(
 		"00000000-0000-4000-8000-000000000201",
 	);
-	if (!assignmentId.ok || !positionId.ok) {
+	if (!(assignmentId.ok && positionId.ok)) {
 		throw new Error("Failed to parse synthetic assignment brands");
 	}
 
@@ -98,7 +98,9 @@ export async function seedApprovedCompensationForHandoff(
 		},
 		seedReady,
 	);
-	if (!employee.ok) return employee;
+	if (!employee.ok) {
+		return employee;
+	}
 
 	const employment = await createEmployment(
 		{
@@ -110,7 +112,9 @@ export async function seedApprovedCompensationForHandoff(
 		},
 		seedReady,
 	);
-	if (!employment.ok) return employment;
+	if (!employment.ok) {
+		return employment;
+	}
 
 	const compensation = await createEmployeeCompensation(
 		{
@@ -128,7 +132,9 @@ export async function seedApprovedCompensationForHandoff(
 		},
 		ready,
 	);
-	if (!compensation.ok) return compensation;
+	if (!compensation.ok) {
+		return compensation;
+	}
 
 	const approved = await approveEmployeeCompensation(
 		{
@@ -140,7 +146,9 @@ export async function seedApprovedCompensationForHandoff(
 		},
 		ready,
 	);
-	if (!approved.ok) return approved;
+	if (!approved.ok) {
+		return approved;
+	}
 
 	return {
 		ok: true as const,

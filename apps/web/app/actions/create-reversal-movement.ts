@@ -14,9 +14,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type CreateReversalMovementActionData = {
+export interface CreateReversalMovementActionData {
 	movement: StockMovement;
-};
+}
 
 export type CreateReversalMovementActionState =
 	ActionResult<CreateReversalMovementActionData> | null;
@@ -38,7 +38,7 @@ export async function createReversalMovementAction(
 	_prev: CreateReversalMovementActionState,
 	formData: FormData,
 ): Promise<CreateReversalMovementActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "createReversalMovementAction",
 		permission: "inventory.movement.post",
 		safeMessage:

@@ -21,9 +21,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type ActivatePartyActionData = {
+export interface ActivatePartyActionData {
 	party: Party;
-};
+}
 
 export type ActivatePartyActionState =
 	ActionResult<ActivatePartyActionData> | null;

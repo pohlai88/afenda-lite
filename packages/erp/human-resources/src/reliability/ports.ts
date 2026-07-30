@@ -7,71 +7,73 @@ import type {
 	ReliabilityWorkItem,
 } from "./types";
 
-export type ReliabilityClockPort = { now(): Date };
+export interface ReliabilityClockPort {
+	now: () => Date;
+}
 
-export type ReliabilityExecutorPort = {
+export interface ReliabilityExecutorPort {
 	/** Must deduplicate by workItemId + requestFingerprint. */
-	execute(
+	execute: (
 		input: ReliabilityWorkItem,
-	): Promise<Result<ReliabilityExecutionOutcome>>;
-};
+	) => Promise<Result<ReliabilityExecutionOutcome>>;
+}
 
-export type ReliabilityFailureClassifierPort = {
-	isRetryable(failure: { code: string; message: string }): boolean;
-};
+export interface ReliabilityFailureClassifierPort {
+	isRetryable: (failure: { code: string; message: string }) => boolean;
+}
 
-export type ReliabilityStorePort = {
-	findByIdempotencyKey(input: {
-		organizationId: string;
-		connector: string;
-		idempotencyKey: string;
-	}): Promise<Result<ReliabilityWorkItem | null>>;
-	getWorkItem(input: {
-		organizationId: string;
-		workItemId: string;
-	}): Promise<Result<ReliabilityWorkItem | null>>;
-	createWorkItem(
-		item: ReliabilityWorkItem,
-	): Promise<Result<ReliabilityWorkItem>>;
+export interface ReliabilityStorePort {
 	/** Atomically leases due work with per-tenant fairness and expired-lease recovery. */
-	claimDueWork(input: {
+	claimDueWork: (input: {
 		workerId: string;
 		now: Date;
 		leaseExpiresAt: Date;
 		limit: number;
 		perOrganizationLimit: number;
-	}): Promise<Result<readonly ReliabilityWorkItem[]>>;
+	}) => Promise<Result<readonly ReliabilityWorkItem[]>>;
 	/** Atomically commits the work update and optional dead-letter insert. */
-	commitAttempt(input: {
+	commitAttempt: (input: {
 		expectedVersion: number;
 		workItem: ReliabilityWorkItem;
 		deadLetter: ReliabilityDeadLetterRecord | null;
-	}): Promise<Result<ReliabilityWorkItem>>;
-	getDeadLetter(input: {
-		organizationId: string;
-		deadLetterId: string;
-	}): Promise<Result<ReliabilityDeadLetterRecord | null>>;
-	findDeadLetterByWorkItem(input: {
-		organizationId: string;
-		workItemId: string;
-	}): Promise<Result<ReliabilityDeadLetterRecord | null>>;
+	}) => Promise<Result<ReliabilityWorkItem>>;
+	commitCursor: (input: {
+		expectedVersion: number | null;
+		cursor: ConnectorCursor;
+	}) => Promise<Result<ConnectorCursor>>;
 	/** Atomically creates replay work and links the terminal dead letter. */
-	createDeadLetterReplay(input: {
+	createDeadLetterReplay: (input: {
 		deadLetterId: string;
 		workItem: ReliabilityWorkItem;
-	}): Promise<Result<ReliabilityWorkItem>>;
-	getCursor(input: {
+	}) => Promise<Result<ReliabilityWorkItem>>;
+	createWorkItem: (
+		item: ReliabilityWorkItem,
+	) => Promise<Result<ReliabilityWorkItem>>;
+	findByIdempotencyKey: (input: {
+		organizationId: string;
+		connector: string;
+		idempotencyKey: string;
+	}) => Promise<Result<ReliabilityWorkItem | null>>;
+	findDeadLetterByWorkItem: (input: {
+		organizationId: string;
+		workItemId: string;
+	}) => Promise<Result<ReliabilityDeadLetterRecord | null>>;
+	getCursor: (input: {
 		organizationId: string;
 		connector: string;
 		stream: string;
-	}): Promise<Result<ConnectorCursor | null>>;
-	commitCursor(input: {
-		expectedVersion: number | null;
-		cursor: ConnectorCursor;
-	}): Promise<Result<ConnectorCursor>>;
-};
+	}) => Promise<Result<ConnectorCursor | null>>;
+	getDeadLetter: (input: {
+		organizationId: string;
+		deadLetterId: string;
+	}) => Promise<Result<ReliabilityDeadLetterRecord | null>>;
+	getWorkItem: (input: {
+		organizationId: string;
+		workItemId: string;
+	}) => Promise<Result<ReliabilityWorkItem | null>>;
+}
 
-export type ReliabilityTransactionRecoveryContract = {
+export interface ReliabilityTransactionRecoveryContract {
 	atomicAttemptAndDeadLetter: true;
 	compareAndSwapVersions: true;
 	uniqueIdempotencyBoundary: readonly [
@@ -79,7 +81,7 @@ export type ReliabilityTransactionRecoveryContract = {
 		"connector",
 		"idempotencyKey",
 	];
-};
+}
 
 export const RELIABILITY_TRANSACTION_RECOVERY_CONTRACT = {
 	atomicAttemptAndDeadLetter: true,

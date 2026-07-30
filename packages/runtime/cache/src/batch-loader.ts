@@ -1,8 +1,8 @@
-type QueueItem<K, V> = {
+interface QueueItem<K, V> {
 	key: K;
-	resolve: (value: V | null) => void;
 	reject: (error: Error) => void;
-};
+	resolve: (value: V | null) => void;
+}
 
 const BATCH_LOAD_FAILED_MESSAGE = "Batch load failed";
 
@@ -16,15 +16,17 @@ function normalizeBatchLoadError(error: unknown): Error {
  * Batches and deduplicates individual loads into one batchFn call (N+1 guard).
  */
 export class BatchLoader<K, V> {
-	private queue: Array<QueueItem<K, V>> = [];
-	private scheduled = false;
+	private readonly queue: QueueItem<K, V>[] = [];
+	private scheduledBatch: ReturnType<typeof setTimeout> | undefined;
 	private readonly maxBatchSize: number;
 	private readonly batchDelayMs: number;
+	private readonly batchFn: (keys: K[]) => Promise<Map<K, V>>;
 
 	constructor(
-		private readonly batchFn: (keys: K[]) => Promise<Map<K, V>>,
+		batchFn: (keys: K[]) => Promise<Map<K, V>>,
 		options: { maxBatchSize?: number; batchDelayMs?: number } = {},
 	) {
+		this.batchFn = batchFn;
 		this.maxBatchSize = options.maxBatchSize ?? 100;
 		this.batchDelayMs = options.batchDelayMs ?? 10;
 	}
@@ -32,22 +34,25 @@ export class BatchLoader<K, V> {
 	load(key: K): Promise<V | null> {
 		return new Promise((resolve, reject) => {
 			this.queue.push({ key, resolve, reject });
-
-			if (!this.scheduled) {
-				this.scheduled = true;
-				setTimeout(() => {
-					void this.executeBatch();
-				}, this.batchDelayMs);
-			}
+			this.scheduleBatch();
 
 			if (this.queue.length >= this.maxBatchSize) {
-				void this.executeBatch();
+				this.executeBatch().catch(() => undefined);
 			}
 		});
 	}
 
+	private scheduleBatch(): void {
+		if (this.scheduledBatch !== undefined) {
+			return;
+		}
+		this.scheduledBatch = setTimeout(() => {
+			this.executeBatch().catch(() => undefined);
+		}, this.batchDelayMs);
+	}
+
 	private async executeBatch(): Promise<void> {
-		this.scheduled = false;
+		this.scheduledBatch = undefined;
 		const batch = this.queue.splice(0);
 		if (batch.length === 0) {
 			return;

@@ -32,11 +32,11 @@ export function SignInButton({
 		return (
 			<Button
 				asChild
-				variant="ghost"
 				className={cn(
 					"sign-in-button sign-in-button--machine ring-0 focus-visible:ring-0",
 					className,
 				)}
+				variant="ghost"
 			>
 				<Link href={AUTH_LOGIN_PATH}>
 					<span aria-hidden="true" className="sign-in-button__mark" />
@@ -49,8 +49,8 @@ export function SignInButton({
 	return (
 		<Button
 			asChild
-			variant={variant}
 			className={cn("sign-in-button", className)}
+			variant={variant}
 		>
 			<Link href={AUTH_LOGIN_PATH}>Sign in</Link>
 		</Button>

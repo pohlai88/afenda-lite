@@ -12,7 +12,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type GetCustomerBalanceActionData = { balances: CustomerBalance[] };
+export interface GetCustomerBalanceActionData {
+	balances: CustomerBalance[];
+}
 
 const schema = z.object({
 	customerId: z.string().uuid(),
@@ -23,7 +25,7 @@ export async function getCustomerBalanceAction(input: {
 	customerId: string;
 	currencyCode?: string;
 }): Promise<ActionResult<GetCustomerBalanceActionData>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getCustomerBalanceAction",
 		permission: "receivables.balance.read",
 		safeMessage:
@@ -46,7 +48,9 @@ export async function getCustomerBalanceAction(input: {
 				createReceivablesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { balances: mapped.data } };
 		},
 	});

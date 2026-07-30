@@ -53,7 +53,7 @@ describe("@afenda/master-data mergeParties", () => {
 			options,
 		);
 		expect(source.ok && target.ok).toBe(true);
-		if (!source.ok || !target.ok) {
+		if (!(source.ok && target.ok)) {
 			return;
 		}
 
@@ -197,7 +197,7 @@ describe("@afenda/master-data mergeParties", () => {
 			options,
 		);
 		expect(orgParty.ok && person.ok).toBe(true);
-		if (!orgParty.ok || !person.ok) {
+		if (!(orgParty.ok && person.ok)) {
 			return;
 		}
 
@@ -282,7 +282,7 @@ describe("@afenda/master-data mergeParties", () => {
 			options,
 		);
 		expect(source.ok && target.ok).toBe(true);
-		if (!source.ok || !target.ok) {
+		if (!(source.ok && target.ok)) {
 			return;
 		}
 
@@ -316,9 +316,11 @@ describe("@afenda/master-data mergeParties", () => {
 				targetCustomerDraft.ok,
 		).toBe(true);
 		if (
-			!sourceCustomerDraft.ok ||
-			!sourceSupplierDraft.ok ||
-			!targetCustomerDraft.ok
+			!(
+				sourceCustomerDraft.ok &&
+				sourceSupplierDraft.ok &&
+				targetCustomerDraft.ok
+			)
 		) {
 			return;
 		}
@@ -349,7 +351,7 @@ describe("@afenda/master-data mergeParties", () => {
 		expect(sourceCustomer.ok && sourceSupplier.ok && targetCustomer.ok).toBe(
 			true,
 		);
-		if (!sourceCustomer.ok || !sourceSupplier.ok || !targetCustomer.ok) {
+		if (!(sourceCustomer.ok && sourceSupplier.ok && targetCustomer.ok)) {
 			return;
 		}
 

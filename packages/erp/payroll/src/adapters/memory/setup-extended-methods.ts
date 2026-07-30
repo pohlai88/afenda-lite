@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/useAwait: The deterministic memory adapter implements asynchronous extended payroll setup ports.
 import { ok, type Result } from "@afenda/errors/result";
 
 import { parsePayrollRunId } from "../../brands";
@@ -379,12 +380,12 @@ export function createMemorySetupExtendedMethods(input: {
 			const updated: PayrollEarningRule = {
 				...rule,
 				name: ruleInput.name ?? rule.name,
-				amount: ruleInput.amount !== undefined ? ruleInput.amount : rule.amount,
-				rate: ruleInput.rate !== undefined ? ruleInput.rate : rule.rate,
+				amount: ruleInput.amount === undefined ? rule.amount : ruleInput.amount,
+				rate: ruleInput.rate === undefined ? rule.rate : ruleInput.rate,
 				effectiveTo:
-					ruleInput.effectiveTo !== undefined
-						? ruleInput.effectiveTo
-						: rule.effectiveTo,
+					ruleInput.effectiveTo === undefined
+						? rule.effectiveTo
+						: ruleInput.effectiveTo,
 				version: rule.version + 1,
 				updatedBy: ruleInput.actorUserId,
 				updatedAt: now,
@@ -502,8 +503,8 @@ export function createMemorySetupExtendedMethods(input: {
 					code: existing.code,
 					name: record.name ?? existing.name,
 					ruleType: record.ruleType ?? existing.ruleType,
-					amount: record.amount !== undefined ? record.amount : existing.amount,
-					rate: record.rate !== undefined ? record.rate : existing.rate,
+					amount: record.amount === undefined ? existing.amount : record.amount,
+					rate: record.rate === undefined ? existing.rate : record.rate,
 					currencyCode: record.currencyCode ?? existing.currencyCode,
 					ruleVersion: record.ruleVersion,
 					effectiveFrom: record.effectiveFrom,
@@ -568,16 +569,16 @@ export function createMemorySetupExtendedMethods(input: {
 			const updated: PayrollDeductionRule = {
 				...rule,
 				name: ruleInput.name ?? rule.name,
-				amount: ruleInput.amount !== undefined ? ruleInput.amount : rule.amount,
-				rate: ruleInput.rate !== undefined ? ruleInput.rate : rule.rate,
+				amount: ruleInput.amount === undefined ? rule.amount : ruleInput.amount,
+				rate: ruleInput.rate === undefined ? rule.rate : ruleInput.rate,
 				taxTiming:
-					ruleInput.taxTiming !== undefined
-						? ruleInput.taxTiming
-						: rule.taxTiming,
+					ruleInput.taxTiming === undefined
+						? rule.taxTiming
+						: ruleInput.taxTiming,
 				effectiveTo:
-					ruleInput.effectiveTo !== undefined
-						? ruleInput.effectiveTo
-						: rule.effectiveTo,
+					ruleInput.effectiveTo === undefined
+						? rule.effectiveTo
+						: ruleInput.effectiveTo,
 				version: rule.version + 1,
 				updatedBy: ruleInput.actorUserId,
 				updatedAt: now,
@@ -695,8 +696,8 @@ export function createMemorySetupExtendedMethods(input: {
 					code: existing.code,
 					name: record.name ?? existing.name,
 					ruleType: record.ruleType ?? existing.ruleType,
-					amount: record.amount !== undefined ? record.amount : existing.amount,
-					rate: record.rate !== undefined ? record.rate : existing.rate,
+					amount: record.amount === undefined ? existing.amount : record.amount,
+					rate: record.rate === undefined ? existing.rate : record.rate,
 					currencyCode: record.currencyCode ?? existing.currencyCode,
 					ruleVersion: record.ruleVersion,
 					taxTiming: record.taxTiming ?? existing.taxTiming,
@@ -765,9 +766,9 @@ export function createMemorySetupExtendedMethods(input: {
 				jurisdictionCode: ruleInput.jurisdictionCode ?? rule.jurisdictionCode,
 				configJson: ruleInput.configJson ?? rule.configJson,
 				effectiveTo:
-					ruleInput.effectiveTo !== undefined
-						? ruleInput.effectiveTo
-						: rule.effectiveTo,
+					ruleInput.effectiveTo === undefined
+						? rule.effectiveTo
+						: ruleInput.effectiveTo,
 				version: rule.version + 1,
 				updatedBy: ruleInput.actorUserId,
 				updatedAt: now,

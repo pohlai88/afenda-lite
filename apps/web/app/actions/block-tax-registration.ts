@@ -17,5 +17,5 @@ export async function blockTaxRegistrationAction(
 	_prev: TaxRegistrationLifecycleActionState,
 	formData: FormData,
 ): Promise<TaxRegistrationLifecycleActionState> {
-	return runTaxRegistrationLifecycle("block", formData);
+	return await runTaxRegistrationLifecycle("block", formData);
 }

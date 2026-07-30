@@ -1,5 +1,4 @@
 import { afterAll, expect, it } from "vitest";
-
 import { createEmployee } from "../../src/core/employee";
 import { createEmployment } from "../../src/core/employment";
 import {
@@ -17,6 +16,7 @@ import {
 	verifyOvertimeRequest,
 } from "../../src/time/overtime";
 import { assignTimeApprovalAuthority } from "../../src/time/policy";
+import { helperAssert as assert } from "./helper-assert";
 import {
 	createHrParityHarness,
 	type WorkforceStoreAdapter,
@@ -59,8 +59,10 @@ export function defineOvertimeApprovalAuthoritySuite(
 			},
 			ready,
 		);
-		expect(employee.ok).toBe(true);
-		if (!employee.ok) throw new Error("employee seed failed");
+		assert.strictEqual(employee.ok, true);
+		if (!employee.ok) {
+			throw new Error("employee seed failed");
+		}
 		const employment = await createEmployment(
 			{
 				organizationId: ORG,
@@ -71,8 +73,10 @@ export function defineOvertimeApprovalAuthoritySuite(
 			},
 			ready,
 		);
-		expect(employment.ok).toBe(true);
-		if (!employment.ok) throw new Error("employment seed failed");
+		assert.strictEqual(employment.ok, true);
+		if (!employment.ok) {
+			throw new Error("employment seed failed");
+		}
 		await seedEmploymentWorkCalendar(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,
@@ -97,8 +101,10 @@ export function defineOvertimeApprovalAuthoritySuite(
 			},
 			ready,
 		);
-		expect(requested.ok).toBe(true);
-		if (!requested.ok) throw new Error("overtime request seed failed");
+		assert.strictEqual(requested.ok, true);
+		if (!requested.ok) {
+			throw new Error("overtime request seed failed");
+		}
 		const managerId = `user-hr-ot-auth-manager-${suffix}-${seedKey}`;
 		return { request: requested.data, managerId, seedKey };
 	}
@@ -125,8 +131,10 @@ export function defineOvertimeApprovalAuthoritySuite(
 			},
 			ready,
 		);
-		expect(assigned.ok).toBe(true);
-		if (!assigned.ok) throw new Error("authority assignment failed");
+		assert.strictEqual(assigned.ok, true);
+		if (!assigned.ok) {
+			throw new Error("authority assignment failed");
+		}
 	}
 
 	it("allows an authorized approver to approve overtime", async () => {
@@ -148,7 +156,9 @@ export function defineOvertimeApprovalAuthoritySuite(
 			ready,
 		);
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 		expect(approved.data.status).toBe("approved");
 		expect(approved.data.approvedMaximumMinutes).toBe(90);
 		expect(ready.ports.outbox.calls.length).toBeGreaterThan(outboxBefore);
@@ -178,7 +188,9 @@ export function defineOvertimeApprovalAuthoritySuite(
 			ready,
 		);
 		expect(denied.ok).toBe(false);
-		if (denied.ok) return;
+		if (denied.ok) {
+			return;
+		}
 		expect(humanResourcesCodeFromResult(denied)).toBe(
 			HUMAN_RESOURCES_ERROR_FORBIDDEN,
 		);
@@ -193,7 +205,9 @@ export function defineOvertimeApprovalAuthoritySuite(
 			ready,
 		);
 		expect(unchanged.ok).toBe(true);
-		if (!unchanged.ok) return;
+		if (!unchanged.ok) {
+			return;
+		}
 		expect(unchanged.data?.status).toBe("requested");
 		expect(ready.ports.audit.calls.length).toBe(auditBefore);
 		expect(ready.ports.outbox.calls.length).toBe(outboxBefore);
@@ -430,7 +444,9 @@ export function defineOvertimeApprovalAuthoritySuite(
 			ready,
 		);
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 
 		const worked = await recordOvertimeActual(
 			{
@@ -444,7 +460,9 @@ export function defineOvertimeApprovalAuthoritySuite(
 			ready,
 		);
 		expect(worked.ok).toBe(true);
-		if (!worked.ok) return;
+		if (!worked.ok) {
+			return;
+		}
 
 		const second = await approveOvertimeRequest(
 			{
@@ -480,7 +498,9 @@ export function defineOvertimeApprovalAuthoritySuite(
 			ready,
 		);
 		expect(rejected.ok).toBe(true);
-		if (!rejected.ok) return;
+		if (!rejected.ok) {
+			return;
+		}
 		expect(rejected.data.status).toBe("rejected");
 		expect(ready.ports.audit.calls.length).toBeGreaterThan(auditBefore);
 		expect(ready.ports.outbox.calls.length).toBe(outboxBefore);
@@ -495,7 +515,9 @@ export function defineOvertimeApprovalAuthoritySuite(
 			ready,
 		);
 		expect(unchanged.ok).toBe(true);
-		if (!unchanged.ok) return;
+		if (!unchanged.ok) {
+			return;
+		}
 		expect(unchanged.data?.status).toBe("rejected");
 	});
 
@@ -517,7 +539,9 @@ export function defineOvertimeApprovalAuthoritySuite(
 			ready,
 		);
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 		const auditAfterFirst = ready.ports.audit.calls.length;
 		const outboxAfterFirst = ready.ports.outbox.calls.length;
 
@@ -534,7 +558,9 @@ export function defineOvertimeApprovalAuthoritySuite(
 			ready,
 		);
 		expect(retry.ok).toBe(true);
-		if (!retry.ok) return;
+		if (!retry.ok) {
+			return;
+		}
 		expect(retry.data.approvedMaximumMinutes).toBe(90);
 		expect(retry.data.version).toBe(first.data.version);
 		expect(ready.ports.audit.calls.length).toBe(auditAfterFirst);
@@ -559,7 +585,9 @@ export function defineOvertimeApprovalAuthoritySuite(
 			ready,
 		);
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 		const auditAfterFirst = ready.ports.audit.calls.length;
 		const outboxAfterFirst = ready.ports.outbox.calls.length;
 
@@ -576,7 +604,9 @@ export function defineOvertimeApprovalAuthoritySuite(
 			ready,
 		);
 		expect(retry.ok).toBe(false);
-		if (retry.ok) return;
+		if (retry.ok) {
+			return;
+		}
 		expect(humanResourcesCodeFromResult(retry)).toBe(
 			HUMAN_RESOURCES_ERROR_CONFLICT,
 		);
@@ -593,7 +623,9 @@ export function defineOvertimeApprovalAuthoritySuite(
 			ready,
 		);
 		expect(unchanged.ok).toBe(true);
-		if (!unchanged.ok) return;
+		if (!unchanged.ok) {
+			return;
+		}
 		expect(unchanged.data?.approvedMaximumMinutes).toBe(90);
 		expect(unchanged.data?.version).toBe(first.data.version);
 	});
@@ -616,7 +648,9 @@ export function defineOvertimeApprovalAuthoritySuite(
 			ready,
 		);
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 
 		const worked = await recordOvertimeActual(
 			{
@@ -630,7 +664,9 @@ export function defineOvertimeApprovalAuthoritySuite(
 			ready,
 		);
 		expect(worked.ok).toBe(true);
-		if (!worked.ok) return;
+		if (!worked.ok) {
+			return;
+		}
 
 		const verified = await verifyOvertimeRequest(
 			{
@@ -644,7 +680,9 @@ export function defineOvertimeApprovalAuthoritySuite(
 			ready,
 		);
 		expect(verified.ok).toBe(true);
-		if (!verified.ok) return;
+		if (!verified.ok) {
+			return;
+		}
 		expect(verified.data).toMatchObject({
 			requestedMinutes: 120,
 			approvedMaximumMinutes: 90,
@@ -678,7 +716,9 @@ export function defineOvertimeApprovalAuthoritySuite(
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 		const employment = await createEmployment(
 			{
 				organizationId: ORG,
@@ -690,7 +730,9 @@ export function defineOvertimeApprovalAuthoritySuite(
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 		await seedEmploymentWorkCalendar(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,
@@ -718,7 +760,9 @@ export function defineOvertimeApprovalAuthoritySuite(
 			ready,
 		);
 		expect(requested.ok).toBe(true);
-		if (!requested.ok) return;
+		if (!requested.ok) {
+			return;
+		}
 
 		await grantAuthority(ready, {
 			targetActorUserId: managerId,
@@ -758,7 +802,9 @@ export function defineOvertimeApprovalAuthoritySuite(
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 		const employment = await createEmployment(
 			{
 				organizationId: ORG,
@@ -770,7 +816,9 @@ export function defineOvertimeApprovalAuthoritySuite(
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 		await seedEmploymentWorkCalendar(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,
@@ -798,7 +846,9 @@ export function defineOvertimeApprovalAuthoritySuite(
 			ready,
 		);
 		expect(requested.ok).toBe(true);
-		if (!requested.ok) return;
+		if (!requested.ok) {
+			return;
+		}
 
 		await grantAuthority(ready, {
 			targetActorUserId: managerId,

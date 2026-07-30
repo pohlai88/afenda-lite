@@ -1,3 +1,5 @@
+// biome-ignore-all lint/style/noNestedTernary: Fixture selection mirrors the three-state officer contract.
+// biome-ignore-all lint/suspicious/useAwait: Officer fixtures implement asynchronous production ports.
 import {
 	assertNoOfficerAppointmentConflict,
 	calculateOfficerVacancyStatus,
@@ -214,7 +216,9 @@ describe("CA-2.2 memory officer store", () => {
 			expectedCompanyVersion: 1,
 		});
 		expect(office.ok).toBe(true);
-		if (!office.ok) return;
+		if (!office.ok) {
+			return;
+		}
 
 		const crossTenant = await store.getStatutoryOffice({
 			organizationId: otherOrganizationId,
@@ -239,7 +243,9 @@ describe("CA-2.2 memory officer store", () => {
 			expectedOfficeVersion: 1,
 		});
 		expect(appointment.ok).toBe(true);
-		if (!appointment.ok) return;
+		if (!appointment.ok) {
+			return;
+		}
 
 		const before = await store.listOfficersAsOf({
 			organizationId,

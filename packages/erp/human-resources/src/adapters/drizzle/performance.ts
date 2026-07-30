@@ -122,8 +122,15 @@ import {
 	isPostgresUniqueViolation,
 	mapPersistenceFailure,
 } from "../../shared/persistence-errors";
+import { isResultFailure } from "../../shared/result-guards";
+import {
+	runSequential,
+	sequentialContinue,
+	sequentialReturn,
+} from "../../shared/run-sequential";
 import type { HumanResourcesStore } from "../../store";
 import type {
+	EmployeePerformanceHistoryEntry,
 	PerformanceAssessment,
 	PerformanceCycle,
 	PerformanceCycleEligibility,
@@ -143,12 +150,12 @@ import {
 	PERFORMANCE_REVIEW_SELF_SEQUENCE,
 } from "../../types";
 
-type PerformanceHost = {
+interface PerformanceHost {
 	getEmployeeById: HumanResourcesStore["getEmployeeById"];
 	getEmploymentById: HumanResourcesStore["getEmploymentById"];
 	listEmployees: HumanResourcesStore["listEmployees"];
 	listEmploymentsByEmployee: HumanResourcesStore["listEmploymentsByEmployee"];
-};
+}
 
 function eventPayloadJson(value: Record<string, unknown>): string {
 	return JSON.stringify(value);
@@ -215,200 +222,206 @@ export type DrizzlePerformanceMethods = Pick<
 	| "getEmployeePerformanceHistory"
 >;
 
-type CycleSqlRow = {
-	id: string;
-	organization_id: string;
+interface CycleSqlRow {
 	code: string;
-	name: string;
-	period_start: string;
-	period_end: string;
-	rating_scale: unknown;
-	weighting_model: string;
-	status: string;
 	create_idempotency_key: string;
 	create_request_fingerprint: string;
-	version: number;
-	created_by: string;
-	updated_by: string;
 	created_at: Date;
-	updated_at: Date;
-};
-
-type ParticipantSqlRow = {
+	created_by: string;
 	id: string;
+	name: string;
 	organization_id: string;
-	cycle_id: string;
-	employee_id: string;
-	employment_id: string;
+	period_end: string;
+	period_start: string;
+	rating_scale: unknown;
 	status: string;
+	updated_at: Date;
+	updated_by: string;
 	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
-	updated_at: Date;
-};
+	weighting_model: string;
+}
 
-type ReviewPeriodSqlRow = {
-	id: string;
-	organization_id: string;
-	cycle_id: string;
-	kind: string;
-	period_start: string;
-	period_end: string;
-	created_by: string;
-	updated_by: string;
+interface ParticipantSqlRow {
 	created_at: Date;
-	updated_at: Date;
-};
-
-type EligibilitySqlRow = {
-	id: string;
-	organization_id: string;
-	cycle_id: string;
-	min_tenure_days: number | null;
-	allowed_employment_statuses: string;
 	created_by: string;
-	updated_by: string;
-	created_at: Date;
-	updated_at: Date;
-};
-
-type GoalSqlRow = {
-	id: string;
-	organization_id: string;
 	cycle_id: string;
 	employee_id: string;
 	employment_id: string;
-	title: string;
-	description: string | null;
-	weight: string | null;
-	period_start: string;
+	id: string;
+	organization_id: string;
+	status: string;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+}
+
+interface ReviewPeriodSqlRow {
+	created_at: Date;
+	created_by: string;
+	cycle_id: string;
+	id: string;
+	kind: string;
+	organization_id: string;
 	period_end: string;
+	period_start: string;
+	updated_at: Date;
+	updated_by: string;
+}
+
+interface EligibilitySqlRow {
+	allowed_employment_statuses: string;
+	created_at: Date;
+	created_by: string;
+	cycle_id: string;
+	id: string;
+	min_tenure_days: number | null;
+	organization_id: string;
+	updated_at: Date;
+	updated_by: string;
+}
+
+interface GoalSqlRow {
+	aligned_to_goal_id: string | null;
+	completion_evidence_reference: string | null;
+	completion_note: string | null;
+	create_idempotency_key: string;
+	create_request_fingerprint: string;
+	created_at: Date;
+	created_by: string;
+	cycle_id: string;
+	description: string | null;
+	employee_id: string;
+	employment_id: string;
 	exception_outside_cycle: boolean;
 	goal_kind: string;
-	aligned_to_goal_id: string | null;
-	completion_note: string | null;
-	completion_evidence_reference: string | null;
-	status: string;
-	create_idempotency_key: string;
-	create_request_fingerprint: string;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
-	updated_at: Date;
-};
-
-type GoalProgressSqlRow = {
 	id: string;
 	organization_id: string;
+	period_end: string;
+	period_start: string;
+	status: string;
+	title: string;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+	weight: string | null;
+}
+
+interface GoalProgressSqlRow {
+	created_at: Date;
+	evidence_reference: string | null;
 	goal_id: string;
-	recorded_at: Date;
+	id: string;
+	organization_id: string;
 	progress_note: string;
 	progress_value: string | null;
-	evidence_reference: string | null;
+	recorded_at: Date;
 	recorded_by: string;
-	created_at: Date;
 	updated_at: Date;
-};
+}
 
-type ReviewSqlRow = {
-	id: string;
-	organization_id: string;
+interface ReviewSqlRow {
+	acknowledgement_note: string | null;
+	calibration_note: string | null;
+	created_at: Date;
+	created_by: string;
 	cycle_id: string;
 	employee_id: string;
 	employment_id: string;
-	overall_rating: string | null;
-	acknowledgement_note: string | null;
-	calibration_note: string | null;
-	status: string;
 	finalize_idempotency_key: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
+	id: string;
+	organization_id: string;
+	overall_rating: string | null;
+	status: string;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+}
 
-type ReviewParticipantSqlRow = {
+interface ReviewParticipantSqlRow {
+	created_at: Date;
+	created_by: string;
+	employee_id: string | null;
 	id: string;
 	organization_id: string;
 	review_id: string;
 	role: string;
-	employee_id: string | null;
-	user_id: string | null;
 	sequence_number: number;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
 	updated_at: Date;
-};
+	updated_by: string;
+	user_id: string | null;
+	version: number;
+}
 
-type AssessmentSqlRow = {
-	id: string;
-	organization_id: string;
-	review_id: string;
-	participant_id: string;
-	kind: string;
-	rating: string | null;
+interface AssessmentSqlRow {
 	comments_sensitive: string | null;
-	submitted_at: Date | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
 	created_at: Date;
-	updated_at: Date;
-};
-
-type PlanSqlRow = {
+	created_by: string;
 	id: string;
+	kind: string;
 	organization_id: string;
+	participant_id: string;
+	rating: string | null;
 	review_id: string;
-	employee_id: string;
-	employment_id: string;
-	performance_gap: string;
-	expected_outcome: string;
-	measurable_actions: string;
-	support_resources: string;
-	due_date: string;
+	submitted_at: Date | null;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+}
+
+interface PlanSqlRow {
 	accountable_manager_employee_id: string;
-	status: string;
-	outcome_reason: string | null;
-	outcome_evidence_reference: string | null;
-	last_extension_reason: string | null;
-	last_extension_evidence_reference: string | null;
 	create_idempotency_key: string;
 	create_request_fingerprint: string;
-	version: number;
+	created_at: Date;
 	created_by: string;
-	updated_by: string;
-	created_at: Date;
-	updated_at: Date;
-};
-
-type CheckpointSqlRow = {
-	id: string;
-	organization_id: string;
-	plan_id: string;
-	sequence_number: number;
 	due_date: string;
-	outcome: string;
-	notes: string | null;
-	evidence_reference: string | null;
-	recorded_by: string | null;
-	recorded_at: Date | null;
-	created_at: Date;
+	employee_id: string;
+	employment_id: string;
+	expected_outcome: string;
+	id: string;
+	last_extension_evidence_reference: string | null;
+	last_extension_reason: string | null;
+	measurable_actions: string;
+	organization_id: string;
+	outcome_evidence_reference: string | null;
+	outcome_reason: string | null;
+	performance_gap: string;
+	review_id: string;
+	status: string;
+	support_resources: string;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+}
+
+interface CheckpointSqlRow {
+	created_at: Date;
+	due_date: string;
+	evidence_reference: string | null;
+	id: string;
+	notes: string | null;
+	organization_id: string;
+	outcome: string;
+	plan_id: string;
+	recorded_at: Date | null;
+	recorded_by: string | null;
+	sequence_number: number;
+	updated_at: Date;
+}
 
 function mapCycleSql(row: CycleSqlRow): Result<PerformanceCycle> {
 	const id = parseHumanResourcesPerformanceCycleId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const ratingScale = parseRatingScale(row.rating_scale);
-	if (!ratingScale.ok) return ratingScale;
+	if (!ratingScale.ok) {
+		return ratingScale;
+	}
 	const status = performanceCycleStatusSchema.safeParse(row.status);
-	if (!status.success) return fail("INTERNAL_ERROR", "Invalid cycle status");
+	if (!status.success) {
+		return fail("INTERNAL_ERROR", "Invalid cycle status");
+	}
 	const weightingModel = performanceWeightingModelSchema.safeParse(
 		row.weighting_model,
 	);
@@ -460,16 +473,25 @@ function mapParticipantSql(
 	row: ParticipantSqlRow,
 ): Result<PerformanceCycleParticipant> {
 	const id = parseHumanResourcesPerformanceCycleParticipantId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const cycleId = parseHumanResourcesPerformanceCycleId(row.cycle_id);
-	if (!cycleId.ok) return cycleId;
+	if (!cycleId.ok) {
+		return cycleId;
+	}
 	const employeeId = parseHumanResourcesEmployeeId(row.employee_id);
-	if (!employeeId.ok) return employeeId;
+	if (!employeeId.ok) {
+		return employeeId;
+	}
 	const employmentId = parseHumanResourcesEmploymentId(row.employment_id);
-	if (!employmentId.ok) return employmentId;
+	if (!employmentId.ok) {
+		return employmentId;
+	}
 	const status = performanceCycleParticipantStatusSchema.safeParse(row.status);
-	if (!status.success)
+	if (!status.success) {
 		return fail("INTERNAL_ERROR", "Invalid participant status");
+	}
 	return ok({
 		id: id.data,
 		organizationId: row.organization_id,
@@ -489,7 +511,9 @@ function mapReviewPeriodSql(
 	row: ReviewPeriodSqlRow,
 ): Result<PerformanceCycleReviewPeriod> {
 	const cycleId = parseHumanResourcesPerformanceCycleId(row.cycle_id);
-	if (!cycleId.ok) return cycleId;
+	if (!cycleId.ok) {
+		return cycleId;
+	}
 	const kind = performanceCycleReviewPeriodKindSchema.safeParse(row.kind);
 	if (!kind.success) {
 		return fail("INTERNAL_ERROR", "Invalid review period kind");
@@ -512,7 +536,9 @@ function mapEligibilitySql(
 	row: EligibilitySqlRow,
 ): Result<PerformanceCycleEligibility> {
 	const cycleId = parseHumanResourcesPerformanceCycleId(row.cycle_id);
-	if (!cycleId.ok) return cycleId;
+	if (!cycleId.ok) {
+		return cycleId;
+	}
 	const statuses = row.allowed_employment_statuses
 		.split(",")
 		.map((value) => value.trim())
@@ -573,7 +599,9 @@ async function loadCycleReviewPeriods(input: {
 				created_at: row.createdAt,
 				updated_at: row.updatedAt,
 			});
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			periods.push(mapped.data);
 		}
 		return ok(periods);
@@ -600,7 +628,7 @@ async function loadCycleEligibility(input: {
 				),
 			)
 			.limit(1);
-		const row = rows[0];
+		const [row] = rows;
 		if (!row) {
 			return ok(null);
 		}
@@ -640,22 +668,36 @@ function mapParticipant(
 
 function mapGoalSql(row: GoalSqlRow): Result<PerformanceGoal> {
 	const id = parseHumanResourcesGoalId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const cycleId = parseHumanResourcesPerformanceCycleId(row.cycle_id);
-	if (!cycleId.ok) return cycleId;
+	if (!cycleId.ok) {
+		return cycleId;
+	}
 	const employeeId = parseHumanResourcesEmployeeId(row.employee_id);
-	if (!employeeId.ok) return employeeId;
+	if (!employeeId.ok) {
+		return employeeId;
+	}
 	const employmentId = parseHumanResourcesEmploymentId(row.employment_id);
-	if (!employmentId.ok) return employmentId;
+	if (!employmentId.ok) {
+		return employmentId;
+	}
 	const status = performanceGoalStatusSchema.safeParse(row.status);
-	if (!status.success) return fail("INTERNAL_ERROR", "Invalid goal status");
+	if (!status.success) {
+		return fail("INTERNAL_ERROR", "Invalid goal status");
+	}
 	const goalKind = performanceGoalKindSchema.safeParse(row.goal_kind);
-	if (!goalKind.success) return fail("INTERNAL_ERROR", "Invalid goal kind");
+	if (!goalKind.success) {
+		return fail("INTERNAL_ERROR", "Invalid goal kind");
+	}
 	const alignedToGoalId =
 		row.aligned_to_goal_id === null
 			? ok(null)
 			: parseHumanResourcesGoalId(row.aligned_to_goal_id);
-	if (!alignedToGoalId.ok) return alignedToGoalId;
+	if (isResultFailure(alignedToGoalId)) {
+		return alignedToGoalId;
+	}
 	return ok({
 		id: id.data,
 		organizationId: row.organization_id,
@@ -715,9 +757,13 @@ function mapGoalProgressSql(
 	row: GoalProgressSqlRow,
 ): Result<PerformanceGoalProgress> {
 	const id = parseHumanResourcesGoalProgressId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const goalId = parseHumanResourcesGoalId(row.goal_id);
-	if (!goalId.ok) return goalId;
+	if (!goalId.ok) {
+		return goalId;
+	}
 	return ok({
 		id: id.data,
 		organizationId: row.organization_id,
@@ -751,15 +797,25 @@ function _mapGoalProgress(
 
 function mapReviewSql(row: ReviewSqlRow): Result<PerformanceReview> {
 	const id = parseHumanResourcesReviewId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const cycleId = parseHumanResourcesPerformanceCycleId(row.cycle_id);
-	if (!cycleId.ok) return cycleId;
+	if (!cycleId.ok) {
+		return cycleId;
+	}
 	const employeeId = parseHumanResourcesEmployeeId(row.employee_id);
-	if (!employeeId.ok) return employeeId;
+	if (!employeeId.ok) {
+		return employeeId;
+	}
 	const employmentId = parseHumanResourcesEmploymentId(row.employment_id);
-	if (!employmentId.ok) return employmentId;
+	if (!employmentId.ok) {
+		return employmentId;
+	}
 	const status = performanceReviewStatusSchema.safeParse(row.status);
-	if (!status.success) return fail("INTERNAL_ERROR", "Invalid review status");
+	if (!status.success) {
+		return fail("INTERNAL_ERROR", "Invalid review status");
+	}
 	return ok({
 		id: id.data,
 		organizationId: row.organization_id,
@@ -804,13 +860,19 @@ function mapReviewParticipantSql(
 	row: ReviewParticipantSqlRow,
 ): Result<PerformanceReviewParticipant> {
 	const id = parseHumanResourcesReviewParticipantId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const reviewId = parseHumanResourcesReviewId(row.review_id);
-	if (!reviewId.ok) return reviewId;
+	if (!reviewId.ok) {
+		return reviewId;
+	}
 	let employeeId: HumanResourcesEmployeeId | null = null;
 	if (row.employee_id !== null) {
 		const parsed = parseHumanResourcesEmployeeId(row.employee_id);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		employeeId = parsed.data;
 	}
 	const role = row.role as PerformanceReviewParticipant["role"];
@@ -834,15 +896,23 @@ function mapAssessmentSql(
 	row: AssessmentSqlRow,
 ): Result<PerformanceAssessment> {
 	const id = parseHumanResourcesAssessmentId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const reviewId = parseHumanResourcesReviewId(row.review_id);
-	if (!reviewId.ok) return reviewId;
+	if (!reviewId.ok) {
+		return reviewId;
+	}
 	const participantId = parseHumanResourcesReviewParticipantId(
 		row.participant_id,
 	);
-	if (!participantId.ok) return participantId;
+	if (!participantId.ok) {
+		return participantId;
+	}
 	const kind = performanceAssessmentKindSchema.safeParse(row.kind);
-	if (!kind.success) return fail("INTERNAL_ERROR", "Invalid assessment kind");
+	if (!kind.success) {
+		return fail("INTERNAL_ERROR", "Invalid assessment kind");
+	}
 	return ok({
 		id: id.data,
 		organizationId: row.organization_id,
@@ -882,20 +952,31 @@ function mapAssessment(
 
 function mapPlanSql(row: PlanSqlRow): Result<PerformanceImprovementPlan> {
 	const id = parseHumanResourcesImprovementPlanId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const reviewId = parseHumanResourcesReviewId(row.review_id);
-	if (!reviewId.ok) return reviewId;
+	if (!reviewId.ok) {
+		return reviewId;
+	}
 	const employeeId = parseHumanResourcesEmployeeId(row.employee_id);
-	if (!employeeId.ok) return employeeId;
+	if (!employeeId.ok) {
+		return employeeId;
+	}
 	const employmentId = parseHumanResourcesEmploymentId(row.employment_id);
-	if (!employmentId.ok) return employmentId;
+	if (!employmentId.ok) {
+		return employmentId;
+	}
 	const managerId = parseHumanResourcesEmployeeId(
 		row.accountable_manager_employee_id,
 	);
-	if (!managerId.ok) return managerId;
+	if (!managerId.ok) {
+		return managerId;
+	}
 	const status = performanceImprovementPlanStatusSchema.safeParse(row.status);
-	if (!status.success)
+	if (!status.success) {
 		return fail("INTERNAL_ERROR", "Invalid improvement plan status");
+	}
 	return ok({
 		id: id.data,
 		organizationId: row.organization_id,
@@ -955,12 +1036,17 @@ function mapCheckpointSql(
 	row: CheckpointSqlRow,
 ): Result<PerformanceImprovementCheckpoint> {
 	const id = parseHumanResourcesImprovementCheckpointId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const planId = parseHumanResourcesImprovementPlanId(row.plan_id);
-	if (!planId.ok) return planId;
+	if (!planId.ok) {
+		return planId;
+	}
 	const outcome = performanceCheckpointOutcomeSchema.safeParse(row.outcome);
-	if (!outcome.success)
+	if (!outcome.success) {
 		return fail("INTERNAL_ERROR", "Invalid checkpoint outcome");
+	}
 	return ok({
 		id: id.data,
 		organizationId: row.organization_id,
@@ -1091,7 +1177,9 @@ async function mutateGoalStatus(
 		organizationId: input.organizationId,
 		goalId: input.goalId,
 	});
-	if (!existing.ok) return existing;
+	if (!existing.ok) {
+		return existing;
+	}
 	if (existing.data === null) {
 		return notFound(
 			"Performance goal not found",
@@ -1102,12 +1190,16 @@ async function mutateGoalStatus(
 		existing.data.version,
 		input.expectedVersion,
 	);
-	if (!versionCheck.ok) return versionCheck;
+	if (!versionCheck.ok) {
+		return versionCheck;
+	}
 	const transition = assertGoalStatusTransition(
 		existing.data.status,
 		nextStatus,
 	);
-	if (!transition.ok) return transition;
+	if (!transition.ok) {
+		return transition;
+	}
 
 	const nextVersion = input.expectedVersion + 1;
 	const auditId = randomUUID();
@@ -1142,7 +1234,7 @@ async function mutateGoalStatus(
 				SELECT mutated.* FROM mutated, audited
 			`,
 		]);
-		const row = rows[0];
+		const [row] = rows;
 		if (!row) {
 			return missAfterOptimisticUpdate({
 				found: true,
@@ -1163,10 +1255,9 @@ async function loadAlignmentAncestorMap(input: {
 	startParentId: HumanResourcesGoalId;
 }): Promise<Map<string, { id: string; alignedToGoalId: string | null }>> {
 	const map = new Map<string, { id: string; alignedToGoalId: string | null }>();
-	let cursor: string | null = input.startParentId;
-	while (cursor !== null) {
-		if (map.has(cursor)) {
-			break;
+	const loadAncestor = async (cursor: string | null): Promise<void> => {
+		if (cursor === null || map.has(cursor)) {
+			return;
 		}
 		const rows: Array<{
 			id: string;
@@ -1184,16 +1275,17 @@ async function loadAlignmentAncestorMap(input: {
 				),
 			)
 			.limit(1);
-		const row = rows[0];
+		const [row] = rows;
 		if (!row) {
-			break;
+			return;
 		}
 		map.set(row.id, {
 			id: row.id,
 			alignedToGoalId: row.alignedToGoalId,
 		});
-		cursor = row.alignedToGoalId;
-	}
+		await loadAncestor(row.alignedToGoalId);
+	};
+	await loadAncestor(input.startParentId);
 	return map;
 }
 
@@ -1213,23 +1305,31 @@ async function mutateReviewStatus(
 		reviewId: input.reviewId,
 		includeConfidential: true,
 	});
-	if (!detail.ok) return detail;
+	if (!detail.ok) {
+		return detail;
+	}
 	if (detail.data === null) {
 		return notFound(
 			"Performance review not found",
 			HUMAN_RESOURCES_ERROR_NOT_FOUND,
 		);
 	}
-	const review = detail.data.review;
+	const { review } = detail.data;
 	const immutable = assertReviewNotFinalized(review.status);
-	if (!immutable.ok) return immutable;
+	if (!immutable.ok) {
+		return immutable;
+	}
 	const versionCheck = assertExpectedVersion(
 		review.version,
 		input.expectedVersion,
 	);
-	if (!versionCheck.ok) return versionCheck;
+	if (!versionCheck.ok) {
+		return versionCheck;
+	}
 	const transition = assertReviewStatusTransition(review.status, nextStatus);
-	if (!transition.ok) return transition;
+	if (!transition.ok) {
+		return transition;
+	}
 
 	const nextVersion = input.expectedVersion + 1;
 	const auditId = randomUUID();
@@ -1264,7 +1364,7 @@ async function mutateReviewStatus(
 				SELECT mutated.* FROM mutated, audited
 			`,
 		]);
-		const row = rows[0];
+		const [row] = rows;
 		if (!row) {
 			return missAfterOptimisticUpdate({
 				found: true,
@@ -1301,7 +1401,9 @@ async function listImprovementPlanCheckpointsForPlan(input: {
 		const checkpoints: PerformanceImprovementCheckpoint[] = [];
 		for (const row of rows) {
 			const mapped = _mapCheckpoint(row);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			checkpoints.push(mapped.data);
 		}
 		return ok(checkpoints);
@@ -1328,7 +1430,9 @@ async function mutatePlanStatus(
 		organizationId: input.organizationId,
 		planId: input.planId,
 	});
-	if (!existing.ok) return existing;
+	if (!existing.ok) {
+		return existing;
+	}
 	if (existing.data === null) {
 		return notFound(
 			"Improvement plan not found",
@@ -1339,12 +1443,16 @@ async function mutatePlanStatus(
 		existing.data.version,
 		input.expectedVersion,
 	);
-	if (!versionCheck.ok) return versionCheck;
+	if (!versionCheck.ok) {
+		return versionCheck;
+	}
 	const transition = assertImprovementPlanStatusTransition(
 		existing.data.status,
 		nextStatus,
 	);
-	if (!transition.ok) return transition;
+	if (!transition.ok) {
+		return transition;
+	}
 
 	const nextVersion = input.expectedVersion + 1;
 	const auditId = randomUUID();
@@ -1379,7 +1487,7 @@ async function mutatePlanStatus(
 				SELECT mutated.* FROM mutated, audited
 			`,
 		]);
-		const row = rows[0];
+		const [row] = rows;
 		if (!row) {
 			return missAfterOptimisticUpdate({
 				found: true,
@@ -1415,29 +1523,39 @@ async function submitAssessment(
 		reviewId: input.reviewId,
 		includeConfidential: true,
 	});
-	if (!detail.ok) return detail;
+	if (!detail.ok) {
+		return detail;
+	}
 	if (detail.data === null) {
 		return notFound(
 			"Performance review not found",
 			HUMAN_RESOURCES_ERROR_NOT_FOUND,
 		);
 	}
-	const review = detail.data.review;
+	const { review } = detail.data;
 	const immutable = assertReviewNotFinalized(review.status);
-	if (!immutable.ok) return immutable;
+	if (!immutable.ok) {
+		return immutable;
+	}
 	const versionCheck = assertExpectedVersion(
 		review.version,
 		input.expectedVersion,
 	);
-	if (!versionCheck.ok) return versionCheck;
+	if (!versionCheck.ok) {
+		return versionCheck;
+	}
 	const transition = assertReviewStatusTransition(review.status, nextStatus);
-	if (!transition.ok) return transition;
+	if (!transition.ok) {
+		return transition;
+	}
 
 	const cycle = await host.getPerformanceCycleById({
 		organizationId: input.organizationId,
 		cycleId: review.cycleId,
 	});
-	if (!cycle.ok) return cycle;
+	if (!cycle.ok) {
+		return cycle;
+	}
 	if (cycle.data === null) {
 		return notFound(
 			"Performance cycle not found",
@@ -1448,7 +1566,9 @@ async function submitAssessment(
 		input.rating,
 		cycle.data.ratingScale,
 	);
-	if (!ratingCheck.ok) return ratingCheck;
+	if (!ratingCheck.ok) {
+		return ratingCheck;
+	}
 
 	const assessment = detail.data.assessments.find((item) => item.kind === kind);
 	if (!assessment) {
@@ -1512,7 +1632,7 @@ async function submitAssessment(
 				SELECT mutated.* FROM mutated, audited, updated_assessment
 			`,
 		]);
-		const row = rows[0];
+		const [row] = rows;
 		if (!row) {
 			return missAfterOptimisticUpdate({
 				found: true,
@@ -1539,8 +1659,10 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapCycle(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load performance cycle");
@@ -1559,10 +1681,14 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			const cycle = mapCycle(row);
-			if (!cycle.ok) return cycle;
+			if (!cycle.ok) {
+				return cycle;
+			}
 			return ok({
 				cycle: cycle.data,
 				createRequestFingerprint: row.createRequestFingerprint,
@@ -1580,7 +1706,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			organizationId: record.organizationId,
 			idempotencyKey: record.createIdempotencyKey,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data !== null) {
 			if (
 				existing.data.createRequestFingerprint ===
@@ -1595,11 +1723,15 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			periodStart: record.periodStart,
 			periodEnd: record.periodEnd,
 		});
-		if (!periodCheck.ok) return periodCheck;
+		if (!periodCheck.ok) {
+			return periodCheck;
+		}
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesPerformanceCycleId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 		const ratingScaleJson = JSON.stringify(record.ratingScale);
 
@@ -1640,7 +1772,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					SELECT mutated.* FROM mutated, audited
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return fail(
 					"CONFLICT",
@@ -1655,7 +1787,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					organizationId: record.organizationId,
 					idempotencyKey: record.createIdempotencyKey,
 				});
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (replay.data !== null) {
 					if (
 						replay.data.createRequestFingerprint ===
@@ -1682,7 +1816,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			organizationId: input.organizationId,
 			cycleId: input.cycleId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound(
 				"Performance cycle not found",
@@ -1696,17 +1832,23 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const periodStart = input.periodStart ?? existing.data.periodStart;
 		const periodEnd = input.periodEnd ?? existing.data.periodEnd;
 		const periodCheck = assertValidCyclePeriod({ periodStart, periodEnd });
-		if (!periodCheck.ok) return periodCheck;
+		if (!periodCheck.ok) {
+			return periodCheck;
+		}
 
-		let ratingScale = existing.data.ratingScale;
+		let { ratingScale } = existing.data;
 		if (input.ratingScale !== undefined) {
 			const scaleCheck = assertRatingScaleUniqueCodes(input.ratingScale);
-			if (!scaleCheck.ok) return scaleCheck;
+			if (!scaleCheck.ok) {
+				return scaleCheck;
+			}
 			ratingScale = scaleCheck.data;
 		}
 
@@ -1749,7 +1891,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					SELECT mutated.* FROM mutated, audited
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -1767,7 +1909,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			organizationId: input.organizationId,
 			cycleId: input.cycleId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound(
 				"Performance cycle not found",
@@ -1778,18 +1922,24 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const transition = assertCycleStatusTransition(
 			existing.data.status,
 			"open",
 		);
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 
 		const participants = await this.listCycleParticipants({
 			organizationId: input.organizationId,
 			cycleId: input.cycleId,
 		});
-		if (!participants.ok) return participants;
+		if (!participants.ok) {
+			return participants;
+		}
 		const activeParticipants = participants.data.filter(
 			(participant) => participant.status === "active",
 		);
@@ -1852,7 +2002,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					SELECT mutated.* FROM mutated, audited, outboxed
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -1870,7 +2020,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			organizationId: input.organizationId,
 			cycleId: input.cycleId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound(
 				"Performance cycle not found",
@@ -1881,12 +2033,16 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const transition = assertCycleStatusTransition(
 			existing.data.status,
 			"closed",
 		);
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 
 		const cycle = existing.data;
 		const nextVersion = input.expectedVersion + 1;
@@ -1921,7 +2077,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					SELECT mutated.* FROM mutated, audited
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -1939,7 +2095,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			organizationId: input.organizationId,
 			cycleId: input.cycleId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound(
 				"Performance cycle not found",
@@ -1950,12 +2108,16 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const transition = assertCycleStatusTransition(
 			existing.data.status,
 			"cancelled",
 		);
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 
 		const cycle = existing.data;
 		const nextVersion = input.expectedVersion + 1;
@@ -1990,7 +2152,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					SELECT mutated.* FROM mutated, audited
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -2008,7 +2170,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			organizationId: input.organizationId,
 			cycleId: input.cycleId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound(
 				"Performance cycle not found",
@@ -2019,29 +2183,39 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const transition = assertCycleStatusTransition(
 			existing.data.status,
 			"published",
 		);
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 
 		const eligibility = await loadCycleEligibility({
 			organizationId: input.organizationId,
 			cycleId: input.cycleId,
 		});
-		if (!eligibility.ok) return eligibility;
+		if (!eligibility.ok) {
+			return eligibility;
+		}
 		const reviewPeriods = await loadCycleReviewPeriods({
 			organizationId: input.organizationId,
 			cycleId: input.cycleId,
 		});
-		if (!reviewPeriods.ok) return reviewPeriods;
+		if (!reviewPeriods.ok) {
+			return reviewPeriods;
+		}
 		const publishReady = assertCyclePublishReady({
 			ratingScale: existing.data.ratingScale,
 			eligibility: eligibility.data,
 			reviewPeriods: reviewPeriods.data,
 		});
-		if (!publishReady.ok) return publishReady;
+		if (!publishReady.ok) {
+			return publishReady;
+		}
 
 		const cycle = existing.data;
 		const nextVersion = input.expectedVersion + 1;
@@ -2076,7 +2250,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					SELECT mutated.* FROM mutated, audited
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -2097,7 +2271,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			organizationId: input.organizationId,
 			cycleId: input.cycleId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound(
 				"Performance cycle not found",
@@ -2113,14 +2289,18 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const withinCycle = assertReviewPeriodsWithinCycle({
 			cyclePeriodStart: existing.data.periodStart,
 			cyclePeriodEnd: existing.data.periodEnd,
 			periods: input.periods,
 		});
-		if (!withinCycle.ok) return withinCycle;
+		if (!withinCycle.ok) {
+			return withinCycle;
+		}
 
 		const kinds = new Set(input.periods.map((period) => period.kind));
 		if (kinds.size !== input.periods.length) {
@@ -2144,7 +2324,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			}),
 		);
 		const overlapCheck = assertReviewPeriodsNonOverlapping(nextPeriods);
-		if (!overlapCheck.ok) return overlapCheck;
+		if (!overlapCheck.ok) {
+			return overlapCheck;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -2209,7 +2391,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 
 			const inserted: PerformanceCycleReviewPeriod[] = [];
 			for (let index = 1; index < results.length; index += 1) {
-				const row = (results[index] as ReviewPeriodSqlRow[])[0];
+				const [row] = results[index] as ReviewPeriodSqlRow[];
 				if (!row) {
 					return fail(
 						"INTERNAL_ERROR",
@@ -2217,7 +2399,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					);
 				}
 				const mapped = mapReviewPeriodSql(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				inserted.push(mapped.data);
 			}
 
@@ -2235,7 +2419,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			organizationId: input.organizationId,
 			cycleId: input.cycleId,
 		});
-		if (!cycle.ok) return cycle;
+		if (!cycle.ok) {
+			return cycle;
+		}
 		if (cycle.data === null) {
 			return notFound(
 				"Performance cycle not found",
@@ -2253,7 +2439,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			organizationId: input.organizationId,
 			cycleId: input.cycleId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound(
 				"Performance cycle not found",
@@ -2269,13 +2457,17 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const currentEligibility = await loadCycleEligibility({
 			organizationId: input.organizationId,
 			cycleId: input.cycleId,
 		});
-		if (!currentEligibility.ok) return currentEligibility;
+		if (!currentEligibility.ok) {
+			return currentEligibility;
+		}
 
 		const id = currentEligibility.data?.id ?? randomUUID();
 		const auditId = randomUUID();
@@ -2342,7 +2534,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -2363,7 +2555,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			organizationId: input.organizationId,
 			cycleId: input.cycleId,
 		});
-		if (!cycle.ok) return cycle;
+		if (!cycle.ok) {
+			return cycle;
+		}
 		if (cycle.data === null) {
 			return notFound(
 				"Performance cycle not found",
@@ -2381,7 +2575,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			organizationId: input.organizationId,
 			cycleId: input.cycleId,
 		});
-		if (!cycle.ok) return cycle;
+		if (!cycle.ok) {
+			return cycle;
+		}
 		if (cycle.data === null) {
 			return notFound(
 				"Performance cycle not found",
@@ -2398,89 +2594,114 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			organizationId: input.organizationId,
 			cycleId: input.cycleId,
 		});
-		if (!eligibility.ok) return eligibility;
+		if (!eligibility.ok) {
+			return eligibility;
+		}
 		if (eligibility.data === null) {
 			return invalidState(
 				"Performance cycle eligibility must be configured before enrollment",
 			);
 		}
+		const eligibilityData = eligibility.data;
 
 		const enrolled: PerformanceCycleParticipant[] = [];
-		let page = 1;
 		const pageSize = 100;
 
-		while (true) {
+		const enrollPage = async (page: number): Promise<Result<void>> => {
 			const employees = await this.listEmployees({
 				organizationId: input.organizationId,
 				page,
 				pageSize,
 			});
-			if (!employees.ok) return employees;
+			if (!employees.ok) {
+				return employees;
+			}
 			if (employees.data.employees.length === 0) {
-				break;
+				return ok(undefined);
 			}
 
-			for (const employee of employees.data.employees) {
-				const employments = await this.listEmploymentsByEmployee({
-					organizationId: input.organizationId,
-					employeeId: employee.id,
-				});
-				if (!employments.ok) return employments;
-
-				for (const employmentRef of employments.data) {
-					const employment = await this.getEmploymentById({
+			const sequentialOuterOutcome1 = await runSequential(
+				employees.data.employees,
+				async (employee) => {
+					const employments = await this.listEmploymentsByEmployee({
 						organizationId: input.organizationId,
-						employmentId: employmentRef.id,
+						employeeId: employee.id,
 					});
-					if (!employment.ok) return employment;
-					if (employment.data === null) {
-						continue;
-					}
-					if (
-						!isEmploymentEligibleForPerformanceCycle({
-							eligibility: eligibility.data,
-							employmentStatus: employment.data.status,
-							tenureDays: tenureDaysOn(
-								employment.data.startsOn,
-								input.asOfDate,
-							),
-						})
-					) {
-						continue;
+					if (!employments.ok) {
+						return sequentialReturn(employments);
 					}
 
-					const added = await this.addCycleParticipant(
-						{
-							organizationId: input.organizationId,
-							cycleId: input.cycleId,
-							employeeId: employee.id,
-							employmentId: employmentRef.id,
-							actorUserId: input.actorUserId,
-							asOfDate: input.asOfDate,
+					const sequentialOutcome1 = await runSequential(
+						employments.data,
+						async (employmentRef) => {
+							const employment = await this.getEmploymentById({
+								organizationId: input.organizationId,
+								employmentId: employmentRef.id,
+							});
+							if (!employment.ok) {
+								return sequentialReturn(employment);
+							}
+							if (employment.data === null) {
+								return sequentialContinue();
+							}
+							if (
+								!isEmploymentEligibleForPerformanceCycle({
+									eligibility: eligibilityData,
+									employmentStatus: employment.data.status,
+									tenureDays: tenureDaysOn(
+										employment.data.startsOn,
+										input.asOfDate,
+									),
+								})
+							) {
+								return sequentialContinue();
+							}
+
+							const added = await this.addCycleParticipant(
+								{
+									organizationId: input.organizationId,
+									cycleId: input.cycleId,
+									employeeId: employee.id,
+									employmentId: employmentRef.id,
+									actorUserId: input.actorUserId,
+									asOfDate: input.asOfDate,
+								},
+								_ports,
+								meta,
+							);
+							if (!added.ok) {
+								if (
+									added.code === "CONFLICT" &&
+									added.message ===
+										"Participant is already active in this cycle"
+								) {
+									return sequentialContinue();
+								}
+								return sequentialReturn(added);
+							}
+							enrolled.push(added.data);
 						},
-						_ports,
-						meta,
 					);
-					if (!added.ok) {
-						if (
-							added.code === "CONFLICT" &&
-							added.message === "Participant is already active in this cycle"
-						) {
-							continue;
-						}
-						return added;
+					if (sequentialOutcome1.kind === "return") {
+						return sequentialReturn(sequentialOutcome1.value);
 					}
-					enrolled.push(added.data);
-				}
+				},
+			);
+			if (sequentialOuterOutcome1.kind === "return") {
+				return sequentialOuterOutcome1.value;
 			}
 
 			if (
 				page * pageSize >= employees.data.totalCount ||
 				employees.data.employees.length < pageSize
 			) {
-				break;
+				return ok(undefined);
 			}
-			page += 1;
+			return enrollPage(page + 1);
+		};
+		const enrollment = await enrollPage(1);
+		if (!enrollment.ok) {
+			return enrollment;
 		}
 
 		return ok(enrolled);
@@ -2491,7 +2712,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			organizationId: input.organizationId,
 			cycleId: input.cycleId,
 		});
-		if (!cycle.ok) return cycle;
+		if (!cycle.ok) {
+			return cycle;
+		}
 		if (cycle.data === null) {
 			return notFound(
 				"Performance cycle not found",
@@ -2510,19 +2733,25 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			input.employeeId,
 			input.employmentId,
 		);
-		if (!refs.ok) return refs;
+		if (!refs.ok) {
+			return refs;
+		}
 
 		const eligibility = await loadCycleEligibility({
 			organizationId: input.organizationId,
 			cycleId: input.cycleId,
 		});
-		if (!eligibility.ok) return eligibility;
+		if (!eligibility.ok) {
+			return eligibility;
+		}
 		if (eligibility.data !== null) {
 			const employment = await this.getEmploymentById({
 				organizationId: input.organizationId,
 				employmentId: input.employmentId,
 			});
-			if (!employment.ok) return employment;
+			if (!employment.ok) {
+				return employment;
+			}
 			if (employment.data === null) {
 				return notFound(
 					"Employment not found",
@@ -2538,7 +2767,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					eligibilityAsOfDate: input.asOfDate,
 				}),
 			});
-			if (!eligibilityCheck.ok) return eligibilityCheck;
+			if (!eligibilityCheck.ok) {
+				return eligibilityCheck;
+			}
 		}
 
 		try {
@@ -2556,7 +2787,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					),
 				)
 				.limit(1);
-			const existing = existingRows[0];
+			const [existing] = existingRows;
 
 			if (existing) {
 				if (existing.status === "active") {
@@ -2593,7 +2824,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					`,
 					],
 				);
-				const row = rows[0];
+				const [row] = rows;
 				if (!row) {
 					return missAfterOptimisticUpdate({
 						found: true,
@@ -2606,7 +2837,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			const idResult = newBrandId(
 				humanResourcesPerformanceCycleParticipantIdSchema,
 			);
-			if (!idResult.ok) return idResult;
+			if (!idResult.ok) {
+				return idResult;
+			}
 			const auditId = randomUUID();
 
 			const [rows] = await runNeonHttpTransaction<[ParticipantSqlRow[]]>(
@@ -2638,7 +2871,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return conflict("Participant is already active in this cycle");
 			}
@@ -2667,7 +2900,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					),
 				)
 				.limit(1);
-			const existing = rows[0];
+			const [existing] = rows;
 			if (!existing) {
 				return notFound(
 					"Cycle participant not found",
@@ -2678,7 +2911,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				existing.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			if (existing.status === "removed") {
 				return invalidState("Participant is already removed");
 			}
@@ -2716,7 +2951,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				`,
 				],
 			);
-			const row = updated[0];
+			const [row] = updated;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -2746,7 +2981,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			const cycles: PerformanceCycle[] = [];
 			for (const row of paged) {
 				const mapped = mapCycle(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				cycles.push(mapped.data);
 			}
 			return ok({
@@ -2777,7 +3014,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			const participants: PerformanceCycleParticipant[] = [];
 			for (const row of rows) {
 				const mapped = mapParticipant(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				participants.push(mapped.data);
 			}
 			return ok(participants);
@@ -2798,8 +3037,10 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapGoal(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load performance goal");
@@ -2818,10 +3059,14 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			const goal = mapGoal(row);
-			if (!goal.ok) return goal;
+			if (!goal.ok) {
+				return goal;
+			}
 			return ok({
 				goal: goal.data,
 				createRequestFingerprint: row.createRequestFingerprint,
@@ -2839,7 +3084,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			organizationId: record.organizationId,
 			idempotencyKey: record.createIdempotencyKey,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data !== null) {
 			if (
 				existing.data.createRequestFingerprint ===
@@ -2854,7 +3101,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			organizationId: record.organizationId,
 			cycleId: record.cycleId,
 		});
-		if (!cycle.ok) return cycle;
+		if (!cycle.ok) {
+			return cycle;
+		}
 		if (cycle.data === null) {
 			return notFound(
 				"Performance cycle not found",
@@ -2869,7 +3118,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			record.cycleId,
 			record.employmentId,
 		);
-		if (!active.ok) return active;
+		if (!active.ok) {
+			return active;
+		}
 		if (!active.data) {
 			return invalidState("Employee is not an active cycle participant");
 		}
@@ -2880,7 +3131,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			record.employeeId,
 			record.employmentId,
 		);
-		if (!refs.ok) return refs;
+		if (!refs.ok) {
+			return refs;
+		}
 
 		const datesCheck = assertGoalDatesWithinCycle({
 			goalPeriodStart: record.periodStart,
@@ -2889,11 +3142,15 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			cyclePeriodEnd: cycle.data.periodEnd,
 			exceptionOutsideCycle: record.exceptionOutsideCycle,
 		});
-		if (!datesCheck.ok) return datesCheck;
+		if (!datesCheck.ok) {
+			return datesCheck;
+		}
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesGoalId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 
 		const initialStatus = record.goalKind === "manager" ? "approved" : "draft";
 
@@ -2902,7 +3159,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				organizationId: record.organizationId,
 				goalId: record.alignedToGoalId,
 			});
-			if (!parent.ok) return parent;
+			if (!parent.ok) {
+				return parent;
+			}
 			const ancestorMap = await loadAlignmentAncestorMap({
 				organizationId: record.organizationId,
 				startParentId: record.alignedToGoalId,
@@ -2922,7 +3181,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				goalCycleId: record.cycleId,
 				resolveParent: (parentId) => ancestorMap.get(parentId) ?? null,
 			});
-			if (!alignment.ok) return alignment;
+			if (!alignment.ok) {
+				return alignment;
+			}
 		}
 
 		const auditId = randomUUID();
@@ -2963,9 +3224,10 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					SELECT mutated.* FROM mutated, audited
 				`,
 			]);
-			const row = rows[0];
-			if (!row)
+			const [row] = rows;
+			if (!row) {
 				return fail("INTERNAL_ERROR", "Failed to create performance goal");
+			}
 			return mapGoalSql(row);
 		} catch (error) {
 			if (isCreateIdempotencyUniqueViolation(error)) {
@@ -2973,7 +3235,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					organizationId: record.organizationId,
 					idempotencyKey: record.createIdempotencyKey,
 				});
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (replay.data !== null) {
 					if (
 						replay.data.createRequestFingerprint ===
@@ -2993,7 +3257,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			organizationId: input.organizationId,
 			goalId: input.goalId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound(
 				"Performance goal not found",
@@ -3004,18 +3270,24 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			existing.data.status,
 			existing.data.goalKind,
 		);
-		if (!editable.ok) return editable;
+		if (!editable.ok) {
+			return editable;
+		}
 		const versionCheck = assertExpectedVersion(
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const cycle = await this.getPerformanceCycleById({
 			organizationId: input.organizationId,
 			cycleId: existing.data.cycleId,
 		});
-		if (!cycle.ok) return cycle;
+		if (!cycle.ok) {
+			return cycle;
+		}
 		if (cycle.data === null) {
 			return notFound(
 				"Performance cycle not found",
@@ -3032,15 +3304,17 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			cyclePeriodEnd: cycle.data.periodEnd,
 			exceptionOutsideCycle: existing.data.exceptionOutsideCycle,
 		});
-		if (!datesCheck.ok) return datesCheck;
+		if (!datesCheck.ok) {
+			return datesCheck;
+		}
 
 		const title = input.title ?? existing.data.title;
 		const description =
-			input.description !== undefined
-				? input.description
-				: existing.data.description;
+			input.description === undefined
+				? existing.data.description
+				: input.description;
 		const weight =
-			input.weight !== undefined ? input.weight : existing.data.weight;
+			input.weight === undefined ? existing.data.weight : input.weight;
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
 
@@ -3076,7 +3350,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					SELECT mutated.* FROM mutated, audited
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -3094,7 +3368,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			organizationId: input.organizationId,
 			goalId: input.goalId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound(
 				"Performance goal not found",
@@ -3108,7 +3384,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			organizationId: input.organizationId,
 			cycleId: existing.data.cycleId,
 		});
-		if (!cycle.ok) return cycle;
+		if (!cycle.ok) {
+			return cycle;
+		}
 		if (cycle.data === null) {
 			return notFound(
 				"Performance cycle not found",
@@ -3119,16 +3397,18 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			weight: existing.data.weight,
 			weightingModel: cycle.data.weightingModel,
 		});
-		if (!weightCheck.ok) return weightCheck;
+		if (!weightCheck.ok) {
+			return weightCheck;
+		}
 		return mutateGoalStatus(this, input, "submitted", meta);
 	},
 
 	async rejectPerformanceGoal(input, _ports, meta) {
-		return mutateGoalStatus(this, input, "rejected", meta);
+		return await mutateGoalStatus(this, input, "rejected", meta);
 	},
 
 	async activatePerformanceGoal(input, _ports, meta) {
-		return mutateGoalStatus(this, input, "active", meta);
+		return await mutateGoalStatus(this, input, "active", meta);
 	},
 
 	async alignPerformanceGoal(input, _ports, meta) {
@@ -3136,7 +3416,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			organizationId: input.organizationId,
 			goalId: input.goalId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound(
 				"Performance goal not found",
@@ -3147,7 +3429,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const parent =
 			input.alignedToGoalId === null
@@ -3156,7 +3440,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 						organizationId: input.organizationId,
 						goalId: input.alignedToGoalId,
 					});
-		if (!parent.ok) return parent;
+		if (!parent.ok) {
+			return parent;
+		}
 
 		const ancestorMap =
 			input.alignedToGoalId === null
@@ -3180,7 +3466,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			goalCycleId: existing.data.cycleId,
 			resolveParent: (parentId) => ancestorMap.get(parentId) ?? null,
 		});
-		if (!alignment.ok) return alignment;
+		if (!alignment.ok) {
+			return alignment;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -3213,7 +3501,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					SELECT mutated.* FROM mutated, audited
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -3231,7 +3519,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			organizationId: input.organizationId,
 			goalId: input.goalId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound(
 				"Performance goal not found",
@@ -3242,12 +3532,16 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const transition = assertGoalStatusTransition(
 			existing.data.status,
 			"closed",
 		);
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -3284,7 +3578,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					SELECT mutated.* FROM mutated, audited
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -3298,7 +3592,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 	},
 
 	async cancelPerformanceGoal(input, _ports, meta) {
-		return mutateGoalStatus(this, input, "cancelled", meta);
+		return await mutateGoalStatus(this, input, "cancelled", meta);
 	},
 
 	async approvePerformanceGoal(input, _ports, meta) {
@@ -3306,7 +3600,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			organizationId: input.organizationId,
 			goalId: input.goalId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound(
 				"Performance goal not found",
@@ -3317,19 +3613,25 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const transition = assertGoalStatusTransition(
 			existing.data.status,
 			"approved",
 		);
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 
 		const goal = existing.data;
 		const cycle = await this.getPerformanceCycleById({
 			organizationId: input.organizationId,
 			cycleId: goal.cycleId,
 		});
-		if (!cycle.ok) return cycle;
+		if (!cycle.ok) {
+			return cycle;
+		}
 		if (cycle.data === null) {
 			return notFound(
 				"Performance cycle not found",
@@ -3362,7 +3664,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					.map((g) => (g.id === input.goalId ? goal.weight : g.weight))
 					.filter((w): w is string => w !== null);
 				const weightCheck = assertGoalWeightsSumTo100(weights);
-				if (!weightCheck.ok) return weightCheck;
+				if (!weightCheck.ok) {
+					return weightCheck;
+				}
 			}
 		}
 
@@ -3418,7 +3722,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					SELECT mutated.* FROM mutated, audited, outboxed
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -3436,7 +3740,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			organizationId: input.organizationId,
 			goalId: input.goalId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound(
 				"Performance goal not found",
@@ -3448,7 +3754,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		}
 
 		const idResult = newBrandId(humanResourcesGoalProgressIdSchema);
-		if (!idResult.ok) return idResult;
+		if (!idResult.ok) {
+			return idResult;
+		}
 		const auditId = randomUUID();
 		const recordedAt = new Date();
 
@@ -3482,8 +3790,10 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				`,
 				],
 			);
-			const row = rows[0];
-			if (!row) return fail("INTERNAL_ERROR", "Failed to record goal progress");
+			const [row] = rows;
+			if (!row) {
+				return fail("INTERNAL_ERROR", "Failed to record goal progress");
+			}
 			return mapGoalProgressSql(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to record goal progress");
@@ -3510,7 +3820,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			const progress: PerformanceGoalProgress[] = [];
 			for (const row of paged) {
 				const mapped = _mapGoalProgress(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				progress.push(mapped.data);
 			}
 			return ok({
@@ -3546,7 +3858,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			const goals: PerformanceGoal[] = [];
 			for (const row of paged) {
 				const mapped = mapGoal(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				goals.push(mapped.data);
 			}
 			return ok({
@@ -3568,7 +3882,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			organizationId: input.organizationId,
 			cycleId: input.cycleId,
 		});
-		if (!cycle.ok) return cycle;
+		if (!cycle.ok) {
+			return cycle;
+		}
 		if (cycle.data === null) {
 			return notFound(
 				"Performance cycle not found",
@@ -3583,7 +3899,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			input.cycleId,
 			input.employmentId,
 		);
-		if (!active.ok) return active;
+		if (!active.ok) {
+			return active;
+		}
 		if (!active.data) {
 			return invalidState("Employee is not an active cycle participant");
 		}
@@ -3594,7 +3912,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			input.employeeId,
 			input.employmentId,
 		);
-		if (!refs.ok) return refs;
+		if (!refs.ok) {
+			return refs;
+		}
 
 		try {
 			const duplicate = await db
@@ -3618,7 +3938,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		}
 
 		const reviewIdResult = parseHumanResourcesReviewId(randomUUID());
-		if (!reviewIdResult.ok) return reviewIdResult;
+		if (!reviewIdResult.ok) {
+			return reviewIdResult;
+		}
 		const selfParticipantId = newBrandId(
 			humanResourcesReviewParticipantIdSchema,
 		);
@@ -3628,10 +3950,12 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		const selfAssessmentId = newBrandId(humanResourcesAssessmentIdSchema);
 		const managerAssessmentId = newBrandId(humanResourcesAssessmentIdSchema);
 		if (
-			!selfParticipantId.ok ||
-			!managerParticipantId.ok ||
-			!selfAssessmentId.ok ||
-			!managerAssessmentId.ok
+			!(
+				selfParticipantId.ok &&
+				managerParticipantId.ok &&
+				selfAssessmentId.ok &&
+				managerAssessmentId.ok
+			)
 		) {
 			return fail(
 				"INTERNAL_ERROR",
@@ -3703,9 +4027,10 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				`,
 				],
 			);
-			const row = rows[0];
-			if (!row)
+			const [row] = rows;
+			if (!row) {
 				return fail("INTERNAL_ERROR", "Failed to start performance review");
+			}
 			return mapReviewSql(row);
 		} catch (error) {
 			if (isPostgresUniqueViolation(error)) {
@@ -3718,7 +4043,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 	},
 
 	async submitSelfAssessment(input, _ports, meta) {
-		return submitAssessment(this, input, "self", "self_submitted", meta);
+		return await submitAssessment(this, input, "self", "self_submitted", meta);
 	},
 
 	async submitManagerAssessment(input, _ports, meta) {
@@ -3727,7 +4052,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			reviewId: input.reviewId,
 			includeConfidential: true,
 		});
-		if (!review.ok) return review;
+		if (!review.ok) {
+			return review;
+		}
 		if (review.data === null) {
 			return notFound(
 				"Performance review not found",
@@ -3760,21 +4087,27 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			reviewId: input.reviewId,
 			includeConfidential: true,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound(
 				"Performance review not found",
 				HUMAN_RESOURCES_ERROR_NOT_FOUND,
 			);
 		}
-		const review = existing.data.review;
+		const { review } = existing.data;
 		const immutable = assertReviewNotFinalized(review.status);
-		if (!immutable.ok) return immutable;
+		if (!immutable.ok) {
+			return immutable;
+		}
 		const versionCheck = assertExpectedVersion(
 			review.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		if (input.delegatedEmployeeId === review.employeeId) {
 			return invalidInput("Delegated reviewer cannot be the review employee");
 		}
@@ -3788,7 +4121,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 
 		const participantId = newBrandId(humanResourcesReviewParticipantIdSchema);
 		const assessmentId = newBrandId(humanResourcesAssessmentIdSchema);
-		if (!participantId.ok || !assessmentId.ok) {
+		if (!(participantId.ok && assessmentId.ok)) {
 			return fail(
 				"INTERNAL_ERROR",
 				"Failed to allocate delegated reviewer identifiers",
@@ -3850,7 +4183,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -3872,21 +4205,27 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			reviewId: input.reviewId,
 			includeConfidential: true,
 		});
-		if (!detail.ok) return detail;
+		if (!detail.ok) {
+			return detail;
+		}
 		if (detail.data === null) {
 			return notFound(
 				"Performance review not found",
 				HUMAN_RESOURCES_ERROR_NOT_FOUND,
 			);
 		}
-		const review = detail.data.review;
+		const { review } = detail.data;
 		const immutable = assertReviewNotFinalized(review.status);
-		if (!immutable.ok) return immutable;
+		if (!immutable.ok) {
+			return immutable;
+		}
 		const versionCheck = assertExpectedVersion(
 			review.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const participant = detail.data.participants.find(
 			(item) => item.id === input.participantId,
@@ -3902,7 +4241,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			assessments: detail.data.assessments,
 			targetParticipantId: participant.id,
 		});
-		if (!priorCheck.ok) return priorCheck;
+		if (!priorCheck.ok) {
+			return priorCheck;
+		}
 
 		const assessment = detail.data.assessments.find(
 			(item) => item.participantId === participant.id,
@@ -3918,7 +4259,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			organizationId: input.organizationId,
 			cycleId: review.cycleId,
 		});
-		if (!cycle.ok) return cycle;
+		if (!cycle.ok) {
+			return cycle;
+		}
 		if (cycle.data === null) {
 			return notFound(
 				"Performance cycle not found",
@@ -3929,7 +4272,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			input.rating,
 			cycle.data.ratingScale,
 		);
-		if (!ratingCheck.ok) return ratingCheck;
+		if (!ratingCheck.ok) {
+			return ratingCheck;
+		}
 
 		const nextReviewVersion = input.expectedVersion + 1;
 		const nextAssessmentVersion = assessment.version + 1;
@@ -3979,7 +4324,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -4001,16 +4346,20 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			reviewId: input.reviewId,
 			includeConfidential: true,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound(
 				"Performance review not found",
 				HUMAN_RESOURCES_ERROR_NOT_FOUND,
 			);
 		}
-		const review = existing.data.review;
+		const { review } = existing.data;
 		const immutable = assertReviewNotFinalized(review.status);
-		if (!immutable.ok) return immutable;
+		if (!immutable.ok) {
+			return immutable;
+		}
 		if (
 			review.status !== "manager_submitted" &&
 			review.status !== "acknowledged"
@@ -4023,13 +4372,17 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			review.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const cycle = await this.getPerformanceCycleById({
 			organizationId: input.organizationId,
 			cycleId: review.cycleId,
 		});
-		if (!cycle.ok) return cycle;
+		if (!cycle.ok) {
+			return cycle;
+		}
 		if (cycle.data === null) {
 			return notFound(
 				"Performance cycle not found",
@@ -4040,7 +4393,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			input.overallRating,
 			cycle.data.ratingScale,
 		);
-		if (!ratingCheck.ok) return ratingCheck;
+		if (!ratingCheck.ok) {
+			return ratingCheck;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -4076,7 +4431,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -4093,7 +4448,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 	},
 
 	async returnPerformanceReviewForCorrection(input, _ports, meta) {
-		return mutateReviewStatus(this, input, "returned", meta);
+		return await mutateReviewStatus(this, input, "returned", meta);
 	},
 
 	async acknowledgePerformanceReview(input, _ports, meta) {
@@ -4102,26 +4457,34 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			reviewId: input.reviewId,
 			includeConfidential: true,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound(
 				"Performance review not found",
 				HUMAN_RESOURCES_ERROR_NOT_FOUND,
 			);
 		}
-		const review = existing.data.review;
+		const { review } = existing.data;
 		const immutable = assertReviewNotFinalized(review.status);
-		if (!immutable.ok) return immutable;
+		if (!immutable.ok) {
+			return immutable;
+		}
 		const versionCheck = assertExpectedVersion(
 			review.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const transition = assertReviewStatusTransition(
 			review.status,
 			"acknowledged",
 		);
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -4158,7 +4521,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -4189,7 +4552,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					),
 				)
 				.limit(1);
-			const idemRow = idemRows[0];
+			const [idemRow] = idemRows;
 			if (idemRow) {
 				return mapReview(idemRow);
 			}
@@ -4205,27 +4568,35 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			reviewId: input.reviewId,
 			includeConfidential: true,
 		});
-		if (!detail.ok) return detail;
+		if (!detail.ok) {
+			return detail;
+		}
 		if (detail.data === null) {
 			return notFound(
 				"Performance review not found",
 				HUMAN_RESOURCES_ERROR_NOT_FOUND,
 			);
 		}
-		const review = detail.data.review;
+		const { review } = detail.data;
 		const versionCheck = assertExpectedVersion(
 			review.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const transition = assertReviewStatusTransition(review.status, "finalized");
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 
 		const cycle = await this.getPerformanceCycleById({
 			organizationId: input.organizationId,
 			cycleId: review.cycleId,
 		});
-		if (!cycle.ok) return cycle;
+		if (!cycle.ok) {
+			return cycle;
+		}
 		if (cycle.data === null) {
 			return notFound(
 				"Performance cycle not found",
@@ -4236,7 +4607,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			input.overallRating,
 			cycle.data.ratingScale,
 		);
-		if (!ratingCheck.ok) return ratingCheck;
+		if (!ratingCheck.ok) {
+			return ratingCheck;
+		}
 
 		const selfAssessment = detail.data.assessments.find(
 			(a) => a.kind === "self",
@@ -4244,10 +4617,10 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		const managerAssessment = detail.data.assessments.find(
 			(a) => a.kind === "manager",
 		);
-		if (!selfAssessment || !managerAssessment) {
+		if (!(selfAssessment && managerAssessment)) {
 			return invalidState("Review is missing required assessments");
 		}
-		if (!selfAssessment.submittedAt || !managerAssessment.submittedAt) {
+		if (!(selfAssessment.submittedAt && managerAssessment.submittedAt)) {
 			return invalidState(
 				"Both self and manager assessments must be submitted",
 			);
@@ -4309,7 +4682,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -4332,8 +4705,10 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 						),
 					)
 					.limit(1);
-				const replayRow = replay[0];
-				if (replayRow) return mapReview(replayRow);
+				const [replayRow] = replay;
+				if (replayRow) {
+					return mapReview(replayRow);
+				}
 			}
 			return mapPersistenceFailure(
 				error,
@@ -4348,14 +4723,16 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			reviewId: input.reviewId,
 			includeConfidential: true,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound(
 				"Performance review not found",
 				HUMAN_RESOURCES_ERROR_NOT_FOUND,
 			);
 		}
-		const review = existing.data.review;
+		const { review } = existing.data;
 		if (!isPerformanceReviewFinalized(review.status)) {
 			return invalidState("Only finalized reviews can be reopened");
 		}
@@ -4363,9 +4740,13 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			review.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const transition = assertReviewStatusTransition(review.status, "reopened");
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -4421,7 +4802,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -4449,10 +4830,14 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			const review = mapReview(row);
-			if (!review.ok) return review;
+			if (!review.ok) {
+				return review;
+			}
 
 			const participantRows = await db
 				.select()
@@ -4482,7 +4867,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					created_at: p.createdAt,
 					updated_at: p.updatedAt,
 				});
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				participants.push(mapped.data);
 			}
 
@@ -4498,7 +4885,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			const assessments: PerformanceAssessment[] = [];
 			for (const a of assessmentRows) {
 				const mapped = mapAssessment(a);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				assessments.push(mapped.data);
 			}
 
@@ -4532,7 +4921,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			const reviews: PerformanceReview[] = [];
 			for (const row of paged) {
 				const mapped = mapReview(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				reviews.push(mapped.data);
 			}
 			return ok({
@@ -4596,7 +4987,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			const reviews: PerformanceReview[] = [];
 			for (const row of paged) {
 				const mapped = mapReview(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				reviews.push(mapped.data);
 			}
 			return ok({
@@ -4628,8 +5021,10 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapPlan(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load improvement plan");
@@ -4654,10 +5049,14 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			const plan = mapPlan(row);
-			if (!plan.ok) return plan;
+			if (!plan.ok) {
+				return plan;
+			}
 			return ok({
 				plan: plan.data,
 				createRequestFingerprint: row.createRequestFingerprint,
@@ -4675,7 +5074,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			organizationId: record.organizationId,
 			idempotencyKey: record.createIdempotencyKey,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data !== null) {
 			if (
 				existing.data.createRequestFingerprint ===
@@ -4696,7 +5097,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				),
 			)
 			.limit(1);
-		const reviewRow = reviewRows[0];
+		const [reviewRow] = reviewRows;
 		if (!reviewRow) {
 			return notFound(
 				"Performance review not found",
@@ -4704,7 +5105,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			);
 		}
 		const review = mapReview(reviewRow);
-		if (!review.ok) return review;
+		if (!review.ok) {
+			return review;
+		}
 		if (!isPerformanceReviewFinalized(review.data.status)) {
 			return invalidState("Improvement plans require a finalized review");
 		}
@@ -4715,17 +5118,23 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			record.employeeId,
 			record.employmentId,
 		);
-		if (!refs.ok) return refs;
+		if (!refs.ok) {
+			return refs;
+		}
 
 		const idResult = parseHumanResourcesImprovementPlanId(randomUUID());
-		if (!idResult.ok) return idResult;
+		if (!idResult.ok) {
+			return idResult;
+		}
 		const auditId = randomUUID();
-		const checkpointIds: Array<Result<string>> = [];
+		const checkpointIds: Result<string>[] = [];
 		for (const _milestone of record.milestones) {
 			const checkpointId = newBrandId(
 				humanResourcesImprovementCheckpointIdSchema,
 			);
-			if (!checkpointId.ok) return checkpointId;
+			if (!checkpointId.ok) {
+				return checkpointId;
+			}
 			checkpointIds.push(ok(checkpointId.data));
 		}
 
@@ -4783,9 +5192,10 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				}
 				return statements;
 			});
-			const row = rows[0];
-			if (!row)
+			const [row] = rows;
+			if (!row) {
 				return fail("INTERNAL_ERROR", "Failed to create improvement plan");
+			}
 			return mapPlanSql(row);
 		} catch (error) {
 			if (isCreateIdempotencyUniqueViolation(error)) {
@@ -4793,7 +5203,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					organizationId: record.organizationId,
 					idempotencyKey: record.createIdempotencyKey,
 				});
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (replay.data !== null) {
 					if (
 						replay.data.createRequestFingerprint ===
@@ -4813,7 +5225,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			organizationId: input.organizationId,
 			planId: input.planId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound(
 				"Improvement plan not found",
@@ -4824,12 +5238,16 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const transition = assertImprovementPlanStatusTransition(
 			existing.data.status,
 			"open",
 		);
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 
 		const plan = existing.data;
 		const nextVersion = input.expectedVersion + 1;
@@ -4884,7 +5302,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					SELECT mutated.* FROM mutated, audited, outboxed
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -4898,7 +5316,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 	},
 
 	async acknowledgeImprovementPlan(input, _ports, meta) {
-		return mutatePlanStatus(this, input, "acknowledged", meta);
+		return await mutatePlanStatus(this, input, "acknowledged", meta);
 	},
 
 	async recordImprovementCheckpoint(input, _ports, meta) {
@@ -4906,7 +5324,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			organizationId: input.organizationId,
 			planId: input.planId,
 		});
-		if (!plan.ok) return plan;
+		if (!plan.ok) {
+			return plan;
+		}
 		if (plan.data === null) {
 			return notFound(
 				"Improvement plan not found",
@@ -4932,7 +5352,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					),
 				)
 				.limit(1);
-			const existing = rows[0];
+			const [existing] = rows;
 			if (!existing) {
 				return notFound(
 					"Improvement checkpoint not found",
@@ -4950,7 +5370,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				priorOutcome,
 				nextOutcome,
 			);
-			if (!outcomeCheck.ok) return outcomeCheck;
+			if (!outcomeCheck.ok) {
+				return outcomeCheck;
+			}
 
 			const auditId = randomUUID();
 			const recordedAt = new Date();
@@ -4986,7 +5408,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				`,
 				],
 			);
-			const row = updated[0];
+			const [row] = updated;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -5007,7 +5429,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			organizationId: input.organizationId,
 			planId: input.planId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound(
 				"Improvement plan not found",
@@ -5024,14 +5448,18 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const extensionCheck = assertImprovementPlanExtension({
 			currentDueDate: existing.data.dueDate,
 			nextDueDate: input.dueDate,
 			extensionReason: input.extensionReason,
 		});
-		if (!extensionCheck.ok) return extensionCheck;
+		if (!extensionCheck.ok) {
+			return extensionCheck;
+		}
 
 		const nextDueDate = input.dueDate ?? existing.data.dueDate;
 		const extending = nextDueDate > existing.data.dueDate;
@@ -5039,7 +5467,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			organizationId: input.organizationId,
 			planId: input.planId,
 		});
-		if (!existingCheckpoints.ok) return existingCheckpoints;
+		if (!existingCheckpoints.ok) {
+			return existingCheckpoints;
+		}
 		if (extending) {
 			const milestoneValidation = assertImprovementPlanMilestones({
 				planDueDate: nextDueDate,
@@ -5050,25 +5480,27 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					{ dueDate: nextDueDate },
 				],
 			});
-			if (!milestoneValidation.ok) return milestoneValidation;
+			if (!milestoneValidation.ok) {
+				return milestoneValidation;
+			}
 		}
 
 		const performanceGap =
-			input.performanceGap !== undefined
-				? input.performanceGap
-				: existing.data.performanceGap;
+			input.performanceGap === undefined
+				? existing.data.performanceGap
+				: input.performanceGap;
 		const expectedOutcome =
-			input.expectedOutcome !== undefined
-				? input.expectedOutcome
-				: existing.data.expectedOutcome;
+			input.expectedOutcome === undefined
+				? existing.data.expectedOutcome
+				: input.expectedOutcome;
 		const measurableActions =
-			input.measurableActions !== undefined
-				? input.measurableActions
-				: existing.data.measurableActions;
+			input.measurableActions === undefined
+				? existing.data.measurableActions
+				: input.measurableActions;
 		const supportResources =
-			input.supportResources !== undefined
-				? input.supportResources
-				: existing.data.supportResources;
+			input.supportResources === undefined
+				? existing.data.supportResources
+				: input.supportResources;
 		const lastExtensionReason = extending
 			? (input.extensionReason ?? null)
 			: existing.data.lastExtensionReason;
@@ -5139,7 +5571,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				}
 				return statements;
 			});
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -5157,7 +5589,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			organizationId: input.organizationId,
 			planId: input.planId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound(
 				"Improvement plan not found",
@@ -5168,20 +5602,28 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const transition = assertImprovementPlanStatusTransition(
 			existing.data.status,
 			"completed",
 		);
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 
 		const checkpoints = await listImprovementPlanCheckpointsForPlan({
 			organizationId: input.organizationId,
 			planId: input.planId,
 		});
-		if (!checkpoints.ok) return checkpoints;
+		if (!checkpoints.ok) {
+			return checkpoints;
+		}
 		const pendingCheck = assertNoPendingCheckpoints(checkpoints.data);
-		if (!pendingCheck.ok) return pendingCheck;
+		if (!pendingCheck.ok) {
+			return pendingCheck;
+		}
 
 		const plan = existing.data;
 		const nextVersion = input.expectedVersion + 1;
@@ -5238,7 +5680,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					SELECT mutated.* FROM mutated, audited, outboxed
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -5259,7 +5701,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			organizationId: input.organizationId,
 			planId: input.planId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound(
 				"Improvement plan not found",
@@ -5270,20 +5714,28 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const transition = assertImprovementPlanStatusTransition(
 			existing.data.status,
 			"unsuccessful",
 		);
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 
 		const checkpoints = await listImprovementPlanCheckpointsForPlan({
 			organizationId: input.organizationId,
 			planId: input.planId,
 		});
-		if (!checkpoints.ok) return checkpoints;
+		if (!checkpoints.ok) {
+			return checkpoints;
+		}
 		const pendingCheck = assertNoPendingCheckpoints(checkpoints.data);
-		if (!pendingCheck.ok) return pendingCheck;
+		if (!pendingCheck.ok) {
+			return pendingCheck;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -5320,7 +5772,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					SELECT mutated.* FROM mutated, audited
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -5337,7 +5789,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 	},
 
 	async cancelImprovementPlan(input, _ports, meta) {
-		return mutatePlanStatus(this, input, "cancelled", meta);
+		return await mutatePlanStatus(this, input, "cancelled", meta);
 	},
 
 	async listActiveImprovementPlans(input) {
@@ -5358,7 +5810,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			const plans: PerformanceImprovementPlan[] = [];
 			for (const row of paged) {
 				const mapped = mapPlan(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				plans.push(mapped.data);
 			}
 			return ok({
@@ -5380,7 +5834,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			organizationId: input.organizationId,
 			planId: input.planId,
 		});
-		if (!plan.ok) return plan;
+		if (!plan.ok) {
+			return plan;
+		}
 		if (plan.data === null) {
 			return notFound(
 				"Improvement plan not found",
@@ -5388,7 +5844,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			);
 		}
 		const checkpoints = await listImprovementPlanCheckpointsForPlan(input);
-		if (!checkpoints.ok) return checkpoints;
+		if (!checkpoints.ok) {
+			return checkpoints;
+		}
 		return ok({
 			checkpoints: checkpoints.data,
 			totalCount: checkpoints.data.length,
@@ -5408,64 +5866,80 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				)
 				.orderBy(desc(hrPerformanceReview.createdAt));
 
-			const entries = [];
-			for (const reviewRow of reviewRows) {
-				const reviewMapped = mapReview(reviewRow);
-				if (!reviewMapped.ok) return reviewMapped;
+			const entries: EmployeePerformanceHistoryEntry[] = [];
+			const sequentialOutcome2 = await runSequential(
+				reviewRows,
+				async (reviewRow) => {
+					const reviewMapped = mapReview(reviewRow);
+					if (!reviewMapped.ok) {
+						return sequentialReturn(reviewMapped);
+					}
 
-				const detailResult = await this.getPerformanceReviewById({
-					organizationId: input.organizationId,
-					reviewId: reviewMapped.data.id,
-					includeConfidential: input.includeConfidential,
-				});
-				if (!detailResult.ok) return detailResult;
-				if (detailResult.data === null) continue;
+					const detailResult = await this.getPerformanceReviewById({
+						organizationId: input.organizationId,
+						reviewId: reviewMapped.data.id,
+						includeConfidential: input.includeConfidential,
+					});
+					if (!detailResult.ok) {
+						return sequentialReturn(detailResult);
+					}
+					if (detailResult.data === null) {
+						return sequentialContinue();
+					}
 
-				const goalRows = await db
-					.select()
-					.from(hrPerformanceGoal)
-					.where(
-						and(
-							eq(hrPerformanceGoal.organizationId, input.organizationId),
-							eq(hrPerformanceGoal.employeeId, input.employeeId),
-							eq(hrPerformanceGoal.cycleId, reviewMapped.data.cycleId),
-						),
-					);
-				const goals: PerformanceGoal[] = [];
-				for (const g of goalRows) {
-					const mapped = mapGoal(g);
-					if (!mapped.ok) return mapped;
-					goals.push(mapped.data);
-				}
-
-				const planRows = await db
-					.select()
-					.from(hrPerformanceImprovementPlan)
-					.where(
-						and(
-							eq(
-								hrPerformanceImprovementPlan.organizationId,
-								input.organizationId,
+					const goalRows = await db
+						.select()
+						.from(hrPerformanceGoal)
+						.where(
+							and(
+								eq(hrPerformanceGoal.organizationId, input.organizationId),
+								eq(hrPerformanceGoal.employeeId, input.employeeId),
+								eq(hrPerformanceGoal.cycleId, reviewMapped.data.cycleId),
 							),
-							eq(hrPerformanceImprovementPlan.reviewId, reviewMapped.data.id),
-						),
-					);
-				const improvementPlans: PerformanceImprovementPlan[] = [];
-				for (const p of planRows) {
-					const mapped = mapPlan(p);
-					if (!mapped.ok) return mapped;
-					improvementPlans.push(mapped.data);
-				}
+						);
+					const goals: PerformanceGoal[] = [];
+					for (const g of goalRows) {
+						const mapped = mapGoal(g);
+						if (!mapped.ok) {
+							return sequentialReturn(mapped);
+						}
+						goals.push(mapped.data);
+					}
 
-				entries.push({
-					review: detailResult.data.review,
-					overallRating: input.includeConfidential
-						? reviewMapped.data.overallRating
-						: null,
-					assessments: detailResult.data.assessments,
-					goals,
-					improvementPlans,
-				});
+					const planRows = await db
+						.select()
+						.from(hrPerformanceImprovementPlan)
+						.where(
+							and(
+								eq(
+									hrPerformanceImprovementPlan.organizationId,
+									input.organizationId,
+								),
+								eq(hrPerformanceImprovementPlan.reviewId, reviewMapped.data.id),
+							),
+						);
+					const improvementPlans: PerformanceImprovementPlan[] = [];
+					for (const p of planRows) {
+						const mapped = mapPlan(p);
+						if (!mapped.ok) {
+							return sequentialReturn(mapped);
+						}
+						improvementPlans.push(mapped.data);
+					}
+
+					entries.push({
+						review: detailResult.data.review,
+						overallRating: input.includeConfidential
+							? reviewMapped.data.overallRating
+							: null,
+						assessments: detailResult.data.assessments,
+						goals,
+						improvementPlans,
+					});
+				},
+			);
+			if (sequentialOutcome2.kind === "return") {
+				return sequentialOutcome2.value;
 			}
 
 			return ok({

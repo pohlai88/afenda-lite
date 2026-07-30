@@ -29,12 +29,12 @@ function WorkbenchSection({
 	children,
 }: WorkbenchSectionProps) {
 	return (
-		<section className="grid gap-4" aria-labelledby={id}>
+		<section aria-labelledby={id} className="grid gap-4">
 			<div className="grid gap-1">
-				<h2 className="text-base font-semibold tracking-tight" id={id}>
+				<h2 className="font-semibold text-base tracking-tight" id={id}>
 					{title}
 				</h2>
-				<p className="max-w-5xl text-sm leading-5 text-foreground-secondary">
+				<p className="max-w-5xl text-foreground-secondary text-sm leading-5">
 					{description}
 				</p>
 			</div>
@@ -80,16 +80,16 @@ export const Overview: Story = {
 						<div className="flex flex-wrap items-center gap-2">
 							<Badge variant="outline">Accounts receivable</Badge>
 							<StatusBadge
+								label="Evidence incomplete"
 								size="sm"
 								status="warning"
-								label="Evidence incomplete"
 							/>
 						</div>
 						<div className="grid gap-1">
-							<h1 className="text-2xl font-semibold tracking-tight">
+							<h1 className="font-semibold text-2xl tracking-tight">
 								Invoice INV-1042 · machine identifiers
 							</h1>
-							<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+							<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 								Short monospace values stay distinguishable for operators and
 								auditors. Feature code owns redaction, copy actions, and whether
 								a value may be shown.
@@ -98,25 +98,25 @@ export const Overview: Story = {
 					</div>
 					<dl className="grid grid-cols-2 gap-x-8 gap-y-3 rounded-lg border bg-card p-4">
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Subject
 							</dt>
 							<dd className="text-sm">Machine identifiers</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Scope
 							</dt>
 							<dd className="text-sm">Exact characters</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Ownership
 							</dt>
 							<dd className="text-sm">Code formatting only</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Lifecycle
 							</dt>
 							<dd className="text-sm">Read, compare, copy</dd>
@@ -125,17 +125,17 @@ export const Overview: Story = {
 				</header>
 
 				<section
-					className="grid gap-3"
 					aria-labelledby="code-identifiers-title"
+					className="grid gap-3"
 				>
 					<div className="grid gap-1">
 						<h2
-							className="text-base font-semibold tracking-tight text-foreground"
+							className="font-semibold text-base text-foreground tracking-tight"
 							id="code-identifiers-title"
 						>
 							Record identifiers
 						</h2>
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							Exact invoice, organization, and correlation IDs with surrounding
 							labels.
 						</p>
@@ -150,7 +150,7 @@ export const Overview: Story = {
 						<CardContent>
 							<dl className="grid gap-4 sm:grid-cols-2">
 								<div className="grid gap-1">
-									<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+									<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 										Invoice number
 									</dt>
 									<dd>
@@ -158,7 +158,7 @@ export const Overview: Story = {
 									</dd>
 								</div>
 								<div className="grid gap-1">
-									<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+									<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 										Organization
 									</dt>
 									<dd>
@@ -166,7 +166,7 @@ export const Overview: Story = {
 									</dd>
 								</div>
 								<div className="grid gap-1">
-									<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+									<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 										Correlation
 									</dt>
 									<dd>
@@ -174,7 +174,7 @@ export const Overview: Story = {
 									</dd>
 								</div>
 								<div className="grid gap-1">
-									<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+									<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 										Supplier code
 									</dt>
 									<dd>
@@ -186,26 +186,26 @@ export const Overview: Story = {
 					</Card>
 				</section>
 
-				<section className="grid gap-3" aria-labelledby="code-error-title">
+				<section aria-labelledby="code-error-title" className="grid gap-3">
 					<div className="grid gap-1">
 						<h2
-							className="text-base font-semibold tracking-tight text-foreground"
+							className="font-semibold text-base text-foreground tracking-tight"
 							id="code-error-title"
 						>
 							Confirmed failure code
 						</h2>
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							Destructive colour reinforces a known validation code — prose
 							still names the condition.
 						</p>
 					</div>
 					<Card className="shadow-none">
 						<CardContent className="grid gap-2 pt-6">
-							<p className="text-sm text-foreground">
+							<p className="text-foreground text-sm">
 								Posting blocked because the tax identifier failed format
 								validation.
 							</p>
-							<p className="text-sm text-foreground-secondary">
+							<p className="text-foreground-secondary text-sm">
 								Error code{" "}
 								<Code className="text-destructive">VALIDATION_ERROR</Code>
 							</p>
@@ -213,19 +213,19 @@ export const Overview: Story = {
 					</Card>
 				</section>
 
-				<section className="grid gap-3" aria-labelledby="code-command-title">
+				<section aria-labelledby="code-command-title" className="grid gap-3">
 					<div className="grid gap-1">
 						<h2
-							className="text-base font-semibold tracking-tight text-foreground"
+							className="font-semibold text-base text-foreground tracking-tight"
 							id="code-command-title"
 						>
 							Quiet operator command
 						</h2>
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							Short commands stay exact without becoming a multi-line log.
 						</p>
 					</div>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						Re-run Storybook coverage with <Code>pnpm check:storybook</Code>{" "}
 						after identifier contract changes.
 					</p>
@@ -247,21 +247,21 @@ export const Usage: Story = {
 	},
 	render: () => (
 		<WorkbenchSection
+			description="Code keeps character identity exact while the surrounding prose carries the business meaning."
 			id="code-semantic-usage-title"
 			title="Exact text and surrounding meaning"
-			description="Code keeps character identity exact while the surrounding prose carries the business meaning."
 		>
 			<div className="grid max-w-5xl gap-6">
 				<StorySection title="Identifiers in labelled fields">
 					<dl className="grid gap-3">
 						<div className="grid gap-1">
-							<dt className="text-sm font-medium">Invoice</dt>
+							<dt className="font-medium text-sm">Invoice</dt>
 							<dd>
 								<Code>INV-1042</Code>
 							</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-sm font-medium">Organization</dt>
+							<dt className="font-medium text-sm">Organization</dt>
 							<dd>
 								<Code>org-fragrant-lake-90358173</Code>
 							</dd>
@@ -270,7 +270,7 @@ export const Usage: Story = {
 				</StorySection>
 
 				<StorySection title="Inline command and error code">
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						Run <Code>pnpm check:storybook</Code>. On failure inspect{" "}
 						<Code className="text-destructive">VALIDATION_ERROR</Code>.
 					</p>
@@ -293,10 +293,10 @@ export const AdaptiveLayout: Story = {
 	render: () => (
 		<div className="grid max-w-4xl gap-6">
 			<StorySection title="Narrow metadata region">
-				<div className="w-full max-w-xs rounded-lg border border-dashed border-border p-4">
+				<div className="w-full max-w-xs rounded-lg border border-border border-dashed p-4">
 					<dl className="grid gap-4">
 						<div className="grid min-w-0 gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Organization
 							</dt>
 							<dd className="min-w-0 overflow-x-auto pb-1">
@@ -304,7 +304,7 @@ export const AdaptiveLayout: Story = {
 							</dd>
 						</div>
 						<div className="grid min-w-0 gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Correlation
 							</dt>
 							<dd className="min-w-0 overflow-x-auto pb-1">
@@ -316,7 +316,7 @@ export const AdaptiveLayout: Story = {
 			</StorySection>
 
 			<StorySection title="Inline operational sentence">
-				<p className="max-w-xl text-sm leading-6 text-foreground-secondary">
+				<p className="max-w-xl text-foreground-secondary text-sm leading-6">
 					Retry journal <Code>JE-2026-07-8841</Code> after restoring ledger
 					account <Code>4000-AR</Code>. The surrounding sentence carries the
 					meaning; Code preserves the exact operands.
@@ -338,15 +338,15 @@ export const StatesAndAccessibility: Story = {
 	},
 	render: () => (
 		<div className="grid max-w-5xl gap-4">
-			<p className="text-sm text-foreground">
+			<p className="text-foreground text-sm">
 				Default treatment: <Code>INV-1042</Code>
 			</p>
-			<p className="text-sm text-foreground">
+			<p className="text-foreground text-sm">
 				Confirmed error code:{" "}
 				<Code className="text-destructive">VALIDATION_ERROR</Code> — tax
 				identifier format failed.
 			</p>
-			<p className="text-sm text-foreground-secondary">
+			<p className="text-foreground-secondary text-sm">
 				Correlation for support: <Code>corr-7f2a9c1e</Code>
 			</p>
 		</div>
@@ -370,7 +370,7 @@ export const Composition: Story = {
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="outline">Invoice</Badge>
 						<Code>INV-1039</Code>
-						<StatusBadge size="sm" status="error" label="Posting failed" />
+						<StatusBadge label="Posting failed" size="sm" status="error" />
 					</div>
 					<CardTitle>Target ledger account inactive</CardTitle>
 					<CardDescription>
@@ -378,7 +378,7 @@ export const Composition: Story = {
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						Restore account <Code>4000-AR</Code> before retrying the July batch.
 					</p>
 				</CardContent>
@@ -400,13 +400,13 @@ export const DoAndDoNot: Story = {
 	render: () => (
 		<div className="grid max-w-5xl gap-6 sm:grid-cols-2">
 			<StorySection title="Do: keep exact short machine values">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Invoice <Code>INV-1042</Code> for supplier <Code>SUP-004821</Code>
 				</p>
 			</StorySection>
 
 			<StorySection title="Do not: use Code as body copy">
-				<p className="text-sm text-foreground-tertiary">
+				<p className="text-foreground-tertiary text-sm">
 					<Code>
 						The invoice remains outside the receivables ledger until the account
 						mapping is restored and the operator retries posting.
@@ -415,26 +415,26 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do: redact sensitive identifiers">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Bank account <Code>•••• 4218</Code>
 				</p>
 			</StorySection>
 
 			<StorySection title="Do not: expose secrets or tokens">
-				<div className="rounded-md border border-dashed p-4 text-sm text-foreground-tertiary">
+				<div className="rounded-md border border-dashed p-4 text-foreground-tertiary text-sm">
 					Never render API keys, session tokens, or full account numbers inside
 					Code.
 				</div>
 			</StorySection>
 
 			<StorySection title="Do: preserve significant characters">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Organization <Code>org-fragrant-lake-90358173</Code>
 				</p>
 			</StorySection>
 
 			<StorySection title="Do not: silently truncate IDs">
-				<div className="rounded-md border border-dashed p-4 text-sm text-foreground-tertiary">
+				<div className="rounded-md border border-dashed p-4 text-foreground-tertiary text-sm">
 					Truncating to <Code>org-frag…</Code> can hide the digits operators use
 					to match support tickets.
 				</div>

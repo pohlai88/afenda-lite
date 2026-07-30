@@ -20,9 +20,9 @@ import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 
 const initialState: CreateItemTemplateActionState = null;
 
-type CreateItemTemplateFormProps = {
+interface CreateItemTemplateFormProps {
 	canManage: boolean;
-};
+}
 
 /** Draft item template create — attributes added while draft. */
 export function CreateItemTemplateForm({
@@ -71,22 +71,22 @@ export function CreateItemTemplateForm({
 				<FormError>{state.message}</FormError>
 			) : null}
 			<FormField
+				error={codeError}
+				fieldId="item-template-code"
 				label="Code"
 				required
-				fieldId="item-template-code"
-				error={codeError}
 			>
-				<Input name="code" required autoComplete="off" disabled={pending} />
+				<Input autoComplete="off" disabled={pending} name="code" required />
 			</FormField>
 			<FormField
+				error={nameError}
+				fieldId="item-template-name"
 				label="Name"
 				required
-				fieldId="item-template-name"
-				error={nameError}
 			>
-				<Input name="name" required autoComplete="off" disabled={pending} />
+				<Input autoComplete="off" disabled={pending} name="name" required />
 			</FormField>
-			<Button type="submit" disabled={pending}>
+			<Button disabled={pending} type="submit">
 				{pending ? (
 					<>
 						<Spinner className="size-4" /> Creating…

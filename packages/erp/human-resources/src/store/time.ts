@@ -80,31 +80,31 @@ import type {
  * orchestration belongs in application commands.
  */
 
-export type TimesheetGenerationDeps = {
+export interface TimesheetGenerationDeps {
 	approvedLeave: ApprovedLeaveQueryPort;
 	workCalendar: WorkCalendarPort;
-};
+}
 
 export type AttendanceImportStoreInput = AttendanceImportBatchInput & {
 	sourceRejectedRows?: readonly AttendanceImportRejectedRow[] | undefined;
 	sourceRowIndexes?: readonly number[] | undefined;
 };
 
-export type TimePolicyCreateRecord = {
-	organizationId: string;
-	code: string;
-	name: string;
-	effectiveFrom: string;
-	effectiveTo: string | null;
-	minimumRestMinutes: number;
+export interface TimePolicyCreateRecord {
+	approvalSteps: readonly TimeApprovalAuthority[];
 	automaticBreakAfterMinutes: number | null;
 	automaticBreakMinutes: number;
-	approvalSteps: readonly TimeApprovalAuthority[];
-	idempotencyKey: string;
-	createRequestFingerprint: string;
-	createdBy: string;
+	code: string;
 	correlationId: string;
-};
+	createdBy: string;
+	createRequestFingerprint: string;
+	effectiveFrom: string;
+	effectiveTo: string | null;
+	idempotencyKey: string;
+	minimumRestMinutes: number;
+	name: string;
+	organizationId: string;
+}
 
 export type {
 	AttendanceEventRecordInput,
@@ -123,334 +123,249 @@ export type {
 	TimesheetCreateRecord,
 } from "../types";
 
-export type WorkCalendarCreateRecord = {
-	organizationId: string;
-	code: string;
-	name: string;
-	timezone: string;
+export interface WorkCalendarCreateRecord {
 	calendarVersion: string;
-	workWeek: readonly WorkWeekDayPatternJson[];
-	standardHoursPerDay: string;
+	code: string;
+	correlationId: string;
+	createdBy: string;
+	createRequestFingerprint: string;
 	effectiveFrom: string;
 	effectiveTo: string | null;
 	idempotencyKey: string;
-	createRequestFingerprint: string;
-	createdBy: string;
-	correlationId: string;
-};
-
-export type WorkCalendarHolidayCreateRecord = {
+	name: string;
 	organizationId: string;
+	standardHoursPerDay: string;
+	timezone: string;
+	workWeek: readonly WorkWeekDayPatternJson[];
+}
+
+export interface WorkCalendarHolidayCreateRecord {
 	calendarId: HumanResourcesWorkCalendarId;
+	correlationId: string;
+	createdBy: string;
+	expectedMinutes: number | null;
 	holidayDate: string;
+	isWorkingDay: boolean;
+	jurisdiction: string | null;
 	label: string | null;
 	locationCode: string | null;
-	jurisdiction: string | null;
-	overrideKind: WorkCalendarDateOverrideKind;
-	isWorkingDay: boolean;
-	expectedMinutes: number | null;
-	createdBy: string;
-	correlationId: string;
-};
-
-export type EmploymentCalendarAssignRecord = {
 	organizationId: string;
+	overrideKind: WorkCalendarDateOverrideKind;
+}
+
+export interface EmploymentCalendarAssignRecord {
+	calendarId: HumanResourcesWorkCalendarId;
+	correlationId: string;
+	createdBy: string;
+	effectiveFrom: string;
+	effectiveTo: string | null;
 	employeeId: HumanResourcesEmployeeId;
 	employmentId: HumanResourcesEmploymentId;
-	calendarId: HumanResourcesWorkCalendarId;
-	effectiveFrom: string;
-	effectiveTo: string | null;
-	locationCode: string | null;
 	jurisdiction: string | null;
-	createdBy: string;
-	correlationId: string;
-};
-
-export type WorkCalendarScopeAssignRecord = {
+	locationCode: string | null;
 	organizationId: string;
-	scopeType: import("../types").WorkCalendarScopeType;
-	scopeKey: string;
+}
+
+export interface WorkCalendarScopeAssignRecord {
 	calendarId: HumanResourcesWorkCalendarId;
+	correlationId: string;
+	createdBy: string;
 	effectiveFrom: string;
 	effectiveTo: string | null;
-	createdBy: string;
-	correlationId: string;
-};
-
-export type ShiftBreakCreateRecord = {
 	organizationId: string;
-	shiftId: HumanResourcesShiftId;
+	scopeKey: string;
+	scopeType: import("../types").WorkCalendarScopeType;
+}
+
+export interface ShiftBreakCreateRecord {
 	breakOrder: number;
-	startOffsetMinutes: number | null;
+	correlationId: string;
 	durationMinutes: number;
 	isPaid: boolean;
 	label: string | null;
-	correlationId: string;
-};
-
-export type ShiftAssignmentCreateRecord = {
 	organizationId: string;
+	shiftId: HumanResourcesShiftId;
+	startOffsetMinutes: number | null;
+}
+
+export interface ShiftAssignmentCreateRecord {
+	assignmentSource: string;
+	correlationId: string;
+	createdBy: string;
+	createRequestFingerprint: string;
 	employeeId: HumanResourcesEmployeeId;
 	employmentId: HumanResourcesEmploymentId | null;
-	shiftId: HumanResourcesShiftId;
-	scheduledDate: string;
-	startsAt: Date;
 	endsAt: Date;
+	idempotencyKey: string;
 	locationKey: string | null;
-	timezone: string;
-	assignmentSource: string;
+	organizationId: string;
+	scheduledDate: string;
 	segments: readonly {
 		segmentOrder: number;
 		startsAt: Date;
 		endsAt: Date;
 	}[];
-	idempotencyKey: string;
-	createRequestFingerprint: string;
-	createdBy: string;
-	correlationId: string;
-};
-
-export type AttendanceExceptionCreateRecord = {
-	organizationId: string;
-	employeeId: HumanResourcesEmployeeId;
-	sessionId: HumanResourcesAttendanceSessionId | null;
-	eventId: HumanResourcesAttendanceEventId | null;
-	shiftAssignmentId: HumanResourcesShiftAssignmentId | null;
-	exceptionType: AttendanceExceptionType;
-	severity: "info" | "warning" | "critical";
-	remarks: string | null;
-	createdBy: string;
-	correlationId: string;
-};
-
-export type TimesheetEntryCreateRecord = {
-	organizationId: string;
-	timesheetId: HumanResourcesTimesheetId;
-	employeeId: HumanResourcesEmployeeId;
-	workDate: string;
+	shiftId: HumanResourcesShiftId;
+	startsAt: Date;
 	timezone: string;
-	sourceType: TimesheetEntrySourceType;
-	sourceReference: string | null;
-	timeType: TimesheetEntryTimeType;
-	startedAt: Date | null;
-	endedAt: Date | null;
-	recordedMinutes: number;
-	approvedMinutes: number;
-	costCenterId: string | null;
-	projectId: string | null;
-	locationId: string | null;
-	departmentId: string | null;
-	approvalReference: string | null;
-	evidenceReference: string | null;
-	createdBy: string;
-	correlationId: string;
-};
+}
 
-export type OvertimeRequestCreateRecord = {
+export interface AttendanceExceptionCreateRecord {
+	correlationId: string;
+	createdBy: string;
+	employeeId: HumanResourcesEmployeeId;
+	eventId: HumanResourcesAttendanceEventId | null;
+	exceptionType: AttendanceExceptionType;
 	organizationId: string;
+	remarks: string | null;
+	sessionId: HumanResourcesAttendanceSessionId | null;
+	severity: "info" | "warning" | "critical";
+	shiftAssignmentId: HumanResourcesShiftAssignmentId | null;
+}
+
+export interface TimesheetEntryCreateRecord {
+	approvalReference: string | null;
+	approvedMinutes: number;
+	correlationId: string;
+	costCenterId: string | null;
+	createdBy: string;
+	departmentId: string | null;
+	employeeId: HumanResourcesEmployeeId;
+	endedAt: Date | null;
+	evidenceReference: string | null;
+	locationId: string | null;
+	organizationId: string;
+	projectId: string | null;
+	recordedMinutes: number;
+	sourceReference: string | null;
+	sourceType: TimesheetEntrySourceType;
+	startedAt: Date | null;
+	timesheetId: HumanResourcesTimesheetId;
+	timeType: TimesheetEntryTimeType;
+	timezone: string;
+	workDate: string;
+}
+
+export interface OvertimeRequestCreateRecord {
+	correlationId: string;
+	createdBy: string;
+	createRequestFingerprint: string;
 	employeeId: HumanResourcesEmployeeId;
 	employmentId: HumanResourcesEmploymentId | null;
-	overtimeType: OvertimeType;
-	requestedStartsAt: Date;
-	requestedEndsAt: Date;
-	requestedMinutes: number;
-	reason: string;
 	evidenceReference: string | null;
 	idempotencyKey: string;
-	createRequestFingerprint: string;
-	createdBy: string;
-	correlationId: string;
-};
+	organizationId: string;
+	overtimeType: OvertimeType;
+	reason: string;
+	requestedEndsAt: Date;
+	requestedMinutes: number;
+	requestedStartsAt: Date;
+}
 
-export type HumanResourcesTimeStore = {
-	// Work calendar
-	findWorkCalendarByIdempotencyKey(input: {
-		organizationId: string;
-		idempotencyKey: string;
-	}): Promise<Result<IdempotentWorkCalendarRecord | null>>;
-
-	createWorkCalendar(
-		input: WorkCalendarCreateRecord,
-		ports: MutationPorts,
-	): Promise<Result<WorkCalendar>>;
-
-	supersedeWorkCalendar(
-		input: WorkCalendarCreateRecord & {
-			calendarId: HumanResourcesWorkCalendarId;
-			expectedVersion: number;
-			predecessorEffectiveTo: string;
-		},
-		ports: MutationPorts,
-	): Promise<Result<{ superseded: WorkCalendar; successor: WorkCalendar }>>;
-
-	updateWorkCalendar(
+export interface HumanResourcesTimeStore {
+	activateShift: (
 		input: {
 			organizationId: string;
-			calendarId: HumanResourcesWorkCalendarId;
-			name?: string | undefined;
-			timezone?: string | undefined;
-			calendarVersion?: string | undefined;
-			workWeek?: readonly WorkWeekDayPatternJson[] | undefined;
-			standardHoursPerDay?: string | undefined;
-			effectiveTo?: string | null | undefined;
+			shiftId: HumanResourcesShiftId;
 			expectedVersion: number;
 			actorUserId: string;
 			correlationId: string;
 		},
 		ports: MutationPorts,
-	): Promise<Result<WorkCalendar>>;
+	) => Promise<Result<Shift>>;
 
-	archiveWorkCalendar(
+	activateTimePolicy: (
 		input: {
 			organizationId: string;
-			calendarId: HumanResourcesWorkCalendarId;
+			policyId: HumanResourcesTimePolicyId;
 			expectedVersion: number;
 			actorUserId: string;
 			correlationId: string;
 		},
 		ports: MutationPorts,
-	): Promise<Result<WorkCalendar>>;
+	) => Promise<Result<TimePolicy>>;
 
-	getWorkCalendar(input: {
-		organizationId: string;
-		calendarId: HumanResourcesWorkCalendarId;
-	}): Promise<Result<WorkCalendar | null>>;
+	addShiftBreak: (
+		input: ShiftBreakCreateRecord,
+		ports: MutationPorts,
+	) => Promise<Result<ShiftBreak>>;
 
-	listWorkCalendars(input: {
-		organizationId: string;
-		status?: "active" | "superseded" | "archived" | undefined;
-		page?: number | undefined;
-		pageSize?: number | undefined;
-	}): Promise<Result<WorkCalendar[]>>;
+	addTimesheetEntry: (
+		input: TimesheetEntryCreateRecord,
+		ports: MutationPorts,
+	) => Promise<Result<TimesheetEntry>>;
 
-	addWorkCalendarHoliday(
+	addWorkCalendarHoliday: (
 		input: WorkCalendarHolidayCreateRecord,
 		ports: MutationPorts,
-	): Promise<Result<WorkCalendarHolidayRecord>>;
+	) => Promise<Result<WorkCalendarHolidayRecord>>;
 
-	removeWorkCalendarHoliday(
+	approveAttendanceBreakWaiver: (
 		input: {
 			organizationId: string;
-			holidayId: HumanResourcesWorkCalendarHolidayId;
+			sessionId: HumanResourcesAttendanceSessionId;
+			policyId: HumanResourcesTimePolicyId;
+			authorityAssignmentId: HumanResourcesTimeApprovalAuthorityAssignmentId;
+			authority: TimeApprovalAuthority;
+			reason: string;
+			evidenceReference: string;
+			expectedVersion: number;
 			actorUserId: string;
 			correlationId: string;
 		},
 		ports: MutationPorts,
-	): Promise<Result<void>>;
+	) => Promise<Result<AttendanceBreakWaiverDecision>>;
 
-	listWorkCalendarHolidays(input: {
-		organizationId: string;
-		calendarId: HumanResourcesWorkCalendarId;
-		fromDate?: string | undefined;
-		toDate?: string | undefined;
-	}): Promise<Result<WorkCalendarHolidayRecord[]>>;
+	approveOvertimeRequest: (
+		input: {
+			organizationId: string;
+			requestId: HumanResourcesOvertimeRequestId;
+			authority: TimeApprovalAuthority;
+			approvedMaximumMinutes: number;
+			comment?: string | null | undefined;
+			expectedVersion: number;
+			actorUserId: string;
+			correlationId: string;
+		},
+		ports: MutationPorts,
+	) => Promise<Result<OvertimeRequest>>;
 
-	assignEmploymentCalendar(
+	approveTimesheet: (
+		input: {
+			organizationId: string;
+			timesheetId: HumanResourcesTimesheetId;
+			approverNotes?: string | null | undefined;
+			authority: TimeApprovalAuthority;
+			authorityAssignmentId: HumanResourcesTimeApprovalAuthorityAssignmentId;
+			expectedVersion: number;
+			actorUserId: string;
+			correlationId: string;
+		},
+		ports: MutationPorts,
+	) => Promise<Result<Timesheet>>;
+
+	archiveWorkCalendar: (
+		input: {
+			organizationId: string;
+			calendarId: HumanResourcesWorkCalendarId;
+			expectedVersion: number;
+			actorUserId: string;
+			correlationId: string;
+		},
+		ports: MutationPorts,
+	) => Promise<Result<WorkCalendar>>;
+
+	assignEmploymentCalendar: (
 		input: EmploymentCalendarAssignRecord,
 		ports: MutationPorts,
-	): Promise<Result<EmploymentCalendarAssignment>>;
+	) => Promise<Result<EmploymentCalendarAssignment>>;
 
-	endEmploymentCalendarAssignment(
-		input: {
-			organizationId: string;
-			assignmentId: HumanResourcesEmploymentCalendarAssignmentId;
-			effectiveTo: string;
-			expectedVersion: number;
-			actorUserId: string;
-			correlationId: string;
-		},
+	assignShift: (
+		input: ShiftAssignmentCreateRecord,
 		ports: MutationPorts,
-	): Promise<Result<EmploymentCalendarAssignment>>;
+	) => Promise<Result<ShiftAssignment>>;
 
-	resolveEmploymentCalendar(input: {
-		organizationId: string;
-		employeeId: HumanResourcesEmployeeId;
-		employmentId: HumanResourcesEmploymentId;
-		asOf: string;
-	}): Promise<Result<EmploymentCalendarAssignment | null>>;
-
-	listWorkCalendarScopeAssignments(input: {
-		organizationId: string;
-		asOf: string;
-	}): Promise<Result<WorkCalendarScopeAssignment[]>>;
-
-	assignWorkCalendarScope(
-		input: WorkCalendarScopeAssignRecord,
-		ports: MutationPorts,
-	): Promise<Result<WorkCalendarScopeAssignment>>;
-
-	endWorkCalendarScopeAssignment(
-		input: {
-			organizationId: string;
-			assignmentId: HumanResourcesWorkCalendarScopeAssignmentId;
-			effectiveTo: string;
-			expectedVersion: number;
-			actorUserId: string;
-			correlationId: string;
-		},
-		ports: MutationPorts,
-	): Promise<Result<WorkCalendarScopeAssignment>>;
-
-	findTimePolicyByIdempotencyKey(input: {
-		organizationId: string;
-		idempotencyKey: string;
-	}): Promise<
-		Result<{
-			policy: TimePolicy;
-			createRequestFingerprint: string;
-		} | null>
-	>;
-
-	createTimePolicy(
-		input: TimePolicyCreateRecord,
-		ports: MutationPorts,
-	): Promise<Result<TimePolicy>>;
-
-	supersedeTimePolicy(
-		input: TimePolicyCreateRecord & {
-			policyId: HumanResourcesTimePolicyId;
-			expectedVersion: number;
-			predecessorEffectiveTo: string;
-		},
-		ports: MutationPorts,
-	): Promise<Result<{ superseded: TimePolicy; successor: TimePolicy }>>;
-
-	activateTimePolicy(
-		input: {
-			organizationId: string;
-			policyId: HumanResourcesTimePolicyId;
-			expectedVersion: number;
-			actorUserId: string;
-			correlationId: string;
-		},
-		ports: MutationPorts,
-	): Promise<Result<TimePolicy>>;
-
-	assignTimePolicy(
-		input: {
-			organizationId: string;
-			policyId: HumanResourcesTimePolicyId;
-			employmentId: HumanResourcesEmploymentId;
-			effectiveFrom: string;
-			effectiveTo: string | null;
-			actorUserId: string;
-			correlationId: string;
-		},
-		ports: MutationPorts,
-	): Promise<Result<TimePolicyAssignment>>;
-
-	getTimePolicy(input: {
-		organizationId: string;
-		policyId: HumanResourcesTimePolicyId;
-	}): Promise<Result<TimePolicy | null>>;
-
-	resolveTimePolicy(input: {
-		organizationId: string;
-		employmentId: HumanResourcesEmploymentId;
-		asOf: string;
-	}): Promise<Result<TimePolicy | null>>;
-
-	assignTimeApprovalAuthority(
+	assignTimeApprovalAuthority: (
 		input: {
 			organizationId: string;
 			targetActorUserId: string;
@@ -461,9 +376,146 @@ export type HumanResourcesTimeStore = {
 			correlationId: string;
 		},
 		ports: MutationPorts,
-	): Promise<Result<TimeApprovalAuthorityAssignment>>;
+	) => Promise<Result<TimeApprovalAuthorityAssignment>>;
 
-	endTimeApprovalAuthorityAssignment(
+	assignTimePolicy: (
+		input: {
+			organizationId: string;
+			policyId: HumanResourcesTimePolicyId;
+			employmentId: HumanResourcesEmploymentId;
+			effectiveFrom: string;
+			effectiveTo: string | null;
+			actorUserId: string;
+			correlationId: string;
+		},
+		ports: MutationPorts,
+	) => Promise<Result<TimePolicyAssignment>>;
+
+	assignWorkCalendarScope: (
+		input: WorkCalendarScopeAssignRecord,
+		ports: MutationPorts,
+	) => Promise<Result<WorkCalendarScopeAssignment>>;
+
+	cancelOvertimeRequest: (
+		input: {
+			organizationId: string;
+			requestId: HumanResourcesOvertimeRequestId;
+			expectedVersion: number;
+			actorUserId: string;
+			correlationId: string;
+		},
+		ports: MutationPorts,
+	) => Promise<Result<OvertimeRequest>>;
+
+	cancelShiftAssignment: (
+		input: {
+			organizationId: string;
+			assignmentId: HumanResourcesShiftAssignmentId;
+			expectedVersion: number;
+			actorUserId: string;
+			correlationId: string;
+		},
+		ports: MutationPorts,
+	) => Promise<Result<ShiftAssignment>>;
+
+	changeShiftAssignment: (
+		input: {
+			organizationId: string;
+			assignmentId: HumanResourcesShiftAssignmentId;
+			shiftId?: HumanResourcesShiftId | undefined;
+			scheduledDate?: string | undefined;
+			startsAt?: Date | undefined;
+			endsAt?: Date | undefined;
+			locationKey?: string | null | undefined;
+			timezone?: string | undefined;
+			expectedVersion: number;
+			actorUserId: string;
+			correlationId: string;
+		},
+		ports: MutationPorts,
+	) => Promise<Result<ShiftAssignment>>;
+
+	completeShiftAssignment: (
+		input: {
+			organizationId: string;
+			assignmentId: HumanResourcesShiftAssignmentId;
+			expectedVersion: number;
+			actorUserId: string;
+			correlationId: string;
+		},
+		ports: MutationPorts,
+	) => Promise<Result<ShiftAssignment>>;
+
+	correctAttendanceEvent: (
+		input: {
+			organizationId: string;
+			eventId: HumanResourcesAttendanceEventId;
+			occurredAt: Date;
+			notes?: string | null | undefined;
+			adjustmentReason: string;
+			evidenceReference?: string | null | undefined;
+			expectedVersion: number;
+			actorUserId: string;
+			correlationId: string;
+		},
+		ports: MutationPorts,
+	) => Promise<Result<AttendanceEvent>>;
+
+	// Attendance exceptions
+	createAttendanceException: (
+		input: AttendanceExceptionCreateRecord,
+		ports: MutationPorts,
+	) => Promise<Result<AttendanceException>>;
+
+	createOvertimeRequest: (
+		input: OvertimeRequestCreateRecord,
+		ports: MutationPorts,
+	) => Promise<Result<OvertimeRequest>>;
+
+	createShift: (
+		input: ShiftCreateRecord,
+		ports: MutationPorts,
+	) => Promise<Result<Shift>>;
+
+	createTimePolicy: (
+		input: TimePolicyCreateRecord,
+		ports: MutationPorts,
+	) => Promise<Result<TimePolicy>>;
+
+	createTimesheet: (
+		input: TimesheetCreateRecord,
+		ports: MutationPorts,
+	) => Promise<Result<Timesheet>>;
+
+	createWorkCalendar: (
+		input: WorkCalendarCreateRecord,
+		ports: MutationPorts,
+	) => Promise<Result<WorkCalendar>>;
+
+	deactivateShift: (
+		input: {
+			organizationId: string;
+			shiftId: HumanResourcesShiftId;
+			expectedVersion: number;
+			actorUserId: string;
+			correlationId: string;
+		},
+		ports: MutationPorts,
+	) => Promise<Result<Shift>>;
+
+	endEmploymentCalendarAssignment: (
+		input: {
+			organizationId: string;
+			assignmentId: HumanResourcesEmploymentCalendarAssignmentId;
+			effectiveTo: string;
+			expectedVersion: number;
+			actorUserId: string;
+			correlationId: string;
+		},
+		ports: MutationPorts,
+	) => Promise<Result<EmploymentCalendarAssignment>>;
+
+	endTimeApprovalAuthorityAssignment: (
 		input: {
 			organizationId: string;
 			assignmentId: HumanResourcesTimeApprovalAuthorityAssignmentId;
@@ -473,36 +525,564 @@ export type HumanResourcesTimeStore = {
 			correlationId: string;
 		},
 		ports: MutationPorts,
-	): Promise<Result<TimeApprovalAuthorityAssignment>>;
+	) => Promise<Result<TimeApprovalAuthorityAssignment>>;
 
-	resolveTimeApprovalAuthority(input: {
+	endWorkCalendarScopeAssignment: (
+		input: {
+			organizationId: string;
+			assignmentId: HumanResourcesWorkCalendarScopeAssignmentId;
+			effectiveTo: string;
+			expectedVersion: number;
+			actorUserId: string;
+			correlationId: string;
+		},
+		ports: MutationPorts,
+	) => Promise<Result<WorkCalendarScopeAssignment>>;
+
+	excuseAttendanceException: (
+		input: {
+			organizationId: string;
+			exceptionId: HumanResourcesAttendanceExceptionId;
+			resolution: string;
+			evidenceReference?: string | null | undefined;
+			expectedVersion: number;
+			actorUserId: string;
+			correlationId: string;
+		},
+		ports: MutationPorts,
+	) => Promise<Result<AttendanceException>>;
+
+	// Attendance events
+	findAttendanceEventByIdempotencyKey: (input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}) => Promise<Result<IdempotentAttendanceEventRecord | null>>;
+
+	findAttendanceEventBySourceReference: (input: {
+		organizationId: string;
+		source: AttendanceEventSource;
+		sourceReference: string;
+	}) => Promise<Result<IdempotentAttendanceEventRecord | null>>;
+
+	findAttendanceImportBatchByIdempotencyKey: (input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}) => Promise<Result<IdempotentAttendanceImportBatchRecord | null>>;
+
+	// Attendance sessions
+	findAttendanceSessionByIdempotencyKey: (input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}) => Promise<Result<IdempotentAttendanceSessionRecord | null>>;
+
+	findOverlappingShiftAssignments: (input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+		startsAt: Date;
+		endsAt: Date;
+		excludeAssignmentId?: HumanResourcesShiftAssignmentId | undefined;
+	}) => Promise<Result<ShiftAssignment[]>>;
+
+	// Overtime
+	findOvertimeRequestByIdempotencyKey: (input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}) => Promise<Result<IdempotentOvertimeRequestRecord | null>>;
+
+	// Shift assignment / scheduling
+	findShiftAssignmentByIdempotencyKey: (input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}) => Promise<Result<IdempotentShiftAssignmentRecord | null>>;
+
+	// Shift definition
+	findShiftByIdempotencyKey: (input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}) => Promise<Result<IdempotentShiftRecord | null>>;
+
+	findTimePolicyByIdempotencyKey: (input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}) => Promise<
+		Result<{
+			policy: TimePolicy;
+			createRequestFingerprint: string;
+		} | null>
+	>;
+
+	// Timesheet
+	findTimesheetByIdempotencyKey: (input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}) => Promise<Result<IdempotentTimesheetRecord | null>>;
+
+	findTimesheetForEmployeePeriod: (input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+		periodStart: string;
+		periodEnd: string;
+	}) => Promise<Result<Timesheet | null>>;
+	// Work calendar
+	findWorkCalendarByIdempotencyKey: (input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}) => Promise<Result<IdempotentWorkCalendarRecord | null>>;
+
+	generateTimesheetEntries: (
+		input: {
+			organizationId: string;
+			timesheetId: HumanResourcesTimesheetId;
+			expectedVersion: number;
+			actorUserId: string;
+			correlationId: string;
+		},
+		ports: MutationPorts,
+		deps: TimesheetGenerationDeps,
+	) => Promise<Result<{ timesheet: Timesheet; entries: TimesheetEntry[] }>>;
+
+	getApprovedTimeHandoff: (input: {
+		organizationId: string;
+		timesheetId: HumanResourcesTimesheetId;
+	}) => Promise<Result<ApprovedTimeHandoff | null>>;
+
+	getAttendanceEvent: (input: {
+		organizationId: string;
+		eventId: HumanResourcesAttendanceEventId;
+	}) => Promise<Result<AttendanceEvent | null>>;
+
+	getAttendanceException: (input: {
+		organizationId: string;
+		exceptionId: HumanResourcesAttendanceExceptionId;
+	}) => Promise<Result<AttendanceException | null>>;
+
+	getAttendanceSession: (input: {
+		organizationId: string;
+		sessionId: HumanResourcesAttendanceSessionId;
+	}) => Promise<Result<AttendanceSession | null>>;
+
+	getDailyAttendanceSummary: (input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+		localWorkDate: string;
+		timezone: string;
+	}) => Promise<Result<DailyAttendanceSummary>>;
+
+	getOvertimeRequest: (input: {
+		organizationId: string;
+		requestId: HumanResourcesOvertimeRequestId;
+	}) => Promise<Result<OvertimeRequest | null>>;
+
+	getPreviousCompletedAttendanceSession: (input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+		before: Date;
+		excludeSessionId: HumanResourcesAttendanceSessionId;
+	}) => Promise<Result<AttendanceSession | null>>;
+
+	getScheduledShiftForEmployeeDate: (input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+		scheduledDate: string;
+	}) => Promise<Result<ShiftAssignment | null>>;
+
+	getShift: (input: {
+		organizationId: string;
+		shiftId: HumanResourcesShiftId;
+	}) => Promise<Result<Shift | null>>;
+
+	getShiftAssignment: (input: {
+		organizationId: string;
+		assignmentId: HumanResourcesShiftAssignmentId;
+	}) => Promise<Result<ShiftAssignment | null>>;
+
+	getTimePolicy: (input: {
+		organizationId: string;
+		policyId: HumanResourcesTimePolicyId;
+	}) => Promise<Result<TimePolicy | null>>;
+
+	getTimesheet: (input: {
+		organizationId: string;
+		timesheetId: HumanResourcesTimesheetId;
+	}) => Promise<Result<Timesheet | null>>;
+
+	getTimesheetTotals: (input: {
+		organizationId: string;
+		timesheetId: HumanResourcesTimesheetId;
+	}) => Promise<Result<TimesheetTotals | null>>;
+
+	getWorkCalendar: (input: {
+		organizationId: string;
+		calendarId: HumanResourcesWorkCalendarId;
+	}) => Promise<Result<WorkCalendar | null>>;
+
+	importAttendanceEvents: (
+		input: AttendanceImportStoreInput,
+		ports: MutationPorts,
+	) => Promise<Result<AttendanceImportResult>>;
+
+	listAttendanceAdjustments: (input: {
+		organizationId: string;
+		eventId: HumanResourcesAttendanceEventId;
+	}) => Promise<Result<AttendanceAdjustment[]>>;
+
+	listAttendanceBreakWaiverDecisions: (input: {
+		organizationId: string;
+		sessionId: HumanResourcesAttendanceSessionId;
+	}) => Promise<Result<AttendanceBreakWaiverDecision[]>>;
+
+	listAttendanceEvents: (input: {
+		organizationId: string;
+		employeeId?: HumanResourcesEmployeeId | undefined;
+		fromDate?: string | undefined;
+		toDate?: string | undefined;
+		eventType?: AttendanceEventType | undefined;
+		page?: number | undefined;
+		pageSize?: number | undefined;
+	}) => Promise<Result<AttendanceEvent[]>>;
+
+	listAttendanceExceptions: (input: {
+		organizationId: string;
+		employeeId?: HumanResourcesEmployeeId | undefined;
+		reviewStatus?: AttendanceException["reviewStatus"] | undefined;
+		page?: number | undefined;
+		pageSize?: number | undefined;
+	}) => Promise<Result<AttendanceException[]>>;
+
+	listAttendanceSessions: (input: {
+		organizationId: string;
+		employeeId?: HumanResourcesEmployeeId | undefined;
+		fromDate?: string | undefined;
+		toDate?: string | undefined;
+		page?: number | undefined;
+		pageSize?: number | undefined;
+	}) => Promise<Result<AttendanceSession[]>>;
+
+	listLocationSchedule: (input: {
+		organizationId: string;
+		locationKey: string;
+		fromDate?: string | undefined;
+		toDate?: string | undefined;
+		publicationStatus?: ShiftAssignment["publicationStatus"] | undefined;
+		page?: number | undefined;
+		pageSize?: number | undefined;
+	}) => Promise<Result<ShiftAssignment[]>>;
+
+	listOvertimeRequests: (input: {
+		organizationId: string;
+		employeeId?: HumanResourcesEmployeeId | undefined;
+		status?: OvertimeRequest["status"] | undefined;
+		page?: number | undefined;
+		pageSize?: number | undefined;
+	}) => Promise<Result<OvertimeRequest[]>>;
+
+	listShiftAssignmentSegments: (input: {
+		organizationId: string;
+		assignmentId: HumanResourcesShiftAssignmentId;
+	}) => Promise<Result<ShiftAssignmentSegment[]>>;
+
+	listShiftAssignments: (input: {
+		organizationId: string;
+		employeeId?: HumanResourcesEmployeeId | undefined;
+		fromDate?: string | undefined;
+		toDate?: string | undefined;
+		scheduledDate?: string | undefined;
+		locationKey?: string | undefined;
+		publicationStatus?: ShiftAssignment["publicationStatus"] | undefined;
+		page?: number | undefined;
+		pageSize?: number | undefined;
+	}) => Promise<Result<ShiftAssignment[]>>;
+
+	listShiftBreaks: (input: {
+		organizationId: string;
+		shiftId: HumanResourcesShiftId;
+	}) => Promise<Result<ShiftBreak[]>>;
+
+	listShifts: (input: {
+		organizationId: string;
+		status?: "draft" | "active" | "superseded" | "inactive" | undefined;
+		page?: number | undefined;
+		pageSize?: number | undefined;
+	}) => Promise<Result<Shift[]>>;
+
+	listTimesheetApprovalDecisions: (input: {
+		organizationId: string;
+		timesheetId: HumanResourcesTimesheetId;
+		submissionReference?: string | undefined;
+	}) => Promise<Result<TimesheetApprovalDecision[]>>;
+
+	listTimesheetEntries: (input: {
+		organizationId: string;
+		timesheetId: HumanResourcesTimesheetId;
+	}) => Promise<Result<TimesheetEntry[]>>;
+
+	listTimesheets: (input: {
+		organizationId: string;
+		employeeId?: HumanResourcesEmployeeId | undefined;
+		status?: TimesheetStatus | undefined;
+		periodStart?: string | undefined;
+		page?: number | undefined;
+		pageSize?: number | undefined;
+	}) => Promise<Result<Timesheet[]>>;
+
+	listUnresolvedAttendanceExceptions: (input: {
+		organizationId: string;
+		employeeId?: HumanResourcesEmployeeId | undefined;
+		page?: number | undefined;
+		pageSize?: number | undefined;
+	}) => Promise<Result<AttendanceException[]>>;
+
+	listWorkCalendarHolidays: (input: {
+		organizationId: string;
+		calendarId: HumanResourcesWorkCalendarId;
+		fromDate?: string | undefined;
+		toDate?: string | undefined;
+	}) => Promise<Result<WorkCalendarHolidayRecord[]>>;
+
+	listWorkCalendarScopeAssignments: (input: {
+		organizationId: string;
+		asOf: string;
+	}) => Promise<Result<WorkCalendarScopeAssignment[]>>;
+
+	listWorkCalendars: (input: {
+		organizationId: string;
+		status?: "active" | "superseded" | "archived" | undefined;
+		page?: number | undefined;
+		pageSize?: number | undefined;
+	}) => Promise<Result<WorkCalendar[]>>;
+
+	lockTimesheet: (
+		input: {
+			organizationId: string;
+			timesheetId: HumanResourcesTimesheetId;
+			expectedVersion: number;
+			actorUserId: string;
+			correlationId: string;
+		},
+		ports: MutationPorts,
+	) => Promise<Result<Timesheet>>;
+
+	publishShiftAssignment: (
+		input: {
+			organizationId: string;
+			assignmentId: HumanResourcesShiftAssignmentId;
+			expectedVersion: number;
+			actorUserId: string;
+			correlationId: string;
+		},
+		ports: MutationPorts,
+	) => Promise<Result<ShiftAssignment>>;
+
+	recordAttendanceEvent: (
+		input: AttendanceEventRecordInput,
+		ports: MutationPorts,
+	) => Promise<Result<AttendanceEvent>>;
+
+	recordOvertimeActual: (
+		input: {
+			organizationId: string;
+			requestId: HumanResourcesOvertimeRequestId;
+			actualMinutes: number;
+			expectedVersion: number;
+			actorUserId: string;
+			correlationId: string;
+		},
+		ports: MutationPorts,
+	) => Promise<Result<OvertimeRequest>>;
+
+	rejectAttendanceException: (
+		input: {
+			organizationId: string;
+			exceptionId: HumanResourcesAttendanceExceptionId;
+			resolution: string;
+			expectedVersion: number;
+			actorUserId: string;
+			correlationId: string;
+		},
+		ports: MutationPorts,
+	) => Promise<Result<AttendanceException>>;
+
+	rejectOvertimeRequest: (
+		input: {
+			organizationId: string;
+			requestId: HumanResourcesOvertimeRequestId;
+			comment: string;
+			expectedVersion: number;
+			actorUserId: string;
+			correlationId: string;
+		},
+		ports: MutationPorts,
+	) => Promise<Result<OvertimeRequest>>;
+
+	rejectTimesheet: (
+		input: {
+			organizationId: string;
+			timesheetId: HumanResourcesTimesheetId;
+			rejectionReason: string;
+			expectedVersion: number;
+			actorUserId: string;
+			correlationId: string;
+		},
+		ports: MutationPorts,
+	) => Promise<Result<Timesheet>>;
+
+	removeShiftBreak: (
+		input: {
+			organizationId: string;
+			breakId: HumanResourcesShiftBreakId;
+			actorUserId: string;
+			correlationId: string;
+		},
+		ports: MutationPorts,
+	) => Promise<Result<void>>;
+
+	removeTimesheetEntry: (
+		input: {
+			organizationId: string;
+			entryId: HumanResourcesTimesheetEntryId;
+			expectedVersion: number;
+			actorUserId: string;
+			correlationId: string;
+		},
+		ports: MutationPorts,
+	) => Promise<Result<void>>;
+
+	removeWorkCalendarHoliday: (
+		input: {
+			organizationId: string;
+			holidayId: HumanResourcesWorkCalendarHolidayId;
+			actorUserId: string;
+			correlationId: string;
+		},
+		ports: MutationPorts,
+	) => Promise<Result<void>>;
+
+	reopenTimesheet: (
+		input: {
+			organizationId: string;
+			timesheetId: HumanResourcesTimesheetId;
+			expectedVersion: number;
+			actorUserId: string;
+			correlationId: string;
+		},
+		ports: MutationPorts,
+	) => Promise<Result<Timesheet>>;
+
+	resolveAttendanceException: (
+		input: {
+			organizationId: string;
+			exceptionId: HumanResourcesAttendanceExceptionId;
+			resolution: string;
+			expectedVersion: number;
+			actorUserId: string;
+			correlationId: string;
+		},
+		ports: MutationPorts,
+	) => Promise<Result<AttendanceException>>;
+
+	resolveAttendanceSession: (
+		input: AttendanceSessionResolveInput,
+		ports: MutationPorts,
+	) => Promise<Result<AttendanceSession>>;
+
+	resolveEmploymentCalendar: (input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+		employmentId: HumanResourcesEmploymentId;
+		asOf: string;
+	}) => Promise<Result<EmploymentCalendarAssignment | null>>;
+
+	resolveTimeApprovalAuthority: (input: {
 		organizationId: string;
 		actorUserId: string;
 		authority: TimeApprovalAuthority;
 		asOf: string;
-	}): Promise<Result<TimeApprovalAuthorityAssignment | null>>;
+	}) => Promise<Result<TimeApprovalAuthorityAssignment | null>>;
 
-	// Shift definition
-	findShiftByIdempotencyKey(input: {
+	resolveTimePolicy: (input: {
 		organizationId: string;
-		idempotencyKey: string;
-	}): Promise<Result<IdempotentShiftRecord | null>>;
+		employmentId: HumanResourcesEmploymentId;
+		asOf: string;
+	}) => Promise<Result<TimePolicy | null>>;
 
-	createShift(
-		input: ShiftCreateRecord,
+	returnTimesheet: (
+		input: {
+			organizationId: string;
+			timesheetId: HumanResourcesTimesheetId;
+			approverNotes?: string | null | undefined;
+			expectedVersion: number;
+			actorUserId: string;
+			correlationId: string;
+		},
 		ports: MutationPorts,
-	): Promise<Result<Shift>>;
+	) => Promise<Result<Timesheet>>;
 
-	supersedeShift(
+	reviewAttendanceException: (
+		input: {
+			organizationId: string;
+			exceptionId: HumanResourcesAttendanceExceptionId;
+			expectedVersion: number;
+			actorUserId: string;
+			correlationId: string;
+		},
+		ports: MutationPorts,
+	) => Promise<Result<AttendanceException>>;
+
+	submitTimesheet: (
+		input: {
+			organizationId: string;
+			timesheetId: HumanResourcesTimesheetId;
+			submissionReference: string;
+			approvalPolicyId: HumanResourcesTimePolicyId | null;
+			requiredApprovalSteps: readonly TimeApprovalAuthority[];
+			expectedVersion: number;
+			actorUserId: string;
+			correlationId: string;
+		},
+		ports: MutationPorts,
+	) => Promise<Result<Timesheet>>;
+
+	supersedeShift: (
 		input: ShiftCreateRecord & {
 			shiftId: HumanResourcesShiftId;
 			expectedVersion: number;
 			predecessorEffectiveTo: string;
 		},
 		ports: MutationPorts,
-	): Promise<Result<{ superseded: Shift; successor: Shift }>>;
+	) => Promise<Result<{ superseded: Shift; successor: Shift }>>;
 
-	updateShift(
+	supersedeTimePolicy: (
+		input: TimePolicyCreateRecord & {
+			policyId: HumanResourcesTimePolicyId;
+			expectedVersion: number;
+			predecessorEffectiveTo: string;
+		},
+		ports: MutationPorts,
+	) => Promise<Result<{ superseded: TimePolicy; successor: TimePolicy }>>;
+
+	supersedeTimesheet: (
+		input: {
+			organizationId: string;
+			timesheetId: HumanResourcesTimesheetId;
+			expectedVersion: number;
+			actorUserId: string;
+			idempotencyKey: string;
+			createRequestFingerprint: string;
+			correlationId: string;
+		},
+		ports: MutationPorts,
+	) => Promise<Result<Timesheet>>;
+
+	supersedeWorkCalendar: (
+		input: WorkCalendarCreateRecord & {
+			calendarId: HumanResourcesWorkCalendarId;
+			expectedVersion: number;
+			predecessorEffectiveTo: string;
+		},
+		ports: MutationPorts,
+	) => Promise<Result<{ superseded: WorkCalendar; successor: WorkCalendar }>>;
+
+	updateShift: (
 		input: {
 			organizationId: string;
 			shiftId: HumanResourcesShiftId;
@@ -527,406 +1107,9 @@ export type HumanResourcesTimeStore = {
 			correlationId: string;
 		},
 		ports: MutationPorts,
-	): Promise<Result<Shift>>;
+	) => Promise<Result<Shift>>;
 
-	activateShift(
-		input: {
-			organizationId: string;
-			shiftId: HumanResourcesShiftId;
-			expectedVersion: number;
-			actorUserId: string;
-			correlationId: string;
-		},
-		ports: MutationPorts,
-	): Promise<Result<Shift>>;
-
-	deactivateShift(
-		input: {
-			organizationId: string;
-			shiftId: HumanResourcesShiftId;
-			expectedVersion: number;
-			actorUserId: string;
-			correlationId: string;
-		},
-		ports: MutationPorts,
-	): Promise<Result<Shift>>;
-
-	getShift(input: {
-		organizationId: string;
-		shiftId: HumanResourcesShiftId;
-	}): Promise<Result<Shift | null>>;
-
-	listShifts(input: {
-		organizationId: string;
-		status?: "draft" | "active" | "superseded" | "inactive" | undefined;
-		page?: number | undefined;
-		pageSize?: number | undefined;
-	}): Promise<Result<Shift[]>>;
-
-	addShiftBreak(
-		input: ShiftBreakCreateRecord,
-		ports: MutationPorts,
-	): Promise<Result<ShiftBreak>>;
-
-	removeShiftBreak(
-		input: {
-			organizationId: string;
-			breakId: HumanResourcesShiftBreakId;
-			actorUserId: string;
-			correlationId: string;
-		},
-		ports: MutationPorts,
-	): Promise<Result<void>>;
-
-	listShiftBreaks(input: {
-		organizationId: string;
-		shiftId: HumanResourcesShiftId;
-	}): Promise<Result<ShiftBreak[]>>;
-
-	// Shift assignment / scheduling
-	findShiftAssignmentByIdempotencyKey(input: {
-		organizationId: string;
-		idempotencyKey: string;
-	}): Promise<Result<IdempotentShiftAssignmentRecord | null>>;
-
-	assignShift(
-		input: ShiftAssignmentCreateRecord,
-		ports: MutationPorts,
-	): Promise<Result<ShiftAssignment>>;
-
-	publishShiftAssignment(
-		input: {
-			organizationId: string;
-			assignmentId: HumanResourcesShiftAssignmentId;
-			expectedVersion: number;
-			actorUserId: string;
-			correlationId: string;
-		},
-		ports: MutationPorts,
-	): Promise<Result<ShiftAssignment>>;
-
-	cancelShiftAssignment(
-		input: {
-			organizationId: string;
-			assignmentId: HumanResourcesShiftAssignmentId;
-			expectedVersion: number;
-			actorUserId: string;
-			correlationId: string;
-		},
-		ports: MutationPorts,
-	): Promise<Result<ShiftAssignment>>;
-
-	changeShiftAssignment(
-		input: {
-			organizationId: string;
-			assignmentId: HumanResourcesShiftAssignmentId;
-			shiftId?: HumanResourcesShiftId | undefined;
-			scheduledDate?: string | undefined;
-			startsAt?: Date | undefined;
-			endsAt?: Date | undefined;
-			locationKey?: string | null | undefined;
-			timezone?: string | undefined;
-			expectedVersion: number;
-			actorUserId: string;
-			correlationId: string;
-		},
-		ports: MutationPorts,
-	): Promise<Result<ShiftAssignment>>;
-
-	completeShiftAssignment(
-		input: {
-			organizationId: string;
-			assignmentId: HumanResourcesShiftAssignmentId;
-			expectedVersion: number;
-			actorUserId: string;
-			correlationId: string;
-		},
-		ports: MutationPorts,
-	): Promise<Result<ShiftAssignment>>;
-
-	getShiftAssignment(input: {
-		organizationId: string;
-		assignmentId: HumanResourcesShiftAssignmentId;
-	}): Promise<Result<ShiftAssignment | null>>;
-
-	listShiftAssignments(input: {
-		organizationId: string;
-		employeeId?: HumanResourcesEmployeeId | undefined;
-		fromDate?: string | undefined;
-		toDate?: string | undefined;
-		scheduledDate?: string | undefined;
-		locationKey?: string | undefined;
-		publicationStatus?: ShiftAssignment["publicationStatus"] | undefined;
-		page?: number | undefined;
-		pageSize?: number | undefined;
-	}): Promise<Result<ShiftAssignment[]>>;
-
-	listShiftAssignmentSegments(input: {
-		organizationId: string;
-		assignmentId: HumanResourcesShiftAssignmentId;
-	}): Promise<Result<ShiftAssignmentSegment[]>>;
-
-	getScheduledShiftForEmployeeDate(input: {
-		organizationId: string;
-		employeeId: HumanResourcesEmployeeId;
-		scheduledDate: string;
-	}): Promise<Result<ShiftAssignment | null>>;
-
-	listLocationSchedule(input: {
-		organizationId: string;
-		locationKey: string;
-		fromDate?: string | undefined;
-		toDate?: string | undefined;
-		publicationStatus?: ShiftAssignment["publicationStatus"] | undefined;
-		page?: number | undefined;
-		pageSize?: number | undefined;
-	}): Promise<Result<ShiftAssignment[]>>;
-
-	findOverlappingShiftAssignments(input: {
-		organizationId: string;
-		employeeId: HumanResourcesEmployeeId;
-		startsAt: Date;
-		endsAt: Date;
-		excludeAssignmentId?: HumanResourcesShiftAssignmentId | undefined;
-	}): Promise<Result<ShiftAssignment[]>>;
-
-	// Attendance events
-	findAttendanceEventByIdempotencyKey(input: {
-		organizationId: string;
-		idempotencyKey: string;
-	}): Promise<Result<IdempotentAttendanceEventRecord | null>>;
-
-	findAttendanceEventBySourceReference(input: {
-		organizationId: string;
-		source: AttendanceEventSource;
-		sourceReference: string;
-	}): Promise<Result<IdempotentAttendanceEventRecord | null>>;
-
-	findAttendanceImportBatchByIdempotencyKey(input: {
-		organizationId: string;
-		idempotencyKey: string;
-	}): Promise<Result<IdempotentAttendanceImportBatchRecord | null>>;
-
-	importAttendanceEvents(
-		input: AttendanceImportStoreInput,
-		ports: MutationPorts,
-	): Promise<Result<AttendanceImportResult>>;
-
-	recordAttendanceEvent(
-		input: AttendanceEventRecordInput,
-		ports: MutationPorts,
-	): Promise<Result<AttendanceEvent>>;
-
-	correctAttendanceEvent(
-		input: {
-			organizationId: string;
-			eventId: HumanResourcesAttendanceEventId;
-			occurredAt: Date;
-			notes?: string | null | undefined;
-			adjustmentReason: string;
-			evidenceReference?: string | null | undefined;
-			expectedVersion: number;
-			actorUserId: string;
-			correlationId: string;
-		},
-		ports: MutationPorts,
-	): Promise<Result<AttendanceEvent>>;
-
-	voidAttendanceEvent(
-		input: {
-			organizationId: string;
-			eventId: HumanResourcesAttendanceEventId;
-			voidReason: string;
-			expectedVersion: number;
-			actorUserId: string;
-			correlationId: string;
-		},
-		ports: MutationPorts,
-	): Promise<Result<AttendanceEvent>>;
-
-	getAttendanceEvent(input: {
-		organizationId: string;
-		eventId: HumanResourcesAttendanceEventId;
-	}): Promise<Result<AttendanceEvent | null>>;
-
-	listAttendanceAdjustments(input: {
-		organizationId: string;
-		eventId: HumanResourcesAttendanceEventId;
-	}): Promise<Result<AttendanceAdjustment[]>>;
-
-	listAttendanceEvents(input: {
-		organizationId: string;
-		employeeId?: HumanResourcesEmployeeId | undefined;
-		fromDate?: string | undefined;
-		toDate?: string | undefined;
-		eventType?: AttendanceEventType | undefined;
-		page?: number | undefined;
-		pageSize?: number | undefined;
-	}): Promise<Result<AttendanceEvent[]>>;
-
-	// Attendance sessions
-	findAttendanceSessionByIdempotencyKey(input: {
-		organizationId: string;
-		idempotencyKey: string;
-	}): Promise<Result<IdempotentAttendanceSessionRecord | null>>;
-
-	resolveAttendanceSession(
-		input: AttendanceSessionResolveInput,
-		ports: MutationPorts,
-	): Promise<Result<AttendanceSession>>;
-
-	getAttendanceSession(input: {
-		organizationId: string;
-		sessionId: HumanResourcesAttendanceSessionId;
-	}): Promise<Result<AttendanceSession | null>>;
-
-	approveAttendanceBreakWaiver(
-		input: {
-			organizationId: string;
-			sessionId: HumanResourcesAttendanceSessionId;
-			policyId: HumanResourcesTimePolicyId;
-			authorityAssignmentId: HumanResourcesTimeApprovalAuthorityAssignmentId;
-			authority: TimeApprovalAuthority;
-			reason: string;
-			evidenceReference: string;
-			expectedVersion: number;
-			actorUserId: string;
-			correlationId: string;
-		},
-		ports: MutationPorts,
-	): Promise<Result<AttendanceBreakWaiverDecision>>;
-
-	listAttendanceBreakWaiverDecisions(input: {
-		organizationId: string;
-		sessionId: HumanResourcesAttendanceSessionId;
-	}): Promise<Result<AttendanceBreakWaiverDecision[]>>;
-
-	listAttendanceSessions(input: {
-		organizationId: string;
-		employeeId?: HumanResourcesEmployeeId | undefined;
-		fromDate?: string | undefined;
-		toDate?: string | undefined;
-		page?: number | undefined;
-		pageSize?: number | undefined;
-	}): Promise<Result<AttendanceSession[]>>;
-
-	getPreviousCompletedAttendanceSession(input: {
-		organizationId: string;
-		employeeId: HumanResourcesEmployeeId;
-		before: Date;
-		excludeSessionId: HumanResourcesAttendanceSessionId;
-	}): Promise<Result<AttendanceSession | null>>;
-
-	// Attendance exceptions
-	createAttendanceException(
-		input: AttendanceExceptionCreateRecord,
-		ports: MutationPorts,
-	): Promise<Result<AttendanceException>>;
-
-	reviewAttendanceException(
-		input: {
-			organizationId: string;
-			exceptionId: HumanResourcesAttendanceExceptionId;
-			expectedVersion: number;
-			actorUserId: string;
-			correlationId: string;
-		},
-		ports: MutationPorts,
-	): Promise<Result<AttendanceException>>;
-
-	excuseAttendanceException(
-		input: {
-			organizationId: string;
-			exceptionId: HumanResourcesAttendanceExceptionId;
-			resolution: string;
-			evidenceReference?: string | null | undefined;
-			expectedVersion: number;
-			actorUserId: string;
-			correlationId: string;
-		},
-		ports: MutationPorts,
-	): Promise<Result<AttendanceException>>;
-
-	rejectAttendanceException(
-		input: {
-			organizationId: string;
-			exceptionId: HumanResourcesAttendanceExceptionId;
-			resolution: string;
-			expectedVersion: number;
-			actorUserId: string;
-			correlationId: string;
-		},
-		ports: MutationPorts,
-	): Promise<Result<AttendanceException>>;
-
-	resolveAttendanceException(
-		input: {
-			organizationId: string;
-			exceptionId: HumanResourcesAttendanceExceptionId;
-			resolution: string;
-			expectedVersion: number;
-			actorUserId: string;
-			correlationId: string;
-		},
-		ports: MutationPorts,
-	): Promise<Result<AttendanceException>>;
-
-	getAttendanceException(input: {
-		organizationId: string;
-		exceptionId: HumanResourcesAttendanceExceptionId;
-	}): Promise<Result<AttendanceException | null>>;
-
-	listAttendanceExceptions(input: {
-		organizationId: string;
-		employeeId?: HumanResourcesEmployeeId | undefined;
-		reviewStatus?: AttendanceException["reviewStatus"] | undefined;
-		page?: number | undefined;
-		pageSize?: number | undefined;
-	}): Promise<Result<AttendanceException[]>>;
-
-	listUnresolvedAttendanceExceptions(input: {
-		organizationId: string;
-		employeeId?: HumanResourcesEmployeeId | undefined;
-		page?: number | undefined;
-		pageSize?: number | undefined;
-	}): Promise<Result<AttendanceException[]>>;
-
-	getDailyAttendanceSummary(input: {
-		organizationId: string;
-		employeeId: HumanResourcesEmployeeId;
-		localWorkDate: string;
-		timezone: string;
-	}): Promise<Result<DailyAttendanceSummary>>;
-
-	// Timesheet
-	findTimesheetByIdempotencyKey(input: {
-		organizationId: string;
-		idempotencyKey: string;
-	}): Promise<Result<IdempotentTimesheetRecord | null>>;
-
-	createTimesheet(
-		input: TimesheetCreateRecord,
-		ports: MutationPorts,
-	): Promise<Result<Timesheet>>;
-
-	generateTimesheetEntries(
-		input: {
-			organizationId: string;
-			timesheetId: HumanResourcesTimesheetId;
-			expectedVersion: number;
-			actorUserId: string;
-			correlationId: string;
-		},
-		ports: MutationPorts,
-		deps: TimesheetGenerationDeps,
-	): Promise<Result<{ timesheet: Timesheet; entries: TimesheetEntry[] }>>;
-
-	addTimesheetEntry(
-		input: TimesheetEntryCreateRecord,
-		ports: MutationPorts,
-	): Promise<Result<TimesheetEntry>>;
-
-	updateTimesheetEntry(
+	updateTimesheetEntry: (
 		input: {
 			organizationId: string;
 			entryId: HumanResourcesTimesheetEntryId;
@@ -947,209 +1130,26 @@ export type HumanResourcesTimeStore = {
 			correlationId: string;
 		},
 		ports: MutationPorts,
-	): Promise<Result<TimesheetEntry>>;
+	) => Promise<Result<TimesheetEntry>>;
 
-	removeTimesheetEntry(
+	updateWorkCalendar: (
 		input: {
 			organizationId: string;
-			entryId: HumanResourcesTimesheetEntryId;
+			calendarId: HumanResourcesWorkCalendarId;
+			name?: string | undefined;
+			timezone?: string | undefined;
+			calendarVersion?: string | undefined;
+			workWeek?: readonly WorkWeekDayPatternJson[] | undefined;
+			standardHoursPerDay?: string | undefined;
+			effectiveTo?: string | null | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 			correlationId: string;
 		},
 		ports: MutationPorts,
-	): Promise<Result<void>>;
+	) => Promise<Result<WorkCalendar>>;
 
-	submitTimesheet(
-		input: {
-			organizationId: string;
-			timesheetId: HumanResourcesTimesheetId;
-			submissionReference: string;
-			approvalPolicyId: HumanResourcesTimePolicyId | null;
-			requiredApprovalSteps: readonly TimeApprovalAuthority[];
-			expectedVersion: number;
-			actorUserId: string;
-			correlationId: string;
-		},
-		ports: MutationPorts,
-	): Promise<Result<Timesheet>>;
-
-	returnTimesheet(
-		input: {
-			organizationId: string;
-			timesheetId: HumanResourcesTimesheetId;
-			approverNotes?: string | null | undefined;
-			expectedVersion: number;
-			actorUserId: string;
-			correlationId: string;
-		},
-		ports: MutationPorts,
-	): Promise<Result<Timesheet>>;
-
-	approveTimesheet(
-		input: {
-			organizationId: string;
-			timesheetId: HumanResourcesTimesheetId;
-			approverNotes?: string | null | undefined;
-			authority: TimeApprovalAuthority;
-			authorityAssignmentId: HumanResourcesTimeApprovalAuthorityAssignmentId;
-			expectedVersion: number;
-			actorUserId: string;
-			correlationId: string;
-		},
-		ports: MutationPorts,
-	): Promise<Result<Timesheet>>;
-
-	listTimesheetApprovalDecisions(input: {
-		organizationId: string;
-		timesheetId: HumanResourcesTimesheetId;
-		submissionReference?: string | undefined;
-	}): Promise<Result<TimesheetApprovalDecision[]>>;
-
-	rejectTimesheet(
-		input: {
-			organizationId: string;
-			timesheetId: HumanResourcesTimesheetId;
-			rejectionReason: string;
-			expectedVersion: number;
-			actorUserId: string;
-			correlationId: string;
-		},
-		ports: MutationPorts,
-	): Promise<Result<Timesheet>>;
-
-	reopenTimesheet(
-		input: {
-			organizationId: string;
-			timesheetId: HumanResourcesTimesheetId;
-			expectedVersion: number;
-			actorUserId: string;
-			correlationId: string;
-		},
-		ports: MutationPorts,
-	): Promise<Result<Timesheet>>;
-
-	lockTimesheet(
-		input: {
-			organizationId: string;
-			timesheetId: HumanResourcesTimesheetId;
-			expectedVersion: number;
-			actorUserId: string;
-			correlationId: string;
-		},
-		ports: MutationPorts,
-	): Promise<Result<Timesheet>>;
-
-	supersedeTimesheet(
-		input: {
-			organizationId: string;
-			timesheetId: HumanResourcesTimesheetId;
-			expectedVersion: number;
-			actorUserId: string;
-			idempotencyKey: string;
-			createRequestFingerprint: string;
-			correlationId: string;
-		},
-		ports: MutationPorts,
-	): Promise<Result<Timesheet>>;
-
-	getTimesheet(input: {
-		organizationId: string;
-		timesheetId: HumanResourcesTimesheetId;
-	}): Promise<Result<Timesheet | null>>;
-
-	findTimesheetForEmployeePeriod(input: {
-		organizationId: string;
-		employeeId: HumanResourcesEmployeeId;
-		periodStart: string;
-		periodEnd: string;
-	}): Promise<Result<Timesheet | null>>;
-
-	listTimesheets(input: {
-		organizationId: string;
-		employeeId?: HumanResourcesEmployeeId | undefined;
-		status?: TimesheetStatus | undefined;
-		periodStart?: string | undefined;
-		page?: number | undefined;
-		pageSize?: number | undefined;
-	}): Promise<Result<Timesheet[]>>;
-
-	listTimesheetEntries(input: {
-		organizationId: string;
-		timesheetId: HumanResourcesTimesheetId;
-	}): Promise<Result<TimesheetEntry[]>>;
-
-	getTimesheetTotals(input: {
-		organizationId: string;
-		timesheetId: HumanResourcesTimesheetId;
-	}): Promise<Result<TimesheetTotals | null>>;
-
-	getApprovedTimeHandoff(input: {
-		organizationId: string;
-		timesheetId: HumanResourcesTimesheetId;
-	}): Promise<Result<ApprovedTimeHandoff | null>>;
-
-	// Overtime
-	findOvertimeRequestByIdempotencyKey(input: {
-		organizationId: string;
-		idempotencyKey: string;
-	}): Promise<Result<IdempotentOvertimeRequestRecord | null>>;
-
-	createOvertimeRequest(
-		input: OvertimeRequestCreateRecord,
-		ports: MutationPorts,
-	): Promise<Result<OvertimeRequest>>;
-
-	approveOvertimeRequest(
-		input: {
-			organizationId: string;
-			requestId: HumanResourcesOvertimeRequestId;
-			authority: TimeApprovalAuthority;
-			approvedMaximumMinutes: number;
-			comment?: string | null | undefined;
-			expectedVersion: number;
-			actorUserId: string;
-			correlationId: string;
-		},
-		ports: MutationPorts,
-	): Promise<Result<OvertimeRequest>>;
-
-	rejectOvertimeRequest(
-		input: {
-			organizationId: string;
-			requestId: HumanResourcesOvertimeRequestId;
-			comment: string;
-			expectedVersion: number;
-			actorUserId: string;
-			correlationId: string;
-		},
-		ports: MutationPorts,
-	): Promise<Result<OvertimeRequest>>;
-
-	cancelOvertimeRequest(
-		input: {
-			organizationId: string;
-			requestId: HumanResourcesOvertimeRequestId;
-			expectedVersion: number;
-			actorUserId: string;
-			correlationId: string;
-		},
-		ports: MutationPorts,
-	): Promise<Result<OvertimeRequest>>;
-
-	recordOvertimeActual(
-		input: {
-			organizationId: string;
-			requestId: HumanResourcesOvertimeRequestId;
-			actualMinutes: number;
-			expectedVersion: number;
-			actorUserId: string;
-			correlationId: string;
-		},
-		ports: MutationPorts,
-	): Promise<Result<OvertimeRequest>>;
-
-	verifyOvertimeRequest(
+	verifyOvertimeRequest: (
 		input: {
 			organizationId: string;
 			requestId: HumanResourcesOvertimeRequestId;
@@ -1159,18 +1159,17 @@ export type HumanResourcesTimeStore = {
 			correlationId: string;
 		},
 		ports: MutationPorts,
-	): Promise<Result<OvertimeRequest>>;
+	) => Promise<Result<OvertimeRequest>>;
 
-	getOvertimeRequest(input: {
-		organizationId: string;
-		requestId: HumanResourcesOvertimeRequestId;
-	}): Promise<Result<OvertimeRequest | null>>;
-
-	listOvertimeRequests(input: {
-		organizationId: string;
-		employeeId?: HumanResourcesEmployeeId | undefined;
-		status?: OvertimeRequest["status"] | undefined;
-		page?: number | undefined;
-		pageSize?: number | undefined;
-	}): Promise<Result<OvertimeRequest[]>>;
-};
+	voidAttendanceEvent: (
+		input: {
+			organizationId: string;
+			eventId: HumanResourcesAttendanceEventId;
+			voidReason: string;
+			expectedVersion: number;
+			actorUserId: string;
+			correlationId: string;
+		},
+		ports: MutationPorts,
+	) => Promise<Result<AttendanceEvent>>;
+}

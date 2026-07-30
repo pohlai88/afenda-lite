@@ -52,8 +52,8 @@ describe("ActivityDialog", () => {
 		const user = userEvent.setup();
 		render(
 			<ActivityDialog
-				trigger={<Button type="button">Open activity</Button>}
 				activities={activities}
+				trigger={<Button type="button">Open activity</Button>}
 			/>,
 		);
 
@@ -84,9 +84,9 @@ describe("ActivityDialog", () => {
 		const user = userEvent.setup();
 		render(
 			<ActivityDialog
-				trigger={<Button type="button">Open empty activity</Button>}
 				activities={[]}
 				emptyMessage="No close activity yet"
+				trigger={<Button type="button">Open empty activity</Button>}
 			/>,
 		);
 
@@ -104,9 +104,9 @@ describe("ActivityDialog", () => {
 		const onOpenChange = vi.fn();
 		render(
 			<ActivityDialog
-				trigger={<Button type="button">Open tracked activity</Button>}
 				activities={activities}
 				onOpenChange={onOpenChange}
+				trigger={<Button type="button">Open tracked activity</Button>}
 			/>,
 		);
 

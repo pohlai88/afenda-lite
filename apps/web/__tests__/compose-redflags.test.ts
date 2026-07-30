@@ -78,7 +78,7 @@ describe("@afenda/web compose red-flags (afenda-elite-ui-compose)", () => {
 				}
 				const hasSpinner = /Spinner/.test(src);
 				const hasSkeleton = /Skeleton/.test(src);
-				return !hasSpinner && !hasSkeleton;
+				return !(hasSpinner || hasSkeleton);
 			})
 			.map(({ rel }) => rel);
 		expect(
@@ -110,10 +110,15 @@ describe("@afenda/web compose red-flags (afenda-elite-ui-compose)", () => {
 		const allFiles: string[] = [];
 		const walk = (dir: string) => {
 			for (const entry of readdirSync(dir)) {
-				if (SKIP_DIRS.has(entry)) continue;
+				if (SKIP_DIRS.has(entry)) {
+					continue;
+				}
 				const fullPath = path.join(dir, entry);
-				if (statSync(fullPath).isDirectory()) walk(fullPath);
-				else if (/\.(tsx|ts|css)$/.test(entry)) allFiles.push(fullPath);
+				if (statSync(fullPath).isDirectory()) {
+					walk(fullPath);
+				} else if (/\.(tsx|ts|css)$/.test(entry)) {
+					allFiles.push(fullPath);
+				}
 			}
 		};
 		walk(webRoot);
@@ -122,7 +127,9 @@ describe("@afenda/web compose red-flags (afenda-elite-ui-compose)", () => {
 		for (const full of allFiles) {
 			const rel = toRel(full);
 			const src = readFileSync(full, "utf8");
-			if (!/auth-surface\.css/.test(src)) continue;
+			if (!/auth-surface\.css/.test(src)) {
+				continue;
+			}
 			if (
 				isAuthIsland(rel) ||
 				rel === "app/(public)/auth/auth-surface.css" ||

@@ -19,13 +19,13 @@ export type AccountingPermission =
 	| "accounting.exception.read"
 	| "accounting.exception.manage";
 
-export type AccountingAuthorizationPort = {
-	can(input: {
+export interface AccountingAuthorizationPort {
+	can: (input: {
 		organizationId: string;
 		actorUserId: string;
 		permission: AccountingPermission;
-	}): Promise<boolean>;
-};
+	}) => Promise<boolean>;
+}
 
 export async function requireAccountingPermission(
 	authorization: AccountingAuthorizationPort | undefined,

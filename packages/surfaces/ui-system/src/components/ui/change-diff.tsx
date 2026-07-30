@@ -2,10 +2,10 @@ import type * as React from "react";
 import { cn } from "../../lib/utils";
 
 interface ChangeDiffRowProps extends React.ComponentProps<"div"> {
-	label: React.ReactNode;
-	before: React.ReactNode;
 	after: React.ReactNode;
+	before: React.ReactNode;
 	changed?: boolean;
+	label: React.ReactNode;
 }
 
 function ChangeDiffRow({
@@ -24,10 +24,10 @@ function ChangeDiffRow({
 			)}
 			{...props}
 		>
-			<div className="text-sm font-medium">{label}</div>
+			<div className="font-medium text-sm">{label}</div>
 			<div
 				className={cn(
-					"rounded-md bg-muted px-3 py-2 text-sm text-foreground",
+					"rounded-md bg-muted px-3 py-2 text-foreground text-sm",
 					changed && "line-through",
 				)}
 			>

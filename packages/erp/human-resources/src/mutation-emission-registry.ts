@@ -30,15 +30,15 @@ export {
 } from "./emissions/validate-emission";
 
 import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } from "./emissions/registry";
-import { getHumanResourcesMutationEmission } from "./emissions/resolve-emission";
+import { tryGetHumanResourcesMutationEmission } from "./emissions/resolve-emission";
 
 export type MutationEmissionKind = HumanResourcesEmissionMode;
 
-export type MutationEmissionEntry = {
+export interface MutationEmissionEntry {
 	command: HumanResourcesCommandId;
 	emission: MutationEmissionKind;
 	eventTypes?: readonly HumanResourcesEventType[];
-};
+}
 
 function toMutationEmissionEntry(
 	definition: HumanResourcesMutationEmissionDefinition,
@@ -69,9 +69,9 @@ export type RegisteredMutationCommand =
 export function getMutationEmissionEntry(
 	command: HumanResourcesCommandId,
 ): MutationEmissionEntry | undefined {
-	try {
-		return toMutationEmissionEntry(getHumanResourcesMutationEmission(command));
-	} catch {
-		return undefined;
+	const definition = tryGetHumanResourcesMutationEmission(command);
+	if (definition === undefined) {
+		return;
 	}
+	return toMutationEmissionEntry(definition);
 }

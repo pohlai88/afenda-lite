@@ -43,10 +43,6 @@
 
 .auth-surface {
 	/* Island is always OLED dark — lynx plate + glass (root app may stay light). */
-	color-scheme: dark;
-	background: var(--canvas);
-	color: var(--foreground);
-	isolation: isolate;
 	--auth-panel-ice: 1;
 	--auth-panel-fire: 0;
 	--auth-lynx-fire: 0;
@@ -66,6 +62,11 @@
 			70%,
 		var(--border) 30%
 	);
+	color: var(--foreground);
+	/* Island is always OLED dark — lynx plate + glass (root app may stay light). */
+	color-scheme: dark;
+	background: var(--canvas);
+	isolation: isolate;
 	/* login-command ~25s elemental cycle */
 	animation: auth-surface-cinematic-cycle 25s ease-in-out infinite;
 }
@@ -84,15 +85,15 @@
 :where(.auth-surface) .auth-surface__art-plane {
 	z-index: 0;
 	transform-origin: center center;
+	backface-visibility: hidden;
 	animation: auth-surface-art-drift var(--auth-ken-zoom-duration) linear
 		infinite alternate;
 	will-change: transform;
-	backface-visibility: hidden;
 }
 
 :where(.auth-surface) .auth-surface__brand-art {
-	object-position: center center;
 	user-select: none;
+	object-position: center center;
 }
 
 :where(.auth-surface) .auth-surface__brand-art--ice {
@@ -127,12 +128,11 @@
  * Radiant energy — ice/fire blooms track lynx morph only (not panel thaw).
  */
 :where(.auth-surface) .auth-surface__radiant {
-	mix-blend-mode: screen;
 	z-index: 2;
+	mix-blend-mode: screen;
 }
 
 :where(.auth-surface) .auth-surface__radiant--ice {
-	opacity: calc((1 - var(--auth-lynx-fire)) * 0.85);
 	background:
 		radial-gradient(
 			circle 18% at 38% 38%,
@@ -157,10 +157,10 @@
 			color-mix(in oklab, var(--info) 16%, transparent) 0%,
 			transparent 68%
 		);
+	opacity: calc((1 - var(--auth-lynx-fire)) * 0.85);
 }
 
 :where(.auth-surface) .auth-surface__radiant--fire {
-	opacity: calc(var(--auth-lynx-fire) * 0.95);
 	background:
 		radial-gradient(
 			circle 18% at 38% 38%,
@@ -185,6 +185,7 @@
 			color-mix(in oklab, var(--destructive) 22%, transparent) 0%,
 			transparent 68%
 		);
+	opacity: calc(var(--auth-lynx-fire) * 0.95);
 }
 
 /* Ambient wash follows lynx element (warm only when fire lynx is present). */
@@ -227,19 +228,6 @@
  */
 :where(.auth-surface) .auth-surface__steam {
 	z-index: 4;
-	opacity: calc(var(--auth-steam) * 0.55);
-	mix-blend-mode: soft-light;
-	/* Keep mist off the face / shield focal region. */
-	-webkit-mask-image: radial-gradient(
-		ellipse 48% 52% at 40% 46%,
-		transparent 42%,
-		black 78%
-	);
-	mask-image: radial-gradient(
-		ellipse 48% 52% at 40% 46%,
-		transparent 42%,
-		black 78%
-	);
 	background:
 		radial-gradient(
 			ellipse 70% 42% at 28% 88%,
@@ -252,17 +240,30 @@
 			color-mix(in oklab, var(--foreground) 18%, transparent) 0%,
 			transparent 68%
 		);
+	mix-blend-mode: soft-light;
+	opacity: calc(var(--auth-steam) * 0.55);
 	filter: blur(22px);
-	animation: auth-surface-steam-rise 8s ease-in-out infinite alternate;
+	/* Keep mist off the face / shield focal region. */
+	-webkit-mask-image: radial-gradient(
+		ellipse 48% 52% at 40% 46%,
+		transparent 42%,
+		black 78%
+	);
+	mask-image: radial-gradient(
+		ellipse 48% 52% at 40% 46%,
+		transparent 42%,
+		black 78%
+	);
 	transform: translate3d(0, 0, 0);
+	animation: auth-surface-steam-rise 8s ease-in-out infinite alternate;
 }
 
 :where(.auth-surface) .auth-surface__embers {
 	z-index: 4;
-	opacity: calc(var(--auth-embers) * 0.9);
-	mix-blend-mode: normal;
 	overflow: hidden;
 	pointer-events: none;
+	mix-blend-mode: normal;
+	opacity: calc(var(--auth-embers) * 0.9);
 	-webkit-mask-image: radial-gradient(
 		ellipse 46% 50% at 40% 46%,
 		transparent 28%,
@@ -306,37 +307,37 @@
 			color-mix(in oklab, var(--warning) 58%, transparent) 0 0.9px,
 			transparent 2px
 		);
+	background-repeat: repeat;
 	background-size:
 		145px 170px,
 		185px 210px,
 		125px 155px,
 		200px 235px,
 		165px 195px;
-	background-repeat: repeat;
 }
 
 :where(.auth-surface) .auth-surface__ember-field--a {
-	animation: auth-surface-ember-rise 11s linear infinite;
 	opacity: 0.9;
+	animation: auth-surface-ember-rise 11s linear infinite;
 }
 
 :where(.auth-surface) .auth-surface__ember-field--b {
-	animation: auth-surface-ember-rise 16s linear infinite;
-	animation-delay: -4s;
-	opacity: 0.65;
 	background-position:
 		40px 20px,
 		90px 60px,
 		10px 100px,
 		120px 30px,
 		55px 80px;
+	opacity: 0.65;
+	animation: auth-surface-ember-rise 16s linear infinite;
+	animation-delay: -4s;
 }
 
 :where(.auth-surface) .auth-surface__weather {
 	z-index: 4;
-	opacity: calc(var(--auth-snow) * 0.9);
-	mix-blend-mode: normal;
 	overflow: hidden;
+	mix-blend-mode: normal;
+	opacity: calc(var(--auth-snow) * 0.9);
 	-webkit-mask-image: radial-gradient(
 		ellipse 46% 50% at 40% 46%,
 		transparent 26%,
@@ -380,30 +381,30 @@
 			color-mix(in oklab, var(--foreground) 55%, transparent) 0 0.9px,
 			transparent 2px
 		);
+	background-repeat: repeat;
 	background-size:
 		130px 155px,
 		170px 195px,
 		120px 145px,
 		195px 220px,
 		150px 180px;
-	background-repeat: repeat;
 }
 
 :where(.auth-surface) .auth-surface__snow--a {
-	animation: auth-surface-snow-fall 14s linear infinite;
 	opacity: 0.85;
+	animation: auth-surface-snow-fall 14s linear infinite;
 }
 
 :where(.auth-surface) .auth-surface__snow--b {
-	animation: auth-surface-snow-fall-mirror 19s linear infinite;
-	animation-delay: -5s;
-	opacity: 0.6;
 	background-position:
 		30px 10px,
 		80px 40px,
 		0 70px,
 		110px 20px,
 		45px 55px;
+	opacity: 0.6;
+	animation: auth-surface-snow-fall-mirror 19s linear infinite;
+	animation-delay: -5s;
 }
 
 /* Soft vignette above FX — edges darker, Lynx face stays clear. */
@@ -426,12 +427,6 @@
  * Undertone tracks --auth-* cycle via --auth-accent (CSS tokens only; no orange ink).
  */
 :where(.auth-surface) .auth-surface__identity {
-	position: absolute;
-	z-index: 6;
-	left: clamp(1rem, 3.5vw, 2.25rem);
-	bottom: clamp(1rem, 4.5vh, 2.5rem);
-	max-width: 20rem;
-	pointer-events: none;
 	--auth-identity-ink: color-mix(
 		in oklab,
 		var(--foreground) calc(94% - var(--auth-panel-fire) * 6%),
@@ -442,17 +437,23 @@
 		var(--muted-foreground) calc(92% - var(--auth-panel-fire) * 8%),
 		var(--auth-accent) calc(8% + var(--auth-panel-fire) * 12%)
 	);
+	position: absolute;
+	bottom: clamp(1rem, 4.5vh, 2.5rem);
+	left: clamp(1rem, 3.5vw, 2.25rem);
+	z-index: 6;
+	max-width: 20rem;
 	text-shadow: 0 1px 14px
 		color-mix(in oklab, var(--background) 62%, transparent);
+	pointer-events: none;
 }
 
 :where(.auth-surface) .auth-surface__identity-eyebrow {
 	margin: 0;
 	font-size: 0.6875rem;
 	font-weight: 600;
-	letter-spacing: 0.2em;
-	text-transform: uppercase;
 	color: var(--auth-identity-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.2em;
 }
 
 :where(.auth-surface) .auth-surface__identity-tagline {
@@ -460,8 +461,8 @@
 	font-size: 0.9375rem;
 	font-weight: 500;
 	line-height: 1.35;
-	letter-spacing: 0.01em;
 	color: var(--auth-identity-ink);
+	letter-spacing: 0.01em;
 }
 
 :where(.auth-surface) .auth-surface__identity-support {
@@ -469,8 +470,8 @@
 	font-size: 0.75rem;
 	font-weight: 400;
 	line-height: 1.4;
-	letter-spacing: 0.02em;
 	color: var(--auth-identity-muted);
+	letter-spacing: 0.02em;
 }
 
 :where(.auth-surface) .auth-surface__column {
@@ -480,24 +481,16 @@
 
 :where(.auth-surface) .auth-surface__panel {
 	position: relative;
+	padding: var(--section-gap) calc(var(--field-gap) * 1.5);
 	overflow: hidden;
-	border: 1px solid
-		color-mix(in oklab, var(--border) 45%, var(--auth-accent) 55%);
-	border-radius: var(--radius-xl);
 	background: color-mix(
 		in oklab,
 		var(--surface-raised) calc(48% + var(--auth-panel-ice) * 8%),
 		transparent
 	);
-	backdrop-filter: blur(calc(18px + var(--auth-panel-ice) * 8px))
-		saturate(
-			calc(1.1 + var(--auth-panel-ice) * 0.25 + var(--auth-panel-fire) * 0.15)
-		);
-	-webkit-backdrop-filter: blur(calc(18px + var(--auth-panel-ice) * 8px))
-		saturate(
-			calc(1.1 + var(--auth-panel-ice) * 0.25 + var(--auth-panel-fire) * 0.15)
-		);
-	padding: var(--section-gap) calc(var(--field-gap) * 1.5);
+	border: 1px solid
+		color-mix(in oklab, var(--border) 45%, var(--auth-accent) 55%);
+	border-radius: var(--radius-xl);
 	box-shadow:
 		var(--shadow-dialog),
 		var(--shadow-overlay),
@@ -518,16 +511,25 @@
 			var(--warning) calc(var(--auth-panel-fire) * 16%),
 			transparent
 		);
+	-webkit-backdrop-filter: blur(calc(18px + var(--auth-panel-ice) * 8px))
+		saturate(
+			calc(1.1 + var(--auth-panel-ice) * 0.25 + var(--auth-panel-fire) * 0.15)
+		);
+	backdrop-filter: blur(calc(18px + var(--auth-panel-ice) * 8px))
+		saturate(
+			calc(1.1 + var(--auth-panel-ice) * 0.25 + var(--auth-panel-fire) * 0.15)
+		);
 	animation: auth-surface-panel-enter 260ms ease-out both;
 }
 
 /* Top signal bar — accent follows panel beat. */
 :where(.auth-surface) .auth-surface__panel::before {
-	content: "";
 	position: absolute;
 	inset: 0 0 auto 0;
 	z-index: 2;
 	height: 0.1875rem;
+	pointer-events: none;
+	content: "";
 	background: linear-gradient(
 		to right,
 		transparent 0%,
@@ -536,7 +538,6 @@
 		color-mix(in oklab, var(--auth-accent) 55%, var(--primary) 45%) 82%,
 		transparent 100%
 	);
-	pointer-events: none;
 	box-shadow: 0 0 18px color-mix(in oklab, var(--auth-accent) 42%, transparent);
 }
 
@@ -548,8 +549,6 @@
 	position: absolute;
 	inset: 0;
 	z-index: 0;
-	border-radius: inherit;
-	opacity: calc(0.2 + var(--auth-panel-ice) * 0.78);
 	background:
 		radial-gradient(
 			circle at 0% 0%,
@@ -597,6 +596,7 @@
 				)
 				100%
 		);
+	border-radius: inherit;
 	box-shadow:
 		inset 0 0 0 calc(1px + var(--auth-panel-ice) * 1px)
 		color-mix(
@@ -610,6 +610,7 @@
 			var(--info) calc(var(--auth-panel-ice) * 10%),
 			transparent
 		);
+	opacity: calc(0.2 + var(--auth-panel-ice) * 0.78);
 	/* Rim-first reveal: hollow when ice low, fills as ice rises. */
 	-webkit-mask-image: radial-gradient(
 		ellipse 72% 68% at 50% 48%,
@@ -628,9 +629,6 @@
 	position: absolute;
 	inset: -8% -6%;
 	z-index: 0;
-	border-radius: inherit;
-	opacity: calc(var(--auth-panel-fire) * 0.88);
-	mix-blend-mode: screen;
 	background:
 		radial-gradient(
 			ellipse 70% 45% at 50% 110%,
@@ -648,6 +646,9 @@
 			color-mix(in oklab, var(--warning) 24%, transparent) 0%,
 			transparent 40%
 		);
+	border-radius: inherit;
+	mix-blend-mode: screen;
+	opacity: calc(var(--auth-panel-fire) * 0.88);
 	filter: blur(2px);
 }
 
@@ -656,9 +657,7 @@
 	position: absolute;
 	inset: 0;
 	z-index: 0;
-	border-radius: inherit;
-	opacity: calc(var(--auth-panel-fire) * 0.42);
-	mix-blend-mode: soft-light;
+	pointer-events: none;
 	background: repeating-linear-gradient(
 		105deg,
 		transparent 0 10px,
@@ -666,8 +665,10 @@
 		transparent 14px 22px
 	);
 	background-size: 100% 200%;
+	border-radius: inherit;
+	mix-blend-mode: soft-light;
+	opacity: calc(var(--auth-panel-fire) * 0.42);
 	animation: auth-surface-heat-shimmer 2.4s ease-in-out infinite;
-	pointer-events: none;
 }
 
 :where(.auth-surface) .auth-surface__brand {
@@ -990,23 +991,23 @@
 	}
 
 	:where(.auth-surface) .auth-surface__ember-field--a {
-		opacity: 0.45;
 		background-size:
 			220px 260px,
 			280px 320px,
 			200px 240px,
 			300px 360px,
 			250px 300px;
+		opacity: 0.45;
 	}
 
 	:where(.auth-surface) .auth-surface__snow--a {
-		opacity: 0.42;
 		background-size:
 			200px 240px,
 			260px 300px,
 			190px 230px,
 			290px 340px,
 			230px 280px;
+		opacity: 0.42;
 	}
 
 	:where(.auth-surface) .auth-surface__steam {
@@ -1025,15 +1026,15 @@
  */
 @media (prefers-reduced-motion: reduce) {
 	.auth-surface {
-		animation: auth-surface-reduced-dissolve 25s ease-in-out infinite;
 		--auth-snow: 0;
 		--auth-steam: 0;
 		--auth-embers: 0;
+		animation: auth-surface-reduced-dissolve 25s ease-in-out infinite;
 	}
 
 	:where(.auth-surface) .auth-surface__art-plane {
-		animation: none;
 		transform: none;
+		animation: none;
 	}
 
 	:where(.auth-surface) .auth-surface__radiant--ice {
@@ -1059,14 +1060,14 @@
 	}
 
 	:where(.auth-surface) .auth-surface__panel {
-		animation: none;
-		backdrop-filter: none;
-		-webkit-backdrop-filter: none;
 		background: color-mix(
 			in oklab,
 			var(--surface-raised) calc(92% + var(--auth-panel-ice) * 4%),
 			var(--card) calc(4% + var(--auth-panel-fire) * 4%)
 		);
+		-webkit-backdrop-filter: none;
+		backdrop-filter: none;
+		animation: none;
 	}
 }
 

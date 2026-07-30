@@ -51,7 +51,7 @@ async function loadEmploymentForAssignment(
 	return ok(employment.data);
 }
 
-export async function createAssignment(
+export function createAssignment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<WorkAssignment>> {
@@ -61,7 +61,9 @@ export async function createAssignment(
 		command: HUMAN_RESOURCES_COMMAND_ASSIGNMENT_CREATE,
 		execute: async (data, { store, ports }) => {
 			const directory = requireOrganizationDimensionDirectory(options);
-			if (!directory.ok) return directory;
+			if (!directory.ok) {
+				return directory;
+			}
 
 			const employment = await loadEmploymentForAssignment(store, {
 				organizationId: data.organizationId,
@@ -99,7 +101,9 @@ export async function createAssignment(
 					project: data.projectKey,
 				},
 			});
-			if (!dimensions.ok) return dimensions;
+			if (!dimensions.ok) {
+				return dimensions;
+			}
 
 			const snapshots = await resolveAssignmentContextSnapshots({
 				organizationId: data.organizationId,
@@ -155,7 +159,7 @@ export async function createAssignment(
 	});
 }
 
-export async function endAssignment(
+export function endAssignment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<WorkAssignment>> {
@@ -241,7 +245,7 @@ export async function endAssignment(
 	});
 }
 
-export async function getAssignment(
+export function getAssignment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<WorkAssignment>> {
@@ -269,7 +273,7 @@ export async function getAssignment(
 	});
 }
 
-export async function getAssignmentAsOf(
+export function getAssignmentAsOf(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<WorkAssignment | null>> {
@@ -277,12 +281,11 @@ export async function getAssignmentAsOf(
 		schema: getAssignmentAsOfInputSchema,
 		invalidMessage: "Invalid assignment as-of input",
 		query: HUMAN_RESOURCES_QUERY_ASSIGNMENT_AS_OF,
-		execute: async (data, { store }) => {
-			return store.findAssignmentByEmploymentAsOf({
+		execute: async (data, { store }) =>
+			store.findAssignmentByEmploymentAsOf({
 				organizationId: data.organizationId,
 				employmentId: data.employmentId,
 				asOf: data.asOf,
-			});
-		},
+			}),
 	});
 }

@@ -26,7 +26,9 @@ function policy(input: {
 					const parsed = parseHumanResourcesLeavePolicyId(
 						input.supersedesPolicyId,
 					);
-					if (!parsed.ok) throw new Error("invalid supersedes id fixture");
+					if (!parsed.ok) {
+						throw new Error("invalid supersedes id fixture");
+					}
 					return parsed.data;
 				})();
 

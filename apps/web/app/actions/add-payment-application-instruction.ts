@@ -34,7 +34,7 @@ export async function addPaymentApplicationInstructionAction(
 	_prev: AddPaymentApplicationInstructionActionState,
 	formData: FormData,
 ): Promise<AddPaymentApplicationInstructionActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "addPaymentApplicationInstructionAction",
 		permission: "payments.application_instruction.manage",
 		safeMessage:
@@ -67,7 +67,9 @@ export async function addPaymentApplicationInstructionAction(
 					createPaymentsCommandOptions(),
 				),
 			);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePath("/admin/payments");
 			revalidatePath("/client/payments");
 			return { ok: true, data: { instruction: mapped.data } };

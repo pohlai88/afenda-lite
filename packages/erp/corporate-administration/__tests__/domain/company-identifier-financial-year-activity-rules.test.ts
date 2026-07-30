@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/noUnnecessaryConditions: Explicit fallbacks document the nullable policy input contract.
 import { describe, expect, it } from "vitest";
 
 import {

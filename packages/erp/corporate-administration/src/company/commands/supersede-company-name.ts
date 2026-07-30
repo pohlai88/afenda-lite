@@ -1,3 +1,4 @@
+// biome-ignore-all lint/style/useDestructuring: Explicit predecessor access keeps name supersession evidence visible.
 import { fail, type Result } from "@afenda/errors/result";
 import {
 	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
@@ -45,7 +46,9 @@ export async function supersedeCompanyName(
 		supersedeCompanyNameInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 
 	const authorized = await requireCorporateAdministrationPermission(
 		options.authorization,
@@ -56,7 +59,9 @@ export async function supersedeCompanyName(
 				CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS.supersedeCompanyName,
 		},
 	);
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 
 	const identity = createCorporateAdministrationCommandFingerprint({
 		schema: supersedeCompanyNameInputSchema,
@@ -64,7 +69,9 @@ export async function supersedeCompanyName(
 		commandId: "corporate-administration.legal-company.supersede-company-name",
 		input: parsed.data,
 	});
-	if (!identity.ok) return identity;
+	if (!identity.ok) {
+		return identity;
+	}
 	const approved = await requireCorporateAdministrationApprovalIfConfigured(
 		dependencies,
 		{
@@ -75,14 +82,18 @@ export async function supersedeCompanyName(
 			commandFingerprint: identity.data.fingerprint,
 		},
 	);
-	if (!approved.ok) return approved;
+	if (!approved.ok) {
+		return approved;
+	}
 
 	const sourceDocument =
 		await dependencies.referenceData.validateSourceDocument({
 			organizationId: options.organizationId,
 			sourceDocumentId: parsed.data.replacement.sourceDocumentId,
 		});
-	if (!sourceDocument.ok) return sourceDocument;
+	if (!sourceDocument.ok) {
+		return sourceDocument;
+	}
 	if (sourceDocument.data === null) {
 		return fail(
 			"NOT_FOUND",
@@ -110,12 +121,16 @@ export async function supersedeCompanyName(
 		legalCompanyId: parsed.data.legalCompanyId,
 		companyNameId: parsed.data.companyNameId,
 	});
-	if (!existing.ok) return existing;
+	if (!existing.ok) {
+		return existing;
+	}
 	const eligible = validateCompanyNameSupersession({
 		name: existing.data,
 		expectedVersion: parsed.data.expectedNameVersion,
 	});
-	if (!eligible.ok) return eligible;
+	if (!eligible.ok) {
+		return eligible;
+	}
 
 	const normalizedName = normalizeCompanyName(
 		parsed.data.replacement.displayName,
@@ -133,7 +148,9 @@ export async function supersedeCompanyName(
 		effectivePeriod,
 		ignoreCompanyNameId: parsed.data.companyNameId,
 	});
-	if (!overlap.ok) return overlap;
+	if (!overlap.ok) {
+		return overlap;
+	}
 	if (overlap.data !== null) {
 		return fail(
 			"CONFLICT",

@@ -1,3 +1,4 @@
+const HR_REGEX_1 = /^0+(?=\d)/;
 export type ExactDecimal = Readonly<{
 	coefficient: bigint;
 	scale: number;
@@ -12,12 +13,14 @@ export const EXACT_DECIMAL_ZERO: ExactDecimal = Object.freeze({
 
 export function parseExactDecimal(value: string): ExactDecimal | null {
 	const match = EXACT_DECIMAL_PATTERN.exec(value);
-	if (!match) return null;
+	if (!match) {
+		return null;
+	}
 
 	const sign = match[1] ?? "";
 	const integerPart = match[2] ?? "0";
 	const fractionalPart = match[3] ?? "";
-	const digits = `${integerPart}${fractionalPart}`.replace(/^0+(?=\d)/, "");
+	const digits = `${integerPart}${fractionalPart}`.replace(HR_REGEX_1, "");
 	const magnitude = BigInt(digits || "0");
 
 	return {
@@ -38,8 +41,12 @@ export function compareExactDecimals(
 	const leftCoefficient = coefficientAtScale(left, scale);
 	const rightCoefficient = coefficientAtScale(right, scale);
 
-	if (leftCoefficient < rightCoefficient) return -1;
-	if (leftCoefficient > rightCoefficient) return 1;
+	if (leftCoefficient < rightCoefficient) {
+		return -1;
+	}
+	if (leftCoefficient > rightCoefficient) {
+		return 1;
+	}
 	return 0;
 }
 

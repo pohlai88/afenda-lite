@@ -53,15 +53,17 @@ export async function queryDomainEvents(
 /**
  * Purge processed outbox rows older than a cutoff (org-scoped).
  */
-export async function purgeProcessedDomainEvents(
+export function purgeProcessedDomainEvents(
 	input: unknown,
 	store?: EventStore,
 ): Promise<Result<number>> {
 	const parsed = eventPurgeOptionsSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail("BAD_REQUEST", "Invalid event purge input", {
-			fieldErrors: parsed.error.flatten().fieldErrors,
-		});
+		return Promise.resolve(
+			fail("BAD_REQUEST", "Invalid event purge input", {
+				fieldErrors: parsed.error.flatten().fieldErrors,
+			}),
+		);
 	}
 
 	return resolveEventStore(store).purgeProcessed(parsed.data);

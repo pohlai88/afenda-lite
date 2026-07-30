@@ -83,7 +83,7 @@ export async function importAttendanceEvents(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceImportResult>> {
-	return runTimeCommand(input, options, {
+	return await runTimeCommand(input, options, {
 		schema: importAttendanceEventsInputSchema,
 		invalidMessage: "Invalid attendance import input",
 		command: HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENTS_IMPORT,
@@ -97,14 +97,20 @@ export async function importAttendanceEvents(
 
 			if (rawEvents === undefined) {
 				const source = requireAttendanceSource(options);
-				if (!source.ok) return source;
+				if (!source.ok) {
+					return source;
+				}
 				const fetched = await source.data.fetchEvents({
 					organizationId: data.organizationId,
 					...(data.cursor === undefined ? {} : { cursor: data.cursor }),
 				});
-				if (!fetched.ok) return fetched;
+				if (!fetched.ok) {
+					return fetched;
+				}
 				sourceRejectedRows = fetched.data.rejectedRows;
-				const parsedRows = [];
+				const parsedRows: ReturnType<
+					typeof attendanceImportEventRowSchema.parse
+				>[] = [];
 				for (const event of fetched.data.events) {
 					const parsed = attendanceImportEventRowSchema.safeParse(event);
 					if (!parsed.success) {
@@ -127,7 +133,7 @@ export async function importAttendanceEvents(
 					);
 				}
 				rawEvents = parsedRows;
-				nextCursor = fetched.data.nextCursor;
+				({ nextCursor } = fetched.data);
 				if (sourceRejectedRows !== undefined) {
 					sourceRowIndexes = resolveSourceRowIndexes({
 						acceptedCount: parsedRows.length,

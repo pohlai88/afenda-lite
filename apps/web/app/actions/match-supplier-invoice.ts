@@ -27,7 +27,7 @@ export async function matchSupplierInvoiceAction(
 	_prev: MatchSupplierInvoiceActionState,
 	formData: FormData,
 ): Promise<MatchSupplierInvoiceActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "matchSupplierInvoiceAction",
 		permission: "payables.manage",
 		safeMessage:
@@ -39,12 +39,13 @@ export async function matchSupplierInvoiceAction(
 				goodsReceiptId: formData.get("goodsReceiptId"),
 				expectedVersion: formData.get("expectedVersion"),
 			});
-			if (!parsed.success)
+			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
 					"Enter a valid invoice, purchase order, goods receipt, and version.",
 					parsed.details,
 				);
+			}
 			const mapped = mapPackageResult(
 				await matchSupplierInvoice(
 					{
@@ -56,7 +57,9 @@ export async function matchSupplierInvoiceAction(
 					createPayablesCommandOptions(session.userId),
 				),
 			);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePayablesPaths();
 			return { ok: true, data: { invoice: mapped.data } };
 		},

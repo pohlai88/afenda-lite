@@ -23,7 +23,9 @@ const contract: RootParityContract<TaxRegistrationProjection> = {
 			},
 			harness.options,
 		);
-		if (!party.ok) return party;
+		if (!party.ok) {
+			return party;
+		}
 		return createTaxRegistration(
 			{
 				...harness.context(),

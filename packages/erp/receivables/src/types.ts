@@ -18,117 +18,117 @@ export const CUSTOMER_ALLOCATION_STATUSES = ["active", "reversed"] as const;
 export type CustomerAllocationStatus =
 	(typeof CUSTOMER_ALLOCATION_STATUSES)[number];
 
-export type SalesInvoiceLine = {
-	id: string;
-	organizationId: string;
-	invoiceId: string;
-	lineNo: number;
-	itemId: string;
-	itemCode: string;
-	itemName: string;
-	description: string;
-	quantity: string;
-	unitPrice: string;
-	lineAmount: string;
-	salesOrderLineId: string | null;
-	deliveryLineId: string | null;
-	createdBy: string;
+export interface SalesInvoiceLine {
 	createdAt: Date;
-};
-
-export type SalesInvoice = {
-	id: string;
-	organizationId: string;
-	code: string;
-	normalizedCode: string;
-	status: SalesInvoiceStatus;
-	invoiceSource: SalesInvoiceSource;
-	customerId: string;
-	customerCode: string;
-	customerName: string;
-	currencyCode: string;
-	salesOrderId: string | null;
-	deliveryId: string | null;
-	invoiceDate: Date | null;
-	accountingDate: Date | null;
-	dueDate: Date | null;
-	paymentTermCode: string | null;
-	paymentTermDescription: string | null;
-	manualReason: string | null;
-	totalAmount: string;
-	openAmount: string;
-	version: number;
 	createdBy: string;
-	updatedBy: string;
-	postedAt: Date | null;
-	postedBy: string | null;
-	closedAt: Date | null;
-	closedBy: string | null;
+	deliveryLineId: string | null;
+	description: string;
+	id: string;
+	invoiceId: string;
+	itemCode: string;
+	itemId: string;
+	itemName: string;
+	lineAmount: string;
+	lineNo: number;
+	organizationId: string;
+	quantity: string;
+	salesOrderLineId: string | null;
+	unitPrice: string;
+}
+
+export interface SalesInvoice {
+	accountingDate: Date | null;
 	cancelledAt: Date | null;
 	cancelledBy: string | null;
-	createdAt: Date;
-	updatedAt: Date;
-	lines: SalesInvoiceLine[];
-};
-
-export type SalesCreditNote = {
-	id: string;
-	organizationId: string;
+	closedAt: Date | null;
+	closedBy: string | null;
 	code: string;
-	normalizedCode: string;
-	status: "draft" | "posted" | "cancelled";
-	customerId: string;
-	customerCode: string;
-	customerName: string;
-	salesInvoiceId: string;
-	currencyCode: string;
-	amount: string;
-	version: number;
+	createdAt: Date;
 	createdBy: string;
-	updatedBy: string;
+	currencyCode: string;
+	customerCode: string;
+	customerId: string;
+	customerName: string;
+	deliveryId: string | null;
+	dueDate: Date | null;
+	id: string;
+	invoiceDate: Date | null;
+	invoiceSource: SalesInvoiceSource;
+	lines: SalesInvoiceLine[];
+	manualReason: string | null;
+	normalizedCode: string;
+	openAmount: string;
+	organizationId: string;
+	paymentTermCode: string | null;
+	paymentTermDescription: string | null;
 	postedAt: Date | null;
 	postedBy: string | null;
-	createdAt: Date;
+	salesOrderId: string | null;
+	status: SalesInvoiceStatus;
+	totalAmount: string;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type CustomerAllocation = {
-	id: string;
-	organizationId: string;
-	invoiceId: string;
-	customerId: string;
-	paymentId: string;
-	paymentApplicationInstructionId: string;
-	creditNoteId: string | null;
-	status: CustomerAllocationStatus;
+export interface SalesCreditNote {
 	amount: string;
-	createdBy: string;
+	code: string;
 	createdAt: Date;
+	createdBy: string;
+	currencyCode: string;
+	customerCode: string;
+	customerId: string;
+	customerName: string;
+	id: string;
+	normalizedCode: string;
+	organizationId: string;
+	postedAt: Date | null;
+	postedBy: string | null;
+	salesInvoiceId: string;
+	status: "draft" | "posted" | "cancelled";
+	updatedAt: Date;
+	updatedBy: string;
+	version: number;
+}
+
+export interface CustomerAllocation {
+	amount: string;
+	createdAt: Date;
+	createdBy: string;
+	creditNoteId: string | null;
+	customerId: string;
+	id: string;
+	invoiceId: string;
+	organizationId: string;
+	paymentApplicationInstructionId: string;
+	paymentId: string;
 	reversedAt: Date | null;
 	reversedBy: string | null;
-};
+	status: CustomerAllocationStatus;
+}
 
-export type CustomerBalance = {
-	organizationId: string;
-	customerId: string;
+export interface CustomerBalance {
 	currencyCode: string;
+	customerId: string;
 	openBalance: string;
+	organizationId: string;
 	updatedAt: Date;
-};
+}
 
-export type CustomerAgingBucket = {
+export interface CustomerAgingBucket {
 	current: string;
 	days1to30: string;
 	days31to60: string;
 	days61to90: string;
 	over90: string;
-};
+}
 
-export type CustomerAging = {
-	organizationId: string;
-	customerId: string;
-	currencyCode: string;
+export interface CustomerAging {
 	asOfDate: string;
 	buckets: CustomerAgingBucket;
+	currencyCode: string;
+	customerId: string;
+	organizationId: string;
 	totalOpen: string;
-};
+}

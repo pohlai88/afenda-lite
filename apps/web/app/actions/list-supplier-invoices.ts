@@ -31,19 +31,20 @@ export async function listSupplierInvoicesAction(input?: {
 	currencyCode?: string;
 	documentType?: SupplierInvoice["documentType"];
 }): Promise<ActionResult<{ invoices: SupplierInvoice[] }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listSupplierInvoicesAction",
 		permission: "payables.read",
 		safeMessage:
 			"Could not list supplier invoices. Try again or contact an admin.",
 		execute: async (session) => {
 			const parsed = parseSchema(schema, input);
-			if (!parsed.success)
+			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
 					"Enter valid supplier invoice filters.",
 					parsed.details,
 				);
+			}
 			const mapped = mapPackageResult(
 				await listSupplierInvoices(
 					{
@@ -54,7 +55,9 @@ export async function listSupplierInvoicesAction(input?: {
 					createPayablesCommandOptions(session.userId),
 				),
 			);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { invoices: mapped.data } };
 		},
 	});

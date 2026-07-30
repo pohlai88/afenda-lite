@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/useAwait: The deterministic helper implements the asynchronous outbox port.
 import type {
 	CorporateAdministrationOutboxPort,
 	CorporateAdministrationPendingEvent,

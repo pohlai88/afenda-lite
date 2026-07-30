@@ -16,9 +16,9 @@ export const AUTH_ISLAND_BRAND_ART_ICE = "/lynx/lynx-icy3-wide.png";
 /** Full-bleed fire plate — morphs in after panel thaw + ignition. */
 export const AUTH_ISLAND_BRAND_ART_FIRE = "/lynx/lynx-fire-wide.png";
 
-type AuthSurfaceChromeProps = {
+interface AuthSurfaceChromeProps {
 	children: ReactNode;
-};
+}
 
 /**
  * Recovery-path support line — forgot/reset only.
@@ -51,25 +51,25 @@ export function AuthSurfaceChrome({ children }: AuthSurfaceChromeProps) {
 	return (
 		<AuthSurfaceRoot>
 			<div
-				className="auth-surface__backdrop absolute inset-0"
 				aria-hidden="true"
+				className="auth-surface__backdrop absolute inset-0"
 			>
 				<div className="auth-surface__art-plane absolute inset-0">
 					<Image
-						src={AUTH_ISLAND_BRAND_ART_ICE}
 						alt=""
+						className="auth-surface__brand-art auth-surface__brand-art--ice object-cover"
 						fill
 						priority
 						sizes="100vw"
-						className="auth-surface__brand-art auth-surface__brand-art--ice object-cover"
+						src={AUTH_ISLAND_BRAND_ART_ICE}
 					/>
 					<Image
-						src={AUTH_ISLAND_BRAND_ART_FIRE}
 						alt=""
+						className="auth-surface__brand-art auth-surface__brand-art--fire object-cover"
 						fill
 						priority
 						sizes="100vw"
-						className="auth-surface__brand-art auth-surface__brand-art--fire object-cover"
+						src={AUTH_ISLAND_BRAND_ART_FIRE}
 					/>
 				</div>
 				<div className="auth-surface__radiant auth-surface__radiant--ice pointer-events-none absolute inset-0" />
@@ -103,18 +103,18 @@ export function AuthSurfaceChrome({ children }: AuthSurfaceChromeProps) {
 			<div className="auth-surface__column relative flex min-h-0 flex-col justify-center p-6 lg:p-(--section-gap)">
 				<div className="auth-surface__panel flex w-full flex-col gap-6">
 					<div
+						aria-hidden="true"
 						className="auth-surface__panel-frost pointer-events-none"
-						aria-hidden="true"
 					/>
 					<div
+						aria-hidden="true"
 						className="auth-surface__panel-ember pointer-events-none"
-						aria-hidden="true"
 					/>
 					<div
-						className="auth-surface__panel-heat pointer-events-none"
 						aria-hidden="true"
+						className="auth-surface__panel-heat pointer-events-none"
 					/>
-					<p className="auth-surface__brand relative z-[1] text-center text-sm font-semibold uppercase">
+					<p className="auth-surface__brand relative z-[1] text-center font-semibold text-sm uppercase">
 						Afenda-Lite
 					</p>
 					<div className="auth-surface__panel-body relative z-[1] flex flex-col gap-6">

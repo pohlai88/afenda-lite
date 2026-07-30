@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+function isNullish(value: unknown): value is null | undefined {
+	return value === null || value === undefined;
+}
+
 import {
 	legalCompanyIdSchema,
 	officerAppointmentIdSchema,
@@ -84,7 +88,7 @@ export const statutoryOfficeSchema = z
 	.strict()
 	.refine(
 		(value) =>
-			value.maximumHolders === null ||
+			isNullish(value.maximumHolders) ||
 			value.maximumHolders >= value.minimumHolders,
 		{ path: ["maximumHolders"], message: "maximumHolders is below minimum" },
 	)
@@ -137,7 +141,7 @@ export const officerQualificationSchema = z
 	})
 	.strict()
 	.refine(
-		(value) => value.validTo === null || value.validFrom < value.validTo,
+		(value) => isNullish(value.validTo) || value.validFrom < value.validTo,
 		{
 			path: ["validTo"],
 			message: "validTo must follow validFrom",
@@ -167,7 +171,7 @@ export const defineStatutoryOfficeInputSchema = z
 	.strict()
 	.refine(
 		(value) =>
-			value.maximumHolders == null ||
+			isNullish(value.maximumHolders) ||
 			value.maximumHolders >= value.minimumHolders,
 		{ path: ["maximumHolders"], message: "maximumHolders is below minimum" },
 	)
@@ -195,7 +199,7 @@ export const appointOfficerInputSchema = z
 	.strict()
 	.refine(
 		(value) =>
-			value.effectiveTo == null || value.effectiveFrom < value.effectiveTo,
+			isNullish(value.effectiveTo) || value.effectiveFrom < value.effectiveTo,
 		{
 			path: ["effectiveTo"],
 			message: "effectiveTo must follow effectiveFrom",
@@ -224,7 +228,7 @@ export const amendOfficerAppointmentInputSchema = z
 	.strict()
 	.refine(
 		(value) =>
-			value.effectiveTo == null || value.effectiveFrom < value.effectiveTo,
+			isNullish(value.effectiveTo) || value.effectiveFrom < value.effectiveTo,
 		{
 			path: ["effectiveTo"],
 			message: "effectiveTo must follow effectiveFrom",
@@ -246,13 +250,16 @@ export const recordOfficerQualificationInputSchema = z
 		expectedAppointmentVersion: z.number().int().positive(),
 	})
 	.strict()
-	.refine((value) => value.validTo == null || value.validFrom < value.validTo, {
-		path: ["validTo"],
-		message: "validTo must follow validFrom",
-	})
+	.refine(
+		(value) => isNullish(value.validTo) || value.validFrom < value.validTo,
+		{
+			path: ["validTo"],
+			message: "validTo must follow validFrom",
+		},
+	)
 	.refine(
 		(value) =>
-			value.verificationStatus !== "verified" || value.verifiedAt != null,
+			value.verificationStatus !== "verified" || !isNullish(value.verifiedAt),
 		{ path: ["verifiedAt"], message: "verifiedAt is required when verified" },
 	)
 	.readonly();

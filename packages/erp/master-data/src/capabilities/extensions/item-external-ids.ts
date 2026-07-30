@@ -38,7 +38,9 @@ export async function createItemExternalId(
 		externalValue: parsed.data.externalValue,
 		caseSensitivity: parsed.data.caseSensitivity,
 	});
-	if (!normalized.ok) return normalized;
+	if (!normalized.ok) {
+		return normalized;
+	}
 	const { store, roots, ports, authorization } = resolveItemExtensionDeps(
 		options,
 		["createItemExternalId"],
@@ -56,7 +58,9 @@ export async function createItemExternalId(
 		parsed.data.organizationId,
 		parsed.data.itemId,
 	);
-	if (!parent.ok) return parent;
+	if (!parent.ok) {
+		return parent;
+	}
 	return store.createItemExternalId(
 		{
 			organizationId: parsed.data.organizationId,
@@ -92,7 +96,9 @@ export async function findItemByExternalId(
 		externalValue: parsed.data.externalValue,
 		caseSensitivity: parsed.data.caseSensitivity,
 	});
-	if (!normalized.ok) return normalized;
+	if (!normalized.ok) {
+		return normalized;
+	}
 	const { store, authorization } = resolveItemExtensionDeps(options, [
 		"findItemByExternalId",
 	]);

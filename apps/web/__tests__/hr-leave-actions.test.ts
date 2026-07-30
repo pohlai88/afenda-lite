@@ -358,7 +358,9 @@ describe("HR Leave Server Actions", () => {
 			invalidHandoff,
 		]) {
 			expect(result.ok).toBe(false);
-			if (!result.ok) expect(result.code).toBe("VALIDATION_ERROR");
+			if (!result.ok) {
+				expect(result.code).toBe("VALIDATION_ERROR");
+			}
 		}
 		expect(hrLeaveMocks.createDraftLeaveRequest).not.toHaveBeenCalled();
 		expect(hrLeaveMocks.submitLeaveRequest).not.toHaveBeenCalled();
@@ -529,3 +531,4 @@ describe("HR Leave Server Actions", () => {
 		);
 	});
 });
+// biome-ignore-all lint/performance/noAwaitInLoops: Cases run serially to isolate mutable test state and ordered transitions.

@@ -20,9 +20,9 @@ import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 
 const initialState: AddPurchaseOrderLineActionState = null;
 
-type AddPurchaseOrderLineFormProps = {
+interface AddPurchaseOrderLineFormProps {
 	canUpdate: boolean;
-};
+}
 
 /**
  * Add line to draft purchase order — CAPABLE when `purchasing.order.update` is granted.
@@ -79,90 +79,90 @@ export function AddPurchaseOrderLineForm({
 				<FormError>{state.message}</FormError>
 			) : null}
 			<FormField
+				error={orderError}
+				fieldId="purchase-line-order"
 				label="Order id"
 				required
-				fieldId="purchase-line-order"
-				error={orderError}
 			>
 				<Input
+					autoComplete="off"
+					disabled={pending}
 					id="purchase-line-order"
 					name="orderId"
 					required
-					autoComplete="off"
-					disabled={pending}
 				/>
 			</FormField>
 			<FormField
+				error={itemError}
+				fieldId="purchase-line-item"
 				label="Item id"
 				required
-				fieldId="purchase-line-item"
-				error={itemError}
 			>
 				<Input
+					autoComplete="off"
+					disabled={pending}
 					id="purchase-line-item"
 					name="itemId"
 					required
-					autoComplete="off"
-					disabled={pending}
 				/>
 			</FormField>
 			<FormField
+				error={qtyError}
+				fieldId="purchase-line-qty"
 				label="Quantity"
 				required
-				fieldId="purchase-line-qty"
-				error={qtyError}
 			>
 				<Input
-					id="purchase-line-qty"
-					name="quantity"
-					type="number"
-					step="any"
-					min="0.000001"
-					required
 					disabled={pending}
+					id="purchase-line-qty"
+					min="0.000001"
+					name="quantity"
+					required
+					step="any"
+					type="number"
 				/>
 			</FormField>
 			<FormField
+				error={priceError}
+				fieldId="purchase-line-price"
 				label="Unit price"
 				required
-				fieldId="purchase-line-price"
-				error={priceError}
 			>
 				<Input
+					disabled={pending}
 					id="purchase-line-price"
+					min="0"
 					name="unitPrice"
-					type="number"
-					step="any"
-					min="0"
 					required
-					disabled={pending}
-				/>
-			</FormField>
-			<FormField
-				label="Discount amount (optional)"
-				fieldId="purchase-line-discount"
-			>
-				<Input
-					id="purchase-line-discount"
-					name="discountAmount"
-					type="number"
 					step="any"
-					min="0"
-					disabled={pending}
+					type="number"
 				/>
 			</FormField>
 			<FormField
-				label="Tax classification (optional)"
-				fieldId="purchase-line-tax"
+				fieldId="purchase-line-discount"
+				label="Discount amount (optional)"
 			>
 				<Input
-					id="purchase-line-tax"
-					name="taxClassification"
+					disabled={pending}
+					id="purchase-line-discount"
+					min="0"
+					name="discountAmount"
+					step="any"
+					type="number"
+				/>
+			</FormField>
+			<FormField
+				fieldId="purchase-line-tax"
+				label="Tax classification (optional)"
+			>
+				<Input
 					autoComplete="off"
 					disabled={pending}
+					id="purchase-line-tax"
+					name="taxClassification"
 				/>
 			</FormField>
-			<Button type="submit" disabled={pending}>
+			<Button disabled={pending} type="submit">
 				{pending ? <Spinner /> : null}
 				Add line
 			</Button>

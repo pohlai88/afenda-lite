@@ -30,29 +30,39 @@ import type {
 } from "./types";
 
 export interface PlatformReferenceStore {
-	getCountryById(id: RefCountryId): Promise<RefCountry | null>;
-	getCountryByCode(code: CountryCode): Promise<RefCountry | null>;
-	listCountries(input: ListRefCountriesInput): Promise<ListPage<RefCountry>>;
-	getCurrencyById(id: RefCurrencyId): Promise<RefCurrency | null>;
-	getCurrencyByCode(code: CurrencyCode): Promise<RefCurrency | null>;
-	listCurrencies(input: ListRefCurrenciesInput): Promise<ListPage<RefCurrency>>;
-	getLanguageById(id: RefLanguageId): Promise<RefLanguage | null>;
-	getLanguageByCode(code: LanguageCode): Promise<RefLanguage | null>;
-	listLanguages(input: ListRefLanguagesInput): Promise<ListPage<RefLanguage>>;
-	getTimeZoneById(id: RefTimeZoneId): Promise<RefTimeZone | null>;
-	getTimeZoneByCode(code: TimeZoneCode): Promise<RefTimeZone | null>;
-	listTimeZones(input: ListRefTimeZonesInput): Promise<ListPage<RefTimeZone>>;
-	getUomDimensionById(id: RefUomDimensionId): Promise<RefUomDimension | null>;
-	getUomDimensionByCode(
+	getCountryByCode: (code: CountryCode) => Promise<RefCountry | null>;
+	getCountryById: (id: RefCountryId) => Promise<RefCountry | null>;
+	getCurrencyByCode: (code: CurrencyCode) => Promise<RefCurrency | null>;
+	getCurrencyById: (id: RefCurrencyId) => Promise<RefCurrency | null>;
+	getLanguageByCode: (code: LanguageCode) => Promise<RefLanguage | null>;
+	getLanguageById: (id: RefLanguageId) => Promise<RefLanguage | null>;
+	getTimeZoneByCode: (code: TimeZoneCode) => Promise<RefTimeZone | null>;
+	getTimeZoneById: (id: RefTimeZoneId) => Promise<RefTimeZone | null>;
+	getUomByCode: (code: UomCode) => Promise<RefUom | null>;
+	getUomById: (id: RefUomId) => Promise<RefUom | null>;
+	getUomDimensionByCode: (
 		code: UomDimensionCode,
-	): Promise<RefUomDimension | null>;
-	listUomDimensions(
+	) => Promise<RefUomDimension | null>;
+	getUomDimensionById: (
+		id: RefUomDimensionId,
+	) => Promise<RefUomDimension | null>;
+	listCountries: (
+		input: ListRefCountriesInput,
+	) => Promise<ListPage<RefCountry>>;
+	listCurrencies: (
+		input: ListRefCurrenciesInput,
+	) => Promise<ListPage<RefCurrency>>;
+	listLanguages: (
+		input: ListRefLanguagesInput,
+	) => Promise<ListPage<RefLanguage>>;
+	listTimeZones: (
+		input: ListRefTimeZonesInput,
+	) => Promise<ListPage<RefTimeZone>>;
+	listUomDimensions: (
 		input: ListRefUomDimensionsInput,
-	): Promise<ListPage<RefUomDimension>>;
-	getUomById(id: RefUomId): Promise<RefUom | null>;
-	getUomByCode(code: UomCode): Promise<RefUom | null>;
-	listUoms(input: ListRefUomsInput): Promise<ListPage<RefUom>>;
-	listUomsByDimension(
+	) => Promise<ListPage<RefUomDimension>>;
+	listUoms: (input: ListRefUomsInput) => Promise<ListPage<RefUom>>;
+	listUomsByDimension: (
 		input: ListRefUomsByDimensionInput,
-	): Promise<ListPage<RefUom>>;
+	) => Promise<ListPage<RefUom>>;
 }

@@ -62,7 +62,7 @@ export const HUMAN_RESOURCES_AGGREGATE_COMPETENCY = "competency" as const;
 export type HumanResourcesCompetencyAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_COMPETENCY;
 
-export async function createCompetency(
+export function createCompetency(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Competency>> {
@@ -97,7 +97,7 @@ export async function createCompetency(
 				return ok(existingByKey.data.competency);
 			}
 
-			return await store.createCompetency(
+			return store.createCompetency(
 				{
 					organizationId: data.organizationId,
 					code: data.code,
@@ -119,7 +119,7 @@ export async function createCompetency(
 	});
 }
 
-export async function updateCompetency(
+export function updateCompetency(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Competency>> {
@@ -127,8 +127,8 @@ export async function updateCompetency(
 		schema: updateCompetencyInputSchema,
 		invalidMessage: "Invalid competency update input",
 		command: HUMAN_RESOURCES_COMMAND_COMPETENCY_UPDATE,
-		execute: async (data, { store, ports }) => {
-			return await store.updateCompetency(
+		execute: async (data, { store, ports }) =>
+			await store.updateCompetency(
 				{
 					organizationId: data.organizationId,
 					competencyId: data.competencyId,
@@ -143,12 +143,11 @@ export async function updateCompetency(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_COMPETENCY_UPDATE,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function retireCompetency(
+export function retireCompetency(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Competency>> {
@@ -156,8 +155,8 @@ export async function retireCompetency(
 		schema: retireCompetencyInputSchema,
 		invalidMessage: "Invalid competency retire input",
 		command: HUMAN_RESOURCES_COMMAND_COMPETENCY_RETIRE,
-		execute: async (data, { store, ports }) => {
-			return await store.retireCompetency(
+		execute: async (data, { store, ports }) =>
+			await store.retireCompetency(
 				{
 					organizationId: data.organizationId,
 					competencyId: data.competencyId,
@@ -169,12 +168,11 @@ export async function retireCompetency(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_COMPETENCY_RETIRE,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function mapCompetencyToJob(
+export function mapCompetencyToJob(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<JobCompetency>> {
@@ -182,8 +180,8 @@ export async function mapCompetencyToJob(
 		schema: mapCompetencyToJobInputSchema,
 		invalidMessage: "Invalid competency to job mapping input",
 		command: HUMAN_RESOURCES_COMMAND_JOB_COMPETENCY_MAP,
-		execute: async (data, { store, ports }) => {
-			return await store.mapCompetencyToJob(
+		execute: async (data, { store, ports }) =>
+			await store.mapCompetencyToJob(
 				{
 					organizationId: data.organizationId,
 					jobId: data.jobId,
@@ -196,12 +194,11 @@ export async function mapCompetencyToJob(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_JOB_COMPETENCY_MAP,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function removeCompetencyFromJob(
+export function removeCompetencyFromJob(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<JobCompetency>> {
@@ -209,8 +206,8 @@ export async function removeCompetencyFromJob(
 		schema: removeCompetencyFromJobInputSchema,
 		invalidMessage: "Invalid competency from job removal input",
 		command: HUMAN_RESOURCES_COMMAND_JOB_COMPETENCY_REMOVE,
-		execute: async (data, { store, ports }) => {
-			return await store.removeCompetencyFromJob(
+		execute: async (data, { store, ports }) =>
+			await store.removeCompetencyFromJob(
 				{
 					organizationId: data.organizationId,
 					jobCompetencyId: data.jobCompetencyId,
@@ -222,12 +219,11 @@ export async function removeCompetencyFromJob(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_JOB_COMPETENCY_REMOVE,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function assessEmployeeCompetency(
+export function assessEmployeeCompetency(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompetencyAssessment>> {
@@ -272,7 +268,7 @@ export async function assessEmployeeCompetency(
 				return ok(existingByKey.data.assessment);
 			}
 
-			return await store.createCompetencyAssessment(
+			return store.createCompetencyAssessment(
 				{
 					organizationId: data.organizationId,
 					employeeId: data.employeeId,
@@ -297,7 +293,7 @@ export async function assessEmployeeCompetency(
 	});
 }
 
-export async function supersedeCompetencyAssessment(
+export function supersedeCompetencyAssessment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompetencyAssessment>> {
@@ -340,7 +336,7 @@ export async function supersedeCompetencyAssessment(
 	});
 }
 
-export async function expireCompetencyAssessment(
+export function expireCompetencyAssessment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompetencyAssessment>> {
@@ -350,8 +346,8 @@ export async function expireCompetencyAssessment(
 		command: HUMAN_RESOURCES_COMMAND_COMPETENCY_ASSESSMENT_EXPIRE,
 		resolveResource: (data, opts) =>
 			resolveCompetencyAssessmentResource(data, opts),
-		execute: async (data, { store, ports }) => {
-			return await store.expireCompetencyAssessment(
+		execute: async (data, { store, ports }) =>
+			await store.expireCompetencyAssessment(
 				{
 					organizationId: data.organizationId,
 					assessmentId: data.assessmentId,
@@ -363,12 +359,11 @@ export async function expireCompetencyAssessment(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_COMPETENCY_ASSESSMENT_EXPIRE,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function getCompetencyById(
+export function getCompetencyById(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Competency | null>> {
@@ -376,16 +371,15 @@ export async function getCompetencyById(
 		schema: getCompetencyByIdInputSchema,
 		invalidMessage: "Invalid competency get input",
 		query: HUMAN_RESOURCES_QUERY_COMPETENCY_GET,
-		execute: async (data, { store }) => {
-			return await store.getCompetencyById({
+		execute: async (data, { store }) =>
+			await store.getCompetencyById({
 				organizationId: data.organizationId,
 				competencyId: data.competencyId,
-			});
-		},
+			}),
 	});
 }
 
-export async function listCompetencies(
+export function listCompetencies(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompetencyListPage>> {
@@ -393,18 +387,17 @@ export async function listCompetencies(
 		schema: listCompetenciesInputSchema,
 		invalidMessage: "Invalid competency list input",
 		query: HUMAN_RESOURCES_QUERY_COMPETENCY_LIST,
-		execute: async (data, { store }) => {
-			return await store.listCompetencies({
+		execute: async (data, { store }) =>
+			await store.listCompetencies({
 				organizationId: data.organizationId,
 				page: data.page ?? 1,
 				pageSize: data.pageSize ?? 20,
 				status: data.status,
-			});
-		},
+			}),
 	});
 }
 
-export async function listJobCompetencies(
+export function listJobCompetencies(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<JobCompetencyListPage>> {
@@ -412,18 +405,17 @@ export async function listJobCompetencies(
 		schema: listJobCompetenciesInputSchema,
 		invalidMessage: "Invalid job competency list input",
 		query: HUMAN_RESOURCES_QUERY_JOB_COMPETENCY_LIST,
-		execute: async (data, { store }) => {
-			return await store.listJobCompetencies({
+		execute: async (data, { store }) =>
+			await store.listJobCompetencies({
 				organizationId: data.organizationId,
 				jobId: data.jobId,
 				page: data.page ?? 1,
 				pageSize: data.pageSize ?? 20,
-			});
-		},
+			}),
 	});
 }
 
-export async function getEmployeeCompetencyProfile(
+export function getEmployeeCompetencyProfile(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ProjectedEmployeeCompetencyProfile>> {
@@ -434,11 +426,10 @@ export async function getEmployeeCompetencyProfile(
 		resolveRequestedFields: () => talentSensitiveQueryRequestedFields(),
 		project: (value: EmployeeCompetencyProfile, projection) =>
 			projectEmployeeCompetencyProfileFromDecision(value, projection),
-		execute: async (data, { store }) => {
-			return await store.getEmployeeCompetencyProfile({
+		execute: async (data, { store }) =>
+			await store.getEmployeeCompetencyProfile({
 				organizationId: data.organizationId,
 				employeeId: data.employeeId,
-			});
-		},
+			}),
 	});
 }

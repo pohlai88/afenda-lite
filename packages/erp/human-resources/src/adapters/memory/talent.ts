@@ -23,6 +23,7 @@ import {
 	type HumanResourcesCareerPlanId,
 	type HumanResourcesCompetencyAssessmentId,
 	type HumanResourcesCompetencyId,
+	type HumanResourcesEmployeeId,
 	type HumanResourcesJobCompetencyId,
 	type HumanResourcesSuccessionCandidateId,
 	type HumanResourcesSuccessionPlanId,
@@ -118,32 +119,31 @@ import type {
 } from "../../types";
 import { idempotencyMapKey } from "./shared";
 
-export type TalentMemoryState = {
+export interface TalentMemoryState {
+	careerPlanActions: Map<HumanResourcesCareerPlanActionId, CareerPlanAction>;
+	careerPlanIdempotency: Map<string, IdempotentCareerPlanRecord>;
+	careerPlans: Map<HumanResourcesCareerPlanId, CareerPlan>;
 	competencies: Map<HumanResourcesCompetencyId, Competency>;
-	competencyIdempotency: Map<string, IdempotentCompetencyRecord>;
-	jobCompetencies: Map<HumanResourcesJobCompetencyId, JobCompetency>;
-	competencyAssessments: Map<
-		HumanResourcesCompetencyAssessmentId,
-		CompetencyAssessment
-	>;
 	competencyAssessmentIdempotency: Map<
 		string,
 		IdempotentCompetencyAssessmentRecord
 	>;
-	talentProfiles: Map<HumanResourcesTalentProfileId, TalentProfile>;
-	talentProfileIdempotency: Map<string, IdempotentTalentProfileRecord>;
-	talentProfileAssessments: Map<
-		HumanResourcesTalentProfileAssessmentId,
-		TalentProfileAssessment
+	competencyAssessments: Map<
+		HumanResourcesCompetencyAssessmentId,
+		CompetencyAssessment
 	>;
-	talentProfileMobilities: Map<
-		HumanResourcesTalentProfileMobilityId,
-		TalentProfileMobility
-	>;
-	talentProfileMobilityIdempotency: Map<
+	competencyIdempotency: Map<string, IdempotentCompetencyRecord>;
+	jobCompetencies: Map<HumanResourcesJobCompetencyId, JobCompetency>;
+	successionCandidateIdempotency: Map<
 		string,
-		IdempotentTalentProfileMobilityRecord
+		IdempotentSuccessionCandidateRecord
 	>;
+	successionCandidates: Map<
+		HumanResourcesSuccessionCandidateId,
+		SuccessionCandidate
+	>;
+	successionPlanIdempotency: Map<string, IdempotentSuccessionPlanRecord>;
+	successionPlans: Map<HumanResourcesSuccessionPlanId, SuccessionPlan>;
 	talentCriticalRoleReadiness: Map<
 		HumanResourcesTalentCriticalRoleReadinessId,
 		TalentCriticalRoleReadiness
@@ -152,24 +152,25 @@ export type TalentMemoryState = {
 		string,
 		IdempotentTalentCriticalRoleReadinessRecord
 	>;
-	talentPools: Map<HumanResourcesTalentPoolId, TalentPool>;
 	talentPoolIdempotency: Map<string, IdempotentTalentPoolRecord>;
-	talentPoolMembers: Map<HumanResourcesTalentPoolMemberId, TalentPoolMember>;
 	talentPoolMemberIdempotency: Map<string, IdempotentTalentPoolMemberRecord>;
-	careerPlans: Map<HumanResourcesCareerPlanId, CareerPlan>;
-	careerPlanIdempotency: Map<string, IdempotentCareerPlanRecord>;
-	careerPlanActions: Map<HumanResourcesCareerPlanActionId, CareerPlanAction>;
-	successionPlans: Map<HumanResourcesSuccessionPlanId, SuccessionPlan>;
-	successionPlanIdempotency: Map<string, IdempotentSuccessionPlanRecord>;
-	successionCandidates: Map<
-		HumanResourcesSuccessionCandidateId,
-		SuccessionCandidate
+	talentPoolMembers: Map<HumanResourcesTalentPoolMemberId, TalentPoolMember>;
+	talentPools: Map<HumanResourcesTalentPoolId, TalentPool>;
+	talentProfileAssessments: Map<
+		HumanResourcesTalentProfileAssessmentId,
+		TalentProfileAssessment
 	>;
-	successionCandidateIdempotency: Map<
+	talentProfileIdempotency: Map<string, IdempotentTalentProfileRecord>;
+	talentProfileMobilities: Map<
+		HumanResourcesTalentProfileMobilityId,
+		TalentProfileMobility
+	>;
+	talentProfileMobilityIdempotency: Map<
 		string,
-		IdempotentSuccessionCandidateRecord
+		IdempotentTalentProfileMobilityRecord
 	>;
-};
+	talentProfiles: Map<HumanResourcesTalentProfileId, TalentProfile>;
+}
 
 export type TalentHost = Pick<
 	HumanResourcesStore,
@@ -278,7 +279,7 @@ async function recordAudit(
 		action: "CREATE" | "UPDATE";
 	},
 ): Promise<Result<{ id: string }>> {
-	return ports.audit.record({
+	return await ports.audit.record({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: meta.correlationId,
@@ -300,7 +301,7 @@ async function recordOutbox(
 		entityId: string;
 	},
 ): Promise<Result<{ id: string }>> {
-	return ports.outbox.append({
+	return await ports.outbox.append({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: meta.correlationId,
@@ -501,6 +502,57 @@ function getSuccessionCandidateInOrg(
 	return ok(record);
 }
 
+function resolveTalentIdempotencyReplay<
+	TRecord extends { createRequestFingerprint: string },
+	TValue,
+>(
+	existing: TRecord | undefined,
+	expectedFingerprint: string,
+	readValue: (record: TRecord) => TValue,
+): Result<TValue | null> {
+	if (existing === undefined) {
+		return ok(null);
+	}
+	if (existing.createRequestFingerprint !== expectedFingerprint) {
+		return fail(
+			"CONFLICT",
+			"Idempotency key reused with different payload",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+		);
+	}
+	return ok(readValue(existing));
+}
+
+async function resolveSuccessionEmploymentStatus(
+	host: Pick<
+		HumanResourcesStore,
+		"getEmployeeById" | "findOpenEmploymentByEmployee"
+	>,
+	input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId | null;
+	},
+): Promise<Result<EmploymentStatus | null>> {
+	if (input.employeeId === null) {
+		return ok(null);
+	}
+	const employee = await host.getEmployeeById({
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+	});
+	if (!employee.ok) {
+		return employee;
+	}
+	if (employee.data === null) {
+		return notFound("Employee not found");
+	}
+	const employment = await host.findOpenEmploymentByEmployee({
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+	});
+	return employment.ok ? ok(employment.data?.status ?? null) : employment;
+}
+
 export function createMemoryTalentMethods(
 	state: TalentMemoryState,
 ): MemoryTalentMethods & ThisType<TalentHost & MemoryTalentMethods> {
@@ -509,30 +561,30 @@ export function createMemoryTalentMethods(
 		// Competency
 
 		async getCompetencyById(input) {
-			const state = getState();
-			const record = state.competencies.get(input.competencyId);
+			const stateValue65 = getState();
+			const record = stateValue65.competencies.get(input.competencyId);
 			if (!record || record.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...record });
+			return await ok({ ...record });
 		},
 
 		async findCompetencyByIdempotencyKey(input) {
-			const state = getState();
+			const stateValue64 = getState();
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
-			const record = state.competencyIdempotency.get(key);
+			const record = stateValue64.competencyIdempotency.get(key);
 			if (!record) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...record, competency: { ...record.competency } });
+			return await ok({ ...record, competency: { ...record.competency } });
 		},
 
 		async createCompetency(record, ports, meta) {
-			const state = getState();
-			const existingCode = Array.from(state.competencies.values()).find(
-				(competency) =>
-					competency.organizationId === record.organizationId &&
-					competency.code === record.code,
+			const stateValue63 = getState();
+			const existingCode = Array.from(stateValue63.competencies.values()).find(
+				(competencyValue) =>
+					competencyValue.organizationId === record.organizationId &&
+					competencyValue.code === record.code,
 			);
 			if (existingCode) {
 				return conflict("Competency with this code already exists");
@@ -559,13 +611,13 @@ export function createMemoryTalentMethods(
 				createdAt: now,
 				updatedAt: now,
 			};
-			state.competencies.set(competency.id, competency);
+			stateValue63.competencies.set(competency.id, competency);
 
 			const idempotencyKey = idempotencyMapKey(
 				record.organizationId,
 				record.createIdempotencyKey,
 			);
-			state.competencyIdempotency.set(idempotencyKey, {
+			stateValue63.competencyIdempotency.set(idempotencyKey, {
 				competency: { ...competency },
 				createRequestFingerprint: record.createRequestFingerprint,
 			});
@@ -578,8 +630,8 @@ export function createMemoryTalentMethods(
 				action: "CREATE",
 			});
 			if (!audit.ok) {
-				state.competencies.delete(competency.id);
-				state.competencyIdempotency.delete(idempotencyKey);
+				stateValue63.competencies.delete(competency.id);
+				stateValue63.competencyIdempotency.delete(idempotencyKey);
 				return audit;
 			}
 
@@ -587,9 +639,9 @@ export function createMemoryTalentMethods(
 		},
 
 		async updateCompetency(input, ports, meta) {
-			const state = getState();
+			const stateValue62 = getState();
 			const loaded = getCompetencyInOrg(
-				state,
+				stateValue62,
 				input.organizationId,
 				input.competencyId,
 			);
@@ -609,16 +661,16 @@ export function createMemoryTalentMethods(
 				...loaded.data,
 				name: input.name ?? loaded.data.name,
 				description:
-					input.description !== undefined
-						? input.description
-						: loaded.data.description,
+					input.description === undefined
+						? loaded.data.description
+						: input.description,
 				category:
-					input.category !== undefined ? input.category : loaded.data.category,
+					input.category === undefined ? loaded.data.category : input.category,
 				version: loaded.data.version + 1,
 				updatedBy: input.actorUserId,
 				updatedAt: now,
 			};
-			state.competencies.set(updated.id, updated);
+			stateValue62.competencies.set(updated.id, updated);
 
 			const audit = await recordAudit(ports, meta, {
 				organizationId: input.organizationId,
@@ -628,7 +680,7 @@ export function createMemoryTalentMethods(
 				action: "UPDATE",
 			});
 			if (!audit.ok) {
-				state.competencies.set(loaded.data.id, loaded.data);
+				stateValue62.competencies.set(loaded.data.id, loaded.data);
 				return audit;
 			}
 
@@ -636,9 +688,9 @@ export function createMemoryTalentMethods(
 		},
 
 		async retireCompetency(input, ports, meta) {
-			const state = getState();
+			const stateValue61 = getState();
 			const loaded = getCompetencyInOrg(
-				state,
+				stateValue61,
 				input.organizationId,
 				input.competencyId,
 			);
@@ -668,7 +720,7 @@ export function createMemoryTalentMethods(
 				updatedBy: input.actorUserId,
 				updatedAt: now,
 			};
-			state.competencies.set(updated.id, updated);
+			stateValue61.competencies.set(updated.id, updated);
 
 			const audit = await recordAudit(ports, meta, {
 				organizationId: input.organizationId,
@@ -678,7 +730,7 @@ export function createMemoryTalentMethods(
 				action: "UPDATE",
 			});
 			if (!audit.ok) {
-				state.competencies.set(loaded.data.id, loaded.data);
+				stateValue61.competencies.set(loaded.data.id, loaded.data);
 				return audit;
 			}
 
@@ -686,10 +738,10 @@ export function createMemoryTalentMethods(
 		},
 
 		async listCompetencies(input) {
-			const state = getState();
+			const stateValue60 = getState();
 			const page = input.page ?? 1;
 			const pageSize = input.pageSize ?? 20;
-			const filtered = Array.from(state.competencies.values()).filter(
+			const filtered = Array.from(stateValue60.competencies.values()).filter(
 				(competency) => {
 					if (competency.organizationId !== input.organizationId) {
 						return false;
@@ -704,7 +756,7 @@ export function createMemoryTalentMethods(
 				},
 			);
 			const { items, totalCount } = paginate(filtered, page, pageSize);
-			return ok({
+			return await ok({
 				competencies: items.map((item) => ({ ...item })),
 				totalCount,
 				page,
@@ -715,7 +767,7 @@ export function createMemoryTalentMethods(
 		// Job competency
 
 		async mapCompetencyToJob(input, ports, meta) {
-			const state = getState();
+			const stateValue59 = getState();
 			const job = await this.getJobById({
 				organizationId: input.organizationId,
 				jobId: input.jobId,
@@ -727,7 +779,7 @@ export function createMemoryTalentMethods(
 				return notFound("Job not found");
 			}
 			const competency = getCompetencyInOrg(
-				state,
+				stateValue59,
 				input.organizationId,
 				input.competencyId,
 			);
@@ -735,12 +787,14 @@ export function createMemoryTalentMethods(
 				return competency;
 			}
 
-			const existingMapping = Array.from(state.jobCompetencies.values()).find(
-				(mapping) =>
-					mapping.organizationId === input.organizationId &&
-					mapping.jobId === input.jobId &&
-					mapping.competencyId === input.competencyId &&
-					mapping.status === "active",
+			const existingMapping = Array.from(
+				stateValue59.jobCompetencies.values(),
+			).find(
+				(mappingValue) =>
+					mappingValue.organizationId === input.organizationId &&
+					mappingValue.jobId === input.jobId &&
+					mappingValue.competencyId === input.competencyId &&
+					mappingValue.status === "active",
 			);
 			const mappable = assertJobCompetencyMappable({
 				competencyStatus: competency.data.status,
@@ -769,7 +823,7 @@ export function createMemoryTalentMethods(
 				createdAt: now,
 				updatedAt: now,
 			};
-			state.jobCompetencies.set(mapping.id, mapping);
+			stateValue59.jobCompetencies.set(mapping.id, mapping);
 
 			const audit = await recordAudit(ports, meta, {
 				organizationId: input.organizationId,
@@ -779,7 +833,7 @@ export function createMemoryTalentMethods(
 				action: "CREATE",
 			});
 			if (!audit.ok) {
-				state.jobCompetencies.delete(mapping.id);
+				stateValue59.jobCompetencies.delete(mapping.id);
 				return audit;
 			}
 
@@ -787,9 +841,9 @@ export function createMemoryTalentMethods(
 		},
 
 		async removeCompetencyFromJob(input, ports, meta) {
-			const state = getState();
+			const stateValue58 = getState();
 			const loaded = getJobCompetencyInOrg(
-				state,
+				stateValue58,
 				input.organizationId,
 				input.jobCompetencyId,
 			);
@@ -816,7 +870,7 @@ export function createMemoryTalentMethods(
 				updatedBy: input.actorUserId,
 				updatedAt: now,
 			};
-			state.jobCompetencies.set(updated.id, updated);
+			stateValue58.jobCompetencies.set(updated.id, updated);
 
 			const audit = await recordAudit(ports, meta, {
 				organizationId: input.organizationId,
@@ -826,7 +880,7 @@ export function createMemoryTalentMethods(
 				action: "UPDATE",
 			});
 			if (!audit.ok) {
-				state.jobCompetencies.set(loaded.data.id, loaded.data);
+				stateValue58.jobCompetencies.set(loaded.data.id, loaded.data);
 				return audit;
 			}
 
@@ -834,16 +888,16 @@ export function createMemoryTalentMethods(
 		},
 
 		async listJobCompetencies(input) {
-			const state = getState();
+			const stateValue57 = getState();
 			const page = input.page ?? 1;
 			const pageSize = input.pageSize ?? 20;
-			const filtered = Array.from(state.jobCompetencies.values()).filter(
+			const filtered = Array.from(stateValue57.jobCompetencies.values()).filter(
 				(mapping) =>
 					mapping.organizationId === input.organizationId &&
 					mapping.jobId === input.jobId,
 			);
 			const { items, totalCount } = paginate(filtered, page, pageSize);
-			return ok({
+			return await ok({
 				jobCompetencies: items.map((item) => ({ ...item })),
 				totalCount,
 				page,
@@ -854,17 +908,19 @@ export function createMemoryTalentMethods(
 		// Competency assessment
 
 		async getCompetencyAssessmentById(input) {
-			const state = getState();
-			const record = state.competencyAssessments.get(input.assessmentId);
+			const stateValue56 = getState();
+			const record = stateValue56.competencyAssessments.get(input.assessmentId);
 			if (!record || record.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...record });
+			return await ok({ ...record });
 		},
 
 		async findCurrentCompetencyAssessment(input) {
-			const state = getState();
-			const record = Array.from(state.competencyAssessments.values()).find(
+			const stateValue55 = getState();
+			const record = Array.from(
+				stateValue55.competencyAssessments.values(),
+			).find(
 				(assessment) =>
 					assessment.organizationId === input.organizationId &&
 					assessment.employeeId === input.employeeId &&
@@ -872,25 +928,25 @@ export function createMemoryTalentMethods(
 					assessment.status === "current",
 			);
 			if (!record) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...record });
+			return await ok({ ...record });
 		},
 
 		async findCompetencyAssessmentByIdempotencyKey(input) {
-			const state = getState();
+			const stateValue54 = getState();
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
-			const record = state.competencyAssessmentIdempotency.get(key);
+			const record = stateValue54.competencyAssessmentIdempotency.get(key);
 			if (!record) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...record, assessment: { ...record.assessment } });
+			return await ok({ ...record, assessment: { ...record.assessment } });
 		},
 
 		async createCompetencyAssessment(record, ports, meta) {
-			const state = getState();
+			const stateValue53 = getState();
 			const competency = getCompetencyInOrg(
-				state,
+				stateValue53,
 				record.organizationId,
 				record.competencyId,
 			);
@@ -913,13 +969,13 @@ export function createMemoryTalentMethods(
 			}
 
 			const existingCurrent = Array.from(
-				state.competencyAssessments.values(),
+				stateValue53.competencyAssessments.values(),
 			).find(
-				(assessment) =>
-					assessment.organizationId === record.organizationId &&
-					assessment.employeeId === record.employeeId &&
-					assessment.competencyId === record.competencyId &&
-					assessment.status === "current",
+				(assessmentValue) =>
+					assessmentValue.organizationId === record.organizationId &&
+					assessmentValue.employeeId === record.employeeId &&
+					assessmentValue.competencyId === record.competencyId &&
+					assessmentValue.status === "current",
 			);
 			if (existingCurrent) {
 				return conflict(
@@ -953,13 +1009,13 @@ export function createMemoryTalentMethods(
 				createdAt: now,
 				updatedAt: now,
 			};
-			state.competencyAssessments.set(assessment.id, assessment);
+			stateValue53.competencyAssessments.set(assessment.id, assessment);
 
 			const idempotencyKey = idempotencyMapKey(
 				record.organizationId,
 				record.createIdempotencyKey,
 			);
-			state.competencyAssessmentIdempotency.set(idempotencyKey, {
+			stateValue53.competencyAssessmentIdempotency.set(idempotencyKey, {
 				assessment: { ...assessment },
 				createRequestFingerprint: record.createRequestFingerprint,
 			});
@@ -972,8 +1028,8 @@ export function createMemoryTalentMethods(
 				action: "CREATE",
 			});
 			if (!audit.ok) {
-				state.competencyAssessments.delete(assessment.id);
-				state.competencyAssessmentIdempotency.delete(idempotencyKey);
+				stateValue53.competencyAssessments.delete(assessment.id);
+				stateValue53.competencyAssessmentIdempotency.delete(idempotencyKey);
 				return audit;
 			}
 
@@ -985,8 +1041,8 @@ export function createMemoryTalentMethods(
 				entityId: assessment.id,
 			});
 			if (!outbox.ok) {
-				state.competencyAssessments.delete(assessment.id);
-				state.competencyAssessmentIdempotency.delete(idempotencyKey);
+				stateValue53.competencyAssessments.delete(assessment.id);
+				stateValue53.competencyAssessmentIdempotency.delete(idempotencyKey);
 				return outbox;
 			}
 
@@ -994,29 +1050,27 @@ export function createMemoryTalentMethods(
 		},
 
 		async supersedeCompetencyAssessment(record, ports, meta) {
-			const state = getState();
+			const stateValue52 = getState();
 			const idempotencyKey = idempotencyMapKey(
 				record.organizationId,
 				record.createIdempotencyKey,
 			);
 			const existingByKey =
-				state.competencyAssessmentIdempotency.get(idempotencyKey);
-			if (existingByKey) {
-				if (
-					existingByKey.createRequestFingerprint !==
-					record.createRequestFingerprint
-				) {
-					return fail(
-						"CONFLICT",
-						"Idempotency key reused with different payload",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
-				}
-				return ok({ ...existingByKey.assessment });
+				stateValue52.competencyAssessmentIdempotency.get(idempotencyKey);
+			const replay = resolveTalentIdempotencyReplay(
+				existingByKey,
+				record.createRequestFingerprint,
+				(existing) => ({ ...existing.assessment }),
+			);
+			if (!replay.ok) {
+				return replay;
+			}
+			if (replay.data !== null) {
+				return ok(replay.data);
 			}
 
 			const source = getCompetencyAssessmentInOrg(
-				state,
+				stateValue52,
 				record.organizationId,
 				record.sourceAssessmentId,
 			);
@@ -1035,7 +1089,7 @@ export function createMemoryTalentMethods(
 				return versionCheck;
 			}
 			const competency = getCompetencyInOrg(
-				state,
+				stateValue52,
 				record.organizationId,
 				source.data.competencyId,
 			);
@@ -1071,7 +1125,7 @@ export function createMemoryTalentMethods(
 				updatedBy: record.createdBy,
 				updatedAt: now,
 			};
-			state.competencyAssessments.set(superseded.id, superseded);
+			stateValue52.competencyAssessments.set(superseded.id, superseded);
 
 			const assessment: CompetencyAssessment = {
 				id: idResult.data,
@@ -1093,9 +1147,9 @@ export function createMemoryTalentMethods(
 				createdAt: now,
 				updatedAt: now,
 			};
-			state.competencyAssessments.set(assessment.id, assessment);
+			stateValue52.competencyAssessments.set(assessment.id, assessment);
 
-			state.competencyAssessmentIdempotency.set(idempotencyKey, {
+			stateValue52.competencyAssessmentIdempotency.set(idempotencyKey, {
 				assessment: { ...assessment },
 				createRequestFingerprint: record.createRequestFingerprint,
 			});
@@ -1108,9 +1162,9 @@ export function createMemoryTalentMethods(
 				action: "CREATE",
 			});
 			if (!audit.ok) {
-				state.competencyAssessments.set(source.data.id, source.data);
-				state.competencyAssessments.delete(assessment.id);
-				state.competencyAssessmentIdempotency.delete(idempotencyKey);
+				stateValue52.competencyAssessments.set(source.data.id, source.data);
+				stateValue52.competencyAssessments.delete(assessment.id);
+				stateValue52.competencyAssessmentIdempotency.delete(idempotencyKey);
 				return audit;
 			}
 
@@ -1122,9 +1176,9 @@ export function createMemoryTalentMethods(
 				entityId: assessment.id,
 			});
 			if (!outbox.ok) {
-				state.competencyAssessments.set(source.data.id, source.data);
-				state.competencyAssessments.delete(assessment.id);
-				state.competencyAssessmentIdempotency.delete(idempotencyKey);
+				stateValue52.competencyAssessments.set(source.data.id, source.data);
+				stateValue52.competencyAssessments.delete(assessment.id);
+				stateValue52.competencyAssessmentIdempotency.delete(idempotencyKey);
 				return outbox;
 			}
 
@@ -1132,9 +1186,9 @@ export function createMemoryTalentMethods(
 		},
 
 		async expireCompetencyAssessment(input, ports, meta) {
-			const state = getState();
+			const stateValue51 = getState();
 			const assessmentResult = getCompetencyAssessmentInOrg(
-				state,
+				stateValue51,
 				input.organizationId,
 				input.assessmentId,
 			);
@@ -1163,7 +1217,7 @@ export function createMemoryTalentMethods(
 				updatedBy: input.actorUserId,
 				updatedAt: now,
 			};
-			state.competencyAssessments.set(updated.id, updated);
+			stateValue51.competencyAssessments.set(updated.id, updated);
 
 			const audit = await recordAudit(ports, meta, {
 				organizationId: input.organizationId,
@@ -1173,7 +1227,7 @@ export function createMemoryTalentMethods(
 				action: "UPDATE",
 			});
 			if (!audit.ok) {
-				state.competencyAssessments.set(
+				stateValue51.competencyAssessments.set(
 					assessmentResult.data.id,
 					assessmentResult.data,
 				);
@@ -1188,7 +1242,7 @@ export function createMemoryTalentMethods(
 				entityId: updated.id,
 			});
 			if (!outbox.ok) {
-				state.competencyAssessments.set(
+				stateValue51.competencyAssessments.set(
 					assessmentResult.data.id,
 					assessmentResult.data,
 				);
@@ -1209,8 +1263,10 @@ export function createMemoryTalentMethods(
 			if (employee.data === null) {
 				return notFound("Employee not found");
 			}
-			const state = getState();
-			const assessments = Array.from(state.competencyAssessments.values())
+			const stateValue50 = getState();
+			const assessments = Array.from(
+				stateValue50.competencyAssessments.values(),
+			)
 				.filter(
 					(assessment) =>
 						assessment.organizationId === input.organizationId &&
@@ -1228,39 +1284,39 @@ export function createMemoryTalentMethods(
 		// Talent profile
 
 		async getTalentProfileById(input) {
-			const state = getState();
-			const record = state.talentProfiles.get(input.talentProfileId);
+			const stateValue49 = getState();
+			const record = stateValue49.talentProfiles.get(input.talentProfileId);
 			if (!record || record.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...record });
+			return await ok({ ...record });
 		},
 
 		async findTalentProfileByEmployeeId(input) {
-			const state = getState();
-			const record = Array.from(state.talentProfiles.values()).find(
+			const stateValue48 = getState();
+			const record = Array.from(stateValue48.talentProfiles.values()).find(
 				(profile) =>
 					profile.organizationId === input.organizationId &&
 					profile.employeeId === input.employeeId,
 			);
 			if (!record) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...record });
+			return await ok({ ...record });
 		},
 
 		async findTalentProfileByIdempotencyKey(input) {
-			const state = getState();
+			const stateValue47 = getState();
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
-			const record = state.talentProfileIdempotency.get(key);
+			const record = stateValue47.talentProfileIdempotency.get(key);
 			if (!record) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...record, profile: { ...record.profile } });
+			return await ok({ ...record, profile: { ...record.profile } });
 		},
 
 		async createTalentProfile(record, ports, meta) {
-			const state = getState();
+			const stateValue46 = getState();
 			const employee = await this.getEmployeeById({
 				organizationId: record.organizationId,
 				employeeId: record.employeeId,
@@ -1271,10 +1327,10 @@ export function createMemoryTalentMethods(
 			if (employee.data === null) {
 				return notFound("Employee not found");
 			}
-			const existing = Array.from(state.talentProfiles.values()).find(
-				(profile) =>
-					profile.organizationId === record.organizationId &&
-					profile.employeeId === record.employeeId,
+			const existing = Array.from(stateValue46.talentProfiles.values()).find(
+				(profileValue) =>
+					profileValue.organizationId === record.organizationId &&
+					profileValue.employeeId === record.employeeId,
 			);
 			if (existing) {
 				return conflict("Talent profile already exists for this employee");
@@ -1299,13 +1355,13 @@ export function createMemoryTalentMethods(
 				createdAt: now,
 				updatedAt: now,
 			};
-			state.talentProfiles.set(profile.id, profile);
+			stateValue46.talentProfiles.set(profile.id, profile);
 
 			const idempotencyKey = idempotencyMapKey(
 				record.organizationId,
 				record.createIdempotencyKey,
 			);
-			state.talentProfileIdempotency.set(idempotencyKey, {
+			stateValue46.talentProfileIdempotency.set(idempotencyKey, {
 				profile: { ...profile },
 				createRequestFingerprint: record.createRequestFingerprint,
 			});
@@ -1318,8 +1374,8 @@ export function createMemoryTalentMethods(
 				action: "CREATE",
 			});
 			if (!audit.ok) {
-				state.talentProfiles.delete(profile.id);
-				state.talentProfileIdempotency.delete(idempotencyKey);
+				stateValue46.talentProfiles.delete(profile.id);
+				stateValue46.talentProfileIdempotency.delete(idempotencyKey);
 				return audit;
 			}
 
@@ -1331,8 +1387,8 @@ export function createMemoryTalentMethods(
 				entityId: profile.id,
 			});
 			if (!outbox.ok) {
-				state.talentProfiles.delete(profile.id);
-				state.talentProfileIdempotency.delete(idempotencyKey);
+				stateValue46.talentProfiles.delete(profile.id);
+				stateValue46.talentProfileIdempotency.delete(idempotencyKey);
 				return outbox;
 			}
 
@@ -1340,9 +1396,9 @@ export function createMemoryTalentMethods(
 		},
 
 		async updateTalentProfile(input, ports, meta) {
-			const state = getState();
+			const stateValue45 = getState();
 			const loaded = getTalentProfileInOrg(
-				state,
+				stateValue45,
 				input.organizationId,
 				input.talentProfileId,
 			);
@@ -1365,12 +1421,12 @@ export function createMemoryTalentMethods(
 			const updated: TalentProfile = {
 				...loaded.data,
 				summary:
-					input.summary !== undefined ? input.summary : loaded.data.summary,
+					input.summary === undefined ? loaded.data.summary : input.summary,
 				version: loaded.data.version + 1,
 				updatedBy: input.actorUserId,
 				updatedAt: now,
 			};
-			state.talentProfiles.set(updated.id, updated);
+			stateValue45.talentProfiles.set(updated.id, updated);
 
 			const audit = await recordAudit(ports, meta, {
 				organizationId: input.organizationId,
@@ -1380,7 +1436,7 @@ export function createMemoryTalentMethods(
 				action: "UPDATE",
 			});
 			if (!audit.ok) {
-				state.talentProfiles.set(loaded.data.id, loaded.data);
+				stateValue45.talentProfiles.set(loaded.data.id, loaded.data);
 				return audit;
 			}
 
@@ -1392,7 +1448,7 @@ export function createMemoryTalentMethods(
 				entityId: input.talentProfileId,
 			});
 			if (!outbox.ok) {
-				state.talentProfiles.set(loaded.data.id, loaded.data);
+				stateValue45.talentProfiles.set(loaded.data.id, loaded.data);
 				return outbox;
 			}
 
@@ -1400,9 +1456,9 @@ export function createMemoryTalentMethods(
 		},
 
 		async archiveTalentProfile(input, ports, meta) {
-			const state = getState();
+			const stateValue44 = getState();
 			const loaded = getTalentProfileInOrg(
-				state,
+				stateValue44,
 				input.organizationId,
 				input.talentProfileId,
 			);
@@ -1429,7 +1485,7 @@ export function createMemoryTalentMethods(
 				updatedBy: input.actorUserId,
 				updatedAt: now,
 			};
-			state.talentProfiles.set(updated.id, updated);
+			stateValue44.talentProfiles.set(updated.id, updated);
 
 			const audit = await recordAudit(ports, meta, {
 				organizationId: input.organizationId,
@@ -1439,7 +1495,7 @@ export function createMemoryTalentMethods(
 				action: "UPDATE",
 			});
 			if (!audit.ok) {
-				state.talentProfiles.set(loaded.data.id, loaded.data);
+				stateValue44.talentProfiles.set(loaded.data.id, loaded.data);
 				return audit;
 			}
 
@@ -1447,24 +1503,24 @@ export function createMemoryTalentMethods(
 		},
 
 		async getTalentProfileByEmployee(input) {
-			const state = getState();
-			const record = Array.from(state.talentProfiles.values()).find(
+			const stateValue43 = getState();
+			const record = Array.from(stateValue43.talentProfiles.values()).find(
 				(profile) =>
 					profile.organizationId === input.organizationId &&
 					profile.employeeId === input.employeeId,
 			);
 			if (!record) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...record });
+			return await ok({ ...record });
 		},
 
 		// Talent profile assessment
 
 		async recordTalentProfileAssessment(input, ports, meta) {
-			const state = getState();
+			const stateValue42 = getState();
 			const profile = getTalentProfileInOrg(
-				state,
+				stateValue42,
 				input.organizationId,
 				input.talentProfileId,
 			);
@@ -1507,7 +1563,7 @@ export function createMemoryTalentMethods(
 				createdAt: now,
 				updatedAt: now,
 			};
-			state.talentProfileAssessments.set(assessment.id, assessment);
+			stateValue42.talentProfileAssessments.set(assessment.id, assessment);
 
 			const audit = await recordAudit(ports, meta, {
 				organizationId: input.organizationId,
@@ -1517,7 +1573,7 @@ export function createMemoryTalentMethods(
 				action: "CREATE",
 			});
 			if (!audit.ok) {
-				state.talentProfileAssessments.delete(assessment.id);
+				stateValue42.talentProfileAssessments.delete(assessment.id);
 				return audit;
 			}
 
@@ -1525,9 +1581,9 @@ export function createMemoryTalentMethods(
 		},
 
 		async confirmTalentProfileAssessment(input, ports, meta) {
-			const state = getState();
+			const stateValue41 = getState();
 			const loaded = getTalentProfileAssessmentInOrg(
-				state,
+				stateValue41,
 				input.organizationId,
 				input.assessmentId,
 			);
@@ -1548,7 +1604,7 @@ export function createMemoryTalentMethods(
 				return versionCheck;
 			}
 			const profile = getTalentProfileInOrg(
-				state,
+				stateValue41,
 				input.organizationId,
 				loaded.data.talentProfileId,
 			);
@@ -1558,7 +1614,7 @@ export function createMemoryTalentMethods(
 
 			const now = new Date();
 			const previouslyConfirmed = Array.from(
-				state.talentProfileAssessments.values(),
+				stateValue41.talentProfileAssessments.values(),
 			).filter(
 				(assessment) =>
 					assessment.organizationId === input.organizationId &&
@@ -1566,7 +1622,7 @@ export function createMemoryTalentMethods(
 					assessment.status === "confirmed",
 			);
 			for (const assessment of previouslyConfirmed) {
-				state.talentProfileAssessments.set(assessment.id, {
+				stateValue41.talentProfileAssessments.set(assessment.id, {
 					...assessment,
 					status: "superseded",
 					version: assessment.version + 1,
@@ -1583,7 +1639,7 @@ export function createMemoryTalentMethods(
 				updatedBy: input.actorUserId,
 				updatedAt: now,
 			};
-			state.talentProfileAssessments.set(updated.id, updated);
+			stateValue41.talentProfileAssessments.set(updated.id, updated);
 
 			const updatedProfile: TalentProfile = {
 				...profile.data,
@@ -1592,7 +1648,7 @@ export function createMemoryTalentMethods(
 				updatedBy: input.actorUserId,
 				updatedAt: now,
 			};
-			state.talentProfiles.set(updatedProfile.id, updatedProfile);
+			stateValue41.talentProfiles.set(updatedProfile.id, updatedProfile);
 
 			const audit = await recordAudit(ports, meta, {
 				organizationId: input.organizationId,
@@ -1602,10 +1658,10 @@ export function createMemoryTalentMethods(
 				action: "UPDATE",
 			});
 			if (!audit.ok) {
-				state.talentProfileAssessments.set(loaded.data.id, loaded.data);
-				state.talentProfiles.set(profile.data.id, profile.data);
+				stateValue41.talentProfileAssessments.set(loaded.data.id, loaded.data);
+				stateValue41.talentProfiles.set(profile.data.id, profile.data);
 				for (const assessment of previouslyConfirmed) {
-					state.talentProfileAssessments.set(assessment.id, assessment);
+					stateValue41.talentProfileAssessments.set(assessment.id, assessment);
 				}
 				return audit;
 			}
@@ -1614,8 +1670,10 @@ export function createMemoryTalentMethods(
 		},
 
 		async listTalentProfileAssessments(input) {
-			const state = getState();
-			const assessments = Array.from(state.talentProfileAssessments.values())
+			const stateValue40 = getState();
+			const assessments = Array.from(
+				stateValue40.talentProfileAssessments.values(),
+			)
 				.filter(
 					(assessment) =>
 						assessment.organizationId === input.organizationId &&
@@ -1623,32 +1681,32 @@ export function createMemoryTalentMethods(
 				)
 				.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
 				.map((assessment) => ({ ...assessment }));
-			return ok({
+			return await ok({
 				assessments,
 			} satisfies TalentProfileAssessmentListPage);
 		},
 
 		async findTalentProfileMobilityByIdempotencyKey(input) {
-			const state = getState();
+			const stateValue39 = getState();
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
-			const record = state.talentProfileMobilityIdempotency.get(key);
+			const record = stateValue39.talentProfileMobilityIdempotency.get(key);
 			if (!record) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({
+			return await ok({
 				mobility: { ...record.mobility },
 				createRequestFingerprint: record.createRequestFingerprint,
 			});
 		},
 
 		async recordTalentProfileMobility(record, ports, meta) {
-			const state = getState();
+			const stateValue38 = getState();
 			const idempotencyKey = idempotencyMapKey(
 				record.organizationId,
 				record.createIdempotencyKey,
 			);
 			const existingByKey =
-				state.talentProfileMobilityIdempotency.get(idempotencyKey);
+				stateValue38.talentProfileMobilityIdempotency.get(idempotencyKey);
 			if (existingByKey) {
 				if (
 					existingByKey.createRequestFingerprint !==
@@ -1664,7 +1722,7 @@ export function createMemoryTalentMethods(
 			}
 
 			const profile = getTalentProfileInOrg(
-				state,
+				stateValue38,
 				record.organizationId,
 				record.talentProfileId,
 			);
@@ -1686,16 +1744,16 @@ export function createMemoryTalentMethods(
 
 			const now = new Date();
 			const previouslyCurrent = Array.from(
-				state.talentProfileMobilities.values(),
+				stateValue38.talentProfileMobilities.values(),
 			).filter(
-				(mobility) =>
-					mobility.organizationId === record.organizationId &&
-					mobility.talentProfileId === record.talentProfileId &&
-					mobility.dimension === record.dimension &&
-					mobility.status === "current",
+				(mobilityValue) =>
+					mobilityValue.organizationId === record.organizationId &&
+					mobilityValue.talentProfileId === record.talentProfileId &&
+					mobilityValue.dimension === record.dimension &&
+					mobilityValue.status === "current",
 			);
 			for (const mobility of previouslyCurrent) {
-				state.talentProfileMobilities.set(mobility.id, {
+				stateValue38.talentProfileMobilities.set(mobility.id, {
 					...mobility,
 					status: "superseded",
 					version: mobility.version + 1,
@@ -1726,8 +1784,8 @@ export function createMemoryTalentMethods(
 				createdAt: now,
 				updatedAt: now,
 			};
-			state.talentProfileMobilities.set(mobility.id, mobility);
-			state.talentProfileMobilityIdempotency.set(idempotencyKey, {
+			stateValue38.talentProfileMobilities.set(mobility.id, mobility);
+			stateValue38.talentProfileMobilityIdempotency.set(idempotencyKey, {
 				mobility: { ...mobility },
 				createRequestFingerprint: record.createRequestFingerprint,
 			});
@@ -1740,10 +1798,10 @@ export function createMemoryTalentMethods(
 				action: "CREATE",
 			});
 			if (!audit.ok) {
-				state.talentProfileMobilities.delete(mobility.id);
-				state.talentProfileMobilityIdempotency.delete(idempotencyKey);
+				stateValue38.talentProfileMobilities.delete(mobility.id);
+				stateValue38.talentProfileMobilityIdempotency.delete(idempotencyKey);
 				for (const prior of previouslyCurrent) {
-					state.talentProfileMobilities.set(prior.id, prior);
+					stateValue38.talentProfileMobilities.set(prior.id, prior);
 				}
 				return audit;
 			}
@@ -1752,8 +1810,10 @@ export function createMemoryTalentMethods(
 		},
 
 		async listTalentProfileMobility(input) {
-			const state = getState();
-			const mobilities = Array.from(state.talentProfileMobilities.values())
+			const stateValue37 = getState();
+			const mobilities = Array.from(
+				stateValue37.talentProfileMobilities.values(),
+			)
 				.filter(
 					(mobility) =>
 						mobility.organizationId === input.organizationId &&
@@ -1761,32 +1821,33 @@ export function createMemoryTalentMethods(
 				)
 				.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
 				.map((mobility) => ({ ...mobility }));
-			return ok({
+			return await ok({
 				mobilities,
 			} satisfies TalentProfileMobilityListPage);
 		},
 
 		async findCriticalRoleReadinessByIdempotencyKey(input) {
-			const state = getState();
+			const stateValue36 = getState();
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
-			const record = state.talentCriticalRoleReadinessIdempotency.get(key);
+			const record =
+				stateValue36.talentCriticalRoleReadinessIdempotency.get(key);
 			if (!record) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({
+			return await ok({
 				readiness: { ...record.readiness },
 				createRequestFingerprint: record.createRequestFingerprint,
 			});
 		},
 
 		async recordCriticalRoleReadiness(record, ports, meta) {
-			const state = getState();
+			const stateValue35 = getState();
 			const idempotencyKey = idempotencyMapKey(
 				record.organizationId,
 				record.createIdempotencyKey,
 			);
 			const existingByKey =
-				state.talentCriticalRoleReadinessIdempotency.get(idempotencyKey);
+				stateValue35.talentCriticalRoleReadinessIdempotency.get(idempotencyKey);
 			if (existingByKey) {
 				if (
 					existingByKey.createRequestFingerprint !==
@@ -1802,7 +1863,7 @@ export function createMemoryTalentMethods(
 			}
 
 			const profile = getTalentProfileInOrg(
-				state,
+				stateValue35,
 				record.organizationId,
 				record.talentProfileId,
 			);
@@ -1834,16 +1895,16 @@ export function createMemoryTalentMethods(
 
 			const now = new Date();
 			const previouslyCurrent = Array.from(
-				state.talentCriticalRoleReadiness.values(),
+				stateValue35.talentCriticalRoleReadiness.values(),
 			).filter(
-				(readiness) =>
-					readiness.organizationId === record.organizationId &&
-					readiness.talentProfileId === record.talentProfileId &&
-					readiness.positionId === record.positionId &&
-					readiness.status === "current",
+				(readinessValue) =>
+					readinessValue.organizationId === record.organizationId &&
+					readinessValue.talentProfileId === record.talentProfileId &&
+					readinessValue.positionId === record.positionId &&
+					readinessValue.status === "current",
 			);
 			for (const readiness of previouslyCurrent) {
-				state.talentCriticalRoleReadiness.set(readiness.id, {
+				stateValue35.talentCriticalRoleReadiness.set(readiness.id, {
 					...readiness,
 					status: "superseded",
 					version: readiness.version + 1,
@@ -1875,8 +1936,8 @@ export function createMemoryTalentMethods(
 				createdAt: now,
 				updatedAt: now,
 			};
-			state.talentCriticalRoleReadiness.set(readiness.id, readiness);
-			state.talentCriticalRoleReadinessIdempotency.set(idempotencyKey, {
+			stateValue35.talentCriticalRoleReadiness.set(readiness.id, readiness);
+			stateValue35.talentCriticalRoleReadinessIdempotency.set(idempotencyKey, {
 				readiness: { ...readiness },
 				createRequestFingerprint: record.createRequestFingerprint,
 			});
@@ -1889,10 +1950,12 @@ export function createMemoryTalentMethods(
 				action: "CREATE",
 			});
 			if (!audit.ok) {
-				state.talentCriticalRoleReadiness.delete(readiness.id);
-				state.talentCriticalRoleReadinessIdempotency.delete(idempotencyKey);
+				stateValue35.talentCriticalRoleReadiness.delete(readiness.id);
+				stateValue35.talentCriticalRoleReadinessIdempotency.delete(
+					idempotencyKey,
+				);
 				for (const prior of previouslyCurrent) {
-					state.talentCriticalRoleReadiness.set(prior.id, prior);
+					stateValue35.talentCriticalRoleReadiness.set(prior.id, prior);
 				}
 				return audit;
 			}
@@ -1901,9 +1964,9 @@ export function createMemoryTalentMethods(
 		},
 
 		async listCriticalRoleReadiness(input) {
-			const state = getState();
+			const stateValue34 = getState();
 			const readinessRecords = Array.from(
-				state.talentCriticalRoleReadiness.values(),
+				stateValue34.talentCriticalRoleReadiness.values(),
 			)
 				.filter(
 					(readiness) =>
@@ -1912,7 +1975,7 @@ export function createMemoryTalentMethods(
 				)
 				.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
 				.map((readiness) => ({ ...readiness }));
-			return ok({
+			return await ok({
 				readinessRecords,
 			} satisfies TalentCriticalRoleReadinessListPage);
 		},
@@ -1920,30 +1983,30 @@ export function createMemoryTalentMethods(
 		// Talent pool
 
 		async getTalentPoolById(input) {
-			const state = getState();
-			const record = state.talentPools.get(input.poolId);
+			const stateValue33 = getState();
+			const record = stateValue33.talentPools.get(input.poolId);
 			if (!record || record.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...record });
+			return await ok({ ...record });
 		},
 
 		async findTalentPoolByIdempotencyKey(input) {
-			const state = getState();
+			const stateValue32 = getState();
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
-			const record = state.talentPoolIdempotency.get(key);
+			const record = stateValue32.talentPoolIdempotency.get(key);
 			if (!record) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...record, pool: { ...record.pool } });
+			return await ok({ ...record, pool: { ...record.pool } });
 		},
 
 		async createTalentPool(record, ports, meta) {
-			const state = getState();
-			const existingCode = Array.from(state.talentPools.values()).find(
-				(pool) =>
-					pool.organizationId === record.organizationId &&
-					pool.code === record.code,
+			const stateValue31 = getState();
+			const existingCode = Array.from(stateValue31.talentPools.values()).find(
+				(poolValue) =>
+					poolValue.organizationId === record.organizationId &&
+					poolValue.code === record.code,
 			);
 			if (existingCode) {
 				return conflict("Talent pool with this code already exists");
@@ -1968,13 +2031,13 @@ export function createMemoryTalentMethods(
 				createdAt: now,
 				updatedAt: now,
 			};
-			state.talentPools.set(pool.id, pool);
+			stateValue31.talentPools.set(pool.id, pool);
 
 			const idempotencyKey = idempotencyMapKey(
 				record.organizationId,
 				record.createIdempotencyKey,
 			);
-			state.talentPoolIdempotency.set(idempotencyKey, {
+			stateValue31.talentPoolIdempotency.set(idempotencyKey, {
 				pool: { ...pool },
 				createRequestFingerprint: record.createRequestFingerprint,
 			});
@@ -1987,8 +2050,8 @@ export function createMemoryTalentMethods(
 				action: "CREATE",
 			});
 			if (!audit.ok) {
-				state.talentPools.delete(pool.id);
-				state.talentPoolIdempotency.delete(idempotencyKey);
+				stateValue31.talentPools.delete(pool.id);
+				stateValue31.talentPoolIdempotency.delete(idempotencyKey);
 				return audit;
 			}
 
@@ -1996,9 +2059,9 @@ export function createMemoryTalentMethods(
 		},
 
 		async updateTalentPool(input, ports, meta) {
-			const state = getState();
+			const stateValue30 = getState();
 			const loaded = getTalentPoolInOrg(
-				state,
+				stateValue30,
 				input.organizationId,
 				input.poolId,
 			);
@@ -2022,14 +2085,14 @@ export function createMemoryTalentMethods(
 				...loaded.data,
 				name: input.name ?? loaded.data.name,
 				description:
-					input.description !== undefined
-						? input.description
-						: loaded.data.description,
+					input.description === undefined
+						? loaded.data.description
+						: input.description,
 				version: loaded.data.version + 1,
 				updatedBy: input.actorUserId,
 				updatedAt: now,
 			};
-			state.talentPools.set(updated.id, updated);
+			stateValue30.talentPools.set(updated.id, updated);
 
 			const audit = await recordAudit(ports, meta, {
 				organizationId: input.organizationId,
@@ -2039,7 +2102,7 @@ export function createMemoryTalentMethods(
 				action: "UPDATE",
 			});
 			if (!audit.ok) {
-				state.talentPools.set(loaded.data.id, loaded.data);
+				stateValue30.talentPools.set(loaded.data.id, loaded.data);
 				return audit;
 			}
 
@@ -2047,9 +2110,9 @@ export function createMemoryTalentMethods(
 		},
 
 		async closeTalentPool(input, ports, meta) {
-			const state = getState();
+			const stateValue29 = getState();
 			const loaded = getTalentPoolInOrg(
-				state,
+				stateValue29,
 				input.organizationId,
 				input.poolId,
 			);
@@ -2076,7 +2139,7 @@ export function createMemoryTalentMethods(
 				updatedBy: input.actorUserId,
 				updatedAt: now,
 			};
-			state.talentPools.set(updated.id, updated);
+			stateValue29.talentPools.set(updated.id, updated);
 
 			const audit = await recordAudit(ports, meta, {
 				organizationId: input.organizationId,
@@ -2086,7 +2149,7 @@ export function createMemoryTalentMethods(
 				action: "UPDATE",
 			});
 			if (!audit.ok) {
-				state.talentPools.set(loaded.data.id, loaded.data);
+				stateValue29.talentPools.set(loaded.data.id, loaded.data);
 				return audit;
 			}
 
@@ -2096,19 +2159,19 @@ export function createMemoryTalentMethods(
 		// Talent pool member
 
 		async findTalentPoolMemberByIdempotencyKey(input) {
-			const state = getState();
+			const stateValue28 = getState();
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
-			const record = state.talentPoolMemberIdempotency.get(key);
+			const record = stateValue28.talentPoolMemberIdempotency.get(key);
 			if (!record) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...record, member: { ...record.member } });
+			return await ok({ ...record, member: { ...record.member } });
 		},
 
 		async nominateTalentPoolMember(record, ports, meta) {
-			const state = getState();
+			const stateValue27 = getState();
 			const pool = getTalentPoolInOrg(
-				state,
+				stateValue27,
 				record.organizationId,
 				record.poolId,
 			);
@@ -2126,12 +2189,15 @@ export function createMemoryTalentMethods(
 				return notFound("Employee not found");
 			}
 
-			const existingMember = Array.from(state.talentPoolMembers.values()).find(
-				(member) =>
-					member.organizationId === record.organizationId &&
-					member.poolId === record.poolId &&
-					member.employeeId === record.employeeId &&
-					(member.status === "nominated" || member.status === "approved"),
+			const existingMember = Array.from(
+				stateValue27.talentPoolMembers.values(),
+			).find(
+				(memberValue) =>
+					memberValue.organizationId === record.organizationId &&
+					memberValue.poolId === record.poolId &&
+					memberValue.employeeId === record.employeeId &&
+					(memberValue.status === "nominated" ||
+						memberValue.status === "approved"),
 			);
 			const nominatable = assertTalentPoolMemberNominatable({
 				poolStatus: pool.data.status,
@@ -2165,13 +2231,13 @@ export function createMemoryTalentMethods(
 				createdAt: now,
 				updatedAt: now,
 			};
-			state.talentPoolMembers.set(member.id, member);
+			stateValue27.talentPoolMembers.set(member.id, member);
 
 			const idempotencyKey = idempotencyMapKey(
 				record.organizationId,
 				record.createIdempotencyKey,
 			);
-			state.talentPoolMemberIdempotency.set(idempotencyKey, {
+			stateValue27.talentPoolMemberIdempotency.set(idempotencyKey, {
 				member: { ...member },
 				createRequestFingerprint: record.createRequestFingerprint,
 			});
@@ -2184,8 +2250,8 @@ export function createMemoryTalentMethods(
 				action: "CREATE",
 			});
 			if (!audit.ok) {
-				state.talentPoolMembers.delete(member.id);
-				state.talentPoolMemberIdempotency.delete(idempotencyKey);
+				stateValue27.talentPoolMembers.delete(member.id);
+				stateValue27.talentPoolMemberIdempotency.delete(idempotencyKey);
 				return audit;
 			}
 
@@ -2193,9 +2259,9 @@ export function createMemoryTalentMethods(
 		},
 
 		async approveTalentPoolMember(input, ports, meta) {
-			const state = getState();
+			const stateValue26 = getState();
 			const loaded = getTalentPoolMemberInOrg(
-				state,
+				stateValue26,
 				input.organizationId,
 				input.memberId,
 			);
@@ -2227,7 +2293,7 @@ export function createMemoryTalentMethods(
 				updatedBy: input.actorUserId,
 				updatedAt: now,
 			};
-			state.talentPoolMembers.set(updated.id, updated);
+			stateValue26.talentPoolMembers.set(updated.id, updated);
 
 			const audit = await recordAudit(ports, meta, {
 				organizationId: input.organizationId,
@@ -2237,7 +2303,7 @@ export function createMemoryTalentMethods(
 				action: "UPDATE",
 			});
 			if (!audit.ok) {
-				state.talentPoolMembers.set(loaded.data.id, loaded.data);
+				stateValue26.talentPoolMembers.set(loaded.data.id, loaded.data);
 				return audit;
 			}
 
@@ -2249,7 +2315,7 @@ export function createMemoryTalentMethods(
 				entityId: input.memberId,
 			});
 			if (!outbox.ok) {
-				state.talentPoolMembers.set(loaded.data.id, loaded.data);
+				stateValue26.talentPoolMembers.set(loaded.data.id, loaded.data);
 				return outbox;
 			}
 
@@ -2257,9 +2323,9 @@ export function createMemoryTalentMethods(
 		},
 
 		async removeTalentPoolMember(input, ports, meta) {
-			const state = getState();
+			const stateValue25 = getState();
 			const loaded = getTalentPoolMemberInOrg(
-				state,
+				stateValue25,
 				input.organizationId,
 				input.memberId,
 			);
@@ -2287,7 +2353,7 @@ export function createMemoryTalentMethods(
 				updatedBy: input.actorUserId,
 				updatedAt: now,
 			};
-			state.talentPoolMembers.set(updated.id, updated);
+			stateValue25.talentPoolMembers.set(updated.id, updated);
 
 			const audit = await recordAudit(ports, meta, {
 				organizationId: input.organizationId,
@@ -2297,7 +2363,7 @@ export function createMemoryTalentMethods(
 				action: "UPDATE",
 			});
 			if (!audit.ok) {
-				state.talentPoolMembers.set(loaded.data.id, loaded.data);
+				stateValue25.talentPoolMembers.set(loaded.data.id, loaded.data);
 				return audit;
 			}
 
@@ -2309,7 +2375,7 @@ export function createMemoryTalentMethods(
 				entityId: input.memberId,
 			});
 			if (!outbox.ok) {
-				state.talentPoolMembers.set(loaded.data.id, loaded.data);
+				stateValue25.talentPoolMembers.set(loaded.data.id, loaded.data);
 				return outbox;
 			}
 
@@ -2317,25 +2383,25 @@ export function createMemoryTalentMethods(
 		},
 
 		async listTalentPoolMembers(input) {
-			const state = getState();
+			const stateValue24 = getState();
 			const page = input.page ?? 1;
 			const pageSize = input.pageSize ?? 20;
-			const filtered = Array.from(state.talentPoolMembers.values()).filter(
-				(member) => {
-					if (member.organizationId !== input.organizationId) {
-						return false;
-					}
-					if (member.poolId !== input.poolId) {
-						return false;
-					}
-					if (input.status !== undefined && member.status !== input.status) {
-						return false;
-					}
-					return true;
-				},
-			);
+			const filtered = Array.from(
+				stateValue24.talentPoolMembers.values(),
+			).filter((member) => {
+				if (member.organizationId !== input.organizationId) {
+					return false;
+				}
+				if (member.poolId !== input.poolId) {
+					return false;
+				}
+				if (input.status !== undefined && member.status !== input.status) {
+					return false;
+				}
+				return true;
+			});
 			const { items, totalCount } = paginate(filtered, page, pageSize);
-			return ok({
+			return await ok({
 				members: items.map((item) => ({ ...item })),
 				totalCount,
 				page,
@@ -2346,17 +2412,17 @@ export function createMemoryTalentMethods(
 		// Career plan
 
 		async findCareerPlanByIdempotencyKey(input) {
-			const state = getState();
+			const stateValue23 = getState();
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
-			const record = state.careerPlanIdempotency.get(key);
+			const record = stateValue23.careerPlanIdempotency.get(key);
 			if (!record) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...record, careerPlan: { ...record.careerPlan } });
+			return await ok({ ...record, careerPlan: { ...record.careerPlan } });
 		},
 
 		async createCareerPlan(record, ports, meta) {
-			const state = getState();
+			const stateValue22 = getState();
 			const employee = await this.getEmployeeById({
 				organizationId: record.organizationId,
 				employeeId: record.employeeId,
@@ -2367,10 +2433,10 @@ export function createMemoryTalentMethods(
 			if (employee.data === null) {
 				return notFound("Employee not found");
 			}
-			const existingCode = Array.from(state.careerPlans.values()).find(
-				(plan) =>
-					plan.organizationId === record.organizationId &&
-					plan.code === record.code,
+			const existingCode = Array.from(stateValue22.careerPlans.values()).find(
+				(planValue2) =>
+					planValue2.organizationId === record.organizationId &&
+					planValue2.code === record.code,
 			);
 			if (existingCode) {
 				return conflict("Career plan with this code already exists");
@@ -2397,13 +2463,13 @@ export function createMemoryTalentMethods(
 				createdAt: now,
 				updatedAt: now,
 			};
-			state.careerPlans.set(plan.id, plan);
+			stateValue22.careerPlans.set(plan.id, plan);
 
 			const idempotencyKey = idempotencyMapKey(
 				record.organizationId,
 				record.createIdempotencyKey,
 			);
-			state.careerPlanIdempotency.set(idempotencyKey, {
+			stateValue22.careerPlanIdempotency.set(idempotencyKey, {
 				careerPlan: { ...plan },
 				createRequestFingerprint: record.createRequestFingerprint,
 			});
@@ -2416,8 +2482,8 @@ export function createMemoryTalentMethods(
 				action: "CREATE",
 			});
 			if (!audit.ok) {
-				state.careerPlans.delete(plan.id);
-				state.careerPlanIdempotency.delete(idempotencyKey);
+				stateValue22.careerPlans.delete(plan.id);
+				stateValue22.careerPlanIdempotency.delete(idempotencyKey);
 				return audit;
 			}
 
@@ -2425,9 +2491,9 @@ export function createMemoryTalentMethods(
 		},
 
 		async updateCareerPlan(input, ports, meta) {
-			const state = getState();
+			const stateValue21 = getState();
 			const loaded = getCareerPlanInOrg(
-				state,
+				stateValue21,
 				input.organizationId,
 				input.careerPlanId,
 			);
@@ -2454,7 +2520,7 @@ export function createMemoryTalentMethods(
 				updatedBy: input.actorUserId,
 				updatedAt: now,
 			};
-			state.careerPlans.set(updated.id, updated);
+			stateValue21.careerPlans.set(updated.id, updated);
 
 			const audit = await recordAudit(ports, meta, {
 				organizationId: input.organizationId,
@@ -2464,7 +2530,7 @@ export function createMemoryTalentMethods(
 				action: "UPDATE",
 			});
 			if (!audit.ok) {
-				state.careerPlans.set(loaded.data.id, loaded.data);
+				stateValue21.careerPlans.set(loaded.data.id, loaded.data);
 				return audit;
 			}
 
@@ -2472,9 +2538,9 @@ export function createMemoryTalentMethods(
 		},
 
 		async acknowledgeCareerPlan(input, ports, meta) {
-			const state = getState();
+			const stateValue20 = getState();
 			const loaded = getCareerPlanInOrg(
-				state,
+				stateValue20,
 				input.organizationId,
 				input.careerPlanId,
 			);
@@ -2504,7 +2570,7 @@ export function createMemoryTalentMethods(
 				updatedBy: input.actorUserId,
 				updatedAt: now,
 			};
-			state.careerPlans.set(updated.id, updated);
+			stateValue20.careerPlans.set(updated.id, updated);
 
 			const audit = await recordAudit(ports, meta, {
 				organizationId: input.organizationId,
@@ -2514,7 +2580,7 @@ export function createMemoryTalentMethods(
 				action: "UPDATE",
 			});
 			if (!audit.ok) {
-				state.careerPlans.set(loaded.data.id, loaded.data);
+				stateValue20.careerPlans.set(loaded.data.id, loaded.data);
 				return audit;
 			}
 
@@ -2526,7 +2592,7 @@ export function createMemoryTalentMethods(
 				entityId: input.careerPlanId,
 			});
 			if (!outbox.ok) {
-				state.careerPlans.set(loaded.data.id, loaded.data);
+				stateValue20.careerPlans.set(loaded.data.id, loaded.data);
 				return outbox;
 			}
 
@@ -2534,9 +2600,9 @@ export function createMemoryTalentMethods(
 		},
 
 		async closeCareerPlan(input, ports, meta) {
-			const state = getState();
+			const stateValue19 = getState();
 			const loaded = getCareerPlanInOrg(
-				state,
+				stateValue19,
 				input.organizationId,
 				input.careerPlanId,
 			);
@@ -2566,7 +2632,7 @@ export function createMemoryTalentMethods(
 				updatedBy: input.actorUserId,
 				updatedAt: now,
 			};
-			state.careerPlans.set(updated.id, updated);
+			stateValue19.careerPlans.set(updated.id, updated);
 
 			const audit = await recordAudit(ports, meta, {
 				organizationId: input.organizationId,
@@ -2576,7 +2642,7 @@ export function createMemoryTalentMethods(
 				action: "UPDATE",
 			});
 			if (!audit.ok) {
-				state.careerPlans.set(loaded.data.id, loaded.data);
+				stateValue19.careerPlans.set(loaded.data.id, loaded.data);
 				return audit;
 			}
 
@@ -2584,12 +2650,12 @@ export function createMemoryTalentMethods(
 		},
 
 		async getCareerPlanById(input) {
-			const state = getState();
-			const record = state.careerPlans.get(input.careerPlanId);
+			const stateValue18 = getState();
+			const record = stateValue18.careerPlans.get(input.careerPlanId);
 			if (!record || record.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			const actions = Array.from(state.careerPlanActions.values())
+			const actions = Array.from(stateValue18.careerPlanActions.values())
 				.filter(
 					(action) =>
 						action.organizationId === input.organizationId &&
@@ -2598,27 +2664,29 @@ export function createMemoryTalentMethods(
 				.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
 				.map((action) => ({ ...action }));
 			const withActions: CareerPlanWithActions = { ...record, actions };
-			return ok(withActions);
+			return await ok(withActions);
 		},
 
 		async listEmployeeCareerPlans(input) {
-			const state = getState();
+			const stateValue17 = getState();
 			const page = input.page ?? 1;
 			const pageSize = input.pageSize ?? 20;
-			const filtered = Array.from(state.careerPlans.values()).filter((plan) => {
-				if (plan.organizationId !== input.organizationId) {
-					return false;
-				}
-				if (plan.employeeId !== input.employeeId) {
-					return false;
-				}
-				if (input.status !== undefined && plan.status !== input.status) {
-					return false;
-				}
-				return true;
-			});
+			const filtered = Array.from(stateValue17.careerPlans.values()).filter(
+				(plan) => {
+					if (plan.organizationId !== input.organizationId) {
+						return false;
+					}
+					if (plan.employeeId !== input.employeeId) {
+						return false;
+					}
+					if (input.status !== undefined && plan.status !== input.status) {
+						return false;
+					}
+					return true;
+				},
+			);
 			const { items, totalCount } = paginate(filtered, page, pageSize);
-			return ok({
+			return await ok({
 				careerPlans: items.map((item) => ({ ...item })),
 				totalCount,
 				page,
@@ -2629,9 +2697,9 @@ export function createMemoryTalentMethods(
 		// Career plan action
 
 		async addCareerPlanAction(input, ports, meta) {
-			const state = getState();
+			const stateValue16 = getState();
 			const plan = getCareerPlanInOrg(
-				state,
+				stateValue16,
 				input.organizationId,
 				input.careerPlanId,
 			);
@@ -2663,7 +2731,7 @@ export function createMemoryTalentMethods(
 				createdAt: now,
 				updatedAt: now,
 			};
-			state.careerPlanActions.set(action.id, action);
+			stateValue16.careerPlanActions.set(action.id, action);
 
 			const audit = await recordAudit(ports, meta, {
 				organizationId: action.organizationId,
@@ -2673,7 +2741,7 @@ export function createMemoryTalentMethods(
 				action: "CREATE",
 			});
 			if (!audit.ok) {
-				state.careerPlanActions.delete(action.id);
+				stateValue16.careerPlanActions.delete(action.id);
 				return audit;
 			}
 
@@ -2681,9 +2749,9 @@ export function createMemoryTalentMethods(
 		},
 
 		async completeCareerPlanAction(input, ports, meta) {
-			const state = getState();
+			const stateValue15 = getState();
 			const loaded = getCareerPlanActionInOrg(
-				state,
+				stateValue15,
 				input.organizationId,
 				input.actionId,
 			);
@@ -2710,7 +2778,7 @@ export function createMemoryTalentMethods(
 				updatedBy: input.actorUserId,
 				updatedAt: now,
 			};
-			state.careerPlanActions.set(updated.id, updated);
+			stateValue15.careerPlanActions.set(updated.id, updated);
 
 			const audit = await recordAudit(ports, meta, {
 				organizationId: input.organizationId,
@@ -2720,7 +2788,7 @@ export function createMemoryTalentMethods(
 				action: "UPDATE",
 			});
 			if (!audit.ok) {
-				state.careerPlanActions.set(loaded.data.id, loaded.data);
+				stateValue15.careerPlanActions.set(loaded.data.id, loaded.data);
 				return audit;
 			}
 
@@ -2728,31 +2796,31 @@ export function createMemoryTalentMethods(
 		},
 
 		async getCareerPlanActionById(input) {
-			const state = getState();
-			const record = state.careerPlanActions.get(input.actionId);
+			const stateValue14 = getState();
+			const record = stateValue14.careerPlanActions.get(input.actionId);
 			if (!record || record.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...record });
+			return await ok({ ...record });
 		},
 
 		// Succession plan
 
 		async findSuccessionPlanByIdempotencyKey(input) {
-			const state = getState();
+			const stateValue13 = getState();
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
-			const record = state.successionPlanIdempotency.get(key);
+			const record = stateValue13.successionPlanIdempotency.get(key);
 			if (!record) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({
+			return await ok({
 				...record,
 				successionPlan: { ...record.successionPlan },
 			});
 		},
 
 		async createSuccessionPlan(record, ports, meta) {
-			const state = getState();
+			const stateValue12 = getState();
 			const position = await this.getPositionById({
 				organizationId: record.organizationId,
 				positionId: record.positionId,
@@ -2763,10 +2831,12 @@ export function createMemoryTalentMethods(
 			if (position.data === null) {
 				return notFound("Position not found");
 			}
-			const existingCode = Array.from(state.successionPlans.values()).find(
-				(plan) =>
-					plan.organizationId === record.organizationId &&
-					plan.code === record.code,
+			const existingCode = Array.from(
+				stateValue12.successionPlans.values(),
+			).find(
+				(planValue) =>
+					planValue.organizationId === record.organizationId &&
+					planValue.code === record.code,
 			);
 			if (existingCode) {
 				return conflict("Succession plan with this code already exists");
@@ -2792,13 +2862,13 @@ export function createMemoryTalentMethods(
 				createdAt: now,
 				updatedAt: now,
 			};
-			state.successionPlans.set(plan.id, plan);
+			stateValue12.successionPlans.set(plan.id, plan);
 
 			const idempotencyKey = idempotencyMapKey(
 				record.organizationId,
 				record.createIdempotencyKey,
 			);
-			state.successionPlanIdempotency.set(idempotencyKey, {
+			stateValue12.successionPlanIdempotency.set(idempotencyKey, {
 				successionPlan: { ...plan },
 				createRequestFingerprint: record.createRequestFingerprint,
 			});
@@ -2811,8 +2881,8 @@ export function createMemoryTalentMethods(
 				action: "CREATE",
 			});
 			if (!audit.ok) {
-				state.successionPlans.delete(plan.id);
-				state.successionPlanIdempotency.delete(idempotencyKey);
+				stateValue12.successionPlans.delete(plan.id);
+				stateValue12.successionPlanIdempotency.delete(idempotencyKey);
 				return audit;
 			}
 
@@ -2820,9 +2890,9 @@ export function createMemoryTalentMethods(
 		},
 
 		async updateSuccessionPlan(input, ports, meta) {
-			const state = getState();
+			const stateValue11 = getState();
 			const loaded = getSuccessionPlanInOrg(
-				state,
+				stateValue11,
 				input.organizationId,
 				input.successionPlanId,
 			);
@@ -2851,7 +2921,7 @@ export function createMemoryTalentMethods(
 				updatedBy: input.actorUserId,
 				updatedAt: now,
 			};
-			state.successionPlans.set(updated.id, updated);
+			stateValue11.successionPlans.set(updated.id, updated);
 
 			const audit = await recordAudit(ports, meta, {
 				organizationId: input.organizationId,
@@ -2861,7 +2931,7 @@ export function createMemoryTalentMethods(
 				action: "UPDATE",
 			});
 			if (!audit.ok) {
-				state.successionPlans.set(loaded.data.id, loaded.data);
+				stateValue11.successionPlans.set(loaded.data.id, loaded.data);
 				return audit;
 			}
 
@@ -2869,9 +2939,9 @@ export function createMemoryTalentMethods(
 		},
 
 		async closeSuccessionPlan(input, ports, meta) {
-			const state = getState();
+			const stateValue10 = getState();
 			const loaded = getSuccessionPlanInOrg(
-				state,
+				stateValue10,
 				input.organizationId,
 				input.successionPlanId,
 			);
@@ -2901,7 +2971,7 @@ export function createMemoryTalentMethods(
 				updatedBy: input.actorUserId,
 				updatedAt: now,
 			};
-			state.successionPlans.set(updated.id, updated);
+			stateValue10.successionPlans.set(updated.id, updated);
 
 			const audit = await recordAudit(ports, meta, {
 				organizationId: input.organizationId,
@@ -2911,7 +2981,7 @@ export function createMemoryTalentMethods(
 				action: "UPDATE",
 			});
 			if (!audit.ok) {
-				state.successionPlans.set(loaded.data.id, loaded.data);
+				stateValue10.successionPlans.set(loaded.data.id, loaded.data);
 				return audit;
 			}
 
@@ -2919,19 +2989,19 @@ export function createMemoryTalentMethods(
 		},
 
 		async getSuccessionPlanById(input) {
-			const state = getState();
-			const record = state.successionPlans.get(input.successionPlanId);
+			const stateValue9 = getState();
+			const record = stateValue9.successionPlans.get(input.successionPlanId);
 			if (!record || record.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...record });
+			return await ok({ ...record });
 		},
 
 		async listSuccessionPlans(input) {
-			const state = getState();
+			const stateValue8 = getState();
 			const page = input.page ?? 1;
 			const pageSize = input.pageSize ?? 20;
-			const filtered = Array.from(state.successionPlans.values()).filter(
+			const filtered = Array.from(stateValue8.successionPlans.values()).filter(
 				(plan) => {
 					if (plan.organizationId !== input.organizationId) {
 						return false;
@@ -2949,7 +3019,7 @@ export function createMemoryTalentMethods(
 				},
 			);
 			const { items, totalCount } = paginate(filtered, page, pageSize);
-			return ok({
+			return await ok({
 				successionPlans: items.map((item) => ({ ...item })),
 				totalCount,
 				page,
@@ -2960,19 +3030,19 @@ export function createMemoryTalentMethods(
 		// Succession candidate
 
 		async findSuccessionCandidateByIdempotencyKey(input) {
-			const state = getState();
+			const stateValue7 = getState();
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
-			const record = state.successionCandidateIdempotency.get(key);
+			const record = stateValue7.successionCandidateIdempotency.get(key);
 			if (!record) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...record, candidate: { ...record.candidate } });
+			return await ok({ ...record, candidate: { ...record.candidate } });
 		},
 
 		async nominateSuccessionCandidate(record, ports, meta) {
-			const state = getState();
+			const stateValue6 = getState();
 			const plan = getSuccessionPlanInOrg(
-				state,
+				stateValue6,
 				record.organizationId,
 				record.successionPlanId,
 			);
@@ -2980,26 +3050,12 @@ export function createMemoryTalentMethods(
 				return plan;
 			}
 
-			let employmentStatus: EmploymentStatus | null = null;
-			if (record.employeeId !== null) {
-				const employee = await this.getEmployeeById({
-					organizationId: record.organizationId,
-					employeeId: record.employeeId,
-				});
-				if (!employee.ok) {
-					return employee;
-				}
-				if (employee.data === null) {
-					return notFound("Employee not found");
-				}
-				const employment = await this.findOpenEmploymentByEmployee({
-					organizationId: record.organizationId,
-					employeeId: record.employeeId,
-				});
-				if (!employment.ok) {
-					return employment;
-				}
-				employmentStatus = employment.data?.status ?? null;
+			const employmentStatus = await resolveSuccessionEmploymentStatus(this, {
+				organizationId: record.organizationId,
+				employeeId: record.employeeId,
+			});
+			if (!employmentStatus.ok) {
+				return employmentStatus;
 			}
 
 			const nominatable = assertSuccessionCandidateNominatable({
@@ -3007,7 +3063,7 @@ export function createMemoryTalentMethods(
 				allowsExternalCandidates: plan.data.allowsExternalCandidates,
 				employeeId: record.employeeId,
 				externalCandidateRef: record.externalCandidateRef,
-				employmentStatus,
+				employmentStatus: employmentStatus.data,
 				nominatorUserId: record.nominatorUserId,
 			});
 			if (!nominatable.ok) {
@@ -3037,13 +3093,13 @@ export function createMemoryTalentMethods(
 				createdAt: now,
 				updatedAt: now,
 			};
-			state.successionCandidates.set(candidate.id, candidate);
+			stateValue6.successionCandidates.set(candidate.id, candidate);
 
 			const idempotencyKey = idempotencyMapKey(
 				record.organizationId,
 				record.createIdempotencyKey,
 			);
-			state.successionCandidateIdempotency.set(idempotencyKey, {
+			stateValue6.successionCandidateIdempotency.set(idempotencyKey, {
 				candidate: { ...candidate },
 				createRequestFingerprint: record.createRequestFingerprint,
 			});
@@ -3056,8 +3112,8 @@ export function createMemoryTalentMethods(
 				action: "CREATE",
 			});
 			if (!audit.ok) {
-				state.successionCandidates.delete(candidate.id);
-				state.successionCandidateIdempotency.delete(idempotencyKey);
+				stateValue6.successionCandidates.delete(candidate.id);
+				stateValue6.successionCandidateIdempotency.delete(idempotencyKey);
 				return audit;
 			}
 
@@ -3069,8 +3125,8 @@ export function createMemoryTalentMethods(
 				entityId: candidate.id,
 			});
 			if (!outbox.ok) {
-				state.successionCandidates.delete(candidate.id);
-				state.successionCandidateIdempotency.delete(idempotencyKey);
+				stateValue6.successionCandidates.delete(candidate.id);
+				stateValue6.successionCandidateIdempotency.delete(idempotencyKey);
 				return outbox;
 			}
 
@@ -3078,9 +3134,9 @@ export function createMemoryTalentMethods(
 		},
 
 		async assessSuccessionReadiness(input, ports, meta) {
-			const state = getState();
+			const stateValue5 = getState();
 			const loaded = getSuccessionCandidateInOrg(
-				state,
+				stateValue5,
 				input.organizationId,
 				input.candidateId,
 			);
@@ -3119,7 +3175,7 @@ export function createMemoryTalentMethods(
 				updatedBy: input.actorUserId,
 				updatedAt: now,
 			};
-			state.successionCandidates.set(updated.id, updated);
+			stateValue5.successionCandidates.set(updated.id, updated);
 
 			const audit = await recordAudit(ports, meta, {
 				organizationId: input.organizationId,
@@ -3129,7 +3185,7 @@ export function createMemoryTalentMethods(
 				action: "UPDATE",
 			});
 			if (!audit.ok) {
-				state.successionCandidates.set(loaded.data.id, loaded.data);
+				stateValue5.successionCandidates.set(loaded.data.id, loaded.data);
 				return audit;
 			}
 
@@ -3141,7 +3197,7 @@ export function createMemoryTalentMethods(
 				entityId: input.candidateId,
 			});
 			if (!outbox.ok) {
-				state.successionCandidates.set(loaded.data.id, loaded.data);
+				stateValue5.successionCandidates.set(loaded.data.id, loaded.data);
 				return outbox;
 			}
 
@@ -3149,9 +3205,9 @@ export function createMemoryTalentMethods(
 		},
 
 		async approveSuccessionCandidate(input, ports, meta) {
-			const state = getState();
+			const stateValue4 = getState();
 			const loaded = getSuccessionCandidateInOrg(
-				state,
+				stateValue4,
 				input.organizationId,
 				input.candidateId,
 			);
@@ -3180,7 +3236,7 @@ export function createMemoryTalentMethods(
 				updatedBy: input.actorUserId,
 				updatedAt: now,
 			};
-			state.successionCandidates.set(updated.id, updated);
+			stateValue4.successionCandidates.set(updated.id, updated);
 
 			const audit = await recordAudit(ports, meta, {
 				organizationId: input.organizationId,
@@ -3190,7 +3246,7 @@ export function createMemoryTalentMethods(
 				action: "UPDATE",
 			});
 			if (!audit.ok) {
-				state.successionCandidates.set(loaded.data.id, loaded.data);
+				stateValue4.successionCandidates.set(loaded.data.id, loaded.data);
 				return audit;
 			}
 
@@ -3202,7 +3258,7 @@ export function createMemoryTalentMethods(
 				entityId: input.candidateId,
 			});
 			if (!outbox.ok) {
-				state.successionCandidates.set(loaded.data.id, loaded.data);
+				stateValue4.successionCandidates.set(loaded.data.id, loaded.data);
 				return outbox;
 			}
 
@@ -3210,9 +3266,9 @@ export function createMemoryTalentMethods(
 		},
 
 		async removeSuccessionCandidate(input, ports, meta) {
-			const state = getState();
+			const stateValue3 = getState();
 			const loaded = getSuccessionCandidateInOrg(
-				state,
+				stateValue3,
 				input.organizationId,
 				input.candidateId,
 			);
@@ -3239,7 +3295,7 @@ export function createMemoryTalentMethods(
 				updatedBy: input.actorUserId,
 				updatedAt: now,
 			};
-			state.successionCandidates.set(updated.id, updated);
+			stateValue3.successionCandidates.set(updated.id, updated);
 
 			const audit = await recordAudit(ports, meta, {
 				organizationId: input.organizationId,
@@ -3249,7 +3305,7 @@ export function createMemoryTalentMethods(
 				action: "UPDATE",
 			});
 			if (!audit.ok) {
-				state.successionCandidates.set(loaded.data.id, loaded.data);
+				stateValue3.successionCandidates.set(loaded.data.id, loaded.data);
 				return audit;
 			}
 
@@ -3257,25 +3313,25 @@ export function createMemoryTalentMethods(
 		},
 
 		async listSuccessionCandidates(input) {
-			const state = getState();
+			const stateValue2 = getState();
 			const page = input.page ?? 1;
 			const pageSize = input.pageSize ?? 20;
-			const filtered = Array.from(state.successionCandidates.values()).filter(
-				(candidate) => {
-					if (candidate.organizationId !== input.organizationId) {
-						return false;
-					}
-					if (candidate.successionPlanId !== input.successionPlanId) {
-						return false;
-					}
-					if (input.status !== undefined && candidate.status !== input.status) {
-						return false;
-					}
-					return true;
-				},
-			);
+			const filtered = Array.from(
+				stateValue2.successionCandidates.values(),
+			).filter((candidate) => {
+				if (candidate.organizationId !== input.organizationId) {
+					return false;
+				}
+				if (candidate.successionPlanId !== input.successionPlanId) {
+					return false;
+				}
+				if (input.status !== undefined && candidate.status !== input.status) {
+					return false;
+				}
+				return true;
+			});
 			const { items, totalCount } = paginate(filtered, page, pageSize);
-			return ok({
+			return await ok({
 				candidates: items.map((item) => ({ ...item })),
 				totalCount,
 				page,
@@ -3284,8 +3340,8 @@ export function createMemoryTalentMethods(
 		},
 
 		async getPositionSuccessionCoverage(input) {
-			const state = getState();
-			const plans = Array.from(state.successionPlans.values()).filter(
+			const stateValue = getState();
+			const plans = Array.from(stateValue.successionPlans.values()).filter(
 				(plan) =>
 					plan.organizationId === input.organizationId &&
 					plan.positionId === input.positionId,
@@ -3297,7 +3353,7 @@ export function createMemoryTalentMethods(
 			let readySoonCandidateCount = 0;
 			let totalActiveCandidateCount = 0;
 
-			for (const candidate of state.successionCandidates.values()) {
+			for (const candidate of stateValue.successionCandidates.values()) {
 				if (
 					candidate.organizationId !== input.organizationId ||
 					!planIds.has(candidate.successionPlanId)
@@ -3334,7 +3390,7 @@ export function createMemoryTalentMethods(
 				readySoonCandidateCount,
 				totalActiveCandidateCount,
 			};
-			return ok(coverage);
+			return await ok(coverage);
 		},
 	};
 }

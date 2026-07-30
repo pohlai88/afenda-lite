@@ -181,9 +181,9 @@ describe("HR-ENT-04 contextual authorization", () => {
 	it("requires a specific reason and durable audit evidence for break-glass access", async () => {
 		const records: unknown[] = [];
 		const audit = {
-			async record(input: unknown) {
-				records.push(input);
-				return ok({ id: "break-glass-1" });
+			async record(inputValue1: unknown) {
+				records.push(inputValue1);
+				return await ok({ id: "break-glass-1" });
 			},
 		};
 		const input = {
@@ -221,7 +221,7 @@ describe("HR-ENT-04 contextual authorization", () => {
 					...input.breakGlass,
 					audit: {
 						async record() {
-							return fail("INTERNAL_ERROR", "Audit unavailable");
+							return await fail("INTERNAL_ERROR", "Audit unavailable");
 						},
 					},
 				},
@@ -239,7 +239,7 @@ describe("HR-ENT-04 field privacy and retention", () => {
 	): HumanResourcesAuthorizationPort {
 		return {
 			async can(input) {
-				return permissions.has(input.permission);
+				return await permissions.has(input.permission);
 			},
 		};
 	}
@@ -286,7 +286,7 @@ describe("HR-ENT-04 field privacy and retention", () => {
 		);
 
 		expect(decision.ok).toBe(true);
-		if (!decision.ok || !decision.data.allowed) {
+		if (!(decision.ok && decision.data.allowed)) {
 			throw new Error("Expected authorization success");
 		}
 
@@ -316,7 +316,9 @@ describe("HR-ENT-04 field privacy and retention", () => {
 			actorPermissions: new Set<HumanResourcesPermission>(),
 		});
 		expect(projected.data).toEqual({ displayName: "Person" });
-		expect(projected.redactedFields.sort()).toEqual(
+		expect(
+			projected.redactedFields.sort((left, right) => left.localeCompare(right)),
+		).toEqual(
 			[
 				"ssn",
 				"medicalDetails",
@@ -324,7 +326,7 @@ describe("HR-ENT-04 field privacy and retention", () => {
 				"evidence",
 				"backgroundCheckResult",
 				"readinessLevel",
-			].sort(),
+			].sort((left, right) => left.localeCompare(right)),
 		);
 	});
 

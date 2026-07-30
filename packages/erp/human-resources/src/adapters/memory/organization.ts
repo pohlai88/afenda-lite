@@ -68,6 +68,11 @@ import {
 	assertReportingLineAcyclic,
 	buildBoundedDepartmentTree as buildOrganizationTree,
 } from "../../shared/organization-guards";
+import {
+	runSequential,
+	sequentialContinue,
+	sequentialReturn,
+} from "../../shared/run-sequential";
 import type {
 	DepartmentCreateRecord,
 	HumanResourcesStore,
@@ -88,15 +93,15 @@ import {
 } from "../../workforce-foundation/lineage-segment";
 import type { CoreMemoryState } from "./core";
 
-export type OrganizationMemoryState = {
+export interface OrganizationMemoryState {
+	departmentStructureVersions: Map<string, DepartmentStructureVersion>;
 	departments: Map<HumanResourcesDepartmentId, Department>;
+	jobDefinitionVersions: Map<string, JobDefinitionVersion>;
 	jobs: Map<HumanResourcesJobId, Job>;
+	positionDefinitionVersions: Map<string, PositionDefinitionVersion>;
 	positions: Map<HumanResourcesPositionId, Position>;
 	reportingLines: Map<HumanResourcesReportingLineId, ReportingLine>;
-	departmentStructureVersions: Map<string, DepartmentStructureVersion>;
-	jobDefinitionVersions: Map<string, JobDefinitionVersion>;
-	positionDefinitionVersions: Map<string, PositionDefinitionVersion>;
-};
+}
 
 export type MemoryOrganizationMethods = Pick<
 	HumanResourcesStore,
@@ -196,6 +201,53 @@ async function appendOrganizationDomainEvent(
 	return ok(undefined);
 }
 
+async function assertJobHasNoActivePositionsWhenArchiving(
+	host: Pick<HumanResourcesStore, "countActiveOrFrozenPositionsForJob">,
+	input: {
+		organizationId: string;
+		jobId: HumanResourcesJobId;
+		status: JobStatus;
+	},
+): Promise<Result<void>> {
+	if (input.status !== "archived") {
+		return ok(undefined);
+	}
+	const positionCount = await host.countActiveOrFrozenPositionsForJob(input);
+	if (!positionCount.ok) {
+		return positionCount;
+	}
+	return positionCount.data > 0
+		? conflict("Cannot archive job with active or frozen positions")
+		: ok(undefined);
+}
+
+const JOB_STATUS_EVENTS: Partial<Record<JobStatus, HumanResourcesEventType>> = {
+	active: HUMAN_RESOURCES_JOB_ACTIVATED_EVENT,
+	archived: HUMAN_RESOURCES_JOB_ARCHIVED_EVENT,
+};
+
+function appendJobStatusEvent(
+	ports: MutationPorts,
+	meta: HumanResourcesMutationMeta,
+	input: {
+		organizationId: string;
+		actorUserId: string;
+		jobId: HumanResourcesJobId;
+		status: JobStatus;
+	},
+): Promise<Result<void>> {
+	const eventType = JOB_STATUS_EVENTS[input.status];
+	return eventType === undefined
+		? Promise.resolve(ok(undefined))
+		: appendOrganizationDomainEvent(ports, meta, {
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				entityType: "hr_job",
+				entityId: input.jobId,
+				eventType,
+			});
+}
+
 export function createMemoryOrganizationMethods(
 	state: OrganizationMemoryState,
 	core: CoreMemoryState,
@@ -208,24 +260,30 @@ export function createMemoryOrganizationMethods(
 		}): Promise<Result<Department | null>> {
 			const department = state.departments.get(input.departmentId);
 			if (!department || department.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...department });
+			return await ok({ ...department });
 		},
 
 		async findDepartmentByCode(input: {
 			organizationId: string;
 			code: string;
 		}): Promise<Result<Department | null>> {
-			for (const department of state.departments.values()) {
-				if (
-					department.organizationId === input.organizationId &&
-					department.code === input.code
-				) {
-					return ok({ ...department });
-				}
+			const sequentialOutcome1 = await runSequential(
+				state.departments.values(),
+				async (department) => {
+					if (
+						department.organizationId === input.organizationId &&
+						department.code === input.code
+					) {
+						return sequentialReturn(await ok({ ...department }));
+					}
+				},
+			);
+			if (sequentialOutcome1.kind === "return") {
+				return sequentialOutcome1.value;
 			}
-			return ok(null);
+			return await ok(null);
 		},
 
 		async createDepartment(
@@ -330,11 +388,11 @@ export function createMemoryOrganizationMethods(
 			input: {
 				organizationId: string;
 				departmentId: HumanResourcesDepartmentId;
-				name?: string;
-				parentDepartmentId?: HumanResourcesDepartmentId | null;
+				name?: string | undefined;
+				parentDepartmentId?: HumanResourcesDepartmentId | null | undefined;
 				effectiveOn: string;
 				reasonCode: string;
-				evidenceRef?: string;
+				evidenceRef?: string | undefined;
 				expectedVersion: number;
 				actorUserId: string;
 			},
@@ -354,11 +412,11 @@ export function createMemoryOrganizationMethods(
 				return versionCheck;
 			}
 
-			const nextName = input.name !== undefined ? input.name : department.name;
+			const nextName = input.name === undefined ? department.name : input.name;
 			const nextParent =
-				input.parentDepartmentId !== undefined
-					? input.parentDepartmentId
-					: department.parentDepartmentId;
+				input.parentDepartmentId === undefined
+					? department.parentDepartmentId
+					: input.parentDepartmentId;
 
 			if (
 				nextName === department.name &&
@@ -417,7 +475,7 @@ export function createMemoryOrganizationMethods(
 				getParentId: (id) => {
 					const dept = state.departments.get(id);
 					if (!dept || dept.organizationId !== input.organizationId) {
-						return undefined;
+						return;
 					}
 					return dept.parentDepartmentId;
 				},
@@ -575,12 +633,15 @@ export function createMemoryOrganizationMethods(
 				return audit;
 			}
 
-			const departmentEventType =
-				input.status === "active"
-					? HUMAN_RESOURCES_DEPARTMENT_ACTIVATED_EVENT
-					: input.status === "archived"
-						? HUMAN_RESOURCES_DEPARTMENT_ARCHIVED_EVENT
-						: null;
+			const departmentEventType = (() => {
+				if (input.status === "active") {
+					return HUMAN_RESOURCES_DEPARTMENT_ACTIVATED_EVENT;
+				}
+				if (input.status === "archived") {
+					return HUMAN_RESOURCES_DEPARTMENT_ARCHIVED_EVENT;
+				}
+				return null;
+			})();
 			if (departmentEventType) {
 				const outbox = await appendOrganizationDomainEvent(ports, meta, {
 					organizationId: updated.organizationId,
@@ -602,8 +663,8 @@ export function createMemoryOrganizationMethods(
 			organizationId: string;
 			page: number;
 			pageSize: number;
-			status?: DepartmentStatus;
-			parentDepartmentId?: HumanResourcesDepartmentId | null;
+			status?: DepartmentStatus | undefined;
+			parentDepartmentId?: HumanResourcesDepartmentId | null | undefined;
 		}): Promise<Result<{ departments: Department[]; totalCount: number }>> {
 			let filtered = Array.from(state.departments.values()).filter(
 				(d) => d.organizationId === input.organizationId,
@@ -626,7 +687,7 @@ export function createMemoryOrganizationMethods(
 				.slice(start, start + input.pageSize)
 				.map((d) => ({ ...d }));
 
-			return ok({ departments, totalCount });
+			return await ok({ departments, totalCount });
 		},
 
 		async listAllDepartments(input: {
@@ -636,7 +697,7 @@ export function createMemoryOrganizationMethods(
 				.filter((d) => d.organizationId === input.organizationId)
 				.map((d) => ({ ...d }));
 			departments.sort((a, b) => a.code.localeCompare(b.code));
-			return ok(departments);
+			return await ok(departments);
 		},
 
 		// Job methods
@@ -646,24 +707,30 @@ export function createMemoryOrganizationMethods(
 		}): Promise<Result<Job | null>> {
 			const job = state.jobs.get(input.jobId);
 			if (!job || job.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...job });
+			return await ok({ ...job });
 		},
 
 		async findJobByCode(input: {
 			organizationId: string;
 			code: string;
 		}): Promise<Result<Job | null>> {
-			for (const job of state.jobs.values()) {
-				if (
-					job.organizationId === input.organizationId &&
-					job.code === input.code
-				) {
-					return ok({ ...job });
-				}
+			const sequentialOutcome2 = await runSequential(
+				state.jobs.values(),
+				async (job) => {
+					if (
+						job.organizationId === input.organizationId &&
+						job.code === input.code
+					) {
+						return sequentialReturn(await ok({ ...job }));
+					}
+				},
+			);
+			if (sequentialOutcome2.kind === "return") {
+				return sequentialOutcome2.value;
 			}
-			return ok(null);
+			return await ok(null);
 		},
 
 		async createJob(
@@ -751,7 +818,7 @@ export function createMemoryOrganizationMethods(
 				title: string;
 				effectiveOn: string;
 				reasonCode: string;
-				evidenceRef?: string;
+				evidenceRef?: string | undefined;
 				expectedVersion: number;
 				actorUserId: string;
 			},
@@ -892,17 +959,12 @@ export function createMemoryOrganizationMethods(
 				return transition;
 			}
 
-			if (input.status === "archived") {
-				const positionCount = await this.countActiveOrFrozenPositionsForJob({
-					organizationId: input.organizationId,
-					jobId: input.jobId,
-				});
-				if (!positionCount.ok) {
-					return positionCount;
-				}
-				if (positionCount.data > 0) {
-					return conflict("Cannot archive job with active or frozen positions");
-				}
+			const archivable = await assertJobHasNoActivePositionsWhenArchiving(
+				this,
+				input,
+			);
+			if (!archivable.ok) {
+				return archivable;
 			}
 
 			const now = new Date();
@@ -930,24 +992,15 @@ export function createMemoryOrganizationMethods(
 				return audit;
 			}
 
-			const jobEventType =
-				input.status === "active"
-					? HUMAN_RESOURCES_JOB_ACTIVATED_EVENT
-					: input.status === "archived"
-						? HUMAN_RESOURCES_JOB_ARCHIVED_EVENT
-						: null;
-			if (jobEventType) {
-				const outbox = await appendOrganizationDomainEvent(ports, meta, {
-					organizationId: updated.organizationId,
-					actorUserId: input.actorUserId,
-					entityType: "hr_job",
-					entityId: updated.id,
-					eventType: jobEventType,
-				});
-				if (!outbox.ok) {
-					state.jobs.set(input.jobId, job);
-					return outbox;
-				}
+			const outbox = await appendJobStatusEvent(ports, meta, {
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				jobId: updated.id,
+				status: input.status,
+			});
+			if (!outbox.ok) {
+				state.jobs.set(input.jobId, job);
+				return outbox;
 			}
 
 			return ok({ ...updated });
@@ -957,7 +1010,7 @@ export function createMemoryOrganizationMethods(
 			organizationId: string;
 			page: number;
 			pageSize: number;
-			status?: JobStatus;
+			status?: JobStatus | undefined;
 		}): Promise<Result<{ jobs: Job[]; totalCount: number }>> {
 			let filtered = Array.from(state.jobs.values()).filter(
 				(j) => j.organizationId === input.organizationId,
@@ -975,7 +1028,7 @@ export function createMemoryOrganizationMethods(
 				.slice(start, start + input.pageSize)
 				.map((j) => ({ ...j }));
 
-			return ok({ jobs, totalCount });
+			return await ok({ jobs, totalCount });
 		},
 
 		// Position methods
@@ -985,24 +1038,30 @@ export function createMemoryOrganizationMethods(
 		}): Promise<Result<Position | null>> {
 			const position = state.positions.get(input.positionId);
 			if (!position || position.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...position });
+			return await ok({ ...position });
 		},
 
 		async findPositionByCode(input: {
 			organizationId: string;
 			code: string;
 		}): Promise<Result<Position | null>> {
-			for (const position of state.positions.values()) {
-				if (
-					position.organizationId === input.organizationId &&
-					position.code === input.code
-				) {
-					return ok({ ...position });
-				}
+			const sequentialOutcome3 = await runSequential(
+				state.positions.values(),
+				async (position) => {
+					if (
+						position.organizationId === input.organizationId &&
+						position.code === input.code
+					) {
+						return sequentialReturn(await ok({ ...position }));
+					}
+				},
+			);
+			if (sequentialOutcome3.kind === "return") {
+				return sequentialOutcome3.value;
 			}
-			return ok(null);
+			return await ok(null);
 		},
 
 		async createPosition(
@@ -1128,12 +1187,12 @@ export function createMemoryOrganizationMethods(
 			input: {
 				organizationId: string;
 				positionId: HumanResourcesPositionId;
-				title?: string;
-				departmentId?: HumanResourcesDepartmentId;
-				jobId?: HumanResourcesJobId;
+				title?: string | undefined;
+				departmentId?: HumanResourcesDepartmentId | undefined;
+				jobId?: HumanResourcesJobId | undefined;
 				effectiveOn: string;
 				reasonCode: string;
-				evidenceRef?: string;
+				evidenceRef?: string | undefined;
 				expectedVersion: number;
 				actorUserId: string;
 			},
@@ -1154,13 +1213,13 @@ export function createMemoryOrganizationMethods(
 			}
 
 			const nextTitle =
-				input.title !== undefined ? input.title : position.title;
+				input.title === undefined ? position.title : input.title;
 			const nextDepartmentId =
-				input.departmentId !== undefined
-					? input.departmentId
-					: position.departmentId;
+				input.departmentId === undefined
+					? position.departmentId
+					: input.departmentId;
 			const nextJobId =
-				input.jobId !== undefined ? input.jobId : position.jobId;
+				input.jobId === undefined ? position.jobId : input.jobId;
 
 			if (nextDepartmentId === null || nextJobId === null) {
 				return invalidInput("Position requires department and job");
@@ -1369,14 +1428,18 @@ export function createMemoryOrganizationMethods(
 				return audit;
 			}
 
-			const positionEventType =
-				input.status === "active"
-					? HUMAN_RESOURCES_POSITION_ACTIVATED_EVENT
-					: input.status === "frozen"
-						? HUMAN_RESOURCES_POSITION_FROZEN_EVENT
-						: input.status === "closed"
-							? HUMAN_RESOURCES_POSITION_CLOSED_EVENT
-							: null;
+			const positionEventType = (() => {
+				if (input.status === "active") {
+					return HUMAN_RESOURCES_POSITION_ACTIVATED_EVENT;
+				}
+				if (input.status === "frozen") {
+					return HUMAN_RESOURCES_POSITION_FROZEN_EVENT;
+				}
+				if (input.status === "closed") {
+					return HUMAN_RESOURCES_POSITION_CLOSED_EVENT;
+				}
+				return null;
+			})();
 			if (positionEventType) {
 				const outbox = await appendOrganizationDomainEvent(ports, meta, {
 					organizationId: updated.organizationId,
@@ -1398,9 +1461,9 @@ export function createMemoryOrganizationMethods(
 			organizationId: string;
 			page: number;
 			pageSize: number;
-			status?: string;
-			departmentId?: HumanResourcesDepartmentId;
-			jobId?: HumanResourcesJobId;
+			status?: string | undefined;
+			departmentId?: HumanResourcesDepartmentId | undefined;
+			jobId?: HumanResourcesJobId | undefined;
 		}): Promise<Result<{ positions: Position[]; totalCount: number }>> {
 			let filtered = Array.from(state.positions.values()).filter(
 				(p) => p.organizationId === input.organizationId,
@@ -1426,7 +1489,7 @@ export function createMemoryOrganizationMethods(
 				.slice(start, start + input.pageSize)
 				.map((p) => ({ ...p }));
 
-			return ok({ positions, totalCount });
+			return await ok({ positions, totalCount });
 		},
 
 		async countActiveOrFrozenPositionsForDepartment(input: {
@@ -1443,7 +1506,7 @@ export function createMemoryOrganizationMethods(
 					count += 1;
 				}
 			}
-			return ok(count);
+			return await ok(count);
 		},
 
 		async countActiveOrFrozenPositionsForJob(input: {
@@ -1460,7 +1523,7 @@ export function createMemoryOrganizationMethods(
 					count += 1;
 				}
 			}
-			return ok(count);
+			return await ok(count);
 		},
 
 		async countActiveChildDepartments(input: {
@@ -1477,7 +1540,7 @@ export function createMemoryOrganizationMethods(
 					count += 1;
 				}
 			}
-			return ok(count);
+			return await ok(count);
 		},
 
 		// Reporting line methods
@@ -1487,9 +1550,9 @@ export function createMemoryOrganizationMethods(
 		}): Promise<Result<ReportingLine | null>> {
 			const line = state.reportingLines.get(input.reportingLineId);
 			if (!line || line.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...line });
+			return await ok({ ...line });
 		},
 
 		async listReportingLinesForEmployee(input: {
@@ -1504,24 +1567,30 @@ export function createMemoryOrganizationMethods(
 				)
 				.map((line) => ({ ...line }));
 			lines.sort((a, b) => a.startsOn.localeCompare(b.startsOn));
-			return ok(lines);
+			return await ok(lines);
 		},
 
 		async findOpenPrimaryReportingLine(input: {
 			organizationId: string;
 			employeeId: HumanResourcesEmployeeId;
 		}): Promise<Result<ReportingLine | null>> {
-			for (const line of state.reportingLines.values()) {
-				if (
-					line.organizationId === input.organizationId &&
-					line.employeeId === input.employeeId &&
-					line.relationshipKind === "primary" &&
-					line.endsOn === null
-				) {
-					return ok({ ...line });
-				}
+			const sequentialOutcome4 = await runSequential(
+				state.reportingLines.values(),
+				async (line) => {
+					if (
+						line.organizationId === input.organizationId &&
+						line.employeeId === input.employeeId &&
+						line.relationshipKind === "primary" &&
+						line.endsOn === null
+					) {
+						return sequentialReturn(await ok({ ...line }));
+					}
+				},
+			);
+			if (sequentialOutcome4.kind === "return") {
+				return sequentialOutcome4.value;
 			}
-			return ok(null);
+			return await ok(null);
 		},
 
 		async resolvePrimaryManager(input: {
@@ -1542,13 +1611,15 @@ export function createMemoryOrganizationMethods(
 				getEffectiveTo: (line) => line.endsOn,
 			});
 			if (!resolution.ok) {
-				return fail(
+				return await fail(
 					"CONFLICT",
 					"Multiple primary reporting lines are effective on the requested date",
 					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
 				);
 			}
-			return ok(resolution.record === null ? null : { ...resolution.record });
+			return await ok(
+				resolution.record === null ? null : { ...resolution.record },
+			);
 		},
 
 		async listDirectReports(input: {
@@ -1577,7 +1648,7 @@ export function createMemoryOrganizationMethods(
 				.slice(start, start + input.pageSize)
 				.map((line) => ({ ...line }));
 
-			return ok({ reportingLines, totalCount });
+			return await ok({ reportingLines, totalCount });
 		},
 
 		async assignPrimaryReportingLine(
@@ -1640,7 +1711,7 @@ export function createMemoryOrganizationMethods(
 				getOpenPrimaryManagerId: (employeeId) => {
 					const emp = core.employees.get(employeeId);
 					if (!emp || emp.organizationId !== record.organizationId) {
-						return undefined;
+						return;
 					}
 					for (const line of state.reportingLines.values()) {
 						if (
@@ -1883,7 +1954,7 @@ export function createMemoryOrganizationMethods(
 				getOpenPrimaryManagerId: (employeeId) => {
 					const emp = core.employees.get(employeeId);
 					if (!emp || emp.organizationId !== input.organizationId) {
-						return undefined;
+						return;
 					}
 					if (employeeId === input.employeeId) {
 						return null;
@@ -2018,7 +2089,7 @@ export function createMemoryOrganizationMethods(
 		}) {
 			const department = state.departments.get(input.departmentId);
 			if (!department || department.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
 
 			const resolved = resolveDepartmentStructureAsOf({
@@ -2027,17 +2098,17 @@ export function createMemoryOrganizationMethods(
 				asOf: input.asOf,
 			});
 			if (!resolved.ok) {
-				return fail(
+				return await fail(
 					"CONFLICT",
 					`Department structure is not deterministic for as-of date (${resolved.reason})`,
 					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
 				);
 			}
 			if (resolved.record === null) {
-				return ok(null);
+				return await ok(null);
 			}
 
-			return ok({
+			return await ok({
 				departmentId: input.departmentId,
 				organizationId: input.organizationId,
 				name: resolved.record.name,
@@ -2056,7 +2127,7 @@ export function createMemoryOrganizationMethods(
 		}) {
 			const job = state.jobs.get(input.jobId);
 			if (!job || job.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
 
 			const resolved = resolveJobDefinitionAsOf({
@@ -2065,17 +2136,17 @@ export function createMemoryOrganizationMethods(
 				asOf: input.asOf,
 			});
 			if (!resolved.ok) {
-				return fail(
+				return await fail(
 					"CONFLICT",
 					`Job definition is not deterministic for as-of date (${resolved.reason})`,
 					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
 				);
 			}
 			if (resolved.record === null) {
-				return ok(null);
+				return await ok(null);
 			}
 
-			return ok({
+			return await ok({
 				jobId: input.jobId,
 				organizationId: input.organizationId,
 				title: resolved.record.title,
@@ -2093,7 +2164,7 @@ export function createMemoryOrganizationMethods(
 		}): Promise<Result<PositionDefinitionAtAsOf | null>> {
 			const position = state.positions.get(input.positionId);
 			if (!position || position.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
 
 			const resolved = resolvePositionDefinitionAsOf({
@@ -2102,17 +2173,17 @@ export function createMemoryOrganizationMethods(
 				asOf: input.asOf,
 			});
 			if (!resolved.ok) {
-				return fail(
+				return await fail(
 					"CONFLICT",
 					`Position definition is not deterministic for as-of date (${resolved.reason})`,
 					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
 				);
 			}
 			if (resolved.record === null) {
-				return ok(null);
+				return await ok(null);
 			}
 
-			return ok({
+			return await ok({
 				positionId: input.positionId,
 				organizationId: input.organizationId,
 				title: resolved.record.title,
@@ -2140,23 +2211,29 @@ export function createMemoryOrganizationMethods(
 			}
 
 			const historicalDepartments: Department[] = [];
-			for (const department of departments.data) {
-				const asOfStructure = await this.findDepartmentAsOf({
-					organizationId: input.organizationId,
-					departmentId: department.id,
-					asOf: input.asOf,
-				});
-				if (!asOfStructure.ok) {
-					return asOfStructure;
-				}
-				if (asOfStructure.data === null) {
-					continue;
-				}
-				historicalDepartments.push({
-					...department,
-					name: asOfStructure.data.name,
-					parentDepartmentId: asOfStructure.data.parentDepartmentId,
-				});
+			const sequentialOutcome5 = await runSequential(
+				departments.data,
+				async (department) => {
+					const asOfStructure = await this.findDepartmentAsOf({
+						organizationId: input.organizationId,
+						departmentId: department.id,
+						asOf: input.asOf,
+					});
+					if (!asOfStructure.ok) {
+						return sequentialReturn(asOfStructure);
+					}
+					if (asOfStructure.data === null) {
+						return sequentialContinue();
+					}
+					historicalDepartments.push({
+						...department,
+						name: asOfStructure.data.name,
+						parentDepartmentId: asOfStructure.data.parentDepartmentId,
+					});
+				},
+			);
+			if (sequentialOutcome5.kind === "return") {
+				return sequentialOutcome5.value;
 			}
 
 			const tree = buildOrganizationTree({

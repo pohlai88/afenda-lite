@@ -12,11 +12,11 @@ import type { Result } from "@afenda/errors/result";
 
 import { readRequestAttribution } from "@/modules/platform/domain/request-attribution";
 
-export type RecordOrganizationDeletedAuditInput = {
-	organizationId: string;
+export interface RecordOrganizationDeletedAuditInput {
 	actorUserId: string;
 	correlationId: string;
-};
+	organizationId: string;
+}
 
 const ORGANIZATION_DELETE_AUDIT = {
 	module: "platform",

@@ -98,7 +98,7 @@ beforeEach(() => {
 
 describe("AssignOrgRoleForm — member picker STABILITY", () => {
 	it("empty roles Alert is non-assertive status", () => {
-		render(<AssignOrgRoleForm roles={[]} memberDirectory={READY_DIRECTORY} />);
+		render(<AssignOrgRoleForm memberDirectory={READY_DIRECTORY} roles={[]} />);
 
 		const status = screen.getByRole("status");
 		expect(status).toHaveTextContent("Assignment unavailable");
@@ -108,8 +108,8 @@ describe("AssignOrgRoleForm — member picker STABILITY", () => {
 	it("shows empty and unavailable member directory Alerts", () => {
 		const { rerender } = render(
 			<AssignOrgRoleForm
-				roles={ROLES}
 				memberDirectory={{ status: "empty", options: [] }}
+				roles={ROLES}
 			/>,
 		);
 		expect(screen.getByRole("status")).toHaveTextContent(
@@ -119,8 +119,8 @@ describe("AssignOrgRoleForm — member picker STABILITY", () => {
 
 		rerender(
 			<AssignOrgRoleForm
-				roles={ROLES}
 				memberDirectory={{ status: "unavailable", options: [] }}
+				roles={ROLES}
 			/>,
 		);
 		expect(screen.getByRole("alert")).toHaveTextContent(
@@ -134,7 +134,7 @@ describe("AssignOrgRoleForm — member picker STABILITY", () => {
 		assignOrgRoleAction.mockResolvedValue(successState("asg_1", "aud_1"));
 
 		const { container } = render(
-			<AssignOrgRoleForm roles={ROLES} memberDirectory={READY_DIRECTORY} />,
+			<AssignOrgRoleForm memberDirectory={READY_DIRECTORY} roles={ROLES} />,
 		);
 
 		const combobox = screen.getByRole("combobox", {
@@ -165,7 +165,7 @@ describe("AssignOrgRoleForm — member picker STABILITY", () => {
 	it("filters members by search text", async () => {
 		const user = userEvent.setup();
 		render(
-			<AssignOrgRoleForm roles={ROLES} memberDirectory={READY_DIRECTORY} />,
+			<AssignOrgRoleForm memberDirectory={READY_DIRECTORY} roles={ROLES} />,
 		);
 
 		await user.click(
@@ -199,7 +199,7 @@ describe("AssignOrgRoleForm — member picker STABILITY", () => {
 			});
 
 			render(
-				<AssignOrgRoleForm roles={ROLES} memberDirectory={READY_DIRECTORY} />,
+				<AssignOrgRoleForm memberDirectory={READY_DIRECTORY} roles={ROLES} />,
 			);
 
 			await user.click(
@@ -231,7 +231,7 @@ describe("AssignOrgRoleForm — member picker STABILITY", () => {
 		assignOrgRoleAction.mockImplementation(() => first.promise);
 
 		const { container } = render(
-			<AssignOrgRoleForm roles={ROLES} memberDirectory={READY_DIRECTORY} />,
+			<AssignOrgRoleForm memberDirectory={READY_DIRECTORY} roles={ROLES} />,
 		);
 		const form = container.querySelector("form");
 		expect(form).toBeTruthy();
@@ -271,7 +271,7 @@ describe("AssignOrgRoleForm — member picker STABILITY", () => {
 		} satisfies AssignOrgRoleActionState);
 
 		render(
-			<AssignOrgRoleForm roles={ROLES} memberDirectory={READY_DIRECTORY} />,
+			<AssignOrgRoleForm memberDirectory={READY_DIRECTORY} roles={ROLES} />,
 		);
 
 		await selectMember(user, "Ada Lovelace · ada@example.com");

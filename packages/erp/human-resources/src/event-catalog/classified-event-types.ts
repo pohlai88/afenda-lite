@@ -3,13 +3,15 @@ import type { HumanResourcesEventType } from "@afenda/events";
 import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } from "../emissions/registry";
 import type { HumanResourcesDomain } from "../emissions/types";
 
-type RegistryDomainEventScan = {
-	readonly types: readonly HumanResourcesEventType[];
+const HUMAN_RESOURCES_EVENT_VERSION_SUFFIX = /\.v(\d+)$/;
+
+interface RegistryDomainEventScan {
 	readonly domainByEventType: ReadonlyMap<
 		HumanResourcesEventType,
 		HumanResourcesDomain
 	>;
-};
+	readonly types: readonly HumanResourcesEventType[];
+}
 
 function scanRegistryDomainEvents(): RegistryDomainEventScan {
 	const types = new Set<HumanResourcesEventType>();
@@ -61,7 +63,9 @@ export function listDomainEventTypesFromRegistry(
 ): readonly HumanResourcesEventType[] {
 	const types = new Set<HumanResourcesEventType>();
 	for (const entry of input) {
-		if (entry.emission !== "domain_event") continue;
+		if (entry.emission !== "domain_event") {
+			continue;
+		}
 		for (const eventType of entry.eventTypes ?? []) {
 			types.add(eventType);
 		}
@@ -70,7 +74,7 @@ export function listDomainEventTypesFromRegistry(
 }
 
 export function parseHumanResourcesEventVersion(eventType: string): number {
-	const match = /\.v(\d+)$/.exec(eventType);
+	const match = HUMAN_RESOURCES_EVENT_VERSION_SUFFIX.exec(eventType);
 	if (!match) {
 		throw new Error(
 			`Human Resources event type "${eventType}" has no .vN version suffix.`,

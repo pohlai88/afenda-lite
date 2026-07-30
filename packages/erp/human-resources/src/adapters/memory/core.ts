@@ -51,6 +51,7 @@ import {
 } from "../../shared/employment-status";
 import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 import { mapEmployeeNumberDuplicate } from "../../shared/persistence-errors";
+import { runSequential, sequentialReturn } from "../../shared/run-sequential";
 import type {
 	AssignmentCreateRecord,
 	EmployeeCreateRecord,
@@ -95,14 +96,14 @@ function mapEmployee(
 	};
 }
 
-export type CoreMemoryState = {
-	employees: Map<HumanResourcesEmployeeId, Employee>;
-	idempotencyByKey: Map<string, IdempotentEmployeeRecord>;
-	employments: Map<HumanResourcesEmploymentId, Employment>;
-	employmentStatusHistory: Map<string, EmploymentStatusHistory>;
-	contracts: Map<string, EmploymentContract>;
+export interface CoreMemoryState {
 	assignments: Map<HumanResourcesAssignmentId, WorkAssignment>;
-};
+	contracts: Map<string, EmploymentContract>;
+	employees: Map<HumanResourcesEmployeeId, Employee>;
+	employmentStatusHistory: Map<string, EmploymentStatusHistory>;
+	employments: Map<HumanResourcesEmploymentId, Employment>;
+	idempotencyByKey: Map<string, IdempotentEmployeeRecord>;
+}
 
 export type MemoryCoreMethods = Pick<
 	HumanResourcesStore,
@@ -211,12 +212,12 @@ export function createMemoryCoreMethods(
 		}): Promise<Result<Employee | null>> {
 			const employee = state.employees.get(input.employeeId);
 			if (employee === undefined) {
-				return ok(null);
+				return await ok(null);
 			}
 			if (employee.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok(cloneEmployee(employee));
+			return await ok(cloneEmployee(employee));
 		},
 
 		async findEmployeeByIdempotencyKey(input: {
@@ -227,9 +228,9 @@ export function createMemoryCoreMethods(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
 			if (record === undefined) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({
+			return await ok({
 				employee: cloneEmployee(record.employee),
 				createRequestFingerprint: record.createRequestFingerprint,
 			});
@@ -419,7 +420,7 @@ export function createMemoryCoreMethods(
 				.slice(start, start + input.pageSize)
 				.map(cloneEmployee);
 
-			return ok({
+			return await ok({
 				employees,
 				totalCount,
 				page: input.page,
@@ -434,25 +435,31 @@ export function createMemoryCoreMethods(
 		}): Promise<Result<Employment | null>> {
 			const employment = state.employments.get(input.employmentId);
 			if (!employment || employment.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...employment });
+			return await ok({ ...employment });
 		},
 
 		async findOpenEmploymentByEmployee(input: {
 			organizationId: string;
 			employeeId: HumanResourcesEmployeeId;
 		}): Promise<Result<Employment | null>> {
-			for (const employment of state.employments.values()) {
-				if (
-					employment.organizationId === input.organizationId &&
-					employment.employeeId === input.employeeId &&
-					employment.endsOn === null
-				) {
-					return ok({ ...employment });
-				}
+			const sequentialOutcome1 = await runSequential(
+				state.employments.values(),
+				async (employment) => {
+					if (
+						employment.organizationId === input.organizationId &&
+						employment.employeeId === input.employeeId &&
+						employment.endsOn === null
+					) {
+						return sequentialReturn(await ok({ ...employment }));
+					}
+				},
+			);
+			if (sequentialOutcome1.kind === "return") {
+				return sequentialOutcome1.value;
 			}
-			return ok(null);
+			return await ok(null);
 		},
 
 		async findEmploymentByEmployeeAsOf(input: {
@@ -472,20 +479,22 @@ export function createMemoryCoreMethods(
 				getEffectiveTo: (employment) => employment.endsOn,
 			});
 			if (!resolution.ok) {
-				return fail(
+				return await fail(
 					"CONFLICT",
 					"Multiple employments are effective for the Time work date",
 					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
 				);
 			}
-			return ok(resolution.record === null ? null : { ...resolution.record });
+			return await ok(
+				resolution.record === null ? null : { ...resolution.record },
+			);
 		},
 
 		async listEmploymentsByEmployee(input: {
 			organizationId: string;
 			employeeId: HumanResourcesEmployeeId;
 		}) {
-			return ok(
+			return await ok(
 				listEmploymentsForEmployee(state, input).map((employment) => ({
 					id: employment.id,
 					startsOn: employment.startsOn,
@@ -512,13 +521,13 @@ export function createMemoryCoreMethods(
 					return left.createdAt.getTime() - right.createdAt.getTime();
 				})
 				.map((row) => ({ ...row }));
-			return ok(rows);
+			return await ok(rows);
 		},
 
 		async appendEmploymentStatusHistory(
 			record: EmploymentStatusHistoryAppendRecord,
 		): Promise<Result<EmploymentStatusHistory>> {
-			return ok(appendEmploymentHistoryToState(state, record));
+			return await ok(appendEmploymentHistoryToState(state, record));
 		},
 
 		async createEmployment(
@@ -559,7 +568,7 @@ export function createMemoryCoreMethods(
 			});
 
 			const isRehire = siblingEmployments.some(
-				(employment) => employment.endsOn !== null,
+				(employmentValue) => employmentValue.endsOn !== null,
 			);
 
 			const idResult = parseHumanResourcesEmploymentId(randomUUID());
@@ -646,10 +655,10 @@ export function createMemoryCoreMethods(
 			input: {
 				organizationId: string;
 				employmentId: HumanResourcesEmploymentId;
-				status?: EmploymentStatus;
-				startsOn?: string;
-				endsOn?: string | null;
-				lifecycleEffectiveOn?: string;
+				status?: EmploymentStatus | undefined;
+				startsOn?: string | undefined;
+				endsOn?: string | null | undefined;
+				lifecycleEffectiveOn?: string | undefined;
 				expectedVersion: number;
 				actorUserId: string;
 			},
@@ -675,7 +684,7 @@ export function createMemoryCoreMethods(
 
 			const newStartsOn = input.startsOn ?? employment.startsOn;
 			const newEndsOn =
-				input.endsOn !== undefined ? input.endsOn : employment.endsOn;
+				input.endsOn === undefined ? employment.endsOn : input.endsOn;
 			const nextStatus = input.status ?? employment.status;
 			const parsedStatus = employmentStatusSchema.safeParse(nextStatus);
 			if (!parsedStatus.success) {
@@ -787,12 +796,12 @@ export function createMemoryCoreMethods(
 			input: {
 				organizationId: string;
 				employmentId: HumanResourcesEmploymentId;
-				status?: EmploymentStatus;
-				startsOn?: string;
-				endsOn?: string | null;
+				status?: EmploymentStatus | undefined;
+				startsOn?: string | undefined;
+				endsOn?: string | null | undefined;
 				reason: string;
 				evidenceReference: string | null;
-				effectiveOn?: string;
+				effectiveOn?: string | undefined;
 				expectedVersion: number;
 				actorUserId: string;
 			},
@@ -818,7 +827,7 @@ export function createMemoryCoreMethods(
 
 			const newStartsOn = input.startsOn ?? employment.startsOn;
 			const newEndsOn =
-				input.endsOn !== undefined ? input.endsOn : employment.endsOn;
+				input.endsOn === undefined ? employment.endsOn : input.endsOn;
 			const nextStatus = input.status ?? employment.status;
 			const parsedStatus = employmentStatusSchema.safeParse(nextStatus);
 			if (!parsedStatus.success) {
@@ -904,9 +913,9 @@ export function createMemoryCoreMethods(
 		}): Promise<Result<EmploymentContract | null>> {
 			const contract = state.contracts.get(input.employmentContractId);
 			if (!contract || contract.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...contract });
+			return await ok({ ...contract });
 		},
 
 		async findContractByEmploymentAndCode(input: {
@@ -914,24 +923,30 @@ export function createMemoryCoreMethods(
 			employmentId: HumanResourcesEmploymentId;
 			referenceCode: string;
 		}): Promise<Result<EmploymentContract | null>> {
-			for (const contract of state.contracts.values()) {
-				if (
-					contract.organizationId === input.organizationId &&
-					contract.employmentId === input.employmentId &&
-					contract.referenceCode === input.referenceCode &&
-					contract.lineageStatus === "active"
-				) {
-					return ok({ ...contract });
-				}
+			const sequentialOutcome2 = await runSequential(
+				state.contracts.values(),
+				async (contract) => {
+					if (
+						contract.organizationId === input.organizationId &&
+						contract.employmentId === input.employmentId &&
+						contract.referenceCode === input.referenceCode &&
+						contract.lineageStatus === "active"
+					) {
+						return sequentialReturn(await ok({ ...contract }));
+					}
+				},
+			);
+			if (sequentialOutcome2.kind === "return") {
+				return sequentialOutcome2.value;
 			}
-			return ok(null);
+			return await ok(null);
 		},
 
 		async listActiveContractsByEmployment(input: {
 			organizationId: string;
 			employmentId: HumanResourcesEmploymentId;
 		}) {
-			return ok(
+			return await ok(
 				[...state.contracts.values()]
 					.filter(
 						(contract) =>
@@ -959,7 +974,7 @@ export function createMemoryCoreMethods(
 				)
 				.sort(compareEmploymentContractsByLineage)
 				.map((contract) => ({ ...contract }));
-			return ok(contracts);
+			return await ok(contracts);
 		},
 
 		async findEmploymentContractByEmploymentAsOf(input: {
@@ -979,13 +994,15 @@ export function createMemoryCoreMethods(
 				getEffectiveTo: (contract) => contract.endsOn,
 			});
 			if (!resolution.ok) {
-				return fail(
+				return await fail(
 					"CONFLICT",
 					"Multiple employment contracts are effective for the as-of date",
 					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
 				);
 			}
-			return ok(resolution.record === null ? null : { ...resolution.record });
+			return await ok(
+				resolution.record === null ? null : { ...resolution.record },
+			);
 		},
 
 		async createEmploymentContract(
@@ -1100,9 +1117,9 @@ export function createMemoryCoreMethods(
 			input: {
 				organizationId: string;
 				employmentContractId: HumanResourcesEmploymentContractId;
-				referenceCode: string;
-				startsOn: string;
-				endsOn: string | null;
+				referenceCode?: string | undefined;
+				startsOn?: string | undefined;
+				endsOn?: string | null | undefined;
 				reasonCode: string;
 				sourceReference: string;
 				expectedVersion: number;
@@ -1134,16 +1151,20 @@ export function createMemoryCoreMethods(
 				);
 			}
 
-			const dateCheck = assertValidDateRange(input.startsOn, input.endsOn);
+			const referenceCode = input.referenceCode ?? contract.referenceCode;
+			const startsOn = input.startsOn ?? contract.startsOn;
+			const endsOn =
+				input.endsOn === undefined ? contract.endsOn : input.endsOn;
+			const dateCheck = assertValidDateRange(startsOn, endsOn);
 			if (!dateCheck.ok) {
 				return dateCheck;
 			}
 
 			const previous = { ...contract };
 			const now = new Date();
-			contract.referenceCode = input.referenceCode;
-			contract.startsOn = input.startsOn;
-			contract.endsOn = input.endsOn;
+			contract.referenceCode = referenceCode;
+			contract.startsOn = startsOn;
+			contract.endsOn = endsOn;
 			contract.reasonCode = input.reasonCode;
 			contract.sourceReference = input.sourceReference;
 			contract.version += 1;
@@ -1356,7 +1377,7 @@ export function createMemoryCoreMethods(
 					count += 1;
 				}
 			}
-			return ok(count);
+			return await ok(count);
 		},
 
 		async resolvePositionOccupancyAsOf(input: {
@@ -1366,18 +1387,19 @@ export function createMemoryCoreMethods(
 		}): Promise<Result<PositionOccupancyAsOf | null>> {
 			const position = org.positions.get(input.positionId);
 			if (!position || position.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
 
 			const assignments = [...state.assignments.values()].filter(
-				(assignment) =>
-					assignment.organizationId === input.organizationId &&
-					assignment.positionId === input.positionId &&
-					assignment.startsOn <= input.asOf &&
-					(assignment.endsOn === null || assignment.endsOn >= input.asOf),
+				(assignmentValue) =>
+					assignmentValue.organizationId === input.organizationId &&
+					assignmentValue.positionId === input.positionId &&
+					assignmentValue.startsOn <= input.asOf &&
+					(assignmentValue.endsOn === null ||
+						assignmentValue.endsOn >= input.asOf),
 			);
 			if (assignments.length > 1) {
-				return fail(
+				return await fail(
 					"CONFLICT",
 					"Multiple assignments occupy the position on the requested date",
 					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
@@ -1385,7 +1407,7 @@ export function createMemoryCoreMethods(
 			}
 
 			const assignment = assignments[0] ?? null;
-			return ok({
+			return await ok({
 				position: { ...position },
 				asOf: input.asOf,
 				assignment: assignment ? { ...assignment } : null,
@@ -1400,25 +1422,31 @@ export function createMemoryCoreMethods(
 		}): Promise<Result<WorkAssignment | null>> {
 			const assignment = state.assignments.get(input.assignmentId);
 			if (!assignment || assignment.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...assignment });
+			return await ok({ ...assignment });
 		},
 
 		async findOpenAssignmentByEmployment(input: {
 			organizationId: string;
 			employmentId: HumanResourcesEmploymentId;
 		}): Promise<Result<WorkAssignment | null>> {
-			for (const assignment of state.assignments.values()) {
-				if (
-					assignment.organizationId === input.organizationId &&
-					assignment.employmentId === input.employmentId &&
-					assignment.endsOn === null
-				) {
-					return ok({ ...assignment });
-				}
+			const sequentialOutcome3 = await runSequential(
+				state.assignments.values(),
+				async (assignment) => {
+					if (
+						assignment.organizationId === input.organizationId &&
+						assignment.employmentId === input.employmentId &&
+						assignment.endsOn === null
+					) {
+						return sequentialReturn(await ok({ ...assignment }));
+					}
+				},
+			);
+			if (sequentialOutcome3.kind === "return") {
+				return sequentialOutcome3.value;
 			}
-			return ok(null);
+			return await ok(null);
 		},
 
 		async findAssignmentByEmploymentAsOf(input: {
@@ -1438,9 +1466,11 @@ export function createMemoryCoreMethods(
 				getEffectiveTo: (assignment) => assignment.endsOn,
 			});
 			if (!resolution.ok) {
-				return multiplePrimaryAssignmentsAtAsOf();
+				return await multiplePrimaryAssignmentsAtAsOf();
 			}
-			return ok(resolution.record === null ? null : { ...resolution.record });
+			return await ok(
+				resolution.record === null ? null : { ...resolution.record },
+			);
 		},
 
 		async listAssignmentsByEmployment(input: {
@@ -1454,7 +1484,7 @@ export function createMemoryCoreMethods(
 						assignment.employmentId === input.employmentId,
 				)
 				.map((assignment) => ({ ...assignment }));
-			return ok(rows);
+			return await ok(rows);
 		},
 
 		async listWorkforcePlanActualAssignments(input: {
@@ -1503,7 +1533,7 @@ export function createMemoryCoreMethods(
 			}
 
 			actuals.sort((a, b) => a.employeeId.localeCompare(b.employeeId));
-			return ok(actuals);
+			return await ok(actuals);
 		},
 
 		async createAssignment(

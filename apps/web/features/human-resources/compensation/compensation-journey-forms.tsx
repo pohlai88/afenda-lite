@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noJsxPropsBind: The enabled React Compiler stabilizes JSX callback props.
 "use client";
 
 import {
@@ -42,7 +43,9 @@ function useJourney() {
 						? success
 						: (result.message ?? "The request could not be completed."),
 				});
-				if (result.ok) router.refresh();
+				if (result.ok) {
+					router.refresh();
+				}
 			});
 		},
 	};
@@ -51,8 +54,8 @@ function useJourney() {
 function Notice({ feedback }: { feedback: Feedback }) {
 	return feedback ? (
 		<Alert
-			variant={feedback.ok ? "default" : "destructive"}
 			role={feedback.ok ? "status" : "alert"}
+			variant={feedback.ok ? "default" : "destructive"}
 		>
 			<AlertTitle>{feedback.ok ? "Completed" : "Request failed"}</AlertTitle>
 			<AlertDescription>{feedback.message}</AlertDescription>
@@ -82,14 +85,14 @@ export function GradeCreateForm() {
 		>
 			<div className="grid gap-4 sm:grid-cols-2">
 				<Input
-					name="code"
 					aria-label="Grade code"
+					name="code"
 					placeholder="Grade code"
 					required
 				/>
 				<Input
-					name="name"
 					aria-label="Grade name"
+					name="name"
 					placeholder="Grade name"
 					required
 				/>
@@ -126,45 +129,45 @@ export function SalaryBandCreateForm() {
 		>
 			<div className="grid gap-4 sm:grid-cols-2">
 				<Input
-					name="gradeId"
 					aria-label="Grade ID"
+					name="gradeId"
 					placeholder="Grade ID"
 					required
 				/>
 				<Input
-					name="currencyCode"
 					aria-label="Currency"
-					placeholder="Currency (USD)"
-					minLength={3}
 					maxLength={3}
+					minLength={3}
+					name="currencyCode"
+					placeholder="Currency (USD)"
 					required
 				/>
 				<Input
-					name="minAmount"
 					aria-label="Minimum amount"
+					inputMode="decimal"
+					name="minAmount"
 					placeholder="Minimum amount"
-					inputMode="decimal"
 					required
 				/>
 				<Input
-					name="midAmount"
 					aria-label="Midpoint amount"
+					inputMode="decimal"
+					name="midAmount"
 					placeholder="Midpoint amount"
-					inputMode="decimal"
 					required
 				/>
 				<Input
-					name="maxAmount"
 					aria-label="Maximum amount"
-					placeholder="Maximum amount"
 					inputMode="decimal"
+					name="maxAmount"
+					placeholder="Maximum amount"
 					required
 				/>
 				<Input
-					name="effectiveFrom"
 					aria-label="Effective from"
-					type="date"
+					name="effectiveFrom"
 					required
+					type="date"
 				/>
 			</div>
 			<Notice feedback={state.feedback} />
@@ -200,37 +203,37 @@ export function ReviewCycleCreateForm() {
 		>
 			<div className="grid gap-4 sm:grid-cols-2">
 				<Input
-					name="code"
 					aria-label="Cycle code"
+					name="code"
 					placeholder="Cycle code"
 					required
 				/>
 				<Input
-					name="name"
 					aria-label="Cycle name"
+					name="name"
 					placeholder="Cycle name"
 					required
 				/>
 				<Input
-					name="periodStart"
 					aria-label="Period start"
+					name="periodStart"
+					required
 					type="date"
-					required
 				/>
-				<Input name="periodEnd" aria-label="Period end" type="date" required />
+				<Input aria-label="Period end" name="periodEnd" required type="date" />
 				<Input
-					name="budgetTotalAmount"
 					aria-label="Budget amount"
-					placeholder="Budget amount"
 					inputMode="decimal"
+					name="budgetTotalAmount"
+					placeholder="Budget amount"
 					required
 				/>
 				<Input
-					name="budgetCurrencyCode"
 					aria-label="Budget currency"
-					placeholder="Currency (USD)"
-					minLength={3}
 					maxLength={3}
+					minLength={3}
+					name="budgetCurrencyCode"
+					placeholder="Currency (USD)"
 					required
 				/>
 			</div>
@@ -263,20 +266,20 @@ export function BenefitPlanCreateForm() {
 		>
 			<div className="grid gap-4 sm:grid-cols-2">
 				<Input
-					name="code"
 					aria-label="Benefit code"
+					name="code"
 					placeholder="Benefit code"
 					required
 				/>
 				<Input
-					name="name"
 					aria-label="Benefit name"
+					name="name"
 					placeholder="Benefit name"
 					required
 				/>
 			</div>
 			<Label htmlFor="benefit-note">Eligibility note</Label>
-			<Textarea id="benefit-note" name="eligibilityNote" maxLength={2000} />
+			<Textarea id="benefit-note" maxLength={2000} name="eligibilityNote" />
 			<Notice feedback={state.feedback} />
 			<Button disabled={state.pending}>
 				{state.pending ? <Spinner /> : null}Create benefit plan
@@ -305,7 +308,9 @@ export function EmployeeCompensationLookup() {
 				page: 1,
 				pageSize: 100,
 			});
-			if (result.ok) setRows(result.data.page.compensations);
+			if (result.ok) {
+				setRows(result.data.page.compensations);
+			}
 			return result;
 		}, "Compensation history loaded.");
 	};
@@ -313,8 +318,8 @@ export function EmployeeCompensationLookup() {
 		<div className="space-y-4">
 			<form className="flex flex-col gap-3 sm:flex-row" onSubmit={submit}>
 				<Input
-					name="employeeId"
 					aria-label="Employee ID"
+					name="employeeId"
 					placeholder="Employee ID"
 					required
 				/>
@@ -356,19 +361,20 @@ export function PayrollHandoffLookup() {
 						const result = await getApprovedCompensationHandoffAction({
 							employeeId,
 						});
-						if (result.ok)
+						if (result.ok) {
 							setSummary(
 								result.data.handoff?.activeCompensation
 									? `Ready · ${result.data.handoff.activeBenefitEnrollments.length} active benefit enrollments`
 									: "Not ready · no approved compensation handoff",
 							);
+						}
 						return result;
 					}, "Payroll handoff status loaded.");
 				}}
 			>
 				<Input
-					name="employeeId"
 					aria-label="Payroll employee ID"
+					name="employeeId"
 					placeholder="Employee ID"
 					required
 				/>

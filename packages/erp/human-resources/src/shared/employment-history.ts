@@ -13,30 +13,30 @@ export const EMPLOYMENT_STATUS_CHANGE_KINDS = [
 export type EmploymentStatusChangeKind =
 	(typeof EMPLOYMENT_STATUS_CHANGE_KINDS)[number];
 
-export type EmploymentStatusHistory = {
+export interface EmploymentStatusHistory {
+	actorUserId: string;
+	changeKind: EmploymentStatusChangeKind;
+	correlationId: string;
+	createdAt: Date;
+	effectiveOn: string;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId;
+	endsOnSnapshot: string | null;
+	evidenceReference: string | null;
+	fromStatus: EmploymentStatus | null;
 	id: string;
 	organizationId: string;
-	employmentId: HumanResourcesEmploymentId;
-	employeeId: HumanResourcesEmployeeId;
-	fromStatus: EmploymentStatus | null;
-	toStatus: EmploymentStatus;
-	startsOnSnapshot: string;
-	endsOnSnapshot: string | null;
-	effectiveOn: string;
-	changeKind: EmploymentStatusChangeKind;
 	reason: string | null;
-	evidenceReference: string | null;
-	correlationId: string;
-	actorUserId: string;
-	createdAt: Date;
-};
+	startsOnSnapshot: string;
+	toStatus: EmploymentStatus;
+}
 
-export type EmploymentStatusAsOf = {
-	status: EmploymentStatus;
-	startsOn: string;
-	endsOn: string | null;
+export interface EmploymentStatusAsOf {
 	effectiveOn: string;
-};
+	endsOn: string | null;
+	startsOn: string;
+	status: EmploymentStatus;
+}
 
 export function resolveEmploymentStatusAsOf(input: {
 	history: readonly EmploymentStatusHistory[];

@@ -14,13 +14,13 @@ export default async function ClientWorkspaceHomePage() {
 	return (
 		<section className="flex min-h-dvh flex-col items-center gap-10 px-6 py-16">
 			<div className="space-y-3 text-center">
-				<p className="text-2xl font-semibold tracking-tight text-foreground">
+				<p className="font-semibold text-2xl text-foreground tracking-tight">
 					Afenda-Lite
 				</p>
-				<h1 className="max-w-md text-lg font-medium text-foreground">
+				<h1 className="max-w-md font-medium text-foreground text-lg">
 					{modules.length > 0 ? "Workspace modules" : "No modules available"}
 				</h1>
-				<p className="max-w-sm text-sm text-muted-foreground">
+				<p className="max-w-sm text-muted-foreground text-sm">
 					{modules.length > 0
 						? "Open a module you are permitted to use in this organization."
 						: "Your account is signed in. Product modules appear here when they are enabled for your organization."}
@@ -31,8 +31,8 @@ export default async function ClientWorkspaceHomePage() {
 					{modules.map((item) => (
 						<li key={item.id}>
 							<Link
+								className="block rounded-md border border-border bg-surface-raised px-4 py-3 font-medium text-foreground text-sm underline-offset-4 hover:underline"
 								href={item.href}
-								className="block rounded-md border border-border bg-surface-raised px-4 py-3 text-sm font-medium text-foreground underline-offset-4 hover:underline"
 							>
 								{item.label}
 							</Link>

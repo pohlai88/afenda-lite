@@ -65,7 +65,6 @@ async function seedPostedReceipt(
 		},
 		ctx,
 	);
-	expect(created.ok).toBe(true);
 	if (!created.ok) {
 		throw new Error(created.message);
 	}
@@ -83,7 +82,6 @@ async function seedPostedReceipt(
 		},
 		ctx,
 	);
-	expect(line.ok).toBe(true);
 	if (!line.ok) {
 		throw new Error(line.message);
 	}
@@ -99,7 +97,6 @@ async function seedPostedReceipt(
 		},
 		ctx,
 	);
-	expect(posted.ok).toBe(true);
 	if (!posted.ok) {
 		throw new Error(posted.message);
 	}

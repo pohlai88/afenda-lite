@@ -2,17 +2,19 @@ import type { EventPage, EventStatus } from "@afenda/events";
 
 type QueuePage = EventPage | null;
 
-export type HrQueueHealth = {
-	pending: number;
+export interface HrQueueHealth {
 	failed: number;
+	pending: number;
 	processed: number;
-	stalePending: number;
-	sloHealthy: boolean;
 	reconciliationIssues: string[];
-};
+	sloHealthy: boolean;
+	stalePending: number;
+}
 
 function reconcilePage(page: QueuePage, expectedStatus: EventStatus): string[] {
-	if (page === null) return [`${expectedStatus} queue could not be read`];
+	if (page === null) {
+		return [`${expectedStatus} queue could not be read`];
+	}
 	const issues: string[] = [];
 	if (page.total < page.entries.length) {
 		issues.push(

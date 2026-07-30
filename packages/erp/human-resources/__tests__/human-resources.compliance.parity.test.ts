@@ -19,6 +19,7 @@ import {
 	recordWorkEligibility,
 } from "../src/compliance/work-eligibility";
 import { createEmployee } from "../src/core/employee";
+import { runSequential, sequentialReturn } from "../src/shared/run-sequential";
 import { runDrizzleParity } from "./helpers/database-gate";
 import {
 	createHrParityHarness,
@@ -82,7 +83,9 @@ function defineComplianceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(requirement.ok).toBe(true);
-		if (!requirement.ok) return;
+		if (!requirement.ok) {
+			return;
+		}
 		const published = await publishDocumentRequirement(
 			{
 				organizationId,
@@ -94,7 +97,9 @@ function defineComplianceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(published.ok).toBe(true);
-		if (!published.ok) return;
+		if (!published.ok) {
+			return;
+		}
 		const document = await registerEmployeeDocument(
 			{
 				organizationId,
@@ -111,7 +116,9 @@ function defineComplianceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(document.ok).toBe(true);
-		if (!document.ok) return;
+		if (!document.ok) {
+			return;
+		}
 		const verified = await verifyEmployeeDocument(
 			{
 				organizationId,
@@ -124,7 +131,9 @@ function defineComplianceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(verified.ok).toBe(true);
-		if (!verified.ok) return;
+		if (!verified.ok) {
+			return;
+		}
 		expect(verified.data.verificationStatus).toBe("verified");
 		const eligibility = await recordWorkEligibility(
 			{
@@ -152,7 +161,9 @@ function defineComplianceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(policy.ok).toBe(true);
-		if (!policy.ok) return;
+		if (!policy.ok) {
+			return;
+		}
 		expect(policy.data.requirementStatus).toBe("outstanding");
 	});
 
@@ -168,46 +179,54 @@ function defineComplianceParitySuite(adapter: WorkforceStoreAdapter): void {
 			actorUserId,
 			suffix: `app-b-${suffix}`,
 		});
-		for (const input of [
-			{
-				code: `ALL-${suffix}`.slice(0, 64),
-				name: "All employees",
-				applicability: { kind: "all_employees" as const },
-			},
-			{
-				code: `ONLY-${suffix}`.slice(0, 64),
-				name: "Employee A only",
-				applicability: {
-					kind: "employee_ids" as const,
-					employeeIds: [employeeA.id],
-				},
-			},
-		]) {
-			const created = await createDocumentRequirement(
+		const sequentialOutcome1 = await runSequential(
+			[
 				{
-					organizationId,
-					actorUserId,
-					correlationId: `corr-app-create-${input.code}`,
-					code: input.code,
-					name: input.name,
-					documentType: "policy",
-					applicability: input.applicability,
+					code: `ALL-${suffix}`.slice(0, 64),
+					name: "All employees",
+					applicability: { kind: "all_employees" as const },
 				},
-				ready,
-			);
-			expect(created.ok).toBe(true);
-			if (!created.ok) return;
-			const published = await publishDocumentRequirement(
 				{
-					organizationId,
-					actorUserId,
-					correlationId: `corr-app-publish-${input.code}`,
-					requirementId: created.data.id,
-					expectedVersion: created.data.version,
+					code: `ONLY-${suffix}`.slice(0, 64),
+					name: "Employee A only",
+					applicability: {
+						kind: "employee_ids" as const,
+						employeeIds: [employeeA.id],
+					},
 				},
-				ready,
-			);
-			expect(published.ok).toBe(true);
+			],
+			async (input) => {
+				const created = await createDocumentRequirement(
+					{
+						organizationId,
+						actorUserId,
+						correlationId: `corr-app-create-${input.code}`,
+						code: input.code,
+						name: input.name,
+						documentType: "policy",
+						applicability: input.applicability,
+					},
+					ready,
+				);
+				expect(created.ok).toBe(true);
+				if (!created.ok) {
+					return sequentialReturn(undefined);
+				}
+				const published = await publishDocumentRequirement(
+					{
+						organizationId,
+						actorUserId,
+						correlationId: `corr-app-publish-${input.code}`,
+						requirementId: created.data.id,
+						expectedVersion: created.data.version,
+					},
+					ready,
+				);
+				expect(published.ok).toBe(true);
+			},
+		);
+		if (sequentialOutcome1.kind === "return") {
+			return sequentialOutcome1.value;
 		}
 		const unfiltered = await listMissingRequiredDocuments(
 			{
@@ -218,7 +237,9 @@ function defineComplianceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(unfiltered.ok).toBe(true);
-		if (!unfiltered.ok) return;
+		if (!unfiltered.ok) {
+			return;
+		}
 		expect(unfiltered.data.requirements.map((row) => row.name)).toEqual(
 			expect.arrayContaining(["All employees", "Employee A only"]),
 		);
@@ -232,7 +253,9 @@ function defineComplianceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employeeBOnly.ok).toBe(true);
-		if (!employeeBOnly.ok) return;
+		if (!employeeBOnly.ok) {
+			return;
+		}
 		expect(employeeBOnly.data.requirements.map((row) => row.name)).toContain(
 			"All employees",
 		);
@@ -254,25 +277,28 @@ function defineComplianceParitySuite(adapter: WorkforceStoreAdapter): void {
 			actorUserId,
 			suffix: `risk-b-${suffix}`,
 		});
-		for (const input of [
-			{ employeeId: employeeA.id, expiresOn: "2026-06-30", label: "past" },
-			{ employeeId: employeeB.id, expiresOn: "2026-07-15", label: "near" },
-		]) {
-			const recorded = await recordWorkEligibility(
-				{
-					organizationId: riskOrganizationId,
-					actorUserId,
-					correlationId: `corr-risk-${input.label}-${suffix}`,
-					employeeId: input.employeeId,
-					countryCode: "US",
-					issuedOn: "2026-01-01",
-					expiresOn: input.expiresOn,
-					idempotencyKey: `idem-risk-${input.label}-${suffix}`,
-				},
-				ready,
-			);
-			expect(recorded.ok).toBe(true);
-		}
+		await runSequential(
+			[
+				{ employeeId: employeeA.id, expiresOn: "2026-06-30", label: "past" },
+				{ employeeId: employeeB.id, expiresOn: "2026-07-15", label: "near" },
+			],
+			async (input) => {
+				const recorded = await recordWorkEligibility(
+					{
+						organizationId: riskOrganizationId,
+						actorUserId,
+						correlationId: `corr-risk-${input.label}-${suffix}`,
+						employeeId: input.employeeId,
+						countryCode: "US",
+						issuedOn: "2026-01-01",
+						expiresOn: input.expiresOn,
+						idempotencyKey: `idem-risk-${input.label}-${suffix}`,
+					},
+					ready,
+				);
+				expect(recorded.ok).toBe(true);
+			},
+		);
 		const risks = await listEmployeesWithWorkEligibilityRisk(
 			{
 				organizationId: riskOrganizationId,
@@ -285,31 +311,36 @@ function defineComplianceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(risks.ok).toBe(true);
-		if (!risks.ok) return;
+		if (!risks.ok) {
+			return;
+		}
 		expect(risks.data.eligibilities.map((row) => row.employeeId)).toEqual([
 			employeeA.id,
 			employeeB.id,
 		]);
 
-		for (const input of [
-			{ employeeId: employeeA.id, dueOn: "2026-06-15", label: "first" },
-			{ employeeId: employeeB.id, dueOn: "2026-06-30", label: "second" },
-		]) {
-			const issued = await issuePolicyAcknowledgementRequirement(
-				{
-					organizationId: riskOrganizationId,
-					actorUserId,
-					correlationId: `corr-overdue-${input.label}-${suffix}`,
-					employeeId: input.employeeId,
-					policyCode: `POLICY-${input.label}`,
-					policyVersion: "1",
-					dueOn: input.dueOn,
-					idempotencyKey: `idem-overdue-${input.label}-${suffix}`,
-				},
-				ready,
-			);
-			expect(issued.ok).toBe(true);
-		}
+		await runSequential(
+			[
+				{ employeeId: employeeA.id, dueOn: "2026-06-15", label: "first" },
+				{ employeeId: employeeB.id, dueOn: "2026-06-30", label: "second" },
+			],
+			async (input) => {
+				const issued = await issuePolicyAcknowledgementRequirement(
+					{
+						organizationId: riskOrganizationId,
+						actorUserId,
+						correlationId: `corr-overdue-${input.label}-${suffix}`,
+						employeeId: input.employeeId,
+						policyCode: `POLICY-${input.label}`,
+						policyVersion: "1",
+						dueOn: input.dueOn,
+						idempotencyKey: `idem-overdue-${input.label}-${suffix}`,
+					},
+					ready,
+				);
+				expect(issued.ok).toBe(true);
+			},
+		);
 		const overdue = await listOverduePolicyAcknowledgements(
 			{
 				organizationId: riskOrganizationId,
@@ -321,7 +352,9 @@ function defineComplianceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(overdue.ok).toBe(true);
-		if (!overdue.ok) return;
+		if (!overdue.ok) {
+			return;
+		}
 		expect(overdue.data.acknowledgements.map((row) => row.dueOn)).toEqual([
 			"2026-06-15",
 			"2026-06-30",

@@ -22,9 +22,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type TaxRegistrationLifecycleActionData = {
+export interface TaxRegistrationLifecycleActionData {
 	taxRegistration: TaxRegistrationProjection;
-};
+}
 
 export type TaxRegistrationLifecycleActionState =
 	ActionResult<TaxRegistrationLifecycleActionData> | null;

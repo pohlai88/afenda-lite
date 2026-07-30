@@ -50,7 +50,9 @@ export async function createPartyContact(
 		parsed.data.contactType,
 		parsed.data.value,
 	);
-	if (!normalized.ok) return normalized;
+	if (!normalized.ok) {
+		return normalized;
+	}
 	const { store, roots, ports, authorization } = resolvePartyExtensionDeps(
 		options,
 		["createPartyContact"],
@@ -68,7 +70,9 @@ export async function createPartyContact(
 		parsed.data.organizationId,
 		parsed.data.partyId,
 	);
-	if (!parent.ok) return parent;
+	if (!parent.ok) {
+		return parent;
+	}
 	return projectPartyContactResult(
 		await store.createPartyContact(
 			{
@@ -106,7 +110,9 @@ export async function updatePartyContact(
 		parsed.data.contactType !== undefined && parsed.data.value !== undefined
 			? normalizePartyContactValue(parsed.data.contactType, parsed.data.value)
 			: null;
-	if (normalized !== null && !normalized.ok) return normalized;
+	if (normalized !== null && !normalized.ok) {
+		return normalized;
+	}
 	const { store, ports, authorization } = resolvePartyExtensionDeps(options, [
 		"updatePartyContact",
 	]);
@@ -149,7 +155,9 @@ export async function updatePartyContactVerification(
 		input,
 		"Invalid party contact verification input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const { store, ports, authorization } = resolvePartyExtensionDeps(options, [
 		"updatePartyContactVerification",
 	]);
@@ -158,7 +166,9 @@ export async function updatePartyContactVerification(
 		actorUserId: parsed.data.actorUserId,
 		command: MASTER_COMMAND_PARTY_CONTACT_VERIFY,
 	});
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return projectPartyContactResult(
 		await store.updatePartyContactVerification(
 			{
@@ -181,7 +191,9 @@ export async function updatePartyContactVerification(
 function projectPartyContactResult(
 	result: Result<PartyContact>,
 ): Result<PartyContactProjection> {
-	if (!result.ok) return result;
+	if (!result.ok) {
+		return result;
+	}
 	return ok(toPartyContactProjection(result.data));
 }
 
@@ -214,7 +226,9 @@ export async function listPartyContacts(
 		page: parsed.data.page,
 		pageSize: parsed.data.pageSize,
 	});
-	if (!result.ok) return result;
+	if (!result.ok) {
+		return result;
+	}
 	return ok(result.data.map(toPartyContactProjection));
 }
 
@@ -227,7 +241,9 @@ export async function getPrimaryPartyContact(
 		input,
 		"Invalid primary party contact input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const { store, authorization } = resolvePartyExtensionDeps(options, [
 		"getPrimaryPartyContact",
 	]);
@@ -236,15 +252,21 @@ export async function getPrimaryPartyContact(
 		actorUserId: parsed.data.actorUserId,
 		query: MASTER_QUERY_PARTY_CONTACT_GET_PRIMARY,
 	});
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const result = await store.getPrimaryPartyContact(
 		parsed.data.organizationId,
 		parsed.data.partyId,
 		parsed.data.contactType,
 		parsed.data.purpose ?? null,
 	);
-	if (!result.ok) return result;
-	if (result.data === null) return ok(null);
+	if (!result.ok) {
+		return result;
+	}
+	if (result.data === null) {
+		return ok(null);
+	}
 	return ok(toPartyContactProjection(result.data));
 }
 
@@ -257,7 +279,9 @@ export async function listSensitivePartyContacts(
 		input,
 		"Invalid sensitive party contact list input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const { store, authorization } = resolvePartyExtensionDeps(options, [
 		"listPartyContacts",
 	]);
@@ -266,14 +290,18 @@ export async function listSensitivePartyContacts(
 		actorUserId: parsed.data.actorUserId,
 		query: MASTER_QUERY_PARTY_CONTACT_LIST_SENSITIVE,
 	});
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const result = await store.listPartyContacts({
 		organizationId: parsed.data.organizationId,
 		parentId: parsed.data.parentId,
 		page: parsed.data.page,
 		pageSize: parsed.data.pageSize,
 	});
-	if (!result.ok) return result;
+	if (!result.ok) {
+		return result;
+	}
 	return ok(result.data.map(toSensitivePartyContactProjection));
 }
 
@@ -286,7 +314,9 @@ export async function getSensitivePrimaryPartyContact(
 		input,
 		"Invalid sensitive primary party contact input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const { store, authorization } = resolvePartyExtensionDeps(options, [
 		"getPrimaryPartyContact",
 	]);
@@ -295,14 +325,20 @@ export async function getSensitivePrimaryPartyContact(
 		actorUserId: parsed.data.actorUserId,
 		query: MASTER_QUERY_PARTY_CONTACT_GET_SENSITIVE_PRIMARY,
 	});
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const result = await store.getPrimaryPartyContact(
 		parsed.data.organizationId,
 		parsed.data.partyId,
 		parsed.data.contactType,
 		parsed.data.purpose ?? null,
 	);
-	if (!result.ok) return result;
-	if (result.data === null) return ok(null);
+	if (!result.ok) {
+		return result;
+	}
+	if (result.data === null) {
+		return ok(null);
+	}
 	return ok(toSensitivePartyContactProjection(result.data));
 }

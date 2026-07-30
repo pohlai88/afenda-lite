@@ -139,12 +139,16 @@ async function assertDrizzleReviewCycleOpen(
 			organizationId,
 			cycleId,
 		});
-	if (!cycle.ok) return cycle;
+	if (!cycle.ok) {
+		return cycle;
+	}
 	if (cycle.data === null) {
 		return notFound("Compensation review cycle not found");
 	}
 	const open = assertReviewCycleOpenForMutation(cycle.data.status);
-	if (!open.ok) return open;
+	if (!open.ok) {
+		return open;
+	}
 	return ok(true);
 }
 
@@ -153,7 +157,7 @@ async function assertDrizzleReviewBudget(
 	organizationId: string,
 	review: CompensationReview,
 ): Promise<Result<true>> {
-	return assertCompensationReviewBudgetForMutation(
+	return await assertCompensationReviewBudgetForMutation(
 		{
 			getCycle: () =>
 				drizzleCompensationReviewCycleMethods.getCompensationReviewCycle({
@@ -170,7 +174,9 @@ async function assertDrizzleReviewBudget(
 					organizationId,
 					employmentId,
 				});
-				if (!active.ok) return active;
+				if (!active.ok) {
+					return active;
+				}
 				return ok(active.data?.baseAmount ?? null);
 			},
 		},
@@ -213,7 +219,7 @@ function planCompensationDrizzleOutbox(input: {
 		eventEntityType: input.entityType,
 	});
 	if (eventType === undefined) {
-		return undefined;
+		return;
 	}
 	return {
 		eventType,
@@ -228,11 +234,11 @@ function planCompensationDrizzleOutbox(input: {
 	};
 }
 
-type CompensationBenefitsHost = {
-	getEmploymentById: HumanResourcesStore["getEmploymentById"];
-	getEmployeeById: HumanResourcesStore["getEmployeeById"];
+interface CompensationBenefitsHost {
 	getApplicationById: HumanResourcesStore["getApplicationById"];
-};
+	getEmployeeById: HumanResourcesStore["getEmployeeById"];
+	getEmploymentById: HumanResourcesStore["getEmploymentById"];
+}
 
 export type DrizzleCompensationBenefitsMethods = Pick<
 	HumanResourcesStore,
@@ -307,142 +313,144 @@ export type DrizzleCompensationBenefitsMethods = Pick<
 	| "getApprovedCompensationHandoff"
 >;
 
-type CompensationGradeSqlRow = {
-	id: string;
-	organization_id: string;
+interface CompensationGradeSqlRow {
 	code: string;
+	created_at: Date;
+	created_by: string;
+	id: string;
 	name: string;
-	status: string;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
-	updated_at: Date;
-};
-
-type SalaryBandSqlRow = {
-	id: string;
 	organization_id: string;
-	grade_id: string;
+	status: string;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+}
+
+interface SalaryBandSqlRow {
+	created_at: Date;
+	created_by: string;
 	currency_code: string;
-	minimum_amount: string;
-	midpoint_amount: string;
+	effective_from: string;
+	effective_to: string | null;
+	grade_id: string;
+	id: string;
 	maximum_amount: string;
-	effective_from: string;
-	effective_to: string | null;
+	midpoint_amount: string;
+	minimum_amount: string;
+	organization_id: string;
+	status: string;
 	supersedes_salary_band_id: string | null;
-	status: string;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+}
 
-type CompensationGradeProgressionRuleSqlRow = {
-	id: string;
-	organization_id: string;
-	from_grade_id: string;
-	to_grade_id: string;
+interface CompensationGradeProgressionRuleSqlRow {
+	created_at: Date;
+	created_by: string;
 	effective_from: string;
 	effective_to: string | null;
-	min_months_in_grade: number | null;
-	status: string;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
-	updated_at: Date;
-};
-
-export type EmployeeCompensationSqlRow = {
+	from_grade_id: string;
 	id: string;
+	min_months_in_grade: number | null;
 	organization_id: string;
+	status: string;
+	to_grade_id: string;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+}
+
+export interface EmployeeCompensationSqlRow {
+	approved_at: Date | null;
+	approved_by: string | null;
+	base_amount: string;
+	confidential_note: string | null;
+	create_idempotency_key: string;
+	create_request_fingerprint: string;
+	created_at: Date;
+	created_by: string;
+	currency_code: string;
+	effective_from: string;
+	effective_to: string | null;
 	employee_id: string;
 	employment_id: string;
 	grade_id: string | null;
-	salary_band_id: string | null;
-	base_amount: string;
-	currency_code: string;
-	pay_frequency: string;
-	effective_from: string;
-	effective_to: string | null;
-	reason: string;
-	confidential_note: string | null;
-	supersedes_compensation_id: string | null;
-	approved_at: Date | null;
-	approved_by: string | null;
-	status: string;
-	source_review_id: string | null;
-	create_idempotency_key: string;
-	create_request_fingerprint: string;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
-	updated_at: Date;
-};
-
-type CompensationReviewSqlRow = {
 	id: string;
 	organization_id: string;
+	pay_frequency: string;
+	reason: string;
+	salary_band_id: string | null;
+	source_review_id: string | null;
+	status: string;
+	supersedes_compensation_id: string | null;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+}
+
+interface CompensationReviewSqlRow {
+	applied_compensation_id: string | null;
+	create_idempotency_key: string;
+	create_request_fingerprint: string;
+	created_at: Date;
+	created_by: string;
 	cycle_id: string;
+	effective_from: string | null;
 	employee_id: string;
 	employment_id: string;
-	status: string;
+	finalized_at: Date | null;
+	id: string;
+	organization_id: string;
 	proposed_base_amount: string | null;
 	proposed_currency_code: string | null;
 	proposed_grade_id: string | null;
 	proposed_salary_band_id: string | null;
 	recommendation_note: string | null;
-	effective_from: string | null;
-	finalized_at: Date | null;
-	applied_compensation_id: string | null;
-	create_idempotency_key: string;
-	create_request_fingerprint: string;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
+	status: string;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+}
 
-type CompensationProposalSqlRow = {
+interface CompensationProposalSqlRow {
+	application_id: string;
+	confidential_note: string | null;
+	created_at: Date;
+	created_by: string;
 	id: string;
 	organization_id: string;
-	application_id: string;
-	status: string;
 	proposed_base_amount: string | null;
 	proposed_currency_code: string | null;
 	proposed_grade_id: string | null;
 	proposed_salary_band_id: string | null;
-	confidential_note: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
-	updated_at: Date;
-};
-
-type BenefitPlanSqlRow = {
-	id: string;
-	organization_id: string;
-	code: string;
-	name: string;
-	eligibility_note: string | null;
 	status: string;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+}
+
+interface BenefitPlanSqlRow {
+	code: string;
+	created_at: Date;
+	created_by: string;
+	eligibility_note: string | null;
+	id: string;
+	name: string;
+	organization_id: string;
+	status: string;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+}
 
 function mapCompensationGrade(
 	row: typeof hrCompensationGrade.$inferSelect,
 ): Result<CompensationGrade> {
 	const id = parseHumanResourcesCompensationGradeId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const status = compensationGradeStatusSchema.safeParse(row.status);
 	if (!status.success) {
 		return fail("INTERNAL_ERROR", "Invalid compensation grade status");
@@ -465,9 +473,13 @@ function mapSalaryBand(
 	row: typeof hrSalaryBand.$inferSelect,
 ): Result<SalaryBand> {
 	const id = parseHumanResourcesSalaryBandId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const gradeId = parseHumanResourcesCompensationGradeId(row.gradeId);
-	if (!gradeId.ok) return gradeId;
+	if (!gradeId.ok) {
+		return gradeId;
+	}
 	const status = salaryBandStatusSchema.safeParse(row.status);
 	if (!status.success) {
 		return fail("INTERNAL_ERROR", "Invalid salary band status");
@@ -478,7 +490,9 @@ function mapSalaryBand(
 		row.supersedesSalaryBandId !== undefined
 	) {
 		const parsed = parseHumanResourcesSalaryBandId(row.supersedesSalaryBandId);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		supersedesSalaryBandId = parsed.data;
 	}
 	return ok({
@@ -505,27 +519,39 @@ function mapEmployeeCompensation(
 	row: typeof hrEmployeeCompensation.$inferSelect,
 ): Result<EmployeeCompensation> {
 	const id = parseHumanResourcesEmployeeCompensationId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const employeeId = parseHumanResourcesEmployeeId(row.employeeId);
-	if (!employeeId.ok) return employeeId;
+	if (!employeeId.ok) {
+		return employeeId;
+	}
 	const employmentId = parseHumanResourcesEmploymentId(row.employmentId);
-	if (!employmentId.ok) return employmentId;
+	if (!employmentId.ok) {
+		return employmentId;
+	}
 	let gradeId = null as EmployeeCompensation["gradeId"];
 	if (row.gradeId !== null) {
 		const parsed = parseHumanResourcesCompensationGradeId(row.gradeId);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		gradeId = parsed.data;
 	}
 	let salaryBandId = null as EmployeeCompensation["salaryBandId"];
 	if (row.salaryBandId !== null) {
 		const parsed = parseHumanResourcesSalaryBandId(row.salaryBandId);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		salaryBandId = parsed.data;
 	}
 	let sourceReviewId = null as EmployeeCompensation["sourceReviewId"];
 	if (row.sourceReviewId !== null) {
 		const parsed = parseHumanResourcesCompensationReviewId(row.sourceReviewId);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		sourceReviewId = parsed.data;
 	}
 	let supersedesCompensationId =
@@ -534,7 +560,9 @@ function mapEmployeeCompensation(
 		const parsed = parseHumanResourcesEmployeeCompensationId(
 			row.supersedesCompensationId,
 		);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		supersedesCompensationId = parsed.data;
 	}
 	const payFrequency = payFrequencySchema.safeParse(row.payFrequency);
@@ -581,23 +609,35 @@ export function mapCompensationReviewFromDbRow(
 	row: typeof hrCompensationReview.$inferSelect,
 ): Result<CompensationReview> {
 	const id = parseHumanResourcesCompensationReviewId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const employeeId = parseHumanResourcesEmployeeId(row.employeeId);
-	if (!employeeId.ok) return employeeId;
+	if (!employeeId.ok) {
+		return employeeId;
+	}
 	const employmentId = parseHumanResourcesEmploymentId(row.employmentId);
-	if (!employmentId.ok) return employmentId;
+	if (!employmentId.ok) {
+		return employmentId;
+	}
 	const cycleId = parseHumanResourcesCompensationReviewCycleId(row.cycleId);
-	if (!cycleId.ok) return cycleId;
+	if (!cycleId.ok) {
+		return cycleId;
+	}
 	let proposedGradeId = null as CompensationReview["proposedGradeId"];
 	if (row.proposedGradeId !== null) {
 		const parsed = parseHumanResourcesCompensationGradeId(row.proposedGradeId);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		proposedGradeId = parsed.data;
 	}
 	let proposedSalaryBandId = null as CompensationReview["proposedSalaryBandId"];
 	if (row.proposedSalaryBandId !== null) {
 		const parsed = parseHumanResourcesSalaryBandId(row.proposedSalaryBandId);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		proposedSalaryBandId = parsed.data;
 	}
 	let appliedCompensationId =
@@ -606,7 +646,9 @@ export function mapCompensationReviewFromDbRow(
 		const parsed = parseHumanResourcesEmployeeCompensationId(
 			row.appliedCompensationId,
 		);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		appliedCompensationId = parsed.data;
 	}
 	const status = compensationReviewStatusSchema.safeParse(row.status);
@@ -642,7 +684,9 @@ function mapBenefitPlan(
 	row: typeof hrBenefitPlan.$inferSelect,
 ): Result<BenefitPlan> {
 	const id = parseHumanResourcesBenefitPlanId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const status = benefitPlanStatusSchema.safeParse(row.status);
 	if (!status.success) {
 		return fail("INTERNAL_ERROR", "Invalid benefit plan status");
@@ -704,11 +748,17 @@ function mapCompensationGradeProgressionRule(
 	row: typeof hrCompensationGradeProgressionRule.$inferSelect,
 ): Result<CompensationGradeProgressionRule> {
 	const id = parseHumanResourcesCompensationGradeProgressionRuleId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const fromGradeId = parseHumanResourcesCompensationGradeId(row.fromGradeId);
-	if (!fromGradeId.ok) return fromGradeId;
+	if (!fromGradeId.ok) {
+		return fromGradeId;
+	}
 	const toGradeId = parseHumanResourcesCompensationGradeId(row.toGradeId);
-	if (!toGradeId.ok) return toGradeId;
+	if (!toGradeId.ok) {
+		return toGradeId;
+	}
 	const status = compensationGradeProgressionRuleStatusSchema.safeParse(
 		row.status,
 	);
@@ -788,20 +838,28 @@ function mapCompensationProposal(
 	row: typeof hrCompensationProposal.$inferSelect,
 ): Result<CompensationProposal> {
 	const id = parseHumanResourcesCompensationProposalId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const applicationId = parseHumanResourcesApplicationId(row.applicationId);
-	if (!applicationId.ok) return applicationId;
+	if (!applicationId.ok) {
+		return applicationId;
+	}
 	let proposedGradeId = null as CompensationProposal["proposedGradeId"];
 	if (row.proposedGradeId !== null) {
 		const parsed = parseHumanResourcesCompensationGradeId(row.proposedGradeId);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		proposedGradeId = parsed.data;
 	}
 	let proposedSalaryBandId =
 		null as CompensationProposal["proposedSalaryBandId"];
 	if (row.proposedSalaryBandId !== null) {
 		const parsed = parseHumanResourcesSalaryBandId(row.proposedSalaryBandId);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		proposedSalaryBandId = parsed.data;
 	}
 	const status = compensationProposalStatusSchema.safeParse(row.status);
@@ -906,8 +964,10 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapCompensationGrade(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load compensation grade");
@@ -926,8 +986,10 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapCompensationGrade(row);
 		} catch (error) {
 			return mapPersistenceFailure(
@@ -942,14 +1004,18 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			organizationId: record.organizationId,
 			code: record.code,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data !== null) {
 			return conflict("Compensation grade code already exists");
 		}
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesCompensationGradeId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 
 		try {
@@ -982,7 +1048,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return conflict("Unable to create compensation grade");
 			}
@@ -1003,7 +1069,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			organizationId: input.organizationId,
 			gradeId: input.gradeId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Compensation grade not found");
 		}
@@ -1011,7 +1079,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -1046,7 +1116,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -1067,7 +1137,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			organizationId: input.organizationId,
 			gradeId: input.gradeId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Compensation grade not found");
 		}
@@ -1075,7 +1147,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -1119,7 +1193,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				const bandRows = await db
 					.select()
@@ -1166,7 +1240,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			const grades: CompensationGrade[] = [];
 			for (const row of allRows) {
 				const mapped = mapCompensationGrade(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				grades.push(mapped.data);
 			}
 			grades.sort((a, b) => a.code.localeCompare(b.code));
@@ -1196,8 +1272,10 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapSalaryBand(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load salary band");
@@ -1209,7 +1287,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			organizationId: record.organizationId,
 			gradeId: record.gradeId,
 		});
-		if (!grade.ok) return grade;
+		if (!grade.ok) {
+			return grade;
+		}
 		if (grade.data === null) {
 			return fail(
 				"NOT_FOUND",
@@ -1226,11 +1306,15 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			record.midAmount,
 			record.maxAmount,
 		);
-		if (!moneyCheck.ok) return moneyCheck;
+		if (!moneyCheck.ok) {
+			return moneyCheck;
+		}
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesSalaryBandId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 
 		try {
@@ -1280,7 +1364,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return conflict(
 					"Overlapping salary band exists for this grade and currency",
@@ -1297,7 +1381,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			organizationId: input.organizationId,
 			gradeId: input.gradeId,
 		});
-		if (!grade.ok) return grade;
+		if (!grade.ok) {
+			return grade;
+		}
 		if (grade.data === null) {
 			return fail(
 				"NOT_FOUND",
@@ -1311,7 +1397,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			input.midAmount,
 			input.maxAmount,
 		);
-		if (!moneyCheck.ok) return moneyCheck;
+		if (!moneyCheck.ok) {
+			return moneyCheck;
+		}
 
 		let predecessor: SalaryBand | null = null;
 		if (input.supersededSalaryBandId) {
@@ -1319,7 +1407,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 				organizationId: input.organizationId,
 				salaryBandId: input.supersededSalaryBandId,
 			});
-			if (!band.ok) return band;
+			if (!band.ok) {
+				return band;
+			}
 			if (band.data === null) {
 				return notFound(
 					"Salary band not found",
@@ -1348,19 +1438,21 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 						"Ambiguous active salary band for grade and currency",
 					);
 				}
-				const activeRow = rows[0];
+				const [activeRow] = rows;
 				if (!activeRow) {
 					return notFound("No active salary band to supersede");
 				}
 				const mapped = mapSalaryBand(activeRow);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				predecessor = mapped.data;
 			} catch (error) {
 				return mapPersistenceFailure(error, "Failed to resolve salary band");
 			}
 		}
 
-		if (!predecessor || !isSalaryBandActive(predecessor.status)) {
+		if (!(predecessor && isSalaryBandActive(predecessor.status))) {
 			return invalidState("Only active salary bands can be superseded");
 		}
 		if (
@@ -1380,7 +1472,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		const predecessorEffectiveTo = previousIsoDate(input.effectiveFrom);
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesSalaryBandId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 		const nextPredecessorVersion = predecessor.version + 1;
 
@@ -1447,9 +1541,13 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			}
 
 			const superseded = mapSalaryBandSql(supersededSql);
-			if (!superseded.ok) return superseded;
+			if (!superseded.ok) {
+				return superseded;
+			}
 			const successor = mapSalaryBandSql(successorSql);
-			if (!successor.ok) return successor;
+			if (!successor.ok) {
+				return successor;
+			}
 
 			return ok({
 				superseded: superseded.data,
@@ -1465,7 +1563,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			organizationId: input.organizationId,
 			salaryBandId: input.salaryBandId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Salary band not found");
 		}
@@ -1473,7 +1573,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -1508,7 +1610,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -1526,7 +1628,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			organizationId: input.organizationId,
 			gradeId: input.gradeId,
 		});
-		if (!grade.ok) return grade;
+		if (!grade.ok) {
+			return grade;
+		}
 		if (grade.data === null) {
 			return notFound("Compensation grade not found");
 		}
@@ -1547,7 +1651,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			const bands: SalaryBand[] = [];
 			for (const row of allRows) {
 				const mapped = mapSalaryBand(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				bands.push(mapped.data);
 			}
 			const totalCount = bands.length;
@@ -1583,7 +1689,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			const records: SalaryBand[] = [];
 			for (const row of rows) {
 				const mapped = mapSalaryBand(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				records.push(mapped.data);
 			}
 			const selected = selectUniqueEffectiveRangeRecord({
@@ -1614,8 +1722,10 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapCompensationGradeProgressionRule(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load progression rule");
@@ -1631,7 +1741,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			organizationId: record.organizationId,
 			gradeId: record.fromGradeId,
 		});
-		if (!fromGrade.ok) return fromGrade;
+		if (!fromGrade.ok) {
+			return fromGrade;
+		}
 		if (fromGrade.data === null) {
 			return notFound("From compensation grade not found");
 		}
@@ -1639,20 +1751,26 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			organizationId: record.organizationId,
 			gradeId: record.toGradeId,
 		});
-		if (!toGrade.ok) return toGrade;
+		if (!toGrade.ok) {
+			return toGrade;
+		}
 		if (toGrade.data === null) {
 			return notFound("To compensation grade not found");
 		}
 		if (
-			!isCompensationGradeActive(fromGrade.data.status) ||
-			!isCompensationGradeActive(toGrade.data.status)
+			!(
+				isCompensationGradeActive(fromGrade.data.status) &&
+				isCompensationGradeActive(toGrade.data.status)
+			)
 		) {
 			return invalidState("Grades must be active");
 		}
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesCompensationGradeProgressionRuleId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 
 		try {
@@ -1700,7 +1818,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					SELECT mutated.* FROM mutated, audited
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return conflict(
 					"Overlapping progression rule exists for this grade transition",
@@ -1717,7 +1835,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			organizationId: input.organizationId,
 			progressionRuleId: input.progressionRuleId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Progression rule not found");
 		}
@@ -1725,7 +1845,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -1760,7 +1882,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					SELECT mutated.* FROM mutated, audited
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -1795,13 +1917,17 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			const rules: CompensationGradeProgressionRule[] = [];
 			for (const row of rows) {
 				const mapped = mapCompensationGradeProgressionRule(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				if (input.asOf) {
 					const selected = selectUniqueEffectiveRangeRecord({
 						records: [mapped.data],
 						asOf: input.asOf,
 					});
-					if (selected === null) continue;
+					if (selected === null) {
+						continue;
+					}
 				}
 				rules.push(mapped.data);
 			}
@@ -1827,7 +1953,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			pageSize: 10_000,
 			asOf: input.asOf,
 		});
-		if (!listed.ok) return listed;
+		if (!listed.ok) {
+			return listed;
+		}
 		return ok(listed.data.rules);
 	},
 
@@ -1843,8 +1971,10 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapEmployeeCompensation(row);
 		} catch (error) {
 			return mapPersistenceFailure(
@@ -1869,8 +1999,10 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapEmployeeCompensation(row);
 		} catch (error) {
 			return mapPersistenceFailure(
@@ -1885,7 +2017,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			organizationId: record.organizationId,
 			idempotencyKey: record.createIdempotencyKey,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data !== null) {
 			return ok(existing.data);
 		}
@@ -1894,7 +2028,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			organizationId: record.organizationId,
 			employmentId: record.employmentId,
 		});
-		if (!employment.ok) return employment;
+		if (!employment.ok) {
+			return employment;
+		}
 		if (employment.data === null) {
 			return fail("NOT_FOUND", "Employment not found or cross-org reference", {
 				code: HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
@@ -1912,7 +2048,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesEmployeeCompensationId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const payloadJson = eventPayloadJson({
@@ -1990,7 +2128,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return conflict(
 					"An open draft compensation agreement already exists for this employment",
@@ -2003,7 +2141,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					organizationId: record.organizationId,
 					idempotencyKey: record.createIdempotencyKey,
 				});
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (replay.data !== null) {
 					return ok(replay.data);
 				}
@@ -2016,7 +2156,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 	},
 
 	async amendEmployeeCompensation(input, ports, meta) {
-		return drizzleAmendEmployeeCompensation(
+		return await drizzleAmendEmployeeCompensation(
 			this,
 			{
 				organizationId: input.organizationId,
@@ -2053,19 +2193,24 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 	},
 
 	async approveEmployeeCompensation(input, ports, meta) {
-		return drizzleApproveEmployeeCompensation(this, input, ports, meta);
+		return await drizzleApproveEmployeeCompensation(this, input, ports, meta);
 	},
 
 	async scheduleEmployeeCompensationChange(input, ports, meta) {
-		return drizzleScheduleEmployeeCompensationChange(this, input, ports, meta);
+		return await drizzleScheduleEmployeeCompensationChange(
+			this,
+			input,
+			ports,
+			meta,
+		);
 	},
 
 	async activateEmployeeCompensation(input, ports, meta) {
-		return drizzleActivateEmployeeCompensation(this, input, ports, meta);
+		return await drizzleActivateEmployeeCompensation(this, input, ports, meta);
 	},
 
 	async correctEmployeeCompensation(input, ports, meta) {
-		return drizzleCorrectEmployeeCompensation(this, input, ports, meta);
+		return await drizzleCorrectEmployeeCompensation(this, input, ports, meta);
 	},
 
 	async endEmployeeCompensation(input, _ports, meta) {
@@ -2073,7 +2218,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			organizationId: input.organizationId,
 			compensationId: input.compensationId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Employee compensation not found");
 		}
@@ -2081,7 +2228,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		if (!isEmployeeCompensationCancellable(existing.data.status)) {
 			return invalidState("Compensation cannot be ended in its current status");
 		}
@@ -2141,7 +2290,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -2172,7 +2321,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			const compensations: EmployeeCompensation[] = [];
 			for (const row of allRows) {
 				const mapped = mapEmployeeCompensation(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				compensations.push(mapped.data);
 			}
 			const totalCount = compensations.length;
@@ -2205,8 +2356,10 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapEmployeeCompensation(row);
 		} catch (error) {
 			return mapPersistenceFailure(
@@ -2230,7 +2383,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			const records: EmployeeCompensation[] = [];
 			for (const row of rows) {
 				const mapped = mapEmployeeCompensation(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				if (!isEmployeeCompensationAsOfEligible(mapped.data.status)) {
 					continue;
 				}
@@ -2261,8 +2416,10 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapCompensationReviewFromDbRow(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load compensation review");
@@ -2281,8 +2438,10 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapCompensationReviewFromDbRow(row);
 		} catch (error) {
 			return mapPersistenceFailure(
@@ -2297,7 +2456,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			organizationId: record.organizationId,
 			idempotencyKey: record.createIdempotencyKey,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data !== null) {
 			if (existing.data.fingerprint === record.createRequestFingerprint) {
 				return ok(existing.data);
@@ -2309,7 +2470,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			organizationId: record.organizationId,
 			employeeId: record.employeeId,
 		});
-		if (!employee.ok) return employee;
+		if (!employee.ok) {
+			return employee;
+		}
 		if (employee.data === null) {
 			return fail("NOT_FOUND", "Employee not found or cross-org reference", {
 				code: HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
@@ -2320,7 +2483,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			organizationId: record.organizationId,
 			employmentId: record.employmentId,
 		});
-		if (!employment.ok) return employment;
+		if (!employment.ok) {
+			return employment;
+		}
 		if (employment.data === null) {
 			return fail("NOT_FOUND", "Employment not found or cross-org reference", {
 				code: HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
@@ -2331,11 +2496,15 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			record.organizationId,
 			record.cycleId,
 		);
-		if (!cycleOpen.ok) return cycleOpen;
+		if (!cycleOpen.ok) {
+			return cycleOpen;
+		}
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesCompensationReviewId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 
 		try {
@@ -2374,7 +2543,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return conflict("Unable to create compensation review draft");
 			}
@@ -2385,7 +2554,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					organizationId: record.organizationId,
 					idempotencyKey: record.createIdempotencyKey,
 				});
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (replay.data !== null) {
 					if (replay.data.fingerprint === record.createRequestFingerprint) {
 						return ok(replay.data);
@@ -2405,7 +2576,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			organizationId: input.organizationId,
 			reviewId: input.reviewId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Compensation review not found");
 		}
@@ -2413,18 +2586,24 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const statusGuard = assertCanRecordCompensationRecommendation(
 			existing.data.status,
 		);
-		if (!statusGuard.ok) return statusGuard;
+		if (!statusGuard.ok) {
+			return statusGuard;
+		}
 
 		const cycleOpen = await assertDrizzleReviewCycleOpen(
 			input.organizationId,
 			existing.data.cycleId,
 		);
-		if (!cycleOpen.ok) return cycleOpen;
+		if (!cycleOpen.ok) {
+			return cycleOpen;
+		}
 
 		const updatedPreview: CompensationReview = {
 			...existing.data,
@@ -2441,7 +2620,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			input.organizationId,
 			updatedPreview,
 		);
-		if (!budgetCheck.ok) return budgetCheck;
+		if (!budgetCheck.ok) {
+			return budgetCheck;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -2483,7 +2664,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -2504,7 +2685,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			organizationId: input.organizationId,
 			reviewId: input.reviewId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Compensation review not found");
 		}
@@ -2512,23 +2695,31 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const finalizeGuard = assertCanFinalizeCompensationReview(existing.data);
-		if (!finalizeGuard.ok) return finalizeGuard;
+		if (!finalizeGuard.ok) {
+			return finalizeGuard;
+		}
 
 		const cycleOpen = await assertDrizzleReviewCycleOpen(
 			input.organizationId,
 			existing.data.cycleId,
 		);
-		if (!cycleOpen.ok) return cycleOpen;
+		if (!cycleOpen.ok) {
+			return cycleOpen;
+		}
 
 		const budgetCheck = await assertDrizzleReviewBudget(
 			this,
 			input.organizationId,
 			existing.data,
 		);
-		if (!budgetCheck.ok) return budgetCheck;
+		if (!budgetCheck.ok) {
+			return budgetCheck;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -2565,7 +2756,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -2586,7 +2777,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			organizationId: input.organizationId,
 			reviewId: input.reviewId,
 		});
-		if (!review.ok) return review;
+		if (!review.ok) {
+			return review;
+		}
 		if (review.data === null) {
 			return notFound("Compensation review not found");
 		}
@@ -2595,9 +2788,11 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			return invalidState("Compensation review is not finalized");
 		}
 		if (
-			!reviewData.proposedBaseAmount ||
-			!reviewData.proposedCurrencyCode ||
-			!reviewData.effectiveFrom
+			!(
+				reviewData.proposedBaseAmount &&
+				reviewData.proposedCurrencyCode &&
+				reviewData.effectiveFrom
+			)
 		) {
 			return invalidState(
 				"Review must have proposed amount, currency, and effective date",
@@ -2608,7 +2803,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			organizationId: input.organizationId,
 			employmentId: reviewData.employmentId,
 		});
-		if (!employment.ok) return employment;
+		if (!employment.ok) {
+			return employment;
+		}
 		if (employment.data === null) {
 			return fail("NOT_FOUND", "Employment not found or cross-org reference", {
 				code: HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
@@ -2617,7 +2814,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesEmployeeCompensationId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditOldId = randomUUID();
 		const auditNewId = randomUUID();
 		const eventOldId = randomUUID();
@@ -2749,7 +2948,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 						SELECT mutated.* FROM mutated, audit_new, outbox_new, review_linked
 					`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return conflict("Unable to apply compensation result");
 			}
@@ -2763,7 +2962,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					organizationId: input.organizationId,
 					idempotencyKey: input.createIdempotencyKey,
 				});
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (replay.data !== null) {
 					return ok(replay.data);
 				}
@@ -2790,7 +2991,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			const reviews: CompensationReview[] = [];
 			for (const row of allRows) {
 				const mapped = mapCompensationReviewFromDbRow(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				reviews.push(mapped.data);
 			}
 			const totalCount = reviews.length;
@@ -2822,8 +3025,10 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapCompensationProposal(row);
 		} catch (error) {
 			return mapPersistenceFailure(
@@ -2838,7 +3043,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			organizationId: record.organizationId,
 			applicationId: record.applicationId,
 		});
-		if (!application.ok) return application;
+		if (!application.ok) {
+			return application;
+		}
 		if (application.data === null) {
 			return notFound("Application not found");
 		}
@@ -2850,7 +3057,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesCompensationProposalId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 
 		try {
@@ -2887,7 +3096,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 						SELECT mutated.* FROM mutated, audited
 					`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return conflict("Unable to create compensation proposal");
 			}
@@ -2905,7 +3114,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			organizationId: input.organizationId,
 			proposalId: input.proposalId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Compensation proposal not found");
 		}
@@ -2913,30 +3124,34 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const amendable = assertCompensationProposalAmendable(existing.data.status);
-		if (!amendable.ok) return amendable;
+		if (!amendable.ok) {
+			return amendable;
+		}
 
 		const nextProposedBaseAmount =
-			input.proposedBaseAmount !== undefined
-				? input.proposedBaseAmount
-				: existing.data.proposedBaseAmount;
+			input.proposedBaseAmount === undefined
+				? existing.data.proposedBaseAmount
+				: input.proposedBaseAmount;
 		const nextProposedCurrencyCode =
-			input.proposedCurrencyCode !== undefined
-				? input.proposedCurrencyCode
-				: existing.data.proposedCurrencyCode;
+			input.proposedCurrencyCode === undefined
+				? existing.data.proposedCurrencyCode
+				: input.proposedCurrencyCode;
 		const nextProposedGradeId =
-			input.proposedGradeId !== undefined
-				? input.proposedGradeId
-				: existing.data.proposedGradeId;
+			input.proposedGradeId === undefined
+				? existing.data.proposedGradeId
+				: input.proposedGradeId;
 		const nextProposedSalaryBandId =
-			input.proposedSalaryBandId !== undefined
-				? input.proposedSalaryBandId
-				: existing.data.proposedSalaryBandId;
+			input.proposedSalaryBandId === undefined
+				? existing.data.proposedSalaryBandId
+				: input.proposedSalaryBandId;
 		const nextConfidentialNote =
-			input.confidentialNote !== undefined
-				? input.confidentialNote
-				: existing.data.confidentialNote;
+			input.confidentialNote === undefined
+				? existing.data.confidentialNote
+				: input.confidentialNote;
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -2976,7 +3191,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 						SELECT mutated.* FROM mutated, audited
 					`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -2997,7 +3212,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			organizationId: input.organizationId,
 			proposalId: input.proposalId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Compensation proposal not found");
 		}
@@ -3005,10 +3222,11 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		if (
-			!existing.data.proposedBaseAmount ||
-			!existing.data.proposedCurrencyCode
+			!(existing.data.proposedBaseAmount && existing.data.proposedCurrencyCode)
 		) {
 			return invalidState(
 				"Proposal must have proposed base amount and currency before approval",
@@ -3018,7 +3236,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			existing.data.status,
 			"approved",
 		);
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -3081,7 +3301,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -3115,7 +3335,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			let proposals: CompensationProposal[] = [];
 			for (const row of allRows) {
 				const mapped = mapCompensationProposal(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				proposals.push(mapped.data);
 			}
 			const totalCount = proposals.length;
@@ -3147,8 +3369,10 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapBenefitPlan(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load benefit plan");
@@ -3167,8 +3391,10 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapBenefitPlan(row);
 		} catch (error) {
 			return mapPersistenceFailure(
@@ -3183,14 +3409,18 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			organizationId: record.organizationId,
 			code: record.code,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data !== null) {
 			return conflict("Benefit plan code already exists");
 		}
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesBenefitPlanId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 
 		try {
@@ -3224,7 +3454,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return conflict("Unable to create benefit plan");
 			}
@@ -3242,7 +3472,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			organizationId: input.organizationId,
 			planId: input.planId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Benefit plan not found");
 		}
@@ -3250,7 +3482,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -3286,7 +3520,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -3304,7 +3538,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			organizationId: input.organizationId,
 			planId: input.planId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Benefit plan not found");
 		}
@@ -3312,7 +3548,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		try {
 			const openRows = await db
@@ -3377,7 +3615,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -3399,7 +3637,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			const plans: BenefitPlan[] = [];
 			for (const row of allRows) {
 				const mapped = mapBenefitPlan(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				plans.push(mapped.data);
 			}
 			plans.sort((a, b) => a.code.localeCompare(b.code));
@@ -3418,11 +3658,11 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 	},
 
 	async getBenefitPlanEligibility(input) {
-		return drizzleGetBenefitPlanEligibility(input);
+		return await drizzleGetBenefitPlanEligibility(input);
 	},
 
 	async setBenefitPlanEligibility(input, ports, meta) {
-		return drizzleSetBenefitPlanEligibility(this, input, ports, meta);
+		return await drizzleSetBenefitPlanEligibility(this, input, ports, meta);
 	},
 
 	async getBenefitEnrollment(input) {
@@ -3437,8 +3677,10 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapBenefitEnrollmentFromDbRow(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load benefit enrollment");
@@ -3457,8 +3699,10 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapBenefitEnrollmentFromDbRow(row);
 		} catch (error) {
 			return mapPersistenceFailure(
@@ -3473,7 +3717,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			organizationId: record.organizationId,
 			idempotencyKey: record.createIdempotencyKey,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data !== null) {
 			if (existing.data.fingerprint === record.createRequestFingerprint) {
 				return ok(existing.data);
@@ -3487,7 +3733,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			contributionCurrencyCode: record.contributionCurrencyCode,
 			contributionFrequency: record.contributionFrequency,
 		});
-		if (!contributionCheck.ok) return contributionCheck;
+		if (!contributionCheck.ok) {
+			return contributionCheck;
+		}
 
 		const preconditions = await assertDrizzleBenefitEnrollmentPreconditions(
 			this,
@@ -3500,13 +3748,17 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 				effectiveTo: record.effectiveTo,
 			},
 		);
-		if (!preconditions.ok) return preconditions;
+		if (!preconditions.ok) {
+			return preconditions;
+		}
 
 		const employee = await this.getEmployeeById({
 			organizationId: record.organizationId,
 			employeeId: record.employeeId,
 		});
-		if (!employee.ok) return employee;
+		if (!employee.ok) {
+			return employee;
+		}
 		if (employee.data === null) {
 			return fail("NOT_FOUND", "Employee not found or cross-org reference", {
 				code: HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
@@ -3515,7 +3767,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesBenefitEnrollmentId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const payloadJson = eventPayloadJson({
@@ -3585,7 +3839,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return conflict(
 					"Employee already has an open enrollment for this plan",
@@ -3598,7 +3852,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					organizationId: record.organizationId,
 					idempotencyKey: record.createIdempotencyKey,
 				});
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (replay.data !== null) {
 					if (replay.data.fingerprint === record.createRequestFingerprint) {
 						return ok(replay.data);
@@ -3611,23 +3867,23 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 	},
 
 	async waiveBenefit(input, ports, meta) {
-		return drizzleWaiveBenefit(this, input, ports, meta);
+		return await drizzleWaiveBenefit(this, input, ports, meta);
 	},
 
 	async getBenefitEnrollmentDependent(input) {
-		return drizzleGetBenefitEnrollmentDependent(input);
+		return await drizzleGetBenefitEnrollmentDependent(input);
 	},
 
 	async listBenefitEnrollmentDependentsByEnrollment(input) {
-		return drizzleListBenefitEnrollmentDependentsByEnrollment(input);
+		return await drizzleListBenefitEnrollmentDependentsByEnrollment(input);
 	},
 
 	async addBenefitEnrollmentDependent(input, ports, meta) {
-		return drizzleAddBenefitEnrollmentDependent(this, input, ports, meta);
+		return await drizzleAddBenefitEnrollmentDependent(this, input, ports, meta);
 	},
 
 	async endBenefitEnrollmentDependent(input, ports, meta) {
-		return drizzleEndBenefitEnrollmentDependent(input, ports, meta);
+		return await drizzleEndBenefitEnrollmentDependent(input, ports, meta);
 	},
 
 	async endBenefitEnrollment(input, _ports, meta) {
@@ -3635,7 +3891,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			organizationId: input.organizationId,
 			enrollmentId: input.enrollmentId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Benefit enrollment not found");
 		}
@@ -3643,7 +3901,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		if (!isBenefitEnrollmentActive(existing.data.status)) {
 			return invalidState("Benefit enrollment is not active");
 		}
@@ -3651,7 +3911,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			effectiveFrom: existing.data.effectiveFrom,
 			effectiveTo: input.endsOn,
 		});
-		if (!rangeCheck.ok) return rangeCheck;
+		if (!rangeCheck.ok) {
+			return rangeCheck;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -3708,7 +3970,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -3726,7 +3988,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			organizationId: input.organizationId,
 			enrollmentId: input.enrollmentId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Benefit enrollment not found");
 		}
@@ -3734,7 +3998,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		if (!isBenefitEnrollmentActive(existing.data.status)) {
 			return invalidState("Benefit enrollment is not active");
 		}
@@ -3793,7 +4059,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -3824,7 +4090,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			const enrollments: BenefitEnrollment[] = [];
 			for (const row of allRows) {
 				const mapped = mapBenefitEnrollmentFromDbRow(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				enrollments.push(mapped.data);
 			}
 			const totalCount = enrollments.length;
@@ -3846,7 +4114,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			organizationId: input.organizationId,
 			employeeId: input.employeeId,
 		});
-		if (!employee.ok) return employee;
+		if (!employee.ok) {
+			return employee;
+		}
 		if (employee.data === null) {
 			return fail("NOT_FOUND", "Employee not found or cross-org reference", {
 				code: HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
@@ -3882,7 +4152,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					.limit(1);
 				if (compRows[0]) {
 					const mapped = mapEmployeeCompensation(compRows[0]);
-					if (!mapped.ok) return mapped;
+					if (!mapped.ok) {
+						return mapped;
+					}
 					activeCompensation = mapped.data;
 				}
 			}
@@ -3900,7 +4172,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			const activeBenefitEnrollments: BenefitEnrollment[] = [];
 			for (const row of enrollmentRows) {
 				const mapped = mapBenefitEnrollmentFromDbRow(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				activeBenefitEnrollments.push(mapped.data);
 			}
 

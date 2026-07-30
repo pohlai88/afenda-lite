@@ -209,10 +209,12 @@ function coreCommandPermission(
 	command: MasterCommandId,
 ): (typeof MASTER_DATA_PERMISSION_CODES)[number] {
 	if (command.startsWith("master_data.organization_dimension.")) {
-		if (command.endsWith(".create"))
+		if (command.endsWith(".create")) {
 			return MASTER_DATA_PERMISSION_DIMENSION_CREATE;
-		if (command.endsWith(".update"))
+		}
+		if (command.endsWith(".update")) {
 			return MASTER_DATA_PERMISSION_DIMENSION_UPDATE;
+		}
 		if (command.endsWith(".activate")) {
 			return MASTER_DATA_PERMISSION_DIMENSION_ACTIVATE;
 		}

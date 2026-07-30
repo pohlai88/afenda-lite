@@ -1,12 +1,12 @@
 import type { ItemTrackingPolicy, ItemType } from "../../types";
 
-export type ItemOperationalProfile = {
-	trackingPolicy: ItemTrackingPolicy;
-	sellable: boolean;
+export interface ItemOperationalProfile {
 	purchasable: boolean;
-	stocked: boolean;
+	sellable: boolean;
 	serviceIndicator: boolean;
-};
+	stocked: boolean;
+	trackingPolicy: ItemTrackingPolicy;
+}
 
 export function defaultItemOperationalProfile(
 	itemType: ItemType,
@@ -52,7 +52,13 @@ export function defaultItemOperationalProfile(
 				stocked: false,
 				serviceIndicator: false,
 			};
+		default:
+			return unsupportedItemType(itemType);
 	}
+}
+
+function unsupportedItemType(value: never): never {
+	throw new TypeError(`Unsupported item type: ${value}`);
 }
 
 export function resolveItemOperationalProfile(input: {

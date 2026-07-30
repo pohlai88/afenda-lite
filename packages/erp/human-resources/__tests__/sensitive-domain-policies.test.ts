@@ -45,7 +45,7 @@ function grantingAuthorization(
 ): HumanResourcesAuthorizationPort {
 	return {
 		async can(input) {
-			return permissions.has(input.permission);
+			return await permissions.has(input.permission);
 		},
 	};
 }
@@ -369,9 +369,13 @@ describe("sensitive-domain policies", () => {
 			{ authorization: auth },
 		);
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 		expect(result.data).toMatchObject({ allowed: true });
-		if (!result.data.allowed) return;
+		if (!result.data.allowed) {
+			return;
+		}
 		expect(result.data.projection?.allowedFields).toEqual(
 			expect.arrayContaining(["organizationId", "employeeId"]),
 		);
@@ -459,9 +463,13 @@ describe("sensitive-domain policies", () => {
 			},
 		);
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 		expect(result.data).toMatchObject({ allowed: true });
-		if (!result.data.allowed) return;
+		if (!result.data.allowed) {
+			return;
+		}
 		expect(result.data.projection?.deniedFields).toEqual(
 			expect.arrayContaining([...WORKFORCE_PLANNING_EMPLOYEE_ACTUAL_FIELDS]),
 		);
@@ -553,7 +561,9 @@ describe("sensitive-domain policies", () => {
 			},
 		);
 		expect(managerGrade.ok).toBe(true);
-		if (!managerGrade.ok || !managerGrade.data.allowed) return;
+		if (!(managerGrade.ok && managerGrade.data.allowed)) {
+			return;
+		}
 		expect(managerGrade.data.projection?.allowedFields).toEqual(
 			expect.arrayContaining([
 				...COMPENSATION_FIELD_CLASSES.public,
@@ -614,7 +624,9 @@ describe("sensitive-domain policies", () => {
 			},
 		);
 		expect(subjectOk.ok).toBe(true);
-		if (!subjectOk.ok || !subjectOk.data.allowed) return;
+		if (!(subjectOk.ok && subjectOk.data.allowed)) {
+			return;
+		}
 		expect(subjectOk.data.projection?.deniedFields).toContain(
 			"identifierLast4",
 		);
@@ -707,7 +719,9 @@ describe("sensitive-domain policies", () => {
 			},
 		);
 		expect(complianceOk.ok).toBe(true);
-		if (!complianceOk.ok || !complianceOk.data.allowed) return;
+		if (!(complianceOk.ok && complianceOk.data.allowed)) {
+			return;
+		}
 		expect(complianceOk.data.projection?.allowedFields).toContain(
 			"identifierLast4",
 		);

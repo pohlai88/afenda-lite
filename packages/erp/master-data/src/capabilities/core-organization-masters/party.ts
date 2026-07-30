@@ -25,6 +25,7 @@ import {
 	type MasterCommandId,
 } from "../../module-ids";
 import { parseMasterInput } from "../../parse-input";
+import { resolveAsync } from "../../resolve-async";
 import type { Party } from "../../types";
 import { assertApprovedChangeRequestForApply } from "../data-governance-workflows/change-request-commands";
 import {
@@ -86,7 +87,7 @@ export async function createParty(
 		"Invalid party create input",
 	);
 	if (!parsed.ok) {
-		return parsed;
+		return Promise.resolve(parsed);
 	}
 	const { store, ports, authorization } = resolveCommandDeps(options);
 	const authorized = await requireMasterCommandPermission(authorization, {
@@ -141,7 +142,7 @@ export async function updateParty(
 		"Invalid party update input",
 	);
 	if (!parsed.ok) {
-		return parsed;
+		return Promise.resolve(parsed);
 	}
 	const { store, ports, authorization } = resolveCommandDeps(options);
 	const authorized = await requireMasterCommandPermission(authorization, {
@@ -190,7 +191,7 @@ async function transitionPartyStatus(
 		"Invalid party lifecycle input",
 	);
 	if (!parsed.ok) {
-		return parsed;
+		return Promise.resolve(parsed);
 	}
 	const { store, ports, dependencyInspector, authorization } =
 		resolveCommandDeps(options);
@@ -343,7 +344,7 @@ export async function activateParty(
 	return afterPartyMutation(result, options);
 }
 
-export async function inactiveParty(
+export function inactiveParty(
 	input: unknown,
 	options: MasterCommandOptions = {},
 ): Promise<Result<Party>> {
@@ -356,7 +357,7 @@ export async function inactiveParty(
 	);
 }
 
-export async function blockParty(
+export function blockParty(
 	input: unknown,
 	options: MasterCommandOptions = {},
 ): Promise<Result<Party>> {
@@ -371,7 +372,7 @@ export async function blockParty(
 
 export const suspendParty = blockParty;
 
-export async function retireParty(
+export function retireParty(
 	input: unknown,
 	options: MasterCommandOptions = {},
 ): Promise<Result<Party>> {
@@ -386,7 +387,7 @@ export async function retireParty(
 
 export const archiveParty = retireParty;
 
-export async function restoreParty(
+export function restoreParty(
 	input: unknown,
 	options: MasterCommandOptions = {},
 ): Promise<Result<Party>> {
@@ -462,7 +463,9 @@ export async function existsPartyByCode(
 	options: MasterQueryOptions = {},
 ): Promise<Result<boolean>> {
 	const result = await getPartyByCode(input, options);
-	if (!result.ok) return result;
+	if (!result.ok) {
+		return result;
+	}
 	return ok(result.data !== null);
 }
 
@@ -496,43 +499,55 @@ export async function listParties(
 	});
 }
 
-export async function listActiveParties(
+export function listActiveParties(
 	input: unknown,
 	options: MasterQueryOptions = {},
 ): Promise<Result<Party[]>> {
-	const parsed = parseMasterInput(
-		masterListOptionsSchema,
-		input,
-		"Invalid active party list input",
-	);
-	if (!parsed.ok) return parsed;
-	return listParties({ ...parsed.data, status: "active" }, options);
+	return resolveAsync(() => {
+		const parsed = parseMasterInput(
+			masterListOptionsSchema,
+			input,
+			"Invalid active party list input",
+		);
+		if (!parsed.ok) {
+			return parsed;
+		}
+		return listParties({ ...parsed.data, status: "active" }, options);
+	});
 }
 
-export async function listPartiesByStatus(
+export function listPartiesByStatus(
 	input: unknown,
 	options: MasterQueryOptions = {},
 ): Promise<Result<Party[]>> {
-	const parsed = parseMasterInput(
-		listByStatusInputSchema,
-		input,
-		"Invalid party list-by-status input",
-	);
-	if (!parsed.ok) return parsed;
-	return listParties(parsed.data, options);
+	return resolveAsync(() => {
+		const parsed = parseMasterInput(
+			listByStatusInputSchema,
+			input,
+			"Invalid party list-by-status input",
+		);
+		if (!parsed.ok) {
+			return parsed;
+		}
+		return listParties(parsed.data, options);
+	});
 }
 
-export async function listPartiesUpdatedSince(
+export function listPartiesUpdatedSince(
 	input: unknown,
 	options: MasterQueryOptions = {},
 ): Promise<Result<Party[]>> {
-	const parsed = parseMasterInput(
-		listUpdatedSinceInputSchema,
-		input,
-		"Invalid party updated-since list input",
-	);
-	if (!parsed.ok) return parsed;
-	return listParties(parsed.data, options);
+	return resolveAsync(() => {
+		const parsed = parseMasterInput(
+			listUpdatedSinceInputSchema,
+			input,
+			"Invalid party updated-since list input",
+		);
+		if (!parsed.ok) {
+			return parsed;
+		}
+		return listParties(parsed.data, options);
+	});
 }
 
 export async function listPartiesByRole(
@@ -544,14 +559,18 @@ export async function listPartiesByRole(
 		input,
 		"Invalid party list-by-role input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const store = resolveStore(options.store);
 	const authorized = await requireMasterQueryPermission(options.authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		query: MASTER_QUERY_PARTY_LIST,
 	});
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return store.listPartiesByRole({
 		organizationId: parsed.data.organizationId,
 		page: parsed.data.page,
@@ -572,18 +591,24 @@ export async function findPartyByTaxRegistration(
 		input,
 		"Invalid party tax-registration lookup input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const normalized = normalizeTaxRegistrationNumber(
 		parsed.data.registrationNumber,
 	);
-	if (!normalized.ok) return normalized;
+	if (!normalized.ok) {
+		return normalized;
+	}
 	const store = resolveStore(options.store);
 	const authorized = await requireMasterQueryPermission(options.authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		query: MASTER_QUERY_PARTY_LIST,
 	});
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return store.findPartyByTaxRegistration({
 		organizationId: parsed.data.organizationId,
 		jurisdictionCountryId: parsed.data.jurisdictionCountryId,

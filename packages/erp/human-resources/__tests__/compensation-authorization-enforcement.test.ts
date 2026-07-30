@@ -118,7 +118,9 @@ describe("compensation authorization enforcement", () => {
 		);
 
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 		expect(result.data.baseAmount).toBe("125000.0000");
 	});
 
@@ -148,7 +150,9 @@ describe("compensation authorization enforcement", () => {
 		);
 
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 		expect(result.data.currencyCode).toBe("USD");
 		expect(result.data.payFrequency).toBe("monthly");
 		expect(result.data).not.toHaveProperty("baseAmount");

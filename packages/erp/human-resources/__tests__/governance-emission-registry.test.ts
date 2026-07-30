@@ -33,7 +33,6 @@ import {
 	HUMAN_RESOURCES_WORK_ELIGIBILITY_VERIFIED_EVENT,
 } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
-
 import { HUMAN_RESOURCES_COMPLIANCE_EMISSIONS } from "../src/emissions/domains/compliance";
 import { HUMAN_RESOURCES_EMPLOYEE_RELATIONS_EMISSIONS } from "../src/emissions/domains/employee-relations";
 import { HUMAN_RESOURCES_TALENT_EMISSIONS } from "../src/emissions/domains/talent";
@@ -126,11 +125,12 @@ import {
 	HUMAN_RESOURCES_TALENT_COMMAND_IDS,
 	HUMAN_RESOURCES_WORKFORCE_PLANNING_COMMAND_IDS,
 } from "../src/module-ids";
+import { helperAssert as assert } from "./helpers/helper-assert";
 
-type EmissionExpectation = {
+interface EmissionExpectation {
 	emission: "audit_only" | "domain_event";
 	eventTypes?: readonly string[];
-};
+}
 
 const EMPLOYEE_RELATIONS_MATRIX: Record<string, EmissionExpectation> = {
 	[HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_OPEN]: {
@@ -384,21 +384,21 @@ function assertLockedMatrix(
 ) {
 	for (const commandId of commandIds) {
 		const expected = expectedMatrix[commandId];
-		expect(expected).toBeDefined();
+		assert.isDefined(expected);
 
 		const definition =
 			HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD[commandId];
-		expect(definition).toBeDefined();
-		expect(definition?.emissionMode).toBe(expected.emission);
-		expect(definition?.auditRequired).toBe(true);
-		expect(definition?.correlationRequired).toBe(true);
+		assert.isDefined(definition);
+		assert.strictEqual(definition?.emissionMode, expected.emission);
+		assert.strictEqual(definition?.auditRequired, true);
+		assert.strictEqual(definition?.correlationRequired, true);
 
 		if (expected.emission === "audit_only") {
-			expect(definition?.eventTypes).toEqual([]);
+			assert.deepEqual(definition?.eventTypes, []);
 			continue;
 		}
 
-		expect(definition?.eventTypes).toEqual(expected.eventTypes);
+		assert.deepEqual(definition?.eventTypes, expected.eventTypes);
 	}
 }
 

@@ -2,26 +2,6 @@
 export const PAYROLL_AGGREGATE_CALCULATION = "calculation" as const;
 export type PayrollCalculationAggregate = typeof PAYROLL_AGGREGATE_CALCULATION;
 
-import { verifyAccountingIdentities } from "./calc/identities";
-import { normalizeCalcOutput } from "./calc/normalize";
-import { calculateEmployeePayroll } from "./calc/pipeline";
-import { canonicalizeSnapshot, hashSnapshot } from "./calc/snapshot";
-import type {
-	NormalizedPayrollEmployeeCalcOutput,
-	PayrollAccountingIdentityResult,
-	PayrollCalcException,
-	PayrollCalcResultLine,
-	PayrollCalcStatutoryResult,
-	PayrollCalcTraceStep,
-	PayrollDeductionTaxTiming,
-	PayrollEmployeeCalcOutput,
-	PayrollEmployeeCalcSnapshot,
-	PayrollEmployeeCalcTotals,
-	PayrollEmployeeSnapshotFacts,
-	PayrollResultLineKind,
-	PayrollRuleKind,
-} from "./calc/types";
-
 export {
 	addScaled,
 	compareScaled,
@@ -55,6 +35,10 @@ export type {
 	StatutoryCalculatorOutput,
 	StatutoryRuleCalculator,
 } from "../statutory/calculators/types";
+export { verifyAccountingIdentities } from "./calc/identities";
+export { normalizeCalcOutput } from "./calc/normalize";
+export { calculateEmployeePayroll } from "./calc/pipeline";
+export { canonicalizeSnapshot, hashSnapshot } from "./calc/snapshot";
 export type {
 	NormalizedPayrollEmployeeCalcOutput,
 	PayrollAccountingIdentityResult,
@@ -69,11 +53,4 @@ export type {
 	PayrollEmployeeSnapshotFacts,
 	PayrollResultLineKind,
 	PayrollRuleKind,
-};
-export {
-	calculateEmployeePayroll,
-	canonicalizeSnapshot,
-	hashSnapshot,
-	normalizeCalcOutput,
-	verifyAccountingIdentities,
-};
+} from "./calc/types";

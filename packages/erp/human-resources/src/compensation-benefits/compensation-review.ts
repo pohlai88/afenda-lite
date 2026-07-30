@@ -34,7 +34,7 @@ export const HUMAN_RESOURCES_AGGREGATE_COMPENSATION_REVIEW =
 export type HumanResourcesCompensationReviewAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_COMPENSATION_REVIEW;
 
-export async function createCompensationReviewDraft(
+export function createCompensationReviewDraft(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationReview>> {
@@ -68,7 +68,7 @@ export async function createCompensationReviewDraft(
 	});
 }
 
-export async function recordCompensationRecommendation(
+export function recordCompensationRecommendation(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationReview>> {
@@ -108,7 +108,7 @@ export async function recordCompensationRecommendation(
 	});
 }
 
-export async function finalizeCompensationReview(
+export function finalizeCompensationReview(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationReview>> {
@@ -133,7 +133,7 @@ export async function finalizeCompensationReview(
 	});
 }
 
-export async function applyApprovedCompensationResult(
+export function applyApprovedCompensationResult(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCompensation>> {
@@ -160,7 +160,7 @@ export async function applyApprovedCompensationResult(
 	});
 }
 
-export async function getCompensationReview(
+export function getCompensationReview(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationReview | null>> {
@@ -176,7 +176,7 @@ export async function getCompensationReview(
 	});
 }
 
-export async function listCompensationReviewsByEmployee(
+export function listCompensationReviewsByEmployee(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationReviewListPage>> {

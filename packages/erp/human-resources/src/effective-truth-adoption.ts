@@ -57,19 +57,19 @@ export type EffectiveTruthDomain =
 	| "workforce-foundation"
 	| "workforce-planning";
 
-type EffectiveTruthEvidence = {
-	unit: string;
+interface EffectiveTruthEvidence {
 	parity: string;
-};
+	unit: string;
+}
 
-type EffectiveTruthAdoptionBase = {
+interface EffectiveTruthAdoptionBase {
 	aggregate: string;
-	table: HumanResourcesMutationTable;
-	domain: EffectiveTruthDomain;
 	concurrency: "version";
-	provenance: "audit-outbox" | "row-and-audit-outbox";
+	domain: EffectiveTruthDomain;
 	evidence: EffectiveTruthEvidence;
-};
+	provenance: "audit-outbox" | "row-and-audit-outbox";
+	table: HumanResourcesMutationTable;
+}
 
 type EffectiveLineageAdoption = EffectiveTruthAdoptionBase & {
 	decision: "effective-lineage";
@@ -158,6 +158,11 @@ const WORKFORCE_PLANNING_EVIDENCE = {
 	unit: "human-resources.workforce-planning.test.ts",
 	parity: "human-resources.workforce-planning.parity.test.ts",
 } satisfies EffectiveTruthEvidence;
+const TIME_PREDECESSOR_FIELDS = {
+	"work-calendar": "supersedesCalendarId",
+	"time-policy": "supersedesPolicyId",
+	shift: "supersedesShiftId",
+} as const;
 const TIME_CALENDAR_EVIDENCE = {
 	unit: "effective-lineage.test.ts",
 	parity: "human-resources.time.calendar.parity.test.ts",
@@ -539,12 +544,7 @@ export const HUMAN_RESOURCES_EFFECTIVE_TRUTH_ADOPTION = [
 				domain: "time",
 				decision: "effective-lineage",
 				rangeFields: ["effectiveFrom", "effectiveTo"],
-				predecessorField:
-					aggregate === "work-calendar"
-						? "supersedesCalendarId"
-						: aggregate === "time-policy"
-							? "supersedesPolicyId"
-							: "supersedesShiftId",
+				predecessorField: TIME_PREDECESSOR_FIELDS[aggregate],
 				successorField: null,
 				concurrency: "version",
 				provenance: "audit-outbox",

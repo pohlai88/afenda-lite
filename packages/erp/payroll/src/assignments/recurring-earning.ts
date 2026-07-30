@@ -20,7 +20,7 @@ import type { PayrollRecurringEarning } from "../types";
 
 export const PAYROLL_AGGREGATE_RECURRING_EARNING = "recurring-earning" as const;
 
-export async function createPayrollRecurringEarning(
+export function createPayrollRecurringEarning(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollRecurringEarning>> {
@@ -28,6 +28,7 @@ export async function createPayrollRecurringEarning(
 		schema: createPayrollRecurringEarningInputSchema,
 		invalidMessage: "Invalid payroll recurring earning create input",
 		command: PAYROLL_COMMAND_ASSIGNMENT_RECURRING_EARNING_CREATE,
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The command boundary validates employee, assignment, rule, currency, and idempotency invariants before mutation.
 		execute: async (data, { store, ports, employees }) => {
 			const assignment = await store.getEmployeeAssignment({
 				organizationId: data.organizationId,

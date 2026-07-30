@@ -33,12 +33,12 @@ function emitEdge(
 		level,
 		...bindings,
 		...fields,
-		...(msg !== undefined ? { msg } : {}),
+		...(msg === undefined ? {} : { msg }),
 	});
 }
 
 export function createEdgeLogger(options: CreateLoggerOptions): EdgeLogger {
-	const service = options.service;
+	const { service } = options;
 
 	function make(bindings: EdgeLoggerBindings): EdgeLogger {
 		return {

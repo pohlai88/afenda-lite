@@ -84,17 +84,17 @@ import type {
 	TeamCalendarLeavePage,
 } from "../../types";
 
-export type LeaveMemoryState = {
+export interface LeaveMemoryState {
+	leaveAdjustments: Map<string, LeaveAdjustment>;
+	leaveApprovalDecisions: Map<string, { requestId: string; decision: string }>;
+	leaveEntitlementIdempotency: Map<string, IdempotentLeaveEntitlementRecord>;
+	leaveEntitlements: Map<string, LeaveEntitlement>;
 	leavePolicies: Map<string, LeavePolicy>;
 	leavePolicyEligibility: Map<string, LeavePolicyEligibility>;
-	leaveEntitlements: Map<string, LeaveEntitlement>;
-	leaveEntitlementIdempotency: Map<string, IdempotentLeaveEntitlementRecord>;
-	leaveAdjustments: Map<string, LeaveAdjustment>;
-	leaveRequests: Map<string, LeaveRequest>;
 	leaveRequestIdempotency: Map<string, IdempotentLeaveRequestRecord>;
 	leaveRequestSegments: Map<string, LeaveRequestSegment>;
-	leaveApprovalDecisions: Map<string, { requestId: string; decision: string }>;
-};
+	leaveRequests: Map<string, LeaveRequest>;
+}
 
 export function createLeaveMemoryState(): LeaveMemoryState {
 	return {
@@ -144,7 +144,7 @@ async function withLeaveEmployeeBookingLock<T>(
 	leaveEmployeeBookingLocks.set(key, current);
 	try {
 		await previous;
-		return await fn();
+		return fn();
 	} finally {
 		release();
 		if (leaveEmployeeBookingLocks.get(key) === current) {
@@ -181,7 +181,7 @@ function assertNoLeaveOverlapForRequest(
 		organizationId: string;
 		requestId: HumanResourcesLeaveRequestId;
 		employeeId: HumanResourcesEmployeeId;
-		includeDraft?: boolean;
+		includeDraft?: boolean | undefined;
 	},
 ): Result<void> {
 	const candidateSegments = Array.from(state.leaveRequestSegments.values())
@@ -250,7 +250,7 @@ async function emitLeaveSideEffects(
 		aggregateId: string;
 		audit: {
 			entity: string;
-			entityId?: string;
+			entityId?: string | undefined;
 			action: "CREATE" | "UPDATE" | "DELETE";
 		};
 		eventType?: HumanResourcesEventType | undefined;
@@ -272,7 +272,7 @@ async function emitLeaveSideEffects(
 			: undefined);
 	const eventEntityId = input.eventEntityId ?? input.aggregateId;
 
-	return emitHumanResourcesMutationOutcome(
+	return await emitHumanResourcesMutationOutcome(
 		{
 			commandId: input.commandId,
 			meta: executionMeta,
@@ -411,7 +411,9 @@ async function transitionLeavePolicyStatus(
 	},
 ): Promise<Result<LeavePolicy>> {
 	const policy = state.leavePolicies.get(input.policyId);
-	if (!policy) return notFound("Leave policy not found");
+	if (!policy) {
+		return notFound("Leave policy not found");
+	}
 	if (policy.organizationId !== input.organizationId) {
 		return notFound(
 			"Leave policy not found",
@@ -422,12 +424,16 @@ async function transitionLeavePolicyStatus(
 		policy.version,
 		input.expectedVersion,
 	);
-	if (!versionCheck.ok) return versionCheck;
+	if (!versionCheck.ok) {
+		return versionCheck;
+	}
 	const transition = assertLeavePolicyStatusTransition(
 		policy.status,
 		input.nextStatus,
 	);
-	if (!transition.ok) return transition;
+	if (!transition.ok) {
+		return transition;
+	}
 
 	const previous = { ...policy };
 	const now = new Date();
@@ -473,7 +479,9 @@ async function transitionLeaveEntitlementStatus(
 	},
 ): Promise<Result<LeaveEntitlement>> {
 	const entitlement = state.leaveEntitlements.get(input.entitlementId);
-	if (!entitlement) return notFound("Leave entitlement not found");
+	if (!entitlement) {
+		return notFound("Leave entitlement not found");
+	}
 	if (entitlement.organizationId !== input.organizationId) {
 		return notFound(
 			"Leave entitlement not found",
@@ -484,12 +492,16 @@ async function transitionLeaveEntitlementStatus(
 		entitlement.version,
 		input.expectedVersion,
 	);
-	if (!versionCheck.ok) return versionCheck;
+	if (!versionCheck.ok) {
+		return versionCheck;
+	}
 	const transition = assertLeaveEntitlementStatusTransition(
 		entitlement.status,
 		input.nextStatus,
 	);
-	if (!transition.ok) return transition;
+	if (!transition.ok) {
+		return transition;
+	}
 
 	const previous = { ...entitlement };
 
@@ -512,7 +524,9 @@ async function transitionLeaveEntitlementStatus(
 				input.ports,
 				input.meta,
 			);
-			if (!expiry.ok) return expiry;
+			if (!expiry.ok) {
+				return expiry;
+			}
 		}
 	}
 
@@ -554,16 +568,18 @@ async function transitionLeaveRequestStatus(
 		expectedVersion: number;
 		actorUserId: string;
 		nextStatus: LeaveRequestStatus;
-		note?: string | null;
-		decision?: "approved" | "rejected" | "returned" | "cancelled";
+		note?: string | null | undefined;
+		decision?: "approved" | "rejected" | "returned" | "cancelled" | undefined;
 		ports: MutationPorts;
 		meta: HumanResourcesMutationMeta;
-		emitEvent?: HumanResourcesEventType;
-		approvedAt?: Date;
+		emitEvent?: HumanResourcesEventType | undefined;
+		approvedAt?: Date | undefined;
 	},
 ): Promise<Result<LeaveRequest>> {
 	const request = state.leaveRequests.get(input.requestId);
-	if (!request) return notFound("Leave request not found");
+	if (!request) {
+		return notFound("Leave request not found");
+	}
 	if (request.organizationId !== input.organizationId) {
 		return notFound(
 			"Leave request not found",
@@ -574,12 +590,16 @@ async function transitionLeaveRequestStatus(
 		request.version,
 		input.expectedVersion,
 	);
-	if (!versionCheck.ok) return versionCheck;
+	if (!versionCheck.ok) {
+		return versionCheck;
+	}
 	const transition = assertLeaveRequestStatusTransition(
 		request.status,
 		input.nextStatus,
 	);
-	if (!transition.ok) return transition;
+	if (!transition.ok) {
+		return transition;
+	}
 
 	const previous = { ...request };
 	const now = new Date();
@@ -637,9 +657,9 @@ export function createMemoryLeaveMethods(
 		}): Promise<Result<LeavePolicy | null>> {
 			const policy = state.leavePolicies.get(input.policyId);
 			if (!policy || policy.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...policy });
+			return await ok({ ...policy });
 		},
 
 		async getLeavePolicyEligibility(input: {
@@ -653,7 +673,7 @@ export function createMemoryLeaveMethods(
 					row.organizationId === input.organizationId &&
 					row.policyId === input.policyId,
 			);
-			return ok(eligibility ? { ...eligibility } : null);
+			return await ok(eligibility ? { ...eligibility } : null);
 		},
 
 		async resolveApplicableLeavePolicy(input: {
@@ -667,7 +687,9 @@ export function createMemoryLeaveMethods(
 				organizationId: input.organizationId,
 				employmentId: input.employmentId,
 			});
-			if (!employment.ok) return employment;
+			if (!employment.ok) {
+				return employment;
+			}
 			if (employment.data === null) {
 				return ok(null);
 			}
@@ -690,7 +712,9 @@ export function createMemoryLeaveMethods(
 				organizationId: input.organizationId,
 				policyId: policy.id,
 			});
-			if (!eligibility.ok) return eligibility;
+			if (!eligibility.ok) {
+				return eligibility;
+			}
 			if (eligibility.data === null) {
 				return ok(null);
 			}
@@ -720,7 +744,9 @@ export function createMemoryLeaveMethods(
 				employeeId: input.employeeId,
 				asOf: input.asOf,
 			});
-			if (!primary.ok) return primary;
+			if (!primary.ok) {
+				return primary;
+			}
 			return ok(primary.data?.managerEmployeeId ?? null);
 		},
 
@@ -736,7 +762,7 @@ export function createMemoryLeaveMethods(
 						row.code === input.code &&
 						row.effectiveFrom === input.effectiveFrom,
 				) ?? null;
-			return ok(policy ? { ...policy } : null);
+			return await ok(policy ? { ...policy } : null);
 		},
 
 		async createLeavePolicy(
@@ -749,13 +775,17 @@ export function createMemoryLeaveMethods(
 				code: record.code,
 				effectiveFrom: record.effectiveFrom,
 			});
-			if (!duplicate.ok) return duplicate;
+			if (!duplicate.ok) {
+				return duplicate;
+			}
 			if (duplicate.data !== null) {
 				return conflict("Leave policy code already exists for effective date");
 			}
 
 			const policyId = parseHumanResourcesLeavePolicyId(randomUUID());
-			if (!policyId.ok) return policyId;
+			if (!policyId.ok) {
+				return policyId;
+			}
 			const now = new Date();
 			const policy: LeavePolicy = {
 				id: policyId.data,
@@ -825,22 +855,24 @@ export function createMemoryLeaveMethods(
 			input: {
 				organizationId: string;
 				policyId: HumanResourcesLeavePolicyId;
-				name?: string;
-				paid?: boolean;
-				sensitive?: boolean;
-				allowsNegativeBalance?: boolean;
-				allowSelfApproval?: boolean;
-				allowsPartialDay?: boolean;
-				accrualBasis?: LeavePolicy["accrualBasis"];
-				accrualFrequency?: LeavePolicy["accrualFrequency"];
-				accrualQuantityPerPeriod?: string | null;
-				carryForwardEnabled?: boolean;
-				carryForwardMaxQuantity?: string | null;
-				entitlementExpiryRule?: LeavePolicy["entitlementExpiryRule"];
-				entitlementExpiryDays?: number | null;
-				effectiveTo?: string | null;
-				minTenureDays?: number | null;
-				allowedEmploymentStatuses?: EmploymentStatus[];
+				name?: string | undefined;
+				paid?: boolean | undefined;
+				sensitive?: boolean | undefined;
+				allowsNegativeBalance?: boolean | undefined;
+				allowSelfApproval?: boolean | undefined;
+				allowsPartialDay?: boolean | undefined;
+				accrualBasis?: LeavePolicy["accrualBasis"] | undefined;
+				accrualFrequency?: LeavePolicy["accrualFrequency"] | undefined;
+				accrualQuantityPerPeriod?: string | null | undefined;
+				carryForwardEnabled?: boolean | undefined;
+				carryForwardMaxQuantity?: string | null | undefined;
+				entitlementExpiryRule?:
+					| LeavePolicy["entitlementExpiryRule"]
+					| undefined;
+				entitlementExpiryDays?: number | null | undefined;
+				effectiveTo?: string | null | undefined;
+				minTenureDays?: number | null | undefined;
+				allowedEmploymentStatuses?: EmploymentStatus[] | undefined;
 				expectedVersion: number;
 				actorUserId: string;
 			},
@@ -848,7 +880,9 @@ export function createMemoryLeaveMethods(
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LeavePolicy>> {
 			const policy = state.leavePolicies.get(input.policyId);
-			if (!policy) return notFound("Leave policy not found");
+			if (!policy) {
+				return notFound("Leave policy not found");
+			}
 			if (policy.organizationId !== input.organizationId) {
 				return notFound(
 					"Leave policy not found",
@@ -859,9 +893,13 @@ export function createMemoryLeaveMethods(
 				policy.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			const editable = assertLeavePolicyEditable(policy.status);
-			if (!editable.ok) return editable;
+			if (!editable.ok) {
+				return editable;
+			}
 
 			const previous = { ...policy };
 			const now = new Date();
@@ -877,9 +915,9 @@ export function createMemoryLeaveMethods(
 				allowsPartialDay: input.allowsPartialDay ?? policy.allowsPartialDay,
 				...balanceRules,
 				effectiveTo:
-					input.effectiveTo !== undefined
-						? input.effectiveTo
-						: policy.effectiveTo,
+					input.effectiveTo === undefined
+						? policy.effectiveTo
+						: input.effectiveTo,
 				version: policy.version + 1,
 				updatedBy: input.actorUserId,
 				updatedAt: now,
@@ -897,9 +935,9 @@ export function createMemoryLeaveMethods(
 					state.leavePolicyEligibility.set(eligibility.id, {
 						...eligibility,
 						minTenureDays:
-							input.minTenureDays !== undefined
-								? input.minTenureDays
-								: eligibility.minTenureDays,
+							input.minTenureDays === undefined
+								? eligibility.minTenureDays
+								: input.minTenureDays,
 						allowedEmploymentStatuses:
 							input.allowedEmploymentStatuses ??
 							eligibility.allowedEmploymentStatuses,
@@ -938,7 +976,7 @@ export function createMemoryLeaveMethods(
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LeavePolicy>> {
-			return transitionLeavePolicyStatus(
+			return await transitionLeavePolicyStatus(
 				state,
 				this as LeaveMemoryHost & MemoryLeaveMethods,
 				{
@@ -981,7 +1019,9 @@ export function createMemoryLeaveMethods(
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LeavePolicy>> {
 			const existing = state.leavePolicies.get(input.policyId);
-			if (!existing) return notFound("Leave policy not found");
+			if (!existing) {
+				return notFound("Leave policy not found");
+			}
 			if (existing.organizationId !== input.organizationId) {
 				return notFound(
 					"Leave policy not found",
@@ -1002,7 +1042,9 @@ export function createMemoryLeaveMethods(
 					meta,
 				},
 			);
-			if (!superseded.ok) return superseded;
+			if (!superseded.ok) {
+				return superseded;
+			}
 
 			const created = await this.createLeavePolicy(
 				{
@@ -1032,7 +1074,9 @@ export function createMemoryLeaveMethods(
 				ports,
 				meta,
 			);
-			if (!created.ok) return created;
+			if (!created.ok) {
+				return created;
+			}
 
 			const published: LeavePolicy = {
 				...created.data,
@@ -1056,7 +1100,7 @@ export function createMemoryLeaveMethods(
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LeavePolicy>> {
-			return transitionLeavePolicyStatus(
+			return await transitionLeavePolicyStatus(
 				state,
 				this as LeaveMemoryHost & MemoryLeaveMethods,
 				{
@@ -1072,7 +1116,7 @@ export function createMemoryLeaveMethods(
 			organizationId: string;
 			page: number;
 			pageSize: number;
-			status?: LeavePolicyStatus;
+			status?: LeavePolicyStatus | undefined;
 		}): Promise<Result<LeavePolicyListPage>> {
 			let policies = Array.from(state.leavePolicies.values()).filter(
 				(row) => row.organizationId === input.organizationId,
@@ -1083,7 +1127,7 @@ export function createMemoryLeaveMethods(
 			policies.sort((a, b) => a.code.localeCompare(b.code));
 			const totalCount = policies.length;
 			const start = (input.page - 1) * input.pageSize;
-			return ok({
+			return await ok({
 				policies: policies
 					.slice(start, start + input.pageSize)
 					.map((p) => ({ ...p })),
@@ -1099,9 +1143,9 @@ export function createMemoryLeaveMethods(
 		}): Promise<Result<LeaveEntitlement | null>> {
 			const entitlement = state.leaveEntitlements.get(input.entitlementId);
 			if (!entitlement || entitlement.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...entitlement });
+			return await ok({ ...entitlement });
 		},
 
 		async findLeaveEntitlementByIdempotencyKey(input: {
@@ -1112,7 +1156,7 @@ export function createMemoryLeaveMethods(
 				state.leaveEntitlementIdempotency.get(
 					idempotencyMapKey(input.organizationId, input.idempotencyKey),
 				) ?? null;
-			return ok(
+			return await ok(
 				record ? { ...record, entitlement: { ...record.entitlement } } : null,
 			);
 		},
@@ -1131,7 +1175,9 @@ export function createMemoryLeaveMethods(
 			}
 
 			const entitlementId = parseHumanResourcesLeaveEntitlementId(randomUUID());
-			if (!entitlementId.ok) return entitlementId;
+			if (!entitlementId.ok) {
+				return entitlementId;
+			}
 			const now = new Date();
 			const entitlement: LeaveEntitlement = {
 				id: entitlementId.data,
@@ -1199,7 +1245,9 @@ export function createMemoryLeaveMethods(
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LeaveEntitlement>> {
 			const source = state.leaveEntitlements.get(input.entitlementId);
-			if (!source) return notFound("Leave entitlement not found");
+			if (!source) {
+				return notFound("Leave entitlement not found");
+			}
 			if (source.organizationId !== input.organizationId) {
 				return notFound(
 					"Leave entitlement not found",
@@ -1211,13 +1259,17 @@ export function createMemoryLeaveMethods(
 				source.status,
 				"carried_forward",
 			);
-			if (!transition.ok) return transition;
+			if (!transition.ok) {
+				return transition;
+			}
 
 			const versionCheck = assertExpectedVersion(
 				source.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 
 			const sourceDebit = await this.adjustLeaveEntitlement(
 				{
@@ -1235,7 +1287,9 @@ export function createMemoryLeaveMethods(
 				ports,
 				meta,
 			);
-			if (!sourceDebit.ok) return sourceDebit;
+			if (!sourceDebit.ok) {
+				return sourceDebit;
+			}
 
 			const now = new Date();
 			const previous = { ...source };
@@ -1283,7 +1337,7 @@ export function createMemoryLeaveMethods(
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LeaveEntitlement>> {
-			return transitionLeaveEntitlementStatus(
+			return await transitionLeaveEntitlementStatus(
 				state,
 				this as LeaveMemoryHost & MemoryLeaveMethods,
 				{
@@ -1305,7 +1359,7 @@ export function createMemoryLeaveMethods(
 						candidate.organizationId === input.organizationId &&
 						candidate.createIdempotencyKey === input.idempotencyKey,
 				) ?? null;
-			return ok(
+			return await ok(
 				adjustment
 					? {
 							adjustment: { ...adjustment },
@@ -1324,7 +1378,9 @@ export function createMemoryLeaveMethods(
 				organizationId: record.organizationId,
 				idempotencyKey: record.createIdempotencyKey,
 			});
-			if (!replay.ok) return replay;
+			if (!replay.ok) {
+				return replay;
+			}
 			if (replay.data !== null) {
 				if (
 					replay.data.createRequestFingerprint ===
@@ -1336,7 +1392,9 @@ export function createMemoryLeaveMethods(
 			}
 
 			const entitlement = state.leaveEntitlements.get(record.entitlementId);
-			if (!entitlement) return notFound("Leave entitlement not found");
+			if (!entitlement) {
+				return notFound("Leave entitlement not found");
+			}
 			if (entitlement.organizationId !== record.organizationId) {
 				return notFound(
 					"Leave entitlement not found",
@@ -1344,10 +1402,14 @@ export function createMemoryLeaveMethods(
 				);
 			}
 			const active = assertLeaveEntitlementActive(entitlement.status);
-			if (!active.ok) return active;
+			if (!active.ok) {
+				return active;
+			}
 
 			const adjustmentId = parseHumanResourcesLeaveAdjustmentId(randomUUID());
-			if (!adjustmentId.ok) return adjustmentId;
+			if (!adjustmentId.ok) {
+				return adjustmentId;
+			}
 			const now = new Date();
 			const adjustment: LeaveAdjustment = {
 				id: adjustmentId.data,
@@ -1406,9 +1468,9 @@ export function createMemoryLeaveMethods(
 			organizationId: string;
 			page: number;
 			pageSize: number;
-			employeeId?: HumanResourcesEmployeeId;
-			employmentId?: HumanResourcesEmploymentId;
-			policyId?: HumanResourcesLeavePolicyId;
+			employeeId?: HumanResourcesEmployeeId | undefined;
+			employmentId?: HumanResourcesEmploymentId | undefined;
+			policyId?: HumanResourcesLeavePolicyId | undefined;
 		}): Promise<Result<LeaveEntitlementListPage>> {
 			let entitlements = Array.from(state.leaveEntitlements.values()).filter(
 				(row) => row.organizationId === input.organizationId,
@@ -1431,7 +1493,7 @@ export function createMemoryLeaveMethods(
 			entitlements.sort((a, b) => b.periodStart.localeCompare(a.periodStart));
 			const totalCount = entitlements.length;
 			const start = (input.page - 1) * input.pageSize;
-			return ok({
+			return await ok({
 				entitlements: entitlements
 					.slice(start, start + input.pageSize)
 					.map((row) => ({ ...row })),
@@ -1449,7 +1511,7 @@ export function createMemoryLeaveMethods(
 				state,
 				input.entitlementId,
 			).filter((row) => row.organizationId === input.organizationId);
-			return ok(adjustments.map((row) => ({ ...row })));
+			return await ok(adjustments.map((row) => ({ ...row })));
 		},
 
 		async getLeaveBalance(input: {
@@ -1458,9 +1520,9 @@ export function createMemoryLeaveMethods(
 		}): Promise<Result<LeaveBalance | null>> {
 			const entitlement = state.leaveEntitlements.get(input.entitlementId);
 			if (!entitlement || entitlement.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok(resolveBalance(state, entitlement));
+			return await ok(resolveBalance(state, entitlement));
 		},
 
 		async getLeaveRequestById(input: {
@@ -1469,9 +1531,9 @@ export function createMemoryLeaveMethods(
 		}): Promise<Result<LeaveRequest | null>> {
 			const request = state.leaveRequests.get(input.requestId);
 			if (!request || request.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...request });
+			return await ok({ ...request });
 		},
 
 		async findLeaveRequestByIdempotencyKey(input: {
@@ -1482,7 +1544,9 @@ export function createMemoryLeaveMethods(
 				state.leaveRequestIdempotency.get(
 					idempotencyMapKey(input.organizationId, input.idempotencyKey),
 				) ?? null;
-			return ok(record ? { ...record, request: { ...record.request } } : null);
+			return await ok(
+				record ? { ...record, request: { ...record.request } } : null,
+			);
 		},
 
 		async listLeaveRequestSegments(input: {
@@ -1495,14 +1559,14 @@ export function createMemoryLeaveMethods(
 					row.requestId === input.requestId,
 			);
 			segments.sort((a, b) => a.segmentDate.localeCompare(b.segmentDate));
-			return ok(segments.map((row) => ({ ...row })));
+			return await ok(segments.map((row) => ({ ...row })));
 		},
 
 		async listOverlappingLeaveSegments(input: {
 			organizationId: string;
 			employeeId: HumanResourcesEmployeeId;
-			excludeRequestId?: HumanResourcesLeaveRequestId;
-			includeDraft?: boolean;
+			excludeRequestId?: HumanResourcesLeaveRequestId | undefined;
+			includeDraft?: boolean | undefined;
 		}): Promise<Result<LeaveRequestSegment[]>> {
 			const requestIds = activeLeaveOverlapRequestIds(state, input);
 			const segments = Array.from(state.leaveRequestSegments.values()).filter(
@@ -1510,7 +1574,7 @@ export function createMemoryLeaveMethods(
 					segment.organizationId === input.organizationId &&
 					requestIds.has(segment.requestId),
 			);
-			return ok(segments.map((row) => ({ ...row })));
+			return await ok(segments.map((row) => ({ ...row })));
 		},
 
 		async createDraftLeaveRequest(
@@ -1519,7 +1583,9 @@ export function createMemoryLeaveMethods(
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LeaveRequest>> {
 			const requestId = parseHumanResourcesLeaveRequestId(randomUUID());
-			if (!requestId.ok) return requestId;
+			if (!requestId.ok) {
+				return requestId;
+			}
 			const now = new Date();
 			const request: LeaveRequest = {
 				id: requestId.data,
@@ -1550,7 +1616,9 @@ export function createMemoryLeaveMethods(
 				const segmentId = parseHumanResourcesLeaveRequestSegmentId(
 					randomUUID(),
 				);
-				if (!segmentId.ok) return segmentId;
+				if (!segmentId.ok) {
+					return segmentId;
+				}
 				segments.push({
 					id: segmentId.data,
 					organizationId: record.organizationId,
@@ -1606,7 +1674,9 @@ export function createMemoryLeaveMethods(
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LeaveRequest>> {
 			const request = state.leaveRequests.get(record.requestId);
-			if (!request) return notFound("Leave request not found");
+			if (!request) {
+				return notFound("Leave request not found");
+			}
 			if (request.organizationId !== record.organizationId) {
 				return notFound(
 					"Leave request not found",
@@ -1617,9 +1687,13 @@ export function createMemoryLeaveMethods(
 				request.version,
 				record.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			const amendable = assertLeaveRequestAmendable(request.status);
-			if (!amendable.ok) return amendable;
+			if (!amendable.ok) {
+				return amendable;
+			}
 
 			const previous = { ...request };
 			const previousSegments = Array.from(
@@ -1703,15 +1777,17 @@ export function createMemoryLeaveMethods(
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LeaveRequest>> {
 			const request = state.leaveRequests.get(input.requestId);
-			if (!request) return notFound("Leave request not found");
+			if (!request) {
+				return await notFound("Leave request not found");
+			}
 			if (request.organizationId !== input.organizationId) {
-				return notFound(
+				return await notFound(
 					"Leave request not found",
 					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 				);
 			}
 
-			return withLeaveEmployeeBookingLock(
+			return await withLeaveEmployeeBookingLock(
 				leaveEmployeeBookingLockKey(input.organizationId, request.employeeId),
 				async () => {
 					const overlap = assertNoLeaveOverlapForRequest(state, {
@@ -1720,9 +1796,11 @@ export function createMemoryLeaveMethods(
 						employeeId: request.employeeId,
 						includeDraft: false,
 					});
-					if (!overlap.ok) return overlap;
+					if (!overlap.ok) {
+						return await overlap;
+					}
 
-					return transitionLeaveRequestStatus(
+					return await transitionLeaveRequestStatus(
 						state,
 						this as LeaveMemoryHost & MemoryLeaveMethods,
 						{
@@ -1749,15 +1827,17 @@ export function createMemoryLeaveMethods(
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LeaveRequest>> {
 			const request = state.leaveRequests.get(input.requestId);
-			if (!request) return notFound("Leave request not found");
+			if (!request) {
+				return await notFound("Leave request not found");
+			}
 			if (request.organizationId !== input.organizationId) {
-				return notFound(
+				return await notFound(
 					"Leave request not found",
 					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 				);
 			}
 
-			return withLeaveEmployeeBookingLock(
+			return await withLeaveEmployeeBookingLock(
 				leaveEmployeeBookingLockKey(input.organizationId, request.employeeId),
 				async () => {
 					const overlap = assertNoLeaveOverlapForRequest(state, {
@@ -1765,7 +1845,9 @@ export function createMemoryLeaveMethods(
 						requestId: input.requestId,
 						employeeId: request.employeeId,
 					});
-					if (!overlap.ok) return overlap;
+					if (!overlap.ok) {
+						return overlap;
+					}
 
 					const consumption = await this.adjustLeaveEntitlement(
 						{
@@ -1783,7 +1865,9 @@ export function createMemoryLeaveMethods(
 						ports,
 						meta,
 					);
-					if (!consumption.ok) return consumption;
+					if (!consumption.ok) {
+						return consumption;
+					}
 
 					const approved = await transitionLeaveRequestStatus(
 						state,
@@ -1823,7 +1907,7 @@ export function createMemoryLeaveMethods(
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LeaveRequest>> {
-			return transitionLeaveRequestStatus(
+			return await transitionLeaveRequestStatus(
 				state,
 				this as LeaveMemoryHost & MemoryLeaveMethods,
 				{
@@ -1848,7 +1932,7 @@ export function createMemoryLeaveMethods(
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LeaveRequest>> {
-			return transitionLeaveRequestStatus(
+			return await transitionLeaveRequestStatus(
 				state,
 				this as LeaveMemoryHost & MemoryLeaveMethods,
 				{
@@ -1871,7 +1955,7 @@ export function createMemoryLeaveMethods(
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LeaveRequest>> {
-			return transitionLeaveRequestStatus(
+			return await transitionLeaveRequestStatus(
 				state,
 				this as LeaveMemoryHost & MemoryLeaveMethods,
 				{
@@ -1895,7 +1979,9 @@ export function createMemoryLeaveMethods(
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LeaveRequest>> {
 			const request = state.leaveRequests.get(input.requestId);
-			if (!request) return notFound("Leave request not found");
+			if (!request) {
+				return notFound("Leave request not found");
+			}
 			if (request.organizationId !== input.organizationId) {
 				return notFound(
 					"Leave request not found",
@@ -1919,7 +2005,9 @@ export function createMemoryLeaveMethods(
 				ports,
 				meta,
 			);
-			if (!reversal.ok) return reversal;
+			if (!reversal.ok) {
+				return reversal;
+			}
 
 			return transitionLeaveRequestStatus(
 				state,
@@ -1943,8 +2031,8 @@ export function createMemoryLeaveMethods(
 			organizationId: string;
 			page: number;
 			pageSize: number;
-			employeeId?: HumanResourcesEmployeeId;
-			status?: LeaveRequestStatus;
+			employeeId?: HumanResourcesEmployeeId | undefined;
+			status?: LeaveRequestStatus | undefined;
 		}): Promise<Result<LeaveRequestListPage>> {
 			let requests = Array.from(state.leaveRequests.values()).filter(
 				(row) => row.organizationId === input.organizationId,
@@ -1960,7 +2048,7 @@ export function createMemoryLeaveMethods(
 			requests.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 			const totalCount = requests.length;
 			const start = (input.page - 1) * input.pageSize;
-			return ok({
+			return await ok({
 				requests: requests.slice(start, start + input.pageSize).map((row) => ({
 					...row,
 				})),
@@ -1983,7 +2071,9 @@ export function createMemoryLeaveMethods(
 				page: 1,
 				pageSize: 10_000,
 			});
-			if (!directReports.ok) return directReports;
+			if (!directReports.ok) {
+				return directReports;
+			}
 
 			const reportIds = new Set(
 				directReports.data.reportingLines.map((line) => line.employeeId),
@@ -2023,7 +2113,9 @@ export function createMemoryLeaveMethods(
 				page: 1,
 				pageSize: 10_000,
 			});
-			if (!directReports.ok) return directReports;
+			if (!directReports.ok) {
+				return directReports;
+			}
 
 			const reportIds = new Set(
 				directReports.data.reportingLines.map((line) => line.employeeId),
@@ -2084,7 +2176,9 @@ export function createMemoryLeaveMethods(
 				organizationId: input.organizationId,
 				requestId: request.id,
 			});
-			if (!segments.ok) return segments;
+			if (!segments.ok) {
+				return segments;
+			}
 
 			return ok({
 				organizationId: input.organizationId,

@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/useAwait: The deterministic memory adapter implements asynchronous resolution ports.
 import { randomUUID } from "node:crypto";
 import { fail, ok } from "@afenda/errors/result";
 
@@ -119,7 +120,9 @@ export function createMemoryCorporateAdministrationResolutionStore(): Resolution
 			const current = resolutions.get(
 				key(input.organizationId, input.resolutionId),
 			);
-			if (current === undefined) return notFound();
+			if (current === undefined) {
+				return notFound();
+			}
 			if (current.version !== input.expectedVersion) {
 				return stale(input.expectedVersion, current.version);
 			}
@@ -142,7 +145,9 @@ export function createMemoryCorporateAdministrationResolutionStore(): Resolution
 			const current = resolutions.get(
 				key(input.organizationId, input.resolutionId),
 			);
-			if (current === undefined) return notFound();
+			if (current === undefined) {
+				return notFound();
+			}
 			if (current.version !== input.expectedVersion) {
 				return stale(input.expectedVersion, current.version);
 			}
@@ -220,7 +225,9 @@ export function createMemoryCorporateAdministrationResolutionStore(): Resolution
 			const current = actions.get(
 				key(input.organizationId, input.resolutionActionId),
 			);
-			if (current === undefined) return notFound();
+			if (current === undefined) {
+				return notFound();
+			}
 			if (current.version !== input.expectedVersion) {
 				return stale(input.expectedVersion, current.version);
 			}

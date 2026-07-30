@@ -90,7 +90,9 @@ describe("CA-2.5 memory resolution store", () => {
 			thresholdType: "simple_majority",
 		});
 		expect(voteOutcome.ok).toBe(true);
-		if (!voteOutcome.ok) return;
+		if (!voteOutcome.ok) {
+			return;
+		}
 
 		const vote = await store.recordMeetingVote({
 			organizationId,
@@ -111,7 +113,9 @@ describe("CA-2.5 memory resolution store", () => {
 			expectedMeetingVersion: 1,
 		});
 		expect(vote.ok && vote.data.outcome).toBe("adopted");
-		if (!vote.ok) return;
+		if (!vote.ok) {
+			return;
+		}
 
 		const crossTenantVote = await store.getMeetingVote({
 			organizationId: otherOrganizationId,
@@ -138,7 +142,9 @@ describe("CA-2.5 memory resolution store", () => {
 			recordedBy: actorUserId,
 		});
 		expect(resolution.ok && resolution.data.status).toBe("adopted");
-		if (!resolution.ok) return;
+		if (!resolution.ok) {
+			return;
+		}
 
 		const listed = await store.listResolutionsAsOf({
 			organizationId,
@@ -173,7 +179,9 @@ describe("CA-2.5 memory resolution store", () => {
 			expectedResolutionVersion: 1,
 		});
 		expect(action.ok && action.data.status).toBe("assigned");
-		if (!action.ok) return;
+		if (!action.ok) {
+			return;
+		}
 
 		const overdue = await store.listOverdueResolutionActions({
 			organizationId,
@@ -196,7 +204,9 @@ describe("CA-2.5 memory resolution store", () => {
 		expect(completed.ok && completed.data.evidenceDocumentId).toBe(
 			"doc-bank-mandate-filed",
 		);
-		if (!completed.ok) return;
+		if (!completed.ok) {
+			return;
+		}
 
 		const staleCompletion = await store.completeResolutionAction({
 			organizationId,
@@ -233,7 +243,9 @@ describe("CA-2.5 memory resolution store", () => {
 			expectedVersion: 1,
 		});
 		expect(minutes.ok && minutes.data.minutesDocumentId).toBe("doc-minutes-1");
-		if (!minutes.ok) return;
+		if (!minutes.ok) {
+			return;
+		}
 
 		const successor = await store.recordResolution({
 			organizationId,
@@ -254,7 +266,9 @@ describe("CA-2.5 memory resolution store", () => {
 			recordedBy: actorUserId,
 		});
 		expect(successor.ok).toBe(true);
-		if (!successor.ok) return;
+		if (!successor.ok) {
+			return;
+		}
 
 		const superseded = await store.supersedeResolution({
 			organizationId,

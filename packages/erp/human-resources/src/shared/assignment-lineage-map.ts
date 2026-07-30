@@ -14,18 +14,18 @@ import {
 } from "../brands";
 import type { WorkAssignment } from "../types";
 
-type AssignmentLineageRow = {
-	predecessorAssignmentId?: string | null | undefined;
-	predecessor_assignment_id?: string | null | undefined;
-	successorAssignmentId?: string | null | undefined;
-	successor_assignment_id?: string | null | undefined;
-	transferMovementId?: string | null | undefined;
-	transfer_movement_id?: string | null | undefined;
-	managerEmployeeIdSnapshot?: string | null | undefined;
+interface AssignmentLineageRow {
 	manager_employee_id_snapshot?: string | null | undefined;
-	workCalendarIdSnapshot?: string | null | undefined;
+	managerEmployeeIdSnapshot?: string | null | undefined;
+	predecessor_assignment_id?: string | null | undefined;
+	predecessorAssignmentId?: string | null | undefined;
+	successor_assignment_id?: string | null | undefined;
+	successorAssignmentId?: string | null | undefined;
+	transfer_movement_id?: string | null | undefined;
+	transferMovementId?: string | null | undefined;
 	work_calendar_id_snapshot?: string | null | undefined;
-};
+	workCalendarIdSnapshot?: string | null | undefined;
+}
 
 function readOptionalString(
 	row: AssignmentLineageRow,
@@ -72,35 +72,45 @@ export function mapAssignmentLineageFields(row: AssignmentLineageRow): Result<{
 	let predecessorAssignmentId: HumanResourcesAssignmentId | null = null;
 	if (predecessorRaw !== null) {
 		const parsed = parseHumanResourcesAssignmentId(predecessorRaw);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		predecessorAssignmentId = parsed.data;
 	}
 
 	let successorAssignmentId: HumanResourcesAssignmentId | null = null;
 	if (successorRaw !== null) {
 		const parsed = parseHumanResourcesAssignmentId(successorRaw);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		successorAssignmentId = parsed.data;
 	}
 
 	let transferMovementId: HumanResourcesEmploymentMovementId | null = null;
 	if (movementRaw !== null) {
 		const parsed = parseHumanResourcesEmploymentMovementId(movementRaw);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		transferMovementId = parsed.data;
 	}
 
 	let managerEmployeeIdSnapshot: HumanResourcesEmployeeId | null = null;
 	if (managerRaw !== null) {
 		const parsed = parseHumanResourcesEmployeeId(managerRaw);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		managerEmployeeIdSnapshot = parsed.data;
 	}
 
 	let workCalendarIdSnapshot: HumanResourcesWorkCalendarId | null = null;
 	if (calendarRaw !== null) {
 		const parsed = parseHumanResourcesWorkCalendarId(calendarRaw);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		workCalendarIdSnapshot = parsed.data;
 	}
 

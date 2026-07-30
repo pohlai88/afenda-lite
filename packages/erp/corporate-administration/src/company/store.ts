@@ -490,218 +490,220 @@ export type LegalCompanyTimelineStoreInput = Readonly<{
 }>;
 
 export type CompanyNameStore = Readonly<{
-	insertCompanyName(
+	insertCompanyName: (
 		record: CompanyNameCreateRecord,
-	): Promise<Result<CompanyName>>;
-	addCompanyName(input: AddCompanyNameStoreInput): Promise<Result<CompanyName>>;
-	findCompanyNameById(
+	) => Promise<Result<CompanyName>>;
+	addCompanyName: (
+		input: AddCompanyNameStoreInput,
+	) => Promise<Result<CompanyName>>;
+	findCompanyNameById: (
 		organizationId: OrganizationId,
 		companyNameId: CompanyNameId,
-	): Promise<Result<CompanyName | null>>;
-	supersedeCompanyName(
+	) => Promise<Result<CompanyName | null>>;
+	supersedeCompanyName: (
 		command: CompanyNameSupersessionRecord,
-	): Promise<Result<CompanyName>>;
-	retireCompanyName(
+	) => Promise<Result<CompanyName>>;
+	retireCompanyName: (
 		command: CompanyNameRetirementRecord,
-	): Promise<Result<CompanyName>>;
-	getCompanyName(
+	) => Promise<Result<CompanyName>>;
+	getCompanyName: (
 		input: Readonly<{
 			organizationId: OrganizationId;
 			legalCompanyId: LegalCompanyId;
 			companyNameId: CompanyNameId;
 			knownAt?: CanonicalInstant | undefined;
 		}>,
-	): Promise<Result<CompanyName | null>>;
-	listCompanyNames(
+	) => Promise<Result<CompanyName | null>>;
+	listCompanyNames: (
 		query: CompanyNameListQuery,
-	): Promise<Result<CompanyNameListPage>>;
-	findCompanyNameAsOf(
+	) => Promise<Result<CompanyNameListPage>>;
+	findCompanyNameAsOf: (
 		query: CompanyNameAsOfQuery,
-	): Promise<Result<CompanyName | null>>;
-	findOverlappingCompanyName(
+	) => Promise<Result<CompanyName | null>>;
+	findOverlappingCompanyName: (
 		query: CompanyNameOverlapQuery,
-	): Promise<Result<CompanyName | null>>;
-	hasOverlappingCompanyName(
+	) => Promise<Result<CompanyName | null>>;
+	hasOverlappingCompanyName: (
 		input: CompanyNameOverlapQuery,
-	): Promise<Result<boolean>>;
-	lockCompanyNameScope(
+	) => Promise<Result<boolean>>;
+	lockCompanyNameScope: (
 		organizationId: OrganizationId,
 		legalCompanyId: LegalCompanyId,
 		nameType: CompanyNameType,
 		languageCode: string,
-	): Promise<Result<void>>;
+	) => Promise<Result<void>>;
 }>;
 
 export type CompanyLegalFormStore = Readonly<{
-	insertCompanyLegalForm(
+	insertCompanyLegalForm: (
 		record: CompanyLegalFormCreateRecord,
-	): Promise<Result<CompanyLegalFormHistory>>;
-	setCompanyLegalForm(
+	) => Promise<Result<CompanyLegalFormHistory>>;
+	setCompanyLegalForm: (
 		input: SetCompanyLegalFormStoreInput,
-	): Promise<Result<CompanyLegalForm>>;
-	supersedeCompanyLegalForm(
+	) => Promise<Result<CompanyLegalForm>>;
+	supersedeCompanyLegalForm: (
 		command: CompanyLegalFormSupersessionRecord,
-	): Promise<Result<CompanyLegalFormHistory>>;
-	getCompanyLegalForm(
+	) => Promise<Result<CompanyLegalFormHistory>>;
+	getCompanyLegalForm: (
 		input: Readonly<{
 			organizationId: OrganizationId;
 			legalCompanyId: LegalCompanyId;
 			companyLegalFormHistoryId: CompanyLegalFormHistoryId;
 			knownAt?: CanonicalInstant | undefined;
 		}>,
-	): Promise<Result<CompanyLegalFormHistory | null>>;
-	listCompanyLegalForms(
+	) => Promise<Result<CompanyLegalFormHistory | null>>;
+	listCompanyLegalForms: (
 		input: Readonly<{
 			organizationId: OrganizationId;
 			legalCompanyId: LegalCompanyId;
 			knownAt?: CanonicalInstant | undefined;
 		}>,
-	): Promise<Result<readonly CompanyLegalFormHistory[]>>;
-	findCompanyLegalFormAsOf(
+	) => Promise<Result<readonly CompanyLegalFormHistory[]>>;
+	findCompanyLegalFormAsOf: (
 		query: CompanyLegalFormAsOfQuery,
-	): Promise<Result<CompanyLegalFormHistory | null>>;
-	findOverlappingCompanyLegalForm(
+	) => Promise<Result<CompanyLegalFormHistory | null>>;
+	findOverlappingCompanyLegalForm: (
 		query: CompanyLegalFormOverlapQuery,
-	): Promise<Result<CompanyLegalFormHistory | null>>;
-	hasOverlappingCompanyLegalForm(
+	) => Promise<Result<CompanyLegalFormHistory | null>>;
+	hasOverlappingCompanyLegalForm: (
 		input: CompanyLegalFormOverlapQuery,
-	): Promise<Result<boolean>>;
-	lockCompanyLegalFormScope(
+	) => Promise<Result<boolean>>;
+	lockCompanyLegalFormScope: (
 		organizationId: OrganizationId,
 		legalCompanyId: LegalCompanyId,
-	): Promise<Result<void>>;
+	) => Promise<Result<void>>;
 }>;
 
 export type CompanyIdentifierStore = Readonly<{
-	registerCompanyIdentifier(
+	registerCompanyIdentifier: (
 		input: RegisterCompanyIdentifierStoreInput,
-	): Promise<Result<CompanyIdentifier>>;
-	supersedeCompanyIdentifier(
+	) => Promise<Result<CompanyIdentifier>>;
+	supersedeCompanyIdentifier: (
 		input: SupersedeCompanyIdentifierStoreInput,
-	): Promise<Result<CompanyIdentifier>>;
-	retireCompanyIdentifier(
+	) => Promise<Result<CompanyIdentifier>>;
+	retireCompanyIdentifier: (
 		input: RetireCompanyIdentifierStoreInput,
-	): Promise<Result<CompanyIdentifier>>;
-	getCompanyIdentifier(
+	) => Promise<Result<CompanyIdentifier>>;
+	getCompanyIdentifier: (
 		input: Readonly<{
 			organizationId: OrganizationId;
 			legalCompanyId: LegalCompanyId;
 			companyIdentifierId: CompanyIdentifierId;
 			knownAt?: CanonicalInstant | undefined;
 		}>,
-	): Promise<Result<CompanyIdentifier | null>>;
-	listCompanyIdentifiers(
+	) => Promise<Result<CompanyIdentifier | null>>;
+	listCompanyIdentifiers: (
 		query: CompanyIdentifierListQuery,
-	): Promise<Result<CompanyIdentifierListPage>>;
-	findCompanyIdentifierAsOf(
+	) => Promise<Result<CompanyIdentifierListPage>>;
+	findCompanyIdentifierAsOf: (
 		query: CompanyIdentifierAsOfQuery,
-	): Promise<Result<CompanyIdentifier | null>>;
-	findOverlappingCompanyIdentifier(
+	) => Promise<Result<CompanyIdentifier | null>>;
+	findOverlappingCompanyIdentifier: (
 		query: CompanyIdentifierOverlapQuery,
-	): Promise<Result<CompanyIdentifier | null>>;
-	lockCompanyIdentifierScope(
+	) => Promise<Result<CompanyIdentifier | null>>;
+	lockCompanyIdentifierScope: (
 		organizationId: OrganizationId,
 		legalCompanyId: LegalCompanyId,
 		identifierType: CompanyIdentifierType,
 		jurisdictionCode: string,
 		issuingAuthorityCode: string,
 		normalizedIdentifierValue: string,
-	): Promise<Result<void>>;
+	) => Promise<Result<void>>;
 }>;
 
 export type CompanyFinancialYearStore = Readonly<{
-	setCompanyFinancialYear(
+	setCompanyFinancialYear: (
 		input: SetCompanyFinancialYearStoreInput,
-	): Promise<Result<CompanyFinancialYear>>;
-	findCompanyFinancialYearAsOf(
+	) => Promise<Result<CompanyFinancialYear>>;
+	findCompanyFinancialYearAsOf: (
 		query: CompanyFinancialYearAsOfQuery,
-	): Promise<Result<CompanyFinancialYear | null>>;
-	findOverlappingCompanyFinancialYear(
+	) => Promise<Result<CompanyFinancialYear | null>>;
+	findOverlappingCompanyFinancialYear: (
 		query: CompanyFinancialYearOverlapQuery,
-	): Promise<Result<CompanyFinancialYear | null>>;
-	lockCompanyFinancialYearScope(
+	) => Promise<Result<CompanyFinancialYear | null>>;
+	lockCompanyFinancialYearScope: (
 		organizationId: OrganizationId,
 		legalCompanyId: LegalCompanyId,
-	): Promise<Result<void>>;
+	) => Promise<Result<void>>;
 }>;
 
 export type CompanyActivityStore = Readonly<{
-	registerCompanyActivity(
+	registerCompanyActivity: (
 		input: RegisterCompanyActivityStoreInput,
-	): Promise<Result<CompanyActivity>>;
-	endCompanyActivity(
+	) => Promise<Result<CompanyActivity>>;
+	endCompanyActivity: (
 		input: EndCompanyActivityStoreInput,
-	): Promise<Result<CompanyActivity>>;
-	getCompanyActivity(
+	) => Promise<Result<CompanyActivity>>;
+	getCompanyActivity: (
 		input: Readonly<{
 			organizationId: OrganizationId;
 			legalCompanyId: LegalCompanyId;
 			companyActivityId: CompanyActivityId;
 			knownAt?: CanonicalInstant | undefined;
 		}>,
-	): Promise<Result<CompanyActivity | null>>;
-	listCompanyActivitiesAsOf(
+	) => Promise<Result<CompanyActivity | null>>;
+	listCompanyActivitiesAsOf: (
 		query: CompanyActivitiesAsOfQuery,
-	): Promise<Result<readonly CompanyActivity[]>>;
+	) => Promise<Result<readonly CompanyActivity[]>>;
 }>;
 
 export type LegalCompanyStore = Readonly<{
-	getLegalCompany(
+	getLegalCompany: (
 		input: LegalCompanyLookupInput,
-	): Promise<Result<LegalCompany | null>>;
-	listLegalCompanies(
+	) => Promise<Result<LegalCompany | null>>;
+	listLegalCompanies: (
 		input: ListLegalCompaniesStoreInput,
-	): Promise<Result<LegalCompanyListPage>>;
-	registerLegalCompanyDraft(
+	) => Promise<Result<LegalCompanyListPage>>;
+	registerLegalCompanyDraft: (
 		input: RegisterLegalCompanyDraftStoreInput,
-	): Promise<Result<LegalCompany>>;
-	updateLegalCompanyProfile(
+	) => Promise<Result<LegalCompany>>;
+	updateLegalCompanyProfile: (
 		input: UpdateLegalCompanyProfileStoreInput,
-	): Promise<Result<LegalCompany>>;
-	insertJurisdictionProfile(
+	) => Promise<Result<LegalCompany>>;
+	insertJurisdictionProfile: (
 		input: InsertJurisdictionProfileStoreInput,
-	): Promise<Result<CompanyJurisdictionProfile>>;
-	supersedeJurisdictionProfile(
+	) => Promise<Result<CompanyJurisdictionProfile>>;
+	supersedeJurisdictionProfile: (
 		input: SupersedeJurisdictionProfileStoreInput,
-	): Promise<Result<CompanyJurisdictionProfile>>;
-	findJurisdictionProfileAsOf(
+	) => Promise<Result<CompanyJurisdictionProfile>>;
+	findJurisdictionProfileAsOf: (
 		input: Readonly<{
 			organizationId: OrganizationId;
 			legalCompanyId: LegalCompanyId;
 			asOf: CanonicalDate;
 			knownAt?: CanonicalInstant | undefined;
 		}>,
-	): Promise<Result<CompanyJurisdictionProfile | null>>;
-	listJurisdictionProfiles(
+	) => Promise<Result<CompanyJurisdictionProfile | null>>;
+	listJurisdictionProfiles: (
 		input: LegalCompanyLookupInput,
-	): Promise<Result<readonly CompanyJurisdictionProfile[]>>;
-	hasOverlappingJurisdictionProfile(
+	) => Promise<Result<readonly CompanyJurisdictionProfile[]>>;
+	hasOverlappingJurisdictionProfile: (
 		input: Readonly<{
 			organizationId: OrganizationId;
 			legalCompanyId: LegalCompanyId;
 			effectiveRange: EffectiveRange;
 			ignoreJurisdictionProfileId?: string;
 		}>,
-	): Promise<Result<boolean>>;
-	lockLegalCompany(
+	) => Promise<Result<boolean>>;
+	lockLegalCompany: (
 		input: Readonly<{
 			organizationId: OrganizationId;
 			legalCompanyId: LegalCompanyId;
 			expectedVersion?: number;
 		}>,
-	): Promise<Result<LegalCompany | null>>;
-	changeLegalCompanyStatus(
+	) => Promise<Result<LegalCompany | null>>;
+	changeLegalCompanyStatus: (
 		input: ChangeLegalCompanyStatusStoreInput,
-	): Promise<Result<CompanyStatusHistory>>;
-	findCompanyStatusAsOf(
+	) => Promise<Result<CompanyStatusHistory>>;
+	findCompanyStatusAsOf: (
 		query: CompanyStatusAsOfQuery,
-	): Promise<Result<CompanyStatusHistory | null>>;
-	listCompaniesByStatus(
+	) => Promise<Result<CompanyStatusHistory | null>>;
+	listCompaniesByStatus: (
 		query: CompaniesByStatusQuery,
-	): Promise<Result<LegalCompanyListPage>>;
-	getLegalCompanyTimeline(
+	) => Promise<Result<LegalCompanyListPage>>;
+	getLegalCompanyTimeline: (
 		input: LegalCompanyTimelineStoreInput,
-	): Promise<Result<readonly LegalCompanyTimelineEntry[]>>;
+	) => Promise<Result<readonly LegalCompanyTimelineEntry[]>>;
 }> &
 	Partial<
 		Pick<
@@ -751,12 +753,12 @@ export type LegalCompanyStore = Readonly<{
 	>;
 
 export type CompanyJurisdictionRulePort = Readonly<{
-	listEntityTypeRules(
+	listEntityTypeRules: (
 		input: Readonly<{
 			organizationId: OrganizationId;
 			jurisdictionCountryCode: string;
 		}>,
-	): Promise<Result<readonly JurisdictionEntityTypeRule[]>>;
+	) => Promise<Result<readonly JurisdictionEntityTypeRule[]>>;
 }>;
 
 export type CompanyPartyReference = PartyReference;
@@ -765,75 +767,75 @@ export type CompanyPartyReferencePort = PartyReferencePort;
 
 export type CompanyReferenceDataPort = ReferenceDataPort &
 	Readonly<{
-		validateLanguage(
+		validateLanguage: (
 			input: Readonly<{
 				organizationId: OrganizationId;
 				languageCode: string;
 			}>,
-		): Promise<Result<{ languageCode: string; active: boolean } | null>>;
-		resolveLanguage(input: {
+		) => Promise<Result<{ languageCode: string; active: boolean } | null>>;
+		resolveLanguage: (input: {
 			organizationId: OrganizationId;
 			languageCode: string;
-		}): Promise<Result<ReferenceResolution | null>>;
-		resolveLegalForm(input: {
+		}) => Promise<Result<ReferenceResolution | null>>;
+		resolveLegalForm: (input: {
 			organizationId: OrganizationId;
 			jurisdictionCode: string;
 			legalFormCode: string;
 			effectiveDate: CanonicalDate;
-		}): Promise<Result<LegalFormReferenceResolution | null>>;
-		validateLegalFormCompatibility(input: {
+		}) => Promise<Result<LegalFormReferenceResolution | null>>;
+		validateLegalFormCompatibility: (input: {
 			organizationId: OrganizationId;
 			jurisdictionCode: string;
 			entityTypeCode: string;
 			legalFormCode: string;
 			effectiveDate: CanonicalDate;
-		}): Promise<Result<CompatibilityResolution>>;
-		resolveCountry(input: {
+		}) => Promise<Result<CompatibilityResolution>>;
+		resolveCountry: (input: {
 			organizationId: OrganizationId;
 			countryCode: string;
 			effectiveDate?: CanonicalDate | undefined;
-		}): Promise<Result<ReferenceResolution | null>>;
-		resolveCurrency(input: {
+		}) => Promise<Result<ReferenceResolution | null>>;
+		resolveCurrency: (input: {
 			organizationId: OrganizationId;
 			currencyCode: string;
 			effectiveDate?: CanonicalDate | undefined;
-		}): Promise<Result<CurrencyReferenceResolution | null>>;
-		resolveIdentifierAuthority(input: {
+		}) => Promise<Result<CurrencyReferenceResolution | null>>;
+		resolveIdentifierAuthority: (input: {
 			organizationId: OrganizationId;
 			jurisdictionCode: string;
 			authorityCode: string;
 			effectiveDate: CanonicalDate;
-		}): ReturnType<ReferenceDataPort["resolveIdentifierAuthority"]>;
-		resolveActivityClassification(input: {
+		}) => ReturnType<ReferenceDataPort["resolveIdentifierAuthority"]>;
+		resolveActivityClassification: (input: {
 			organizationId: OrganizationId;
 			classificationSystem: string;
 			activityCode: string;
 			effectiveDate: CanonicalDate;
-		}): ReturnType<ReferenceDataPort["resolveActivityClassification"]>;
-		resolveRegulator(input: {
+		}) => ReturnType<ReferenceDataPort["resolveActivityClassification"]>;
+		resolveRegulator: (input: {
 			organizationId: OrganizationId;
 			jurisdictionCode: string;
 			regulatorCode: string;
 			effectiveDate: CanonicalDate;
-		}): ReturnType<ReferenceDataPort["resolveRegulator"]>;
-		resolveRegisteredActivity(input: {
+		}) => ReturnType<ReferenceDataPort["resolveRegulator"]>;
+		resolveRegisteredActivity: (input: {
 			organizationId: OrganizationId;
 			activityCode: string;
 			jurisdictionCode: string;
 			effectiveDate: CanonicalDate;
-		}): Promise<Result<ReferenceResolution | null>>;
-		validateSourceDocument(
+		}) => Promise<Result<ReferenceResolution | null>>;
+		validateSourceDocument: (
 			input: Readonly<{
 				organizationId: OrganizationId;
 				sourceDocumentId: string;
 			}>,
-		): Promise<Result<{ sourceDocumentId: string; active: boolean } | null>>;
-		listLegalFormCompatibilityRules(
+		) => Promise<Result<{ sourceDocumentId: string; active: boolean } | null>>;
+		listLegalFormCompatibilityRules: (
 			input: Readonly<{
 				organizationId: OrganizationId;
 				jurisdictionCode: string;
 			}>,
-		): Promise<Result<readonly LegalFormCompatibilityRule[]>>;
+		) => Promise<Result<readonly LegalFormCompatibilityRule[]>>;
 	}>;
 
 export type CompanyDocumentObjectPort = DocumentObjectPort;

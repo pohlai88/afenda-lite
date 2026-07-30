@@ -75,7 +75,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 		const employment = await createEmployment(
 			{
 				organizationId: ORG,
@@ -87,7 +89,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const timesheet = await createTimesheet(
 			{
@@ -103,7 +107,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(timesheet.ok).toBe(true);
-		if (!timesheet.ok) return;
+		if (!timesheet.ok) {
+			return;
+		}
 
 		const entry = await addTimesheetEntry(
 			{
@@ -122,7 +128,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(entry.ok).toBe(true);
-		if (!entry.ok) return;
+		if (!entry.ok) {
+			return;
+		}
 
 		const foreignEntryMutation = await updateTimesheetEntry(
 			{
@@ -152,7 +160,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(entriesAfterForeignMutation.ok).toBe(true);
-		if (!entriesAfterForeignMutation.ok) return;
+		if (!entriesAfterForeignMutation.ok) {
+			return;
+		}
 		expect(entriesAfterForeignMutation.data).toEqual([entry.data]);
 
 		const editedEntry = await updateTimesheetEntry(
@@ -168,7 +178,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(editedEntry.ok).toBe(true);
-		if (!editedEntry.ok) return;
+		if (!editedEntry.ok) {
+			return;
+		}
 		expect(editedEntry.data).toMatchObject({
 			recordedMinutes: 450,
 			approvedMinutes: 450,
@@ -193,7 +205,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(removableEntry.ok).toBe(true);
-		if (!removableEntry.ok) return;
+		if (!removableEntry.ok) {
+			return;
+		}
 
 		const removedEntry = await removeTimesheetEntry(
 			{
@@ -217,7 +231,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(entriesAfterRemoval.ok).toBe(true);
-		if (!entriesAfterRemoval.ok) return;
+		if (!entriesAfterRemoval.ok) {
+			return;
+		}
 		expect(entriesAfterRemoval.data).toHaveLength(1);
 		expect(entriesAfterRemoval.data[0]).toMatchObject({
 			id: editedEntry.data.id,
@@ -236,7 +252,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(current.ok).toBe(true);
-		if (!current.ok || current.data === null) return;
+		if (!current.ok || current.data === null) {
+			return;
+		}
 
 		const draftHandoff = await getApprovedTimeHandoff(
 			{
@@ -248,7 +266,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(draftHandoff.ok).toBe(true);
-		if (!draftHandoff.ok) return;
+		if (!draftHandoff.ok) {
+			return;
+		}
 		expect(draftHandoff.data).toBeNull();
 
 		const submitted = await submitTimesheet(
@@ -262,7 +282,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 		expect(submitted.data.version).toBe(current.data.version + 1);
 
 		const submittedHandoff = await getApprovedTimeHandoff(
@@ -275,7 +297,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(submittedHandoff.ok).toBe(true);
-		if (!submittedHandoff.ok) return;
+		if (!submittedHandoff.ok) {
+			return;
+		}
 		expect(submittedHandoff.data).toBeNull();
 
 		const returned = await returnTimesheet(
@@ -290,7 +314,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(returned.ok).toBe(true);
-		if (!returned.ok) return;
+		if (!returned.ok) {
+			return;
+		}
 		expect(returned.data.status).toBe("returned");
 		expect(returned.data.version).toBe(submitted.data.version + 1);
 
@@ -304,7 +330,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(returnedHandoff.ok).toBe(true);
-		if (!returnedHandoff.ok) return;
+		if (!returnedHandoff.ok) {
+			return;
+		}
 		expect(returnedHandoff.data).toBeNull();
 
 		const reopened = await reopenTimesheet(
@@ -318,7 +346,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(reopened.ok).toBe(true);
-		if (!reopened.ok) return;
+		if (!reopened.ok) {
+			return;
+		}
 		expect(reopened.data.status).toBe("draft");
 		expect(reopened.data.version).toBe(returned.data.version + 1);
 
@@ -332,7 +362,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(reopenedHandoff.ok).toBe(true);
-		if (!reopenedHandoff.ok) return;
+		if (!reopenedHandoff.ok) {
+			return;
+		}
 		expect(reopenedHandoff.data).toBeNull();
 
 		const resubmitted = await submitTimesheet(
@@ -346,7 +378,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(resubmitted.ok).toBe(true);
-		if (!resubmitted.ok) return;
+		if (!resubmitted.ok) {
+			return;
+		}
 		expect(resubmitted.data.version).toBe(reopened.data.version + 1);
 
 		const resubmittedHandoff = await getApprovedTimeHandoff(
@@ -359,7 +393,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(resubmittedHandoff.ok).toBe(true);
-		if (!resubmittedHandoff.ok) return;
+		if (!resubmittedHandoff.ok) {
+			return;
+		}
 		expect(resubmittedHandoff.data).toBeNull();
 
 		const authority = await assignTimeApprovalAuthority(
@@ -374,7 +410,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(authority.ok).toBe(true);
-		if (!authority.ok) return;
+		if (!authority.ok) {
+			return;
+		}
 
 		const approved = await approveTimesheet(
 			{
@@ -388,7 +426,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 		expect(approved.data.status).toBe("approved");
 		expect(approved.data.version).toBe(resubmitted.data.version + 1);
 
@@ -402,7 +442,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(handoff.ok).toBe(true);
-		if (!handoff.ok || handoff.data === null) return;
+		if (!handoff.ok || handoff.data === null) {
+			return;
+		}
 		expect(handoff.data.regularMinutes).toBe(450);
 		expect(handoff.data.timesheetVersion).toBe(approved.data.version);
 
@@ -434,7 +476,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(locked.ok).toBe(true);
-		if (!locked.ok) return;
+		if (!locked.ok) {
+			return;
+		}
 		expect(locked.data.status).toBe("locked");
 		expect(locked.data.version).toBe(approved.data.version + 1);
 		expect(locked.data.lockedAt).toBeInstanceOf(Date);
@@ -613,7 +657,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(lockedEntries.ok).toBe(true);
-		if (!lockedEntries.ok) return;
+		if (!lockedEntries.ok) {
+			return;
+		}
 		expect(lockedEntries.data).toHaveLength(1);
 		expect(lockedEntries.data[0]).toMatchObject({
 			id: editedEntry.data.id,
@@ -632,7 +678,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(lockedCurrent.ok).toBe(true);
-		if (!lockedCurrent.ok || lockedCurrent.data === null) return;
+		if (!lockedCurrent.ok || lockedCurrent.data === null) {
+			return;
+		}
 		expect(lockedCurrent.data).toMatchObject({
 			status: "locked",
 			totalRecordedMinutes: 450,
@@ -650,7 +698,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(lockedHandoff.ok).toBe(true);
-		if (!lockedHandoff.ok || lockedHandoff.data === null) return;
+		if (!lockedHandoff.ok || lockedHandoff.data === null) {
+			return;
+		}
 		expect(lockedHandoff.data).toEqual({
 			...handoff.data,
 			timesheetVersion: locked.data.version,
@@ -673,7 +723,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const employment = await createEmployment(
 			{
@@ -686,7 +738,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const timesheet = await createTimesheet(
 			{
@@ -702,7 +756,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(timesheet.ok).toBe(true);
-		if (!timesheet.ok) return;
+		if (!timesheet.ok) {
+			return;
+		}
 
 		const entry = await addTimesheetEntry(
 			{
@@ -721,7 +777,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(entry.ok).toBe(true);
-		if (!entry.ok) return;
+		if (!entry.ok) {
+			return;
+		}
 
 		const draft = await getTimesheet(
 			{
@@ -733,7 +791,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(draft.ok).toBe(true);
-		if (!draft.ok || draft.data === null) return;
+		if (!draft.ok || draft.data === null) {
+			return;
+		}
 
 		const submitted = await submitTimesheet(
 			{
@@ -746,7 +806,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 		expect(submitted.data.status).toBe("submitted");
 
 		const rejected = await rejectTimesheet(
@@ -761,7 +823,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(rejected.ok).toBe(true);
-		if (!rejected.ok) return;
+		if (!rejected.ok) {
+			return;
+		}
 		expect(rejected.data.status).toBe("rejected");
 		expect(rejected.data.rejectionReason).toBe("Missing break evidence");
 
@@ -775,7 +839,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(rejectedHandoff.ok).toBe(true);
-		if (!rejectedHandoff.ok) return;
+		if (!rejectedHandoff.ok) {
+			return;
+		}
 		expect(rejectedHandoff.data).toBeNull();
 
 		const reopened = await reopenTimesheet(
@@ -789,7 +855,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(reopened.ok).toBe(true);
-		if (!reopened.ok) return;
+		if (!reopened.ok) {
+			return;
+		}
 		expect(reopened.data.status).toBe("draft");
 		expect(reopened.data.rejectionReason).toBeNull();
 		expect(reopened.data.approverNotes).toBeNull();
@@ -806,7 +874,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(resubmitted.ok).toBe(true);
-		if (!resubmitted.ok) return;
+		if (!resubmitted.ok) {
+			return;
+		}
 		expect(resubmitted.data.status).toBe("submitted");
 
 		const authority = await assignTimeApprovalAuthority(
@@ -821,7 +891,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(authority.ok).toBe(true);
-		if (!authority.ok) return;
+		if (!authority.ok) {
+			return;
+		}
 
 		const approved = await approveTimesheet(
 			{
@@ -835,7 +907,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 		expect(approved.data.status).toBe("approved");
 	});
 
@@ -855,7 +929,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const employment = await createEmployment(
 			{
@@ -868,7 +944,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const original = await createTimesheet(
 			{
@@ -884,7 +962,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(original.ok).toBe(true);
-		if (!original.ok) return;
+		if (!original.ok) {
+			return;
+		}
 
 		const originalEntry = await addTimesheetEntry(
 			{
@@ -904,7 +984,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(originalEntry.ok).toBe(true);
-		if (!originalEntry.ok) return;
+		if (!originalEntry.ok) {
+			return;
+		}
 
 		const currentOriginal = await getTimesheet(
 			{
@@ -916,7 +998,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(currentOriginal.ok).toBe(true);
-		if (!currentOriginal.ok || currentOriginal.data === null) return;
+		if (!currentOriginal.ok || currentOriginal.data === null) {
+			return;
+		}
 
 		const submitted = await submitTimesheet(
 			{
@@ -929,7 +1013,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 
 		const authority = await assignTimeApprovalAuthority(
 			{
@@ -943,7 +1029,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(authority.ok).toBe(true);
-		if (!authority.ok) return;
+		if (!authority.ok) {
+			return;
+		}
 
 		const approved = await approveTimesheet(
 			{
@@ -957,7 +1045,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 
 		const approvedHandoff = await getApprovedTimeHandoff(
 			{
@@ -969,7 +1059,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(approvedHandoff.ok).toBe(true);
-		if (!approvedHandoff.ok || approvedHandoff.data === null) return;
+		if (!approvedHandoff.ok || approvedHandoff.data === null) {
+			return;
+		}
 		expect(approvedHandoff.data.regularMinutes).toBe(480);
 
 		const replacement = await supersedeTimesheet(
@@ -984,7 +1076,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(replacement.ok).toBe(true);
-		if (!replacement.ok) return;
+		if (!replacement.ok) {
+			return;
+		}
 		expect(replacement.data).toMatchObject({
 			organizationId: ORG,
 			employeeId: employee.data.id,
@@ -1008,7 +1102,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(supersededOriginal.ok).toBe(true);
-		if (!supersededOriginal.ok || supersededOriginal.data === null) return;
+		if (!supersededOriginal.ok || supersededOriginal.data === null) {
+			return;
+		}
 		expect(supersededOriginal.data).toMatchObject({
 			status: "superseded",
 			totalRecordedMinutes: 480,
@@ -1046,7 +1142,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(supersededHandoff.ok).toBe(true);
-		if (!supersededHandoff.ok) return;
+		if (!supersededHandoff.ok) {
+			return;
+		}
 		expect(supersededHandoff.data).toBeNull();
 
 		const originalMutation = await updateTimesheetEntry(
@@ -1078,7 +1176,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(originalEntries.ok).toBe(true);
-		if (!originalEntries.ok) return;
+		if (!originalEntries.ok) {
+			return;
+		}
 		expect(originalEntries.data).toHaveLength(1);
 		expect(originalEntries.data[0]).toMatchObject({
 			id: originalEntry.data.id,
@@ -1097,7 +1197,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(replacementEntries.ok).toBe(true);
-		if (!replacementEntries.ok) return;
+		if (!replacementEntries.ok) {
+			return;
+		}
 		expect(replacementEntries.data).toEqual([]);
 	});
 
@@ -1115,7 +1217,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 		const employment = await createEmployment(
 			{
 				organizationId: ORG,
@@ -1127,7 +1231,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const clockIn = await recordClockIn(
 			{
@@ -1144,7 +1250,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(clockIn.ok).toBe(true);
-		if (!clockIn.ok) return;
+		if (!clockIn.ok) {
+			return;
+		}
 		expect(clockIn.data.capturedOccurredAt?.toISOString()).toBe(
 			"2025-07-29T01:00:00.000Z",
 		);
@@ -1160,7 +1268,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(beforeAdjustments.ok).toBe(true);
-		if (!beforeAdjustments.ok) return;
+		if (!beforeAdjustments.ok) {
+			return;
+		}
 		expect(beforeAdjustments.data).toEqual([]);
 
 		const corrected = await correctAttendanceEvent(
@@ -1178,7 +1288,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(corrected.ok).toBe(true);
-		if (!corrected.ok) return;
+		if (!corrected.ok) {
+			return;
+		}
 		expect(corrected.data.id).toBe(clockIn.data.id);
 		expect(corrected.data.version).toBe(clockIn.data.version + 1);
 		expect(corrected.data.voidedAt).toBeNull();
@@ -1202,7 +1314,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(correctedAgain.ok).toBe(true);
-		if (!correctedAgain.ok) return;
+		if (!correctedAgain.ok) {
+			return;
+		}
 		expect(correctedAgain.data).toMatchObject({
 			id: clockIn.data.id,
 			notes: "second corrected timestamp",
@@ -1222,7 +1336,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(adjustments.ok).toBe(true);
-		if (!adjustments.ok) return;
+		if (!adjustments.ok) {
+			return;
+		}
 		expect(adjustments.data).toMatchObject([
 			{
 				organizationId: ORG,
@@ -1398,7 +1514,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			await Promise.all([deferredFailedCorrection, correctionAfterRollback]);
 		expect(deferredFailureResult.ok).toBe(false);
 		expect(correctionAfterRollbackResult.ok).toBe(true);
-		if (!correctionAfterRollbackResult.ok) return;
+		if (!correctionAfterRollbackResult.ok) {
+			return;
+		}
 		expect(correctionAfterRollbackResult.data).toMatchObject({
 			notes: "correction committed after rollback",
 			version: correctedAgain.data.version + 1,
@@ -1416,7 +1534,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(fetched.ok).toBe(true);
-		if (!fetched.ok || fetched.data === null) return;
+		if (!fetched.ok || fetched.data === null) {
+			return;
+		}
 		expect(fetched.data).toMatchObject({
 			id: clockIn.data.id,
 			capturedNotes: null,
@@ -1440,7 +1560,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(afterFailedCorrection.ok).toBe(true);
-		if (!afterFailedCorrection.ok) return;
+		if (!afterFailedCorrection.ok) {
+			return;
+		}
 		expect(afterFailedCorrection.data).toHaveLength(3);
 		expect(afterFailedCorrection.data.slice(0, 2)).toEqual(adjustments.data);
 		expect(afterFailedCorrection.data[2]).toMatchObject({
@@ -1494,7 +1616,9 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(crossOrganizationAdjustments.ok).toBe(true);
-		if (!crossOrganizationAdjustments.ok) return;
+		if (!crossOrganizationAdjustments.ok) {
+			return;
+		}
 		expect(crossOrganizationAdjustments.data).toEqual([]);
 
 		const deniedAdjustments = await listAttendanceAdjustments(

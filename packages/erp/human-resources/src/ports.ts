@@ -2,38 +2,38 @@ import type { Change } from "@afenda/audit";
 import type { Result } from "@afenda/errors/result";
 import type { HumanResourcesEventType } from "@afenda/events";
 
-export type AuditFactInput = {
-	organizationId: string;
+export interface AuditFactInput {
+	action: "CREATE" | "UPDATE" | "DELETE";
 	actorUserId: string;
+	changes: Change[];
 	correlationId: string;
 	entity: string;
 	entityId: string;
-	action: "CREATE" | "UPDATE" | "DELETE";
-	changes: Change[];
-	oldValue?: Record<string, unknown> | null | undefined;
 	newValue?: Record<string, unknown> | null | undefined;
-};
-
-export type AuditFactPort = {
-	record(input: AuditFactInput): Promise<Result<{ id: string }>>;
-};
-
-export type OutboxFactInput = {
+	oldValue?: Record<string, unknown> | null | undefined;
 	organizationId: string;
+}
+
+export interface AuditFactPort {
+	record: (input: AuditFactInput) => Promise<Result<{ id: string }>>;
+}
+
+export interface OutboxFactInput {
 	actorUserId: string;
 	correlationId: string;
-	type: HumanResourcesEventType;
+	organizationId: string;
 	payload: Record<string, unknown>;
-};
+	type: HumanResourcesEventType;
+}
 
-export type OutboxPort = {
-	append(input: OutboxFactInput): Promise<Result<{ id: string }>>;
-};
+export interface OutboxPort {
+	append: (input: OutboxFactInput) => Promise<Result<{ id: string }>>;
+}
 
-export type MutationPorts = {
+export interface MutationPorts {
 	audit: AuditFactPort;
 	outbox: OutboxPort;
-};
+}
 
 export const HUMAN_RESOURCES_DOCUMENT_KINDS = [
 	"passport",
@@ -49,40 +49,40 @@ export const HUMAN_RESOURCES_DOCUMENT_KINDS = [
 
 export type DocumentKind = (typeof HUMAN_RESOURCES_DOCUMENT_KINDS)[number];
 
-export type ValidatedDocumentReference = {
+export interface ValidatedDocumentReference {
+	documentId: string;
+	documentKind: DocumentKind;
+	organizationId: string;
 	/** Normalized canonical vault URI. */
 	reference: string;
-	organizationId: string;
-	documentKind: DocumentKind;
-	documentId: string;
 	version: string | null;
-};
+}
 
-export type DocumentReferencePort = {
-	validateReference(input: {
+export interface DocumentReferencePort {
+	validateReference: (input: {
 		organizationId: string;
 		reference: string;
 		allowedKinds?: readonly DocumentKind[];
 		requireImmutableVersion?: boolean;
-	}): Promise<Result<ValidatedDocumentReference>>;
-};
+	}) => Promise<Result<ValidatedDocumentReference>>;
+}
 
 /**
  * Platform-owned object-policy hook. HR stores only canonical immutable
  * references; binary storage, scanning, ACL, retention, and signature state
  * remain outside the HR package.
  */
-export type DocumentObjectResolverPort = {
-	assertObjectAcceptable(input: {
+export interface DocumentObjectResolverPort {
+	assertObjectAcceptable: (input: {
 		organizationId: string;
 		reference: string;
 		validated: ValidatedDocumentReference;
-	}): Promise<Result<void>>;
-};
+	}) => Promise<Result<void>>;
+}
 
-export type CurrencyLookupPort = {
-	exists(currencyCode: string): Promise<Result<boolean>>;
-};
+export interface CurrencyLookupPort {
+	exists: (currencyCode: string) => Promise<Result<boolean>>;
+}
 
 export const HUMAN_RESOURCES_ORGANIZATION_DIMENSION_KINDS = [
 	"legal_entity",
@@ -95,12 +95,12 @@ export const HUMAN_RESOURCES_ORGANIZATION_DIMENSION_KINDS = [
 export type HumanResourcesOrganizationDimensionKind =
 	(typeof HUMAN_RESOURCES_ORGANIZATION_DIMENSION_KINDS)[number];
 
-export type HumanResourcesOrganizationDimensionSnapshot = {
+export interface HumanResourcesOrganizationDimensionSnapshot {
 	id: string;
-	kind: HumanResourcesOrganizationDimensionKind;
 	key: string;
+	kind: HumanResourcesOrganizationDimensionKind;
 	name: string;
-};
+}
 
 export type HumanResourcesOrganizationDimensions = Record<
 	HumanResourcesOrganizationDimensionKind,
@@ -111,14 +111,14 @@ export type HumanResourcesOrganizationDimensions = Record<
  * App-composed read boundary to governed `@afenda/master-data` dimensions.
  * Implementations must scope every lookup by organization and effective date.
  */
-export type OrganizationDimensionDirectoryPort = {
-	resolveRequiredAsOf(input: {
+export interface OrganizationDimensionDirectoryPort {
+	resolveRequiredAsOf: (input: {
 		organizationId: string;
 		actorUserId: string;
 		asOf: string;
 		keys: Record<HumanResourcesOrganizationDimensionKind, string>;
-	}): Promise<Result<HumanResourcesOrganizationDimensions>>;
-};
+	}) => Promise<Result<HumanResourcesOrganizationDimensions>>;
+}
 
 export type {
 	ApprovedLeaveFact,

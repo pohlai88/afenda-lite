@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noJsxPropsBind: The enabled React Compiler stabilizes JSX callback props.
 "use client";
 
 import {
@@ -44,15 +45,15 @@ export type ManagerDecisionKind =
 	| "talent"
 	| "succession";
 
-type Props = {
-	kind: ManagerDecisionKind;
-	targetId: string;
-	version: number;
-	label: string;
+interface Props {
 	asOf: string;
 	employeeId?: string;
+	kind: ManagerDecisionKind;
+	label: string;
 	relatedId?: string;
-};
+	targetId: string;
+	version: number;
+}
 
 const actions = {
 	leave: managerLeaveDecisionAction,
@@ -65,7 +66,7 @@ const actions = {
 	succession: managerSuccessionDecisionAction,
 } as const;
 
-const operations: Record<ManagerDecisionKind, Array<[string, string]>> = {
+const operations: Record<ManagerDecisionKind, [string, string][]> = {
 	leave: [
 		["approve", "Approve"],
 		["return", "Return"],
@@ -112,7 +113,9 @@ export function ManagerDecisionDialog(props: Props) {
 	const [state, action, pending] = useActionState(actions[props.kind], null);
 
 	useEffect(() => {
-		if (state?.ok) router.refresh();
+		if (state?.ok) {
+			router.refresh();
+		}
 	}, [router, state]);
 
 	const needsRating =
@@ -123,7 +126,7 @@ export function ManagerDecisionDialog(props: Props) {
 	return (
 		<Dialog>
 			<DialogTrigger asChild>
-				<Button variant="outline" size="sm">
+				<Button size="sm" variant="outline">
 					<ClipboardCheckIcon aria-hidden="true" />
 					Review
 				</Button>
@@ -137,17 +140,17 @@ export function ManagerDecisionDialog(props: Props) {
 					</DialogDescription>
 				</DialogHeader>
 				<form action={action} aria-busy={pending} className="space-y-4">
-					<input type="hidden" name="targetId" value={props.targetId} />
-					<input type="hidden" name="expectedVersion" value={props.version} />
+					<input name="targetId" type="hidden" value={props.targetId} />
+					<input name="expectedVersion" type="hidden" value={props.version} />
 					<input
-						type="hidden"
 						name="employeeId"
+						type="hidden"
 						value={props.employeeId ?? ""}
 					/>
-					<input type="hidden" name="relatedId" value={props.relatedId ?? ""} />
+					<input name="relatedId" type="hidden" value={props.relatedId ?? ""} />
 					<input
-						type="hidden"
 						name="resourceKind"
+						type="hidden"
 						value={props.kind === "performance-goal" ? "goal" : "review"}
 					/>
 					{state?.ok ? (
@@ -159,15 +162,15 @@ export function ManagerDecisionDialog(props: Props) {
 						<FormError>{state.message}</FormError>
 					) : null}
 					<FormField
-						label="Decision"
 						fieldId={`${props.targetId}-operation`}
+						label="Decision"
 						required
 					>
 						<NativeSelect
-							name="operation"
-							value={operation}
-							onChange={(event) => setOperation(event.target.value)}
 							disabled={pending}
+							name="operation"
+							onChange={(event) => setOperation(event.target.value)}
+							value={operation}
 						>
 							{operations[props.kind].map(([value, label]) => (
 								<NativeSelectOption key={value} value={value}>
@@ -178,26 +181,26 @@ export function ManagerDecisionDialog(props: Props) {
 					</FormField>
 					{needsRating ? (
 						<FormField
-							label="Rating"
 							fieldId={`${props.targetId}-rating`}
+							label="Rating"
 							required
 						>
-							<Input name="rating" maxLength={64} disabled={pending} />
+							<Input disabled={pending} maxLength={64} name="rating" />
 						</FormField>
 					) : (
-						<input type="hidden" name="rating" value="" />
+						<input name="rating" type="hidden" value="" />
 					)}
 					{props.kind === "talent" ? (
 						<>
 							<FormField
-								label="Assessment method"
 								fieldId={`${props.targetId}-method`}
+								label="Assessment method"
 								required
 							>
 								<NativeSelect
-									name="methodCode"
 									defaultValue="manager_evidence_review"
 									disabled={pending}
+									name="methodCode"
 								>
 									<NativeSelectOption value="manager_evidence_review">
 										Manager evidence review
@@ -211,28 +214,28 @@ export function ManagerDecisionDialog(props: Props) {
 								</NativeSelect>
 							</FormField>
 							<FormField
-								label="Classification"
 								fieldId={`${props.targetId}-classification`}
+								label="Classification"
 								required
 							>
 								<Input
-									name="classification"
-									maxLength={100}
 									disabled={pending}
+									maxLength={100}
+									name="classification"
 								/>
 							</FormField>
 						</>
 					) : null}
 					{props.kind === "succession" ? (
 						<FormField
-							label="Readiness"
 							fieldId={`${props.targetId}-readiness`}
+							label="Readiness"
 							required
 						>
 							<NativeSelect
-								name="readiness"
 								defaultValue="ready_soon"
 								disabled={pending}
+								name="readiness"
 							>
 								<NativeSelectOption value="not_ready">
 									Not ready
@@ -251,21 +254,21 @@ export function ManagerDecisionDialog(props: Props) {
 					) : null}
 					{props.kind === "probation" || props.kind === "succession" ? (
 						<FormField
-							label="Effective date"
 							fieldId={`${props.targetId}-date`}
+							label="Effective date"
 							required
 						>
 							<Input
-								name="effectiveOn"
-								type="date"
 								defaultValue={props.asOf}
 								disabled={pending}
+								name="effectiveOn"
+								type="date"
 							/>
 						</FormField>
 					) : null}
 					<FormField
-						label={needsEvidence ? "Evidence" : "Decision note"}
 						fieldId={`${props.targetId}-note`}
+						label={needsEvidence ? "Evidence" : "Decision note"}
 						required={
 							needsEvidence ||
 							[
@@ -279,20 +282,20 @@ export function ManagerDecisionDialog(props: Props) {
 						}
 					>
 						<Textarea
+							disabled={pending}
+							maxLength={4000}
 							name={needsEvidence ? "evidenceSummary" : "note"}
 							rows={4}
-							maxLength={4000}
-							disabled={pending}
 						/>
 					</FormField>
 					<input
-						type="hidden"
 						name={needsEvidence ? "note" : "evidenceSummary"}
+						type="hidden"
 						value=""
 					/>
-					<input type="hidden" name="evidenceReference" value="" />
+					<input name="evidenceReference" type="hidden" value="" />
 					<DialogFooter showCloseButton>
-						<Button type="submit" disabled={pending}>
+						<Button disabled={pending} type="submit">
 							{pending ? <Spinner /> : null}Submit decision
 						</Button>
 					</DialogFooter>
@@ -301,3 +304,4 @@ export function ManagerDecisionDialog(props: Props) {
 		</Dialog>
 	);
 }
+// biome-ignore-all lint/style/noNestedTernary: Exhaustive status and tri-state view mappings remain explicit at their use sites.

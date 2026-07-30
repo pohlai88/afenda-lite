@@ -42,188 +42,374 @@ import type {
  * This is a domain slice of `HumanResourcesStore`. Keep persistence behavior
  * here; cross-domain orchestration belongs in application commands/services.
  */
-export type LeavePolicyCreateRecord = {
-	organizationId: string;
-	code: string;
-	name: string;
-	leaveType: LeaveType;
-	unit: LeaveUnit;
-	paid: boolean;
-	sensitive: boolean;
-	allowsNegativeBalance: boolean;
-	allowSelfApproval: boolean;
-	allowsPartialDay: boolean;
+export interface LeavePolicyCreateRecord {
 	accrualBasis: LeavePolicyAccrualBasis;
 	accrualFrequency: LeavePolicyAccrualFrequency | null;
 	accrualQuantityPerPeriod: string | null;
+	allowedEmploymentStatuses: EmploymentStatus[];
+	allowSelfApproval: boolean;
+	allowsNegativeBalance: boolean;
+	allowsPartialDay: boolean;
 	carryForwardEnabled: boolean;
 	carryForwardMaxQuantity: string | null;
-	entitlementExpiryRule: LeavePolicyEntitlementExpiryRule;
-	entitlementExpiryDays: number | null;
+	code: string;
+	createdBy: string;
 	effectiveFrom: string;
 	effectiveTo: string | null;
+	entitlementExpiryDays: number | null;
+	entitlementExpiryRule: LeavePolicyEntitlementExpiryRule;
+	leaveType: LeaveType;
 	minTenureDays: number | null;
-	allowedEmploymentStatuses: EmploymentStatus[];
-	createdBy: string;
-};
-
-export type LeaveEntitlementGrantRecord = {
+	name: string;
 	organizationId: string;
-	employeeId: HumanResourcesEmployeeId;
-	employmentId: HumanResourcesEmploymentId;
-	policyId: HumanResourcesLeavePolicyId;
-	periodStart: string;
-	periodEnd: string;
-	openingQuantity: string;
+	paid: boolean;
+	sensitive: boolean;
+	unit: LeaveUnit;
+}
+
+export interface LeaveEntitlementGrantRecord {
+	createdBy: string;
 	createIdempotencyKey: string;
 	createRequestFingerprint: string;
-	createdBy: string;
-};
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId;
+	openingQuantity: string;
+	organizationId: string;
+	periodEnd: string;
+	periodStart: string;
+	policyId: HumanResourcesLeavePolicyId;
+}
 
-export type IdempotentLeaveEntitlementRecord = {
-	entitlement: LeaveEntitlement;
+export interface IdempotentLeaveEntitlementRecord {
 	createRequestFingerprint: string;
-};
+	entitlement: LeaveEntitlement;
+}
 
-export type IdempotentLeaveAdjustmentRecord = {
+export interface IdempotentLeaveAdjustmentRecord {
 	adjustment: LeaveAdjustment;
 	createRequestFingerprint: string;
-};
+}
 
-export type LeaveAdjustmentCreateRecord = {
-	organizationId: string;
-	entitlementId: HumanResourcesLeaveEntitlementId;
-	sourceRequestId: HumanResourcesLeaveRequestId | null;
-	kind: LeaveAdjustmentKind;
+export interface LeaveAdjustmentCreateRecord {
+	createdBy: string;
+	createIdempotencyKey: string;
+	createRequestFingerprint: string;
 	delta: string;
+	entitlementId: HumanResourcesLeaveEntitlementId;
+	kind: LeaveAdjustmentKind;
+	organizationId: string;
 	reason: string;
 	source: string;
+	sourceRequestId: HumanResourcesLeaveRequestId | null;
+}
+
+export interface LeaveRequestCreateRecord {
+	backdateJustification: string | null;
+	createdBy: string;
 	createIdempotencyKey: string;
 	createRequestFingerprint: string;
-	createdBy: string;
-};
-
-export type LeaveRequestCreateRecord = {
-	organizationId: string;
 	employeeId: HumanResourcesEmployeeId;
 	employmentId: HumanResourcesEmploymentId;
+	endDate: string;
 	entitlementId: HumanResourcesLeaveEntitlementId;
-	policyId: HumanResourcesLeavePolicyId;
-	startDate: string;
-	endDate: string;
-	requestedQuantity: string;
-	unit: LeaveUnit;
 	isBackdated: boolean;
-	backdateJustification: string | null;
-	segments: Array<{
-		segmentDate: string;
-		quantity: string;
-		dayPortion: DayPortion;
-	}>;
-	createIdempotencyKey: string;
-	createRequestFingerprint: string;
-	createdBy: string;
-};
-
-export type LeaveRequestAmendRecord = {
 	organizationId: string;
-	requestId: HumanResourcesLeaveRequestId;
-	startDate: string;
-	endDate: string;
+	policyId: HumanResourcesLeavePolicyId;
 	requestedQuantity: string;
-	isBackdated: boolean;
-	backdateJustification: string | null;
 	segments: Array<{
 		segmentDate: string;
 		quantity: string;
 		dayPortion: DayPortion;
 	}>;
-	expectedVersion: number;
+	startDate: string;
+	unit: LeaveUnit;
+}
+
+export interface LeaveRequestAmendRecord {
 	actorUserId: string;
-};
+	backdateJustification: string | null;
+	endDate: string;
+	expectedVersion: number;
+	isBackdated: boolean;
+	organizationId: string;
+	requestedQuantity: string;
+	requestId: HumanResourcesLeaveRequestId;
+	segments: Array<{
+		segmentDate: string;
+		quantity: string;
+		dayPortion: DayPortion;
+	}>;
+	startDate: string;
+}
 
-export type IdempotentLeaveRequestRecord = {
-	request: LeaveRequest;
+export interface IdempotentLeaveRequestRecord {
 	createRequestFingerprint: string;
-};
+	request: LeaveRequest;
+}
 
-export type HumanResourcesLeaveStore = {
+export interface HumanResourcesLeaveStore {
+	adjustLeaveEntitlement: (
+		record: LeaveAdjustmentCreateRecord,
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<LeaveAdjustment>>;
+
+	amendLeaveRequest: (
+		record: LeaveRequestAmendRecord,
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<LeaveRequest>>;
+
+	approveLeaveRequest: (
+		input: {
+			organizationId: string;
+			requestId: HumanResourcesLeaveRequestId;
+			note: string | null;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<LeaveRequest>>;
+
+	archiveLeavePolicy: (
+		input: {
+			organizationId: string;
+			policyId: HumanResourcesLeavePolicyId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<LeavePolicy>>;
+
+	cancelApprovedLeaveRequest: (
+		input: {
+			organizationId: string;
+			requestId: HumanResourcesLeaveRequestId;
+			note: string | null;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<LeaveRequest>>;
+
+	carryForwardLeaveEntitlement: (
+		input: {
+			organizationId: string;
+			entitlementId: HumanResourcesLeaveEntitlementId;
+			newPeriodStart: string;
+			newPeriodEnd: string;
+			carriedQuantity: string;
+			createIdempotencyKey: string;
+			createRequestFingerprint: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<LeaveEntitlement>>;
+
+	createDraftLeaveRequest: (
+		record: LeaveRequestCreateRecord,
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<LeaveRequest>>;
+
+	createLeavePolicy: (
+		record: LeavePolicyCreateRecord,
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<LeavePolicy>>;
+
+	expireLeaveEntitlement: (
+		input: {
+			organizationId: string;
+			entitlementId: HumanResourcesLeaveEntitlementId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<LeaveEntitlement>>;
+
+	findLeaveAdjustmentByIdempotencyKey: (input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}) => Promise<Result<IdempotentLeaveAdjustmentRecord | null>>;
+
+	findLeaveEntitlementByIdempotencyKey: (input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}) => Promise<Result<IdempotentLeaveEntitlementRecord | null>>;
+
+	findLeavePolicyByCode: (input: {
+		organizationId: string;
+		code: string;
+		effectiveFrom: string;
+	}) => Promise<Result<LeavePolicy | null>>;
+
+	findLeaveRequestByIdempotencyKey: (input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}) => Promise<Result<IdempotentLeaveRequestRecord | null>>;
+
+	getApprovedLeaveHandoff: (input: {
+		organizationId: string;
+		requestId: HumanResourcesLeaveRequestId;
+		correlationId: string;
+	}) => Promise<Result<ApprovedLeaveHandoff | null>>;
+
+	getLeaveBalance: (input: {
+		organizationId: string;
+		entitlementId: HumanResourcesLeaveEntitlementId;
+	}) => Promise<Result<LeaveBalance | null>>;
+	// Leave Entitlement
+	getLeaveEntitlementById: (input: {
+		organizationId: string;
+		entitlementId: HumanResourcesLeaveEntitlementId;
+	}) => Promise<Result<LeaveEntitlement | null>>;
 	// Leave Policy
-	getLeavePolicyById(input: {
+	getLeavePolicyById: (input: {
 		organizationId: string;
 		policyId: HumanResourcesLeavePolicyId;
-	}): Promise<Result<LeavePolicy | null>>;
+	}) => Promise<Result<LeavePolicy | null>>;
 
-	getLeavePolicyEligibility(input: {
+	getLeavePolicyEligibility: (input: {
 		organizationId: string;
 		policyId: HumanResourcesLeavePolicyId;
-	}): Promise<Result<LeavePolicyEligibility | null>>;
+	}) => Promise<Result<LeavePolicyEligibility | null>>;
+	// Leave Request
+	getLeaveRequestById: (input: {
+		organizationId: string;
+		requestId: HumanResourcesLeaveRequestId;
+	}) => Promise<Result<LeaveRequest | null>>;
 
-	resolveApplicableLeavePolicy(input: {
+	getPrimaryManagerForEmployee: (input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+		asOf: string;
+	}) => Promise<Result<HumanResourcesEmployeeId | null>>;
+
+	grantLeaveEntitlement: (
+		record: LeaveEntitlementGrantRecord,
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<LeaveEntitlement>>;
+
+	listLeaveEntitlements: (input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		employeeId?: HumanResourcesEmployeeId | undefined;
+		employmentId?: HumanResourcesEmploymentId | undefined;
+		policyId?: HumanResourcesLeavePolicyId | undefined;
+	}) => Promise<Result<LeaveEntitlementListPage>>;
+
+	listLeavePolicies: (input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		status?: LeavePolicyStatus | undefined;
+	}) => Promise<Result<LeavePolicyListPage>>;
+
+	listLeaveRequestSegments: (input: {
+		organizationId: string;
+		requestId: HumanResourcesLeaveRequestId;
+	}) => Promise<Result<LeaveRequestSegment[]>>;
+
+	listLeaveRequests: (input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		employeeId?: HumanResourcesEmployeeId | undefined;
+		status?: LeaveRequestStatus | undefined;
+	}) => Promise<Result<LeaveRequestListPage>>;
+
+	listOverlappingLeaveSegments: (input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+		excludeRequestId?: HumanResourcesLeaveRequestId | undefined;
+		includeDraft?: boolean | undefined;
+	}) => Promise<Result<LeaveRequestSegment[]>>;
+
+	listPendingApprovalLeaveRequests: (input: {
+		organizationId: string;
+		managerEmployeeId: HumanResourcesEmployeeId;
+		page: number;
+		pageSize: number;
+	}) => Promise<Result<LeaveRequestListPage>>;
+
+	listPostedLeaveAdjustments: (input: {
+		organizationId: string;
+		entitlementId: HumanResourcesLeaveEntitlementId;
+	}) => Promise<Result<LeaveAdjustment[]>>;
+
+	listTeamCalendarLeaveRequests: (input: {
+		organizationId: string;
+		managerEmployeeId: HumanResourcesEmployeeId;
+		rangeStart: string;
+		rangeEnd: string;
+		page: number;
+		pageSize: number;
+	}) => Promise<Result<TeamCalendarLeavePage>>;
+
+	publishLeavePolicy: (
+		input: {
+			organizationId: string;
+			policyId: HumanResourcesLeavePolicyId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<LeavePolicy>>;
+
+	rejectLeaveRequest: (
+		input: {
+			organizationId: string;
+			requestId: HumanResourcesLeaveRequestId;
+			note: string | null;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<LeaveRequest>>;
+
+	resolveApplicableLeavePolicy: (input: {
 		organizationId: string;
 		policyCode: string;
 		employeeId: HumanResourcesEmployeeId;
 		employmentId: HumanResourcesEmploymentId;
 		asOfDate: string;
-	}): Promise<Result<ResolvedLeavePolicy | null>>;
+	}) => Promise<Result<ResolvedLeavePolicy | null>>;
 
-	getPrimaryManagerForEmployee(input: {
-		organizationId: string;
-		employeeId: HumanResourcesEmployeeId;
-		asOf: string;
-	}): Promise<Result<HumanResourcesEmployeeId | null>>;
-
-	findLeavePolicyByCode(input: {
-		organizationId: string;
-		code: string;
-		effectiveFrom: string;
-	}): Promise<Result<LeavePolicy | null>>;
-
-	createLeavePolicy(
-		record: LeavePolicyCreateRecord,
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<LeavePolicy>>;
-
-	updateLeavePolicy(
+	returnLeaveRequest: (
 		input: {
 			organizationId: string;
-			policyId: HumanResourcesLeavePolicyId;
-			name?: string | undefined;
-			paid?: boolean | undefined;
-			sensitive?: boolean | undefined;
-			allowsNegativeBalance?: boolean | undefined;
-			allowSelfApproval?: boolean | undefined;
-			allowsPartialDay?: boolean | undefined;
-			accrualBasis?: LeavePolicyAccrualBasis | undefined;
-			accrualFrequency?: LeavePolicyAccrualFrequency | null | undefined;
-			accrualQuantityPerPeriod?: string | null | undefined;
-			carryForwardEnabled?: boolean | undefined;
-			carryForwardMaxQuantity?: string | null | undefined;
-			entitlementExpiryRule?: LeavePolicyEntitlementExpiryRule | undefined;
-			entitlementExpiryDays?: number | null | undefined;
-			effectiveTo?: string | null | undefined;
-			minTenureDays?: number | null | undefined;
-			allowedEmploymentStatuses?: EmploymentStatus[] | undefined;
+			requestId: HumanResourcesLeaveRequestId;
+			note: string | null;
 			expectedVersion: number;
 			actorUserId: string;
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<LeavePolicy>>;
+	) => Promise<Result<LeaveRequest>>;
 
-	publishLeavePolicy(
+	submitLeaveRequest: (
 		input: {
 			organizationId: string;
-			policyId: HumanResourcesLeavePolicyId;
+			requestId: HumanResourcesLeaveRequestId;
 			expectedVersion: number;
 			actorUserId: string;
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<LeavePolicy>>;
+	) => Promise<Result<LeaveRequest>>;
 
-	supersedeLeavePolicy(
+	supersedeLeavePolicy: (
 		input: {
 			organizationId: string;
 			policyId: HumanResourcesLeavePolicyId;
@@ -252,134 +438,36 @@ export type HumanResourcesLeaveStore = {
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<LeavePolicy>>;
+	) => Promise<Result<LeavePolicy>>;
 
-	archiveLeavePolicy(
+	updateLeavePolicy: (
 		input: {
 			organizationId: string;
 			policyId: HumanResourcesLeavePolicyId;
+			name?: string | undefined;
+			paid?: boolean | undefined;
+			sensitive?: boolean | undefined;
+			allowsNegativeBalance?: boolean | undefined;
+			allowSelfApproval?: boolean | undefined;
+			allowsPartialDay?: boolean | undefined;
+			accrualBasis?: LeavePolicyAccrualBasis | undefined;
+			accrualFrequency?: LeavePolicyAccrualFrequency | null | undefined;
+			accrualQuantityPerPeriod?: string | null | undefined;
+			carryForwardEnabled?: boolean | undefined;
+			carryForwardMaxQuantity?: string | null | undefined;
+			entitlementExpiryRule?: LeavePolicyEntitlementExpiryRule | undefined;
+			entitlementExpiryDays?: number | null | undefined;
+			effectiveTo?: string | null | undefined;
+			minTenureDays?: number | null | undefined;
+			allowedEmploymentStatuses?: EmploymentStatus[] | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<LeavePolicy>>;
+	) => Promise<Result<LeavePolicy>>;
 
-	listLeavePolicies(input: {
-		organizationId: string;
-		page: number;
-		pageSize: number;
-		status?: LeavePolicyStatus | undefined;
-	}): Promise<Result<LeavePolicyListPage>>;
-	// Leave Entitlement
-	getLeaveEntitlementById(input: {
-		organizationId: string;
-		entitlementId: HumanResourcesLeaveEntitlementId;
-	}): Promise<Result<LeaveEntitlement | null>>;
-
-	findLeaveEntitlementByIdempotencyKey(input: {
-		organizationId: string;
-		idempotencyKey: string;
-	}): Promise<Result<IdempotentLeaveEntitlementRecord | null>>;
-
-	grantLeaveEntitlement(
-		record: LeaveEntitlementGrantRecord,
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<LeaveEntitlement>>;
-
-	carryForwardLeaveEntitlement(
-		input: {
-			organizationId: string;
-			entitlementId: HumanResourcesLeaveEntitlementId;
-			newPeriodStart: string;
-			newPeriodEnd: string;
-			carriedQuantity: string;
-			createIdempotencyKey: string;
-			createRequestFingerprint: string;
-			expectedVersion: number;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<LeaveEntitlement>>;
-
-	expireLeaveEntitlement(
-		input: {
-			organizationId: string;
-			entitlementId: HumanResourcesLeaveEntitlementId;
-			expectedVersion: number;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<LeaveEntitlement>>;
-
-	findLeaveAdjustmentByIdempotencyKey(input: {
-		organizationId: string;
-		idempotencyKey: string;
-	}): Promise<Result<IdempotentLeaveAdjustmentRecord | null>>;
-
-	adjustLeaveEntitlement(
-		record: LeaveAdjustmentCreateRecord,
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<LeaveAdjustment>>;
-
-	listLeaveEntitlements(input: {
-		organizationId: string;
-		page: number;
-		pageSize: number;
-		employeeId?: HumanResourcesEmployeeId | undefined;
-		employmentId?: HumanResourcesEmploymentId | undefined;
-		policyId?: HumanResourcesLeavePolicyId | undefined;
-	}): Promise<Result<LeaveEntitlementListPage>>;
-
-	listPostedLeaveAdjustments(input: {
-		organizationId: string;
-		entitlementId: HumanResourcesLeaveEntitlementId;
-	}): Promise<Result<LeaveAdjustment[]>>;
-
-	getLeaveBalance(input: {
-		organizationId: string;
-		entitlementId: HumanResourcesLeaveEntitlementId;
-	}): Promise<Result<LeaveBalance | null>>;
-	// Leave Request
-	getLeaveRequestById(input: {
-		organizationId: string;
-		requestId: HumanResourcesLeaveRequestId;
-	}): Promise<Result<LeaveRequest | null>>;
-
-	findLeaveRequestByIdempotencyKey(input: {
-		organizationId: string;
-		idempotencyKey: string;
-	}): Promise<Result<IdempotentLeaveRequestRecord | null>>;
-
-	listLeaveRequestSegments(input: {
-		organizationId: string;
-		requestId: HumanResourcesLeaveRequestId;
-	}): Promise<Result<LeaveRequestSegment[]>>;
-
-	listOverlappingLeaveSegments(input: {
-		organizationId: string;
-		employeeId: HumanResourcesEmployeeId;
-		excludeRequestId?: HumanResourcesLeaveRequestId | undefined;
-		includeDraft?: boolean | undefined;
-	}): Promise<Result<LeaveRequestSegment[]>>;
-
-	createDraftLeaveRequest(
-		record: LeaveRequestCreateRecord,
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<LeaveRequest>>;
-
-	amendLeaveRequest(
-		record: LeaveRequestAmendRecord,
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<LeaveRequest>>;
-
-	submitLeaveRequest(
+	withdrawLeaveRequest: (
 		input: {
 			organizationId: string;
 			requestId: HumanResourcesLeaveRequestId;
@@ -388,94 +476,5 @@ export type HumanResourcesLeaveStore = {
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<LeaveRequest>>;
-
-	approveLeaveRequest(
-		input: {
-			organizationId: string;
-			requestId: HumanResourcesLeaveRequestId;
-			note: string | null;
-			expectedVersion: number;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<LeaveRequest>>;
-
-	rejectLeaveRequest(
-		input: {
-			organizationId: string;
-			requestId: HumanResourcesLeaveRequestId;
-			note: string | null;
-			expectedVersion: number;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<LeaveRequest>>;
-
-	returnLeaveRequest(
-		input: {
-			organizationId: string;
-			requestId: HumanResourcesLeaveRequestId;
-			note: string | null;
-			expectedVersion: number;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<LeaveRequest>>;
-
-	withdrawLeaveRequest(
-		input: {
-			organizationId: string;
-			requestId: HumanResourcesLeaveRequestId;
-			expectedVersion: number;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<LeaveRequest>>;
-
-	cancelApprovedLeaveRequest(
-		input: {
-			organizationId: string;
-			requestId: HumanResourcesLeaveRequestId;
-			note: string | null;
-			expectedVersion: number;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<LeaveRequest>>;
-
-	listLeaveRequests(input: {
-		organizationId: string;
-		page: number;
-		pageSize: number;
-		employeeId?: HumanResourcesEmployeeId | undefined;
-		status?: LeaveRequestStatus | undefined;
-	}): Promise<Result<LeaveRequestListPage>>;
-
-	listPendingApprovalLeaveRequests(input: {
-		organizationId: string;
-		managerEmployeeId: HumanResourcesEmployeeId;
-		page: number;
-		pageSize: number;
-	}): Promise<Result<LeaveRequestListPage>>;
-
-	listTeamCalendarLeaveRequests(input: {
-		organizationId: string;
-		managerEmployeeId: HumanResourcesEmployeeId;
-		rangeStart: string;
-		rangeEnd: string;
-		page: number;
-		pageSize: number;
-	}): Promise<Result<TeamCalendarLeavePage>>;
-
-	getApprovedLeaveHandoff(input: {
-		organizationId: string;
-		requestId: HumanResourcesLeaveRequestId;
-		correlationId: string;
-	}): Promise<Result<ApprovedLeaveHandoff | null>>;
-};
+	) => Promise<Result<LeaveRequest>>;
+}

@@ -1,28 +1,28 @@
 import { notificationSchema } from "./schemas";
 import type { Notification } from "./types";
 
-export type NotificationRow = {
-	id: string;
-	organizationId: string;
-	userId: string;
-	type: string;
-	priority: string;
-	channel: string;
-	title: string;
-	body: string;
-	module: string;
-	deduplicationKey: string | null;
+export interface NotificationRow {
 	actionUrl: string | null;
-	metadata: unknown;
-	read: boolean;
-	expiresAt: Date | null;
+	body: string;
+	channel: string;
 	createdAt: Date;
-};
+	deduplicationKey: string | null;
+	expiresAt: Date | null;
+	id: string;
+	metadata: unknown;
+	module: string;
+	organizationId: string;
+	priority: string;
+	read: boolean;
+	title: string;
+	type: string;
+	userId: string;
+}
 
-export type MapNotificationRowFailure = {
+export interface MapNotificationRowFailure {
 	ok: false;
 	reason: "invalid_metadata" | "invalid_notification";
-};
+}
 
 export type MapNotificationRowResult =
 	| { ok: true; data: Notification }

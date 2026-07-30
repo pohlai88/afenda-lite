@@ -10,10 +10,10 @@ export const DEFAULT_NOTIFICATION_PAGE = 1 as const;
 export const DEFAULT_NOTIFICATION_PAGE_SIZE = 50 as const;
 export const MAX_NOTIFICATION_PAGE_SIZE = 100 as const;
 export const MAX_NOTIFICATION_TITLE_LENGTH = 200 as const;
-export const MAX_NOTIFICATION_BODY_LENGTH = 2_000 as const;
+export const MAX_NOTIFICATION_BODY_LENGTH = 2000 as const;
 export const MAX_NOTIFICATION_MODULE_LENGTH = 64 as const;
 export const MAX_NOTIFICATION_DEDUPLICATION_KEY_LENGTH = 200 as const;
-export const MAX_NOTIFICATION_ACTION_URL_LENGTH = 2_048 as const;
+export const MAX_NOTIFICATION_ACTION_URL_LENGTH = 2048 as const;
 
 export const notificationTypeSchema = z.enum(NOTIFICATION_TYPES);
 export const notificationPrioritySchema = z.enum(NOTIFICATION_PRIORITIES);

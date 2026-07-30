@@ -21,19 +21,20 @@ export async function getSupplierBalanceAction(input: {
 	supplierId: string;
 	currencyCode?: string;
 }): Promise<ActionResult<{ balances: SupplierBalance[] }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getSupplierBalanceAction",
 		permission: "payables.read",
 		safeMessage:
 			"Could not load supplier balance. Try again or contact an admin.",
 		execute: async (session) => {
 			const parsed = parseSchema(schema, input);
-			if (!parsed.success)
+			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
 					"Enter a valid supplier and optional currency.",
 					parsed.details,
 				);
+			}
 			const mapped = mapPackageResult(
 				await getSupplierBalance(
 					{
@@ -44,7 +45,9 @@ export async function getSupplierBalanceAction(input: {
 					createPayablesCommandOptions(session.userId),
 				),
 			);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { balances: mapped.data } };
 		},
 	});

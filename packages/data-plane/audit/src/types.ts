@@ -17,68 +17,68 @@ export const AUDIT_ACTIONS = [
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 
-export type Change = {
+export interface Change {
 	field: string;
-	oldValue: unknown;
 	newValue: unknown;
-};
+	oldValue: unknown;
+}
 
-export type AuditEntry = {
-	id: string;
-	organizationId: string;
+export interface AuditEntry {
+	action: AuditAction;
 	actorUserId: string;
+	changes: Change[];
 	correlationId: string;
-	module: string;
+	createdAt: Date;
 	entity: string;
 	entityId: string;
-	action: AuditAction;
-	changes: Change[];
-	oldValue: Record<string, unknown> | null;
-	newValue: Record<string, unknown> | null;
-	metadata: Record<string, unknown> | null;
+	id: string;
 	ipAddress: string | null;
+	metadata: Record<string, unknown> | null;
+	module: string;
+	newValue: Record<string, unknown> | null;
+	oldValue: Record<string, unknown> | null;
+	organizationId: string;
 	userAgent: string | null;
-	createdAt: Date;
-};
+}
 
 /** Per-call actor / request attribution — never process-global. */
-export type AuditContext = {
-	organizationId: string;
+export interface AuditContext {
 	actorUserId: string;
 	correlationId: string;
 	ipAddress?: string;
-	userAgent?: string;
 	metadata?: Record<string, unknown>;
-};
-
-export type AuditWriteInput = {
 	organizationId: string;
+	userAgent?: string;
+}
+
+export interface AuditWriteInput {
+	action: AuditAction;
 	actorUserId: string;
+	changes: Change[];
 	correlationId: string;
-	module: string;
+	createdAt?: Date;
 	entity: string;
 	entityId: string;
-	action: AuditAction;
-	changes: Change[];
-	oldValue?: Record<string, unknown> | null;
-	newValue?: Record<string, unknown> | null;
-	metadata?: Record<string, unknown> | null;
 	ipAddress?: string | null;
-	userAgent?: string | null;
-	createdAt?: Date;
-};
-
-export type AuditQueryFilter = {
+	metadata?: Record<string, unknown> | null;
+	module: string;
+	newValue?: Record<string, unknown> | null;
+	oldValue?: Record<string, unknown> | null;
 	organizationId: string;
-	module?: string | undefined;
+	userAgent?: string | null;
+}
+
+export interface AuditQueryFilter {
+	action?: AuditAction | undefined;
+	actorUserId?: string | undefined;
+	correlationId?: string | undefined;
 	entity?: string | undefined;
 	entityId?: string | undefined;
-	actorUserId?: string | undefined;
-	action?: AuditAction | undefined;
-	correlationId?: string | undefined;
 	from?: Date | undefined;
+	module?: string | undefined;
+	organizationId: string;
 	to?: Date | undefined;
-};
+}
 
 export type AuditQueryOptions = AuditQueryFilter & {
 	page: number;
@@ -91,7 +91,7 @@ export type AuditExportOptions = AuditQueryFilter & {
 	format: AuditExportFormat;
 };
 
-export type AuditPurgeOptions = {
-	organizationId: string;
+export interface AuditPurgeOptions {
 	olderThan: Date;
-};
+	organizationId: string;
+}

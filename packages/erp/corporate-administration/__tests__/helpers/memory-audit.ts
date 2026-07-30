@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/useAwait: The deterministic helper implements the asynchronous audit port.
 import type {
 	CorporateAdministrationAuditFactInput,
 	CorporateAdministrationAuditFactPort,

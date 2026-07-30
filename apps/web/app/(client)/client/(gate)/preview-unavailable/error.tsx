@@ -2,10 +2,10 @@
 
 import { SegmentError } from "@/features/auth/segment-error";
 
-type ClientPreviewUnavailableErrorProps = {
+interface ClientPreviewUnavailableErrorProps {
 	error: Error & { digest?: string };
 	reset: () => void;
-};
+}
 
 export default function ClientPreviewUnavailableError({
 	error,
@@ -13,10 +13,10 @@ export default function ClientPreviewUnavailableError({
 }: ClientPreviewUnavailableErrorProps) {
 	return (
 		<SegmentError
-			title="Preview unavailable"
-			fallbackMessage="Something went wrong loading this surface."
 			error={error}
+			fallbackMessage="Something went wrong loading this surface."
 			reset={reset}
+			title="Preview unavailable"
 		/>
 	);
 }

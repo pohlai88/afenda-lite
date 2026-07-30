@@ -49,7 +49,7 @@ export const HUMAN_RESOURCES_AGGREGATE_CANDIDATE = "candidate" as const;
 export type HumanResourcesCandidateAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_CANDIDATE;
 
-export async function createCandidate(
+export function createCandidate(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Candidate>> {
@@ -115,7 +115,7 @@ export async function createCandidate(
 	});
 }
 
-export async function updateCandidateProfile(
+export function updateCandidateProfile(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Candidate>> {
@@ -156,7 +156,7 @@ export async function updateCandidateProfile(
 	});
 }
 
-export async function withdrawCandidateConsent(
+export function withdrawCandidateConsent(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Candidate>> {
@@ -195,7 +195,7 @@ export async function withdrawCandidateConsent(
 	});
 }
 
-export async function changeCandidateRetention(
+export function changeCandidateRetention(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Candidate>> {
@@ -246,7 +246,7 @@ export async function changeCandidateRetention(
 	});
 }
 
-export async function anonymizeCandidate(
+export function anonymizeCandidate(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Candidate>> {
@@ -292,7 +292,7 @@ export async function anonymizeCandidate(
 	});
 }
 
-export async function getCandidate(
+export function getCandidate(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Candidate>> {
@@ -320,7 +320,7 @@ export async function getCandidate(
 	});
 }
 
-export async function listCandidates(
+export function listCandidates(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CandidateListPage>> {
@@ -340,7 +340,7 @@ export async function listCandidates(
 	});
 }
 
-export async function detectCandidateDuplicates(
+export function detectCandidateDuplicates(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<readonly CandidateDuplicateMatch[]>> {

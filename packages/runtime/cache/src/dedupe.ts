@@ -4,7 +4,7 @@
 export class RequestDeduplicator {
 	private readonly pending = new Map<string, Promise<unknown>>();
 
-	async dedupe<T>(key: string, factory: () => Promise<T>): Promise<T> {
+	dedupe<T>(key: string, factory: () => Promise<T>): Promise<T> {
 		const existing = this.pending.get(key);
 		if (existing) {
 			return existing as Promise<T>;

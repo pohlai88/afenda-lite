@@ -55,7 +55,7 @@ const openProbationActionSchema = hrActionSchema(openProbationInputSchema);
 export async function openProbationAction(
 	input: unknown,
 ): Promise<ActionResult<{ probationReview: ProbationReview }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "openProbationAction",
 		permission: "human-resources.employment.manage",
 		safeMessage: "Could not open probation.",
@@ -73,7 +73,9 @@ export async function openProbationAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { probationReview: mapped.data } };
 		},
 	});
@@ -84,7 +86,7 @@ const extendProbationActionSchema = hrActionSchema(extendProbationInputSchema);
 export async function extendProbationAction(
 	input: unknown,
 ): Promise<ActionResult<{ probationReview: ProbationReview }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "extendProbationAction",
 		permission: "human-resources.employment.manage",
 		safeMessage: "Could not extend probation.",
@@ -102,7 +104,9 @@ export async function extendProbationAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { probationReview: mapped.data } };
 		},
 	});
@@ -115,7 +119,7 @@ const recordProbationAssessmentActionSchema = hrActionSchema(
 export async function recordProbationAssessmentAction(
 	input: unknown,
 ): Promise<ActionResult<{ assessment: ProbationAssessment }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "recordProbationAssessmentAction",
 		permission: "human-resources.employment.manage",
 		safeMessage: "Could not record probation assessment.",
@@ -133,7 +137,9 @@ export async function recordProbationAssessmentAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { assessment: mapped.data } };
 		},
 	});
@@ -146,7 +152,7 @@ const recordProbationOutcomeActionSchema = hrActionSchema(
 export async function recordProbationOutcomeAction(
 	input: unknown,
 ): Promise<ActionResult<{ probationReview: ProbationReview }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "recordProbationOutcomeAction",
 		permission: "human-resources.employment.manage",
 		safeMessage: "Could not record probation outcome.",
@@ -164,7 +170,9 @@ export async function recordProbationOutcomeAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { probationReview: mapped.data } };
 		},
 	});
@@ -177,7 +185,7 @@ const getProbationReviewActionSchema = hrActionSchema(
 export async function getProbationReviewAction(
 	input: unknown,
 ): Promise<ActionResult<{ probationReview: ProbationReview | null }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getProbationReviewAction",
 		permission: "human-resources.employee.read",
 		safeMessage: "Could not get probation review.",
@@ -195,7 +203,9 @@ export async function getProbationReviewAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { probationReview: mapped.data } };
 		},
 	});
@@ -208,7 +218,7 @@ const listProbationReviewsByEmploymentActionSchema = hrActionSchema(
 export async function listProbationReviewsByEmploymentAction(
 	input: unknown,
 ): Promise<ActionResult<{ reviews: ProbationReview[] }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listProbationReviewsByEmploymentAction",
 		permission: "human-resources.employee.read",
 		safeMessage: "Could not list probation reviews.",
@@ -229,7 +239,9 @@ export async function listProbationReviewsByEmploymentAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { reviews: mapped.data } };
 		},
 	});
@@ -242,7 +254,7 @@ const listProbationAssessmentsActionSchema = hrActionSchema(
 export async function listProbationAssessmentsAction(
 	input: unknown,
 ): Promise<ActionResult<{ assessments: ProbationAssessment[] }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listProbationAssessmentsAction",
 		permission: "human-resources.employee.read",
 		safeMessage: "Could not list probation assessments.",
@@ -260,7 +272,9 @@ export async function listProbationAssessmentsAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { assessments: mapped.data } };
 		},
 	});
@@ -273,7 +287,7 @@ const confirmEmploymentActionSchema = hrActionSchema(
 export async function confirmEmploymentAction(
 	input: unknown,
 ): Promise<ActionResult<{ confirmation: EmploymentConfirmation }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "confirmEmploymentAction",
 		permission: "human-resources.employment.manage",
 		safeMessage: "Could not confirm employment.",
@@ -291,7 +305,9 @@ export async function confirmEmploymentAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { confirmation: mapped.data } };
 		},
 	});
@@ -304,7 +320,7 @@ const getEmploymentConfirmationActionSchema = hrActionSchema(
 export async function getEmploymentConfirmationAction(
 	input: unknown,
 ): Promise<ActionResult<{ confirmation: EmploymentConfirmation | null }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getEmploymentConfirmationAction",
 		permission: "human-resources.employee.read",
 		safeMessage: "Could not get employment confirmation.",
@@ -322,7 +338,9 @@ export async function getEmploymentConfirmationAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { confirmation: mapped.data } };
 		},
 	});
@@ -335,7 +353,7 @@ const proposeTerminationActionSchema = hrActionSchema(
 export async function proposeTerminationAction(
 	input: unknown,
 ): Promise<ActionResult<{ termination: Termination }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "proposeTerminationAction",
 		permission: "human-resources.employment.manage",
 		safeMessage: "Could not propose termination.",
@@ -353,7 +371,9 @@ export async function proposeTerminationAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { termination: mapped.data } };
 		},
 	});
@@ -366,7 +386,7 @@ const approveTerminationActionSchema = hrActionSchema(
 export async function approveTerminationAction(
 	input: unknown,
 ): Promise<ActionResult<{ termination: Termination }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "approveTerminationAction",
 		permission: "human-resources.employment.manage",
 		safeMessage: "Could not approve termination.",
@@ -384,7 +404,9 @@ export async function approveTerminationAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { termination: mapped.data } };
 		},
 	});
@@ -397,7 +419,7 @@ const finalizeTerminationActionSchema = hrActionSchema(
 export async function finalizeTerminationAction(
 	input: unknown,
 ): Promise<ActionResult<{ termination: Termination }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "finalizeTerminationAction",
 		permission: "human-resources.employment.manage",
 		safeMessage: "Could not finalize termination.",
@@ -415,7 +437,9 @@ export async function finalizeTerminationAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { termination: mapped.data } };
 		},
 	});
@@ -426,7 +450,7 @@ const getTerminationActionSchema = hrActionSchema(getTerminationInputSchema);
 export async function getTerminationAction(
 	input: unknown,
 ): Promise<ActionResult<{ termination: Termination | null }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getTerminationAction",
 		permission: "human-resources.employee.read",
 		safeMessage: "Could not get termination.",
@@ -444,7 +468,9 @@ export async function getTerminationAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { termination: mapped.data } };
 		},
 	});

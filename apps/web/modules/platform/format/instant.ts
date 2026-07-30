@@ -33,7 +33,7 @@ function parseInstantMs(value: string): number | null {
 
 /** Date + time in UTC (audit / submitted-at style). */
 export function formatInstantUtc(value: string | null | undefined): string {
-	if (value == null || value.trim().length === 0) {
+	if (value === null || value.trim().length === 0) {
 		return "—";
 	}
 	const ms = parseInstantMs(value);
@@ -45,7 +45,7 @@ export function formatInstantUtc(value: string | null | undefined): string {
 
 /** Calendar date in UTC (due-date / list columns). */
 export function formatInstantUtcDate(value: string | null | undefined): string {
-	if (value == null || value.trim().length === 0) {
+	if (value === null || value.trim().length === 0) {
 		return "—";
 	}
 	const ms = parseInstantMs(value);

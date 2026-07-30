@@ -9,8 +9,8 @@ import type {
 } from "./types";
 
 interface CommonDefinition {
-	domain: HumanResourcesDomain;
 	aggregateType: string;
+	domain: HumanResourcesDomain;
 }
 
 export function defineAuditOnlyEmission(

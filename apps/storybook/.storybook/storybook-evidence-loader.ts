@@ -41,10 +41,9 @@ const evidence = Object.fromEntries(
 		.filter((component) => component.layer !== "foundation")
 		.map((component) => {
 			const contract = component.governance?.contract;
-			const qualityProfile = component.qualityProfiles[0];
+			const [qualityProfile] = component.qualityProfiles;
 			if (
-				!contract ||
-				!qualityProfile ||
+				!(contract && qualityProfile) ||
 				component.publicExports.length === 0
 			) {
 				throw new Error(

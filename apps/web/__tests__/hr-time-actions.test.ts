@@ -670,7 +670,9 @@ describe("hr-time Server Actions", () => {
 
 		for (const result of [invalidPolicy, invalidAuthority, invalidWaiver]) {
 			expect(result.ok).toBe(false);
-			if (!result.ok) expect(result.code).toBe("VALIDATION_ERROR");
+			if (!result.ok) {
+				expect(result.code).toBe("VALIDATION_ERROR");
+			}
 		}
 		expect(hrTimeMocks.createTimePolicy).not.toHaveBeenCalled();
 		expect(
@@ -993,7 +995,9 @@ describe("hr-time Server Actions", () => {
 		});
 
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 		expect(result.data.result).toMatchObject({
 			mode: "dry_run",
 			organizationId: "org-hr-time-active",
@@ -1033,7 +1037,9 @@ describe("hr-time Server Actions", () => {
 		});
 
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 		expect(result.data.result).toMatchObject({
 			mode: "preview",
 			organizationId: "org-hr-time-active",
@@ -1089,3 +1095,4 @@ describe("hr-time Server Actions", () => {
 		}
 	});
 });
+// biome-ignore-all lint/performance/noAwaitInLoops: Cases run serially to isolate mutable test state and ordered transitions.

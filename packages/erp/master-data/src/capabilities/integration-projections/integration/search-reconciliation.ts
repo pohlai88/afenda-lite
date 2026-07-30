@@ -98,14 +98,21 @@ export type SearchReconciliationMismatch =
 	| SearchDeliveryMismatch;
 
 export interface SearchReconciliationReporter {
-	recordMismatch(
+	recordMismatch: (
 		mismatch: SearchReconciliationMismatch,
-	): Promise<Result<SearchReconciliationMismatch>>;
+	) => Promise<Result<SearchReconciliationMismatch>>;
 }
 
 export function defineSearchReconciliationMismatch<
 	const TMismatch extends SearchReconciliationMismatch,
 >(mismatch: TMismatch): TMismatch {
+	assertSearchReconciliationMismatch(mismatch);
+	return mismatch;
+}
+
+function assertSearchReconciliationMismatch(
+	mismatch: SearchReconciliationMismatch,
+): void {
 	assertNonBlank("organizationId", mismatch.organizationId);
 	assertValidDate("detectedAt", mismatch.detectedAt);
 
@@ -188,8 +195,6 @@ export function defineSearchReconciliationMismatch<
 		default:
 			assertNever(mismatch);
 	}
-
-	return mismatch;
 }
 
 function assertDocumentIdentity(mismatch: SearchDocumentMismatch): void {

@@ -13,7 +13,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type IssueCreditNoteActionData = { creditNote: SalesCreditNote };
+export interface IssueCreditNoteActionData {
+	creditNote: SalesCreditNote;
+}
 export type IssueCreditNoteActionState =
 	ActionResult<IssueCreditNoteActionData> | null;
 
@@ -32,7 +34,7 @@ export async function issueCreditNoteAction(
 	_prev: IssueCreditNoteActionState,
 	formData: FormData,
 ): Promise<IssueCreditNoteActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "issueCreditNoteAction",
 		permission: "receivables.credit_note.issue",
 		safeMessage: "Could not issue credit note. Try again or contact an admin.",
@@ -64,7 +66,9 @@ export async function issueCreditNoteAction(
 				createReceivablesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePath("/admin/receivables");
 			revalidatePath("/client/receivables");
 			return { ok: true, data: { creditNote: mapped.data } };

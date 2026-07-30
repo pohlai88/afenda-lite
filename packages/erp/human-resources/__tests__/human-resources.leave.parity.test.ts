@@ -77,7 +77,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const actorMapped = await mapActorToEmployee(ready.store, {
 			organizationId: ORG,
@@ -87,7 +89,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			effectiveFrom: "2025-01-01",
 		});
 		expect(actorMapped.ok).toBe(true);
-		if (!actorMapped.ok) return;
+		if (!actorMapped.ok) {
+			return;
+		}
 
 		const employment = await createEmployment(
 			{
@@ -100,7 +104,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const policy = await createLeavePolicy(
 			{
@@ -119,7 +125,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(policy.ok, resultFailureMessage(policy)).toBe(true);
-		if (!policy.ok) return;
+		if (!policy.ok) {
+			return;
+		}
 
 		const published = await publishLeavePolicy(
 			{
@@ -132,7 +140,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(published.ok).toBe(true);
-		if (!published.ok) return;
+		if (!published.ok) {
+			return;
+		}
 
 		const granted = await grantLeaveEntitlement(
 			{
@@ -150,7 +160,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(granted.ok).toBe(true);
-		if (!granted.ok) return;
+		if (!granted.ok) {
+			return;
+		}
 
 		const draft = await createDraftLeaveRequest(
 			{
@@ -167,7 +179,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 
 		const submitted = await submitLeaveRequest(
 			{
@@ -180,7 +194,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 
 		const manager = await createEmployee(
 			{
@@ -194,7 +210,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(manager.ok).toBe(true);
-		if (!manager.ok) return;
+		if (!manager.ok) {
+			return;
+		}
 
 		const managerMapped = await mapActorToEmployee(ready.store, {
 			organizationId: ORG,
@@ -204,7 +222,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			effectiveFrom: "2025-01-01",
 		});
 		expect(managerMapped.ok).toBe(true);
-		if (!managerMapped.ok) return;
+		if (!managerMapped.ok) {
+			return;
+		}
 
 		const reportingLine = await assignPrimaryReportingLine(
 			{
@@ -218,7 +238,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(reportingLine.ok).toBe(true);
-		if (!reportingLine.ok) return;
+		if (!reportingLine.ok) {
+			return;
+		}
 
 		const approved = await approveLeaveRequest(
 			{
@@ -231,7 +253,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 		expect(approved.data.status).toBe("approved");
 
 		const handoff = await getApprovedLeaveHandoff(
@@ -244,9 +268,13 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(handoff.ok).toBe(true);
-		if (!handoff.ok) return;
+		if (!handoff.ok) {
+			return;
+		}
 		expect(handoff.data).not.toBeNull();
-		if (!handoff.data) return;
+		if (!handoff.data) {
+			return;
+		}
 		expect(handoff.data.employmentId).toBe(employment.data.id);
 		expect(handoff.data.policyVersion).toBe(published.data.version);
 		expect(handoff.data.quantity).toBe("3");
@@ -268,7 +296,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const employment = await createEmployment(
 			{
@@ -281,7 +311,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const policy = await createLeavePolicy(
 			{
@@ -301,7 +333,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(policy.ok, resultFailureMessage(policy)).toBe(true);
-		if (!policy.ok) return;
+		if (!policy.ok) {
+			return;
+		}
 
 		const published = await publishLeavePolicy(
 			{
@@ -314,7 +348,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(published.ok).toBe(true);
-		if (!published.ok) return;
+		if (!published.ok) {
+			return;
+		}
 
 		const granted = await grantLeaveEntitlement(
 			{
@@ -332,7 +368,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(granted.ok).toBe(true);
-		if (!granted.ok) return;
+		if (!granted.ok) {
+			return;
+		}
 
 		const first = await createDraftLeaveRequest(
 			{
@@ -349,7 +387,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 
 		const firstSubmitted = await submitLeaveRequest(
 			{
@@ -362,7 +402,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(firstSubmitted.ok).toBe(true);
-		if (!firstSubmitted.ok) return;
+		if (!firstSubmitted.ok) {
+			return;
+		}
 
 		const second = await createDraftLeaveRequest(
 			{
@@ -379,7 +421,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(second.ok).toBe(true);
-		if (!second.ok) return;
+		if (!second.ok) {
+			return;
+		}
 
 		const secondSubmitted = await submitLeaveRequest(
 			{
@@ -413,7 +457,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const actorMapped = await mapActorToEmployee(ready.store, {
 			organizationId: ORG,
@@ -423,7 +469,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			effectiveFrom: "2025-01-01",
 		});
 		expect(actorMapped.ok).toBe(true);
-		if (!actorMapped.ok) return;
+		if (!actorMapped.ok) {
+			return;
+		}
 
 		const employment = await createEmployment(
 			{
@@ -436,7 +484,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const policy = await createLeavePolicy(
 			{
@@ -456,7 +506,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(policy.ok, resultFailureMessage(policy)).toBe(true);
-		if (!policy.ok) return;
+		if (!policy.ok) {
+			return;
+		}
 
 		const published = await publishLeavePolicy(
 			{
@@ -469,7 +521,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(published.ok).toBe(true);
-		if (!published.ok) return;
+		if (!published.ok) {
+			return;
+		}
 
 		const granted = await grantLeaveEntitlement(
 			{
@@ -487,7 +541,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(granted.ok).toBe(true);
-		if (!granted.ok) return;
+		if (!granted.ok) {
+			return;
+		}
 
 		const submittedDraft = await createDraftLeaveRequest(
 			{
@@ -504,7 +560,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(submittedDraft.ok).toBe(true);
-		if (!submittedDraft.ok) return;
+		if (!submittedDraft.ok) {
+			return;
+		}
 
 		const submitted = await submitLeaveRequest(
 			{
@@ -517,7 +575,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 
 		const overlappingDraft = await createDraftLeaveRequest(
 			{
@@ -534,7 +594,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(overlappingDraft.ok).toBe(true);
-		if (!overlappingDraft.ok) return;
+		if (!overlappingDraft.ok) {
+			return;
+		}
 
 		const manager = await createEmployee(
 			{
@@ -548,7 +610,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(manager.ok).toBe(true);
-		if (!manager.ok) return;
+		if (!manager.ok) {
+			return;
+		}
 
 		const managerMapped = await mapActorToEmployee(ready.store, {
 			organizationId: ORG,
@@ -558,7 +622,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			effectiveFrom: "2025-01-01",
 		});
 		expect(managerMapped.ok).toBe(true);
-		if (!managerMapped.ok) return;
+		if (!managerMapped.ok) {
+			return;
+		}
 
 		const reportingLine = await assignPrimaryReportingLine(
 			{
@@ -572,7 +638,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(reportingLine.ok).toBe(true);
-		if (!reportingLine.ok) return;
+		if (!reportingLine.ok) {
+			return;
+		}
 
 		const approved = await approveLeaveRequest(
 			{
@@ -605,7 +673,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		await mapActorToEmployee(ready.store, {
 			organizationId: ORG,
@@ -626,7 +696,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const v1 = await createLeavePolicy(
 			{
@@ -646,7 +718,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(v1.ok).toBe(true);
-		if (!v1.ok) return;
+		if (!v1.ok) {
+			return;
+		}
 
 		const v1Published = await publishLeavePolicy(
 			{
@@ -659,7 +733,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(v1Published.ok).toBe(true);
-		if (!v1Published.ok) return;
+		if (!v1Published.ok) {
+			return;
+		}
 
 		const v2 = await supersedeLeavePolicy(
 			{
@@ -686,7 +762,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(v2.ok).toBe(true);
-		if (!v2.ok) return;
+		if (!v2.ok) {
+			return;
+		}
 		expect(v2.data.supersedesPolicyId).toBe(v1Published.data.id);
 		expect(v2.data.accrualQuantityPerPeriod).toBe("2");
 
@@ -700,7 +778,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(loaded.ok).toBe(true);
-		if (!loaded.ok || loaded.data === null) return;
+		if (!loaded.ok || loaded.data === null) {
+			return;
+		}
 		expect(loaded.data.carryForwardMaxQuantity).toBe("3");
 		expect(loaded.data.entitlementExpiryRule).toBe("period_end");
 
@@ -717,7 +797,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(before.ok).toBe(true);
-		if (!before.ok) return;
+		if (!before.ok) {
+			return;
+		}
 		expect(before.data?.policy.id).toBe(v1Published.data.id);
 
 		const after = await resolveApplicableLeavePolicy(
@@ -733,7 +815,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(after.ok).toBe(true);
-		if (!after.ok) return;
+		if (!after.ok) {
+			return;
+		}
 		expect(after.data?.policy.id).toBe(v2.data.id);
 	}, 120_000);
 
@@ -752,7 +836,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const employment = await createEmployment(
 			{
@@ -765,7 +851,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const policy = await createLeavePolicy(
 			{
@@ -789,7 +877,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(policy.ok).toBe(true);
-		if (!policy.ok) return;
+		if (!policy.ok) {
+			return;
+		}
 		const published = await publishLeavePolicy(
 			{
 				organizationId: ORG,
@@ -801,7 +891,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(published.ok).toBe(true);
-		if (!published.ok) return;
+		if (!published.ok) {
+			return;
+		}
 
 		const entitlement = await grantLeaveEntitlement(
 			{
@@ -819,7 +911,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(entitlement.ok).toBe(true);
-		if (!entitlement.ok) return;
+		if (!entitlement.ok) {
+			return;
+		}
 
 		const accrued = await accrueLeaveEntitlement(
 			{
@@ -836,7 +930,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(accrued.ok).toBe(true);
-		if (!accrued.ok) return;
+		if (!accrued.ok) {
+			return;
+		}
 
 		const carried = await carryForwardLeaveEntitlement(
 			{
@@ -853,7 +949,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(carried.ok).toBe(true);
-		if (!carried.ok) return;
+		if (!carried.ok) {
+			return;
+		}
 
 		const targetBalance = await getLeaveBalance(
 			{
@@ -865,7 +963,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(targetBalance.ok).toBe(true);
-		if (!targetBalance.ok) return;
+		if (!targetBalance.ok) {
+			return;
+		}
 		expect(targetBalance.data?.balance).toBe("2");
 
 		const expired = await expireLeaveEntitlement(
@@ -879,7 +979,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(expired.ok).toBe(true);
-		if (!expired.ok) return;
+		if (!expired.ok) {
+			return;
+		}
 
 		const reconciliation = await reconcileLeaveBalance(
 			{
@@ -891,7 +993,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(reconciliation.ok).toBe(true);
-		if (!reconciliation.ok) return;
+		if (!reconciliation.ok) {
+			return;
+		}
 		expect(reconciliation.data?.balance).toBe("0");
 		expect(reconciliation.data?.adjustments.at(-1)?.kind).toBe("expiry");
 	}, 120_000);
@@ -912,7 +1016,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const actorMapped = await mapActorToEmployee(ready.store, {
 			organizationId: ORG,
@@ -922,7 +1028,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			effectiveFrom: "2025-01-01",
 		});
 		expect(actorMapped.ok).toBe(true);
-		if (!actorMapped.ok) return;
+		if (!actorMapped.ok) {
+			return;
+		}
 
 		const employment = await createEmployment(
 			{
@@ -935,7 +1043,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const policy = await createLeavePolicy(
 			{
@@ -954,7 +1064,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(policy.ok).toBe(true);
-		if (!policy.ok) return;
+		if (!policy.ok) {
+			return;
+		}
 
 		const published = await publishLeavePolicy(
 			{
@@ -967,7 +1079,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(published.ok).toBe(true);
-		if (!published.ok) return;
+		if (!published.ok) {
+			return;
+		}
 
 		const granted = await grantLeaveEntitlement(
 			{
@@ -985,7 +1099,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(granted.ok).toBe(true);
-		if (!granted.ok) return;
+		if (!granted.ok) {
+			return;
+		}
 
 		const manager = await createEmployee(
 			{
@@ -999,7 +1115,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(manager.ok).toBe(true);
-		if (!manager.ok) return;
+		if (!manager.ok) {
+			return;
+		}
 
 		const managerMapped = await mapActorToEmployee(ready.store, {
 			organizationId: ORG,
@@ -1009,7 +1127,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			effectiveFrom: "2025-01-01",
 		});
 		expect(managerMapped.ok).toBe(true);
-		if (!managerMapped.ok) return;
+		if (!managerMapped.ok) {
+			return;
+		}
 
 		const reportingLine = await assignPrimaryReportingLine(
 			{
@@ -1023,7 +1143,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(reportingLine.ok).toBe(true);
-		if (!reportingLine.ok) return;
+		if (!reportingLine.ok) {
+			return;
+		}
 
 		const draft = await createDraftLeaveRequest(
 			{
@@ -1040,7 +1162,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 
 		const submitted = await submitLeaveRequest(
 			{
@@ -1053,7 +1177,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 
 		const returned = await returnLeaveRequest(
 			{
@@ -1066,7 +1192,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(returned.ok, resultFailureMessage(returned)).toBe(true);
-		if (!returned.ok) return;
+		if (!returned.ok) {
+			return;
+		}
 		expect(returned.data.status).toBe("returned");
 
 		const amended = await amendLeaveRequest(
@@ -1083,7 +1211,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(amended.ok).toBe(true);
-		if (!amended.ok) return;
+		if (!amended.ok) {
+			return;
+		}
 
 		const resubmitted = await submitLeaveRequest(
 			{
@@ -1096,7 +1226,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(resubmitted.ok).toBe(true);
-		if (!resubmitted.ok) return;
+		if (!resubmitted.ok) {
+			return;
+		}
 
 		const rejected = await rejectLeaveRequest(
 			{
@@ -1109,7 +1241,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(rejected.ok).toBe(true);
-		if (!rejected.ok) return;
+		if (!rejected.ok) {
+			return;
+		}
 		expect(rejected.data.status).toBe("rejected");
 	}, 120_000);
 
@@ -1129,7 +1263,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		await mapActorToEmployee(ready.store, {
 			organizationId: ORG,
@@ -1150,7 +1286,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const policy = await createLeavePolicy(
 			{
@@ -1169,7 +1307,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(policy.ok).toBe(true);
-		if (!policy.ok) return;
+		if (!policy.ok) {
+			return;
+		}
 
 		const published = await publishLeavePolicy(
 			{
@@ -1182,7 +1322,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(published.ok).toBe(true);
-		if (!published.ok) return;
+		if (!published.ok) {
+			return;
+		}
 
 		const granted = await grantLeaveEntitlement(
 			{
@@ -1200,7 +1342,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(granted.ok).toBe(true);
-		if (!granted.ok) return;
+		if (!granted.ok) {
+			return;
+		}
 
 		const withdrawDraft = await createDraftLeaveRequest(
 			{
@@ -1217,7 +1361,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(withdrawDraft.ok).toBe(true);
-		if (!withdrawDraft.ok) return;
+		if (!withdrawDraft.ok) {
+			return;
+		}
 
 		const withdrawSubmitted = await submitLeaveRequest(
 			{
@@ -1230,7 +1376,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(withdrawSubmitted.ok).toBe(true);
-		if (!withdrawSubmitted.ok) return;
+		if (!withdrawSubmitted.ok) {
+			return;
+		}
 
 		const withdrawn = await withdrawLeaveRequest(
 			{
@@ -1243,7 +1391,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(withdrawn.ok).toBe(true);
-		if (!withdrawn.ok) return;
+		if (!withdrawn.ok) {
+			return;
+		}
 		expect(withdrawn.data.status).toBe("withdrawn");
 
 		const manager = await createEmployee(
@@ -1258,7 +1408,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(manager.ok).toBe(true);
-		if (!manager.ok) return;
+		if (!manager.ok) {
+			return;
+		}
 
 		await mapActorToEmployee(ready.store, {
 			organizationId: ORG,
@@ -1295,7 +1447,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(cancelDraft.ok).toBe(true);
-		if (!cancelDraft.ok) return;
+		if (!cancelDraft.ok) {
+			return;
+		}
 
 		const cancelSubmitted = await submitLeaveRequest(
 			{
@@ -1308,7 +1462,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(cancelSubmitted.ok).toBe(true);
-		if (!cancelSubmitted.ok) return;
+		if (!cancelSubmitted.ok) {
+			return;
+		}
 
 		const approved = await approveLeaveRequest(
 			{
@@ -1321,7 +1477,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(approved.ok, resultFailureMessage(approved)).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 
 		const balanceAfterApprove = await getLeaveBalance(
 			{
@@ -1333,7 +1491,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(balanceAfterApprove.ok).toBe(true);
-		if (!balanceAfterApprove.ok) return;
+		if (!balanceAfterApprove.ok) {
+			return;
+		}
 		expect(balanceAfterApprove.data?.balance).toBe("7");
 
 		const cancelled = await cancelApprovedLeaveRequest(
@@ -1347,7 +1507,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(cancelled.ok).toBe(true);
-		if (!cancelled.ok) return;
+		if (!cancelled.ok) {
+			return;
+		}
 		expect(cancelled.data.status).toBe("cancelled");
 
 		const balanceAfterCancel = await getLeaveBalance(
@@ -1360,7 +1522,9 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(balanceAfterCancel.ok).toBe(true);
-		if (!balanceAfterCancel.ok) return;
+		if (!balanceAfterCancel.ok) {
+			return;
+		}
 		expect(balanceAfterCancel.data?.balance).toBe("10");
 	}, 120_000);
 }

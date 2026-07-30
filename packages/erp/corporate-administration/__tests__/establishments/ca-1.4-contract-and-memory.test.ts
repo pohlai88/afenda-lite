@@ -119,7 +119,9 @@ describe("CA-1.4 memory establishment store", () => {
 			expectedCompanyVersion: 1,
 		});
 		expect(registered.ok).toBe(true);
-		if (!registered.ok) return;
+		if (!registered.ok) {
+			return;
+		}
 
 		const duplicate = await store.registerLegalEstablishment({
 			organizationId,

@@ -10,7 +10,7 @@ const DEFAULT_WITHIN_DAYS = 30;
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 25;
 
-export async function detectComplianceExpiryOperations(
+export function detectComplianceExpiryOperations(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ComplianceExpiryOperations>> {
@@ -29,7 +29,9 @@ export async function detectComplianceExpiryOperations(
 				page: DEFAULT_PAGE,
 				pageSize,
 			});
-			if (!expiringDocuments.ok) return expiringDocuments;
+			if (!expiringDocuments.ok) {
+				return expiringDocuments;
+			}
 
 			const workEligibilityRisks =
 				await store.listEmployeesWithWorkEligibilityRisk({
@@ -39,7 +41,9 @@ export async function detectComplianceExpiryOperations(
 					page: DEFAULT_PAGE,
 					pageSize,
 				});
-			if (!workEligibilityRisks.ok) return workEligibilityRisks;
+			if (!workEligibilityRisks.ok) {
+				return workEligibilityRisks;
+			}
 
 			const overduePolicyAcknowledgements =
 				await store.listOverduePolicyAcknowledgements({
@@ -59,7 +63,9 @@ export async function detectComplianceExpiryOperations(
 				page: DEFAULT_PAGE,
 				pageSize,
 			});
-			if (!expiringCertifications.ok) return expiringCertifications;
+			if (!expiringCertifications.ok) {
+				return expiringCertifications;
+			}
 
 			return {
 				ok: true,

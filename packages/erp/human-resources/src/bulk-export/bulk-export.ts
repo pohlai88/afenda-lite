@@ -61,7 +61,9 @@ function recordMatchesFilters(
 	if (request.dateTo !== undefined && record.occurredOn > request.dateTo) {
 		return false;
 	}
-	if (request.effectiveOn === undefined) return true;
+	if (request.effectiveOn === undefined) {
+		return true;
+	}
 	return (
 		(record.effectiveFrom === null ||
 			record.effectiveFrom <= request.effectiveOn) &&
@@ -76,7 +78,9 @@ export async function runHumanResourcesBulkExport(
 	ports: HumanResourcesBulkExportPorts,
 ): Promise<Result<HumanResourcesBulkExportResult>> {
 	const validated = validateRequest(request, definition);
-	if (!validated.ok) return validated;
+	if (!validated.ok) {
+		return validated;
+	}
 
 	const authorized = await ports.authorize({
 		organizationId: request.organizationId,
@@ -95,7 +99,9 @@ export async function runHumanResourcesBulkExport(
 			? {}
 			: { effectiveOn: request.effectiveOn }),
 	});
-	if (!listed.ok) return listed;
+	if (!listed.ok) {
+		return listed;
+	}
 	if (
 		listed.data.some(
 			(record) => record.organizationId !== request.organizationId,
@@ -137,7 +143,9 @@ export async function runHumanResourcesBulkExport(
 		dateTo: request.dateTo ?? null,
 		effectiveOn: request.effectiveOn ?? null,
 	});
-	if (!evidence.ok) return evidence;
+	if (!evidence.ok) {
+		return evidence;
+	}
 
 	return ok({
 		organizationId: request.organizationId,

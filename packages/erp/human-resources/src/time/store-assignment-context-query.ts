@@ -26,9 +26,13 @@ export function createStoreAssignmentContextQuery(input: {
 	return {
 		async resolveAsOf(query): Promise<Result<EmployeeAssignmentContext>> {
 			const employeeId = parseHumanResourcesEmployeeId(query.employeeId);
-			if (!employeeId.ok) return employeeId;
+			if (!employeeId.ok) {
+				return employeeId;
+			}
 			const employmentId = parseHumanResourcesEmploymentId(query.employmentId);
-			if (!employmentId.ok) return employmentId;
+			if (!employmentId.ok) {
+				return employmentId;
+			}
 
 			const assignment = await store.findAssignmentByEmploymentAsOf({
 				organizationId: query.organizationId,

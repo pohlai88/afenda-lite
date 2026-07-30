@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noJsxPropsBind: The enabled React Compiler stabilizes JSX callback props.
 "use client";
 
 import {
@@ -24,15 +25,17 @@ import {
 	startOnboardingJourneyAction,
 } from "@/app/actions/hr-admin-journeys";
 
-type EmploymentContext = {
+interface EmploymentContext {
 	employeeId: string;
 	employmentId: string;
 	employmentStatus: "active" | "notice" | "terminated";
 	employmentVersion: number;
-};
+}
 
 function JourneyFeedback({ state }: { state: HrAdminJourneyActionState }) {
-	if (!state) return null;
+	if (!state) {
+		return null;
+	}
 	return state.ok ? (
 		<Alert role="status">
 			<AlertTitle>Employee record updated</AlertTitle>
@@ -48,9 +51,9 @@ function JourneyFeedback({ state }: { state: HrAdminJourneyActionState }) {
 
 function SubmitButton({ pending, label }: { pending: boolean; label: string }) {
 	return (
-		<Button type="submit" disabled={pending}>
+		<Button disabled={pending} type="submit">
 			{pending ? <Spinner className="size-4" /> : null}
-			{pending ? "Saving" : label}
+			{pending ? "Saving" : <span>{label}</span>}
 		</Button>
 	);
 }
@@ -98,31 +101,31 @@ export function EmploymentJourneyForm({
 			className="flex max-w-xl flex-col gap-4"
 		>
 			<JourneyFeedback state={state} />
-			<input type="hidden" name="employeeId" value={employeeId} />
+			<input name="employeeId" type="hidden" value={employeeId} />
 			{employment ? (
 				<input
-					type="hidden"
 					name="employmentId"
+					type="hidden"
 					value={employment.employmentId}
 				/>
 			) : null}
 			{employment && employment.employmentStatus !== "terminated" ? (
 				<input
-					type="hidden"
 					name="expectedVersion"
+					type="hidden"
 					value={employment.employmentVersion}
 				/>
 			) : null}
 			<FormField
+				fieldId="hr-employment-intent"
 				label="Employment transition"
 				required
-				fieldId="hr-employment-intent"
 			>
 				<NativeSelect
+					disabled={pending}
 					id="hr-employment-intent"
 					name="intent"
 					required
-					disabled={pending}
 				>
 					{intents.map((intent) => (
 						<NativeSelectOption key={intent.value} value={intent.value}>
@@ -131,16 +134,16 @@ export function EmploymentJourneyForm({
 					))}
 				</NativeSelect>
 			</FormField>
-			<FormField label="Effective date" required fieldId="hr-employment-date">
+			<FormField fieldId="hr-employment-date" label="Effective date" required>
 				<Input
+					disabled={pending}
 					id="hr-employment-date"
 					name="effectiveOn"
-					type="date"
 					required
-					disabled={pending}
+					type="date"
 				/>
 			</FormField>
-			<SubmitButton pending={pending} label="Apply employment transition" />
+			<SubmitButton label="Apply employment transition" pending={pending} />
 		</form>
 	);
 }
@@ -161,7 +164,7 @@ export function AssignmentJourneyForm({
 		runAssignmentJourneyAction,
 		null,
 	);
-	if (!canManage || !assignment) {
+	if (!(canManage && assignment)) {
 		return (
 			<Alert role="status">
 				<AlertTitle>Assignment changes unavailable</AlertTitle>
@@ -180,23 +183,23 @@ export function AssignmentJourneyForm({
 			className="flex max-w-xl flex-col gap-4"
 		>
 			<JourneyFeedback state={state} />
-			<input type="hidden" name="employeeId" value={context.employeeId} />
-			<input type="hidden" name="employmentId" value={context.employmentId} />
-			<input type="hidden" name="assignmentId" value={assignment.id} />
-			<input type="hidden" name="expectedVersion" value={assignment.version} />
+			<input name="employeeId" type="hidden" value={context.employeeId} />
+			<input name="employmentId" type="hidden" value={context.employmentId} />
+			<input name="assignmentId" type="hidden" value={assignment.id} />
+			<input name="expectedVersion" type="hidden" value={assignment.version} />
 			<FormField
+				fieldId="hr-assignment-intent"
 				label="Assignment transition"
 				required
-				fieldId="hr-assignment-intent"
 			>
 				<NativeSelect
+					disabled={pending}
 					id="hr-assignment-intent"
 					name="intent"
-					value={intent}
 					onChange={(event) =>
 						setIntent(event.target.value === "end" ? "end" : "transfer")
 					}
-					disabled={pending}
+					value={intent}
 				>
 					<NativeSelectOption value="transfer">
 						Transfer to another position
@@ -209,15 +212,15 @@ export function AssignmentJourneyForm({
 			{intent === "transfer" ? (
 				<>
 					<FormField
+						fieldId="hr-assignment-position"
 						label="Destination position"
 						required
-						fieldId="hr-assignment-position"
 					>
 						<NativeSelect
+							disabled={pending}
 							id="hr-assignment-position"
 							name="toPositionId"
 							required
-							disabled={pending}
 						>
 							<NativeSelectOption value="">
 								Select a position
@@ -230,32 +233,32 @@ export function AssignmentJourneyForm({
 						</NativeSelect>
 					</FormField>
 					<FormField
+						fieldId="hr-assignment-reason"
 						label="Transfer reason"
 						required
-						fieldId="hr-assignment-reason"
 					>
 						<Textarea
+							disabled={pending}
 							id="hr-assignment-reason"
+							maxLength={500}
 							name="reason"
 							required
-							maxLength={500}
-							disabled={pending}
 						/>
 					</FormField>
 				</>
 			) : null}
-			<FormField label="Effective date" required fieldId="hr-assignment-date">
+			<FormField fieldId="hr-assignment-date" label="Effective date" required>
 				<Input
+					disabled={pending}
 					id="hr-assignment-date"
 					name="effectiveOn"
-					type="date"
 					required
-					disabled={pending}
+					type="date"
 				/>
 			</FormField>
 			<SubmitButton
-				pending={pending}
 				label={intent === "transfer" ? "Transfer assignment" : "End assignment"}
+				pending={pending}
 			/>
 		</form>
 	);
@@ -280,17 +283,17 @@ export function EmploymentLifecycleJourneyForm({
 			className="flex max-w-xl flex-col gap-4"
 		>
 			<JourneyFeedback state={state} />
-			<input type="hidden" name="employeeId" value={context.employeeId} />
-			<input type="hidden" name="employmentId" value={context.employmentId} />
+			<input name="employeeId" type="hidden" value={context.employeeId} />
+			<input name="employmentId" type="hidden" value={context.employmentId} />
 			<FormField
+				fieldId="hr-lifecycle-intent"
 				label="Lifecycle transition"
 				required
-				fieldId="hr-lifecycle-intent"
 			>
 				<NativeSelect
+					disabled={pending}
 					id="hr-lifecycle-intent"
 					name="intent"
-					value={intent}
 					onChange={(event) =>
 						setIntent(
 							event.target.value === "propose_termination"
@@ -298,7 +301,7 @@ export function EmploymentLifecycleJourneyForm({
 								: "open_probation",
 						)
 					}
-					disabled={pending}
+					value={intent}
 				>
 					<NativeSelectOption value="open_probation">
 						Open probation review
@@ -311,75 +314,75 @@ export function EmploymentLifecycleJourneyForm({
 			{intent === "open_probation" ? (
 				<div className="grid gap-4 sm:grid-cols-2">
 					<FormField
+						fieldId="hr-probation-start"
 						label="Probation start"
 						required
-						fieldId="hr-probation-start"
 					>
 						<Input
+							disabled={pending}
 							id="hr-probation-start"
 							name="startsOn"
-							type="date"
 							required
-							disabled={pending}
+							type="date"
 						/>
 					</FormField>
-					<FormField label="Probation end" required fieldId="hr-probation-end">
+					<FormField fieldId="hr-probation-end" label="Probation end" required>
 						<Input
+							disabled={pending}
 							id="hr-probation-end"
 							name="endsOn"
-							type="date"
 							required
-							disabled={pending}
+							type="date"
 						/>
 					</FormField>
 				</div>
 			) : (
 				<>
 					<FormField
+						fieldId="hr-termination-date"
 						label="Effective date"
 						required
-						fieldId="hr-termination-date"
 					>
 						<Input
+							disabled={pending}
 							id="hr-termination-date"
 							name="effectiveOn"
-							type="date"
 							required
-							disabled={pending}
+							type="date"
 						/>
 					</FormField>
-					<FormField label="Reason code" required fieldId="hr-termination-code">
+					<FormField fieldId="hr-termination-code" label="Reason code" required>
 						<Input
+							disabled={pending}
 							id="hr-termination-code"
+							maxLength={64}
 							name="reasonCode"
 							required
-							maxLength={64}
-							disabled={pending}
 						/>
 					</FormField>
 					<FormField
+						fieldId="hr-termination-detail"
 						label="Reason detail"
 						required
-						fieldId="hr-termination-detail"
 					>
 						<Textarea
+							disabled={pending}
 							id="hr-termination-detail"
+							maxLength={2000}
 							name="reasonDetail"
 							required
-							maxLength={2000}
-							disabled={pending}
 						/>
 					</FormField>
 					<FormField
+						fieldId="hr-rehire-eligible"
 						label="Rehire eligibility"
 						required
-						fieldId="hr-rehire-eligible"
 					>
 						<NativeSelect
+							disabled={pending}
 							id="hr-rehire-eligible"
 							name="rehireEligible"
 							required
-							disabled={pending}
 						>
 							<NativeSelectOption value="off">Not eligible</NativeSelectOption>
 							<NativeSelectOption value="on">Eligible</NativeSelectOption>
@@ -388,10 +391,10 @@ export function EmploymentLifecycleJourneyForm({
 				</>
 			)}
 			<SubmitButton
-				pending={pending}
 				label={
 					intent === "open_probation" ? "Open probation" : "Propose termination"
 				}
+				pending={pending}
 			/>
 		</form>
 	);
@@ -416,13 +419,13 @@ function CaseStartForm({
 			className="flex max-w-xl flex-col gap-4"
 		>
 			<JourneyFeedback state={state} />
-			<input type="hidden" name="employeeId" value={context.employeeId} />
-			<input type="hidden" name="employmentId" value={context.employmentId} />
-			<p className="text-sm text-muted-foreground">
+			<input name="employeeId" type="hidden" value={context.employeeId} />
+			<input name="employmentId" type="hidden" value={context.employmentId} />
+			<p className="text-muted-foreground text-sm">
 				A governed {kind} case will be created with the standard identity,
 				access, and operational checklist.
 			</p>
-			<SubmitButton pending={pending} label={`Start ${kind}`} />
+			<SubmitButton label={`Start ${kind}`} pending={pending} />
 		</form>
 	);
 }
@@ -442,3 +445,4 @@ export function OffboardingJourneyForm({
 }) {
 	return <CaseStartForm context={context} kind="offboarding" />;
 }
+// biome-ignore-all lint/style/noNestedTernary: Exhaustive status and tri-state view mappings remain explicit at their use sites.

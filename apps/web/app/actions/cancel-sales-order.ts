@@ -13,9 +13,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type CancelSalesOrderActionData = {
+export interface CancelSalesOrderActionData {
 	order: SalesOrder;
-};
+}
 
 export type CancelSalesOrderActionState =
 	ActionResult<CancelSalesOrderActionData> | null;
@@ -32,7 +32,7 @@ export async function cancelSalesOrderAction(
 	_prev: CancelSalesOrderActionState,
 	formData: FormData,
 ): Promise<CancelSalesOrderActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "cancelSalesOrderAction",
 		permission: "sales.order.cancel",
 		safeMessage: "Could not cancel sales order. Try again or contact an admin.",

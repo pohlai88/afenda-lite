@@ -28,25 +28,25 @@ import type { HumanResourcesStore } from "./store";
 import type { AssignmentContextQueryPort } from "./time/handoff/ports";
 import type { WorkCalendarPort } from "./time/work-calendar";
 
-export type HumanResourcesCommandOptions = {
-	store?: HumanResourcesStore | undefined;
-	ports?: MutationPorts | undefined;
-	currency?: CurrencyLookupPort | undefined;
-	documentReference?: DocumentReferencePort | undefined;
-	organizationDimensions?: OrganizationDimensionDirectoryPort | undefined;
-	workCalendar?: WorkCalendarPort | undefined;
+export interface HumanResourcesCommandOptions {
 	approvedLeave?: ApprovedLeaveQueryPort | undefined;
 	assignmentContext?: AssignmentContextQueryPort | undefined;
 	attendanceSource?: AttendanceSourcePort | undefined;
 	authorization?: HumanResourcesAuthorizationPort | undefined;
+	currency?: CurrencyLookupPort | undefined;
+	documentObjectResolver?: DocumentObjectResolverPort | undefined;
+	documentReference?: DocumentReferencePort | undefined;
+	identityResolver?: HumanResourcesIdentityResolverPort | undefined;
+	observability?: HrObservabilityPorts | undefined;
+	organizationDimensions?: OrganizationDimensionDirectoryPort | undefined;
+	ports?: MutationPorts | undefined;
+	privacy?: HumanResourcesPrivacyPort | undefined;
 	resourceAwareAuthorization?:
 		| HumanResourcesResourceAwareAuthorizationPort
 		| undefined;
-	identityResolver?: HumanResourcesIdentityResolverPort | undefined;
-	privacy?: HumanResourcesPrivacyPort | undefined;
-	documentObjectResolver?: DocumentObjectResolverPort | undefined;
-	observability?: HrObservabilityPorts | undefined;
-};
+	store?: HumanResourcesStore | undefined;
+	workCalendar?: WorkCalendarPort | undefined;
+}
 
 export function resolvePorts(ports?: MutationPorts): MutationPorts {
 	return ports ?? createProductionMutationPorts();

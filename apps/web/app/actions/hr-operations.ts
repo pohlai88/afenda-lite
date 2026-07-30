@@ -20,7 +20,7 @@ export async function retryFailedHrEventAction(
 	_previous: ActionResult<{ eventId: string }> | null,
 	formData: FormData,
 ): Promise<ActionResult<{ eventId: string }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "retryFailedHrEventAction",
 		permission: "human-resources.organization.manage",
 		safeMessage: "Could not retry the HR integration event.",

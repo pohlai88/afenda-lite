@@ -32,7 +32,7 @@ export async function addJournalLineAction(
 	_prev: AddJournalLineActionState,
 	formData: FormData,
 ): Promise<AddJournalLineActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "addJournalLineAction",
 		permission: "accounting.journal.create",
 		safeMessage: "Could not add journal line. Try again or contact an admin.",
@@ -44,12 +44,13 @@ export async function addJournalLineAction(
 				debit: formData.get("debit"),
 				credit: formData.get("credit"),
 			});
-			if (!parsed.success)
+			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
 					"Enter a valid journal line.",
 					parsed.details,
 				);
+			}
 			const mapped = mapPackageResult(
 				await addJournalLine(
 					{
@@ -65,7 +66,9 @@ export async function addJournalLineAction(
 					createAccountingCommandOptions(),
 				),
 			);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePath("/admin/accounting");
 			revalidatePath("/client/accounting");
 			return { ok: true, data: { line: mapped.data } };

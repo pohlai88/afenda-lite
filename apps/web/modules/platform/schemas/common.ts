@@ -13,19 +13,19 @@ export const emailSchema = z
 	.pipe(z.email())
 	.transform((value) => value.toLowerCase());
 
-export type ParseSchemaSuccess<T> = {
-	success: true;
+export interface ParseSchemaSuccess<T> {
 	data: T;
-};
+	success: true;
+}
 
-export type ParseSchemaFailure = {
-	success: false;
-	error: string;
+export interface ParseSchemaFailure {
 	details: {
 		formErrors: string[];
 		fieldErrors: Record<string, string[] | undefined>;
 	};
-};
+	error: string;
+	success: false;
+}
 
 export type ParseSchemaResult<T> = ParseSchemaSuccess<T> | ParseSchemaFailure;
 

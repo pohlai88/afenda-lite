@@ -23,11 +23,11 @@ import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 
 const initialState: ReserveStockActionState = null;
 
-type ReserveStockFormProps = {
+interface ReserveStockFormProps {
 	canReserve: boolean;
-	warehouses: InventoryMasterOption[];
 	items: InventoryMasterOption[];
-};
+	warehouses: InventoryMasterOption[];
+}
 
 /**
  * One-shot reserve stock — returns a `StockReservation`.
@@ -41,6 +41,7 @@ export function ReserveStockForm({
 		reserveStockAction,
 		initialState,
 	);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: Rotate the key after each completed action state.
 	const idempotencyKey = useMemo(
 		() => `reserve:${crypto.randomUUID()}`,
 		[state],
@@ -88,39 +89,39 @@ export function ReserveStockForm({
 				<FormError>{state.message}</FormError>
 			) : null}
 			<input
-				type="hidden"
 				name="idempotencyKey"
-				value={idempotencyKey}
 				readOnly
+				type="hidden"
+				value={idempotencyKey}
 			/>
 			<FormField
+				error={codeError}
+				fieldId="stock-reserve-code"
 				label="Reservation code"
 				required
-				fieldId="stock-reserve-code"
-				error={codeError}
 			>
 				<Input
+					autoComplete="off"
+					disabled={pending}
 					id="stock-reserve-code"
 					name="code"
 					required
-					autoComplete="off"
-					disabled={pending}
 				/>
 			</FormField>
 			<FormField
+				error={warehouseError}
+				fieldId="stock-reserve-warehouse"
 				label="Warehouse"
 				required
-				fieldId="stock-reserve-warehouse"
-				error={warehouseError}
 			>
 				<NativeSelect
+					defaultValue=""
+					disabled={pending || warehouses.length === 0}
 					id="stock-reserve-warehouse"
 					name="warehouseId"
 					required
-					disabled={pending || warehouses.length === 0}
-					defaultValue=""
 				>
-					<NativeSelectOption value="" disabled>
+					<NativeSelectOption disabled value="">
 						Select warehouse
 					</NativeSelectOption>
 					{warehouses.map((warehouse) => (
@@ -131,19 +132,19 @@ export function ReserveStockForm({
 				</NativeSelect>
 			</FormField>
 			<FormField
+				error={itemError}
+				fieldId="stock-reserve-item"
 				label="Item"
 				required
-				fieldId="stock-reserve-item"
-				error={itemError}
 			>
 				<NativeSelect
+					defaultValue=""
+					disabled={pending || items.length === 0}
 					id="stock-reserve-item"
 					name="itemId"
 					required
-					disabled={pending || items.length === 0}
-					defaultValue=""
 				>
-					<NativeSelectOption value="" disabled>
+					<NativeSelectOption disabled value="">
 						Select item
 					</NativeSelectOption>
 					{items.map((item) => (
@@ -154,22 +155,22 @@ export function ReserveStockForm({
 				</NativeSelect>
 			</FormField>
 			<FormField
+				error={quantityError}
+				fieldId="stock-reserve-quantity"
 				label="Quantity"
 				required
-				fieldId="stock-reserve-quantity"
-				error={quantityError}
 			>
 				<Input
+					autoComplete="off"
+					disabled={pending}
 					id="stock-reserve-quantity"
 					name="quantity"
 					required
-					autoComplete="off"
-					disabled={pending}
 				/>
 			</FormField>
 			<Button
-				type="submit"
 				disabled={pending || warehouses.length === 0 || items.length === 0}
+				type="submit"
 			>
 				{pending ? <Spinner /> : null}
 				Reserve stock

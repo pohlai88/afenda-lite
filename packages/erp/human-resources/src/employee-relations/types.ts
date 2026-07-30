@@ -18,93 +18,93 @@ import type {
 	EmployeeCaseType,
 } from "../shared/employee-relations-status";
 
-export type EmployeeCaseParticipant = {
+export interface EmployeeCaseParticipant {
 	actorUserId: string;
-	role: EmployeeCaseParticipantRole;
 	addedAt: string;
-};
+	role: EmployeeCaseParticipantRole;
+}
 
-export type EmployeeCase = {
-	id: HumanResourcesEmployeeCaseId;
-	organizationId: string;
-	employeeId: HumanResourcesEmployeeId;
-	employmentId: HumanResourcesEmploymentId;
-	caseType: EmployeeCaseType;
-	status: EmployeeCaseStatus;
-	severity: EmployeeCaseSeverity;
+export interface EmployeeCase {
 	allegationSummary: string;
+	caseType: EmployeeCaseType;
 	classificationCode: string;
-	ownerActorUserId: string;
-	subjectActorUserId: string | null;
-	participants: EmployeeCaseParticipant[];
-	conflictedActorUserIds: string[];
-	interimAuthority: string | null;
-	interimReason: string | null;
-	interimStartsOn: string | null;
-	interimReviewOn: string | null;
-	interimStatus: EmployeeCaseInterimStatus | null;
-	findingCode: string | null;
-	findingSummary: string | null;
-	findingRecordedBy: string | null;
-	findingRecordedAt: Date | null;
-	outcomeCode: string | null;
 	closedAt: Date | null;
 	closedBy: string | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
+	conflictedActorUserIds: string[];
 	createdAt: Date;
+	createdBy: string;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId;
+	findingCode: string | null;
+	findingRecordedAt: Date | null;
+	findingRecordedBy: string | null;
+	findingSummary: string | null;
+	id: HumanResourcesEmployeeCaseId;
+	interimAuthority: string | null;
+	interimReason: string | null;
+	interimReviewOn: string | null;
+	interimStartsOn: string | null;
+	interimStatus: EmployeeCaseInterimStatus | null;
+	organizationId: string;
+	outcomeCode: string | null;
+	ownerActorUserId: string;
+	participants: EmployeeCaseParticipant[];
+	severity: EmployeeCaseSeverity;
+	status: EmployeeCaseStatus;
+	subjectActorUserId: string | null;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type EmployeeCaseEvent = {
+export interface EmployeeCaseEvent {
+	caseId: HumanResourcesEmployeeCaseId;
+	createdAt: Date;
+	documentRef: string | null;
+	eventKind: EmployeeCaseEventKind;
 	id: HumanResourcesEmployeeCaseEventId;
 	organizationId: string;
-	caseId: HumanResourcesEmployeeCaseId;
-	eventKind: EmployeeCaseEventKind;
-	sequenceNo: number;
-	documentRef: string | null;
 	payloadJson: Record<string, unknown> | null;
-	redactsEventId: HumanResourcesEmployeeCaseEventId | null;
-	recordedBy: string;
 	recordedAt: Date;
-	createdAt: Date;
-};
+	recordedBy: string;
+	redactsEventId: HumanResourcesEmployeeCaseEventId | null;
+	sequenceNo: number;
+}
 
-export type EmployeeCaseAction = {
+export interface EmployeeCaseAction {
+	actionType: EmployeeCaseActionType;
+	approvedBy: string | null;
+	caseId: HumanResourcesEmployeeCaseId;
+	createdAt: Date;
+	createdBy: string;
 	id: HumanResourcesEmployeeCaseActionId;
 	organizationId: string;
-	caseId: HumanResourcesEmployeeCaseId;
-	actionType: EmployeeCaseActionType;
-	status: EmployeeCaseActionStatus;
-	recommendedBy: string;
-	approvedBy: string | null;
 	policyValidationRecorded: boolean;
 	recommendationNote: string | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
+	recommendedBy: string;
+	status: EmployeeCaseActionStatus;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type EmployeeCaseAppeal = {
+export interface EmployeeCaseAppeal {
+	appealGroundsSummary: string;
+	appealOutcomeCode: string | null;
+	caseId: HumanResourcesEmployeeCaseId;
+	createdAt: Date;
+	createdBy: string;
 	id: HumanResourcesEmployeeCaseAppealId;
 	organizationId: string;
-	caseId: HumanResourcesEmployeeCaseId;
 	originalFindingCode: string;
 	originalFindingRecordedAt: Date;
-	appealGroundsSummary: string;
-	status: EmployeeCaseAppealStatus;
-	appealOutcomeCode: string | null;
-	resolvedBy: string | null;
 	resolvedAt: Date | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
+	resolvedBy: string | null;
+	status: EmployeeCaseAppealStatus;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
 /** Case row after ACL field projection (dates as ISO strings). */
 export type ProjectedEmployeeCase = {
@@ -113,37 +113,37 @@ export type ProjectedEmployeeCase = {
 		: EmployeeCase[K];
 };
 
-export type EmployeeCaseListPage = {
+export interface EmployeeCaseListPage {
 	cases: ProjectedEmployeeCase[];
-	totalCount: number;
 	page: number;
 	pageSize: number;
-};
+	totalCount: number;
+}
 
-export type EmployeeCaseTimeline = {
+export interface EmployeeCaseTimeline {
 	caseId: HumanResourcesEmployeeCaseId;
 	events: EmployeeCaseEvent[];
-};
+}
 
-export type EmployeeCaseTerminationHandoff = {
-	caseId: HumanResourcesEmployeeCaseId;
+export interface EmployeeCaseTerminationHandoff {
 	actionId: HumanResourcesEmployeeCaseActionId;
-	organizationId: string;
+	caseId: HumanResourcesEmployeeCaseId;
 	employeeId: HumanResourcesEmployeeId;
 	employmentId: HumanResourcesEmploymentId;
-};
+	organizationId: string;
+}
 
-export type EmployeeCaseOutcome = {
-	caseId: HumanResourcesEmployeeCaseId;
-	status: EmployeeCaseStatus;
-	outcomeCode: string | null;
-	findingCode: string | null;
+export interface EmployeeCaseOutcome {
 	approvedActions: EmployeeCaseAction[];
+	caseId: HumanResourcesEmployeeCaseId;
+	findingCode: string | null;
 	openAppeals: EmployeeCaseAppeal[];
+	outcomeCode: string | null;
+	status: EmployeeCaseStatus;
 	terminationHandoff: EmployeeCaseTerminationHandoff | null;
-};
+}
 
-export type IdempotentEmployeeCaseRecord = {
+export interface IdempotentEmployeeCaseRecord {
 	caseId: HumanResourcesEmployeeCaseId;
 	fingerprint: string;
-};
+}

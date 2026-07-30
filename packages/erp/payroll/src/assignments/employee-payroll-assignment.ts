@@ -32,7 +32,7 @@ export const PAYROLL_AGGREGATE_EMPLOYEE_PAYROLL_ASSIGNMENT =
 export type PayrollEmployeePayrollAssignmentAggregate =
 	typeof PAYROLL_AGGREGATE_EMPLOYEE_PAYROLL_ASSIGNMENT;
 
-export async function createPayrollEmployeeAssignment(
+export function createPayrollEmployeeAssignment(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollEmployeeAssignment>> {
@@ -118,7 +118,7 @@ export async function createPayrollEmployeeAssignment(
 	});
 }
 
-export async function getPayrollEmployeeAssignment(
+export function getPayrollEmployeeAssignment(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollEmployeeAssignment | null>> {

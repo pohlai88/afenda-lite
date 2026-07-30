@@ -22,15 +22,15 @@ import type {
 	WorkAssignment,
 } from "../types";
 
-export type MapApprovedPayrollHandoffInput = {
-	compensationHandoff: ApprovedCompensationHandoff;
-	leaveHandoffs: readonly ApprovedLeaveHandoff[];
-	timeHandoff: ApprovedTimeHandoff | null;
+export interface MapApprovedPayrollHandoffInput {
 	assignment: WorkAssignment;
 	assignmentContext?: EmployeeAssignmentContext | null;
-	effectiveDate: string;
+	compensationHandoff: ApprovedCompensationHandoff;
 	correlationId: string;
-};
+	effectiveDate: string;
+	leaveHandoffs: readonly ApprovedLeaveHandoff[];
+	timeHandoff: ApprovedTimeHandoff | null;
+}
 
 function toIsoDateTime(value: Date | string): string {
 	if (value instanceof Date) {
@@ -160,9 +160,9 @@ function mapOvertimeFacts(
 	return timeHandoff.overtime.map((entry) => ({
 		overtimeType: entry.type,
 		approvedMinutes: entry.minutes,
-		...(entry.payrollApprovedMinutes !== undefined
-			? { payrollApprovedMinutes: entry.payrollApprovedMinutes }
-			: {}),
+		...(entry.payrollApprovedMinutes === undefined
+			? {}
+			: { payrollApprovedMinutes: entry.payrollApprovedMinutes }),
 		timesheetId: timeHandoff.timesheetId,
 		sourceVersion: timeHandoff.timesheetVersion,
 	}));
@@ -243,15 +243,15 @@ export function mapApprovedPayrollHandoff(
 		assignment: {
 			assignmentId: input.assignment.id,
 			positionId: input.assignment.positionId,
-			...(input.assignmentContext?.departmentId !== undefined
-				? { departmentId: input.assignmentContext.departmentId }
-				: {}),
-			...(input.assignmentContext?.locationKey !== undefined
-				? { locationKey: input.assignmentContext.locationKey }
-				: {}),
-			...(input.assignmentContext?.legalEntityKey !== undefined
-				? { legalEntityKey: input.assignmentContext.legalEntityKey }
-				: {}),
+			...(input.assignmentContext?.departmentId === undefined
+				? {}
+				: { departmentId: input.assignmentContext.departmentId }),
+			...(input.assignmentContext?.locationKey === undefined
+				? {}
+				: { locationKey: input.assignmentContext.locationKey }),
+			...(input.assignmentContext?.legalEntityKey === undefined
+				? {}
+				: { legalEntityKey: input.assignmentContext.legalEntityKey }),
 		},
 		effectiveDate: input.effectiveDate,
 		currencyCode: compensation.currencyCode,
@@ -265,10 +265,10 @@ export function mapApprovedPayrollHandoff(
 		overtimeFacts: mapOvertimeFacts(input.timeHandoff),
 		sourceVersion: {
 			compensationVersion: compensation.version,
-			...(leavePolicyVersion !== undefined ? { leavePolicyVersion } : {}),
-			...(input.timeHandoff
-				? { timesheetVersion: input.timeHandoff.timesheetVersion }
-				: {}),
+			...(leavePolicyVersion === undefined ? {} : { leavePolicyVersion }),
+			...(input.timeHandoff === null
+				? {}
+				: { timesheetVersion: input.timeHandoff.timesheetVersion }),
 		},
 		approvalEvidence,
 	};

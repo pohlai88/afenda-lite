@@ -3,12 +3,12 @@ export const MAX_PAGE_LIMIT = 100;
 
 export type PaginationOrder = "asc" | "desc";
 
-export type PaginationParams = {
+export interface PaginationParams {
 	readonly limit: number;
 	readonly offset: number;
-	readonly orderBy?: string;
 	readonly order?: PaginationOrder;
-};
+	readonly orderBy?: string;
+}
 
 function hasUrlString(input: object): input is { readonly url: string } {
 	return "url" in input && typeof readProperty(input, "url") === "string";
@@ -18,7 +18,7 @@ function readProperty(input: object, key: PropertyKey): unknown {
 	try {
 		return Reflect.get(input, key);
 	} catch {
-		return undefined;
+		// Throwing getters are treated as absent pagination input.
 	}
 }
 
@@ -60,7 +60,6 @@ function parseOrder(raw: string | null): PaginationOrder | undefined {
 	if (raw === "asc" || raw === "desc") {
 		return raw;
 	}
-	return undefined;
 }
 
 /**

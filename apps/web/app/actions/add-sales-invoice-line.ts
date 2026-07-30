@@ -16,7 +16,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type AddSalesInvoiceLineActionData = { line: SalesInvoiceLine };
+export interface AddSalesInvoiceLineActionData {
+	line: SalesInvoiceLine;
+}
 export type AddSalesInvoiceLineActionState =
 	ActionResult<AddSalesInvoiceLineActionData> | null;
 
@@ -35,7 +37,7 @@ export async function addSalesInvoiceLineAction(
 	_prev: AddSalesInvoiceLineActionState,
 	formData: FormData,
 ): Promise<AddSalesInvoiceLineActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "addSalesInvoiceLineAction",
 		permission: "receivables.invoice.update",
 		safeMessage:
@@ -68,7 +70,9 @@ export async function addSalesInvoiceLineAction(
 				createReceivablesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePath("/admin/receivables");
 			revalidatePath("/client/receivables");
 			return { ok: true, data: { line: mapped.data } };

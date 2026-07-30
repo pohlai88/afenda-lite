@@ -4,7 +4,7 @@ import type {
 	HeadcountReservation,
 } from "../types";
 
-export type { HeadcountLineAvailability };
+export type { HeadcountLineAvailability } from "../types";
 
 function sumReservations(
 	reservations: HeadcountReservation[],

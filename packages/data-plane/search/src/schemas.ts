@@ -3,12 +3,12 @@ import { z } from "zod";
 export const DEFAULT_SEARCH_LIMIT = 20 as const;
 export const MAX_SEARCH_LIMIT = 100 as const;
 export const MAX_SEARCH_TITLE_LENGTH = 500 as const;
-export const MAX_SEARCH_DESCRIPTION_LENGTH = 4_000 as const;
-export const MAX_SEARCH_URL_LENGTH = 2_048 as const;
+export const MAX_SEARCH_DESCRIPTION_LENGTH = 4000 as const;
+export const MAX_SEARCH_URL_LENGTH = 2048 as const;
 export const MAX_SEARCH_ENTITY_LENGTH = 128 as const;
 export const MAX_SEARCH_DOCUMENT_ID_LENGTH = 256 as const;
 export const MAX_SEARCH_QUERY_LENGTH = 500 as const;
-export const MAX_SEARCH_BATCH_SIZE = 1_000 as const;
+export const MAX_SEARCH_BATCH_SIZE = 1000 as const;
 
 const jsonObjectSchema = z.record(z.string(), z.unknown());
 

@@ -106,8 +106,12 @@ export type PartyParentRelationshipEdge = PartyRelationshipPathEdge & {
 };
 
 export function compareCanonicalPartyIds(left: string, right: string): number {
-	if (left < right) return -1;
-	if (left > right) return 1;
+	if (left < right) {
+		return -1;
+	}
+	if (left > right) {
+		return 1;
+	}
 	return 0;
 }
 
@@ -128,8 +132,7 @@ export function canonicalizePartyRelationship(input: {
 		} satisfies MasterFailureDetails);
 	}
 
-	let sourcePartyId = input.sourcePartyId;
-	let targetPartyId = input.targetPartyId;
+	let { sourcePartyId, targetPartyId } = input;
 	if (definition.reverseToCanonical) {
 		[sourcePartyId, targetPartyId] = [targetPartyId, sourcePartyId];
 	} else if (
@@ -166,8 +169,12 @@ function hasDirectedPartyPath(
 	const visited = new Set<string>([fromPartyId]);
 	while (pending.length > 0) {
 		const current = pending.pop();
-		if (current === undefined || visited.has(current)) continue;
-		if (current === toPartyId) return true;
+		if (current === undefined || visited.has(current)) {
+			continue;
+		}
+		if (current === toPartyId) {
+			return true;
+		}
 		visited.add(current);
 		pending.push(...(adjacency.get(current) ?? []));
 	}

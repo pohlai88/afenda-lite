@@ -15,18 +15,19 @@ import { parseSchema } from "@/modules/platform/schemas/common";
 export async function getJournalAction(
 	journalId: string,
 ): Promise<ActionResult<{ journal: Journal }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getJournalAction",
 		permission: "accounting.journal.read",
 		safeMessage: "Could not load journal. Try again or contact an admin.",
 		execute: async (session) => {
 			const parsed = parseSchema(z.string().uuid(), journalId);
-			if (!parsed.success)
+			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
 					"Enter a valid journal id.",
 					parsed.details,
 				);
+			}
 			const mapped = mapPackageResult(
 				await getJournalById(
 					{
@@ -37,9 +38,12 @@ export async function getJournalAction(
 					createAccountingCommandOptions(),
 				),
 			);
-			if (!mapped.ok) return mapped;
-			if (mapped.data === null)
+			if (!mapped.ok) {
+				return mapped;
+			}
+			if (mapped.data === null) {
 				return actionFail("NOT_FOUND", "Journal not found");
+			}
 			return { ok: true, data: { journal: mapped.data } };
 		},
 	});

@@ -20,7 +20,7 @@ export const drizzleIdentityMethods: HumanResourcesIdentityStore = {
 	async getUserEmployeeMapping(input: {
 		organizationId: string;
 		userId: string;
-		asOf?: string;
+		asOf?: string | undefined;
 	}): Promise<Result<HumanResourcesEmployeeIdentity | null>> {
 		try {
 			const queryDate = input.asOf ?? new Date().toISOString().slice(0, 10);
@@ -71,7 +71,7 @@ export const drizzleIdentityMethods: HumanResourcesIdentityStore = {
 	async getManagerEmployeesForUser(input: {
 		organizationId: string;
 		userId: string;
-		asOf?: string;
+		asOf?: string | undefined;
 	}): Promise<Result<HumanResourcesEmployeeId[]>> {
 		try {
 			// First, get the employee ID for this user
@@ -81,7 +81,7 @@ export const drizzleIdentityMethods: HumanResourcesIdentityStore = {
 				...(input.asOf === undefined ? {} : { asOf: input.asOf }),
 			});
 
-			if (!userEmployeeResult.ok || !userEmployeeResult.data) {
+			if (!(userEmployeeResult.ok && userEmployeeResult.data)) {
 				return ok([]);
 			}
 
@@ -125,7 +125,7 @@ export const drizzleIdentityMethods: HumanResourcesIdentityStore = {
 		employeeId: HumanResourcesEmployeeId;
 		relationshipType: "self" | "proxy";
 		effectiveFrom: string;
-		effectiveUntil?: string;
+		effectiveUntil?: string | undefined;
 		actorUserId: string;
 	}): Promise<Result<{ id: string }>> {
 		try {

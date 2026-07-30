@@ -125,7 +125,9 @@ async function mapCheckpointRow<Output>(
 		organizationId: row.organizationId,
 		checkpointId: row.id,
 	});
-	if (!auditTrail.ok) return auditTrail;
+	if (!auditTrail.ok) {
+		return auditTrail;
+	}
 	const parsed = checkpointSchema.safeParse({
 		...row,
 		auditTrail: auditTrail.data,
@@ -243,8 +245,9 @@ export function createDrizzleBulkCheckpointPort<
 				const [saved] = await runNeonHttpTransaction<[Array<{ id: string }>]>(
 					(sqlTag) => [statement(sqlTag)],
 				);
-				if (!saved[0])
+				if (!saved[0]) {
 					return fail("CONFLICT", "Bulk checkpoint version changed");
+				}
 				const row = await findRow(checkpoint);
 				return row
 					? mapCheckpointRow<Output>(row)
@@ -271,7 +274,9 @@ export function createDrizzleBulkCheckpointPort<
 		async loadLatestErrorArtifact(input) {
 			try {
 				const checkpoint = await findRow(input);
-				if (!checkpoint) return ok(null);
+				if (!checkpoint) {
+					return ok(null);
+				}
 				const rows = await db
 					.select()
 					.from(hrBulkImportErrorArtifact)
@@ -286,8 +291,10 @@ export function createDrizzleBulkCheckpointPort<
 					)
 					.orderBy(desc(hrBulkImportErrorArtifact.checkpointVersion))
 					.limit(1);
-				const artifact = rows[0];
-				if (!artifact) return ok(null);
+				const [artifact] = rows;
+				if (!artifact) {
+					return ok(null);
+				}
 				const result: BulkErrorArtifact = {
 					organizationId: artifact.organizationId,
 					batchId: checkpoint.batchId,

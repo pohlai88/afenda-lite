@@ -25,11 +25,21 @@ const ITEM_ID = "55555555-5555-4555-8555-555555555555";
 const UOM_DIMENSION_ID = "88888888-8888-4888-8888-888888888888";
 const UOM_ID = "66666666-6666-4666-8666-666666666666";
 
+function executeSequentially(
+	statements: readonly Parameters<typeof db.execute>[0][],
+): Promise<void> {
+	return statements.reduce<Promise<void>>(
+		(sequence, statement) =>
+			sequence.then(() => db.execute(statement)).then(() => undefined),
+		Promise.resolve(),
+	);
+}
+
 describe.runIf(runIntegration)(
 	"Sales Drizzle temporary-Neon integration",
 	() => {
 		beforeAll(async () => {
-			for (const statement of [
+			await executeSequentially([
 				sql`INSERT INTO ref_uom_dimension (id, code, name)
 			VALUES (${UOM_DIMENSION_ID}::uuid, 'sales_it_count', 'Sales integration count')
 			ON CONFLICT (id) DO NOTHING`,
@@ -42,14 +52,11 @@ describe.runIf(runIntegration)(
 			VALUES (${ITEM_GROUP_ID}::uuid, ${ORGANIZATION_ID}, 'SALES-IT-GROUP', 'SALES-IT-GROUP', 'Sales Integration Group', 'active', ${ACTOR_USER_ID}, ${ACTOR_USER_ID})`,
 				sql`INSERT INTO md_item (id, organization_id, code, normalized_code, name, item_type, status, base_uom_id, item_group_id, created_by, updated_by)
 			VALUES (${ITEM_ID}::uuid, ${ORGANIZATION_ID}, 'SALES-IT-ITEM', 'SALES-IT-ITEM', 'Sales Integration Item', 'stock', 'active', ${UOM_ID}::uuid, ${ITEM_GROUP_ID}::uuid, ${ACTOR_USER_ID}, ${ACTOR_USER_ID})`,
-			]) {
-				// biome-ignore lint/performance/noAwaitInLoops: Fixture statements must execute in dependency order.
-				await db.execute(statement);
-			}
+			]);
 		});
 
 		afterAll(async () => {
-			for (const statement of [
+			await executeSequentially([
 				sql`DELETE FROM platform_domain_event WHERE organization_id = ${ORGANIZATION_ID} AND correlation_id LIKE 'test:drizzle-%'`,
 				sql`DELETE FROM platform_audit_log WHERE organization_id = ${ORGANIZATION_ID} AND correlation_id LIKE 'test:drizzle-%'`,
 				sql`DELETE FROM sales_order_schedule WHERE organization_id = ${ORGANIZATION_ID}`,
@@ -60,10 +67,7 @@ describe.runIf(runIntegration)(
 				sql`DELETE FROM md_party WHERE id = ${PARTY_ID}::uuid`,
 				sql`DELETE FROM ref_uom WHERE id = ${UOM_ID}::uuid`,
 				sql`DELETE FROM ref_uom_dimension WHERE id = ${UOM_DIMENSION_ID}::uuid`,
-			]) {
-				// biome-ignore lint/performance/noAwaitInLoops: Cleanup reverses fixture dependencies deterministically.
-				await db.execute(statement);
-			}
+			]);
 		});
 
 		it("persists state, audit and outbox atomically with tenant isolation", async () => {

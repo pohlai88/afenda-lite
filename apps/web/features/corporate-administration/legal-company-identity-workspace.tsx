@@ -235,8 +235,8 @@ export function LegalCompanyIdentityWorkspace({
 				/>
 				<ActivitiesSection
 					action={activityAction}
-					canWrite={canWrite}
 					activities={activities}
+					canWrite={canWrite}
 					company={company}
 					endAction={endActivityAction}
 					endState={endActivityState}
@@ -384,7 +384,7 @@ export function CompanyNameHistory({
 }: Readonly<{ names: readonly LegalCompanyIdentityName[] }>) {
 	if (names.length === 0) {
 		return (
-			<p className="text-sm text-muted-foreground">
+			<p className="text-muted-foreground text-sm">
 				No statutory name history has been recorded.
 			</p>
 		);
@@ -615,7 +615,7 @@ export function LegalFormHistory({
 }: Readonly<{ legalForms: readonly LegalCompanyIdentityLegalForm[] }>) {
 	if (legalForms.length === 0) {
 		return (
-			<p className="text-sm text-muted-foreground">
+			<p className="text-muted-foreground text-sm">
 				No legal form history has been recorded.
 			</p>
 		);
@@ -812,7 +812,7 @@ export function IdentifierForm({
 					organizationSlug={organizationSlug}
 					versionFieldName="expectedCompanyVersion"
 				/>
-				<p id="identifierTaxBoundary" className="text-sm text-muted-foreground">
+				<p className="text-muted-foreground text-sm" id="identifierTaxBoundary">
 					Tax, VAT and GST registrations are owned by Master Data and are
 					rejected here.
 				</p>
@@ -892,7 +892,7 @@ export function IdentifierHistory({
 }: Readonly<{ identifiers: readonly LegalCompanyIdentityIdentifier[] }>) {
 	if (identifiers.length === 0) {
 		return (
-			<p className="text-sm text-muted-foreground">
+			<p className="text-muted-foreground text-sm">
 				No company identifiers have been recorded.
 			</p>
 		);
@@ -1040,7 +1040,7 @@ function FinancialYearSection({
 					state={state}
 				/>
 				{financialYears.length === 0 ? (
-					<p className="text-sm text-muted-foreground">
+					<p className="text-muted-foreground text-sm">
 						No financial-year history has been recorded.
 					</p>
 				) : (
@@ -1288,7 +1288,7 @@ export function ActivityHistory({
 }: Readonly<{ activities: readonly LegalCompanyIdentityActivity[] }>) {
 	if (activities.length === 0) {
 		return (
-			<p className="text-sm text-muted-foreground">
+			<p className="text-muted-foreground text-sm">
 				No company activities have been recorded.
 			</p>
 		);
@@ -1422,8 +1422,8 @@ function FormField({
 function SubmitButton({ children }: Readonly<{ children: React.ReactNode }>) {
 	const status = useFormStatus();
 	return (
-		<Button type="submit" disabled={status.pending}>
-			{status.pending ? "Saving..." : children}
+		<Button disabled={status.pending} type="submit">
+			{status.pending ? "Saving..." : <span>{children}</span>}
 		</Button>
 	);
 }

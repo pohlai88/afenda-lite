@@ -264,17 +264,17 @@ const statesByProfile = {
 } satisfies Record<UiQualityProfileId, readonly UiState[]>;
 
 interface ComponentDefinition {
-	id: UiComponentMetadata["id"];
-	sourceModule: UiComponentMetadata["sourceModule"];
-	publicExports: readonly string[];
-	variants?: UiComponentMetadata["variants"];
-	sizes?: UiComponentMetadata["sizes"];
-	layer: UiLayer;
-	family: UiFamily;
-	renderMode: UiRenderMode;
 	capabilities: readonly UiCapabilityId[];
+	family: UiFamily;
+	id: UiComponentMetadata["id"];
+	layer: UiLayer;
+	publicExports: readonly string[];
 	qualityProfile: UiQualityProfileId;
+	renderMode: UiRenderMode;
+	sizes?: UiComponentMetadata["sizes"];
+	sourceModule: UiComponentMetadata["sourceModule"];
 	tokenFamilies?: readonly UiTokenFamilyId[];
+	variants?: UiComponentMetadata["variants"];
 }
 
 function defineComponent(definition: ComponentDefinition): UiComponentMetadata {

@@ -10,7 +10,6 @@ import {
 	HUMAN_RESOURCES_PERFORMANCE_REVIEW_REOPENED_EVENT,
 } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
-
 import type { HumanResourcesPermission } from "../src/authorization";
 import { createEmployee } from "../src/core/employee";
 import { amendEmployment, createEmployment } from "../src/core/employment";
@@ -83,9 +82,11 @@ import {
 	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_OWN_READ,
 	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_REVIEW_REOPEN,
 } from "../src/permissions";
+import { runSequential, sequentialReturn } from "../src/shared/run-sequential";
 import { createMemoryHumanResourcesStore } from "../src/testing";
 import type { PerformanceReview } from "../src/types";
 import { createTestHumanResourcesCommandOptions } from "./helpers/command-options";
+import { helperAssert as assert } from "./helpers/helper-assert";
 import {
 	createStoreBackedIdentityResolver,
 	mapActorToEmployee,
@@ -232,7 +233,7 @@ async function seedOpenCycleWithParticipant(
 	if (!participants.ok || participants.data.length === 0) {
 		throw new Error("Failed to resolve cycle participant after open");
 	}
-	const participant = participants.data[0];
+	const [participant] = participants.data;
 	if (participant === undefined) {
 		throw new Error("Failed to resolve cycle participant after open");
 	}
@@ -318,7 +319,7 @@ async function finalizeReview(
 	review: PerformanceReview,
 	idempotencyKey: string,
 ) {
-	return finalizePerformanceReview(
+	return await finalizePerformanceReview(
 		{
 			organizationId: review.organizationId,
 			actorUserId: ACTOR,
@@ -357,7 +358,9 @@ describe("Performance cycle lifecycle", () => {
 			{ ...ready, ports },
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const retry = await createPerformanceCycle(
 			{
@@ -375,7 +378,9 @@ describe("Performance cycle lifecycle", () => {
 			ready,
 		);
 		expect(retry.ok).toBe(true);
-		if (!retry.ok) return;
+		if (!retry.ok) {
+			return;
+		}
 		expect(retry.data.id).toBe(created.data.id);
 
 		const conflict = await createPerformanceCycle(
@@ -410,7 +415,9 @@ describe("Performance cycle lifecycle", () => {
 			},
 		});
 		expect(opened.ok).toBe(true);
-		if (!opened.ok) return;
+		if (!opened.ok) {
+			return;
+		}
 		expect(opened.data.status).toBe("open");
 		expect(ports.outbox.calls).toContainEqual(
 			expect.objectContaining({
@@ -462,7 +469,9 @@ describe("Performance cycle lifecycle", () => {
 			{ ...ready, ports },
 		);
 		expect(closed.ok).toBe(true);
-		if (!closed.ok) return;
+		if (!closed.ok) {
+			return;
+		}
 		expect(closed.data.status).toBe("closed");
 		expect(ports.audit.calls).toContainEqual(
 			expect.objectContaining({
@@ -491,7 +500,9 @@ describe("Performance cycle lifecycle", () => {
 			ready,
 		);
 		expect(foreign.ok).toBe(true);
-		if (!foreign.ok) return;
+		if (!foreign.ok) {
+			return;
+		}
 		expect(foreign.data).toBeNull();
 	});
 });
@@ -517,7 +528,7 @@ describe("Slice 9.2 — Performance cycles", () => {
 			},
 			ready,
 		);
-		expect(created.ok).toBe(true);
+		assert.strictEqual(created.ok, true);
 		if (!created.ok) {
 			throw new Error(`Failed to seed draft cycle: ${created.code}`);
 		}
@@ -539,7 +550,9 @@ describe("Slice 9.2 — Performance cycles", () => {
 			cycle: draft,
 		});
 		expect(published.ok).toBe(true);
-		if (!published.ok) return;
+		if (!published.ok) {
+			return;
+		}
 		expect(published.data.status).toBe("published");
 
 		const participant = await addCycleParticipant(
@@ -554,7 +567,9 @@ describe("Slice 9.2 — Performance cycles", () => {
 			ready,
 		);
 		expect(participant.ok).toBe(true);
-		if (!participant.ok) return;
+		if (!participant.ok) {
+			return;
+		}
 
 		const opened = await openPerformanceCycle(
 			{
@@ -567,7 +582,9 @@ describe("Slice 9.2 — Performance cycles", () => {
 			ready,
 		);
 		expect(opened.ok).toBe(true);
-		if (!opened.ok) return;
+		if (!opened.ok) {
+			return;
+		}
 		expect(opened.data.status).toBe("open");
 
 		const closed = await closePerformanceCycle(
@@ -581,7 +598,9 @@ describe("Slice 9.2 — Performance cycles", () => {
 			ready,
 		);
 		expect(closed.ok).toBe(true);
-		if (!closed.ok) return;
+		if (!closed.ok) {
+			return;
+		}
 		expect(closed.data.status).toBe("closed");
 	});
 
@@ -616,7 +635,9 @@ describe("Slice 9.2 — Performance cycles", () => {
 			ready,
 		);
 		expect(periodsOnly.ok).toBe(true);
-		if (!periodsOnly.ok) return;
+		if (!periodsOnly.ok) {
+			return;
+		}
 
 		const missingEligibility = await publishPerformanceCycle(
 			{
@@ -692,7 +713,9 @@ describe("Slice 9.2 — Performance cycles", () => {
 			ready,
 		);
 		expect(updated.ok).toBe(true);
-		if (!updated.ok) return;
+		if (!updated.ok) {
+			return;
+		}
 		expect(updated.data.ratingScale.codes).toEqual(["developing", "strong"]);
 
 		const published = await publishPerformanceCycleReady(ready, {
@@ -702,7 +725,9 @@ describe("Slice 9.2 — Performance cycles", () => {
 			cycle: updated.data,
 		});
 		expect(published.ok).toBe(true);
-		if (!published.ok) return;
+		if (!published.ok) {
+			return;
+		}
 
 		const blocked = await updatePerformanceCycle(
 			{
@@ -800,7 +825,9 @@ describe("Slice 9.2 — Performance cycles", () => {
 			cycle: draft,
 		});
 		expect(published.ok).toBe(true);
-		if (!published.ok) return;
+		if (!published.ok) {
+			return;
+		}
 
 		const terminated = await amendEmployment(
 			{
@@ -814,7 +841,9 @@ describe("Slice 9.2 — Performance cycles", () => {
 			ready,
 		);
 		expect(terminated.ok).toBe(true);
-		if (!terminated.ok) return;
+		if (!terminated.ok) {
+			return;
+		}
 
 		const enrolled = await enrollEligibleCycleParticipants(
 			{
@@ -827,7 +856,9 @@ describe("Slice 9.2 — Performance cycles", () => {
 			ready,
 		);
 		expect(enrolled.ok).toBe(true);
-		if (!enrolled.ok) return;
+		if (!enrolled.ok) {
+			return;
+		}
 		expect(
 			enrolled.data.some(
 				(participant) => participant.employeeId === eligible.employee.id,
@@ -866,7 +897,9 @@ describe("Slice 9.2 — Performance cycles", () => {
 			ready,
 		);
 		expect(eligibility.ok).toBe(true);
-		if (!eligibility.ok) return;
+		if (!eligibility.ok) {
+			return;
+		}
 		expect(eligibility.data?.allowedEmploymentStatuses).toContain("active");
 
 		const reviewPeriods = await listPerformanceCycleReviewPeriods(
@@ -879,7 +912,9 @@ describe("Slice 9.2 — Performance cycles", () => {
 			ready,
 		);
 		expect(reviewPeriods.ok).toBe(true);
-		if (!reviewPeriods.ok) return;
+		if (!reviewPeriods.ok) {
+			return;
+		}
 		expect(reviewPeriods.data).toHaveLength(2);
 	});
 
@@ -909,7 +944,9 @@ describe("Slice 9.2 — Performance cycles", () => {
 			cycle: draft,
 		});
 		expect(published.ok).toBe(true);
-		if (!published.ok) return;
+		if (!published.ok) {
+			return;
+		}
 
 		const closeFromPublished = await closePerformanceCycle(
 			{
@@ -949,7 +986,9 @@ describe("Performance cycle participants", () => {
 			ready,
 		);
 		expect(removed.ok).toBe(true);
-		if (!removed.ok) return;
+		if (!removed.ok) {
+			return;
+		}
 
 		const goal = await createPerformanceGoal(
 			{
@@ -1004,7 +1043,9 @@ describe("Performance cycle participants", () => {
 			ready,
 		);
 		expect(participants.ok).toBe(true);
-		if (!participants.ok) return;
+		if (!participants.ok) {
+			return;
+		}
 		expect(participants.data).toHaveLength(1);
 		expect(participants.data[0]?.status).toBe("removed");
 	});
@@ -1037,7 +1078,9 @@ describe("Performance goals", () => {
 			ready,
 		);
 		expect(goalA.ok).toBe(true);
-		if (!goalA.ok) return;
+		if (!goalA.ok) {
+			return;
+		}
 
 		const goalB = await createPerformanceGoal(
 			{
@@ -1057,28 +1100,38 @@ describe("Performance goals", () => {
 			ready,
 		);
 		expect(goalB.ok).toBe(true);
-		if (!goalB.ok) return;
+		if (!goalB.ok) {
+			return;
+		}
 
 		let submittedA = goalA.data;
 		let submittedB = goalB.data;
-		for (const goal of [goalA.data, goalB.data]) {
-			const submitted = await submitPerformanceGoal(
-				{
-					organizationId: ORG_A,
-					actorUserId: ACTOR,
-					correlationId: `corr-submit-${goal.id}`,
-					goalId: goal.id,
-					expectedVersion: goal.version,
-				},
-				ready,
-			);
-			expect(submitted.ok).toBe(true);
-			if (!submitted.ok) return;
-			if (goal.id === goalA.data.id) {
-				submittedA = submitted.data;
-			} else {
-				submittedB = submitted.data;
-			}
+		const sequentialOutcome1 = await runSequential(
+			[goalA.data, goalB.data],
+			async (goal) => {
+				const submitted = await submitPerformanceGoal(
+					{
+						organizationId: ORG_A,
+						actorUserId: ACTOR,
+						correlationId: `corr-submit-${goal.id}`,
+						goalId: goal.id,
+						expectedVersion: goal.version,
+					},
+					ready,
+				);
+				expect(submitted.ok).toBe(true);
+				if (!submitted.ok) {
+					return sequentialReturn(undefined);
+				}
+				if (goal.id === goalA.data.id) {
+					submittedA = submitted.data;
+				} else {
+					submittedB = submitted.data;
+				}
+			},
+		);
+		if (sequentialOutcome1.kind === "return") {
+			return sequentialOutcome1.value;
 		}
 
 		const approvedA = await approvePerformanceGoal(
@@ -1186,7 +1239,9 @@ describe("Performance goals", () => {
 			ready,
 		);
 		expect(goal.ok).toBe(true);
-		if (!goal.ok) return;
+		if (!goal.ok) {
+			return;
+		}
 
 		const submitted = await submitPerformanceGoal(
 			{
@@ -1199,7 +1254,9 @@ describe("Performance goals", () => {
 			ready,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 
 		const approved = await approvePerformanceGoal(
 			{
@@ -1212,7 +1269,9 @@ describe("Performance goals", () => {
 			ready,
 		);
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 
 		const activated = await activatePerformanceGoal(
 			{
@@ -1225,7 +1284,9 @@ describe("Performance goals", () => {
 			ready,
 		);
 		expect(activated.ok).toBe(true);
-		if (!activated.ok) return;
+		if (!activated.ok) {
+			return;
+		}
 		expect(activated.data.status).toBe("active");
 
 		const progress = await recordGoalProgress(
@@ -1241,7 +1302,9 @@ describe("Performance goals", () => {
 			ready,
 		);
 		expect(progress.ok).toBe(true);
-		if (!progress.ok) return;
+		if (!progress.ok) {
+			return;
+		}
 		expect(progress.data.evidenceReference).toBe("doc://evidence/1");
 
 		const progressPage = await listGoalProgress(
@@ -1256,7 +1319,9 @@ describe("Performance goals", () => {
 			ready,
 		);
 		expect(progressPage.ok).toBe(true);
-		if (!progressPage.ok) return;
+		if (!progressPage.ok) {
+			return;
+		}
 		expect(progressPage.data.progress).toHaveLength(1);
 
 		const closed = await closePerformanceGoal(
@@ -1272,7 +1337,9 @@ describe("Performance goals", () => {
 			ready,
 		);
 		expect(closed.ok).toBe(true);
-		if (!closed.ok) return;
+		if (!closed.ok) {
+			return;
+		}
 		expect(closed.data.status).toBe("closed");
 		expect(closed.data.completionNote).toBe("Delivered");
 		expect(closed.data.completionEvidenceReference).toBe("doc://completion/1");
@@ -1307,7 +1374,9 @@ describe("Performance goals", () => {
 			ready,
 		);
 		expect(managerGoal.ok).toBe(true);
-		if (!managerGoal.ok) return;
+		if (!managerGoal.ok) {
+			return;
+		}
 		expect(managerGoal.data.status).toBe("approved");
 		expect(managerGoal.data.goalKind).toBe("manager");
 
@@ -1334,7 +1403,9 @@ describe("Performance goals", () => {
 			ready,
 		);
 		expect(activated.ok).toBe(true);
-		if (!activated.ok) return;
+		if (!activated.ok) {
+			return;
+		}
 
 		const progress = await recordGoalProgress(
 			{
@@ -1390,7 +1461,9 @@ describe("Performance goals", () => {
 			ready,
 		);
 		expect(goal.ok).toBe(true);
-		if (!goal.ok) return;
+		if (!goal.ok) {
+			return;
+		}
 
 		const submitted = await submitPerformanceGoal(
 			{
@@ -1438,7 +1511,9 @@ describe("Performance goals", () => {
 			ready,
 		);
 		expect(managerGoal.ok).toBe(true);
-		if (!managerGoal.ok) return;
+		if (!managerGoal.ok) {
+			return;
+		}
 
 		const employeeGoal = await createPerformanceGoal(
 			{
@@ -1457,7 +1532,9 @@ describe("Performance goals", () => {
 			ready,
 		);
 		expect(employeeGoal.ok).toBe(true);
-		if (!employeeGoal.ok) return;
+		if (!employeeGoal.ok) {
+			return;
+		}
 
 		const aligned = await alignPerformanceGoal(
 			{
@@ -1471,7 +1548,9 @@ describe("Performance goals", () => {
 			ready,
 		);
 		expect(aligned.ok).toBe(true);
-		if (!aligned.ok) return;
+		if (!aligned.ok) {
+			return;
+		}
 		expect(aligned.data.alignedToGoalId).toBe(managerGoal.data.id);
 
 		const otherCycleManagerGoal = await createPerformanceGoal(
@@ -1491,7 +1570,9 @@ describe("Performance goals", () => {
 			ready,
 		);
 		expect(otherCycleManagerGoal.ok).toBe(true);
-		if (!otherCycleManagerGoal.ok) return;
+		if (!otherCycleManagerGoal.ok) {
+			return;
+		}
 
 		const crossCycleAlign = await alignPerformanceGoal(
 			{
@@ -1539,7 +1620,9 @@ describe("Performance goals", () => {
 			ready,
 		);
 		expect(employeeParentGoal.ok).toBe(true);
-		if (!employeeParentGoal.ok) return;
+		if (!employeeParentGoal.ok) {
+			return;
+		}
 
 		const alignToEmployeeParent = await alignPerformanceGoal(
 			{
@@ -1590,7 +1673,9 @@ describe("Performance goals", () => {
 			employeeOnly,
 		);
 		expect(goal.ok).toBe(true);
-		if (!goal.ok) return;
+		if (!goal.ok) {
+			return;
+		}
 
 		const submitted = await submitPerformanceGoal(
 			{
@@ -1603,7 +1688,9 @@ describe("Performance goals", () => {
 			employeeOnly,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 
 		const selfApprove = await approvePerformanceGoal(
 			{
@@ -1665,7 +1752,9 @@ describe("Performance review workflow", () => {
 			ready,
 		);
 		expect(acknowledged.ok).toBe(true);
-		if (!acknowledged.ok) return;
+		if (!acknowledged.ok) {
+			return;
+		}
 		expect(acknowledged.data.status).toBe("acknowledged");
 		expect(acknowledged.data.acknowledgementNote).toContain("do not agree");
 
@@ -1682,7 +1771,9 @@ describe("Performance review workflow", () => {
 			{ ...ready, ports },
 		);
 		expect(finalized.ok).toBe(true);
-		if (!finalized.ok) return;
+		if (!finalized.ok) {
+			return;
+		}
 		expect(finalized.data.status).toBe("finalized");
 		expect(ports.outbox.calls).toContainEqual(
 			expect.objectContaining({
@@ -1703,7 +1794,9 @@ describe("Performance review workflow", () => {
 			ready,
 		);
 		expect(idempotent.ok).toBe(true);
-		if (!idempotent.ok) return;
+		if (!idempotent.ok) {
+			return;
+		}
 		expect(idempotent.data.id).toBe(finalized.data.id);
 
 		const reopened = await reopenPerformanceReview(
@@ -1718,7 +1811,9 @@ describe("Performance review workflow", () => {
 			{ ...ready, ports },
 		);
 		expect(reopened.ok).toBe(true);
-		if (!reopened.ok) return;
+		if (!reopened.ok) {
+			return;
+		}
 		expect(reopened.data.status).toBe("reopened");
 		expect(ports.outbox.calls).toContainEqual(
 			expect.objectContaining({
@@ -1781,7 +1876,9 @@ describe("Performance review workflow", () => {
 			ready,
 		);
 		expect(review.ok).toBe(true);
-		if (!review.ok) return;
+		if (!review.ok) {
+			return;
+		}
 
 		const unauthorized = await submitManagerAssessment(
 			{
@@ -1825,7 +1922,9 @@ describe("Performance review workflow", () => {
 			ready,
 		);
 		expect(review.ok).toBe(true);
-		if (!review.ok) return;
+		if (!review.ok) {
+			return;
+		}
 
 		const invalid = await submitSelfAssessment(
 			{
@@ -1857,7 +1956,9 @@ describe("Performance review workflow", () => {
 			"idem-immutable",
 		);
 		expect(finalized.ok).toBe(true);
-		if (!finalized.ok) return;
+		if (!finalized.ok) {
+			return;
+		}
 
 		const mutate = await submitSelfAssessment(
 			{
@@ -1917,7 +2018,9 @@ describe("Performance review workflow", () => {
 			fullReady,
 		);
 		expect(calibrated.ok).toBe(true);
-		if (!calibrated.ok) return;
+		if (!calibrated.ok) {
+			return;
+		}
 
 		const redacted = await getPerformanceReviewById(
 			{
@@ -1930,7 +2033,9 @@ describe("Performance review workflow", () => {
 			ownReadReady,
 		);
 		expect(redacted.ok).toBe(true);
-		if (!redacted.ok) return;
+		if (!redacted.ok) {
+			return;
+		}
 		expect(redacted.data?.review.overallRating).toBeNull();
 		expect(redacted.data?.review.calibrationNote).toBeNull();
 		expect(redacted.data?.assessments[0]?.rating).toBeNull();
@@ -1947,7 +2052,9 @@ describe("Performance review workflow", () => {
 			ownReadReady,
 		);
 		expect(listRedacted.ok).toBe(true);
-		if (!listRedacted.ok) return;
+		if (!listRedacted.ok) {
+			return;
+		}
 		expect(listRedacted.data.reviews[0]?.overallRating).toBeNull();
 
 		const blocked = await getPerformanceReviewById(
@@ -1976,7 +2083,9 @@ describe("Performance review workflow", () => {
 			fullReady,
 		);
 		expect(confidential.ok).toBe(true);
-		if (!confidential.ok) return;
+		if (!confidential.ok) {
+			return;
+		}
 		expect(
 			confidential.data?.assessments.some(
 				(assessment) => assessment.rating !== null,
@@ -2011,7 +2120,9 @@ describe("Performance review workflow", () => {
 			ready,
 		);
 		expect(addFirst.ok).toBe(true);
-		if (!addFirst.ok) return;
+		if (!addFirst.ok) {
+			return;
+		}
 
 		const addSecond = await addDelegatedReviewer(
 			{
@@ -2025,7 +2136,9 @@ describe("Performance review workflow", () => {
 			ready,
 		);
 		expect(addSecond.ok).toBe(true);
-		if (!addSecond.ok) return;
+		if (!addSecond.ok) {
+			return;
+		}
 
 		const detail = await getPerformanceReviewById(
 			{
@@ -2038,7 +2151,9 @@ describe("Performance review workflow", () => {
 			ready,
 		);
 		expect(detail.ok).toBe(true);
-		if (!detail.ok || !detail.data) return;
+		if (!(detail.ok && detail.data)) {
+			return;
+		}
 		const delegatedParticipants = detail.data.participants
 			.filter((participant) => participant.role === "delegated")
 			.toSorted((a, b) => a.sequenceNumber - b.sequenceNumber);
@@ -2078,7 +2193,9 @@ describe("Performance review workflow", () => {
 			ready,
 		);
 		expect(firstSubmit.ok).toBe(true);
-		if (!firstSubmit.ok) return;
+		if (!firstSubmit.ok) {
+			return;
+		}
 
 		const blockedFinalize = await finalizeReview(
 			ready,
@@ -2105,7 +2222,9 @@ describe("Performance review workflow", () => {
 			ready,
 		);
 		expect(secondSubmit.ok).toBe(true);
-		if (!secondSubmit.ok) return;
+		if (!secondSubmit.ok) {
+			return;
+		}
 
 		const acknowledged = await acknowledgePerformanceReview(
 			{
@@ -2119,7 +2238,9 @@ describe("Performance review workflow", () => {
 			ready,
 		);
 		expect(acknowledged.ok).toBe(true);
-		if (!acknowledged.ok) return;
+		if (!acknowledged.ok) {
+			return;
+		}
 
 		const finalized = await finalizeReview(
 			ready,
@@ -2149,7 +2270,9 @@ describe("Performance review workflow", () => {
 			ready,
 		);
 		expect(calibrated.ok).toBe(true);
-		if (!calibrated.ok) return;
+		if (!calibrated.ok) {
+			return;
+		}
 		expect(calibrated.data.overallRating).toBe("meets");
 		expect(calibrated.data.calibrationNote).toContain("Committee");
 
@@ -2182,7 +2305,9 @@ describe("Performance review workflow", () => {
 			ready,
 		);
 		expect(acknowledged.ok).toBe(true);
-		if (!acknowledged.ok) return;
+		if (!acknowledged.ok) {
+			return;
+		}
 
 		const finalized = await finalizePerformanceReview(
 			{
@@ -2197,7 +2322,9 @@ describe("Performance review workflow", () => {
 			ready,
 		);
 		expect(finalized.ok).toBe(true);
-		if (!finalized.ok) return;
+		if (!finalized.ok) {
+			return;
+		}
 		expect(finalized.data.status).toBe("finalized");
 	});
 });
@@ -2215,7 +2342,9 @@ describe("Performance improvement plan", () => {
 			seeded.review,
 			"idem-pip-finalize",
 		);
-		if (!finalized.ok) throw new Error(finalized.code);
+		if (!finalized.ok) {
+			throw new Error(finalized.code);
+		}
 
 		const plan = await createImprovementPlan(
 			{
@@ -2236,7 +2365,9 @@ describe("Performance improvement plan", () => {
 			ready,
 		);
 		expect(plan.ok).toBe(true);
-		if (!plan.ok) return;
+		if (!plan.ok) {
+			return;
+		}
 
 		const loaded = await getImprovementPlanById(
 			{
@@ -2260,7 +2391,9 @@ describe("Performance improvement plan", () => {
 			{ ...ready, ports },
 		);
 		expect(opened.ok).toBe(true);
-		if (!opened.ok) return;
+		if (!opened.ok) {
+			return;
+		}
 		expect(ports.outbox.calls).toContainEqual(
 			expect.objectContaining({
 				type: HUMAN_RESOURCES_IMPROVEMENT_PLAN_STARTED_EVENT,
@@ -2280,7 +2413,9 @@ describe("Performance improvement plan", () => {
 			ready,
 		);
 		expect(checkpoint.ok).toBe(true);
-		if (!checkpoint.ok) return;
+		if (!checkpoint.ok) {
+			return;
+		}
 		expect(checkpoint.data.outcome).toBe("met");
 
 		const duplicateCheckpoint = await recordImprovementCheckpoint(
@@ -2327,7 +2462,9 @@ describe("Performance improvement plan — Slice 9.5 lifecycle", () => {
 			seeded.review,
 			"idem-pip-95-finalize",
 		);
-		if (!finalized.ok) throw new Error(finalized.code);
+		if (!finalized.ok) {
+			throw new Error(finalized.code);
+		}
 
 		const plan = await createImprovementPlan(
 			{
@@ -2353,7 +2490,9 @@ describe("Performance improvement plan — Slice 9.5 lifecycle", () => {
 			ready,
 		);
 		expect(plan.ok).toBe(true);
-		if (!plan.ok) return;
+		if (!plan.ok) {
+			return;
+		}
 		expect(plan.data.status).toBe("draft");
 
 		const checkpoints = await listImprovementPlanCheckpoints(
@@ -2366,7 +2505,9 @@ describe("Performance improvement plan — Slice 9.5 lifecycle", () => {
 			ready,
 		);
 		expect(checkpoints.ok).toBe(true);
-		if (!checkpoints.ok) return;
+		if (!checkpoints.ok) {
+			return;
+		}
 		expect(checkpoints.data.checkpoints).toHaveLength(3);
 		expect(
 			checkpoints.data.checkpoints.every(
@@ -2385,7 +2526,9 @@ describe("Performance improvement plan — Slice 9.5 lifecycle", () => {
 			{ ...ready, ports },
 		);
 		expect(opened.ok).toBe(true);
-		if (!opened.ok) return;
+		if (!opened.ok) {
+			return;
+		}
 		expect(ports.outbox.calls).toContainEqual(
 			expect.objectContaining({
 				type: HUMAN_RESOURCES_IMPROVEMENT_PLAN_STARTED_EVENT,
@@ -2401,7 +2544,9 @@ describe("Performance improvement plan — Slice 9.5 lifecycle", () => {
 			ready,
 		);
 		expect(active.ok).toBe(true);
-		if (!active.ok) return;
+		if (!active.ok) {
+			return;
+		}
 		expect(active.data.plans.some((row) => row.id === opened.data.id)).toBe(
 			true,
 		);
@@ -2419,7 +2564,9 @@ describe("Performance improvement plan — Slice 9.5 lifecycle", () => {
 			ready,
 		);
 		expect(amended.ok).toBe(true);
-		if (!amended.ok) return;
+		if (!amended.ok) {
+			return;
+		}
 		expect(amended.data.performanceGap).toBe("Revised gap");
 		expect(amended.data.expectedOutcome).toBe("Revised outcome");
 
@@ -2437,7 +2584,9 @@ describe("Performance improvement plan — Slice 9.5 lifecycle", () => {
 			ready,
 		);
 		expect(checkpoint1.ok).toBe(true);
-		if (!checkpoint1.ok) return;
+		if (!checkpoint1.ok) {
+			return;
+		}
 		expect(checkpoint1.data.evidenceReference).toBe("doc://pip-95/milestone-1");
 
 		const extended = await amendImprovementPlan(
@@ -2454,7 +2603,9 @@ describe("Performance improvement plan — Slice 9.5 lifecycle", () => {
 			ready,
 		);
 		expect(extended.ok).toBe(true);
-		if (!extended.ok) return;
+		if (!extended.ok) {
+			return;
+		}
 		expect(extended.data.dueDate).toBe("2025-10-31");
 		expect(extended.data.lastExtensionReason).toBe(
 			"Additional coaching time required",
@@ -2473,12 +2624,14 @@ describe("Performance improvement plan — Slice 9.5 lifecycle", () => {
 			ready,
 		);
 		expect(afterExtend.ok).toBe(true);
-		if (!afterExtend.ok) return;
+		if (!afterExtend.ok) {
+			return;
+		}
 		expect(afterExtend.data.checkpoints).toHaveLength(4);
 		expect(afterExtend.data.checkpoints[3]?.sequenceNumber).toBe(4);
 		expect(afterExtend.data.checkpoints[3]?.outcome).toBe("pending");
 
-		for (const sequenceNumber of [2, 3, 4]) {
+		await runSequential([2, 3, 4], async (sequenceNumber) => {
 			const recorded = await recordImprovementCheckpoint(
 				{
 					organizationId: ORG_A,
@@ -2492,7 +2645,7 @@ describe("Performance improvement plan — Slice 9.5 lifecycle", () => {
 				ready,
 			);
 			expect(recorded.ok).toBe(true);
-		}
+		});
 
 		const acknowledged = await acknowledgeImprovementPlan(
 			{
@@ -2505,7 +2658,9 @@ describe("Performance improvement plan — Slice 9.5 lifecycle", () => {
 			ready,
 		);
 		expect(acknowledged.ok).toBe(true);
-		if (!acknowledged.ok) return;
+		if (!acknowledged.ok) {
+			return;
+		}
 
 		const completed = await completeImprovementPlan(
 			{
@@ -2520,7 +2675,9 @@ describe("Performance improvement plan — Slice 9.5 lifecycle", () => {
 			{ ...ready, ports },
 		);
 		expect(completed.ok).toBe(true);
-		if (!completed.ok) return;
+		if (!completed.ok) {
+			return;
+		}
 		expect(completed.data.status).toBe("completed");
 		expect(completed.data.outcomeReason).toBe("All milestones met");
 		expect(completed.data.outcomeEvidenceReference).toBe(
@@ -2544,7 +2701,9 @@ describe("Performance improvement plan — Slice 9.5 lifecycle", () => {
 			seeded.review,
 			"idem-pip-95-fail-finalize",
 		);
-		if (!finalized.ok) throw new Error(finalized.code);
+		if (!finalized.ok) {
+			throw new Error(finalized.code);
+		}
 
 		const plan = await createImprovementPlan(
 			{
@@ -2566,7 +2725,9 @@ describe("Performance improvement plan — Slice 9.5 lifecycle", () => {
 			ready,
 		);
 		expect(plan.ok).toBe(true);
-		if (!plan.ok) return;
+		if (!plan.ok) {
+			return;
+		}
 
 		const opened = await openImprovementPlan(
 			{
@@ -2579,7 +2740,9 @@ describe("Performance improvement plan — Slice 9.5 lifecycle", () => {
 			ready,
 		);
 		expect(opened.ok).toBe(true);
-		if (!opened.ok) return;
+		if (!opened.ok) {
+			return;
+		}
 
 		const missed = await recordImprovementCheckpoint(
 			{
@@ -2594,7 +2757,9 @@ describe("Performance improvement plan — Slice 9.5 lifecycle", () => {
 			ready,
 		);
 		expect(missed.ok).toBe(true);
-		if (!missed.ok) return;
+		if (!missed.ok) {
+			return;
+		}
 
 		const reviewed = await recordImprovementCheckpoint(
 			{
@@ -2609,7 +2774,9 @@ describe("Performance improvement plan — Slice 9.5 lifecycle", () => {
 			ready,
 		);
 		expect(reviewed.ok).toBe(true);
-		if (!reviewed.ok) return;
+		if (!reviewed.ok) {
+			return;
+		}
 
 		const acknowledged = await acknowledgeImprovementPlan(
 			{
@@ -2622,7 +2789,9 @@ describe("Performance improvement plan — Slice 9.5 lifecycle", () => {
 			ready,
 		);
 		expect(acknowledged.ok).toBe(true);
-		if (!acknowledged.ok) return;
+		if (!acknowledged.ok) {
+			return;
+		}
 
 		const closed = await closeImprovementPlanUnsuccessful(
 			{
@@ -2637,7 +2806,9 @@ describe("Performance improvement plan — Slice 9.5 lifecycle", () => {
 			ready,
 		);
 		expect(closed.ok).toBe(true);
-		if (!closed.ok) return;
+		if (!closed.ok) {
+			return;
+		}
 		expect(closed.data.status).toBe("unsuccessful");
 		expect(closed.data.outcomeReason).toBe("Milestone 1 missed");
 	});
@@ -2653,7 +2824,9 @@ describe("Performance improvement plan — Slice 9.5 lifecycle", () => {
 			seeded.review,
 			"idem-pip-95-pending-finalize",
 		);
-		if (!finalized.ok) throw new Error(finalized.code);
+		if (!finalized.ok) {
+			throw new Error(finalized.code);
+		}
 
 		const plan = await createImprovementPlan(
 			{
@@ -2675,7 +2848,9 @@ describe("Performance improvement plan — Slice 9.5 lifecycle", () => {
 			ready,
 		);
 		expect(plan.ok).toBe(true);
-		if (!plan.ok) return;
+		if (!plan.ok) {
+			return;
+		}
 
 		const opened = await openImprovementPlan(
 			{
@@ -2688,7 +2863,9 @@ describe("Performance improvement plan — Slice 9.5 lifecycle", () => {
 			ready,
 		);
 		expect(opened.ok).toBe(true);
-		if (!opened.ok) return;
+		if (!opened.ok) {
+			return;
+		}
 
 		const completed = await completeImprovementPlan(
 			{
@@ -2734,7 +2911,9 @@ describe("Employee performance history", () => {
 			ready,
 		);
 		expect(goal.ok).toBe(true);
-		if (!goal.ok) return;
+		if (!goal.ok) {
+			return;
+		}
 
 		const submitted = await submitPerformanceGoal(
 			{
@@ -2747,7 +2926,9 @@ describe("Employee performance history", () => {
 			ready,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 
 		const approved = await approvePerformanceGoal(
 			{
@@ -2760,7 +2941,9 @@ describe("Employee performance history", () => {
 			ready,
 		);
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 
 		const finalized = await finalizeReview(
 			ready,
@@ -2768,7 +2951,9 @@ describe("Employee performance history", () => {
 			"idem-history-finalize",
 		);
 		expect(finalized.ok).toBe(true);
-		if (!finalized.ok) return;
+		if (!finalized.ok) {
+			return;
+		}
 
 		const plan = await createImprovementPlan(
 			{
@@ -2789,7 +2974,9 @@ describe("Employee performance history", () => {
 			ready,
 		);
 		expect(plan.ok).toBe(true);
-		if (!plan.ok) return;
+		if (!plan.ok) {
+			return;
+		}
 
 		const redacted = await getEmployeePerformanceHistory(
 			{
@@ -2802,7 +2989,9 @@ describe("Employee performance history", () => {
 			ready,
 		);
 		expect(redacted.ok).toBe(true);
-		if (!redacted.ok) return;
+		if (!redacted.ok) {
+			return;
+		}
 		expect(redacted.data.employeeId).toBe(seeded.employee.id);
 		expect(redacted.data.entries.length).toBeGreaterThanOrEqual(1);
 
@@ -2810,7 +2999,9 @@ describe("Employee performance history", () => {
 			(historyEntry) => historyEntry.review.id === finalized.data.id,
 		);
 		expect(entry).toBeDefined();
-		if (!entry) return;
+		if (!entry) {
+			return;
+		}
 		expect(
 			entry.goals.some((cycleGoal) => cycleGoal.id === approved.data.id),
 		).toBe(true);
@@ -2833,7 +3024,9 @@ describe("Employee performance history", () => {
 			ready,
 		);
 		expect(confidential.ok).toBe(true);
-		if (!confidential.ok) return;
+		if (!confidential.ok) {
+			return;
+		}
 		const confidentialEntry = confidential.data.entries.find(
 			(historyEntry) => historyEntry.review.id === finalized.data.id,
 		);
@@ -2915,7 +3108,9 @@ describe("Performance authorization and concurrency", () => {
 			"idem-reopen-denied",
 		);
 		expect(finalized.ok).toBe(true);
-		if (!finalized.ok) return;
+		if (!finalized.ok) {
+			return;
+		}
 
 		const denied = await reopenPerformanceReview(
 			{
@@ -2952,7 +3147,9 @@ describe("Performance authorization and concurrency", () => {
 			ready,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const published = await publishPerformanceCycleReady(ready, {
 			organizationId: ORG_A,
@@ -2961,7 +3158,9 @@ describe("Performance authorization and concurrency", () => {
 			cycle: created.data,
 		});
 		expect(published.ok).toBe(true);
-		if (!published.ok) return;
+		if (!published.ok) {
+			return;
+		}
 
 		const stale = await openPerformanceCycle(
 			{

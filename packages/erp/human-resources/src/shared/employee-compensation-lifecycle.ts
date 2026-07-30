@@ -63,14 +63,14 @@ export function isEmployeeCompensationCorrectable(
 	return status === "active" || status === "ended";
 }
 
-export type EmployeeCompensationDraftFields = {
-	payFrequency: PayFrequency;
+export interface EmployeeCompensationDraftFields {
 	baseAmount: string;
+	confidentialNote: string | null;
 	currencyCode: string;
 	effectiveFrom: string;
 	effectiveTo: string | null;
-	reason: string;
 	gradeId: string | null;
+	payFrequency: PayFrequency;
+	reason: string;
 	salaryBandId: string | null;
-	confidentialNote: string | null;
-};
+}

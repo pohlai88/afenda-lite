@@ -62,7 +62,7 @@ function resolveImprovementPlanMilestones(input: {
 	return ok(milestones);
 }
 
-export async function createImprovementPlan(
+export function createImprovementPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceImprovementPlan>> {
@@ -136,7 +136,7 @@ export async function createImprovementPlan(
 	});
 }
 
-export async function openImprovementPlan(
+export function openImprovementPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceImprovementPlan>> {
@@ -161,7 +161,7 @@ export async function openImprovementPlan(
 	});
 }
 
-export async function acknowledgeImprovementPlan(
+export function acknowledgeImprovementPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceImprovementPlan>> {
@@ -186,7 +186,7 @@ export async function acknowledgeImprovementPlan(
 	});
 }
 
-export async function recordImprovementCheckpoint(
+export function recordImprovementCheckpoint(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceImprovementCheckpoint>> {
@@ -215,7 +215,7 @@ export async function recordImprovementCheckpoint(
 	});
 }
 
-export async function amendImprovementPlan(
+export function amendImprovementPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceImprovementPlan>> {
@@ -247,7 +247,7 @@ export async function amendImprovementPlan(
 	});
 }
 
-export async function completeImprovementPlan(
+export function completeImprovementPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceImprovementPlan>> {
@@ -274,7 +274,7 @@ export async function completeImprovementPlan(
 	});
 }
 
-export async function closeImprovementPlanUnsuccessful(
+export function closeImprovementPlanUnsuccessful(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceImprovementPlan>> {
@@ -302,7 +302,7 @@ export async function closeImprovementPlanUnsuccessful(
 	});
 }
 
-export async function cancelImprovementPlan(
+export function cancelImprovementPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceImprovementPlan>> {
@@ -327,7 +327,7 @@ export async function cancelImprovementPlan(
 	});
 }
 
-export async function getImprovementPlanById(
+export function getImprovementPlanById(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceImprovementPlan | null>> {
@@ -343,7 +343,7 @@ export async function getImprovementPlanById(
 	});
 }
 
-export async function listActiveImprovementPlans(
+export function listActiveImprovementPlans(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceImprovementPlanListPage>> {
@@ -360,7 +360,7 @@ export async function listActiveImprovementPlans(
 	});
 }
 
-export async function listImprovementPlanCheckpoints(
+export function listImprovementPlanCheckpoints(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceImprovementCheckpointListPage>> {

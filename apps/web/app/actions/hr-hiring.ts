@@ -24,7 +24,7 @@ const hireFromAcceptedOfferActionSchema = hrActionSchema(
 export async function hireFromAcceptedOfferAction(
 	input: unknown,
 ): Promise<ActionResult<{ result: HireFromAcceptedOfferResult }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "hireFromAcceptedOfferAction",
 		permission: "human-resources.hire.orchestrate",
 		safeMessage: "Could not hire from accepted offer.",
@@ -42,7 +42,9 @@ export async function hireFromAcceptedOfferAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { result: mapped.data } };
 		},
 	});

@@ -20,11 +20,11 @@ import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 
 const initialState: CancelStockMovementActionState = null;
 
-type CancelStockMovementFormProps = {
+interface CancelStockMovementFormProps {
 	canCancel: boolean;
-	defaultMovementId?: string | undefined;
 	defaultExpectedVersion?: number | undefined;
-};
+	defaultMovementId?: string | undefined;
+}
 
 export function CancelStockMovementForm({
 	canCancel,
@@ -35,6 +35,7 @@ export function CancelStockMovementForm({
 		cancelStockMovementAction,
 		initialState,
 	);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: Rotate the key after each completed action state.
 	const idempotencyKey = useMemo(
 		() => `cancel:${crypto.randomUUID()}`,
 		[state],
@@ -78,47 +79,47 @@ export function CancelStockMovementForm({
 				<FormError>{state.message}</FormError>
 			) : null}
 			<input
-				type="hidden"
 				name="idempotencyKey"
-				value={idempotencyKey}
 				readOnly
+				type="hidden"
+				value={idempotencyKey}
 			/>
 			<FormField
+				error={movementError}
+				fieldId="stock-cancel-movement"
 				label="Movement id"
 				required
-				fieldId="stock-cancel-movement"
-				error={movementError}
 			>
 				<Input
+					autoComplete="off"
+					defaultValue={defaultMovementId ?? ""}
+					disabled={pending}
 					id="stock-cancel-movement"
 					name="movementId"
 					required
-					autoComplete="off"
-					disabled={pending}
-					defaultValue={defaultMovementId ?? ""}
 				/>
 			</FormField>
 			<FormField
+				error={versionError}
+				fieldId="stock-cancel-version"
 				label="Expected version"
 				required
-				fieldId="stock-cancel-version"
-				error={versionError}
 			>
 				<Input
-					id="stock-cancel-version"
-					name="expectedVersion"
-					type="number"
-					min="1"
-					required
-					disabled={pending}
 					defaultValue={
-						defaultExpectedVersion !== undefined
-							? String(defaultExpectedVersion)
-							: undefined
+						defaultExpectedVersion === undefined
+							? undefined
+							: String(defaultExpectedVersion)
 					}
+					disabled={pending}
+					id="stock-cancel-version"
+					min="1"
+					name="expectedVersion"
+					required
+					type="number"
 				/>
 			</FormField>
-			<Button type="submit" disabled={pending}>
+			<Button disabled={pending} type="submit">
 				{pending ? <Spinner /> : null}
 				Cancel draft movement
 			</Button>

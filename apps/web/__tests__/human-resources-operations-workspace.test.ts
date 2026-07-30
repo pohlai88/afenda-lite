@@ -87,8 +87,9 @@ describe("Human Resources operations workspace", () => {
 			"Employee relations",
 			"Workforce planning",
 			"Integration health",
-		])
+		]) {
 			expect(workspace).toContain(area);
+		}
 		expect(workspace).toContain('from "@afenda/ui-system"');
 		expect(workspace).not.toMatch(/@afenda\/ui-system\//);
 	});

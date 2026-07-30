@@ -103,7 +103,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 		const employment = await createEmployment(
 			{
 				organizationId: ORG,
@@ -115,7 +117,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const calendar = await createWorkCalendar(
 			{
@@ -134,7 +138,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(calendar.ok).toBe(true);
-		if (!calendar.ok) return;
+		if (!calendar.ok) {
+			return;
+		}
 		const calendarAssignment = await assignEmploymentCalendar(
 			{
 				organizationId: ORG,
@@ -148,7 +154,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(calendarAssignment.ok).toBe(true);
-		if (!calendarAssignment.ok) return;
+		if (!calendarAssignment.ok) {
+			return;
+		}
 
 		const policy = await createTimePolicy(
 			{
@@ -165,7 +173,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(policy.ok).toBe(true);
-		if (!policy.ok) return;
+		if (!policy.ok) {
+			return;
+		}
 		const activePolicy = await activateTimePolicy(
 			{
 				organizationId: ORG,
@@ -177,7 +187,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(activePolicy.ok).toBe(true);
-		if (!activePolicy.ok) return;
+		if (!activePolicy.ok) {
+			return;
+		}
 		const policyAssignment = await assignTimePolicy(
 			{
 				organizationId: ORG,
@@ -190,7 +202,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(policyAssignment.ok).toBe(true);
-		if (!policyAssignment.ok) return;
+		if (!policyAssignment.ok) {
+			return;
+		}
 
 		const createPublishedAssignment = async (input: {
 			tag: string;
@@ -217,7 +231,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 				ready,
 			);
 			expect(shift.ok).toBe(true);
-			if (!shift.ok) throw new Error(`Failed to create ${input.tag} shift`);
+			if (!shift.ok) {
+				throw new Error(`Failed to create ${input.tag} shift`);
+			}
 			const active = await activateShift(
 				{
 					organizationId: ORG,
@@ -229,7 +245,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 				ready,
 			);
 			expect(active.ok).toBe(true);
-			if (!active.ok) throw new Error(`Failed to activate ${input.tag} shift`);
+			if (!active.ok) {
+				throw new Error(`Failed to activate ${input.tag} shift`);
+			}
 			const assignment = await assignShift(
 				{
 					organizationId: ORG,
@@ -345,7 +363,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(groupedSession.ok).toBe(true);
-		if (!groupedSession.ok) return;
+		if (!groupedSession.ok) {
+			return;
+		}
 
 		const earlyAssignment = await createPublishedAssignment({
 			tag: "early",
@@ -382,7 +402,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(earlySession.ok).toBe(true);
-		if (!earlySession.ok) return;
+		if (!earlySession.ok) {
+			return;
+		}
 
 		const lateAssignment = await createPublishedAssignment({
 			tag: "late",
@@ -419,7 +441,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(lateSession.ok).toBe(true);
-		if (!lateSession.ok) return;
+		if (!lateSession.ok) {
+			return;
+		}
 
 		await createPublishedAssignment({
 			tag: "scheduled",
@@ -479,7 +503,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(mismatchSession.ok).toBe(true);
-		if (!mismatchSession.ok) return;
+		if (!mismatchSession.ok) {
+			return;
+		}
 
 		const unplannedEvents = [
 			await recordClockIn(
@@ -525,7 +551,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(unplannedSession.ok).toBe(true);
-		if (!unplannedSession.ok) return;
+		if (!unplannedSession.ok) {
+			return;
+		}
 
 		const shortRestClockIn = await recordClockIn(
 			{
@@ -555,7 +583,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(shortRestSession.ok).toBe(true);
-		if (!shortRestSession.ok) return;
+		if (!shortRestSession.ok) {
+			return;
+		}
 
 		const absenceTimesheet = await createTimesheet(
 			{
@@ -571,7 +601,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(absenceTimesheet.ok).toBe(true);
-		if (!absenceTimesheet.ok) return;
+		if (!absenceTimesheet.ok) {
+			return;
+		}
 		const lookup = createStoreWorkCalendarLookup({ store: ready.store });
 		const generated = await generateTimesheetEntries(
 			{
@@ -598,7 +630,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(beforeRedetection.ok).toBe(true);
-		if (!beforeRedetection.ok) return;
+		if (!beforeRedetection.ok) {
+			return;
+		}
 		const groupedCountBefore = beforeRedetection.data.filter(
 			(exception) =>
 				exception.sessionId === groupedSession.data.id &&
@@ -620,7 +654,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(groupedRedetection.ok).toBe(true);
-		if (!groupedRedetection.ok) return;
+		if (!groupedRedetection.ok) {
+			return;
+		}
 
 		const unresolved = await listUnresolvedAttendanceExceptions(
 			{
@@ -632,7 +668,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(unresolved.ok).toBe(true);
-		if (!unresolved.ok) return;
+		if (!unresolved.ok) {
+			return;
+		}
 		const groupedCountAfter = unresolved.data.filter(
 			(exception) =>
 				exception.sessionId === groupedSession.data.id &&
@@ -711,7 +749,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 		const historical = await createEmployment(
 			{
 				organizationId: ORG,
@@ -724,7 +764,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(historical.ok).toBe(true);
-		if (!historical.ok) return;
+		if (!historical.ok) {
+			return;
+		}
 		const terminated = await amendEmployment(
 			{
 				organizationId: ORG,
@@ -737,7 +779,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(terminated.ok).toBe(true);
-		if (!terminated.ok) return;
+		if (!terminated.ok) {
+			return;
+		}
 		const current = await createEmployment(
 			{
 				organizationId: ORG,
@@ -749,7 +793,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(current.ok).toBe(true);
-		if (!current.ok) return;
+		if (!current.ok) {
+			return;
+		}
 
 		const historicalBoundary = await recordClockIn(
 			{
@@ -765,7 +811,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(historicalBoundary.ok).toBe(true);
-		if (!historicalBoundary.ok) return;
+		if (!historicalBoundary.ok) {
+			return;
+		}
 		expect(historicalBoundary.data.employmentId).toBe(terminated.data.id);
 
 		const gap = await recordClockIn(
@@ -797,7 +845,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(currentBoundary.ok).toBe(true);
-		if (!currentBoundary.ok) return;
+		if (!currentBoundary.ok) {
+			return;
+		}
 		expect(currentBoundary.data.employmentId).toBe(current.data.id);
 
 		const overlappingEmployee = await createEmployee(
@@ -812,7 +862,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(overlappingEmployee.ok).toBe(true);
-		if (!overlappingEmployee.ok) return;
+		if (!overlappingEmployee.ok) {
+			return;
+		}
 		const overlappingHistorical = await createEmployment(
 			{
 				organizationId: ORG,
@@ -825,7 +877,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(overlappingHistorical.ok).toBe(true);
-		if (!overlappingHistorical.ok) return;
+		if (!overlappingHistorical.ok) {
+			return;
+		}
 		const overlappingCurrent = await createEmployment(
 			{
 				organizationId: ORG,
@@ -837,7 +891,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(overlappingCurrent.ok).toBe(false);
-		if (overlappingCurrent.ok) return;
+		if (overlappingCurrent.ok) {
+			return;
+		}
 		expect(humanResourcesCodeFromResult(overlappingCurrent)).toBe(
 			HUMAN_RESOURCES_ERROR_CONFLICT,
 		);
@@ -861,7 +917,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const employment = await createEmployment(
 			{
@@ -874,7 +932,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const actorMapped = await mapActorToEmployee(ready.store, {
 			organizationId: ORG,
@@ -884,7 +944,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			effectiveFrom: "2025-01-01",
 		});
 		expect(actorMapped.ok).toBe(true);
-		if (!actorMapped.ok) return;
+		if (!actorMapped.ok) {
+			return;
+		}
 
 		const managerEmployee = await createEmployee(
 			{
@@ -898,7 +960,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(managerEmployee.ok).toBe(true);
-		if (!managerEmployee.ok) return;
+		if (!managerEmployee.ok) {
+			return;
+		}
 
 		const managerMapped = await mapActorToEmployee(ready.store, {
 			organizationId: ORG,
@@ -908,7 +972,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			effectiveFrom: "2025-01-01",
 		});
 		expect(managerMapped.ok).toBe(true);
-		if (!managerMapped.ok) return;
+		if (!managerMapped.ok) {
+			return;
+		}
 
 		const reportingLine = await assignPrimaryReportingLine(
 			{
@@ -922,7 +988,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(reportingLine.ok).toBe(true);
-		if (!reportingLine.ok) return;
+		if (!reportingLine.ok) {
+			return;
+		}
 
 		const calendar = await createWorkCalendar(
 			{
@@ -941,7 +1009,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(calendar.ok).toBe(true);
-		if (!calendar.ok) return;
+		if (!calendar.ok) {
+			return;
+		}
 
 		const calendarAssignment = await assignEmploymentCalendar(
 			{
@@ -956,7 +1026,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(calendarAssignment.ok).toBe(true);
-		if (!calendarAssignment.ok) return;
+		if (!calendarAssignment.ok) {
+			return;
+		}
 
 		const policy = await createLeavePolicy(
 			{
@@ -976,7 +1048,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(policy.ok).toBe(true);
-		if (!policy.ok) return;
+		if (!policy.ok) {
+			return;
+		}
 
 		const publishedPolicy = await publishLeavePolicy(
 			{
@@ -989,7 +1063,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(publishedPolicy.ok).toBe(true);
-		if (!publishedPolicy.ok) return;
+		if (!publishedPolicy.ok) {
+			return;
+		}
 
 		const entitlement = await grantLeaveEntitlement(
 			{
@@ -1007,7 +1083,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(entitlement.ok).toBe(true);
-		if (!entitlement.ok) return;
+		if (!entitlement.ok) {
+			return;
+		}
 
 		const draftLeave = await createDraftLeaveRequest(
 			{
@@ -1024,7 +1102,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(draftLeave.ok).toBe(true);
-		if (!draftLeave.ok) return;
+		if (!draftLeave.ok) {
+			return;
+		}
 
 		const submittedLeave = await submitLeaveRequest(
 			{
@@ -1037,7 +1117,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(submittedLeave.ok).toBe(true);
-		if (!submittedLeave.ok) return;
+		if (!submittedLeave.ok) {
+			return;
+		}
 
 		const approvedLeave = await approveLeaveRequest(
 			{
@@ -1050,7 +1132,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(approvedLeave.ok).toBe(true);
-		if (!approvedLeave.ok) return;
+		if (!approvedLeave.ok) {
+			return;
+		}
 
 		const timesheet = await createTimesheet(
 			{
@@ -1066,7 +1150,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(timesheet.ok).toBe(true);
-		if (!timesheet.ok) return;
+		if (!timesheet.ok) {
+			return;
+		}
 
 		const lookup = createStoreWorkCalendarLookup({ store: ready.store });
 		const generationPorts = {
@@ -1088,7 +1174,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			generationPorts,
 		);
 		expect(generated.ok).toBe(true);
-		if (!generated.ok) return;
+		if (!generated.ok) {
+			return;
+		}
 
 		const leaveEntries = generated.data.entries.filter(
 			(entry) => entry.sourceType === "leave",
@@ -1110,7 +1198,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			generationPorts,
 		);
 		expect(regenerated.ok).toBe(true);
-		if (!regenerated.ok) return;
+		if (!regenerated.ok) {
+			return;
+		}
 		expect(
 			regenerated.data.entries.filter((entry) => entry.sourceType === "leave"),
 		).toHaveLength(1);
@@ -1125,7 +1215,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(unresolved.ok).toBe(true);
-		if (!unresolved.ok) return;
+		if (!unresolved.ok) {
+			return;
+		}
 
 		const absenceExceptions = unresolved.data.filter(
 			(exception) => exception.exceptionType === "absence",
@@ -1154,7 +1246,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(authority.ok).toBe(true);
-		if (!authority.ok) return;
+		if (!authority.ok) {
+			return;
+		}
 
 		const preApprovalHandoff = await getApprovedTimeHandoff(
 			{
@@ -1166,7 +1260,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(preApprovalHandoff.ok).toBe(true);
-		if (!preApprovalHandoff.ok) return;
+		if (!preApprovalHandoff.ok) {
+			return;
+		}
 		expect(preApprovalHandoff.data).toBeNull();
 
 		const submittedTimesheet = await submitTimesheet(
@@ -1180,7 +1276,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(submittedTimesheet.ok).toBe(true);
-		if (!submittedTimesheet.ok) return;
+		if (!submittedTimesheet.ok) {
+			return;
+		}
 
 		const approvedTimesheet = await approveTimesheet(
 			{
@@ -1194,7 +1292,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(approvedTimesheet.ok).toBe(true);
-		if (!approvedTimesheet.ok) return;
+		if (!approvedTimesheet.ok) {
+			return;
+		}
 
 		const handoff = await getApprovedTimeHandoff(
 			{
@@ -1206,7 +1306,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(handoff.ok).toBe(true);
-		if (!handoff.ok || handoff.data === null) return;
+		if (!handoff.ok || handoff.data === null) {
+			return;
+		}
 		expect(handoff.data.paidLeaveMinutes).toBe(480);
 		expect(handoff.data.unpaidLeaveMinutes).toBe(0);
 	});
@@ -1225,7 +1327,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const excusedSeed = await createAttendanceException(
 			{
@@ -1240,7 +1344,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(excusedSeed.ok).toBe(true);
-		if (!excusedSeed.ok) return;
+		if (!excusedSeed.ok) {
+			return;
+		}
 		expect(excusedSeed.data.reviewStatus).toBe("open");
 
 		const reviewedForExcuse = await reviewAttendanceException(
@@ -1254,7 +1360,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(reviewedForExcuse.ok).toBe(true);
-		if (!reviewedForExcuse.ok) return;
+		if (!reviewedForExcuse.ok) {
+			return;
+		}
 		expect(reviewedForExcuse.data.reviewStatus).toBe("in_review");
 		expect(reviewedForExcuse.data.version).toBe(excusedSeed.data.version + 1);
 
@@ -1270,7 +1378,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(excused.ok).toBe(true);
-		if (!excused.ok) return;
+		if (!excused.ok) {
+			return;
+		}
 		expect(excused.data).toMatchObject({
 			reviewStatus: "excused",
 			resolution: "traffic",
@@ -1290,7 +1400,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(rejectedSeed.ok).toBe(true);
-		if (!rejectedSeed.ok) return;
+		if (!rejectedSeed.ok) {
+			return;
+		}
 
 		const reviewedForReject = await reviewAttendanceException(
 			{
@@ -1303,7 +1415,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(reviewedForReject.ok).toBe(true);
-		if (!reviewedForReject.ok) return;
+		if (!reviewedForReject.ok) {
+			return;
+		}
 
 		const rejected = await rejectAttendanceException(
 			{
@@ -1317,7 +1431,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(rejected.ok).toBe(true);
-		if (!rejected.ok) return;
+		if (!rejected.ok) {
+			return;
+		}
 		expect(rejected.data).toMatchObject({
 			reviewStatus: "rejected",
 			resolution: "unapproved leave",
@@ -1337,7 +1453,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(resolvedSeed.ok).toBe(true);
-		if (!resolvedSeed.ok) return;
+		if (!resolvedSeed.ok) {
+			return;
+		}
 
 		const reviewedForResolve = await reviewAttendanceException(
 			{
@@ -1350,7 +1468,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(reviewedForResolve.ok).toBe(true);
-		if (!reviewedForResolve.ok) return;
+		if (!reviewedForResolve.ok) {
+			return;
+		}
 
 		const resolved = await resolveAttendanceException(
 			{
@@ -1364,7 +1484,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(resolved.ok).toBe(true);
-		if (!resolved.ok) return;
+		if (!resolved.ok) {
+			return;
+		}
 		expect(resolved.data).toMatchObject({
 			reviewStatus: "resolved",
 			resolution: "manual correction filed",
@@ -1381,7 +1503,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(fetchedExcused.ok).toBe(true);
-		if (!fetchedExcused.ok || fetchedExcused.data === null) return;
+		if (!fetchedExcused.ok || fetchedExcused.data === null) {
+			return;
+		}
 		expect(fetchedExcused.data.reviewStatus).toBe("excused");
 
 		const unresolved = await listUnresolvedAttendanceExceptions(
@@ -1394,7 +1518,9 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(unresolved.ok).toBe(true);
-		if (!unresolved.ok) return;
+		if (!unresolved.ok) {
+			return;
+		}
 		expect(unresolved.data.some((row) => row.id === excused.data.id)).toBe(
 			false,
 		);

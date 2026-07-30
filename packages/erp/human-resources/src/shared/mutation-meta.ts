@@ -6,12 +6,12 @@ import type { HumanResourcesCommandId } from "../module-ids";
  * `correlationId` is the caller-supplied trace id (never a command constant).
  * `operationId` is the canonical command identity.
  */
-export type HumanResourcesMutationMeta = {
-	correlationId: string;
-	operationId: HumanResourcesCommandId;
+export interface HumanResourcesMutationMeta {
 	causationId?: string | undefined;
+	correlationId: string;
 	idempotencyKey?: string | undefined;
-};
+	operationId: HumanResourcesCommandId;
+}
 
 /** Execution boundary metadata required for audit/outbox emission. */
 export type HumanResourcesMutationExecutionMeta = HumanResourcesMutationMeta & {

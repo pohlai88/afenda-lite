@@ -16,12 +16,18 @@ function walkTsFiles(dir: string, out: string[] = []): string[] {
 		const full = path.join(dir, name);
 		const st = statSync(full);
 		if (st.isDirectory()) {
-			if (name === "node_modules") continue;
+			if (name === "node_modules") {
+				continue;
+			}
 			walkTsFiles(full, out);
 			continue;
 		}
-		if (!name.endsWith(".ts")) continue;
-		if (name === "module-ids.ts") continue;
+		if (!name.endsWith(".ts")) {
+			continue;
+		}
+		if (name === "module-ids.ts") {
+			continue;
+		}
 		out.push(full);
 	}
 	return out;

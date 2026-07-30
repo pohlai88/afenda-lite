@@ -7,9 +7,9 @@ import { runOperatorPermissionAction } from "@/app/actions/run-operator-permissi
 import { createInventoryCommandOptions } from "@/lib/erp/inventory-command-options";
 import type { ActionResult } from "@/modules/platform/schemas/action-result";
 
-export type ListStockMovementsActionData = {
+export interface ListStockMovementsActionData {
 	movements: StockMovement[];
-};
+}
 
 /**
  * List stock movements — `inventory.movement.read`.
@@ -17,7 +17,7 @@ export type ListStockMovementsActionData = {
 export async function listStockMovementsAction(): Promise<
 	ActionResult<ListStockMovementsActionData>
 > {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listStockMovementsAction",
 		permission: "inventory.movement.read",
 		safeMessage:

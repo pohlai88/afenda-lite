@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noJsxPropsBind: The enabled React Compiler stabilizes JSX callback props.
 "use client";
 
 import { JOIN_PATH } from "@afenda/auth/client";
@@ -43,15 +44,15 @@ function InviteeJoinCredentials({
 			) : (
 				<SignInForm {...neonCredentialFormProps} />
 			)}
-			<p className="text-center text-sm text-foreground-secondary">
+			<p className="text-center text-foreground-secondary text-sm">
 				{mode === "sign-up" ? (
 					<>
 						Already have an account?{" "}
 						<Button
-							type="button"
-							variant="link"
 							className="h-auto p-0 text-foreground"
 							onClick={() => setMode("sign-in")}
+							type="button"
+							variant="link"
 						>
 							Sign in
 						</Button>
@@ -60,10 +61,10 @@ function InviteeJoinCredentials({
 					<>
 						Need an account for this invitation?{" "}
 						<Button
-							type="button"
-							variant="link"
 							className="h-auto p-0 text-foreground"
 							onClick={() => setMode("sign-up")}
+							type="button"
+							variant="link"
 						>
 							Create account
 						</Button>
@@ -93,7 +94,7 @@ export function JoinShell() {
 					className="flex items-center justify-center gap-2 py-4"
 					role="status"
 				>
-					<Spinner size="sm" label="Loading invitation" />
+					<Spinner label="Loading invitation" size="sm" />
 				</div>
 			</AuthLoading>
 			<SignedIn>

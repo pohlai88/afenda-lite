@@ -234,7 +234,9 @@ export function partitionRequestedFieldsBySensitivity(input: {
 }): HumanResourcesFieldProjection {
 	const denied = new Set<string>();
 	for (const fieldClass of input.fieldClasses) {
-		if (canReadFieldClass(fieldClass, input.actorPermissions)) continue;
+		if (canReadFieldClass(fieldClass, input.actorPermissions)) {
+			continue;
+		}
 		for (const field of FIELD_CLASS_FIELDS[fieldClass]) {
 			denied.add(field);
 		}
@@ -362,6 +364,8 @@ function canReadFieldClass(
 					HUMAN_RESOURCES_PERMISSION_TALENT_PROFILE_SENSITIVE_READ,
 				)
 			);
+		default:
+			return false;
 	}
 }
 
@@ -376,9 +380,13 @@ export function applyResourceFieldProjection<T extends Record<string, unknown>>(
 	const projected: Partial<T> = { ...data };
 	const redactedFields: string[] = [];
 	for (const fieldClass of input.fieldClasses) {
-		if (canReadFieldClass(fieldClass, input.actorPermissions)) continue;
+		if (canReadFieldClass(fieldClass, input.actorPermissions)) {
+			continue;
+		}
 		for (const field of FIELD_CLASS_FIELDS[fieldClass]) {
-			if (!(field in projected)) continue;
+			if (!(field in projected)) {
+				continue;
+			}
 			delete projected[field as keyof T];
 			redactedFields.push(field);
 		}
@@ -481,9 +489,8 @@ export function createProjectionFilter<T extends Record<string, unknown>>(
 	sensitivity: SensitivityLevel,
 	actorPermissions: Set<HumanResourcesPermission>,
 ) {
-	return (data: T): ProjectedData<T> => {
-		return applySensitivityProjection(data, sensitivity, actorPermissions);
-	};
+	return (data: T): ProjectedData<T> =>
+		applySensitivityProjection(data, sensitivity, actorPermissions);
 }
 
 export function redactedFieldsForResource(

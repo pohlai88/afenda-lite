@@ -80,7 +80,7 @@ export const workforcePlanningPolicy: HumanResourcesAuthorizationPolicy = {
 		options: HumanResourcesCommandOptions,
 	) {
 		if (isWorkforcePlanningRead(request.operationId)) {
-			const resource = request.resource;
+			const { resource } = request;
 			const executivePlanner =
 				resource?.attributes?.[EXECUTIVE_PLANNER_ATTRIBUTE] === true;
 			const canRead =

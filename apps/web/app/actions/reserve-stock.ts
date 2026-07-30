@@ -14,9 +14,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type ReserveStockActionData = {
+export interface ReserveStockActionData {
 	reservation: StockReservation;
-};
+}
 
 export type ReserveStockActionState =
 	ActionResult<ReserveStockActionData> | null;
@@ -42,7 +42,7 @@ export async function reserveStockAction(
 	_prev: ReserveStockActionState,
 	formData: FormData,
 ): Promise<ReserveStockActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "reserveStockAction",
 		permission: "inventory.reservation.create",
 		safeMessage: "Could not reserve stock. Try again or contact an admin.",

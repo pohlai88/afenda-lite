@@ -55,13 +55,13 @@ export const Overview: Story = {
 		<div className="min-h-screen bg-canvas text-foreground">
 			<div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-2 border-b pb-6">
-					<p className="text-sm font-medium text-foreground-secondary">
+					<p className="font-medium text-foreground-secondary text-sm">
 						Accounts receivable
 					</p>
-					<h1 className="text-2xl font-semibold tracking-tight">
+					<h1 className="font-semibold text-2xl tracking-tight">
 						Open invoice clarification
 					</h1>
-					<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+					<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 						Tooltip owns brief hover/focus disclosure. The trigger must remain
 						operable and named without the tip.
 					</p>
@@ -78,21 +78,21 @@ export const Overview: Story = {
 							</div>
 							<div className="flex flex-wrap items-center gap-2">
 								<Badge variant="outline">Invoice</Badge>
-								<StatusBadge status="pending" label="Open" />
+								<StatusBadge label="Open" status="pending" />
 							</div>
 						</div>
 					</CardHeader>
 					<CardContent>
 						<div className="flex w-full items-center justify-between gap-4 rounded-md border border-border bg-background p-3">
 							<div className="min-w-0">
-								<p className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+								<p className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 									Open invoice
 								</p>
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<button
+											className="max-w-56 truncate text-left font-medium text-foreground text-sm underline-offset-4 hover:underline"
 											type="button"
-											className="max-w-56 truncate text-left text-sm font-medium text-foreground underline-offset-4 hover:underline"
 										>
 											INV-1042-NORTHWIND-JULY-BATCH-18
 										</button>
@@ -104,7 +104,7 @@ export const Overview: Story = {
 							</div>
 							<Tooltip>
 								<TooltipTrigger asChild>
-									<Button type="button" variant="outline" size="icon">
+									<Button size="icon" type="button" variant="outline">
 										<BellIcon />
 										<span className="sr-only">Notifications</span>
 									</Button>
@@ -136,8 +136,8 @@ export const Usage: Story = {
 				<Tooltip>
 					<TooltipTrigger asChild>
 						<button
+							className="max-w-40 truncate font-medium text-sm underline-offset-4 hover:underline"
 							type="button"
-							className="max-w-40 truncate text-sm font-medium underline-offset-4 hover:underline"
 						>
 							INV-1042-NORTHWIND-JULY-BATCH-18
 						</button>
@@ -148,7 +148,7 @@ export const Usage: Story = {
 			<StorySection title="Icon name">
 				<Tooltip>
 					<TooltipTrigger asChild>
-						<Button type="button" variant="outline" size="icon">
+						<Button size="icon" type="button" variant="outline">
 							<BellIcon />
 							<span className="sr-only">Notifications</span>
 						</Button>
@@ -159,7 +159,7 @@ export const Usage: Story = {
 			<StorySection title="Short hint">
 				<Tooltip>
 					<TooltipTrigger asChild>
-						<Button type="button" variant="ghost" size="icon">
+						<Button size="icon" type="button" variant="ghost">
 							<InfoIcon />
 							<span className="sr-only">Tax id format</span>
 						</Button>
@@ -185,14 +185,14 @@ export const ControlledUsage: Story = {
 		<div className="grid w-full max-w-sm gap-3">
 			<Tooltip>
 				<TooltipTrigger asChild>
-					<Button type="button" variant="outline" size="icon">
+					<Button size="icon" type="button" variant="outline">
 						<BellIcon />
 						<span className="sr-only">Notifications</span>
 					</Button>
 				</TooltipTrigger>
 				<TooltipContent>Notifications</TooltipContent>
 			</Tooltip>
-			<p className="text-sm text-foreground-secondary">
+			<p className="text-foreground-secondary text-sm">
 				Touch users must still understand the control without hovering.
 			</p>
 		</div>
@@ -213,7 +213,7 @@ export const StatesAndAccessibility: Story = {
 		<div className="flex flex-wrap items-center gap-4">
 			<Tooltip>
 				<TooltipTrigger asChild>
-					<Button type="button" variant="outline" size="icon">
+					<Button size="icon" type="button" variant="outline">
 						<BellIcon />
 						<span className="sr-only">Notifications</span>
 					</Button>
@@ -223,7 +223,7 @@ export const StatesAndAccessibility: Story = {
 			<Tooltip>
 				<TooltipTrigger asChild>
 					<span className="inline-flex">
-						<Button type="button" variant="outline" size="icon" disabled>
+						<Button disabled size="icon" type="button" variant="outline">
 							<BellIcon />
 							<span className="sr-only">Notifications locked</span>
 						</Button>
@@ -248,14 +248,14 @@ export const VariantsAndSizes: Story = {
 	render: () => (
 		<div className="flex flex-wrap items-center gap-6">
 			<div className="grid gap-2">
-				<p className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+				<p className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 					Text trigger
 				</p>
 				<Tooltip>
 					<TooltipTrigger asChild>
 						<button
-							type="button"
 							className="text-sm underline-offset-4 hover:underline"
+							type="button"
 						>
 							INV-1048
 						</button>
@@ -264,12 +264,12 @@ export const VariantsAndSizes: Story = {
 				</Tooltip>
 			</div>
 			<div className="grid gap-2">
-				<p className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+				<p className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 					Icon trigger
 				</p>
 				<Tooltip>
 					<TooltipTrigger asChild>
-						<Button type="button" variant="outline" size="icon">
+						<Button size="icon" type="button" variant="outline">
 							<InfoIcon />
 							<span className="sr-only">Payment terms</span>
 						</Button>
@@ -301,10 +301,10 @@ export const Composition: Story = {
 					</div>
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="secondary">Finance</Badge>
-						<StatusBadge status="pending" label="Queued" />
+						<StatusBadge label="Queued" status="pending" />
 						<Tooltip>
 							<TooltipTrigger asChild>
-								<Button type="button" variant="ghost" size="icon">
+								<Button size="icon" type="button" variant="ghost">
 									<InfoIcon />
 									<span className="sr-only">Batch timing</span>
 								</Button>
@@ -314,7 +314,7 @@ export const Composition: Story = {
 					</div>
 				</div>
 			</CardHeader>
-			<CardContent className="text-sm text-foreground-secondary">
+			<CardContent className="text-foreground-secondary text-sm">
 				Tip clarifies timing. It does not replace field errors or approval
 				commands.
 			</CardContent>
@@ -337,7 +337,7 @@ export const DoAndDoNot: Story = {
 			<StorySection title="Do: short supplemental name">
 				<Tooltip>
 					<TooltipTrigger asChild>
-						<Button type="button" variant="outline" size="icon">
+						<Button size="icon" type="button" variant="outline">
 							<BellIcon />
 							<span className="sr-only">Notifications</span>
 						</Button>
@@ -346,7 +346,7 @@ export const DoAndDoNot: Story = {
 				</Tooltip>
 			</StorySection>
 			<StorySection title="Do not: critical instructions in the tip">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Do not put “Enter tax id or save will fail”, recovery links, or
 					interactive controls inside Tooltip — use FormField, Alert, or
 					Popover.
@@ -373,15 +373,15 @@ export const AdaptiveTouchAndHighContrast: Story = {
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<button
+								className="max-w-56 truncate text-left font-medium text-sm underline-offset-4 hover:underline"
 								type="button"
-								className="max-w-56 truncate text-left text-sm font-medium underline-offset-4 hover:underline"
 							>
 								INV-1042-NORTHWIND-JULY-BATCH-18
 							</button>
 						</TooltipTrigger>
 						<TooltipContent>INV-1042-NORTHWIND-JULY-BATCH-18</TooltipContent>
 					</Tooltip>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						Provide copy or full-detail access outside the tip when exact text
 						is operationally important.
 					</p>
@@ -391,14 +391,14 @@ export const AdaptiveTouchAndHighContrast: Story = {
 				<div className="flex items-center gap-3">
 					<Tooltip>
 						<TooltipTrigger asChild>
-							<Button type="button" variant="outline" size="icon">
+							<Button size="icon" type="button" variant="outline">
 								<BellIcon aria-hidden="true" />
 								<span className="sr-only">Notifications</span>
 							</Button>
 						</TooltipTrigger>
 						<TooltipContent>Notifications</TooltipContent>
 					</Tooltip>
-					<span className="text-sm text-foreground-secondary">
+					<span className="text-foreground-secondary text-sm">
 						Notifications
 					</span>
 				</div>

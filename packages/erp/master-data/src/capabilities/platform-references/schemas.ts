@@ -53,11 +53,15 @@ export type CurrencyCode = z.infer<typeof currencyCodeSchema>;
 
 function normalizeLanguageCode(value: string): string {
 	const [language, ...rest] = value.trim().split("-");
-	if (!language) return value.trim();
+	if (!language) {
+		return value.trim();
+	}
 	return [
 		language.toLowerCase(),
 		...rest.map((part) => {
-			if (part.length === 2) return part.toUpperCase();
+			if (part.length === 2) {
+				return part.toUpperCase();
+			}
 			if (part.length === 4) {
 				return `${part[0]?.toUpperCase() ?? ""}${part.slice(1).toLowerCase()}`;
 			}

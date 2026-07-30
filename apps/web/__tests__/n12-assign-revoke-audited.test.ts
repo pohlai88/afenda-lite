@@ -142,3 +142,4 @@ describe.skipIf(!hasDatabase)("assign/revoke WithAudit atomicity (N12)", () => {
 		expect(audits[0]?.targetId).toBe(assigned.assignment.id);
 	});
 });
+// biome-ignore-all lint/performance/noAwaitInLoops: Cases run serially to isolate mutable test state and ordered transitions.

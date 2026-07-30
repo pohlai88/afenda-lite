@@ -81,7 +81,7 @@ export function createDrizzleAssignmentContextQuery(): AssignmentContextQueryPor
 			if (workAssignmentRows.length !== 1) {
 				return multiplePrimaryAssignmentsAtAsOf();
 			}
-			const assignment = workAssignmentRows[0];
+			const [assignment] = workAssignmentRows;
 			if (assignment === undefined) {
 				return ok({
 					employmentId: input.employmentId,

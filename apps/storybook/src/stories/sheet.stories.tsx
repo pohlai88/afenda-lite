@@ -45,12 +45,12 @@ function WorkbenchSection({
 	children,
 }: WorkbenchSectionProps) {
 	return (
-		<section className="grid gap-4" aria-labelledby={id}>
+		<section aria-labelledby={id} className="grid gap-4">
 			<div className="grid gap-1">
-				<h2 className="text-base font-semibold tracking-tight" id={id}>
+				<h2 className="font-semibold text-base tracking-tight" id={id}>
 					{title}
 				</h2>
-				<p className="max-w-5xl text-sm leading-5 text-foreground-secondary">
+				<p className="max-w-5xl text-foreground-secondary text-sm leading-5">
 					{description}
 				</p>
 			</div>
@@ -87,14 +87,14 @@ export const Overview: Story = {
 			<div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-5 border-b pb-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
 					<div className="grid gap-2">
-						<p className="text-sm font-medium text-foreground-secondary">
+						<p className="font-medium text-foreground-secondary text-sm">
 							Accounts payable
 						</p>
 						<div className="grid gap-1">
-							<h1 className="text-2xl font-semibold tracking-tight">
+							<h1 className="font-semibold text-2xl tracking-tight">
 								Supplier invoices
 							</h1>
-							<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+							<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 								Sheet keeps list context. Named footer actions own approve and
 								dismiss — Escape closes unless dirty-state policy intervenes.
 							</p>
@@ -102,25 +102,25 @@ export const Overview: Story = {
 					</div>
 					<dl className="grid grid-cols-2 gap-x-8 gap-y-3 rounded-lg border bg-card p-4">
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Subject
 							</dt>
 							<dd className="text-sm">Supplier invoices</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Scope
 							</dt>
 							<dd className="text-sm">Side inspection</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Ownership
 							</dt>
 							<dd className="text-sm">List-adjacent detail</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Lifecycle
 							</dt>
 							<dd className="text-sm">Inspect, approve, close</dd>
@@ -148,17 +148,17 @@ export const Overview: Story = {
 								<div className="grid gap-3 p-4">
 									<KeyValue
 										label="Amount"
-										value="MYR 18,420.00"
 										orientation="horizontal"
 										size="sm"
+										value="MYR 18,420.00"
 									/>
 									<KeyValue
 										label="Due date"
-										value="15 Aug 2026"
 										orientation="horizontal"
 										size="sm"
+										value="15 Aug 2026"
 									/>
-									<StatusBadge status="pending" label="Awaiting approval" />
+									<StatusBadge label="Awaiting approval" status="pending" />
 								</div>
 								<SheetFooter>
 									<SheetClose asChild>
@@ -213,9 +213,9 @@ export const SemanticUsage: Story = {
 	},
 	render: () => (
 		<WorkbenchSection
+			description="Sheet preserves the list context while revealing the selected record."
 			id="sheet-semantic-usage-title"
 			title="Adjacent detail inspection"
-			description="Sheet preserves the list context while revealing the selected record."
 		>
 			<div className="flex flex-wrap gap-3">
 				<Sheet>
@@ -232,11 +232,11 @@ export const SemanticUsage: Story = {
 						<div className="grid gap-3 p-4">
 							<KeyValue
 								label="Amount"
-								value="MYR 18,420.00"
 								orientation="horizontal"
 								size="sm"
+								value="MYR 18,420.00"
 							/>
-							<StatusBadge status="pending" label="Awaiting approval" />
+							<StatusBadge label="Awaiting approval" status="pending" />
 						</div>
 						<SheetFooter>
 							<SheetClose asChild>
@@ -277,7 +277,7 @@ export const Usage: Story = {
 						Remittance preference for amounts above MYR 10,000.
 					</SheetDescription>
 				</SheetHeader>
-				<div className="p-4 text-sm text-foreground-secondary">
+				<div className="p-4 text-foreground-secondary text-sm">
 					Prefer email remittance advice. Feature code owns dirty-state
 					protection on close.
 				</div>
@@ -315,7 +315,7 @@ export const StatesAndAccessibility: Story = {
 						Escape closes the sheet. Focus remains inside while open.
 					</SheetDescription>
 				</SheetHeader>
-				<div className="p-4 text-sm text-foreground-secondary">
+				<div className="p-4 text-foreground-secondary text-sm">
 					Use named footer actions for approve, save, or dismiss.
 				</div>
 				<SheetFooter>
@@ -372,21 +372,21 @@ export const Composition: Story = {
 					<div className="grid gap-3 p-4">
 						<KeyValue
 							label="Status"
-							value={<StatusBadge status="pending" label="Awaiting approval" />}
 							orientation="horizontal"
 							size="sm"
+							value={<StatusBadge label="Awaiting approval" status="pending" />}
 						/>
 						<KeyValue
 							label="Owner"
-							value="Aisha Rahman"
 							orientation="horizontal"
 							size="sm"
+							value="Aisha Rahman"
 						/>
 						<KeyValue
 							label="Due date"
-							value="15 Aug 2026"
 							orientation="horizontal"
 							size="sm"
+							value="15 Aug 2026"
 						/>
 					</div>
 					<SheetFooter>
@@ -414,17 +414,17 @@ export const Composition: Story = {
 					<div className="grid gap-3 p-4">
 						<KeyValue
 							label="Threshold"
-							value="MYR 10,000.00"
 							orientation="horizontal"
 							size="sm"
+							value="MYR 10,000.00"
 						/>
 						<KeyValue
 							label="Escalation mailbox"
-							value="finance-control@example.com"
 							orientation="horizontal"
 							size="sm"
+							value="finance-control@example.com"
 						/>
-						<StatusBadge status="active" label="Active" />
+						<StatusBadge label="Active" status="active" />
 					</div>
 					<SheetFooter>
 						<SheetClose asChild>
@@ -470,7 +470,7 @@ export const VariantsAndSizes: Story = {
 									: "Rare layout variant — prefer right for record detail."}
 							</SheetDescription>
 						</SheetHeader>
-						<div className="p-4 text-sm text-foreground-secondary">
+						<div className="p-4 text-foreground-secondary text-sm">
 							Side inventory for layout coverage only.
 						</div>
 						<SheetFooter>
@@ -518,7 +518,7 @@ export const DoAndDoNot: Story = {
 				</Sheet>
 			</StorySection>
 			<StorySection title="Do not: unnamed primary action">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Sheet footers must expose named commands such as Approve invoice or
 					Save policy. Irreversible voiding belongs on AlertDialog.
 				</p>

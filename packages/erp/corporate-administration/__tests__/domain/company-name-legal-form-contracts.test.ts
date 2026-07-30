@@ -1,3 +1,5 @@
+// biome-ignore-all lint/style/useDestructuring: Explicit schema result access keeps branded identifiers visible.
+// biome-ignore-all lint/suspicious/useAwait: Contract fixtures implement asynchronous store ports.
 import { ok } from "@afenda/errors/result";
 import { describe, expect, it } from "vitest";
 

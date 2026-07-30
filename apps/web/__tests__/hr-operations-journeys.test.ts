@@ -21,8 +21,9 @@ describe("HR operations journeys", () => {
 			"detectComplianceExpiryOperationsAction",
 			"openEmployeeCaseAction",
 			"createHeadcountPlanAction",
-		])
+		]) {
 			expect(forms).toContain(action);
+		}
 		expect(forms).not.toMatch(/@afenda\/human-resources/);
 	});
 

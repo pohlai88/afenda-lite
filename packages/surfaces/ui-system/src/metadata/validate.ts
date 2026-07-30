@@ -9,6 +9,10 @@ import type {
 	UiCatalogIssue,
 	UiRepositorySnapshot,
 } from "./contract";
+
+const COMPONENT_MODULE_EXTENSION_PATTERN = /\.tsx?$/;
+const USE_CLIENT_DIRECTIVE_PATTERN = /^\s*["']use client["'];/m;
+
 import { UI_COMPONENT_CONTRACT_STANDARD } from "./contracts/manifest.contract";
 
 const EXPECTED_PACKAGE_EXPORTS = [".", "./base.css", "./styles.css"] as const;
@@ -22,7 +26,9 @@ function duplicates(values: readonly string[]): string[] {
 	const seen = new Set<string>();
 	const repeated = new Set<string>();
 	for (const value of values) {
-		if (seen.has(value)) repeated.add(value);
+		if (seen.has(value)) {
+			repeated.add(value);
+		}
 		seen.add(value);
 	}
 	return [...repeated].sort();
@@ -32,6 +38,8 @@ function occurrences(source: string, value: string): number {
 	return source.split(value).length - 1;
 }
 
+// Catalog checks intentionally accumulate every issue in stable governance order.
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: A single ordered traversal keeps diagnostics deterministic for protection snapshots.
 export function validateUiCatalog(
 	catalog: UiCatalog,
 	snapshot: UiRepositorySnapshot,
@@ -90,7 +98,7 @@ export function validateUiCatalog(
 	for (const component of catalog.components) {
 		const moduleName = component.sourceModule
 			.replace("src/components/ui/", "")
-			.replace(/\.tsx?$/, "");
+			.replace(COMPONENT_MODULE_EXTENSION_PATTERN, "");
 		if (!snapshot.barrelSource.includes(`./components/ui/${moduleName}`)) {
 			issues.push({
 				kind: "export-drift",
@@ -110,7 +118,7 @@ export function validateUiCatalog(
 			});
 		}
 		const source = snapshot.componentSources[component.sourceModule] ?? "";
-		const isClient = /^\s*["']use client["'];/m.test(source);
+		const isClient = USE_CLIENT_DIRECTIVE_PATTERN.test(source);
 		if (component.renderMode === "client" && !isClient) {
 			issues.push({
 				kind: "boundary-drift",
@@ -324,7 +332,9 @@ function validateUsageRuleSections(input: {
 	readonly axis: "approvedVariants" | "approvedSizes";
 	readonly value: unknown;
 }): GovernanceDiagnostic[] {
-	if (input.value === undefined) return [];
+	if (input.value === undefined) {
+		return [];
+	}
 	if (!isRecord(input.value)) {
 		return [
 			{
@@ -415,16 +425,8 @@ function validateContractShape(
 		});
 	}
 
-	const ownership = runtimeContract.ownership;
-	if (!isRecord(ownership)) {
-		diagnostics.push({
-			severity: "error",
-			code: "missing_contract_ownership",
-			component,
-			message:
-				"Contract ownership requires componentOwns and consumerOwns clauses.",
-		});
-	} else {
+	const { ownership } = runtimeContract;
+	if (isRecord(ownership)) {
 		diagnostics.push(
 			...validateClauseSection({
 				component,
@@ -439,6 +441,14 @@ function validateContractShape(
 				missingCode: "missing_contract_ownership",
 			}),
 		);
+	} else {
+		diagnostics.push({
+			severity: "error",
+			code: "missing_contract_ownership",
+			component,
+			message:
+				"Contract ownership requires componentOwns and consumerOwns clauses.",
+		});
 	}
 
 	diagnostics.push(
@@ -548,6 +558,8 @@ function validateEvidence(
 	return diagnostics;
 }
 
+// Governance diagnostics are accumulated in contract, evidence, then closed-set order.
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Preserving this order is part of the validator's evidence contract.
 export function validateComponentGovernance(
 	components: readonly GovernedCatalogComponent[],
 ): GovernanceValidationResult {
@@ -569,7 +581,7 @@ export function validateComponentGovernance(
 		const governance = component.governance ?? {
 			lifecycle: "candidate" as const,
 		};
-		const contract = governance.contract;
+		const { contract } = governance;
 		const evidence = governance.evidence ?? [];
 
 		if (

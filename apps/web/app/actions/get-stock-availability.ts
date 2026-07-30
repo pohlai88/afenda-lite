@@ -14,9 +14,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type GetStockAvailabilityActionData = {
+export interface GetStockAvailabilityActionData {
 	availability: StockAvailability[];
-};
+}
 
 /**
  * Get stock availability — `inventory.availability.read`.
@@ -24,7 +24,7 @@ export type GetStockAvailabilityActionData = {
 export async function getStockAvailabilityAction(
 	input: unknown = {},
 ): Promise<ActionResult<GetStockAvailabilityActionData>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getStockAvailabilityAction",
 		permission: "inventory.availability.read",
 		safeMessage:

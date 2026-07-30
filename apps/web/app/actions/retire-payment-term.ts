@@ -17,5 +17,5 @@ export async function retirePaymentTermAction(
 	_prev: PaymentTermLifecycleActionState,
 	formData: FormData,
 ): Promise<PaymentTermLifecycleActionState> {
-	return runPaymentTermLifecycle("retire", formData);
+	return await runPaymentTermLifecycle("retire", formData);
 }

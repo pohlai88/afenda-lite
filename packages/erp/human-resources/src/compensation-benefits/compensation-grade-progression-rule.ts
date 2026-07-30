@@ -30,7 +30,7 @@ export const HUMAN_RESOURCES_AGGREGATE_COMPENSATION_GRADE_PROGRESSION_RULE =
 export type HumanResourcesCompensationGradeProgressionRuleAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_COMPENSATION_GRADE_PROGRESSION_RULE;
 
-export async function createCompensationGradeProgressionRule(
+export function createCompensationGradeProgressionRule(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationGradeProgressionRule>> {
@@ -59,7 +59,7 @@ export async function createCompensationGradeProgressionRule(
 	});
 }
 
-export async function archiveCompensationGradeProgressionRule(
+export function archiveCompensationGradeProgressionRule(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationGradeProgressionRule>> {
@@ -86,7 +86,7 @@ export async function archiveCompensationGradeProgressionRule(
 	});
 }
 
-export async function getCompensationGradeProgressionRule(
+export function getCompensationGradeProgressionRule(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationGradeProgressionRule>> {
@@ -110,7 +110,7 @@ export async function getCompensationGradeProgressionRule(
 	});
 }
 
-export async function listCompensationGradeProgressionRulesFromGrade(
+export function listCompensationGradeProgressionRulesFromGrade(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationGradeProgressionRuleListPage>> {
@@ -130,7 +130,7 @@ export async function listCompensationGradeProgressionRulesFromGrade(
 	});
 }
 
-export async function listEligibleProgressionTargets(
+export function listEligibleProgressionTargets(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationGradeProgressionRule[]>> {

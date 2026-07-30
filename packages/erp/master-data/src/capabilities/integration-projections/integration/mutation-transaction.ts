@@ -51,8 +51,8 @@ export type MasterProductionMutationStep =
  * the transaction callback has completed.
  */
 export type MasterMutationTransactionContext = Readonly<{
-	appendAuditFact(fact: MasterDataAuditFact): Promise<void>;
-	appendEvent(event: MasterDataEventEnvelope): Promise<void>;
+	appendAuditFact: (fact: MasterDataAuditFact) => Promise<void>;
+	appendEvent: (event: MasterDataEventEnvelope) => Promise<void>;
 }>;
 
 export type ExecuteMasterMutationTransactionInput<T> = Readonly<{
@@ -66,7 +66,7 @@ export type ExecuteMasterMutationTransactionInput<T> = Readonly<{
 	 * Returning a failed Result must roll back the transaction. Throwing or
 	 * rejecting must also roll back the transaction.
 	 */
-	execute(context: MasterMutationTransactionContext): Promise<Result<T>>;
+	execute: (context: MasterMutationTransactionContext) => Promise<Result<T>>;
 }>;
 
 /**
@@ -78,7 +78,7 @@ export type ExecuteMasterMutationTransactionInput<T> = Readonly<{
  * returned.
  */
 export interface MasterMutationTransactionExecutor {
-	execute<T>(
+	execute: <T>(
 		input: ExecuteMasterMutationTransactionInput<T>,
-	): Promise<Result<MutationCommit<T>>>;
+	) => Promise<Result<MutationCommit<T>>>;
 }

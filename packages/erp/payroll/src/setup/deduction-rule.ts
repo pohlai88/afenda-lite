@@ -25,7 +25,7 @@ import type {
 	PayrollRuleSupersedeResult,
 } from "../types";
 
-export async function createPayrollDeductionRule(
+export function createPayrollDeductionRule(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollDeductionRule>> {
@@ -33,7 +33,7 @@ export async function createPayrollDeductionRule(
 		schema: createPayrollDeductionRuleInputSchema,
 		invalidMessage: "Invalid payroll deduction rule create input",
 		command: PAYROLL_COMMAND_SETUP_DEDUCTION_RULE_CREATE,
-		execute: async (data, { store, ports }) => {
+		execute: (data, { store, ports }) => {
 			const fingerprint = buildPayrollCreateFingerprint({
 				payGroupId: data.payGroupId,
 				code: data.code,
@@ -72,7 +72,7 @@ export async function createPayrollDeductionRule(
 	});
 }
 
-export async function updatePayrollDeductionRule(
+export function updatePayrollDeductionRule(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollDeductionRule>> {
@@ -99,7 +99,7 @@ export async function updatePayrollDeductionRule(
 	});
 }
 
-export async function archivePayrollDeductionRule(
+export function archivePayrollDeductionRule(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollDeductionRule>> {
@@ -121,7 +121,7 @@ export async function archivePayrollDeductionRule(
 	});
 }
 
-export async function supersedePayrollDeductionRule(
+export function supersedePayrollDeductionRule(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollRuleSupersedeResult<PayrollDeductionRule>>> {
@@ -129,7 +129,7 @@ export async function supersedePayrollDeductionRule(
 		schema: supersedePayrollDeductionRuleInputSchema,
 		invalidMessage: "Invalid payroll deduction rule supersede input",
 		command: PAYROLL_COMMAND_SETUP_DEDUCTION_RULE_SUPERSEDE,
-		execute: async (data, { store, ports }) => {
+		execute: (data, { store, ports }) => {
 			const fingerprint = buildPayrollCreateFingerprint({
 				ruleId: data.ruleId,
 				name: data.name ?? null,
@@ -167,7 +167,7 @@ export async function supersedePayrollDeductionRule(
 	});
 }
 
-export async function getPayrollDeductionRule(
+export function getPayrollDeductionRule(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollDeductionRule | null>> {

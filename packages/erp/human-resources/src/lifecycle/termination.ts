@@ -24,7 +24,7 @@ export const HUMAN_RESOURCES_AGGREGATE_TERMINATION = "termination" as const;
 export type HumanResourcesTerminationAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_TERMINATION;
 
-export async function proposeTermination(
+export function proposeTermination(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Termination>> {
@@ -62,7 +62,7 @@ export async function proposeTermination(
 	});
 }
 
-export async function approveTermination(
+export function approveTermination(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Termination>> {
@@ -87,7 +87,7 @@ export async function approveTermination(
 	});
 }
 
-export async function finalizeTermination(
+export function finalizeTermination(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Termination>> {
@@ -112,7 +112,7 @@ export async function finalizeTermination(
 	});
 }
 
-export async function getTermination(
+export function getTermination(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Termination | null>> {

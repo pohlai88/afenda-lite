@@ -4,31 +4,31 @@ export type LocalBenchmarkImplementation =
 	| "real_memory_api"
 	| "real_domain_kernel";
 
-export type LocalBenchmarkWorkload = {
+export interface LocalBenchmarkWorkload {
+	description: string;
+	fixtureSize: number;
+	implementation: LocalBenchmarkImplementation;
 	name: string;
-	description: string;
-	implementation: LocalBenchmarkImplementation;
-	fixtureSize: number;
+	run: () => Promise<number> | number;
 	thresholdP95Ms: number;
-	run(): Promise<number> | number;
-};
+}
 
-export type LocalBenchmarkEvidence = {
-	scope: "local_verification_only";
-	workload: string;
+export interface LocalBenchmarkEvidence {
+	checksum: number;
 	description: string;
-	implementation: LocalBenchmarkImplementation;
 	fixtureSize: number;
-	warmupRuns: number;
-	sampleRuns: number;
-	thresholdP95Ms: number;
-	p50Ms: number;
-	p95Ms: number;
+	implementation: LocalBenchmarkImplementation;
 	maxMs: number;
 	meanMs: number;
-	checksum: number;
+	p50Ms: number;
+	p95Ms: number;
 	passed: boolean;
-};
+	sampleRuns: number;
+	scope: "local_verification_only";
+	thresholdP95Ms: number;
+	warmupRuns: number;
+	workload: string;
+}
 
 function percentile(sorted: readonly number[], ratio: number): number {
 	const index = Math.min(
@@ -65,16 +65,19 @@ export async function runLocalBenchmark(
 	}
 	let checksum = 0;
 	for (let index = 0; index < warmupRuns; index += 1) {
+		// biome-ignore lint/performance/noAwaitInLoops: Warmups must run serially to isolate each benchmark invocation.
 		checksum += await workload.run();
 	}
 	const durations: number[] = [];
 	for (let index = 0; index < sampleRuns; index += 1) {
 		const startedAt = performance.now();
+		// biome-ignore lint/performance/noAwaitInLoops: Concurrent samples would measure contention instead of operation latency.
 		checksum += await workload.run();
 		durations.push(performance.now() - startedAt);
 	}
-	if (!Number.isFinite(checksum))
+	if (!Number.isFinite(checksum)) {
 		throw new Error("Benchmark checksum is invalid");
+	}
 	const sorted = [...durations].sort((left, right) => left - right);
 	const p95Ms = percentile(sorted, 0.95);
 	const evidence: LocalBenchmarkEvidence = {

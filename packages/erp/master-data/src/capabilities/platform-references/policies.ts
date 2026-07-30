@@ -28,8 +28,12 @@ function requireActiveReference<TReference extends { active: boolean }>(
 	reference: TReference | null,
 	referenceFamily: string,
 ): Result<TReference> {
-	if (reference === null) return failReferenceNotFound(referenceFamily);
-	if (!reference.active) return failInactiveReference(referenceFamily);
+	if (reference === null) {
+		return failReferenceNotFound(referenceFamily);
+	}
+	if (!reference.active) {
+		return failInactiveReference(referenceFamily);
+	}
 	return ok(reference);
 }
 

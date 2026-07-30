@@ -36,9 +36,13 @@ export async function getGovernanceMeeting(
 		getGovernanceMeetingInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "getGovernanceMeeting");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return dependencies.meetingStore.getGovernanceMeeting({
 		organizationId: options.organizationId,
 		governanceMeetingId: parsed.data.governanceMeetingId,
@@ -54,9 +58,13 @@ export async function listGovernanceMeetings(
 		listGovernanceMeetingsInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "listGovernanceMeetings");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return dependencies.meetingStore.listGovernanceMeetings({
 		organizationId: options.organizationId,
 		legalCompanyId: parsed.data.legalCompanyId,
@@ -74,9 +82,13 @@ export async function getMeetingAttendance(
 		getMeetingAttendanceInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "getMeetingAttendance");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return dependencies.meetingStore.listMeetingParticipants({
 		organizationId: options.organizationId,
 		governanceMeetingId: parsed.data.governanceMeetingId,
@@ -92,9 +104,13 @@ export async function getMeetingQuorumStatus(
 		getMeetingQuorumStatusInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "getMeetingQuorumStatus");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return dependencies.meetingStore.getLatestQuorumResult({
 		organizationId: options.organizationId,
 		governanceMeetingId: parsed.data.governanceMeetingId,

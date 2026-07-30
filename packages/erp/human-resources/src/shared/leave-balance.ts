@@ -1,3 +1,5 @@
+const HR_REGEX_1 = /^0+(?=\d)/;
+const HR_REGEX_2 = /0+$/;
 const DEFAULT_SCALE = 4;
 
 function resolveScale(...values: string[]): number {
@@ -21,7 +23,7 @@ function toScaled(value: string, scale: number): bigint {
 		scale,
 	);
 	const digits = `${integerPart || "0"}${paddedFraction}`.replace(
-		/^0+(?=\d)/,
+		HR_REGEX_1,
 		"",
 	);
 	const magnitude = BigInt(digits || "0");
@@ -37,7 +39,7 @@ function fromScaled(value: bigint, scale: number): string {
 	const raw = abs.toString();
 	const padded = raw.padStart(scale + 1, "0");
 	const integerPart = padded.slice(0, -scale) || "0";
-	const fractionalPart = padded.slice(-scale).replace(/0+$/, "");
+	const fractionalPart = padded.slice(-scale).replace(HR_REGEX_2, "");
 	const rendered = fractionalPart
 		? `${integerPart}.${fractionalPart}`
 		: integerPart;
@@ -77,8 +79,12 @@ export function compareLeaveQuantity(left: string, right: string): number {
 	const scale = resolveScale(left, right);
 	const leftScaled = toScaled(left, scale);
 	const rightScaled = toScaled(right, scale);
-	if (leftScaled < rightScaled) return -1;
-	if (leftScaled > rightScaled) return 1;
+	if (leftScaled < rightScaled) {
+		return -1;
+	}
+	if (leftScaled > rightScaled) {
+		return 1;
+	}
 	return 0;
 }
 

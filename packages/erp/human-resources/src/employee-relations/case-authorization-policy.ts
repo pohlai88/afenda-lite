@@ -75,7 +75,7 @@ async function resolveActorEmployeeId(
 		return parsed.ok ? parsed.data : null;
 	}
 
-	const identityResolver = options.identityResolver;
+	const { identityResolver } = options;
 	if (identityResolver === undefined) {
 		return null;
 	}
@@ -95,7 +95,7 @@ async function evaluateCaseResourceAccess(
 	options: HumanResourcesCommandOptions,
 	resource: HumanResourcesResourceContext,
 ): Promise<HumanResourcesAuthorizationDecision> {
-	const resourceId = resource.resourceId;
+	const { resourceId } = resource;
 	if (resourceId === undefined) {
 		return denyCaseContext();
 	}
@@ -164,11 +164,11 @@ export const employeeRelationsCasePolicy: HumanResourcesAuthorizationPolicy = {
 		"human-resources.employee-relations.",
 	],
 
-	async evaluate(request, options) {
-		const resource = request.resource;
+	evaluate(request, options) {
+		const { resource } = request;
 
 		if (resource?.kind !== "employee_case") {
-			return denyCaseContext();
+			return Promise.resolve(denyCaseContext());
 		}
 
 		if (resource.resourceId !== undefined) {
@@ -176,9 +176,11 @@ export const employeeRelationsCasePolicy: HumanResourcesAuthorizationPolicy = {
 		}
 
 		if (isPrivilegedActor(resource)) {
-			return allowAuthorization(EMPLOYEE_RELATIONS_CASE_POLICY_ID);
+			return Promise.resolve(
+				allowAuthorization(EMPLOYEE_RELATIONS_CASE_POLICY_ID),
+			);
 		}
 
-		return denyCaseContext();
+		return Promise.resolve(denyCaseContext());
 	},
 };

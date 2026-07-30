@@ -52,7 +52,7 @@ const startOnboardingActionSchema = hrActionSchema(startOnboardingInputSchema);
 export async function startOnboardingAction(
 	input: unknown,
 ): Promise<ActionResult<{ onboardingCase: OnboardingCase }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "startOnboardingAction",
 		permission: "human-resources.onboarding.manage",
 		safeMessage: "Could not start onboarding.",
@@ -70,7 +70,9 @@ export async function startOnboardingAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { onboardingCase: mapped.data } };
 		},
 	});
@@ -83,7 +85,7 @@ const completeOnboardingTaskActionSchema = hrActionSchema(
 export async function completeOnboardingTaskAction(
 	input: unknown,
 ): Promise<ActionResult<{ onboardingCase: OnboardingCase }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "completeOnboardingTaskAction",
 		permission: "human-resources.onboarding.manage",
 		safeMessage: "Could not complete onboarding task.",
@@ -101,7 +103,9 @@ export async function completeOnboardingTaskAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { onboardingCase: mapped.data } };
 		},
 	});
@@ -114,7 +118,7 @@ const recordOnboardingOrientationActionSchema = hrActionSchema(
 export async function recordOnboardingOrientationAction(
 	input: unknown,
 ): Promise<ActionResult<{ onboardingCase: OnboardingCase }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "recordOnboardingOrientationAction",
 		permission: "human-resources.onboarding.manage",
 		safeMessage: "Could not record onboarding orientation.",
@@ -135,7 +139,9 @@ export async function recordOnboardingOrientationAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { onboardingCase: mapped.data } };
 		},
 	});
@@ -148,7 +154,7 @@ const recordOnboardingEquipmentHandoffActionSchema = hrActionSchema(
 export async function recordOnboardingEquipmentHandoffAction(
 	input: unknown,
 ): Promise<ActionResult<{ onboardingCase: OnboardingCase }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "recordOnboardingEquipmentHandoffAction",
 		permission: "human-resources.onboarding.manage",
 		safeMessage: "Could not record onboarding equipment handoff.",
@@ -169,7 +175,9 @@ export async function recordOnboardingEquipmentHandoffAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { onboardingCase: mapped.data } };
 		},
 	});
@@ -182,7 +190,7 @@ const recordOnboardingAccessHandoffActionSchema = hrActionSchema(
 export async function recordOnboardingAccessHandoffAction(
 	input: unknown,
 ): Promise<ActionResult<{ onboardingCase: OnboardingCase }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "recordOnboardingAccessHandoffAction",
 		permission: "human-resources.onboarding.manage",
 		safeMessage: "Could not record onboarding access handoff.",
@@ -203,7 +211,9 @@ export async function recordOnboardingAccessHandoffAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { onboardingCase: mapped.data } };
 		},
 	});
@@ -216,7 +226,7 @@ const completeOnboardingActionSchema = hrActionSchema(
 export async function completeOnboardingAction(
 	input: unknown,
 ): Promise<ActionResult<{ onboardingCase: OnboardingCase }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "completeOnboardingAction",
 		permission: "human-resources.onboarding.manage",
 		safeMessage: "Could not complete onboarding.",
@@ -234,7 +244,9 @@ export async function completeOnboardingAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { onboardingCase: mapped.data } };
 		},
 	});
@@ -247,7 +259,7 @@ const getOnboardingCaseActionSchema = hrActionSchema(
 export async function getOnboardingCaseAction(
 	input: unknown,
 ): Promise<ActionResult<{ onboardingCase: OnboardingCase | null }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getOnboardingCaseAction",
 		permission: "human-resources.employee.read",
 		safeMessage: "Could not get onboarding case.",
@@ -265,7 +277,9 @@ export async function getOnboardingCaseAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { onboardingCase: mapped.data } };
 		},
 	});
@@ -278,7 +292,7 @@ const listOnboardingTasksActionSchema = hrActionSchema(
 export async function listOnboardingTasksAction(
 	input: unknown,
 ): Promise<ActionResult<{ tasks: OnboardingTask[] }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listOnboardingTasksAction",
 		permission: "human-resources.employee.read",
 		safeMessage: "Could not list onboarding tasks.",
@@ -296,7 +310,9 @@ export async function listOnboardingTasksAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { tasks: mapped.data } };
 		},
 	});
@@ -309,7 +325,7 @@ const getOnboardingOrientationByCaseActionSchema = hrActionSchema(
 export async function getOnboardingOrientationByCaseAction(
 	input: unknown,
 ): Promise<ActionResult<{ orientation: OnboardingOrientation | null }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getOnboardingOrientationByCaseAction",
 		permission: "human-resources.employee.read",
 		safeMessage: "Could not get onboarding orientation.",
@@ -330,7 +346,9 @@ export async function getOnboardingOrientationByCaseAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { orientation: mapped.data } };
 		},
 	});
@@ -345,7 +363,7 @@ export async function getOnboardingEquipmentHandoffByCaseAction(
 ): Promise<
 	ActionResult<{ equipmentHandoff: OnboardingEquipmentHandoff | null }>
 > {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getOnboardingEquipmentHandoffByCaseAction",
 		permission: "human-resources.employee.read",
 		safeMessage: "Could not get onboarding equipment handoff.",
@@ -366,7 +384,9 @@ export async function getOnboardingEquipmentHandoffByCaseAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { equipmentHandoff: mapped.data } };
 		},
 	});
@@ -379,7 +399,7 @@ const getOnboardingAccessHandoffByCaseActionSchema = hrActionSchema(
 export async function getOnboardingAccessHandoffByCaseAction(
 	input: unknown,
 ): Promise<ActionResult<{ accessHandoff: OnboardingAccessHandoff | null }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getOnboardingAccessHandoffByCaseAction",
 		permission: "human-resources.employee.read",
 		safeMessage: "Could not get onboarding access handoff.",
@@ -400,7 +420,9 @@ export async function getOnboardingAccessHandoffByCaseAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { accessHandoff: mapped.data } };
 		},
 	});

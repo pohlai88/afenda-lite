@@ -19,11 +19,11 @@ export type NeonHttpIsolationLevel = NonNullable<
 	HTTPTransactionOptions<false, false>["isolationLevel"]
 >;
 
-export type NeonHttpTransactionOptions = {
+export interface NeonHttpTransactionOptions {
+	deferrable?: boolean;
 	isolationLevel?: NeonHttpIsolationLevel;
 	readOnly?: boolean;
-	deferrable?: boolean;
-};
+}
 
 export type NeonHttpSql = NeonQueryFunction<false, false>;
 

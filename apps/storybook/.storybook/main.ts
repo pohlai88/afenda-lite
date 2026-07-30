@@ -13,7 +13,7 @@ const config = {
 		name: "@storybook/react-vite",
 		options: {},
 	},
-	async viteFinal(viteConfig) {
+	viteFinal(viteConfig) {
 		viteConfig.plugins = [
 			...(viteConfig.plugins ?? []),
 			storybookEvidencePlugin(),

@@ -4,19 +4,7 @@ import type { HumanResourcesEmployeeId } from "../brands";
 import type { HumanResourcesEmployeeIdentity } from "../identity-resolver";
 
 export interface HumanResourcesIdentityStore {
-	getUserEmployeeMapping(input: {
-		organizationId: string;
-		userId: string;
-		asOf?: string | undefined;
-	}): Promise<Result<HumanResourcesEmployeeIdentity | null>>;
-
-	getManagerEmployeesForUser(input: {
-		organizationId: string;
-		userId: string;
-		asOf?: string | undefined;
-	}): Promise<Result<HumanResourcesEmployeeId[]>>;
-
-	createUserEmployeeMapping(input: {
+	createUserEmployeeMapping: (input: {
 		organizationId: string;
 		userId: string;
 		employeeId: HumanResourcesEmployeeId;
@@ -24,5 +12,16 @@ export interface HumanResourcesIdentityStore {
 		effectiveFrom: string;
 		effectiveUntil?: string | undefined;
 		actorUserId: string;
-	}): Promise<Result<{ id: string }>>;
+	}) => Promise<Result<{ id: string }>>;
+
+	getManagerEmployeesForUser: (input: {
+		organizationId: string;
+		userId: string;
+		asOf?: string | undefined;
+	}) => Promise<Result<HumanResourcesEmployeeId[]>>;
+	getUserEmployeeMapping: (input: {
+		organizationId: string;
+		userId: string;
+		asOf?: string | undefined;
+	}) => Promise<Result<HumanResourcesEmployeeIdentity | null>>;
 }

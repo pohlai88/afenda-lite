@@ -20,9 +20,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type CreatePartyRoleActionData = {
+export interface CreatePartyRoleActionData {
 	partyRole: PartyRole;
-};
+}
 
 export type CreatePartyRoleActionState =
 	ActionResult<CreatePartyRoleActionData> | null;

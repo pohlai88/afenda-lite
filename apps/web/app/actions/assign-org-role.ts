@@ -18,14 +18,14 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type AssignOrgRoleActionData = {
+export interface AssignOrgRoleActionData {
 	assignmentId: string;
-	userId: string;
-	roleId: string;
-	reactivated: boolean;
 	auditId: string;
 	notificationId: string | null;
-};
+	reactivated: boolean;
+	roleId: string;
+	userId: string;
+}
 
 /** `null` = form idle (`useActionState`); otherwise API-002 `ActionResult`. */
 export type AssignOrgRoleActionState =
@@ -139,7 +139,8 @@ export async function assignOrgRoleAction(
 			reactivated: result.reactivated,
 		});
 		if (recorded.ok) {
-			notificationId = recorded.data.notificationId;
+			const { notificationId: recordedNotificationId } = recorded.data;
+			notificationId = recordedNotificationId;
 		} else {
 			logProductEvent({
 				level: "error",

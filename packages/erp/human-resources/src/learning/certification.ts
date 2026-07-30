@@ -37,7 +37,7 @@ export const HUMAN_RESOURCES_AGGREGATE_CERTIFICATION = "certification" as const;
 export type HumanResourcesCertificationAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_CERTIFICATION;
 
-export async function issueCertification(
+export function issueCertification(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCertification>> {
@@ -50,7 +50,9 @@ export async function issueCertification(
 				organizationId: data.organizationId,
 				completionId: data.completionId,
 			});
-			if (!completionResult.ok) return completionResult;
+			if (!completionResult.ok) {
+				return completionResult;
+			}
 			const completion = completionResult.data;
 			if (
 				completion === null ||
@@ -92,7 +94,7 @@ export async function issueCertification(
 				return ok(existingByKey.data.certification);
 			}
 
-			return await store.issueCertification(
+			return store.issueCertification(
 				{
 					organizationId: data.organizationId,
 					employeeId: data.employeeId,
@@ -116,7 +118,7 @@ export async function issueCertification(
 	});
 }
 
-export async function expireCertification(
+export function expireCertification(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCertification>> {
@@ -124,8 +126,8 @@ export async function expireCertification(
 		schema: certificationStatusTransitionInputSchema,
 		invalidMessage: "Invalid certification expire input",
 		command: HUMAN_RESOURCES_COMMAND_CERTIFICATION_EXPIRE,
-		execute: async (data, { store, ports }) => {
-			return await store.expireCertification(
+		execute: async (data, { store, ports }) =>
+			await store.expireCertification(
 				{
 					organizationId: data.organizationId,
 					certificationId: data.certificationId,
@@ -137,12 +139,11 @@ export async function expireCertification(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_CERTIFICATION_EXPIRE,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function revokeCertification(
+export function revokeCertification(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCertification>> {
@@ -150,8 +151,8 @@ export async function revokeCertification(
 		schema: certificationStatusTransitionInputSchema,
 		invalidMessage: "Invalid certification revoke input",
 		command: HUMAN_RESOURCES_COMMAND_CERTIFICATION_REVOKE,
-		execute: async (data, { store, ports }) => {
-			return await store.revokeCertification(
+		execute: async (data, { store, ports }) =>
+			await store.revokeCertification(
 				{
 					organizationId: data.organizationId,
 					certificationId: data.certificationId,
@@ -164,12 +165,11 @@ export async function revokeCertification(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_CERTIFICATION_REVOKE,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function renewCertification(
+export function renewCertification(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCertification>> {
@@ -182,7 +182,9 @@ export async function renewCertification(
 				organizationId: data.organizationId,
 				certificationId: data.certificationId,
 			});
-			if (!priorResult.ok) return priorResult;
+			if (!priorResult.ok) {
+				return priorResult;
+			}
 			if (priorResult.data === null) {
 				return fail(
 					"NOT_FOUND",
@@ -198,7 +200,9 @@ export async function renewCertification(
 				organizationId: data.organizationId,
 				completionId: data.completionId,
 			});
-			if (!completionResult.ok) return completionResult;
+			if (!completionResult.ok) {
+				return completionResult;
+			}
 			if (completionResult.data === null) {
 				return fail(
 					"NOT_FOUND",
@@ -238,7 +242,7 @@ export async function renewCertification(
 				return ok(existingByKey.data.certification);
 			}
 
-			return await store.renewCertification(
+			return store.renewCertification(
 				{
 					organizationId: data.organizationId,
 					certificationId: data.certificationId,
@@ -265,7 +269,7 @@ export async function renewCertification(
 	});
 }
 
-export async function getCertification(
+export function getCertification(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCertification | null>> {
@@ -273,16 +277,15 @@ export async function getCertification(
 		schema: getCertificationInputSchema,
 		invalidMessage: "Invalid certification get input",
 		query: HUMAN_RESOURCES_QUERY_CERTIFICATION_GET,
-		execute: async (data, { store }) => {
-			return await store.getCertificationById({
+		execute: async (data, { store }) =>
+			await store.getCertificationById({
 				organizationId: data.organizationId,
 				certificationId: data.certificationId,
-			});
-		},
+			}),
 	});
 }
 
-export async function listCertifications(
+export function listCertifications(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CertificationListPage>> {
@@ -290,20 +293,19 @@ export async function listCertifications(
 		schema: listCertificationsInputSchema,
 		invalidMessage: "Invalid certification list input",
 		query: HUMAN_RESOURCES_QUERY_CERTIFICATION_LIST,
-		execute: async (data, { store }) => {
-			return await store.listCertifications({
+		execute: async (data, { store }) =>
+			await store.listCertifications({
 				organizationId: data.organizationId,
 				page: data.page ?? 1,
 				pageSize: data.pageSize ?? 20,
 				status: data.status,
 				employeeId: data.employeeId,
 				courseId: data.courseId,
-			});
-		},
+			}),
 	});
 }
 
-export async function listExpiringCertifications(
+export function listExpiringCertifications(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CertificationListPage>> {
@@ -311,14 +313,13 @@ export async function listExpiringCertifications(
 		schema: listExpiringCertificationsInputSchema,
 		invalidMessage: "Invalid expiring certifications list input",
 		query: HUMAN_RESOURCES_QUERY_CERTIFICATION_LIST_EXPIRING,
-		execute: async (data, { store }) => {
-			return await store.listExpiringCertifications({
+		execute: async (data, { store }) =>
+			await store.listExpiringCertifications({
 				organizationId: data.organizationId,
 				asOf: data.asOf,
 				withinDays: data.withinDays ?? 30,
 				page: data.page ?? 1,
 				pageSize: data.pageSize ?? 25,
-			});
-		},
+			}),
 	});
 }

@@ -54,6 +54,11 @@ import {
 	isCreateIdempotencyUniqueViolation,
 	mapPersistenceFailure,
 } from "../../shared/persistence-errors";
+import {
+	runSequential,
+	sequentialContinue,
+	sequentialReturn,
+} from "../../shared/run-sequential";
 import type {
 	HumanResourcesWorkforceFoundationStore,
 	IdempotentPersonRecord,
@@ -80,76 +85,76 @@ import type {
 } from "../../workforce-foundation/types";
 import { resolveWorkerClassificationAsOf } from "../../workforce-foundation/worker-classification-lineage";
 
-type PersonSqlRow = {
+interface PersonSqlRow {
+	create_idempotency_key: string;
+	create_request_fingerprint: string;
+	created_at: Date;
+	created_by: string;
 	id: string;
-	organization_id: string;
 	legal_name: string;
+	organization_id: string;
 	preferred_name: string | null;
 	privacy_classification: string;
-	create_idempotency_key: string;
-	create_request_fingerprint: string;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+}
 
-type PersonContactSqlRow = {
-	id: string;
-	organization_id: string;
-	person_id: string;
+interface PersonContactSqlRow {
 	contact_type: string;
-	value_text: string;
-	normalized_value: string;
-	is_primary: boolean;
-	status: string;
 	create_idempotency_key: string;
 	create_request_fingerprint: string;
-	version: number;
-	created_by: string;
-	updated_by: string;
 	created_at: Date;
-	updated_at: Date;
-};
-
-type PersonIdentifierSqlRow = {
+	created_by: string;
 	id: string;
+	is_primary: boolean;
+	normalized_value: string;
 	organization_id: string;
 	person_id: string;
-	identifier_type: string;
-	identifier_fingerprint: string;
-	identifier_last4: string;
+	status: string;
+	updated_at: Date;
+	updated_by: string;
+	value_text: string;
+	version: number;
+}
+
+interface PersonIdentifierSqlRow {
+	create_idempotency_key: string;
+	create_request_fingerprint: string;
+	created_at: Date;
+	created_by: string;
 	document_ref: string | null;
 	effective_from: string;
 	effective_to: string | null;
+	id: string;
+	identifier_fingerprint: string;
+	identifier_last4: string;
+	identifier_type: string;
+	organization_id: string;
+	person_id: string;
 	status: string;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+}
+
+interface WorkerSqlRow {
 	create_idempotency_key: string;
 	create_request_fingerprint: string;
-	version: number;
-	created_by: string;
-	updated_by: string;
 	created_at: Date;
-	updated_at: Date;
-};
-
-type WorkerSqlRow = {
+	created_by: string;
+	effective_from: string;
+	effective_to: string | null;
+	employee_id: string | null;
 	id: string;
 	organization_id: string;
 	person_id: string;
-	worker_type: string;
-	employee_id: string | null;
 	status: string;
-	effective_from: string;
-	effective_to: string | null;
-	create_idempotency_key: string;
-	create_request_fingerprint: string;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+	worker_type: string;
+}
 
 type PersonIdentityVersionSqlRow = typeof hrPersonIdentityVersion.$inferSelect;
 
@@ -596,7 +601,7 @@ async function updatePersonScalarFieldDrizzle(input: {
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
 		]);
-		const row = rows[0];
+		const [row] = rows;
 		if (row === undefined) {
 			return fail("CONFLICT", "Person update conflict");
 		}
@@ -671,7 +676,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						),
 					)
 					.limit(1);
-				const row = rows[0];
+				const [row] = rows;
 				if (row === undefined) {
 					return ok(null);
 				}
@@ -790,7 +795,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						),
 					)
 					.limit(1);
-				const row = rows[0];
+				const [row] = rows;
 				if (row === undefined) {
 					return ok(null);
 				}
@@ -831,8 +836,9 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			});
 
 			try {
-				const [rows] = await runNeonHttpTransaction<[PersonSqlRow[]]>((sql) => [
-					sql`
+				const [rows] = await runNeonHttpTransaction<[PersonSqlRow[]]>(
+					(sqlValue5) => [
+						sqlValue5`
 						WITH mutated AS (
 							INSERT INTO hr_person (
 								id, organization_id, legal_name, preferred_name,
@@ -882,8 +888,9 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						)
 						SELECT mutated.* FROM mutated, lineage, audited, outboxed
 					`,
-				]);
-				const row = rows[0];
+					],
+				);
+				const [row] = rows;
 				if (row === undefined) {
 					return fail("INTERNAL_ERROR", "Person create returned no row");
 				}
@@ -987,8 +994,9 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					correlationId: meta.correlationId,
 				});
 
-				const [rows] = await runNeonHttpTransaction<[PersonSqlRow[]]>((sql) => [
-					sql`
+				const [rows] = await runNeonHttpTransaction<[PersonSqlRow[]]>(
+					(sqlValue4) => [
+						sqlValue4`
 						WITH mutated AS (
 							UPDATE hr_person
 							SET legal_name = ${input.legalName},
@@ -1051,8 +1059,9 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						)
 						SELECT mutated.* FROM mutated, closed, successor, audited, outboxed
 					`,
-				]);
-				const row = rows[0];
+					],
+				);
+				const [row] = rows;
 				if (row === undefined) {
 					return fail("CONFLICT", "Person update conflict");
 				}
@@ -1070,7 +1079,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			_ports,
 			meta,
 		): Promise<Result<Person>> {
-			return updatePersonScalarFieldDrizzle({
+			return await updatePersonScalarFieldDrizzle({
 				organizationId: input.organizationId,
 				personId: input.personId,
 				expectedVersion: input.expectedVersion,
@@ -1088,7 +1097,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			_ports,
 			meta,
 		): Promise<Result<Person>> {
-			return updatePersonScalarFieldDrizzle({
+			return await updatePersonScalarFieldDrizzle({
 				organizationId: input.organizationId,
 				personId: input.personId,
 				expectedVersion: input.expectedVersion,
@@ -1113,7 +1122,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						),
 					)
 					.limit(1);
-				const row = rows[0];
+				const [row] = rows;
 				if (row === undefined) {
 					return ok(null);
 				}
@@ -1192,7 +1201,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						`,
 					],
 				);
-				const row = rows[0];
+				const [row] = rows;
 				if (row === undefined) {
 					return fail(
 						"INTERNAL_ERROR",
@@ -1281,7 +1290,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						`,
 					],
 				);
-				const row = rows[0];
+				const [row] = rows;
 				if (row === undefined) {
 					return fail("NOT_FOUND", "Person contact not found");
 				}
@@ -1354,7 +1363,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						`,
 					],
 				);
-				const row = rows[0];
+				const [row] = rows;
 				if (row === undefined) {
 					return fail("NOT_FOUND", "Person contact not found");
 				}
@@ -1418,7 +1427,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						),
 					)
 					.limit(1);
-				const row = rows[0];
+				const [row] = rows;
 				if (row === undefined) {
 					return ok(null);
 				}
@@ -1499,7 +1508,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						`,
 					],
 				);
-				const row = rows[0];
+				const [row] = rows;
 				if (row === undefined) {
 					return fail(
 						"INTERNAL_ERROR",
@@ -1587,7 +1596,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						`,
 					],
 				);
-				const row = rows[0];
+				const [row] = rows;
 				if (row === undefined) {
 					return fail("NOT_FOUND", "Person identifier not found");
 				}
@@ -1687,7 +1696,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 							eq(hrPersonContact.status, "active"),
 						),
 					);
-				for (const email of sourceEmails) {
+				await runSequential(sourceEmails, async (email) => {
 					const emailMatches = await db
 						.select()
 						.from(hrPersonContact)
@@ -1702,7 +1711,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					for (const match of emailMatches) {
 						addMatch(match.personId, "email");
 					}
-				}
+				});
 				const sourceIdentifiers = await db
 					.select()
 					.from(hrPersonIdentifier)
@@ -1714,7 +1723,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 							sql`${hrPersonIdentifier.effectiveTo} IS NULL`,
 						),
 					);
-				for (const identifier of sourceIdentifiers) {
+				await runSequential(sourceIdentifiers, async (identifier) => {
 					const identifierMatches = await db
 						.select()
 						.from(hrPersonIdentifier)
@@ -1736,29 +1745,35 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					for (const match of identifierMatches) {
 						addMatch(match.personId, "identifier_fingerprint");
 					}
-				}
+				});
 				const candidates: PersonDuplicateCandidate[] = [];
-				for (const [personId, reasons] of matches) {
-					const parsed = parseHumanResourcesPersonId(personId);
-					if (!parsed.ok) {
-						return parsed;
-					}
-					const matched = await this.getPersonById({
-						organizationId: input.organizationId,
-						personId: parsed.data,
-					});
-					if (!matched.ok) {
-						return matched;
-					}
-					if (matched.data === null) {
-						continue;
-					}
-					candidates.push({
-						personId: parsed.data,
-						matchReasons: [...reasons],
-						legalName: matched.data.legalName,
-						preferredName: matched.data.preferredName,
-					});
+				const sequentialOutcome1 = await runSequential(
+					matches,
+					async ([personId, reasons]) => {
+						const parsed = parseHumanResourcesPersonId(personId);
+						if (!parsed.ok) {
+							return sequentialReturn(parsed);
+						}
+						const matched = await this.getPersonById({
+							organizationId: input.organizationId,
+							personId: parsed.data,
+						});
+						if (!matched.ok) {
+							return sequentialReturn(matched);
+						}
+						if (matched.data === null) {
+							return sequentialContinue();
+						}
+						candidates.push({
+							personId: parsed.data,
+							matchReasons: [...reasons],
+							legalName: matched.data.legalName,
+							preferredName: matched.data.preferredName,
+						});
+					},
+				);
+				if (sequentialOutcome1.kind === "return") {
+					return sequentialOutcome1.value;
 				}
 				return ok(candidates);
 			} catch (error) {
@@ -1781,7 +1796,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						),
 					)
 					.limit(1);
-				const row = rows[0];
+				const [row] = rows;
 				if (row === undefined) {
 					return ok(null);
 				}
@@ -1909,7 +1924,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						),
 					)
 					.limit(1);
-				const row = rows[0];
+				const [row] = rows;
 				if (row === undefined) {
 					return ok(null);
 				}
@@ -1937,7 +1952,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						),
 					)
 					.limit(1);
-				const row = rows[0];
+				const [row] = rows;
 				if (row === undefined) {
 					return ok(null);
 				}
@@ -1971,7 +1986,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						),
 					)
 					.limit(1);
-				const row = rows[0];
+				const [row] = rows;
 				if (row === undefined) {
 					return ok(null);
 				}
@@ -2054,8 +2069,9 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				record.workerType === "employee" ? record.employeeId : null;
 
 			try {
-				const [rows] = await runNeonHttpTransaction<[WorkerSqlRow[]]>((sql) => [
-					sql`
+				const [rows] = await runNeonHttpTransaction<[WorkerSqlRow[]]>(
+					(sqlValue3) => [
+						sqlValue3`
 						WITH mutated AS (
 							INSERT INTO hr_worker (
 								id, organization_id, person_id, worker_type, employee_id, status,
@@ -2105,8 +2121,9 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						)
 						SELECT mutated.* FROM mutated, lineage, audited, outboxed
 					`,
-				]);
-				const row = rows[0];
+					],
+				);
+				const [row] = rows;
 				if (row === undefined) {
 					return fail("INTERNAL_ERROR", "Worker create returned no row");
 				}
@@ -2227,8 +2244,9 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				correlationId: meta.correlationId,
 			});
 			try {
-				const [rows] = await runNeonHttpTransaction<[WorkerSqlRow[]]>((sql) => [
-					sql`
+				const [rows] = await runNeonHttpTransaction<[WorkerSqlRow[]]>(
+					(sqlValue2) => [
+						sqlValue2`
 						WITH mutated AS (
 							UPDATE hr_worker
 							SET worker_type = ${input.workerType},
@@ -2294,8 +2312,9 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						)
 						SELECT mutated.* FROM mutated, closed, successor, audited, outboxed
 					`,
-				]);
-				const row = rows[0];
+					],
+				);
+				const [row] = rows;
 				if (row === undefined) {
 					return fail("CONFLICT", "Worker type change conflict");
 				}
@@ -2387,8 +2406,9 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			});
 
 			try {
-				const [rows] = await runNeonHttpTransaction<[WorkerSqlRow[]]>((sql) => [
-					sql`
+				const [rows] = await runNeonHttpTransaction<[WorkerSqlRow[]]>(
+					(sqlValue) => [
+						sqlValue`
 						WITH mutated AS (
 							UPDATE hr_worker
 							SET status = ${input.status},
@@ -2453,8 +2473,9 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						)
 						SELECT mutated.* FROM mutated, closed, successor, audited, outboxed
 					`,
-				]);
-				const row = rows[0];
+					],
+				);
+				const [row] = rows;
 				if (row === undefined) {
 					return fail("CONFLICT", "Worker status change conflict");
 				}

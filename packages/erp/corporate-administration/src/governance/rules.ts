@@ -78,13 +78,19 @@ export function assertNoGovernanceMembershipConflict(input: {
 	existing: readonly GovernanceMembership[];
 }): Result<void> {
 	for (const row of input.existing) {
-		if (row.id === input.candidate.id || row.status !== "active") continue;
+		if (row.id === input.candidate.id || row.status !== "active") {
+			continue;
+		}
 		const overlaps = effectiveRangesOverlap(
 			{ from: input.candidate.termFrom, to: input.candidate.termTo },
 			{ from: row.termFrom, to: row.termTo },
 		);
-		if (!overlaps) continue;
-		if (input.candidate.isChair && row.isChair) return conflict("isChair");
+		if (!overlaps) {
+			continue;
+		}
+		if (input.candidate.isChair && row.isChair) {
+			return conflict("isChair");
+		}
 		if (
 			input.candidate.memberKind === row.memberKind &&
 			input.candidate.memberPartyId === row.memberPartyId &&

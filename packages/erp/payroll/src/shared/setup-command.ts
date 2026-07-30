@@ -18,21 +18,21 @@ import type {
 } from "../ports";
 import type { PayrollStore } from "../store";
 
-type ActorScoped = {
-	organizationId: string;
+interface ActorScoped {
 	actorUserId: string;
-};
+	organizationId: string;
+}
 
-type CommandDeps = {
-	store: PayrollStore;
-	ports: MutationPorts;
-	employees: PayrollEmployeeQueryPort | undefined;
+interface CommandDeps {
 	calculator: PayrollRunCalculatorPort | undefined;
-};
-
-type QueryDeps = {
+	employees: PayrollEmployeeQueryPort | undefined;
+	ports: MutationPorts;
 	store: PayrollStore;
-};
+}
+
+interface QueryDeps {
+	store: PayrollStore;
+}
 
 export async function runPayrollSetupCommand<
 	TSchema extends z.ZodType<ActorScoped>,

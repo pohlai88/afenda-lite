@@ -19,14 +19,14 @@ import type { HumanResourcesAuthorizedActorInput } from "./run-authorized-operat
 
 type ActorScoped = HumanResourcesAuthorizedActorInput;
 
-type CommandDeps = {
-	store: HumanResourcesStore;
+interface CommandDeps {
 	ports: MutationPorts;
-};
-
-type QueryDeps = {
 	store: HumanResourcesStore;
-};
+}
+
+interface QueryDeps {
+	store: HumanResourcesStore;
+}
 
 export async function runOrganizationCommand<
 	TSchema extends z.ZodType<ActorScoped>,
@@ -44,7 +44,7 @@ export async function runOrganizationCommand<
 		) => Promise<Result<TOut>>;
 	},
 ): Promise<Result<TOut>> {
-	return runParsedAuthorizedCommand(input, options, {
+	return await runParsedAuthorizedCommand(input, options, {
 		schema: config.schema,
 		invalidMessage: config.invalidMessage,
 		command: config.command,
@@ -69,7 +69,7 @@ export async function runOrganizationQuery<
 		execute: (data: z.infer<TSchema>, deps: QueryDeps) => Promise<Result<TOut>>;
 	},
 ): Promise<Result<TOut>> {
-	return runParsedAuthorizedQuery(input, options, {
+	return await runParsedAuthorizedQuery(input, options, {
 		schema: config.schema,
 		invalidMessage: config.invalidMessage,
 		query: config.query,

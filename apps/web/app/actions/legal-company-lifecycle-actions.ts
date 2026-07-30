@@ -99,7 +99,7 @@ type LifecycleCommand<TPayload extends LifecyclePayload> = (
 export async function activateLegalCompanyAction(
 	formData: FormData,
 ): Promise<ActionResult<LifecycleResult>> {
-	return runLifecycleAction({
+	return await runLifecycleAction({
 		path: "activateLegalCompanyAction",
 		safeMessage: "Could not activate the legal company.",
 		schema: baseLifecycleActionSchema,
@@ -111,7 +111,7 @@ export async function activateLegalCompanyAction(
 export async function suspendLegalCompanyAction(
 	formData: FormData,
 ): Promise<ActionResult<LifecycleResult>> {
-	return runLifecycleAction({
+	return await runLifecycleAction({
 		path: "suspendLegalCompanyAction",
 		safeMessage: "Could not suspend the legal company.",
 		schema: reasonedLifecycleActionSchema,
@@ -123,7 +123,7 @@ export async function suspendLegalCompanyAction(
 export async function markCompanyStruckOffAction(
 	formData: FormData,
 ): Promise<ActionResult<LifecycleResult>> {
-	return runLifecycleAction({
+	return await runLifecycleAction({
 		path: "markCompanyStruckOffAction",
 		safeMessage: "Could not mark the legal company struck off.",
 		schema: reasonedLifecycleActionSchema,
@@ -135,7 +135,7 @@ export async function markCompanyStruckOffAction(
 export async function enterLiquidationAction(
 	formData: FormData,
 ): Promise<ActionResult<LifecycleResult>> {
-	return runLifecycleAction({
+	return await runLifecycleAction({
 		path: "enterLiquidationAction",
 		safeMessage: "Could not enter liquidation.",
 		schema: reasonedLifecycleActionSchema,
@@ -147,7 +147,7 @@ export async function enterLiquidationAction(
 export async function dissolveLegalCompanyAction(
 	formData: FormData,
 ): Promise<ActionResult<LifecycleResult>> {
-	return runLifecycleAction({
+	return await runLifecycleAction({
 		path: "dissolveLegalCompanyAction",
 		safeMessage: "Could not dissolve the legal company.",
 		schema: reasonedLifecycleActionSchema,
@@ -159,7 +159,7 @@ export async function dissolveLegalCompanyAction(
 export async function restoreLegalCompanyAction(
 	formData: FormData,
 ): Promise<ActionResult<LifecycleResult>> {
-	return runLifecycleAction({
+	return await runLifecycleAction({
 		path: "restoreLegalCompanyAction",
 		safeMessage: "Could not restore the legal company.",
 		schema: reasonedLifecycleActionSchema,
@@ -171,7 +171,7 @@ export async function restoreLegalCompanyAction(
 export async function archiveLegalCompanyAction(
 	formData: FormData,
 ): Promise<ActionResult<LifecycleResult>> {
-	return runLifecycleAction({
+	return await runLifecycleAction({
 		path: "archiveLegalCompanyAction",
 		safeMessage: "Could not archive the legal company.",
 		schema: reasonedLifecycleActionSchema,
@@ -184,49 +184,49 @@ export async function activateLegalCompanyFormAction(
 	_previousState: ActionResult<LifecycleResult> | null,
 	formData: FormData,
 ): Promise<ActionResult<LifecycleResult> | null> {
-	return activateLegalCompanyAction(formData);
+	return await activateLegalCompanyAction(formData);
 }
 
 export async function suspendLegalCompanyFormAction(
 	_previousState: ActionResult<LifecycleResult> | null,
 	formData: FormData,
 ): Promise<ActionResult<LifecycleResult> | null> {
-	return suspendLegalCompanyAction(formData);
+	return await suspendLegalCompanyAction(formData);
 }
 
 export async function markCompanyStruckOffFormAction(
 	_previousState: ActionResult<LifecycleResult> | null,
 	formData: FormData,
 ): Promise<ActionResult<LifecycleResult> | null> {
-	return markCompanyStruckOffAction(formData);
+	return await markCompanyStruckOffAction(formData);
 }
 
 export async function enterLiquidationFormAction(
 	_previousState: ActionResult<LifecycleResult> | null,
 	formData: FormData,
 ): Promise<ActionResult<LifecycleResult> | null> {
-	return enterLiquidationAction(formData);
+	return await enterLiquidationAction(formData);
 }
 
 export async function dissolveLegalCompanyFormAction(
 	_previousState: ActionResult<LifecycleResult> | null,
 	formData: FormData,
 ): Promise<ActionResult<LifecycleResult> | null> {
-	return dissolveLegalCompanyAction(formData);
+	return await dissolveLegalCompanyAction(formData);
 }
 
 export async function restoreLegalCompanyFormAction(
 	_previousState: ActionResult<LifecycleResult> | null,
 	formData: FormData,
 ): Promise<ActionResult<LifecycleResult> | null> {
-	return restoreLegalCompanyAction(formData);
+	return await restoreLegalCompanyAction(formData);
 }
 
 export async function archiveLegalCompanyFormAction(
 	_previousState: ActionResult<LifecycleResult> | null,
 	formData: FormData,
 ): Promise<ActionResult<LifecycleResult> | null> {
-	return archiveLegalCompanyAction(formData);
+	return await archiveLegalCompanyAction(formData);
 }
 
 async function runLifecycleAction<TPayload extends LifecyclePayload>(input: {
@@ -236,7 +236,7 @@ async function runLifecycleAction<TPayload extends LifecyclePayload>(input: {
 	formData: FormData;
 	execute: LifecycleCommand<TPayload>;
 }): Promise<ActionResult<LifecycleResult>> {
-	return runMemberPermissionAction({
+	return await runMemberPermissionAction({
 		path: input.path,
 		permission: "corporate_administration.company.manage",
 		safeMessage: input.safeMessage,
@@ -252,7 +252,9 @@ async function runLifecycleAction<TPayload extends LifecyclePayload>(input: {
 				createCorporateAdministrationCompanyDependencies(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 
 			revalidateLifecycleRoutes(
 				parsed.data.organizationSlug,

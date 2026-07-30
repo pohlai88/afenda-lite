@@ -8,12 +8,12 @@ export default function ClientWorkspaceNotFound() {
 	return (
 		<PublicMessageShell
 			asLandmark={false}
-			title="Not found"
 			footer={
-				<Button asChild variant="outline" className="mt-2">
+				<Button asChild className="mt-2" variant="outline">
 					<Link href={CLIENT_DASHBOARD_PATH}>Back to home</Link>
 				</Button>
 			}
+			title="Page not found"
 		>
 			<p className="text-sm">That client workspace page does not exist.</p>
 		</PublicMessageShell>

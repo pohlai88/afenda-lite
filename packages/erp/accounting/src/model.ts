@@ -21,232 +21,222 @@ export type AccountType =
 export type NormalBalance = "debit" | "credit";
 export type PostingExceptionStatus = "open" | "resolved" | "retrying";
 
-export type AccountingPeriod = {
-	id: string;
-	organizationId: string;
+export interface AccountingPeriod {
+	closedAt: Date | null;
+	closedBy: string | null;
+	closeReason: string | null;
 	code: string;
-	normalizedCode: string;
-	startDate: string;
+	createdAt: Date;
 	endDate: string;
-	status: AccountingPeriodStatus;
+	id: string;
+	normalizedCode: string;
+	openedBy: string;
+	organizationId: string;
+	reopenedAt: Date | null;
+	reopenedBy: string | null;
+	reopenReason: string | null;
 	softClosed: boolean;
 	softClosedAt: Date | null;
 	softClosedBy: string | null;
-	reopenReason: string | null;
-	reopenedAt: Date | null;
-	reopenedBy: string | null;
-	closeReason: string | null;
-	version: number;
-	openedBy: string;
-	closedBy: string | null;
-	closedAt: Date | null;
-	createdAt: Date;
+	startDate: string;
+	status: AccountingPeriodStatus;
 	updatedAt: Date;
-};
+	version: number;
+}
 
-export type ChartOfAccounts = {
-	id: string;
-	organizationId: string;
+export interface ChartOfAccounts {
 	code: string;
-	name: string;
-	status: "active" | "inactive";
-	version: number;
-	createdBy: string;
-	updatedBy: string;
 	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type LedgerAccount = {
+	createdBy: string;
 	id: string;
+	name: string;
 	organizationId: string;
+	status: "active" | "inactive";
+	updatedAt: Date;
+	updatedBy: string;
+	version: number;
+}
+
+export interface LedgerAccount {
+	accountType: AccountType;
 	chartOfAccountId: string;
 	code: string;
-	normalizedCode: string;
-	name: string;
-	accountType: AccountType;
-	normalBalance: NormalBalance;
+	createdAt: Date;
+	createdBy: string;
+	id: string;
 	isControl: boolean;
-	status: "active" | "inactive";
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type AccountRoleMapping = {
-	id: string;
+	name: string;
+	normalBalance: NormalBalance;
+	normalizedCode: string;
 	organizationId: string;
+	status: "active" | "inactive";
+	updatedAt: Date;
+	updatedBy: string;
+	version: number;
+}
+
+export interface AccountRoleMapping {
 	accountRole: string;
-	ledgerAccountId: string;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
 	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type PostingProfile = {
+	createdBy: string;
 	id: string;
+	ledgerAccountId: string;
 	organizationId: string;
-	code: string;
-	eventType: string;
-	versionNumber: number;
-	status: "active" | "inactive";
-	version: number;
-	lines: PostingProfileLine[];
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type PostingProfileLine = {
+export interface PostingProfile {
+	code: string;
+	createdAt: Date;
+	createdBy: string;
+	eventType: string;
+	id: string;
+	lines: PostingProfileLine[];
+	organizationId: string;
+	status: "active" | "inactive";
+	updatedAt: Date;
+	updatedBy: string;
+	version: number;
+	versionNumber: number;
+}
+
+export interface PostingProfileLine {
+	accountRole: string;
 	id: string;
 	lineNo: number;
 	side: NormalBalance;
-	accountRole: string;
-};
+}
 
-export type JournalLine = {
-	id: string;
-	organizationId: string;
-	journalId: string;
-	lineNumber: number;
+export interface JournalLine {
 	accountCode: string;
-	description: string | null;
-	ledgerAccountId: string | null;
-	debit: string;
-	credit: string;
-	createdBy: string;
 	createdAt: Date;
-};
-
-export type LedgerPosting = {
+	createdBy: string;
+	credit: string;
+	debit: string;
+	description: string | null;
 	id: string;
+	journalId: string;
+	ledgerAccountId: string | null;
+	lineNumber: number;
 	organizationId: string;
+}
+
+export interface LedgerPosting {
+	accountCode: string;
+	credit: string;
+	debit: string;
+	id: string;
 	journalId: string;
 	journalLineId: string;
-	periodId: string;
-	accountCode: string;
 	ledgerAccountId: string | null;
-	debit: string;
-	credit: string;
+	organizationId: string;
+	periodId: string;
 	postedAt: Date;
 	postedBy: string;
-};
+}
 
-export type Journal = {
-	id: string;
-	organizationId: string;
-	periodId: string;
+export interface Journal {
 	code: string;
-	normalizedCode: string;
+	createdAt: Date;
+	createdBy: string;
 	currencyCode: string;
 	description: string | null;
-	status: JournalStatus;
+	id: string;
 	journalType: JournalType;
-	reversalOfJournalId: string | null;
-	reversedByJournalId: string | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
+	lines: JournalLine[];
+	normalizedCode: string;
+	organizationId: string;
+	periodId: string;
 	postedAt: Date | null;
 	postedBy: string | null;
+	postings: LedgerPosting[];
+	reversalOfJournalId: string | null;
 	reversedAt: Date | null;
 	reversedBy: string | null;
-	createdAt: Date;
+	reversedByJournalId: string | null;
+	status: JournalStatus;
 	updatedAt: Date;
-	lines: JournalLine[];
-	postings: LedgerPosting[];
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type TrialBalanceRow = {
+export interface TrialBalanceRow {
 	accountCode: string;
-	totalDebit: string;
-	totalCredit: string;
 	balance: string;
-};
+	totalCredit: string;
+	totalDebit: string;
+}
 
-export type SourcePostingLink = {
+export interface SourcePostingLink {
+	causationId: string | null;
+	createdAt: Date;
+	createdBy: string;
 	id: string;
+	journalId: string;
 	organizationId: string;
-	sourceModule: string;
-	sourceAggregateId: string;
-	sourceEventId: string;
-	sourceEventVersion: number;
 	postingRuleId: string;
 	postingRuleVersion: number;
-	journalId: string;
-	causationId: string | null;
-	createdBy: string;
-	createdAt: Date;
-};
-
-export type SourcePostingTrace = {
-	link: SourcePostingLink;
-	journal: Journal;
-};
-
-export type PostingException = {
-	id: string;
-	organizationId: string;
-	sourceModule: string;
 	sourceAggregateId: string;
 	sourceEventId: string;
 	sourceEventVersion: number;
+	sourceModule: string;
+}
+
+export interface SourcePostingTrace {
+	journal: Journal;
+	link: SourcePostingLink;
+}
+
+export interface PostingException {
+	createdAt: Date;
+	createdBy: string;
+	id: string;
+	message: string;
+	organizationId: string;
+	payload: unknown;
 	postingRuleCode: string | null;
 	reasonCode: string;
-	message: string;
-	status: PostingExceptionStatus;
 	resolutionNote: string | null;
-	resolvedBy: string | null;
 	resolvedAt: Date | null;
-	payload: unknown;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
+	resolvedBy: string | null;
+	sourceAggregateId: string;
+	sourceEventId: string;
+	sourceEventVersion: number;
+	sourceModule: string;
+	status: PostingExceptionStatus;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type LedgerAccountActivityRow = {
-	journalId: string;
-	journalCode: string;
-	periodId: string;
+export interface LedgerAccountActivityRow {
 	accountCode: string;
-	debit: string;
 	credit: string;
+	debit: string;
+	journalCode: string;
+	journalId: string;
+	periodId: string;
 	postedAt: Date;
-};
+}
 
 export type AccountingEventType =
 	| "accounting.journal.posted.v1"
 	| "accounting.journal.reversed.v1";
 
-export type AccountingEffects = {
-	emit(event: {
+export interface AccountingEffects {
+	emit: (event: {
 		type: AccountingEventType;
 		organizationId: string;
 		actorUserId: string;
 		correlationId: string;
 		payload: Record<string, unknown>;
-	}): Promise<Result<void>>;
-};
+	}) => Promise<Result<void>>;
+}
 
-export type AccountingStore = {
-	createDraft(record: {
-		organizationId: string;
-		periodId: string;
-		code: string;
-		normalizedCode: string;
-		currencyCode: string;
-		description: string | null;
-		journalType: JournalType;
-		actorUserId: string;
-	}): Promise<Result<Journal>>;
-	addLine(record: {
+export interface AccountingStore {
+	addLine: (record: {
 		organizationId: string;
 		journalId: string;
 		accountCode: string;
@@ -255,71 +245,31 @@ export type AccountingStore = {
 		debit: string;
 		credit: string;
 		actorUserId: string;
-	}): Promise<Result<JournalLine>>;
-	post(record: {
-		organizationId: string;
-		journalId: string;
-		expectedVersion: number;
-		actorUserId: string;
-		correlationId: string;
-		effects: AccountingEffects;
-	}): Promise<Result<Journal>>;
-	reverse(record: {
-		organizationId: string;
-		journalId: string;
-		expectedVersion: number;
-		reason: string;
-		actorUserId: string;
-		correlationId: string;
-		effects: AccountingEffects;
-	}): Promise<Result<Journal>>;
-	openPeriod(record: {
-		organizationId: string;
-		code: string;
-		normalizedCode: string;
-		startDate: string;
-		endDate: string;
-		actorUserId: string;
-	}): Promise<Result<AccountingPeriod>>;
-	softClosePeriod(record: {
-		organizationId: string;
-		periodId: string;
-		expectedVersion: number;
-		actorUserId: string;
-	}): Promise<Result<AccountingPeriod>>;
-	closePeriod(record: {
+	}) => Promise<Result<JournalLine>>;
+	closePeriod: (record: {
 		organizationId: string;
 		periodId: string;
 		expectedVersion: number;
 		closeReason: string | null;
 		actorUserId: string;
-	}): Promise<Result<AccountingPeriod>>;
-	reopenPeriod(record: {
-		organizationId: string;
-		periodId: string;
-		expectedVersion: number;
-		reason: string;
-		actorUserId: string;
-	}): Promise<Result<AccountingPeriod>>;
-	getById(organizationId: string, id: string): Promise<Result<Journal | null>>;
-	list(filter: {
-		organizationId: string;
-		page: number;
-		pageSize: number;
-		status?: JournalStatus | undefined;
-		periodId?: string | undefined;
-	}): Promise<Result<Journal[]>>;
-	trialBalance(filter: {
-		organizationId: string;
-		periodId?: string | undefined;
-	}): Promise<Result<TrialBalanceRow[]>>;
-	createChartOfAccounts(record: {
+	}) => Promise<Result<AccountingPeriod>>;
+	createChartOfAccounts: (record: {
 		organizationId: string;
 		code: string;
 		name: string;
 		actorUserId: string;
-	}): Promise<Result<ChartOfAccounts>>;
-	createLedgerAccount(record: {
+	}) => Promise<Result<ChartOfAccounts>>;
+	createDraft: (record: {
+		organizationId: string;
+		periodId: string;
+		code: string;
+		normalizedCode: string;
+		currencyCode: string;
+		description: string | null;
+		journalType: JournalType;
+		actorUserId: string;
+	}) => Promise<Result<Journal>>;
+	createLedgerAccount: (record: {
 		organizationId: string;
 		chartOfAccountId: string;
 		code: string;
@@ -329,75 +279,8 @@ export type AccountingStore = {
 		normalBalance: NormalBalance;
 		isControl: boolean;
 		actorUserId: string;
-	}): Promise<Result<LedgerAccount>>;
-	updateLedgerAccount(record: {
-		organizationId: string;
-		id: string;
-		name: string;
-		accountType: AccountType;
-		normalBalance: NormalBalance;
-		isControl: boolean;
-		expectedVersion: number;
-		actorUserId: string;
-	}): Promise<Result<LedgerAccount>>;
-	deactivateLedgerAccount(record: {
-		organizationId: string;
-		id: string;
-		expectedVersion: number;
-		actorUserId: string;
-	}): Promise<Result<LedgerAccount>>;
-	listLedgerAccounts(filter: {
-		organizationId: string;
-		chartOfAccountId?: string | undefined;
-		status?: "active" | "inactive" | undefined;
-	}): Promise<Result<LedgerAccount[]>>;
-	resolveLedgerAccountByCode(
-		organizationId: string,
-		normalizedCode: string,
-	): Promise<Result<LedgerAccount | null>>;
-	mapAccountRole(record: {
-		organizationId: string;
-		accountRole: string;
-		ledgerAccountId: string;
-		actorUserId: string;
-	}): Promise<Result<AccountRoleMapping>>;
-	resolveAccountRole(
-		organizationId: string,
-		accountRole: string,
-	): Promise<Result<AccountRoleMapping | null>>;
-	upsertPostingProfile(record: {
-		organizationId: string;
-		code: string;
-		eventType: string;
-		versionNumber: number;
-		lines: Array<{ lineNo: number; side: NormalBalance; accountRole: string }>;
-		actorUserId: string;
-	}): Promise<Result<PostingProfile>>;
-	getActivePostingProfile(
-		organizationId: string,
-		code: string,
-	): Promise<Result<PostingProfile | null>>;
-	findSourcePostingLink(record: {
-		organizationId: string;
-		sourceModule: string;
-		sourceAggregateId: string;
-		sourceEventId: string;
-		sourceEventVersion: number;
-		postingRuleVersion: number;
-	}): Promise<Result<SourcePostingLink | null>>;
-	createSourcePostingLink(record: {
-		organizationId: string;
-		sourceModule: string;
-		sourceAggregateId: string;
-		sourceEventId: string;
-		sourceEventVersion: number;
-		postingRuleId: string;
-		postingRuleVersion: number;
-		journalId: string;
-		causationId: string | null;
-		actorUserId: string;
-	}): Promise<Result<SourcePostingLink>>;
-	createPostingException(record: {
+	}) => Promise<Result<LedgerAccount>>;
+	createPostingException: (record: {
 		organizationId: string;
 		sourceModule: string;
 		sourceAggregateId: string;
@@ -408,34 +291,154 @@ export type AccountingStore = {
 		message: string;
 		payload: unknown;
 		actorUserId: string;
-	}): Promise<Result<PostingException>>;
-	listPostingExceptions(filter: {
+	}) => Promise<Result<PostingException>>;
+	createSourcePostingLink: (record: {
 		organizationId: string;
-		status?: PostingExceptionStatus | undefined;
-	}): Promise<Result<PostingException[]>>;
-	resolvePostingException(record: {
+		sourceModule: string;
+		sourceAggregateId: string;
+		sourceEventId: string;
+		sourceEventVersion: number;
+		postingRuleId: string;
+		postingRuleVersion: number;
+		journalId: string;
+		causationId: string | null;
+		actorUserId: string;
+	}) => Promise<Result<SourcePostingLink>>;
+	deactivateLedgerAccount: (record: {
 		organizationId: string;
 		id: string;
-		resolutionNote: string;
 		expectedVersion: number;
 		actorUserId: string;
-	}): Promise<Result<PostingException>>;
-	getSourcePostingTrace(filter: {
+	}) => Promise<Result<LedgerAccount>>;
+	findSourcePostingLink: (record: {
+		organizationId: string;
+		sourceModule: string;
+		sourceAggregateId: string;
+		sourceEventId: string;
+		sourceEventVersion: number;
+		postingRuleVersion: number;
+	}) => Promise<Result<SourcePostingLink | null>>;
+	getActivePostingProfile: (
+		organizationId: string,
+		code: string,
+	) => Promise<Result<PostingProfile | null>>;
+	getById: (
+		organizationId: string,
+		id: string,
+	) => Promise<Result<Journal | null>>;
+	getLedgerAccountActivity: (filter: {
+		organizationId: string;
+		accountCode?: string | undefined;
+		periodId?: string | undefined;
+	}) => Promise<Result<LedgerAccountActivityRow[]>>;
+	getSourcePostingTrace: (filter: {
 		organizationId: string;
 		journalId?: string | undefined;
 		sourceModule?: string | undefined;
 		sourceAggregateId?: string | undefined;
 		sourceEventId?: string | undefined;
-	}): Promise<Result<SourcePostingTrace[]>>;
-	getLedgerAccountActivity(filter: {
+	}) => Promise<Result<SourcePostingTrace[]>>;
+	list: (filter: {
 		organizationId: string;
-		accountCode?: string | undefined;
+		page: number;
+		pageSize: number;
+		status?: JournalStatus | undefined;
 		periodId?: string | undefined;
-	}): Promise<Result<LedgerAccountActivityRow[]>>;
-};
+	}) => Promise<Result<Journal[]>>;
+	listLedgerAccounts: (filter: {
+		organizationId: string;
+		chartOfAccountId?: string | undefined;
+		status?: "active" | "inactive" | undefined;
+	}) => Promise<Result<LedgerAccount[]>>;
+	listPostingExceptions: (filter: {
+		organizationId: string;
+		status?: PostingExceptionStatus | undefined;
+	}) => Promise<Result<PostingException[]>>;
+	mapAccountRole: (record: {
+		organizationId: string;
+		accountRole: string;
+		ledgerAccountId: string;
+		actorUserId: string;
+	}) => Promise<Result<AccountRoleMapping>>;
+	openPeriod: (record: {
+		organizationId: string;
+		code: string;
+		normalizedCode: string;
+		startDate: string;
+		endDate: string;
+		actorUserId: string;
+	}) => Promise<Result<AccountingPeriod>>;
+	post: (record: {
+		organizationId: string;
+		journalId: string;
+		expectedVersion: number;
+		actorUserId: string;
+		correlationId: string;
+		effects: AccountingEffects;
+	}) => Promise<Result<Journal>>;
+	reopenPeriod: (record: {
+		organizationId: string;
+		periodId: string;
+		expectedVersion: number;
+		reason: string;
+		actorUserId: string;
+	}) => Promise<Result<AccountingPeriod>>;
+	resolveAccountRole: (
+		organizationId: string,
+		accountRole: string,
+	) => Promise<Result<AccountRoleMapping | null>>;
+	resolveLedgerAccountByCode: (
+		organizationId: string,
+		normalizedCode: string,
+	) => Promise<Result<LedgerAccount | null>>;
+	resolvePostingException: (record: {
+		organizationId: string;
+		id: string;
+		resolutionNote: string;
+		expectedVersion: number;
+		actorUserId: string;
+	}) => Promise<Result<PostingException>>;
+	reverse: (record: {
+		organizationId: string;
+		journalId: string;
+		expectedVersion: number;
+		reason: string;
+		actorUserId: string;
+		correlationId: string;
+		effects: AccountingEffects;
+	}) => Promise<Result<Journal>>;
+	softClosePeriod: (record: {
+		organizationId: string;
+		periodId: string;
+		expectedVersion: number;
+		actorUserId: string;
+	}) => Promise<Result<AccountingPeriod>>;
+	trialBalance: (filter: {
+		organizationId: string;
+		periodId?: string | undefined;
+	}) => Promise<Result<TrialBalanceRow[]>>;
+	updateLedgerAccount: (record: {
+		organizationId: string;
+		id: string;
+		name: string;
+		accountType: AccountType;
+		normalBalance: NormalBalance;
+		isControl: boolean;
+		expectedVersion: number;
+		actorUserId: string;
+	}) => Promise<Result<LedgerAccount>>;
+	upsertPostingProfile: (record: {
+		organizationId: string;
+		code: string;
+		eventType: string;
+		versionNumber: number;
+		lines: Array<{ lineNo: number; side: NormalBalance; accountRole: string }>;
+		actorUserId: string;
+	}) => Promise<Result<PostingProfile>>;
+}
 
-export type AccountingCommandOptions = {
-	store?: AccountingStore;
+export interface AccountingCommandOptions {
 	authorization?: import("./authorization").AccountingAuthorizationPort;
 	effects?: AccountingEffects;
-};
+	store?: AccountingStore;
+}

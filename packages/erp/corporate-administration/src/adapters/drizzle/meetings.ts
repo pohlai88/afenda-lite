@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/useAwait: Drizzle meeting wrappers expose uniform asynchronous store contracts.
 import {
 	and,
 	asc,
@@ -166,8 +167,12 @@ class DrizzleCorporateAdministrationMeetingStore implements MeetingStore {
 		input: Parameters<MeetingStore["changeMeetingStatus"]>[0],
 	) {
 		const current = await this.getGovernanceMeeting(input);
-		if (!current.ok) return current;
-		if (current.data === null) return notFound();
+		if (!current.ok) {
+			return current;
+		}
+		if (current.data === null) {
+			return notFound();
+		}
 		if (current.data.version !== input.expectedVersion) {
 			return stale(input.expectedVersion, current.data.version);
 		}
@@ -298,8 +303,12 @@ class DrizzleCorporateAdministrationMeetingStore implements MeetingStore {
 		input: Parameters<MeetingStore["recordNoticeDelivery"]>[0],
 	) {
 		const current = await this.getMeetingNotice(input);
-		if (!current.ok) return current;
-		if (current.data === null) return notFound();
+		if (!current.ok) {
+			return current;
+		}
+		if (current.data === null) {
+			return notFound();
+		}
 		if (current.data.version !== input.expectedVersion) {
 			return stale(input.expectedVersion, current.data.version);
 		}
@@ -317,8 +326,12 @@ class DrizzleCorporateAdministrationMeetingStore implements MeetingStore {
 
 	async waiveNotice(input: Parameters<MeetingStore["waiveNotice"]>[0]) {
 		const current = await this.getMeetingNotice(input);
-		if (!current.ok) return current;
-		if (current.data === null) return notFound();
+		if (!current.ok) {
+			return current;
+		}
+		if (current.data === null) {
+			return notFound();
+		}
 		if (current.data.version !== input.expectedVersion) {
 			return stale(input.expectedVersion, current.data.version);
 		}
@@ -493,7 +506,9 @@ class DrizzleCorporateAdministrationMeetingStore implements MeetingStore {
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}

@@ -14,8 +14,8 @@ function MasterDetail({
 }: React.ComponentProps<typeof ResizablePanelGroup>) {
 	return (
 		<ResizablePanelGroup
-			orientation="horizontal"
 			className={cn("min-h-80 rounded-lg border", className)}
+			orientation="horizontal"
 			{...props}
 		/>
 	);
@@ -27,9 +27,9 @@ function MasterDetailPrimary({
 }: React.ComponentProps<typeof ResizablePanel>) {
 	return (
 		<ResizablePanel
+			className={cn("min-w-56", className)}
 			defaultSize="35%"
 			minSize="20%"
-			className={cn("min-w-56", className)}
 			{...props}
 		/>
 	);
@@ -43,9 +43,9 @@ function MasterDetailSecondary({
 		<>
 			<ResizableHandle withHandle />
 			<ResizablePanel
+				className={cn("min-w-0", className)}
 				defaultSize="65%"
 				minSize="35%"
-				className={cn("min-w-0", className)}
 				{...props}
 			/>
 		</>

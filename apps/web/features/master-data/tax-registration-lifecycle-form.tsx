@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noJsxPropsBind: The enabled React Compiler stabilizes JSX callback props.
 "use client";
 
 import type { TaxRegistrationProjection } from "@afenda/master-data";
@@ -31,10 +32,10 @@ import {
 	retireTaxRegistrationAction,
 } from "@/app/actions/retire-tax-registration";
 
-type TaxRegistrationLifecycleFormProps = {
+interface TaxRegistrationLifecycleFormProps {
 	canManage: boolean;
 	registrations: TaxRegistrationProjection[];
-};
+}
 
 const activateInitial: ActivateTaxRegistrationActionState = null;
 const blockInitial: BlockTaxRegistrationActionState = null;
@@ -44,6 +45,7 @@ const restoreInitial: RestoreTaxRegistrationActionState = null;
 /**
  * Tax-registration lifecycle — activate / block / retire / restore with CAS.
  */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Lifecycle branches share one CAS-governed form surface.
 export function TaxRegistrationLifecycleForm({
 	canManage,
 	registrations,
@@ -74,7 +76,7 @@ export function TaxRegistrationLifecycleForm({
 
 	if (selectable.length === 0) {
 		return (
-			<p className="text-sm text-muted-foreground">
+			<p className="text-muted-foreground text-sm">
 				No tax registrations to transition.
 			</p>
 		);
@@ -84,7 +86,7 @@ export function TaxRegistrationLifecycleForm({
 		selectable.find((row) => row.id === selectedId) ?? selectable[0];
 	if (selected === undefined) {
 		return (
-			<p className="text-sm text-muted-foreground">
+			<p className="text-muted-foreground text-sm">
 				No tax registrations to transition.
 			</p>
 		);
@@ -128,14 +130,14 @@ export function TaxRegistrationLifecycleForm({
 			) : null}
 			{failure?.ok === false ? <FormError>{failure.message}</FormError> : null}
 			<FormField
-				label="Tax registration"
 				fieldId="tax-registration-lifecycle-select"
+				label="Tax registration"
 			>
 				<NativeSelect
-					id="tax-registration-lifecycle-select"
-					value={selected.id}
-					onChange={(event) => setSelectedId(event.target.value)}
 					disabled={pending}
+					id="tax-registration-lifecycle-select"
+					onChange={(event) => setSelectedId(event.target.value)}
+					value={selected.id}
 				>
 					{selectable.map((row) => (
 						<NativeSelectOption key={row.id} value={row.id}>
@@ -148,13 +150,13 @@ export function TaxRegistrationLifecycleForm({
 			<div className="flex flex-wrap gap-2">
 				{canActivate ? (
 					<form action={activateAction}>
-						<input type="hidden" name="taxRegistrationId" value={selected.id} />
+						<input name="taxRegistrationId" type="hidden" value={selected.id} />
 						<input
-							type="hidden"
 							name="expectedVersion"
+							type="hidden"
 							value={selected.version}
 						/>
-						<Button type="submit" variant="outline" disabled={pending}>
+						<Button disabled={pending} type="submit" variant="outline">
 							{activatePending ? <Spinner /> : null}
 							Activate
 						</Button>
@@ -162,13 +164,13 @@ export function TaxRegistrationLifecycleForm({
 				) : null}
 				{canBlock ? (
 					<form action={blockAction}>
-						<input type="hidden" name="taxRegistrationId" value={selected.id} />
+						<input name="taxRegistrationId" type="hidden" value={selected.id} />
 						<input
-							type="hidden"
 							name="expectedVersion"
+							type="hidden"
 							value={selected.version}
 						/>
-						<Button type="submit" variant="outline" disabled={pending}>
+						<Button disabled={pending} type="submit" variant="outline">
 							{blockPending ? <Spinner /> : null}
 							Block
 						</Button>
@@ -176,13 +178,13 @@ export function TaxRegistrationLifecycleForm({
 				) : null}
 				{canRetire ? (
 					<form action={retireAction}>
-						<input type="hidden" name="taxRegistrationId" value={selected.id} />
+						<input name="taxRegistrationId" type="hidden" value={selected.id} />
 						<input
-							type="hidden"
 							name="expectedVersion"
+							type="hidden"
 							value={selected.version}
 						/>
-						<Button type="submit" variant="outline" disabled={pending}>
+						<Button disabled={pending} type="submit" variant="outline">
 							{retirePending ? <Spinner /> : null}
 							Retire
 						</Button>
@@ -190,13 +192,13 @@ export function TaxRegistrationLifecycleForm({
 				) : null}
 				{canRestore ? (
 					<form action={restoreAction}>
-						<input type="hidden" name="taxRegistrationId" value={selected.id} />
+						<input name="taxRegistrationId" type="hidden" value={selected.id} />
 						<input
-							type="hidden"
 							name="expectedVersion"
+							type="hidden"
 							value={selected.version}
 						/>
-						<Button type="submit" variant="outline" disabled={pending}>
+						<Button disabled={pending} type="submit" variant="outline">
 							{restorePending ? <Spinner /> : null}
 							Restore
 						</Button>

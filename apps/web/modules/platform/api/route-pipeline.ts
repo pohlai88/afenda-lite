@@ -7,16 +7,16 @@ import {
 	handleCorsPreflight,
 } from "@afenda/security";
 
-export type PlatformRouteOptions = {
+export interface PlatformRouteOptions {
+	/** When set, OPTIONS short-circuits and allow-listed origins get CORS headers. */
+	readonly cors?: CorsConfig;
 	/**
 	 * Static route template for Prometheus HTTP metrics.
 	 * Required — never pass raw URLs or query strings.
 	 */
 	readonly routeTemplate: string;
 	readonly serverTimingMetric?: string;
-	/** When set, OPTIONS short-circuits and allow-listed origins get CORS headers. */
-	readonly cors?: CorsConfig;
-};
+}
 
 function corsMiddleware(config: CorsConfig): HttpMiddleware {
 	return async (request, ctx, next) => {
@@ -52,9 +52,9 @@ export function createPlatformRouteHandler(
 		: handler;
 
 	const withContext = withHttpContext(terminal, {
-		...(options.serverTimingMetric !== undefined
-			? { serverTimingMetric: options.serverTimingMetric }
-			: {}),
+		...(options.serverTimingMetric === undefined
+			? {}
+			: { serverTimingMetric: options.serverTimingMetric }),
 	});
 
 	return async (request) => {

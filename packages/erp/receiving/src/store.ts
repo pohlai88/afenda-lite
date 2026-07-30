@@ -11,56 +11,51 @@ import type {
 	ReceivingDiscrepancyType,
 } from "./types";
 
-export type ReceiptCreateRecord = {
-	organizationId: string;
+export interface ReceiptCreateRecord {
 	code: string;
-	normalizedCode: string;
-	sourceType: GoodsReceiptSourceType;
-	sourceId: string | null;
-	warehouseId: string;
-	warehouseCode: string;
-	warehouseName: string;
-	notes: string | null;
 	createdBy: string;
 	createIdempotencyKey: string;
-};
-export type ReceiptLineCreateRecord = {
+	normalizedCode: string;
+	notes: string | null;
 	organizationId: string;
-	receiptId: string;
-	itemId: string;
-	itemCode: string;
-	itemName: string;
-	baseUomId: string;
+	sourceId: string | null;
+	sourceType: GoodsReceiptSourceType;
+	warehouseCode: string;
+	warehouseId: string;
+	warehouseName: string;
+}
+export interface ReceiptLineCreateRecord {
 	baseUomCode: string;
-	quantityOrdered: string | null;
-	quantityExpected: string | null;
-	quantityReceived: string;
-	quantityAccepted: string;
-	quantityRejected: string;
-	quantityDamaged: string;
-	purchaseOrderLineId: string | null;
-	lineIdempotencyKey: string;
+	baseUomId: string;
 	createdBy: string;
-};
+	itemCode: string;
+	itemId: string;
+	itemName: string;
+	lineIdempotencyKey: string;
+	organizationId: string;
+	purchaseOrderLineId: string | null;
+	quantityAccepted: string;
+	quantityDamaged: string;
+	quantityExpected: string | null;
+	quantityOrdered: string | null;
+	quantityReceived: string;
+	quantityRejected: string;
+	receiptId: string;
+}
 /** Receiving-owned PO accepted-qty ceiling check enforced inside post TX. */
-export type PoConsumptionGuardLine = {
+export interface PoConsumptionGuardLine {
+	ceiling: number;
 	purchaseOrderLineId: string;
 	thisAccepted: number;
-	ceiling: number;
-};
-export type PoConsumptionGuard = {
-	purchaseOrderId: string;
+}
+export interface PoConsumptionGuard {
 	lines: PoConsumptionGuardLine[];
-};
+	purchaseOrderId: string;
+}
 
-export type ReceiptPostRecord = {
-	organizationId: string;
-	receiptId: string;
-	expectedVersion: number;
+export interface ReceiptPostRecord {
 	actorUserId: string;
-	warehouseCode: string;
-	warehouseName: string;
-	postIdempotencyKey: string;
+	expectedVersion: number;
 	lineSnapshots: Array<{
 		lineId: string;
 		itemCode: string;
@@ -68,120 +63,125 @@ export type ReceiptPostRecord = {
 		baseUomId: string;
 		baseUomCode: string;
 	}>;
+	organizationId: string;
 	/** When set, post TX locks PO consumption and re-validates accepted ceilings. */
 	poConsumptionGuard?: PoConsumptionGuard | undefined;
-};
-export type ReceiptCancelRecord = {
-	organizationId: string;
+	postIdempotencyKey: string;
 	receiptId: string;
-	expectedVersion: number;
+	warehouseCode: string;
+	warehouseName: string;
+}
+export interface ReceiptCancelRecord {
 	actorUserId: string;
 	cancelIdempotencyKey: string;
-};
-export type ReceiptReverseRecord = {
+	expectedVersion: number;
+	organizationId: string;
+	receiptId: string;
+}
+export interface ReceiptReverseRecord {
+	actorUserId: string;
+	code: string;
+	expectedVersion: number;
+	normalizedCode: string;
 	organizationId: string;
 	originalReceiptId: string;
-	expectedVersion: number;
-	actorUserId: string;
 	reason: string;
 	reverseIdempotencyKey: string;
-	code: string;
-	normalizedCode: string;
-};
-export type ReceiptInventoryApplicationRecord = {
+}
+export interface ReceiptInventoryApplicationRecord {
+	actorUserId: string;
+	errorMessage: string | null;
+	inventoryMovementId: string | null;
 	organizationId: string;
 	receiptId: string;
 	status: InventoryApplicationStatus;
-	inventoryMovementId: string | null;
-	errorMessage: string | null;
-	actorUserId: string;
-};
-export type DiscrepancyCreateRecord = {
+}
+export interface DiscrepancyCreateRecord {
+	createdBy: string;
+	discrepancyType: ReceivingDiscrepancyType;
+	notes: string | null;
 	organizationId: string;
+	quantity: string;
 	receiptId: string;
 	receiptLineId: string | null;
-	discrepancyType: ReceivingDiscrepancyType;
-	quantity: string;
-	notes: string | null;
 	recordIdempotencyKey: string;
-	createdBy: string;
-};
-export type DiscrepancyResolveRecord = {
-	organizationId: string;
-	receiptId: string;
+}
+export interface DiscrepancyResolveRecord {
+	actorUserId: string;
 	discrepancyId: string;
 	expectedVersion: number;
+	organizationId: string;
+	receiptId: string;
 	resolution: string;
 	resolveIdempotencyKey: string;
-	actorUserId: string;
-};
-export type ReceiptListFilter = {
+}
+export interface ReceiptListFilter {
 	organizationId: string;
 	page: number;
 	pageSize: number;
-	status?: GoodsReceiptStatus | undefined;
 	sourceType?: GoodsReceiptSourceType | undefined;
-};
-export type PostedAcceptedByPoLine = {
-	purchaseOrderLineId: string;
+	status?: GoodsReceiptStatus | undefined;
+}
+export interface PostedAcceptedByPoLine {
 	acceptedQuantity: number;
-};
+	purchaseOrderLineId: string;
+}
 
-export type ReceivingStore = {
-	createReceipt(
-		record: ReceiptCreateRecord,
-		ports: MutationPorts,
-		meta: { correlationId: string },
-	): Promise<Result<GoodsReceipt>>;
-	addLine(
+export interface ReceivingStore {
+	addLine: (
 		record: ReceiptLineCreateRecord,
 		ports: MutationPorts,
 		meta: { correlationId: string },
-	): Promise<Result<GoodsReceiptLine>>;
-	postReceipt(
-		record: ReceiptPostRecord,
-		ports: MutationPorts,
-		meta: { correlationId: string },
-	): Promise<Result<GoodsReceipt>>;
-	cancelReceipt(
+	) => Promise<Result<GoodsReceiptLine>>;
+	cancelReceipt: (
 		record: ReceiptCancelRecord,
 		ports: MutationPorts,
 		meta: { correlationId: string },
-	): Promise<Result<GoodsReceipt>>;
-	reverseReceipt(
-		record: ReceiptReverseRecord,
+	) => Promise<Result<GoodsReceipt>>;
+	createReceipt: (
+		record: ReceiptCreateRecord,
 		ports: MutationPorts,
 		meta: { correlationId: string },
-	): Promise<Result<GoodsReceipt>>;
-	setInventoryApplication(
-		record: ReceiptInventoryApplicationRecord,
-	): Promise<Result<GoodsReceipt>>;
-	recordDiscrepancy(
+	) => Promise<Result<GoodsReceipt>>;
+	getReceiptByCreateIdempotencyKey: (
+		organizationId: string,
+		idempotencyKey: string,
+	) => Promise<Result<GoodsReceipt | null>>;
+	getReceiptById: (
+		organizationId: string,
+		id: string,
+	) => Promise<Result<GoodsReceipt | null>>;
+	listInventoryExceptions: (
+		filter: ReceiptListFilter,
+	) => Promise<Result<GoodsReceipt[]>>;
+	listReceipts: (filter: ReceiptListFilter) => Promise<Result<GoodsReceipt[]>>;
+	postReceipt: (
+		record: ReceiptPostRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	) => Promise<Result<GoodsReceipt>>;
+	recordDiscrepancy: (
 		record: DiscrepancyCreateRecord,
 		ports: MutationPorts,
 		meta: { correlationId: string },
-	): Promise<Result<ReceivingDiscrepancy>>;
-	resolveDiscrepancy(
+	) => Promise<Result<ReceivingDiscrepancy>>;
+	resolveDiscrepancy: (
 		record: DiscrepancyResolveRecord,
 		ports: MutationPorts,
 		meta: { correlationId: string },
-	): Promise<Result<ReceivingDiscrepancy>>;
-	sumPostedAcceptedByPoLines(
+	) => Promise<Result<ReceivingDiscrepancy>>;
+	reverseReceipt: (
+		record: ReceiptReverseRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	) => Promise<Result<GoodsReceipt>>;
+	setInventoryApplication: (
+		record: ReceiptInventoryApplicationRecord,
+	) => Promise<Result<GoodsReceipt>>;
+	sumPostedAcceptedByPoLines: (
 		organizationId: string,
 		purchaseOrderId: string,
 		purchaseOrderLineIds: readonly string[],
 		excludeReceiptId?: string,
-	): Promise<Result<PostedAcceptedByPoLine[]>>;
-	getReceiptById(
-		organizationId: string,
-		id: string,
-	): Promise<Result<GoodsReceipt | null>>;
-	getReceiptByCreateIdempotencyKey(
-		organizationId: string,
-		idempotencyKey: string,
-	): Promise<Result<GoodsReceipt | null>>;
-	listReceipts(filter: ReceiptListFilter): Promise<Result<GoodsReceipt[]>>;
-	listInventoryExceptions(
-		filter: ReceiptListFilter,
-	): Promise<Result<GoodsReceipt[]>>;
-};
+	) => Promise<Result<PostedAcceptedByPoLine[]>>;
+}

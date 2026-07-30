@@ -2253,12 +2253,12 @@ export function isPlatformPermissionCodeV1(
 	return PLATFORM_PERMISSION_CODE_SET.has(code);
 }
 
-export type PlatformRoleTemplateV1 = {
-	templateKey: string;
-	name: string;
+export interface PlatformRoleTemplateV1 {
 	description: string;
+	name: string;
 	permissionCodes: readonly PlatformPermissionCodeV1[];
-};
+	templateKey: string;
+}
 
 const ALL_V1_CODES = PLATFORM_PERMISSION_CODES_V1;
 
@@ -2441,14 +2441,25 @@ export const PLATFORM_ROLE_TEMPLATES_V1: readonly PlatformRoleTemplateV1[] = [
 	},
 ] as const;
 
-export type EnsurePlatformPermissionCatalogResult = {
+export interface EnsurePlatformPermissionCatalogResult {
 	permissionCount: number;
 	templates: ReadonlyArray<{
 		templateKey: string;
 		roleId: string;
 		created: boolean;
 	}>;
-};
+}
+
+function runSequentially<T>(
+	values: readonly T[],
+	operation: (value: T, index: number) => PromiseLike<unknown> | unknown,
+): Promise<void> {
+	return values.reduce<Promise<void>>(
+		(previous, value, index) =>
+			previous.then(() => operation(value, index)).then(() => undefined),
+		Promise.resolve(),
+	);
+}
 
 /**
  * Idempotent upsert of ARCH-023 v1 `platform_permission` rows and the three
@@ -2459,8 +2470,8 @@ export type EnsurePlatformPermissionCatalogResult = {
 export async function ensurePlatformPermissionCatalog(
 	database: Database,
 ): Promise<EnsurePlatformPermissionCatalogResult> {
-	for (const row of PLATFORM_PERMISSION_V1) {
-		await database
+	await runSequentially(PLATFORM_PERMISSION_V1, (row) =>
+		database
 			.insert(platformPermission)
 			.values({
 				code: row.code,
@@ -2475,31 +2486,36 @@ export async function ensurePlatformPermissionCatalog(
 					description: row.description,
 					sensitive: row.sensitive,
 				},
-			});
-	}
+			}),
+	);
 
-	for (const migration of MASTER_DATA_PERMISSION_GRANT_MIGRATIONS) {
-		const grants = await database
-			.select({
-				roleId: platformRolePermission.roleId,
-				grantedBy: platformRolePermission.grantedBy,
-			})
-			.from(platformRolePermission)
-			.where(eq(platformRolePermission.permissionCode, migration.from));
-		if (grants.length === 0) continue;
-		await database
-			.insert(platformRolePermission)
-			.values(
-				grants.flatMap((grant) =>
-					migration.to.map((permissionCode) => ({
-						roleId: grant.roleId,
-						permissionCode,
-						grantedBy: grant.grantedBy,
-					})),
-				),
-			)
-			.onConflictDoNothing();
-	}
+	await runSequentially(
+		MASTER_DATA_PERMISSION_GRANT_MIGRATIONS,
+		async (migration) => {
+			const grants = await database
+				.select({
+					roleId: platformRolePermission.roleId,
+					grantedBy: platformRolePermission.grantedBy,
+				})
+				.from(platformRolePermission)
+				.where(eq(platformRolePermission.permissionCode, migration.from));
+			if (grants.length === 0) {
+				return;
+			}
+			await database
+				.insert(platformRolePermission)
+				.values(
+					grants.flatMap((grant) =>
+						migration.to.map((permissionCode) => ({
+							roleId: grant.roleId,
+							permissionCode,
+							grantedBy: grant.grantedBy,
+						})),
+					),
+				)
+				.onConflictDoNothing();
+		},
+	);
 
 	// HR-TIME-P0-08: copy legacy timesheet.approve grants to successor before retire.
 	const legacyTimesheetApproveGrants = await database
@@ -2546,7 +2562,7 @@ export async function ensurePlatformPermissionCatalog(
 		created: boolean;
 	}> = [];
 
-	for (const template of PLATFORM_ROLE_TEMPLATES_V1) {
+	await runSequentially(PLATFORM_ROLE_TEMPLATES_V1, async (template) => {
 		const [existing] = await database
 			.select({ id: platformRole.id })
 			.from(platformRole)
@@ -2627,7 +2643,7 @@ export async function ensurePlatformPermissionCatalog(
 			roleId,
 			created,
 		});
-	}
+	});
 
 	const permissionRows = await database
 		.select({ code: platformPermission.code })

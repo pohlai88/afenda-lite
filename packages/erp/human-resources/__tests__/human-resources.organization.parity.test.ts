@@ -29,7 +29,9 @@ import {
 	replacePrimaryReportingLine,
 	resolvePrimaryManager,
 } from "../src/organization/reporting-line";
+import { runSequential, sequentialReturn } from "../src/shared/run-sequential";
 import { runDrizzleParity } from "./helpers/database-gate";
+import { helperAssert as assert } from "./helpers/helper-assert";
 import {
 	createHrParityHarness,
 	type WorkforceStoreAdapter,
@@ -68,7 +70,9 @@ function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(root.ok).toBe(true);
-		if (!root.ok) return;
+		if (!root.ok) {
+			return;
+		}
 
 		const child = await createDepartment(
 			{
@@ -82,7 +86,9 @@ function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(child.ok).toBe(true);
-		if (!child.ok) return;
+		if (!child.ok) {
+			return;
+		}
 
 		const cycle = await updateDepartment(
 			{
@@ -118,7 +124,9 @@ function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(parent.ok).toBe(true);
-		if (!parent.ok) return;
+		if (!parent.ok) {
+			return;
+		}
 
 		const archived = await archiveDepartment(
 			{
@@ -164,7 +172,9 @@ function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(parent.ok).toBe(true);
-		if (!parent.ok) return;
+		if (!parent.ok) {
+			return;
+		}
 
 		const child = await createDepartment(
 			{
@@ -233,7 +243,9 @@ function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok && m1.ok && m2.ok).toBe(true);
-		if (!employee.ok || !m1.ok || !m2.ok) return;
+		if (!(employee.ok && m1.ok && m2.ok)) {
+			return;
+		}
 
 		const self = await assignPrimaryReportingLine(
 			{
@@ -368,7 +380,9 @@ function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok && m1.ok && m2.ok).toBe(true);
-		if (!employee.ok || !m1.ok || !m2.ok) return;
+		if (!(employee.ok && m1.ok && m2.ok)) {
+			return;
+		}
 
 		const first = await assignPrimaryReportingLine(
 			{
@@ -429,7 +443,9 @@ function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(empA.ok && empB.ok).toBe(true);
-		if (!empA.ok || !empB.ok) return;
+		if (!(empA.ok && empB.ok)) {
+			return;
+		}
 
 		const cross = await assignPrimaryReportingLine(
 			{
@@ -463,7 +479,9 @@ function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(department.ok).toBe(true);
-		if (!department.ok) return;
+		if (!department.ok) {
+			return;
+		}
 
 		const stale = await updateDepartment(
 			{
@@ -500,7 +518,9 @@ function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(department.ok).toBe(true);
-		if (!department.ok) return;
+		if (!department.ok) {
+			return;
+		}
 
 		const departmentUpdated = await updateDepartment(
 			{
@@ -528,7 +548,9 @@ function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(job.ok).toBe(true);
-		if (!job.ok) return;
+		if (!job.ok) {
+			return;
+		}
 
 		const jobUpdated = await updateJob(
 			{
@@ -558,7 +580,9 @@ function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(position.ok).toBe(true);
-		if (!position.ok) return;
+		if (!position.ok) {
+			return;
+		}
 
 		const positionUpdated = await updatePosition(
 			{
@@ -700,15 +724,15 @@ function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 				},
 				ready,
 			);
-			expect(department.ok).toBe(false);
+			assert.strictEqual(department.ok, false);
 			const listed = await ready.store.listDepartments({
 				organizationId: ORG,
 				page: 1,
 				pageSize: 20,
 			});
-			expect(listed.ok).toBe(true);
+			assert.strictEqual(listed.ok, true);
 			if (listed.ok) {
-				expect(listed.data.totalCount).toBe(0);
+				assert.strictEqual(listed.data.totalCount, 0);
 			}
 		},
 	);
@@ -726,10 +750,12 @@ function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(root.ok).toBe(true);
-		if (!root.ok) return;
+		if (!root.ok) {
+			return;
+		}
 
 		let parentId = root.data.id;
-		for (let i = 0; i < 6; i += 1) {
+		const seedOutcome = await runSequential([0, 1, 2, 3, 4, 5], async (i) => {
 			const next = await createDepartment(
 				{
 					organizationId: ORG,
@@ -742,8 +768,13 @@ function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 				ready,
 			);
 			expect(next.ok).toBe(true);
-			if (!next.ok) return;
+			if (!next.ok) {
+				return sequentialReturn(false);
+			}
 			parentId = next.data.id;
+		});
+		if (seedOutcome.kind === "return") {
+			return;
 		}
 
 		const tree = await getOrganizationTree(

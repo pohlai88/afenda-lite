@@ -32,7 +32,7 @@ export const HUMAN_RESOURCES_AGGREGATE_SESSION = "session" as const;
 export type HumanResourcesSessionAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_SESSION;
 
-export async function createSession(
+export function createSession(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningSession>> {
@@ -75,7 +75,7 @@ export async function createSession(
 				return ok(existingByKey.data.session);
 			}
 
-			return await store.createSession(
+			return store.createSession(
 				{
 					organizationId: data.organizationId,
 					courseId: data.courseId,
@@ -99,7 +99,7 @@ export async function createSession(
 	});
 }
 
-export async function startSession(
+export function startSession(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningSession>> {
@@ -107,8 +107,8 @@ export async function startSession(
 		schema: sessionStatusTransitionInputSchema,
 		invalidMessage: "Invalid session start input",
 		command: HUMAN_RESOURCES_COMMAND_SESSION_START,
-		execute: async (data, { store, ports }) => {
-			return await store.startSession(
+		execute: async (data, { store, ports }) =>
+			await store.startSession(
 				{
 					organizationId: data.organizationId,
 					sessionId: data.sessionId,
@@ -123,12 +123,11 @@ export async function startSession(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_SESSION_START,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function completeSession(
+export function completeSession(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningSession>> {
@@ -136,8 +135,8 @@ export async function completeSession(
 		schema: sessionStatusTransitionInputSchema,
 		invalidMessage: "Invalid session complete input",
 		command: HUMAN_RESOURCES_COMMAND_SESSION_COMPLETE,
-		execute: async (data, { store, ports }) => {
-			return await store.completeSession(
+		execute: async (data, { store, ports }) =>
+			await store.completeSession(
 				{
 					organizationId: data.organizationId,
 					sessionId: data.sessionId,
@@ -152,12 +151,11 @@ export async function completeSession(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_SESSION_COMPLETE,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function assignSessionInstructor(
+export function assignSessionInstructor(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningSession>> {
@@ -165,8 +163,8 @@ export async function assignSessionInstructor(
 		schema: assignSessionInstructorInputSchema,
 		invalidMessage: "Invalid session instructor assignment input",
 		command: HUMAN_RESOURCES_COMMAND_SESSION_ASSIGN_INSTRUCTOR,
-		execute: async (data, { store, ports }) => {
-			return await store.assignSessionInstructor(
+		execute: async (data, { store, ports }) =>
+			await store.assignSessionInstructor(
 				{
 					organizationId: data.organizationId,
 					sessionId: data.sessionId,
@@ -179,12 +177,11 @@ export async function assignSessionInstructor(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_SESSION_ASSIGN_INSTRUCTOR,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function cancelSession(
+export function cancelSession(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningSession>> {
@@ -192,8 +189,8 @@ export async function cancelSession(
 		schema: sessionStatusTransitionInputSchema,
 		invalidMessage: "Invalid session cancel input",
 		command: HUMAN_RESOURCES_COMMAND_SESSION_CANCEL,
-		execute: async (data, { store, ports }) => {
-			return await store.cancelSession(
+		execute: async (data, { store, ports }) =>
+			await store.cancelSession(
 				{
 					organizationId: data.organizationId,
 					sessionId: data.sessionId,
@@ -205,12 +202,11 @@ export async function cancelSession(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_SESSION_CANCEL,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function getSession(
+export function getSession(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningSession | null>> {
@@ -218,16 +214,15 @@ export async function getSession(
 		schema: getSessionInputSchema,
 		invalidMessage: "Invalid session get input",
 		query: HUMAN_RESOURCES_QUERY_SESSION_GET,
-		execute: async (data, { store }) => {
-			return await store.getSessionById({
+		execute: async (data, { store }) =>
+			await store.getSessionById({
 				organizationId: data.organizationId,
 				sessionId: data.sessionId,
-			});
-		},
+			}),
 	});
 }
 
-export async function listSessions(
+export function listSessions(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<SessionListPage>> {
@@ -235,14 +230,13 @@ export async function listSessions(
 		schema: listSessionsInputSchema,
 		invalidMessage: "Invalid session list input",
 		query: HUMAN_RESOURCES_QUERY_SESSION_LIST,
-		execute: async (data, { store }) => {
-			return await store.listSessions({
+		execute: async (data, { store }) =>
+			await store.listSessions({
 				organizationId: data.organizationId,
 				page: data.page ?? 1,
 				pageSize: data.pageSize ?? 20,
 				status: data.status,
 				courseId: data.courseId,
-			});
-		},
+			}),
 	});
 }

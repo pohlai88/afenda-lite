@@ -53,7 +53,9 @@ function defineFoundationParitySuite(adapter: WorkforceStoreAdapter): void {
 			actorUserId: ACTOR,
 		});
 		expect(seeded).not.toBeNull();
-		if (seeded === null) return;
+		if (seeded === null) {
+			return;
+		}
 
 		const employee = await createEmployee(
 			{
@@ -67,7 +69,9 @@ function defineFoundationParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const employment = await createEmployment(
 			{
@@ -80,7 +84,9 @@ function defineFoundationParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const calendar = await createWorkCalendar(
 			{
@@ -99,7 +105,9 @@ function defineFoundationParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(calendar.ok).toBe(true);
-		if (!calendar.ok) return;
+		if (!calendar.ok) {
+			return;
+		}
 
 		const calendarAssignment = await assignEmploymentCalendar(
 			{
@@ -121,7 +129,9 @@ function defineFoundationParitySuite(adapter: WorkforceStoreAdapter): void {
 			correlationId: `corr-dept-b-${suffix}`,
 		});
 		expect(deptB).not.toBeNull();
-		if (deptB === null) return;
+		if (deptB === null) {
+			return;
+		}
 
 		const positionA = await createPosition(
 			{
@@ -137,7 +147,9 @@ function defineFoundationParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(positionA.ok).toBe(true);
-		if (!positionA.ok) return;
+		if (!positionA.ok) {
+			return;
+		}
 
 		const positionB = await createPosition(
 			{
@@ -153,7 +165,9 @@ function defineFoundationParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(positionB.ok).toBe(true);
-		if (!positionB.ok) return;
+		if (!positionB.ok) {
+			return;
+		}
 
 		const firstAssignment = await createAssignment(
 			{
@@ -169,7 +183,9 @@ function defineFoundationParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(firstAssignment.ok).toBe(true);
-		if (!firstAssignment.ok) return;
+		if (!firstAssignment.ok) {
+			return;
+		}
 
 		const ended = await endAssignment(
 			{
@@ -202,7 +218,9 @@ function defineFoundationParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(secondAssignment.ok).toBe(true);
-		if (!secondAssignment.ok) return;
+		if (!secondAssignment.ok) {
+			return;
+		}
 
 		const beforeTransfer = await resolveEmployeeOrgContextAsOf(
 			{
@@ -254,7 +272,9 @@ function defineFoundationParitySuite(adapter: WorkforceStoreAdapter): void {
 			actorUserId: ACTOR,
 		});
 		expect(seeded).not.toBeNull();
-		if (seeded === null) return;
+		if (seeded === null) {
+			return;
+		}
 
 		const deptB = await seedDepartmentAndJob(ready, {
 			organizationId: ORG,
@@ -262,7 +282,9 @@ function defineFoundationParitySuite(adapter: WorkforceStoreAdapter): void {
 			correlationId: `corr-dept-move-${suffix}`,
 		});
 		expect(deptB).not.toBeNull();
-		if (deptB === null) return;
+		if (deptB === null) {
+			return;
+		}
 
 		const position = await createPosition(
 			{
@@ -278,7 +300,9 @@ function defineFoundationParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(position.ok).toBe(true);
-		if (!position.ok) return;
+		if (!position.ok) {
+			return;
+		}
 
 		const employee = await createEmployee(
 			{
@@ -292,7 +316,9 @@ function defineFoundationParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const employment = await createEmployment(
 			{
@@ -305,7 +331,9 @@ function defineFoundationParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const assignment = await createAssignment(
 			{
@@ -321,7 +349,9 @@ function defineFoundationParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(assignment.ok).toBe(true);
-		if (!assignment.ok) return;
+		if (!assignment.ok) {
+			return;
+		}
 
 		const moved = await updatePosition(
 			{

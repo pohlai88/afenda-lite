@@ -47,6 +47,7 @@ export async function persistPayrollRunExceptions(
 ): Promise<Result<PayrollException[]>> {
 	const created: PayrollException[] = [];
 	for (const exception of input.exceptions) {
+		// biome-ignore lint/performance/noAwaitInLoops: Exception evidence is persisted in deterministic order and fails fast on the first write error.
 		const result = await store.createException(
 			{
 				organizationId: input.organizationId,
@@ -68,7 +69,7 @@ export async function persistPayrollRunExceptions(
 	return ok(created);
 }
 
-export async function transitionPayrollRun(
+export function transitionPayrollRun(
 	store: PayrollStore,
 	ports: MutationPorts,
 	input: {
@@ -90,7 +91,7 @@ export async function transitionPayrollRun(
 			input.toStatus,
 		);
 		if (!allowed.ok) {
-			return allowed;
+			return Promise.resolve(allowed);
 		}
 	}
 

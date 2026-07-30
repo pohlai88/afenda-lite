@@ -13,14 +13,14 @@ export type HumanResourcesPolicyMode =
 	| "specialized";
 
 export interface HumanResourcesAuthorizationPolicy {
+	evaluate: (
+		request: HumanResourcesAuthorizationRequest,
+		options: HumanResourcesCommandOptions,
+	) => Promise<HumanResourcesAuthorizationDecision>;
 	id: string;
 	mode: HumanResourcesPolicyMode;
 	operationPrefixes: readonly string[];
 	resourceRequired: boolean;
-	evaluate(
-		request: HumanResourcesAuthorizationRequest,
-		options: HumanResourcesCommandOptions,
-	): Promise<HumanResourcesAuthorizationDecision>;
 }
 
 export type HumanResourcesAuthorizationPolicyResolveCode = Extract<

@@ -5,7 +5,7 @@ export function normalizeSafeFieldPath(
 	path: readonly PropertyKey[],
 ): string | undefined {
 	if (path.length === 0 || typeof path[0] !== "string") {
-		return undefined;
+		return;
 	}
 
 	let normalized = "";
@@ -13,7 +13,7 @@ export function normalizeSafeFieldPath(
 	for (const segment of path) {
 		if (typeof segment === "string") {
 			if (!SAFE_FIELD_NAME_PATTERN.test(segment)) {
-				return undefined;
+				return;
 			}
 
 			normalized += normalized.length === 0 ? segment : `.${segment}`;
@@ -24,11 +24,11 @@ export function normalizeSafeFieldPath(
 		) {
 			normalized += `[${segment}]`;
 		} else {
-			return undefined;
+			return;
 		}
 
 		if (normalized.length > MAX_SAFE_FIELD_PATH_LENGTH) {
-			return undefined;
+			return;
 		}
 	}
 

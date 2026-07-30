@@ -23,7 +23,7 @@ import {
 	StatusBadge,
 } from "@afenda/ui-system";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import * as React from "react";
+import { useCallback, useState } from "react";
 import { contractDocsParameters } from "./contract-docs";
 import { contractEvidence, StorySection } from "./evidence";
 import { interactionFor } from "./interactions";
@@ -55,8 +55,12 @@ function InvoiceWorkbenchMenu({
 }: {
 	triggerLabel?: string;
 }) {
-	const [notifications, setNotifications] = React.useState(true);
-	const [density, setDensity] = React.useState("comfortable");
+	const [notifications, setNotifications] = useState(true);
+	const [density, setDensity] = useState("comfortable");
+	const handleNotificationsChange = useCallback(
+		(checked: boolean | "indeterminate") => setNotifications(checked === true),
+		[],
+	);
 
 	return (
 		<DropdownMenu>
@@ -74,12 +78,12 @@ function InvoiceWorkbenchMenu({
 				<DropdownMenuItem>Copy invoice number</DropdownMenuItem>
 				<DropdownMenuCheckboxItem
 					checked={notifications}
-					onCheckedChange={(checked) => setNotifications(checked === true)}
+					onCheckedChange={handleNotificationsChange}
 				>
 					Watch remittance alerts
 				</DropdownMenuCheckboxItem>
 				<DropdownMenuSeparator />
-				<DropdownMenuRadioGroup value={density} onValueChange={setDensity}>
+				<DropdownMenuRadioGroup onValueChange={setDensity} value={density}>
 					<DropdownMenuLabel inset>List density</DropdownMenuLabel>
 					<DropdownMenuRadioItem value="comfortable">
 						Comfortable
@@ -118,18 +122,18 @@ export const Overview: Story = {
 		<div className="min-h-screen bg-canvas text-foreground">
 			<div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-2 border-b pb-6">
-					<p className="text-sm font-medium text-foreground-secondary">
+					<p className="font-medium text-foreground-secondary text-sm">
 						Accounts receivable · invoice review
 					</p>
-					<h1 className="text-2xl font-semibold tracking-tight">
+					<h1 className="font-semibold text-2xl tracking-tight">
 						Invoice INV-1048
 					</h1>
-					<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+					<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 						DropdownMenu holds secondary actions for this invoice. Approve
 						remains a visible Button, shortcuts remain optional accelerators,
 						and feature policy owns authorization and destructive confirmation.
 					</p>
-					<p className="max-w-5xl text-xs leading-5 text-foreground-tertiary">
+					<p className="max-w-5xl text-foreground-tertiary text-xs leading-5">
 						Operational standard: trigger meaning, item grouping, focus state,
 						submenus, and consequences must remain understandable without
 						colour, icons, or pointer interaction.
@@ -142,9 +146,9 @@ export const Overview: Story = {
 							<div className="flex flex-wrap items-center gap-2">
 								<Badge variant="outline">Invoice</Badge>
 								<StatusBadge
+									label="Awaiting approval"
 									size="sm"
 									status="pending"
-									label="Awaiting approval"
 								/>
 							</div>
 							<CardTitle>Northwind Trading Sdn. Bhd.</CardTitle>
@@ -154,7 +158,7 @@ export const Overview: Story = {
 						</div>
 						<InvoiceWorkbenchMenu />
 					</CardHeader>
-					<CardContent className="text-sm text-foreground-secondary">
+					<CardContent className="text-foreground-secondary text-sm">
 						Secondary open, copy, density, and archive actions share one
 						trigger. Destructive Archive lives under More actions and still
 						requires feature confirmation.
@@ -299,9 +303,9 @@ export const Composition: Story = {
 						<div className="flex flex-wrap items-center gap-2">
 							<Badge variant="outline">Receivables</Badge>
 							<StatusBadge
+								label="Awaiting approval"
 								size="sm"
 								status="pending"
-								label="Awaiting approval"
 							/>
 						</div>
 						<CardTitle>Invoice INV-1048</CardTitle>
@@ -309,7 +313,7 @@ export const Composition: Story = {
 					</div>
 					<InvoiceWorkbenchMenu triggerLabel="Open menu" />
 				</CardHeader>
-				<CardContent className="text-sm text-foreground-secondary">
+				<CardContent className="text-foreground-secondary text-sm">
 					Approve remains a footer Button. Archive stays nested and destructive.
 				</CardContent>
 				<CardFooter className="justify-end gap-2 border-t">
@@ -325,7 +329,7 @@ export const Composition: Story = {
 					<div className="grid gap-2">
 						<div className="flex flex-wrap items-center gap-2">
 							<Badge variant="secondary">Master data</Badge>
-							<StatusBadge size="sm" status="active" label="Active" />
+							<StatusBadge label="Active" size="sm" status="active" />
 						</div>
 						<CardTitle>Supplier Northwind Trading</CardTitle>
 						<CardDescription>
@@ -351,7 +355,7 @@ export const Composition: Story = {
 						</DropdownMenuContent>
 					</DropdownMenu>
 				</CardHeader>
-				<CardContent className="text-sm text-foreground-secondary">
+				<CardContent className="text-foreground-secondary text-sm">
 					Save remains visible. Menu items do not encode Active lifecycle.
 				</CardContent>
 				<CardFooter className="justify-end gap-2 border-t">
@@ -383,10 +387,10 @@ export const DoAndDoNot: Story = {
 						<InvoiceWorkbenchMenu />
 					</div>
 					<div className="flex justify-end gap-2">
-						<Button type="button" size="sm" variant="outline">
+						<Button size="sm" type="button" variant="outline">
 							Request correction
 						</Button>
-						<Button type="button" size="sm">
+						<Button size="sm" type="button">
 							Approve invoice
 						</Button>
 					</div>
@@ -394,7 +398,7 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do not: hide Approve only in the menu">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Critical Approve and Submit actions must remain visible Buttons.
 					DropdownMenu is secondary overflow — never the sole path.
 				</p>
@@ -404,7 +408,7 @@ export const DoAndDoNot: Story = {
 				<div className="flex justify-end rounded-lg border p-4">
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
-							<Button type="button" size="sm" variant="outline">
+							<Button size="sm" type="button" variant="outline">
 								Attachment actions
 							</Button>
 						</DropdownMenuTrigger>
@@ -419,7 +423,7 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do not: use disabled items as fake auth">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					A disabled Escalate item does not replace server authorization.
 					Feature code must enforce permissions; disabled state is not
 					StatusBadge lifecycle.
@@ -427,14 +431,14 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do: name the trigger by scope">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					“Supplier actions” or “Attachment actions” tells operators what the
 					menu affects before it opens.
 				</p>
 			</StorySection>
 
 			<StorySection title="Do not: use an unexplained More trigger">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					A generic “More” trigger is acceptable only when the surrounding
 					record context is unmistakable and an accessible name preserves the
 					scope.

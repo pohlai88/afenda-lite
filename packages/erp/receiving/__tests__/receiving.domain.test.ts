@@ -71,7 +71,7 @@ function harness() {
 	};
 }
 
-async function create(ctx: ReturnType<typeof harness>, code = "GR-100") {
+function create(ctx: ReturnType<typeof harness>, code = "GR-100") {
 	return createDraftGoodsReceipt(
 		{
 			organizationId: ORG_A,
@@ -91,7 +91,9 @@ describe("@afenda/receiving domain", () => {
 		const ctx = harness();
 		const draft = await create(ctx);
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 		const line = await addGoodsReceiptLine(
 			{
 				organizationId: ORG_A,
@@ -113,7 +115,9 @@ describe("@afenda/receiving domain", () => {
 			ctx,
 		);
 		expect(current.ok).toBe(true);
-		if (!current.ok || current.data === null) return;
+		if (!current.ok || current.data === null) {
+			return;
+		}
 		const posted = await postGoodsReceipt(
 			{
 				organizationId: ORG_A,
@@ -151,7 +155,9 @@ describe("@afenda/receiving domain", () => {
 		const ctx = harness();
 		const draft = await create(ctx, "gr-dup");
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 		const emptyPost = await postGoodsReceipt(
 			{
 				organizationId: ORG_A,
@@ -166,33 +172,43 @@ describe("@afenda/receiving domain", () => {
 		expect(emptyPost.ok).toBe(false);
 		const duplicate = await create(ctx, "GR-DUP");
 		expect(duplicate.ok).toBe(false);
-		if (!duplicate.ok) expect(duplicate.code).toBe("CONFLICT");
+		if (!duplicate.ok) {
+			expect(duplicate.code).toBe("CONFLICT");
+		}
 	});
 
 	it("requires purchase_order source and isolates organizations", async () => {
 		const ctx = harness();
 		const draft = await create(ctx, "GR-ORG");
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 		const foreign = await getGoodsReceiptById(
 			{ organizationId: ORG_B, actorUserId: "user-1", id: draft.data.id },
 			ctx,
 		);
 		expect(foreign.ok).toBe(true);
-		if (foreign.ok) expect(foreign.data).toBeNull();
+		if (foreign.ok) {
+			expect(foreign.data).toBeNull();
+		}
 		const foreignList = await listGoodsReceipts(
 			{ organizationId: ORG_B, actorUserId: "user-1" },
 			ctx,
 		);
 		expect(foreignList.ok).toBe(true);
-		if (foreignList.ok) expect(foreignList.data).toEqual([]);
+		if (foreignList.ok) {
+			expect(foreignList.data).toEqual([]);
+		}
 	});
 
 	it("records and resolves discrepancies", async () => {
 		const ctx = harness();
 		const draft = await create(ctx, "GR-DISC");
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 		const draftDiscrepancy = await recordReceivingDiscrepancy(
 			{
 				organizationId: ORG_A,
@@ -206,7 +222,9 @@ describe("@afenda/receiving domain", () => {
 			ctx,
 		);
 		expect(draftDiscrepancy.ok).toBe(true);
-		if (!draftDiscrepancy.ok) return;
+		if (!draftDiscrepancy.ok) {
+			return;
+		}
 		const resolved = await resolveReceivingDiscrepancy(
 			{
 				organizationId: ORG_A,
@@ -221,13 +239,17 @@ describe("@afenda/receiving domain", () => {
 			ctx,
 		);
 		expect(resolved.ok).toBe(true);
-		if (resolved.ok) expect(resolved.data.status).toBe("resolved");
+		if (resolved.ok) {
+			expect(resolved.data.status).toBe("resolved");
+		}
 	});
 
 	it("cancels draft only and reverses posted receipts", async () => {
 		const draftCtx = harness();
 		const draft = await create(draftCtx, "GR-CANCEL-D");
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 		const cancelledDraft = await cancelGoodsReceipt(
 			{
 				organizationId: ORG_A,
@@ -248,7 +270,9 @@ describe("@afenda/receiving domain", () => {
 
 		const postedCtx = harness();
 		const postedDraft = await create(postedCtx, "GR-CANCEL-P");
-		if (!postedDraft.ok) return;
+		if (!postedDraft.ok) {
+			return;
+		}
 		await addGoodsReceiptLine(
 			{
 				organizationId: ORG_A,
@@ -273,7 +297,9 @@ describe("@afenda/receiving domain", () => {
 			},
 			postedCtx,
 		);
-		if (!posted.ok) return;
+		if (!posted.ok) {
+			return;
+		}
 		const cancelled = await cancelGoodsReceipt(
 			{
 				organizationId: ORG_A,
@@ -346,7 +372,9 @@ describe("@afenda/receiving domain", () => {
 		const ctx = harness();
 		const first = await create(ctx, "GR-RACE-1");
 		const second = await create(ctx, "GR-RACE-2");
-		if (!first.ok || !second.ok) return;
+		if (!(first.ok && second.ok)) {
+			return;
+		}
 		await addGoodsReceiptLine(
 			{
 				organizationId: ORG_A,
@@ -404,7 +432,9 @@ describe("@afenda/receiving domain", () => {
 	it("lists inventory application exceptions", async () => {
 		const ctx = harness();
 		const draft = await create(ctx, "GR-EXC");
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 		await addGoodsReceiptLine(
 			{
 				organizationId: ORG_A,

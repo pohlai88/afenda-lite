@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noJsxPropsBind: The enabled React Compiler stabilizes JSX callback props.
 "use client";
 
 import {
@@ -13,14 +14,14 @@ import NextLink from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { ReactNode } from "react";
 
-type AuthUiProviderProps = {
+interface AuthUiProviderProps {
 	/**
 	 * Live request origin for password-reset / callback links
 	 * (`resolveAuthUiOrigin` — not a hard-coded production APP_URL alone).
 	 */
 	appOrigin: string;
 	children: ReactNode;
-};
+}
 
 /** Matches `@daveyplate/better-auth-ui` `Link` contract (href + children). */
 function AuthUiLink({
@@ -33,7 +34,7 @@ function AuthUiLink({
 	children: ReactNode;
 }) {
 	return (
-		<NextLink href={href} className={className}>
+		<NextLink className={className} href={href}>
 			{children}
 		</NextLink>
 	);

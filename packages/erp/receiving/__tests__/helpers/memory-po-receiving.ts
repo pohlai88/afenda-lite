@@ -4,6 +4,7 @@ import type {
 	PurchaseOrderReceivingQueryPort,
 	PurchaseOrderReceivingSnapshot,
 } from "../../src/ports";
+import { resolveAsync } from "../../src/resolve-async";
 
 export function postedPoSnapshot(
 	overrides?: Partial<PurchaseOrderReceivingSnapshot> & {
@@ -45,10 +46,10 @@ export function createMemoryPurchaseOrderReceivingQueryPort(
 		| Record<string, PurchaseOrderReceivingSnapshot> = {},
 ): PurchaseOrderReceivingQueryPort & {
 	snapshots: Map<string, PurchaseOrderReceivingSnapshot>;
-	setSnapshot(
+	setSnapshot: (
 		purchaseOrderId: string,
 		snapshot: PurchaseOrderReceivingSnapshot | null,
-	): void;
+	) => void;
 } {
 	const snapshots =
 		seed instanceof Map ? new Map(seed) : new Map(Object.entries(seed));
@@ -62,12 +63,13 @@ export function createMemoryPurchaseOrderReceivingQueryPort(
 			}
 			snapshots.set(purchaseOrderId, snapshot);
 		},
-		async getReceivingSnapshot(input: {
+		getReceivingSnapshot(input: {
 			organizationId: string;
 			purchaseOrderId: string;
 		}): Promise<Result<PurchaseOrderReceivingSnapshot | null>> {
-			void input.organizationId;
-			return ok(snapshots.get(input.purchaseOrderId) ?? null);
+			return resolveAsync(() =>
+				ok(snapshots.get(input.purchaseOrderId) ?? null),
+			);
 		},
 	};
 }

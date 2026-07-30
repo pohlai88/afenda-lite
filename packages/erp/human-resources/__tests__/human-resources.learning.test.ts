@@ -8,7 +8,6 @@ import {
 	HUMAN_RESOURCES_LEARNING_COMPLETION_RECORDED_EVENT,
 } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
-
 import type { HumanResourcesPermission } from "../src/authorization";
 import { createEmployee } from "../src/core/employee";
 import {
@@ -59,6 +58,7 @@ import {
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
 	HUMAN_RESOURCES_PERMISSION_LEARNING_MANAGE,
 } from "../src/permissions";
+import { runSequential } from "../src/shared/run-sequential";
 import { createMemoryHumanResourcesStore } from "../src/testing";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
@@ -139,7 +139,9 @@ describe("Course lifecycle", () => {
 			ready,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 		expect(created.data.code).toBe("SAFETY-101");
 		expect(created.data.status).toBe("active");
 
@@ -157,7 +159,9 @@ describe("Course lifecycle", () => {
 			ready,
 		);
 		expect(updated.ok).toBe(true);
-		if (!updated.ok) return;
+		if (!updated.ok) {
+			return;
+		}
 		expect(updated.data.title).toBe("Advanced Safety Training");
 		expect(updated.data.durationHours).toBe("8");
 
@@ -172,7 +176,9 @@ describe("Course lifecycle", () => {
 			ready,
 		);
 		expect(archived.ok).toBe(true);
-		if (!archived.ok) return;
+		if (!archived.ok) {
+			return;
+		}
 		expect(archived.data.status).toBe("archived");
 
 		const reactivated = await activateCourse(
@@ -186,7 +192,9 @@ describe("Course lifecycle", () => {
 			ready,
 		);
 		expect(reactivated.ok).toBe(true);
-		if (!reactivated.ok) return;
+		if (!reactivated.ok) {
+			return;
+		}
 		expect(reactivated.data.status).toBe("active");
 	});
 
@@ -212,7 +220,9 @@ describe("Course lifecycle", () => {
 			ready,
 		);
 		expect(archived.ok).toBe(true);
-		if (!archived.ok) return;
+		if (!archived.ok) {
+			return;
+		}
 
 		const assignment = await assignLearning(
 			{
@@ -226,7 +236,9 @@ describe("Course lifecycle", () => {
 			ready,
 		);
 		expect(assignment.ok).toBe(false);
-		if (assignment.ok) return;
+		if (assignment.ok) {
+			return;
+		}
 		expect(humanResourcesCodeFromResult(assignment)).toBe(
 			HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 		);
@@ -250,7 +262,9 @@ describe("Course lifecycle", () => {
 			ready,
 		);
 		expect(result.ok).toBe(false);
-		if (result.ok) return;
+		if (result.ok) {
+			return;
+		}
 		expect(humanResourcesCodeFromResult(result)).toBe(
 			HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 		);
@@ -287,7 +301,9 @@ describe("Course lifecycle", () => {
 			ready,
 		);
 		expect(second.ok).toBe(false);
-		if (second.ok) return;
+		if (second.ok) {
+			return;
+		}
 		expect(humanResourcesCodeFromResult(second)).toBe(
 			HUMAN_RESOURCES_ERROR_CONFLICT,
 		);
@@ -347,7 +363,9 @@ describe("Course lifecycle", () => {
 			ready,
 		);
 		expect(stale.ok).toBe(false);
-		if (stale.ok) return;
+		if (stale.ok) {
+			return;
+		}
 		expect(humanResourcesCodeFromResult(stale)).toBe(
 			HUMAN_RESOURCES_ERROR_STALE_VERSION,
 		);
@@ -378,7 +396,9 @@ describe("Session lifecycle", () => {
 			ready,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 		expect(created.data.status).toBe("scheduled");
 
 		const started = await startSession(
@@ -393,7 +413,9 @@ describe("Session lifecycle", () => {
 			ready,
 		);
 		expect(started.ok).toBe(true);
-		if (!started.ok) return;
+		if (!started.ok) {
+			return;
+		}
 		expect(started.data.status).toBe("in_progress");
 
 		const completed = await completeSession(
@@ -408,7 +430,9 @@ describe("Session lifecycle", () => {
 			ready,
 		);
 		expect(completed.ok).toBe(true);
-		if (!completed.ok) return;
+		if (!completed.ok) {
+			return;
+		}
 		expect(completed.data.status).toBe("completed");
 	});
 
@@ -435,7 +459,9 @@ describe("Session lifecycle", () => {
 			ready,
 		);
 		expect(invalid.ok).toBe(false);
-		if (invalid.ok) return;
+		if (invalid.ok) {
+			return;
+		}
 		expect(humanResourcesCodeFromResult(invalid)).toBe(
 			HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 		);
@@ -464,7 +490,9 @@ describe("Session lifecycle", () => {
 			ready,
 		);
 		expect(session.ok).toBe(true);
-		if (!session.ok) return;
+		if (!session.ok) {
+			return;
+		}
 
 		const cancelled = await cancelSession(
 			{
@@ -477,7 +505,9 @@ describe("Session lifecycle", () => {
 			ready,
 		);
 		expect(cancelled.ok).toBe(true);
-		if (!cancelled.ok) return;
+		if (!cancelled.ok) {
+			return;
+		}
 		expect(cancelled.data.status).toBe("cancelled");
 	});
 
@@ -521,7 +551,9 @@ describe("Session lifecycle", () => {
 			ready,
 		);
 		expect(second.ok).toBe(false);
-		if (second.ok) return;
+		if (second.ok) {
+			return;
+		}
 		expect(humanResourcesCodeFromResult(second)).toBe(
 			HUMAN_RESOURCES_ERROR_CONFLICT,
 		);
@@ -552,7 +584,9 @@ describe("Assignment lifecycle", () => {
 			ready,
 		);
 		expect(assigned.ok).toBe(true);
-		if (!assigned.ok) return;
+		if (!assigned.ok) {
+			return;
+		}
 		expect(assigned.data.status).toBe("pending");
 		expect(ready.ports.outbox.calls).toContainEqual(
 			expect.objectContaining({
@@ -571,7 +605,9 @@ describe("Assignment lifecycle", () => {
 			ready,
 		);
 		expect(enroled.ok).toBe(true);
-		if (!enroled.ok) return;
+		if (!enroled.ok) {
+			return;
+		}
 		expect(enroled.data.status).toBe("in_progress");
 
 		const waived = await waiveAssignment(
@@ -585,7 +621,9 @@ describe("Assignment lifecycle", () => {
 			ready,
 		);
 		expect(waived.ok).toBe(true);
-		if (!waived.ok) return;
+		if (!waived.ok) {
+			return;
+		}
 		expect(waived.data.status).toBe("withdrawn");
 	});
 
@@ -625,7 +663,9 @@ describe("Assignment lifecycle", () => {
 			ready,
 		);
 		expect(second.ok).toBe(false);
-		if (second.ok) return;
+		if (second.ok) {
+			return;
+		}
 		expect(humanResourcesCodeFromResult(second)).toBe(
 			HUMAN_RESOURCES_ERROR_CONFLICT,
 		);
@@ -654,7 +694,9 @@ describe("Assignment lifecycle", () => {
 			ready,
 		);
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 
 		const completion = await recordCompletion(
 			{
@@ -712,7 +754,9 @@ describe("Completion recording", () => {
 			ready,
 		);
 		expect(assignment.ok).toBe(true);
-		if (!assignment.ok) return;
+		if (!assignment.ok) {
+			return;
+		}
 
 		const completion = await recordCompletion(
 			{
@@ -731,7 +775,9 @@ describe("Completion recording", () => {
 			ready,
 		);
 		expect(completion.ok).toBe(true);
-		if (!completion.ok) return;
+		if (!completion.ok) {
+			return;
+		}
 		expect(completion.data.outcome).toBe("passed");
 		expect(completion.data.assessorUserId).toBe("assessor-user-1");
 		expect(ready.ports.outbox.calls).toContainEqual(
@@ -763,7 +809,9 @@ describe("Completion recording", () => {
 			ready,
 		);
 		expect(assignment.ok).toBe(true);
-		if (!assignment.ok) return;
+		if (!assignment.ok) {
+			return;
+		}
 
 		const first = await recordCompletion(
 			{
@@ -800,7 +848,9 @@ describe("Completion recording", () => {
 			ready,
 		);
 		expect(second.ok).toBe(false);
-		if (second.ok) return;
+		if (second.ok) {
+			return;
+		}
 		expect(humanResourcesCodeFromResult(second)).toBe(
 			HUMAN_RESOURCES_ERROR_CONFLICT,
 		);
@@ -832,7 +882,9 @@ describe("Completion recording", () => {
 			ready,
 		);
 		expect(session.ok).toBe(true);
-		if (!session.ok) return;
+		if (!session.ok) {
+			return;
+		}
 
 		const assignment = await assignLearning(
 			{
@@ -846,7 +898,9 @@ describe("Completion recording", () => {
 			ready,
 		);
 		expect(assignment.ok).toBe(true);
-		if (!assignment.ok) return;
+		if (!assignment.ok) {
+			return;
+		}
 
 		const completion = await recordCompletion(
 			{
@@ -865,7 +919,9 @@ describe("Completion recording", () => {
 			ready,
 		);
 		expect(completion.ok).toBe(true);
-		if (!completion.ok) return;
+		if (!completion.ok) {
+			return;
+		}
 		expect(completion.data.sessionId).toBe(session.data.id);
 	});
 });
@@ -893,7 +949,9 @@ describe("Certification issuance", () => {
 			ready,
 		);
 		expect(assignment.ok).toBe(true);
-		if (!assignment.ok) return;
+		if (!assignment.ok) {
+			return;
+		}
 
 		const completion = await recordCompletion(
 			{
@@ -912,7 +970,9 @@ describe("Certification issuance", () => {
 			ready,
 		);
 		expect(completion.ok).toBe(true);
-		if (!completion.ok) return;
+		if (!completion.ok) {
+			return;
+		}
 
 		const certification = await issueCertification(
 			{
@@ -930,7 +990,9 @@ describe("Certification issuance", () => {
 			ready,
 		);
 		expect(certification.ok).toBe(true);
-		if (!certification.ok) return;
+		if (!certification.ok) {
+			return;
+		}
 		expect(certification.data.status).toBe("active");
 		expect(certification.data.certificationCode).toBe("CERT-001");
 	});
@@ -957,7 +1019,9 @@ describe("Certification issuance", () => {
 			ready,
 		);
 		expect(assignment.ok).toBe(true);
-		if (!assignment.ok) return;
+		if (!assignment.ok) {
+			return;
+		}
 
 		const completion = await recordCompletion(
 			{
@@ -976,7 +1040,9 @@ describe("Certification issuance", () => {
 			ready,
 		);
 		expect(completion.ok).toBe(true);
-		if (!completion.ok) return;
+		if (!completion.ok) {
+			return;
+		}
 
 		const invalid = await issueCertification(
 			{
@@ -994,7 +1060,9 @@ describe("Certification issuance", () => {
 			ready,
 		);
 		expect(invalid.ok).toBe(false);
-		if (invalid.ok) return;
+		if (invalid.ok) {
+			return;
+		}
 		expect(humanResourcesCodeFromResult(invalid)).toBe(
 			HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 		);
@@ -1022,7 +1090,9 @@ describe("Certification issuance", () => {
 			ready,
 		);
 		expect(assignment.ok).toBe(true);
-		if (!assignment.ok) return;
+		if (!assignment.ok) {
+			return;
+		}
 
 		const completion = await recordCompletion(
 			{
@@ -1041,7 +1111,9 @@ describe("Certification issuance", () => {
 			ready,
 		);
 		expect(completion.ok).toBe(true);
-		if (!completion.ok) return;
+		if (!completion.ok) {
+			return;
+		}
 
 		const certification = await issueCertification(
 			{
@@ -1059,7 +1131,9 @@ describe("Certification issuance", () => {
 			ready,
 		);
 		expect(certification.ok).toBe(true);
-		if (!certification.ok) return;
+		if (!certification.ok) {
+			return;
+		}
 
 		const revoked = await revokeCertification(
 			{
@@ -1072,7 +1146,9 @@ describe("Certification issuance", () => {
 			ready,
 		);
 		expect(revoked.ok).toBe(true);
-		if (!revoked.ok) return;
+		if (!revoked.ok) {
+			return;
+		}
 		expect(revoked.data.status).toBe("revoked");
 		expect(revoked.data.revokedAt).not.toBeNull();
 		expect(revoked.data.revokedBy).toBe(ACTOR);
@@ -1100,7 +1176,9 @@ describe("Certification issuance", () => {
 			ready,
 		);
 		expect(assignment.ok).toBe(true);
-		if (!assignment.ok) return;
+		if (!assignment.ok) {
+			return;
+		}
 
 		const completion = await recordCompletion(
 			{
@@ -1119,7 +1197,9 @@ describe("Certification issuance", () => {
 			ready,
 		);
 		expect(completion.ok).toBe(true);
-		if (!completion.ok) return;
+		if (!completion.ok) {
+			return;
+		}
 
 		const certification = await issueCertification(
 			{
@@ -1137,7 +1217,9 @@ describe("Certification issuance", () => {
 			ready,
 		);
 		expect(certification.ok).toBe(true);
-		if (!certification.ok) return;
+		if (!certification.ok) {
+			return;
+		}
 
 		const expired = await expireCertification(
 			{
@@ -1150,7 +1232,9 @@ describe("Certification issuance", () => {
 			ready,
 		);
 		expect(expired.ok).toBe(true);
-		if (!expired.ok) return;
+		if (!expired.ok) {
+			return;
+		}
 		expect(expired.data.status).toBe("expired");
 	});
 });
@@ -1179,7 +1263,9 @@ describe("Slice 9.7 learning closure", () => {
 			ready,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 		expect(created.data.primaryInstructorUserId).toBe("instructor-user-create");
 
 		const updated = await assignSessionInstructor(
@@ -1194,7 +1280,9 @@ describe("Slice 9.7 learning closure", () => {
 			ready,
 		);
 		expect(updated.ok).toBe(true);
-		if (!updated.ok) return;
+		if (!updated.ok) {
+			return;
+		}
 		expect(updated.data.primaryInstructorUserId).toBe("instructor-user-update");
 	});
 
@@ -1220,7 +1308,9 @@ describe("Slice 9.7 learning closure", () => {
 			ready,
 		);
 		expect(session.ok).toBe(true);
-		if (!session.ok) return;
+		if (!session.ok) {
+			return;
+		}
 
 		const denied = await assignSessionInstructor(
 			{
@@ -1266,7 +1356,9 @@ describe("Slice 9.7 learning closure", () => {
 			ready,
 		);
 		expect(session.ok).toBe(true);
-		if (!session.ok) return;
+		if (!session.ok) {
+			return;
+		}
 
 		const assignmentOne = await assignLearning(
 			{
@@ -1281,7 +1373,9 @@ describe("Slice 9.7 learning closure", () => {
 			ready,
 		);
 		expect(assignmentOne.ok).toBe(true);
-		if (!assignmentOne.ok) return;
+		if (!assignmentOne.ok) {
+			return;
+		}
 
 		const enrolledOne = await enrolAssignment(
 			{
@@ -1294,7 +1388,9 @@ describe("Slice 9.7 learning closure", () => {
 			ready,
 		);
 		expect(enrolledOne.ok).toBe(true);
-		if (!enrolledOne.ok) return;
+		if (!enrolledOne.ok) {
+			return;
+		}
 
 		const assignmentTwo = await assignLearning(
 			{
@@ -1309,7 +1405,9 @@ describe("Slice 9.7 learning closure", () => {
 			ready,
 		);
 		expect(assignmentTwo.ok).toBe(true);
-		if (!assignmentTwo.ok) return;
+		if (!assignmentTwo.ok) {
+			return;
+		}
 
 		const enrolledTwo = await enrolAssignment(
 			{
@@ -1322,7 +1420,9 @@ describe("Slice 9.7 learning closure", () => {
 			ready,
 		);
 		expect(enrolledTwo.ok).toBe(false);
-		if (enrolledTwo.ok) return;
+		if (enrolledTwo.ok) {
+			return;
+		}
 		expect(humanResourcesCodeFromResult(enrolledTwo)).toBe(
 			HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 		);
@@ -1354,7 +1454,9 @@ describe("Slice 9.7 learning closure", () => {
 			ready,
 		);
 		expect(session.ok).toBe(true);
-		if (!session.ok) return;
+		if (!session.ok) {
+			return;
+		}
 
 		const started = await startSession(
 			{
@@ -1367,7 +1469,9 @@ describe("Slice 9.7 learning closure", () => {
 			ready,
 		);
 		expect(started.ok).toBe(true);
-		if (!started.ok) return;
+		if (!started.ok) {
+			return;
+		}
 
 		const assignment = await assignLearning(
 			{
@@ -1382,7 +1486,9 @@ describe("Slice 9.7 learning closure", () => {
 			ready,
 		);
 		expect(assignment.ok).toBe(true);
-		if (!assignment.ok) return;
+		if (!assignment.ok) {
+			return;
+		}
 
 		const enrolled = await enrolAssignment(
 			{
@@ -1395,7 +1501,9 @@ describe("Slice 9.7 learning closure", () => {
 			ready,
 		);
 		expect(enrolled.ok).toBe(true);
-		if (!enrolled.ok) return;
+		if (!enrolled.ok) {
+			return;
+		}
 
 		const attendance = await recordLearningAttendance(
 			{
@@ -1411,7 +1519,9 @@ describe("Slice 9.7 learning closure", () => {
 			ready,
 		);
 		expect(attendance.ok).toBe(true);
-		if (!attendance.ok) return;
+		if (!attendance.ok) {
+			return;
+		}
 		expect(attendance.data.status).toBe("present");
 
 		const replay = await recordLearningAttendance(
@@ -1428,7 +1538,9 @@ describe("Slice 9.7 learning closure", () => {
 			ready,
 		);
 		expect(replay.ok).toBe(true);
-		if (!replay.ok) return;
+		if (!replay.ok) {
+			return;
+		}
 		expect(replay.data.id).toBe(attendance.data.id);
 
 		const fetched = await getLearningAttendance(
@@ -1441,7 +1553,9 @@ describe("Slice 9.7 learning closure", () => {
 			ready,
 		);
 		expect(fetched.ok).toBe(true);
-		if (!fetched.ok) return;
+		if (!fetched.ok) {
+			return;
+		}
 		expect(fetched.data?.id).toBe(attendance.data.id);
 
 		const listed = await listLearningAttendance(
@@ -1454,7 +1568,9 @@ describe("Slice 9.7 learning closure", () => {
 			ready,
 		);
 		expect(listed.ok).toBe(true);
-		if (!listed.ok) return;
+		if (!listed.ok) {
+			return;
+		}
 		expect(listed.data.attendanceRecords.length).toBe(1);
 	});
 
@@ -1484,7 +1600,9 @@ describe("Slice 9.7 learning closure", () => {
 			ready,
 		);
 		expect(session.ok).toBe(true);
-		if (!session.ok) return;
+		if (!session.ok) {
+			return;
+		}
 
 		const assignment = await assignLearning(
 			{
@@ -1499,7 +1617,9 @@ describe("Slice 9.7 learning closure", () => {
 			ready,
 		);
 		expect(assignment.ok).toBe(true);
-		if (!assignment.ok) return;
+		if (!assignment.ok) {
+			return;
+		}
 
 		const enrolled = await enrolAssignment(
 			{
@@ -1512,7 +1632,9 @@ describe("Slice 9.7 learning closure", () => {
 			ready,
 		);
 		expect(enrolled.ok).toBe(true);
-		if (!enrolled.ok) return;
+		if (!enrolled.ok) {
+			return;
+		}
 
 		const denied = await recordLearningAttendance(
 			{
@@ -1552,7 +1674,9 @@ describe("Slice 9.7 learning closure", () => {
 			ready,
 		);
 		expect(firstAssignment.ok).toBe(true);
-		if (!firstAssignment.ok) return;
+		if (!firstAssignment.ok) {
+			return;
+		}
 
 		const firstCompletion = await recordCompletion(
 			{
@@ -1571,7 +1695,9 @@ describe("Slice 9.7 learning closure", () => {
 			ready,
 		);
 		expect(firstCompletion.ok).toBe(true);
-		if (!firstCompletion.ok) return;
+		if (!firstCompletion.ok) {
+			return;
+		}
 
 		const issued = await issueCertification(
 			{
@@ -1589,7 +1715,9 @@ describe("Slice 9.7 learning closure", () => {
 			ready,
 		);
 		expect(issued.ok).toBe(true);
-		if (!issued.ok) return;
+		if (!issued.ok) {
+			return;
+		}
 
 		const expired = await expireCertification(
 			{
@@ -1602,7 +1730,9 @@ describe("Slice 9.7 learning closure", () => {
 			ready,
 		);
 		expect(expired.ok).toBe(true);
-		if (!expired.ok) return;
+		if (!expired.ok) {
+			return;
+		}
 
 		const renewalAssignment = await assignLearning(
 			{
@@ -1616,7 +1746,9 @@ describe("Slice 9.7 learning closure", () => {
 			ready,
 		);
 		expect(renewalAssignment.ok).toBe(true);
-		if (!renewalAssignment.ok) return;
+		if (!renewalAssignment.ok) {
+			return;
+		}
 
 		const renewalCompletion = await recordCompletion(
 			{
@@ -1635,7 +1767,9 @@ describe("Slice 9.7 learning closure", () => {
 			ready,
 		);
 		expect(renewalCompletion.ok).toBe(true);
-		if (!renewalCompletion.ok) return;
+		if (!renewalCompletion.ok) {
+			return;
+		}
 
 		const renewed = await renewCertification(
 			{
@@ -1653,7 +1787,9 @@ describe("Slice 9.7 learning closure", () => {
 			ready,
 		);
 		expect(renewed.ok).toBe(true);
-		if (!renewed.ok) return;
+		if (!renewed.ok) {
+			return;
+		}
 		expect(renewed.data.status).toBe("active");
 		expect(renewed.data.renewedFromCertificationId).toBe(expired.data.id);
 		expect(ready.ports.outbox.calls).toContainEqual(
@@ -1685,7 +1821,9 @@ describe("Slice 9.7 learning closure", () => {
 			ready,
 		);
 		expect(assignment.ok).toBe(true);
-		if (!assignment.ok) return;
+		if (!assignment.ok) {
+			return;
+		}
 
 		const completion = await recordCompletion(
 			{
@@ -1704,7 +1842,9 @@ describe("Slice 9.7 learning closure", () => {
 			ready,
 		);
 		expect(completion.ok).toBe(true);
-		if (!completion.ok) return;
+		if (!completion.ok) {
+			return;
+		}
 
 		const denied = await renewCertification(
 			{
@@ -1749,7 +1889,9 @@ describe("Cross-organization boundaries", () => {
 			ready,
 		);
 		expect(invalid.ok).toBe(false);
-		if (invalid.ok) return;
+		if (invalid.ok) {
+			return;
+		}
 		expect(humanResourcesCodeFromResult(invalid)).toBe(
 			HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 		);
@@ -1777,7 +1919,9 @@ describe("Cross-organization boundaries", () => {
 			ready,
 		);
 		expect(assignmentA.ok).toBe(true);
-		if (!assignmentA.ok) return;
+		if (!assignmentA.ok) {
+			return;
+		}
 
 		const invalid = await recordCompletion(
 			{
@@ -1796,7 +1940,9 @@ describe("Cross-organization boundaries", () => {
 			ready,
 		);
 		expect(invalid.ok).toBe(false);
-		if (invalid.ok) return;
+		if (invalid.ok) {
+			return;
+		}
 		expect(humanResourcesCodeFromResult(invalid)).toBe(
 			HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 		);
@@ -1821,7 +1967,9 @@ describe("Authorization", () => {
 			ready,
 		);
 		expect(denied.ok).toBe(false);
-		if (denied.ok) return;
+		if (denied.ok) {
+			return;
+		}
 		expect(humanResourcesCodeFromResult(denied)).toBe(
 			HUMAN_RESOURCES_ERROR_FORBIDDEN,
 		);
@@ -1852,7 +2000,9 @@ describe("Authorization", () => {
 			ready,
 		);
 		expect(assignment.ok).toBe(true);
-		if (!assignment.ok) return;
+		if (!assignment.ok) {
+			return;
+		}
 
 		const completion = await recordCompletion(
 			{
@@ -1871,7 +2021,9 @@ describe("Authorization", () => {
 			ready,
 		);
 		expect(completion.ok).toBe(true);
-		if (!completion.ok) return;
+		if (!completion.ok) {
+			return;
+		}
 
 		const denied = await issueCertification(
 			{
@@ -1889,7 +2041,9 @@ describe("Authorization", () => {
 			ready,
 		);
 		expect(denied.ok).toBe(false);
-		if (denied.ok) return;
+		if (denied.ok) {
+			return;
+		}
 		expect(humanResourcesCodeFromResult(denied)).toBe(
 			HUMAN_RESOURCES_ERROR_FORBIDDEN,
 		);
@@ -1899,7 +2053,7 @@ describe("Authorization", () => {
 describe("List pagination", () => {
 	it("lists courses with deterministic ordering", async () => {
 		const ready = harness();
-		for (let i = 1; i <= 3; i++) {
+		await runSequential([1, 2, 3], async (i) => {
 			await createCourse(
 				{
 					organizationId: ORG_A,
@@ -1913,7 +2067,7 @@ describe("List pagination", () => {
 				},
 				ready,
 			);
-		}
+		});
 
 		const page = await listCourses(
 			{
@@ -1924,7 +2078,9 @@ describe("List pagination", () => {
 			ready,
 		);
 		expect(page.ok).toBe(true);
-		if (!page.ok) return;
+		if (!page.ok) {
+			return;
+		}
 		expect(page.data.courses.length).toBeGreaterThanOrEqual(3);
 		const codes = page.data.courses.map((c) => c.code);
 		expect(codes).toContain("LIST-1");
@@ -1939,7 +2095,7 @@ describe("List pagination", () => {
 			code: "LIST-SESSION-COURSE",
 		});
 
-		for (let i = 1; i <= 2; i++) {
+		await runSequential([1, 2], async (i) => {
 			await createSession(
 				{
 					organizationId: ORG_A,
@@ -1955,7 +2111,7 @@ describe("List pagination", () => {
 				},
 				ready,
 			);
-		}
+		});
 
 		const page = await listSessions(
 			{
@@ -1967,7 +2123,9 @@ describe("List pagination", () => {
 			ready,
 		);
 		expect(page.ok).toBe(true);
-		if (!page.ok) return;
+		if (!page.ok) {
+			return;
+		}
 		expect(page.data.sessions.length).toBe(2);
 	});
 
@@ -2019,7 +2177,9 @@ describe("List pagination", () => {
 			ready,
 		);
 		expect(page.ok).toBe(true);
-		if (!page.ok) return;
+		if (!page.ok) {
+			return;
+		}
 		expect(page.data.assignments.length).toBe(2);
 	});
 
@@ -2045,7 +2205,9 @@ describe("List pagination", () => {
 			ready,
 		);
 		expect(assignment.ok).toBe(true);
-		if (!assignment.ok) return;
+		if (!assignment.ok) {
+			return;
+		}
 
 		await recordCompletion(
 			{
@@ -2074,7 +2236,9 @@ describe("List pagination", () => {
 			ready,
 		);
 		expect(page.ok).toBe(true);
-		if (!page.ok) return;
+		if (!page.ok) {
+			return;
+		}
 		expect(page.data.completions.length).toBe(1);
 	});
 
@@ -2100,7 +2264,9 @@ describe("List pagination", () => {
 			ready,
 		);
 		expect(assignment.ok).toBe(true);
-		if (!assignment.ok) return;
+		if (!assignment.ok) {
+			return;
+		}
 
 		const completion = await recordCompletion(
 			{
@@ -2119,7 +2285,9 @@ describe("List pagination", () => {
 			ready,
 		);
 		expect(completion.ok).toBe(true);
-		if (!completion.ok) return;
+		if (!completion.ok) {
+			return;
+		}
 
 		await issueCertification(
 			{
@@ -2147,7 +2315,9 @@ describe("List pagination", () => {
 			ready,
 		);
 		expect(page.ok).toBe(true);
-		if (!page.ok) return;
+		if (!page.ok) {
+			return;
+		}
 		expect(page.data.certifications.length).toBe(1);
 	});
 });

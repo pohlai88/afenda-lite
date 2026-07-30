@@ -24,6 +24,7 @@ import {
 	type MasterCommandId,
 } from "../../module-ids";
 import { parseMasterInput } from "../../parse-input";
+import { resolveAsync } from "../../resolve-async";
 import type { Item } from "../../types";
 import {
 	MASTER_SEARCH_ENTITY,
@@ -67,6 +68,51 @@ async function afterItemMutation(
 	return result;
 }
 
+async function assertItemActivationReferences(
+	store: ReturnType<typeof resolveStore>,
+	item: Item,
+): Promise<Result<true>> {
+	const group = await store.getItemGroupById(
+		item.organizationId,
+		item.itemGroupId,
+	);
+	if (!group.ok) {
+		return group;
+	}
+	if (group.data === null) {
+		return fail("CONFLICT", "Item group must exist in the same organization", {
+			reason: "MASTER_CROSS_ORG_REFERENCE",
+		} satisfies MasterFailureDetails);
+	}
+	if (group.data.status !== "active") {
+		return fail(
+			"CONFLICT",
+			"Item group must be active before activating item",
+			{
+				reason: "MASTER_INVALID_STATE",
+				from: item.status,
+				to: "active",
+			} satisfies MasterFailureDetails,
+		);
+	}
+	const baseUom = await store.getRefUomById(item.baseUomId);
+	if (!baseUom.ok) {
+		return baseUom;
+	}
+	if (baseUom.data === null || !baseUom.data.active) {
+		return fail(
+			"CONFLICT",
+			"Item base UoM must be an active platform UoM before activating item",
+			{
+				reason: "MASTER_INVALID_STATE",
+				from: item.status,
+				to: "active",
+			} satisfies MasterFailureDetails,
+		);
+	}
+	return ok(true);
+}
+
 export async function createItem(
 	input: unknown,
 	options: MasterCommandOptions = {},
@@ -77,7 +123,7 @@ export async function createItem(
 		"Invalid item create input",
 	);
 	if (!parsed.ok) {
-		return parsed;
+		return Promise.resolve(parsed);
 	}
 	const { store, ports, authorization } = resolveCommandDeps(options);
 	const authorized = await requireMasterCommandPermission(authorization, {
@@ -135,7 +181,7 @@ export async function updateItem(
 		"Invalid item update input",
 	);
 	if (!parsed.ok) {
-		return parsed;
+		return Promise.resolve(parsed);
 	}
 	const { store, ports, authorization } = resolveCommandDeps(options);
 	const authorized = await requireMasterCommandPermission(authorization, {
@@ -186,7 +232,7 @@ async function transitionItemStatus(
 		"Invalid item lifecycle input",
 	);
 	if (!parsed.ok) {
-		return parsed;
+		return Promise.resolve(parsed);
 	}
 	const { store, ports, dependencyInspector, authorization } =
 		resolveCommandDeps(options);
@@ -218,47 +264,12 @@ async function transitionItemStatus(
 		return lifecycle;
 	}
 	if (toStatus === "active") {
-		const group = await store.getItemGroupById(
-			parsed.data.organizationId,
-			current.data.itemGroupId,
+		const activatable = await assertItemActivationReferences(
+			store,
+			current.data,
 		);
-		if (!group.ok) {
-			return group;
-		}
-		if (group.data === null) {
-			return fail(
-				"CONFLICT",
-				"Item group must exist in the same organization",
-				{
-					reason: "MASTER_CROSS_ORG_REFERENCE",
-				} satisfies MasterFailureDetails,
-			);
-		}
-		if (group.data.status !== "active") {
-			return fail(
-				"CONFLICT",
-				"Item group must be active before activating item",
-				{
-					reason: "MASTER_INVALID_STATE",
-					from: current.data.status,
-					to: toStatus,
-				} satisfies MasterFailureDetails,
-			);
-		}
-		const baseUom = await store.getRefUomById(current.data.baseUomId);
-		if (!baseUom.ok) {
-			return baseUom;
-		}
-		if (baseUom.data === null || !baseUom.data.active) {
-			return fail(
-				"CONFLICT",
-				"Item base UoM must be an active platform UoM before activating item",
-				{
-					reason: "MASTER_INVALID_STATE",
-					from: current.data.status,
-					to: toStatus,
-				} satisfies MasterFailureDetails,
-			);
+		if (!activatable.ok) {
+			return activatable;
 		}
 	}
 	if (toStatus === "retired") {
@@ -288,7 +299,7 @@ async function transitionItemStatus(
 	return afterItemMutation(result, options);
 }
 
-export async function activateItem(
+export function activateItem(
 	input: unknown,
 	options: MasterCommandOptions = {},
 ): Promise<Result<Item>> {
@@ -301,7 +312,7 @@ export async function activateItem(
 	);
 }
 
-export async function inactiveItem(
+export function inactiveItem(
 	input: unknown,
 	options: MasterCommandOptions = {},
 ): Promise<Result<Item>> {
@@ -316,7 +327,7 @@ export async function inactiveItem(
 
 export const suspendItem = inactiveItem;
 
-export async function retireItem(
+export function retireItem(
 	input: unknown,
 	options: MasterCommandOptions = {},
 ): Promise<Result<Item>> {
@@ -331,7 +342,7 @@ export async function retireItem(
 
 export const archiveItem = retireItem;
 
-export async function restoreItem(
+export function restoreItem(
 	input: unknown,
 	options: MasterCommandOptions = {},
 ): Promise<Result<Item>> {
@@ -407,7 +418,9 @@ export async function existsItemByCode(
 	options: MasterQueryOptions = {},
 ): Promise<Result<boolean>> {
 	const result = await getItemByCode(input, options);
-	if (!result.ok) return result;
+	if (!result.ok) {
+		return result;
+	}
 	return ok(result.data !== null);
 }
 
@@ -442,43 +455,55 @@ export async function listItems(
 	});
 }
 
-export async function listActiveItems(
+export function listActiveItems(
 	input: unknown,
 	options: MasterQueryOptions = {},
 ): Promise<Result<Item[]>> {
-	const parsed = parseMasterInput(
-		masterListOptionsSchema,
-		input,
-		"Invalid active item list input",
-	);
-	if (!parsed.ok) return parsed;
-	return listItems({ ...parsed.data, status: "active" }, options);
+	return resolveAsync(() => {
+		const parsed = parseMasterInput(
+			masterListOptionsSchema,
+			input,
+			"Invalid active item list input",
+		);
+		if (!parsed.ok) {
+			return parsed;
+		}
+		return listItems({ ...parsed.data, status: "active" }, options);
+	});
 }
 
-export async function listItemsByStatus(
+export function listItemsByStatus(
 	input: unknown,
 	options: MasterQueryOptions = {},
 ): Promise<Result<Item[]>> {
-	const parsed = parseMasterInput(
-		listByStatusInputSchema,
-		input,
-		"Invalid item list-by-status input",
-	);
-	if (!parsed.ok) return parsed;
-	return listItems(parsed.data, options);
+	return resolveAsync(() => {
+		const parsed = parseMasterInput(
+			listByStatusInputSchema,
+			input,
+			"Invalid item list-by-status input",
+		);
+		if (!parsed.ok) {
+			return parsed;
+		}
+		return listItems(parsed.data, options);
+	});
 }
 
-export async function listItemsUpdatedSince(
+export function listItemsUpdatedSince(
 	input: unknown,
 	options: MasterQueryOptions = {},
 ): Promise<Result<Item[]>> {
-	const parsed = parseMasterInput(
-		listUpdatedSinceInputSchema,
-		input,
-		"Invalid item updated-since list input",
-	);
-	if (!parsed.ok) return parsed;
-	return listItems(parsed.data, options);
+	return resolveAsync(() => {
+		const parsed = parseMasterInput(
+			listUpdatedSinceInputSchema,
+			input,
+			"Invalid item updated-since list input",
+		);
+		if (!parsed.ok) {
+			return parsed;
+		}
+		return listItems(parsed.data, options);
+	});
 }
 
 export async function listItemsByGroup(
@@ -490,7 +515,9 @@ export async function listItemsByGroup(
 		input,
 		"Invalid item list-by-group input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const store = resolveStore(options.store);
 	const { authorization } = options;
 	const authorized = await requireMasterQueryPermission(authorization, {
@@ -498,7 +525,9 @@ export async function listItemsByGroup(
 		actorUserId: parsed.data.actorUserId,
 		query: MASTER_QUERY_ITEM_LIST,
 	});
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return store.listItems({
 		organizationId: parsed.data.organizationId,
 		page: parsed.data.page,

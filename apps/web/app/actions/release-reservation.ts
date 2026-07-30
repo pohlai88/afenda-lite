@@ -14,9 +14,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type ReleaseReservationActionData = {
+export interface ReleaseReservationActionData {
 	reservation: StockReservation;
-};
+}
 
 export type ReleaseReservationActionState =
 	ActionResult<ReleaseReservationActionData> | null;
@@ -40,7 +40,7 @@ export async function releaseReservationAction(
 	_prev: ReleaseReservationActionState,
 	formData: FormData,
 ): Promise<ReleaseReservationActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "releaseReservationAction",
 		permission: "inventory.reservation.release",
 		safeMessage:

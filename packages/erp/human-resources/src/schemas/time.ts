@@ -276,7 +276,7 @@ function assertWorkCalendarOverrideConsistency(data: {
 	if (nonWorking && data.isWorkingDay) {
 		return false;
 	}
-	if (!nonWorking && !data.isWorkingDay) {
+	if (!(nonWorking || data.isWorkingDay)) {
 		return false;
 	}
 	if (
@@ -1299,8 +1299,6 @@ export const listPendingOvertimeApprovalsInputSchema =
 		})
 		.strict();
 
+export { humanResourcesEmploymentCalendarAssignmentIdSchema } from "../brands";
 // Keep exception type schema exported for adapters that validate detected facts.
-export {
-	exceptionTypeSchema,
-	humanResourcesEmploymentCalendarAssignmentIdSchema,
-};
+export { exceptionTypeSchema };

@@ -211,7 +211,9 @@ describe("employee relations case authorization policy", () => {
 			ready,
 		);
 		expect(direct.ok).toBe(true);
-		if (!direct.ok) return;
+		if (!direct.ok) {
+			return;
+		}
 
 		expect(direct.data.id).toBe(employeeCase.id);
 		expect(direct.data.classificationCode).toBe("CONDUCT-01");

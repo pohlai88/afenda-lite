@@ -35,7 +35,7 @@ export const HUMAN_RESOURCES_AGGREGATE_CRITICAL_ROLE_READINESS =
 export type HumanResourcesCriticalRoleReadinessAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_CRITICAL_ROLE_READINESS;
 
-export async function recordCriticalRoleReadiness(
+export function recordCriticalRoleReadiness(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TalentCriticalRoleReadiness>> {
@@ -74,7 +74,7 @@ export async function recordCriticalRoleReadiness(
 				return ok(existingByKey.data.readiness);
 			}
 
-			return await store.recordCriticalRoleReadiness(
+			return store.recordCriticalRoleReadiness(
 				{
 					organizationId: data.organizationId,
 					talentProfileId: data.talentProfileId,
@@ -97,7 +97,7 @@ export async function recordCriticalRoleReadiness(
 	});
 }
 
-export async function listCriticalRoleReadiness(
+export function listCriticalRoleReadiness(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ProjectedTalentCriticalRoleReadinessListPage>> {
@@ -107,9 +107,9 @@ export async function listCriticalRoleReadiness(
 		"Invalid critical role readiness list input",
 	);
 	if (!parsed.ok) {
-		return parsed;
+		return Promise.resolve(parsed);
 	}
-	const includeSensitive = parsed.data.includeSensitive;
+	const { includeSensitive } = parsed.data;
 
 	return runTalentQuery(parsed.data, options, {
 		schema: listCriticalRoleReadinessInputSchema,

@@ -61,7 +61,7 @@ function invalidDeletionRequest(details: ParseSchemaFailure["details"]) {
 export async function evaluateHumanResourcesPrivacyDeletionAction(
 	input: HumanResourcesPrivacyDeletionActionInput,
 ): Promise<ActionResult<{ decision: HumanResourcesDeletionDecision }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "evaluateHumanResourcesPrivacyDeletionAction",
 		permission: "human-resources.privacy.anonymize.evaluate",
 		safeMessage: "Could not evaluate the privacy deletion request.",
@@ -109,7 +109,7 @@ export async function executeApprovedHumanResourcesPrivacyDeletionAction(
 		executionReference: string;
 	}>
 > {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "executeApprovedHumanResourcesPrivacyDeletionAction",
 		permission: "human-resources.privacy.anonymize.execute",
 		safeMessage: "Could not execute the approved privacy deletion request.",

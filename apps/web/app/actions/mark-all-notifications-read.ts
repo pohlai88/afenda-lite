@@ -6,9 +6,9 @@ import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runMemberSessionAction } from "@/app/actions/run-member-session-action";
 import type { ActionResult } from "@/modules/platform/schemas/action-result";
 
-export type MarkAllNotificationsReadActionData = {
+export interface MarkAllNotificationsReadActionData {
 	marked: number;
-};
+}
 
 /** `null` = form idle (`useActionState`); otherwise API-002 `ActionResult`. */
 export type MarkAllNotificationsReadActionState =
@@ -21,7 +21,7 @@ export async function markAllNotificationsReadAction(
 	_prev: MarkAllNotificationsReadActionState,
 	_formData: FormData,
 ): Promise<MarkAllNotificationsReadActionState> {
-	return runMemberSessionAction({
+	return await runMemberSessionAction({
 		path: "markAllNotificationsReadAction",
 		safeMessage:
 			"Could not mark notifications read. Try again or contact an admin.",

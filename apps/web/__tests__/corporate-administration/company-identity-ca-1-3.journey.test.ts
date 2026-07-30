@@ -132,7 +132,7 @@ describe("Corporate Administration CA-1.3 identity journey", () => {
 		corporateAdministrationMocks.registerCompanyIdentifier.mockImplementation(
 			async (input) => {
 				if (input.identifierValue === "2026-01234567") {
-					return {
+					return await {
 						ok: false,
 						code: "CONFLICT",
 						message:
@@ -154,7 +154,7 @@ describe("Corporate Administration CA-1.3 identity journey", () => {
 					version: 1,
 				};
 				identifiers.push(record);
-				return {
+				return await {
 					ok: true,
 					data: { id: record.companyIdentifierId, version: record.version },
 				};
@@ -173,7 +173,7 @@ describe("Corporate Administration CA-1.3 identity journey", () => {
 					version: 1,
 				};
 				financialYears.push(record);
-				return {
+				return await {
 					ok: true,
 					data: {
 						id: record.companyFinancialYearId,
@@ -189,7 +189,7 @@ describe("Corporate Administration CA-1.3 identity journey", () => {
 						(activity) => activity.activityCode === input.activityCode,
 					)
 				) {
-					return {
+					return await {
 						ok: false,
 						code: "CONFLICT",
 						message:
@@ -212,7 +212,7 @@ describe("Corporate Administration CA-1.3 identity journey", () => {
 					version: 1,
 				};
 				activities.push(record);
-				return {
+				return await {
 					ok: true,
 					data: { id: record.companyActivityId, version: record.version },
 				};

@@ -37,16 +37,18 @@ import {
 } from "./self-service-journey-forms";
 import type { SelfServicePermissions, SelfServiceSnapshot } from "./types";
 
-type Props = {
+interface Props {
 	permissions: SelfServicePermissions;
 	preferences: HrDisplayPreferences;
 	snapshot: SelfServiceSnapshot;
-};
+}
 
 function LoadError({ message }: { message?: string | undefined }) {
-	if (!message) return null;
+	if (!message) {
+		return null;
+	}
 	return (
-		<Alert variant="destructive" role="alert">
+		<Alert role="alert" variant="destructive">
 			<AlertTitle>Information unavailable</AlertTitle>
 			<AlertDescription>{message}</AlertDescription>
 		</Alert>
@@ -58,17 +60,28 @@ function statusLabel(value: string) {
 }
 
 function firstVisibleTab(permissions: SelfServicePermissions) {
-	if (permissions.canViewProfile) return "profile";
-	if (permissions.canViewLeave) return "leave";
-	if (permissions.canViewAttendance || permissions.canRecordAttendance)
+	if (permissions.canViewProfile) {
+		return "profile";
+	}
+	if (permissions.canViewLeave) {
+		return "leave";
+	}
+	if (permissions.canViewAttendance || permissions.canRecordAttendance) {
 		return "attendance";
-	if (permissions.canViewTimesheet) return "timesheet";
-	if (permissions.canViewLearning || permissions.canViewCertifications)
+	}
+	if (permissions.canViewTimesheet) {
+		return "timesheet";
+	}
+	if (permissions.canViewLearning || permissions.canViewCertifications) {
 		return "learning";
-	if (permissions.canViewPerformance) return "performance";
+	}
+	if (permissions.canViewPerformance) {
+		return "performance";
+	}
 	return "documents";
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Permission branches intentionally map independent self-service workflows.
 export function SelfServiceWorkspace({
 	permissions,
 	preferences,
@@ -77,20 +90,20 @@ export function SelfServiceWorkspace({
 	return (
 		<section className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-6 py-10">
 			<header className="space-y-2">
-				<p className="text-sm font-medium text-foreground-secondary">
+				<p className="font-medium text-foreground-secondary text-sm">
 					Employee self-service · {preferences.timeZone}
 				</p>
-				<h1 className="text-2xl font-semibold tracking-tight">
+				<h1 className="font-semibold text-2xl tracking-tight">
 					My employee workspace
 				</h1>
-				<p className="max-w-3xl text-sm text-foreground-secondary">
+				<p className="max-w-3xl text-foreground-secondary text-sm">
 					Review your employment information and complete the journeys enabled
 					for your organization. Your employee identity is resolved from the
 					signed-in account.
 				</p>
 			</header>
 
-			<Tabs defaultValue={firstVisibleTab(permissions)} className="space-y-6">
+			<Tabs className="space-y-6" defaultValue={firstVisibleTab(permissions)}>
 				<TabsList className="h-auto flex-wrap justify-start">
 					{permissions.canViewProfile ? (
 						<TabsTrigger value="profile">Profile</TabsTrigger>
@@ -163,7 +176,7 @@ export function SelfServiceWorkspace({
 				) : null}
 
 				{permissions.canViewLeave ? (
-					<TabsContent value="leave" className="space-y-6">
+					<TabsContent className="space-y-6" value="leave">
 						<LoadError message={snapshot.errors.leave} />
 						<Card>
 							<CardHeader>
@@ -188,7 +201,7 @@ export function SelfServiceWorkspace({
 														{formatHrLocalDate(balance.periodEnd, preferences)}
 													</CardDescription>
 												</CardHeader>
-												<CardContent className="text-lg font-medium">
+												<CardContent className="font-medium text-lg">
 													{balance.balance} {balance.unit}
 												</CardContent>
 											</Card>
@@ -242,10 +255,10 @@ export function SelfServiceWorkspace({
 														<TableCell>{statusLabel(request.status)}</TableCell>
 														<TableCell>
 															<LeaveRequestTransitionForm
-																request={request}
 																canCancelApproved={
 																	permissions.canCancelApprovedLeave
 																}
+																request={request}
 															/>
 														</TableCell>
 													</TableRow>
@@ -262,7 +275,7 @@ export function SelfServiceWorkspace({
 				) : null}
 
 				{permissions.canViewAttendance || permissions.canRecordAttendance ? (
-					<TabsContent value="attendance" className="space-y-6">
+					<TabsContent className="space-y-6" value="attendance">
 						<LoadError message={snapshot.errors.attendance} />
 						<div className="grid gap-6 lg:grid-cols-2">
 							{permissions.canRecordAttendance ? (
@@ -385,7 +398,7 @@ export function SelfServiceWorkspace({
 				) : null}
 
 				{permissions.canViewLearning || permissions.canViewCertifications ? (
-					<TabsContent value="learning" className="space-y-6">
+					<TabsContent className="space-y-6" value="learning">
 						<LoadError message={snapshot.errors.learning} />
 						<div className="grid gap-6 lg:grid-cols-2">
 							{permissions.canViewLearning ? (
@@ -397,16 +410,16 @@ export function SelfServiceWorkspace({
 										{snapshot.learning.assignments.length > 0 ? (
 											snapshot.learning.assignments.map((assignment) => (
 												<div
+													className="space-y-1 border-border border-b pb-4 last:border-0 last:pb-0"
 													key={assignment.id}
-													className="space-y-1 border-b border-border pb-4 last:border-0 last:pb-0"
 												>
 													<div className="flex items-center justify-between gap-4">
-														<p className="text-sm font-medium">
+														<p className="font-medium text-sm">
 															{assignment.course}
 														</p>
 														{statusLabel(assignment.status)}
 													</div>
-													<p className="text-sm text-foreground-secondary">
+													<p className="text-foreground-secondary text-sm">
 														Due{" "}
 														{assignment.dueOn
 															? formatHrLocalDate(assignment.dueOn, preferences)
@@ -429,16 +442,16 @@ export function SelfServiceWorkspace({
 										{snapshot.learning.certifications.length > 0 ? (
 											snapshot.learning.certifications.map((certification) => (
 												<div
+													className="space-y-1 border-border border-b pb-4 last:border-0 last:pb-0"
 													key={certification.id}
-													className="space-y-1 border-b border-border pb-4 last:border-0 last:pb-0"
 												>
 													<div className="flex items-center justify-between gap-4">
-														<p className="text-sm font-medium">
+														<p className="font-medium text-sm">
 															{certification.course}
 														</p>
 														{statusLabel(certification.status)}
 													</div>
-													<p className="text-sm text-foreground-secondary">
+													<p className="text-foreground-secondary text-sm">
 														{certification.code} · issued{" "}
 														{formatHrLocalDate(
 															certification.issuedOn,
@@ -458,7 +471,7 @@ export function SelfServiceWorkspace({
 				) : null}
 
 				{permissions.canViewPerformance ? (
-					<TabsContent value="performance" className="space-y-6">
+					<TabsContent className="space-y-6" value="performance">
 						<LoadError message={snapshot.errors.performance} />
 						<div className="grid gap-6 lg:grid-cols-2">
 							<Card>
@@ -469,14 +482,14 @@ export function SelfServiceWorkspace({
 									{snapshot.performance.goals.length > 0 ? (
 										snapshot.performance.goals.map((goal) => (
 											<div
+												className="space-y-1 border-border border-b pb-4 last:border-0 last:pb-0"
 												key={goal.id}
-												className="space-y-1 border-b border-border pb-4 last:border-0 last:pb-0"
 											>
 												<div className="flex items-center justify-between gap-4">
-													<p className="text-sm font-medium">{goal.title}</p>
+													<p className="font-medium text-sm">{goal.title}</p>
 													{statusLabel(goal.status)}
 												</div>
-												<p className="text-sm text-foreground-secondary">
+												<p className="text-foreground-secondary text-sm">
 													{formatHrLocalDate(goal.periodStart, preferences)} –{" "}
 													{formatHrLocalDate(goal.periodEnd, preferences)}
 												</p>
@@ -495,14 +508,14 @@ export function SelfServiceWorkspace({
 									{snapshot.performance.reviews.length > 0 ? (
 										snapshot.performance.reviews.map((review) => (
 											<div
+												className="space-y-1 border-border border-b pb-4 last:border-0 last:pb-0"
 												key={review.id}
-												className="space-y-1 border-b border-border pb-4 last:border-0 last:pb-0"
 											>
 												<div className="flex items-center justify-between gap-4">
-													<p className="text-sm font-medium">Review</p>
+													<p className="font-medium text-sm">Review</p>
 													{statusLabel(review.status)}
 												</div>
-												<p className="text-sm text-foreground-secondary">
+												<p className="text-foreground-secondary text-sm">
 													Rating {review.rating ?? "not recorded"} · updated{" "}
 													{formatHrInstant(review.updatedAt, preferences)}
 												</p>
@@ -518,7 +531,7 @@ export function SelfServiceWorkspace({
 				) : null}
 
 				{permissions.canViewDocuments || permissions.canViewAcknowledgements ? (
-					<TabsContent value="documents" className="space-y-6">
+					<TabsContent className="space-y-6" value="documents">
 						<LoadError message={snapshot.errors.compliance} />
 						{snapshot.compliance.summary ? (
 							<Alert role="status">
@@ -542,16 +555,16 @@ export function SelfServiceWorkspace({
 										{snapshot.compliance.documents.length > 0 ? (
 											snapshot.compliance.documents.map((document) => (
 												<div
+													className="space-y-1 border-border border-b pb-4 last:border-0 last:pb-0"
 													key={document.id}
-													className="space-y-1 border-b border-border pb-4 last:border-0 last:pb-0"
 												>
 													<div className="flex items-center justify-between gap-4">
-														<p className="text-sm font-medium">
+														<p className="font-medium text-sm">
 															{document.type}
 														</p>
 														{statusLabel(document.status)}
 													</div>
-													<p className="text-sm text-foreground-secondary">
+													<p className="text-foreground-secondary text-sm">
 														Issued{" "}
 														{formatHrLocalDate(document.issuedOn, preferences)}
 														{document.expiresOn
@@ -576,14 +589,14 @@ export function SelfServiceWorkspace({
 											snapshot.compliance.acknowledgements.map(
 												(acknowledgement) => (
 													<div
+														className="space-y-3 border-border border-b pb-4 last:border-0 last:pb-0"
 														key={acknowledgement.id}
-														className="space-y-3 border-b border-border pb-4 last:border-0 last:pb-0"
 													>
-														<p className="text-sm font-medium">
+														<p className="font-medium text-sm">
 															{acknowledgement.policyCode} · version{" "}
 															{acknowledgement.policyVersion}
 														</p>
-														<p className="text-sm text-foreground-secondary">
+														<p className="text-foreground-secondary text-sm">
 															Due{" "}
 															{formatHrLocalDate(
 																acknowledgement.dueOn,

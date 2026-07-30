@@ -5,15 +5,15 @@ import type { INVENTORY_PERMISSION_CODES } from "./permissions";
 
 export type InventoryPermission = (typeof INVENTORY_PERMISSION_CODES)[number];
 
-export type InventoryAuthorizationPort = {
-	can(input: {
+export interface InventoryAuthorizationPort {
+	can: (input: {
 		organizationId: string;
 		actorUserId: string;
 		permission: InventoryPermission;
-	}): Promise<boolean>;
-};
+	}) => Promise<boolean>;
+}
 
-export async function requireInventoryCommandPermission(
+export function requireInventoryCommandPermission(
 	authorization: InventoryAuthorizationPort | undefined,
 	input: {
 		organizationId: string;
@@ -30,7 +30,7 @@ export async function requireInventoryCommandPermission(
 	});
 }
 
-export async function requireInventoryQueryPermission(
+export function requireInventoryQueryPermission(
 	authorization: InventoryAuthorizationPort | undefined,
 	input: {
 		organizationId: string;

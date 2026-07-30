@@ -23,6 +23,7 @@ import {
 } from "@afenda/ui-system";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { CommandIcon, PencilIcon, RefreshCwIcon, XIcon } from "lucide-react";
+import type { FormEvent } from "react";
 import { expect, fn, userEvent, within } from "storybook/test";
 import { contractDocsParameters } from "./contract-docs";
 import { contractEvidence, StorySection } from "./evidence";
@@ -37,6 +38,11 @@ const disabledAction = fn();
 const pendingAction = fn();
 const deleteSupplier = fn();
 const saveSupplier = fn();
+
+function saveSupplierOnSubmit(event: FormEvent<HTMLFormElement>): void {
+	event.preventDefault();
+	saveSupplier();
+}
 const cancelSupplierChanges = fn();
 
 function ButtonOperationalOverview() {
@@ -105,7 +111,7 @@ function ButtonOperationalOverview() {
 							SUP-1021 · Eligible for permanent deletion
 						</CardDescription>
 					</CardHeader>
-					<CardContent className="text-sm text-foreground-secondary">
+					<CardContent className="text-foreground-secondary text-sm">
 						The record has no posted transactions, open orders or active
 						integration references.
 					</CardContent>
@@ -241,40 +247,40 @@ export const SemanticUsage: Story = {
 		<div className="grid w-full max-w-4xl gap-6 sm:grid-cols-2">
 			<StorySection title="Default · recommended next step">
 				<Button onClick={submitForApproval}>Submit for approval</Button>
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Use once for the recommended action in this decision context.
 				</p>
 			</StorySection>
 			<StorySection title="Secondary · neutral decision action">
 				<Button variant="secondary">Save as draft</Button>
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Use inside a contained decision context when the action remains
 					important but is not the recommended next step.
 				</p>
 			</StorySection>
 			<StorySection title="Outline · persistent supporting action">
 				<Button variant="outline">Export transactions</Button>
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Use for an always-available alternative in page chrome, a toolbar or
 					record actions.
 				</p>
 			</StorySection>
 			<StorySection title="Ghost · compact context">
 				<Button variant="ghost">Clear filters</Button>
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					A low-emphasis action in a toolbar or repeated control group.
 				</p>
 			</StorySection>
 			<StorySection title="Destructive · harmful outcome">
 				<Button variant="destructive">Delete supplier</Button>
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Use only for difficult-to-recover harm. Feature policy still decides
 					whether confirmation is required.
 				</p>
 			</StorySection>
 			<StorySection title="Link · low-emphasis action">
 				<Button variant="link">Show approval guidance</Button>
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					This remains a native button because it reveals interface content. URL
 					navigation must use asChild with a real link.
 				</p>
@@ -344,26 +350,26 @@ export const Sizes: Story = {
 			</StorySection>
 			<StorySection title="Icon-only actions">
 				<div className="flex flex-wrap items-end gap-4">
-					<div className="grid justify-items-center gap-2 text-xs text-foreground-tertiary">
-						<Button size="icon" aria-label="Edit supplier">
+					<div className="grid justify-items-center gap-2 text-foreground-tertiary text-xs">
+						<Button aria-label="Edit supplier" size="icon">
 							<PencilIcon />
 						</Button>
 						<span>Edit supplier</span>
 					</div>
-					<div className="grid justify-items-center gap-2 text-xs text-foreground-tertiary">
-						<Button size="icon-xs" aria-label="Remove filter">
+					<div className="grid justify-items-center gap-2 text-foreground-tertiary text-xs">
+						<Button aria-label="Remove filter" size="icon-xs">
 							<XIcon />
 						</Button>
 						<span>Remove filter</span>
 					</div>
-					<div className="grid justify-items-center gap-2 text-xs text-foreground-tertiary">
-						<Button size="icon-sm" aria-label="Refresh records">
+					<div className="grid justify-items-center gap-2 text-foreground-tertiary text-xs">
+						<Button aria-label="Refresh records" size="icon-sm">
 							<RefreshCwIcon />
 						</Button>
 						<span>Refresh records</span>
 					</div>
-					<div className="grid justify-items-center gap-2 text-xs text-foreground-tertiary">
-						<Button size="icon-lg" aria-label="Open command menu">
+					<div className="grid justify-items-center gap-2 text-foreground-tertiary text-xs">
+						<Button aria-label="Open command menu" size="icon-lg">
 							<CommandIcon />
 						</Button>
 						<span>Command menu</span>
@@ -387,47 +393,47 @@ export const StatesAndAccessibility: Story = {
 		<div className="grid w-full max-w-4xl gap-6 sm:grid-cols-2">
 			<StorySection title="Enabled and keyboard operable">
 				<Button onClick={approveRequest}>Approve request</Button>
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					The visible focus ring remains intact and Enter activates the command.
 				</p>
 			</StorySection>
 			<StorySection title="Disabled with an apparent reason">
 				<Button
-					disabled
 					aria-describedby="post-journal-reason"
+					disabled
 					onClick={disabledAction}
 				>
 					Post journal
 				</Button>
 				<p
+					className="text-foreground-secondary text-sm"
 					id="post-journal-reason"
-					className="text-sm text-foreground-secondary"
 				>
 					Resolve the out-of-balance journal before posting.
 				</p>
 			</StorySection>
 			<StorySection title="Pending supplied by feature code">
 				<Button
-					disabled
 					aria-busy="true"
 					aria-describedby="save-supplier-progress"
+					disabled
 					onClick={pendingAction}
 				>
 					<Spinner aria-hidden="true" size="sm" variant="secondary" />
 					Save supplier
 				</Button>
 				<p
+					className="text-foreground-secondary text-sm"
 					id="save-supplier-progress"
-					className="text-sm text-foreground-secondary"
 				>
 					Supplier changes are being saved.
 				</p>
 			</StorySection>
 			<StorySection title="Icon-only with an accessible name">
-				<Button size="icon" aria-label="Edit supplier">
+				<Button aria-label="Edit supplier" size="icon">
 					<PencilIcon />
 				</Button>
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					The icon is decorative to the name supplied by aria-label.
 				</p>
 			</StorySection>
@@ -443,7 +449,7 @@ export const StatesAndAccessibility: Story = {
 						<Button variant="outline">Export transactions</Button>
 					</div>
 				</div>
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					The keyboard-focus indicator remains visible without becoming a large
 					translucent halo or adopting status colour.
 				</p>
@@ -550,12 +556,7 @@ export const Composition: Story = {
 			</PageHeader>
 
 			<div className="grid gap-6 lg:grid-cols-2">
-				<form
-					onSubmit={(event) => {
-						event.preventDefault();
-						saveSupplier();
-					}}
-				>
+				<form onSubmit={saveSupplierOnSubmit}>
 					<Card className="shadow-none">
 						<CardHeader>
 							<CardTitle>Supplier changes</CardTitle>
@@ -563,15 +564,15 @@ export const Composition: Story = {
 								Three validated fields are ready to save.
 							</CardDescription>
 						</CardHeader>
-						<CardContent className="text-sm text-foreground-secondary">
+						<CardContent className="text-foreground-secondary text-sm">
 							Cancel is explicitly type button; Save supplier is the form submit
 							action.
 						</CardContent>
 						<CardFooter className="justify-end gap-2 border-t">
 							<Button
+								onClick={cancelSupplierChanges}
 								type="button"
 								variant="ghost"
-								onClick={cancelSupplierChanges}
 							>
 								Cancel
 							</Button>
@@ -587,7 +588,7 @@ export const Composition: Story = {
 							Confirmation policy belongs to the consuming workflow.
 						</CardDescription>
 					</CardHeader>
-					<CardContent className="text-sm text-foreground-secondary">
+					<CardContent className="text-foreground-secondary text-sm">
 						Deleting SUP-1042 permanently removes an inactive supplier record.
 					</CardContent>
 					<CardFooter className="justify-end border-t">
@@ -605,8 +606,8 @@ export const Composition: Story = {
 								<AlertDialogFooter>
 									<AlertDialogCancel>Keep supplier</AlertDialogCancel>
 									<AlertDialogAction
-										variant="destructive"
 										onClick={deleteSupplier}
+										variant="destructive"
 									>
 										Delete supplier
 									</AlertDialogAction>
@@ -665,7 +666,7 @@ export const DoAndDoNot: Story = {
 			<StorySection title="Do not: use vague confirmation copy">
 				<div className="grid gap-3">
 					<Button>Yes</Button>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						Vague confirmation copy does not name the irreversible command.
 					</p>
 				</div>
@@ -676,7 +677,7 @@ export const DoAndDoNot: Story = {
 			<StorySection title="Do not: style authority as destructive">
 				<div className="grid gap-3">
 					<Button variant="destructive">Approve invoice</Button>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						Approval is an authority action — destructive styling is reserved
 						for difficult-to-recover harm.
 					</p>
@@ -694,7 +695,7 @@ export const DoAndDoNot: Story = {
 						<Button>Save draft</Button>
 						<Button>Submit for approval</Button>
 					</div>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						Two default Buttons create competing recommendations within one
 						decision context.
 					</p>
@@ -708,19 +709,19 @@ export const DoAndDoNot: Story = {
 			<StorySection title="Do not: imply navigation with a native button">
 				<div className="grid gap-3">
 					<Button variant="link">View supplier profile</Button>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						URL navigation must use asChild with a real anchor destination.
 					</p>
 				</div>
 			</StorySection>
 			<StorySection title="Do: disable with an apparent reason">
 				<div className="grid gap-3">
-					<Button disabled aria-describedby="do-post-journal-reason">
+					<Button aria-describedby="do-post-journal-reason" disabled>
 						Post journal
 					</Button>
 					<p
+						className="text-foreground-secondary text-sm"
 						id="do-post-journal-reason"
-						className="text-sm text-foreground-secondary"
 					>
 						Resolve the out-of-balance journal before posting.
 					</p>
@@ -729,7 +730,7 @@ export const DoAndDoNot: Story = {
 			<StorySection title="Do not: disable without explanation">
 				<div className="grid gap-3">
 					<Button disabled>Post journal</Button>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						A disabled action must have an apparent reason nearby or through an
 						accessible description.
 					</p>

@@ -13,9 +13,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type PostStockMovementActionData = {
+export interface PostStockMovementActionData {
 	movement: StockMovement;
-};
+}
 
 export type PostStockMovementActionState =
 	ActionResult<PostStockMovementActionData> | null;
@@ -33,7 +33,7 @@ export async function postStockMovementAction(
 	_prev: PostStockMovementActionState,
 	formData: FormData,
 ): Promise<PostStockMovementActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "postStockMovementAction",
 		permission: "inventory.movement.post",
 		safeMessage:

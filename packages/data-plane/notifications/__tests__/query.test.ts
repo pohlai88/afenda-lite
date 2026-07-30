@@ -145,7 +145,7 @@ describe("@afenda/notifications query", () => {
 				title: "Expired",
 				body: "Gone",
 				module: "identity",
-				expiresAt: new Date(Date.now() - 1_000),
+				expiresAt: new Date(Date.now() - 1000),
 			}),
 		);
 		assertOk(

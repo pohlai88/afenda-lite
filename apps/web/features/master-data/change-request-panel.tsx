@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noJsxPropsBind: The enabled React Compiler stabilizes JSX callback props.
 "use client";
 
 import {
@@ -30,30 +31,30 @@ import {
 	submitChangeRequestAction,
 } from "@/app/actions/submit-change-request";
 
-type PartyOption = {
+interface PartyOption {
 	id: string;
 	label: string;
-	version: number;
 	status: string;
-};
+	version: number;
+}
 
-type ChangeRequestOption = {
-	id: string;
+interface ChangeRequestOption {
 	code: string;
 	commandKind: string;
-	status: string;
-	version: number;
-	subjectEntityId: string;
+	id: string;
 	label: string;
-};
+	status: string;
+	subjectEntityId: string;
+	version: number;
+}
 
-type ChangeRequestPanelProps = {
-	canManage: boolean;
+interface ChangeRequestPanelProps {
+	approvedActivateRequests: ChangeRequestOption[];
 	canApprove: boolean;
+	canManage: boolean;
 	parties: PartyOption[];
 	submittedRequests: ChangeRequestOption[];
-	approvedActivateRequests: ChangeRequestOption[];
-};
+}
 
 const submitInitial: SubmitChangeRequestActionState = null;
 const approveInitial: ApproveChangeRequestActionState = null;
@@ -73,6 +74,7 @@ function pickById<T extends { id: string }>(
 /**
  * MDG steward panel — submit / review CRs and apply approved activate.
  */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Lifecycle and approval branches share one governed change-request surface.
 export function ChangeRequestPanel({
 	canManage,
 	canApprove,
@@ -98,7 +100,7 @@ export function ChangeRequestPanel({
 	);
 
 	const draftParties = parties.filter((party) => party.status === "draft");
-	const defaultDraft = draftParties[0];
+	const [defaultDraft] = draftParties;
 
 	const [selectedReviewId, setSelectedReviewId] = useState(
 		submittedRequests[0]?.id,
@@ -120,7 +122,7 @@ export function ChangeRequestPanel({
 		<div className="flex flex-col gap-8">
 			{canManage ? (
 				<section className="space-y-3">
-					<h3 className="text-sm font-medium">Submit activate request</h3>
+					<h3 className="font-medium text-sm">Submit activate request</h3>
 					{draftParties.length === 0 ? (
 						<Alert role="status">
 							<AlertTitle>No draft parties</AlertTitle>
@@ -131,11 +133,11 @@ export function ChangeRequestPanel({
 						</Alert>
 					) : (
 						<form action={submitAction} className="flex flex-col gap-3">
-							<input type="hidden" name="commandKind" value="activate_party" />
+							<input name="commandKind" type="hidden" value="activate_party" />
 							<FormField label="Party">
 								<NativeSelect
-									name="partyId"
 									defaultValue={defaultDraft?.id}
+									name="partyId"
 									required
 								>
 									{draftParties.map((party) => (
@@ -157,7 +159,7 @@ export function ChangeRequestPanel({
 									</AlertDescription>
 								</Alert>
 							) : null}
-							<Button type="submit" disabled={submitPending}>
+							<Button disabled={submitPending} type="submit">
 								{submitPending ? <Spinner /> : null}
 								Submit activate request
 							</Button>
@@ -168,20 +170,20 @@ export function ChangeRequestPanel({
 
 			{canApprove ? (
 				<section className="space-y-3">
-					<h3 className="text-sm font-medium">Review queue</h3>
+					<h3 className="font-medium text-sm">Review queue</h3>
 					{submittedRequests.length === 0 || selectedReview === undefined ? (
-						<p className="text-sm text-muted-foreground">
+						<p className="text-muted-foreground text-sm">
 							No submitted change requests.
 						</p>
 					) : (
 						<div className="flex flex-col gap-4">
 							<FormField label="Submitted request">
 								<NativeSelect
-									value={selectedReview.id}
 									onChange={(event) =>
 										setSelectedReviewId(event.currentTarget.value)
 									}
 									required
+									value={selectedReview.id}
 								>
 									{submittedRequests.map((request) => (
 										<NativeSelectOption key={request.id} value={request.id}>
@@ -192,41 +194,41 @@ export function ChangeRequestPanel({
 							</FormField>
 							<form action={approveAction} className="flex flex-col gap-3">
 								<input
-									type="hidden"
 									name="changeRequestId"
+									type="hidden"
 									value={selectedReview.id}
 								/>
 								<input
-									type="hidden"
 									name="expectedVersion"
+									type="hidden"
 									value={selectedReview.version}
 								/>
 								{!approvePending && approveState?.ok === false ? (
 									<FormError>{approveState.message}</FormError>
 								) : null}
-								<Button type="submit" disabled={approvePending}>
+								<Button disabled={approvePending} type="submit">
 									{approvePending ? <Spinner /> : null}
 									Approve
 								</Button>
 							</form>
 							<form action={rejectAction} className="flex flex-col gap-3">
 								<input
-									type="hidden"
 									name="changeRequestId"
+									type="hidden"
 									value={selectedReview.id}
 								/>
 								<input
-									type="hidden"
 									name="expectedVersion"
+									type="hidden"
 									value={selectedReview.version}
 								/>
 								<FormField label="Reject note (optional)">
-									<Input name="reviewNote" maxLength={500} />
+									<Input maxLength={500} name="reviewNote" />
 								</FormField>
 								{!rejectPending && rejectState?.ok === false ? (
 									<FormError>{rejectState.message}</FormError>
 								) : null}
-								<Button type="submit" disabled={rejectPending}>
+								<Button disabled={rejectPending} type="submit">
 									{rejectPending ? <Spinner /> : null}
 									Reject
 								</Button>
@@ -238,31 +240,31 @@ export function ChangeRequestPanel({
 
 			{canManage ? (
 				<section className="space-y-3">
-					<h3 className="text-sm font-medium">Apply approved activation</h3>
+					<h3 className="font-medium text-sm">Apply approved activation</h3>
 					{selectedActivateCr === undefined || applyParty === undefined ? (
-						<p className="text-sm text-muted-foreground">
+						<p className="text-muted-foreground text-sm">
 							No approved activate requests ready to apply.
 						</p>
 					) : (
 						<form action={activateAction} className="flex flex-col gap-3">
-							<input type="hidden" name="partyId" value={applyParty.id} />
+							<input name="partyId" type="hidden" value={applyParty.id} />
 							<input
-								type="hidden"
 								name="expectedVersion"
+								type="hidden"
 								value={applyParty.version}
 							/>
 							<input
-								type="hidden"
 								name="changeRequestId"
+								type="hidden"
 								value={selectedActivateCr.id}
 							/>
 							<FormField label="Approved change request">
 								<NativeSelect
-									value={selectedActivateCr.id}
 									onChange={(event) =>
 										setSelectedActivateCrId(event.currentTarget.value)
 									}
 									required
+									value={selectedActivateCr.id}
 								>
 									{approvedActivateRequests.map((request) => (
 										<NativeSelectOption key={request.id} value={request.id}>
@@ -282,7 +284,7 @@ export function ChangeRequestPanel({
 									</AlertDescription>
 								</Alert>
 							) : null}
-							<Button type="submit" disabled={activatePending}>
+							<Button disabled={activatePending} type="submit">
 								{activatePending ? <Spinner /> : null}
 								Apply activation
 							</Button>

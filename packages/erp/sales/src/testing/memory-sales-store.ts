@@ -1,4 +1,3 @@
-// biome-ignore-all lint/suspicious/useAwait: The deterministic in-memory adapter implements the asynchronous SalesStore contract.
 import { randomUUID } from "node:crypto";
 import { fail, ok, type Result } from "@afenda/errors/result";
 import {
@@ -98,6 +97,10 @@ function conflict(current: AuditStamp, expected: number): Result<never> {
 	});
 }
 
+function resolveAsync<T>(operation: () => T | PromiseLike<T>): Promise<T> {
+	return Promise.resolve().then(operation);
+}
+
 export class MemorySalesStore implements SalesStore {
 	readonly evidence: MutationEvidence[] = [];
 	private readonly idempotency = new Map<string, unknown>();
@@ -134,178 +137,192 @@ export class MemorySalesStore implements SalesStore {
 		return ok(value);
 	}
 
-	async createPriceBook(
+	createPriceBook(
 		input: Parameters<SalesStore["createPriceBook"]>[0],
 		evidence: EvidenceSeed,
 	) {
-		const replay = this.existing<PriceBook>(
-			input.organizationId,
-			input.idempotencyKey,
-		);
-		if (replay) {
-			return ok(replay);
-		}
-		if (
-			[...this.books.values()].some(
-				(v) =>
-					v.organizationId === input.organizationId &&
-					v.normalizedCode === input.normalizedCode,
-			)
-		) {
-			return fail("CONFLICT", "Price-book code already exists", {
-				reason: "SALES_DUPLICATE_CODE",
-			});
-		}
-		const value: PriceBook = {
-			...input,
-			id: priceBookIdSchema.parse(randomUUID()),
-			...initialStamp(input.actorUserId),
-		};
-		this.books.set(this.key(input.organizationId, value.id), value);
-		return this.remember(
-			input.organizationId,
-			input.idempotencyKey,
-			value,
-			evidence,
-			value.id,
-			value.version,
-		);
+		return resolveAsync(() => {
+			const replay = this.existing<PriceBook>(
+				input.organizationId,
+				input.idempotencyKey,
+			);
+			if (replay) {
+				return ok(replay);
+			}
+			if (
+				[...this.books.values()].some(
+					(v) =>
+						v.organizationId === input.organizationId &&
+						v.normalizedCode === input.normalizedCode,
+				)
+			) {
+				return fail("CONFLICT", "Price-book code already exists", {
+					reason: "SALES_DUPLICATE_CODE",
+				});
+			}
+			const value: PriceBook = {
+				...input,
+				id: priceBookIdSchema.parse(randomUUID()),
+				...initialStamp(input.actorUserId),
+			};
+			this.books.set(this.key(input.organizationId, value.id), value);
+			return this.remember(
+				input.organizationId,
+				input.idempotencyKey,
+				value,
+				evidence,
+				value.id,
+				value.version,
+			);
+		});
 	}
-	async addPriceBookEntry(
+	addPriceBookEntry(
 		input: Parameters<SalesStore["addPriceBookEntry"]>[0],
 		evidence: EvidenceSeed,
 	) {
-		const replay = this.existing<PriceBookEntry>(
-			input.organizationId,
-			input.idempotencyKey,
-		);
-		if (replay) {
-			return ok(replay);
-		}
-		const book = this.books.get(
-			this.key(input.organizationId, input.priceBookId),
-		);
-		if (!book || book.status === "archived") {
-			return fail("NOT_FOUND", "Price book not found", {
-				reason: "SALES_NOT_FOUND",
-			});
-		}
-		const value: PriceBookEntry = {
-			...input,
-			id: priceBookEntryIdSchema.parse(randomUUID()),
-			...initialStamp(input.actorUserId),
-		};
-		this.entries.set(this.key(input.organizationId, value.id), value);
-		return this.remember(
-			input.organizationId,
-			input.idempotencyKey,
-			value,
-			evidence,
-			value.id,
-			value.version,
-		);
-	}
-	async getPriceBook(input: Parameters<SalesStore["getPriceBook"]>[0]) {
-		return ok(this.books.get(this.key(input.organizationId, input.id)) ?? null);
-	}
-	async listPriceBooks(input: Parameters<SalesStore["listPriceBooks"]>[0]) {
-		const rows = [...this.books.values()]
-			.filter(
-				(value) =>
-					value.organizationId === input.organizationId &&
-					(!input.cursor || value.id > input.cursor),
-			)
-			.sort((a, b) => a.id.localeCompare(b.id));
-		const items = rows.slice(0, input.pageSize);
-		return ok({
-			items,
-			nextCursor: rows.length > input.pageSize ? items.at(-1)?.id : undefined,
+		return resolveAsync(() => {
+			const replay = this.existing<PriceBookEntry>(
+				input.organizationId,
+				input.idempotencyKey,
+			);
+			if (replay) {
+				return ok(replay);
+			}
+			const book = this.books.get(
+				this.key(input.organizationId, input.priceBookId),
+			);
+			if (!book || book.status === "archived") {
+				return fail("NOT_FOUND", "Price book not found", {
+					reason: "SALES_NOT_FOUND",
+				});
+			}
+			const value: PriceBookEntry = {
+				...input,
+				id: priceBookEntryIdSchema.parse(randomUUID()),
+				...initialStamp(input.actorUserId),
+			};
+			this.entries.set(this.key(input.organizationId, value.id), value);
+			return this.remember(
+				input.organizationId,
+				input.idempotencyKey,
+				value,
+				evidence,
+				value.id,
+				value.version,
+			);
 		});
 	}
-	async updatePriceBookStatus(
+	getPriceBook(input: Parameters<SalesStore["getPriceBook"]>[0]) {
+		return resolveAsync(() =>
+			ok(this.books.get(this.key(input.organizationId, input.id)) ?? null),
+		);
+	}
+	listPriceBooks(input: Parameters<SalesStore["listPriceBooks"]>[0]) {
+		return resolveAsync(() => {
+			const rows = [...this.books.values()]
+				.filter(
+					(value) =>
+						value.organizationId === input.organizationId &&
+						(!input.cursor || value.id > input.cursor),
+				)
+				.sort((a, b) => a.id.localeCompare(b.id));
+			const items = rows.slice(0, input.pageSize);
+			return ok({
+				items,
+				nextCursor: rows.length > input.pageSize ? items.at(-1)?.id : undefined,
+			});
+		});
+	}
+	updatePriceBookStatus(
 		input: Parameters<SalesStore["updatePriceBookStatus"]>[0],
 		evidence: EvidenceSeed,
 	) {
-		const current = this.books.get(this.key(input.organizationId, input.id));
-		if (!current) {
-			return fail("NOT_FOUND", "Price book not found");
-		}
-		if (current.version !== input.expectedVersion) {
-			return conflict(current, input.expectedVersion);
-		}
-		const value = {
-			...current,
-			status: input.status,
-			...updatedStamp(current, input.actorUserId),
-		};
-		this.books.set(this.key(input.organizationId, input.id), value);
-		this.evidence.push({
-			...evidence,
-			entityId: value.id,
-			version: value.version,
-		});
-		return ok(value);
-	}
-	async findPriceEntries(input: Parameters<SalesStore["findPriceEntries"]>[0]) {
-		const values = [...this.entries.values()].flatMap((entry) => {
-			const book = this.books.get(
-				this.key(input.organizationId, entry.priceBookId),
-			);
-			if (
-				book?.status !== "active" ||
-				book.currencyCode !== input.currencyCode ||
-				entry.organizationId !== input.organizationId ||
-				entry.itemId !== input.itemId ||
-				entry.uomId !== input.uomId ||
-				entry.validFrom > input.at ||
-				(entry.validTo && entry.validTo < input.at) ||
-				book.validFrom > input.at ||
-				(book.validTo && book.validTo < input.at)
-			) {
-				return [];
+		return resolveAsync(() => {
+			const current = this.books.get(this.key(input.organizationId, input.id));
+			if (!current) {
+				return fail("NOT_FOUND", "Price book not found");
 			}
-			return [{ book, entry }];
+			if (current.version !== input.expectedVersion) {
+				return conflict(current, input.expectedVersion);
+			}
+			const value = {
+				...current,
+				status: input.status,
+				...updatedStamp(current, input.actorUserId),
+			};
+			this.books.set(this.key(input.organizationId, input.id), value);
+			this.evidence.push({
+				...evidence,
+				entityId: value.id,
+				version: value.version,
+			});
+			return ok(value);
 		});
-		return ok(values);
+	}
+	findPriceEntries(input: Parameters<SalesStore["findPriceEntries"]>[0]) {
+		return resolveAsync(() => {
+			const values = [...this.entries.values()].flatMap((entry) => {
+				const book = this.books.get(
+					this.key(input.organizationId, entry.priceBookId),
+				);
+				if (
+					book?.status !== "active" ||
+					book.currencyCode !== input.currencyCode ||
+					entry.organizationId !== input.organizationId ||
+					entry.itemId !== input.itemId ||
+					entry.uomId !== input.uomId ||
+					entry.validFrom > input.at ||
+					(entry.validTo && entry.validTo < input.at) ||
+					book.validFrom > input.at ||
+					(book.validTo && book.validTo < input.at)
+				) {
+					return [];
+				}
+				return [{ book, entry }];
+			});
+			return ok(values);
+		});
 	}
 
-	async createQuotation(
+	createQuotation(
 		input: Parameters<SalesStore["createQuotation"]>[0],
 		evidence: EvidenceSeed,
 	) {
-		const replay = this.existing<SalesQuotation>(
-			input.organizationId,
-			input.idempotencyKey,
-		);
-		if (replay) {
-			return ok(replay);
-		}
-		if (
-			[...this.quotations.values()].some(
-				(v) =>
-					v.organizationId === input.organizationId &&
-					v.normalizedCode === input.normalizedCode &&
-					v.revision === input.revision,
-			)
-		) {
-			return fail("CONFLICT", "Quotation code and revision already exist", {
-				reason: "SALES_DUPLICATE_CODE",
-			});
-		}
-		const value: SalesQuotation = {
-			...input,
-			id: salesQuotationIdSchema.parse(randomUUID()),
-			...initialStamp(input.actorUserId),
-		};
-		this.quotations.set(this.key(input.organizationId, value.id), value);
-		return this.remember(
-			input.organizationId,
-			input.idempotencyKey,
-			value,
-			evidence,
-			value.id,
-			value.version,
-		);
+		return resolveAsync(() => {
+			const replay = this.existing<SalesQuotation>(
+				input.organizationId,
+				input.idempotencyKey,
+			);
+			if (replay) {
+				return ok(replay);
+			}
+			if (
+				[...this.quotations.values()].some(
+					(v) =>
+						v.organizationId === input.organizationId &&
+						v.normalizedCode === input.normalizedCode &&
+						v.revision === input.revision,
+				)
+			) {
+				return fail("CONFLICT", "Quotation code and revision already exist", {
+					reason: "SALES_DUPLICATE_CODE",
+				});
+			}
+			const value: SalesQuotation = {
+				...input,
+				id: salesQuotationIdSchema.parse(randomUUID()),
+				...initialStamp(input.actorUserId),
+			};
+			this.quotations.set(this.key(input.organizationId, value.id), value);
+			return this.remember(
+				input.organizationId,
+				input.idempotencyKey,
+				value,
+				evidence,
+				value.id,
+				value.version,
+			);
+		});
 	}
 	async addQuotationLine(
 		input: Parameters<SalesStore["addQuotationLine"]>[0],
@@ -364,109 +381,115 @@ export class MemorySalesStore implements SalesStore {
 			value.version,
 		);
 	}
-	async transitionQuotation(
+	transitionQuotation(
 		input: Parameters<SalesStore["transitionQuotation"]>[0],
 		evidence: EvidenceSeed,
 	) {
-		const current = this.quotations.get(
-			this.key(input.organizationId, input.id),
-		);
-		if (!current) {
-			return fail("NOT_FOUND", "Sales quotation not found");
-		}
-		if (current.version !== input.expectedVersion) {
-			return conflict(current, input.expectedVersion);
-		}
-		if (!QUOTE_TRANSITIONS[current.status].includes(input.status)) {
-			return fail("CONFLICT", "Invalid quotation lifecycle transition", {
-				reason: "SALES_INVALID_STATE",
-				from: current.status,
-				to: input.status,
+		return resolveAsync(() => {
+			const current = this.quotations.get(
+				this.key(input.organizationId, input.id),
+			);
+			if (!current) {
+				return fail("NOT_FOUND", "Sales quotation not found");
+			}
+			if (current.version !== input.expectedVersion) {
+				return conflict(current, input.expectedVersion);
+			}
+			if (!QUOTE_TRANSITIONS[current.status].includes(input.status)) {
+				return fail("CONFLICT", "Invalid quotation lifecycle transition", {
+					reason: "SALES_INVALID_STATE",
+					from: current.status,
+					to: input.status,
+				});
+			}
+			const value = {
+				...current,
+				status: input.status,
+				convertedOrderId: input.convertedOrderId ?? current.convertedOrderId,
+				...updatedStamp(current, input.actorUserId),
+			};
+			this.quotations.set(this.key(input.organizationId, input.id), value);
+			this.evidence.push({
+				...evidence,
+				entityId: value.id,
+				version: value.version,
 			});
-		}
-		const value = {
-			...current,
-			status: input.status,
-			convertedOrderId: input.convertedOrderId ?? current.convertedOrderId,
-			...updatedStamp(current, input.actorUserId),
-		};
-		this.quotations.set(this.key(input.organizationId, input.id), value);
-		this.evidence.push({
-			...evidence,
-			entityId: value.id,
-			version: value.version,
+			return ok(value);
 		});
-		return ok(value);
 	}
-	async getQuotation(input: Parameters<SalesStore["getQuotation"]>[0]) {
-		return ok(
-			this.quotations.get(this.key(input.organizationId, input.id)) ?? null,
+	getQuotation(input: Parameters<SalesStore["getQuotation"]>[0]) {
+		return resolveAsync(() =>
+			ok(this.quotations.get(this.key(input.organizationId, input.id)) ?? null),
 		);
 	}
-	async listQuotationLines(
-		input: Parameters<SalesStore["listQuotationLines"]>[0],
-	) {
-		return ok(
-			[...this.quotationLines.values()]
-				.filter(
-					(v) =>
-						v.organizationId === input.organizationId &&
-						v.quotationId === input.quotationId,
-				)
-				.sort((a, b) => a.lineNo - b.lineNo),
+	listQuotationLines(input: Parameters<SalesStore["listQuotationLines"]>[0]) {
+		return resolveAsync(() =>
+			ok(
+				[...this.quotationLines.values()]
+					.filter(
+						(v) =>
+							v.organizationId === input.organizationId &&
+							v.quotationId === input.quotationId,
+					)
+					.sort((a, b) => a.lineNo - b.lineNo),
+			),
 		);
 	}
 
-	async listQuotations(input: Parameters<SalesStore["listQuotations"]>[0]) {
-		const rows = [...this.quotations.values()]
-			.filter(
-				(value) =>
-					value.organizationId === input.organizationId &&
-					(!input.cursor || value.id > input.cursor),
-			)
-			.sort((a, b) => a.id.localeCompare(b.id));
-		const items = rows.slice(0, input.pageSize);
-		return ok({
-			items,
-			nextCursor: rows.length > input.pageSize ? items.at(-1)?.id : undefined,
+	listQuotations(input: Parameters<SalesStore["listQuotations"]>[0]) {
+		return resolveAsync(() => {
+			const rows = [...this.quotations.values()]
+				.filter(
+					(value) =>
+						value.organizationId === input.organizationId &&
+						(!input.cursor || value.id > input.cursor),
+				)
+				.sort((a, b) => a.id.localeCompare(b.id));
+			const items = rows.slice(0, input.pageSize);
+			return ok({
+				items,
+				nextCursor: rows.length > input.pageSize ? items.at(-1)?.id : undefined,
+			});
 		});
 	}
-	async createOrder(
+	createOrder(
 		input: Parameters<SalesStore["createOrder"]>[0],
 		evidence: EvidenceSeed,
 	) {
-		const replay = this.existing<SalesOrder>(
-			input.organizationId,
-			input.idempotencyKey,
-		);
-		if (replay) {
-			return ok(replay);
-		}
-		if (
-			[...this.orders.values()].some(
-				(v) =>
-					v.organizationId === input.organizationId &&
-					v.normalizedCode === input.normalizedCode,
-			)
-		) {
-			return fail("CONFLICT", "Sales-order code already exists", {
-				reason: "SALES_DUPLICATE_CODE",
-			});
-		}
-		const value: SalesOrder = {
-			...input,
-			id: salesOrderIdSchema.parse(randomUUID()),
-			...initialStamp(input.actorUserId),
-		};
-		this.orders.set(this.key(input.organizationId, value.id), value);
-		return this.remember(
-			input.organizationId,
-			input.idempotencyKey,
-			value,
-			evidence,
-			value.id,
-			value.version,
-		);
+		return resolveAsync(() => {
+			const replay = this.existing<SalesOrder>(
+				input.organizationId,
+				input.idempotencyKey,
+			);
+			if (replay) {
+				return ok(replay);
+			}
+			if (
+				[...this.orders.values()].some(
+					(v) =>
+						v.organizationId === input.organizationId &&
+						v.normalizedCode === input.normalizedCode,
+				)
+			) {
+				return fail("CONFLICT", "Sales-order code already exists", {
+					reason: "SALES_DUPLICATE_CODE",
+				});
+			}
+			const value: SalesOrder = {
+				...input,
+				id: salesOrderIdSchema.parse(randomUUID()),
+				...initialStamp(input.actorUserId),
+			};
+			this.orders.set(this.key(input.organizationId, value.id), value);
+			return this.remember(
+				input.organizationId,
+				input.idempotencyKey,
+				value,
+				evidence,
+				value.id,
+				value.version,
+			);
+		});
 	}
 	async addOrderLine(
 		input: Parameters<SalesStore["addOrderLine"]>[0],
@@ -541,42 +564,44 @@ export class MemorySalesStore implements SalesStore {
 			value.version,
 		);
 	}
-	async transitionOrder(
+	transitionOrder(
 		input: Parameters<SalesStore["transitionOrder"]>[0],
 		evidence: EvidenceSeed,
 	) {
-		const current = this.orders.get(this.key(input.organizationId, input.id));
-		if (!current) {
-			return fail("NOT_FOUND", "Sales order not found");
-		}
-		if (current.version !== input.expectedVersion) {
-			return conflict(current, input.expectedVersion);
-		}
-		if (!ORDER_TRANSITIONS[current.status].includes(input.status)) {
-			return fail("CONFLICT", "Invalid sales-order lifecycle transition", {
-				reason: "SALES_INVALID_STATE",
-				from: current.status,
-				to: input.status,
+		return resolveAsync(() => {
+			const current = this.orders.get(this.key(input.organizationId, input.id));
+			if (!current) {
+				return fail("NOT_FOUND", "Sales order not found");
+			}
+			if (current.version !== input.expectedVersion) {
+				return conflict(current, input.expectedVersion);
+			}
+			if (!ORDER_TRANSITIONS[current.status].includes(input.status)) {
+				return fail("CONFLICT", "Invalid sales-order lifecycle transition", {
+					reason: "SALES_INVALID_STATE",
+					from: current.status,
+					to: input.status,
+				});
+			}
+			const value: SalesOrder = {
+				...current,
+				status: input.status,
+				confirmedAt:
+					input.status === "confirmed" ? input.at : current.confirmedAt,
+				releasedAt: input.status === "released" ? input.at : current.releasedAt,
+				cancelledAt:
+					input.status === "cancelled" ? input.at : current.cancelledAt,
+				closedAt: input.status === "closed" ? input.at : current.closedAt,
+				...updatedStamp(current, input.actorUserId, input.at),
+			};
+			this.orders.set(this.key(input.organizationId, input.id), value);
+			this.evidence.push({
+				...evidence,
+				entityId: value.id,
+				version: value.version,
 			});
-		}
-		const value: SalesOrder = {
-			...current,
-			status: input.status,
-			confirmedAt:
-				input.status === "confirmed" ? input.at : current.confirmedAt,
-			releasedAt: input.status === "released" ? input.at : current.releasedAt,
-			cancelledAt:
-				input.status === "cancelled" ? input.at : current.cancelledAt,
-			closedAt: input.status === "closed" ? input.at : current.closedAt,
-			...updatedStamp(current, input.actorUserId, input.at),
-		};
-		this.orders.set(this.key(input.organizationId, input.id), value);
-		this.evidence.push({
-			...evidence,
-			entityId: value.id,
-			version: value.version,
+			return ok(value);
 		});
-		return ok(value);
 	}
 	async releaseOrder(
 		input: Parameters<SalesStore["releaseOrder"]>[0],
@@ -629,119 +654,129 @@ export class MemorySalesStore implements SalesStore {
 		});
 		return ok(value);
 	}
-	async getOrder(input: Parameters<SalesStore["getOrder"]>[0]) {
-		return ok(
-			this.orders.get(this.key(input.organizationId, input.id)) ?? null,
+	getOrder(input: Parameters<SalesStore["getOrder"]>[0]) {
+		return resolveAsync(() =>
+			ok(this.orders.get(this.key(input.organizationId, input.id)) ?? null),
 		);
 	}
-	async listOrders(input: Parameters<SalesStore["listOrders"]>[0]) {
-		const sorted = [...this.orders.values()]
-			.filter(
-				(v) =>
-					v.organizationId === input.organizationId &&
-					(!input.status || v.status === input.status),
-			)
-			.sort((a, b) => a.id.localeCompare(b.id));
-		const start = input.cursor
-			? Math.max(0, sorted.findIndex((v) => v.id === input.cursor) + 1)
-			: 0;
-		const items = sorted.slice(start, start + input.pageSize);
-		const nextCursor =
-			start + input.pageSize < sorted.length ? items.at(-1)?.id : undefined;
-		return ok(nextCursor ? { items, nextCursor } : { items });
-	}
-	async listOrderLines(input: Parameters<SalesStore["listOrderLines"]>[0]) {
-		return ok(
-			[...this.orderLines.values()]
+	listOrders(input: Parameters<SalesStore["listOrders"]>[0]) {
+		return resolveAsync(() => {
+			const sorted = [...this.orders.values()]
 				.filter(
 					(v) =>
 						v.organizationId === input.organizationId &&
-						v.orderId === input.orderId,
+						(!input.status || v.status === input.status),
 				)
-				.sort((a, b) => a.lineNo - b.lineNo),
-		);
+				.sort((a, b) => a.id.localeCompare(b.id));
+			const start = input.cursor
+				? Math.max(0, sorted.findIndex((v) => v.id === input.cursor) + 1)
+				: 0;
+			const items = sorted.slice(start, start + input.pageSize);
+			const nextCursor =
+				start + input.pageSize < sorted.length ? items.at(-1)?.id : undefined;
+			return ok(nextCursor ? { items, nextCursor } : { items });
+		});
 	}
-	async listOrderSchedules(
-		input: Parameters<SalesStore["listOrderSchedules"]>[0],
-	) {
-		return ok(
-			[...this.schedules.values()].filter(
-				(v) =>
-					v.organizationId === input.organizationId &&
-					v.orderId === input.orderId,
+	listOrderLines(input: Parameters<SalesStore["listOrderLines"]>[0]) {
+		return resolveAsync(() =>
+			ok(
+				[...this.orderLines.values()]
+					.filter(
+						(v) =>
+							v.organizationId === input.organizationId &&
+							v.orderId === input.orderId,
+					)
+					.sort((a, b) => a.lineNo - b.lineNo),
 			),
 		);
 	}
-	async placeHold(
+	listOrderSchedules(input: Parameters<SalesStore["listOrderSchedules"]>[0]) {
+		return resolveAsync(() =>
+			ok(
+				[...this.schedules.values()].filter(
+					(v) =>
+						v.organizationId === input.organizationId &&
+						v.orderId === input.orderId,
+				),
+			),
+		);
+	}
+	placeHold(
 		input: Parameters<SalesStore["placeHold"]>[0],
 		evidence: EvidenceSeed,
 	) {
-		const replay = this.existing<SalesHold>(
-			input.organizationId,
-			input.idempotencyKey,
-		);
-		if (replay) {
-			return ok(replay);
-		}
-		const order = this.orders.get(
-			this.key(input.organizationId, input.orderId),
-		);
-		if (!order) {
-			return fail("NOT_FOUND", "Sales order not found");
-		}
-		const value: SalesHold = {
-			id: salesHoldIdSchema.parse(randomUUID()),
-			organizationId: input.organizationId,
-			orderId: input.orderId,
-			kind: input.kind,
-			reason: input.reason,
-			status: "open",
-			...initialStamp(input.actorUserId),
-		};
-		this.holds.set(this.key(input.organizationId, value.id), value);
-		return this.remember(
-			input.organizationId,
-			input.idempotencyKey,
-			value,
-			evidence,
-			value.id,
-			value.version,
-		);
+		return resolveAsync(() => {
+			const replay = this.existing<SalesHold>(
+				input.organizationId,
+				input.idempotencyKey,
+			);
+			if (replay) {
+				return ok(replay);
+			}
+			const order = this.orders.get(
+				this.key(input.organizationId, input.orderId),
+			);
+			if (!order) {
+				return fail("NOT_FOUND", "Sales order not found");
+			}
+			const value: SalesHold = {
+				id: salesHoldIdSchema.parse(randomUUID()),
+				organizationId: input.organizationId,
+				orderId: input.orderId,
+				kind: input.kind,
+				reason: input.reason,
+				status: "open",
+				...initialStamp(input.actorUserId),
+			};
+			this.holds.set(this.key(input.organizationId, value.id), value);
+			return this.remember(
+				input.organizationId,
+				input.idempotencyKey,
+				value,
+				evidence,
+				value.id,
+				value.version,
+			);
+		});
 	}
-	async resolveHold(
+	resolveHold(
 		input: Parameters<SalesStore["resolveHold"]>[0],
 		evidence: EvidenceSeed,
 	) {
-		const current = this.holds.get(this.key(input.organizationId, input.id));
-		if (!current) {
-			return fail("NOT_FOUND", "Sales-order hold not found");
-		}
-		if (current.status === "resolved") {
-			return ok(current);
-		}
-		const now = new Date();
-		const value: SalesHold = {
-			...current,
-			status: "resolved",
-			resolvedAt: now,
-			resolvedBy: input.actorUserId,
-			...updatedStamp(current, input.actorUserId, now),
-		};
-		this.holds.set(this.key(input.organizationId, input.id), value);
-		this.evidence.push({
-			...evidence,
-			entityId: value.id,
-			version: value.version,
+		return resolveAsync(() => {
+			const current = this.holds.get(this.key(input.organizationId, input.id));
+			if (!current) {
+				return fail("NOT_FOUND", "Sales-order hold not found");
+			}
+			if (current.status === "resolved") {
+				return ok(current);
+			}
+			const now = new Date();
+			const value: SalesHold = {
+				...current,
+				status: "resolved",
+				resolvedAt: now,
+				resolvedBy: input.actorUserId,
+				...updatedStamp(current, input.actorUserId, now),
+			};
+			this.holds.set(this.key(input.organizationId, input.id), value);
+			this.evidence.push({
+				...evidence,
+				entityId: value.id,
+				version: value.version,
+			});
+			return ok(value);
 		});
-		return ok(value);
 	}
-	async listOpenHolds(input: Parameters<SalesStore["listOpenHolds"]>[0]) {
-		return ok(
-			[...this.holds.values()].filter(
-				(v) =>
-					v.organizationId === input.organizationId &&
-					v.orderId === input.orderId &&
-					v.status === "open",
+	listOpenHolds(input: Parameters<SalesStore["listOpenHolds"]>[0]) {
+		return resolveAsync(() =>
+			ok(
+				[...this.holds.values()].filter(
+					(v) =>
+						v.organizationId === input.organizationId &&
+						v.orderId === input.orderId &&
+						v.status === "open",
+				),
 			),
 		);
 	}
@@ -813,153 +848,165 @@ export class MemorySalesStore implements SalesStore {
 		return ok(value);
 	}
 
-	async createReturnAuthorization(
+	createReturnAuthorization(
 		input: Parameters<SalesStore["createReturnAuthorization"]>[0],
 		evidence: EvidenceSeed,
 	) {
-		const replay = this.existing<ReturnAuthorization>(
-			input.organizationId,
-			input.idempotencyKey,
-		);
-		if (replay) {
-			return ok(replay);
-		}
-		if (!this.orders.has(this.key(input.organizationId, input.orderId))) {
-			return fail("NOT_FOUND", "Sales order not found");
-		}
-		const value: ReturnAuthorization = {
-			...input,
-			id: returnAuthorizationIdSchema.parse(randomUUID()),
-			...initialStamp(input.actorUserId),
-		};
-		this.returns.set(this.key(input.organizationId, value.id), value);
-		return this.remember(
-			input.organizationId,
-			input.idempotencyKey,
-			value,
-			evidence,
-			value.id,
-			value.version,
-		);
+		return resolveAsync(() => {
+			const replay = this.existing<ReturnAuthorization>(
+				input.organizationId,
+				input.idempotencyKey,
+			);
+			if (replay) {
+				return ok(replay);
+			}
+			if (!this.orders.has(this.key(input.organizationId, input.orderId))) {
+				return fail("NOT_FOUND", "Sales order not found");
+			}
+			const value: ReturnAuthorization = {
+				...input,
+				id: returnAuthorizationIdSchema.parse(randomUUID()),
+				...initialStamp(input.actorUserId),
+			};
+			this.returns.set(this.key(input.organizationId, value.id), value);
+			return this.remember(
+				input.organizationId,
+				input.idempotencyKey,
+				value,
+				evidence,
+				value.id,
+				value.version,
+			);
+		});
 	}
-	async addReturnLine(
+	addReturnLine(
 		input: Parameters<SalesStore["addReturnLine"]>[0],
 		evidence: EvidenceSeed,
 	) {
-		const replay = this.existing<ReturnAuthorizationLine>(
-			input.organizationId,
-			input.idempotencyKey,
-		);
-		if (replay) {
-			return ok(replay);
-		}
-		const parent = this.returns.get(
-			this.key(input.organizationId, input.returnAuthorizationId),
-		);
-		if (!parent) {
-			return fail("NOT_FOUND", "Return authorization was not found", {
-				reason: "SALES_NOT_FOUND",
+		return resolveAsync(() => {
+			const replay = this.existing<ReturnAuthorizationLine>(
+				input.organizationId,
+				input.idempotencyKey,
+			);
+			if (replay) {
+				return ok(replay);
+			}
+			const parent = this.returns.get(
+				this.key(input.organizationId, input.returnAuthorizationId),
+			);
+			if (!parent) {
+				return fail("NOT_FOUND", "Return authorization was not found", {
+					reason: "SALES_NOT_FOUND",
+				});
+			}
+			if (parent.version !== input.expectedVersion) {
+				return conflict(parent, input.expectedVersion);
+			}
+			if (parent?.status !== "draft") {
+				return fail("CONFLICT", "Return authorization is not editable", {
+					reason: "SALES_INVALID_STATE",
+				});
+			}
+			const line = this.orderLines.get(
+				this.key(input.organizationId, input.orderLineId),
+			);
+			if (
+				!line ||
+				line.orderId !== parent.orderId ||
+				Number(input.quantity) > Number(line.fulfilledQuantity)
+			) {
+				return fail("CONFLICT", "Return quantity exceeds fulfilled quantity", {
+					reason: "SALES_INVALID_STATE",
+				});
+			}
+			const value: ReturnAuthorizationLine = {
+				...input,
+				id: returnAuthorizationLineIdSchema.parse(randomUUID()),
+				...initialStamp(input.actorUserId),
+			};
+			this.returnLines.set(this.key(input.organizationId, value.id), value);
+			this.returns.set(this.key(input.organizationId, parent.id), {
+				...parent,
+				...updatedStamp(parent, input.actorUserId),
 			});
-		}
-		if (parent.version !== input.expectedVersion) {
-			return conflict(parent, input.expectedVersion);
-		}
-		if (parent?.status !== "draft") {
-			return fail("CONFLICT", "Return authorization is not editable", {
-				reason: "SALES_INVALID_STATE",
-			});
-		}
-		const line = this.orderLines.get(
-			this.key(input.organizationId, input.orderLineId),
-		);
-		if (
-			!line ||
-			line.orderId !== parent.orderId ||
-			Number(input.quantity) > Number(line.fulfilledQuantity)
-		) {
-			return fail("CONFLICT", "Return quantity exceeds fulfilled quantity", {
-				reason: "SALES_INVALID_STATE",
-			});
-		}
-		const value: ReturnAuthorizationLine = {
-			...input,
-			id: returnAuthorizationLineIdSchema.parse(randomUUID()),
-			...initialStamp(input.actorUserId),
-		};
-		this.returnLines.set(this.key(input.organizationId, value.id), value);
-		this.returns.set(this.key(input.organizationId, parent.id), {
-			...parent,
-			...updatedStamp(parent, input.actorUserId),
+			return this.remember(
+				input.organizationId,
+				input.idempotencyKey,
+				value,
+				evidence,
+				value.id,
+				value.version,
+			);
 		});
-		return this.remember(
-			input.organizationId,
-			input.idempotencyKey,
-			value,
-			evidence,
-			value.id,
-			value.version,
-		);
 	}
-	async getReturnAuthorization(
+	getReturnAuthorization(
 		input: Parameters<SalesStore["getReturnAuthorization"]>[0],
 	) {
-		return ok(
-			this.returns.get(this.key(input.organizationId, input.id)) ?? null,
+		return resolveAsync(() =>
+			ok(this.returns.get(this.key(input.organizationId, input.id)) ?? null),
 		);
 	}
-	async listReturnAuthorizations(
+	listReturnAuthorizations(
 		input: Parameters<SalesStore["listReturnAuthorizations"]>[0],
 	) {
-		const rows = [...this.returns.values()]
-			.filter(
-				(value) =>
-					value.organizationId === input.organizationId &&
-					(!input.cursor || value.id > input.cursor),
-			)
-			.sort((a, b) => a.id.localeCompare(b.id));
-		const items = rows.slice(0, input.pageSize);
-		return ok({
-			items,
-			nextCursor: rows.length > input.pageSize ? items.at(-1)?.id : undefined,
+		return resolveAsync(() => {
+			const rows = [...this.returns.values()]
+				.filter(
+					(value) =>
+						value.organizationId === input.organizationId &&
+						(!input.cursor || value.id > input.cursor),
+				)
+				.sort((a, b) => a.id.localeCompare(b.id));
+			const items = rows.slice(0, input.pageSize);
+			return ok({
+				items,
+				nextCursor: rows.length > input.pageSize ? items.at(-1)?.id : undefined,
+			});
 		});
 	}
-	async listReturnLines(input: Parameters<SalesStore["listReturnLines"]>[0]) {
-		return ok(
-			[...this.returnLines.values()].filter(
-				(value) =>
-					value.organizationId === input.organizationId &&
-					value.returnAuthorizationId === input.returnAuthorizationId,
+	listReturnLines(input: Parameters<SalesStore["listReturnLines"]>[0]) {
+		return resolveAsync(() =>
+			ok(
+				[...this.returnLines.values()].filter(
+					(value) =>
+						value.organizationId === input.organizationId &&
+						value.returnAuthorizationId === input.returnAuthorizationId,
+				),
 			),
 		);
 	}
-	async transitionReturn(
+	transitionReturn(
 		input: Parameters<SalesStore["transitionReturn"]>[0],
 		evidence: EvidenceSeed,
 	) {
-		const current = this.returns.get(this.key(input.organizationId, input.id));
-		if (!current) {
-			return fail("NOT_FOUND", "Return authorization not found");
-		}
-		if (current.version !== input.expectedVersion) {
-			return conflict(current, input.expectedVersion);
-		}
-		if (!RETURN_TRANSITIONS[current.status].includes(input.status)) {
-			return fail("CONFLICT", "Invalid return lifecycle transition", {
-				reason: "SALES_INVALID_STATE",
+		return resolveAsync(() => {
+			const current = this.returns.get(
+				this.key(input.organizationId, input.id),
+			);
+			if (!current) {
+				return fail("NOT_FOUND", "Return authorization not found");
+			}
+			if (current.version !== input.expectedVersion) {
+				return conflict(current, input.expectedVersion);
+			}
+			if (!RETURN_TRANSITIONS[current.status].includes(input.status)) {
+				return fail("CONFLICT", "Invalid return lifecycle transition", {
+					reason: "SALES_INVALID_STATE",
+				});
+			}
+			const value = {
+				...current,
+				status: input.status,
+				...updatedStamp(current, input.actorUserId),
+			};
+			this.returns.set(this.key(input.organizationId, input.id), value);
+			this.evidence.push({
+				...evidence,
+				entityId: value.id,
+				version: value.version,
 			});
-		}
-		const value = {
-			...current,
-			status: input.status,
-			...updatedStamp(current, input.actorUserId),
-		};
-		this.returns.set(this.key(input.organizationId, input.id), value);
-		this.evidence.push({
-			...evidence,
-			entityId: value.id,
-			version: value.version,
+			return ok(value);
 		});
-		return ok(value);
 	}
 
 	private async orderTotals(org: string, orderId: string, taxTotal: string) {

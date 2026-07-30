@@ -2,7 +2,7 @@
 
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
-import * as React from "react";
+import { useCallback, useState } from "react";
 import type { DateRange } from "react-day-picker";
 
 import { cn } from "../../lib/utils";
@@ -10,16 +10,16 @@ import { Button } from "./button";
 import { Calendar } from "./calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "./popover";
 
-export type DatePickerProps = {
-	value?: Date;
-	onChange?: (date: Date | undefined) => void;
-	placeholder?: string;
+export interface DatePickerProps {
+	"aria-describedby"?: string;
+	"aria-invalid"?: boolean | "true" | "false";
+	className?: string;
 	disabled?: boolean;
 	id?: string;
-	className?: string;
-	"aria-invalid"?: boolean | "true" | "false";
-	"aria-describedby"?: string;
-};
+	onChange?: (date: Date | undefined) => void;
+	placeholder?: string;
+	value?: Date;
+}
 
 function DatePicker({
 	value,
@@ -31,39 +31,39 @@ function DatePicker({
 	"aria-invalid": ariaInvalid,
 	"aria-describedby": ariaDescribedBy,
 }: DatePickerProps) {
-	const [open, setOpen] = React.useState(false);
+	const [open, setOpen] = useState(false);
+	const handleSelect = useCallback(
+		(date: Date | undefined) => {
+			onChange?.(date);
+			setOpen(false);
+		},
+		[onChange],
+	);
 
 	return (
-		<Popover open={open} onOpenChange={setOpen}>
+		<Popover onOpenChange={setOpen} open={open}>
 			<PopoverTrigger asChild>
 				<Button
-					id={id}
-					type="button"
-					variant="outline"
-					disabled={disabled}
-					aria-invalid={ariaInvalid}
 					aria-describedby={ariaDescribedBy}
 					aria-expanded={open}
 					aria-haspopup="dialog"
+					aria-invalid={ariaInvalid}
 					className={cn(
 						"h-(--control-height) w-full justify-start text-left font-normal",
 						!value && "text-muted-foreground",
 						className,
 					)}
+					disabled={disabled}
+					id={id}
+					type="button"
+					variant="outline"
 				>
-					<CalendarIcon className="mr-2 size-4" aria-hidden="true" />
-					{value ? format(value, "PPP") : placeholder}
+					<CalendarIcon aria-hidden="true" className="mr-2 size-4" />
+					{value ? format(value, "PPP") : String(placeholder ?? "")}
 				</Button>
 			</PopoverTrigger>
-			<PopoverContent className="w-auto p-0" align="start">
-				<Calendar
-					mode="single"
-					selected={value}
-					onSelect={(date) => {
-						onChange?.(date);
-						setOpen(false);
-					}}
-				/>
+			<PopoverContent align="start" className="w-auto p-0">
+				<Calendar mode="single" onSelect={handleSelect} selected={value} />
 			</PopoverContent>
 		</Popover>
 	);
@@ -71,16 +71,16 @@ function DatePicker({
 
 export type DateRangeValue = DateRange;
 
-export type DateRangePickerProps = {
-	value?: DateRangeValue;
-	onChange?: (range: DateRangeValue | undefined) => void;
-	placeholder?: string;
+export interface DateRangePickerProps {
+	"aria-describedby"?: string;
+	"aria-invalid"?: boolean | "true" | "false";
+	className?: string;
 	disabled?: boolean;
 	id?: string;
-	className?: string;
-	"aria-invalid"?: boolean | "true" | "false";
-	"aria-describedby"?: string;
-};
+	onChange?: (range: DateRangeValue | undefined) => void;
+	placeholder?: string;
+	value?: DateRangeValue;
+}
 
 function DateRangePicker({
 	value,
@@ -92,48 +92,52 @@ function DateRangePicker({
 	"aria-invalid": ariaInvalid,
 	"aria-describedby": ariaDescribedBy,
 }: DateRangePickerProps) {
-	const [open, setOpen] = React.useState(false);
+	const [open, setOpen] = useState(false);
+	const handleSelect = useCallback(
+		(range: DateRangeValue | undefined) => {
+			onChange?.(range);
+			if (range?.from && range.to) {
+				setOpen(false);
+			}
+		},
+		[onChange],
+	);
 
-	const label =
-		value?.from && value?.to
-			? `${format(value.from, "LLL dd, y")} – ${format(value.to, "LLL dd, y")}`
-			: value?.from
-				? format(value.from, "LLL dd, y")
-				: placeholder;
+	let label = placeholder;
+	if (value?.from && value.to) {
+		label = `${format(value.from, "LLL dd, y")} – ${format(value.to, "LLL dd, y")}`;
+	} else if (value?.from) {
+		label = format(value.from, "LLL dd, y");
+	}
 
 	return (
-		<Popover open={open} onOpenChange={setOpen}>
+		<Popover onOpenChange={setOpen} open={open}>
 			<PopoverTrigger asChild>
 				<Button
-					id={id}
-					type="button"
-					variant="outline"
-					disabled={disabled}
-					aria-invalid={ariaInvalid}
 					aria-describedby={ariaDescribedBy}
 					aria-expanded={open}
 					aria-haspopup="dialog"
+					aria-invalid={ariaInvalid}
 					className={cn(
 						"h-(--control-height) w-full justify-start text-left font-normal",
 						!value?.from && "text-muted-foreground",
 						className,
 					)}
+					disabled={disabled}
+					id={id}
+					type="button"
+					variant="outline"
 				>
-					<CalendarIcon className="mr-2 size-4" aria-hidden="true" />
+					<CalendarIcon aria-hidden="true" className="mr-2 size-4" />
 					{label}
 				</Button>
 			</PopoverTrigger>
-			<PopoverContent className="w-auto p-0" align="start">
+			<PopoverContent align="start" className="w-auto p-0">
 				<Calendar
 					mode="range"
-					selected={value}
-					onSelect={(range) => {
-						onChange?.(range);
-						if (range?.from && range?.to) {
-							setOpen(false);
-						}
-					}}
 					numberOfMonths={2}
+					onSelect={handleSelect}
+					selected={value}
 				/>
 			</PopoverContent>
 		</Popover>

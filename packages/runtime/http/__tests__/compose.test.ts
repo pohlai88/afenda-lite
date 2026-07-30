@@ -26,8 +26,8 @@ describe("@afenda/http compose", () => {
 		);
 
 		const request = new Request("http://local.test/api");
-		const ctx = createHttpContext(request);
-		const response = await handler(request, ctx);
+		const context = createHttpContext(request);
+		const response = await handler(request, context);
 
 		expect(await response.text()).toBe("ok");
 		expect(order).toEqual([

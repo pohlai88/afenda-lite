@@ -1,14 +1,14 @@
 /* biome-ignore-all lint/complexity/noImportantStyles: screenshot normalization must override component focus styles. */
 html:not([data-preserve-focus="true"]) *:focus,
 html:not([data-preserve-focus="true"]) *:focus-visible {
-	outline: none !important;
 	--tw-ring-shadow: 0 0 transparent !important;
+	outline: none !important;
 }
 
 [data-visual-test="true"] *,
 [data-visual-test="true"] *::before,
 [data-visual-test="true"] *::after {
-	animation-duration: 0ms !important;
 	caret-color: transparent !important;
 	transition-duration: 0ms !important;
+	animation-duration: 0ms !important;
 }

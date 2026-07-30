@@ -9,7 +9,7 @@ export const documentRequirementApplicabilitySchema = z.discriminatedUnion(
 		z
 			.object({
 				kind: z.literal("employee_ids"),
-				employeeIds: z.array(humanResourcesEmployeeIdSchema).min(1).max(1_000),
+				employeeIds: z.array(humanResourcesEmployeeIdSchema).min(1).max(1000),
 			})
 			.strict()
 			.superRefine((value, context) => {

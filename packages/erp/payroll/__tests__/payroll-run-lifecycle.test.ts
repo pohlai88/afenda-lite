@@ -72,8 +72,9 @@ async function seedOpenPeriod(
 		},
 		options,
 	);
-	expect(calendar.ok).toBe(true);
-	if (!calendar.ok) throw new Error(calendar.message);
+	if (!calendar.ok) {
+		throw new Error(calendar.message);
+	}
 
 	const payGroup = await createPayrollPayGroup(
 		{
@@ -86,8 +87,9 @@ async function seedOpenPeriod(
 		},
 		options,
 	);
-	expect(payGroup.ok).toBe(true);
-	if (!payGroup.ok) throw new Error(payGroup.message);
+	if (!payGroup.ok) {
+		throw new Error(payGroup.message);
+	}
 
 	const period = await createPayrollPeriod(
 		{
@@ -100,8 +102,9 @@ async function seedOpenPeriod(
 		},
 		options,
 	);
-	expect(period.ok).toBe(true);
-	if (!period.ok) throw new Error(period.message);
+	if (!period.ok) {
+		throw new Error(period.message);
+	}
 
 	return {
 		store,
@@ -135,7 +138,9 @@ describe("payroll run lifecycle commands", () => {
 			options,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 		expect(created.data.status).toBe("draft");
 
 		const calculated = await calculatePayrollRun(
@@ -147,7 +152,9 @@ describe("payroll run lifecycle commands", () => {
 			options,
 		);
 		expect(calculated.ok).toBe(true);
-		if (!calculated.ok) return;
+		if (!calculated.ok) {
+			return;
+		}
 		expect(calculated.data.status).toBe("calculated");
 		expect(calculated.data.calculationSnapshotHash).toBe("hash-happy-path");
 
@@ -160,7 +167,9 @@ describe("payroll run lifecycle commands", () => {
 			options,
 		);
 		expect(finalized.ok).toBe(true);
-		if (!finalized.ok) return;
+		if (!finalized.ok) {
+			return;
+		}
 		expect(finalized.data.status).toBe("finalized");
 		expect(finalized.data.finalizedBy).toBe(actorUserId);
 
@@ -174,7 +183,9 @@ describe("payroll run lifecycle commands", () => {
 			options,
 		);
 		expect(reversed.ok).toBe(true);
-		if (!reversed.ok) return;
+		if (!reversed.ok) {
+			return;
+		}
 		expect(reversed.data.status).toBe("reversed");
 	});
 
@@ -199,7 +210,9 @@ describe("payroll run lifecycle commands", () => {
 			options,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const blockedFinalize = await finalizePayrollRun(
 			{
@@ -210,7 +223,9 @@ describe("payroll run lifecycle commands", () => {
 			options,
 		);
 		expect(blockedFinalize.ok).toBe(false);
-		if (blockedFinalize.ok) return;
+		if (blockedFinalize.ok) {
+			return;
+		}
 		expect(blockedFinalize.details?.payrollCode).toBe("payroll.invalid_state");
 	});
 
@@ -218,7 +233,7 @@ describe("payroll run lifecycle commands", () => {
 		const organizationId = "org-run-lifecycle-idem";
 		const actorUserId = "user-run-lifecycle-idem";
 		const seeded = await seedOpenPeriod(organizationId, actorUserId, "idem");
-		const options = seeded.options;
+		const { options } = seeded;
 		const createInput = {
 			...baseContext(organizationId, actorUserId),
 			payGroupId: seeded.payGroup.id,
@@ -232,7 +247,9 @@ describe("payroll run lifecycle commands", () => {
 		const second = await createPayrollRun(createInput, options);
 		expect(first.ok).toBe(true);
 		expect(second.ok).toBe(true);
-		if (!first.ok || !second.ok) return;
+		if (!(first.ok && second.ok)) {
+			return;
+		}
 		expect(second.data.id).toBe(first.data.id);
 
 		const conflict = await createPayrollRun(
@@ -243,7 +260,9 @@ describe("payroll run lifecycle commands", () => {
 			options,
 		);
 		expect(conflict.ok).toBe(false);
-		if (conflict.ok) return;
+		if (conflict.ok) {
+			return;
+		}
 		expect(conflict.details?.payrollCode).toBe("payroll.conflict");
 	});
 
@@ -268,7 +287,9 @@ describe("payroll run lifecycle commands", () => {
 			options,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const staleCalculate = await calculatePayrollRun(
 			{
@@ -279,7 +300,9 @@ describe("payroll run lifecycle commands", () => {
 			options,
 		);
 		expect(staleCalculate.ok).toBe(false);
-		if (staleCalculate.ok) return;
+		if (staleCalculate.ok) {
+			return;
+		}
 		expect(staleCalculate.details?.payrollCode).toBe("payroll.stale_version");
 
 		const calculated = await calculatePayrollRun(
@@ -291,7 +314,9 @@ describe("payroll run lifecycle commands", () => {
 			options,
 		);
 		expect(calculated.ok).toBe(true);
-		if (!calculated.ok) return;
+		if (!calculated.ok) {
+			return;
+		}
 
 		const staleFinalize = await finalizePayrollRun(
 			{
@@ -302,7 +327,9 @@ describe("payroll run lifecycle commands", () => {
 			options,
 		);
 		expect(staleFinalize.ok).toBe(false);
-		if (staleFinalize.ok) return;
+		if (staleFinalize.ok) {
+			return;
+		}
 		expect(staleFinalize.details?.payrollCode).toBe("payroll.stale_version");
 	});
 
@@ -331,7 +358,9 @@ describe("payroll run lifecycle commands", () => {
 			options,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const input = {
 			...baseContext(organizationId, actorUserId),
@@ -378,7 +407,9 @@ describe("payroll run lifecycle commands", () => {
 			options,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const calculated = await calculatePayrollRun(
 			{
@@ -389,7 +420,9 @@ describe("payroll run lifecycle commands", () => {
 			options,
 		);
 		expect(calculated.ok).toBe(true);
-		if (!calculated.ok) return;
+		if (!calculated.ok) {
+			return;
+		}
 
 		const input = {
 			...baseContext(organizationId, actorUserId),
@@ -432,7 +465,9 @@ describe("payroll run lifecycle commands", () => {
 			options,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const calculated = await calculatePayrollRun(
 			{
@@ -443,7 +478,9 @@ describe("payroll run lifecycle commands", () => {
 			options,
 		);
 		expect(calculated.ok).toBe(true);
-		if (!calculated.ok) return;
+		if (!calculated.ok) {
+			return;
+		}
 
 		const blocking = await recordPayrollException(
 			{
@@ -467,7 +504,9 @@ describe("payroll run lifecycle commands", () => {
 			options,
 		);
 		expect(blocked.ok).toBe(false);
-		if (blocked.ok) return;
+		if (blocked.ok) {
+			return;
+		}
 		expect(blocked.details?.payrollCode).toBe("payroll.invalid_state");
 	});
 
@@ -501,7 +540,9 @@ describe("payroll run lifecycle commands", () => {
 			options,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const calculated = await calculatePayrollRun(
 			{
@@ -512,7 +553,9 @@ describe("payroll run lifecycle commands", () => {
 			options,
 		);
 		expect(calculated.ok).toBe(true);
-		if (!calculated.ok) return;
+		if (!calculated.ok) {
+			return;
+		}
 
 		const exceptions = await listPayrollExceptionsForRun(
 			{
@@ -523,7 +566,9 @@ describe("payroll run lifecycle commands", () => {
 			options,
 		);
 		expect(exceptions.ok).toBe(true);
-		if (!exceptions.ok) return;
+		if (!exceptions.ok) {
+			return;
+		}
 		expect(exceptions.data).toHaveLength(1);
 
 		const finalized = await finalizePayrollRun(
@@ -541,7 +586,7 @@ describe("payroll run lifecycle commands", () => {
 		const organizationId = "org-run-lifecycle-no-calc";
 		const actorUserId = "user-run-lifecycle-no-calc";
 		const seeded = await seedOpenPeriod(organizationId, actorUserId, "no-calc");
-		const options = seeded.options;
+		const { options } = seeded;
 
 		const created = await createPayrollRun(
 			{
@@ -555,7 +600,9 @@ describe("payroll run lifecycle commands", () => {
 			options,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const blocked = await calculatePayrollRun(
 			{
@@ -566,7 +613,9 @@ describe("payroll run lifecycle commands", () => {
 			options,
 		);
 		expect(blocked.ok).toBe(false);
-		if (blocked.ok) return;
+		if (blocked.ok) {
+			return;
+		}
 		expect(blocked.details?.payrollCode).toBe("payroll.validation");
 	});
 
@@ -604,7 +653,9 @@ describe("payroll run lifecycle commands", () => {
 			options,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const failed = await calculatePayrollRun(
 			{
@@ -615,7 +666,9 @@ describe("payroll run lifecycle commands", () => {
 			options,
 		);
 		expect(failed.ok).toBe(true);
-		if (!failed.ok) return;
+		if (!failed.ok) {
+			return;
+		}
 		expect(failed.data.status).toBe("failed");
 	});
 
@@ -640,7 +693,9 @@ describe("payroll run lifecycle commands", () => {
 			options,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const calculated = await calculatePayrollRun(
 			{
@@ -651,7 +706,9 @@ describe("payroll run lifecycle commands", () => {
 			options,
 		);
 		expect(calculated.ok).toBe(true);
-		if (!calculated.ok) return;
+		if (!calculated.ok) {
+			return;
+		}
 
 		const loaded = await getPayrollRun(
 			{
@@ -662,7 +719,9 @@ describe("payroll run lifecycle commands", () => {
 			options,
 		);
 		expect(loaded.ok).toBe(true);
-		if (!loaded.ok) return;
+		if (!loaded.ok) {
+			return;
+		}
 		expect(loaded.data.status).toBe("calculated");
 	});
 });

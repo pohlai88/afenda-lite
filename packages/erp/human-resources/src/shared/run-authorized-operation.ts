@@ -27,17 +27,17 @@ import {
 
 import { resolveManifestOperationPermission } from "./manifest-permission";
 
-export { resolveManifestOperationPermission };
+export { resolveManifestOperationPermission } from "./manifest-permission";
 
 const AUTHORIZATION_DENIED_MESSAGE =
 	"Human Resources authorization denied" as const;
 
-export type HumanResourcesAuthorizedActorInput = {
-	organizationId: string;
+export interface HumanResourcesAuthorizedActorInput {
+	actorEmployeeId?: string | undefined;
 	actorUserId: string;
 	correlationId?: string | undefined;
-	actorEmployeeId?: string | undefined;
-};
+	organizationId: string;
+}
 
 async function enrichActorFromIdentityResolver(
 	actor: HumanResourcesActorContext,
@@ -46,7 +46,7 @@ async function enrichActorFromIdentityResolver(
 	if (actor.actorEmployeeId !== undefined) {
 		return actor;
 	}
-	const identityResolver = options.identityResolver;
+	const { identityResolver } = options;
 	if (identityResolver === undefined) {
 		return actor;
 	}
@@ -68,28 +68,27 @@ export interface RunHumanResourcesOperationOptions<
 	Output,
 	Projected = Output,
 > {
+	execute: () => Promise<Result<Output>>;
+	input: Input;
 	operationId: HumanResourcesOperationId;
 	operationKind: HumanResourcesOperationKind;
-	requiredPermission: HumanResourcesPermission;
-	input: Input;
 	options: HumanResourcesCommandOptions;
-
-	resolveResource?:
-		| ((
-				input: Input,
-				options: HumanResourcesCommandOptions,
-		  ) => Promise<HumanResourcesResourceContext | undefined>)
-		| undefined;
-
-	requestedFields?: readonly string[] | undefined;
-
-	execute: () => Promise<Result<Output>>;
 
 	project?:
 		| ((
 				value: Output,
 				projection: HumanResourcesFieldProjection | undefined,
 		  ) => Projected)
+		| undefined;
+
+	requestedFields?: readonly string[] | undefined;
+	requiredPermission: HumanResourcesPermission;
+
+	resolveResource?:
+		| ((
+				input: Input,
+				options: HumanResourcesCommandOptions,
+		  ) => Promise<HumanResourcesResourceContext | undefined>)
 		| undefined;
 }
 
@@ -156,7 +155,7 @@ function readProperty(value: object, key: PropertyKey): unknown {
 	try {
 		return Reflect.get(value, key);
 	} catch {
-		return undefined;
+		// A throwing accessor is omitted from the authorized projection.
 	}
 }
 
@@ -322,7 +321,7 @@ export async function runDomainAuthorizedOperation<
 			denyCode: "permission_denied",
 			policyId: "hr.manifest-permission",
 		};
-		return observeAuthorizedOperationResult({
+		return await observeAuthorizedOperationResult({
 			operationId: params.operationId,
 			operationKind: params.operationKind,
 			observability: params.options.observability,
@@ -332,7 +331,7 @@ export async function runDomainAuthorizedOperation<
 		});
 	}
 
-	const parityResourceKind = params.parityResourceKind;
+	const { parityResourceKind } = params;
 	const resolveResource =
 		params.resolveResource ??
 		(parityResourceKind === undefined
@@ -343,7 +342,7 @@ export async function runDomainAuthorizedOperation<
 						kind: parityResourceKind,
 					}));
 
-	return runAuthorizedHumanResourcesOperation({
+	return await runAuthorizedHumanResourcesOperation({
 		operationId: params.operationId,
 		operationKind: params.operationKind,
 		requiredPermission,

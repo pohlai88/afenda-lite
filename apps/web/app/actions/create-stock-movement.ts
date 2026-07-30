@@ -18,9 +18,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type CreateStockMovementActionData = {
+export interface CreateStockMovementActionData {
 	movement: StockMovement;
-};
+}
 
 export type CreateStockMovementActionState =
 	ActionResult<CreateStockMovementActionData> | null;

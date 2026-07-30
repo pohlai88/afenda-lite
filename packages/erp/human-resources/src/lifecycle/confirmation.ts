@@ -20,7 +20,7 @@ export const HUMAN_RESOURCES_AGGREGATE_CONFIRMATION = "confirmation" as const;
 export type HumanResourcesConfirmationAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_CONFIRMATION;
 
-export async function confirmEmployment(
+export function confirmEmployment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentConfirmation>> {
@@ -53,7 +53,7 @@ export async function confirmEmployment(
 	});
 }
 
-export async function getEmploymentConfirmation(
+export function getEmploymentConfirmation(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentConfirmation | null>> {

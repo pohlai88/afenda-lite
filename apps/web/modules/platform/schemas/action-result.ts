@@ -2,9 +2,15 @@ import {
 	type ResultFailure as ActionFailure,
 	type Result as ActionResult,
 	fail as actionFail,
+	failFromUnknown,
+} from "@afenda/errors/result";
+
+export {
+	type ResultFailure as ActionFailure,
+	type Result as ActionResult,
+	fail as actionFail,
 	failFromAppError as actionFailFromAppError,
 	ok as actionOk,
-	failFromUnknown,
 } from "@afenda/errors/result";
 
 /**
@@ -13,10 +19,6 @@ import {
  * Expected failures return `{ ok: false, … }`; throw only for unexpected bugs.
  * Error codes: import `ApiErrorCode` from `@afenda/errors` (or schemas/api-error).
  */
-
-export type { ActionFailure, ActionResult };
-
-export { actionFail, actionFailFromAppError, actionOk };
 
 /**
  * API-007 — unexpected Action failure with safe client correlation reference.
@@ -44,20 +46,20 @@ export function actionFailFromUnknown(
 
 function firstFieldError(details: unknown, field: string): string | undefined {
 	if (typeof details !== "object" || details === null) {
-		return undefined;
+		return;
 	}
 	if (!("fieldErrors" in details)) {
-		return undefined;
+		return;
 	}
 	const fieldErrors = readProperty(details, "fieldErrors");
 	if (typeof fieldErrors !== "object" || fieldErrors === null) {
-		return undefined;
+		return;
 	}
 	const messages = readProperty(fieldErrors, field);
 	if (!Array.isArray(messages)) {
-		return undefined;
+		return;
 	}
-	const first = messages[0];
+	const [first] = messages;
 	return typeof first === "string" ? first : undefined;
 }
 
@@ -65,7 +67,7 @@ function readProperty(value: object, key: PropertyKey): unknown {
 	try {
 		return Reflect.get(value, key);
 	} catch {
-		return undefined;
+		return;
 	}
 }
 
@@ -78,7 +80,7 @@ export function actionFieldMessage(
 	field: string,
 ): string | undefined {
 	if (!state || state.ok || state.details === undefined) {
-		return undefined;
+		return;
 	}
 	return firstFieldError(state.details, field);
 }

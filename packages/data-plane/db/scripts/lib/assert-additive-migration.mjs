@@ -7,6 +7,60 @@
  * Does not ban DROP INDEX / DROP CONSTRAINT / CREATE INDEX by substring alone.
  */
 
+const DOLLAR_QUOTE_TAG_PATTERN = /^\$([A-Za-z_][A-Za-z0-9_]*)?\$/;
+const WHITESPACE_PATTERN = /\s+/g;
+const DROP_TABLE_PATTERN = /^DROP\s+TABLE\b/;
+const TRUNCATE_PATTERN = /^TRUNCATE\b/;
+const ALTER_TABLE_PATTERN = /^ALTER\s+TABLE\b/;
+const DROP_COLUMN_PATTERN = /\bDROP\s+COLUMN\b/;
+
+function skipLineComment(sql, start) {
+	let index = start + 2;
+	while (index < sql.length && sql[index] !== "\n") {
+		index += 1;
+	}
+	return index;
+}
+
+function skipBlockComment(sql, start) {
+	let index = start + 2;
+	while (
+		index < sql.length - 1 &&
+		!(sql[index] === "*" && sql[index + 1] === "/")
+	) {
+		index += 1;
+	}
+	return Math.min(index + 2, sql.length);
+}
+
+function skipSingleQuotedString(sql, start) {
+	let index = start + 1;
+	while (index < sql.length) {
+		if (sql[index] === "'" && sql[index + 1] === "'") {
+			index += 2;
+			continue;
+		}
+		if (sql[index] === "'") {
+			return index + 1;
+		}
+		index += 1;
+	}
+	return index;
+}
+
+function findDollarQuotedStringEnd(sql, start) {
+	const match = DOLLAR_QUOTE_TAG_PATTERN.exec(sql.slice(start));
+	if (!match) {
+		return null;
+	}
+	const [tag] = match;
+	const contentStart = start + tag.length;
+	const closingTag = sql.indexOf(tag, contentStart);
+	return closingTag === -1
+		? { nextIndex: sql.length, unterminated: true }
+		: { nextIndex: closingTag + tag.length, unterminated: false };
+}
+
 /**
  * Remove line comments, block comments, and string / dollar-quote literals.
  * @param {string} sql
@@ -20,53 +74,30 @@ export function stripSqlNoise(sql) {
 		const next = sql[i + 1];
 
 		if (c === "-" && next === "-") {
-			i += 2;
-			while (i < sql.length && sql[i] !== "\n") {
-				i += 1;
-			}
+			i = skipLineComment(sql, i);
 			continue;
 		}
 
 		if (c === "/" && next === "*") {
-			i += 2;
-			while (i < sql.length - 1 && !(sql[i] === "*" && sql[i + 1] === "/")) {
-				i += 1;
-			}
-			i = Math.min(i + 2, sql.length);
+			i = skipBlockComment(sql, i);
 			continue;
 		}
 
 		if (c === "'") {
 			out += " ";
-			i += 1;
-			while (i < sql.length) {
-				if (sql[i] === "'" && sql[i + 1] === "'") {
-					i += 2;
-					continue;
-				}
-				if (sql[i] === "'") {
-					i += 1;
-					break;
-				}
-				i += 1;
-			}
+			i = skipSingleQuotedString(sql, i);
 			continue;
 		}
 
-		if (c === "$") {
-			const dollar = sql.slice(i).match(/^\$([A-Za-z_][A-Za-z0-9_]*)?\$/);
-			if (dollar) {
-				const tag = dollar[0];
-				i += tag.length;
-				const end = sql.indexOf(tag, i);
-				if (end === -1) {
-					out += " ";
-					break;
-				}
-				out += " ";
-				i = end + tag.length;
-				continue;
+		const dollarQuotedString =
+			c === "$" ? findDollarQuotedStringEnd(sql, i) : null;
+		if (dollarQuotedString !== null) {
+			out += " ";
+			i = dollarQuotedString.nextIndex;
+			if (dollarQuotedString.unterminated) {
+				break;
 			}
+			continue;
 		}
 
 		out += c;
@@ -92,17 +123,17 @@ export function splitSqlStatements(sql) {
  * @returns {string | null} reason if destructive
  */
 export function detectDestructiveStatement(statement) {
-	const s = statement.replace(/\s+/g, " ").trim();
+	const s = statement.replace(WHITESPACE_PATTERN, " ").trim();
 	const upper = s.toUpperCase();
 
-	if (/^DROP\s+TABLE\b/.test(upper)) {
+	if (DROP_TABLE_PATTERN.test(upper)) {
 		return "DROP TABLE";
 	}
-	if (/^TRUNCATE\b/.test(upper)) {
+	if (TRUNCATE_PATTERN.test(upper)) {
 		return "TRUNCATE";
 	}
 	// ALTER TABLE … DROP COLUMN — allow DROP CONSTRAINT / DROP INDEX elsewhere
-	if (/^ALTER\s+TABLE\b/.test(upper) && /\bDROP\s+COLUMN\b/.test(upper)) {
+	if (ALTER_TABLE_PATTERN.test(upper) && DROP_COLUMN_PATTERN.test(upper)) {
 		return "DROP COLUMN";
 	}
 	return null;

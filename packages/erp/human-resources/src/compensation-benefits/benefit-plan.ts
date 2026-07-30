@@ -18,7 +18,7 @@ export const HUMAN_RESOURCES_AGGREGATE_BENEFIT_PLAN = "benefit_plan" as const;
 export type HumanResourcesBenefitPlanAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_BENEFIT_PLAN;
 
-export async function createBenefitPlan(
+export function createBenefitPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<BenefitPlan>> {
@@ -44,7 +44,7 @@ export async function createBenefitPlan(
 	});
 }
 
-export async function updateBenefitPlan(
+export function updateBenefitPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<BenefitPlan>> {
@@ -71,7 +71,7 @@ export async function updateBenefitPlan(
 	});
 }
 
-export async function archiveBenefitPlan(
+export function archiveBenefitPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<BenefitPlan>> {

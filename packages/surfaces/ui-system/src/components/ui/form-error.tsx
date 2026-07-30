@@ -2,10 +2,10 @@
 
 import { cva, type VariantProps } from "class-variance-authority";
 import { AlertCircleIcon } from "lucide-react";
-import * as React from "react";
+import type { HTMLAttributes, RefObject } from "react";
 import { cn } from "../../lib/utils";
 
-const formErrorVariants = cva("flex items-start gap-2 text-sm font-bold", {
+const formErrorVariants = cva("flex items-start gap-2 font-bold text-sm", {
 	variants: {
 		variant: {
 			default: "text-destructive-subtle-foreground",
@@ -25,40 +25,46 @@ const formErrorVariants = cva("flex items-start gap-2 text-sm font-bold", {
 });
 
 interface FormErrorProps
-	extends React.HTMLAttributes<HTMLDivElement>,
+	extends HTMLAttributes<HTMLDivElement>,
 		VariantProps<typeof formErrorVariants> {
 	message?: string;
 	showIcon?: boolean;
 }
 
-const FormError = React.forwardRef<HTMLDivElement, FormErrorProps>(
-	(
-		{ className, variant, size, message, showIcon = true, children, ...props },
-		ref,
-	) => {
-		const content = message || children;
+const FormError = ({
+	className,
+	variant,
+	size,
+	message,
+	showIcon = true,
+	children,
+	ref,
+	...props
+}: FormErrorProps & { ref?: RefObject<HTMLDivElement | null> }) => {
+	const content = message || children;
 
-		if (!content) return null;
+	if (!content) {
+		return null;
+	}
 
-		return (
-			<div
-				ref={ref}
-				role="alert"
-				aria-live="polite"
-				className={cn(formErrorVariants({ variant, size }), className)}
-				{...props}
-			>
-				{showIcon && (
-					<AlertCircleIcon
-						className="h-4 w-4 shrink-0 mt-0.5"
-						aria-hidden="true"
-					/>
-				)}
-				<span className="flex-1">{content}</span>
-			</div>
-		);
-	},
-);
+	return (
+		<div
+			aria-live="polite"
+			className={cn(formErrorVariants({ variant, size }), className)}
+			ref={ref}
+			role="alert"
+			{...props}
+		>
+			{showIcon ? (
+				<AlertCircleIcon
+					aria-hidden="true"
+					className="mt-0.5 h-4 w-4 shrink-0"
+				/>
+			) : null}
+			<span className="flex-1">{content}</span>
+		</div>
+	);
+};
 FormError.displayName = "FormError";
 
 export { FormError, formErrorVariants };

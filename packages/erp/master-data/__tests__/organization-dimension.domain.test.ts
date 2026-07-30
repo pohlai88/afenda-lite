@@ -18,6 +18,7 @@ import {
 } from "../src";
 import { createMemoryOrganizationDimensionStore } from "../src/capabilities/core-organization-masters/testing-organization-dimension-store";
 import { MASTER_DATA_PERMISSION_CODES } from "../src/permissions";
+import { runSequentially } from "../src/resolve-async";
 import { createGrantingMasterAuthorization } from "./helpers/memory-authorization";
 
 const ORG_A = randomUUID();
@@ -52,7 +53,7 @@ async function seedRequired(
 	store: ReturnType<typeof createMemoryOrganizationDimensionStore>,
 	organizationId = ORG_A,
 ) {
-	for (const kind of ORGANIZATION_DIMENSION_KINDS) {
+	await runSequentially(ORGANIZATION_DIMENSION_KINDS, async (kind) => {
 		const result = await createOrganizationDimension(
 			{
 				organizationId,
@@ -65,8 +66,12 @@ async function seedRequired(
 			},
 			{ store, authorization },
 		);
-		expect(result.ok).toBe(true);
-	}
+		if (!result.ok) {
+			throw new Error(
+				`Failed to seed required organization dimension: ${kind}`,
+			);
+		}
+	});
 }
 
 describe("organization dimension domain", () => {
@@ -117,7 +122,9 @@ describe("organization dimension domain", () => {
 		);
 
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 		expect(Object.keys(result.data).sort()).toEqual(
 			Object.keys(assignmentKeys).sort(),
 		);
@@ -189,14 +196,16 @@ describe("organization dimension domain", () => {
 			{ store, authorization },
 		);
 		expect(overlap.ok).toBe(false);
-		if (!overlap.ok) expect(overlap.code).toBe("CONFLICT");
+		if (!overlap.ok) {
+			expect(overlap.code).toBe("CONFLICT");
+		}
 	});
 
 	it("fails closed for effective-date gaps and cross-tenant lookup", async () => {
 		const store = createMemoryOrganizationDimensionStore();
 		await seedRequired(store);
 
-		for (const organizationId of [ORG_A, ORG_B]) {
+		await runSequentially([ORG_A, ORG_B], async (organizationId) => {
 			const result = await resolveOrganizationDimensionsAsOf(
 				{
 					organizationId,
@@ -207,8 +216,10 @@ describe("organization dimension domain", () => {
 				{ store, authorization },
 			);
 			expect(result.ok).toBe(false);
-			if (!result.ok) expect(result.code).toBe("NOT_FOUND");
-		}
+			if (!result.ok) {
+				expect(result.code).toBe("NOT_FOUND");
+			}
+		});
 	});
 
 	it("returns a typed conflict when persisted effective rows are ambiguous", async () => {
@@ -239,13 +250,15 @@ describe("organization dimension domain", () => {
 		);
 
 		expect(result.ok).toBe(false);
-		if (!result.ok) expect(result.code).toBe("CONFLICT");
+		if (!result.ok) {
+			expect(result.code).toBe("CONFLICT");
+		}
 	});
 
 	it("gets one effective dimension by id or key for every organization dimension kind", async () => {
 		const store = createMemoryOrganizationDimensionStore();
 
-		for (const kind of ORGANIZATION_DIMENSION_KINDS) {
+		await runSequentially(ORGANIZATION_DIMENSION_KINDS, async (kind) => {
 			const created = await createOrganizationDimension(
 				{
 					organizationId: ORG_A,
@@ -259,7 +272,9 @@ describe("organization dimension domain", () => {
 				{ store, authorization },
 			);
 			expect(created.ok).toBe(true);
-			if (!created.ok) return;
+			if (!created.ok) {
+				throw new Error(`Failed to create lookup dimension: ${kind}`);
+			}
 
 			const byId = await getOrganizationDimensionEffective(
 				{
@@ -272,7 +287,9 @@ describe("organization dimension domain", () => {
 				{ store, authorization },
 			);
 			expect(byId.ok).toBe(true);
-			if (!byId.ok) return;
+			if (!byId.ok) {
+				throw new Error(`Failed to load dimension by id: ${kind}`);
+			}
 			expect(byId.data?.kind).toBe(kind);
 			expect(byId.data?.key).toBe(`MD-${kind.toUpperCase()}`);
 
@@ -287,9 +304,11 @@ describe("organization dimension domain", () => {
 				{ store, authorization },
 			);
 			expect(byKey.ok).toBe(true);
-			if (!byKey.ok) return;
+			if (!byKey.ok) {
+				throw new Error(`Failed to load dimension by key: ${kind}`);
+			}
 			expect(byKey.data?.id).toBe(created.data.id);
-		}
+		});
 	});
 
 	it("updates, transitions, lists, and reads organization dimensions with version CAS", async () => {
@@ -307,7 +326,9 @@ describe("organization dimension domain", () => {
 			{ store, authorization },
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 		expect(created.data.version).toBe(1);
 		expect(created.data.createdBy).toBe(ACTOR);
 		expect(created.data.updatedBy).toBe(ACTOR);
@@ -326,7 +347,9 @@ describe("organization dimension domain", () => {
 			{ store, authorization },
 		);
 		expect(updated.ok).toBe(true);
-		if (!updated.ok) return;
+		if (!updated.ok) {
+			return;
+		}
 		expect(updated.data.version).toBe(2);
 		expect(updated.data.name).toBe("Finance Operations");
 		expect(updated.data.updatedBy).toBe(ACTOR);
@@ -346,7 +369,9 @@ describe("organization dimension domain", () => {
 			{ store, authorization },
 		);
 		expect(stale.ok).toBe(false);
-		if (!stale.ok) expect(stale.code).toBe("CONFLICT");
+		if (!stale.ok) {
+			expect(stale.code).toBe("CONFLICT");
+		}
 
 		const inactive = await deactivateOrganizationDimension(
 			{
@@ -359,7 +384,9 @@ describe("organization dimension domain", () => {
 			{ store, authorization },
 		);
 		expect(inactive.ok).toBe(true);
-		if (!inactive.ok) return;
+		if (!inactive.ok) {
+			return;
+		}
 		expect(inactive.data.status).toBe("inactive");
 
 		const active = await activateOrganizationDimension(
@@ -373,7 +400,9 @@ describe("organization dimension domain", () => {
 			{ store, authorization },
 		);
 		expect(active.ok).toBe(true);
-		if (!active.ok) return;
+		if (!active.ok) {
+			return;
+		}
 		expect(active.data.status).toBe("active");
 
 		const byId = await getOrganizationDimensionById(
@@ -406,7 +435,9 @@ describe("organization dimension domain", () => {
 			{ store, authorization },
 		);
 		expect(listed.ok).toBe(true);
-		if (!listed.ok) return;
+		if (!listed.ok) {
+			return;
+		}
 		expect(listed.data.items.map((row) => row.id)).toEqual([active.data.id]);
 
 		const archived = await archiveOrganizationDimension(
@@ -420,7 +451,9 @@ describe("organization dimension domain", () => {
 			{ store, authorization },
 		);
 		expect(archived.ok).toBe(true);
-		if (!archived.ok) return;
+		if (!archived.ok) {
+			return;
+		}
 		expect(archived.data.status).toBe("archived");
 	});
 
@@ -439,7 +472,9 @@ describe("organization dimension domain", () => {
 			{ store, authorization },
 		);
 		expect(root.ok).toBe(true);
-		if (!root.ok) return;
+		if (!root.ok) {
+			return;
+		}
 
 		const child = await createOrganizationDimension(
 			{
@@ -455,7 +490,9 @@ describe("organization dimension domain", () => {
 			{ store, authorization },
 		);
 		expect(child.ok).toBe(true);
-		if (!child.ok) return;
+		if (!child.ok) {
+			return;
+		}
 
 		const clearedParent = await updateOrganizationDimension(
 			{
@@ -469,7 +506,9 @@ describe("organization dimension domain", () => {
 			{ store, authorization },
 		);
 		expect(clearedParent.ok).toBe(true);
-		if (!clearedParent.ok) return;
+		if (!clearedParent.ok) {
+			return;
+		}
 		expect(clearedParent.data.parentId).toBeNull();
 
 		const reparented = await updateOrganizationDimension(
@@ -484,7 +523,9 @@ describe("organization dimension domain", () => {
 			{ store, authorization },
 		);
 		expect(reparented.ok).toBe(true);
-		if (!reparented.ok) return;
+		if (!reparented.ok) {
+			return;
+		}
 
 		const selfParent = await updateOrganizationDimension(
 			{
@@ -523,7 +564,9 @@ describe("organization dimension domain", () => {
 			{ store, authorization },
 		);
 		expect(inactiveRoot.ok).toBe(true);
-		if (!inactiveRoot.ok) return;
+		if (!inactiveRoot.ok) {
+			return;
+		}
 
 		const underInactive = await createOrganizationDimension(
 			{
@@ -571,7 +614,9 @@ describe("organization dimension domain", () => {
 			{ store, authorization },
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const result = await getOrganizationDimensionEffective(
 			{
@@ -584,7 +629,9 @@ describe("organization dimension domain", () => {
 			{ store, authorization },
 		);
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 		expect(result.data).toBeNull();
 	});
 
@@ -603,7 +650,9 @@ describe("organization dimension domain", () => {
 			{ store, authorization },
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const foreign = await getOrganizationDimensionEffective(
 			{

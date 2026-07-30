@@ -25,7 +25,7 @@ import type {
 	PayrollStatutoryRule,
 } from "../types";
 
-export async function createPayrollStatutoryRule(
+export function createPayrollStatutoryRule(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollStatutoryRule>> {
@@ -33,7 +33,7 @@ export async function createPayrollStatutoryRule(
 		schema: createPayrollStatutoryRuleInputSchema,
 		invalidMessage: "Invalid payroll statutory rule create input",
 		command: PAYROLL_COMMAND_SETUP_STATUTORY_RULE_CREATE,
-		execute: async (data, { store, ports }) => {
+		execute: (data, { store, ports }) => {
 			const fingerprint = buildPayrollCreateFingerprint({
 				payGroupId: data.payGroupId,
 				code: data.code,
@@ -66,7 +66,7 @@ export async function createPayrollStatutoryRule(
 	});
 }
 
-export async function updatePayrollStatutoryRule(
+export function updatePayrollStatutoryRule(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollStatutoryRule>> {
@@ -92,7 +92,7 @@ export async function updatePayrollStatutoryRule(
 	});
 }
 
-export async function archivePayrollStatutoryRule(
+export function archivePayrollStatutoryRule(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollStatutoryRule>> {
@@ -114,7 +114,7 @@ export async function archivePayrollStatutoryRule(
 	});
 }
 
-export async function supersedePayrollStatutoryRule(
+export function supersedePayrollStatutoryRule(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollRuleSupersedeResult<PayrollStatutoryRule>>> {
@@ -122,7 +122,7 @@ export async function supersedePayrollStatutoryRule(
 		schema: supersedePayrollStatutoryRuleInputSchema,
 		invalidMessage: "Invalid payroll statutory rule supersede input",
 		command: PAYROLL_COMMAND_SETUP_STATUTORY_RULE_SUPERSEDE,
-		execute: async (data, { store, ports }) => {
+		execute: (data, { store, ports }) => {
 			const fingerprint = buildPayrollCreateFingerprint({
 				ruleId: data.ruleId,
 				name: data.name ?? null,
@@ -154,7 +154,7 @@ export async function supersedePayrollStatutoryRule(
 	});
 }
 
-export async function getPayrollStatutoryRule(
+export function getPayrollStatutoryRule(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollStatutoryRule | null>> {

@@ -58,7 +58,9 @@ describe("HR effective-truth classification register", () => {
 		const [removed, ...remaining] =
 			HUMAN_RESOURCES_EFFECTIVE_TRUTH_CLASSIFICATION;
 		expect(removed).toBeDefined();
-		if (removed === undefined) return;
+		if (removed === undefined) {
+			return;
+		}
 
 		expect(
 			validateEffectiveTruthClassificationRegister(remaining),
@@ -71,7 +73,9 @@ describe("HR effective-truth classification register", () => {
 	it("reports duplicate table classification", () => {
 		const [first] = HUMAN_RESOURCES_EFFECTIVE_TRUTH_CLASSIFICATION;
 		expect(first).toBeDefined();
-		if (first === undefined) return;
+		if (first === undefined) {
+			return;
+		}
 
 		const duplicated = [
 			first,
@@ -108,7 +112,9 @@ describe("HR effective-truth classification register", () => {
 	it("reports missing rationale", () => {
 		const [first] = HUMAN_RESOURCES_EFFECTIVE_TRUTH_CLASSIFICATION;
 		expect(first).toBeDefined();
-		if (first === undefined) return;
+		if (first === undefined) {
+			return;
+		}
 
 		const withEmptyRationale =
 			HUMAN_RESOURCES_EFFECTIVE_TRUTH_CLASSIFICATION.map((row) =>
@@ -123,9 +129,11 @@ describe("HR effective-truth classification register", () => {
 	});
 
 	it("reports adoption bridge mismatch", () => {
-		const adoption = HUMAN_RESOURCES_EFFECTIVE_TRUTH_ADOPTION[0];
+		const [adoption] = HUMAN_RESOURCES_EFFECTIVE_TRUTH_ADOPTION;
 		expect(adoption).toBeDefined();
-		if (adoption === undefined) return;
+		if (adoption === undefined) {
+			return;
+		}
 
 		const expected = adoptionDecisionToClassificationCategory(
 			adoption.decision,

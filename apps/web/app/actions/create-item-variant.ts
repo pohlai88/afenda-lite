@@ -21,9 +21,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type CreateItemVariantActionData = {
+export interface CreateItemVariantActionData {
 	variant: ItemVariant;
-};
+}
 
 export type CreateItemVariantActionState =
 	ActionResult<CreateItemVariantActionData> | null;
@@ -43,6 +43,7 @@ type AttributeValueInput =
 	| { attributeId: string; optionId: string }
 	| { attributeId: string; valueText: string };
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Validation keeps mutually exclusive attribute inputs in one atomic parser.
 function parseAttributeValues(
 	formData: FormData,
 ): { ok: true; values: AttributeValueInput[] } | ActionFailure {

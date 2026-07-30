@@ -25,10 +25,10 @@ export function createMemoryAuditPort(options?: {
 		async record(input: AuditFactInput): Promise<Result<{ id: string }>> {
 			calls.push(input);
 			if (remaining <= 0) {
-				return fail("INTERNAL_ERROR", "audit port failed");
+				return await fail("INTERNAL_ERROR", "audit port failed");
 			}
 			remaining -= 1;
-			return ok({ id: randomUUID() });
+			return await ok({ id: randomUUID() });
 		},
 	};
 }
@@ -48,10 +48,10 @@ export function createMemoryOutboxPort(options?: {
 		async append(input: OutboxFactInput): Promise<Result<{ id: string }>> {
 			calls.push(input);
 			if (remaining <= 0) {
-				return fail("INTERNAL_ERROR", "outbox port failed");
+				return await fail("INTERNAL_ERROR", "outbox port failed");
 			}
 			remaining -= 1;
-			return ok({ id: randomUUID() });
+			return await ok({ id: randomUUID() });
 		},
 	};
 }

@@ -101,31 +101,71 @@ function attendanceAssignmentSessionKey(
 	return `${assignmentId}:${sessionId}`;
 }
 
-export type LearningMemoryState = {
-	courses: Map<HumanResourcesCourseId, LearningCourse>;
-	courseIdempotencyByKey: Map<string, IdempotentCourseRecord>;
-	sessions: Map<HumanResourcesSessionId, LearningSession>;
-	sessionIdempotencyByKey: Map<string, IdempotentSessionRecord>;
-	learningAssignments: Map<
-		HumanResourcesLearningAssignmentId,
-		LearningAssignment
-	>;
+export interface LearningMemoryState {
 	assignmentIdempotencyByKey: Map<string, IdempotentLearningAssignmentRecord>;
-	completions: Map<HumanResourcesCompletionId, LearningCompletion>;
-	completionByAssignmentId: Map<string, string>;
-	completionIdempotencyByKey: Map<string, IdempotentCompletionRecord>;
-	learningAttendance: Map<
-		HumanResourcesLearningAttendanceId,
-		LearningAttendance
-	>;
 	attendanceByAssignmentSession: Map<
 		string,
 		HumanResourcesLearningAttendanceId
 	>;
 	attendanceIdempotencyByKey: Map<string, IdempotentLearningAttendanceRecord>;
-	certifications: Map<HumanResourcesCertificationId, EmployeeCertification>;
 	certificationIdempotencyByKey: Map<string, IdempotentCertificationRecord>;
-};
+	certifications: Map<HumanResourcesCertificationId, EmployeeCertification>;
+	completionByAssignmentId: Map<string, string>;
+	completionIdempotencyByKey: Map<string, IdempotentCompletionRecord>;
+	completions: Map<HumanResourcesCompletionId, LearningCompletion>;
+	courseIdempotencyByKey: Map<string, IdempotentCourseRecord>;
+	courses: Map<HumanResourcesCourseId, LearningCourse>;
+	learningAssignments: Map<
+		HumanResourcesLearningAssignmentId,
+		LearningAssignment
+	>;
+	learningAttendance: Map<
+		HumanResourcesLearningAttendanceId,
+		LearningAttendance
+	>;
+	sessionIdempotencyByKey: Map<string, IdempotentSessionRecord>;
+	sessions: Map<HumanResourcesSessionId, LearningSession>;
+}
+
+function resolveLearningAttendanceReplay(
+	existing: IdempotentLearningAttendanceRecord | undefined,
+	expectedFingerprint: string,
+): Result<LearningAttendance | null> {
+	if (existing === undefined) {
+		return ok(null);
+	}
+	if (existing.createRequestFingerprint !== expectedFingerprint) {
+		return conflict("Idempotency key reused with different payload");
+	}
+	return ok({ ...existing.attendance });
+}
+
+function resolveLearningAttendanceContext(
+	state: LearningMemoryState,
+	record: LearningAttendanceCreateRecord,
+): Result<{ assignment: LearningAssignment; session: LearningSession }> {
+	const assignment = state.learningAssignments.get(record.assignmentId);
+	if (!assignment || assignment.organizationId !== record.organizationId) {
+		return notFound(
+			"Assignment not found",
+			HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+		);
+	}
+	if (assignment.employeeId !== record.employeeId) {
+		return notFound(
+			"Attendance employee does not match assignment",
+			HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+		);
+	}
+	const session = state.sessions.get(record.sessionId);
+	if (!session || session.organizationId !== record.organizationId) {
+		return notFound(
+			"Session not found",
+			HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+		);
+	}
+	return ok({ assignment, session });
+}
 
 export type MemoryLearningMethods = Pick<
 	HumanResourcesStore,
@@ -223,7 +263,7 @@ export function createMemoryLearningMethods(
 					a.courseId === input.courseId &&
 					isAssignmentActive(a.status),
 			).length;
-			return ok(count);
+			return await ok(count);
 		},
 
 		async getCourseById(input: {
@@ -232,9 +272,9 @@ export function createMemoryLearningMethods(
 		}): Promise<Result<LearningCourse | null>> {
 			const course = state.courses.get(input.courseId);
 			if (!course || course.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...course });
+			return await ok({ ...course });
 		},
 
 		async findCourseByIdempotencyKey(input: {
@@ -244,9 +284,9 @@ export function createMemoryLearningMethods(
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = state.courseIdempotencyByKey.get(key);
 			if (!record) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...record, course: { ...record.course } });
+			return await ok({ ...record, course: { ...record.course } });
 		},
 
 		async createCourse(
@@ -321,9 +361,9 @@ export function createMemoryLearningMethods(
 			input: {
 				organizationId: string;
 				courseId: HumanResourcesCourseId;
-				title?: string;
-				description?: string | null;
-				durationHours?: string | null;
+				title?: string | undefined;
+				description?: string | null | undefined;
+				durationHours?: string | null | undefined;
 				expectedVersion: number;
 				actorUserId: string;
 			},
@@ -348,13 +388,13 @@ export function createMemoryLearningMethods(
 				...course,
 				title: input.title ?? course.title,
 				description:
-					input.description !== undefined
-						? input.description
-						: course.description,
+					input.description === undefined
+						? course.description
+						: input.description,
 				durationHours:
-					input.durationHours !== undefined
-						? input.durationHours
-						: course.durationHours,
+					input.durationHours === undefined
+						? course.durationHours
+						: input.durationHours,
 				version: course.version + 1,
 				updatedBy: input.actorUserId,
 				updatedAt: now,
@@ -506,7 +546,7 @@ export function createMemoryLearningMethods(
 			organizationId: string;
 			page: number;
 			pageSize: number;
-			status?: CourseStatus;
+			status?: CourseStatus | undefined;
 		}): Promise<Result<CourseListPage>> {
 			let filtered = Array.from(state.courses.values()).filter(
 				(c) => c.organizationId === input.organizationId,
@@ -524,7 +564,7 @@ export function createMemoryLearningMethods(
 				.slice(start, start + input.pageSize)
 				.map((c) => ({ ...c }));
 
-			return ok({
+			return await ok({
 				courses,
 				totalCount,
 				page: input.page,
@@ -539,9 +579,9 @@ export function createMemoryLearningMethods(
 		}): Promise<Result<LearningSession | null>> {
 			const session = state.sessions.get(input.sessionId);
 			if (!session || session.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...session });
+			return await ok({ ...session });
 		},
 
 		async findSessionByIdempotencyKey(input: {
@@ -551,9 +591,9 @@ export function createMemoryLearningMethods(
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = state.sessionIdempotencyByKey.get(key);
 			if (!record) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...record, session: { ...record.session } });
+			return await ok({ ...record, session: { ...record.session } });
 		},
 
 		async countEnrolledInSession(input: {
@@ -567,7 +607,7 @@ export function createMemoryLearningMethods(
 					a.sessionId === input.sessionId &&
 					a.status === "in_progress",
 			).length;
-			return ok(count);
+			return await ok(count);
 		},
 
 		async createSession(
@@ -588,9 +628,9 @@ export function createMemoryLearningMethods(
 				return activeGuard;
 			}
 			const existingSession = Array.from(state.sessions.values()).find(
-				(session) =>
-					session.organizationId === record.organizationId &&
-					session.code === record.code,
+				(sessionValue) =>
+					sessionValue.organizationId === record.organizationId &&
+					sessionValue.code === record.code,
 			);
 			if (existingSession) {
 				return conflict("Session code already exists in organization");
@@ -905,8 +945,8 @@ export function createMemoryLearningMethods(
 			organizationId: string;
 			page: number;
 			pageSize: number;
-			status?: SessionStatus;
-			courseId?: HumanResourcesCourseId;
+			status?: SessionStatus | undefined;
+			courseId?: HumanResourcesCourseId | undefined;
 		}): Promise<Result<SessionListPage>> {
 			let filtered = Array.from(state.sessions.values()).filter(
 				(s) => s.organizationId === input.organizationId,
@@ -929,7 +969,7 @@ export function createMemoryLearningMethods(
 				.slice(start, start + input.pageSize)
 				.map((s) => ({ ...s }));
 
-			return ok({
+			return await ok({
 				sessions,
 				totalCount,
 				page: input.page,
@@ -944,9 +984,9 @@ export function createMemoryLearningMethods(
 		}): Promise<Result<LearningAssignment | null>> {
 			const assignment = state.learningAssignments.get(input.assignmentId);
 			if (!assignment || assignment.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...assignment });
+			return await ok({ ...assignment });
 		},
 
 		async findLearningAssignmentByIdempotencyKey(input: {
@@ -956,9 +996,9 @@ export function createMemoryLearningMethods(
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = state.assignmentIdempotencyByKey.get(key);
 			if (!record) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...record, assignment: { ...record.assignment } });
+			return await ok({ ...record, assignment: { ...record.assignment } });
 		},
 
 		async createLearningAssignment(
@@ -989,12 +1029,12 @@ export function createMemoryLearningMethods(
 			const existingActiveAssignment = Array.from(
 				state.learningAssignments.values(),
 			).find(
-				(assignment) =>
-					assignment.organizationId === record.organizationId &&
-					assignment.employeeId === record.employeeId &&
-					assignment.courseId === record.courseId &&
-					(assignment.status === "pending" ||
-						assignment.status === "in_progress"),
+				(assignmentValue) =>
+					assignmentValue.organizationId === record.organizationId &&
+					assignmentValue.employeeId === record.employeeId &&
+					assignmentValue.courseId === record.courseId &&
+					(assignmentValue.status === "pending" ||
+						assignmentValue.status === "in_progress"),
 			);
 			if (existingActiveAssignment) {
 				return conflict(
@@ -1094,7 +1134,7 @@ export function createMemoryLearningMethods(
 			input: {
 				organizationId: string;
 				assignmentId: HumanResourcesLearningAssignmentId;
-				sessionId?: HumanResourcesSessionId;
+				sessionId?: HumanResourcesSessionId | undefined;
 				expectedVersion: number;
 				actorUserId: string;
 			},
@@ -1244,9 +1284,9 @@ export function createMemoryLearningMethods(
 			organizationId: string;
 			page: number;
 			pageSize: number;
-			status?: AssignmentStatus;
-			employeeId?: HumanResourcesEmployeeId;
-			courseId?: HumanResourcesCourseId;
+			status?: AssignmentStatus | undefined;
+			employeeId?: HumanResourcesEmployeeId | undefined;
+			courseId?: HumanResourcesCourseId | undefined;
 		}): Promise<Result<LearningAssignmentListPage>> {
 			let filtered = Array.from(state.learningAssignments.values()).filter(
 				(a) => a.organizationId === input.organizationId,
@@ -1270,7 +1310,7 @@ export function createMemoryLearningMethods(
 				.slice(start, start + input.pageSize)
 				.map((a) => ({ ...a }));
 
-			return ok({
+			return await ok({
 				assignments,
 				totalCount,
 				page: input.page,
@@ -1285,9 +1325,9 @@ export function createMemoryLearningMethods(
 		}): Promise<Result<LearningCompletion | null>> {
 			const completion = state.completions.get(input.completionId);
 			if (!completion || completion.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...completion });
+			return await ok({ ...completion });
 		},
 
 		async findCompletionByIdempotencyKey(input: {
@@ -1297,9 +1337,9 @@ export function createMemoryLearningMethods(
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = state.completionIdempotencyByKey.get(key);
 			if (!record) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...record, completion: { ...record.completion } });
+			return await ok({ ...record, completion: { ...record.completion } });
 		},
 
 		async findCompletionByAssignmentId(input: {
@@ -1310,15 +1350,15 @@ export function createMemoryLearningMethods(
 				input.assignmentId,
 			);
 			if (!completionId) {
-				return ok(null);
+				return await ok(null);
 			}
 			const completion = state.completions.get(
 				completionId as HumanResourcesCompletionId,
 			);
 			if (!completion || completion.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...completion });
+			return await ok({ ...completion });
 		},
 
 		async recordCompletion(
@@ -1466,8 +1506,8 @@ export function createMemoryLearningMethods(
 			organizationId: string;
 			page: number;
 			pageSize: number;
-			employeeId?: HumanResourcesEmployeeId;
-			courseId?: HumanResourcesCourseId;
+			employeeId?: HumanResourcesEmployeeId | undefined;
+			courseId?: HumanResourcesCourseId | undefined;
 		}): Promise<Result<CompletionListPage>> {
 			let filtered = Array.from(state.completions.values()).filter(
 				(c) => c.organizationId === input.organizationId,
@@ -1490,7 +1530,7 @@ export function createMemoryLearningMethods(
 				.slice(start, start + input.pageSize)
 				.map((c) => ({ ...c }));
 
-			return ok({
+			return await ok({
 				completions,
 				totalCount,
 				page: input.page,
@@ -1504,9 +1544,9 @@ export function createMemoryLearningMethods(
 		}): Promise<Result<LearningAttendance | null>> {
 			const attendance = state.learningAttendance.get(input.attendanceId);
 			if (!attendance || attendance.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...attendance });
+			return await ok({ ...attendance });
 		},
 
 		async findLearningAttendanceByIdempotencyKey(input: {
@@ -1516,9 +1556,9 @@ export function createMemoryLearningMethods(
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = state.attendanceIdempotencyByKey.get(key);
 			if (!record) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...record, attendance: { ...record.attendance } });
+			return await ok({ ...record, attendance: { ...record.attendance } });
 		},
 
 		async findLearningAttendanceByAssignmentAndSession(input: {
@@ -1530,13 +1570,13 @@ export function createMemoryLearningMethods(
 				attendanceAssignmentSessionKey(input.assignmentId, input.sessionId),
 			);
 			if (!attendanceId) {
-				return ok(null);
+				return await ok(null);
 			}
 			const attendance = state.learningAttendance.get(attendanceId);
 			if (!attendance || attendance.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...attendance });
+			return await ok({ ...attendance });
 		},
 
 		async recordLearningAttendance(
@@ -1549,41 +1589,26 @@ export function createMemoryLearningMethods(
 				record.createIdempotencyKey,
 			);
 			const existing = state.attendanceIdempotencyByKey.get(idempotencyKey);
-			if (existing) {
-				if (
-					existing.createRequestFingerprint !== record.createRequestFingerprint
-				) {
-					return conflict("Idempotency key reused with different payload");
-				}
-				return ok({ ...existing.attendance });
+			const replay = resolveLearningAttendanceReplay(
+				existing,
+				record.createRequestFingerprint,
+			);
+			if (!replay.ok) {
+				return replay;
+			}
+			if (replay.data !== null) {
+				return ok(replay.data);
 			}
 
-			const assignment = state.learningAssignments.get(record.assignmentId);
-			if (!assignment || assignment.organizationId !== record.organizationId) {
-				return notFound(
-					"Assignment not found",
-					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
-				);
-			}
-			if (assignment.employeeId !== record.employeeId) {
-				return notFound(
-					"Attendance employee does not match assignment",
-					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
-				);
-			}
-
-			const session = state.sessions.get(record.sessionId);
-			if (!session || session.organizationId !== record.organizationId) {
-				return notFound(
-					"Session not found",
-					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
-				);
+			const context = resolveLearningAttendanceContext(state, record);
+			if (!context.ok) {
+				return context;
 			}
 
 			const recordableGuard = assertLearningAttendanceRecordable({
-				sessionStatus: session.status,
-				assignmentStatus: assignment.status,
-				assignmentSessionId: assignment.sessionId,
+				sessionStatus: context.data.session.status,
+				assignmentStatus: context.data.assignment.status,
+				assignmentSessionId: context.data.assignment.sessionId,
 				requestedSessionId: record.sessionId,
 			});
 			if (!recordableGuard.ok) {
@@ -1655,8 +1680,8 @@ export function createMemoryLearningMethods(
 			organizationId: string;
 			page: number;
 			pageSize: number;
-			sessionId?: HumanResourcesSessionId;
-			employeeId?: HumanResourcesEmployeeId;
+			sessionId?: HumanResourcesSessionId | undefined;
+			employeeId?: HumanResourcesEmployeeId | undefined;
 		}): Promise<Result<LearningAttendanceListPage>> {
 			let filtered = Array.from(state.learningAttendance.values()).filter(
 				(a) => a.organizationId === input.organizationId,
@@ -1677,7 +1702,7 @@ export function createMemoryLearningMethods(
 				.slice(start, start + input.pageSize)
 				.map((a) => ({ ...a }));
 
-			return ok({
+			return await ok({
 				attendanceRecords: attendance,
 				totalCount,
 				page: input.page,
@@ -1695,9 +1720,9 @@ export function createMemoryLearningMethods(
 				!certification ||
 				certification.organizationId !== input.organizationId
 			) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...certification });
+			return await ok({ ...certification });
 		},
 
 		async findCertificationByIdempotencyKey(input: {
@@ -1707,9 +1732,12 @@ export function createMemoryLearningMethods(
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = state.certificationIdempotencyByKey.get(key);
 			if (!record) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...record, certification: { ...record.certification } });
+			return await ok({
+				...record,
+				certification: { ...record.certification },
+			});
 		},
 
 		async issueCertification(
@@ -2156,9 +2184,9 @@ export function createMemoryLearningMethods(
 			organizationId: string;
 			page: number;
 			pageSize: number;
-			status?: CertificationStatus;
-			employeeId?: HumanResourcesEmployeeId;
-			courseId?: HumanResourcesCourseId;
+			status?: CertificationStatus | undefined;
+			employeeId?: HumanResourcesEmployeeId | undefined;
+			courseId?: HumanResourcesCourseId | undefined;
 		}): Promise<Result<CertificationListPage>> {
 			let filtered = Array.from(state.certifications.values()).filter(
 				(c) => c.organizationId === input.organizationId,
@@ -2182,7 +2210,7 @@ export function createMemoryLearningMethods(
 				.slice(start, start + input.pageSize)
 				.map((c) => ({ ...c }));
 
-			return ok({
+			return await ok({
 				certifications,
 				totalCount,
 				page: input.page,
@@ -2214,7 +2242,9 @@ export function createMemoryLearningMethods(
 					const expiresCompare = (a.expiresOn ?? "").localeCompare(
 						b.expiresOn ?? "",
 					);
-					if (expiresCompare !== 0) return expiresCompare;
+					if (expiresCompare !== 0) {
+						return expiresCompare;
+					}
 					return a.id.localeCompare(b.id);
 				});
 
@@ -2224,7 +2254,7 @@ export function createMemoryLearningMethods(
 				.slice(start, start + input.pageSize)
 				.map((certification) => ({ ...certification }));
 
-			return ok({
+			return await ok({
 				certifications,
 				totalCount,
 				page: input.page,

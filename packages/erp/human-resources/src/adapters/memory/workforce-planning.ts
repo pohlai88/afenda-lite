@@ -21,6 +21,7 @@ import type { MutationPorts } from "../../ports";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import { conflict, invalidState, notFound } from "../../shared/domain-guards";
 import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
+import { runSequential, sequentialReturn } from "../../shared/run-sequential";
 import {
 	assertHeadcountPlanStatusTransition,
 	assertValidHeadcountPeriod,
@@ -51,16 +52,16 @@ import type {
 import { computeLineAvailability } from "../../workforce-planning/availability";
 import { computeWorkforcePlanVarianceLine } from "../../workforce-planning/variance";
 
-export type WorkforcePlanningMemoryState = {
-	headcountPlans: Map<string, HeadcountPlan>;
+export interface WorkforcePlanningMemoryState {
 	headcountPlanIdempotency: Map<string, IdempotentHeadcountPlanRecord>;
 	headcountPlanLines: Map<string, HeadcountPlanLine>;
-	headcountReservations: Map<string, HeadcountReservation>;
+	headcountPlans: Map<string, HeadcountPlan>;
 	headcountReservationIdempotency: Map<
 		string,
 		IdempotentHeadcountReservationRecord
 	>;
-};
+	headcountReservations: Map<string, HeadcountReservation>;
+}
 
 export function createWorkforcePlanningMemoryState(): WorkforcePlanningMemoryState {
 	return {
@@ -93,7 +94,7 @@ async function recordAudit(
 		action: "CREATE" | "UPDATE" | "DELETE";
 	},
 ): Promise<Result<{ id: string }>> {
-	return ports.audit.record({
+	return await ports.audit.record({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: input.correlationId,
@@ -115,7 +116,7 @@ async function recordOutbox(
 		entityId: string;
 	},
 ): Promise<Result<{ id: string }>> {
-	return ports.outbox.append({
+	return await ports.outbox.append({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: meta.correlationId,
@@ -203,7 +204,9 @@ async function transitionHeadcountReservationStatus(
 	},
 ): Promise<Result<HeadcountReservation>> {
 	const reservation = state.headcountReservations.get(input.reservationId);
-	if (!reservation) return notFound("Headcount reservation not found");
+	if (!reservation) {
+		return notFound("Headcount reservation not found");
+	}
 	if (reservation.organizationId !== input.organizationId) {
 		return notFound(
 			"Headcount reservation not found",
@@ -214,7 +217,9 @@ async function transitionHeadcountReservationStatus(
 		reservation.version,
 		input.expectedVersion,
 	);
-	if (!versionCheck.ok) return versionCheck;
+	if (!versionCheck.ok) {
+		return versionCheck;
+	}
 	if (reservation.status !== "active") {
 		return invalidState(
 			`Cannot transition headcount reservation from ${reservation.status} to ${input.nextStatus}`,
@@ -277,7 +282,7 @@ export function createMemoryWorkforcePlanningMethods(
 				state.headcountPlanIdempotency.get(
 					idempotencyMapKey(input.organizationId, input.idempotencyKey),
 				) ?? null;
-			return ok(record ? { ...record, plan: { ...record.plan } } : null);
+			return await ok(record ? { ...record, plan: { ...record.plan } } : null);
 		},
 
 		async getHeadcountPlanById(input: {
@@ -286,9 +291,9 @@ export function createMemoryWorkforcePlanningMethods(
 		}): Promise<Result<HeadcountPlan | null>> {
 			const plan = state.headcountPlans.get(input.planId);
 			if (!plan || plan.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...plan });
+			return await ok({ ...plan });
 		},
 
 		async findApprovedHeadcountPlanForScope(input: {
@@ -306,7 +311,7 @@ export function createMemoryWorkforcePlanningMethods(
 						row.periodEnd === input.periodEnd &&
 						row.status === "approved",
 				) ?? null;
-			return ok(plan ? { ...plan } : null);
+			return await ok(plan ? { ...plan } : null);
 		},
 
 		async createHeadcountPlan(
@@ -318,7 +323,9 @@ export function createMemoryWorkforcePlanningMethods(
 				record.periodStart,
 				record.periodEnd,
 			);
-			if (!validPeriod.ok) return validPeriod;
+			if (!validPeriod.ok) {
+				return validPeriod;
+			}
 
 			const duplicateCode = Array.from(state.headcountPlans.values()).find(
 				(row) =>
@@ -330,7 +337,9 @@ export function createMemoryWorkforcePlanningMethods(
 			}
 
 			const planId = parseHumanResourcesHeadcountPlanId(randomUUID());
-			if (!planId.ok) return planId;
+			if (!planId.ok) {
+				return planId;
+			}
 			const now = new Date();
 			const plan: HeadcountPlan = {
 				id: planId.data,
@@ -388,9 +397,9 @@ export function createMemoryWorkforcePlanningMethods(
 			input: {
 				organizationId: string;
 				planId: HumanResourcesHeadcountPlanId;
-				title?: string;
-				costEnvelopeAmount?: string | null;
-				costEnvelopeCurrencyCode?: string | null;
+				title?: string | undefined;
+				costEnvelopeAmount?: string | null | undefined;
+				costEnvelopeCurrencyCode?: string | null | undefined;
 				expectedVersion: number;
 				actorUserId: string;
 			},
@@ -398,7 +407,9 @@ export function createMemoryWorkforcePlanningMethods(
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<HeadcountPlan>> {
 			const plan = state.headcountPlans.get(input.planId);
-			if (!plan) return notFound("Headcount plan not found");
+			if (!plan) {
+				return notFound("Headcount plan not found");
+			}
 			if (plan.organizationId !== input.organizationId) {
 				return notFound(
 					"Headcount plan not found",
@@ -409,7 +420,9 @@ export function createMemoryWorkforcePlanningMethods(
 				plan.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			if (plan.status !== "draft" && plan.status !== "submitted") {
 				return invalidState("Approved headcount plans are immutable");
 			}
@@ -420,13 +433,13 @@ export function createMemoryWorkforcePlanningMethods(
 				...plan,
 				title: input.title ?? plan.title,
 				costEnvelopeAmount:
-					input.costEnvelopeAmount !== undefined
-						? input.costEnvelopeAmount
-						: plan.costEnvelopeAmount,
+					input.costEnvelopeAmount === undefined
+						? plan.costEnvelopeAmount
+						: input.costEnvelopeAmount,
 				costEnvelopeCurrencyCode:
-					input.costEnvelopeCurrencyCode !== undefined
-						? input.costEnvelopeCurrencyCode
-						: plan.costEnvelopeCurrencyCode,
+					input.costEnvelopeCurrencyCode === undefined
+						? plan.costEnvelopeCurrencyCode
+						: input.costEnvelopeCurrencyCode,
 				version: plan.version + 1,
 				updatedBy: input.actorUserId,
 				updatedAt: now,
@@ -456,13 +469,15 @@ export function createMemoryWorkforcePlanningMethods(
 				status: HeadcountPlanStatus;
 				expectedVersion: number;
 				actorUserId: string;
-				rejectionReason?: string;
+				rejectionReason?: string | undefined;
 			},
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<HeadcountPlan>> {
 			const plan = state.headcountPlans.get(input.planId);
-			if (!plan) return notFound("Headcount plan not found");
+			if (!plan) {
+				return notFound("Headcount plan not found");
+			}
 			if (plan.organizationId !== input.organizationId) {
 				return notFound(
 					"Headcount plan not found",
@@ -473,12 +488,16 @@ export function createMemoryWorkforcePlanningMethods(
 				plan.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			const transition = assertHeadcountPlanStatusTransition(
 				plan.status,
 				input.status,
 			);
-			if (!transition.ok) return transition;
+			if (!transition.ok) {
+				return transition;
+			}
 
 			if (input.status === "approved") {
 				const duplicate = Array.from(state.headcountPlans.values()).find(
@@ -575,7 +594,9 @@ export function createMemoryWorkforcePlanningMethods(
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<HeadcountPlan>> {
 			const source = state.headcountPlans.get(record.sourcePlanId);
-			if (!source) return notFound("Headcount plan not found");
+			if (!source) {
+				return notFound("Headcount plan not found");
+			}
 			if (source.organizationId !== record.organizationId) {
 				return notFound(
 					"Headcount plan not found",
@@ -589,7 +610,9 @@ export function createMemoryWorkforcePlanningMethods(
 				source.version,
 				record.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 
 			const duplicateCode = Array.from(state.headcountPlans.values()).find(
 				(row) =>
@@ -601,7 +624,9 @@ export function createMemoryWorkforcePlanningMethods(
 			}
 
 			const planId = parseHumanResourcesHeadcountPlanId(randomUUID());
-			if (!planId.ok) return planId;
+			if (!planId.ok) {
+				return planId;
+			}
 			const now = new Date();
 			const draft: HeadcountPlan = {
 				id: planId.data,
@@ -645,7 +670,9 @@ export function createMemoryWorkforcePlanningMethods(
 				source.id,
 			)) {
 				const lineId = parseHumanResourcesHeadcountPlanLineId(randomUUID());
-				if (!lineId.ok) continue;
+				if (!lineId.ok) {
+					continue;
+				}
 				state.headcountPlanLines.set(lineId.data, {
 					...line,
 					id: lineId.data,
@@ -681,8 +708,8 @@ export function createMemoryWorkforcePlanningMethods(
 			organizationId: string;
 			page: number;
 			pageSize: number;
-			status?: HeadcountPlanStatus;
-			planningScopeKey?: string;
+			status?: HeadcountPlanStatus | undefined;
+			planningScopeKey?: string | undefined;
 		}): Promise<Result<HeadcountPlanListPage>> {
 			let plans = Array.from(state.headcountPlans.values()).filter(
 				(row) => row.organizationId === input.organizationId,
@@ -698,7 +725,7 @@ export function createMemoryWorkforcePlanningMethods(
 			plans.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 			const totalCount = plans.length;
 			const start = (input.page - 1) * input.pageSize;
-			return ok({
+			return await ok({
 				plans: plans.slice(start, start + input.pageSize).map((row) => ({
 					...row,
 				})),
@@ -714,16 +741,16 @@ export function createMemoryWorkforcePlanningMethods(
 		}): Promise<Result<HeadcountPlanLine | null>> {
 			const line = state.headcountPlanLines.get(input.planLineId);
 			if (!line || line.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...line });
+			return await ok({ ...line });
 		},
 
 		async listHeadcountPlanLinesByPlanId(input: {
 			organizationId: string;
 			planId: HumanResourcesHeadcountPlanId;
 		}): Promise<Result<HeadcountPlanLine[]>> {
-			return ok(
+			return await ok(
 				linesForPlan(state, input.organizationId, input.planId).map((row) => ({
 					...row,
 				})),
@@ -736,7 +763,9 @@ export function createMemoryWorkforcePlanningMethods(
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<HeadcountPlanLine>> {
 			const plan = state.headcountPlans.get(record.planId);
-			if (!plan) return notFound("Headcount plan not found");
+			if (!plan) {
+				return notFound("Headcount plan not found");
+			}
 			if (plan.organizationId !== record.organizationId) {
 				return notFound(
 					"Headcount plan not found",
@@ -748,7 +777,9 @@ export function createMemoryWorkforcePlanningMethods(
 			}
 
 			const lineId = parseHumanResourcesHeadcountPlanLineId(randomUUID());
-			if (!lineId.ok) return lineId;
+			if (!lineId.ok) {
+				return lineId;
+			}
 			const now = new Date();
 			const line: HeadcountPlanLine = {
 				id: lineId.data,
@@ -791,15 +822,15 @@ export function createMemoryWorkforcePlanningMethods(
 			input: {
 				organizationId: string;
 				planLineId: HumanResourcesHeadcountPlanLineId;
-				departmentId?: HeadcountPlanLine["departmentId"];
-				jobId?: HeadcountPlanLine["jobId"];
-				positionId?: HeadcountPlanLine["positionId"];
-				locationCode?: string | null;
-				employmentType?: HeadcountPlanLine["employmentType"];
-				plannedFte?: string;
-				plannedHeadcount?: number;
-				costEnvelopeAmount?: string | null;
-				costEnvelopeCurrencyCode?: string | null;
+				departmentId?: HeadcountPlanLine["departmentId"] | undefined;
+				jobId?: HeadcountPlanLine["jobId"] | undefined;
+				positionId?: HeadcountPlanLine["positionId"] | undefined;
+				locationCode?: string | null | undefined;
+				employmentType?: HeadcountPlanLine["employmentType"] | undefined;
+				plannedFte?: string | undefined;
+				plannedHeadcount?: number | undefined;
+				costEnvelopeAmount?: string | null | undefined;
+				costEnvelopeCurrencyCode?: string | null | undefined;
 				expectedVersion: number;
 				actorUserId: string;
 			},
@@ -807,7 +838,9 @@ export function createMemoryWorkforcePlanningMethods(
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<HeadcountPlanLine>> {
 			const line = state.headcountPlanLines.get(input.planLineId);
-			if (!line) return notFound("Headcount plan line not found");
+			if (!line) {
+				return notFound("Headcount plan line not found");
+			}
 			if (line.organizationId !== input.organizationId) {
 				return notFound(
 					"Headcount plan line not found",
@@ -822,37 +855,39 @@ export function createMemoryWorkforcePlanningMethods(
 				line.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 
 			const previous = { ...line };
 			const now = new Date();
 			const updated: HeadcountPlanLine = {
 				...line,
 				departmentId:
-					input.departmentId !== undefined
-						? input.departmentId
-						: line.departmentId,
-				jobId: input.jobId !== undefined ? input.jobId : line.jobId,
+					input.departmentId === undefined
+						? line.departmentId
+						: input.departmentId,
+				jobId: input.jobId === undefined ? line.jobId : input.jobId,
 				positionId:
-					input.positionId !== undefined ? input.positionId : line.positionId,
+					input.positionId === undefined ? line.positionId : input.positionId,
 				locationCode:
-					input.locationCode !== undefined
-						? input.locationCode
-						: line.locationCode,
+					input.locationCode === undefined
+						? line.locationCode
+						: input.locationCode,
 				employmentType:
-					input.employmentType !== undefined
-						? input.employmentType
-						: line.employmentType,
+					input.employmentType === undefined
+						? line.employmentType
+						: input.employmentType,
 				plannedFte: input.plannedFte ?? line.plannedFte,
 				plannedHeadcount: input.plannedHeadcount ?? line.plannedHeadcount,
 				costEnvelopeAmount:
-					input.costEnvelopeAmount !== undefined
-						? input.costEnvelopeAmount
-						: line.costEnvelopeAmount,
+					input.costEnvelopeAmount === undefined
+						? line.costEnvelopeAmount
+						: input.costEnvelopeAmount,
 				costEnvelopeCurrencyCode:
-					input.costEnvelopeCurrencyCode !== undefined
-						? input.costEnvelopeCurrencyCode
-						: line.costEnvelopeCurrencyCode,
+					input.costEnvelopeCurrencyCode === undefined
+						? line.costEnvelopeCurrencyCode
+						: input.costEnvelopeCurrencyCode,
 				version: line.version + 1,
 				updatedBy: input.actorUserId,
 				updatedAt: now,
@@ -886,7 +921,9 @@ export function createMemoryWorkforcePlanningMethods(
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<void>> {
 			const line = state.headcountPlanLines.get(input.planLineId);
-			if (!line) return notFound("Headcount plan line not found");
+			if (!line) {
+				return notFound("Headcount plan line not found");
+			}
 			if (line.organizationId !== input.organizationId) {
 				return notFound(
 					"Headcount plan line not found",
@@ -901,7 +938,9 @@ export function createMemoryWorkforcePlanningMethods(
 				line.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 
 			state.headcountPlanLines.delete(input.planLineId);
 
@@ -929,7 +968,7 @@ export function createMemoryWorkforcePlanningMethods(
 				state.headcountReservationIdempotency.get(
 					idempotencyMapKey(input.organizationId, input.idempotencyKey),
 				) ?? null;
-			return ok(
+			return await ok(
 				record ? { ...record, reservation: { ...record.reservation } } : null,
 			);
 		},
@@ -940,9 +979,9 @@ export function createMemoryWorkforcePlanningMethods(
 		}): Promise<Result<HeadcountReservation | null>> {
 			const reservation = state.headcountReservations.get(input.reservationId);
 			if (!reservation || reservation.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...reservation });
+			return await ok({ ...reservation });
 		},
 
 		async findActiveHeadcountReservationForRequisition(input: {
@@ -956,7 +995,7 @@ export function createMemoryWorkforcePlanningMethods(
 						row.requisitionId === input.requisitionId &&
 						row.status === "active",
 				) ?? null;
-			return ok(reservation ? { ...reservation } : null);
+			return await ok(reservation ? { ...reservation } : null);
 		},
 
 		async reserveHeadcount(
@@ -968,7 +1007,9 @@ export function createMemoryWorkforcePlanningMethods(
 				organizationId: record.organizationId,
 				requisitionId: record.requisitionId,
 			});
-			if (!requisition.ok) return requisition;
+			if (!requisition.ok) {
+				return requisition;
+			}
 			if (requisition.data === null) {
 				return notFound(
 					"Requisition not found",
@@ -993,7 +1034,9 @@ export function createMemoryWorkforcePlanningMethods(
 			const reservationId = parseHumanResourcesHeadcountReservationId(
 				randomUUID(),
 			);
-			if (!reservationId.ok) return reservationId;
+			if (!reservationId.ok) {
+				return reservationId;
+			}
 			const line = state.headcountPlanLines.get(record.planLineId);
 			if (!line || line.organizationId !== record.organizationId) {
 				return notFound("Headcount plan line not found");
@@ -1070,7 +1113,7 @@ export function createMemoryWorkforcePlanningMethods(
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<HeadcountReservation>> {
-			return transitionHeadcountReservationStatus(state, this, {
+			return await transitionHeadcountReservationStatus(state, this, {
 				...input,
 				nextStatus: "released",
 				ports,
@@ -1088,7 +1131,7 @@ export function createMemoryWorkforcePlanningMethods(
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<HeadcountReservation>> {
-			return transitionHeadcountReservationStatus(state, this, {
+			return await transitionHeadcountReservationStatus(state, this, {
 				...input,
 				nextStatus: "consumed",
 				ports,
@@ -1111,21 +1154,29 @@ export function createMemoryWorkforcePlanningMethods(
 					row.requisitionId === input.requisitionId &&
 					row.status === "active",
 			);
-			for (const reservation of active) {
-				const released = await transitionHeadcountReservationStatus(
-					state,
-					this,
-					{
-						organizationId: input.organizationId,
-						reservationId: reservation.id,
-						expectedVersion: reservation.version,
-						actorUserId: input.actorUserId,
-						nextStatus: "released",
-						ports,
-						meta,
-					},
-				);
-				if (!released.ok) return released;
+			const sequentialOutcome1 = await runSequential(
+				active,
+				async (reservation) => {
+					const released = await transitionHeadcountReservationStatus(
+						state,
+						this,
+						{
+							organizationId: input.organizationId,
+							reservationId: reservation.id,
+							expectedVersion: reservation.version,
+							actorUserId: input.actorUserId,
+							nextStatus: "released",
+							ports,
+							meta,
+						},
+					);
+					if (!released.ok) {
+						return sequentialReturn(released);
+					}
+				},
+			);
+			if (sequentialOutcome1.kind === "return") {
+				return sequentialOutcome1.value;
 			}
 			return ok(undefined);
 		},
@@ -1157,7 +1208,9 @@ export function createMemoryWorkforcePlanningMethods(
 				ports,
 				meta,
 			});
-			if (!consumed.ok) return consumed;
+			if (!consumed.ok) {
+				return consumed;
+			}
 			return ok(undefined);
 		},
 
@@ -1165,8 +1218,8 @@ export function createMemoryWorkforcePlanningMethods(
 			organizationId: string;
 			page: number;
 			pageSize: number;
-			planId?: HumanResourcesHeadcountPlanId;
-			requisitionId?: HumanResourcesRequisitionId;
+			planId?: HumanResourcesHeadcountPlanId | undefined;
+			requisitionId?: HumanResourcesRequisitionId | undefined;
 		}): Promise<Result<HeadcountReservationListPage>> {
 			let reservations = Array.from(
 				state.headcountReservations.values(),
@@ -1186,7 +1239,7 @@ export function createMemoryWorkforcePlanningMethods(
 			);
 			const totalCount = reservations.length;
 			const start = (input.page - 1) * input.pageSize;
-			return ok({
+			return await ok({
 				reservations: reservations
 					.slice(start, start + input.pageSize)
 					.map((row) => ({ ...row })),
@@ -1200,7 +1253,7 @@ export function createMemoryWorkforcePlanningMethods(
 			organizationId: string;
 			planLineId: HumanResourcesHeadcountPlanLineId;
 		}): Promise<Result<HeadcountReservation[]>> {
-			return ok(
+			return await ok(
 				reservationsForLine(state, input.organizationId, input.planLineId).map(
 					(row) => ({ ...row }),
 				),
@@ -1213,7 +1266,7 @@ export function createMemoryWorkforcePlanningMethods(
 		}): Promise<Result<HeadcountAvailability | null>> {
 			const line = state.headcountPlanLines.get(input.planLineId);
 			if (!line || line.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
 			const reservations = reservationsForLine(
 				state,
@@ -1221,7 +1274,7 @@ export function createMemoryWorkforcePlanningMethods(
 				input.planLineId,
 			);
 			const lineAvailability = computeLineAvailability({ line, reservations });
-			return ok({
+			return await ok({
 				planId: line.planId,
 				planLineId: line.id,
 				lines: [lineAvailability],
@@ -1241,7 +1294,7 @@ export function createMemoryWorkforcePlanningMethods(
 				) ?? null;
 
 			if (!activeReservation) {
-				return ok({
+				return await ok({
 					organizationId: input.organizationId,
 					requisitionId: input.requisitionId,
 					approvedPlan: null,
@@ -1263,7 +1316,7 @@ export function createMemoryWorkforcePlanningMethods(
 					})
 				: null;
 
-			return ok({
+			return await ok({
 				organizationId: input.organizationId,
 				requisitionId: input.requisitionId,
 				approvedPlan: plan ? { ...plan } : null,
@@ -1275,7 +1328,7 @@ export function createMemoryWorkforcePlanningMethods(
 		async getWorkforcePlanVariance(input: {
 			organizationId: string;
 			planId: HumanResourcesHeadcountPlanId;
-			asOf?: string;
+			asOf?: string | undefined;
 		}): Promise<Result<WorkforcePlanVariance>> {
 			const plan = state.headcountPlans.get(input.planId);
 			if (!plan || plan.organizationId !== input.organizationId) {
@@ -1286,7 +1339,9 @@ export function createMemoryWorkforcePlanningMethods(
 				organizationId: input.organizationId,
 				asOf,
 			});
-			if (!actuals.ok) return actuals;
+			if (!actuals.ok) {
+				return actuals;
+			}
 
 			const lines = linesForPlan(state, input.organizationId, input.planId);
 			const varianceLines = lines.map((line) => {

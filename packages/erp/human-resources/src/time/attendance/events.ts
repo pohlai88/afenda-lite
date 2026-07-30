@@ -47,7 +47,7 @@ async function recordTypedAttendanceEvent(
 		eventType: AttendanceEventType;
 	},
 ): Promise<Result<AttendanceEvent>> {
-	return runTimeCommand(input, options, {
+	return await runTimeCommand(input, options, {
 		schema: config.schema,
 		invalidMessage: config.invalidMessage,
 		command: HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_RECORD,
@@ -58,7 +58,9 @@ async function recordTypedAttendanceEvent(
 				employmentId: data.employmentId ?? null,
 				workDate: data.localWorkDate,
 			});
-			if (!employment.ok) return employment;
+			if (!employment.ok) {
+				return employment;
+			}
 			const occurredAt = new Date(data.occurredAt);
 			const source = data.source ?? "self";
 			const fingerprint = JSON.stringify({
@@ -75,7 +77,9 @@ async function recordTypedAttendanceEvent(
 				organizationId: data.organizationId,
 				idempotencyKey: data.idempotencyKey,
 			});
-			if (!existing.ok) return existing;
+			if (!existing.ok) {
+				return existing;
+			}
 			if (existing.data !== null) {
 				if (existing.data.createRequestFingerprint !== fingerprint) {
 					return fail(
@@ -115,7 +119,7 @@ export async function recordAttendanceEvent(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceEvent>> {
-	return runTimeCommand(input, options, {
+	return await runTimeCommand(input, options, {
 		schema: recordAttendanceEventInputSchema,
 		invalidMessage: "Invalid attendance event record input",
 		command: HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_RECORD,
@@ -126,7 +130,9 @@ export async function recordAttendanceEvent(
 				employmentId: data.employmentId ?? null,
 				workDate: data.localWorkDate,
 			});
-			if (!employment.ok) return employment;
+			if (!employment.ok) {
+				return employment;
+			}
 			const occurredAt = new Date(data.occurredAt);
 			const fingerprint = JSON.stringify({
 				employeeId: data.employeeId,
@@ -142,7 +148,9 @@ export async function recordAttendanceEvent(
 				organizationId: data.organizationId,
 				idempotencyKey: data.idempotencyKey,
 			});
-			if (!existing.ok) return existing;
+			if (!existing.ok) {
+				return existing;
+			}
 			if (existing.data !== null) {
 				if (existing.data.createRequestFingerprint !== fingerprint) {
 					return fail(
@@ -183,7 +191,7 @@ export async function recordClockIn(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceEvent>> {
-	return recordTypedAttendanceEvent(input, options, {
+	return await recordTypedAttendanceEvent(input, options, {
 		schema: recordClockInInputSchema,
 		invalidMessage: "Invalid clock-in input",
 		eventType: "clock_in",
@@ -195,7 +203,7 @@ export async function recordClockOut(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceEvent>> {
-	return recordTypedAttendanceEvent(input, options, {
+	return await recordTypedAttendanceEvent(input, options, {
 		schema: recordClockOutInputSchema,
 		invalidMessage: "Invalid clock-out input",
 		eventType: "clock_out",
@@ -207,7 +215,7 @@ export async function recordBreakStart(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceEvent>> {
-	return recordTypedAttendanceEvent(input, options, {
+	return await recordTypedAttendanceEvent(input, options, {
 		schema: recordBreakStartInputSchema,
 		invalidMessage: "Invalid break-start input",
 		eventType: "break_start",
@@ -219,7 +227,7 @@ export async function recordBreakEnd(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceEvent>> {
-	return recordTypedAttendanceEvent(input, options, {
+	return await recordTypedAttendanceEvent(input, options, {
 		schema: recordBreakEndInputSchema,
 		invalidMessage: "Invalid break-end input",
 		eventType: "break_end",
@@ -231,7 +239,7 @@ export async function recordManualAttendance(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceEvent>> {
-	return runTimeCommand(input, options, {
+	return await runTimeCommand(input, options, {
 		schema: recordManualAttendanceInputSchema,
 		invalidMessage: "Invalid manual attendance input",
 		command: HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_RECORD,
@@ -242,7 +250,9 @@ export async function recordManualAttendance(
 				employmentId: data.employmentId ?? null,
 				workDate: data.localWorkDate,
 			});
-			if (!employment.ok) return employment;
+			if (!employment.ok) {
+				return employment;
+			}
 			const occurredAt = new Date(data.occurredAt);
 			const fingerprint = JSON.stringify({
 				employeeId: data.employeeId,
@@ -258,7 +268,9 @@ export async function recordManualAttendance(
 				organizationId: data.organizationId,
 				idempotencyKey: data.idempotencyKey,
 			});
-			if (!existing.ok) return existing;
+			if (!existing.ok) {
+				return existing;
+			}
 			if (existing.data !== null) {
 				if (existing.data.createRequestFingerprint !== fingerprint) {
 					return fail(
@@ -298,7 +310,7 @@ export async function correctAttendanceEvent(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceEvent>> {
-	return runTimeCommand(input, options, {
+	return await runTimeCommand(input, options, {
 		schema: correctAttendanceEventInputSchema,
 		invalidMessage: "Invalid attendance event correct input",
 		command: HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_CORRECT,
@@ -324,7 +336,7 @@ export async function voidAttendanceEvent(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceEvent>> {
-	return runTimeCommand(input, options, {
+	return await runTimeCommand(input, options, {
 		schema: voidAttendanceEventInputSchema,
 		invalidMessage: "Invalid attendance event void input",
 		command: HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_VOID,
@@ -337,7 +349,7 @@ export async function getAttendanceEvent(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceEvent | null>> {
-	return runTimeQuery(input, options, {
+	return await runTimeQuery(input, options, {
 		schema: getAttendanceEventInputSchema,
 		invalidMessage: "Invalid attendance event get input",
 		query: HUMAN_RESOURCES_QUERY_ATTENDANCE_EVENT_GET,
@@ -353,7 +365,7 @@ export async function listAttendanceEvents(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceEvent[]>> {
-	return runTimeQuery(input, options, {
+	return await runTimeQuery(input, options, {
 		schema: listAttendanceEventsInputSchema,
 		invalidMessage: "Invalid attendance event list input",
 		query: HUMAN_RESOURCES_QUERY_ATTENDANCE_EVENT_LIST,
@@ -365,7 +377,7 @@ export async function listAttendanceAdjustments(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceAdjustment[]>> {
-	return runTimeQuery(input, options, {
+	return await runTimeQuery(input, options, {
 		schema: listAttendanceAdjustmentsInputSchema,
 		invalidMessage: "Invalid attendance adjustment list input",
 		query: HUMAN_RESOURCES_QUERY_ATTENDANCE_ADJUSTMENT_LIST,

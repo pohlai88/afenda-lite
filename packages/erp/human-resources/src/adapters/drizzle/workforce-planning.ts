@@ -41,6 +41,7 @@ import {
 	isPostgresUniqueConstraint,
 	mapPersistenceFailure,
 } from "../../shared/persistence-errors";
+import { runSequential, sequentialReturn } from "../../shared/run-sequential";
 import {
 	assertHeadcountPlanStatusTransition,
 	assertReservationWithinAvailability,
@@ -62,56 +63,64 @@ import type {
 import { computeLineAvailability } from "../../workforce-planning/availability";
 import { computeWorkforcePlanVarianceLine } from "../../workforce-planning/variance";
 
+const HR_REGEX_1 = /hr_headcount_plan_org_code_uidx/i;
+const HR_REGEX_2 = /hr_headcount_plan_org_scope_period_approved_uidx/i;
+const HR_REGEX_3 = /hr_headcount_reservation_org_requisition_active_uidx/i;
+
 type WorkforcePlanVarianceLine = WorkforcePlanVariance["lines"][number];
 
-type HeadcountPlanSqlRow = {
-	id: string;
-	organization_id: string;
-	code: string;
-	title: string;
-	planning_scope_key: string;
-	period_start: string;
-	period_end: string;
-	status: string;
-	plan_version: number;
-	supersedes_plan_id: string | null;
-	approved_by: string | null;
+interface HeadcountPlanSqlRow {
 	approved_at: Date | null;
-	rejected_by: string | null;
-	rejected_at: Date | null;
-	rejection_reason: string | null;
+	approved_by: string | null;
+	code: string;
 	cost_envelope_amount: string | null;
 	cost_envelope_currency_code: string | null;
 	create_idempotency_key: string;
 	create_request_fingerprint: string;
-	version: number;
-	created_by: string;
-	updated_by: string;
 	created_at: Date;
-	updated_at: Date;
-};
-
-type HeadcountPlanLineSqlRow = {
+	created_by: string;
 	id: string;
 	organization_id: string;
-	plan_id: string;
-	department_id: string | null;
-	job_id: string | null;
-	position_id: string | null;
-	location_code: string | null;
-	employment_type: string | null;
-	planned_fte: string;
-	planned_headcount: number;
+	period_end: string;
+	period_start: string;
+	plan_version: number;
+	planning_scope_key: string;
+	rejected_at: Date | null;
+	rejected_by: string | null;
+	rejection_reason: string | null;
+	status: string;
+	supersedes_plan_id: string | null;
+	title: string;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+}
+
+interface HeadcountPlanLineSqlRow {
 	cost_envelope_amount: string | null;
 	cost_envelope_currency_code: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
 	created_at: Date;
+	created_by: string;
+	department_id: string | null;
+	employment_type: string | null;
+	id: string;
+	job_id: string | null;
+	location_code: string | null;
+	organization_id: string;
+	plan_id: string;
+	planned_fte: string;
+	planned_headcount: number;
+	position_id: string | null;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+}
 
-type HeadcountReservationSqlRow = {
+interface HeadcountReservationSqlRow {
+	create_idempotency_key: string;
+	create_request_fingerprint: string;
+	created_at: Date;
+	created_by: string;
 	id: string;
 	organization_id: string;
 	plan_id: string;
@@ -120,24 +129,24 @@ type HeadcountReservationSqlRow = {
 	reserved_fte: string;
 	reserved_headcount: number;
 	status: string;
-	create_idempotency_key: string;
-	create_request_fingerprint: string;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+}
 
 function mapHeadcountPlan(
 	row: typeof hrHeadcountPlan.$inferSelect,
 ): Result<HeadcountPlan> {
 	const id = parseHumanResourcesHeadcountPlanId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	let supersedesPlanId: HeadcountPlan["supersedesPlanId"] = null;
 	if (row.supersedesPlanId !== null) {
 		const parsed = parseHumanResourcesHeadcountPlanId(row.supersedesPlanId);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		supersedesPlanId = parsed.data;
 	}
 	const status = headcountPlanStatusSchema.safeParse(row.status);
@@ -174,11 +183,15 @@ function mapHeadcountPlan(
 
 function mapHeadcountPlanSql(row: HeadcountPlanSqlRow): Result<HeadcountPlan> {
 	const id = parseHumanResourcesHeadcountPlanId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	let supersedesPlanId: HeadcountPlan["supersedesPlanId"] = null;
 	if (row.supersedes_plan_id !== null) {
 		const parsed = parseHumanResourcesHeadcountPlanId(row.supersedes_plan_id);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		supersedesPlanId = parsed.data;
 	}
 	const status = headcountPlanStatusSchema.safeParse(row.status);
@@ -217,25 +230,35 @@ function mapHeadcountPlanLine(
 	row: typeof hrHeadcountPlanLine.$inferSelect,
 ): Result<HeadcountPlanLine> {
 	const id = parseHumanResourcesHeadcountPlanLineId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const planId = parseHumanResourcesHeadcountPlanId(row.planId);
-	if (!planId.ok) return planId;
+	if (!planId.ok) {
+		return planId;
+	}
 	let departmentId: HeadcountPlanLine["departmentId"] = null;
 	if (row.departmentId !== null) {
 		const parsed = parseHumanResourcesDepartmentId(row.departmentId);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		departmentId = parsed.data;
 	}
 	let jobId: HeadcountPlanLine["jobId"] = null;
 	if (row.jobId !== null) {
 		const parsed = parseHumanResourcesJobId(row.jobId);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		jobId = parsed.data;
 	}
 	let positionId: HeadcountPlanLine["positionId"] = null;
 	if (row.positionId !== null) {
 		const parsed = parseHumanResourcesPositionId(row.positionId);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		positionId = parsed.data;
 	}
 	const employmentType = headcountEmploymentTypeSchema
@@ -272,25 +295,35 @@ function mapHeadcountPlanLineSql(
 	row: HeadcountPlanLineSqlRow,
 ): Result<HeadcountPlanLine> {
 	const id = parseHumanResourcesHeadcountPlanLineId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const planId = parseHumanResourcesHeadcountPlanId(row.plan_id);
-	if (!planId.ok) return planId;
+	if (!planId.ok) {
+		return planId;
+	}
 	let departmentId: HeadcountPlanLine["departmentId"] = null;
 	if (row.department_id !== null) {
 		const parsed = parseHumanResourcesDepartmentId(row.department_id);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		departmentId = parsed.data;
 	}
 	let jobId: HeadcountPlanLine["jobId"] = null;
 	if (row.job_id !== null) {
 		const parsed = parseHumanResourcesJobId(row.job_id);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		jobId = parsed.data;
 	}
 	let positionId: HeadcountPlanLine["positionId"] = null;
 	if (row.position_id !== null) {
 		const parsed = parseHumanResourcesPositionId(row.position_id);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		positionId = parsed.data;
 	}
 	const employmentType = headcountEmploymentTypeSchema
@@ -327,13 +360,21 @@ function mapHeadcountReservation(
 	row: typeof hrHeadcountReservation.$inferSelect,
 ): Result<HeadcountReservation> {
 	const id = parseHumanResourcesHeadcountReservationId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const planId = parseHumanResourcesHeadcountPlanId(row.planId);
-	if (!planId.ok) return planId;
+	if (!planId.ok) {
+		return planId;
+	}
 	const planLineId = parseHumanResourcesHeadcountPlanLineId(row.planLineId);
-	if (!planLineId.ok) return planLineId;
+	if (!planLineId.ok) {
+		return planLineId;
+	}
 	const requisitionId = parseHumanResourcesRequisitionId(row.requisitionId);
-	if (!requisitionId.ok) return requisitionId;
+	if (!requisitionId.ok) {
+		return requisitionId;
+	}
 	const status = headcountReservationStatusSchema.safeParse(row.status);
 	if (!status.success) {
 		return fail("INTERNAL_ERROR", "Invalid headcount reservation status");
@@ -361,13 +402,21 @@ function mapHeadcountReservationSql(
 	row: HeadcountReservationSqlRow,
 ): Result<HeadcountReservation> {
 	const id = parseHumanResourcesHeadcountReservationId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const planId = parseHumanResourcesHeadcountPlanId(row.plan_id);
-	if (!planId.ok) return planId;
+	if (!planId.ok) {
+		return planId;
+	}
 	const planLineId = parseHumanResourcesHeadcountPlanLineId(row.plan_line_id);
-	if (!planLineId.ok) return planLineId;
+	if (!planLineId.ok) {
+		return planLineId;
+	}
 	const requisitionId = parseHumanResourcesRequisitionId(row.requisition_id);
-	if (!requisitionId.ok) return requisitionId;
+	if (!requisitionId.ok) {
+		return requisitionId;
+	}
 	const status = headcountReservationStatusSchema.safeParse(row.status);
 	if (!status.success) {
 		return fail("INTERNAL_ERROR", "Invalid headcount reservation status");
@@ -469,8 +518,8 @@ async function transitionHeadcountReservationStatus(
 	});
 	try {
 		const [rows] = await runNeonHttpTransaction<[HeadcountReservationSqlRow[]]>(
-			(sql) => [
-				sql`
+			(sqlValue9) => [
+				sqlValue9`
 					WITH mutated AS (
 						UPDATE hr_headcount_reservation
 						SET status = ${nextStatus},
@@ -510,13 +559,15 @@ async function transitionHeadcountReservationStatus(
 				`,
 			],
 		);
-		const row = rows[0];
+		const [row] = rows;
 		if (!row) {
 			const again = await host.getHeadcountReservationById({
 				organizationId: input.organizationId,
 				reservationId: input.reservationId,
 			});
-			if (!again.ok) return again;
+			if (!again.ok) {
+				return again;
+			}
 			if (again.data === null) {
 				const foreign = await db
 					.select({
@@ -566,10 +617,14 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			const mapped = mapHeadcountPlan(row);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return ok({
 				plan: mapped.data,
 				createRequestFingerprint: row.createRequestFingerprint,
@@ -594,8 +649,10 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapHeadcountPlan(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load headcount plan");
@@ -617,8 +674,10 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapHeadcountPlan(row);
 		} catch (error) {
 			return mapPersistenceFailure(
@@ -633,16 +692,20 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 			record.periodStart,
 			record.periodEnd,
 		);
-		if (!periodCheck.ok) return periodCheck;
+		if (!periodCheck.ok) {
+			return periodCheck;
+		}
 
 		const brandedId = parseHumanResourcesHeadcountPlanId(randomUUID());
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 
 		try {
 			const [rows] = await runNeonHttpTransaction<[HeadcountPlanSqlRow[]]>(
-				(sql) => [
-					sql`
+				(sqlValue8) => [
+					sqlValue8`
 						WITH mutated AS (
 							INSERT INTO hr_headcount_plan (
 								id, organization_id, code, title, planning_scope_key, period_start,
@@ -674,8 +737,10 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 					`,
 				],
 			);
-			const row = rows[0];
-			if (!row) return conflict("Unable to create headcount plan");
+			const [row] = rows;
+			if (!row) {
+				return conflict("Unable to create headcount plan");
+			}
 			return mapHeadcountPlanSql(row);
 		} catch (error) {
 			if (isCreateIdempotencyUniqueViolation(error)) {
@@ -683,7 +748,9 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 					organizationId: record.organizationId,
 					idempotencyKey: record.createIdempotencyKey,
 				});
-				if (!existing.ok) return existing;
+				if (!existing.ok) {
+					return existing;
+				}
 				if (existing.data !== null) {
 					if (
 						existing.data.createRequestFingerprint ===
@@ -694,9 +761,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 					return conflict("Idempotency key already used with different data");
 				}
 			}
-			if (
-				isPostgresUniqueConstraint(error, /hr_headcount_plan_org_code_uidx/i)
-			) {
+			if (isPostgresUniqueConstraint(error, HR_REGEX_1)) {
 				return conflict("Headcount plan code already exists");
 			}
 			return mapPersistenceFailure(error, "Failed to create headcount plan");
@@ -708,14 +773,20 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 			organizationId: input.organizationId,
 			planId: input.planId,
 		});
-		if (!existing.ok) return existing;
-		if (existing.data === null) return notFound("Headcount plan not found");
+		if (!existing.ok) {
+			return existing;
+		}
+		if (existing.data === null) {
+			return notFound("Headcount plan not found");
+		}
 		const plan = existing.data;
 		const versionCheck = assertExpectedVersion(
 			plan.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		if (plan.status !== "draft" && plan.status !== "submitted") {
 			return invalidState("Approved headcount plans are immutable");
 		}
@@ -724,18 +795,18 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 		const auditId = randomUUID();
 		const nextTitle = input.title ?? plan.title;
 		const nextCostAmount =
-			input.costEnvelopeAmount !== undefined
-				? input.costEnvelopeAmount
-				: plan.costEnvelopeAmount;
+			input.costEnvelopeAmount === undefined
+				? plan.costEnvelopeAmount
+				: input.costEnvelopeAmount;
 		const nextCostCurrency =
-			input.costEnvelopeCurrencyCode !== undefined
-				? input.costEnvelopeCurrencyCode
-				: plan.costEnvelopeCurrencyCode;
+			input.costEnvelopeCurrencyCode === undefined
+				? plan.costEnvelopeCurrencyCode
+				: input.costEnvelopeCurrencyCode;
 
 		try {
 			const [rows] = await runNeonHttpTransaction<[HeadcountPlanSqlRow[]]>(
-				(sql) => [
-					sql`
+				(sqlValue7) => [
+					sqlValue7`
 						WITH mutated AS (
 							UPDATE hr_headcount_plan
 							SET title = ${nextTitle},
@@ -765,13 +836,15 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				const again = await this.getHeadcountPlanById({
 					organizationId: input.organizationId,
 					planId: input.planId,
 				});
-				if (!again.ok) return again;
+				if (!again.ok) {
+					return again;
+				}
 				if (
 					again.data !== null &&
 					again.data.status !== "draft" &&
@@ -795,19 +868,27 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 			organizationId: input.organizationId,
 			planId: input.planId,
 		});
-		if (!existing.ok) return existing;
-		if (existing.data === null) return notFound("Headcount plan not found");
+		if (!existing.ok) {
+			return existing;
+		}
+		if (existing.data === null) {
+			return notFound("Headcount plan not found");
+		}
 		const plan = existing.data;
 		const versionCheck = assertExpectedVersion(
 			plan.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const transitionCheck = assertHeadcountPlanStatusTransition(
 			plan.status,
 			input.status,
 		);
-		if (!transitionCheck.ok) return transitionCheck;
+		if (!transitionCheck.ok) {
+			return transitionCheck;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -828,8 +909,8 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 
 		try {
 			const [rows] = await runNeonHttpTransaction<[HeadcountPlanSqlRow[]]>(
-				(sql) => [
-					sql`
+				(sqlValue6) => [
+					sqlValue6`
 						WITH mutated AS (
 							UPDATE hr_headcount_plan
 							SET status = ${input.status},
@@ -904,13 +985,15 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				const again = await this.getHeadcountPlanById({
 					organizationId: input.organizationId,
 					planId: input.planId,
 				});
-				if (!again.ok) return again;
+				if (!again.ok) {
+					return again;
+				}
 				return missAfterOptimisticUpdate({
 					found: again.data !== null,
 					entityLabel: "Headcount plan",
@@ -918,12 +1001,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 			}
 			return mapHeadcountPlanSql(row);
 		} catch (error) {
-			if (
-				isPostgresUniqueConstraint(
-					error,
-					/hr_headcount_plan_org_scope_period_approved_uidx/i,
-				)
-			) {
+			if (isPostgresUniqueConstraint(error, HR_REGEX_2)) {
 				return conflict(
 					"An approved headcount plan already exists for this scope and period",
 				);
@@ -940,8 +1018,12 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 			organizationId: record.organizationId,
 			planId: record.sourcePlanId,
 		});
-		if (!source.ok) return source;
-		if (source.data === null) return notFound("Headcount plan not found");
+		if (!source.ok) {
+			return source;
+		}
+		if (source.data === null) {
+			return notFound("Headcount plan not found");
+		}
 		if (source.data.status !== "approved") {
 			return invalidState("Only approved headcount plans can be superseded");
 		}
@@ -950,16 +1032,20 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 			sourcePlan.version,
 			record.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const brandedId = parseHumanResourcesHeadcountPlanId(randomUUID());
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 
 		try {
 			const [rows] = await runNeonHttpTransaction<[HeadcountPlanSqlRow[]]>(
-				(sql) => [
-					sql`
+				(sqlValue5) => [
+					sqlValue5`
 						WITH source_check AS (
 							SELECT id FROM hr_headcount_plan
 							WHERE id = ${record.sourcePlanId}
@@ -998,7 +1084,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 						)
 						SELECT mutated.* FROM mutated JOIN audited ON true
 					`,
-					sql`
+					sqlValue5`
 						INSERT INTO hr_headcount_plan_line (
 							id, organization_id, plan_id, department_id, job_id, position_id,
 							location_code, employment_type, planned_fte, planned_headcount,
@@ -1020,7 +1106,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return conflict(
 					"Source headcount plan is no longer approved or its version is stale",
@@ -1033,7 +1119,9 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 					organizationId: record.organizationId,
 					idempotencyKey: record.createIdempotencyKey,
 				});
-				if (!existing.ok) return existing;
+				if (!existing.ok) {
+					return existing;
+				}
 				if (existing.data !== null) {
 					if (
 						existing.data.createRequestFingerprint ===
@@ -1044,9 +1132,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 					return conflict("Idempotency key already used with different data");
 				}
 			}
-			if (
-				isPostgresUniqueConstraint(error, /hr_headcount_plan_org_code_uidx/i)
-			) {
+			if (isPostgresUniqueConstraint(error, HR_REGEX_1)) {
 				return conflict("Headcount plan code already exists");
 			}
 			return mapPersistenceFailure(error, "Failed to supersede headcount plan");
@@ -1083,7 +1169,9 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 			const plans: HeadcountPlan[] = [];
 			for (const row of rows) {
 				const mapped = mapHeadcountPlan(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				plans.push(mapped.data);
 			}
 			return ok({
@@ -1109,8 +1197,10 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapHeadcountPlanLine(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load headcount plan line");
@@ -1132,7 +1222,9 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 			const lines: HeadcountPlanLine[] = [];
 			for (const row of rows) {
 				const mapped = mapHeadcountPlanLine(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				lines.push(mapped.data);
 			}
 			return ok(lines);
@@ -1149,20 +1241,26 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 			organizationId: record.organizationId,
 			planId: record.planId,
 		});
-		if (!plan.ok) return plan;
-		if (plan.data === null) return notFound("Headcount plan not found");
+		if (!plan.ok) {
+			return plan;
+		}
+		if (plan.data === null) {
+			return notFound("Headcount plan not found");
+		}
 		if (plan.data.status !== "draft" && plan.data.status !== "submitted") {
 			return invalidState("Approved headcount plans are immutable");
 		}
 
 		const brandedId = parseHumanResourcesHeadcountPlanLineId(randomUUID());
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 
 		try {
 			const [rows] = await runNeonHttpTransaction<[HeadcountPlanLineSqlRow[]]>(
-				(sql) => [
-					sql`
+				(sqlValue4) => [
+					sqlValue4`
 						WITH plan_check AS (
 							SELECT id FROM hr_headcount_plan
 							WHERE id = ${record.planId}
@@ -1200,8 +1298,10 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 					`,
 				],
 			);
-			const row = rows[0];
-			if (!row) return invalidState("Approved headcount plans are immutable");
+			const [row] = rows;
+			if (!row) {
+				return invalidState("Approved headcount plans are immutable");
+			}
 			return mapHeadcountPlanLineSql(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to add headcount plan line");
@@ -1213,13 +1313,19 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 			organizationId: input.organizationId,
 			planLineId: input.planLineId,
 		});
-		if (!line.ok) return line;
-		if (line.data === null) return notFound("Headcount plan line not found");
+		if (!line.ok) {
+			return line;
+		}
+		if (line.data === null) {
+			return notFound("Headcount plan line not found");
+		}
 		const plan = await this.getHeadcountPlanById({
 			organizationId: input.organizationId,
 			planId: line.data.planId,
 		});
-		if (!plan.ok) return plan;
+		if (!plan.ok) {
+			return plan;
+		}
 		if (
 			plan.data === null ||
 			(plan.data.status !== "draft" && plan.data.status !== "submitted")
@@ -1230,41 +1336,43 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 			line.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
 		const nextDepartmentId =
-			input.departmentId !== undefined
-				? input.departmentId
-				: line.data.departmentId;
-		const nextJobId = input.jobId !== undefined ? input.jobId : line.data.jobId;
+			input.departmentId === undefined
+				? line.data.departmentId
+				: input.departmentId;
+		const nextJobId = input.jobId === undefined ? line.data.jobId : input.jobId;
 		const nextPositionId =
-			input.positionId !== undefined ? input.positionId : line.data.positionId;
+			input.positionId === undefined ? line.data.positionId : input.positionId;
 		const nextLocationCode =
-			input.locationCode !== undefined
-				? input.locationCode
-				: line.data.locationCode;
+			input.locationCode === undefined
+				? line.data.locationCode
+				: input.locationCode;
 		const nextEmploymentType =
-			input.employmentType !== undefined
-				? input.employmentType
-				: line.data.employmentType;
+			input.employmentType === undefined
+				? line.data.employmentType
+				: input.employmentType;
 		const nextPlannedFte = input.plannedFte ?? line.data.plannedFte;
 		const nextPlannedHeadcount =
 			input.plannedHeadcount ?? line.data.plannedHeadcount;
 		const nextCostAmount =
-			input.costEnvelopeAmount !== undefined
-				? input.costEnvelopeAmount
-				: line.data.costEnvelopeAmount;
+			input.costEnvelopeAmount === undefined
+				? line.data.costEnvelopeAmount
+				: input.costEnvelopeAmount;
 		const nextCostCurrency =
-			input.costEnvelopeCurrencyCode !== undefined
-				? input.costEnvelopeCurrencyCode
-				: line.data.costEnvelopeCurrencyCode;
+			input.costEnvelopeCurrencyCode === undefined
+				? line.data.costEnvelopeCurrencyCode
+				: input.costEnvelopeCurrencyCode;
 
 		try {
 			const [rows] = await runNeonHttpTransaction<[HeadcountPlanLineSqlRow[]]>(
-				(sql) => [
-					sql`
+				(sqlValue3) => [
+					sqlValue3`
 						WITH mutated AS (
 							UPDATE hr_headcount_plan_line l
 							SET department_id = ${nextDepartmentId},
@@ -1302,13 +1410,15 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				const again = await this.getHeadcountPlanLineById({
 					organizationId: input.organizationId,
 					planLineId: input.planLineId,
 				});
-				if (!again.ok) return again;
+				if (!again.ok) {
+					return again;
+				}
 				return missAfterOptimisticUpdate({
 					found: again.data !== null,
 					entityLabel: "Headcount plan line",
@@ -1328,13 +1438,19 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 			organizationId: input.organizationId,
 			planLineId: input.planLineId,
 		});
-		if (!line.ok) return line;
-		if (line.data === null) return notFound("Headcount plan line not found");
+		if (!line.ok) {
+			return line;
+		}
+		if (line.data === null) {
+			return notFound("Headcount plan line not found");
+		}
 		const plan = await this.getHeadcountPlanById({
 			organizationId: input.organizationId,
 			planId: line.data.planId,
 		});
-		if (!plan.ok) return plan;
+		if (!plan.ok) {
+			return plan;
+		}
 		if (
 			plan.data === null ||
 			(plan.data.status !== "draft" && plan.data.status !== "submitted")
@@ -1345,13 +1461,16 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 			line.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
-				sql`
+			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>(
+				(sqlValue2) => [
+					sqlValue2`
 						WITH mutated AS (
 							DELETE FROM hr_headcount_plan_line l
 							USING hr_headcount_plan p
@@ -1375,14 +1494,17 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 						)
 						SELECT mutated.id FROM mutated JOIN audited ON true
 					`,
-			]);
-			const row = rows[0];
+				],
+			);
+			const [row] = rows;
 			if (!row) {
 				const again = await this.getHeadcountPlanLineById({
 					organizationId: input.organizationId,
 					planLineId: input.planLineId,
 				});
-				if (!again.ok) return again;
+				if (!again.ok) {
+					return again;
+				}
 				return missAfterOptimisticUpdate({
 					found: again.data !== null,
 					entityLabel: "Headcount plan line",
@@ -1412,10 +1534,14 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			const mapped = mapHeadcountReservation(row);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return ok({
 				reservation: mapped.data,
 				createRequestFingerprint: row.createRequestFingerprint,
@@ -1440,8 +1566,10 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapHeadcountReservation(row);
 		} catch (error) {
 			return mapPersistenceFailure(
@@ -1464,8 +1592,10 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapHeadcountReservation(row);
 		} catch (error) {
 			return mapPersistenceFailure(
@@ -1481,7 +1611,9 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 				organizationId: record.organizationId,
 				idempotencyKey: record.createIdempotencyKey,
 			});
-		if (!existingIdempotent.ok) return existingIdempotent;
+		if (!existingIdempotent.ok) {
+			return existingIdempotent;
+		}
 		if (existingIdempotent.data !== null) {
 			if (
 				existingIdempotent.data.createRequestFingerprint ===
@@ -1496,7 +1628,9 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 			organizationId: record.organizationId,
 			requisitionId: record.requisitionId,
 		});
-		if (!requisition.ok) return requisition;
+		if (!requisition.ok) {
+			return requisition;
+		}
 		if (requisition.data === null) {
 			return notFound(
 				"Requisition not found",
@@ -1508,15 +1642,21 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 			organizationId: record.organizationId,
 			planLineId: record.planLineId,
 		});
-		if (!line.ok) return line;
-		if (line.data === null) return notFound("Headcount plan line not found");
+		if (!line.ok) {
+			return line;
+		}
+		if (line.data === null) {
+			return notFound("Headcount plan line not found");
+		}
 		const planLine = line.data;
 
 		const plan = await this.getHeadcountPlanById({
 			organizationId: record.organizationId,
 			planId: planLine.planId,
 		});
-		if (!plan.ok) return plan;
+		if (!plan.ok) {
+			return plan;
+		}
 		if (plan.data === null || plan.data.status !== "approved") {
 			return invalidState("Headcount reservations require an approved plan");
 		}
@@ -1526,7 +1666,9 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 				organizationId: record.organizationId,
 				planLineId: record.planLineId,
 			});
-		if (!existingReservations.ok) return existingReservations;
+		if (!existingReservations.ok) {
+			return existingReservations;
+		}
 		const availability = computeLineAvailability({
 			line: planLine,
 			reservations: existingReservations.data,
@@ -1537,10 +1679,14 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 			reservedFte: record.reservedFte,
 			reservedHeadcount: record.reservedHeadcount,
 		});
-		if (!availabilityCheck.ok) return availabilityCheck;
+		if (!availabilityCheck.ok) {
+			return availabilityCheck;
+		}
 
 		const brandedId = parseHumanResourcesHeadcountReservationId(randomUUID());
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const payloadJson = headcountEventPayloadJson({
@@ -1554,8 +1700,8 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 		try {
 			const [rows] = await runNeonHttpTransaction<
 				[HeadcountReservationSqlRow[]]
-			>((sql) => [
-				sql`
+			>((sqlValue) => [
+				sqlValue`
 						WITH mutated AS (
 							INSERT INTO hr_headcount_reservation (
 								id, organization_id, plan_id, plan_line_id, requisition_id,
@@ -1596,8 +1742,10 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 						SELECT mutated.* FROM mutated JOIN audited ON true JOIN outboxed ON true
 					`,
 			]);
-			const row = rows[0];
-			if (!row) return conflict("Unable to reserve headcount");
+			const [row] = rows;
+			if (!row) {
+				return conflict("Unable to reserve headcount");
+			}
 			return mapHeadcountReservationSql(row);
 		} catch (error) {
 			if (isCreateIdempotencyUniqueViolation(error)) {
@@ -1605,7 +1753,9 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 					organizationId: record.organizationId,
 					idempotencyKey: record.createIdempotencyKey,
 				});
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (replay.data !== null) {
 					if (
 						replay.data.createRequestFingerprint ===
@@ -1616,12 +1766,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 					return conflict("Idempotency key already used with different data");
 				}
 			}
-			if (
-				isPostgresUniqueConstraint(
-					error,
-					/hr_headcount_reservation_org_requisition_active_uidx/i,
-				)
-			) {
+			if (isPostgresUniqueConstraint(error, HR_REGEX_3)) {
 				return conflict(
 					"Requisition already has an active headcount reservation",
 				);
@@ -1631,11 +1776,21 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 	},
 
 	async releaseHeadcountReservation(input, _ports, meta) {
-		return transitionHeadcountReservationStatus(this, input, "released", meta);
+		return await transitionHeadcountReservationStatus(
+			this,
+			input,
+			"released",
+			meta,
+		);
 	},
 
 	async consumeHeadcountReservation(input, _ports, meta) {
-		return transitionHeadcountReservationStatus(this, input, "consumed", meta);
+		return await transitionHeadcountReservationStatus(
+			this,
+			input,
+			"consumed",
+			meta,
+		);
 	},
 
 	async releaseActiveHeadcountReservationsForRequisition(input, ports, meta) {
@@ -1650,9 +1805,11 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 						eq(hrHeadcountReservation.status, "active"),
 					),
 				);
-			for (const row of rows) {
+			const sequentialOutcome1 = await runSequential(rows, async (row) => {
 				const mapped = mapHeadcountReservation(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return sequentialReturn(mapped);
+				}
 				const released = await this.releaseHeadcountReservation(
 					{
 						organizationId: input.organizationId,
@@ -1663,7 +1820,12 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 					ports,
 					meta,
 				);
-				if (!released.ok) return released;
+				if (!released.ok) {
+					return sequentialReturn(released);
+				}
+			});
+			if (sequentialOutcome1.kind === "return") {
+				return sequentialOutcome1.value;
 			}
 			return ok(undefined);
 		} catch (error) {
@@ -1679,8 +1841,12 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 			organizationId: input.organizationId,
 			requisitionId: input.requisitionId,
 		});
-		if (!active.ok) return active;
-		if (active.data === null) return ok(undefined);
+		if (!active.ok) {
+			return active;
+		}
+		if (active.data === null) {
+			return ok(undefined);
+		}
 		const consumed = await this.consumeHeadcountReservation(
 			{
 				organizationId: input.organizationId,
@@ -1691,7 +1857,9 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 			ports,
 			meta,
 		);
-		if (!consumed.ok) return consumed;
+		if (!consumed.ok) {
+			return consumed;
+		}
 		return ok(undefined);
 	},
 
@@ -1725,7 +1893,9 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 			const reservations: HeadcountReservation[] = [];
 			for (const row of rows) {
 				const mapped = mapHeadcountReservation(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				reservations.push(mapped.data);
 			}
 			return ok({
@@ -1756,7 +1926,9 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 			const reservations: HeadcountReservation[] = [];
 			for (const row of rows) {
 				const mapped = mapHeadcountReservation(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				reservations.push(mapped.data);
 			}
 			return ok(reservations);
@@ -1780,16 +1952,22 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 					),
 				)
 				.limit(1);
-			const lineRow = lineRows[0];
-			if (!lineRow) return ok(null);
+			const [lineRow] = lineRows;
+			if (!lineRow) {
+				return ok(null);
+			}
 			const line = mapHeadcountPlanLine(lineRow);
-			if (!line.ok) return line;
+			if (!line.ok) {
+				return line;
+			}
 
 			const reservations = await this.listHeadcountReservationsByPlanLineId({
 				organizationId: input.organizationId,
 				planLineId: input.planLineId,
 			});
-			if (!reservations.ok) return reservations;
+			if (!reservations.ok) {
+				return reservations;
+			}
 
 			const availability = computeLineAvailability({
 				line: line.data,
@@ -1813,7 +1991,9 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 			organizationId: input.organizationId,
 			requisitionId: input.requisitionId,
 		});
-		if (!active.ok) return active;
+		if (!active.ok) {
+			return active;
+		}
 		if (active.data === null) {
 			return ok({
 				organizationId: input.organizationId,
@@ -1828,13 +2008,17 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 			organizationId: input.organizationId,
 			planId: active.data.planId,
 		});
-		if (!plan.ok) return plan;
+		if (!plan.ok) {
+			return plan;
+		}
 
 		const availability = await this.getHeadcountAvailability({
 			organizationId: input.organizationId,
 			planLineId: active.data.planLineId,
 		});
-		if (!availability.ok) return availability;
+		if (!availability.ok) {
+			return availability;
+		}
 
 		return ok({
 			organizationId: input.organizationId,
@@ -1853,7 +2037,9 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 				organizationId: input.organizationId,
 				planId: input.planId,
 			});
-			if (!plan.ok) return plan;
+			if (!plan.ok) {
+				return plan;
+			}
 			if (plan.data === null) {
 				return notFound("Headcount plan not found");
 			}
@@ -1862,7 +2048,9 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 				organizationId: input.organizationId,
 				asOf,
 			});
-			if (!actuals.ok) return actuals;
+			if (!actuals.ok) {
+				return actuals;
+			}
 
 			const lineRows = await db
 				.select()
@@ -1874,14 +2062,18 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 					),
 				);
 			const varianceLines: WorkforcePlanVarianceLine[] = [];
-			for (const row of lineRows) {
+			const sequentialOutcome2 = await runSequential(lineRows, async (row) => {
 				const line = mapHeadcountPlanLine(row);
-				if (!line.ok) return line;
+				if (!line.ok) {
+					return sequentialReturn(line);
+				}
 				const reservations = await this.listHeadcountReservationsByPlanLineId({
 					organizationId: input.organizationId,
 					planLineId: line.data.id,
 				});
-				if (!reservations.ok) return reservations;
+				if (!reservations.ok) {
+					return sequentialReturn(reservations);
+				}
 				const availability = computeLineAvailability({
 					line: line.data,
 					reservations: reservations.data,
@@ -1893,6 +2085,9 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 						actuals: actuals.data,
 					}),
 				);
+			});
+			if (sequentialOutcome2.kind === "return") {
+				return sequentialOutcome2.value;
 			}
 			return ok({ planId: input.planId, asOf, lines: varianceLines });
 		} catch (error) {

@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/useAwait: The deterministic helper implements the asynchronous idempotency port.
 import type {
 	CorporateAdministrationIdempotencyBeginInput,
 	CorporateAdministrationIdempotencyBeginOutcome,
@@ -135,7 +136,9 @@ export function createMemoryCorporateAdministrationIdempotencyPort(): CorporateA
 			try {
 				result = toImmutableCanonicalJson(input.result);
 			} catch (error) {
-				if (!(error instanceof TypeError)) throw error;
+				if (!(error instanceof TypeError)) {
+					throw error;
+				}
 				return fail(
 					"VALIDATION_ERROR",
 					"Corporate Administration replay result is not canonical JSON",

@@ -56,7 +56,9 @@ export async function createPartyAddress(
 		parsed.data.organizationId,
 		parsed.data.partyId,
 	);
-	if (!parent.ok) return parent;
+	if (!parent.ok) {
+		return parent;
+	}
 	return store.createPartyAddress(
 		{
 			organizationId: parsed.data.organizationId,
@@ -171,7 +173,9 @@ export async function getPartyAddressById(
 		input,
 		"Invalid party address get input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const { store, authorization } = resolvePartyExtensionDeps(options, [
 		"getPartyAddressById",
 	]);
@@ -180,7 +184,9 @@ export async function getPartyAddressById(
 		actorUserId: parsed.data.actorUserId,
 		query: MASTER_QUERY_PARTY_ADDRESS_GET,
 	});
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return store.getPartyAddressById(
 		parsed.data.organizationId,
 		parsed.data.partyId,
@@ -197,7 +203,9 @@ export async function getPrimaryPartyAddress(
 		input,
 		"Invalid primary party address input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const { store, authorization } = resolvePartyExtensionDeps(options, [
 		"getPrimaryPartyAddress",
 	]);
@@ -206,7 +214,9 @@ export async function getPrimaryPartyAddress(
 		actorUserId: parsed.data.actorUserId,
 		query: MASTER_QUERY_PARTY_ADDRESS_GET_PRIMARY,
 	});
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return store.getPrimaryPartyAddress(
 		parsed.data.organizationId,
 		parsed.data.partyId,

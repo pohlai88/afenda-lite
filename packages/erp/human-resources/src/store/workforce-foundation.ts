@@ -26,61 +26,61 @@ import type {
 	WorkerClassificationVersion,
 } from "../workforce-foundation/types";
 
-export type PersonCreateRecord = {
-	organizationId: string;
+export interface PersonCreateRecord {
+	createdBy: string;
+	createIdempotencyKey: string;
+	createRequestFingerprint: string;
 	legalName: string;
+	organizationId: string;
 	preferredName: string | null;
 	privacyClassification: HumanResourcesRetentionClassification;
-	createIdempotencyKey: string;
-	createRequestFingerprint: string;
-	createdBy: string;
-};
+}
 
-export type PersonContactCreateRecord = {
-	organizationId: string;
-	personId: HumanResourcesPersonId;
+export interface PersonContactCreateRecord {
 	contactType: PersonContact["contactType"];
-	valueText: string;
-	normalizedValue: string;
-	isPrimary: boolean;
+	createdBy: string;
 	createIdempotencyKey: string;
 	createRequestFingerprint: string;
-	createdBy: string;
-};
-
-export type PersonIdentifierCreateRecord = {
+	isPrimary: boolean;
+	normalizedValue: string;
 	organizationId: string;
 	personId: HumanResourcesPersonId;
-	identifierType: string;
-	identifierFingerprint: string;
-	identifierLast4: string;
+	valueText: string;
+}
+
+export interface PersonIdentifierCreateRecord {
+	createdBy: string;
+	createIdempotencyKey: string;
+	createRequestFingerprint: string;
 	documentRef: string | null;
 	effectiveFrom: string;
-	createIdempotencyKey: string;
-	createRequestFingerprint: string;
-	createdBy: string;
-};
+	identifierFingerprint: string;
+	identifierLast4: string;
+	identifierType: string;
+	organizationId: string;
+	personId: HumanResourcesPersonId;
+}
 
-export type IdempotentPersonContactRecord = {
+export interface IdempotentPersonContactRecord {
 	contact: PersonContact;
 	createRequestFingerprint: string;
-};
+}
 
-export type IdempotentPersonIdentifierRecord = {
-	identifier: PersonIdentifier;
+export interface IdempotentPersonIdentifierRecord {
 	createRequestFingerprint: string;
-};
+	identifier: PersonIdentifier;
+}
 
-type WorkerCreateRecordBase = {
+interface WorkerCreateRecordBase {
+	createdBy: string;
+	createIdempotencyKey: string;
+	createRequestFingerprint: string;
+	effectiveFrom: string;
+	effectiveTo: string | null;
 	organizationId: string;
 	personId: HumanResourcesPersonId;
 	status: WorkerStatus;
-	effectiveFrom: string;
-	effectiveTo: string | null;
-	createIdempotencyKey: string;
-	createRequestFingerprint: string;
-	createdBy: string;
-};
+}
 
 export type EmployeeWorkerCreateRecord = WorkerCreateRecordBase & {
 	workerType: "employee";
@@ -96,84 +96,186 @@ export type WorkerCreateRecord =
 	| EmployeeWorkerCreateRecord
 	| NonEmployeeWorkerCreateRecord;
 
-export type IdempotentPersonRecord = {
+export interface IdempotentPersonRecord {
+	createRequestFingerprint: string;
 	person: Person;
-	createRequestFingerprint: string;
-};
+}
 
-export type IdempotentWorkerRecord = {
+export interface IdempotentWorkerRecord {
+	createRequestFingerprint: string;
 	worker: Worker;
-	createRequestFingerprint: string;
-};
+}
 
-type PersonNameCorrectionInput = {
+interface PersonNameCorrectionInput {
+	actorUserId: string;
+	effectiveOn: string;
+	evidenceRef: string | null;
+	expectedVersion: number;
+	legalName: string;
 	organizationId: string;
 	personId: HumanResourcesPersonId;
-	legalName: string;
-	effectiveOn: string;
 	reasonCode: string;
+}
+
+interface WorkerClassificationChangeBase {
+	actorUserId: string;
+	effectiveOn: string;
 	evidenceRef: string | null;
 	expectedVersion: number;
-	actorUserId: string;
-};
-
-type WorkerClassificationChangeBase = {
 	organizationId: string;
-	workerId: HumanResourcesWorkerId;
-	effectiveOn: string;
 	reasonCode: string;
-	evidenceRef: string | null;
-	expectedVersion: number;
-	actorUserId: string;
-};
+	workerId: HumanResourcesWorkerId;
+}
 
-export type HumanResourcesWorkforceFoundationStore = {
-	getPersonById(input: {
-		organizationId: string;
-		personId: HumanResourcesPersonId;
-	}): Promise<Result<Person | null>>;
+export interface HumanResourcesWorkforceFoundationStore {
+	addPersonContact: (
+		record: PersonContactCreateRecord,
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<PersonContact>>;
 
-	findPersonAsOf(input: {
-		organizationId: string;
-		personId: HumanResourcesPersonId;
-		asOf: string;
-	}): Promise<Result<PersonIdentityAtAsOf | null>>;
+	addPersonIdentifier: (
+		record: PersonIdentifierCreateRecord,
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<PersonIdentifier>>;
 
-	listPersonIdentityVersions(input: {
-		organizationId: string;
-		personId: HumanResourcesPersonId;
-	}): Promise<Result<readonly PersonIdentityVersion[]>>;
+	changeWorkerStatus: (
+		input: WorkerClassificationChangeBase & {
+			status: WorkerStatus;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<Worker>>;
 
-	findPersonByIdempotencyKey(input: {
-		organizationId: string;
-		idempotencyKey: string;
-	}): Promise<Result<IdempotentPersonRecord | null>>;
+	changeWorkerType: (
+		input:
+			| (WorkerClassificationChangeBase & {
+					workerType: "employee";
+					employeeId: HumanResourcesEmployeeId | null;
+			  })
+			| (WorkerClassificationChangeBase & {
+					workerType: NonEmployeeWorkerType;
+					employeeId: null;
+			  }),
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<EmployeeWorker | NonEmployeeWorker>>;
 
-	createPerson(
+	createPerson: (
 		record: PersonCreateRecord,
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<Person>>;
+	) => Promise<Result<Person>>;
 
-	updatePersonName(
-		input: PersonNameCorrectionInput,
+	createWorker: (
+		record: WorkerCreateRecord,
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<Person>>;
+	) => Promise<Result<Worker>>;
 
-	updatePersonPreferredName(
+	detectPersonDuplicates: (input: {
+		organizationId: string;
+		personId: HumanResourcesPersonId;
+	}) => Promise<Result<readonly PersonDuplicateCandidate[]>>;
+
+	findPersonAsOf: (input: {
+		organizationId: string;
+		personId: HumanResourcesPersonId;
+		asOf: string;
+	}) => Promise<Result<PersonIdentityAtAsOf | null>>;
+
+	findPersonByIdempotencyKey: (input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}) => Promise<Result<IdempotentPersonRecord | null>>;
+
+	findPersonContactByIdempotencyKey: (input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}) => Promise<Result<IdempotentPersonContactRecord | null>>;
+
+	findPersonIdentifierByIdempotencyKey: (input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}) => Promise<Result<IdempotentPersonIdentifierRecord | null>>;
+
+	findWorkerAsOf: (input: {
+		organizationId: string;
+		workerId: HumanResourcesWorkerId;
+		asOf: string;
+	}) => Promise<Result<WorkerClassificationAtAsOf | null>>;
+
+	findWorkerByEmployeeId: (input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+	}) => Promise<Result<EmployeeWorker | null>>;
+
+	findWorkerByIdempotencyKey: (input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}) => Promise<Result<IdempotentWorkerRecord | null>>;
+
+	findWorkerByPersonId: (input: {
+		organizationId: string;
+		personId: HumanResourcesPersonId;
+	}) => Promise<Result<Worker | null>>;
+	getPersonById: (input: {
+		organizationId: string;
+		personId: HumanResourcesPersonId;
+	}) => Promise<Result<Person | null>>;
+
+	getWorkerById: (input: {
+		organizationId: string;
+		workerId: HumanResourcesWorkerId;
+	}) => Promise<Result<Worker | null>>;
+
+	listPersonContacts: (input: {
+		organizationId: string;
+		personId: HumanResourcesPersonId;
+	}) => Promise<Result<readonly PersonContact[]>>;
+
+	listPersonIdentifiers: (input: {
+		organizationId: string;
+		personId: HumanResourcesPersonId;
+	}) => Promise<Result<readonly PersonIdentifier[]>>;
+
+	listPersonIdentityVersions: (input: {
+		organizationId: string;
+		personId: HumanResourcesPersonId;
+	}) => Promise<Result<readonly PersonIdentityVersion[]>>;
+
+	listWorkerClassificationVersions: (input: {
+		organizationId: string;
+		workerId: HumanResourcesWorkerId;
+	}) => Promise<Result<readonly WorkerClassificationVersion[]>>;
+
+	retirePersonContact: (
 		input: {
 			organizationId: string;
 			personId: HumanResourcesPersonId;
-			preferredName: string | null;
+			contactId: string;
 			expectedVersion: number;
 			actorUserId: string;
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<Person>>;
+	) => Promise<Result<PersonContact>>;
 
-	setPersonPrivacyClassification(
+	retirePersonIdentifier: (
+		input: {
+			organizationId: string;
+			personId: HumanResourcesPersonId;
+			identifierId: string;
+			effectiveTo: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<PersonIdentifier>>;
+
+	setPersonPrivacyClassification: (
 		input: {
 			organizationId: string;
 			personId: HumanResourcesPersonId;
@@ -183,20 +285,9 @@ export type HumanResourcesWorkforceFoundationStore = {
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<Person>>;
+	) => Promise<Result<Person>>;
 
-	findPersonContactByIdempotencyKey(input: {
-		organizationId: string;
-		idempotencyKey: string;
-	}): Promise<Result<IdempotentPersonContactRecord | null>>;
-
-	addPersonContact(
-		record: PersonContactCreateRecord,
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<PersonContact>>;
-
-	updatePersonContact(
+	updatePersonContact: (
 		input: {
 			organizationId: string;
 			personId: HumanResourcesPersonId;
@@ -209,115 +300,23 @@ export type HumanResourcesWorkforceFoundationStore = {
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<PersonContact>>;
+	) => Promise<Result<PersonContact>>;
 
-	retirePersonContact(
+	updatePersonName: (
+		input: PersonNameCorrectionInput,
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<Person>>;
+
+	updatePersonPreferredName: (
 		input: {
 			organizationId: string;
 			personId: HumanResourcesPersonId;
-			contactId: string;
+			preferredName: string | null;
 			expectedVersion: number;
 			actorUserId: string;
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<PersonContact>>;
-
-	listPersonContacts(input: {
-		organizationId: string;
-		personId: HumanResourcesPersonId;
-	}): Promise<Result<readonly PersonContact[]>>;
-
-	findPersonIdentifierByIdempotencyKey(input: {
-		organizationId: string;
-		idempotencyKey: string;
-	}): Promise<Result<IdempotentPersonIdentifierRecord | null>>;
-
-	addPersonIdentifier(
-		record: PersonIdentifierCreateRecord,
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<PersonIdentifier>>;
-
-	retirePersonIdentifier(
-		input: {
-			organizationId: string;
-			personId: HumanResourcesPersonId;
-			identifierId: string;
-			effectiveTo: string;
-			expectedVersion: number;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<PersonIdentifier>>;
-
-	listPersonIdentifiers(input: {
-		organizationId: string;
-		personId: HumanResourcesPersonId;
-	}): Promise<Result<readonly PersonIdentifier[]>>;
-
-	detectPersonDuplicates(input: {
-		organizationId: string;
-		personId: HumanResourcesPersonId;
-	}): Promise<Result<readonly PersonDuplicateCandidate[]>>;
-
-	getWorkerById(input: {
-		organizationId: string;
-		workerId: HumanResourcesWorkerId;
-	}): Promise<Result<Worker | null>>;
-
-	findWorkerAsOf(input: {
-		organizationId: string;
-		workerId: HumanResourcesWorkerId;
-		asOf: string;
-	}): Promise<Result<WorkerClassificationAtAsOf | null>>;
-
-	listWorkerClassificationVersions(input: {
-		organizationId: string;
-		workerId: HumanResourcesWorkerId;
-	}): Promise<Result<readonly WorkerClassificationVersion[]>>;
-
-	findWorkerByPersonId(input: {
-		organizationId: string;
-		personId: HumanResourcesPersonId;
-	}): Promise<Result<Worker | null>>;
-
-	findWorkerByEmployeeId(input: {
-		organizationId: string;
-		employeeId: HumanResourcesEmployeeId;
-	}): Promise<Result<EmployeeWorker | null>>;
-
-	findWorkerByIdempotencyKey(input: {
-		organizationId: string;
-		idempotencyKey: string;
-	}): Promise<Result<IdempotentWorkerRecord | null>>;
-
-	createWorker(
-		record: WorkerCreateRecord,
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<Worker>>;
-
-	changeWorkerType(
-		input:
-			| (WorkerClassificationChangeBase & {
-					workerType: "employee";
-					employeeId: HumanResourcesEmployeeId | null;
-			  })
-			| (WorkerClassificationChangeBase & {
-					workerType: NonEmployeeWorkerType;
-					employeeId: null;
-			  }),
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<EmployeeWorker | NonEmployeeWorker>>;
-
-	changeWorkerStatus(
-		input: WorkerClassificationChangeBase & {
-			status: WorkerStatus;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<Worker>>;
-};
+	) => Promise<Result<Person>>;
+}

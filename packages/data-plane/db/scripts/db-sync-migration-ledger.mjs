@@ -24,6 +24,7 @@ import {
 	loadEnvLocal,
 	loadMigrationJournalRows,
 } from "./lib/migration-journal-rows.mjs";
+import { runSequentially } from "./lib/run-sequentially.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const repoRoot = join(root, "../../..");
@@ -126,7 +127,7 @@ if (targets.length === 0) {
 	process.exit(0);
 }
 
-for (const row of targets) {
+await runSequentially(targets, async (row) => {
 	const probe = await probeMigrationDdlApplied(sql, row.tag);
 	if (probe === null) {
 		console.error(
@@ -148,7 +149,7 @@ for (const row of targets) {
 		console.log(
 			`@afenda/db db:sync-migration-ledger: ${row.tag} already journaled`,
 		);
-		continue;
+		return;
 	}
 
 	await sql`
@@ -158,4 +159,4 @@ for (const row of targets) {
 	console.log(
 		`@afenda/db db:sync-migration-ledger: recorded ${row.tag} in drizzle.__drizzle_migrations`,
 	);
-}
+});

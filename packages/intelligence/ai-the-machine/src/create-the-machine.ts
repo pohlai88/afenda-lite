@@ -14,14 +14,14 @@ export function createTheMachine(config: CreateTheMachineConfig): TheMachine {
 
 	return createMachineEngine({
 		model: config.model,
-		...(parsed.maxOutputTokens !== undefined
-			? { maxOutputTokens: parsed.maxOutputTokens }
-			: {}),
-		...(parsed.temperature !== undefined
-			? { temperature: parsed.temperature }
-			: {}),
-		...(config.assistants !== undefined
-			? { assistants: config.assistants }
-			: {}),
+		...(parsed.maxOutputTokens === undefined
+			? {}
+			: { maxOutputTokens: parsed.maxOutputTokens }),
+		...(parsed.temperature === undefined
+			? {}
+			: { temperature: parsed.temperature }),
+		...(config.assistants === undefined
+			? {}
+			: { assistants: config.assistants }),
 	});
 }

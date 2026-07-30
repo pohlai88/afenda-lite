@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noJsxPropsBind: The enabled React Compiler stabilizes JSX callback props.
 "use client";
 
 import {
@@ -24,7 +25,12 @@ import {
 	retireWarehouseAction,
 } from "@/app/actions/master-root-lifecycle";
 
-type Option = { id: string; label: string; version: number; status: string };
+interface Option {
+	id: string;
+	label: string;
+	status: string;
+	version: number;
+}
 
 function VersionedSelect({
 	name,
@@ -40,12 +46,11 @@ function VersionedSelect({
 	label: string;
 }) {
 	return (
-		<FormField label={label} fieldId={fieldId}>
+		<FormField fieldId={fieldId} label={label}>
 			<NativeSelect
+				disabled={disabled || options.length === 0}
 				id={fieldId}
 				name={name}
-				required
-				disabled={disabled || options.length === 0}
 				onChange={(event) => {
 					const selected = options.find((row) => row.id === event.target.value);
 					const versionInput =
@@ -54,6 +59,7 @@ function VersionedSelect({
 						versionInput.value = String(selected.version);
 					}
 				}}
+				required
 			>
 				<option value="">Select</option>
 				{options.map((row) => (
@@ -132,57 +138,57 @@ function ItemLifecycleControls({
 	return (
 		<LifecycleShell
 			canManage={canManage}
-			title={title}
-			lastOk={
-				activateState?.ok === true ||
-				inactiveState?.ok === true ||
-				retireState?.ok === true
-			}
 			lastError={
 				(activateState?.ok === false && activateState.message) ||
 				(inactiveState?.ok === false && inactiveState.message) ||
 				(retireState?.ok === false && retireState.message) ||
 				null
 			}
+			lastOk={
+				activateState?.ok === true ||
+				inactiveState?.ok === true ||
+				retireState?.ok === true
+			}
+			title={title}
 		>
 			<form action={activateAction} className="flex flex-col gap-2">
 				<VersionedSelect
-					name="id"
-					options={draft}
 					disabled={pending}
 					fieldId="item-activate"
 					label={`Activate ${title.toLowerCase()}`}
+					name="id"
+					options={draft}
 				/>
-				<input type="hidden" name="expectedVersion" defaultValue={1} />
-				<Button type="submit" disabled={pending || draft.length === 0}>
+				<input defaultValue={1} name="expectedVersion" type="hidden" />
+				<Button disabled={pending || draft.length === 0} type="submit">
 					{activatePending ? <Spinner /> : null}
 					Activate
 				</Button>
 			</form>
 			<form action={inactiveAction} className="flex flex-col gap-2">
 				<VersionedSelect
-					name="id"
-					options={active}
 					disabled={pending}
 					fieldId="item-inactive"
 					label={`Inactive ${title.toLowerCase()}`}
+					name="id"
+					options={active}
 				/>
-				<input type="hidden" name="expectedVersion" defaultValue={1} />
-				<Button type="submit" disabled={pending || active.length === 0}>
+				<input defaultValue={1} name="expectedVersion" type="hidden" />
+				<Button disabled={pending || active.length === 0} type="submit">
 					{inactivePending ? <Spinner /> : null}
 					Set inactive
 				</Button>
 			</form>
 			<form action={retireAction} className="flex flex-col gap-2">
 				<VersionedSelect
-					name="id"
-					options={retireable}
 					disabled={pending}
 					fieldId="item-retire"
 					label={`Retire ${title.toLowerCase()}`}
+					name="id"
+					options={retireable}
 				/>
-				<input type="hidden" name="expectedVersion" defaultValue={1} />
-				<Button type="submit" disabled={pending || retireable.length === 0}>
+				<input defaultValue={1} name="expectedVersion" type="hidden" />
+				<Button disabled={pending || retireable.length === 0} type="submit">
 					{retirePending ? <Spinner /> : null}
 					Retire
 				</Button>
@@ -220,57 +226,57 @@ function ItemGroupLifecycleControls({
 	return (
 		<LifecycleShell
 			canManage={canManage}
-			title={title}
-			lastOk={
-				activateState?.ok === true ||
-				inactiveState?.ok === true ||
-				retireState?.ok === true
-			}
 			lastError={
 				(activateState?.ok === false && activateState.message) ||
 				(inactiveState?.ok === false && inactiveState.message) ||
 				(retireState?.ok === false && retireState.message) ||
 				null
 			}
+			lastOk={
+				activateState?.ok === true ||
+				inactiveState?.ok === true ||
+				retireState?.ok === true
+			}
+			title={title}
 		>
 			<form action={activateAction} className="flex flex-col gap-2">
 				<VersionedSelect
-					name="id"
-					options={draft}
 					disabled={pending}
 					fieldId="itemGroup-activate"
 					label={`Activate ${title.toLowerCase()}`}
+					name="id"
+					options={draft}
 				/>
-				<input type="hidden" name="expectedVersion" defaultValue={1} />
-				<Button type="submit" disabled={pending || draft.length === 0}>
+				<input defaultValue={1} name="expectedVersion" type="hidden" />
+				<Button disabled={pending || draft.length === 0} type="submit">
 					{activatePending ? <Spinner /> : null}
 					Activate
 				</Button>
 			</form>
 			<form action={inactiveAction} className="flex flex-col gap-2">
 				<VersionedSelect
-					name="id"
-					options={active}
 					disabled={pending}
 					fieldId="itemGroup-inactive"
 					label={`Inactive ${title.toLowerCase()}`}
+					name="id"
+					options={active}
 				/>
-				<input type="hidden" name="expectedVersion" defaultValue={1} />
-				<Button type="submit" disabled={pending || active.length === 0}>
+				<input defaultValue={1} name="expectedVersion" type="hidden" />
+				<Button disabled={pending || active.length === 0} type="submit">
 					{inactivePending ? <Spinner /> : null}
 					Set inactive
 				</Button>
 			</form>
 			<form action={retireAction} className="flex flex-col gap-2">
 				<VersionedSelect
-					name="id"
-					options={retireable}
 					disabled={pending}
 					fieldId="itemGroup-retire"
 					label={`Retire ${title.toLowerCase()}`}
+					name="id"
+					options={retireable}
 				/>
-				<input type="hidden" name="expectedVersion" defaultValue={1} />
-				<Button type="submit" disabled={pending || retireable.length === 0}>
+				<input defaultValue={1} name="expectedVersion" type="hidden" />
+				<Button disabled={pending || retireable.length === 0} type="submit">
 					{retirePending ? <Spinner /> : null}
 					Retire
 				</Button>
@@ -308,57 +314,57 @@ function WarehouseLifecycleControls({
 	return (
 		<LifecycleShell
 			canManage={canManage}
-			title={title}
-			lastOk={
-				activateState?.ok === true ||
-				inactiveState?.ok === true ||
-				retireState?.ok === true
-			}
 			lastError={
 				(activateState?.ok === false && activateState.message) ||
 				(inactiveState?.ok === false && inactiveState.message) ||
 				(retireState?.ok === false && retireState.message) ||
 				null
 			}
+			lastOk={
+				activateState?.ok === true ||
+				inactiveState?.ok === true ||
+				retireState?.ok === true
+			}
+			title={title}
 		>
 			<form action={activateAction} className="flex flex-col gap-2">
 				<VersionedSelect
-					name="id"
-					options={draft}
 					disabled={pending}
 					fieldId="warehouse-activate"
 					label={`Activate ${title.toLowerCase()}`}
+					name="id"
+					options={draft}
 				/>
-				<input type="hidden" name="expectedVersion" defaultValue={1} />
-				<Button type="submit" disabled={pending || draft.length === 0}>
+				<input defaultValue={1} name="expectedVersion" type="hidden" />
+				<Button disabled={pending || draft.length === 0} type="submit">
 					{activatePending ? <Spinner /> : null}
 					Activate
 				</Button>
 			</form>
 			<form action={inactiveAction} className="flex flex-col gap-2">
 				<VersionedSelect
-					name="id"
-					options={active}
 					disabled={pending}
 					fieldId="warehouse-inactive"
 					label={`Inactive ${title.toLowerCase()}`}
+					name="id"
+					options={active}
 				/>
-				<input type="hidden" name="expectedVersion" defaultValue={1} />
-				<Button type="submit" disabled={pending || active.length === 0}>
+				<input defaultValue={1} name="expectedVersion" type="hidden" />
+				<Button disabled={pending || active.length === 0} type="submit">
 					{inactivePending ? <Spinner /> : null}
 					Set inactive
 				</Button>
 			</form>
 			<form action={retireAction} className="flex flex-col gap-2">
 				<VersionedSelect
-					name="id"
-					options={retireable}
 					disabled={pending}
 					fieldId="warehouse-retire"
 					label={`Retire ${title.toLowerCase()}`}
+					name="id"
+					options={retireable}
 				/>
-				<input type="hidden" name="expectedVersion" defaultValue={1} />
-				<Button type="submit" disabled={pending || retireable.length === 0}>
+				<input defaultValue={1} name="expectedVersion" type="hidden" />
+				<Button disabled={pending || retireable.length === 0} type="submit">
 					{retirePending ? <Spinner /> : null}
 					Retire
 				</Button>
@@ -386,24 +392,24 @@ export function MasterRootLifecycleForm({
 			return (
 				<ItemLifecycleControls
 					canManage={canManage}
-					title={title}
 					options={options}
+					title={title}
 				/>
 			);
 		case "itemGroup":
 			return (
 				<ItemGroupLifecycleControls
 					canManage={canManage}
-					title={title}
 					options={options}
+					title={title}
 				/>
 			);
 		case "warehouse":
 			return (
 				<WarehouseLifecycleControls
 					canManage={canManage}
-					title={title}
 					options={options}
+					title={title}
 				/>
 			);
 		default: {

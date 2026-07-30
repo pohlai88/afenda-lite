@@ -247,7 +247,7 @@ export async function createDepartmentAction(input: {
 	parentDepartmentId?: string | null;
 	status?: "active" | "archived";
 }): Promise<ActionResult<{ department: Department }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "createDepartmentAction",
 		permission: "human-resources.organization.manage",
 		safeMessage: "Could not create department.",
@@ -265,7 +265,9 @@ export async function createDepartmentAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { department: mapped.data } };
 		},
 	});
@@ -281,7 +283,7 @@ export async function updateDepartmentAction(input: {
 	evidenceRef?: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ department: Department }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "updateDepartmentAction",
 		permission: "human-resources.organization.manage",
 		safeMessage: "Could not update department.",
@@ -299,7 +301,9 @@ export async function updateDepartmentAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { department: mapped.data } };
 		},
 	});
@@ -310,7 +314,7 @@ export async function activateDepartmentAction(input: {
 	departmentId: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ department: Department }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "activateDepartmentAction",
 		permission: "human-resources.organization.manage",
 		safeMessage: "Could not activate department.",
@@ -328,7 +332,9 @@ export async function activateDepartmentAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { department: mapped.data } };
 		},
 	});
@@ -339,7 +345,7 @@ export async function archiveDepartmentAction(input: {
 	departmentId: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ department: Department }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "archiveDepartmentAction",
 		permission: "human-resources.organization.manage",
 		safeMessage: "Could not archive department.",
@@ -357,7 +363,9 @@ export async function archiveDepartmentAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { department: mapped.data } };
 		},
 	});
@@ -367,7 +375,7 @@ export async function getDepartmentAction(input: {
 	correlationId?: string;
 	departmentId: string;
 }): Promise<ActionResult<{ department: Department }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getDepartmentAction",
 		permission: "human-resources.organization.read",
 		safeMessage: "Could not get department.",
@@ -385,7 +393,9 @@ export async function getDepartmentAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { department: mapped.data } };
 		},
 	});
@@ -398,7 +408,7 @@ export async function listDepartmentsAction(input?: {
 	status?: "active" | "archived";
 	parentDepartmentId?: string | null;
 }): Promise<ActionResult<{ departments: Department[]; totalCount: number }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listDepartmentsAction",
 		permission: "human-resources.organization.read",
 		safeMessage: "Could not list departments.",
@@ -416,7 +426,9 @@ export async function listDepartmentsAction(input?: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return {
 				ok: true,
 				data: {
@@ -433,7 +445,7 @@ export async function getDepartmentAsOfAction(input: {
 	departmentId: string;
 	asOf: string;
 }): Promise<ActionResult<{ department: DepartmentAsOf }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getDepartmentAsOfAction",
 		permission: "human-resources.organization.read",
 		safeMessage: "Could not get department as of date.",
@@ -451,7 +463,9 @@ export async function getDepartmentAsOfAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { department: mapped.data } };
 		},
 	});
@@ -463,7 +477,7 @@ export async function getOrganizationTreeAction(input?: {
 	maxDepth?: number;
 	maxNodes?: number;
 }): Promise<ActionResult<{ tree: OrganizationTreePage }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getOrganizationTreeAction",
 		permission: "human-resources.organization.read",
 		safeMessage: "Could not get organization tree.",
@@ -481,7 +495,9 @@ export async function getOrganizationTreeAction(input?: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { tree: mapped.data } };
 		},
 	});
@@ -494,7 +510,7 @@ export async function getOrganizationTreeAsOfAction(input: {
 	maxDepth?: number;
 	maxNodes?: number;
 }): Promise<ActionResult<{ tree: OrganizationTreePage }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getOrganizationTreeAsOfAction",
 		permission: "human-resources.organization.read",
 		safeMessage: "Could not get organization tree as of date.",
@@ -512,7 +528,9 @@ export async function getOrganizationTreeAsOfAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { tree: mapped.data } };
 		},
 	});
@@ -526,7 +544,7 @@ export async function createJobAction(input: {
 	title: string;
 	status?: "active" | "archived";
 }): Promise<ActionResult<{ job: Job }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "createJobAction",
 		permission: "human-resources.organization.manage",
 		safeMessage: "Could not create job.",
@@ -544,7 +562,9 @@ export async function createJobAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { job: mapped.data } };
 		},
 	});
@@ -559,7 +579,7 @@ export async function updateJobAction(input: {
 	evidenceRef?: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ job: Job }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "updateJobAction",
 		permission: "human-resources.organization.manage",
 		safeMessage: "Could not update job.",
@@ -577,7 +597,9 @@ export async function updateJobAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { job: mapped.data } };
 		},
 	});
@@ -588,7 +610,7 @@ export async function activateJobAction(input: {
 	jobId: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ job: Job }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "activateJobAction",
 		permission: "human-resources.organization.manage",
 		safeMessage: "Could not activate job.",
@@ -606,7 +628,9 @@ export async function activateJobAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { job: mapped.data } };
 		},
 	});
@@ -617,7 +641,7 @@ export async function archiveJobAction(input: {
 	jobId: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ job: Job }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "archiveJobAction",
 		permission: "human-resources.organization.manage",
 		safeMessage: "Could not archive job.",
@@ -635,7 +659,9 @@ export async function archiveJobAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { job: mapped.data } };
 		},
 	});
@@ -645,7 +671,7 @@ export async function getJobAction(input: {
 	correlationId?: string;
 	jobId: string;
 }): Promise<ActionResult<{ job: Job }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getJobAction",
 		permission: "human-resources.organization.read",
 		safeMessage: "Could not get job.",
@@ -663,7 +689,9 @@ export async function getJobAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { job: mapped.data } };
 		},
 	});
@@ -675,7 +703,7 @@ export async function listJobsAction(input?: {
 	pageSize?: number;
 	status?: "active" | "archived";
 }): Promise<ActionResult<{ jobs: Job[]; totalCount: number }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listJobsAction",
 		permission: "human-resources.organization.read",
 		safeMessage: "Could not list jobs.",
@@ -693,7 +721,9 @@ export async function listJobsAction(input?: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return {
 				ok: true,
 				data: { jobs: mapped.data.jobs, totalCount: mapped.data.totalCount },
@@ -707,7 +737,7 @@ export async function getJobAsOfAction(input: {
 	jobId: string;
 	asOf: string;
 }): Promise<ActionResult<{ job: JobAsOf }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getJobAsOfAction",
 		permission: "human-resources.organization.read",
 		safeMessage: "Could not get job as of date.",
@@ -725,7 +755,9 @@ export async function getJobAsOfAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { job: mapped.data } };
 		},
 	});
@@ -741,7 +773,7 @@ export async function createPositionAction(input: {
 	jobId: string;
 	status?: "active" | "frozen" | "closed";
 }): Promise<ActionResult<{ position: Position }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "createPositionAction",
 		permission: "human-resources.organization.manage",
 		safeMessage: "Could not create position.",
@@ -759,7 +791,9 @@ export async function createPositionAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { position: mapped.data } };
 		},
 	});
@@ -776,7 +810,7 @@ export async function updatePositionAction(input: {
 	evidenceRef?: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ position: Position }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "updatePositionAction",
 		permission: "human-resources.organization.manage",
 		safeMessage: "Could not update position.",
@@ -794,7 +828,9 @@ export async function updatePositionAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { position: mapped.data } };
 		},
 	});
@@ -805,7 +841,7 @@ export async function activatePositionAction(input: {
 	positionId: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ position: Position }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "activatePositionAction",
 		permission: "human-resources.organization.manage",
 		safeMessage: "Could not activate position.",
@@ -823,7 +859,9 @@ export async function activatePositionAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { position: mapped.data } };
 		},
 	});
@@ -834,7 +872,7 @@ export async function freezePositionAction(input: {
 	positionId: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ position: Position }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "freezePositionAction",
 		permission: "human-resources.organization.manage",
 		safeMessage: "Could not freeze position.",
@@ -852,7 +890,9 @@ export async function freezePositionAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { position: mapped.data } };
 		},
 	});
@@ -863,7 +903,7 @@ export async function closePositionAction(input: {
 	positionId: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ position: Position }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "closePositionAction",
 		permission: "human-resources.organization.manage",
 		safeMessage: "Could not close position.",
@@ -881,7 +921,9 @@ export async function closePositionAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { position: mapped.data } };
 		},
 	});
@@ -891,7 +933,7 @@ export async function getPositionAction(input: {
 	correlationId?: string;
 	positionId: string;
 }): Promise<ActionResult<{ position: Position }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getPositionAction",
 		permission: "human-resources.organization.read",
 		safeMessage: "Could not get position.",
@@ -909,7 +951,9 @@ export async function getPositionAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { position: mapped.data } };
 		},
 	});
@@ -923,7 +967,7 @@ export async function listPositionsAction(input?: {
 	departmentId?: string;
 	jobId?: string;
 }): Promise<ActionResult<{ positions: Position[]; totalCount: number }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listPositionsAction",
 		permission: "human-resources.organization.read",
 		safeMessage: "Could not list positions.",
@@ -941,7 +985,9 @@ export async function listPositionsAction(input?: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return {
 				ok: true,
 				data: {
@@ -958,7 +1004,7 @@ export async function getPositionAsOfAction(input: {
 	positionId: string;
 	asOf: string;
 }): Promise<ActionResult<{ position: PositionAsOf }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getPositionAsOfAction",
 		permission: "human-resources.organization.read",
 		safeMessage: "Could not get position as of date.",
@@ -976,7 +1022,9 @@ export async function getPositionAsOfAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { position: mapped.data } };
 		},
 	});
@@ -987,7 +1035,7 @@ export async function getPositionOccupancyAsOfAction(input: {
 	positionId: string;
 	asOf: string;
 }): Promise<ActionResult<{ occupancy: PositionOccupancyAsOf }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getPositionOccupancyAsOfAction",
 		permission: "human-resources.organization.read",
 		safeMessage: "Could not get position occupancy as of date.",
@@ -1005,7 +1053,9 @@ export async function getPositionOccupancyAsOfAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { occupancy: mapped.data } };
 		},
 	});
@@ -1020,7 +1070,7 @@ export async function assignPrimaryReportingLineAction(input: {
 	startsOn: string;
 	endsOn?: string | null;
 }): Promise<ActionResult<{ reportingLine: ReportingLine }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "assignPrimaryReportingLineAction",
 		permission: "human-resources.organization.manage",
 		safeMessage: "Could not assign primary reporting line.",
@@ -1038,7 +1088,9 @@ export async function assignPrimaryReportingLineAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { reportingLine: mapped.data } };
 		},
 	});
@@ -1050,7 +1102,7 @@ export async function closeReportingLineAction(input: {
 	endsOn: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ reportingLine: ReportingLine }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "closeReportingLineAction",
 		permission: "human-resources.organization.manage",
 		safeMessage: "Could not close reporting line.",
@@ -1068,7 +1120,9 @@ export async function closeReportingLineAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { reportingLine: mapped.data } };
 		},
 	});
@@ -1082,7 +1136,7 @@ export async function replacePrimaryReportingLineAction(input: {
 	endsOn?: string | null;
 	closePriorOn?: string;
 }): Promise<ActionResult<{ reportingLine: ReportingLine }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "replacePrimaryReportingLineAction",
 		permission: "human-resources.organization.manage",
 		safeMessage: "Could not replace primary reporting line.",
@@ -1103,7 +1157,9 @@ export async function replacePrimaryReportingLineAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { reportingLine: mapped.data } };
 		},
 	});
@@ -1114,7 +1170,7 @@ export async function resolvePrimaryManagerAction(input: {
 	employeeId: string;
 	asOf?: string;
 }): Promise<ActionResult<{ reportingLine: ReportingLine | null }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "resolvePrimaryManagerAction",
 		permission: "human-resources.organization.read",
 		safeMessage: "Could not resolve primary manager.",
@@ -1132,7 +1188,9 @@ export async function resolvePrimaryManagerAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { reportingLine: mapped.data } };
 		},
 	});
@@ -1147,7 +1205,7 @@ export async function listDirectReportsAction(input: {
 }): Promise<
 	ActionResult<{ reportingLines: ReportingLine[]; totalCount: number }>
 > {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listDirectReportsAction",
 		permission: "human-resources.organization.read",
 		safeMessage: "Could not list direct reports.",
@@ -1165,7 +1223,9 @@ export async function listDirectReportsAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return {
 				ok: true,
 				data: {
@@ -1195,7 +1255,7 @@ export async function addWorkCalendarHolidayAction(input: {
 	isWorkingDay?: boolean;
 	expectedMinutes?: number | null;
 }): Promise<ActionResult<{ holiday: WorkCalendarHolidayRecord }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "addWorkCalendarHolidayAction",
 		permission: "human-resources.time.calendar.manage",
 		safeMessage: "Could not add work calendar holiday.",
@@ -1213,7 +1273,9 @@ export async function addWorkCalendarHolidayAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { holiday: mapped.data } };
 		},
 	});
@@ -1223,7 +1285,7 @@ export async function removeWorkCalendarHolidayAction(input: {
 	correlationId?: string;
 	holidayId: string;
 }): Promise<ActionResult<Record<string, never>>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "removeWorkCalendarHolidayAction",
 		permission: "human-resources.time.calendar.manage",
 		safeMessage: "Could not remove work calendar holiday.",
@@ -1241,7 +1303,9 @@ export async function removeWorkCalendarHolidayAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: {} };
 		},
 	});
@@ -1263,7 +1327,7 @@ export async function addCalendarDateOverrideAction(input: {
 	locationCode?: string | null;
 	jurisdiction?: string | null;
 }): Promise<ActionResult<{ override: WorkCalendarHolidayRecord }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "addCalendarDateOverrideAction",
 		permission: "human-resources.time.calendar.manage",
 		safeMessage: "Could not add calendar date override.",
@@ -1281,7 +1345,9 @@ export async function addCalendarDateOverrideAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { override: mapped.data } };
 		},
 	});
@@ -1291,7 +1357,7 @@ export async function removeCalendarDateOverrideAction(input: {
 	correlationId?: string;
 	holidayId: string;
 }): Promise<ActionResult<Record<string, never>>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "removeCalendarDateOverrideAction",
 		permission: "human-resources.time.calendar.manage",
 		safeMessage: "Could not remove calendar date override.",
@@ -1309,7 +1375,9 @@ export async function removeCalendarDateOverrideAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: {} };
 		},
 	});
@@ -1325,7 +1393,7 @@ export async function assignEmploymentCalendarAction(input: {
 	locationCode?: string | null;
 	jurisdiction?: string | null;
 }): Promise<ActionResult<{ assignment: EmploymentCalendarAssignment }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "assignEmploymentCalendarAction",
 		permission: "human-resources.time.calendar.manage",
 		safeMessage: "Could not assign employment calendar.",
@@ -1343,7 +1411,9 @@ export async function assignEmploymentCalendarAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { assignment: mapped.data } };
 		},
 	});
@@ -1355,7 +1425,7 @@ export async function endWorkCalendarAssignmentAction(input: {
 	effectiveTo: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ assignment: EmploymentCalendarAssignment }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "endWorkCalendarAssignmentAction",
 		permission: "human-resources.time.calendar.manage",
 		safeMessage: "Could not end work calendar assignment.",
@@ -1373,7 +1443,9 @@ export async function endWorkCalendarAssignmentAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { assignment: mapped.data } };
 		},
 	});
@@ -1393,7 +1465,7 @@ export async function assignWorkCalendarScopeAction(input: {
 	effectiveFrom: string;
 	effectiveTo?: string | null;
 }): Promise<ActionResult<{ assignment: WorkCalendarScopeAssignment }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "assignWorkCalendarScopeAction",
 		permission: "human-resources.time.calendar.manage",
 		safeMessage: "Could not assign work calendar scope.",
@@ -1411,7 +1483,9 @@ export async function assignWorkCalendarScopeAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { assignment: mapped.data } };
 		},
 	});
@@ -1423,7 +1497,7 @@ export async function endWorkCalendarScopeAssignmentAction(input: {
 	effectiveTo: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ assignment: WorkCalendarScopeAssignment }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "endWorkCalendarScopeAssignmentAction",
 		permission: "human-resources.time.calendar.manage",
 		safeMessage: "Could not end work calendar scope assignment.",
@@ -1444,7 +1518,9 @@ export async function endWorkCalendarScopeAssignmentAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { assignment: mapped.data } };
 		},
 	});
@@ -1454,7 +1530,7 @@ export async function getWorkCalendarAction(input: {
 	correlationId?: string;
 	calendarId: string;
 }): Promise<ActionResult<{ calendar: WorkCalendar | null }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getWorkCalendarAction",
 		permission: "human-resources.time.calendar.read",
 		safeMessage: "Could not get work calendar.",
@@ -1472,7 +1548,9 @@ export async function getWorkCalendarAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { calendar: mapped.data } };
 		},
 	});
@@ -1484,7 +1562,7 @@ export async function listWorkCalendarsAction(input?: {
 	page?: number;
 	pageSize?: number;
 }): Promise<ActionResult<{ calendars: WorkCalendar[] }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listWorkCalendarsAction",
 		permission: "human-resources.time.calendar.read",
 		safeMessage: "Could not list work calendars.",
@@ -1502,7 +1580,9 @@ export async function listWorkCalendarsAction(input?: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { calendars: mapped.data } };
 		},
 	});
@@ -1514,7 +1594,7 @@ export async function listWorkCalendarHolidaysAction(input: {
 	fromDate?: string;
 	toDate?: string;
 }): Promise<ActionResult<{ holidays: WorkCalendarHolidayRecord[] }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listWorkCalendarHolidaysAction",
 		permission: "human-resources.time.calendar.read",
 		safeMessage: "Could not list work calendar holidays.",
@@ -1532,7 +1612,9 @@ export async function listWorkCalendarHolidaysAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { holidays: mapped.data } };
 		},
 	});
@@ -1544,7 +1626,7 @@ export async function resolveEmploymentCalendarAction(input: {
 	employmentId: string;
 	asOf: string;
 }): Promise<ActionResult<{ assignment: EmploymentCalendarAssignment | null }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "resolveEmploymentCalendarAction",
 		permission: "human-resources.time.calendar.read",
 		safeMessage: "Could not resolve employment calendar.",
@@ -1562,7 +1644,9 @@ export async function resolveEmploymentCalendarAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { assignment: mapped.data } };
 		},
 	});
@@ -1574,7 +1658,7 @@ export async function resolveEmployeeWorkCalendarAction(input: {
 	employmentId: string;
 	asOf: string;
 }): Promise<ActionResult<{ calendarId: string }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "resolveEmployeeWorkCalendarAction",
 		permission: "human-resources.time.calendar.read",
 		safeMessage: "Could not resolve employee work calendar.",
@@ -1595,7 +1679,9 @@ export async function resolveEmployeeWorkCalendarAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { calendarId: mapped.data.calendarId } };
 		},
 	});

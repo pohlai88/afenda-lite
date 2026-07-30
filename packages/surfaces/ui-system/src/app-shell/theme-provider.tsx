@@ -2,13 +2,13 @@
 
 import { ThemeProvider, useTheme } from "next-themes";
 import { type ReactNode, useEffect } from "react";
-import type { AppShellColorMode } from "../blocks/app-shell-block/application-shell-settings";
+import type { AppShellColorMode as ControlledColorMode } from "../blocks/app-shell-block/application-shell-settings";
 
-export type { AppShellColorMode };
+export type { AppShellColorMode } from "../blocks/app-shell-block/application-shell-settings";
 
 function ControlledThemeSync({
 	controlledTheme,
-}: Readonly<{ controlledTheme?: AppShellColorMode }>) {
+}: Readonly<{ controlledTheme?: ControlledColorMode }>) {
 	const { setTheme } = useTheme();
 
 	useEffect(() => {
@@ -30,8 +30,8 @@ export function AppShellThemeProvider({
 }: Readonly<{
 	attribute?: "class" | `data-${string}`;
 	children: ReactNode;
-	controlledTheme?: AppShellColorMode;
-	defaultTheme?: AppShellColorMode;
+	controlledTheme?: ControlledColorMode;
+	defaultTheme?: ControlledColorMode;
 	disableTransitionOnChange?: boolean;
 	enableSystem?: boolean;
 }>) {

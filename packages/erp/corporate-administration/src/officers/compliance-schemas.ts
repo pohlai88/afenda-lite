@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+function isNullish(value: unknown): value is null | undefined {
+	return value === null || value === undefined;
+}
+
 import {
 	legalCompanyIdSchema,
 	officerAppointmentIdSchema,
@@ -72,12 +76,12 @@ export const officerDeclarationSchema = z
 	.strict()
 	.refine(
 		(value) =>
-			value.expiresOn === null || value.effectiveFrom < value.expiresOn,
+			isNullish(value.expiresOn) || value.effectiveFrom < value.expiresOn,
 		{ path: ["expiresOn"], message: "expiresOn must follow effectiveFrom" },
 	)
 	.refine(
 		(value) =>
-			value.sensitiveDetailRef !== null || value.maskedSummary !== null,
+			!(isNullish(value.sensitiveDetailRef) && isNullish(value.maskedSummary)),
 		{
 			path: ["maskedSummary"],
 			message: "maskedSummary or sensitiveDetailRef is required",
@@ -107,7 +111,7 @@ export const officerDisqualificationSchema = z
 	.strict()
 	.refine(
 		(value) =>
-			value.effectiveTo === null || value.effectiveFrom < value.effectiveTo,
+			isNullish(value.effectiveTo) || value.effectiveFrom < value.effectiveTo,
 		{ path: ["effectiveTo"], message: "effectiveTo must follow effectiveFrom" },
 	)
 	.readonly();
@@ -137,7 +141,7 @@ export const conflictDisclosureSchema = z
 	.strict()
 	.refine(
 		(value) =>
-			value.sensitiveDetailRef !== null || value.maskedSummary !== null,
+			!(isNullish(value.sensitiveDetailRef) && isNullish(value.maskedSummary)),
 		{
 			path: ["maskedSummary"],
 			message: "maskedSummary or sensitiveDetailRef is required",
@@ -158,11 +162,13 @@ export const recordOfficerDeclarationInputSchema = z
 	})
 	.strict()
 	.refine(
-		(value) => value.expiresOn == null || value.effectiveFrom < value.expiresOn,
+		(value) =>
+			isNullish(value.expiresOn) || value.effectiveFrom < value.expiresOn,
 		{ path: ["expiresOn"], message: "expiresOn must follow effectiveFrom" },
 	)
 	.refine(
-		(value) => value.sensitiveDetailRef != null || value.maskedSummary != null,
+		(value) =>
+			!(isNullish(value.sensitiveDetailRef) && isNullish(value.maskedSummary)),
 		{
 			path: ["maskedSummary"],
 			message: "maskedSummary or sensitiveDetailRef is required",
@@ -200,7 +206,7 @@ export const recordOfficerDisqualificationInputSchema = z
 	.strict()
 	.refine(
 		(value) =>
-			value.effectiveTo == null || value.effectiveFrom < value.effectiveTo,
+			isNullish(value.effectiveTo) || value.effectiveFrom < value.effectiveTo,
 		{ path: ["effectiveTo"], message: "effectiveTo must follow effectiveFrom" },
 	)
 	.readonly();
@@ -230,7 +236,8 @@ export const discloseConflictInputSchema = z
 	})
 	.strict()
 	.refine(
-		(value) => value.sensitiveDetailRef != null || value.maskedSummary != null,
+		(value) =>
+			!(isNullish(value.sensitiveDetailRef) && isNullish(value.maskedSummary)),
 		{
 			path: ["maskedSummary"],
 			message: "maskedSummary or sensitiveDetailRef is required",

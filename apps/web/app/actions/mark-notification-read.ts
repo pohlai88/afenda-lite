@@ -11,9 +11,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type MarkNotificationReadActionData = {
+export interface MarkNotificationReadActionData {
 	notification: Notification;
-};
+}
 
 /** `null` = form idle (`useActionState`); otherwise API-002 `ActionResult`. */
 export type MarkNotificationReadActionState =
@@ -26,7 +26,7 @@ export async function markNotificationReadAction(
 	_prev: MarkNotificationReadActionState,
 	formData: FormData,
 ): Promise<MarkNotificationReadActionState> {
-	return runMemberSessionAction({
+	return await runMemberSessionAction({
 		path: "markNotificationReadAction",
 		safeMessage:
 			"Could not mark notification read. Try again or contact an admin.",

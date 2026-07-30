@@ -147,6 +147,9 @@ const REGULATORY_EXTERNAL_ID_TOKENS: ReadonlySet<string> = new Set([
 	"tax",
 	"vat",
 ]);
+const CAMEL_CASE_BOUNDARY_RE = /([a-z])([A-Z])/gu;
+const EXTERNAL_ID_WORD_SEPARATOR_RE = /[\s/]+/gu;
+const EXTERNAL_ID_TOKEN_SEPARATOR_RE = /[._-]+/u;
 
 /**
  * Provides a conservative fallback classification for external-ID type codes.
@@ -157,16 +160,16 @@ export function isRegulatoryExternalIdType(externalIdType: string): boolean {
 	const normalizedType = externalIdType
 		.normalize("NFC")
 		.trim()
-		.replace(/([a-z])([A-Z])/gu, "$1_$2")
+		.replace(CAMEL_CASE_BOUNDARY_RE, "$1_$2")
 		.toLowerCase()
-		.replace(/[\s/]+/gu, "_");
+		.replace(EXTERNAL_ID_WORD_SEPARATOR_RE, "_");
 
 	if (normalizedType.length === 0) {
 		return false;
 	}
 
 	return normalizedType
-		.split(/[._-]+/u)
+		.split(EXTERNAL_ID_TOKEN_SEPARATOR_RE)
 		.some((token) => REGULATORY_EXTERNAL_ID_TOKENS.has(token));
 }
 

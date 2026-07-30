@@ -84,7 +84,7 @@ const COMPENSATION_READ = "human-resources.compensation.read" as const;
 export async function createCompensationReviewCycleAction(
 	input: unknown,
 ): Promise<ActionResult<{ cycle: CompensationReviewCycle }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		CompensationReviewCycle,
 		{ cycle: CompensationReviewCycle }
 	>({
@@ -102,7 +102,7 @@ export async function createCompensationReviewCycleAction(
 export async function openCompensationReviewCycleAction(
 	input: unknown,
 ): Promise<ActionResult<{ cycle: CompensationReviewCycle }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		CompensationReviewCycle,
 		{ cycle: CompensationReviewCycle }
 	>({
@@ -120,7 +120,7 @@ export async function openCompensationReviewCycleAction(
 export async function closeCompensationReviewCycleAction(
 	input: unknown,
 ): Promise<ActionResult<{ cycle: CompensationReviewCycle }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		CompensationReviewCycle,
 		{ cycle: CompensationReviewCycle }
 	>({
@@ -138,7 +138,7 @@ export async function closeCompensationReviewCycleAction(
 export async function cancelCompensationReviewCycleAction(
 	input: unknown,
 ): Promise<ActionResult<{ cycle: CompensationReviewCycle }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		CompensationReviewCycle,
 		{ cycle: CompensationReviewCycle }
 	>({
@@ -156,7 +156,7 @@ export async function cancelCompensationReviewCycleAction(
 export async function getCompensationReviewCycleAction(
 	input: unknown,
 ): Promise<ActionResult<{ cycle: CompensationReviewCycle | null }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		CompensationReviewCycle | null,
 		{ cycle: CompensationReviewCycle | null }
 	>({
@@ -174,7 +174,7 @@ export async function getCompensationReviewCycleAction(
 export async function listCompensationReviewCyclesAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: CompensationReviewCycleListPage }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		CompensationReviewCycleListPage,
 		{ page: CompensationReviewCycleListPage }
 	>({
@@ -192,7 +192,7 @@ export async function listCompensationReviewCyclesAction(
 export async function createCompensationReviewDraftAction(
 	input: unknown,
 ): Promise<ActionResult<{ review: CompensationReview }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		CompensationReview,
 		{ review: CompensationReview }
 	>({
@@ -210,7 +210,7 @@ export async function createCompensationReviewDraftAction(
 export async function recordCompensationRecommendationAction(
 	input: unknown,
 ): Promise<ActionResult<{ review: CompensationReview }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		CompensationReview,
 		{ review: CompensationReview }
 	>({
@@ -228,7 +228,7 @@ export async function recordCompensationRecommendationAction(
 export async function finalizeCompensationReviewAction(
 	input: unknown,
 ): Promise<ActionResult<{ review: CompensationReview }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		CompensationReview,
 		{ review: CompensationReview }
 	>({
@@ -246,7 +246,7 @@ export async function finalizeCompensationReviewAction(
 export async function applyApprovedCompensationResultAction(
 	input: unknown,
 ): Promise<ActionResult<{ compensation: EmployeeCompensation }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		EmployeeCompensation,
 		{ compensation: EmployeeCompensation }
 	>({
@@ -264,7 +264,7 @@ export async function applyApprovedCompensationResultAction(
 export async function getCompensationReviewAction(
 	input: unknown,
 ): Promise<ActionResult<{ review: CompensationReview | null }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		CompensationReview | null,
 		{ review: CompensationReview | null }
 	>({
@@ -282,7 +282,7 @@ export async function getCompensationReviewAction(
 export async function listCompensationReviewsByEmployeeAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: CompensationReviewListPage }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		CompensationReviewListPage,
 		{ page: CompensationReviewListPage }
 	>({

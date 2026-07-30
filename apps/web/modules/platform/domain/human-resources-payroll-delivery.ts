@@ -79,9 +79,12 @@ export async function publishPayrollDelivery(
 	const composed =
 		ports ?? createProductionPayrollDeliveryPorts(undefined, input.actorUserId);
 	const found = await composed.store.getById(input);
-	if (!found.ok) return found;
-	if (found.data === null)
+	if (!found.ok) {
+		return found;
+	}
+	if (found.data === null) {
 		return fail("NOT_FOUND", "Payroll delivery not found");
+	}
 	return deliverPayrollHandoffWorkflow(
 		{ ...input, correlationId: found.data.correlationId },
 		composed,
@@ -101,9 +104,12 @@ export async function recordPayrollDeliveryFeedback(
 	const composed =
 		ports ?? createProductionPayrollDeliveryPorts(undefined, input.actorUserId);
 	const found = await composed.store.getById(input);
-	if (!found.ok) return found;
-	if (found.data === null)
+	if (!found.ok) {
+		return found;
+	}
+	if (found.data === null) {
 		return fail("NOT_FOUND", "Payroll delivery not found");
+	}
 	return recordPayrollDeliveryFeedbackWorkflow(
 		{ ...input, correlationId: found.data.correlationId },
 		composed,
@@ -125,9 +131,12 @@ export async function recoverPendingPayrollDeliveries(
 		organizationId: input.organizationId,
 		limit: input.limit,
 	});
-	if (!pending.ok) return pending;
+	if (!pending.ok) {
+		return pending;
+	}
 	const recovered: PayrollDeliveryRecord[] = [];
 	for (const delivery of pending.data) {
+		// biome-ignore lint/performance/noAwaitInLoops: Recovery deliveries are serialized to control downstream payroll pressure.
 		const result = await deliverPayrollHandoffWorkflow(
 			{
 				organizationId: input.organizationId,
@@ -137,7 +146,9 @@ export async function recoverPendingPayrollDeliveries(
 			},
 			composed,
 		);
-		if (!result.ok) return result;
+		if (!result.ok) {
+			return result;
+		}
 		recovered.push(result.data);
 	}
 	return ok(recovered);

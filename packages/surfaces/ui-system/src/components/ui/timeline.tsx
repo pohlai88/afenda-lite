@@ -2,10 +2,10 @@ import type * as React from "react";
 import { cn } from "../../lib/utils";
 
 interface TimelineEntryProps extends Omit<React.ComponentProps<"li">, "title"> {
-	title: React.ReactNode;
-	timestamp?: React.ReactNode;
 	description?: React.ReactNode;
 	icon?: React.ReactNode;
+	timestamp?: React.ReactNode;
+	title: React.ReactNode;
 }
 
 function TimelineEntry({
@@ -26,21 +26,21 @@ function TimelineEntry({
 		>
 			<div className="flex justify-center">
 				<span
-					className="z-10 flex size-6 items-center justify-center rounded-full border bg-background text-xs"
 					aria-hidden="true"
+					className="z-10 flex size-6 items-center justify-center rounded-full border bg-background text-xs"
 				>
 					{icon ?? "•"}
 				</span>
 			</div>
 			<div className="min-w-0">
 				<div className="flex flex-wrap items-baseline justify-between gap-2">
-					<p className="text-sm font-medium">{title}</p>
+					<p className="font-medium text-sm">{title}</p>
 					{timestamp ? (
-						<time className="text-xs text-muted-foreground">{timestamp}</time>
+						<time className="text-muted-foreground text-xs">{timestamp}</time>
 					) : null}
 				</div>
 				{description ? (
-					<div className="mt-1 text-sm text-muted-foreground">
+					<div className="mt-1 text-muted-foreground text-sm">
 						{description}
 					</div>
 				) : null}
@@ -53,7 +53,7 @@ function Timeline({ className, ...props }: React.ComponentProps<"ol">) {
 	return (
 		<ol
 			className={cn(
-				"relative [&>li:not(:last-child)]:after:absolute [&>li:not(:last-child)]:after:bottom-0 [&>li:not(:last-child)]:after:left-3 [&>li:not(:last-child)]:after:top-6 [&>li:not(:last-child)]:after:w-px [&>li:not(:last-child)]:after:bg-border",
+				"relative [&>li:not(:last-child)]:after:absolute [&>li:not(:last-child)]:after:top-6 [&>li:not(:last-child)]:after:bottom-0 [&>li:not(:last-child)]:after:left-3 [&>li:not(:last-child)]:after:w-px [&>li:not(:last-child)]:after:bg-border",
 				className,
 			)}
 			{...props}
@@ -62,8 +62,8 @@ function Timeline({ className, ...props }: React.ComponentProps<"ol">) {
 }
 
 interface AuditTrailEntry extends TimelineEntryProps {
-	actor: React.ReactNode;
 	action: React.ReactNode;
+	actor: React.ReactNode;
 }
 
 function AuditTrail({

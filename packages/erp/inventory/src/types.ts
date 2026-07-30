@@ -34,147 +34,147 @@ export const INVENTORY_MOVEMENT_SOURCES = [
 export type InventoryMovementSource =
 	(typeof INVENTORY_MOVEMENT_SOURCES)[number];
 
-export type StockMovementLine = {
-	id: string;
-	organizationId: string;
-	movementId: string;
-	lineNo: number;
-	itemId: string;
-	itemCode: string;
-	itemName: string;
-	baseUomId: string;
+export interface StockMovementLine {
 	baseUomCode: string;
+	baseUomId: string;
+	createdAt: Date;
+	createdBy: string;
+	id: string;
+	itemCode: string;
+	itemId: string;
+	itemName: string;
+	lineIdempotencyKey: string;
+	lineNo: number;
+	movementId: string;
+	organizationId: string;
 	/** Decimal quantity as normalized string (precision preserved). */
 	quantity: string;
-	lineIdempotencyKey: string;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type StockMovement = {
-	id: string;
-	organizationId: string;
+export interface StockMovement {
+	adjustmentNote: string | null;
+	adjustmentReasonCode: string | null;
+	cancelIdempotencyKey: string | null;
+	cancelledAt: Date | null;
+	cancelledBy: string | null;
 	code: string;
-	normalizedCode: string;
-	movementType: StockMovementType;
-	status: StockMovementStatus;
-	source: InventoryMovementSource;
-	warehouseId: string | null;
-	warehouseCode: string | null;
-	warehouseName: string | null;
-	fromWarehouseId: string | null;
+	createdAt: Date;
+	createdBy: string;
+	createIdempotencyKey: string;
 	fromWarehouseCode: string | null;
+	fromWarehouseId: string | null;
 	fromWarehouseName: string | null;
-	toWarehouseId: string | null;
-	toWarehouseCode: string | null;
-	toWarehouseName: string | null;
+	id: string;
+	lines: StockMovementLine[];
+	movementType: StockMovementType;
+	normalizedCode: string;
+	organizationId: string;
+	postedAt: Date | null;
+	postedBy: string | null;
+	postIdempotencyKey: string | null;
 	/** Linked reservation when issue consumes a reservation. */
 	reservationId: string | null;
 	/** Posted movement this reverses (compensating movement). */
 	reversesMovementId: string | null;
-	adjustmentReasonCode: string | null;
-	adjustmentNote: string | null;
-	sourceModule: string | null;
+	source: InventoryMovementSource;
 	sourceAggregateId: string | null;
 	sourceEventId: string | null;
 	sourceEventVersion: number | null;
 	sourceLineId: string | null;
-	createIdempotencyKey: string;
-	postIdempotencyKey: string | null;
-	cancelIdempotencyKey: string | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	postedAt: Date | null;
-	postedBy: string | null;
-	cancelledAt: Date | null;
-	cancelledBy: string | null;
-	createdAt: Date;
+	sourceModule: string | null;
+	status: StockMovementStatus;
+	toWarehouseCode: string | null;
+	toWarehouseId: string | null;
+	toWarehouseName: string | null;
 	updatedAt: Date;
-	lines: StockMovementLine[];
-};
+	updatedBy: string;
+	version: number;
+	warehouseCode: string | null;
+	warehouseId: string | null;
+	warehouseName: string | null;
+}
 
-export type StockBalance = {
-	id: string;
-	organizationId: string;
-	warehouseId: string;
-	warehouseCode: string;
-	itemId: string;
-	itemCode: string;
-	baseUomId: string | null;
-	baseUomCode: string | null;
-	onHand: string;
-	reserved: string;
+export interface StockBalance {
 	available: string;
-	version: number;
-	updatedBy: string;
+	baseUomCode: string | null;
+	baseUomId: string | null;
 	createdAt: Date;
+	id: string;
+	itemCode: string;
+	itemId: string;
+	onHand: string;
+	organizationId: string;
+	reserved: string;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+	warehouseCode: string;
+	warehouseId: string;
+}
 
 /** Availability projection — available = onHand − active reserved (no ATP). */
-export type StockAvailability = {
-	organizationId: string;
-	warehouseId: string;
-	warehouseCode: string;
-	itemId: string;
-	itemCode: string;
-	baseUomId: string | null;
-	baseUomCode: string | null;
-	onHandQuantity: string;
-	reservedQuantity: string;
-	availableQuantity: string;
+export interface StockAvailability {
 	asOfLedgerSequence: number;
+	availableQuantity: string;
 	balanceVersion: number;
-};
-
-export type StockReservation = {
-	id: string;
-	organizationId: string;
-	code: string;
-	normalizedCode: string;
-	status: StockReservationStatus;
-	warehouseId: string;
-	warehouseCode: string;
-	warehouseName: string;
-	itemId: string;
+	baseUomCode: string | null;
+	baseUomId: string | null;
 	itemCode: string;
-	itemName: string;
-	baseUomId: string;
+	itemId: string;
+	onHandQuantity: string;
+	organizationId: string;
+	reservedQuantity: string;
+	warehouseCode: string;
+	warehouseId: string;
+}
+
+export interface StockReservation {
 	baseUomCode: string;
-	quantity: string;
+	baseUomId: string;
+	code: string;
 	consumedQuantity: string;
-	createIdempotencyKey: string;
-	releaseIdempotencyKey: string | null;
-	version: number;
+	createdAt: Date;
 	createdBy: string;
-	updatedBy: string;
+	createIdempotencyKey: string;
+	id: string;
+	itemCode: string;
+	itemId: string;
+	itemName: string;
+	normalizedCode: string;
+	organizationId: string;
+	quantity: string;
 	releasedAt: Date | null;
 	releasedBy: string | null;
-	createdAt: Date;
+	releaseIdempotencyKey: string | null;
+	status: StockReservationStatus;
 	updatedAt: Date;
-};
-
-export type StockLedgerEntry = {
-	id: string;
-	organizationId: string;
-	movementId: string;
-	movementLineId: string | null;
-	movementCode: string;
-	movementType: StockMovementType;
-	warehouseId: string;
+	updatedBy: string;
+	version: number;
 	warehouseCode: string;
-	itemId: string;
-	itemCode: string;
-	quantityDelta: string;
-	onHandAfter: string;
-	reservedAfter: string;
-	availableAfter: string;
-	ledgerSequence: number;
+	warehouseId: string;
+	warehouseName: string;
+}
+
+export interface StockLedgerEntry {
 	actorUserId: string;
+	availableAfter: string;
 	correlationId: string;
 	createdAt: Date;
-};
+	id: string;
+	itemCode: string;
+	itemId: string;
+	ledgerSequence: number;
+	movementCode: string;
+	movementId: string;
+	movementLineId: string | null;
+	movementType: StockMovementType;
+	onHandAfter: string;
+	organizationId: string;
+	quantityDelta: string;
+	reservedAfter: string;
+	warehouseCode: string;
+	warehouseId: string;
+}

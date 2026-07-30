@@ -7,13 +7,13 @@ import { ManagerWorkspaceLoading } from "@/features/human-resources/manager/mana
 import { ManagerWorkspaceServer } from "@/features/human-resources/manager/manager-workspace-server";
 import { parseHrPage } from "@/features/human-resources/pagination";
 
-type PageProps = {
+interface PageProps {
 	searchParams: Promise<{
 		page?: string | string[];
 		locale?: string | string[];
 		timeZone?: string | string[];
 	}>;
-};
+}
 
 const MANAGER_WORKSPACE_PERMISSIONS = [
 	"human-resources.employee.read",
@@ -38,9 +38,9 @@ export default async function ManagerHumanResourcesPage({
 	return (
 		<Suspense fallback={<ManagerWorkspaceLoading />}>
 			<ManagerWorkspaceServer
-				session={session}
 				page={page}
 				preferences={preferences}
+				session={session}
 			/>
 		</Suspense>
 	);

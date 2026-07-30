@@ -122,19 +122,19 @@ export function LegalCompanyLifecycleWorkspace({
 			<div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
 				<div>
 					<h2
+						className="font-medium text-lg"
 						id="legal-company-lifecycle-heading"
-						className="text-lg font-medium"
 					>
 						Company status lifecycle
 					</h2>
-					<p className="text-sm text-muted-foreground">
+					<p className="text-muted-foreground text-sm">
 						Effective company state and Phase 1 activation completeness.
 					</p>
 				</div>
 				<StatusBadge
-					status={company.state === "active" ? "success" : "pending"}
 					label={`${statusLabel(company.state)} · v${company.version}`}
 					showIcon={false}
+					status={company.state === "active" ? "success" : "pending"}
 				/>
 			</div>
 
@@ -148,7 +148,7 @@ export function LegalCompanyLifecycleWorkspace({
 					</CardHeader>
 					<CardContent>
 						{completeness === null ? (
-							<Alert variant="destructive" role="alert">
+							<Alert role="alert" variant="destructive">
 								<AlertTitle>Readiness unavailable</AlertTitle>
 								<AlertDescription>
 									Activation completeness could not be loaded.
@@ -157,13 +157,13 @@ export function LegalCompanyLifecycleWorkspace({
 						) : (
 							<div className="space-y-4">
 								<StatusBadge
-									status={completeness.complete ? "success" : "pending"}
 									label={
 										completeness.complete
 											? "Activation ready"
 											: "Activation incomplete"
 									}
 									showIcon={false}
+									status={completeness.complete ? "success" : "pending"}
 								/>
 								<Table aria-label="Activation completeness checks">
 									<TableHeader>
@@ -197,7 +197,7 @@ export function LegalCompanyLifecycleWorkspace({
 					</CardHeader>
 					<CardContent className="space-y-6">
 						{transitionForms.length === 0 ? (
-							<p className="text-sm text-muted-foreground">
+							<p className="text-muted-foreground text-sm">
 								No further status transition is available.
 							</p>
 						) : null}
@@ -418,8 +418,8 @@ function SubmitButton({
 }: Readonly<{ children: ReactNode; disabled: boolean }>) {
 	const status = useFormStatus();
 	return (
-		<Button type="submit" disabled={disabled || status.pending}>
-			{status.pending ? "Saving..." : children}
+		<Button disabled={disabled || status.pending} type="submit">
+			{status.pending ? "Saving..." : <span>{children}</span>}
 		</Button>
 	);
 }
@@ -428,10 +428,12 @@ function ActionFeedback({
 	state,
 	success,
 }: Readonly<{ state: LifecycleActionState; success: string }>) {
-	if (state === null) return null;
+	if (state === null) {
+		return null;
+	}
 	if (!state.ok) {
 		return (
-			<Alert variant="destructive" role="alert">
+			<Alert role="alert" variant="destructive">
 				<AlertTitle>Change not saved</AlertTitle>
 				<AlertDescription>{state.message}</AlertDescription>
 			</Alert>
@@ -456,6 +458,7 @@ type LifecycleTransition =
 export function availableLifecycleTransitions(
 	status: LegalCompanyLifecycleStatus,
 ): readonly LifecycleTransition[] {
+	// biome-ignore lint/style/useDefaultSwitchClause: The union switch is exhaustive so additions fail type review.
 	switch (status) {
 		case "draft":
 			return ["activate", "archive"];

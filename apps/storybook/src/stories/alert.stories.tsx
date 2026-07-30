@@ -37,12 +37,12 @@ function WorkbenchSection({
 	children,
 }: WorkbenchSectionProps) {
 	return (
-		<section className="grid gap-4" aria-labelledby={id}>
+		<section aria-labelledby={id} className="grid gap-4">
 			<div className="grid gap-1">
-				<h2 className="text-base font-semibold tracking-tight" id={id}>
+				<h2 className="font-semibold text-base tracking-tight" id={id}>
 					{title}
 				</h2>
-				<p className="max-w-5xl text-sm leading-5 text-foreground-secondary">
+				<p className="max-w-5xl text-foreground-secondary text-sm leading-5">
 					{description}
 				</p>
 			</div>
@@ -80,14 +80,14 @@ export const Overview: Story = {
 			<div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-5 border-b pb-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
 					<div className="grid gap-2">
-						<p className="text-sm font-medium text-foreground-secondary">
+						<p className="font-medium text-foreground-secondary text-sm">
 							Accounts receivable
 						</p>
 						<div className="grid gap-1">
-							<h1 className="text-2xl font-semibold tracking-tight">
+							<h1 className="font-semibold text-2xl tracking-tight">
 								July period-close notices
 							</h1>
-							<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+							<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 								Alerts remain beside the affected work. They explain conditions
 								and recovery without replacing workflow status, validation
 								fields, or primary page actions.
@@ -96,25 +96,25 @@ export const Overview: Story = {
 					</div>
 					<dl className="grid grid-cols-2 gap-x-8 gap-y-3 rounded-lg border bg-card p-4">
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Subject
 							</dt>
 							<dd className="text-sm">Period-close notices</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Scope
 							</dt>
 							<dd className="text-sm">Persistent alerts</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Ownership
 							</dt>
 							<dd className="text-sm">Contextual condition</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Lifecycle
 							</dt>
 							<dd className="text-sm">Info · guidance · failure</dd>
@@ -180,9 +180,9 @@ export const SemanticUsage: Story = {
 	},
 	render: () => (
 		<WorkbenchSection
+			description="Default alerts explain conditions; destructive alerts communicate confirmed blocking failure."
 			id="alert-semantic-usage-title"
 			title="Operational roles"
-			description="Default alerts explain conditions; destructive alerts communicate confirmed blocking failure."
 		>
 			<div className="grid w-full max-w-5xl gap-4">
 				<StorySection title="Default · information">
@@ -319,7 +319,7 @@ export const StatesAndAccessibility: Story = {
 				</AlertDescription>
 			</Alert>
 
-			<Alert variant="destructive" role="alert">
+			<Alert role="alert" variant="destructive">
 				<CircleAlertIcon aria-hidden="true" />
 
 				<AlertTitle>Validation blocked</AlertTitle>
@@ -372,10 +372,10 @@ export const Composition: Story = {
 					</div>
 
 					<Button
-						type="button"
-						size="sm"
-						variant="outline"
 						className="shrink-0"
+						size="sm"
+						type="button"
+						variant="outline"
 					>
 						Open exceptions
 					</Button>
@@ -395,10 +395,10 @@ export const Composition: Story = {
 					</div>
 
 					<Button
-						type="button"
-						size="sm"
-						variant="destructive"
 						className="shrink-0"
+						size="sm"
+						type="button"
+						variant="destructive"
 					>
 						Retry posting
 					</Button>
@@ -414,8 +414,8 @@ export const Composition: Story = {
 					<AlertDescription>
 						Bank evidence must be issued within the previous 90 days.{" "}
 						<a
-							href="#supplier-evidence-policy"
 							className="font-medium text-foreground underline underline-offset-4"
+							href="#supplier-evidence-policy"
 						>
 							View policy
 						</a>
@@ -496,7 +496,7 @@ export const DoAndDoNot: Story = {
 						<AlertDescription>Please try again.</AlertDescription>
 					</Alert>
 
-					<p className="text-sm leading-6 text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm leading-6">
 						Name the failed operation, affected object, and required recovery.
 					</p>
 				</div>
@@ -527,7 +527,7 @@ export const DoAndDoNot: Story = {
 						</AlertDescription>
 					</Alert>
 
-					<p className="text-sm leading-6 text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm leading-6">
 						Successful outcomes use the default treatment or quieter page
 						feedback.
 					</p>
@@ -548,7 +548,7 @@ export const DoAndDoNot: Story = {
 						</div>
 
 						<div>
-							<Button type="button" size="sm" variant="destructive">
+							<Button size="sm" type="button" variant="destructive">
 								Open supplier account
 							</Button>
 						</div>
@@ -559,34 +559,34 @@ export const DoAndDoNot: Story = {
 			<StorySection title="Do not: add competing actions">
 				<div className="grid gap-2">
 					<div className="flex flex-wrap gap-2">
-						<Button type="button" size="sm">
+						<Button size="sm" type="button">
 							Retry
 						</Button>
 
-						<Button type="button" size="sm">
+						<Button size="sm" type="button">
 							Ignore
 						</Button>
 
-						<Button type="button" size="sm">
+						<Button size="sm" type="button">
 							Escalate
 						</Button>
 					</div>
 
-					<p className="text-sm leading-6 text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm leading-6">
 						Move complex decision sets to the owning workflow surface.
 					</p>
 				</div>
 			</StorySection>
 
 			<StorySection title="Do: keep persistent notices on the page">
-				<p className="text-sm leading-6 text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm leading-6">
 					Use Alert for conditions operators must continue seeing while they
 					work. Use Toast for transient acknowledgement.
 				</p>
 			</StorySection>
 
 			<StorySection title="Do not: use Alert as record status">
-				<p className="text-sm leading-6 text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm leading-6">
 					Posted, pending, blocked, and approved lifecycle labels belong in
 					StatusBadge. Alert explains an operational condition.
 				</p>

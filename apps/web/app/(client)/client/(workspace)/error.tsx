@@ -2,10 +2,10 @@
 
 import { SegmentError } from "@/features/auth/segment-error";
 
-type ClientWorkspaceErrorProps = {
+interface ClientWorkspaceErrorProps {
 	error: Error & { digest?: string };
 	reset: () => void;
-};
+}
 
 export default function ClientWorkspaceError({
 	error,
@@ -14,10 +14,10 @@ export default function ClientWorkspaceError({
 	return (
 		<SegmentError
 			asLandmark={false}
-			title="Client workspace unavailable"
-			fallbackMessage="Something went wrong loading this surface."
 			error={error}
+			fallbackMessage="Something went wrong loading this surface."
 			reset={reset}
+			title="Client workspace unavailable"
 		/>
 	);
 }

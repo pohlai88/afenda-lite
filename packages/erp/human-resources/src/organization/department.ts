@@ -37,7 +37,7 @@ export const HUMAN_RESOURCES_AGGREGATE_DEPARTMENT = "department" as const;
 export type HumanResourcesDepartmentAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_DEPARTMENT;
 
-export async function createDepartment(
+export function createDepartment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Department>> {
@@ -45,8 +45,8 @@ export async function createDepartment(
 		schema: createDepartmentInputSchema,
 		invalidMessage: "Invalid department create input",
 		command: HUMAN_RESOURCES_COMMAND_DEPARTMENT_CREATE,
-		execute: async (data, { store, ports }) => {
-			return store.createDepartment(
+		execute: async (data, { store, ports }) =>
+			store.createDepartment(
 				{
 					organizationId: data.organizationId,
 					code: data.code.trim(),
@@ -60,12 +60,11 @@ export async function createDepartment(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_DEPARTMENT_CREATE,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function updateDepartment(
+export function updateDepartment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Department>> {
@@ -73,8 +72,8 @@ export async function updateDepartment(
 		schema: updateDepartmentInputSchema,
 		invalidMessage: "Invalid department update input",
 		command: HUMAN_RESOURCES_COMMAND_DEPARTMENT_UPDATE,
-		execute: async (data, { store, ports }) => {
-			return store.updateDepartment(
+		execute: async (data, { store, ports }) =>
+			store.updateDepartment(
 				{
 					organizationId: data.organizationId,
 					departmentId: data.departmentId,
@@ -91,12 +90,11 @@ export async function updateDepartment(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_DEPARTMENT_UPDATE,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function activateDepartment(
+export function activateDepartment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Department>> {
@@ -104,8 +102,8 @@ export async function activateDepartment(
 		schema: departmentStatusTransitionInputSchema,
 		invalidMessage: "Invalid department activate input",
 		command: HUMAN_RESOURCES_COMMAND_DEPARTMENT_ACTIVATE,
-		execute: async (data, { store, ports }) => {
-			return store.setDepartmentStatus(
+		execute: async (data, { store, ports }) =>
+			store.setDepartmentStatus(
 				{
 					organizationId: data.organizationId,
 					departmentId: data.departmentId,
@@ -118,12 +116,11 @@ export async function activateDepartment(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_DEPARTMENT_ACTIVATE,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function archiveDepartment(
+export function archiveDepartment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Department>> {
@@ -131,8 +128,8 @@ export async function archiveDepartment(
 		schema: departmentStatusTransitionInputSchema,
 		invalidMessage: "Invalid department archive input",
 		command: HUMAN_RESOURCES_COMMAND_DEPARTMENT_ARCHIVE,
-		execute: async (data, { store, ports }) => {
-			return store.setDepartmentStatus(
+		execute: async (data, { store, ports }) =>
+			store.setDepartmentStatus(
 				{
 					organizationId: data.organizationId,
 					departmentId: data.departmentId,
@@ -145,12 +142,11 @@ export async function archiveDepartment(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_DEPARTMENT_ARCHIVE,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function getDepartment(
+export function getDepartment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Department>> {
@@ -178,7 +174,7 @@ export async function getDepartment(
 	});
 }
 
-export async function listDepartments(
+export function listDepartments(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<{ departments: Department[]; totalCount: number }>> {
@@ -186,19 +182,18 @@ export async function listDepartments(
 		schema: listDepartmentsInputSchema,
 		invalidMessage: "Invalid department list input",
 		query: HUMAN_RESOURCES_QUERY_DEPARTMENT_LIST,
-		execute: async (data, { store }) => {
-			return store.listDepartments({
+		execute: async (data, { store }) =>
+			store.listDepartments({
 				organizationId: data.organizationId,
 				page: data.page ?? 1,
 				pageSize: data.pageSize ?? 20,
 				status: data.status,
 				parentDepartmentId: data.parentDepartmentId,
-			});
-		},
+			}),
 	});
 }
 
-export async function getOrganizationTree(
+export function getOrganizationTree(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OrganizationTreePage>> {
@@ -206,18 +201,17 @@ export async function getOrganizationTree(
 		schema: organizationTreeInputSchema,
 		invalidMessage: "Invalid organization tree input",
 		query: HUMAN_RESOURCES_QUERY_ORGANIZATION_TREE,
-		execute: async (data, { store }) => {
-			return store.getOrganizationTree({
+		execute: async (data, { store }) =>
+			store.getOrganizationTree({
 				organizationId: data.organizationId,
 				rootDepartmentId: data.rootDepartmentId ?? null,
 				maxDepth: data.maxDepth,
 				maxNodes: data.maxNodes,
-			});
-		},
+			}),
 	});
 }
 
-export async function getDepartmentAsOf(
+export function getDepartmentAsOf(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<DepartmentStructureAtAsOf>> {
@@ -246,7 +240,7 @@ export async function getDepartmentAsOf(
 	});
 }
 
-export async function getOrganizationTreeAsOf(
+export function getOrganizationTreeAsOf(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OrganizationTreePage>> {
@@ -254,14 +248,13 @@ export async function getOrganizationTreeAsOf(
 		schema: organizationTreeAsOfInputSchema,
 		invalidMessage: "Invalid organization tree as-of input",
 		query: HUMAN_RESOURCES_QUERY_ORGANIZATION_TREE_AS_OF,
-		execute: async (data, { store }) => {
-			return store.getOrganizationTreeAsOf({
+		execute: async (data, { store }) =>
+			store.getOrganizationTreeAsOf({
 				organizationId: data.organizationId,
 				asOf: data.asOf,
 				rootDepartmentId: data.rootDepartmentId ?? null,
 				maxDepth: data.maxDepth,
 				maxNodes: data.maxNodes,
-			});
-		},
+			}),
 	});
 }

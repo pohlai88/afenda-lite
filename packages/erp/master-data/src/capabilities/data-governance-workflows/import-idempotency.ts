@@ -17,9 +17,15 @@ export function hashImportRow(payload: unknown): string {
 }
 
 export function canonicalJson(value: unknown): string {
-	if (value === null) return "null";
-	if (typeof value === "string") return JSON.stringify(value);
-	if (typeof value === "boolean") return value ? "true" : "false";
+	if (value === null) {
+		return "null";
+	}
+	if (typeof value === "string") {
+		return JSON.stringify(value);
+	}
+	if (typeof value === "boolean") {
+		return value ? "true" : "false";
+	}
 	if (typeof value === "number") {
 		if (!Number.isFinite(value)) {
 			throw new Error("Import payload contains a non-finite number");

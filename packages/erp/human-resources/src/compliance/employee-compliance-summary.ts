@@ -5,19 +5,18 @@ import { getEmployeeComplianceSummaryInputSchema } from "../schemas/compliance";
 import { runComplianceEmployeeScopedQuery } from "../shared/compliance-command";
 import type { EmployeeComplianceSummary } from "../types";
 
-export async function getEmployeeComplianceSummary(
+export function getEmployeeComplianceSummary(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeComplianceSummary>> {
 	return runComplianceEmployeeScopedQuery(input, options, {
 		schema: getEmployeeComplianceSummaryInputSchema,
 		invalidMessage: "Invalid employee compliance summary get input",
-		execute: async (data, { store }) => {
-			return store.getEmployeeComplianceSummary({
+		execute: async (data, { store }) =>
+			store.getEmployeeComplianceSummary({
 				organizationId: data.organizationId,
 				employeeId: data.employeeId,
 				...(data.asOf === undefined ? {} : { asOf: data.asOf }),
-			});
-		},
+			}),
 	});
 }

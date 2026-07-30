@@ -73,7 +73,9 @@ describe("CA-2.4 meeting memory store and quorum rules", () => {
 			expectedCompanyVersion: 1,
 		});
 		expect(body.ok).toBe(true);
-		if (!body.ok) return;
+		if (!body.ok) {
+			return;
+		}
 
 		const firstMember = await governanceStore.appointGovernanceMember({
 			organizationId,
@@ -112,7 +114,9 @@ describe("CA-2.4 meeting memory store and quorum rules", () => {
 			expectedBodyVersion: 1,
 		});
 		expect(firstMember.ok && secondMember.ok).toBe(true);
-		if (!firstMember.ok || !secondMember.ok) return;
+		if (!(firstMember.ok && secondMember.ok)) {
+			return;
+		}
 
 		const meeting = await meetingStore.scheduleGovernanceMeeting({
 			organizationId,
@@ -131,7 +135,9 @@ describe("CA-2.4 meeting memory store and quorum rules", () => {
 			expectedBodyVersion: 1,
 		});
 		expect(meeting.ok).toBe(true);
-		if (!meeting.ok) return;
+		if (!meeting.ok) {
+			return;
+		}
 
 		const crossTenant = await meetingStore.getGovernanceMeeting({
 			organizationId: otherOrganizationId,
@@ -153,7 +159,9 @@ describe("CA-2.4 meeting memory store and quorum rules", () => {
 			expectedMeetingVersion: 1,
 		});
 		expect(notice.ok).toBe(true);
-		if (!notice.ok) return;
+		if (!notice.ok) {
+			return;
+		}
 
 		const waived = await meetingStore.waiveNotice({
 			organizationId,
@@ -217,7 +225,9 @@ describe("CA-2.4 meeting memory store and quorum rules", () => {
 			governanceMeetingId: meeting.data.id,
 		});
 		expect(memberships.ok && participants.ok).toBe(true);
-		if (!memberships.ok || !participants.ok) return;
+		if (!(memberships.ok && participants.ok)) {
+			return;
+		}
 		const quorum = calculateMeetingQuorum({
 			meeting: meeting.data,
 			memberships: memberships.data,
@@ -228,7 +238,9 @@ describe("CA-2.4 meeting memory store and quorum rules", () => {
 			noQuorumReason: "Recusal left only one eligible participant present",
 		});
 		expect(quorum.ok).toBe(true);
-		if (!quorum.ok) return;
+		if (!quorum.ok) {
+			return;
+		}
 		expect(quorum.data).toMatchObject({
 			eligibleMemberCount: 2,
 			presentMemberCount: 1,

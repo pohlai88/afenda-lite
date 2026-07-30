@@ -9,7 +9,6 @@ import type {
 	ItemTemplateAttributeValidationRules,
 	ItemType,
 	ItemVariant,
-	MasterStatus,
 } from "../../types";
 import type { ItemTemplateLifecycleEventSuffix } from "../core-organization-masters/core-master-events";
 import type {
@@ -17,94 +16,94 @@ import type {
 	ListFilter,
 } from "../core-organization-masters/store";
 
-export type ItemTemplateCreateRecord = {
-	organizationId: string;
+export interface ItemTemplateCreateRecord {
 	code: string;
-	normalizedCode: string;
-	name: string;
 	createdBy: string;
-};
-
-export type ItemTemplateUpdateRecord = {
+	name: string;
+	normalizedCode: string;
 	organizationId: string;
-	id: string;
-	expectedVersion: number;
-	updatedBy: string;
-	name?: string | undefined;
-};
+}
 
-export type ItemTemplateAttributeCreateRecord = {
+export interface ItemTemplateUpdateRecord {
+	expectedVersion: number;
+	id: string;
+	name?: string | undefined;
+	organizationId: string;
+	updatedBy: string;
+}
+
+export interface ItemTemplateAttributeCreateRecord {
+	code: string;
+	createdBy: string;
+	dataType: ItemTemplateAttributeDataType;
+	description: string | null;
+	displayOrder: number;
+	isRequired: boolean;
+	isSearchable: boolean;
+	isVariantDefining: boolean;
+	name: string;
+	normalizedCode: string;
 	organizationId: string;
 	templateId: string;
-	code: string;
-	normalizedCode: string;
-	name: string;
-	description: string | null;
-	dataType: ItemTemplateAttributeDataType;
-	isRequired: boolean;
-	isVariantDefining: boolean;
-	isSearchable: boolean;
-	displayOrder: number;
 	validationRules: ItemTemplateAttributeValidationRules;
-	createdBy: string;
-};
+}
 
-export type ItemTemplateAttributeOptionCreateRecord = {
-	organizationId: string;
+export interface ItemTemplateAttributeOptionCreateRecord {
 	attributeId: string;
 	code: string;
-	normalizedCode: string;
-	label: string;
+	createdBy: string;
 	description: string | null;
 	displayOrder: number;
-	createdBy: string;
-};
+	label: string;
+	normalizedCode: string;
+	organizationId: string;
+}
 
-export type ItemTemplateAttributeContext = {
+export interface ItemTemplateAttributeContext {
 	attribute: ItemTemplateAttribute;
 	template: ItemTemplate;
-};
+}
 
-export type ItemVariantAttributeValueCreateRecord = {
+export interface ItemVariantAttributeValueCreateRecord {
 	attributeId: string;
-	valueType: ItemTemplateAttributeDataType;
-	textValue: string | null;
-	integerValue: string | null;
-	decimalValue: string | null;
 	booleanValue: boolean | null;
 	dateValue: string | null;
+	decimalValue: string | null;
+	integerValue: string | null;
+	normalizedValue: string;
 	optionId: string | null;
 	optionIds: readonly string[];
 	referenceValue: string | null;
-	normalizedValue: string;
-};
+	textValue: string | null;
+	valueType: ItemTemplateAttributeDataType;
+}
 
-export type ItemVariantCreateRecord = {
+export interface ItemVariantCreateRecord {
+	attributeValues: ItemVariantAttributeValueCreateRecord[];
+	baseUomId: string;
+	code: string;
+	combinationKey: string;
+	createdBy: string;
+	itemGroupId: string;
+	itemType: ItemType;
+	name: string;
+	normalizedCode: string;
 	organizationId: string;
 	templateId: string;
-	code: string;
-	normalizedCode: string;
-	name: string;
-	itemType: ItemType;
-	baseUomId: string;
-	itemGroupId: string;
-	combinationKey: string;
-	attributeValues: ItemVariantAttributeValueCreateRecord[];
-	createdBy: string;
-};
+}
 
 export type ItemTemplateLifecycleRecord = Omit<LifecycleRecord, "toStatus"> & {
 	toStatus: "active" | "inactive" | "retired";
 };
 
-export type ItemVariantRetireRecord = {
-	organizationId: string;
-	variantId: string;
+export interface ItemVariantRetireRecord {
+	actorUserId: string;
+	expectedItemVersion: number;
 	expectedVariantVersion: number;
 	itemId: string;
-	expectedItemVersion: number;
-	actorUserId: string;
-};
+	organizationId: string;
+	variantId: string;
+}
 
 export type ListItemVariantsFilter = ListFilter & {
 	templateId: string;
@@ -112,82 +111,82 @@ export type ListItemVariantsFilter = ListFilter & {
 
 /** Item-variant and template-owned child persistence boundary. */
 export interface ItemVariantExtensionStore {
-	getItemTemplateById(
-		organizationId: string,
-		id: string,
-	): Promise<Result<ItemTemplate | null>>;
-	getItemTemplateByCode(
-		organizationId: string,
-		normalizedCode: string,
-	): Promise<Result<ItemTemplate | null>>;
-	listItemTemplates(filter: ListFilter): Promise<Result<ItemTemplate[]>>;
-	createItemTemplate(
+	addItemTemplateAttribute: (
+		record: ItemTemplateAttributeCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	) => Promise<Result<ItemTemplateAttribute>>;
+	addItemTemplateAttributeOption: (
+		record: ItemTemplateAttributeOptionCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	) => Promise<Result<ItemTemplateAttributeOption>>;
+	createItemTemplate: (
 		record: ItemTemplateCreateRecord,
 		ports: MutationPorts,
 		meta: { correlationId: string },
-	): Promise<Result<ItemTemplate>>;
-	updateItemTemplate(
-		record: ItemTemplateUpdateRecord,
+	) => Promise<Result<ItemTemplate>>;
+	createItemVariant: (
+		record: ItemVariantCreateRecord,
 		ports: MutationPorts,
 		meta: { correlationId: string },
-	): Promise<Result<ItemTemplate>>;
-	transitionItemTemplate(
+	) => Promise<Result<ItemVariant>>;
+	getItemTemplateAttributeContextById: (
+		organizationId: string,
+		attributeId: string,
+	) => Promise<Result<ItemTemplateAttributeContext | null>>;
+	getItemTemplateByCode: (
+		organizationId: string,
+		normalizedCode: string,
+	) => Promise<Result<ItemTemplate | null>>;
+	getItemTemplateById: (
+		organizationId: string,
+		id: string,
+	) => Promise<Result<ItemTemplate | null>>;
+
+	getItemVariantById: (
+		organizationId: string,
+		id: string,
+	) => Promise<Result<ItemVariant | null>>;
+	listItemTemplateAttributeOptions: (
+		organizationId: string,
+		attributeId: string,
+	) => Promise<Result<ItemTemplateAttributeOption[]>>;
+	listItemTemplateAttributeOptionsByTemplate: (
+		organizationId: string,
+		templateId: string,
+	) => Promise<Result<ItemTemplateAttributeOption[]>>;
+
+	listItemTemplateAttributes: (
+		organizationId: string,
+		templateId: string,
+	) => Promise<Result<ItemTemplateAttribute[]>>;
+	listItemTemplates: (filter: ListFilter) => Promise<Result<ItemTemplate[]>>;
+	listItemVariantsByTemplate: (
+		filter: ListItemVariantsFilter,
+	) => Promise<Result<ItemVariant[]>>;
+	retireItemVariant: (
+		record: ItemVariantRetireRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	) => Promise<Result<ItemVariant>>;
+	transitionItemTemplate: (
 		record: ItemTemplateLifecycleRecord,
 		ports: MutationPorts,
 		meta: {
 			correlationId: string;
 			eventSuffix: ItemTemplateLifecycleEventSuffix;
 		},
-	): Promise<Result<ItemTemplate>>;
-
-	listItemTemplateAttributes(
-		organizationId: string,
-		templateId: string,
-	): Promise<Result<ItemTemplateAttribute[]>>;
-	getItemTemplateAttributeContextById(
-		organizationId: string,
-		attributeId: string,
-	): Promise<Result<ItemTemplateAttributeContext | null>>;
-	listItemTemplateAttributeOptions(
-		organizationId: string,
-		attributeId: string,
-	): Promise<Result<ItemTemplateAttributeOption[]>>;
-	listItemTemplateAttributeOptionsByTemplate(
-		organizationId: string,
-		templateId: string,
-	): Promise<Result<ItemTemplateAttributeOption[]>>;
-	addItemTemplateAttribute(
-		record: ItemTemplateAttributeCreateRecord,
+	) => Promise<Result<ItemTemplate>>;
+	updateItemTemplate: (
+		record: ItemTemplateUpdateRecord,
 		ports: MutationPorts,
 		meta: { correlationId: string },
-	): Promise<Result<ItemTemplateAttribute>>;
-	addItemTemplateAttributeOption(
-		record: ItemTemplateAttributeOptionCreateRecord,
-		ports: MutationPorts,
-		meta: { correlationId: string },
-	): Promise<Result<ItemTemplateAttributeOption>>;
-
-	getItemVariantById(
-		organizationId: string,
-		id: string,
-	): Promise<Result<ItemVariant | null>>;
-	listItemVariantsByTemplate(
-		filter: ListItemVariantsFilter,
-	): Promise<Result<ItemVariant[]>>;
-	createItemVariant(
-		record: ItemVariantCreateRecord,
-		ports: MutationPorts,
-		meta: { correlationId: string },
-	): Promise<Result<ItemVariant>>;
-	retireItemVariant(
-		record: ItemVariantRetireRecord,
-		ports: MutationPorts,
-		meta: { correlationId: string },
-	): Promise<Result<ItemVariant>>;
+	) => Promise<Result<ItemTemplate>>;
 }
 
 /** Backward-compatible names retained for existing package consumers. */
 export type MasterDataVariantStore = ItemVariantExtensionStore;
 export type ItemTemplateVariantStore = ItemVariantExtensionStore;
 
-export type { MasterStatus };
+export type { MasterStatus } from "../../types";

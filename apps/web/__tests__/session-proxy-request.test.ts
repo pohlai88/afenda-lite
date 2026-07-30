@@ -31,9 +31,9 @@ describe("N6 apps/web proxy request gate", () => {
 
 	it("request-level: unauthenticated protected path redirects via createSessionProxy to AUTH_LOGIN_PATH", async () => {
 		const { NextRequest, NextResponse } = await import("next/server");
-		sessionGateMock.mockImplementation(async (request) => {
-			return NextResponse.redirect(new URL(AUTH_LOGIN_PATH, request.url));
-		});
+		sessionGateMock.mockImplementation(async (request) =>
+			NextResponse.redirect(new URL(AUTH_LOGIN_PATH, request.url)),
+		);
 
 		const { proxy } = await import("../proxy");
 		for (const protectedPath of ["/admin", "/client"] as const) {
@@ -89,3 +89,4 @@ describe("N6 apps/web proxy request gate", () => {
 		}
 	});
 });
+// biome-ignore-all lint/performance/noAwaitInLoops: Cases run serially to isolate mutable test state and ordered transitions.

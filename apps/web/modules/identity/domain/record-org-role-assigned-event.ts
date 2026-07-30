@@ -19,22 +19,22 @@ const ORG_ROLE_NOTIFICATION_FAILED_MESSAGE =
 const ORG_ROLE_EVENT_HANDLER_FAILED_MESSAGE =
 	"Organization role assignment event handler failed";
 
-export type RecordOrgRoleAssignedEventInput = {
+export interface RecordOrgRoleAssignedEventInput {
+	actorUserId: string;
+	assignmentId: string;
+	correlationId: string;
 	organizationId: string;
+	reactivated: boolean;
+	roleId: string;
 	/** Recipient — the member who received the role. */
 	userId: string;
-	roleId: string;
-	assignmentId: string;
-	actorUserId: string;
-	correlationId: string;
-	reactivated: boolean;
-};
+}
 
-export type RecordOrgRoleAssignedEventData = {
-	event: DomainEvent;
+export interface RecordOrgRoleAssignedEventData {
 	dispatch: EventDispatchSummary;
+	event: DomainEvent;
 	notificationId: string | null;
-};
+}
 
 /**
  * Publish `identity.org_role.assigned` and dispatch the IN_APP notification handler.

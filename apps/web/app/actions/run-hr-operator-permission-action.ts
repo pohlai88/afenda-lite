@@ -20,7 +20,7 @@ export function createHrOperatorPermissionActionRunner(
 	return async function runHrOperatorPermissionAction<T>(
 		input: HrOperatorPermissionActionInput<T>,
 	) {
-		return runOperatorPermissionAction({
+		return await runOperatorPermissionAction({
 			...input,
 			onPermissionDenied: async () => {
 				await recordHrAuthorizationDenial(

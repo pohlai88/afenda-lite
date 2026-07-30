@@ -7,6 +7,15 @@ import type {
 } from "./work-calendar";
 
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
+const WEEKDAY_BY_SHORT_LABEL: Readonly<Record<string, number>> = {
+	Fri: 5,
+	Mon: 1,
+	Sat: 6,
+	Sun: 0,
+	Thu: 4,
+	Tue: 2,
+	Wed: 3,
+};
 
 function parseIsoDateParts(value: string): {
 	year: number;
@@ -21,9 +30,11 @@ function parseIsoDateParts(value: string): {
 	const month = Number(match[2]);
 	const day = Number(match[3]);
 	if (
-		!Number.isInteger(year) ||
-		!Number.isInteger(month) ||
-		!Number.isInteger(day)
+		!(
+			Number.isInteger(year) &&
+			Number.isInteger(month) &&
+			Number.isInteger(day)
+		)
 	) {
 		return null;
 	}
@@ -47,24 +58,7 @@ export function weekdayInTimeZone(isoDate: string, timeZone: string): number {
 		weekday: "short",
 	});
 	const label = formatter.format(instant);
-	switch (label) {
-		case "Sun":
-			return 0;
-		case "Mon":
-			return 1;
-		case "Tue":
-			return 2;
-		case "Wed":
-			return 3;
-		case "Thu":
-			return 4;
-		case "Fri":
-			return 5;
-		case "Sat":
-			return 6;
-		default:
-			return Number.NaN;
-	}
+	return WEEKDAY_BY_SHORT_LABEL[label] ?? Number.NaN;
 }
 
 function patternForDay(
@@ -131,8 +125,9 @@ function resolveExpectedMinutes(
 	if (!override.isWorkingDay) {
 		return null;
 	}
-	if (pattern?.standardMinutes != null) {
-		return pattern.standardMinutes;
+	const patternMinutes = pattern?.standardMinutes;
+	if (patternMinutes !== null && patternMinutes !== undefined) {
+		return patternMinutes;
 	}
 	const standard = standardMinutesFromContext(context);
 	return standard > 0 ? standard : null;

@@ -1,6 +1,5 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
-
 import type { HumanResourcesEmployeeId } from "../src/brands";
 import type { HumanResourcesCommandOptions } from "../src/command-options";
 import { createEmployee } from "../src/core/employee";
@@ -22,6 +21,7 @@ import {
 } from "../src/workforce-foundation/person-management";
 import { createWorker } from "../src/workforce-foundation/worker";
 import { createTestHumanResourcesCommandOptions } from "./helpers/command-options";
+import { helperAssert as assert } from "./helpers/helper-assert";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
@@ -46,7 +46,7 @@ function adminHarness(): HumanResourcesCommandOptions {
 
 function requireHarnessDeps(admin: HumanResourcesCommandOptions) {
 	const { store, ports } = admin;
-	if (!store || !ports) {
+	if (!(store && ports)) {
 		throw new Error("Expected harness store and ports");
 	}
 	return { store, ports };
@@ -85,7 +85,7 @@ async function seedEmployeeWithPerson(input: {
 		},
 		input.ready,
 	);
-	expect(person.ok).toBe(true);
+	assert.strictEqual(person.ok, true);
 	if (!person.ok) {
 		throw new Error("person create failed");
 	}
@@ -101,7 +101,7 @@ async function seedEmployeeWithPerson(input: {
 		},
 		input.ready,
 	);
-	expect(employee.ok).toBe(true);
+	assert.strictEqual(employee.ok, true);
 	if (!employee.ok) {
 		throw new Error("employee create failed");
 	}
@@ -119,7 +119,7 @@ async function seedEmployeeWithPerson(input: {
 		},
 		input.ready,
 	);
-	expect(worker.ok).toBe(true);
+	assert.strictEqual(worker.ok, true);
 	if (!worker.ok) {
 		throw new Error("worker create failed");
 	}
@@ -134,7 +134,7 @@ async function seedEmployeeWithPerson(input: {
 		},
 		input.ready,
 	);
-	expect(employment.ok).toBe(true);
+	assert.strictEqual(employment.ok, true);
 	if (!employment.ok) {
 		throw new Error("employment create failed");
 	}
@@ -214,7 +214,9 @@ describe("@afenda/human-resources employee management", () => {
 			ready,
 		);
 		expect(profile.ok).toBe(true);
-		if (!profile.ok) return;
+		if (!profile.ok) {
+			return;
+		}
 
 		expect(profile.data.employeeNumber).toBe("e-100");
 		expect(profile.data.employmentStatus).toBe(employment.data.status);
@@ -251,7 +253,9 @@ describe("@afenda/human-resources employee management", () => {
 			ready,
 		);
 		expect(profile.ok).toBe(true);
-		if (!profile.ok) return;
+		if (!profile.ok) {
+			return;
+		}
 
 		expect(profile.data.personalPhoneNumber).toBe("+1-555-0100");
 		expect(profile.data.homeAddress).toBe("123 Example Street");
@@ -307,7 +311,9 @@ describe("@afenda/human-resources employee management", () => {
 			ready,
 		);
 		expect(profile.ok).toBe(true);
-		if (!profile.ok) return;
+		if (!profile.ok) {
+			return;
+		}
 
 		expect(profile.data.legalName).toBe("Report Example");
 		expect(profile.data.personalPhoneNumber).toBeNull();
@@ -346,7 +352,9 @@ describe("@afenda/human-resources employee management", () => {
 			ready,
 		);
 		expect(profile.ok).toBe(true);
-		if (!profile.ok) return;
+		if (!profile.ok) {
+			return;
+		}
 
 		expect(profile.data.personalPhoneNumber).toBe("+1-555-0100");
 		expect(profile.data.identifierLast4).not.toBeNull();

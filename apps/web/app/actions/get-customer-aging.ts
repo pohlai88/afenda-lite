@@ -12,7 +12,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type GetCustomerAgingActionData = { aging: CustomerAging };
+export interface GetCustomerAgingActionData {
+	aging: CustomerAging;
+}
 
 const schema = z.object({
 	customerId: z.string().uuid(),
@@ -28,7 +30,7 @@ export async function getCustomerAgingAction(input: {
 	currencyCode: string;
 	asOfDate: string;
 }): Promise<ActionResult<GetCustomerAgingActionData>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getCustomerAgingAction",
 		permission: "receivables.aging.read",
 		safeMessage:
@@ -52,7 +54,9 @@ export async function getCustomerAgingAction(input: {
 					createReceivablesCommandOptions(),
 				),
 			);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { aging: mapped.data } };
 		},
 	});

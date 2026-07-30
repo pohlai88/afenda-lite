@@ -11,7 +11,7 @@ import { assertPayrollRunTransition } from "./transitions";
 export const PAYROLL_AGGREGATE_REVERSAL = "reversal" as const;
 export type PayrollReversalAggregate = typeof PAYROLL_AGGREGATE_REVERSAL;
 
-export async function reversePayrollRun(
+export function reversePayrollRun(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollRun>> {

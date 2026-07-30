@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/useAwait: The parity harness exposes a uniform asynchronous adapter API.
 import type { Result } from "@afenda/errors/result";
 
 import type {

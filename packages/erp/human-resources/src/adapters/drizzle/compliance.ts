@@ -108,9 +108,9 @@ function complianceEntityPayload(input: {
 	});
 }
 
-type ComplianceHost = {
+interface ComplianceHost {
 	getEmployeeById: HumanResourcesStore["getEmployeeById"];
-};
+}
 
 export type DrizzleComplianceMethods = Pick<
 	HumanResourcesStore,
@@ -153,90 +153,90 @@ export type DrizzleComplianceMethods = Pick<
 	| "getEmployeeComplianceSummary"
 >;
 
-type DocumentRequirementSqlRow = {
-	id: string;
-	organization_id: string;
-	code: string;
-	name: string;
-	document_type: string;
-	issuing_jurisdiction: string | null;
-	applies_to_note: string | null;
+interface DocumentRequirementSqlRow {
 	applicability_json: unknown;
-	status: string;
-	version: number;
-	created_by: string;
-	updated_by: string;
+	applies_to_note: string | null;
+	code: string;
 	created_at: Date;
-	updated_at: Date;
-};
-
-type EmployeeDocumentSqlRow = {
-	id: string;
-	organization_id: string;
-	employee_id: string;
-	requirement_id: string | null;
+	created_by: string;
 	document_type: string;
+	id: string;
 	issuing_jurisdiction: string | null;
-	issued_on: string;
-	expires_on: string | null;
-	verification_status: string;
-	verified_by: string | null;
-	verified_at: Date | null;
-	rejection_reason: string | null;
-	document_ref: string;
-	identifier_last4: string | null;
-	identifier_fingerprint: string | null;
-	metadata_json: unknown;
-	create_idempotency_key: string | null;
-	create_request_fingerprint: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
-	updated_at: Date;
-};
-
-type WorkEligibilitySqlRow = {
-	id: string;
+	name: string;
 	organization_id: string;
-	employee_id: string;
-	country_code: string;
-	jurisdiction: string | null;
 	status: string;
-	issued_on: string;
-	expires_on: string | null;
-	verified_by: string | null;
-	verified_at: Date | null;
-	document_ref: string | null;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+}
+
+interface EmployeeDocumentSqlRow {
 	create_idempotency_key: string | null;
 	create_request_fingerprint: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
 	created_at: Date;
-	updated_at: Date;
-};
-
-type PolicyAcknowledgementSqlRow = {
-	id: string;
-	organization_id: string;
+	created_by: string;
+	document_ref: string;
+	document_type: string;
 	employee_id: string;
+	expires_on: string | null;
+	id: string;
+	identifier_fingerprint: string | null;
+	identifier_last4: string | null;
+	issued_on: string;
+	issuing_jurisdiction: string | null;
+	metadata_json: unknown;
+	organization_id: string;
+	rejection_reason: string | null;
+	requirement_id: string | null;
+	updated_at: Date;
+	updated_by: string;
+	verification_status: string;
+	verified_at: Date | null;
+	verified_by: string | null;
+	version: number;
+}
+
+interface WorkEligibilitySqlRow {
+	country_code: string;
+	create_idempotency_key: string | null;
+	create_request_fingerprint: string | null;
+	created_at: Date;
+	created_by: string;
+	document_ref: string | null;
+	employee_id: string;
+	expires_on: string | null;
+	id: string;
+	issued_on: string;
+	jurisdiction: string | null;
+	organization_id: string;
+	status: string;
+	updated_at: Date;
+	updated_by: string;
+	verified_at: Date | null;
+	verified_by: string | null;
+	version: number;
+}
+
+interface PolicyAcknowledgementSqlRow {
+	acknowledged_at: Date | null;
+	acknowledged_by: string | null;
+	create_idempotency_key: string | null;
+	create_request_fingerprint: string | null;
+	created_at: Date;
+	created_by: string;
+	due_on: string;
+	employee_id: string;
+	id: string;
+	issued_at: Date;
+	organization_id: string;
 	policy_code: string;
 	policy_version: string;
 	requirement_status: string;
-	issued_at: Date;
-	due_on: string;
-	acknowledged_at: Date | null;
-	acknowledged_by: string | null;
 	supersedes_acknowledgement_id: string | null;
-	create_idempotency_key: string | null;
-	create_request_fingerprint: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+}
 
 function parseMetadataJson(value: unknown): Record<string, unknown> | null {
 	if (value === null || value === undefined) {
@@ -252,7 +252,9 @@ function mapDocumentRequirement(
 	row: typeof hrDocumentRequirement.$inferSelect,
 ): Result<DocumentRequirement> {
 	const id = parseHumanResourcesDocumentRequirementId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const status = documentRequirementStatusSchema.safeParse(row.status);
 	if (!status.success) {
 		return fail("INTERNAL_ERROR", "Invalid document requirement status");
@@ -306,13 +308,19 @@ function mapEmployeeDocument(
 	row: typeof hrEmployeeDocument.$inferSelect,
 ): Result<EmployeeDocument> {
 	const id = parseHumanResourcesEmployeeDocumentId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const employeeId = parseHumanResourcesEmployeeId(row.employeeId);
-	if (!employeeId.ok) return employeeId;
+	if (!employeeId.ok) {
+		return employeeId;
+	}
 	let requirementId = null as EmployeeDocument["requirementId"];
 	if (row.requirementId !== null) {
 		const parsed = parseHumanResourcesDocumentRequirementId(row.requirementId);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		requirementId = parsed.data;
 	}
 	const verificationStatus = employeeDocumentVerificationStatusSchema.safeParse(
@@ -383,9 +391,13 @@ function mapWorkEligibility(
 	row: typeof hrWorkEligibility.$inferSelect,
 ): Result<WorkEligibility> {
 	const id = parseHumanResourcesWorkEligibilityId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const employeeId = parseHumanResourcesEmployeeId(row.employeeId);
-	if (!employeeId.ok) return employeeId;
+	if (!employeeId.ok) {
+		return employeeId;
+	}
 	const status = workEligibilityStatusSchema.safeParse(row.status);
 	if (!status.success) {
 		return fail("INTERNAL_ERROR", "Invalid work eligibility status");
@@ -439,16 +451,22 @@ function mapPolicyAcknowledgement(
 	row: typeof hrPolicyAcknowledgement.$inferSelect,
 ): Result<PolicyAcknowledgement> {
 	const id = parseHumanResourcesPolicyAcknowledgementId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const employeeId = parseHumanResourcesEmployeeId(row.employeeId);
-	if (!employeeId.ok) return employeeId;
+	if (!employeeId.ok) {
+		return employeeId;
+	}
 	let supersedesAcknowledgementId =
 		null as PolicyAcknowledgement["supersedesAcknowledgementId"];
 	if (row.supersedesAcknowledgementId !== null) {
 		const parsed = parseHumanResourcesPolicyAcknowledgementId(
 			row.supersedesAcknowledgementId,
 		);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		supersedesAcknowledgementId = parsed.data;
 	}
 	const requirementStatus = policyAcknowledgementStatusSchema.safeParse(
@@ -516,8 +534,10 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapDocumentRequirement(row);
 		} catch (error) {
 			return mapPersistenceFailure(
@@ -539,8 +559,10 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapDocumentRequirement(row);
 		} catch (error) {
 			return mapPersistenceFailure(
@@ -555,14 +577,18 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			organizationId: record.organizationId,
 			code: record.code,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data !== null) {
 			return conflict("Document requirement code already exists");
 		}
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesDocumentRequirementId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const changesJson = fieldChangeJson("status", null, "draft");
 		const newValueJson = valueSnapshotJson({
 			code: record.code,
@@ -608,7 +634,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 						SELECT mutated.* FROM mutated, audited
 					`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return conflict("Unable to create document requirement");
 			}
@@ -629,7 +655,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			organizationId: input.organizationId,
 			requirementId: input.requirementId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Document requirement not found");
 		}
@@ -640,7 +668,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const changesJson = fieldChangeJson(
@@ -689,7 +719,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 						SELECT mutated.* FROM mutated, audited
 					`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -710,7 +740,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			organizationId: input.organizationId,
 			requirementId: input.requirementId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Document requirement not found");
 		}
@@ -718,12 +750,16 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const transition = assertDocumentRequirementStatusTransition(
 			existing.data.status,
 			"published",
 		);
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const changesJson = fieldChangeJson(
@@ -764,7 +800,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 						SELECT mutated.* FROM mutated, audited
 					`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -785,7 +821,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			organizationId: input.organizationId,
 			requirementId: input.requirementId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Document requirement not found");
 		}
@@ -793,12 +831,16 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const transition = assertDocumentRequirementStatusTransition(
 			existing.data.status,
 			"retired",
 		);
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const changesJson = fieldChangeJson(
@@ -839,7 +881,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 						SELECT mutated.* FROM mutated, audited
 					`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -869,7 +911,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			const requirements: DocumentRequirement[] = [];
 			for (const row of rows) {
 				const mapped = mapDocumentRequirement(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				requirements.push(mapped.data);
 			}
 			requirements.sort((a, b) => a.code.localeCompare(b.code));
@@ -902,8 +946,10 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapEmployeeDocument(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load employee document");
@@ -922,10 +968,14 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			const mapped = mapEmployeeDocument(row);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			if (
 				row.createIdempotencyKey === null ||
 				row.createRequestFingerprint === null
@@ -949,7 +999,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			organizationId: record.organizationId,
 			idempotencyKey: record.createIdempotencyKey,
 		});
-		if (!replay.ok) return replay;
+		if (!replay.ok) {
+			return replay;
+		}
 		if (replay.data !== null) {
 			if (
 				replay.data.createRequestFingerprint !== record.createRequestFingerprint
@@ -963,7 +1015,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			organizationId: record.organizationId,
 			employeeId: record.employeeId,
 		});
-		if (!employee.ok) return employee;
+		if (!employee.ok) {
+			return employee;
+		}
 		if (employee.data === null) {
 			return notFound(
 				"Employee not found",
@@ -976,7 +1030,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 				organizationId: record.organizationId,
 				requirementId: record.requirementId,
 			});
-			if (!requirement.ok) return requirement;
+			if (!requirement.ok) {
+				return requirement;
+			}
 			if (requirement.data === null) {
 				return notFound(
 					"Document requirement not found",
@@ -992,11 +1048,15 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			issuedOn: record.issuedOn,
 			expiresOn: record.expiresOn,
 		});
-		if (!dateRange.ok) return dateRange;
+		if (!dateRange.ok) {
+			return dateRange;
+		}
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesEmployeeDocumentId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const changesJson = fieldChangeJson("verificationStatus", null, "pending");
 		const newValueJson = valueSnapshotJson({
 			employeeId: record.employeeId,
@@ -1112,7 +1172,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return conflict("Unable to register employee document");
 			}
@@ -1123,7 +1183,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 					organizationId: record.organizationId,
 					idempotencyKey: record.createIdempotencyKey,
 				});
-				if (!retry.ok) return retry;
+				if (!retry.ok) {
+					return retry;
+				}
 				if (retry.data !== null) {
 					if (
 						retry.data.createRequestFingerprint !==
@@ -1146,7 +1208,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			organizationId: input.organizationId,
 			documentId: input.documentId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Employee document not found");
 		}
@@ -1154,15 +1218,19 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const nextExpiresOn =
-			input.expiresOn !== undefined ? input.expiresOn : existing.data.expiresOn;
+			input.expiresOn === undefined ? existing.data.expiresOn : input.expiresOn;
 		const dateRange = assertValidDocumentDateRange({
 			issuedOn: existing.data.issuedOn,
 			expiresOn: nextExpiresOn,
 		});
-		if (!dateRange.ok) return dateRange;
+		if (!dateRange.ok) {
+			return dateRange;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const changesJson = fieldChangeJson(
@@ -1172,12 +1240,15 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		);
 		const auditId = randomUUID();
 		const nearingExpiryEventId = randomUUID();
-		const metadataJson =
-			input.metadata === undefined
-				? null
-				: input.metadata === null
-					? null
-					: JSON.stringify(input.metadata);
+		const metadataJson = (() => {
+			if (input.metadata === undefined) {
+				return null;
+			}
+			if (input.metadata === null) {
+				return null;
+			}
+			return JSON.stringify(input.metadata);
+		})();
 		const asOf = new Date().toISOString().slice(0, 10);
 		const emitNearingExpiry = isNearingExpiry({
 			expiresOn: nextExpiresOn,
@@ -1237,7 +1308,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -1258,7 +1329,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			organizationId: input.organizationId,
 			documentId: input.documentId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Employee document not found");
 		}
@@ -1266,12 +1339,16 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const transition = assertEmployeeDocumentVerificationTransition(
 			existing.data.verificationStatus,
 			"verified",
 		);
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const changesJson = fieldChangeJson(
@@ -1336,7 +1413,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -1354,22 +1431,30 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			organizationId: input.organizationId,
 			documentId: input.documentId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Employee document not found");
 		}
 		const reasonCheck = assertRejectionReasonProvided(input.rejectionReason);
-		if (!reasonCheck.ok) return reasonCheck;
+		if (!reasonCheck.ok) {
+			return reasonCheck;
+		}
 		const versionCheck = assertExpectedVersion(
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const transition = assertEmployeeDocumentVerificationTransition(
 			existing.data.verificationStatus,
 			"rejected",
 		);
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const changesJson = fieldChangeJson(
@@ -1434,7 +1519,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -1452,7 +1537,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			organizationId: input.organizationId,
 			documentId: input.documentId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Employee document not found");
 		}
@@ -1460,12 +1547,16 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const transition = assertEmployeeDocumentVerificationTransition(
 			existing.data.verificationStatus,
 			"revoked",
 		);
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const changesJson = fieldChangeJson(
@@ -1506,7 +1597,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -1527,7 +1618,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			organizationId: input.organizationId,
 			documentId: input.documentId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Employee document not found");
 		}
@@ -1535,12 +1628,16 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const transition = assertEmployeeDocumentVerificationTransition(
 			existing.data.verificationStatus,
 			"expired",
 		);
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const changesJson = fieldChangeJson(
@@ -1604,7 +1701,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -1640,7 +1737,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			const documents: EmployeeDocumentListPage["documents"] = [];
 			for (const row of rows) {
 				const mapped = mapEmployeeDocument(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				documents.push(toEmployeeDocumentListItem(mapped.data));
 			}
 			documents.sort((a, b) => b.issuedOn.localeCompare(a.issuedOn));
@@ -1701,7 +1800,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			const missing: DocumentRequirement[] = [];
 			for (const row of published) {
 				const mapped = mapDocumentRequirement(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				const requirement = mapped.data;
 				const isMissing = employeeIds.some(
 					(employeeId) =>
@@ -1710,7 +1811,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 							employeeId,
 						}) && !satisfied.has(`${employeeId}:${requirement.id}`),
 				);
-				if (isMissing) missing.push(requirement);
+				if (isMissing) {
+					missing.push(requirement);
+				}
 			}
 			missing.sort((a, b) => a.code.localeCompare(b.code));
 			const totalCount = missing.length;
@@ -1749,7 +1852,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			const documents: EmployeeDocumentListPage["documents"] = [];
 			for (const row of rows) {
 				const mapped = mapEmployeeDocument(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				documents.push(toEmployeeDocumentListItem(mapped.data));
 			}
 			documents.sort((a, b) => {
@@ -1785,8 +1890,10 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapWorkEligibility(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load work eligibility");
@@ -1807,8 +1914,10 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 				)
 				.orderBy(desc(hrWorkEligibility.issuedOn))
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapWorkEligibility(row);
 		} catch (error) {
 			return mapPersistenceFailure(
@@ -1830,10 +1939,14 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			const mapped = mapWorkEligibility(row);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			if (
 				row.createIdempotencyKey === null ||
 				row.createRequestFingerprint === null
@@ -1857,7 +1970,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			organizationId: record.organizationId,
 			idempotencyKey: record.createIdempotencyKey,
 		});
-		if (!replay.ok) return replay;
+		if (!replay.ok) {
+			return replay;
+		}
 		if (replay.data !== null) {
 			if (
 				replay.data.createRequestFingerprint !== record.createRequestFingerprint
@@ -1871,7 +1986,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			organizationId: record.organizationId,
 			employeeId: record.employeeId,
 		});
-		if (!employee.ok) return employee;
+		if (!employee.ok) {
+			return employee;
+		}
 		if (employee.data === null) {
 			return notFound(
 				"Employee not found",
@@ -1883,11 +2000,15 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			issuedOn: record.issuedOn,
 			expiresOn: record.expiresOn,
 		});
-		if (!dateRange.ok) return dateRange;
+		if (!dateRange.ok) {
+			return dateRange;
+		}
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesWorkEligibilityId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const changesJson = fieldChangeJson("status", null, "pending");
 		const newValueJson = valueSnapshotJson({
 			employeeId: record.employeeId,
@@ -1937,7 +2058,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return conflict("Unable to record work eligibility");
 			}
@@ -1948,7 +2069,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 					organizationId: record.organizationId,
 					idempotencyKey: record.createIdempotencyKey,
 				});
-				if (!retry.ok) return retry;
+				if (!retry.ok) {
+					return retry;
+				}
 				if (retry.data !== null) {
 					if (
 						retry.data.createRequestFingerprint !==
@@ -1968,7 +2091,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			organizationId: input.organizationId,
 			eligibilityId: input.eligibilityId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Work eligibility not found");
 		}
@@ -1976,12 +2101,16 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const transition = assertWorkEligibilityStatusTransition(
 			existing.data.status,
 			"active",
 		);
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const changesJson = fieldChangeJson(
@@ -2045,7 +2174,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -2063,7 +2192,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			organizationId: input.organizationId,
 			eligibilityId: input.eligibilityId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Work eligibility not found");
 		}
@@ -2071,12 +2202,16 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const transition = assertWorkEligibilityStatusTransition(
 			existing.data.status,
 			"suspended",
 		);
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const changesJson = fieldChangeJson(
@@ -2138,7 +2273,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -2156,7 +2291,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			organizationId: input.organizationId,
 			eligibilityId: input.eligibilityId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Work eligibility not found");
 		}
@@ -2173,12 +2310,16 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			issuedOn: input.issuedOn,
 			expiresOn: input.expiresOn,
 		});
-		if (!dateRange.ok) return dateRange;
+		if (!dateRange.ok) {
+			return dateRange;
+		}
 		const versionCheck = assertExpectedVersion(
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const changesJson = fieldChangeJson(
@@ -2242,7 +2383,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -2260,7 +2401,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			organizationId: input.organizationId,
 			eligibilityId: input.eligibilityId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Work eligibility not found");
 		}
@@ -2268,12 +2411,16 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const transition = assertWorkEligibilityStatusTransition(
 			existing.data.status,
 			"closed",
 		);
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const changesJson = fieldChangeJson(
@@ -2335,7 +2482,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 					`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -2357,7 +2504,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			const eligibilities: WorkEligibility[] = [];
 			for (const row of rows) {
 				const mapped = mapWorkEligibility(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				const eligibility = mapped.data;
 				const expiredByDate =
 					eligibility.expiresOn !== null && eligibility.expiresOn < input.asOf;
@@ -2385,9 +2534,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 					return expiresCompare;
 				}
 				const issuedCompare = b.issuedOn.localeCompare(a.issuedOn);
-				return issuedCompare !== 0
-					? issuedCompare
-					: a.employeeId.localeCompare(b.employeeId);
+				return issuedCompare === 0
+					? a.employeeId.localeCompare(b.employeeId)
+					: issuedCompare;
 			});
 			const totalCount = eligibilities.length;
 			const offset = (input.page - 1) * input.pageSize;
@@ -2417,8 +2566,10 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapPolicyAcknowledgement(row);
 		} catch (error) {
 			return mapPersistenceFailure(
@@ -2443,10 +2594,14 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			const mapped = mapPolicyAcknowledgement(row);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			if (
 				row.createIdempotencyKey === null ||
 				row.createRequestFingerprint === null
@@ -2470,7 +2625,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			organizationId: record.organizationId,
 			idempotencyKey: record.createIdempotencyKey,
 		});
-		if (!replay.ok) return replay;
+		if (!replay.ok) {
+			return replay;
+		}
 		if (replay.data !== null) {
 			if (
 				replay.data.createRequestFingerprint !== record.createRequestFingerprint
@@ -2484,7 +2641,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			organizationId: record.organizationId,
 			employeeId: record.employeeId,
 		});
-		if (!employee.ok) return employee;
+		if (!employee.ok) {
+			return employee;
+		}
 		if (employee.data === null) {
 			return notFound(
 				"Employee not found",
@@ -2510,7 +2669,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesPolicyAcknowledgementId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const changesJson = fieldChangeJson(
 			"requirementStatus",
 			null,
@@ -2583,7 +2744,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return conflict("Unable to issue policy acknowledgement requirement");
 			}
@@ -2594,7 +2755,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 					organizationId: record.organizationId,
 					idempotencyKey: record.createIdempotencyKey,
 				});
-				if (!retry.ok) return retry;
+				if (!retry.ok) {
+					return retry;
+				}
 				if (retry.data !== null) {
 					if (
 						retry.data.createRequestFingerprint !==
@@ -2620,7 +2783,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			organizationId: input.organizationId,
 			acknowledgementId: input.acknowledgementId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Policy acknowledgement not found");
 		}
@@ -2628,12 +2793,16 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const transition = assertPolicyAcknowledgementStatusTransition(
 			existing.data.requirementStatus,
 			"acknowledged",
 		);
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const changesJson = fieldChangeJson(
@@ -2697,7 +2866,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -2715,7 +2884,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			organizationId: input.organizationId,
 			acknowledgementId: input.acknowledgementId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Policy acknowledgement not found");
 		}
@@ -2723,12 +2894,16 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const transition = assertPolicyAcknowledgementStatusTransition(
 			existing.data.requirementStatus,
 			"revoked",
 		);
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 
 		const nextVersion = input.expectedVersion + 1;
 		const changesJson = fieldChangeJson(
@@ -2769,7 +2944,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 						SELECT mutated.* FROM mutated, audited
 					`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -2790,7 +2965,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			organizationId: input.organizationId,
 			acknowledgementId: input.acknowledgementId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Policy acknowledgement not found");
 		}
@@ -2798,11 +2975,15 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const newId = randomUUID();
 		const brandedNewId = parseHumanResourcesPolicyAcknowledgementId(newId);
-		if (!brandedNewId.ok) return brandedNewId;
+		if (!brandedNewId.ok) {
+			return brandedNewId;
+		}
 		const changesJson = fieldChangeJson(
 			"requirementStatus",
 			null,
@@ -2865,7 +3046,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 						SELECT mutated.* FROM mutated, audited
 					`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
 					found: true,
@@ -2899,8 +3080,10 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 				.where(and(...conditions))
 				.orderBy(desc(hrPolicyAcknowledgement.issuedAt))
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapPolicyAcknowledgement(row);
 		} catch (error) {
 			return mapPersistenceFailure(
@@ -2928,7 +3111,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			const acknowledgements: PolicyAcknowledgement[] = [];
 			for (const row of rows) {
 				const mapped = mapPolicyAcknowledgement(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				acknowledgements.push(mapped.data);
 			}
 			acknowledgements.sort(
@@ -2971,16 +3156,18 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			const acknowledgements: PolicyAcknowledgement[] = [];
 			for (const row of rows) {
 				const mapped = mapPolicyAcknowledgement(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				if (mapped.data.dueOn < input.asOf) {
 					acknowledgements.push(mapped.data);
 				}
 			}
 			acknowledgements.sort((a, b) => {
 				const dueCompare = a.dueOn.localeCompare(b.dueOn);
-				return dueCompare !== 0
-					? dueCompare
-					: b.issuedAt.getTime() - a.issuedAt.getTime();
+				return dueCompare === 0
+					? b.issuedAt.getTime() - a.issuedAt.getTime()
+					: dueCompare;
 			});
 			const totalCount = acknowledgements.length;
 			const offset = (input.page - 1) * input.pageSize;
@@ -3007,7 +3194,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			organizationId: input.organizationId,
 			employeeId: input.employeeId,
 		});
-		if (!employee.ok) return employee;
+		if (!employee.ok) {
+			return employee;
+		}
 		if (employee.data === null) {
 			return notFound(
 				"Employee not found",
@@ -3021,7 +3210,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			page: 1,
 			pageSize: 10_000,
 		});
-		if (!missing.ok) return missing;
+		if (!missing.ok) {
+			return missing;
+		}
 
 		const expiring = await this.listExpiringEmployeeDocuments({
 			organizationId: input.organizationId,
@@ -3031,7 +3222,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			page: 1,
 			pageSize: 10_000,
 		});
-		if (!expiring.ok) return expiring;
+		if (!expiring.ok) {
+			return expiring;
+		}
 
 		const outstanding = await this.listOutstandingPolicyAcknowledgements({
 			organizationId: input.organizationId,
@@ -3039,13 +3232,17 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			page: 1,
 			pageSize: 10_000,
 		});
-		if (!outstanding.ok) return outstanding;
+		if (!outstanding.ok) {
+			return outstanding;
+		}
 
 		const activeEligibility = await this.getActiveWorkEligibilityForEmployee({
 			organizationId: input.organizationId,
 			employeeId: input.employeeId,
 		});
-		if (!activeEligibility.ok) return activeEligibility;
+		if (!activeEligibility.ok) {
+			return activeEligibility;
+		}
 
 		let workEligibilityAtRisk = false;
 		if (activeEligibility.data === null) {
@@ -3065,7 +3262,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 				page: 1,
 				pageSize: 10_000,
 			});
-			if (!riskList.ok) return riskList;
+			if (!riskList.ok) {
+				return riskList;
+			}
 			workEligibilityAtRisk = riskList.data.eligibilities.some(
 				(e) => e.employeeId === input.employeeId,
 			);

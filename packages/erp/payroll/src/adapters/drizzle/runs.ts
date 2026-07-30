@@ -31,7 +31,7 @@ import type {
 	PayrollRunUpdateInput,
 } from "../../types";
 
-async function recordAudit(
+function recordAudit(
 	ports: MutationPorts,
 	input: {
 		organizationId: string;
@@ -146,7 +146,7 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 					),
 				)
 				.limit(1);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return ok(null);
 			}
@@ -166,6 +166,7 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Run creation keeps idempotency, persistence, audit, and outbox rollback in one transaction boundary.
 	async createRun(
 		record: PayrollRunCreateRecord,
 		ports: MutationPorts,
@@ -215,7 +216,7 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 					updatedBy: record.createdBy,
 				})
 				.returning();
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return mapPersistenceFailure(
 					new Error("Missing returning row"),
@@ -282,7 +283,7 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 					),
 				)
 				.limit(1);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return ok(null);
 			}
@@ -292,6 +293,7 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Versioned run transition keeps state validation and rollback evidence in one transaction boundary.
 	async updateRunWithVersion(
 		input: PayrollRunUpdateInput,
 		ports: MutationPorts,
@@ -315,12 +317,10 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 			return versionCheck;
 		}
 
-		if (current.data.status === "finalized") {
-			if (input.status !== "reversed") {
-				return mapInvalidState(
-					"Finalized payroll runs cannot be updated except to reversed",
-				);
-			}
+		if (current.data.status === "finalized" && input.status !== "reversed") {
+			return mapInvalidState(
+				"Finalized payroll runs cannot be updated except to reversed",
+			);
 		}
 		if (current.data.status === "reversed") {
 			return mapInvalidState("Reversed payroll runs cannot be updated");
@@ -343,25 +343,25 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 				.set({
 					status: input.status ?? current.data.status,
 					calculationSnapshotHash:
-						input.calculationSnapshotHash !== undefined
-							? input.calculationSnapshotHash
-							: current.data.calculationSnapshotHash,
+						input.calculationSnapshotHash === undefined
+							? current.data.calculationSnapshotHash
+							: input.calculationSnapshotHash,
 					calculationVersion:
-						input.calculationVersion !== undefined
-							? input.calculationVersion
-							: current.data.calculationVersion,
+						input.calculationVersion === undefined
+							? current.data.calculationVersion
+							: input.calculationVersion,
 					roundingPolicyJson:
-						input.roundingPolicyJson !== undefined
-							? input.roundingPolicyJson
-							: current.data.roundingPolicyJson,
+						input.roundingPolicyJson === undefined
+							? current.data.roundingPolicyJson
+							: input.roundingPolicyJson,
 					finalizedAt:
-						input.finalizedAt !== undefined
-							? parseDateTime(input.finalizedAt)
-							: parseDateTime(current.data.finalizedAt),
+						input.finalizedAt === undefined
+							? parseDateTime(current.data.finalizedAt)
+							: parseDateTime(input.finalizedAt),
 					finalizedBy:
-						input.finalizedBy !== undefined
-							? input.finalizedBy
-							: current.data.finalizedBy,
+						input.finalizedBy === undefined
+							? current.data.finalizedBy
+							: input.finalizedBy,
 					version: current.data.version + 1,
 					updatedBy: input.actorUserId,
 					updatedAt: new Date(),
@@ -374,7 +374,7 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 					),
 				)
 				.returning();
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return mapConflict("Payroll run version is stale");
 			}
@@ -446,7 +446,7 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 					createdBy: record.createdBy,
 				})
 				.returning();
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return mapPersistenceFailure(
 					new Error("Missing returning row"),

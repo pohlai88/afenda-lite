@@ -94,9 +94,9 @@ function renderPanels(
 ) {
 	return render(
 		<OrgConsolePanels
+			activeOrgId="org_active"
 			orgList={overrides?.orgList ?? READY_LIST}
 			usage={overrides?.usage ?? READY_USAGE}
-			activeOrgId="org_active"
 		/>,
 	);
 }

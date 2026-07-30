@@ -12,28 +12,8 @@ import type {
  * Persistence contract for outputs — payroll result lines and run employees.
  * Slice of `PayrollStore`. Persistence only; orchestration stays in commands.
  */
-export type PayrollOutputsStore = {
-	replaceRunCalculationOutputs(
-		input: ReplaceRunCalculationOutputsInput,
-		ports: MutationPorts,
-	): Promise<
-		Result<{
-			runEmployees: PayrollRunEmployee[];
-			resultLines: PayrollResultLine[];
-		}>
-	>;
-
-	listRunEmployeesForRun(input: {
-		organizationId: string;
-		runId: PayrollRunId;
-	}): Promise<Result<PayrollRunEmployee[]>>;
-
-	listResultLinesForRun(input: {
-		organizationId: string;
-		runId: PayrollRunId;
-	}): Promise<Result<PayrollResultLine[]>>;
-
-	deleteCalculationOutputsForRun(
+export interface PayrollOutputsStore {
+	deleteCalculationOutputsForRun: (
 		input: {
 			organizationId: string;
 			runId: PayrollRunId;
@@ -41,8 +21,27 @@ export type PayrollOutputsStore = {
 			correlationId: string;
 		},
 		ports: MutationPorts,
-	): Promise<Result<{ deleted: true }>>;
-};
+	) => Promise<Result<{ deleted: true }>>;
+
+	listResultLinesForRun: (input: {
+		organizationId: string;
+		runId: PayrollRunId;
+	}) => Promise<Result<PayrollResultLine[]>>;
+
+	listRunEmployeesForRun: (input: {
+		organizationId: string;
+		runId: PayrollRunId;
+	}) => Promise<Result<PayrollRunEmployee[]>>;
+	replaceRunCalculationOutputs: (
+		input: ReplaceRunCalculationOutputsInput,
+		ports: MutationPorts,
+	) => Promise<
+		Result<{
+			runEmployees: PayrollRunEmployee[];
+			resultLines: PayrollResultLine[];
+		}>
+	>;
+}
 
 export type { PayrollRunId } from "../brands";
 export type { ReplaceRunCalculationOutputsInput } from "../types";

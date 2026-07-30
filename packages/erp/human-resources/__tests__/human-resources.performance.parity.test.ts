@@ -50,8 +50,10 @@ import {
 	submitManagerAssessment,
 	submitSelfAssessment,
 } from "../src/performance/review";
+import { runSequential } from "../src/shared/run-sequential";
 import { runDrizzleParity } from "./helpers/database-gate";
 import { ensurePerformanceSchemaForTests } from "./helpers/ensure-performance-schema";
+import { helperAssert as assert } from "./helpers/helper-assert";
 import {
 	createHrParityHarness,
 	type WorkforceStoreAdapter,
@@ -146,10 +148,11 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 						eq(platformDomainEvent.correlationId, input.correlationId),
 					),
 				);
-			expect(events.length).toBeGreaterThan(0);
+			assert.isAbove(events.length, 0);
 			return;
 		}
-		expect(input.ready.ports.outbox.calls).toContainEqual(
+		assert.deepInclude(
+			input.ready.ports.outbox.calls,
 			expect.objectContaining({
 				type: input.type,
 			}),
@@ -186,7 +189,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 		expect(created.data.status).toBe("draft");
 
 		const retrieved = await getPerformanceCycleById(
@@ -199,7 +204,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(retrieved.ok).toBe(true);
-		if (!retrieved.ok) return;
+		if (!retrieved.ok) {
+			return;
+		}
 		expect(retrieved.data?.code).toBe(`FY-PARITY-${suffix}`);
 
 		const opened = await publishAndOpenPerformanceCycle(ready, {
@@ -213,7 +220,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 		});
 		expect(opened.ok).toBe(true);
-		if (!opened.ok) return;
+		if (!opened.ok) {
+			return;
+		}
 		expect(opened.data.status).toBe("open");
 
 		const participants = await listCycleParticipants(
@@ -226,7 +235,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(participants.ok).toBe(true);
-		if (!participants.ok) return;
+		if (!participants.ok) {
+			return;
+		}
 		expect(participants.data).toHaveLength(1);
 
 		const cycles = await listPerformanceCycles(
@@ -239,7 +250,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(cycles.ok).toBe(true);
-		if (!cycles.ok) return;
+		if (!cycles.ok) {
+			return;
+		}
 		expect(
 			cycles.data.cycles.some((cycle) => cycle.id === opened.data.id),
 		).toBe(true);
@@ -268,7 +281,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		if (!cycle.ok) throw new Error(cycle.code);
+		if (!cycle.ok) {
+			throw new Error(cycle.code);
+		}
 
 		const opened = await publishAndOpenPerformanceCycle(ready, {
 			organizationId: ORG,
@@ -280,7 +295,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 				employmentId: worker.employment.id,
 			},
 		});
-		if (!opened.ok) throw new Error(opened.code);
+		if (!opened.ok) {
+			throw new Error(opened.code);
+		}
 
 		const goal = await createPerformanceGoal(
 			{
@@ -300,7 +317,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(goal.ok, resultMessage(goal)).toBe(true);
-		if (!goal.ok) return;
+		if (!goal.ok) {
+			return;
+		}
 
 		const submitted = await submitPerformanceGoal(
 			{
@@ -313,7 +332,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 
 		const approved = await approvePerformanceGoal(
 			{
@@ -326,7 +347,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 		expect(approved.data.status).toBe("approved");
 
 		const retrieved = await getPerformanceGoalById(
@@ -339,7 +362,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(retrieved.ok).toBe(true);
-		if (!retrieved.ok) return;
+		if (!retrieved.ok) {
+			return;
+		}
 		expect(retrieved.data?.status).toBe("approved");
 
 		const page = await listEmployeeGoals(
@@ -352,7 +377,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(page.ok).toBe(true);
-		if (!page.ok) return;
+		if (!page.ok) {
+			return;
+		}
 		expect(page.data.goals).toHaveLength(1);
 	});
 
@@ -379,7 +406,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		if (!cycle.ok) throw new Error(cycle.code);
+		if (!cycle.ok) {
+			throw new Error(cycle.code);
+		}
 
 		const opened = await publishAndOpenPerformanceCycle(ready, {
 			organizationId: ORG,
@@ -391,7 +420,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 				employmentId: worker.employment.id,
 			},
 		});
-		if (!opened.ok) throw new Error(opened.code);
+		if (!opened.ok) {
+			throw new Error(opened.code);
+		}
 
 		const goal = await createPerformanceGoal(
 			{
@@ -411,7 +442,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(goal.ok, resultMessage(goal)).toBe(true);
-		if (!goal.ok) return;
+		if (!goal.ok) {
+			return;
+		}
 
 		const submitted = await submitPerformanceGoal(
 			{
@@ -424,7 +457,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 
 		const approved = await approvePerformanceGoal(
 			{
@@ -437,7 +472,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 
 		const activated = await activatePerformanceGoal(
 			{
@@ -450,7 +487,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(activated.ok).toBe(true);
-		if (!activated.ok) return;
+		if (!activated.ok) {
+			return;
+		}
 
 		const progress = await recordGoalProgress(
 			{
@@ -465,7 +504,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(progress.ok).toBe(true);
-		if (!progress.ok) return;
+		if (!progress.ok) {
+			return;
+		}
 
 		const progressPage = await listGoalProgress(
 			{
@@ -479,7 +520,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(progressPage.ok).toBe(true);
-		if (!progressPage.ok) return;
+		if (!progressPage.ok) {
+			return;
+		}
 		expect(progressPage.data.totalCount).toBe(1);
 
 		const closed = await closePerformanceGoal(
@@ -495,7 +538,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(closed.ok).toBe(true);
-		if (!closed.ok) return;
+		if (!closed.ok) {
+			return;
+		}
 		expect(closed.data.status).toBe("closed");
 	});
 
@@ -532,7 +577,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		if (!cycle.ok) throw new Error(cycle.code);
+		if (!cycle.ok) {
+			throw new Error(cycle.code);
+		}
 
 		const opened = await publishAndOpenPerformanceCycle(ready, {
 			organizationId: ORG,
@@ -544,7 +591,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 				employmentId: worker.employment.id,
 			},
 		});
-		if (!opened.ok) throw new Error(opened.code);
+		if (!opened.ok) {
+			throw new Error(opened.code);
+		}
 
 		const review = await startPerformanceReview(
 			{
@@ -559,7 +608,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(review.ok, resultMessage(review)).toBe(true);
-		if (!review.ok) return;
+		if (!review.ok) {
+			return;
+		}
 
 		const self = await submitSelfAssessment(
 			{
@@ -574,7 +625,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(self.ok).toBe(true);
-		if (!self.ok) return;
+		if (!self.ok) {
+			return;
+		}
 
 		const managerAssessment = await submitManagerAssessment(
 			{
@@ -589,7 +642,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(managerAssessment.ok).toBe(true);
-		if (!managerAssessment.ok) return;
+		if (!managerAssessment.ok) {
+			return;
+		}
 
 		const withDelegated = await addDelegatedReviewer(
 			{
@@ -603,7 +658,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(withDelegated.ok).toBe(true);
-		if (!withDelegated.ok) return;
+		if (!withDelegated.ok) {
+			return;
+		}
 
 		const detail = await getPerformanceReviewById(
 			{
@@ -616,12 +673,16 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(detail.ok).toBe(true);
-		if (!detail.ok || !detail.data) return;
+		if (!(detail.ok && detail.data)) {
+			return;
+		}
 		const delegatedParticipant = detail.data.participants.find(
 			(participant) => participant.role === "delegated",
 		);
 		expect(delegatedParticipant).toBeDefined();
-		if (!delegatedParticipant) return;
+		if (!delegatedParticipant) {
+			return;
+		}
 
 		const delegatedSubmit = await submitDelegatedAssessment(
 			{
@@ -638,7 +699,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(delegatedSubmit.ok).toBe(true);
-		if (!delegatedSubmit.ok) return;
+		if (!delegatedSubmit.ok) {
+			return;
+		}
 
 		const acknowledged = await acknowledgePerformanceReview(
 			{
@@ -652,7 +715,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(acknowledged.ok).toBe(true);
-		if (!acknowledged.ok) return;
+		if (!acknowledged.ok) {
+			return;
+		}
 
 		const calibrated = await calibratePerformanceReview(
 			{
@@ -667,7 +732,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(calibrated.ok).toBe(true);
-		if (!calibrated.ok) return;
+		if (!calibrated.ok) {
+			return;
+		}
 
 		const finalized = await finalizePerformanceReview(
 			{
@@ -682,7 +749,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(finalized.ok).toBe(true);
-		if (!finalized.ok) return;
+		if (!finalized.ok) {
+			return;
+		}
 		expect(finalized.data.status).toBe("finalized");
 
 		const retrieved = await getPerformanceReviewById(
@@ -696,7 +765,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(retrieved.ok).toBe(true);
-		if (!retrieved.ok) return;
+		if (!retrieved.ok) {
+			return;
+		}
 		expect(retrieved.data?.review.status).toBe("finalized");
 		expect(retrieved.data?.review.overallRating).toBeNull();
 		expect(retrieved.data?.review.calibrationNote).toBeNull();
@@ -726,7 +797,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(plan.ok, resultMessage(plan)).toBe(true);
-		if (!plan.ok) return;
+		if (!plan.ok) {
+			return;
+		}
 
 		const openedPlan = await openImprovementPlan(
 			{
@@ -739,7 +812,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(openedPlan.ok).toBe(true);
-		if (!openedPlan.ok) return;
+		if (!openedPlan.ok) {
+			return;
+		}
 
 		const checkpoint = await recordImprovementCheckpoint(
 			{
@@ -796,7 +871,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		if (!cycle.ok) throw new Error(cycle.code);
+		if (!cycle.ok) {
+			throw new Error(cycle.code);
+		}
 
 		const opened = await publishAndOpenPerformanceCycle(ready, {
 			organizationId: ORG,
@@ -808,7 +885,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 				employmentId: worker.employment.id,
 			},
 		});
-		if (!opened.ok) throw new Error(opened.code);
+		if (!opened.ok) {
+			throw new Error(opened.code);
+		}
 
 		const goal = await createPerformanceGoal(
 			{
@@ -828,7 +907,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(goal.ok, resultMessage(goal)).toBe(true);
-		if (!goal.ok) return;
+		if (!goal.ok) {
+			return;
+		}
 
 		const submittedGoal = await submitPerformanceGoal(
 			{
@@ -841,7 +922,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(submittedGoal.ok).toBe(true);
-		if (!submittedGoal.ok) return;
+		if (!submittedGoal.ok) {
+			return;
+		}
 
 		const approvedGoal = await approvePerformanceGoal(
 			{
@@ -854,7 +937,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(approvedGoal.ok).toBe(true);
-		if (!approvedGoal.ok) return;
+		if (!approvedGoal.ok) {
+			return;
+		}
 
 		const review = await startPerformanceReview(
 			{
@@ -869,7 +954,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(review.ok, resultMessage(review)).toBe(true);
-		if (!review.ok) return;
+		if (!review.ok) {
+			return;
+		}
 
 		const self = await submitSelfAssessment(
 			{
@@ -884,7 +971,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(self.ok).toBe(true);
-		if (!self.ok) return;
+		if (!self.ok) {
+			return;
+		}
 
 		const managerAssessment = await submitManagerAssessment(
 			{
@@ -899,7 +988,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(managerAssessment.ok).toBe(true);
-		if (!managerAssessment.ok) return;
+		if (!managerAssessment.ok) {
+			return;
+		}
 
 		const finalized = await finalizePerformanceReview(
 			{
@@ -914,7 +1005,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(finalized.ok).toBe(true);
-		if (!finalized.ok) return;
+		if (!finalized.ok) {
+			return;
+		}
 
 		const plan = await createImprovementPlan(
 			{
@@ -935,7 +1028,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(plan.ok, resultMessage(plan)).toBe(true);
-		if (!plan.ok) return;
+		if (!plan.ok) {
+			return;
+		}
 
 		const history = await getEmployeePerformanceHistory(
 			{
@@ -948,7 +1043,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(history.ok).toBe(true);
-		if (!history.ok) return;
+		if (!history.ok) {
+			return;
+		}
 		expect(history.data.employeeId).toBe(worker.employee.id);
 		expect(history.data.entries.length).toBeGreaterThanOrEqual(1);
 
@@ -956,7 +1053,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			(historyEntry) => historyEntry.review.id === finalized.data.id,
 		);
 		expect(entry).toBeDefined();
-		if (!entry) return;
+		if (!entry) {
+			return;
+		}
 		expect(
 			entry.goals.some((cycleGoal) => cycleGoal.id === approvedGoal.data.id),
 		).toBe(true);
@@ -995,7 +1094,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(cycle.ok).toBe(true);
-		if (!cycle.ok) return;
+		if (!cycle.ok) {
+			return;
+		}
 
 		const openedCycle = await publishAndOpenPerformanceCycle(ready, {
 			organizationId: ORG,
@@ -1008,7 +1109,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 		});
 		expect(openedCycle.ok).toBe(true);
-		if (!openedCycle.ok) return;
+		if (!openedCycle.ok) {
+			return;
+		}
 
 		const review = await startPerformanceReview(
 			{
@@ -1023,7 +1126,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(review.ok, resultMessage(review)).toBe(true);
-		if (!review.ok) return;
+		if (!review.ok) {
+			return;
+		}
 
 		const self = await submitSelfAssessment(
 			{
@@ -1038,7 +1143,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(self.ok).toBe(true);
-		if (!self.ok) return;
+		if (!self.ok) {
+			return;
+		}
 
 		const managerReview = await submitManagerAssessment(
 			{
@@ -1053,7 +1160,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(managerReview.ok).toBe(true);
-		if (!managerReview.ok) return;
+		if (!managerReview.ok) {
+			return;
+		}
 
 		const finalized = await finalizePerformanceReview(
 			{
@@ -1068,7 +1177,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(finalized.ok).toBe(true);
-		if (!finalized.ok) return;
+		if (!finalized.ok) {
+			return;
+		}
 
 		const plan = await createImprovementPlan(
 			{
@@ -1094,7 +1205,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(plan.ok, resultMessage(plan)).toBe(true);
-		if (!plan.ok) return;
+		if (!plan.ok) {
+			return;
+		}
 		expect(plan.data.status).toBe("draft");
 
 		const checkpoints = await listImprovementPlanCheckpoints(
@@ -1107,7 +1220,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(checkpoints.ok).toBe(true);
-		if (!checkpoints.ok) return;
+		if (!checkpoints.ok) {
+			return;
+		}
 		expect(checkpoints.data.checkpoints).toHaveLength(3);
 
 		const openedPlan = await openImprovementPlan(
@@ -1121,7 +1236,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(openedPlan.ok).toBe(true);
-		if (!openedPlan.ok) return;
+		if (!openedPlan.ok) {
+			return;
+		}
 		await expectPipEvent({
 			correlationId: `corr-pip95-open-${suffix}`,
 			type: HUMAN_RESOURCES_IMPROVEMENT_PLAN_STARTED_EVENT,
@@ -1137,7 +1254,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(active.ok).toBe(true);
-		if (!active.ok) return;
+		if (!active.ok) {
+			return;
+		}
 		expect(active.data.plans.some((row) => row.id === openedPlan.data.id)).toBe(
 			true,
 		);
@@ -1155,7 +1274,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(amended.ok).toBe(true);
-		if (!amended.ok) return;
+		if (!amended.ok) {
+			return;
+		}
 
 		const checkpoint1 = await recordImprovementCheckpoint(
 			{
@@ -1171,7 +1292,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(checkpoint1.ok).toBe(true);
-		if (!checkpoint1.ok) return;
+		if (!checkpoint1.ok) {
+			return;
+		}
 
 		const extended = await amendImprovementPlan(
 			{
@@ -1187,7 +1310,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(extended.ok).toBe(true);
-		if (!extended.ok) return;
+		if (!extended.ok) {
+			return;
+		}
 
 		const afterExtend = await listImprovementPlanCheckpoints(
 			{
@@ -1199,10 +1324,12 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(afterExtend.ok).toBe(true);
-		if (!afterExtend.ok) return;
+		if (!afterExtend.ok) {
+			return;
+		}
 		expect(afterExtend.data.checkpoints).toHaveLength(4);
 
-		for (const sequenceNumber of [2, 3, 4]) {
+		await runSequential([2, 3, 4], async (sequenceNumber) => {
 			const recorded = await recordImprovementCheckpoint(
 				{
 					organizationId: ORG,
@@ -1216,7 +1343,7 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 				ready,
 			);
 			expect(recorded.ok).toBe(true);
-		}
+		});
 
 		const acknowledgedPlan = await acknowledgeImprovementPlan(
 			{
@@ -1229,7 +1356,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(acknowledgedPlan.ok).toBe(true);
-		if (!acknowledgedPlan.ok) return;
+		if (!acknowledgedPlan.ok) {
+			return;
+		}
 
 		const completedPlan = await completeImprovementPlan(
 			{
@@ -1244,7 +1373,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(completedPlan.ok).toBe(true);
-		if (!completedPlan.ok) return;
+		if (!completedPlan.ok) {
+			return;
+		}
 		expect(completedPlan.data.status).toBe("completed");
 		await expectPipEvent({
 			correlationId: `corr-pip95-complete-${suffix}`,
@@ -1272,7 +1403,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(failPlan.ok).toBe(true);
-		if (!failPlan.ok) return;
+		if (!failPlan.ok) {
+			return;
+		}
 
 		const openedFailPlan = await openImprovementPlan(
 			{
@@ -1285,7 +1418,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(openedFailPlan.ok).toBe(true);
-		if (!openedFailPlan.ok) return;
+		if (!openedFailPlan.ok) {
+			return;
+		}
 
 		await recordImprovementCheckpoint(
 			{
@@ -1323,7 +1458,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(acknowledgedFailPlan.ok).toBe(true);
-		if (!acknowledgedFailPlan.ok) return;
+		if (!acknowledgedFailPlan.ok) {
+			return;
+		}
 
 		const closedFailPlan = await closeImprovementPlanUnsuccessful(
 			{
@@ -1337,7 +1474,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(closedFailPlan.ok).toBe(true);
-		if (!closedFailPlan.ok) return;
+		if (!closedFailPlan.ok) {
+			return;
+		}
 		expect(closedFailPlan.data.status).toBe("unsuccessful");
 	});
 }

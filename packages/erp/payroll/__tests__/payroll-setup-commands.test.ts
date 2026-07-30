@@ -58,7 +58,6 @@ async function seedCalendarPayGroup(
 		},
 		options,
 	);
-	expect(calendar.ok).toBe(true);
 	if (!calendar.ok) {
 		throw new Error(calendar.message);
 	}
@@ -74,7 +73,6 @@ async function seedCalendarPayGroup(
 		},
 		options,
 	);
-	expect(payGroup.ok).toBe(true);
 	if (!payGroup.ok) {
 		throw new Error(payGroup.message);
 	}
@@ -106,7 +104,9 @@ describe("payroll setup commands", () => {
 			},
 		);
 		expect(result.ok).toBe(false);
-		if (result.ok) return;
+		if (result.ok) {
+			return;
+		}
 		expect(result.code).toBe("FORBIDDEN");
 	});
 
@@ -127,7 +127,9 @@ describe("payroll setup commands", () => {
 			{ store, ports, authorization: auth },
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const crossOrg = await getPayrollCalendar(
 			{
@@ -137,7 +139,9 @@ describe("payroll setup commands", () => {
 			{ store, authorization: auth },
 		);
 		expect(crossOrg.ok).toBe(true);
-		if (!crossOrg.ok) return;
+		if (!crossOrg.ok) {
+			return;
+		}
 		expect(crossOrg.data).toBeNull();
 	});
 
@@ -166,7 +170,9 @@ describe("payroll setup commands", () => {
 		});
 		expect(first.ok).toBe(true);
 		expect(second.ok).toBe(true);
-		if (!first.ok || !second.ok) return;
+		if (!(first.ok && second.ok)) {
+			return;
+		}
 		expect(second.data.id).toBe(first.data.id);
 	});
 
@@ -192,7 +198,9 @@ describe("payroll setup commands", () => {
 			{ store, ports, authorization },
 		);
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 
 		const overlap = await createPayrollEarningRule(
 			{
@@ -236,7 +244,9 @@ describe("payroll setup commands", () => {
 			options,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const recorded = await store.recordRuleVersionUsedByFinalizedRun({
 			organizationId: "org-lock",
@@ -256,7 +266,9 @@ describe("payroll setup commands", () => {
 			options,
 		);
 		expect(blocked.ok).toBe(false);
-		if (blocked.ok) return;
+		if (blocked.ok) {
+			return;
+		}
 		expect(blocked.details?.payrollCode).toBe("payroll.invalid_state");
 	});
 });

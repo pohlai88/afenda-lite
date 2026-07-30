@@ -11,18 +11,22 @@ import {
 	payrollErrorDetails,
 } from "../error-codes";
 
+const CREATE_IDEMPOTENCY_CONFLICT_PATTERN =
+	/_org_create_idempotency_uidx|create_idempotency_key/i;
+const RUN_IDENTITY_CONFLICT_PATTERN = /payroll_run_org_identity_uidx/i;
+
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null;
 }
 
 function readProperty(value: unknown, key: PropertyKey): unknown {
 	if (!isRecord(value)) {
-		return undefined;
+		return;
 	}
 	try {
 		return Reflect.get(value, key);
 	} catch {
-		return undefined;
+		// Hostile error objects may expose throwing getters; absence is intentional.
 	}
 }
 
@@ -53,7 +57,7 @@ export function isCreateIdempotencyUniqueViolation(error: unknown): boolean {
 	if (!isPostgresUniqueViolation(error)) {
 		return false;
 	}
-	return /_org_create_idempotency_uidx|create_idempotency_key/i.test(
+	return CREATE_IDEMPOTENCY_CONFLICT_PATTERN.test(
 		postgresConstraintName(error),
 	);
 }
@@ -62,7 +66,7 @@ export function isPayrollRunIdentityUniqueViolation(error: unknown): boolean {
 	if (!isPostgresUniqueViolation(error)) {
 		return false;
 	}
-	return /payroll_run_org_identity_uidx/i.test(postgresConstraintName(error));
+	return RUN_IDENTITY_CONFLICT_PATTERN.test(postgresConstraintName(error));
 }
 
 export function mapPersistenceFailure(

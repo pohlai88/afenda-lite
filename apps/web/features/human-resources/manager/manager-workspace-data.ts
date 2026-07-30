@@ -48,6 +48,7 @@ function displayNameByEmployee(
 	);
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The loader preserves partial-failure handling across independent manager queues.
 export async function loadManagerWorkspace(
 	session: Session,
 	page: number,
@@ -112,7 +113,9 @@ export async function loadManagerWorkspace(
 		),
 	);
 	const profiles = profileResults.flatMap((result) => {
-		if (result.ok) return [result.data];
+		if (result.ok) {
+			return [result.data];
+		}
 		errors.push("Some team member context could not be loaded.");
 		return [];
 	});
@@ -356,7 +359,9 @@ export async function loadManagerWorkspace(
 			errors.push("Some talent profiles could not be loaded.");
 			return [];
 		}
-		if (result.data === null) return [];
+		if (result.data === null) {
+			return [];
+		}
 		return [
 			{
 				id: result.data.id,
@@ -393,7 +398,9 @@ export async function loadManagerWorkspace(
 			)
 		: [];
 	const successionPlans = successionPlanResults.flatMap((result) => {
-		if (result.ok) return result.data.successionPlans;
+		if (result.ok) {
+			return result.data.successionPlans;
+		}
 		errors.push("Some succession plans could not be loaded.");
 		return [];
 	});
@@ -482,6 +489,7 @@ export async function loadManagerWorkspace(
 		const gaps = result.data.lines.filter(
 			(line) => line.varianceHeadcount < 0 || line.availableHeadcount > 0,
 		);
+		// biome-ignore lint/performance/noAwaitInLoops: Each bounded plan batch resolves concurrently, while plans preserve display and error order.
 		const availabilityResults = await Promise.all(
 			gaps.map((line) =>
 				getHeadcountAvailability(

@@ -102,7 +102,7 @@ describe("master-data authorization matrix", () => {
 	});
 
 	it("maps representative commands to the matrix permissions", () => {
-		const commands = masterDataModuleManifest.authorization.commands;
+		const { commands } = masterDataModuleManifest.authorization;
 
 		expect(commands[MASTER_COMMAND_ORGANIZATION_DIMENSION_CREATE]).toBe(
 			"master_data.dimension_create",
@@ -167,7 +167,7 @@ describe("master-data authorization matrix", () => {
 	});
 
 	it("maps representative queries to explicit read and review permissions", () => {
-		const queries = masterDataModuleManifest.authorization.queries;
+		const { queries } = masterDataModuleManifest.authorization;
 
 		expect(queries[MASTER_QUERY_REF_CURRENCY_GET_BY_CODE]).toBe(
 			"master_data.reference_read",

@@ -30,7 +30,9 @@ function collectSourceFiles(dir: string): string[] {
 	}
 	const files: string[] = [];
 	for (const entry of readdirSync(dir)) {
-		if (SKIP_DIRS.has(entry)) continue;
+		if (SKIP_DIRS.has(entry)) {
+			continue;
+		}
 		const fullPath = path.join(dir, entry);
 		const stats = statSync(fullPath);
 		if (stats.isDirectory()) {
@@ -66,7 +68,9 @@ describe("@afenda/web Neon Auth SDK boundary (N5)", () => {
 		const offenders: string[] = [];
 		for (const file of collectSourceFiles(webRoot)) {
 			const source = readFileSync(file, "utf-8");
-			if (!hasUseClientDirective(source)) continue;
+			if (!hasUseClientDirective(source)) {
+				continue;
+			}
 			for (const match of source.match(AFENDA_AUTH_ROOT_IMPORT) ?? []) {
 				offenders.push(`${toRepoPath(file)} -> ${match}`);
 			}

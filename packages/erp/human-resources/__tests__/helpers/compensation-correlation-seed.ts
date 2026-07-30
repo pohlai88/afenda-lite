@@ -1,4 +1,3 @@
-import { expect } from "vitest";
 import type { HumanResourcesCommandOptions } from "../../src/command-options";
 import { createBenefitPlan } from "../../src/compensation-benefits/benefit-plan";
 import {
@@ -17,6 +16,7 @@ import {
 	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
 } from "../../src/permissions";
 import { seedOpenCompensationReviewCycle } from "./compensation-review-cycle-seed";
+import { helperAssert as assert } from "./helper-assert";
 import { createGrantingHumanResourcesAuthorization } from "./memory-authorization";
 
 export async function seedCompensationCorrelationFixture(input: {
@@ -51,7 +51,7 @@ export async function seedCompensationCorrelationFixture(input: {
 		},
 		seedReady,
 	);
-	expect(employee.ok).toBe(true);
+	assert.strictEqual(employee.ok, true);
 	if (!employee.ok) {
 		throw employee.error;
 	}
@@ -66,7 +66,7 @@ export async function seedCompensationCorrelationFixture(input: {
 		},
 		seedReady,
 	);
-	expect(employment.ok).toBe(true);
+	assert.strictEqual(employment.ok, true);
 	if (!employment.ok) {
 		throw employment.error;
 	}
@@ -81,7 +81,7 @@ export async function seedCompensationCorrelationFixture(input: {
 		},
 		seedReady,
 	);
-	expect(plan.ok).toBe(true);
+	assert.strictEqual(plan.ok, true);
 	if (!plan.ok) {
 		throw plan.error;
 	}
@@ -121,7 +121,7 @@ export async function seedFinalizedCompensationReview(input: {
 		},
 		input.seedReady,
 	);
-	expect(draft.ok).toBe(true);
+	assert.strictEqual(draft.ok, true);
 	if (!draft.ok) {
 		throw draft.error;
 	}
@@ -139,7 +139,7 @@ export async function seedFinalizedCompensationReview(input: {
 		},
 		input.seedReady,
 	);
-	expect(recommended.ok).toBe(true);
+	assert.strictEqual(recommended.ok, true);
 	if (!recommended.ok) {
 		throw recommended.error;
 	}
@@ -154,7 +154,7 @@ export async function seedFinalizedCompensationReview(input: {
 		},
 		input.seedReady,
 	);
-	expect(finalized.ok).toBe(true);
+	assert.strictEqual(finalized.ok, true);
 	if (!finalized.ok) {
 		throw finalized.error;
 	}

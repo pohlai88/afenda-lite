@@ -15,7 +15,7 @@ import {
 } from "../../permissions";
 import type { ExtensionKind } from "./extension-policies";
 
-export const MAX_EXTENSION_TRANSITION_REASON_LENGTH = 1_000;
+export const MAX_EXTENSION_TRANSITION_REASON_LENGTH = 1000;
 
 export const STANDARD_CHILD_LIFECYCLE_STATUSES = [
 	"draft",
@@ -52,11 +52,11 @@ export type ExtensionLifecycleFamily =
 	| "identity_registration"
 	| "relationship";
 
-export type ExtensionLifecycleStatusByFamily = {
-	standard_child: StandardChildLifecycleStatus;
+export interface ExtensionLifecycleStatusByFamily {
 	identity_registration: IdentityRegistrationLifecycleStatus;
 	relationship: RelationshipLifecycleStatus;
-};
+	standard_child: StandardChildLifecycleStatus;
+}
 
 export type ExtensionLifecycleStatus =
 	ExtensionLifecycleStatusByFamily[ExtensionLifecycleFamily];

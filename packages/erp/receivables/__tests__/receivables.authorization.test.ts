@@ -17,9 +17,9 @@ describe("receivables authorization", () => {
 		const store = createMemoryReceivablesStore();
 		const seen: string[] = [];
 		const authorization = {
-			async can(input: { permission: string }) {
+			can(input: { permission: string }) {
 				seen.push(input.permission);
-				return false;
+				return Promise.resolve(false);
 			},
 		};
 		const command = await createDraftSalesInvoice(

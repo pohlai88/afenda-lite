@@ -51,68 +51,80 @@ function matchesFilter(entry: AuditEntry, filter: AuditQueryFilter): boolean {
 	return true;
 }
 
+function onPromiseBoundary<T>(operation: () => T): Promise<T> {
+	return Promise.resolve().then(operation);
+}
+
 /** In-memory AuditStore for Vitest only — not a production export. */
 export class MemoryAuditStore implements AuditStore {
 	private readonly entries: AuditEntry[] = [];
 
-	async write(entry: AuditWriteInput): Promise<Result<AuditEntry>> {
-		const created: AuditEntry = {
-			id: randomUUID(),
-			organizationId: entry.organizationId,
-			actorUserId: entry.actorUserId,
-			correlationId: entry.correlationId,
-			module: entry.module,
-			entity: entry.entity,
-			entityId: entry.entityId,
-			action: entry.action,
-			changes: entry.changes,
-			oldValue: entry.oldValue ?? null,
-			newValue: entry.newValue ?? null,
-			metadata: entry.metadata ?? null,
-			ipAddress: entry.ipAddress ?? null,
-			userAgent: entry.userAgent ?? null,
-			createdAt: entry.createdAt ?? new Date(),
-		};
-		this.entries.push(created);
-		return ok(created);
+	write(entry: AuditWriteInput): Promise<Result<AuditEntry>> {
+		return onPromiseBoundary(() => {
+			const created: AuditEntry = {
+				id: randomUUID(),
+				organizationId: entry.organizationId,
+				actorUserId: entry.actorUserId,
+				correlationId: entry.correlationId,
+				module: entry.module,
+				entity: entry.entity,
+				entityId: entry.entityId,
+				action: entry.action,
+				changes: entry.changes,
+				oldValue: entry.oldValue ?? null,
+				newValue: entry.newValue ?? null,
+				metadata: entry.metadata ?? null,
+				ipAddress: entry.ipAddress ?? null,
+				userAgent: entry.userAgent ?? null,
+				createdAt: entry.createdAt ?? new Date(),
+			};
+			this.entries.push(created);
+			return ok(created);
+		});
 	}
 
-	async query(options: AuditQueryOptions): Promise<Result<AuditEntry[]>> {
-		const filtered = this.entries
-			.filter((entry) => matchesFilter(entry, options))
-			.toSorted((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-		const offset = (options.page - 1) * options.pageSize;
-		return ok(filtered.slice(offset, offset + options.pageSize));
+	query(options: AuditQueryOptions): Promise<Result<AuditEntry[]>> {
+		return onPromiseBoundary(() => {
+			const filtered = this.entries
+				.filter((entry) => matchesFilter(entry, options))
+				.toSorted((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+			const offset = (options.page - 1) * options.pageSize;
+			return ok(filtered.slice(offset, offset + options.pageSize));
+		});
 	}
 
-	async count(options: AuditQueryFilter): Promise<Result<number>> {
-		return ok(
-			this.entries.filter((entry) => matchesFilter(entry, options)).length,
+	count(options: AuditQueryFilter): Promise<Result<number>> {
+		return onPromiseBoundary(() =>
+			ok(this.entries.filter((entry) => matchesFilter(entry, options)).length),
 		);
 	}
 
-	async export(options: AuditExportOptions): Promise<Result<string>> {
-		const filtered = this.entries
-			.filter((entry) => matchesFilter(entry, options))
-			.toSorted((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-			.slice(0, MAX_AUDIT_EXPORT_ROWS);
+	export(options: AuditExportOptions): Promise<Result<string>> {
+		return onPromiseBoundary(() => {
+			const filtered = this.entries
+				.filter((entry) => matchesFilter(entry, options))
+				.toSorted((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+				.slice(0, MAX_AUDIT_EXPORT_ROWS);
 
-		if (options.format === "json") {
-			return ok(JSON.stringify(filtered, null, 2));
-		}
-		return ok(auditEntriesToCsv(filtered));
+			if (options.format === "json") {
+				return ok(JSON.stringify(filtered, null, 2));
+			}
+			return ok(auditEntriesToCsv(filtered));
+		});
 	}
 
-	async purge(options: AuditPurgeOptions): Promise<Result<number>> {
-		const before = this.entries.length;
-		const kept = this.entries.filter(
-			(entry) =>
-				entry.organizationId !== options.organizationId ||
-				entry.createdAt >= options.olderThan,
-		);
-		this.entries.length = 0;
-		this.entries.push(...kept);
-		return ok(before - kept.length);
+	purge(options: AuditPurgeOptions): Promise<Result<number>> {
+		return onPromiseBoundary(() => {
+			const before = this.entries.length;
+			const kept = this.entries.filter(
+				(entry) =>
+					entry.organizationId !== options.organizationId ||
+					entry.createdAt >= options.olderThan,
+			);
+			this.entries.length = 0;
+			this.entries.push(...kept);
+			return ok(before - kept.length);
+		});
 	}
 
 	/** Test inspection — not part of AuditStore. */

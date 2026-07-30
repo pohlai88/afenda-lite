@@ -39,7 +39,6 @@ function attrNamed(
 			return prop;
 		}
 	}
-	return undefined;
 }
 
 function attrStringValue(attr: ts.JsxAttribute | undefined): string | null {
@@ -103,10 +102,14 @@ function directChildTagNames(element: ts.JsxElement): string[] {
 	for (const child of element.children) {
 		if (ts.isJsxElement(child)) {
 			const name = tagName(child.openingElement);
-			if (name) names.push(name);
+			if (name) {
+				names.push(name);
+			}
 		} else if (ts.isJsxSelfClosingElement(child)) {
 			const name = tagName(child);
-			if (name) names.push(name);
+			if (name) {
+				names.push(name);
+			}
 		} else if (ts.isJsxExpression(child) && child.expression) {
 			// Skip expressions; navigation Link must be a direct JSX child for C2.
 		}

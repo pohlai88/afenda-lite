@@ -30,27 +30,30 @@ export type ExtensionKind = keyof typeof EXTENSION_AGGREGATE_ROOTS;
 export type ExtensionAggregateRoot =
 	(typeof EXTENSION_AGGREGATE_ROOTS)[ExtensionKind][number];
 
-export type PartyExtensionRootReader = {
-	getPartyById(
+export interface PartyExtensionRootReader {
+	getPartyById: (
 		organizationId: string,
 		id: string,
-	): Promise<Result<Party | null>>;
-};
+	) => Promise<Result<Party | null>>;
+}
 
-export type ItemExtensionRootReader = {
-	getItemById(organizationId: string, id: string): Promise<Result<Item | null>>;
-};
-
-export type WarehouseExtensionRootReader = {
-	getWarehouseById(
+export interface ItemExtensionRootReader {
+	getItemById: (
 		organizationId: string,
 		id: string,
-	): Promise<Result<Warehouse | null>>;
-};
+	) => Promise<Result<Item | null>>;
+}
 
-type ExtensionCapableParent = {
+export interface WarehouseExtensionRootReader {
+	getWarehouseById: (
+		organizationId: string,
+		id: string,
+	) => Promise<Result<Warehouse | null>>;
+}
+
+interface ExtensionCapableParent {
 	status: ExtensionParentStatus;
-};
+}
 
 function parentSatisfiesRequirement(
 	status: ExtensionParentStatus,
@@ -96,7 +99,7 @@ function partyMergedFailure(
 	} satisfies MasterFailureDetails);
 }
 
-export async function requirePartyExtensionParent(
+export function requirePartyExtensionParent(
 	reader: PartyExtensionRootReader,
 	organizationId: string,
 	partyId: string,
@@ -119,9 +122,13 @@ async function requirePartyParent(
 	requirement: ExtensionParentStateRequirement,
 ): Promise<Result<Party>> {
 	const result = await reader.getPartyById(organizationId, partyId);
-	if (!result.ok) return result;
+	if (!result.ok) {
+		return result;
+	}
 	const usable = requireUsableParent(result.data, parentType, requirement);
-	if (!usable.ok) return usable;
+	if (!usable.ok) {
+		return usable;
+	}
 	if (usable.data.mergedIntoId !== null) {
 		return partyMergedFailure(parentType, usable.data);
 	}
@@ -135,7 +142,9 @@ export async function requireItemExtensionParent(
 	requirement: ExtensionParentStateRequirement = "parent_not_retired",
 ): Promise<Result<Item>> {
 	const result = await reader.getItemById(organizationId, itemId);
-	if (!result.ok) return result;
+	if (!result.ok) {
+		return result;
+	}
 	return requireUsableParent(result.data, "item", requirement);
 }
 
@@ -146,7 +155,9 @@ export async function requireWarehouseExtensionParent(
 	requirement: ExtensionParentStateRequirement = "parent_not_retired",
 ): Promise<Result<Warehouse>> {
 	const result = await reader.getWarehouseById(organizationId, warehouseId);
-	if (!result.ok) return result;
+	if (!result.ok) {
+		return result;
+	}
 	return requireUsableParent(result.data, "warehouse", requirement);
 }
 
@@ -182,8 +193,12 @@ export async function requirePartyRelationshipParents(
 			requirement,
 		),
 	]);
-	if (!partyResult.ok) return partyResult;
-	if (!relatedPartyResult.ok) return relatedPartyResult;
+	if (!partyResult.ok) {
+		return partyResult;
+	}
+	if (!relatedPartyResult.ok) {
+		return relatedPartyResult;
+	}
 	return ok({
 		party: partyResult.data,
 		relatedParty: relatedPartyResult.data,

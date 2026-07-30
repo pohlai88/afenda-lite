@@ -20,6 +20,7 @@ import {
 	isPostgresUniqueViolation,
 	mapPersistenceFailure,
 } from "../../shared/persistence-errors";
+import { runSequential, sequentialReturn } from "../../shared/run-sequential";
 
 type WorkRow = typeof hrReliabilityWorkItem.$inferSelect;
 type DeadLetterRow = typeof hrReliabilityDeadLetter.$inferSelect;
@@ -44,9 +45,13 @@ function mapWork(row: WorkRow): Result<ReliabilityWorkItem> {
 		return fail("INTERNAL_ERROR", "Reliability work status is invalid");
 	}
 	const createdAt = validDate(row.createdAt, "createdAt");
-	if (!createdAt.ok) return createdAt;
+	if (!createdAt.ok) {
+		return createdAt;
+	}
 	const updatedAt = validDate(row.updatedAt, "updatedAt");
-	if (!updatedAt.ok) return updatedAt;
+	if (!updatedAt.ok) {
+		return updatedAt;
+	}
 	return ok({
 		id: row.id,
 		organizationId: row.organizationId,
@@ -77,7 +82,9 @@ function mapDeadLetter(
 	row: DeadLetterRow,
 ): Result<ReliabilityDeadLetterRecord> {
 	const failedAt = validDate(row.failedAt, "failedAt");
-	if (!failedAt.ok) return failedAt;
+	if (!failedAt.ok) {
+		return failedAt;
+	}
 	return ok({
 		id: row.id,
 		organizationId: row.organizationId,
@@ -179,7 +186,10 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 			try {
 				return await getWork(input);
 			} catch (error) {
-				return mapPersistenceFailure(error, "Failed to get reliability work");
+				return await mapPersistenceFailure(
+					error,
+					"Failed to get reliability work",
+				);
 			}
 		},
 		async createWorkItem(item) {
@@ -235,16 +245,23 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 					`,
 				]);
 				const items: ReliabilityWorkItem[] = [];
-				for (const row of claimed) {
+				const sequentialOutcome1 = await runSequential(claimed, async (row) => {
 					const item = await getWork({
 						organizationId: row.organizationId,
 						workItemId: row.id,
 					});
-					if (!item.ok) return item;
+					if (!item.ok) {
+						return sequentialReturn(item);
+					}
 					if (item.data === null) {
-						return fail("NOT_FOUND", "Claimed reliability work was not found");
+						return sequentialReturn(
+							fail("NOT_FOUND", "Claimed reliability work was not found"),
+						);
 					}
 					items.push(item.data);
+				});
+				if (sequentialOutcome1.kind === "return") {
+					return sequentialOutcome1.value;
 				}
 				return ok(items);
 			} catch (error) {
@@ -327,7 +344,7 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 				if (!saved[0]) {
 					return fail("CONFLICT", "Reliability work item version conflict");
 				}
-				return await getWork({
+				return getWork({
 					organizationId: item.organizationId,
 					workItemId: item.id,
 				}).then((result) =>
@@ -425,7 +442,7 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 				if (!created[0]) {
 					return fail("CONFLICT", "Reliability dead letter already replayed");
 				}
-				return await getWork({
+				return getWork({
 					organizationId: item.organizationId,
 					workItemId: item.id,
 				}).then((result) =>

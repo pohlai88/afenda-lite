@@ -16,8 +16,10 @@ const MEMORY_CURRENCY_CODES = new Set([
 
 export function createMemoryCurrencyLookup(): CurrencyLookupPort {
 	return {
-		async exists(currencyCode: string): Promise<Result<boolean>> {
-			return ok(MEMORY_CURRENCY_CODES.has(currencyCode.toUpperCase()));
+		exists(currencyCode: string): Promise<Result<boolean>> {
+			return Promise.resolve(
+				ok(MEMORY_CURRENCY_CODES.has(currencyCode.toUpperCase())),
+			);
 		},
 	};
 }

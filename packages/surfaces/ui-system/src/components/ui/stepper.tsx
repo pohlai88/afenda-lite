@@ -3,10 +3,17 @@ import { cn } from "../../lib/utils";
 
 type StepStatus = "complete" | "current" | "upcoming" | "error";
 
+const STATUS_MARKERS: Record<StepStatus, string> = {
+	complete: "✓",
+	current: "•",
+	error: "!",
+	upcoming: "•",
+};
+
 interface StepperStepProps extends Omit<React.ComponentProps<"li">, "title"> {
+	description?: React.ReactNode;
 	status: StepStatus;
 	title: React.ReactNode;
-	description?: React.ReactNode;
 }
 
 function StepperStep({
@@ -18,14 +25,14 @@ function StepperStep({
 }: StepperStepProps) {
 	return (
 		<li
-			className={cn("relative flex min-w-0 flex-1 gap-3", className)}
 			aria-current={status === "current" ? "step" : undefined}
+			className={cn("relative flex min-w-0 flex-1 gap-3", className)}
 			{...props}
 		>
 			<span
 				aria-hidden="true"
 				className={cn(
-					"mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border text-xs font-semibold",
+					"mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border font-semibold text-xs",
 					status === "complete" &&
 						"border-success-border bg-success-subtle text-success-subtle-foreground",
 					status === "current" &&
@@ -36,12 +43,12 @@ function StepperStep({
 						"border-border bg-muted text-muted-foreground",
 				)}
 			>
-				{status === "complete" ? "✓" : status === "error" ? "!" : "•"}
+				{STATUS_MARKERS[status]}
 			</span>
 			<div className="min-w-0">
-				<div className="text-sm font-medium">{title}</div>
+				<div className="font-medium text-sm">{title}</div>
 				{description ? (
-					<div className="text-sm text-muted-foreground">{description}</div>
+					<div className="text-muted-foreground text-sm">{description}</div>
 				) : null}
 			</div>
 		</li>

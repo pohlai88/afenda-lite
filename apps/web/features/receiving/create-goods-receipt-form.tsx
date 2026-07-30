@@ -64,47 +64,47 @@ export function CreateGoodsReceiptForm({ canManage }: { canManage: boolean }) {
 			{showFormError && state?.ok === false ? (
 				<FormError>{state.message}</FormError>
 			) : null}
-			<FormField label="Code" required fieldId="receipt-code" error={codeError}>
+			<FormField error={codeError} fieldId="receipt-code" label="Code" required>
 				<Input
+					autoComplete="off"
+					disabled={pending}
 					id="receipt-code"
 					name="code"
 					required
-					autoComplete="off"
-					disabled={pending}
 				/>
 			</FormField>
 			<FormField
+				error={purchaseOrderError}
+				fieldId="receipt-po-id"
 				label="Purchase order id"
 				required
-				fieldId="receipt-po-id"
-				error={purchaseOrderError}
 			>
 				<Input
+					autoComplete="off"
+					disabled={pending}
 					id="receipt-po-id"
 					name="purchaseOrderId"
 					required
-					autoComplete="off"
-					disabled={pending}
 				/>
 			</FormField>
 			<FormField
+				error={warehouseError}
+				fieldId="receipt-warehouse"
 				label="Warehouse id"
 				required
-				fieldId="receipt-warehouse"
-				error={warehouseError}
 			>
 				<Input
+					autoComplete="off"
+					disabled={pending}
 					id="receipt-warehouse"
 					name="warehouseId"
 					required
-					autoComplete="off"
-					disabled={pending}
 				/>
 			</FormField>
-			<FormField label="Notes (optional)" fieldId="receipt-notes">
-				<Input id="receipt-notes" name="notes" disabled={pending} />
+			<FormField fieldId="receipt-notes" label="Notes (optional)">
+				<Input disabled={pending} id="receipt-notes" name="notes" />
 			</FormField>
-			<Button type="submit" disabled={pending}>
+			<Button disabled={pending} type="submit">
 				{pending ? <Spinner /> : null}
 				Create draft receipt
 			</Button>

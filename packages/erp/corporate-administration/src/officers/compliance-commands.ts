@@ -52,15 +52,21 @@ export async function recordOfficerDeclaration(
 		recordOfficerDeclarationInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "recordOfficerDeclaration");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const appointment = await loadAppointment(
 		options,
 		dependencies,
 		parsed.data.officerAppointmentId,
 	);
-	if (!appointment.ok) return appointment;
+	if (!appointment.ok) {
+		return appointment;
+	}
 	if (appointment.data.version !== parsed.data.expectedAppointmentVersion) {
 		return stale(
 			parsed.data.expectedAppointmentVersion,
@@ -72,7 +78,9 @@ export async function recordOfficerDeclaration(
 		options.organizationId,
 		parsed.data.sourceDocumentId,
 	);
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	return runDurableCompanyCommand({
 		commandId: "corporate-administration.officer.record-declaration",
 		fingerprintSchema: recordOfficerDeclarationInputSchema,
@@ -128,16 +136,24 @@ export async function supersedeOfficerDeclaration(
 		supersedeOfficerDeclarationInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "supersedeOfficerDeclaration");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const current =
 		await dependencies.officerComplianceStore.getOfficerDeclaration({
 			organizationId: options.organizationId,
 			officerDeclarationId: parsed.data.officerDeclarationId,
 		});
-	if (!current.ok) return current;
-	if (current.data === null) return notFound("officerDeclaration");
+	if (!current.ok) {
+		return current;
+	}
+	if (current.data === null) {
+		return notFound("officerDeclaration");
+	}
 	if (current.data.version !== parsed.data.expectedVersion) {
 		return stale(parsed.data.expectedVersion, current.data.version);
 	}
@@ -146,14 +162,20 @@ export async function supersedeOfficerDeclaration(
 			organizationId: options.organizationId,
 			officerDeclarationId: parsed.data.supersededByDeclarationId,
 		});
-	if (!successor.ok) return successor;
-	if (successor.data === null) return notFound("supersededByDeclaration");
+	if (!successor.ok) {
+		return successor;
+	}
+	if (successor.data === null) {
+		return notFound("supersededByDeclaration");
+	}
 	const source = await validateSource(
 		dependencies,
 		options.organizationId,
 		parsed.data.sourceDocumentId,
 	);
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	return runDurableCompanyCommand({
 		commandId: "corporate-administration.officer.supersede-declaration",
 		fingerprintSchema: supersedeOfficerDeclarationInputSchema,
@@ -202,15 +224,21 @@ export async function recordOfficerDisqualification(
 		recordOfficerDisqualificationInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "recordOfficerDisqualification");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const appointment = await loadAppointment(
 		options,
 		dependencies,
 		parsed.data.officerAppointmentId,
 	);
-	if (!appointment.ok) return appointment;
+	if (!appointment.ok) {
+		return appointment;
+	}
 	if (appointment.data.version !== parsed.data.expectedAppointmentVersion) {
 		return stale(
 			parsed.data.expectedAppointmentVersion,
@@ -222,7 +250,9 @@ export async function recordOfficerDisqualification(
 		options.organizationId,
 		parsed.data.sourceDocumentId,
 	);
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	return runDurableCompanyCommand({
 		commandId: "corporate-administration.officer.record-disqualification",
 		fingerprintSchema: recordOfficerDisqualificationInputSchema,
@@ -277,16 +307,24 @@ export async function endOfficerDisqualification(
 		endOfficerDisqualificationInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "endOfficerDisqualification");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const current =
 		await dependencies.officerComplianceStore.getOfficerDisqualification({
 			organizationId: options.organizationId,
 			officerDisqualificationId: parsed.data.officerDisqualificationId,
 		});
-	if (!current.ok) return current;
-	if (current.data === null) return notFound("officerDisqualification");
+	if (!current.ok) {
+		return current;
+	}
+	if (current.data === null) {
+		return notFound("officerDisqualification");
+	}
 	if (current.data.version !== parsed.data.expectedVersion) {
 		return stale(parsed.data.expectedVersion, current.data.version);
 	}
@@ -298,7 +336,9 @@ export async function endOfficerDisqualification(
 		options.organizationId,
 		parsed.data.sourceDocumentId,
 	);
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	return runDurableCompanyCommand({
 		commandId: "corporate-administration.officer.end-disqualification",
 		fingerprintSchema: endOfficerDisqualificationInputSchema,
@@ -348,15 +388,21 @@ export async function discloseConflict(
 		discloseConflictInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "discloseConflict");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const appointment = await loadAppointment(
 		options,
 		dependencies,
 		parsed.data.officerAppointmentId,
 	);
-	if (!appointment.ok) return appointment;
+	if (!appointment.ok) {
+		return appointment;
+	}
 	if (appointment.data.version !== parsed.data.expectedAppointmentVersion) {
 		return stale(
 			parsed.data.expectedAppointmentVersion,
@@ -368,7 +414,9 @@ export async function discloseConflict(
 		options.organizationId,
 		parsed.data.sourceDocumentId,
 	);
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	return runDurableCompanyCommand({
 		commandId: "corporate-administration.conflict.disclose",
 		fingerprintSchema: discloseConflictInputSchema,
@@ -427,16 +475,24 @@ export async function recordRecusal(
 		recordRecusalInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "recordRecusal");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const current =
 		await dependencies.officerComplianceStore.getConflictDisclosure({
 			organizationId: options.organizationId,
 			conflictDisclosureId: parsed.data.conflictDisclosureId,
 		});
-	if (!current.ok) return current;
-	if (current.data === null) return notFound("conflictDisclosure");
+	if (!current.ok) {
+		return current;
+	}
+	if (current.data === null) {
+		return notFound("conflictDisclosure");
+	}
 	if (current.data.version !== parsed.data.expectedVersion) {
 		return stale(parsed.data.expectedVersion, current.data.version);
 	}
@@ -445,7 +501,9 @@ export async function recordRecusal(
 		options.organizationId,
 		parsed.data.sourceDocumentId,
 	);
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	return runDurableCompanyCommand({
 		commandId: "corporate-administration.conflict.record-recusal",
 		fingerprintSchema: recordRecusalInputSchema,
@@ -509,7 +567,9 @@ async function loadAppointment(
 		organizationId: options.organizationId,
 		officerAppointmentId,
 	});
-	if (!appointment.ok) return appointment;
+	if (!appointment.ok) {
+		return appointment;
+	}
 	return appointment.data === null
 		? notFound("officerAppointment")
 		: { ok: true as const, data: appointment.data };
@@ -524,7 +584,9 @@ async function validateSource(
 		organizationId,
 		sourceDocumentId,
 	});
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	return source.data === null || !source.data.active
 		? invalidReference("sourceDocumentId", source.data !== null)
 		: { ok: true, data: undefined };

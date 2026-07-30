@@ -20,23 +20,23 @@ function SearchField({
 	return (
 		<div className={cn("relative", className)}>
 			<SearchIcon
-				className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
 				aria-hidden="true"
+				className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
 			/>
 			<Input
+				className="pr-9 pl-9 [&::-webkit-search-cancel-button]:hidden"
 				type="search"
 				value={value}
-				className="pl-9 pr-9 [&::-webkit-search-cancel-button]:hidden"
 				{...props}
 			/>
 			{onClear && hasValue ? (
 				<Button
+					aria-label="Clear search"
+					className="absolute top-1/2 right-1 -translate-y-1/2"
+					onClick={onClear}
+					size="icon-sm"
 					type="button"
 					variant="ghost"
-					size="icon-sm"
-					className="absolute right-1 top-1/2 -translate-y-1/2"
-					onClick={onClear}
-					aria-label="Clear search"
 				>
 					<XIcon aria-hidden="true" />
 				</Button>

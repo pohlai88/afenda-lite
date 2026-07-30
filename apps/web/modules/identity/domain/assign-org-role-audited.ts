@@ -30,30 +30,30 @@ export type AssignOrgRoleWithAuditInput = AssignOrgRoleInput & {
 	userAgent?: string;
 };
 
-export type AssignOrgRoleWithAuditOk = {
-	ok: true;
+export interface AssignOrgRoleWithAuditOk {
 	assignment: typeof platformRoleAssignment.$inferSelect;
-	reactivated: boolean;
 	auditId: string;
-};
+	ok: true;
+	reactivated: boolean;
+}
 
 export type AssignOrgRoleWithAuditResult =
 	| AssignOrgRoleWithAuditOk
 	| Extract<AssignOrgRoleResult, { ok: false }>;
 
-type AssignAuditedSqlRow = {
+interface AssignAuditedSqlRow {
+	active: boolean;
+	audit_id: string;
+	created_at: string | Date;
+	granted_by: string | null;
 	id: string;
-	user_id: string;
 	organization_id: string;
 	role_id: string;
-	scope_type: string;
 	scope_id: string | null;
-	active: boolean;
-	granted_by: string | null;
-	created_at: string | Date;
+	scope_type: string;
 	updated_at: string | Date;
-	audit_id: string;
-};
+	user_id: string;
+}
 
 function mapAssignmentRow(
 	row: AssignAuditedSqlRow,
@@ -170,7 +170,7 @@ export async function assignOrgRoleWithAudit(
 		)
 		.limit(1);
 
-	const current = existing[0];
+	const [current] = existing;
 	if (current?.active) {
 		return fail("CONFLICT", "That role is already assigned to this user.");
 	}
@@ -293,7 +293,7 @@ export async function assignOrgRoleWithAudit(
 		},
 	);
 
-	const row = rows[0];
+	const [row] = rows;
 	if (!row) {
 		return fail(
 			"BAD_REQUEST",

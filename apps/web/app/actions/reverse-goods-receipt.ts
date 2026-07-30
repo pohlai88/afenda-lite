@@ -13,7 +13,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type ReverseGoodsReceiptActionData = { receipt: GoodsReceipt };
+export interface ReverseGoodsReceiptActionData {
+	receipt: GoodsReceipt;
+}
 export type ReverseGoodsReceiptActionState =
 	ActionResult<ReverseGoodsReceiptActionData> | null;
 
@@ -27,7 +29,7 @@ export async function reverseGoodsReceiptAction(
 	_prev: ReverseGoodsReceiptActionState,
 	formData: FormData,
 ): Promise<ReverseGoodsReceiptActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "reverseGoodsReceiptAction",
 		permission: "receiving.receipt.reverse",
 		safeMessage:
@@ -56,7 +58,9 @@ export async function reverseGoodsReceiptAction(
 				createReceivingCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidateReceivingPaths();
 			return { ok: true, data: { receipt: mapped.data } };
 		},

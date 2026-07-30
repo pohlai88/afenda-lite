@@ -10,11 +10,11 @@ export type AssignOrgRoleInput = AssignOrgRoleCommand & {
 	grantedBy: string;
 };
 
-export type AssignOrgRoleOk = {
-	ok: true;
+export interface AssignOrgRoleOk {
 	assignment: typeof platformRoleAssignment.$inferSelect;
+	ok: true;
 	reactivated: boolean;
-};
+}
 
 export type AssignOrgRoleErr = ResultFailure;
 

@@ -66,7 +66,9 @@ describe("Human Resources source-specific bulk pipelines", () => {
 		);
 
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 		expect(result.data.totals).toEqual({
 			accepted: 1,
 			rejected: 1,
@@ -114,7 +116,9 @@ describe("Human Resources source-specific bulk pipelines", () => {
 		);
 
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 		expect(result.data.status).toBe("completed_with_rejections");
 		expect(create).toHaveBeenCalledOnce();
 		expect(create).toHaveBeenCalledWith(
@@ -223,7 +227,9 @@ describe("Human Resources source-specific bulk pipelines", () => {
 		);
 
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 		expect(result.data.rows.map((row) => row.status)).toEqual([
 			"rejected",
 			"accepted",
@@ -251,7 +257,9 @@ describe("Human Resources source-specific bulk pipelines", () => {
 		const replay = await runLearningAssignmentBulkImport(input, deps);
 
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 		expect(first.data.status).toBe("completed_with_rejections");
 		expect(replay).toEqual(first);
 		expect(assign).toHaveBeenCalledOnce();

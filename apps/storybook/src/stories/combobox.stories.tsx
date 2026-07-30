@@ -13,7 +13,7 @@ import {
 	StatusBadge,
 } from "@afenda/ui-system";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import * as React from "react";
+import { useState } from "react";
 import { contractDocsParameters } from "./contract-docs";
 import { contractEvidence, StorySection } from "./evidence";
 import { interactionFor } from "./interactions";
@@ -69,19 +69,19 @@ function ModuleCombobox({
 	disabled?: boolean;
 	id?: string;
 }) {
-	const [value, setValue] = React.useState(initialValue);
+	const [value, setValue] = useState(initialValue);
 
 	return (
 		<Combobox
 			{...(id === undefined ? {} : { id })}
 			aria-label={ariaLabel}
-			options={[...MODULE_OPTIONS]}
-			value={value}
 			disabled={disabled}
-			placeholder="Select a module"
-			searchPlaceholder="Search modules..."
 			emptyMessage="No modules match this search."
 			onValueChange={setValue}
+			options={[...MODULE_OPTIONS]}
+			placeholder="Select a module"
+			searchPlaceholder="Search modules..."
+			value={value}
 		/>
 	);
 }
@@ -93,19 +93,19 @@ function MultiModuleCombobox({
 	initialValue?: string[];
 	id?: string;
 }) {
-	const [value, setValue] = React.useState(initialValue);
+	const [value, setValue] = useState(initialValue);
 
 	return (
 		<Combobox
 			{...(id === undefined ? {} : { id })}
 			aria-label="Multiple modules"
+			emptyMessage="No modules match this search."
 			multiple
+			onValueChange={setValue}
 			options={[...MODULE_OPTIONS]}
-			value={value}
 			placeholder="Select modules"
 			searchPlaceholder="Search modules..."
-			emptyMessage="No modules match this search."
-			onValueChange={setValue}
+			value={value}
 		/>
 	);
 }
@@ -117,18 +117,18 @@ function SupplierCombobox({
 	initialValue?: string;
 	id?: string;
 }) {
-	const [value, setValue] = React.useState(initialValue);
+	const [value, setValue] = useState(initialValue);
 
 	return (
 		<Combobox
 			{...(id === undefined ? {} : { id })}
 			aria-label="Supplier"
-			options={[...SUPPLIER_OPTIONS]}
-			value={value}
-			placeholder="Select a supplier"
-			searchPlaceholder="Search suppliers..."
 			emptyMessage="No suppliers match this search."
 			onValueChange={setValue}
+			options={[...SUPPLIER_OPTIONS]}
+			placeholder="Select a supplier"
+			searchPlaceholder="Search suppliers..."
+			value={value}
 		/>
 	);
 }
@@ -148,18 +148,18 @@ export const Overview: Story = {
 		<div className="min-h-screen bg-canvas text-foreground">
 			<div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-2 border-b pb-6">
-					<p className="text-sm font-medium text-foreground-secondary">
+					<p className="font-medium text-foreground-secondary text-sm">
 						Platform · permission catalog
 					</p>
-					<h1 className="text-2xl font-semibold tracking-tight">
+					<h1 className="font-semibold text-2xl tracking-tight">
 						Module scope filter
 					</h1>
-					<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+					<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 						Combobox searches a bounded ERP option set. Client filtering helps
 						operators find Accounting or Payroll, while stable values protect
 						saved filters across label and locale changes.
 					</p>
-					<p className="max-w-5xl text-xs leading-5 text-foreground-tertiary">
+					<p className="max-w-5xl text-foreground-tertiary text-xs leading-5">
 						Operational standard: keyboard search, selection state, empty
 						results, disabled options, and focus must remain understandable
 						across narrow layouts and high-contrast presentation.
@@ -170,7 +170,7 @@ export const Overview: Story = {
 					<CardHeader>
 						<div className="flex flex-wrap items-center gap-2">
 							<Badge variant="outline">Admin</Badge>
-							<StatusBadge size="sm" status="active" label="Operational" />
+							<StatusBadge label="Operational" size="sm" status="active" />
 						</div>
 						<CardTitle>Catalog view filters</CardTitle>
 						<CardDescription>
@@ -180,9 +180,9 @@ export const Overview: Story = {
 					<CardContent className="grid gap-4">
 						<div className="grid max-w-md gap-2">
 							<Label htmlFor="module-scope">Module</Label>
-							<ModuleCombobox id="module-scope" ariaLabel="Module" />
+							<ModuleCombobox ariaLabel="Module" id="module-scope" />
 						</div>
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							Selected value is a stable module id. Display labels may change
 							with locale without breaking saved filters.
 						</p>
@@ -253,14 +253,14 @@ export const StatesAndAccessibility: Story = {
 			</StorySection>
 
 			<StorySection title="Empty selection awaiting operator choice">
-				<ModuleCombobox initialValue="" ariaLabel="Module without selection" />
+				<ModuleCombobox ariaLabel="Module without selection" initialValue="" />
 			</StorySection>
 
 			<StorySection title="Disabled control">
 				<ModuleCombobox
-					initialValue="accounting"
 					ariaLabel="Disabled module"
 					disabled
+					initialValue="accounting"
 				/>
 			</StorySection>
 
@@ -287,7 +287,7 @@ export const Composition: Story = {
 				<CardHeader>
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="outline">Permissions</Badge>
-						<StatusBadge size="sm" status="pending" label="Draft filter" />
+						<StatusBadge label="Draft filter" size="sm" status="pending" />
 					</div>
 					<CardTitle>Module catalog filter</CardTitle>
 					<CardDescription>
@@ -310,7 +310,7 @@ export const Composition: Story = {
 				<CardHeader>
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="secondary">Payables</Badge>
-						<StatusBadge size="sm" status="active" label="Operational" />
+						<StatusBadge label="Operational" size="sm" status="active" />
 					</div>
 					<CardTitle>Payment run suppliers</CardTitle>
 					<CardDescription>
@@ -352,7 +352,7 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do not: accept freeform text as the value">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Operators must choose from options. Freeform notes belong in Textarea
 					or a governed notes field — never as Combobox persistence.
 				</p>
@@ -371,7 +371,7 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do not: treat a missing option as authorization">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Omitting Payroll from a client option list does not revoke
 					payroll.access. Authorization stays on the server; Combobox only
 					presents the allowed catalogue the feature loaded.
@@ -379,14 +379,14 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do: provide task-specific empty copy">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					“No suppliers match this search” identifies both the searched entity
 					and the current outcome.
 				</p>
 			</StorySection>
 
 			<StorySection title="Do not: use a vague empty message">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Generic copy such as “No data” does not tell the operator what was
 					searched or whether the catalogue failed to load.
 				</p>

@@ -1,25 +1,25 @@
 import type { PayrollRoundingPolicy } from "../../shared/rounding-policy";
 
-export type StatutoryCalculatorInput = {
-	ruleCode: string;
-	ruleVersion: string;
-	jurisdictionCode: string;
+export interface StatutoryCalculatorInput {
 	configJson: Record<string, unknown>;
 	currencyCode: string;
 	gross: bigint;
-	taxableBase: bigint;
+	jurisdictionCode: string;
 	roundingPolicy: PayrollRoundingPolicy;
-};
+	ruleCode: string;
+	ruleVersion: string;
+	taxableBase: bigint;
+}
 
-export type StatutoryCalculatorOutput = {
-	calculatorId: string;
+export interface StatutoryCalculatorOutput {
 	baseAmount: bigint;
+	calculatorId: string;
 	employeeAmount: bigint;
 	employerAmount: bigint;
 	traceMessage: string;
-};
+}
 
-export type StatutoryRuleCalculator = {
+export interface StatutoryRuleCalculator {
+	calculate: (input: StatutoryCalculatorInput) => StatutoryCalculatorOutput;
 	readonly calculatorId: string;
-	calculate(input: StatutoryCalculatorInput): StatutoryCalculatorOutput;
-};
+}

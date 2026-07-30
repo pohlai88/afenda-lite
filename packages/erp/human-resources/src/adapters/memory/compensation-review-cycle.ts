@@ -38,6 +38,7 @@ import {
 import { assertExpectedVersion } from "../../shared/concurrency";
 import { conflict, invalidState, notFound } from "../../shared/domain-guards";
 import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
+import { runRollbacks } from "../../shared/rollback";
 import type {
 	CompensationReviewCycleCreateRecord,
 	IdempotentCompensationReviewCycleRecord,
@@ -85,64 +86,64 @@ async function recordAudit(
 	_meta: HumanResourcesMutationMeta,
 	fact: ReturnType<typeof buildCreateAuditFact>,
 ): Promise<Result<{ id: string }>> {
-	return ports.audit.record(fact);
+	return await ports.audit.record(fact);
 }
 
-export type MemoryCompensationReviewCycleMethods = {
-	getCompensationReviewCycle(input: {
-		organizationId: string;
-		cycleId: HumanResourcesCompensationReviewCycleId;
-	}): Promise<Result<CompensationReviewCycle | null>>;
-	findCompensationReviewCycleByIdempotencyKey(input: {
-		organizationId: string;
-		idempotencyKey: string;
-	}): Promise<Result<IdempotentCompensationReviewCycleRecord | null>>;
-	createCompensationReviewCycle(
+export interface MemoryCompensationReviewCycleMethods {
+	cancelCompensationReviewCycle: (
+		input: {
+			organizationId: string;
+			cycleId: HumanResourcesCompensationReviewCycleId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<CompensationReviewCycle>>;
+	closeCompensationReviewCycle: (
+		input: {
+			organizationId: string;
+			cycleId: HumanResourcesCompensationReviewCycleId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<CompensationReviewCycle>>;
+	createCompensationReviewCycle: (
 		record: CompensationReviewCycleCreateRecord,
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<CompensationReviewCycle>>;
-	openCompensationReviewCycle(
-		input: {
-			organizationId: string;
-			cycleId: HumanResourcesCompensationReviewCycleId;
-			expectedVersion: number;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<CompensationReviewCycle>>;
-	closeCompensationReviewCycle(
-		input: {
-			organizationId: string;
-			cycleId: HumanResourcesCompensationReviewCycleId;
-			expectedVersion: number;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<CompensationReviewCycle>>;
-	cancelCompensationReviewCycle(
-		input: {
-			organizationId: string;
-			cycleId: HumanResourcesCompensationReviewCycleId;
-			expectedVersion: number;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<CompensationReviewCycle>>;
-	listCompensationReviewCycles(input: {
+	) => Promise<Result<CompensationReviewCycle>>;
+	findCompensationReviewCycleByIdempotencyKey: (input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}) => Promise<Result<IdempotentCompensationReviewCycleRecord | null>>;
+	getCompensationReviewCycle: (input: {
+		organizationId: string;
+		cycleId: HumanResourcesCompensationReviewCycleId;
+	}) => Promise<Result<CompensationReviewCycle | null>>;
+	listCompensationReviewCycles: (input: {
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		status?: CompensationReviewCycle["status"];
-	}): Promise<Result<CompensationReviewCycleListPage>>;
-	listCompensationReviewsByCycle(input: {
+		status?: CompensationReviewCycle["status"] | undefined;
+	}) => Promise<Result<CompensationReviewCycleListPage>>;
+	listCompensationReviewsByCycle: (input: {
 		organizationId: string;
 		cycleId: HumanResourcesCompensationReviewCycleId;
-	}): Promise<Result<CompensationReview[]>>;
-};
+	}) => Promise<Result<CompensationReview[]>>;
+	openCompensationReviewCycle: (
+		input: {
+			organizationId: string;
+			cycleId: HumanResourcesCompensationReviewCycleId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<CompensationReviewCycle>>;
+}
 
 export function createMemoryCompensationReviewCycleMethods(
 	state: CompensationBenefitsMemoryState,
@@ -151,15 +152,15 @@ export function createMemoryCompensationReviewCycleMethods(
 		async getCompensationReviewCycle(input) {
 			const cycle = state.compensationReviewCycles.get(input.cycleId) ?? null;
 			if (cycle && cycle.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok(cycle === null ? null : cloneCycle(cycle));
+			return await ok(cycle === null ? null : cloneCycle(cycle));
 		},
 
 		async findCompensationReviewCycleByIdempotencyKey(input) {
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = state.cycleIdempotencyByKey.get(key) ?? null;
-			return ok(
+			return await ok(
 				record === null
 					? null
 					: {
@@ -188,9 +189,9 @@ export function createMemoryCompensationReviewCycleMethods(
 			const duplicate = Array.from(
 				state.compensationReviewCycles.values(),
 			).find(
-				(cycle) =>
-					cycle.organizationId === record.organizationId &&
-					cycle.code === record.code,
+				(cycleValue) =>
+					cycleValue.organizationId === record.organizationId &&
+					cycleValue.code === record.code,
 			);
 			if (duplicate) {
 				return fail(
@@ -211,7 +212,9 @@ export function createMemoryCompensationReviewCycleMethods(
 			const idResult = parseHumanResourcesCompensationReviewCycleId(
 				randomUUID(),
 			);
-			if (!idResult.ok) return idResult;
+			if (!idResult.ok) {
+				return idResult;
+			}
 
 			const now = new Date();
 			const cycle: CompensationReviewCycle = {
@@ -261,15 +264,27 @@ export function createMemoryCompensationReviewCycleMethods(
 		},
 
 		async openCompensationReviewCycle(input, ports, meta) {
-			return transitionReviewCycleStatus(state, input, ports, meta, "open");
+			return await transitionReviewCycleStatus(
+				state,
+				input,
+				ports,
+				meta,
+				"open",
+			);
 		},
 
 		async closeCompensationReviewCycle(input, ports, meta) {
-			return transitionReviewCycleStatus(state, input, ports, meta, "closed");
+			return await transitionReviewCycleStatus(
+				state,
+				input,
+				ports,
+				meta,
+				"closed",
+			);
 		},
 
 		async cancelCompensationReviewCycle(input, ports, meta) {
-			return transitionReviewCycleStatus(
+			return await transitionReviewCycleStatus(
 				state,
 				input,
 				ports,
@@ -291,7 +306,7 @@ export function createMemoryCompensationReviewCycleMethods(
 			const pageItems = cycles
 				.slice(start, start + input.pageSize)
 				.map((cycle) => cloneCycle(cycle));
-			return ok({
+			return await ok({
 				cycles: pageItems,
 				totalCount,
 				page: input.page,
@@ -305,7 +320,7 @@ export function createMemoryCompensationReviewCycleMethods(
 				input.organizationId,
 				input.cycleId,
 			).map((review) => ({ ...review }));
-			return ok(reviews);
+			return await ok(reviews);
 		},
 	};
 }
@@ -323,18 +338,24 @@ async function transitionReviewCycleStatus(
 	nextStatus: CompensationReviewCycle["status"],
 ): Promise<Result<CompensationReviewCycle>> {
 	const current = getReviewCycle(state, input.organizationId, input.cycleId);
-	if (!current.ok) return current;
+	if (!current.ok) {
+		return current;
+	}
 	const cycle = current.data;
 	const versionCheck = assertExpectedVersion(
 		cycle.version,
 		input.expectedVersion,
 	);
-	if (!versionCheck.ok) return versionCheck;
+	if (!versionCheck.ok) {
+		return versionCheck;
+	}
 	const transition = assertReviewCycleStatusTransition(
 		cycle.status,
 		nextStatus,
 	);
-	if (!transition.ok) return transition;
+	if (!transition.ok) {
+		return transition;
+	}
 
 	const previous = cloneCycle(cycle);
 	const now = new Date();
@@ -372,7 +393,11 @@ async function transitionReviewCycleStatus(
 	return ok(cloneCycle(updated));
 }
 
-export type MemoryCompensationReviewLifecycleDeps = {
+export interface MemoryCompensationReviewLifecycleDeps {
+	getActiveBaseAmount: (
+		organizationId: string,
+		employmentId: HumanResourcesEmploymentId,
+	) => Promise<Result<string | null>>;
 	getReviewCycle: (
 		organizationId: string,
 		cycleId: HumanResourcesCompensationReviewCycleId,
@@ -381,11 +406,7 @@ export type MemoryCompensationReviewLifecycleDeps = {
 		organizationId: string,
 		cycleId: HumanResourcesCompensationReviewCycleId,
 	) => Promise<Result<CompensationReview[]>>;
-	getActiveBaseAmount: (
-		organizationId: string,
-		employmentId: HumanResourcesEmploymentId,
-	) => Promise<Result<string | null>>;
-};
+}
 
 export function createMemoryReviewLifecycleDeps(
 	state: CompensationBenefitsMemoryState,
@@ -394,9 +415,9 @@ export function createMemoryReviewLifecycleDeps(
 		getReviewCycle: async (organizationId, cycleId) => {
 			const cycle = state.compensationReviewCycles.get(cycleId) ?? null;
 			if (cycle && cycle.organizationId !== organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok(cycle === null ? null : cloneCycle(cycle));
+			return await ok(cycle === null ? null : cloneCycle(cycle));
 		},
 		listCycleReviews: async (organizationId, cycleId) =>
 			ok(listReviewsByCycle(state, organizationId, cycleId)),
@@ -408,7 +429,7 @@ export function createMemoryReviewLifecycleDeps(
 						compensation.employmentId === employmentId &&
 						isEmployeeCompensationActive(compensation.status),
 				) ?? null;
-			return ok(active?.baseAmount ?? null);
+			return await ok(active?.baseAmount ?? null);
 		},
 	};
 }
@@ -448,21 +469,29 @@ export async function memoryRecordCompensationRecommendation(
 		review.version,
 		input.expectedVersion,
 	);
-	if (!versionCheck.ok) return versionCheck;
+	if (!versionCheck.ok) {
+		return versionCheck;
+	}
 
 	const statusGuard = assertCanRecordCompensationRecommendation(review.status);
-	if (!statusGuard.ok) return statusGuard;
+	if (!statusGuard.ok) {
+		return statusGuard;
+	}
 
 	const cycleResult = await deps.getReviewCycle(
 		input.organizationId,
 		review.cycleId,
 	);
-	if (!cycleResult.ok) return cycleResult;
+	if (!cycleResult.ok) {
+		return cycleResult;
+	}
 	if (cycleResult.data === null) {
 		return notFound("Compensation review cycle not found");
 	}
 	const openGuard = assertReviewCycleOpenForMutation(cycleResult.data.status);
-	if (!openGuard.ok) return openGuard;
+	if (!openGuard.ok) {
+		return openGuard;
+	}
 
 	const now = new Date();
 	const previous = { ...review };
@@ -490,7 +519,9 @@ export async function memoryRecordCompensationRecommendation(
 		},
 		updated,
 	);
-	if (!budgetCheck.ok) return budgetCheck;
+	if (!budgetCheck.ok) {
+		return budgetCheck;
+	}
 
 	state.compensationReviews.set(updated.id, updated);
 	const key = idempotencyMapKey(
@@ -522,7 +553,7 @@ export async function memoryRecordCompensationRecommendation(
 		}),
 	);
 	if (!audit.ok) {
-		for (const undo of rollback) undo();
+		runRollbacks(rollback);
 		return audit;
 	}
 
@@ -558,21 +589,29 @@ export async function memoryFinalizeCompensationReview(
 		review.version,
 		input.expectedVersion,
 	);
-	if (!versionCheck.ok) return versionCheck;
+	if (!versionCheck.ok) {
+		return versionCheck;
+	}
 
 	const finalizeGuard = assertCanFinalizeCompensationReview(review);
-	if (!finalizeGuard.ok) return finalizeGuard;
+	if (!finalizeGuard.ok) {
+		return finalizeGuard;
+	}
 
 	const cycleResult = await deps.getReviewCycle(
 		input.organizationId,
 		review.cycleId,
 	);
-	if (!cycleResult.ok) return cycleResult;
+	if (!cycleResult.ok) {
+		return cycleResult;
+	}
 	if (cycleResult.data === null) {
 		return notFound("Compensation review cycle not found");
 	}
 	const openGuard = assertReviewCycleOpenForMutation(cycleResult.data.status);
-	if (!openGuard.ok) return openGuard;
+	if (!openGuard.ok) {
+		return openGuard;
+	}
 
 	const budgetCheck = await assertCompensationReviewBudgetForMutation(
 		{
@@ -584,7 +623,9 @@ export async function memoryFinalizeCompensationReview(
 		},
 		review,
 	);
-	if (!budgetCheck.ok) return budgetCheck;
+	if (!budgetCheck.ok) {
+		return budgetCheck;
+	}
 
 	const now = new Date();
 	const previous = { ...review };
@@ -628,7 +669,7 @@ export async function memoryFinalizeCompensationReview(
 		}),
 	);
 	if (!audit.ok) {
-		for (const undo of rollback) undo();
+		runRollbacks(rollback);
 		return audit;
 	}
 

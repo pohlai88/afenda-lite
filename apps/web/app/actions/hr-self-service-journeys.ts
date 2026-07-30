@@ -97,7 +97,7 @@ export async function createOwnLeaveDraftAction(
 	_previous: ActionResult<{ id: string; status: string }> | null,
 	formData: FormData,
 ): Promise<ActionResult<{ id: string; status: string }>> {
-	return runMemberPermissionAction({
+	return await runMemberPermissionAction({
 		path: "createOwnLeaveDraftAction",
 		permission: "human-resources.leave-request.own",
 		safeMessage: "Could not create the leave draft. Retry or contact HR.",
@@ -120,14 +120,18 @@ export async function createOwnLeaveDraftAction(
 				organizationId: session.orgId,
 				actorUserId: session.userId,
 			});
-			if (!employee.ok) return employee;
+			if (!employee.ok) {
+				return employee;
+			}
 
 			const entitlement =
 				await resolveHumanResourcesStore().getLeaveEntitlementById({
 					organizationId: session.orgId,
 					entitlementId: parsed.data.entitlementId,
 				});
-			if (!entitlement.ok) return mapPackageResult(entitlement);
+			if (!entitlement.ok) {
+				return mapPackageResult(entitlement);
+			}
 			if (
 				entitlement.data === null ||
 				entitlement.data.employeeId !== employee.data.employeeId
@@ -156,7 +160,9 @@ export async function createOwnLeaveDraftAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePath(HR_SELF_SERVICE_PATH);
 			return changed(mapped.data);
 		},
@@ -167,7 +173,7 @@ export async function changeOwnLeaveRequestAction(
 	_previous: ActionResult<{ id: string; status: string }> | null,
 	formData: FormData,
 ): Promise<ActionResult<{ id: string; status: string }>> {
-	return runMemberPermissionAction({
+	return await runMemberPermissionAction({
 		path: "changeOwnLeaveRequestAction",
 		permission: "human-resources.leave-request.own",
 		safeMessage: "Could not update the leave request. Retry or contact HR.",
@@ -189,12 +195,16 @@ export async function changeOwnLeaveRequestAction(
 				organizationId: session.orgId,
 				actorUserId: session.userId,
 			});
-			if (!employee.ok) return employee;
+			if (!employee.ok) {
+				return employee;
+			}
 			const request = await resolveHumanResourcesStore().getLeaveRequestById({
 				organizationId: session.orgId,
 				requestId: parsed.data.requestId,
 			});
-			if (!request.ok) return mapPackageResult(request);
+			if (!request.ok) {
+				return mapPackageResult(request);
+			}
 			if (
 				request.data === null ||
 				request.data.employeeId !== employee.data.employeeId
@@ -217,7 +227,9 @@ export async function changeOwnLeaveRequestAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePath(HR_SELF_SERVICE_PATH);
 			return changed(mapped.data);
 		},
@@ -228,7 +240,7 @@ export async function cancelOwnApprovedLeaveAction(
 	_previous: ActionResult<{ id: string; status: string }> | null,
 	formData: FormData,
 ): Promise<ActionResult<{ id: string; status: string }>> {
-	return runMemberPermissionAction({
+	return await runMemberPermissionAction({
 		path: "cancelOwnApprovedLeaveAction",
 		permission: "human-resources.leave-request.approve-team",
 		safeMessage: "Could not cancel the approved leave. Retry or contact HR.",
@@ -249,12 +261,16 @@ export async function cancelOwnApprovedLeaveAction(
 				organizationId: session.orgId,
 				actorUserId: session.userId,
 			});
-			if (!employee.ok) return employee;
+			if (!employee.ok) {
+				return employee;
+			}
 			const request = await resolveHumanResourcesStore().getLeaveRequestById({
 				organizationId: session.orgId,
 				requestId: parsed.data.requestId,
 			});
-			if (!request.ok) return mapPackageResult(request);
+			if (!request.ok) {
+				return mapPackageResult(request);
+			}
 			if (
 				request.data === null ||
 				request.data.employeeId !== employee.data.employeeId ||
@@ -278,7 +294,9 @@ export async function cancelOwnApprovedLeaveAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePath(HR_SELF_SERVICE_PATH);
 			return changed(mapped.data);
 		},
@@ -289,7 +307,7 @@ export async function submitOwnTimesheetAction(
 	_previous: ActionResult<{ id: string; status: string }> | null,
 	formData: FormData,
 ): Promise<ActionResult<{ id: string; status: string }>> {
-	return runMemberPermissionAction({
+	return await runMemberPermissionAction({
 		path: "submitOwnTimesheetAction",
 		permission: "human-resources.time.timesheet.submit",
 		safeMessage: "Could not submit the timesheet. Retry or contact HR.",
@@ -309,12 +327,16 @@ export async function submitOwnTimesheetAction(
 				organizationId: session.orgId,
 				actorUserId: session.userId,
 			});
-			if (!employee.ok) return employee;
+			if (!employee.ok) {
+				return employee;
+			}
 			const timesheet = await resolveHumanResourcesStore().getTimesheet({
 				organizationId: session.orgId,
 				timesheetId: parsed.data.timesheetId,
 			});
-			if (!timesheet.ok) return mapPackageResult(timesheet);
+			if (!timesheet.ok) {
+				return mapPackageResult(timesheet);
+			}
 			if (
 				timesheet.data === null ||
 				timesheet.data.employeeId !== employee.data.employeeId
@@ -333,7 +355,9 @@ export async function submitOwnTimesheetAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePath(HR_SELF_SERVICE_PATH);
 			return changed(mapped.data);
 		},
@@ -344,7 +368,7 @@ export async function acknowledgeOwnPolicyAction(
 	_previous: ActionResult<{ id: string; status: string }> | null,
 	formData: FormData,
 ): Promise<ActionResult<{ id: string; status: string }>> {
-	return runMemberPermissionAction({
+	return await runMemberPermissionAction({
 		path: "acknowledgeOwnPolicyAction",
 		permission: "human-resources.policy-acknowledgement.administer",
 		safeMessage: "Could not record the acknowledgement. Retry or contact HR.",
@@ -364,13 +388,17 @@ export async function acknowledgeOwnPolicyAction(
 				organizationId: session.orgId,
 				actorUserId: session.userId,
 			});
-			if (!employee.ok) return employee;
+			if (!employee.ok) {
+				return employee;
+			}
 			const acknowledgement =
 				await resolveHumanResourcesStore().getPolicyAcknowledgementById({
 					organizationId: session.orgId,
 					acknowledgementId: parsed.data.acknowledgementId,
 				});
-			if (!acknowledgement.ok) return mapPackageResult(acknowledgement);
+			if (!acknowledgement.ok) {
+				return mapPackageResult(acknowledgement);
+			}
 			if (
 				acknowledgement.data === null ||
 				acknowledgement.data.employeeId !== employee.data.employeeId ||
@@ -393,7 +421,9 @@ export async function acknowledgeOwnPolicyAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePath(HR_SELF_SERVICE_PATH);
 			return changed({
 				id: mapped.data.id,

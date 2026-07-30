@@ -13,7 +13,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type CancelDeliveryActionData = { delivery: Delivery };
+export interface CancelDeliveryActionData {
+	delivery: Delivery;
+}
 export type CancelDeliveryActionState =
 	ActionResult<CancelDeliveryActionData> | null;
 
@@ -26,7 +28,7 @@ export async function cancelDeliveryAction(
 	_prev: CancelDeliveryActionState,
 	formData: FormData,
 ): Promise<CancelDeliveryActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "cancelDeliveryAction",
 		permission: "fulfillment.delivery.cancel",
 		safeMessage: "Could not cancel delivery. Try again or contact an admin.",
@@ -53,7 +55,9 @@ export async function cancelDeliveryAction(
 				createFulfillmentCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePath("/admin/fulfillment");
 			revalidatePath("/client/fulfillment");
 			return { ok: true, data: { delivery: mapped.data } };

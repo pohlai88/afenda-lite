@@ -31,7 +31,7 @@ export async function createDraftSupplierInvoiceAction(
 	_prev: CreateDraftSupplierInvoiceActionState,
 	formData: FormData,
 ): Promise<CreateDraftSupplierInvoiceActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "createDraftSupplierInvoiceAction",
 		permission: "payables.manage",
 		safeMessage:
@@ -44,12 +44,13 @@ export async function createDraftSupplierInvoiceAction(
 				supplierName: formData.get("supplierName"),
 				currencyCode: formData.get("currencyCode"),
 			});
-			if (!parsed.success)
+			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
 					"Enter a valid invoice, supplier, and currency.",
 					parsed.details,
 				);
+			}
 			const mapped = mapPackageResult(
 				await createDraftSupplierInvoice(
 					{
@@ -61,7 +62,9 @@ export async function createDraftSupplierInvoiceAction(
 					createPayablesCommandOptions(session.userId),
 				),
 			);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePayablesPaths();
 			return { ok: true, data: { invoice: mapped.data } };
 		},

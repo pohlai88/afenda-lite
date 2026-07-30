@@ -14,11 +14,15 @@ import {
 	StatusBadge,
 } from "@afenda/ui-system";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import type { ReactNode } from "react";
+import type { FormEvent, ReactNode } from "react";
 import { contractDocsParameters } from "./contract-docs";
 import { contractEvidence, StorySection } from "./evidence";
 
 const evidence = contractEvidence("ui.native-select");
+
+function preventSubmit(event: FormEvent<HTMLFormElement>): void {
+	event.preventDefault();
+}
 
 type WorkbenchSectionProps = Readonly<{
 	id: string;
@@ -34,15 +38,15 @@ function WorkbenchSection({
 	children,
 }: WorkbenchSectionProps) {
 	return (
-		<section className="grid gap-4" aria-labelledby={id}>
+		<section aria-labelledby={id} className="grid gap-4">
 			<div className="grid gap-1">
 				<h2
-					className="text-base font-semibold tracking-tight text-foreground"
+					className="font-semibold text-base text-foreground tracking-tight"
 					id={id}
 				>
 					{title}
 				</h2>
-				<p className="max-w-5xl text-sm leading-5 text-foreground-secondary">
+				<p className="max-w-5xl text-foreground-secondary text-sm leading-5">
 					{description}
 				</p>
 			</div>
@@ -79,14 +83,14 @@ export const Overview: Story = {
 			<main className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-5 border-b pb-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
 					<div className="grid gap-2">
-						<p className="text-sm font-medium text-foreground-secondary">
+						<p className="font-medium text-foreground-secondary text-sm">
 							Accounting · journal register
 						</p>
 						<div className="grid gap-1">
-							<h1 className="text-2xl font-semibold tracking-tight">
+							<h1 className="font-semibold text-2xl tracking-tight">
 								Posting filters
 							</h1>
-							<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+							<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 								NativeSelect suits compact option sets. Prefer Select when
 								operators need typeahead or rich option rows.
 							</p>
@@ -94,25 +98,25 @@ export const Overview: Story = {
 					</div>
 					<dl className="grid grid-cols-2 gap-x-8 gap-y-3 rounded-lg border bg-card p-4">
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Subject
 							</dt>
 							<dd className="text-sm">Posting filters</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Area
 							</dt>
 							<dd className="text-sm">Accounting register</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Scope
 							</dt>
 							<dd className="text-sm">Small bounded vocabularies</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								State
 							</dt>
 							<dd className="text-sm">Operational guidance</dd>
@@ -124,7 +128,7 @@ export const Overview: Story = {
 					<CardHeader>
 						<div className="flex flex-wrap items-center gap-2">
 							<Badge variant="outline">Accounting</Badge>
-							<StatusBadge size="sm" status="active" label="Operational" />
+							<StatusBadge label="Operational" size="sm" status="active" />
 						</div>
 						<CardTitle>Register scope</CardTitle>
 						<CardDescription>
@@ -134,14 +138,14 @@ export const Overview: Story = {
 					<CardContent>
 						<form
 							className="grid gap-5 sm:grid-cols-2"
-							onSubmit={(event) => event.preventDefault()}
+							onSubmit={preventSubmit}
 						>
 							<div className="grid gap-2">
 								<Label htmlFor="overview-module">Module</Label>
 								<NativeSelect
-									id="overview-module"
 									aria-label="Module"
 									defaultValue="accounting"
+									id="overview-module"
 								>
 									<NativeSelectOption value="accounting">
 										Accounting
@@ -159,9 +163,9 @@ export const Overview: Story = {
 							<div className="grid gap-2">
 								<Label htmlFor="overview-status">Posting status</Label>
 								<NativeSelect
-									id="overview-status"
-									defaultValue="all"
 									aria-label="Posting status"
+									defaultValue="all"
+									id="overview-status"
 								>
 									<NativeSelectOption value="all">
 										All statuses
@@ -205,9 +209,9 @@ export const Usage: Story = {
 				<div className="grid gap-2">
 					<Label htmlFor="usage-module">Module</Label>
 					<NativeSelect
-						id="usage-module"
 						aria-label="Module"
 						defaultValue="accounting"
+						id="usage-module"
 					>
 						<NativeSelectOption value="accounting">
 							Accounting
@@ -226,9 +230,9 @@ export const Usage: Story = {
 				<div className="grid gap-2">
 					<Label htmlFor="usage-currency">Settlement currency</Label>
 					<NativeSelect
-						id="usage-currency"
-						defaultValue="MYR"
 						aria-label="Settlement currency"
+						defaultValue="MYR"
+						id="usage-currency"
 					>
 						<NativeSelectOption value="MYR">MYR</NativeSelectOption>
 						<NativeSelectOption value="USD">USD</NativeSelectOption>
@@ -256,10 +260,10 @@ export const StatesAndAccessibility: Story = {
 				<div className="grid gap-2">
 					<Label htmlFor="state-default">Posting status</Label>
 					<NativeSelect
+						aria-label="Posting status default"
+						defaultValue="pending"
 						id="state-default"
 						size="default"
-						defaultValue="pending"
-						aria-label="Posting status default"
 					>
 						<NativeSelectOption value="approved">Approved</NativeSelectOption>
 						<NativeSelectOption value="pending">Pending</NativeSelectOption>
@@ -271,10 +275,10 @@ export const StatesAndAccessibility: Story = {
 				<div className="grid gap-2">
 					<Label htmlFor="state-sm">Density</Label>
 					<NativeSelect
+						aria-label="Density"
+						defaultValue="comfortable"
 						id="state-sm"
 						size="sm"
-						defaultValue="comfortable"
-						aria-label="Density"
 					>
 						<NativeSelectOption value="comfortable">
 							Comfortable
@@ -288,16 +292,16 @@ export const StatesAndAccessibility: Story = {
 				<div className="grid gap-2">
 					<Label htmlFor="state-disabled">Module</Label>
 					<NativeSelect
-						id="state-disabled"
-						disabled
-						defaultValue="accounting"
 						aria-label="Disabled module"
+						defaultValue="accounting"
+						disabled
+						id="state-disabled"
 					>
 						<NativeSelectOption value="accounting">
 							Accounting
 						</NativeSelectOption>
 					</NativeSelect>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						Module scope is fixed for this operator role.
 					</p>
 				</div>
@@ -307,19 +311,19 @@ export const StatesAndAccessibility: Story = {
 				<div className="grid gap-2">
 					<Label htmlFor="state-invalid">Posting status</Label>
 					<NativeSelect
-						id="state-invalid"
-						defaultValue=""
 						aria-invalid
 						aria-label="Invalid posting status"
+						defaultValue=""
+						id="state-invalid"
 						required
 					>
-						<NativeSelectOption value="" disabled>
+						<NativeSelectOption disabled value="">
 							Select a status
 						</NativeSelectOption>
 						<NativeSelectOption value="approved">Approved</NativeSelectOption>
 						<NativeSelectOption value="pending">Pending</NativeSelectOption>
 					</NativeSelect>
-					<p className="text-sm text-destructive">
+					<p className="text-destructive text-sm">
 						Posting status is required before Apply.
 					</p>
 				</div>
@@ -340,15 +344,15 @@ export const Composition: Story = {
 	},
 	render: () => (
 		<WorkbenchSection
+			description="Card owns the filter surface. NativeSelect fills compact filter slots. StatusBadge owns register lifecycle — not the selected option."
 			id="posting-register-filters"
 			title="Posting register filters"
-			description="Card owns the filter surface. NativeSelect fills compact filter slots. StatusBadge owns register lifecycle — not the selected option."
 		>
 			<Card className="shadow-none">
 				<CardHeader>
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="outline">Accounting</Badge>
-						<StatusBadge size="sm" status="pending" label="Filters applied" />
+						<StatusBadge label="Filters applied" size="sm" status="pending" />
 					</div>
 					<CardTitle>Posting register filters</CardTitle>
 					<CardDescription>
@@ -360,9 +364,9 @@ export const Composition: Story = {
 						<div className="grid gap-2">
 							<Label htmlFor="comp-module">Module</Label>
 							<NativeSelect
-								id="comp-module"
 								aria-label="Module"
 								defaultValue="accounting"
+								id="comp-module"
 							>
 								<NativeSelectOption value="accounting">
 									Accounting
@@ -380,9 +384,9 @@ export const Composition: Story = {
 						<div className="grid gap-2">
 							<Label htmlFor="comp-status">Posting status</Label>
 							<NativeSelect
-								id="comp-status"
-								defaultValue="pending"
 								aria-label="Posting status"
+								defaultValue="pending"
+								id="comp-status"
 							>
 								<NativeSelectOption value="all">
 									All statuses
@@ -422,9 +426,9 @@ export const DoAndDoNot: Story = {
 				<div className="grid gap-2 rounded-lg border p-3">
 					<Label htmlFor="do-currency">Settlement currency</Label>
 					<NativeSelect
-						id="do-currency"
-						defaultValue="MYR"
 						aria-label="Settlement currency"
+						defaultValue="MYR"
+						id="do-currency"
 					>
 						<NativeSelectOption value="MYR">MYR</NativeSelectOption>
 						<NativeSelectOption value="USD">USD</NativeSelectOption>
@@ -433,7 +437,7 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do not: dump a searchable catalog here">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Thousands of suppliers, chart-of-accounts nodes, or free-text lookup
 					belong in Select / Combobox / SearchField — not NativeSelect.
 				</p>
@@ -443,9 +447,9 @@ export const DoAndDoNot: Story = {
 				<div className="grid gap-2 rounded-lg border p-3">
 					<Label htmlFor="do-status">Posting status</Label>
 					<NativeSelect
-						id="do-status"
-						defaultValue="pending"
 						aria-label="Posting status"
+						defaultValue="pending"
+						id="do-status"
 					>
 						<NativeSelectOption value="pending">Pending</NativeSelectOption>
 						<NativeSelectOption value="approved">Approved</NativeSelectOption>
@@ -454,7 +458,7 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do not: treat listing as authorization">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Showing Payroll in the module list does not grant payroll access.
 					Server authorization still decides whether the selected scope is
 					allowed.

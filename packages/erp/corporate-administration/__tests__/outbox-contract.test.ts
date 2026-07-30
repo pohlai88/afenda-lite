@@ -1,3 +1,6 @@
+// biome-ignore-all lint/performance/noAwaitInLoops: Ordered outbox operations are the behavior under test.
+// biome-ignore-all lint/style/useThrowOnlyError: Failure injection uses caller-supplied sentinel values intentionally.
+// biome-ignore-all lint/suspicious/useAwait: Outbox probes implement asynchronous production ports.
 import { randomUUID } from "node:crypto";
 
 import {

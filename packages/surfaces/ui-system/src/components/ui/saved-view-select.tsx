@@ -1,22 +1,23 @@
 "use client";
 
 import { BookmarkIcon } from "lucide-react";
+import { type ChangeEvent, useCallback } from "react";
 import { cn } from "../../lib/utils";
 import { NativeSelect, NativeSelectOption } from "./native-select";
 
 interface SavedViewOption {
+	disabled?: boolean;
 	id: string;
 	label: string;
-	disabled?: boolean;
 }
 
 interface SavedViewSelectProps {
-	value?: string;
-	views: readonly SavedViewOption[];
-	onValueChange: (id: string) => void;
-	placeholder?: string;
 	className?: string;
 	disabled?: boolean;
+	onValueChange: (id: string) => void;
+	placeholder?: string;
+	value?: string;
+	views: readonly SavedViewOption[];
 }
 
 function SavedViewSelect({
@@ -27,27 +28,32 @@ function SavedViewSelect({
 	className,
 	disabled,
 }: SavedViewSelectProps) {
+	const handleChange = useCallback(
+		(event: ChangeEvent<HTMLSelectElement>) =>
+			onValueChange(event.target.value),
+		[onValueChange],
+	);
 	return (
 		<div className={cn("relative min-w-44", className)}>
 			<BookmarkIcon
-				className="pointer-events-none absolute left-3 top-1/2 z-10 size-4 -translate-y-1/2 text-muted-foreground"
 				aria-hidden="true"
+				className="pointer-events-none absolute top-1/2 left-3 z-10 size-4 -translate-y-1/2 text-muted-foreground"
 			/>
 			<NativeSelect
-				value={value ?? ""}
-				onChange={(event) => onValueChange(event.target.value)}
-				disabled={disabled}
-				className="pl-9"
 				aria-label="Saved view"
+				className="pl-9"
+				disabled={disabled}
+				onChange={handleChange}
+				value={value ?? ""}
 			>
-				<NativeSelectOption value="" disabled>
+				<NativeSelectOption disabled value="">
 					{placeholder}
 				</NativeSelectOption>
 				{views.map((view) => (
 					<NativeSelectOption
+						disabled={view.disabled}
 						key={view.id}
 						value={view.id}
-						disabled={view.disabled}
 					>
 						{view.label}
 					</NativeSelectOption>

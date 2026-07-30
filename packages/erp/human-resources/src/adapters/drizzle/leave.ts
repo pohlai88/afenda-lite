@@ -17,6 +17,7 @@ import {
 	type HumanResourcesEmployeeId,
 	type HumanResourcesEmploymentId,
 	type HumanResourcesLeavePolicyId,
+	type HumanResourcesLeaveRequestSegmentId,
 	parseHumanResourcesEmployeeId,
 	parseHumanResourcesEmploymentId,
 	parseHumanResourcesLeaveAdjustmentId,
@@ -88,6 +89,7 @@ import {
 	isPostgresUniqueViolation,
 	mapPersistenceFailure,
 } from "../../shared/persistence-errors";
+import { runSequential, sequentialReturn } from "../../shared/run-sequential";
 import type {
 	HumanResourcesStore,
 	IdempotentLeaveAdjustmentRecord,
@@ -293,22 +295,22 @@ export type DrizzleLeaveMethods = Pick<
 >;
 
 type LeaveHost = {
-	resolvePrimaryManager(input: {
+	resolvePrimaryManager: (input: {
 		organizationId: string;
 		employeeId: HumanResourcesEmployeeId;
 		asOf: string;
-	}): Promise<Result<ReportingLine | null>>;
-	getEmploymentById(input: {
+	}) => Promise<Result<ReportingLine | null>>;
+	getEmploymentById: (input: {
 		organizationId: string;
 		employmentId: HumanResourcesEmploymentId;
-	}): Promise<Result<import("../../types").Employment | null>>;
-	listDirectReports(input: {
+	}) => Promise<Result<import("../../types").Employment | null>>;
+	listDirectReports: (input: {
 		organizationId: string;
 		managerEmployeeId: HumanResourcesEmployeeId;
 		asOf: string;
 		page: number;
 		pageSize: number;
-	}): Promise<
+	}) => Promise<
 		Result<{
 			reportingLines: ReportingLine[];
 			totalCount: number;
@@ -342,13 +344,21 @@ function mapLeavePolicy(
 	row: typeof hrLeavePolicy.$inferSelect,
 ): Result<LeavePolicy> {
 	const id = parseHumanResourcesLeavePolicyId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const leaveType = leaveTypeSchema.safeParse(row.leaveType);
-	if (!leaveType.success) return invalidState("Invalid leave policy type");
+	if (!leaveType.success) {
+		return invalidState("Invalid leave policy type");
+	}
 	const unit = leaveUnitSchema.safeParse(row.unit);
-	if (!unit.success) return invalidState("Invalid leave policy unit");
+	if (!unit.success) {
+		return invalidState("Invalid leave policy unit");
+	}
 	const status = leavePolicyStatusSchema.safeParse(row.status);
-	if (!status.success) return invalidState("Invalid leave policy status");
+	if (!status.success) {
+		return invalidState("Invalid leave policy status");
+	}
 	const accrualBasis = leavePolicyAccrualBasisSchema.safeParse(
 		row.accrualBasis,
 	);
@@ -373,7 +383,9 @@ function mapLeavePolicy(
 	let supersedesPolicyId: LeavePolicy["supersedesPolicyId"] = null;
 	if (row.supersedesPolicyId !== null) {
 		const parsed = parseHumanResourcesLeavePolicyId(row.supersedesPolicyId);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		supersedesPolicyId = parsed.data;
 	}
 	return ok({
@@ -443,9 +455,13 @@ function mapLeavePolicyEligibility(
 	row: typeof hrLeavePolicyEligibility.$inferSelect,
 ): Result<LeavePolicyEligibility> {
 	const policyId = parseHumanResourcesLeavePolicyId(row.policyId);
-	if (!policyId.ok) return policyId;
+	if (!policyId.ok) {
+		return policyId;
+	}
 	const statuses = parseEmploymentStatuses(row.allowedEmploymentStatuses);
-	if (!statuses.ok) return statuses;
+	if (!statuses.ok) {
+		return statuses;
+	}
 	return ok({
 		id: row.id,
 		organizationId: row.organizationId,
@@ -463,15 +479,25 @@ function mapLeaveEntitlement(
 	row: typeof hrLeaveEntitlement.$inferSelect,
 ): Result<LeaveEntitlement> {
 	const id = parseHumanResourcesLeaveEntitlementId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const employeeId = parseHumanResourcesEmployeeId(row.employeeId);
-	if (!employeeId.ok) return employeeId;
+	if (!employeeId.ok) {
+		return employeeId;
+	}
 	const employmentId = parseHumanResourcesEmploymentId(row.employmentId);
-	if (!employmentId.ok) return employmentId;
+	if (!employmentId.ok) {
+		return employmentId;
+	}
 	const policyId = parseHumanResourcesLeavePolicyId(row.policyId);
-	if (!policyId.ok) return policyId;
+	if (!policyId.ok) {
+		return policyId;
+	}
 	const status = leaveEntitlementStatusSchema.safeParse(row.status);
-	if (!status.success) return invalidState("Invalid leave entitlement status");
+	if (!status.success) {
+		return invalidState("Invalid leave entitlement status");
+	}
 	return ok({
 		id: id.data,
 		organizationId: row.organizationId,
@@ -496,21 +522,31 @@ function mapLeaveAdjustment(
 	row: typeof hrLeaveAdjustment.$inferSelect,
 ): Result<LeaveAdjustment> {
 	const id = parseHumanResourcesLeaveAdjustmentId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const entitlementId = parseHumanResourcesLeaveEntitlementId(
 		row.entitlementId,
 	);
-	if (!entitlementId.ok) return entitlementId;
+	if (!entitlementId.ok) {
+		return entitlementId;
+	}
 	let sourceRequestId: LeaveAdjustment["sourceRequestId"] = null;
 	if (row.sourceRequestId !== null) {
 		const parsed = parseHumanResourcesLeaveRequestId(row.sourceRequestId);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		sourceRequestId = parsed.data;
 	}
 	const kind = leaveAdjustmentKindSchema.safeParse(row.kind);
-	if (!kind.success) return invalidState("Invalid leave adjustment kind");
+	if (!kind.success) {
+		return invalidState("Invalid leave adjustment kind");
+	}
 	const status = leaveAdjustmentStatusSchema.safeParse(row.status);
-	if (!status.success) return invalidState("Invalid leave adjustment status");
+	if (!status.success) {
+		return invalidState("Invalid leave adjustment status");
+	}
 	return ok({
 		id: id.data,
 		organizationId: row.organizationId,
@@ -535,21 +571,35 @@ function mapLeaveRequest(
 	row: typeof hrLeaveRequest.$inferSelect,
 ): Result<LeaveRequest> {
 	const id = parseHumanResourcesLeaveRequestId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const employeeId = parseHumanResourcesEmployeeId(row.employeeId);
-	if (!employeeId.ok) return employeeId;
+	if (!employeeId.ok) {
+		return employeeId;
+	}
 	const employmentId = parseHumanResourcesEmploymentId(row.employmentId);
-	if (!employmentId.ok) return employmentId;
+	if (!employmentId.ok) {
+		return employmentId;
+	}
 	const entitlementId = parseHumanResourcesLeaveEntitlementId(
 		row.entitlementId,
 	);
-	if (!entitlementId.ok) return entitlementId;
+	if (!entitlementId.ok) {
+		return entitlementId;
+	}
 	const policyId = parseHumanResourcesLeavePolicyId(row.policyId);
-	if (!policyId.ok) return policyId;
+	if (!policyId.ok) {
+		return policyId;
+	}
 	const unit = leaveUnitSchema.safeParse(row.unit);
-	if (!unit.success) return invalidState("Invalid leave request unit");
+	if (!unit.success) {
+		return invalidState("Invalid leave request unit");
+	}
 	const status = leaveRequestStatusSchema.safeParse(row.status);
-	if (!status.success) return invalidState("Invalid leave request status");
+	if (!status.success) {
+		return invalidState("Invalid leave request status");
+	}
 	return ok({
 		id: id.data,
 		organizationId: row.organizationId,
@@ -579,12 +629,17 @@ function mapLeaveRequestSegment(
 	row: typeof hrLeaveRequestSegment.$inferSelect,
 ): Result<LeaveRequestSegment> {
 	const id = parseHumanResourcesLeaveRequestSegmentId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const requestId = parseHumanResourcesLeaveRequestId(row.requestId);
-	if (!requestId.ok) return requestId;
+	if (!requestId.ok) {
+		return requestId;
+	}
 	const dayPortion = dayPortionSchema.safeParse(row.dayPortion);
-	if (!dayPortion.success)
+	if (!dayPortion.success) {
 		return invalidState("Invalid leave segment day portion");
+	}
 	return ok({
 		id: id.data,
 		organizationId: row.organizationId,
@@ -614,8 +669,10 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (row === undefined) return ok(null);
+			const [row] = rows;
+			if (row === undefined) {
+				return ok(null);
+			}
 			return mapLeavePolicy(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load leave policy");
@@ -634,8 +691,10 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (row === undefined) return ok(null);
+			const [row] = rows;
+			if (row === undefined) {
+				return ok(null);
+			}
 			return mapLeavePolicyEligibility(row);
 		} catch (error) {
 			return mapPersistenceFailure(
@@ -651,7 +710,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			organizationId: input.organizationId,
 			employmentId: input.employmentId,
 		});
-		if (!employment.ok) return employment;
+		if (!employment.ok) {
+			return employment;
+		}
 		if (employment.data === null) {
 			return ok(null);
 		}
@@ -673,7 +734,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			const policies: LeavePolicy[] = [];
 			for (const row of rows) {
 				const mapped = mapLeavePolicy(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				policies.push(mapped.data);
 			}
 			const policy = resolvePublishedLeavePolicyByCodeLineageAsOf({
@@ -689,7 +752,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				organizationId: input.organizationId,
 				policyId: policy.id,
 			});
-			if (!eligibility.ok) return eligibility;
+			if (!eligibility.ok) {
+				return eligibility;
+			}
 			if (eligibility.data === null) {
 				return ok(null);
 			}
@@ -733,7 +798,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			employeeId: input.employeeId,
 			asOf: input.asOf,
 		});
-		if (!primary.ok) return primary;
+		if (!primary.ok) {
+			return primary;
+		}
 		return ok(primary.data?.managerEmployeeId ?? null);
 	},
 
@@ -750,8 +817,10 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (row === undefined) return ok(null);
+			const [row] = rows;
+			if (row === undefined) {
+				return ok(null);
+			}
 			return mapLeavePolicy(row);
 		} catch (error) {
 			return mapPersistenceFailure(
@@ -768,7 +837,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			correlationId: meta.correlationId,
 			actorUserId: record.createdBy,
 		});
-		if (!validation.ok) return validation;
+		if (!validation.ok) {
+			return validation;
+		}
 
 		// Pre-transaction validation
 		const duplicate = await this.findLeavePolicyByCode({
@@ -776,17 +847,21 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			code: record.code,
 			effectiveFrom: record.effectiveFrom,
 		});
-		if (!duplicate.ok) return duplicate;
+		if (!duplicate.ok) {
+			return duplicate;
+		}
 		if (duplicate.data !== null) {
 			return conflict("Leave policy code already exists for effective date");
 		}
 
 		const policyId = parseHumanResourcesLeavePolicyId(randomUUID());
-		if (!policyId.ok) return policyId;
+		if (!policyId.ok) {
+			return policyId;
+		}
 		const eligibilityId = randomUUID();
 
 		try {
-			const sql = buildCreateLeavePolicySql({
+			const sqlValue15 = buildCreateLeavePolicySql({
 				policyId: policyId.data,
 				organizationId: record.organizationId,
 				code: record.code,
@@ -815,10 +890,10 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			});
 
 			const [rows] = await runLeaveTransaction<[LeavePolicySqlRow[]]>(
-				(sqlClient) => [sqlClient.query(sql)],
+				(sqlClient) => [sqlClient.query(sqlValue15)],
 			);
 
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return notFound("Leave policy creation failed");
 			}
@@ -837,15 +912,23 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			organizationId: input.organizationId,
 			policyId: input.policyId,
 		});
-		if (!existing.ok) return existing;
-		if (existing.data === null) return notFound("Leave policy not found");
+		if (!existing.ok) {
+			return existing;
+		}
+		if (existing.data === null) {
+			return notFound("Leave policy not found");
+		}
 		const versionCheck = assertExpectedVersion(
 			existing.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 		const editable = assertLeavePolicyEditable(existing.data.status);
-		if (!editable.ok) return editable;
+		if (!editable.ok) {
+			return editable;
+		}
 
 		const balanceRules = mergeLeavePolicyBalanceRules(existing.data, input);
 		const nextVersion = input.expectedVersion + 1;
@@ -864,9 +947,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 						input.allowsPartialDay ?? existing.data.allowsPartialDay,
 					...balanceRules,
 					effectiveTo:
-						input.effectiveTo !== undefined
-							? input.effectiveTo
-							: existing.data.effectiveTo,
+						input.effectiveTo === undefined
+							? existing.data.effectiveTo
+							: input.effectiveTo,
 					version: nextVersion,
 					updatedBy: input.actorUserId,
 					updatedAt: new Date(),
@@ -891,19 +974,21 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 					organizationId: input.organizationId,
 					policyId: input.policyId,
 				});
-				if (!eligibility.ok) return eligibility;
+				if (!eligibility.ok) {
+					return eligibility;
+				}
 				if (eligibility.data !== null) {
 					await db
 						.update(hrLeavePolicyEligibility)
 						.set({
 							minTenureDays:
-								input.minTenureDays !== undefined
-									? input.minTenureDays
-									: eligibility.data.minTenureDays,
+								input.minTenureDays === undefined
+									? eligibility.data.minTenureDays
+									: input.minTenureDays,
 							allowedEmploymentStatuses:
-								input.allowedEmploymentStatuses !== undefined
-									? JSON.stringify(input.allowedEmploymentStatuses)
-									: JSON.stringify(eligibility.data.allowedEmploymentStatuses),
+								input.allowedEmploymentStatuses === undefined
+									? JSON.stringify(eligibility.data.allowedEmploymentStatuses)
+									: JSON.stringify(input.allowedEmploymentStatuses),
 							updatedBy: input.actorUserId,
 							updatedAt: new Date(),
 						})
@@ -932,14 +1017,20 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			},
 			ports,
 		);
-		if (!emission.ok) return emission;
+		if (!emission.ok) {
+			return emission;
+		}
 
 		return this.getLeavePolicyById({
 			organizationId: input.organizationId,
 			policyId: input.policyId,
 		}).then((result) => {
-			if (!result.ok) return result;
-			if (result.data === null) return notFound("Leave policy not found");
+			if (!result.ok) {
+				return result;
+			}
+			if (result.data === null) {
+				return notFound("Leave policy not found");
+			}
 			return ok(result.data);
 		});
 	},
@@ -951,10 +1042,12 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			correlationId: meta.correlationId,
 			actorUserId: input.actorUserId,
 		});
-		if (!validation.ok) return validation;
+		if (!validation.ok) {
+			return validation;
+		}
 
 		try {
-			const sql = buildPolicyStatusTransitionSql({
+			const sqlValue14 = buildPolicyStatusTransitionSql({
 				policyId: input.policyId,
 				organizationId: input.organizationId,
 				expectedVersion: input.expectedVersion,
@@ -964,10 +1057,10 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			});
 
 			const [rows] = await runLeaveTransaction<[LeavePolicySqlRow[]]>(
-				(sqlClient) => [sqlClient.query(sql)],
+				(sqlClient) => [sqlClient.query(sqlValue14)],
 			);
 
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return notFound("Leave policy publication failed");
 			}
@@ -985,10 +1078,12 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			correlationId: meta.correlationId,
 			actorUserId: input.actorUserId,
 		});
-		if (!validation.ok) return validation;
+		if (!validation.ok) {
+			return validation;
+		}
 
 		try {
-			const sql = buildPolicyStatusTransitionSql({
+			const sqlValue13 = buildPolicyStatusTransitionSql({
 				policyId: input.policyId,
 				organizationId: input.organizationId,
 				expectedVersion: input.expectedVersion,
@@ -998,10 +1093,10 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			});
 
 			const [rows] = await runLeaveTransaction<[LeavePolicySqlRow[]]>(
-				(sqlClient) => [sqlClient.query(sql)],
+				(sqlClient) => [sqlClient.query(sqlValue13)],
 			);
 
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return notFound("Leave policy archival failed");
 			}
@@ -1025,7 +1120,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				meta,
 			},
 		);
-		if (!superseded.ok) return superseded;
+		if (!superseded.ok) {
+			return superseded;
+		}
 
 		const created = await this.createLeavePolicy(
 			{
@@ -1055,7 +1152,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			ports,
 			meta,
 		);
-		if (!created.ok) return created;
+		if (!created.ok) {
+			return created;
+		}
 
 		try {
 			await db
@@ -1084,8 +1183,12 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			organizationId: input.organizationId,
 			policyId: created.data.id,
 		}).then((result) => {
-			if (!result.ok) return result;
-			if (result.data === null) return notFound("Leave policy not found");
+			if (!result.ok) {
+				return result;
+			}
+			if (result.data === null) {
+				return notFound("Leave policy not found");
+			}
 			return ok(result.data);
 		});
 	},
@@ -1106,7 +1209,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			const policies: LeavePolicy[] = [];
 			for (const row of paged) {
 				const mapped = mapLeavePolicy(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				policies.push(mapped.data);
 			}
 			return ok({
@@ -1132,8 +1237,10 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (row === undefined) return ok(null);
+			const [row] = rows;
+			if (row === undefined) {
+				return ok(null);
+			}
 			return mapLeaveEntitlement(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load leave entitlement");
@@ -1152,10 +1259,14 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (row === undefined) return ok(null);
+			const [row] = rows;
+			if (row === undefined) {
+				return ok(null);
+			}
 			const entitlement = mapLeaveEntitlement(row);
-			if (!entitlement.ok) return entitlement;
+			if (!entitlement.ok) {
+				return entitlement;
+			}
 			return ok({
 				entitlement: entitlement.data,
 				createRequestFingerprint: row.createRequestFingerprint,
@@ -1175,24 +1286,32 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			correlationId: meta.correlationId,
 			actorUserId: record.createdBy,
 		});
-		if (!validation.ok) return validation;
+		if (!validation.ok) {
+			return validation;
+		}
 
 		// Pre-transaction validation
 		const policy = await this.getLeavePolicyById({
 			organizationId: record.organizationId,
 			policyId: record.policyId,
 		});
-		if (!policy.ok) return policy;
-		if (policy.data === null) return notFound("Leave policy not found");
+		if (!policy.ok) {
+			return policy;
+		}
+		if (policy.data === null) {
+			return notFound("Leave policy not found");
+		}
 		if (policy.data.status !== "published") {
 			return invalidState("Leave policy must be published");
 		}
 
 		const entitlementId = parseHumanResourcesLeaveEntitlementId(randomUUID());
-		if (!entitlementId.ok) return entitlementId;
+		if (!entitlementId.ok) {
+			return entitlementId;
+		}
 
 		try {
-			const sql = buildCreateLeaveEntitlementSql({
+			const sqlValue12 = buildCreateLeaveEntitlementSql({
 				entitlementId: entitlementId.data,
 				organizationId: record.organizationId,
 				employeeId: record.employeeId,
@@ -1208,10 +1327,10 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			});
 
 			const [rows] = await runLeaveTransaction<[LeaveEntitlementSqlRow[]]>(
-				(sqlClient) => [sqlClient.query(sql)],
+				(sqlClient) => [sqlClient.query(sqlValue12)],
 			);
 
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return notFound("Leave entitlement creation failed");
 			}
@@ -1240,7 +1359,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 					organizationId: record.organizationId,
 					idempotencyKey: record.createIdempotencyKey,
 				});
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (replay.data !== null) {
 					if (
 						replay.data.createRequestFingerprint ===
@@ -1262,38 +1383,52 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			correlationId: meta.correlationId,
 			actorUserId: input.actorUserId,
 		});
-		if (!validation.ok) return validation;
+		if (!validation.ok) {
+			return validation;
+		}
 
 		// Pre-transaction validation
 		const source = await this.getLeaveEntitlementById({
 			organizationId: input.organizationId,
 			entitlementId: input.entitlementId,
 		});
-		if (!source.ok) return source;
-		if (source.data === null) return notFound("Leave entitlement not found");
+		if (!source.ok) {
+			return source;
+		}
+		if (source.data === null) {
+			return notFound("Leave entitlement not found");
+		}
 
 		const transition = assertLeaveEntitlementStatusTransition(
 			source.data.status,
 			"carried_forward",
 		);
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 
 		const versionCheck = assertExpectedVersion(
 			source.data.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		// Generate IDs for transaction components
 		const newEntitlementId = parseHumanResourcesLeaveEntitlementId(
 			randomUUID(),
 		);
-		if (!newEntitlementId.ok) return newEntitlementId;
+		if (!newEntitlementId.ok) {
+			return newEntitlementId;
+		}
 
 		const sourceCarryOutAdjustmentId = parseHumanResourcesLeaveAdjustmentId(
 			randomUUID(),
 		);
-		if (!sourceCarryOutAdjustmentId.ok) return sourceCarryOutAdjustmentId;
+		if (!sourceCarryOutAdjustmentId.ok) {
+			return sourceCarryOutAdjustmentId;
+		}
 
 		const carryEventType = planLeaveMutationOutboxEventType({
 			commandId: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ADJUST,
@@ -1318,7 +1453,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		}
 
 		try {
-			const sql = buildCarryForwardEntitlementSql({
+			const sqlValue11 = buildCarryForwardEntitlementSql({
 				sourceEntitlementId: input.entitlementId,
 				newEntitlementId: newEntitlementId.data,
 				organizationId: input.organizationId,
@@ -1336,10 +1471,10 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			});
 
 			const [rows] = await runLeaveTransaction<[LeaveEntitlementSqlRow[]]>(
-				(sqlClient) => [sqlClient.query(sql)],
+				(sqlClient) => [sqlClient.query(sqlValue11)],
 			);
 
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return notFound("Carry forward operation failed");
 			}
@@ -1376,13 +1511,17 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			correlationId: meta.correlationId,
 			actorUserId: input.actorUserId,
 		});
-		if (!validation.ok) return validation;
+		if (!validation.ok) {
+			return validation;
+		}
 
 		const existing = await this.getLeaveEntitlementById({
 			organizationId: input.organizationId,
 			entitlementId: input.entitlementId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Leave entitlement not found");
 		}
@@ -1390,7 +1529,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		const expiryAdjustmentId = parseHumanResourcesLeaveAdjustmentId(
 			randomUUID(),
 		);
-		if (!expiryAdjustmentId.ok) return expiryAdjustmentId;
+		if (!expiryAdjustmentId.ok) {
+			return expiryAdjustmentId;
+		}
 
 		const expiryEventType = planLeaveMutationOutboxEventType({
 			commandId: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ADJUST,
@@ -1412,7 +1553,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		});
 
 		try {
-			const sql = buildExpireEntitlementSql({
+			const sqlValue10 = buildExpireEntitlementSql({
 				entitlementId: input.entitlementId,
 				organizationId: input.organizationId,
 				expectedVersion: input.expectedVersion,
@@ -1426,10 +1567,10 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			});
 
 			const [rows] = await runLeaveTransaction<[LeaveEntitlementSqlRow[]]>(
-				(sqlClient) => [sqlClient.query(sql)],
+				(sqlClient) => [sqlClient.query(sqlValue10)],
 			);
 
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return notFound("Leave entitlement expiry failed");
 			}
@@ -1471,10 +1612,14 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (row === undefined) return ok(null);
+			const [row] = rows;
+			if (row === undefined) {
+				return ok(null);
+			}
 			const adjustment = mapLeaveAdjustment(row);
-			if (!adjustment.ok) return adjustment;
+			if (!adjustment.ok) {
+				return adjustment;
+			}
 			return ok({
 				adjustment: adjustment.data,
 				createRequestFingerprint: row.createRequestFingerprint,
@@ -1492,7 +1637,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			organizationId: record.organizationId,
 			idempotencyKey: record.createIdempotencyKey,
 		});
-		if (!replay.ok) return replay;
+		if (!replay.ok) {
+			return replay;
+		}
 		if (replay.data !== null) {
 			if (
 				replay.data.createRequestFingerprint === record.createRequestFingerprint
@@ -1507,21 +1654,30 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			correlationId: meta.correlationId,
 			actorUserId: record.createdBy,
 		});
-		if (!validation.ok) return validation;
+		if (!validation.ok) {
+			return validation;
+		}
 
 		// Pre-transaction validation
 		const entitlement = await this.getLeaveEntitlementById({
 			organizationId: record.organizationId,
 			entitlementId: record.entitlementId,
 		});
-		if (!entitlement.ok) return entitlement;
-		if (entitlement.data === null)
+		if (!entitlement.ok) {
+			return entitlement;
+		}
+		if (entitlement.data === null) {
 			return notFound("Leave entitlement not found");
+		}
 		const active = assertLeaveEntitlementActive(entitlement.data.status);
-		if (!active.ok) return active;
+		if (!active.ok) {
+			return active;
+		}
 
 		const adjustmentId = parseHumanResourcesLeaveAdjustmentId(randomUUID());
-		if (!adjustmentId.ok) return adjustmentId;
+		if (!adjustmentId.ok) {
+			return adjustmentId;
+		}
 
 		// Determine if this adjustment type should emit an outbox event
 		const shouldEmitEvent =
@@ -1555,7 +1711,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		});
 
 		try {
-			const sql = buildCreateLeaveAdjustmentSql({
+			const sqlValue9 = buildCreateLeaveAdjustmentSql({
 				adjustmentId: adjustmentId.data,
 				organizationId: record.organizationId,
 				entitlementId: record.entitlementId,
@@ -1574,10 +1730,10 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			});
 
 			const [rows] = await runLeaveTransaction<[LeaveAdjustmentSqlRow[]]>(
-				(sqlClient) => [sqlClient.query(sql)],
+				(sqlClient) => [sqlClient.query(sqlValue9)],
 			);
 
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return notFound("Leave adjustment creation failed");
 			}
@@ -1602,17 +1758,19 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			});
 		} catch (error) {
 			if (isCreateIdempotencyUniqueViolation(error)) {
-				const replay = await this.findLeaveAdjustmentByIdempotencyKey({
+				const replayValue = await this.findLeaveAdjustmentByIdempotencyKey({
 					organizationId: record.organizationId,
 					idempotencyKey: record.createIdempotencyKey,
 				});
-				if (!replay.ok) return replay;
-				if (replay.data !== null) {
+				if (!replayValue.ok) {
+					return replayValue;
+				}
+				if (replayValue.data !== null) {
 					if (
-						replay.data.createRequestFingerprint ===
+						replayValue.data.createRequestFingerprint ===
 						record.createRequestFingerprint
 					) {
-						return ok(replay.data.adjustment);
+						return ok(replayValue.data.adjustment);
 					}
 					return conflict("Idempotency key already used with different data");
 				}
@@ -1643,7 +1801,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			const entitlements: LeaveEntitlement[] = [];
 			for (const row of paged) {
 				const mapped = mapLeaveEntitlement(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				entitlements.push(mapped.data);
 			}
 			return ok({
@@ -1672,7 +1832,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			const adjustments: LeaveAdjustment[] = [];
 			for (const row of rows) {
 				const mapped = mapLeaveAdjustment(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				adjustments.push(mapped.data);
 			}
 			return ok(adjustments);
@@ -1683,20 +1845,28 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 
 	async getLeaveBalance(input) {
 		const entitlement = await this.getLeaveEntitlementById(input);
-		if (!entitlement.ok) return entitlement;
-		if (entitlement.data === null) return ok(null);
+		if (!entitlement.ok) {
+			return entitlement;
+		}
+		if (entitlement.data === null) {
+			return ok(null);
+		}
 
 		const policy = await this.getLeavePolicyById({
 			organizationId: input.organizationId,
 			policyId: entitlement.data.policyId,
 		});
-		if (!policy.ok) return policy;
+		if (!policy.ok) {
+			return policy;
+		}
 
 		const adjustments = await this.listPostedLeaveAdjustments({
 			organizationId: input.organizationId,
 			entitlementId: input.entitlementId,
 		});
-		if (!adjustments.ok) return adjustments;
+		if (!adjustments.ok) {
+			return adjustments;
+		}
 
 		const balance: LeaveBalance = {
 			entitlementId: entitlement.data.id,
@@ -1724,8 +1894,10 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (row === undefined) return ok(null);
+			const [row] = rows;
+			if (row === undefined) {
+				return ok(null);
+			}
 			return mapLeaveRequest(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load leave request");
@@ -1744,10 +1916,14 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (row === undefined) return ok(null);
+			const [row] = rows;
+			if (row === undefined) {
+				return ok(null);
+			}
 			const request = mapLeaveRequest(row);
-			if (!request.ok) return request;
+			if (!request.ok) {
+				return request;
+			}
 			return ok({
 				request: request.data,
 				createRequestFingerprint: row.createRequestFingerprint,
@@ -1775,7 +1951,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			const segments: LeaveRequestSegment[] = [];
 			for (const row of rows) {
 				const mapped = mapLeaveRequestSegment(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				segments.push(mapped.data);
 			}
 			return ok(segments);
@@ -1806,7 +1984,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 					(input.includeDraft !== false || row.status !== "draft") &&
 					row.id !== input.excludeRequestId,
 			);
-			if (requests.length === 0) return ok([]);
+			if (requests.length === 0) {
+				return ok([]);
+			}
 			const requestIds = requests.map((row) => row.id);
 			const rows = await db
 				.select()
@@ -1820,7 +2000,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			const segments: LeaveRequestSegment[] = [];
 			for (const row of rows) {
 				const mapped = mapLeaveRequestSegment(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				segments.push(mapped.data);
 			}
 			return ok(segments);
@@ -1839,16 +2021,27 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			correlationId: meta.correlationId,
 			actorUserId: record.createdBy,
 		});
-		if (!validation.ok) return validation;
+		if (!validation.ok) {
+			return validation;
+		}
 
 		const requestId = parseHumanResourcesLeaveRequestId(randomUUID());
-		if (!requestId.ok) return requestId;
+		if (!requestId.ok) {
+			return requestId;
+		}
 
 		// Generate segment IDs
-		const segments = [];
+		const segments: Array<{
+			id: HumanResourcesLeaveRequestSegmentId;
+			segmentDate: string;
+			quantity: string;
+			dayPortion: "morning" | "afternoon" | "full";
+		}> = [];
 		for (const segment of record.segments) {
 			const segmentId = parseHumanResourcesLeaveRequestSegmentId(randomUUID());
-			if (!segmentId.ok) return segmentId;
+			if (!segmentId.ok) {
+				return segmentId;
+			}
 			segments.push({
 				id: segmentId.data,
 				segmentDate: segment.segmentDate,
@@ -1858,7 +2051,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		}
 
 		try {
-			const sql = buildCreateLeaveRequestSql({
+			const sqlValue8 = buildCreateLeaveRequestSql({
 				requestId: requestId.data,
 				organizationId: record.organizationId,
 				employeeId: record.employeeId,
@@ -1879,10 +2072,10 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			});
 
 			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>(
-				(sqlClient) => [sqlClient.query(sql)],
+				(sqlClient) => [sqlClient.query(sqlValue8)],
 			);
 
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return notFound("Leave request creation failed");
 			}
@@ -1919,8 +2112,12 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 							organizationId: record.organizationId,
 							idempotencyKey: record.createIdempotencyKey,
 						});
-						if (!replay.ok) return replay;
-						if (replay.data === null) return ok(null);
+						if (!replay.ok) {
+							return replay;
+						}
+						if (replay.data === null) {
+							return ok(null);
+						}
 						return ok({
 							fingerprint: replay.data.createRequestFingerprint,
 							value: replay.data.request,
@@ -1939,30 +2136,47 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			correlationId: meta.correlationId,
 			actorUserId: record.actorUserId,
 		});
-		if (!validation.ok) return validation;
+		if (!validation.ok) {
+			return validation;
+		}
 
 		// Pre-transaction validation
 		const existing = await this.getLeaveRequestById({
 			organizationId: record.organizationId,
 			requestId: record.requestId,
 		});
-		if (!existing.ok) return existing;
-		if (existing.data === null) return notFound("Leave request not found");
+		if (!existing.ok) {
+			return existing;
+		}
+		if (existing.data === null) {
+			return notFound("Leave request not found");
+		}
 
 		const versionCheck = assertExpectedVersion(
 			existing.data.version,
 			record.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const amendable = assertLeaveRequestAmendable(existing.data.status);
-		if (!amendable.ok) return amendable;
+		if (!amendable.ok) {
+			return amendable;
+		}
 
 		// Generate segment IDs
-		const segments = [];
+		const segments: Array<{
+			id: HumanResourcesLeaveRequestSegmentId;
+			segmentDate: string;
+			quantity: string;
+			dayPortion: "morning" | "afternoon" | "full";
+		}> = [];
 		for (const segment of record.segments) {
 			const segmentId = parseHumanResourcesLeaveRequestSegmentId(randomUUID());
-			if (!segmentId.ok) return segmentId;
+			if (!segmentId.ok) {
+				return segmentId;
+			}
 			segments.push({
 				id: segmentId.data,
 				segmentDate: segment.segmentDate,
@@ -1972,7 +2186,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		}
 
 		try {
-			const sql = buildAmendLeaveRequestSql({
+			const sqlValue7 = buildAmendLeaveRequestSql({
 				requestId: record.requestId,
 				organizationId: record.organizationId,
 				expectedVersion: record.expectedVersion,
@@ -1987,10 +2201,10 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			});
 
 			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>(
-				(sqlClient) => [sqlClient.query(sql)],
+				(sqlClient) => [sqlClient.query(sqlValue7)],
 			);
 
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return notFound("Leave request amendment failed");
 			}
@@ -2030,7 +2244,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			correlationId: meta.correlationId,
 			actorUserId: input.actorUserId,
 		});
-		if (!validation.ok) return validation;
+		if (!validation.ok) {
+			return validation;
+		}
 
 		const submitEventType = planLeaveMutationOutboxEventType({
 			commandId: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_SUBMIT,
@@ -2055,7 +2271,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				requestId: input.requestId,
 				organizationId: input.organizationId,
 			});
-			const sql = buildSubmitLeaveRequestSql({
+			const sqlValue6 = buildSubmitLeaveRequestSql({
 				requestId: input.requestId,
 				organizationId: input.organizationId,
 				expectedVersion: input.expectedVersion,
@@ -2066,7 +2282,10 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 
 			const [, rows] = await runLeaveTransaction<
 				[Record<string, unknown>[], LeaveRequestOverlapSqlRow[]]
-			>((sqlClient) => [sqlClient.query(bookingLockSql), sqlClient.query(sql)]);
+			>((sqlClient) => [
+				sqlClient.query(bookingLockSql),
+				sqlClient.query(sqlValue6),
+			]);
 
 			return mapLeaveRequestOverlapRow(
 				rows[0],
@@ -2084,24 +2303,34 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			correlationId: meta.correlationId,
 			actorUserId: input.actorUserId,
 		});
-		if (!validation.ok) return validation;
+		if (!validation.ok) {
+			return validation;
+		}
 
 		// Pre-transaction validation
 		const request = await this.getLeaveRequestById({
 			organizationId: input.organizationId,
 			requestId: input.requestId,
 		});
-		if (!request.ok) return request;
-		if (request.data === null) return notFound("Leave request not found");
+		if (!request.ok) {
+			return request;
+		}
+		if (request.data === null) {
+			return notFound("Leave request not found");
+		}
 
 		// Generate IDs for transaction components
 		const consumptionAdjustmentId = parseHumanResourcesLeaveAdjustmentId(
 			randomUUID(),
 		);
-		if (!consumptionAdjustmentId.ok) return consumptionAdjustmentId;
+		if (!consumptionAdjustmentId.ok) {
+			return consumptionAdjustmentId;
+		}
 
 		const decisionId = parseHumanResourcesLeaveApprovalDecisionId(randomUUID());
-		if (!decisionId.ok) return decisionId;
+		if (!decisionId.ok) {
+			return decisionId;
+		}
 
 		const approveEventType = planLeaveMutationOutboxEventType({
 			commandId: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_APPROVE,
@@ -2129,7 +2358,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				requestId: input.requestId,
 				organizationId: input.organizationId,
 			});
-			const sql = buildApproveLeaveRequestSql({
+			const sqlValue5 = buildApproveLeaveRequestSql({
 				requestId: input.requestId,
 				organizationId: input.organizationId,
 				expectedVersion: input.expectedVersion,
@@ -2144,7 +2373,10 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 
 			const [, rows] = await runLeaveTransaction<
 				[Record<string, unknown>[], LeaveRequestOverlapSqlRow[]]
-			>((sqlClient) => [sqlClient.query(bookingLockSql), sqlClient.query(sql)]);
+			>((sqlClient) => [
+				sqlClient.query(bookingLockSql),
+				sqlClient.query(sqlValue5),
+			]);
 
 			return mapLeaveRequestOverlapRow(
 				rows[0],
@@ -2162,11 +2394,15 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			correlationId: meta.correlationId,
 			actorUserId: input.actorUserId,
 		});
-		if (!validation.ok) return validation;
+		if (!validation.ok) {
+			return validation;
+		}
 
 		// Generate decision ID
 		const decisionId = parseHumanResourcesLeaveApprovalDecisionId(randomUUID());
-		if (!decisionId.ok) return decisionId;
+		if (!decisionId.ok) {
+			return decisionId;
+		}
 
 		const rejectEventType = planLeaveMutationOutboxEventType({
 			commandId: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_REJECT,
@@ -2187,7 +2423,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		});
 
 		try {
-			const sql = buildStatusTransitionSql({
+			const sqlValue4 = buildStatusTransitionSql({
 				requestId: input.requestId,
 				organizationId: input.organizationId,
 				expectedVersion: input.expectedVersion,
@@ -2201,10 +2437,10 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			});
 
 			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>(
-				(sqlClient) => [sqlClient.query(sql)],
+				(sqlClient) => [sqlClient.query(sqlValue4)],
 			);
 
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return notFound("Leave request rejection failed");
 			}
@@ -2244,14 +2480,18 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			correlationId: meta.correlationId,
 			actorUserId: input.actorUserId,
 		});
-		if (!validation.ok) return validation;
+		if (!validation.ok) {
+			return validation;
+		}
 
 		// Generate decision ID
 		const decisionId = parseHumanResourcesLeaveApprovalDecisionId(randomUUID());
-		if (!decisionId.ok) return decisionId;
+		if (!decisionId.ok) {
+			return decisionId;
+		}
 
 		try {
-			const sql = buildStatusTransitionSql({
+			const sqlValue3 = buildStatusTransitionSql({
 				requestId: input.requestId,
 				organizationId: input.organizationId,
 				expectedVersion: input.expectedVersion,
@@ -2265,10 +2505,10 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			});
 
 			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>(
-				(sqlClient) => [sqlClient.query(sql)],
+				(sqlClient) => [sqlClient.query(sqlValue3)],
 			);
 
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return notFound("Leave request return failed");
 			}
@@ -2308,10 +2548,12 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			correlationId: meta.correlationId,
 			actorUserId: input.actorUserId,
 		});
-		if (!validation.ok) return validation;
+		if (!validation.ok) {
+			return validation;
+		}
 
 		try {
-			const sql = buildStatusTransitionSql({
+			const sqlValue2 = buildStatusTransitionSql({
 				requestId: input.requestId,
 				organizationId: input.organizationId,
 				expectedVersion: input.expectedVersion,
@@ -2322,10 +2564,10 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			});
 
 			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>(
-				(sqlClient) => [sqlClient.query(sql)],
+				(sqlClient) => [sqlClient.query(sqlValue2)],
 			);
 
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return notFound("Leave request withdrawal failed");
 			}
@@ -2365,24 +2607,34 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			correlationId: meta.correlationId,
 			actorUserId: input.actorUserId,
 		});
-		if (!validation.ok) return validation;
+		if (!validation.ok) {
+			return validation;
+		}
 
 		// Pre-transaction validation
 		const request = await this.getLeaveRequestById({
 			organizationId: input.organizationId,
 			requestId: input.requestId,
 		});
-		if (!request.ok) return request;
-		if (request.data === null) return notFound("Leave request not found");
+		if (!request.ok) {
+			return request;
+		}
+		if (request.data === null) {
+			return notFound("Leave request not found");
+		}
 
 		// Generate IDs for transaction components
 		const reversalAdjustmentId = parseHumanResourcesLeaveAdjustmentId(
 			randomUUID(),
 		);
-		if (!reversalAdjustmentId.ok) return reversalAdjustmentId;
+		if (!reversalAdjustmentId.ok) {
+			return reversalAdjustmentId;
+		}
 
 		const decisionId = parseHumanResourcesLeaveApprovalDecisionId(randomUUID());
-		if (!decisionId.ok) return decisionId;
+		if (!decisionId.ok) {
+			return decisionId;
+		}
 
 		const cancelEventType = planLeaveMutationOutboxEventType({
 			commandId: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_CANCEL_APPROVED,
@@ -2406,7 +2658,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		}
 
 		try {
-			const sql = buildCancelApprovedLeaveRequestSql({
+			const sqlValue = buildCancelApprovedLeaveRequestSql({
 				requestId: input.requestId,
 				organizationId: input.organizationId,
 				expectedVersion: input.expectedVersion,
@@ -2420,10 +2672,10 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			});
 
 			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>(
-				(sqlClient) => [sqlClient.query(sql)],
+				(sqlClient) => [sqlClient.query(sqlValue)],
 			);
 
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return notFound(
 					"Leave request cancellation failed - request not in approved status or stale version",
@@ -2480,7 +2732,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			const requests: LeaveRequest[] = [];
 			for (const row of paged) {
 				const mapped = mapLeaveRequest(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				requests.push(mapped.data);
 			}
 			return ok({
@@ -2503,7 +2757,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			page: 1,
 			pageSize: 10_000,
 		});
-		if (!directReports.ok) return directReports;
+		if (!directReports.ok) {
+			return directReports;
+		}
 
 		const reportIds = new Set(
 			directReports.data.reportingLines.map((line) => line.employeeId),
@@ -2529,7 +2785,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			const requests: LeaveRequest[] = [];
 			for (const row of paged) {
 				const mapped = mapLeaveRequest(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				requests.push(mapped.data);
 			}
 			return ok({
@@ -2555,7 +2813,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			page: 1,
 			pageSize: 10_000,
 		});
-		if (!directReports.ok) return directReports;
+		if (!directReports.ok) {
+			return directReports;
+		}
 
 		const reportIds = new Set(
 			directReports.data.reportingLines.map((line) => line.employeeId),
@@ -2578,9 +2838,11 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			const start = (input.page - 1) * input.pageSize;
 			const paged = rows.slice(start, start + input.pageSize);
 			const entries: TeamCalendarLeavePage["entries"] = [];
-			for (const row of paged) {
+			const sequentialOutcome1 = await runSequential(paged, async (row) => {
 				const request = mapLeaveRequest(row);
-				if (!request.ok) return request;
+				if (!request.ok) {
+					return sequentialReturn(request);
+				}
 				const segments = await this.listLeaveRequestSegments({
 					organizationId: input.organizationId,
 					requestId: request.data.id,
@@ -2589,6 +2851,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 					request: request.data,
 					segments: segments.ok ? segments.data : [],
 				});
+			});
+			if (sequentialOutcome1.kind === "return") {
+				return sequentialOutcome1.value;
 			}
 			return ok({
 				entries,
@@ -2607,7 +2872,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				organizationId: input.organizationId,
 				requestId: input.requestId,
 			});
-			if (!request.ok) return request;
+			if (!request.ok) {
+				return request;
+			}
 			if (
 				request.data === null ||
 				request.data.status !== "approved" ||
@@ -2620,7 +2887,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				organizationId: input.organizationId,
 				policyId: request.data.policyId,
 			});
-			if (!policy.ok) return policy;
+			if (!policy.ok) {
+				return policy;
+			}
 			if (policy.data === null) {
 				return ok(null);
 			}
@@ -2629,7 +2898,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				organizationId: input.organizationId,
 				requestId: request.data.id,
 			});
-			if (!segments.ok) return segments;
+			if (!segments.ok) {
+				return segments;
+			}
 
 			const handoff: ApprovedLeaveHandoff = {
 				organizationId: input.organizationId,

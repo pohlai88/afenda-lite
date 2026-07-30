@@ -30,7 +30,9 @@ import {
 import { createPayablesCommandOptions } from "@/lib/erp/payables-command-options";
 import { sessionHasPermission } from "@/modules/identity/domain/session-permission";
 
-type PayablesShellProps = { surface: "admin" | "client" };
+interface PayablesShellProps {
+	surface: "admin" | "client";
+}
 
 const formSections = [
 	["Create draft invoice", CreateDraftSupplierInvoiceForm],
@@ -66,24 +68,24 @@ export async function PayablesShell({ surface }: PayablesShellProps) {
 	return (
 		<section className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-10">
 			<div className="space-y-2">
-				<p className="text-sm text-muted-foreground">
+				<p className="text-muted-foreground text-sm">
 					{surface === "admin" ? "Operator" : "Client"} · Payables
 				</p>
-				<h1 className="text-2xl font-semibold tracking-tight">
+				<h1 className="font-semibold text-2xl tracking-tight">
 					Supplier payables
 				</h1>
-				<p className="max-w-2xl text-sm text-muted-foreground">
+				<p className="max-w-2xl text-muted-foreground text-sm">
 					Create, match, and post supplier invoices, manage credit notes, apply
 					posted payments, and track open balances.
 				</p>
 			</div>
 
-			{!invoicesResult.ok ? (
+			{invoicesResult.ok ? null : (
 				<Alert>
 					<AlertTitle>Could not load supplier invoices</AlertTitle>
 					<AlertDescription>{invoicesResult.message}</AlertDescription>
 				</Alert>
-			) : null}
+			)}
 
 			<Card>
 				<CardHeader>
@@ -98,7 +100,7 @@ export async function PayablesShell({ surface }: PayablesShellProps) {
 					) : (
 						<ul className="space-y-2">
 							{invoices.map((invoice) => (
-								<li key={invoice.id} className="rounded-md border px-3 py-2">
+								<li className="rounded-md border px-3 py-2" key={invoice.id}>
 									<div className="font-medium">
 										{invoice.code} · {invoice.documentType} · {invoice.status} ·
 										v{invoice.version}

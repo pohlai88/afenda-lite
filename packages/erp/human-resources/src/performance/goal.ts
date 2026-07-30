@@ -47,7 +47,16 @@ import type {
 export const HUMAN_RESOURCES_AGGREGATE_GOAL = "goal" as const;
 export type HumanResourcesGoalAggregate = typeof HUMAN_RESOURCES_AGGREGATE_GOAL;
 
-export async function createPerformanceGoal(
+function serializeGoalWeight(
+	weight: string | number | null | undefined,
+): string | null | undefined {
+	if (weight === undefined) {
+		return;
+	}
+	return weight === null ? null : String(weight);
+}
+
+export function createPerformanceGoal(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceGoal>> {
@@ -55,7 +64,7 @@ export async function createPerformanceGoal(
 		schema: createPerformanceGoalInputSchema,
 		invalidMessage: "Invalid performance goal create input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_CREATE,
-		authorize: async (opts, data, deps) => {
+		authorize: (opts, data, deps) => {
 			if (data.goalKind === "manager") {
 				return requirePerformanceGoalManagerScope(opts, deps, {
 					organizationId: data.organizationId,
@@ -131,7 +140,7 @@ export async function createPerformanceGoal(
 	});
 }
 
-export async function updatePerformanceGoal(
+export function updatePerformanceGoal(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceGoal>> {
@@ -152,12 +161,7 @@ export async function updatePerformanceGoal(
 					goalId: data.goalId,
 					title: data.title,
 					description: data.description,
-					weight:
-						data.weight !== undefined
-							? data.weight === null
-								? null
-								: String(data.weight)
-							: undefined,
+					weight: serializeGoalWeight(data.weight),
 					periodStart: data.periodStart,
 					periodEnd: data.periodEnd,
 					expectedVersion: data.expectedVersion,
@@ -172,7 +176,7 @@ export async function updatePerformanceGoal(
 	});
 }
 
-export async function submitPerformanceGoal(
+export function submitPerformanceGoal(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceGoal>> {
@@ -203,7 +207,7 @@ export async function submitPerformanceGoal(
 	});
 }
 
-export async function approvePerformanceGoal(
+export function approvePerformanceGoal(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceGoal>> {
@@ -228,7 +232,7 @@ export async function approvePerformanceGoal(
 	});
 }
 
-export async function rejectPerformanceGoal(
+export function rejectPerformanceGoal(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceGoal>> {
@@ -253,7 +257,7 @@ export async function rejectPerformanceGoal(
 	});
 }
 
-export async function recordGoalProgress(
+export function recordGoalProgress(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceGoalProgress>> {
@@ -289,7 +293,7 @@ export async function recordGoalProgress(
 	});
 }
 
-export async function activatePerformanceGoal(
+export function activatePerformanceGoal(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceGoal>> {
@@ -314,7 +318,7 @@ export async function activatePerformanceGoal(
 	});
 }
 
-export async function alignPerformanceGoal(
+export function alignPerformanceGoal(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceGoal>> {
@@ -340,7 +344,7 @@ export async function alignPerformanceGoal(
 	});
 }
 
-export async function closePerformanceGoal(
+export function closePerformanceGoal(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceGoal>> {
@@ -367,7 +371,7 @@ export async function closePerformanceGoal(
 	});
 }
 
-export async function cancelPerformanceGoal(
+export function cancelPerformanceGoal(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceGoal>> {
@@ -380,7 +384,9 @@ export async function cancelPerformanceGoal(
 				organizationId: data.organizationId,
 				goalId: data.goalId,
 			});
-			if (!goalResult.ok) return goalResult;
+			if (!goalResult.ok) {
+				return goalResult;
+			}
 			if (goalResult.data === null) {
 				return fail("NOT_FOUND", "Performance goal not found");
 			}
@@ -414,7 +420,7 @@ export async function cancelPerformanceGoal(
 	});
 }
 
-export async function getPerformanceGoalById(
+export function getPerformanceGoalById(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceGoal | null>> {
@@ -429,7 +435,7 @@ export async function getPerformanceGoalById(
 	});
 }
 
-export async function listEmployeeGoals(
+export function listEmployeeGoals(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceGoalListPage>> {
@@ -447,7 +453,7 @@ export async function listEmployeeGoals(
 	});
 }
 
-export async function listGoalProgress(
+export function listGoalProgress(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceGoalProgressListPage>> {

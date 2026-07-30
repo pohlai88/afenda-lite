@@ -9,7 +9,7 @@ export function createInventoryAuthorizationPort(): InventoryAuthorizationPort {
 	return {
 		async can(input) {
 			const permission: InventoryPermission = input.permission;
-			return hasPermission({
+			return await hasPermission({
 				orgId: input.organizationId,
 				userId: input.actorUserId,
 				code: permission,

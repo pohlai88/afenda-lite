@@ -13,7 +13,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type CancelGoodsReceiptActionData = { receipt: GoodsReceipt };
+export interface CancelGoodsReceiptActionData {
+	receipt: GoodsReceipt;
+}
 export type CancelGoodsReceiptActionState =
 	ActionResult<CancelGoodsReceiptActionData> | null;
 
@@ -26,7 +28,7 @@ export async function cancelGoodsReceiptAction(
 	_prev: CancelGoodsReceiptActionState,
 	formData: FormData,
 ): Promise<CancelGoodsReceiptActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "cancelGoodsReceiptAction",
 		permission: "receiving.receipt.cancel",
 		safeMessage:
@@ -54,7 +56,9 @@ export async function cancelGoodsReceiptAction(
 				createReceivingCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidateReceivingPaths();
 			return { ok: true, data: { receipt: mapped.data } };
 		},

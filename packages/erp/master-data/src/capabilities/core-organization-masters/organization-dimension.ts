@@ -77,23 +77,23 @@ export const ORGANIZATION_DIMENSION_KINDS = [
 export type OrganizationDimensionKind =
 	(typeof ORGANIZATION_DIMENSION_KINDS)[number];
 
-export type OrganizationDimension = {
-	id: string;
-	organizationId: string;
-	kind: OrganizationDimensionKind;
-	key: string;
-	name: string;
-	parentId: string | null;
-	status: "active" | "inactive" | "archived";
+export interface OrganizationDimension {
+	createdAt: Date;
+	createdBy: string;
 	effectiveFrom: string;
 	effectiveTo: string | null;
+	id: string;
+	key: string;
+	kind: OrganizationDimensionKind;
+	name: string;
+	organizationId: string;
+	parentId: string | null;
+	status: "active" | "inactive" | "archived";
 	supersedesId: string | null;
-	version: number;
-	createdBy: string;
-	createdAt: Date;
-	updatedBy: string;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
 export type OrganizationDimensionReference = Pick<
 	OrganizationDimension,
@@ -141,9 +141,14 @@ export const createOrganizationDimensionInputSchema = orgActorContextSchema
 			});
 		}
 
-		const hasSupersedesId = value.supersedesId != null;
-		const hasExpectedVersion = value.supersedesExpectedVersion != null;
-		if (hasSupersedesId === hasExpectedVersion) return;
+		const hasSupersedesId =
+			value.supersedesId !== undefined && value.supersedesId !== null;
+		const hasExpectedVersion =
+			value.supersedesExpectedVersion !== undefined &&
+			value.supersedesExpectedVersion !== null;
+		if (hasSupersedesId === hasExpectedVersion) {
+			return;
+		}
 
 		context.addIssue({
 			code: "custom",
@@ -232,24 +237,24 @@ export const listOrganizationDimensionsInputSchema = orgQueryActorSchema
 
 // 4. SQL row mapping
 
-type OrganizationDimensionSqlRow = {
-	id: string;
-	organization_id: string;
-	kind: OrganizationDimensionKind;
-	key: string;
-	normalized_key: string;
-	name: string;
+interface OrganizationDimensionSqlRow {
+	created_at: Date;
+	created_by: string;
 	effective_from: string;
 	effective_to: string | null;
-	supersedes_id: string | null;
+	id: string;
+	key: string;
+	kind: OrganizationDimensionKind;
+	name: string;
+	normalized_key: string;
+	organization_id: string;
 	parent_id?: string | null;
 	status?: "active" | "inactive" | "archived";
-	version: number;
-	created_by: string;
-	created_at: Date;
-	updated_by: string | null;
+	supersedes_id: string | null;
 	updated_at: Date | null;
-};
+	updated_by: string | null;
+	version: number;
+}
 
 function mapDimension(
 	row:
@@ -501,7 +506,7 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 							AND EXISTS (SELECT 1 FROM emitted)
 					`,
 				]);
-				const row = rows[0];
+				const [row] = rows;
 				if (!row) {
 					if (record.supersedesId) {
 						return fail(
@@ -645,7 +650,7 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 							AND EXISTS (SELECT 1 FROM emitted)
 					`,
 				]);
-				const row = rows[0];
+				const [row] = rows;
 				if (row === undefined) {
 					return resolveTenantScopedCasMiss({
 						entityType: "organization_dimension",
@@ -740,7 +745,7 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 							AND EXISTS (SELECT 1 FROM emitted)
 					`,
 				]);
-				const row = rows[0];
+				const [row] = rows;
 				if (row === undefined) {
 					return resolveTenantScopedCasMiss({
 						entityType: "organization_dimension",
@@ -804,7 +809,7 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 						kind: input.kind,
 					});
 				}
-				const row = rows[0];
+				const [row] = rows;
 				return ok(row === undefined ? null : mapDimension(row));
 			} catch (error) {
 				return failFromPersistence(
@@ -942,7 +947,9 @@ function resolveUniqueEffectiveMatch(
 		key?: string | undefined;
 	},
 ): Result<OrganizationDimensionReference | null> {
-	if (matches.length === 0) return ok(null);
+	if (matches.length === 0) {
+		return ok(null);
+	}
 
 	if (matches.length > 1) {
 		return fail("CONFLICT", "Organization dimension is ambiguous", {
@@ -954,7 +961,7 @@ function resolveUniqueEffectiveMatch(
 		});
 	}
 
-	const match = matches[0];
+	const [match] = matches;
 	if (!match) {
 		return fail(
 			"INTERNAL_ERROR",
@@ -976,7 +983,9 @@ async function resolveRequiredEffectiveDimension(
 	},
 ): Promise<Result<OrganizationDimensionReference>> {
 	const normalized = normalizeMasterCode(input.key);
-	if (!normalized.ok) return normalized;
+	if (!normalized.ok) {
+		return normalized;
+	}
 
 	const matches = await store.findEffective({
 		organizationId: input.organizationId,
@@ -984,10 +993,14 @@ async function resolveRequiredEffectiveDimension(
 		normalizedKey: normalized.data.normalizedCode,
 		asOf: input.asOf,
 	});
-	if (!matches.ok) return matches;
+	if (!matches.ok) {
+		return matches;
+	}
 
 	const unique = resolveUniqueEffectiveMatch(matches.data, input);
-	if (!unique.ok) return unique;
+	if (!unique.ok) {
+		return unique;
+	}
 	if (!unique.data) {
 		return fail("NOT_FOUND", "Organization dimension is not effective", {
 			reason: "MASTER_DIMENSION_NOT_EFFECTIVE",
@@ -1017,7 +1030,9 @@ async function resolveSingleEffectiveDimension(
 			kind: input.kind,
 			asOf: input.asOf,
 		});
-		if (!matches.ok) return matches;
+		if (!matches.ok) {
+			return matches;
+		}
 		return resolveUniqueEffectiveMatch(matches.data, {
 			kind: input.kind,
 			id: input.id,
@@ -1026,14 +1041,18 @@ async function resolveSingleEffectiveDimension(
 	}
 
 	const normalized = normalizeMasterCode(input.key ?? "");
-	if (!normalized.ok) return normalized;
+	if (!normalized.ok) {
+		return normalized;
+	}
 	const matches = await store.findEffective({
 		organizationId: input.organizationId,
 		kind: input.kind,
 		normalizedKey: normalized.data.normalizedCode,
 		asOf: input.asOf,
 	});
-	if (!matches.ok) return matches;
+	if (!matches.ok) {
+		return matches;
+	}
 	return resolveUniqueEffectiveMatch(matches.data, {
 		kind: input.kind,
 		key: input.key,
@@ -1061,9 +1080,13 @@ export async function createOrganizationDimension(
 			command: MASTER_COMMAND_ORGANIZATION_DIMENSION_CREATE,
 		},
 	);
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const normalized = normalizeMasterCode(parsed.data.key);
-	if (!normalized.ok) return normalized;
+	if (!normalized.ok) {
+		return normalized;
+	}
 	return resolveStore(options.store).create({
 		organizationId: parsed.data.organizationId,
 		kind: parsed.data.kind,
@@ -1100,7 +1123,9 @@ export async function updateOrganizationDimension(
 			command: MASTER_COMMAND_ORGANIZATION_DIMENSION_UPDATE,
 		},
 	);
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return resolveStore(options.store).update({
 		organizationId: parsed.data.organizationId,
 		id: parsed.data.id,
@@ -1139,7 +1164,9 @@ async function transitionOrganizationDimension(
 			command,
 		},
 	);
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return resolveStore(options.store).transition({
 		organizationId: parsed.data.organizationId,
 		id: parsed.data.id,
@@ -1150,7 +1177,7 @@ async function transitionOrganizationDimension(
 	});
 }
 
-export async function activateOrganizationDimension(
+export function activateOrganizationDimension(
 	input: unknown,
 	options: OrganizationDimensionOptions = {},
 ): Promise<Result<OrganizationDimension>> {
@@ -1162,7 +1189,7 @@ export async function activateOrganizationDimension(
 	);
 }
 
-export async function deactivateOrganizationDimension(
+export function deactivateOrganizationDimension(
 	input: unknown,
 	options: OrganizationDimensionOptions = {},
 ): Promise<Result<OrganizationDimension>> {
@@ -1174,7 +1201,7 @@ export async function deactivateOrganizationDimension(
 	);
 }
 
-export async function archiveOrganizationDimension(
+export function archiveOrganizationDimension(
 	input: unknown,
 	options: OrganizationDimensionOptions = {},
 ): Promise<Result<OrganizationDimension>> {
@@ -1207,7 +1234,9 @@ export async function resolveOrganizationDimensionsAsOf(
 		actorUserId: parsed.data.actorUserId,
 		query: MASTER_QUERY_ORGANIZATION_DIMENSION_RESOLVE_AS_OF,
 	});
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const store = resolveStore(options.store);
 	const [legalEntity, businessUnit, location, costCentre, project] =
 		await Promise.all([
@@ -1243,11 +1272,21 @@ export async function resolveOrganizationDimensionsAsOf(
 			}),
 		]);
 
-	if (!legalEntity.ok) return legalEntity;
-	if (!businessUnit.ok) return businessUnit;
-	if (!location.ok) return location;
-	if (!costCentre.ok) return costCentre;
-	if (!project.ok) return project;
+	if (!legalEntity.ok) {
+		return legalEntity;
+	}
+	if (!businessUnit.ok) {
+		return businessUnit;
+	}
+	if (!location.ok) {
+		return location;
+	}
+	if (!costCentre.ok) {
+		return costCentre;
+	}
+	if (!project.ok) {
+		return project;
+	}
 
 	return ok({
 		legal_entity: legalEntity.data,
@@ -1273,7 +1312,9 @@ export async function getOrganizationDimensionEffective(
 		actorUserId: parsed.data.actorUserId,
 		query: MASTER_QUERY_ORGANIZATION_DIMENSION_GET_EFFECTIVE,
 	});
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return resolveSingleEffectiveDimension(resolveStore(options.store), {
 		organizationId: parsed.data.organizationId,
 		kind: parsed.data.kind,
@@ -1298,7 +1339,9 @@ export async function getOrganizationDimensionById(
 		actorUserId: parsed.data.actorUserId,
 		query: MASTER_QUERY_ORGANIZATION_DIMENSION_GET_BY_ID,
 	});
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return resolveStore(options.store).getById({
 		organizationId: parsed.data.organizationId,
 		id: parsed.data.id,
@@ -1322,9 +1365,13 @@ export async function getOrganizationDimensionByCode(
 		actorUserId: parsed.data.actorUserId,
 		query: MASTER_QUERY_ORGANIZATION_DIMENSION_GET_BY_CODE,
 	});
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const normalized = normalizeMasterCode(parsed.data.key);
-	if (!normalized.ok) return normalized;
+	if (!normalized.ok) {
+		return normalized;
+	}
 	return resolveStore(options.store).getByCode({
 		organizationId: parsed.data.organizationId,
 		kind: parsed.data.kind,
@@ -1347,7 +1394,9 @@ export async function listOrganizationDimensions(
 		actorUserId: parsed.data.actorUserId,
 		query: MASTER_QUERY_ORGANIZATION_DIMENSION_LIST,
 	});
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return resolveStore(options.store).list({
 		organizationId: parsed.data.organizationId,
 		kind: parsed.data.kind,

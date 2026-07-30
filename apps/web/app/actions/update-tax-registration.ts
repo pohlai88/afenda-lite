@@ -19,9 +19,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type UpdateTaxRegistrationActionData = {
+export interface UpdateTaxRegistrationActionData {
 	taxRegistration: TaxRegistrationProjection;
-};
+}
 
 export type UpdateTaxRegistrationActionState =
 	ActionResult<UpdateTaxRegistrationActionData> | null;
@@ -89,13 +89,13 @@ export async function updateTaxRegistrationAction(
 				expectedVersion: parsed.data.expectedVersion,
 				name: parsed.data.name,
 				validFrom:
-					parsed.data.validFrom !== undefined
-						? new Date(parsed.data.validFrom)
-						: undefined,
+					parsed.data.validFrom === undefined
+						? undefined
+						: new Date(parsed.data.validFrom),
 				validTo:
-					parsed.data.validTo !== undefined
-						? new Date(parsed.data.validTo)
-						: undefined,
+					parsed.data.validTo === undefined
+						? undefined
+						: new Date(parsed.data.validTo),
 			},
 			{ authorization: createMasterDataAuthorizationPort() },
 		);

@@ -13,7 +13,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type CloseDeliveryActionData = { delivery: Delivery };
+export interface CloseDeliveryActionData {
+	delivery: Delivery;
+}
 export type CloseDeliveryActionState =
 	ActionResult<CloseDeliveryActionData> | null;
 
@@ -26,7 +28,7 @@ export async function closeDeliveryAction(
 	_prev: CloseDeliveryActionState,
 	formData: FormData,
 ): Promise<CloseDeliveryActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "closeDeliveryAction",
 		permission: "fulfillment.delivery.close",
 		safeMessage: "Could not close delivery. Try again or contact an admin.",
@@ -53,7 +55,9 @@ export async function closeDeliveryAction(
 				createFulfillmentCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePath("/admin/fulfillment");
 			revalidatePath("/client/fulfillment");
 			return { ok: true, data: { delivery: mapped.data } };

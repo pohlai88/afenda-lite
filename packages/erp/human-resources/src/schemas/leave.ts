@@ -48,6 +48,7 @@ const leavePolicyBalanceRuleFields = {
 	entitlementExpiryDays: z.number().int().nonnegative().nullable().optional(),
 };
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The refinement intentionally accumulates all independent balance-rule issues in one parse.
 function refineLeavePolicyBalanceRules(
 	data: {
 		accrualBasis?: "none" | "periodic" | "anniversary" | undefined;
@@ -106,18 +107,17 @@ function refineLeavePolicyBalanceRules(
 		}
 	}
 
-	if (!carryForwardEnabled) {
-		if (
-			data.carryForwardMaxQuantity !== undefined &&
-			data.carryForwardMaxQuantity !== null
-		) {
-			ctx.addIssue({
-				code: "custom",
-				message:
-					"Carry-forward max quantity must be null when carry-forward is disabled",
-				path: ["carryForwardMaxQuantity"],
-			});
-		}
+	if (
+		!carryForwardEnabled &&
+		data.carryForwardMaxQuantity !== undefined &&
+		data.carryForwardMaxQuantity !== null
+	) {
+		ctx.addIssue({
+			code: "custom",
+			message:
+				"Carry-forward max quantity must be null when carry-forward is disabled",
+			path: ["carryForwardMaxQuantity"],
+		});
 	}
 
 	if (entitlementExpiryRule === "days_after_period_end") {

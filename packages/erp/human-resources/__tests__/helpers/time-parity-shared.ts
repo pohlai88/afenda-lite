@@ -1,5 +1,3 @@
-import { expect } from "vitest";
-
 import type { HumanResourcesCommandOptions } from "../../src/command-options";
 import { createEmployee } from "../../src/core/employee";
 import { createEmployment } from "../../src/core/employment";
@@ -10,10 +8,10 @@ import type {
 	Employment,
 	Shift,
 } from "../../src/types";
-import { runDrizzleParity } from "./database-gate";
+import { helperAssert as assert } from "./helper-assert";
 import type { WorkforceStoreAdapter } from "./hr-parity-harness";
 
-export { runDrizzleParity };
+export { runDrizzleParity } from "./database-gate";
 
 export const STANDARD_WEEK = [0, 1, 2, 3, 4, 5, 6].map((dayOfWeek) => ({
 	dayOfWeek: dayOfWeek as 0 | 1 | 2 | 3 | 4 | 5 | 6,
@@ -89,8 +87,10 @@ export async function seedParityEmployeeEmployment(
 		},
 		ready,
 	);
-	expect(employee.ok).toBe(true);
-	if (!employee.ok) throw new Error("employee seed failed");
+	assert.strictEqual(employee.ok, true);
+	if (!employee.ok) {
+		throw new Error("employee seed failed");
+	}
 	const employment = await createEmployment(
 		{
 			organizationId: input.organizationId,
@@ -101,8 +101,10 @@ export async function seedParityEmployeeEmployment(
 		},
 		ready,
 	);
-	expect(employment.ok).toBe(true);
-	if (!employment.ok) throw new Error("employment seed failed");
+	assert.strictEqual(employment.ok, true);
+	if (!employment.ok) {
+		throw new Error("employment seed failed");
+	}
 	return { employee: employee.data, employment: employment.data };
 }
 
@@ -135,7 +137,7 @@ export async function seedDraftShift(
 		},
 		ready,
 	);
-	expect(created.ok).toBe(true);
+	assert.strictEqual(created.ok, true);
 	if (!created.ok) {
 		throw new Error(`createShift failed: ${created.message}`);
 	}
@@ -163,7 +165,7 @@ export async function seedActiveShift(
 		},
 		ready,
 	);
-	expect(activated.ok).toBe(true);
+	assert.strictEqual(activated.ok, true);
 	if (!activated.ok) {
 		throw new Error(`activateShift failed: ${activated.message}`);
 	}

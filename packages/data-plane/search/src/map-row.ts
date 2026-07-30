@@ -1,18 +1,18 @@
 import { searchDocumentSchema, searchHitSchema } from "./schemas";
 import type { SearchDocument, SearchHit } from "./types";
 
-export type SearchDocumentRow = {
-	id: string;
-	organizationId: string;
-	entity: string;
-	documentId: string;
-	title: string;
-	description: string | null;
-	url: string | null;
-	metadata: unknown;
+export interface SearchDocumentRow {
 	createdAt: Date;
+	description: string | null;
+	documentId: string;
+	entity: string;
+	id: string;
+	metadata: unknown;
+	organizationId: string;
+	title: string;
 	updatedAt: Date;
-};
+	url: string | null;
+}
 
 export type SearchHitRow = Omit<
 	SearchDocumentRow,
@@ -21,10 +21,10 @@ export type SearchHitRow = Omit<
 	score: unknown;
 };
 
-export type MapSearchRowFailure = {
+export interface MapSearchRowFailure {
 	ok: false;
 	reason: "invalid_metadata" | "invalid_document" | "invalid_hit";
-};
+}
 
 export type MapSearchDocumentResult =
 	| { ok: true; data: SearchDocument }
@@ -83,12 +83,13 @@ export function mapSearchHitRow(row: SearchHitRow): MapSearchHitResult {
 		return { ok: false, reason: "invalid_metadata" };
 	}
 
-	const score =
-		typeof row.score === "number"
-			? row.score
-			: typeof row.score === "string"
-				? Number(row.score)
-				: Number.NaN;
+	const { score: rawScore } = row;
+	let score = Number.NaN;
+	if (typeof rawScore === "number") {
+		score = rawScore;
+	} else if (typeof rawScore === "string") {
+		score = Number(rawScore);
+	}
 
 	const parsed = searchHitSchema.safeParse({
 		id: row.id,

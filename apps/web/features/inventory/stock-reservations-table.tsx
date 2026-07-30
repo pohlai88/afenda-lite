@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noJsxPropsBind: The enabled React Compiler stabilizes JSX callback props.
 "use client";
 
 import { Code, DataTable, type DataTableColumn } from "@afenda/ui-system";
@@ -37,10 +38,10 @@ export function StockReservationsTable({
 		<DataTable
 			columns={columns}
 			data={rows}
-			getRowId={(row) => row.id}
-			emptyTitle="No stock reservations yet"
-			emptyDescription="Reserve available quantity against a warehouse and item."
 			density="comfortable"
+			emptyDescription="Reserve available quantity against a warehouse and item."
+			emptyTitle="No stock reservations yet"
+			getRowId={(row) => row.id}
 		/>
 	);
 }

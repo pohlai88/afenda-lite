@@ -16,9 +16,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type RecordReceivingDiscrepancyActionData = {
+export interface RecordReceivingDiscrepancyActionData {
 	discrepancy: ReceivingDiscrepancy;
-};
+}
 export type RecordReceivingDiscrepancyActionState =
 	ActionResult<RecordReceivingDiscrepancyActionData> | null;
 
@@ -56,7 +56,7 @@ export async function recordReceivingDiscrepancyAction(
 	_prev: RecordReceivingDiscrepancyActionState,
 	formData: FormData,
 ): Promise<RecordReceivingDiscrepancyActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "recordReceivingDiscrepancyAction",
 		permission: "receiving.discrepancy.record",
 		safeMessage:
@@ -87,7 +87,9 @@ export async function recordReceivingDiscrepancyAction(
 				createReceivingCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidateReceivingPaths();
 			return { ok: true, data: { discrepancy: mapped.data } };
 		},

@@ -1,10 +1,9 @@
-import { expect } from "vitest";
-
 import type { HumanResourcesCommandOptions } from "../../src/command-options";
 import {
 	assignEmploymentCalendar,
 	createWorkCalendar,
 } from "../../src/time/calendar";
+import { helperAssert as assert } from "./helper-assert";
 import { STANDARD_WEEK } from "./time-parity-shared";
 
 export async function seedEmploymentWorkCalendar(
@@ -39,7 +38,7 @@ export async function seedEmploymentWorkCalendar(
 		},
 		ready,
 	);
-	expect(calendar.ok).toBe(true);
+	assert.strictEqual(calendar.ok, true);
 	if (!calendar.ok) {
 		throw new Error("work calendar seed failed");
 	}
@@ -56,7 +55,7 @@ export async function seedEmploymentWorkCalendar(
 		},
 		ready,
 	);
-	expect(assigned.ok).toBe(true);
+	assert.strictEqual(assigned.ok, true);
 	if (!assigned.ok) {
 		throw new Error("employment calendar assignment failed");
 	}

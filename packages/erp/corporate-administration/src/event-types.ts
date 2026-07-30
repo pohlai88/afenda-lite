@@ -132,11 +132,11 @@ export function createCorporateAdministrationEventType(
 	}
 
 	if (
-		!EVENT_ACTION_PATTERN.test(input.action) ||
 		!(
-			input.action.endsWith("ed") ||
-			input.action.endsWith("_set") ||
-			input.action === "set"
+			EVENT_ACTION_PATTERN.test(input.action) &&
+			(input.action.endsWith("ed") ||
+				input.action.endsWith("_set") ||
+				input.action === "set")
 		)
 	) {
 		throw new RangeError(

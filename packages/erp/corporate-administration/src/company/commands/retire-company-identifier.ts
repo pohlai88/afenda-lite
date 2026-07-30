@@ -45,7 +45,9 @@ export async function retireCompanyIdentifier(
 		retireCompanyIdentifierInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 
 	const authorized = await requireCorporateAdministrationPermission(
 		options.authorization,
@@ -56,7 +58,9 @@ export async function retireCompanyIdentifier(
 				CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS.retireCompanyIdentifier,
 		},
 	);
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 
 	const identity = createCorporateAdministrationCommandFingerprint({
 		schema: retireCompanyIdentifierInputSchema,
@@ -64,7 +68,9 @@ export async function retireCompanyIdentifier(
 		commandId: "corporate-administration.legal-company.retire-identifier",
 		input: parsed.data,
 	});
-	if (!identity.ok) return identity;
+	if (!identity.ok) {
+		return identity;
+	}
 	const approved = await requireCorporateAdministrationApprovalIfConfigured(
 		dependencies,
 		{
@@ -75,19 +81,25 @@ export async function retireCompanyIdentifier(
 			commandFingerprint: identity.data.fingerprint,
 		},
 	);
-	if (!approved.ok) return approved;
+	if (!approved.ok) {
+		return approved;
+	}
 
 	const existing = await dependencies.identifierStore.getCompanyIdentifier({
 		organizationId: options.organizationId,
 		legalCompanyId: parsed.data.legalCompanyId,
 		companyIdentifierId: parsed.data.companyIdentifierId,
 	});
-	if (!existing.ok) return existing;
+	if (!existing.ok) {
+		return existing;
+	}
 	const activeIdentifier = validateIdentifierSupersession({
 		identifier: existing.data,
 		expectedVersion: parsed.data.expectedIdentifierVersion,
 	});
-	if (!activeIdentifier.ok) return activeIdentifier;
+	if (!activeIdentifier.ok) {
+		return activeIdentifier;
+	}
 	const retiredAtDate = parsed.data.retiredAt.slice(0, 10);
 	if (retiredAtDate < activeIdentifier.data.effectiveFrom) {
 		return fail(
@@ -116,8 +128,9 @@ export async function retireCompanyIdentifier(
 					causationId: options.causationId,
 					transaction,
 				});
-			if (!retired.ok)
+			if (!retired.ok) {
 				return rollbackCorporateAdministrationTransaction(retired);
+			}
 			const audit = await dependencies.runtime.audit.record(
 				{
 					organizationId: options.organizationId,

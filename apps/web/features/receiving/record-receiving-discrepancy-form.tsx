@@ -69,34 +69,34 @@ export function RecordReceivingDiscrepancyForm({
 				<FormError>{state.message}</FormError>
 			) : null}
 			<FormField
+				error={receiptError}
+				fieldId="discrepancy-receipt"
 				label="Receipt id"
 				required
-				fieldId="discrepancy-receipt"
-				error={receiptError}
 			>
 				<Input
+					disabled={pending}
 					id="discrepancy-receipt"
 					name="receiptId"
 					required
-					disabled={pending}
 				/>
 			</FormField>
-			<FormField label="Receipt line id (optional)" fieldId="discrepancy-line">
-				<Input id="discrepancy-line" name="receiptLineId" disabled={pending} />
+			<FormField fieldId="discrepancy-line" label="Receipt line id (optional)">
+				<Input disabled={pending} id="discrepancy-line" name="receiptLineId" />
 			</FormField>
 			<FormField
+				error={typeError}
+				fieldId="discrepancy-type"
 				label="Discrepancy type"
 				required
-				fieldId="discrepancy-type"
-				error={typeError}
 			>
 				<Input
+					defaultValue="short_quantity"
+					disabled={pending}
 					id="discrepancy-type"
+					list="discrepancy-types"
 					name="discrepancyType"
 					required
-					defaultValue="short_quantity"
-					list="discrepancy-types"
-					disabled={pending}
 				/>
 				<datalist id="discrepancy-types">
 					<option value="short_quantity" />
@@ -111,25 +111,25 @@ export function RecordReceivingDiscrepancyForm({
 				</datalist>
 			</FormField>
 			<FormField
+				error={quantityError}
+				fieldId="discrepancy-quantity"
 				label="Quantity"
 				required
-				fieldId="discrepancy-quantity"
-				error={quantityError}
 			>
 				<Input
-					id="discrepancy-quantity"
-					name="quantity"
-					type="number"
-					step="any"
-					min="0.000001"
-					required
 					disabled={pending}
+					id="discrepancy-quantity"
+					min="0.000001"
+					name="quantity"
+					required
+					step="any"
+					type="number"
 				/>
 			</FormField>
-			<FormField label="Notes (optional)" fieldId="discrepancy-notes">
-				<Input id="discrepancy-notes" name="notes" disabled={pending} />
+			<FormField fieldId="discrepancy-notes" label="Notes (optional)">
+				<Input disabled={pending} id="discrepancy-notes" name="notes" />
 			</FormField>
-			<Button type="submit" disabled={pending}>
+			<Button disabled={pending} type="submit">
 				{pending ? <Spinner /> : null}
 				Record discrepancy
 			</Button>

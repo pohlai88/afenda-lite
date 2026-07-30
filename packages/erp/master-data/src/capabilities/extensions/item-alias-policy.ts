@@ -39,7 +39,9 @@ export function normalizeItemAlias(
 		field: "aliasValue",
 		maxLength: MAX_ITEM_ALIAS_VALUE_LENGTH,
 	});
-	if (!normalized.ok) return normalized;
+	if (!normalized.ok) {
+		return normalized;
+	}
 
 	return ok({
 		aliasValue: normalized.data.text,

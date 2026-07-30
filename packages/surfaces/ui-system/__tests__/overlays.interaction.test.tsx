@@ -82,6 +82,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 afterEach(cleanup);
 
+const noop = () => undefined;
+const getNamedRowId = (row: { name: string }) => String(row.name);
+const getProgressValueLabel = (value: number, max: number) =>
+	`${value} of ${max} tasks completed`;
+const renderEditAction = () => <button type="button">Edit</button>;
+
 describe("Dialog — keyboard/focus smoke", () => {
 	it("opens on trigger and closes on Escape", async () => {
 		const user = userEvent.setup();
@@ -523,7 +529,7 @@ describe("AlertDialog — destructive action confirmation", () => {
 });
 
 describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
-	it("Dialog has accessible name from DialogTitle", async () => {
+	it("Dialog has accessible name from DialogTitle", () => {
 		render(
 			<Dialog open>
 				<DialogContent>
@@ -536,7 +542,7 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 		expect(dialog).toBeInTheDocument();
 	});
 
-	it("AlertDialog has accessible name and description", async () => {
+	it("AlertDialog has accessible name and description", () => {
 		render(
 			<AlertDialog open>
 				<AlertDialogContent>
@@ -559,7 +565,7 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 		);
 	});
 
-	it("Sheet has accessible name from SheetTitle", async () => {
+	it("Sheet has accessible name from SheetTitle", () => {
 		render(
 			<Sheet open>
 				<SheetContent>
@@ -572,7 +578,7 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 		expect(sheet).toBeInTheDocument();
 	});
 
-	it("Select has accessible name from aria-label", async () => {
+	it("Select has accessible name from aria-label", () => {
 		render(
 			<Select>
 				<SelectTrigger aria-label="Task Status">
@@ -600,11 +606,11 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 
 		render(
 			<Combobox
-				options={options}
-				value=""
 				onValueChange={mockChange}
+				options={options}
 				placeholder="Select fruit..."
 				searchPlaceholder="Search fruits..."
+				value=""
 			/>,
 		);
 
@@ -636,14 +642,14 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 		const mockChange = vi.fn();
 		const { rerender } = render(
 			<Combobox
+				aria-label="Organization member"
+				onValueChange={mockChange}
 				options={[
 					{ value: "apple", label: "Apple" },
 					{ value: "banana", label: "Banana" },
 				]}
-				value=""
-				onValueChange={mockChange}
 				placeholder="Select fruit..."
-				aria-label="Organization member"
+				value=""
 			/>,
 		);
 
@@ -653,14 +659,14 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 
 		rerender(
 			<Combobox
+				aria-label="Organization member"
+				onValueChange={mockChange}
 				options={[
 					{ value: "apple", label: "Apple" },
 					{ value: "banana", label: "Banana" },
 				]}
-				value="apple"
-				onValueChange={mockChange}
 				placeholder="Select fruit..."
-				aria-label="Organization member"
+				value="apple"
 			/>,
 		);
 
@@ -681,11 +687,11 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 			<>
 				<span id="member-label">Member label</span>
 				<Combobox
-					options={[{ value: "apple", label: "Apple" }]}
-					value="apple"
-					onValueChange={() => undefined}
-					placeholder="Select fruit..."
 					aria-labelledby="member-label"
+					onValueChange={noop}
+					options={[{ value: "apple", label: "Apple" }]}
+					placeholder="Select fruit..."
+					value="apple"
 				/>
 			</>,
 		);
@@ -701,13 +707,13 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 		render(
 			<Combobox
 				multiple
+				onValueChange={mockChange}
 				options={[
 					{ value: "apple", label: "Apple" },
 					{ value: "banana", label: "Banana" },
 				]}
-				value={["apple"]}
-				onValueChange={mockChange}
 				placeholder="Select fruits..."
+				value={["apple"]}
 			/>,
 		);
 		expect(screen.getByText("Apple")).toBeInTheDocument();
@@ -718,7 +724,7 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 
 	it("DatePicker opens a calendar popover", async () => {
 		const user = userEvent.setup();
-		render(<DatePicker placeholder="Pick a date" onChange={vi.fn()} />);
+		render(<DatePicker onChange={vi.fn()} placeholder="Pick a date" />);
 		await user.click(screen.getByRole("button", { name: /Pick a date/i }));
 		expect(screen.getByRole("grid")).toBeInTheDocument();
 	});
@@ -726,7 +732,7 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 	it("DateRangePicker opens a multi-month calendar", async () => {
 		const user = userEvent.setup();
 		render(
-			<DateRangePicker placeholder="Pick a date range" onChange={vi.fn()} />,
+			<DateRangePicker onChange={vi.fn()} placeholder="Pick a date range" />,
 		);
 		await user.click(
 			screen.getByRole("button", { name: /Pick a date range/i }),
@@ -739,7 +745,7 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 		const mockSelect = vi.fn();
 
 		render(
-			<Calendar mode="single" selected={undefined} onSelect={mockSelect} />,
+			<Calendar mode="single" onSelect={mockSelect} selected={undefined} />,
 		);
 
 		// Calendar should be present with proper grid role
@@ -760,15 +766,11 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 		expect(mockSelect).toHaveBeenCalled();
 	});
 
-	it("Progress provides accessible status and value information", async () => {
+	it("Progress provides accessible status and value information", () => {
 		render(
 			<div>
-				<Progress value={65} max={100} />
-				<Progress
-					value={3}
-					max={5}
-					getValueLabel={(v, m) => `${v} of ${m} tasks completed`}
-				/>
+				<Progress max={100} value={65} />
+				<Progress getValueLabel={getProgressValueLabel} max={5} value={3} />
 			</div>,
 		);
 
@@ -791,11 +793,11 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 		);
 	});
 
-	it("Spinner provides accessible status and live region updates", async () => {
+	it("Spinner provides accessible status and live region updates", () => {
 		render(
 			<div>
 				<Spinner />
-				<Spinner size="lg" variant="secondary" label="Processing data" />
+				<Spinner label="Processing data" size="lg" variant="secondary" />
 			</div>,
 		);
 
@@ -816,9 +818,9 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 	it("Empty state provides accessible region with semantic content", () => {
 		render(
 			<Empty
-				title="No results found"
-				description="Try adjusting your search criteria"
 				action={<button type="button">Reset Filters</button>}
+				description="Try adjusting your search criteria"
+				title="No results found"
 			/>,
 		);
 
@@ -859,9 +861,9 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 			<DataTable
 				columns={columns}
 				data={data}
+				onSort={mockSort}
 				sortBy="name"
 				sortDirection="asc"
-				onSort={mockSort}
 			/>,
 		);
 
@@ -900,8 +902,8 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 			<DataTable
 				columns={columns}
 				data={[]}
-				loading={false}
 				emptyTitle="No users found"
+				loading={false}
 			/>,
 		);
 		expect(
@@ -919,11 +921,11 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 		render(
 			<DataTable
 				columns={columns}
-				data={data}
-				showPagination={true}
 				currentPage={1}
-				totalPages={3}
+				data={data}
 				onPageChange={mockPageChange}
+				showPagination={true}
+				totalPages={3}
 			/>,
 		);
 
@@ -946,13 +948,13 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 			<DataTable
 				columns={columns}
 				data={data}
-				getRowId={(row) => String(row.name)}
+				filters={{ name: "" }}
+				getRowId={getNamedRowId}
+				onFilterChange={vi.fn()}
+				onSelectionChange={mockSelectionChange}
+				rowActions={renderEditAction}
 				selectable={true}
 				selectedRowIds={new Set(["Item 1"])}
-				onSelectionChange={mockSelectionChange}
-				rowActions={() => <button type="button">Edit</button>}
-				filters={{ name: "" }}
-				onFilterChange={vi.fn()}
 			/>,
 		);
 
@@ -973,8 +975,8 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 		render(
 			<div>
 				<FormError message="Email is required" />
-				<FormError variant="warning" message="Password should be stronger" />
-				<FormError variant="info" showIcon={false}>
+				<FormError message="Password should be stronger" variant="warning" />
+				<FormError showIcon={false} variant="info">
 					Please check your network connection
 				</FormError>
 			</div>,
@@ -1014,13 +1016,13 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 		render(
 			<div>
 				<FormField
-					label="Email Address"
 					description="Enter your work email"
 					error="Email is required"
-					required={true}
 					fieldId="email"
+					label="Email Address"
+					required={true}
 				>
-					<FormInput type="email" placeholder="john@company.com" />
+					<FormInput placeholder="john@company.com" type="email" />
 				</FormField>
 
 				<FormField label="Optional field">
@@ -1087,7 +1089,7 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 		const user = userEvent.setup();
 
 		render(
-			<Accordion type="single" collapsible>
+			<Accordion collapsible type="single">
 				<AccordionItem value="item-1">
 					<AccordionTrigger>Section One</AccordionTrigger>
 					<AccordionContent>First section content</AccordionContent>
@@ -1112,11 +1114,11 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 		const onValueChange = vi.fn();
 
 		render(
-			<ToggleGroup type="single" onValueChange={onValueChange}>
-				<ToggleGroupItem value="list" aria-label="List view">
+			<ToggleGroup onValueChange={onValueChange} type="single">
+				<ToggleGroupItem aria-label="List view" value="list">
 					List
 				</ToggleGroupItem>
-				<ToggleGroupItem value="grid" aria-label="Grid view">
+				<ToggleGroupItem aria-label="Grid view" value="grid">
 					Grid
 				</ToggleGroupItem>
 			</ToggleGroup>,
@@ -1126,7 +1128,7 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 		expect(onValueChange).toHaveBeenCalledWith("list");
 	});
 
-	it("InputGroup associates addons with the control", async () => {
+	it("InputGroup associates addons with the control", () => {
 		render(
 			<InputGroup>
 				<InputGroupAddon>
@@ -1163,7 +1165,7 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 
 	it("Slider exposes accessible range semantics", () => {
 		render(
-			<Slider defaultValue={[50]} max={100} step={1} aria-label="Volume" />,
+			<Slider aria-label="Volume" defaultValue={[50]} max={100} step={1} />,
 		);
 
 		const slider = screen.getByRole("slider");

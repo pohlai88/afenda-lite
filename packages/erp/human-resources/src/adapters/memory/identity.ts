@@ -5,17 +5,17 @@ import type { HumanResourcesEmployeeIdentity } from "../../identity-resolver";
 import type { HumanResourcesIdentityStore } from "../../store/identity";
 import type { OrganizationMemoryState } from "./organization";
 
-type UserEmployeeMapping = {
-	id: string;
-	organizationId: string;
-	userId: string;
-	employeeId: HumanResourcesEmployeeId;
-	relationshipType: "self" | "proxy";
+interface UserEmployeeMapping {
+	createdAt: string;
+	createdBy: string;
 	effectiveFrom: string;
 	effectiveUntil: string | null;
-	createdBy: string;
-	createdAt: string;
-};
+	employeeId: HumanResourcesEmployeeId;
+	id: string;
+	organizationId: string;
+	relationshipType: "self" | "proxy";
+	userId: string;
+}
 
 export function createMemoryHumanResourcesIdentityStore(
 	organization: OrganizationMemoryState,
@@ -26,7 +26,7 @@ export function createMemoryHumanResourcesIdentityStore(
 		async getUserEmployeeMapping(input: {
 			organizationId: string;
 			userId: string;
-			asOf?: string;
+			asOf?: string | undefined;
 		}): Promise<Result<HumanResourcesEmployeeIdentity | null>> {
 			const queryDate = input.asOf ?? new Date().toISOString().slice(0, 10);
 
@@ -39,10 +39,10 @@ export function createMemoryHumanResourcesIdentityStore(
 			);
 
 			if (!mapping) {
-				return ok(null);
+				return await ok(null);
 			}
 
-			return ok({
+			return await ok({
 				employeeId: mapping.employeeId,
 				relationshipType: mapping.relationshipType,
 				effectiveFrom: mapping.effectiveFrom,
@@ -53,7 +53,7 @@ export function createMemoryHumanResourcesIdentityStore(
 		async getManagerEmployeesForUser(input: {
 			organizationId: string;
 			userId: string;
-			asOf?: string;
+			asOf?: string | undefined;
 		}): Promise<Result<HumanResourcesEmployeeId[]>> {
 			const userEmployeeResult = await this.getUserEmployeeMapping({
 				organizationId: input.organizationId,
@@ -90,10 +90,10 @@ export function createMemoryHumanResourcesIdentityStore(
 			employeeId: HumanResourcesEmployeeId;
 			relationshipType: "self" | "proxy";
 			effectiveFrom: string;
-			effectiveUntil?: string;
+			effectiveUntil?: string | undefined;
 			actorUserId: string;
 		}): Promise<Result<{ id: string }>> {
-			const id = `mapping_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+			const id = `mapping_${Date.now()}_${Math.random().toString(36).slice(7)}`;
 
 			const mapping: UserEmployeeMapping = {
 				id,
@@ -108,7 +108,7 @@ export function createMemoryHumanResourcesIdentityStore(
 			};
 
 			mappings.push(mapping);
-			return ok({ id });
+			return await ok({ id });
 		},
 	};
 }

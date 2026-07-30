@@ -31,13 +31,13 @@ export type TaxRegistrationLifecycleStatus =
 export type TaxRegistrationStatus = MasterStatus;
 
 export interface TaxRegistrationProjection {
+	countryId: RefCountryId;
 	id: TaxRegistrationId;
+	maskedRegistrationNumber: string;
 	organizationId: OrganizationId;
 	partyId: PartyId;
-	countryId: RefCountryId;
-	taxType: TaxRegistrationType;
-	maskedRegistrationNumber: string;
 	status: TaxRegistrationStatus;
+	taxType: TaxRegistrationType;
 	validFrom: Date | null;
 	validUntil: Date | null;
 	version: number;

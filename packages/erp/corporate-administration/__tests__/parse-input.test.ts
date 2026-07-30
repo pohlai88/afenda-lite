@@ -85,7 +85,9 @@ describe("Corporate Administration safe input parsing", () => {
 		});
 
 		expect(result.ok).toBe(false);
-		if (result.ok) return;
+		if (result.ok) {
+			return;
+		}
 
 		expect(result.code).toBe("VALIDATION_ERROR");
 		expect(result.details).toEqual({

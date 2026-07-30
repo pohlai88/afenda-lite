@@ -21,6 +21,7 @@ import type { EmployeeAssignmentContext } from "../src/time/handoff/ports";
 import type { WorkCalendar, WorkCalendarScopeType } from "../src/types";
 import { TEST_ORGANIZATION_DIMENSION_KEYS } from "./helpers/command-options";
 import { runDrizzleParity } from "./helpers/database-gate";
+import { helperAssert as assert } from "./helpers/helper-assert";
 import {
 	createHrParityHarness,
 	seedDepartmentAndJob,
@@ -69,17 +70,17 @@ function withContextKeys(
 				return ok({
 					...base.data,
 					departmentId:
-						keys.departmentId !== undefined
-							? keys.departmentId
-							: base.data.departmentId,
+						keys.departmentId === undefined
+							? base.data.departmentId
+							: keys.departmentId,
 					locationKey:
-						keys.locationKey !== undefined
-							? keys.locationKey
-							: base.data.locationKey,
+						keys.locationKey === undefined
+							? base.data.locationKey
+							: keys.locationKey,
 					legalEntityKey:
-						keys.legalEntityKey !== undefined
-							? keys.legalEntityKey
-							: base.data.legalEntityKey,
+						keys.legalEntityKey === undefined
+							? base.data.legalEntityKey
+							: keys.legalEntityKey,
 				});
 			},
 		},
@@ -109,7 +110,7 @@ async function seedCalendar(
 		},
 		ready,
 	);
-	expect(created.ok).toBe(true);
+	assert.strictEqual(created.ok, true);
 	if (!created.ok) {
 		throw new Error(`createWorkCalendar failed: ${created.message}`);
 	}
@@ -133,7 +134,7 @@ async function seedEmployeeEmployment(
 		},
 		ready,
 	);
-	expect(employee.ok).toBe(true);
+	assert.strictEqual(employee.ok, true);
 	if (!employee.ok) {
 		throw new Error("employee seed failed");
 	}
@@ -147,7 +148,7 @@ async function seedEmployeeEmployment(
 		},
 		ready,
 	);
-	expect(employment.ok).toBe(true);
+	assert.strictEqual(employment.ok, true);
 	if (!employment.ok) {
 		throw new Error("employment seed failed");
 	}
@@ -178,7 +179,7 @@ async function assignScope(
 		},
 		ready,
 	);
-	expect(assigned.ok).toBe(true);
+	assert.strictEqual(assigned.ok, true);
 	if (!assigned.ok) {
 		throw new Error(`assignWorkCalendarScope failed: ${assigned.message}`);
 	}
@@ -193,7 +194,7 @@ async function resolveCalendar(
 	employmentId: string,
 	asOf: string,
 ) {
-	return resolveEmployeeWorkCalendar(
+	return await resolveEmployeeWorkCalendar(
 		{
 			organizationId: org,
 			actorUserId: actor,
@@ -243,7 +244,9 @@ function defineCalendarScopeParitySuite(adapter: WorkforceStoreAdapter): void {
 			actorUserId: ACTOR,
 		});
 		expect(orgSeed).not.toBeNull();
-		if (orgSeed === null) return;
+		if (orgSeed === null) {
+			return;
+		}
 
 		const position = await createPosition(
 			{
@@ -258,7 +261,9 @@ function defineCalendarScopeParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(position.ok).toBe(true);
-		if (!position.ok) return;
+		if (!position.ok) {
+			return;
+		}
 
 		const assignment = await createAssignment(
 			{
@@ -273,7 +278,9 @@ function defineCalendarScopeParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(assignment.ok).toBe(true);
-		if (!assignment.ok) return;
+		if (!assignment.ok) {
+			return;
+		}
 
 		const calOrg = await seedCalendar(ready, ORG, ACTOR, suffix, "org");
 		const calLegal = await seedCalendar(ready, ORG, ACTOR, suffix, "legal");
@@ -334,7 +341,9 @@ function defineCalendarScopeParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employmentAssigned.ok).toBe(true);
-		if (!employmentAssigned.ok) return;
+		if (!employmentAssigned.ok) {
+			return;
+		}
 
 		const resolved = await resolveCalendar(
 			ready,
@@ -345,7 +354,9 @@ function defineCalendarScopeParitySuite(adapter: WorkforceStoreAdapter): void {
 			"2025-07-01",
 		);
 		expect(resolved.ok).toBe(true);
-		if (!resolved.ok) return;
+		if (!resolved.ok) {
+			return;
+		}
 		expect(resolved.data.calendarId).toBe(calEmployment.id);
 	});
 
@@ -408,7 +419,9 @@ function defineCalendarScopeParitySuite(adapter: WorkforceStoreAdapter): void {
 			"2025-07-01",
 		);
 		expect(resolved.ok).toBe(true);
-		if (!resolved.ok) return;
+		if (!resolved.ok) {
+			return;
+		}
 		expect(resolved.data.calendarId).toBe(calEmp.id);
 	});
 
@@ -464,7 +477,9 @@ function defineCalendarScopeParitySuite(adapter: WorkforceStoreAdapter): void {
 			"2025-07-01",
 		);
 		expect(resolved.ok).toBe(true);
-		if (!resolved.ok) return;
+		if (!resolved.ok) {
+			return;
+		}
 		expect(resolved.data.calendarId).toBe(calLoc.id);
 	});
 
@@ -482,7 +497,9 @@ function defineCalendarScopeParitySuite(adapter: WorkforceStoreAdapter): void {
 			actorUserId: ACTOR,
 		});
 		expect(orgSeed).not.toBeNull();
-		if (orgSeed === null) return;
+		if (orgSeed === null) {
+			return;
+		}
 
 		const position = await createPosition(
 			{
@@ -497,7 +514,9 @@ function defineCalendarScopeParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(position.ok).toBe(true);
-		if (!position.ok) return;
+		if (!position.ok) {
+			return;
+		}
 
 		await createAssignment(
 			{
@@ -544,7 +563,9 @@ function defineCalendarScopeParitySuite(adapter: WorkforceStoreAdapter): void {
 			"2025-07-01",
 		);
 		expect(resolved.ok).toBe(true);
-		if (!resolved.ok) return;
+		if (!resolved.ok) {
+			return;
+		}
 		expect(resolved.data.calendarId).toBe(calDept.id);
 	});
 
@@ -570,7 +591,9 @@ function defineCalendarScopeParitySuite(adapter: WorkforceStoreAdapter): void {
 			asOf: "2025-07-01",
 		});
 		expect(listed.ok).toBe(true);
-		if (!listed.ok) return;
+		if (!listed.ok) {
+			return;
+		}
 		expect(
 			listed.data.some(
 				(row) =>
@@ -618,7 +641,9 @@ function defineCalendarScopeParitySuite(adapter: WorkforceStoreAdapter): void {
 			"2025-07-01",
 		);
 		expect(resolved.ok).toBe(true);
-		if (!resolved.ok) return;
+		if (!resolved.ok) {
+			return;
+		}
 		expect(resolved.data.calendarId).toBe(calLegal.id);
 	});
 
@@ -653,7 +678,9 @@ function defineCalendarScopeParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(ended.ok).toBe(true);
-		if (!ended.ok) return;
+		if (!ended.ok) {
+			return;
+		}
 
 		await assignScope(ready, ORG, ACTOR, {
 			scopeType: "organization",
@@ -672,7 +699,9 @@ function defineCalendarScopeParitySuite(adapter: WorkforceStoreAdapter): void {
 			"2025-06-01",
 		);
 		expect(before.ok).toBe(true);
-		if (!before.ok) return;
+		if (!before.ok) {
+			return;
+		}
 		expect(before.data.calendarId).toBe(calFirst.id);
 
 		const after = await resolveCalendar(
@@ -684,7 +713,9 @@ function defineCalendarScopeParitySuite(adapter: WorkforceStoreAdapter): void {
 			"2025-08-01",
 		);
 		expect(after.ok).toBe(true);
-		if (!after.ok) return;
+		if (!after.ok) {
+			return;
+		}
 		expect(after.data.calendarId).toBe(calSecond.id);
 	});
 
@@ -741,7 +772,9 @@ function defineCalendarScopeParitySuite(adapter: WorkforceStoreAdapter): void {
 			"2025-07-01",
 		);
 		expect(resolved.ok).toBe(false);
-		if (resolved.ok) return;
+		if (resolved.ok) {
+			return;
+		}
 		expect(humanResourcesCodeFromResult(resolved)).toBe(
 			HUMAN_RESOURCES_ERROR_CONFLICT,
 		);
@@ -788,7 +821,9 @@ function defineCalendarScopeParitySuite(adapter: WorkforceStoreAdapter): void {
 			"2025-07-01",
 		);
 		expect(resolved.ok).toBe(true);
-		if (!resolved.ok) return;
+		if (!resolved.ok) {
+			return;
+		}
 		expect(resolved.data.calendarId).toBe(calOrgA.id);
 		expect(resolved.data.calendarId).not.toBe(calOrgB.id);
 	});

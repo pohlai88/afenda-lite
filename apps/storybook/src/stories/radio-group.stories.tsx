@@ -42,13 +42,13 @@ export const Overview: Story = {
 		<div className="min-h-screen bg-canvas text-foreground">
 			<div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-2 border-b pb-6">
-					<p className="text-sm font-medium text-foreground-secondary">
+					<p className="font-medium text-foreground-secondary text-sm">
 						Accounts payable · remittance
 					</p>
-					<h1 className="text-2xl font-semibold tracking-tight">
+					<h1 className="font-semibold text-2xl tracking-tight">
 						Settlement frequency
 					</h1>
-					<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+					<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 						Choose one visible option. Feature code owns persistence and whether
 						the supplier is eligible for each cadence.
 					</p>
@@ -63,10 +63,10 @@ export const Overview: Story = {
 					</CardHeader>
 					<CardContent>
 						<fieldset className="grid gap-4">
-							<legend className="text-sm font-medium text-foreground">
+							<legend className="font-medium text-foreground text-sm">
 								Settlement frequency
 							</legend>
-							<RadioGroup defaultValue="monthly" className="grid gap-3">
+							<RadioGroup className="grid gap-3" defaultValue="monthly">
 								<Label className="flex items-center gap-2">
 									<RadioGroupItem value="weekly" />
 									Weekly
@@ -80,7 +80,7 @@ export const Overview: Story = {
 									Quarterly
 								</Label>
 								<Label className="flex items-center gap-2 text-foreground-secondary">
-									<RadioGroupItem value="annual" disabled />
+									<RadioGroupItem disabled value="annual" />
 									Annual — not offered for this supplier
 								</Label>
 							</RadioGroup>
@@ -106,7 +106,7 @@ export const SemanticUsage: Story = {
 		<div className="grid w-full max-w-xl gap-6">
 			<StorySection title="Posting mode">
 				<fieldset className="grid gap-3">
-					<legend className="text-sm font-medium">Posting mode</legend>
+					<legend className="font-medium text-sm">Posting mode</legend>
 					<RadioGroup defaultValue="batch">
 						<Label className="flex items-center gap-2">
 							<RadioGroupItem value="batch" />
@@ -121,7 +121,7 @@ export const SemanticUsage: Story = {
 			</StorySection>
 			<StorySection title="Tax treatment">
 				<fieldset className="grid gap-3">
-					<legend className="text-sm font-medium">Tax treatment</legend>
+					<legend className="font-medium text-sm">Tax treatment</legend>
 					<RadioGroup defaultValue="inclusive">
 						<Label className="flex items-center gap-2">
 							<RadioGroupItem value="inclusive" />
@@ -150,7 +150,7 @@ export const Usage: Story = {
 	},
 	render: () => (
 		<fieldset className="grid w-80 gap-3">
-			<legend className="text-sm font-medium">Invoice matching</legend>
+			<legend className="font-medium text-sm">Invoice matching</legend>
 			<RadioGroup defaultValue="exact">
 				<Label className="flex items-center gap-2">
 					<RadioGroupItem value="exact" />
@@ -177,8 +177,8 @@ export const StatesAndAccessibility: Story = {
 	},
 	render: () => (
 		<fieldset className="grid w-96 gap-3">
-			<legend className="text-sm font-medium">Close window</legend>
-			<RadioGroup defaultValue="standard" aria-invalid={false}>
+			<legend className="font-medium text-sm">Close window</legend>
+			<RadioGroup aria-invalid={false} defaultValue="standard">
 				<Label className="flex items-center gap-2">
 					<RadioGroupItem value="standard" />
 					Standard close
@@ -188,7 +188,7 @@ export const StatesAndAccessibility: Story = {
 					Early close
 				</Label>
 				<Label className="flex items-center gap-2 text-foreground-secondary">
-					<RadioGroupItem value="locked" disabled />
+					<RadioGroupItem disabled value="locked" />
 					Locked period — unavailable
 				</Label>
 			</RadioGroup>
@@ -263,7 +263,7 @@ export const DoAndDoNot: Story = {
 		<div className="grid gap-6 sm:grid-cols-2">
 			<StorySection title="Do: mutually exclusive cadence">
 				<fieldset className="grid gap-3">
-					<legend className="text-sm font-medium">Billing cycle</legend>
+					<legend className="font-medium text-sm">Billing cycle</legend>
 					<RadioGroup defaultValue="monthly">
 						<Label className="flex items-center gap-2">
 							<RadioGroupItem value="monthly" />
@@ -277,7 +277,7 @@ export const DoAndDoNot: Story = {
 				</fieldset>
 			</StorySection>
 			<StorySection title="Do not: independent toggles as radios">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Send remittance email and require dual approval are independent
 					booleans. They belong on Checkbox or Switch, not RadioGroup.
 				</p>

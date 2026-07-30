@@ -25,30 +25,30 @@ import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 const initialState: AssignOrgRoleActionState = null;
 const SEARCH_DEBOUNCE_MS = 250;
 
-export type AssignableRoleOption = {
+export interface AssignableRoleOption {
 	id: string;
 	name: string;
-};
+}
 
-export type AssignableMemberOption = {
+export interface AssignableMemberOption {
 	id: string;
 	label: string;
-};
+}
 
 export type MemberDirectoryState =
 	| { status: "ready"; options: AssignableMemberOption[] }
 	| { status: "empty"; options: [] }
 	| { status: "unavailable"; options: [] };
 
-type AssignOrgRoleFormProps = {
-	roles: AssignableRoleOption[];
+interface AssignOrgRoleFormProps {
 	memberDirectory: MemberDirectoryState;
-};
+	roles: AssignableRoleOption[];
+}
 
-type ComboboxOption = {
-	value: string;
+interface ComboboxOption {
 	label: string;
-};
+	value: string;
+}
 
 function toComboboxOptions(
 	members: AssignableMemberOption[],
@@ -110,7 +110,7 @@ export function AssignOrgRoleForm({
 
 		let cancelled = false;
 		const timer = setTimeout(() => {
-			void searchOrgMembersAction({ query: trimmed }).then((result) => {
+			searchOrgMembersAction({ query: trimmed }).then((result) => {
 				if (cancelled) {
 					return;
 				}
@@ -186,37 +186,37 @@ export function AssignOrgRoleForm({
 			className="flex w-full flex-col gap-(--field-gap)"
 		>
 			<FormField
+				description="Search and select an active Neon Auth member of this organization."
+				error={userIdError}
+				fieldId="assign-user-id"
 				label="Organization member"
 				required
-				fieldId="assign-user-id"
-				error={userIdError}
-				description="Search and select an active Neon Auth member of this organization."
 			>
 				<Combobox
-					name="userId"
-					options={comboboxOptions}
-					value={selectedUserId}
-					onValueChange={setSelectedUserId}
+					aria-label="Organization member"
+					disabled={pending}
+					emptyMessage="No matching members."
 					filterMode={filterMode}
+					name="userId"
 					onSearchChange={setSearchQuery}
+					onValueChange={setSelectedUserId}
+					options={comboboxOptions}
 					placeholder="Select a member…"
 					searchPlaceholder="Search members…"
-					emptyMessage="No matching members."
-					disabled={pending}
-					aria-label="Organization member"
+					value={selectedUserId}
 				/>
 			</FormField>
 
 			<FormField
+				error={roleIdError}
+				fieldId="assign-role-id"
 				label="Platform role"
 				required
-				fieldId="assign-role-id"
-				error={roleIdError}
 			>
 				<NativeSelect
-					name="roleId"
 					defaultValue={defaultRoleId}
 					disabled={pending}
+					name="roleId"
 				>
 					{roles.map((role) => (
 						<NativeSelectOption key={role.id} value={role.id}>
@@ -226,13 +226,13 @@ export function AssignOrgRoleForm({
 				</NativeSelect>
 			</FormField>
 
-			<Button type="submit" disabled={pending || selectedUserId.length === 0}>
+			<Button disabled={pending || selectedUserId.length === 0} type="submit">
 				{pending ? (
 					<>
 						<Spinner
-							size="sm"
-							label="Assigning role"
 							className="text-primary-foreground"
+							label="Assigning role"
+							size="sm"
 						/>
 						Assigning role…
 					</>

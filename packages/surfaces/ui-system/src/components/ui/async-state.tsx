@@ -52,7 +52,7 @@ function AsyncState(props: AsyncStateProps) {
 			);
 		case "error":
 			return (
-				<Alert variant="destructive" className={props.className}>
+				<Alert className={props.className} variant="destructive">
 					<AlertTitle>{props.title ?? "Unable to load"}</AlertTitle>
 					<AlertDescription>{props.description}</AlertDescription>
 					{props.action ? <div className="mt-3">{props.action}</div> : null}
@@ -60,6 +60,8 @@ function AsyncState(props: AsyncStateProps) {
 			);
 		case "ready":
 			return <div className={props.className}>{props.children}</div>;
+		default:
+			return null;
 	}
 }
 

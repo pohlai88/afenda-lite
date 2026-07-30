@@ -1,4 +1,4 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { fail, ok, type Result } from "@afenda/errors/result";
 import {
 	itemIdSchema,
 	partyIdSchema,
@@ -311,7 +311,93 @@ export const closeSalesOrder = (
 	options: SalesCommandOptions = {},
 ) => transitionOrder("sales.order.close", "closed", input, options);
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Release coordinates ordered state, hold, credit, availability, and tax policy checks.
+type SalesDeps = ReturnType<typeof resolveSalesDeps>;
+
+function validateOrderPostingState(order: SalesOrder): Result<true> {
+	if (!(order.status === "approved" || order.status === "confirmed")) {
+		return fail("CONFLICT", "Sales order requires approval before release", {
+			reason: "SALES_INVALID_STATE",
+			status: order.status,
+		});
+	}
+	return ok(true);
+}
+
+async function checkOrderCredit(
+	deps: SalesDeps,
+	order: SalesOrder,
+): Promise<Result<string | undefined>> {
+	if (deps.credit === undefined) {
+		return ok(undefined);
+	}
+	const creditResult = await deps.credit.check({
+		organizationId: order.organizationId,
+		customerId: order.customer.partyId,
+		currencyCode: order.currencyCode,
+		amount: order.documentTotal,
+	});
+	if (!creditResult.ok) {
+		return creditResult;
+	}
+	if (!creditResult.data.approved) {
+		return fail("CONFLICT", "Sales order failed credit approval", {
+			reason: "SALES_INTEGRATION_REJECTED",
+			reference: creditResult.data.reference,
+		});
+	}
+	return ok(creditResult.data.reference);
+}
+
+async function checkOrderAvailability(
+	deps: SalesDeps,
+	order: SalesOrder,
+	lines: readonly SalesOrderLine[],
+): Promise<Result<string | undefined>> {
+	if (deps.availability === undefined) {
+		return ok(undefined);
+	}
+	const availabilityResult = await deps.availability.check({
+		organizationId: order.organizationId,
+		lines: lines.map((line) => ({
+			itemId: line.item.itemId,
+			quantity: line.quantity,
+			requestedDate: deps.clock.now(),
+		})),
+	});
+	if (!availabilityResult.ok) {
+		return availabilityResult;
+	}
+	if (!availabilityResult.data.available) {
+		return fail("CONFLICT", "Sales order has unavailable quantities", {
+			reason: "SALES_INTEGRATION_REJECTED",
+			shortages: availabilityResult.data.shortages,
+		});
+	}
+	return ok(availabilityResult.data.reference);
+}
+
+async function calculateOrderTax(
+	deps: SalesDeps,
+	order: SalesOrder,
+	lines: readonly SalesOrderLine[],
+	taxTotal: SalesOrder["taxTotal"],
+): Promise<Result<SalesOrder["taxTotal"]>> {
+	if (deps.tax === undefined) {
+		return ok(taxTotal);
+	}
+	const tax = await deps.tax.calculate({
+		organizationId: order.organizationId,
+		customerId: order.customer.partyId,
+		currencyCode: order.currencyCode,
+		lines: lines.map((line) => ({
+			itemId: line.item.itemId,
+			quantity: line.quantity,
+			netAmount: line.lineAmount,
+		})),
+	});
+	return tax.ok ? ok(tax.data.totalTax) : tax;
+}
+
 export async function postSalesOrder(
 	input: z.input<typeof postSalesOrderInputSchema>,
 	options: SalesCommandOptions = {},
@@ -345,13 +431,9 @@ export async function postSalesOrder(
 			reason: "SALES_NOT_FOUND",
 		});
 	}
-	if (
-		!(current.data.status === "approved" || current.data.status === "confirmed")
-	) {
-		return fail("CONFLICT", "Sales order requires approval before release", {
-			reason: "SALES_INVALID_STATE",
-			status: current.data.status,
-		});
+	const stateValidation = validateOrderPostingState(current.data);
+	if (!stateValidation.ok) {
+		return stateValidation;
 	}
 	const lines = await deps.store.listOrderLines({
 		organizationId: parsed.data.organizationId,
@@ -378,73 +460,37 @@ export async function postSalesOrder(
 			holds: holds.data.map((hold) => hold.kind),
 		});
 	}
-	let creditReference: string | undefined;
-	if (deps.credit) {
-		const creditResult = await deps.credit.check({
-			organizationId: parsed.data.organizationId,
-			customerId: current.data.customer.partyId,
-			currencyCode: current.data.currencyCode,
-			amount: current.data.documentTotal,
-		});
-		if (!creditResult.ok) {
-			return creditResult;
-		}
-		if (!creditResult.data.approved) {
-			return fail("CONFLICT", "Sales order failed credit approval", {
-				reason: "SALES_INTEGRATION_REJECTED",
-				reference: creditResult.data.reference,
-			});
-		}
-		creditReference = creditResult.data.reference;
+	const credit = await checkOrderCredit(deps, current.data);
+	if (!credit.ok) {
+		return credit;
 	}
-	let availabilityReference: string | undefined;
-	if (deps.availability) {
-		const availabilityResult = await deps.availability.check({
-			organizationId: parsed.data.organizationId,
-			lines: lines.data.map((line) => ({
-				itemId: line.item.itemId,
-				quantity: line.quantity,
-				requestedDate: deps.clock.now(),
-			})),
-		});
-		if (!availabilityResult.ok) {
-			return availabilityResult;
-		}
-		if (!availabilityResult.data.available) {
-			return fail("CONFLICT", "Sales order has unavailable quantities", {
-				reason: "SALES_INTEGRATION_REJECTED",
-				shortages: availabilityResult.data.shortages,
-			});
-		}
-		availabilityReference = availabilityResult.data.reference;
+	const availability = await checkOrderAvailability(
+		deps,
+		current.data,
+		lines.data,
+	);
+	if (!availability.ok) {
+		return availability;
 	}
-	let taxTotal = parsed.data.taxTotal ?? current.data.taxTotal;
-	if (deps.tax) {
-		const tax = await deps.tax.calculate({
-			organizationId: parsed.data.organizationId,
-			customerId: current.data.customer.partyId,
-			currencyCode: current.data.currencyCode,
-			lines: lines.data.map((line) => ({
-				itemId: line.item.itemId,
-				quantity: line.quantity,
-				netAmount: line.lineAmount,
-			})),
-		});
-		if (!tax.ok) {
-			return tax;
-		}
-		taxTotal = tax.data.totalTax;
+	const tax = await calculateOrderTax(
+		deps,
+		current.data,
+		lines.data,
+		parsed.data.taxTotal ?? current.data.taxTotal,
+	);
+	if (!tax.ok) {
+		return tax;
 	}
 	return deps.store.releaseOrder(
 		{
 			organizationId: parsed.data.organizationId,
 			id: parsed.data.orderId,
 			expectedVersion: parsed.data.expectedVersion,
-			taxTotal,
+			taxTotal: tax.data,
 			actorUserId: parsed.data.actorUserId,
 			at: deps.clock.now(),
-			creditReference,
-			availabilityReference,
+			creditReference: credit.data,
+			availabilityReference: availability.data,
 		},
 		salesEvidence({
 			...parsed.data,

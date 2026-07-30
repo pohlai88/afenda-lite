@@ -112,11 +112,11 @@ describe("N12 living authz audit evidence", () => {
 		const callOrder: string[] = [];
 		auditMocks.recordRbacAudit.mockImplementation(async () => {
 			callOrder.push("audit");
-			return { ok: true as const, data: { id: "audit-invite-1" } };
+			return await { ok: true as const, data: { id: "audit-invite-1" } };
 		});
 		authMocks.inviteOrgMember.mockImplementation(async () => {
 			callOrder.push("invite");
-			return {
+			return await {
 				ok: true as const,
 				data: { data: null, invitationId: "inv-n12-fixture" },
 			};

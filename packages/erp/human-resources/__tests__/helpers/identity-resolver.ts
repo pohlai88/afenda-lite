@@ -17,7 +17,7 @@ export function createStoreBackedIdentityResolver(
 			actorUserId: string;
 			asOf?: string;
 		}): Promise<Result<HumanResourcesEmployeeIdentity | null>> {
-			return store.getUserEmployeeMapping({
+			return await store.getUserEmployeeMapping({
 				organizationId: input.organizationId,
 				userId: input.actorUserId,
 				asOf: input.asOf,
@@ -28,7 +28,7 @@ export function createStoreBackedIdentityResolver(
 			actorUserId: string;
 			asOf?: string;
 		}): Promise<Result<HumanResourcesEmployeeId[]>> {
-			return store.getManagerEmployeesForUser({
+			return await store.getManagerEmployeesForUser({
 				organizationId: input.organizationId,
 				userId: input.actorUserId,
 				asOf: input.asOf,
@@ -48,7 +48,7 @@ export async function mapActorToEmployee(
 		effectiveUntil?: string;
 	},
 ): Promise<Result<{ id: string }>> {
-	return store.createUserEmployeeMapping({
+	return await store.createUserEmployeeMapping({
 		organizationId: input.organizationId,
 		userId: input.userId,
 		employeeId: input.employeeId,
@@ -75,16 +75,16 @@ export function createMappingIdentityResolver(
 		async resolveEmployeeForActor(input) {
 			const employeeId = mappings[input.actorUserId];
 			if (!employeeId) {
-				return ok(null);
+				return await ok(null);
 			}
 			const asOf = input.asOf ?? new Date().toISOString().slice(0, 10);
 			if (effectiveFrom > asOf) {
-				return ok(null);
+				return await ok(null);
 			}
 			if (effectiveUntil !== null && effectiveUntil < asOf) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({
+			return await ok({
 				employeeId,
 				relationshipType: "self",
 				effectiveFrom,
@@ -92,7 +92,7 @@ export function createMappingIdentityResolver(
 			});
 		},
 		async resolveManagerEmployeesForActor(input) {
-			return ok(managerReports[input.actorUserId] ?? []);
+			return await ok(managerReports[input.actorUserId] ?? []);
 		},
 	};
 }

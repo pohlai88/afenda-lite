@@ -4,54 +4,54 @@ import type { InventoryEventType } from "@afenda/events/schemas";
 import type { Item, RefUom, Warehouse } from "@afenda/master-data";
 
 /** Same-TX audit fact — production adapter writes `platform_audit_log`. */
-export type AuditFactInput = {
-	organizationId: string;
+export interface AuditFactInput {
+	action: "CREATE" | "UPDATE" | "DELETE";
 	actorUserId: string;
+	changes: Change[];
 	correlationId: string;
 	entity: string;
 	entityId: string;
-	action: "CREATE" | "UPDATE" | "DELETE";
-	changes: Change[];
-	oldValue?: Record<string, unknown> | null | undefined;
 	newValue?: Record<string, unknown> | null | undefined;
-};
-
-export type AuditFactPort = {
-	record(input: AuditFactInput): Promise<Result<{ id: string }>>;
-};
-
-export type OutboxFactInput = {
+	oldValue?: Record<string, unknown> | null | undefined;
 	organizationId: string;
+}
+
+export interface AuditFactPort {
+	record: (input: AuditFactInput) => Promise<Result<{ id: string }>>;
+}
+
+export interface OutboxFactInput {
 	actorUserId: string;
 	correlationId: string;
-	type: InventoryEventType;
+	organizationId: string;
 	payload: Record<string, unknown>;
-};
+	type: InventoryEventType;
+}
 
-export type OutboxPort = {
-	append(input: OutboxFactInput): Promise<Result<{ id: string }>>;
-};
+export interface OutboxPort {
+	append: (input: OutboxFactInput) => Promise<Result<{ id: string }>>;
+}
 
-export type MutationPorts = {
+export interface MutationPorts {
 	audit: AuditFactPort;
 	outbox: OutboxPort;
-};
+}
 
 /** Resolve Authority B masters — never dual-write `md_*`. */
-export type MasterLookupPort = {
-	getItemById(
+export interface MasterLookupPort {
+	getItemById: (
 		organizationId: string,
 		id: string,
 		actorUserId: string,
-	): Promise<Result<Item | null>>;
-	getRefUomById(
+	) => Promise<Result<Item | null>>;
+	getRefUomById: (
 		organizationId: string,
 		id: string,
 		actorUserId: string,
-	): Promise<Result<RefUom | null>>;
-	getWarehouseById(
+	) => Promise<Result<RefUom | null>>;
+	getWarehouseById: (
 		organizationId: string,
 		id: string,
 		actorUserId: string,
-	): Promise<Result<Warehouse | null>>;
-};
+	) => Promise<Result<Warehouse | null>>;
+}

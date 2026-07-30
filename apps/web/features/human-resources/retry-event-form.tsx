@@ -12,16 +12,16 @@ export function RetryEventForm({ eventId }: { eventId: string }) {
 	);
 	return (
 		<form action={action} aria-busy={pending} className="space-y-2">
-			<input type="hidden" name="eventId" value={eventId} />
-			<input type="hidden" name="confirmation" value="RETRY_FAILED_HR_EVENT" />
-			<Button type="submit" size="sm" variant="outline" disabled={pending}>
+			<input name="eventId" type="hidden" value={eventId} />
+			<input name="confirmation" type="hidden" value="RETRY_FAILED_HR_EVENT" />
+			<Button disabled={pending} size="sm" type="submit" variant="outline">
 				{pending ? <Spinner /> : null}
 				Retry
 			</Button>
 			{state?.ok === false ? <FormError>{state.message}</FormError> : null}
 			{state?.ok ? (
 				<p
-					className="text-sm font-bold text-success-subtle-foreground"
+					className="font-bold text-sm text-success-subtle-foreground"
 					role="status"
 				>
 					Queued for retry.

@@ -31,93 +31,238 @@ import type {
  * This is a domain slice of `HumanResourcesStore`. Keep persistence behavior
  * here; cross-domain orchestration belongs in application commands/services.
  */
-export type HeadcountPlanCreateRecord = {
-	organizationId: string;
+export interface HeadcountPlanCreateRecord {
 	code: string;
-	title: string;
-	planningScopeKey: string;
-	periodStart: string;
-	periodEnd: string;
 	costEnvelopeAmount: string | null;
 	costEnvelopeCurrencyCode: string | null;
+	createdBy: string;
 	createIdempotencyKey: string;
 	createRequestFingerprint: string;
-	createdBy: string;
-};
-
-export type IdempotentHeadcountPlanRecord = {
-	plan: HeadcountPlan;
-	createRequestFingerprint: string;
-};
-
-export type HeadcountPlanSupersedeRecord = {
 	organizationId: string;
-	sourcePlanId: HumanResourcesHeadcountPlanId;
-	code: string;
+	periodEnd: string;
+	periodStart: string;
+	planningScopeKey: string;
 	title: string;
+}
+
+export interface IdempotentHeadcountPlanRecord {
+	createRequestFingerprint: string;
+	plan: HeadcountPlan;
+}
+
+export interface HeadcountPlanSupersedeRecord {
+	code: string;
+	createdBy: string;
 	createIdempotencyKey: string;
 	createRequestFingerprint: string;
 	expectedVersion: number;
-	createdBy: string;
-};
-
-export type HeadcountPlanLineCreateRecord = {
 	organizationId: string;
-	planId: HumanResourcesHeadcountPlanId;
-	departmentId: HumanResourcesDepartmentId | null;
-	jobId: HumanResourcesJobId | null;
-	positionId: HumanResourcesPositionId | null;
-	locationCode: string | null;
-	employmentType: HeadcountEmploymentType | null;
-	plannedFte: string;
-	plannedHeadcount: number;
+	sourcePlanId: HumanResourcesHeadcountPlanId;
+	title: string;
+}
+
+export interface HeadcountPlanLineCreateRecord {
 	costEnvelopeAmount: string | null;
 	costEnvelopeCurrencyCode: string | null;
 	createdBy: string;
-};
+	departmentId: HumanResourcesDepartmentId | null;
+	employmentType: HeadcountEmploymentType | null;
+	jobId: HumanResourcesJobId | null;
+	locationCode: string | null;
+	organizationId: string;
+	planId: HumanResourcesHeadcountPlanId;
+	plannedFte: string;
+	plannedHeadcount: number;
+	positionId: HumanResourcesPositionId | null;
+}
 
-export type HeadcountReservationCreateRecord = {
+export interface HeadcountReservationCreateRecord {
+	createdBy: string;
+	createIdempotencyKey: string;
+	createRequestFingerprint: string;
 	organizationId: string;
 	planLineId: HumanResourcesHeadcountPlanLineId;
 	requisitionId: HumanResourcesRequisitionId;
 	reservedFte: string;
 	reservedHeadcount: number;
-	createIdempotencyKey: string;
-	createRequestFingerprint: string;
-	createdBy: string;
-};
+}
 
-export type IdempotentHeadcountReservationRecord = {
+export interface IdempotentHeadcountReservationRecord {
+	createRequestFingerprint: string;
 	reservation: HeadcountReservation;
-	createRequestFingerprint: string;
-};
+}
 
-export type HumanResourcesWorkforcePlanningStore = {
-	// Workforce planning — headcount plan
-	findHeadcountPlanByIdempotencyKey(input: {
+export interface HumanResourcesWorkforcePlanningStore {
+	addHeadcountPlanLine: (
+		record: HeadcountPlanLineCreateRecord,
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<HeadcountPlanLine>>;
+
+	consumeActiveHeadcountReservationForRequisition: (
+		input: {
+			organizationId: string;
+			requisitionId: HumanResourcesRequisitionId;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<void>>;
+
+	consumeHeadcountReservation: (
+		input: {
+			organizationId: string;
+			reservationId: HumanResourcesHeadcountReservationId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<HeadcountReservation>>;
+
+	createHeadcountPlan: (
+		record: HeadcountPlanCreateRecord,
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<HeadcountPlan>>;
+
+	findActiveHeadcountReservationForRequisition: (input: {
 		organizationId: string;
-		idempotencyKey: string;
-	}): Promise<Result<IdempotentHeadcountPlanRecord | null>>;
+		requisitionId: HumanResourcesRequisitionId;
+	}) => Promise<Result<HeadcountReservation | null>>;
 
-	getHeadcountPlanById(input: {
-		organizationId: string;
-		planId: HumanResourcesHeadcountPlanId;
-	}): Promise<Result<HeadcountPlan | null>>;
-
-	findApprovedHeadcountPlanForScope(input: {
+	findApprovedHeadcountPlanForScope: (input: {
 		organizationId: string;
 		planningScopeKey: string;
 		periodStart: string;
 		periodEnd: string;
-	}): Promise<Result<HeadcountPlan | null>>;
+	}) => Promise<Result<HeadcountPlan | null>>;
+	// Workforce planning — headcount plan
+	findHeadcountPlanByIdempotencyKey: (input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}) => Promise<Result<IdempotentHeadcountPlanRecord | null>>;
+	// Workforce planning — headcount reservation
+	findHeadcountReservationByIdempotencyKey: (input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}) => Promise<Result<IdempotentHeadcountReservationRecord | null>>;
 
-	createHeadcountPlan(
-		record: HeadcountPlanCreateRecord,
+	getHeadcountAvailability: (input: {
+		organizationId: string;
+		planLineId: HumanResourcesHeadcountPlanLineId;
+	}) => Promise<Result<HeadcountAvailability | null>>;
+
+	getHeadcountPlanById: (input: {
+		organizationId: string;
+		planId: HumanResourcesHeadcountPlanId;
+	}) => Promise<Result<HeadcountPlan | null>>;
+	// Workforce planning — headcount plan line
+	getHeadcountPlanLineById: (input: {
+		organizationId: string;
+		planLineId: HumanResourcesHeadcountPlanLineId;
+	}) => Promise<Result<HeadcountPlanLine | null>>;
+
+	getHeadcountReservationById: (input: {
+		organizationId: string;
+		reservationId: HumanResourcesHeadcountReservationId;
+	}) => Promise<Result<HeadcountReservation | null>>;
+
+	getRecruitmentHeadcountHandoff: (input: {
+		organizationId: string;
+		requisitionId: HumanResourcesRequisitionId;
+	}) => Promise<Result<RecruitmentHeadcountHandoff>>;
+
+	getWorkforcePlanVariance: (input: {
+		organizationId: string;
+		planId: HumanResourcesHeadcountPlanId;
+		asOf?: string | undefined;
+	}) => Promise<Result<WorkforcePlanVariance>>;
+
+	listHeadcountPlanLinesByPlanId: (input: {
+		organizationId: string;
+		planId: HumanResourcesHeadcountPlanId;
+	}) => Promise<Result<HeadcountPlanLine[]>>;
+
+	listHeadcountPlans: (input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		status?: HeadcountPlanStatus | undefined;
+		planningScopeKey?: string | undefined;
+	}) => Promise<Result<HeadcountPlanListPage>>;
+
+	listHeadcountReservations: (input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		planId?: HumanResourcesHeadcountPlanId | undefined;
+		requisitionId?: HumanResourcesRequisitionId | undefined;
+	}) => Promise<Result<HeadcountReservationListPage>>;
+
+	listHeadcountReservationsByPlanLineId: (input: {
+		organizationId: string;
+		planLineId: HumanResourcesHeadcountPlanLineId;
+	}) => Promise<Result<HeadcountReservation[]>>;
+
+	releaseActiveHeadcountReservationsForRequisition: (
+		input: {
+			organizationId: string;
+			requisitionId: HumanResourcesRequisitionId;
+			actorUserId: string;
+		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<HeadcountPlan>>;
+	) => Promise<Result<void>>;
 
-	updateHeadcountPlan(
+	releaseHeadcountReservation: (
+		input: {
+			organizationId: string;
+			reservationId: HumanResourcesHeadcountReservationId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<HeadcountReservation>>;
+
+	removeHeadcountPlanLine: (
+		input: {
+			organizationId: string;
+			planLineId: HumanResourcesHeadcountPlanLineId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<void>>;
+
+	reserveHeadcount: (
+		record: HeadcountReservationCreateRecord,
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<HeadcountReservation>>;
+
+	supersedeHeadcountPlan: (
+		record: HeadcountPlanSupersedeRecord,
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<HeadcountPlan>>;
+
+	transitionHeadcountPlanStatus: (
+		input: {
+			organizationId: string;
+			planId: HumanResourcesHeadcountPlanId;
+			status: HeadcountPlanStatus;
+			expectedVersion: number;
+			actorUserId: string;
+			rejectionReason?: string | undefined;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<HeadcountPlan>>;
+
+	updateHeadcountPlan: (
 		input: {
 			organizationId: string;
 			planId: HumanResourcesHeadcountPlanId;
@@ -129,52 +274,9 @@ export type HumanResourcesWorkforcePlanningStore = {
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<HeadcountPlan>>;
+	) => Promise<Result<HeadcountPlan>>;
 
-	transitionHeadcountPlanStatus(
-		input: {
-			organizationId: string;
-			planId: HumanResourcesHeadcountPlanId;
-			status: HeadcountPlanStatus;
-			expectedVersion: number;
-			actorUserId: string;
-			rejectionReason?: string | undefined;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<HeadcountPlan>>;
-
-	supersedeHeadcountPlan(
-		record: HeadcountPlanSupersedeRecord,
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<HeadcountPlan>>;
-
-	listHeadcountPlans(input: {
-		organizationId: string;
-		page: number;
-		pageSize: number;
-		status?: HeadcountPlanStatus | undefined;
-		planningScopeKey?: string | undefined;
-	}): Promise<Result<HeadcountPlanListPage>>;
-	// Workforce planning — headcount plan line
-	getHeadcountPlanLineById(input: {
-		organizationId: string;
-		planLineId: HumanResourcesHeadcountPlanLineId;
-	}): Promise<Result<HeadcountPlanLine | null>>;
-
-	listHeadcountPlanLinesByPlanId(input: {
-		organizationId: string;
-		planId: HumanResourcesHeadcountPlanId;
-	}): Promise<Result<HeadcountPlanLine[]>>;
-
-	addHeadcountPlanLine(
-		record: HeadcountPlanLineCreateRecord,
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<HeadcountPlanLine>>;
-
-	updateHeadcountPlanLine(
+	updateHeadcountPlanLine: (
 		input: {
 			organizationId: string;
 			planLineId: HumanResourcesHeadcountPlanLineId;
@@ -192,108 +294,5 @@ export type HumanResourcesWorkforcePlanningStore = {
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<HeadcountPlanLine>>;
-
-	removeHeadcountPlanLine(
-		input: {
-			organizationId: string;
-			planLineId: HumanResourcesHeadcountPlanLineId;
-			expectedVersion: number;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<void>>;
-	// Workforce planning — headcount reservation
-	findHeadcountReservationByIdempotencyKey(input: {
-		organizationId: string;
-		idempotencyKey: string;
-	}): Promise<Result<IdempotentHeadcountReservationRecord | null>>;
-
-	getHeadcountReservationById(input: {
-		organizationId: string;
-		reservationId: HumanResourcesHeadcountReservationId;
-	}): Promise<Result<HeadcountReservation | null>>;
-
-	findActiveHeadcountReservationForRequisition(input: {
-		organizationId: string;
-		requisitionId: HumanResourcesRequisitionId;
-	}): Promise<Result<HeadcountReservation | null>>;
-
-	reserveHeadcount(
-		record: HeadcountReservationCreateRecord,
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<HeadcountReservation>>;
-
-	releaseHeadcountReservation(
-		input: {
-			organizationId: string;
-			reservationId: HumanResourcesHeadcountReservationId;
-			expectedVersion: number;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<HeadcountReservation>>;
-
-	consumeHeadcountReservation(
-		input: {
-			organizationId: string;
-			reservationId: HumanResourcesHeadcountReservationId;
-			expectedVersion: number;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<HeadcountReservation>>;
-
-	releaseActiveHeadcountReservationsForRequisition(
-		input: {
-			organizationId: string;
-			requisitionId: HumanResourcesRequisitionId;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<void>>;
-
-	consumeActiveHeadcountReservationForRequisition(
-		input: {
-			organizationId: string;
-			requisitionId: HumanResourcesRequisitionId;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<void>>;
-
-	listHeadcountReservations(input: {
-		organizationId: string;
-		page: number;
-		pageSize: number;
-		planId?: HumanResourcesHeadcountPlanId | undefined;
-		requisitionId?: HumanResourcesRequisitionId | undefined;
-	}): Promise<Result<HeadcountReservationListPage>>;
-
-	listHeadcountReservationsByPlanLineId(input: {
-		organizationId: string;
-		planLineId: HumanResourcesHeadcountPlanLineId;
-	}): Promise<Result<HeadcountReservation[]>>;
-
-	getHeadcountAvailability(input: {
-		organizationId: string;
-		planLineId: HumanResourcesHeadcountPlanLineId;
-	}): Promise<Result<HeadcountAvailability | null>>;
-
-	getRecruitmentHeadcountHandoff(input: {
-		organizationId: string;
-		requisitionId: HumanResourcesRequisitionId;
-	}): Promise<Result<RecruitmentHeadcountHandoff>>;
-
-	getWorkforcePlanVariance(input: {
-		organizationId: string;
-		planId: HumanResourcesHeadcountPlanId;
-		asOf?: string | undefined;
-	}): Promise<Result<WorkforcePlanVariance>>;
-};
+	) => Promise<Result<HeadcountPlanLine>>;
+}

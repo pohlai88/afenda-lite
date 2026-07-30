@@ -30,7 +30,9 @@ export async function seedLifecycleEmploymentWithAssignment(
 		},
 		ready,
 	);
-	if (!employee.ok) return employee;
+	if (!employee.ok) {
+		return employee;
+	}
 
 	const employment = await createEmployment(
 		{
@@ -42,7 +44,9 @@ export async function seedLifecycleEmploymentWithAssignment(
 		},
 		ready,
 	);
-	if (!employment.ok) return employment;
+	if (!employment.ok) {
+		return employment;
+	}
 
 	const orgSeed = await seedDepartmentAndJob(ready, {
 		organizationId: input.organizationId,
@@ -69,7 +73,9 @@ export async function seedLifecycleEmploymentWithAssignment(
 		},
 		ready,
 	);
-	if (!positionA.ok) return positionA;
+	if (!positionA.ok) {
+		return positionA;
+	}
 
 	const positionB = await createPosition(
 		{
@@ -83,7 +89,9 @@ export async function seedLifecycleEmploymentWithAssignment(
 		},
 		ready,
 	);
-	if (!positionB.ok) return positionB;
+	if (!positionB.ok) {
+		return positionB;
+	}
 
 	const assignment = await createAssignment(
 		{
@@ -97,7 +105,9 @@ export async function seedLifecycleEmploymentWithAssignment(
 		},
 		ready,
 	);
-	if (!assignment.ok) return assignment;
+	if (!assignment.ok) {
+		return assignment;
+	}
 
 	return {
 		ok: true as const,

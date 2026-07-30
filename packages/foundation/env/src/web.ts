@@ -69,6 +69,259 @@ export function isDevelopmentRuntimeNow(): boolean {
 	return runtimeCtx.nodeEnv === "development" && !isVercelRuntime(runtimeCtx);
 }
 
+type ReliabilityValues = Readonly<{
+	HR_RELIABILITY_PER_ORG_LIMIT: number;
+	HR_RELIABILITY_BATCH_SIZE: number;
+	HR_RELIABILITY_CONCURRENCY: number;
+}>;
+
+type UpstashValues = Readonly<{
+	UPSTASH_REDIS_REST_URL?: string | undefined;
+	UPSTASH_REDIS_REST_TOKEN?: string | undefined;
+}>;
+
+type PortalValues = Readonly<{
+	PORTAL_ORGANIZATION_ID?: string | undefined;
+	PORTAL_ORG_SLUG?: string | undefined;
+	PORTAL_ORG_NAME?: string | undefined;
+	PORTAL_ORG_SWITCHER_ENABLED: boolean;
+}>;
+
+type PlaygroundValues = Readonly<{
+	PLAYGROUND_ENABLED: boolean;
+	PLAYGROUND_SURVEY_ID?: string | undefined;
+	PLAYGROUND_ASSIGNMENT_ID?: string | undefined;
+	PLAYGROUND_SURVEY_SLUG?: string | undefined;
+}>;
+
+type ProductionValues = Parameters<
+	typeof assertLocalOnlyConfigAbsentInProduction
+>[0] &
+	Readonly<{
+		NEON_ORG_ID?: string | undefined;
+		NEON_PROJECT_ID?: string | undefined;
+		NEON_BRANCH_ID?: string | undefined;
+		UPSTASH_REDIS_REST_URL?: string | undefined;
+		HR_RELIABILITY_ENABLED: boolean;
+		CRON_SECRET?: string | undefined;
+	}>;
+
+function addCustomIssue(
+	ctx: z.RefinementCtx,
+	path: string,
+	message: string,
+): void {
+	ctx.addIssue({ code: "custom", path: [path], message });
+}
+
+function validateReliabilityLimits(
+	value: ReliabilityValues,
+	ctx: z.RefinementCtx,
+): void {
+	if (value.HR_RELIABILITY_PER_ORG_LIMIT > value.HR_RELIABILITY_BATCH_SIZE) {
+		addCustomIssue(
+			ctx,
+			"HR_RELIABILITY_PER_ORG_LIMIT",
+			"HR reliability per-organization limit cannot exceed batch size.",
+		);
+	}
+	if (value.HR_RELIABILITY_CONCURRENCY > value.HR_RELIABILITY_BATCH_SIZE) {
+		addCustomIssue(
+			ctx,
+			"HR_RELIABILITY_CONCURRENCY",
+			"HR reliability concurrency cannot exceed batch size.",
+		);
+	}
+}
+
+function validateUpstashPair(
+	value: UpstashValues,
+	ctx: z.RefinementCtx,
+): boolean {
+	const result = assertPairedSecretConfig({
+		leftName: "UPSTASH_REDIS_REST_URL",
+		leftValue: value.UPSTASH_REDIS_REST_URL,
+		rightName: "UPSTASH_REDIS_REST_TOKEN",
+		rightValue: value.UPSTASH_REDIS_REST_TOKEN,
+	});
+	if (!result.ok) {
+		addCustomIssue(
+			ctx,
+			value.UPSTASH_REDIS_REST_URL === undefined
+				? "UPSTASH_REDIS_REST_URL"
+				: "UPSTASH_REDIS_REST_TOKEN",
+			formatNeonContractIssues(result.issues),
+		);
+	}
+	return result.ok;
+}
+
+function validatePortalIdentity(
+	value: PortalValues,
+	ctx: z.RefinementCtx,
+): void {
+	const identityPresent = value.PORTAL_ORGANIZATION_ID !== undefined;
+	const descriptionPresent =
+		value.PORTAL_ORG_SLUG !== undefined || value.PORTAL_ORG_NAME !== undefined;
+	if (value.PORTAL_ORG_SWITCHER_ENABLED && !identityPresent) {
+		addCustomIssue(
+			ctx,
+			"PORTAL_ORGANIZATION_ID",
+			"PORTAL_ORGANIZATION_ID is required when PORTAL_ORG_SWITCHER_ENABLED=true.",
+		);
+	}
+	if (descriptionPresent && !identityPresent) {
+		addCustomIssue(
+			ctx,
+			"PORTAL_ORGANIZATION_ID",
+			"PORTAL_ORGANIZATION_ID is required when portal organization metadata is configured.",
+		);
+	}
+}
+
+function validatePlaygroundTarget(
+	value: PlaygroundValues,
+	ctx: z.RefinementCtx,
+): void {
+	if (
+		value.PLAYGROUND_ENABLED &&
+		value.PLAYGROUND_SURVEY_ID === undefined &&
+		value.PLAYGROUND_ASSIGNMENT_ID === undefined &&
+		value.PLAYGROUND_SURVEY_SLUG === undefined
+	) {
+		addCustomIssue(
+			ctx,
+			"PLAYGROUND_ENABLED",
+			"At least one playground survey or assignment target is required when PLAYGROUND_ENABLED=true.",
+		);
+	}
+}
+
+function validatePairedCredential(
+	ctx: z.RefinementCtx,
+	leftName: string,
+	leftValue: string | undefined,
+	rightName: string,
+	rightValue: string | undefined,
+): void {
+	const result = assertPairedSecretConfig({
+		leftName,
+		leftValue,
+		rightName,
+		rightValue,
+	});
+	if (!result.ok) {
+		addCustomIssue(ctx, leftName, formatNeonContractIssues(result.issues));
+	}
+}
+
+function validatePairedCredentials(
+	value: Readonly<{
+		PREVIEW_CLIENT_EMAIL?: string | undefined;
+		PREVIEW_CLIENT_PASSWORD?: string | undefined;
+		E2E_OPERATOR_EMAIL?: string | undefined;
+		E2E_OPERATOR_PASSWORD?: string | undefined;
+		E2E_CLIENT_EMAIL?: string | undefined;
+		E2E_CLIENT_PASSWORD?: string | undefined;
+		E2E_INVITEE_EMAIL?: string | undefined;
+		E2E_INVITEE_PASSWORD?: string | undefined;
+		SHADCN_STUDIO_EMAIL?: string | undefined;
+		SHADCN_STUDIO_API_KEY?: string | undefined;
+	}>,
+	ctx: z.RefinementCtx,
+): void {
+	validatePairedCredential(
+		ctx,
+		"PREVIEW_CLIENT_EMAIL",
+		value.PREVIEW_CLIENT_EMAIL,
+		"PREVIEW_CLIENT_PASSWORD",
+		value.PREVIEW_CLIENT_PASSWORD,
+	);
+	validatePairedCredential(
+		ctx,
+		"E2E_OPERATOR_EMAIL",
+		value.E2E_OPERATOR_EMAIL,
+		"E2E_OPERATOR_PASSWORD",
+		value.E2E_OPERATOR_PASSWORD,
+	);
+	validatePairedCredential(
+		ctx,
+		"E2E_CLIENT_EMAIL",
+		value.E2E_CLIENT_EMAIL,
+		"E2E_CLIENT_PASSWORD",
+		value.E2E_CLIENT_PASSWORD,
+	);
+	validatePairedCredential(
+		ctx,
+		"E2E_INVITEE_EMAIL",
+		value.E2E_INVITEE_EMAIL,
+		"E2E_INVITEE_PASSWORD",
+		value.E2E_INVITEE_PASSWORD,
+	);
+	validatePairedCredential(
+		ctx,
+		"SHADCN_STUDIO_EMAIL",
+		value.SHADCN_STUDIO_EMAIL,
+		"SHADCN_STUDIO_API_KEY",
+		value.SHADCN_STUDIO_API_KEY,
+	);
+}
+
+function validateProductionRequirements(
+	value: ProductionValues,
+	ctx: z.RefinementCtx,
+	upstashPairValid: boolean,
+): void {
+	if (!productionDeployment) {
+		return;
+	}
+	if (value.NEON_ORG_ID === undefined) {
+		addCustomIssue(
+			ctx,
+			"NEON_ORG_ID",
+			"NEON_ORG_ID is required on production deployments.",
+		);
+	}
+	if (value.NEON_PROJECT_ID === undefined) {
+		addCustomIssue(
+			ctx,
+			"NEON_PROJECT_ID",
+			"NEON_PROJECT_ID is required on production deployments.",
+		);
+	}
+	if (value.NEON_BRANCH_ID === undefined) {
+		addCustomIssue(
+			ctx,
+			"NEON_BRANCH_ID",
+			"NEON_BRANCH_ID is required on production deployments.",
+		);
+	}
+	if (upstashPairValid && value.UPSTASH_REDIS_REST_URL === undefined) {
+		addCustomIssue(
+			ctx,
+			"UPSTASH_REDIS_REST_URL",
+			"UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are required on production deployments.",
+		);
+	}
+	if (value.HR_RELIABILITY_ENABLED && value.CRON_SECRET === undefined) {
+		addCustomIssue(
+			ctx,
+			"CRON_SECRET",
+			"CRON_SECRET is required in production when HR_RELIABILITY_ENABLED=true.",
+		);
+	}
+
+	const localOnlyResult = assertLocalOnlyConfigAbsentInProduction(
+		value,
+		runtimeCtx,
+	);
+	if (!localOnlyResult.ok) {
+		for (const issue of localOnlyResult.issues) {
+			addCustomIssue(ctx, issue.variable, issue.message);
+		}
+	}
+}
+
 /**
  * Typed Next.js environment contract for `@afenda/web`.
  *
@@ -108,7 +361,7 @@ export const env = createEnv({
 		HR_RELIABILITY_CONCURRENCY: boundedIntString(1, 10, 4),
 		HR_RELIABILITY_PER_ORG_LIMIT: boundedIntString(1, 25, 5),
 		HR_RELIABILITY_LEASE_SECONDS: boundedIntString(60, 900, 120),
-		HR_RELIABILITY_TIME_BUDGET_MS: boundedIntString(1_000, 55_000, 45_000),
+		HR_RELIABILITY_TIME_BUDGET_MS: boundedIntString(1000, 55_000, 45_000),
 
 		AI_GATEWAY_API_KEY: nonEmptyOptionalString,
 		AI_THE_MACHINE_MODEL: z
@@ -231,215 +484,11 @@ export const env = createEnv({
 	skipValidation,
 	createFinalSchema: (shape) =>
 		z.object(shape).superRefine((value, ctx) => {
-			if (
-				value.HR_RELIABILITY_PER_ORG_LIMIT > value.HR_RELIABILITY_BATCH_SIZE
-			) {
-				ctx.addIssue({
-					code: "custom",
-					path: ["HR_RELIABILITY_PER_ORG_LIMIT"],
-					message:
-						"HR reliability per-organization limit cannot exceed batch size.",
-				});
-			}
-			if (value.HR_RELIABILITY_CONCURRENCY > value.HR_RELIABILITY_BATCH_SIZE) {
-				ctx.addIssue({
-					code: "custom",
-					path: ["HR_RELIABILITY_CONCURRENCY"],
-					message: "HR reliability concurrency cannot exceed batch size.",
-				});
-			}
-
-			const upstashResult = assertPairedSecretConfig({
-				leftName: "UPSTASH_REDIS_REST_URL",
-				leftValue: value.UPSTASH_REDIS_REST_URL,
-				rightName: "UPSTASH_REDIS_REST_TOKEN",
-				rightValue: value.UPSTASH_REDIS_REST_TOKEN,
-			});
-			if (!upstashResult.ok) {
-				ctx.addIssue({
-					code: "custom",
-					path: [
-						value.UPSTASH_REDIS_REST_URL === undefined
-							? "UPSTASH_REDIS_REST_URL"
-							: "UPSTASH_REDIS_REST_TOKEN",
-					],
-					message: formatNeonContractIssues(upstashResult.issues),
-				});
-			}
-
-			const portalIdentityPresent = value.PORTAL_ORGANIZATION_ID !== undefined;
-			const portalDescriptionPresent =
-				value.PORTAL_ORG_SLUG !== undefined ||
-				value.PORTAL_ORG_NAME !== undefined;
-			if (value.PORTAL_ORG_SWITCHER_ENABLED && !portalIdentityPresent) {
-				ctx.addIssue({
-					code: "custom",
-					path: ["PORTAL_ORGANIZATION_ID"],
-					message:
-						"PORTAL_ORGANIZATION_ID is required when PORTAL_ORG_SWITCHER_ENABLED=true.",
-				});
-			}
-			if (portalDescriptionPresent && !portalIdentityPresent) {
-				ctx.addIssue({
-					code: "custom",
-					path: ["PORTAL_ORGANIZATION_ID"],
-					message:
-						"PORTAL_ORGANIZATION_ID is required when portal organization metadata is configured.",
-				});
-			}
-
-			if (
-				value.PLAYGROUND_ENABLED &&
-				value.PLAYGROUND_SURVEY_ID === undefined &&
-				value.PLAYGROUND_ASSIGNMENT_ID === undefined &&
-				value.PLAYGROUND_SURVEY_SLUG === undefined
-			) {
-				ctx.addIssue({
-					code: "custom",
-					path: ["PLAYGROUND_ENABLED"],
-					message:
-						"At least one playground survey or assignment target is required when PLAYGROUND_ENABLED=true.",
-				});
-			}
-
-			const pairedConfigs = [
-				{
-					result: assertPairedSecretConfig({
-						leftName: "PREVIEW_CLIENT_EMAIL",
-						leftValue: value.PREVIEW_CLIENT_EMAIL,
-						rightName: "PREVIEW_CLIENT_PASSWORD",
-						rightValue: value.PREVIEW_CLIENT_PASSWORD,
-					}),
-					path: "PREVIEW_CLIENT_EMAIL",
-				},
-				{
-					result: assertPairedSecretConfig({
-						leftName: "E2E_OPERATOR_EMAIL",
-						leftValue: value.E2E_OPERATOR_EMAIL,
-						rightName: "E2E_OPERATOR_PASSWORD",
-						rightValue: value.E2E_OPERATOR_PASSWORD,
-					}),
-					path: "E2E_OPERATOR_EMAIL",
-				},
-				{
-					result: assertPairedSecretConfig({
-						leftName: "E2E_CLIENT_EMAIL",
-						leftValue: value.E2E_CLIENT_EMAIL,
-						rightName: "E2E_CLIENT_PASSWORD",
-						rightValue: value.E2E_CLIENT_PASSWORD,
-					}),
-					path: "E2E_CLIENT_EMAIL",
-				},
-				{
-					result: assertPairedSecretConfig({
-						leftName: "E2E_INVITEE_EMAIL",
-						leftValue: value.E2E_INVITEE_EMAIL,
-						rightName: "E2E_INVITEE_PASSWORD",
-						rightValue: value.E2E_INVITEE_PASSWORD,
-					}),
-					path: "E2E_INVITEE_EMAIL",
-				},
-				{
-					result: assertPairedSecretConfig({
-						leftName: "SHADCN_STUDIO_EMAIL",
-						leftValue: value.SHADCN_STUDIO_EMAIL,
-						rightName: "SHADCN_STUDIO_API_KEY",
-						rightValue: value.SHADCN_STUDIO_API_KEY,
-					}),
-					path: "SHADCN_STUDIO_EMAIL",
-				},
-			] as const;
-			for (const config of pairedConfigs) {
-				if (!config.result.ok) {
-					ctx.addIssue({
-						code: "custom",
-						path: [config.path],
-						message: formatNeonContractIssues(config.result.issues),
-					});
-				}
-			}
-
-			if (!productionDeployment) {
-				return;
-			}
-
-			if (value.NEON_ORG_ID === undefined) {
-				ctx.addIssue({
-					code: "custom",
-					path: ["NEON_ORG_ID"],
-					message: "NEON_ORG_ID is required on production deployments.",
-				});
-			}
-			if (value.NEON_PROJECT_ID === undefined) {
-				ctx.addIssue({
-					code: "custom",
-					path: ["NEON_PROJECT_ID"],
-					message: "NEON_PROJECT_ID is required on production deployments.",
-				});
-			}
-			if (value.NEON_BRANCH_ID === undefined) {
-				ctx.addIssue({
-					code: "custom",
-					path: ["NEON_BRANCH_ID"],
-					message: "NEON_BRANCH_ID is required on production deployments.",
-				});
-			}
-			if (upstashResult.ok && value.UPSTASH_REDIS_REST_URL === undefined) {
-				ctx.addIssue({
-					code: "custom",
-					path: ["UPSTASH_REDIS_REST_URL"],
-					message:
-						"UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are required on production deployments.",
-				});
-			}
-			if (value.HR_RELIABILITY_ENABLED && value.CRON_SECRET === undefined) {
-				ctx.addIssue({
-					code: "custom",
-					path: ["CRON_SECRET"],
-					message:
-						"CRON_SECRET is required in production when HR_RELIABILITY_ENABLED=true.",
-				});
-			}
-
-			const localOnlyResult = assertLocalOnlyConfigAbsentInProduction(
-				{
-					NEON_API_KEY: value.NEON_API_KEY,
-					PLAYGROUND_ENABLED: value.PLAYGROUND_ENABLED,
-					PLAYGROUND_SURVEY_ID: value.PLAYGROUND_SURVEY_ID,
-					PLAYGROUND_ASSIGNMENT_ID: value.PLAYGROUND_ASSIGNMENT_ID,
-					PLAYGROUND_SURVEY_SLUG: value.PLAYGROUND_SURVEY_SLUG,
-					SHARED_ADMIN_EMAIL: value.SHARED_ADMIN_EMAIL,
-					SHARED_ADMIN_NAME: value.SHARED_ADMIN_NAME,
-					SHARED_ADMIN_PASSWORD: value.SHARED_ADMIN_PASSWORD,
-					PREVIEW_CLIENT_EMAIL: value.PREVIEW_CLIENT_EMAIL,
-					PREVIEW_CLIENT_NAME: value.PREVIEW_CLIENT_NAME,
-					PREVIEW_CLIENT_PASSWORD: value.PREVIEW_CLIENT_PASSWORD,
-					CLIENT_DEFAULT_PASSWORD: value.CLIENT_DEFAULT_PASSWORD,
-					E2E_ORGANIZATION_ID: value.E2E_ORGANIZATION_ID,
-					E2E_FACTORY_PASSWORD: value.E2E_FACTORY_PASSWORD,
-					E2E_FACTORY_HASH_TEMPLATE_EMAIL:
-						value.E2E_FACTORY_HASH_TEMPLATE_EMAIL,
-					E2E_OPERATOR_EMAIL: value.E2E_OPERATOR_EMAIL,
-					E2E_OPERATOR_PASSWORD: value.E2E_OPERATOR_PASSWORD,
-					E2E_CLIENT_EMAIL: value.E2E_CLIENT_EMAIL,
-					E2E_CLIENT_PASSWORD: value.E2E_CLIENT_PASSWORD,
-					E2E_INVITEE_EMAIL: value.E2E_INVITEE_EMAIL,
-					E2E_INVITEE_PASSWORD: value.E2E_INVITEE_PASSWORD,
-					E2E_SURVEY_SLUG: value.E2E_SURVEY_SLUG,
-					E2E_INVITE_TOKEN: value.E2E_INVITE_TOKEN,
-					SHADCN_STUDIO_EMAIL: value.SHADCN_STUDIO_EMAIL,
-					SHADCN_STUDIO_API_KEY: value.SHADCN_STUDIO_API_KEY,
-				},
-				runtimeCtx,
-			);
-			if (!localOnlyResult.ok) {
-				for (const issue of localOnlyResult.issues) {
-					ctx.addIssue({
-						code: "custom",
-						path: [issue.variable],
-						message: issue.message,
-					});
-				}
-			}
+			validateReliabilityLimits(value, ctx);
+			const upstashPairValid = validateUpstashPair(value, ctx);
+			validatePortalIdentity(value, ctx);
+			validatePlaygroundTarget(value, ctx);
+			validatePairedCredentials(value, ctx);
+			validateProductionRequirements(value, ctx, upstashPairValid);
 		}),
 });

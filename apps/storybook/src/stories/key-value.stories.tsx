@@ -55,29 +55,29 @@ export const Overview: Story = {
 				<header className="grid gap-2 border-b pb-6">
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="outline">Accounts receivable</Badge>
-						<StatusBadge size="sm" status="pending" label="Awaiting evidence" />
+						<StatusBadge label="Awaiting evidence" size="sm" status="pending" />
 					</div>
-					<h1 className="text-2xl font-semibold tracking-tight">
+					<h1 className="font-semibold text-2xl tracking-tight">
 						Invoice INV-1042 · record summary
 					</h1>
-					<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+					<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 						KeyValue presents labelled read-only facts. Feature code owns
 						formatting, redaction, ordering, and whether a value may be shown.
 					</p>
 				</header>
 
 				<section
-					className="grid gap-3"
 					aria-labelledby="key-value-summary-title"
+					className="grid gap-3"
 				>
 					<div className="grid gap-1">
 						<h2
-							className="text-base font-semibold tracking-tight text-foreground"
+							className="font-semibold text-base text-foreground tracking-tight"
 							id="key-value-summary-title"
 						>
 							Invoice identity
 						</h2>
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							Stacked labels for clear hierarchy; copyable where operators need
 							exact identifiers.
 						</p>
@@ -91,18 +91,18 @@ export const Overview: Story = {
 						</CardHeader>
 						<CardContent>
 							<KeyValueList
-								orientation="vertical"
-								size="md"
 								items={[
 									{ label: "Invoice", value: "INV-1042", copyable: true },
 									{ label: "Supplier", value: "SUP-004821", copyable: true },
 									{ label: "Currency", value: "MYR" },
 									{ label: "Due date", value: "28 Jul 2026" },
 								]}
+								orientation="vertical"
+								size="md"
 							/>
 						</CardContent>
 						<CardFooter className="justify-end border-t">
-							<Button type="button" size="sm" variant="outline">
+							<Button size="sm" type="button" variant="outline">
 								Open full record
 							</Button>
 						</CardFooter>
@@ -125,14 +125,14 @@ export const SemanticUsage: Story = {
 	render: () => (
 		<div className="grid w-full max-w-md gap-6">
 			<StorySection
-				title="Single pair"
 				description="One labelled fact with optional copy."
+				title="Single pair"
 			>
-				<KeyValue label="Organization" value="org-fragrant-lake" copyable />
+				<KeyValue copyable label="Organization" value="org-fragrant-lake" />
 			</StorySection>
 			<StorySection
-				title="Metadata list"
 				description="Ordered by task importance, not storage order."
+				title="Metadata list"
 			>
 				<KeyValueList
 					items={[
@@ -158,26 +158,26 @@ export const Variants: Story = {
 	render: () => (
 		<div className="grid w-full max-w-lg gap-6">
 			<StorySection
-				title="vertical"
 				description="Stacked label and value for wrapping or clear hierarchy."
+				title="vertical"
 			>
-				<KeyValue orientation="vertical" label="Invoice" value="INV-1042" />
+				<KeyValue label="Invoice" orientation="vertical" value="INV-1042" />
 			</StorySection>
 			<StorySection
-				title="horizontal"
 				description="Opposed label and value across available width."
+				title="horizontal"
 			>
 				<KeyValue
-					orientation="horizontal"
 					label="Supplier"
+					orientation="horizontal"
 					value="Northwind Trading Sdn. Bhd."
 				/>
 			</StorySection>
 			<StorySection
-				title="inline"
 				description="Compact inline pair for dense repeated metadata."
+				title="inline"
 			>
-				<KeyValue orientation="inline" label="Currency" value="MYR" size="sm" />
+				<KeyValue label="Currency" orientation="inline" size="sm" value="MYR" />
 			</StorySection>
 		</div>
 	),
@@ -201,11 +201,11 @@ export const Sizes: Story = {
 					{ size: "lg" as const, description: "Sparse summary emphasis." },
 				] as const
 			).map(({ size, description }) => (
-				<StorySection key={size} title={size} description={description}>
+				<StorySection description={description} key={size} title={size}>
 					<KeyValue
+						label="Invoice"
 						orientation="horizontal"
 						size={size}
-						label="Invoice"
 						value="INV-1042"
 					/>
 				</StorySection>
@@ -225,24 +225,24 @@ export const StatesAndAccessibility: Story = {
 	},
 	render: () => (
 		<div className="grid w-full max-w-md gap-6">
-			<StorySection title="Loaded" description="Stable labelled value.">
+			<StorySection description="Stable labelled value." title="Loaded">
 				<KeyValue label="Invoice" value="INV-1042" />
 			</StorySection>
 			<StorySection
-				title="Copyable"
 				description="String values may expose a copy control with an explicit title."
+				title="Copyable"
 			>
-				<KeyValue label="Correlation ID" value="corr-9f2a1c" copyable />
+				<KeyValue copyable label="Correlation ID" value="corr-9f2a1c" />
 			</StorySection>
 			<StorySection
-				title="Loading"
 				description="Pulse placeholder while feature code resolves the value."
+				title="Loading"
 			>
 				<KeyValue label="Settlement bank" loading />
 			</StorySection>
 			<StorySection
-				title="Unavailable"
 				description="Use an em dash only when the domain value is genuinely absent."
+				title="Unavailable"
 			>
 				<KeyValue label="External reference" />
 			</StorySection>
@@ -269,21 +269,21 @@ export const Composition: Story = {
 			</CardHeader>
 			<CardContent>
 				<KeyValueList
-					orientation="horizontal"
-					size="sm"
 					items={[
 						{ label: "Supplier", value: "SUP-004821", copyable: true },
 						{ label: "Amount", value: "USD 1,250.00" },
 						{ label: "Method", value: "ACH" },
 						{ label: "Advice status", value: "Draft" },
 					]}
+					orientation="horizontal"
+					size="sm"
 				/>
 			</CardContent>
 			<CardFooter className="justify-end gap-2 border-t">
-				<Button type="button" variant="outline" size="sm">
+				<Button size="sm" type="button" variant="outline">
 					Edit remittance
 				</Button>
-				<Button type="button" size="sm">
+				<Button size="sm" type="button">
 					Generate advice
 				</Button>
 			</CardFooter>
@@ -303,25 +303,25 @@ export const DoAndDoNot: Story = {
 	render: () => (
 		<div className="grid w-full max-w-5xl gap-6 md:grid-cols-2">
 			<StorySection
-				title="Do"
 				description="Read-only summary with consistent currency formatting."
+				title="Do"
 			>
 				<KeyValueList
-					orientation="vertical"
 					items={[
 						{ label: "Invoiced", value: "MYR 4,820.50" },
 						{ label: "Paid", value: "MYR 1,200.00" },
 						{ label: "Open", value: "MYR 3,620.50" },
 					]}
+					orientation="vertical"
 				/>
 			</StorySection>
 			<StorySection
-				title="Do not"
 				description="Do not treat KeyValue as the edit surface for mutable fields."
+				title="Do not"
 			>
 				<div className="grid gap-2 rounded-md border border-destructive/40 p-3">
 					<KeyValue label="Invoice total (edit here)" value="4820.5" />
-					<p className="text-xs text-destructive">
+					<p className="text-destructive text-xs">
 						Editable amounts belong in FormField + Input or NumericInput — not
 						KeyValue.
 					</p>

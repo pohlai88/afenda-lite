@@ -40,7 +40,9 @@ describe("extension lifecycle policy", () => {
 			"active",
 		);
 		expect(result.ok).toBe(false);
-		if (result.ok) return;
+		if (result.ok) {
+			return;
+		}
 		expect((result.details as { reason?: string }).reason).toBe(
 			"MASTER_INVALID_STATE",
 		);
@@ -74,7 +76,9 @@ describe("extension lifecycle policy", () => {
 			"inactive",
 		);
 		expect(resolved.ok).toBe(true);
-		if (!resolved.ok) return;
+		if (!resolved.ok) {
+			return;
+		}
 
 		expect(assertExtensionTransitionReason(resolved.data, "   ").ok).toBe(
 			false,
@@ -83,7 +87,7 @@ describe("extension lifecycle policy", () => {
 			assertExtensionTransitionReason(resolved.data, "  Duplicate role  "),
 		).toEqual({ ok: true, data: "Duplicate role" });
 		expect(
-			assertExtensionTransitionReason(resolved.data, "x".repeat(1_001)).ok,
+			assertExtensionTransitionReason(resolved.data, "x".repeat(1001)).ok,
 		).toBe(false);
 	});
 

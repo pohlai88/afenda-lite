@@ -4,6 +4,7 @@ import type {
 	PurchaseOrderCommitmentQueryPort,
 	PurchaseOrderCommitmentStatus,
 } from "../ports";
+import { resolveAsync } from "../resolve-async";
 
 const ZERO_COMMITMENT: PurchaseOrderCommitmentStatus = {
 	orderedQuantity: "0",
@@ -22,10 +23,8 @@ export function createMemoryCommitmentQueryPort(
 		...override,
 	};
 	return {
-		async getCommitmentStatus(): Promise<
-			Result<PurchaseOrderCommitmentStatus>
-		> {
-			return ok(status);
+		getCommitmentStatus(): Promise<Result<PurchaseOrderCommitmentStatus>> {
+			return resolveAsync(() => ok(status));
 		},
 	};
 }

@@ -30,9 +30,9 @@ export function StorySection({
 	return (
 		<section className="grid gap-3">
 			<div className="grid gap-1">
-				<h2 className="text-lg font-medium">{title}</h2>
+				<h2 className="font-medium text-lg">{title}</h2>
 				{description ? (
-					<p className="text-sm text-foreground-secondary">{description}</p>
+					<p className="text-foreground-secondary text-sm">{description}</p>
 				) : null}
 			</div>
 			{children}

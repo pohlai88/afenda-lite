@@ -13,9 +13,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type CreateSalesOrderActionData = {
+export interface CreateSalesOrderActionData {
 	order: SalesOrder;
-};
+}
 
 export type CreateSalesOrderActionState =
 	ActionResult<CreateSalesOrderActionData> | null;
@@ -58,7 +58,7 @@ export async function createSalesOrderAction(
 	_prev: CreateSalesOrderActionState,
 	formData: FormData,
 ): Promise<CreateSalesOrderActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "createSalesOrderAction",
 		permission: "sales.order.create",
 		safeMessage: "Could not create sales order. Try again or contact an admin.",

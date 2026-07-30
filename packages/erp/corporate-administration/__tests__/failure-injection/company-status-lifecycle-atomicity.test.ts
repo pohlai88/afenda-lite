@@ -1,3 +1,4 @@
+// biome-ignore-all lint/style/useDestructuring: Explicit state access keeps failure-injection checkpoints visible.
 import { randomUUID } from "node:crypto";
 import {
 	activateLegalCompany,

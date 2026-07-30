@@ -22,10 +22,10 @@ import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 
 const initialState: CreatePartyActionState = null;
 
-type CreatePartyFormProps = {
+interface CreatePartyFormProps {
 	canManage: boolean;
 	partyKinds: readonly string[];
-};
+}
 
 /**
  * Party create form — CAPABLE when `master_data.manage` is granted.
@@ -85,22 +85,22 @@ export function CreatePartyForm({
 			{showFormError && state?.ok === false ? (
 				<FormError>{state.message}</FormError>
 			) : null}
-			<FormField label="Code" required fieldId="party-code" error={codeError}>
-				<Input name="code" required autoComplete="off" disabled={pending} />
+			<FormField error={codeError} fieldId="party-code" label="Code" required>
+				<Input autoComplete="off" disabled={pending} name="code" required />
 			</FormField>
-			<FormField label="Name" required fieldId="party-name" error={nameError}>
+			<FormField error={nameError} fieldId="party-name" label="Name" required>
 				<Input
-					name="name"
-					required
 					autoComplete="organization"
 					disabled={pending}
+					name="name"
+					required
 				/>
 			</FormField>
-			<FormField label="Kind" required fieldId="party-kind" error={kindError}>
+			<FormField error={kindError} fieldId="party-kind" label="Kind" required>
 				<NativeSelect
-					name="partyKind"
 					defaultValue={partyKinds[0]}
 					disabled={pending}
+					name="partyKind"
 				>
 					{partyKinds.map((kind) => (
 						<NativeSelectOption key={kind} value={kind}>
@@ -109,7 +109,7 @@ export function CreatePartyForm({
 					))}
 				</NativeSelect>
 			</FormField>
-			<Button type="submit" disabled={pending}>
+			<Button disabled={pending} type="submit">
 				{pending ? <Spinner /> : null}
 				Create party
 			</Button>

@@ -94,7 +94,6 @@ const ACTOR = "user-cb-1";
 
 function requireExactDecimal(value: string) {
 	const parsed = parseExactDecimal(value);
-	expect(parsed).not.toBeNull();
 	if (parsed === null) {
 		throw new Error(`Expected valid exact decimal: ${value}`);
 	}
@@ -131,7 +130,9 @@ async function seedEmployeeEmployment(ready: ReturnType<typeof harness>) {
 		},
 		seedReady,
 	);
-	if (!employee.ok) return employee;
+	if (!employee.ok) {
+		return employee;
+	}
 
 	const employment = await createEmployment(
 		{
@@ -143,7 +144,9 @@ async function seedEmployeeEmployment(ready: ReturnType<typeof harness>) {
 		},
 		seedReady,
 	);
-	if (!employment.ok) return employment;
+	if (!employment.ok) {
+		return employment;
+	}
 
 	return {
 		ok: true as const,
@@ -153,7 +156,7 @@ async function seedEmployeeEmployment(ready: ReturnType<typeof harness>) {
 }
 
 async function seedGrade(ready: ReturnType<typeof harness>) {
-	return createCompensationGrade(
+	return await createCompensationGrade(
 		{
 			organizationId: ORG_A,
 			actorUserId: ACTOR,
@@ -170,7 +173,9 @@ describe("compensation & benefits (HR-07)", () => {
 		const ready = harness();
 		const grade = await seedGrade(ready);
 		expect(grade.ok).toBe(true);
-		if (!grade.ok) return;
+		if (!grade.ok) {
+			return;
+		}
 
 		const band = await createSalaryBand(
 			{
@@ -188,7 +193,9 @@ describe("compensation & benefits (HR-07)", () => {
 		);
 
 		expect(band.ok).toBe(false);
-		if (band.ok) return;
+		if (band.ok) {
+			return;
+		}
 		expect(humanResourcesCodeFromResult(band)).toBe(
 			HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 		);
@@ -198,7 +205,9 @@ describe("compensation & benefits (HR-07)", () => {
 		const ready = harness();
 		const grade = await seedGrade(ready);
 		expect(grade.ok).toBe(true);
-		if (!grade.ok) return;
+		if (!grade.ok) {
+			return;
+		}
 
 		const band = await createSalaryBand(
 			{
@@ -216,7 +225,9 @@ describe("compensation & benefits (HR-07)", () => {
 		);
 
 		expect(band.ok).toBe(false);
-		if (band.ok) return;
+		if (band.ok) {
+			return;
+		}
 		expect(humanResourcesCodeFromResult(band)).toBe(
 			HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 		);
@@ -274,7 +285,9 @@ describe("compensation & benefits (HR-07)", () => {
 
 		expect(atBoundary.ok).toBe(true);
 		expect(belowBoundary.ok).toBe(false);
-		if (belowBoundary.ok) return;
+		if (belowBoundary.ok) {
+			return;
+		}
 		expect(humanResourcesCodeFromResult(belowBoundary)).toBe(
 			HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 		);
@@ -284,7 +297,9 @@ describe("compensation & benefits (HR-07)", () => {
 		const ready = harness();
 		const grade = await seedGrade(ready);
 		expect(grade.ok).toBe(true);
-		if (!grade.ok) return;
+		if (!grade.ok) {
+			return;
+		}
 
 		const first = await createSalaryBand(
 			{
@@ -302,7 +317,9 @@ describe("compensation & benefits (HR-07)", () => {
 			ready,
 		);
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 
 		const overlap = await createSalaryBand(
 			{
@@ -321,7 +338,9 @@ describe("compensation & benefits (HR-07)", () => {
 		);
 
 		expect(overlap.ok).toBe(false);
-		if (overlap.ok) return;
+		if (overlap.ok) {
+			return;
+		}
 		expect(humanResourcesCodeFromResult(overlap)).toBe(
 			HUMAN_RESOURCES_ERROR_CONFLICT,
 		);
@@ -331,7 +350,9 @@ describe("compensation & benefits (HR-07)", () => {
 		const ready = harness();
 		const grade = await seedGrade(ready);
 		expect(grade.ok).toBe(true);
-		if (!grade.ok) return;
+		if (!grade.ok) {
+			return;
+		}
 
 		const usd = await createSalaryBand(
 			{
@@ -370,7 +391,9 @@ describe("compensation & benefits (HR-07)", () => {
 		const ready = harness();
 		const grade = await seedGrade(ready);
 		expect(grade.ok).toBe(true);
-		if (!grade.ok) return;
+		if (!grade.ok) {
+			return;
+		}
 
 		const first = await createSalaryBand(
 			{
@@ -387,7 +410,9 @@ describe("compensation & benefits (HR-07)", () => {
 			ready,
 		);
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 
 		const second = await supersedeSalaryBand(
 			{
@@ -404,7 +429,9 @@ describe("compensation & benefits (HR-07)", () => {
 			ready,
 		);
 		expect(second.ok).toBe(true);
-		if (!second.ok) return;
+		if (!second.ok) {
+			return;
+		}
 		expect(second.data.supersedesSalaryBandId).toBe(first.data.id);
 
 		const predecessor = await getSalaryBand(
@@ -417,7 +444,9 @@ describe("compensation & benefits (HR-07)", () => {
 			ready,
 		);
 		expect(predecessor.ok).toBe(true);
-		if (!predecessor.ok) return;
+		if (!predecessor.ok) {
+			return;
+		}
 		expect(predecessor.data.status).toBe("superseded");
 		expect(predecessor.data.effectiveTo).toBe("2025-06-30");
 
@@ -433,7 +462,9 @@ describe("compensation & benefits (HR-07)", () => {
 			ready,
 		);
 		expect(beforeSupersede.ok).toBe(true);
-		if (!beforeSupersede.ok) return;
+		if (!beforeSupersede.ok) {
+			return;
+		}
 		expect(beforeSupersede.data.id).toBe(first.data.id);
 
 		const afterSupersede = await findSalaryBandByGradeAndCurrencyAsOf(
@@ -448,7 +479,9 @@ describe("compensation & benefits (HR-07)", () => {
 			ready,
 		);
 		expect(afterSupersede.ok).toBe(true);
-		if (!afterSupersede.ok) return;
+		if (!afterSupersede.ok) {
+			return;
+		}
 		expect(afterSupersede.data.id).toBe(second.data.id);
 	});
 
@@ -462,7 +495,9 @@ describe("compensation & benefits (HR-07)", () => {
 			]),
 		});
 		expect(grade.ok).toBe(true);
-		if (!grade.ok) return;
+		if (!grade.ok) {
+			return;
+		}
 
 		const updated = await updateCompensationGrade(
 			{
@@ -481,7 +516,9 @@ describe("compensation & benefits (HR-07)", () => {
 			},
 		);
 		expect(updated.ok).toBe(true);
-		if (!updated.ok) return;
+		if (!updated.ok) {
+			return;
+		}
 
 		const got = await getCompensationGrade(
 			{
@@ -493,7 +530,9 @@ describe("compensation & benefits (HR-07)", () => {
 			ready,
 		);
 		expect(got.ok).toBe(true);
-		if (!got.ok) return;
+		if (!got.ok) {
+			return;
+		}
 		expect(got.data.name).toBe("Grade 1 Updated");
 
 		const listed = await listCompensationGrades(
@@ -507,7 +546,9 @@ describe("compensation & benefits (HR-07)", () => {
 			ready,
 		);
 		expect(listed.ok).toBe(true);
-		if (!listed.ok) return;
+		if (!listed.ok) {
+			return;
+		}
 		expect(listed.data.grades.some((g) => g.id === grade.data.id)).toBe(true);
 
 		const band = await createSalaryBand(
@@ -530,7 +571,9 @@ describe("compensation & benefits (HR-07)", () => {
 			},
 		);
 		expect(band.ok).toBe(true);
-		if (!band.ok) return;
+		if (!band.ok) {
+			return;
+		}
 
 		const bands = await listSalaryBandsByGrade(
 			{
@@ -544,7 +587,9 @@ describe("compensation & benefits (HR-07)", () => {
 			ready,
 		);
 		expect(bands.ok).toBe(true);
-		if (!bands.ok) return;
+		if (!bands.ok) {
+			return;
+		}
 		expect(bands.data.bands.some((b) => b.id === band.data.id)).toBe(true);
 	});
 
@@ -554,7 +599,9 @@ describe("compensation & benefits (HR-07)", () => {
 		]);
 		const grade = await seedGrade(manageReady);
 		expect(grade.ok).toBe(true);
-		if (!grade.ok) return;
+		if (!grade.ok) {
+			return;
+		}
 
 		const band = await createSalaryBand(
 			{
@@ -571,7 +618,9 @@ describe("compensation & benefits (HR-07)", () => {
 			manageReady,
 		);
 		expect(band.ok).toBe(true);
-		if (!band.ok) return;
+		if (!band.ok) {
+			return;
+		}
 
 		const archived = await archiveCompensationGrade(
 			{
@@ -584,7 +633,9 @@ describe("compensation & benefits (HR-07)", () => {
 			manageReady,
 		);
 		expect(archived.ok).toBe(false);
-		if (archived.ok) return;
+		if (archived.ok) {
+			return;
+		}
 		expect(humanResourcesCodeFromResult(archived)).toBe(
 			HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 		);
@@ -624,7 +675,9 @@ describe("compensation & benefits (HR-07)", () => {
 		);
 		expect(gradeA.ok).toBe(true);
 		expect(gradeB.ok).toBe(true);
-		if (!gradeA.ok || !gradeB.ok) return;
+		if (!(gradeA.ok && gradeB.ok)) {
+			return;
+		}
 
 		const sameGrade = await createCompensationGradeProgressionRule(
 			{
@@ -652,7 +705,9 @@ describe("compensation & benefits (HR-07)", () => {
 			manageReady,
 		);
 		expect(rule.ok).toBe(true);
-		if (!rule.ok) return;
+		if (!rule.ok) {
+			return;
+		}
 
 		const targets = await listEligibleProgressionTargets(
 			{
@@ -665,7 +720,9 @@ describe("compensation & benefits (HR-07)", () => {
 			readReady,
 		);
 		expect(targets.ok).toBe(true);
-		if (!targets.ok) return;
+		if (!targets.ok) {
+			return;
+		}
 		expect(targets.data).toHaveLength(1);
 		expect(targets.data[0]?.toGradeId).toBe(gradeB.data.id);
 
@@ -682,7 +739,9 @@ describe("compensation & benefits (HR-07)", () => {
 			readReady,
 		);
 		expect(listed.ok).toBe(true);
-		if (!listed.ok) return;
+		if (!listed.ok) {
+			return;
+		}
 		expect(listed.data.rules).toHaveLength(1);
 
 		const archived = await archiveCompensationGradeProgressionRule(
@@ -696,7 +755,9 @@ describe("compensation & benefits (HR-07)", () => {
 			manageReady,
 		);
 		expect(archived.ok).toBe(true);
-		if (!archived.ok) return;
+		if (!archived.ok) {
+			return;
+		}
 		expect(archived.data.status).toBe("archived");
 	});
 
@@ -704,7 +765,9 @@ describe("compensation & benefits (HR-07)", () => {
 		const ready = harness();
 		const grade = await seedGrade(ready);
 		expect(grade.ok).toBe(true);
-		if (!grade.ok) return;
+		if (!grade.ok) {
+			return;
+		}
 
 		const band = await createSalaryBand(
 			{
@@ -722,7 +785,9 @@ describe("compensation & benefits (HR-07)", () => {
 		);
 
 		expect(band.ok).toBe(false);
-		if (band.ok) return;
+		if (band.ok) {
+			return;
+		}
 		expect(humanResourcesCodeFromResult(band)).toBe(
 			HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 		);
@@ -732,7 +797,9 @@ describe("compensation & benefits (HR-07)", () => {
 		const baseReady = harness();
 		const seeded = await seedEmployeeEmployment(baseReady);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const readOnlyReady = {
 			...baseReady,
@@ -750,7 +817,9 @@ describe("compensation & benefits (HR-07)", () => {
 			readOnlyReady,
 		);
 		expect(denied.ok).toBe(false);
-		if (denied.ok) return;
+		if (denied.ok) {
+			return;
+		}
 		expect(humanResourcesCodeFromResult(denied)).toBe(
 			HUMAN_RESOURCES_ERROR_FORBIDDEN,
 		);
@@ -774,7 +843,9 @@ describe("compensation & benefits (HR-07)", () => {
 			compensationReadReady,
 		);
 		expect(allowed.ok).toBe(true);
-		if (!allowed.ok) return;
+		if (!allowed.ok) {
+			return;
+		}
 		expect(allowed.data).toBeNull();
 	});
 
@@ -782,7 +853,9 @@ describe("compensation & benefits (HR-07)", () => {
 		const ready = harness([HUMAN_RESOURCES_PERMISSION_COMPENSATION_READ]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 		const subjectReady = {
 			...ready,
 			identityResolver: createMappingIdentityResolver({
@@ -801,7 +874,9 @@ describe("compensation & benefits (HR-07)", () => {
 		);
 
 		expect(handoff.ok).toBe(true);
-		if (!handoff.ok) return;
+		if (!handoff.ok) {
+			return;
+		}
 		expect(handoff.data).toBeNull();
 	});
 
@@ -814,7 +889,9 @@ describe("compensation & benefits (HR-07)", () => {
 		]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const compensation = await createEmployeeCompensation(
 			{
@@ -833,7 +910,9 @@ describe("compensation & benefits (HR-07)", () => {
 			ready,
 		);
 		expect(compensation.ok).toBe(true);
-		if (!compensation.ok) return;
+		if (!compensation.ok) {
+			return;
+		}
 
 		const approved = await approveEmployeeCompensation(
 			{
@@ -846,7 +925,9 @@ describe("compensation & benefits (HR-07)", () => {
 			ready,
 		);
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 
 		const plan = await createBenefitPlan(
 			{
@@ -859,7 +940,9 @@ describe("compensation & benefits (HR-07)", () => {
 			ready,
 		);
 		expect(plan.ok).toBe(true);
-		if (!plan.ok) return;
+		if (!plan.ok) {
+			return;
+		}
 
 		const enrollment = await enrolBenefit(
 			{
@@ -875,7 +958,9 @@ describe("compensation & benefits (HR-07)", () => {
 			ready,
 		);
 		expect(enrollment.ok).toBe(true);
-		if (!enrollment.ok) return;
+		if (!enrollment.ok) {
+			return;
+		}
 
 		const handoff = await getApprovedCompensationHandoff(
 			{
@@ -888,9 +973,13 @@ describe("compensation & benefits (HR-07)", () => {
 		);
 
 		expect(handoff.ok).toBe(true);
-		if (!handoff.ok) return;
+		if (!handoff.ok) {
+			return;
+		}
 		expect(handoff.data).not.toBeNull();
-		if (handoff.data === null) return;
+		if (handoff.data === null) {
+			return;
+		}
 		expect(handoff.data.activeCompensation?.id).toBe(approved.data.id);
 		expect(handoff.data.activeBenefitEnrollments).toHaveLength(1);
 		expect(handoff.data.activeBenefitEnrollments[0]?.id).toBe(
@@ -902,7 +991,9 @@ describe("compensation & benefits (HR-07)", () => {
 		const ready = harness([HUMAN_RESOURCES_PERMISSION_COMPENSATION_MANAGE]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const cycle = await seedOpenCompensationReviewCycle({
 			organizationId: ORG_A,
@@ -924,7 +1015,9 @@ describe("compensation & benefits (HR-07)", () => {
 			ready,
 		);
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 
 		const recommended = await recordCompensationRecommendation(
 			{
@@ -940,7 +1033,9 @@ describe("compensation & benefits (HR-07)", () => {
 			ready,
 		);
 		expect(recommended.ok).toBe(true);
-		if (!recommended.ok) return;
+		if (!recommended.ok) {
+			return;
+		}
 
 		const finalized = await finalizeCompensationReview(
 			{
@@ -953,7 +1048,9 @@ describe("compensation & benefits (HR-07)", () => {
 			ready,
 		);
 		expect(finalized.ok).toBe(true);
-		if (!finalized.ok) return;
+		if (!finalized.ok) {
+			return;
+		}
 
 		const mutation = await recordCompensationRecommendation(
 			{
@@ -976,7 +1073,9 @@ describe("compensation & benefits (HR-07)", () => {
 		const ready = harness([HUMAN_RESOURCES_PERMISSION_BENEFITS_MANAGE]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const plan = await createBenefitPlan(
 			{
@@ -989,7 +1088,9 @@ describe("compensation & benefits (HR-07)", () => {
 			ready,
 		);
 		expect(plan.ok).toBe(true);
-		if (!plan.ok) return;
+		if (!plan.ok) {
+			return;
+		}
 
 		const first = await enrolBenefit(
 			{
@@ -1005,7 +1106,9 @@ describe("compensation & benefits (HR-07)", () => {
 			ready,
 		);
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 
 		const duplicate = await enrolBenefit(
 			{
@@ -1022,7 +1125,9 @@ describe("compensation & benefits (HR-07)", () => {
 		);
 
 		expect(duplicate.ok).toBe(false);
-		if (duplicate.ok) return;
+		if (duplicate.ok) {
+			return;
+		}
 		expect(humanResourcesCodeFromResult(duplicate)).toBe(
 			HUMAN_RESOURCES_ERROR_CONFLICT,
 		);
@@ -1036,7 +1141,9 @@ describe("compensation & benefits (HR-07)", () => {
 		]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const compensation = await createEmployeeCompensation(
 			{
@@ -1067,7 +1174,9 @@ describe("compensation & benefits (HR-07)", () => {
 			ready,
 		);
 		expect(plan.ok).toBe(true);
-		if (!plan.ok) return;
+		if (!plan.ok) {
+			return;
+		}
 
 		await enrolBenefit(
 			{
@@ -1097,7 +1206,9 @@ describe("compensation & benefits (HR-07)", () => {
 		]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const cycle = await seedOpenCompensationReviewCycle({
 			organizationId: ORG_A,
@@ -1119,7 +1230,9 @@ describe("compensation & benefits (HR-07)", () => {
 			ready,
 		);
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 
 		const recommended = await recordCompensationRecommendation(
 			{
@@ -1135,7 +1248,9 @@ describe("compensation & benefits (HR-07)", () => {
 			ready,
 		);
 		expect(recommended.ok).toBe(true);
-		if (!recommended.ok) return;
+		if (!recommended.ok) {
+			return;
+		}
 
 		const finalized = await finalizeCompensationReview(
 			{
@@ -1148,7 +1263,9 @@ describe("compensation & benefits (HR-07)", () => {
 			ready,
 		);
 		expect(finalized.ok).toBe(true);
-		if (!finalized.ok) return;
+		if (!finalized.ok) {
+			return;
+		}
 
 		const applied = await applyApprovedCompensationResult(
 			{
@@ -1163,7 +1280,9 @@ describe("compensation & benefits (HR-07)", () => {
 		);
 
 		expect(applied.ok).toBe(true);
-		if (!applied.ok) return;
+		if (!applied.ok) {
+			return;
+		}
 		expect(applied.data.baseAmount).toBe("92000");
 		expect(applied.data.currencyCode).toBe("USD");
 
@@ -1177,7 +1296,9 @@ describe("compensation & benefits (HR-07)", () => {
 			ready,
 		);
 		expect(review.ok).toBe(true);
-		if (!review.ok) return;
+		if (!review.ok) {
+			return;
+		}
 		expect(review.data?.appliedCompensationId).toBe(applied.data.id);
 		expect(review.data?.status).toBe("finalized");
 	});
@@ -1190,7 +1311,9 @@ describe("compensation & benefits (HR-07)", () => {
 			const ready = benefitsReady();
 			const seeded = await seedEmployeeEmployment(ready);
 			expect(seeded.ok).toBe(true);
-			if (!seeded.ok) return;
+			if (!seeded.ok) {
+				return;
+			}
 
 			const plan = await createBenefitPlan(
 				{
@@ -1203,7 +1326,9 @@ describe("compensation & benefits (HR-07)", () => {
 				ready,
 			);
 			expect(plan.ok).toBe(true);
-			if (!plan.ok) return;
+			if (!plan.ok) {
+				return;
+			}
 
 			const set = await setBenefitPlanEligibility(
 				{
@@ -1217,7 +1342,9 @@ describe("compensation & benefits (HR-07)", () => {
 				ready,
 			);
 			expect(set.ok).toBe(true);
-			if (!set.ok) return;
+			if (!set.ok) {
+				return;
+			}
 
 			const got = await getBenefitPlanEligibility(
 				{
@@ -1229,7 +1356,9 @@ describe("compensation & benefits (HR-07)", () => {
 				ready,
 			);
 			expect(got.ok).toBe(true);
-			if (!got.ok) return;
+			if (!got.ok) {
+				return;
+			}
 			expect(got.data?.minTenureDays).toBe(90);
 		});
 
@@ -1237,7 +1366,9 @@ describe("compensation & benefits (HR-07)", () => {
 			const ready = benefitsReady();
 			const seeded = await seedEmployeeEmployment(ready);
 			expect(seeded.ok).toBe(true);
-			if (!seeded.ok) return;
+			if (!seeded.ok) {
+				return;
+			}
 
 			const plan = await createBenefitPlan(
 				{
@@ -1250,7 +1381,9 @@ describe("compensation & benefits (HR-07)", () => {
 				ready,
 			);
 			expect(plan.ok).toBe(true);
-			if (!plan.ok) return;
+			if (!plan.ok) {
+				return;
+			}
 
 			await setBenefitPlanEligibility(
 				{
@@ -1278,7 +1411,9 @@ describe("compensation & benefits (HR-07)", () => {
 				ready,
 			);
 			expect(blocked.ok).toBe(false);
-			if (blocked.ok) return;
+			if (blocked.ok) {
+				return;
+			}
 			expect(humanResourcesCodeFromResult(blocked)).toBe(
 				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 			);
@@ -1288,7 +1423,9 @@ describe("compensation & benefits (HR-07)", () => {
 			const ready = benefitsReady();
 			const seeded = await seedEmployeeEmployment(ready);
 			expect(seeded.ok).toBe(true);
-			if (!seeded.ok) return;
+			if (!seeded.ok) {
+				return;
+			}
 
 			const plan = await createBenefitPlan(
 				{
@@ -1301,7 +1438,9 @@ describe("compensation & benefits (HR-07)", () => {
 				ready,
 			);
 			expect(plan.ok).toBe(true);
-			if (!plan.ok) return;
+			if (!plan.ok) {
+				return;
+			}
 
 			const enrollment = await enrolBenefit(
 				{
@@ -1322,7 +1461,9 @@ describe("compensation & benefits (HR-07)", () => {
 				ready,
 			);
 			expect(enrollment.ok).toBe(true);
-			if (!enrollment.ok) return;
+			if (!enrollment.ok) {
+				return;
+			}
 			expect(enrollment.data.employeeContributionAmount).toBe("100.00");
 			expect(enrollment.data.employerContributionAmount).toBe("300.00");
 			expect(enrollment.data.effectiveTo).toBe("2025-12-31");
@@ -1332,7 +1473,9 @@ describe("compensation & benefits (HR-07)", () => {
 			const ready = benefitsReady();
 			const seeded = await seedEmployeeEmployment(ready);
 			expect(seeded.ok).toBe(true);
-			if (!seeded.ok) return;
+			if (!seeded.ok) {
+				return;
+			}
 
 			const plan = await createBenefitPlan(
 				{
@@ -1345,7 +1488,9 @@ describe("compensation & benefits (HR-07)", () => {
 				ready,
 			);
 			expect(plan.ok).toBe(true);
-			if (!plan.ok) return;
+			if (!plan.ok) {
+				return;
+			}
 
 			const enrollment = await enrolBenefit(
 				{
@@ -1361,7 +1506,9 @@ describe("compensation & benefits (HR-07)", () => {
 				ready,
 			);
 			expect(enrollment.ok).toBe(true);
-			if (!enrollment.ok) return;
+			if (!enrollment.ok) {
+				return;
+			}
 
 			const waived = await waiveBenefit(
 				{
@@ -1376,7 +1523,9 @@ describe("compensation & benefits (HR-07)", () => {
 				ready,
 			);
 			expect(waived.ok).toBe(true);
-			if (!waived.ok) return;
+			if (!waived.ok) {
+				return;
+			}
 			expect(waived.data.status).toBe("waived");
 			expect(waived.data.waiverReason).toBe("Employee opted out");
 		});
@@ -1385,7 +1534,9 @@ describe("compensation & benefits (HR-07)", () => {
 			const ready = benefitsReady();
 			const seeded = await seedEmployeeEmployment(ready);
 			expect(seeded.ok).toBe(true);
-			if (!seeded.ok) return;
+			if (!seeded.ok) {
+				return;
+			}
 
 			const plan = await createBenefitPlan(
 				{
@@ -1398,7 +1549,9 @@ describe("compensation & benefits (HR-07)", () => {
 				ready,
 			);
 			expect(plan.ok).toBe(true);
-			if (!plan.ok) return;
+			if (!plan.ok) {
+				return;
+			}
 
 			const enrollment = await enrolBenefit(
 				{
@@ -1414,7 +1567,9 @@ describe("compensation & benefits (HR-07)", () => {
 				ready,
 			);
 			expect(enrollment.ok).toBe(true);
-			if (!enrollment.ok) return;
+			if (!enrollment.ok) {
+				return;
+			}
 
 			const dependent = await addBenefitEnrollmentDependent(
 				{
@@ -1429,7 +1584,9 @@ describe("compensation & benefits (HR-07)", () => {
 				ready,
 			);
 			expect(dependent.ok).toBe(true);
-			if (!dependent.ok) return;
+			if (!dependent.ok) {
+				return;
+			}
 
 			const ended = await endBenefitEnrollmentDependent(
 				{
@@ -1443,7 +1600,9 @@ describe("compensation & benefits (HR-07)", () => {
 				ready,
 			);
 			expect(ended.ok).toBe(true);
-			if (!ended.ok) return;
+			if (!ended.ok) {
+				return;
+			}
 			expect(ended.data.effectiveTo).toBe("2025-12-31");
 		});
 
@@ -1451,7 +1610,9 @@ describe("compensation & benefits (HR-07)", () => {
 			const ready = benefitsReady();
 			const seeded = await seedEmployeeEmployment(ready);
 			expect(seeded.ok).toBe(true);
-			if (!seeded.ok) return;
+			if (!seeded.ok) {
+				return;
+			}
 
 			const plan = await createBenefitPlan(
 				{
@@ -1464,7 +1625,9 @@ describe("compensation & benefits (HR-07)", () => {
 				ready,
 			);
 			expect(plan.ok).toBe(true);
-			if (!plan.ok) return;
+			if (!plan.ok) {
+				return;
+			}
 
 			const invalid = await enrolBenefit(
 				{
@@ -1481,7 +1644,9 @@ describe("compensation & benefits (HR-07)", () => {
 				ready,
 			);
 			expect(invalid.ok).toBe(false);
-			if (invalid.ok) return;
+			if (invalid.ok) {
+				return;
+			}
 			expect(humanResourcesCodeFromResult(invalid)).toBe(
 				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 			);
@@ -1491,7 +1656,9 @@ describe("compensation & benefits (HR-07)", () => {
 			const ready = benefitsReady();
 			const seeded = await seedEmployeeEmployment(ready);
 			expect(seeded.ok).toBe(true);
-			if (!seeded.ok) return;
+			if (!seeded.ok) {
+				return;
+			}
 
 			const plan = await createBenefitPlan(
 				{
@@ -1504,7 +1671,9 @@ describe("compensation & benefits (HR-07)", () => {
 				ready,
 			);
 			expect(plan.ok).toBe(true);
-			if (!plan.ok) return;
+			if (!plan.ok) {
+				return;
+			}
 
 			const invalid = await enrolBenefit(
 				{
@@ -1521,7 +1690,9 @@ describe("compensation & benefits (HR-07)", () => {
 				ready,
 			);
 			expect(invalid.ok).toBe(false);
-			if (invalid.ok) return;
+			if (invalid.ok) {
+				return;
+			}
 			expect(humanResourcesCodeFromResult(invalid)).toBe(
 				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 			);

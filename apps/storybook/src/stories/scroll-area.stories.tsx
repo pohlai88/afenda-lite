@@ -11,6 +11,19 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { contractDocsParameters } from "./contract-docs";
 import { contractEvidence, StorySection } from "./evidence";
 
+const approvalNotes = Array.from({ length: 8 }, (_, index) => ({
+	id: `approval-note-${index + 1}`,
+	label: `Note ${index + 1}: Remittance reference reviewed against bank letter.`,
+}));
+const lineItems = Array.from({ length: 12 }, (_, index) => ({
+	id: `line-item-${index + 1}`,
+	label: `Line ${index + 1} · packaging materials`,
+}));
+const paymentActivities = Array.from({ length: 10 }, (_, index) => ({
+	id: `payment-activity-${index + 1}`,
+	label: `Activity ${index + 1} · payment application update`,
+}));
+
 const evidence = contractEvidence("ui.scroll-area");
 
 const meta = {
@@ -50,13 +63,13 @@ export const Overview: Story = {
 		<div className="min-h-screen bg-canvas text-foreground">
 			<div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-2 border-b pb-6">
-					<p className="text-sm font-medium text-foreground-secondary">
+					<p className="font-medium text-foreground-secondary text-sm">
 						Accounts payable · INV-1048
 					</p>
-					<h1 className="text-2xl font-semibold tracking-tight">
+					<h1 className="font-semibold text-2xl tracking-tight">
 						Posting evidence
 					</h1>
-					<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+					<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 						ScrollArea fits a bounded panel. Large authoritative collections
 						still need Pagination or server paging.
 					</p>
@@ -77,13 +90,13 @@ export const Overview: Story = {
 							<ul className="grid gap-0 p-1">
 								{auditEvents.map((event) => (
 									<li
-										key={event.id}
 										className="grid gap-1 border-b px-3 py-3 last:border-b-0"
+										key={event.id}
 									>
-										<p className="text-sm font-medium text-foreground">
+										<p className="font-medium text-foreground text-sm">
 											{event.summary}
 										</p>
-										<p className="text-xs text-foreground-secondary">
+										<p className="text-foreground-secondary text-xs">
 											{event.actor} · {event.at}
 										</p>
 									</li>
@@ -115,9 +128,9 @@ export const SemanticUsage: Story = {
 					className="h-40 rounded-md border"
 				>
 					<div className="grid gap-3 p-4 text-sm">
-						{Array.from({ length: 8 }, (_, i) => (
-							<p key={i} className="text-foreground-secondary">
-								Note {i + 1}: Remittance reference reviewed against bank letter.
+						{approvalNotes.map((note) => (
+							<p className="text-foreground-secondary" key={note.id}>
+								{note.label}
 							</p>
 						))}
 					</div>
@@ -132,8 +145,8 @@ export const SemanticUsage: Story = {
 						{["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"].map(
 							(month) => (
 								<div
-									key={month}
 									className="min-w-24 rounded-md border px-3 py-2 text-center"
+									key={month}
 								>
 									<p className="font-medium">{month}</p>
 									<p className="text-foreground-secondary">MYR</p>
@@ -159,10 +172,10 @@ export const Usage: Story = {
 		},
 	},
 	render: () => (
-		<ScrollArea className="h-48 w-80 rounded-md border" aria-label="Line items">
+		<ScrollArea aria-label="Line items" className="h-48 w-80 rounded-md border">
 			<div className="grid gap-2 p-4 text-sm">
-				{Array.from({ length: 12 }, (_, i) => (
-					<p key={i}>Line {i + 1} · packaging materials</p>
+				{lineItems.map((item) => (
+					<p key={item.id}>{item.label}</p>
 				))}
 			</div>
 		</ScrollArea>
@@ -186,19 +199,19 @@ export const StatesAndAccessibility: Story = {
 		>
 			<div className="grid gap-3 p-4">
 				<button
-					type="button"
 					className="rounded-md border px-3 py-2 text-left text-sm"
+					type="button"
 				>
 					Open remittance advice
 				</button>
-				{Array.from({ length: 10 }, (_, i) => (
-					<p key={i} className="text-sm text-foreground-secondary">
-						Activity {i + 1} · payment application update
+				{paymentActivities.map((activity) => (
+					<p className="text-foreground-secondary text-sm" key={activity.id}>
+						{activity.label}
 					</p>
 				))}
 				<button
-					type="button"
 					className="rounded-md border px-3 py-2 text-left text-sm"
+					type="button"
 				>
 					Download statement
 				</button>
@@ -240,8 +253,8 @@ export const Composition: Story = {
 							"INV-1022 · MYR 4,600.00",
 						].map((row) => (
 							<li
-								key={row}
 								className="border-b px-3 py-3 text-sm last:border-b-0"
+								key={row}
 							>
 								{row}
 							</li>
@@ -280,7 +293,7 @@ export const DoAndDoNot: Story = {
 				</ScrollArea>
 			</StorySection>
 			<StorySection title="Do not: endless dump for server collections">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Thousands of invoice rows need Pagination and server paging.
 					ScrollArea is for bounded chrome — not a substitute for collection
 					navigation.

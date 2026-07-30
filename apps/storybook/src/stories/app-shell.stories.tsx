@@ -25,7 +25,7 @@ function StoryLink({
 	target?: "_blank" | "_self";
 }) {
 	return (
-		<a href={href} aria-current={ariaCurrent} rel={rel} target={target}>
+		<a aria-current={ariaCurrent} href={href} rel={rel} target={target}>
 			{children}
 		</a>
 	);
@@ -95,10 +95,10 @@ export const Overview: Story = {
 			<div className="grid gap-4">
 				<div className="flex items-center justify-between gap-3">
 					<div>
-						<h1 className="text-2xl font-semibold tracking-tight">
+						<h1 className="font-semibold text-2xl tracking-tight">
 							Inventory control
 						</h1>
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							Stock movement review and exception handling.
 						</p>
 					</div>
@@ -115,7 +115,7 @@ export const Overview: Story = {
 								<CardTitle>{label}</CardTitle>
 							</CardHeader>
 							<CardContent className="flex items-end justify-between">
-								<span className="text-2xl font-semibold">{value}</span>
+								<span className="font-semibold text-2xl">{value}</span>
 								<Badge variant="outline">{status}</Badge>
 							</CardContent>
 						</Card>

@@ -21,12 +21,12 @@ export type CorporateAdministrationPendingOutboxEvent = Readonly<{
 }>;
 
 export type CorporateAdministrationPendingEventAppender = Readonly<{
-	append(
+	append: (
 		events: readonly CorporateAdministrationPendingOutboxEvent[],
-	): Promise<Result<void>>;
-	createStatement(
+	) => Promise<Result<void>>;
+	createStatement: (
 		event: CorporateAdministrationPendingOutboxEvent,
-	): (database: unknown) => unknown;
+	) => (database: unknown) => unknown;
 }>;
 
 export type CorporateAdministrationDrizzleOutboxDependencies = Readonly<{
@@ -52,7 +52,9 @@ export class DrizzleCorporateAdministrationOutboxPort
 		events: readonly CorporateAdministrationPendingEvent[],
 		options?: Parameters<CorporateAdministrationOutboxPort["append"]>[1],
 	): Promise<Result<void>> {
-		if (events.length === 0) return ok(undefined);
+		if (events.length === 0) {
+			return ok(undefined);
+		}
 		const validatedEvents = events.map((event) =>
 			createCorporateAdministrationDomainEventEnvelope(event),
 		);
@@ -67,7 +69,9 @@ export class DrizzleCorporateAdministrationOutboxPort
 
 		try {
 			const appended = await this.#appender.append(pendingEvents);
-			if (appended.ok) return ok(undefined);
+			if (appended.ok) {
+				return ok(undefined);
+			}
 			if (appended.code !== "SERVICE_UNAVAILABLE") {
 				return fail(
 					"INTERNAL_ERROR",
@@ -78,7 +82,9 @@ export class DrizzleCorporateAdministrationOutboxPort
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}

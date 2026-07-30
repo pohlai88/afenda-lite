@@ -1,11 +1,11 @@
 import { CLASSIFIED_HUMAN_RESOURCES_DOMAIN_EVENT_TYPES } from "./classified-event-types";
 import { tryGetEventCatalogEntry } from "./get-event-catalog-entry";
 
-export type HumanResourcesEventCatalogIssue = {
-	eventType?: string;
+export interface HumanResourcesEventCatalogIssue {
 	code: "missing_catalog_entry" | "orphan_catalog_entry";
+	eventType?: string;
 	message: string;
-};
+}
 
 export function validateHumanResourcesEventCatalog(): HumanResourcesEventCatalogIssue[] {
 	const issues: HumanResourcesEventCatalogIssue[] = [];

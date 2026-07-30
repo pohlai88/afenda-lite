@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noJsxPropsBind: The enabled React Compiler stabilizes JSX callback props.
 "use client";
 
 import { Code, DataTable, type DataTableColumn } from "@afenda/ui-system";
@@ -23,8 +24,8 @@ function buildColumns(
 			title: "Code",
 			render: (value, row) => (
 				<Link
-					href={`${detailHrefBase}?movementId=${encodeURIComponent(row.id)}`}
 					className="font-medium underline-offset-4 hover:underline"
+					href={`${detailHrefBase}?movementId=${encodeURIComponent(row.id)}`}
 				>
 					{String(value)}
 				</Link>
@@ -55,10 +56,10 @@ export function StockMovementsTable({
 		<DataTable
 			columns={buildColumns(detailHrefBase)}
 			data={rows}
-			getRowId={(row) => row.id}
-			emptyTitle="No stock movements yet"
-			emptyDescription="Create a draft opening-balance receipt, transfer, or adjustment to begin."
 			density="comfortable"
+			emptyDescription="Create a draft opening-balance receipt, transfer, or adjustment to begin."
+			emptyTitle="No stock movements yet"
+			getRowId={(row) => row.id}
 		/>
 	);
 }

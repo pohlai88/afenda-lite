@@ -7,17 +7,17 @@ import { useEffect } from "react";
 import { signOutAction } from "@/app/actions/auth-credentials";
 import { AfendaSignInForm } from "@/features/auth/afenda-sign-in-form";
 
-type AuthPathShellProps = {
+interface AuthPathShellProps {
 	path: PublicAuthPath;
-};
+}
 
 function SignOutRunner() {
 	useEffect(() => {
-		void signOutAction();
+		signOutAction().catch(() => undefined);
 	}, []);
 
 	return (
-		<p className="text-sm text-muted-foreground" role="status">
+		<p className="text-muted-foreground text-sm" role="status">
 			Signing out…
 		</p>
 	);

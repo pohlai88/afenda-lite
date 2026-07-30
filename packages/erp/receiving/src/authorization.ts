@@ -4,13 +4,13 @@ import type { ReceivingCommandId, ReceivingQueryId } from "./module-ids";
 import type { RECEIVING_PERMISSION_CODES } from "./permissions";
 
 export type ReceivingPermission = (typeof RECEIVING_PERMISSION_CODES)[number];
-export type ReceivingAuthorizationPort = {
-	can(input: {
+export interface ReceivingAuthorizationPort {
+	can: (input: {
 		organizationId: string;
 		actorUserId: string;
 		permission: ReceivingPermission;
-	}): Promise<boolean>;
-};
+	}) => Promise<boolean>;
+}
 
 async function requirePermission(
 	authorization: ReceivingAuthorizationPort | undefined,

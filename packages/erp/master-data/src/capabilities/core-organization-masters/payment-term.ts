@@ -23,6 +23,7 @@ import {
 	type MasterCommandId,
 } from "../../module-ids";
 import { parseMasterInput } from "../../parse-input";
+import { resolveAsync } from "../../resolve-async";
 import type { PaymentTerm } from "../../types";
 import {
 	MASTER_SEARCH_ENTITY,
@@ -73,7 +74,7 @@ export async function createPaymentTerm(
 		"Invalid payment term create input",
 	);
 	if (!parsed.ok) {
-		return parsed;
+		return Promise.resolve(parsed);
 	}
 	const { store, ports, authorization } = resolveCommandDeps(options);
 	const authorized = await requireMasterCommandPermission(authorization, {
@@ -124,7 +125,7 @@ export async function updatePaymentTerm(
 		"Invalid payment term update input",
 	);
 	if (!parsed.ok) {
-		return parsed;
+		return Promise.resolve(parsed);
 	}
 	const { store, ports, authorization } = resolveCommandDeps(options);
 	const authorized = await requireMasterCommandPermission(authorization, {
@@ -172,7 +173,7 @@ async function transitionPaymentTermStatus(
 		"Invalid payment term lifecycle input",
 	);
 	if (!parsed.ok) {
-		return parsed;
+		return Promise.resolve(parsed);
 	}
 	const { store, ports, dependencyInspector, authorization } =
 		resolveCommandDeps(options);
@@ -227,7 +228,7 @@ async function transitionPaymentTermStatus(
 	return afterPaymentTermMutation(result, options);
 }
 
-export async function activatePaymentTerm(
+export function activatePaymentTerm(
 	input: unknown,
 	options: MasterCommandOptions = {},
 ): Promise<Result<PaymentTerm>> {
@@ -240,7 +241,7 @@ export async function activatePaymentTerm(
 	);
 }
 
-export async function inactivePaymentTerm(
+export function inactivePaymentTerm(
 	input: unknown,
 	options: MasterCommandOptions = {},
 ): Promise<Result<PaymentTerm>> {
@@ -253,7 +254,7 @@ export async function inactivePaymentTerm(
 	);
 }
 
-export async function retirePaymentTerm(
+export function retirePaymentTerm(
 	input: unknown,
 	options: MasterCommandOptions = {},
 ): Promise<Result<PaymentTerm>> {
@@ -328,7 +329,9 @@ export async function existsPaymentTermByCode(
 	options: MasterQueryOptions = {},
 ): Promise<Result<boolean>> {
 	const result = await getPaymentTermByCode(input, options);
-	if (!result.ok) return result;
+	if (!result.ok) {
+		return result;
+	}
 	return ok(result.data !== null);
 }
 
@@ -363,41 +366,53 @@ export async function listPaymentTerms(
 	});
 }
 
-export async function listActivePaymentTerms(
+export function listActivePaymentTerms(
 	input: unknown,
 	options: MasterQueryOptions = {},
 ): Promise<Result<PaymentTerm[]>> {
-	const parsed = parseMasterInput(
-		masterListOptionsSchema,
-		input,
-		"Invalid active payment term list input",
-	);
-	if (!parsed.ok) return parsed;
-	return listPaymentTerms({ ...parsed.data, status: "active" }, options);
+	return resolveAsync(() => {
+		const parsed = parseMasterInput(
+			masterListOptionsSchema,
+			input,
+			"Invalid active payment term list input",
+		);
+		if (!parsed.ok) {
+			return parsed;
+		}
+		return listPaymentTerms({ ...parsed.data, status: "active" }, options);
+	});
 }
 
-export async function listPaymentTermsByStatus(
+export function listPaymentTermsByStatus(
 	input: unknown,
 	options: MasterQueryOptions = {},
 ): Promise<Result<PaymentTerm[]>> {
-	const parsed = parseMasterInput(
-		listByStatusInputSchema,
-		input,
-		"Invalid payment term list-by-status input",
-	);
-	if (!parsed.ok) return parsed;
-	return listPaymentTerms(parsed.data, options);
+	return resolveAsync(() => {
+		const parsed = parseMasterInput(
+			listByStatusInputSchema,
+			input,
+			"Invalid payment term list-by-status input",
+		);
+		if (!parsed.ok) {
+			return parsed;
+		}
+		return listPaymentTerms(parsed.data, options);
+	});
 }
 
-export async function listPaymentTermsUpdatedSince(
+export function listPaymentTermsUpdatedSince(
 	input: unknown,
 	options: MasterQueryOptions = {},
 ): Promise<Result<PaymentTerm[]>> {
-	const parsed = parseMasterInput(
-		listUpdatedSinceInputSchema,
-		input,
-		"Invalid payment term updated-since list input",
-	);
-	if (!parsed.ok) return parsed;
-	return listPaymentTerms(parsed.data, options);
+	return resolveAsync(() => {
+		const parsed = parseMasterInput(
+			listUpdatedSinceInputSchema,
+			input,
+			"Invalid payment term updated-since list input",
+		);
+		if (!parsed.ok) {
+			return parsed;
+		}
+		return listPaymentTerms(parsed.data, options);
+	});
 }

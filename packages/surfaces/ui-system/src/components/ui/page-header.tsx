@@ -19,7 +19,7 @@ function PageHeaderHeading({
 }: React.ComponentProps<"h1">) {
 	return (
 		<h1
-			className={cn("text-2xl font-semibold tracking-tight", className)}
+			className={cn("font-semibold text-2xl tracking-tight", className)}
 			{...props}
 		/>
 	);
@@ -31,7 +31,7 @@ function PageHeaderDescription({
 }: React.ComponentProps<"p">) {
 	return (
 		<p
-			className={cn("max-w-3xl text-sm text-muted-foreground", className)}
+			className={cn("max-w-3xl text-muted-foreground text-sm", className)}
 			{...props}
 		/>
 	);
@@ -66,11 +66,11 @@ function SectionHeader({
 
 interface EntityHeaderProps
 	extends Omit<React.ComponentProps<"header">, "title"> {
-	title: React.ReactNode;
-	description?: React.ReactNode;
-	status?: React.ReactNode;
-	metadata?: React.ReactNode;
 	actions?: React.ReactNode;
+	description?: React.ReactNode;
+	metadata?: React.ReactNode;
+	status?: React.ReactNode;
+	title: React.ReactNode;
 }
 
 function EntityHeader({
@@ -92,14 +92,14 @@ function EntityHeader({
 		>
 			<div className="min-w-0 space-y-2">
 				<div className="flex flex-wrap items-center gap-2">
-					<h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+					<h1 className="font-semibold text-2xl tracking-tight">{title}</h1>
 					{status}
 				</div>
 				{description ? (
-					<p className="text-sm text-muted-foreground">{description}</p>
+					<p className="text-muted-foreground text-sm">{description}</p>
 				) : null}
 				{metadata ? (
-					<div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+					<div className="flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground text-sm">
 						{metadata}
 					</div>
 				) : null}

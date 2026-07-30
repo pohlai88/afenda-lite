@@ -135,6 +135,16 @@ import type {
 	RequisitionListPage,
 } from "../../types";
 
+const HR_REGEX_1 = /hr_job_requisition_org_create_idempotency_uidx/i;
+const HR_REGEX_2 = /hr_job_requisition_org_code_uidx/i;
+const HR_REGEX_3 = /hr_candidate_org_create_idempotency_uidx/i;
+const HR_REGEX_4 = /hr_candidate_org_normalized_email_uidx/i;
+const HR_REGEX_5 =
+	/hr_candidate_application_org_candidate_requisition_open_uidx/i;
+const HR_REGEX_6 = /hr_interview_evaluation_org_interview_uidx/i;
+const HR_REGEX_7 = /hr_employment_offer_org_application_draft_issued_uidx/i;
+const HR_REGEX_8 = /hr_employment_offer_org_accept_idempotency_uidx/i;
+
 function mapNullableDepartmentId(
 	value: string | null,
 ): Result<HumanResourcesDepartmentId | null> {
@@ -171,22 +181,22 @@ function mapNullableEmployeeId(
 	return parseHumanResourcesEmployeeId(value);
 }
 
-type RequisitionSqlRow = {
-	id: string;
-	organization_id: string;
+interface RequisitionSqlRow {
 	code: string;
-	title: string;
-	status: string;
-	job_id: string | null;
-	position_id: string | null;
+	created_at: Date;
+	created_by: string;
 	department_id: string | null;
 	hiring_manager_employee_id: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
+	id: string;
+	job_id: string | null;
+	organization_id: string;
+	position_id: string | null;
+	status: string;
+	title: string;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+}
 
 function mapRequisitionFields(input: {
 	id: string;
@@ -205,17 +215,27 @@ function mapRequisitionFields(input: {
 	updatedAt: Date;
 }): Result<JobRequisition> {
 	const id = parseHumanResourcesRequisitionId(input.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const jobId = mapNullableJobId(input.jobId);
-	if (!jobId.ok) return jobId;
+	if (!jobId.ok) {
+		return jobId;
+	}
 	const positionId = mapNullablePositionId(input.positionId);
-	if (!positionId.ok) return positionId;
+	if (!positionId.ok) {
+		return positionId;
+	}
 	const departmentId = mapNullableDepartmentId(input.departmentId);
-	if (!departmentId.ok) return departmentId;
+	if (!departmentId.ok) {
+		return departmentId;
+	}
 	const hiringManagerEmployeeId = mapNullableEmployeeId(
 		input.hiringManagerEmployeeId,
 	);
-	if (!hiringManagerEmployeeId.ok) return hiringManagerEmployeeId;
+	if (!hiringManagerEmployeeId.ok) {
+		return hiringManagerEmployeeId;
+	}
 	const status = requisitionStatusSchema.safeParse(input.status);
 	if (!status.success) {
 		return fail(
@@ -282,24 +302,24 @@ function mapRequisition(
 	});
 }
 
-type CandidateSqlRow = {
-	id: string;
-	organization_id: string;
+interface CandidateSqlRow {
+	consent_captured_at: Date | string | null;
+	consent_policy_version: string | null;
+	consent_source: string | null;
+	consent_withdrawn_at: Date | string | null;
+	created_at: Date | string;
+	created_by: string;
 	display_name: string;
 	email: string;
+	id: string;
+	organization_id: string;
 	phone: string | null;
-	consent_policy_version: string | null;
-	consent_captured_at: Date | string | null;
-	consent_source: string | null;
 	retention_until: string | null;
-	consent_withdrawn_at: Date | string | null;
 	status: string;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date | string;
 	updated_at: Date | string;
-};
+	updated_by: string;
+	version: number;
+}
 
 function coercePersistedTimestamp(value: Date | string | null): Date | null {
 	if (value === null) {
@@ -344,7 +364,9 @@ function mapCandidateFields(input: {
 	updatedAt: Date | string;
 }): Result<Candidate> {
 	const id = parseHumanResourcesCandidateId(input.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const status = candidateStatusSchema.safeParse(input.status);
 	if (!status.success) {
 		return fail(
@@ -356,7 +378,9 @@ function mapCandidateFields(input: {
 	const consentSource = parsePersistedCandidateConsentSource(
 		input.consentSource,
 	);
-	if (!consentSource.ok) return consentSource;
+	if (!consentSource.ok) {
+		return consentSource;
+	}
 	return ok({
 		id: id.data,
 		organizationId: input.organizationId,
@@ -419,18 +443,18 @@ function mapCandidate(row: typeof hrCandidate.$inferSelect): Result<Candidate> {
 	});
 }
 
-type ApplicationSqlRow = {
+interface ApplicationSqlRow {
+	candidate_id: string;
+	created_at: Date;
+	created_by: string;
 	id: string;
 	organization_id: string;
-	candidate_id: string;
 	requisition_id: string;
 	status: string;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+}
 
 function mapApplicationFields(input: {
 	id: string;
@@ -445,11 +469,17 @@ function mapApplicationFields(input: {
 	updatedAt: Date;
 }): Result<CandidateApplication> {
 	const id = parseHumanResourcesApplicationId(input.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const candidateId = parseHumanResourcesCandidateId(input.candidateId);
-	if (!candidateId.ok) return candidateId;
+	if (!candidateId.ok) {
+		return candidateId;
+	}
 	const requisitionId = parseHumanResourcesRequisitionId(input.requisitionId);
-	if (!requisitionId.ok) return requisitionId;
+	if (!requisitionId.ok) {
+		return requisitionId;
+	}
 	const status = applicationStatusSchema.safeParse(input.status);
 	if (!status.success) {
 		return fail(
@@ -489,31 +519,37 @@ function mapApplicationSqlRow(
 	});
 }
 
-type ApplicationStatusHistorySqlRow = {
-	id: string;
-	organization_id: string;
+interface ApplicationStatusHistorySqlRow {
+	actor_user_id: string;
 	application_id: string;
 	candidate_id: string;
-	requisition_id: string;
-	from_status: string | null;
-	to_status: string;
 	change_kind: string;
+	correlation_id: string;
+	created_at: Date;
+	from_status: string | null;
+	id: string;
+	organization_id: string;
 	reason: string | null;
 	reason_code: string | null;
-	correlation_id: string;
-	actor_user_id: string;
-	created_at: Date;
-};
+	requisition_id: string;
+	to_status: string;
+}
 
 function mapApplicationStatusHistorySqlRow(
 	row: ApplicationStatusHistorySqlRow,
 ): Result<ApplicationStatusHistory> {
 	const applicationId = parseHumanResourcesApplicationId(row.application_id);
-	if (!applicationId.ok) return applicationId;
+	if (!applicationId.ok) {
+		return applicationId;
+	}
 	const candidateId = parseHumanResourcesCandidateId(row.candidate_id);
-	if (!candidateId.ok) return candidateId;
+	if (!candidateId.ok) {
+		return candidateId;
+	}
 	const requisitionId = parseHumanResourcesRequisitionId(row.requisition_id);
-	if (!requisitionId.ok) return requisitionId;
+	if (!requisitionId.ok) {
+		return requisitionId;
+	}
 	const statusParse = applicationStatusSchema.safeParse(row.to_status);
 	if (!statusParse.success) {
 		return fail(
@@ -599,19 +635,19 @@ function mapApplication(
 	});
 }
 
-type InterviewSqlRow = {
-	id: string;
-	organization_id: string;
+interface InterviewSqlRow {
 	application_id: string;
+	created_at: Date;
+	created_by: string;
+	id: string;
+	interviewer_actor_id: string;
+	organization_id: string;
 	scheduled_at: Date;
 	status: string;
-	interviewer_actor_id: string;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+}
 
 function mapInterviewFields(input: {
 	id: string;
@@ -627,9 +663,13 @@ function mapInterviewFields(input: {
 	updatedAt: Date;
 }): Result<Interview> {
 	const id = parseHumanResourcesInterviewId(input.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const applicationId = parseHumanResourcesApplicationId(input.applicationId);
-	if (!applicationId.ok) return applicationId;
+	if (!applicationId.ok) {
+		return applicationId;
+	}
 	const status = interviewStatusSchema.safeParse(input.status);
 	if (!status.success) {
 		return fail(
@@ -685,21 +725,21 @@ function mapInterview(row: typeof hrInterview.$inferSelect): Result<Interview> {
 	});
 }
 
-type InterviewEvaluationSqlRow = {
-	id: string;
-	organization_id: string;
-	interview_id: string;
-	result: string;
-	private_notes: string | null;
-	scorecard_json: unknown;
-	evaluator_actor_id: string;
-	recorded_at: Date;
-	version: number;
-	created_by: string;
-	updated_by: string;
+interface InterviewEvaluationSqlRow {
 	created_at: Date;
+	created_by: string;
+	evaluator_actor_id: string;
+	id: string;
+	interview_id: string;
+	organization_id: string;
+	private_notes: string | null;
+	recorded_at: Date;
+	result: string;
+	scorecard_json: unknown;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+}
 
 function parsePersistedInterviewScorecard(
 	value: unknown,
@@ -719,9 +759,13 @@ function mapInterviewEvaluationSqlRow(
 	row: InterviewEvaluationSqlRow,
 ): Result<InterviewEvaluation> {
 	const id = parseHumanResourcesInterviewEvaluationId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const interviewId = parseHumanResourcesInterviewId(row.interview_id);
-	if (!interviewId.ok) return interviewId;
+	if (!interviewId.ok) {
+		return interviewId;
+	}
 	const result = interviewEvaluationResultSchema.safeParse(row.result);
 	if (!result.success) {
 		return fail(
@@ -731,7 +775,9 @@ function mapInterviewEvaluationSqlRow(
 		);
 	}
 	const scorecard = parsePersistedInterviewScorecard(row.scorecard_json);
-	if (!scorecard.ok) return scorecard;
+	if (!scorecard.ok) {
+		return scorecard;
+	}
 	return ok({
 		id: id.data,
 		organizationId: row.organization_id,
@@ -753,9 +799,13 @@ function mapInterviewEvaluation(
 	row: typeof hrInterviewEvaluation.$inferSelect,
 ): Result<InterviewEvaluation> {
 	const id = parseHumanResourcesInterviewEvaluationId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const interviewId = parseHumanResourcesInterviewId(row.interviewId);
-	if (!interviewId.ok) return interviewId;
+	if (!interviewId.ok) {
+		return interviewId;
+	}
 	const result = interviewEvaluationResultSchema.safeParse(row.result);
 	if (!result.success) {
 		return fail(
@@ -765,7 +815,9 @@ function mapInterviewEvaluation(
 		);
 	}
 	const scorecard = parsePersistedInterviewScorecard(row.scorecardJson);
-	if (!scorecard.ok) return scorecard;
+	if (!scorecard.ok) {
+		return scorecard;
+	}
 	return ok({
 		id: id.data,
 		organizationId: row.organizationId,
@@ -783,22 +835,22 @@ function mapInterviewEvaluation(
 	});
 }
 
-type OfferSqlRow = {
-	id: string;
-	organization_id: string;
+interface OfferSqlRow {
 	application_id: string;
 	compensation_proposal_id: string | null;
+	created_at: Date;
+	created_by: string;
+	expires_on: string;
+	id: string;
+	issued_at: Date | null;
+	organization_id: string;
+	responded_at: Date | null;
 	status: string;
 	terms_summary: string;
-	expires_on: string;
-	issued_at: Date | null;
-	responded_at: Date | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+}
 
 function mapOfferFields(input: {
 	id: string;
@@ -817,16 +869,22 @@ function mapOfferFields(input: {
 	updatedAt: Date;
 }): Result<EmploymentOffer> {
 	const id = parseHumanResourcesOfferId(input.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const applicationId = parseHumanResourcesApplicationId(input.applicationId);
-	if (!applicationId.ok) return applicationId;
+	if (!applicationId.ok) {
+		return applicationId;
+	}
 	let compensationProposalId =
 		null as EmploymentOffer["compensationProposalId"];
 	if (input.compensationProposalId !== null) {
 		const parsed = parseHumanResourcesCompensationProposalId(
 			input.compensationProposalId,
 		);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		compensationProposalId = parsed.data;
 	}
 	const status = offerStatusSchema.safeParse(input.status);
@@ -951,7 +1009,7 @@ function planRecruitmentDrizzleOutbox(input: {
 		conditionalEventSuppressed: input.conditionalEventSuppressed,
 	});
 	if (eventType === undefined) {
-		return undefined;
+		return;
 	}
 	return {
 		eventType,
@@ -1033,7 +1091,9 @@ async function validateRequisitionReferences(
 			organizationId: input.organizationId,
 			jobId: input.jobId,
 		});
-		if (!job.ok) return job;
+		if (!job.ok) {
+			return job;
+		}
 		if (job.data === null) {
 			return notFound(
 				"Job not found",
@@ -1046,7 +1106,9 @@ async function validateRequisitionReferences(
 			organizationId: input.organizationId,
 			positionId: input.positionId,
 		});
-		if (!position.ok) return position;
+		if (!position.ok) {
+			return position;
+		}
 		if (position.data === null) {
 			return notFound(
 				"Position not found",
@@ -1059,7 +1121,9 @@ async function validateRequisitionReferences(
 			organizationId: input.organizationId,
 			departmentId: input.departmentId,
 		});
-		if (!department.ok) return department;
+		if (!department.ok) {
+			return department;
+		}
 		if (department.data === null) {
 			return notFound(
 				"Department not found",
@@ -1087,12 +1151,14 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 					),
 				)
 				.limit(1);
-			const row = result[0];
+			const [row] = result;
 			if (row === undefined) {
 				return ok(null);
 			}
 			const mapped = mapRequisition(row);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return ok({
 				requisition: mapped.data,
 				createRequestFingerprint: row.createRequestFingerprint,
@@ -1120,7 +1186,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 					),
 				)
 				.limit(1);
-			const row = result[0];
+			const [row] = result;
 			if (row === undefined) {
 				return ok(null);
 			}
@@ -1145,7 +1211,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 					),
 				)
 				.limit(1);
-			const row = result[0];
+			const [row] = result;
 			if (row === undefined) {
 				return ok(null);
 			}
@@ -1164,7 +1230,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			organizationId: record.organizationId,
 			idempotencyKey: record.createIdempotencyKey,
 		});
-		if (!existingByKey.ok) return existingByKey;
+		if (!existingByKey.ok) {
+			return existingByKey;
+		}
 		if (existingByKey.data !== null) {
 			return ok(existingByKey.data.requisition);
 		}
@@ -1173,7 +1241,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			organizationId: record.organizationId,
 			code: record.code,
 		});
-		if (!existingByCode.ok) return existingByCode;
+		if (!existingByCode.ok) {
+			return existingByCode;
+		}
 		if (existingByCode.data !== null) {
 			return fail(
 				"CONFLICT",
@@ -1188,16 +1258,20 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			positionId: record.positionId,
 			departmentId: record.departmentId,
 		});
-		if (!refs.ok) return refs;
+		if (!refs.ok) {
+			return refs;
+		}
 
 		const entityId = randomUUID();
 		const brandedId = parseHumanResourcesRequisitionId(entityId);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 		try {
 			const [rows] = await runNeonHttpTransaction<[RequisitionSqlRow[]]>(
-				(sql) => [
-					sql`
+				(sqlValue19) => [
+					sqlValue19`
 							WITH mutated AS (
 								INSERT INTO hr_job_requisition (
 									id, organization_id, code, title, status,
@@ -1228,30 +1302,25 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 						`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return fail("INTERNAL_ERROR", "Requisition create returned no row");
 			}
 			return mapRequisitionSqlRow(row);
 		} catch (error) {
-			if (
-				isPostgresUniqueConstraint(
-					error,
-					/hr_job_requisition_org_create_idempotency_uidx/i,
-				)
-			) {
+			if (isPostgresUniqueConstraint(error, HR_REGEX_1)) {
 				const existing = await this.findRequisitionByIdempotencyKey({
 					organizationId: record.organizationId,
 					idempotencyKey: record.createIdempotencyKey,
 				});
-				if (!existing.ok) return existing;
+				if (!existing.ok) {
+					return existing;
+				}
 				if (existing.data !== null) {
 					return ok(existing.data.requisition);
 				}
 			}
-			if (
-				isPostgresUniqueConstraint(error, /hr_job_requisition_org_code_uidx/i)
-			) {
+			if (isPostgresUniqueConstraint(error, HR_REGEX_2)) {
 				return fail(
 					"CONFLICT",
 					"Requisition with this code already exists",
@@ -1266,11 +1335,11 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		input: {
 			organizationId: string;
 			requisitionId: HumanResourcesRequisitionId;
-			title?: string;
-			jobId?: HumanResourcesJobId | null;
-			positionId?: HumanResourcesPositionId | null;
-			departmentId?: HumanResourcesDepartmentId | null;
-			hiringManagerEmployeeId?: HumanResourcesEmployeeId | null;
+			title?: string | undefined;
+			jobId?: HumanResourcesJobId | null | undefined;
+			positionId?: HumanResourcesPositionId | null | undefined;
+			departmentId?: HumanResourcesDepartmentId | null | undefined;
+			hiringManagerEmployeeId?: HumanResourcesEmployeeId | null | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -1281,7 +1350,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			organizationId: input.organizationId,
 			requisitionId: input.requisitionId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Requisition not found");
 		}
@@ -1291,27 +1362,31 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			requisition.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const amendable = assertRequisitionAmendable(requisition.status);
-		if (!amendable.ok) return amendable;
+		if (!amendable.ok) {
+			return amendable;
+		}
 
 		const nextTitle =
-			input.title !== undefined ? input.title : requisition.title;
+			input.title === undefined ? requisition.title : input.title;
 		const nextJobId =
-			input.jobId !== undefined ? input.jobId : requisition.jobId;
+			input.jobId === undefined ? requisition.jobId : input.jobId;
 		const nextPositionId =
-			input.positionId !== undefined
-				? input.positionId
-				: requisition.positionId;
+			input.positionId === undefined
+				? requisition.positionId
+				: input.positionId;
 		const nextDepartmentId =
-			input.departmentId !== undefined
-				? input.departmentId
-				: requisition.departmentId;
+			input.departmentId === undefined
+				? requisition.departmentId
+				: input.departmentId;
 		const nextHiringManagerEmployeeId =
-			input.hiringManagerEmployeeId !== undefined
-				? input.hiringManagerEmployeeId
-				: requisition.hiringManagerEmployeeId;
+			input.hiringManagerEmployeeId === undefined
+				? requisition.hiringManagerEmployeeId
+				: input.hiringManagerEmployeeId;
 
 		const refs = await validateRequisitionReferences(this, {
 			organizationId: input.organizationId,
@@ -1319,14 +1394,16 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			positionId: nextPositionId,
 			departmentId: nextDepartmentId,
 		});
-		if (!refs.ok) return refs;
+		if (!refs.ok) {
+			return refs;
+		}
 
 		const auditId = randomUUID();
 		const nextVersion = input.expectedVersion + 1;
 		try {
 			const [rows] = await runNeonHttpTransaction<[RequisitionSqlRow[]]>(
-				(sql) => [
-					sql`
+				(sqlValue18) => [
+					sqlValue18`
 							WITH mutated AS (
 								UPDATE hr_job_requisition
 								SET title = ${nextTitle},
@@ -1358,13 +1435,15 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 						`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				const again = await this.getRequisitionById({
 					organizationId: input.organizationId,
 					requisitionId: input.requisitionId,
 				});
-				if (!again.ok) return again;
+				if (!again.ok) {
+					return again;
+				}
 				return missAfterOptimisticUpdate({
 					found: again.data !== null,
 					entityLabel: "Requisition",
@@ -1391,7 +1470,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			organizationId: input.organizationId,
 			requisitionId: input.requisitionId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Requisition not found");
 		}
@@ -1401,19 +1482,23 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			requisition.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const assignable = assertRequisitionHiringManagerAssignable(
 			requisition.status,
 		);
-		if (!assignable.ok) return assignable;
+		if (!assignable.ok) {
+			return assignable;
+		}
 
 		const auditId = randomUUID();
 		const nextVersion = input.expectedVersion + 1;
 		try {
 			const [rows] = await runNeonHttpTransaction<[RequisitionSqlRow[]]>(
-				(sql) => [
-					sql`
+				(sqlValue17) => [
+					sqlValue17`
 							WITH mutated AS (
 								UPDATE hr_job_requisition
 								SET hiring_manager_employee_id = ${input.hiringManagerEmployeeId},
@@ -1441,13 +1526,15 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 						`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				const again = await this.getRequisitionById({
 					organizationId: input.organizationId,
 					requisitionId: input.requisitionId,
 				});
-				if (!again.ok) return again;
+				if (!again.ok) {
+					return again;
+				}
 				return missAfterOptimisticUpdate({
 					found: again.data !== null,
 					entityLabel: "Requisition",
@@ -1469,7 +1556,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			status: RequisitionStatus;
 			expectedVersion: number;
 			actorUserId: string;
-			emitApprovedEvent?: boolean;
+			emitApprovedEvent?: boolean | undefined;
 		},
 		_ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
@@ -1478,7 +1565,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			organizationId: input.organizationId,
 			requisitionId: input.requisitionId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Requisition not found");
 		}
@@ -1488,13 +1577,17 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			requisition.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const transition = assertRequisitionStatusTransition(
 			requisition.status,
 			input.status,
 		);
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 
 		const auditId = randomUUID();
 		const nextVersion = input.expectedVersion + 1;
@@ -1515,9 +1608,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 
 		try {
 			const [rows] = await runNeonHttpTransaction<[RequisitionSqlRow[]]>(
-				(sql) => [
+				(sqlValue16) => [
 					plannedOutbox
-						? sql`
+						? sqlValue16`
 								WITH mutated AS (
 									UPDATE hr_job_requisition
 									SET status = ${input.status},
@@ -1580,7 +1673,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 								LEFT JOIN released_reservations ON true
 								LEFT JOIN reservations_audited ON true
 							`
-						: sql`
+						: sqlValue16`
 								WITH mutated AS (
 									UPDATE hr_job_requisition
 									SET status = ${input.status},
@@ -1633,13 +1726,15 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 							`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				const again = await this.getRequisitionById({
 					organizationId: input.organizationId,
 					requisitionId: input.requisitionId,
 				});
-				if (!again.ok) return again;
+				if (!again.ok) {
+					return again;
+				}
 				return missAfterOptimisticUpdate({
 					found: again.data !== null,
 					entityLabel: "Requisition",
@@ -1658,7 +1753,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		status?: RequisitionStatus;
+		status?: RequisitionStatus | undefined;
 	}): Promise<Result<RequisitionListPage>> {
 		try {
 			const conditions = [
@@ -1714,12 +1809,14 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 					),
 				)
 				.limit(1);
-			const row = result[0];
+			const [row] = result;
 			if (row === undefined) {
 				return ok(null);
 			}
 			const mapped = mapCandidate(row);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return ok({
 				candidate: mapped.data,
 				createRequestFingerprint: row.createRequestFingerprint,
@@ -1747,7 +1844,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 					),
 				)
 				.limit(1);
-			const row = result[0];
+			const [row] = result;
 			if (row === undefined) {
 				return ok(null);
 			}
@@ -1772,7 +1869,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 					),
 				)
 				.limit(1);
-			const row = result[0];
+			const [row] = result;
 			if (row === undefined) {
 				return ok(null);
 			}
@@ -1794,7 +1891,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			organizationId: record.organizationId,
 			idempotencyKey: record.createIdempotencyKey,
 		});
-		if (!existingByKey.ok) return existingByKey;
+		if (!existingByKey.ok) {
+			return existingByKey;
+		}
 		if (existingByKey.data !== null) {
 			return ok(existingByKey.data.candidate);
 		}
@@ -1803,7 +1902,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			organizationId: record.organizationId,
 			normalizedEmail: record.normalizedEmail,
 		});
-		if (!existingByEmail.ok) return existingByEmail;
+		if (!existingByEmail.ok) {
+			return existingByEmail;
+		}
 		if (existingByEmail.data !== null) {
 			return fail(
 				"CONFLICT",
@@ -1814,7 +1915,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 
 		const entityId = randomUUID();
 		const brandedId = parseHumanResourcesCandidateId(entityId);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const plannedOutbox = planRecruitmentDrizzleOutbox({
@@ -1831,8 +1934,8 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		}
 		try {
 			const [rows] = await runNeonHttpTransaction<[CandidateSqlRow[]]>(
-				(sql) => [
-					sql`
+				(sqlValue15) => [
+					sqlValue15`
 							WITH mutated AS (
 								INSERT INTO hr_candidate (
 									id, organization_id, display_name, email, normalized_email, phone,
@@ -1877,33 +1980,25 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 						`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return fail("INTERNAL_ERROR", "Candidate create returned no row");
 			}
 			return mapCandidateSqlRow(row);
 		} catch (error) {
-			if (
-				isPostgresUniqueConstraint(
-					error,
-					/hr_candidate_org_create_idempotency_uidx/i,
-				)
-			) {
+			if (isPostgresUniqueConstraint(error, HR_REGEX_3)) {
 				const existing = await this.findCandidateByIdempotencyKey({
 					organizationId: record.organizationId,
 					idempotencyKey: record.createIdempotencyKey,
 				});
-				if (!existing.ok) return existing;
+				if (!existing.ok) {
+					return existing;
+				}
 				if (existing.data !== null) {
 					return ok(existing.data.candidate);
 				}
 			}
-			if (
-				isPostgresUniqueConstraint(
-					error,
-					/hr_candidate_org_normalized_email_uidx/i,
-				)
-			) {
+			if (isPostgresUniqueConstraint(error, HR_REGEX_4)) {
 				return fail(
 					"CONFLICT",
 					"Candidate with this email already exists",
@@ -1918,8 +2013,8 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		input: {
 			organizationId: string;
 			candidateId: HumanResourcesCandidateId;
-			displayName?: string;
-			phone?: string | null;
+			displayName?: string | undefined;
+			phone?: string | null | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -1930,7 +2025,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			organizationId: input.organizationId,
 			candidateId: input.candidateId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Candidate not found");
 		}
@@ -1940,7 +2037,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			candidate.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const notAnonymized = assertCandidateNotAnonymized(candidate.status);
 		if (!notAnonymized.ok) {
@@ -1948,17 +2047,17 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		}
 
 		const nextDisplayName =
-			input.displayName !== undefined
-				? input.displayName
-				: candidate.displayName;
-		const nextPhone = input.phone !== undefined ? input.phone : candidate.phone;
+			input.displayName === undefined
+				? candidate.displayName
+				: input.displayName;
+		const nextPhone = input.phone === undefined ? candidate.phone : input.phone;
 
 		const auditId = randomUUID();
 		const nextVersion = input.expectedVersion + 1;
 		try {
 			const [rows] = await runNeonHttpTransaction<[CandidateSqlRow[]]>(
-				(sql) => [
-					sql`
+				(sqlValue14) => [
+					sqlValue14`
 							WITH mutated AS (
 								UPDATE hr_candidate
 								SET display_name = ${nextDisplayName},
@@ -1987,13 +2086,15 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 						`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				const again = await this.getCandidateById({
 					organizationId: input.organizationId,
 					candidateId: input.candidateId,
 				});
-				if (!again.ok) return again;
+				if (!again.ok) {
+					return again;
+				}
 				if (again.data?.status === "anonymized") {
 					return invalidState("Candidate has been anonymized");
 				}
@@ -2022,7 +2123,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			organizationId: input.organizationId,
 			candidateId: input.candidateId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Candidate not found");
 		}
@@ -2032,7 +2135,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			candidate.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const notAnonymized = assertCandidateNotAnonymized(candidate.status);
 		if (!notAnonymized.ok) {
@@ -2063,8 +2168,8 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 
 		try {
 			const [rows] = await runNeonHttpTransaction<[CandidateSqlRow[]]>(
-				(sql) => [
-					sql`
+				(sqlValue13) => [
+					sqlValue13`
 							WITH mutated AS (
 								UPDATE hr_candidate
 								SET consent_withdrawn_at = now(),
@@ -2105,13 +2210,15 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 						`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				const again = await this.getCandidateById({
 					organizationId: input.organizationId,
 					candidateId: input.candidateId,
 				});
-				if (!again.ok) return again;
+				if (!again.ok) {
+					return again;
+				}
 				if (again.data === null) {
 					return notFound("Candidate not found");
 				}
@@ -2147,7 +2254,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			organizationId: input.organizationId,
 			candidateId: input.candidateId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Candidate not found");
 		}
@@ -2157,7 +2266,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			candidate.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const notAnonymized = assertCandidateNotAnonymized(candidate.status);
 		if (!notAnonymized.ok) {
@@ -2188,8 +2299,8 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 
 		try {
 			const [rows] = await runNeonHttpTransaction<[CandidateSqlRow[]]>(
-				(sql) => [
-					sql`
+				(sqlValue12) => [
+					sqlValue12`
 							WITH mutated AS (
 								UPDATE hr_candidate
 								SET retention_until = ${input.retentionUntil},
@@ -2230,13 +2341,15 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 						`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				const again = await this.getCandidateById({
 					organizationId: input.organizationId,
 					candidateId: input.candidateId,
 				});
-				if (!again.ok) return again;
+				if (!again.ok) {
+					return again;
+				}
 				if (again.data === null) {
 					return notFound("Candidate not found");
 				}
@@ -2274,7 +2387,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			organizationId: input.organizationId,
 			candidateId: input.candidateId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Candidate not found");
 		}
@@ -2284,7 +2399,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			candidate.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const eligible = assertCandidateAnonymizationEligible({
 			status: candidate.status,
@@ -2361,13 +2478,15 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 						`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				const again = await this.getCandidateById({
 					organizationId: input.organizationId,
 					candidateId: input.candidateId,
 				});
-				if (!again.ok) return again;
+				if (!again.ok) {
+					return again;
+				}
 				if (again.data === null) {
 					return notFound("Candidate not found");
 				}
@@ -2389,9 +2508,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		status?: CandidateStatus;
-		retentionDueAsOf?: string;
-		query?: string;
+		status?: CandidateStatus | undefined;
+		retentionDueAsOf?: string | undefined;
+		query?: string | undefined;
 	}): Promise<Result<CandidateListPage>> {
 		try {
 			const conditions = [eq(hrCandidate.organizationId, input.organizationId)];
@@ -2448,8 +2567,8 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 
 	async detectCandidateDuplicates(input: {
 		organizationId: string;
-		email?: string;
-		displayName?: string;
+		email?: string | undefined;
+		displayName?: string | undefined;
 	}): Promise<Result<readonly CandidateDuplicateMatch[]>> {
 		try {
 			const conditions = [
@@ -2457,21 +2576,21 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 				sql`${hrCandidate.status} <> 'anonymized'`,
 			];
 			const normalizedEmail =
-				input.email !== undefined
-					? normalizeCandidateEmail(input.email)
-					: undefined;
+				input.email === undefined
+					? undefined
+					: normalizeCandidateEmail(input.email);
 			const normalizedDisplayName =
-				input.displayName !== undefined
-					? input.displayName.trim().toLowerCase()
-					: undefined;
+				input.displayName === undefined
+					? undefined
+					: input.displayName.trim().toLowerCase();
 			const emailMatch =
-				normalizedEmail !== undefined
-					? eq(hrCandidate.normalizedEmail, normalizedEmail)
-					: undefined;
+				normalizedEmail === undefined
+					? undefined
+					: eq(hrCandidate.normalizedEmail, normalizedEmail);
 			const nameMatch =
-				normalizedDisplayName !== undefined
-					? sql`lower(trim(${hrCandidate.displayName})) = ${normalizedDisplayName}`
-					: undefined;
+				normalizedDisplayName === undefined
+					? undefined
+					: sql`lower(trim(${hrCandidate.displayName})) = ${normalizedDisplayName}`;
 			if (emailMatch !== undefined && nameMatch !== undefined) {
 				const combinedMatch = or(emailMatch, nameMatch);
 				if (combinedMatch !== undefined) {
@@ -2479,10 +2598,10 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 				}
 			} else if (emailMatch !== undefined) {
 				conditions.push(emailMatch);
-			} else if (nameMatch !== undefined) {
-				conditions.push(nameMatch);
-			} else {
+			} else if (nameMatch === undefined) {
 				return ok([]);
+			} else {
+				conditions.push(nameMatch);
 			}
 
 			const rows = await db
@@ -2544,7 +2663,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 					),
 				)
 				.limit(1);
-			const row = result[0];
+			const [row] = result;
 			if (row === undefined) {
 				return ok(null);
 			}
@@ -2572,7 +2691,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 					),
 				)
 				.limit(1);
-			const row = result[0];
+			const [row] = result;
 			if (row === undefined) {
 				return ok(null);
 			}
@@ -2591,25 +2710,33 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			organizationId: record.organizationId,
 			candidateId: record.candidateId,
 		});
-		if (!candidate.ok) return candidate;
+		if (!candidate.ok) {
+			return candidate;
+		}
 		if (candidate.data === null) {
 			return notFound("Candidate not found");
 		}
 		const activeCandidate = assertCandidateActive(candidate.data.status);
-		if (!activeCandidate.ok) return activeCandidate;
+		if (!activeCandidate.ok) {
+			return activeCandidate;
+		}
 
 		const requisition = await this.getRequisitionById({
 			organizationId: record.organizationId,
 			requisitionId: record.requisitionId,
 		});
-		if (!requisition.ok) return requisition;
+		if (!requisition.ok) {
+			return requisition;
+		}
 		if (requisition.data === null) {
 			return notFound("Requisition not found");
 		}
 		const openRequisition = assertRequisitionOpenForApplication(
 			requisition.data.status,
 		);
-		if (!openRequisition.ok) return openRequisition;
+		if (!openRequisition.ok) {
+			return openRequisition;
+		}
 
 		const existingActive =
 			await this.findActiveApplicationByCandidateRequisition({
@@ -2617,7 +2744,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 				candidateId: record.candidateId,
 				requisitionId: record.requisitionId,
 			});
-		if (!existingActive.ok) return existingActive;
+		if (!existingActive.ok) {
+			return existingActive;
+		}
 		if (existingActive.data !== null) {
 			return conflict(
 				"An active application already exists for this candidate and requisition",
@@ -2626,7 +2755,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 
 		const entityId = randomUUID();
 		const brandedId = parseHumanResourcesApplicationId(entityId);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const historyId = randomUUID();
@@ -2644,8 +2775,8 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		}
 		try {
 			const [rows] = await runNeonHttpTransaction<[ApplicationSqlRow[]]>(
-				(sql) => [
-					sql`
+				(sqlValue11) => [
+					sqlValue11`
 							WITH candidate_ref AS (
 								SELECT id, organization_id
 								FROM hr_candidate
@@ -2712,42 +2843,45 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 						`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				const candidateAgain = await this.getCandidateById({
 					organizationId: record.organizationId,
 					candidateId: record.candidateId,
 				});
-				if (!candidateAgain.ok) return candidateAgain;
+				if (!candidateAgain.ok) {
+					return candidateAgain;
+				}
 				if (candidateAgain.data === null) {
 					return notFound("Candidate not found");
 				}
 				if (candidateAgain.data.status !== "active") {
 					const activeCheck = assertCandidateActive(candidateAgain.data.status);
-					if (!activeCheck.ok) return activeCheck;
+					if (!activeCheck.ok) {
+						return activeCheck;
+					}
 				}
 				const requisitionAgain = await this.getRequisitionById({
 					organizationId: record.organizationId,
 					requisitionId: record.requisitionId,
 				});
-				if (!requisitionAgain.ok) return requisitionAgain;
+				if (!requisitionAgain.ok) {
+					return requisitionAgain;
+				}
 				if (requisitionAgain.data === null) {
 					return notFound("Requisition not found");
 				}
 				const openCheck = assertRequisitionOpenForApplication(
 					requisitionAgain.data.status,
 				);
-				if (!openCheck.ok) return openCheck;
+				if (!openCheck.ok) {
+					return openCheck;
+				}
 				return conflict("Could not create application");
 			}
 			return mapApplicationSqlRow(row);
 		} catch (error) {
-			if (
-				isPostgresUniqueConstraint(
-					error,
-					/hr_candidate_application_org_candidate_requisition_open_uidx/i,
-				)
-			) {
+			if (isPostgresUniqueConstraint(error, HR_REGEX_5)) {
 				return conflict(
 					"An active application already exists for this candidate and requisition",
 				);
@@ -2763,8 +2897,8 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			status: ApplicationStatus;
 			expectedVersion: number;
 			actorUserId: string;
-			reason?: string | null;
-			reasonCode?: string | null;
+			reason?: string | null | undefined;
+			reasonCode?: string | null | undefined;
 		},
 		_ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
@@ -2773,7 +2907,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			organizationId: input.organizationId,
 			applicationId: input.applicationId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Application not found");
 		}
@@ -2783,13 +2919,17 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			application.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const transition = assertApplicationStatusTransition(
 			application.status,
 			input.status,
 		);
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 
 		const auditId = randomUUID();
 		const eventId = randomUUID();
@@ -2814,8 +2954,8 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		}
 		try {
 			const [rows] = await runNeonHttpTransaction<[ApplicationSqlRow[]]>(
-				(sql) => [
-					sql`
+				(sqlValue10) => [
+					sqlValue10`
 							WITH mutated AS (
 								UPDATE hr_candidate_application
 								SET status = ${input.status},
@@ -2867,13 +3007,15 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 						`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				const again = await this.getApplicationById({
 					organizationId: input.organizationId,
 					applicationId: input.applicationId,
 				});
-				if (!again.ok) return again;
+				if (!again.ok) {
+					return again;
+				}
 				return missAfterOptimisticUpdate({
 					found: again.data !== null,
 					entityLabel: "Application",
@@ -2881,12 +3023,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			}
 			return mapApplicationSqlRow(row);
 		} catch (error) {
-			if (
-				isPostgresUniqueConstraint(
-					error,
-					/hr_candidate_application_org_candidate_requisition_open_uidx/i,
-				)
-			) {
+			if (isPostgresUniqueConstraint(error, HR_REGEX_5)) {
 				return conflict(
 					"An active application already exists for this candidate and requisition",
 				);
@@ -2904,8 +3041,8 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			applicationId: HumanResourcesApplicationId;
 			expectedVersion: number;
 			actorUserId: string;
-			reason?: string | null;
-			reasonCode?: string | null;
+			reason?: string | null | undefined;
+			reasonCode?: string | null | undefined;
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
@@ -2914,13 +3051,17 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			organizationId: input.organizationId,
 			applicationId: input.applicationId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Application not found");
 		}
 
 		const reopenable = assertApplicationReopenable(existing.data.status);
-		if (!reopenable.ok) return reopenable;
+		if (!reopenable.ok) {
+			return reopenable;
+		}
 
 		const activeDuplicate =
 			await this.findActiveApplicationByCandidateRequisition({
@@ -2928,7 +3069,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 				candidateId: existing.data.candidateId,
 				requisitionId: existing.data.requisitionId,
 			});
-		if (!activeDuplicate.ok) return activeDuplicate;
+		if (!activeDuplicate.ok) {
+			return activeDuplicate;
+		}
 		if (activeDuplicate.data !== null) {
 			return conflict(
 				"An active application already exists for this candidate and requisition",
@@ -2974,7 +3117,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			const history: ApplicationStatusHistory[] = [];
 			for (const row of rows) {
 				const mapped = mapApplicationStatusHistory(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				history.push(mapped.data);
 			}
 			return ok(history);
@@ -3026,9 +3171,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		status?: ApplicationStatus;
-		candidateId?: HumanResourcesCandidateId;
-		requisitionId?: HumanResourcesRequisitionId;
+		status?: ApplicationStatus | undefined;
+		candidateId?: HumanResourcesCandidateId | undefined;
+		requisitionId?: HumanResourcesRequisitionId | undefined;
 	}): Promise<Result<ApplicationListPage>> {
 		try {
 			const conditions = [
@@ -3094,7 +3239,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 					),
 				)
 				.limit(1);
-			const row = result[0];
+			const [row] = result;
 			if (row === undefined) {
 				return ok(null);
 			}
@@ -3113,16 +3258,22 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			organizationId: record.organizationId,
 			applicationId: record.applicationId,
 		});
-		if (!application.ok) return application;
+		if (!application.ok) {
+			return application;
+		}
 		if (application.data === null) {
 			return notFound("Application not found");
 		}
 		const schedulable = assertInterviewSchedulable(application.data.status);
-		if (!schedulable.ok) return schedulable;
+		if (!schedulable.ok) {
+			return schedulable;
+		}
 
 		const entityId = randomUUID();
 		const brandedId = parseHumanResourcesInterviewId(entityId);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const scheduledAt = new Date(record.scheduledAt);
@@ -3140,8 +3291,8 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		}
 		try {
 			const [rows] = await runNeonHttpTransaction<[InterviewSqlRow[]]>(
-				(sql) => [
-					sql`
+				(sqlValue9) => [
+					sqlValue9`
 							WITH application_ref AS (
 								SELECT id, organization_id
 								FROM hr_candidate_application
@@ -3188,20 +3339,24 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 						`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				const applicationAgain = await this.getApplicationById({
 					organizationId: record.organizationId,
 					applicationId: record.applicationId,
 				});
-				if (!applicationAgain.ok) return applicationAgain;
+				if (!applicationAgain.ok) {
+					return applicationAgain;
+				}
 				if (applicationAgain.data === null) {
 					return notFound("Application not found");
 				}
 				const schedulableCheck = assertInterviewSchedulable(
 					applicationAgain.data.status,
 				);
-				if (!schedulableCheck.ok) return schedulableCheck;
+				if (!schedulableCheck.ok) {
+					return schedulableCheck;
+				}
 				return conflict("Could not schedule interview");
 			}
 			return mapInterviewSqlRow(row);
@@ -3224,7 +3379,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			organizationId: input.organizationId,
 			interviewId: input.interviewId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Interview not found");
 		}
@@ -3234,20 +3391,24 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			interview.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const transition = assertInterviewStatusTransition(
 			interview.status,
 			"cancelled",
 		);
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 
 		const auditId = randomUUID();
 		const nextVersion = input.expectedVersion + 1;
 		try {
 			const [rows] = await runNeonHttpTransaction<[InterviewSqlRow[]]>(
-				(sql) => [
-					sql`
+				(sqlValue8) => [
+					sqlValue8`
 							WITH mutated AS (
 								UPDATE hr_interview
 								SET status = 'cancelled',
@@ -3275,13 +3436,15 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 						`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				const again = await this.getInterviewById({
 					organizationId: input.organizationId,
 					interviewId: input.interviewId,
 				});
-				if (!again.ok) return again;
+				if (!again.ok) {
+					return again;
+				}
 				return missAfterOptimisticUpdate({
 					found: again.data !== null,
 					entityLabel: "Interview",
@@ -3308,7 +3471,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			organizationId: input.organizationId,
 			interviewId: input.interviewId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Interview not found");
 		}
@@ -3318,17 +3483,21 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			interview.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const assignable = assertInterviewInterviewerAssignable(interview.status);
-		if (!assignable.ok) return assignable;
+		if (!assignable.ok) {
+			return assignable;
+		}
 
 		const auditId = randomUUID();
 		const nextVersion = input.expectedVersion + 1;
 		try {
 			const [rows] = await runNeonHttpTransaction<[InterviewSqlRow[]]>(
-				(sql) => [
-					sql`
+				(sqlValue7) => [
+					sqlValue7`
 							WITH mutated AS (
 								UPDATE hr_interview
 								SET interviewer_actor_id = ${input.interviewerActorId},
@@ -3356,13 +3525,15 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 						`,
 				],
 			);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				const again = await this.getInterviewById({
 					organizationId: input.organizationId,
 					interviewId: input.interviewId,
 				});
-				if (!again.ok) return again;
+				if (!again.ok) {
+					return again;
+				}
 				return missAfterOptimisticUpdate({
 					found: again.data !== null,
 					entityLabel: "Interview",
@@ -3381,7 +3552,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		applicationId?: HumanResourcesApplicationId;
+		applicationId?: HumanResourcesApplicationId | undefined;
 	}): Promise<Result<InterviewListPage>> {
 		try {
 			const conditions = [eq(hrInterview.organizationId, input.organizationId)];
@@ -3450,7 +3621,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 					),
 				)
 				.limit(1);
-			const row = result[0];
+			const [row] = result;
 			if (row === undefined) {
 				return ok(null);
 			}
@@ -3472,7 +3643,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			organizationId: record.organizationId,
 			interviewId: record.interviewId,
 		});
-		if (!interview.ok) return interview;
+		if (!interview.ok) {
+			return interview;
+		}
 		if (interview.data === null) {
 			return notFound("Interview not found");
 		}
@@ -3481,7 +3654,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			organizationId: record.organizationId,
 			interviewId: record.interviewId,
 		});
-		if (!existingEvaluation.ok) return existingEvaluation;
+		if (!existingEvaluation.ok) {
+			return existingEvaluation;
+		}
 		if (existingEvaluation.data !== null) {
 			return conflict("Interview evaluation already recorded");
 		}
@@ -3490,17 +3665,23 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			interview.data.version,
 			record.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const completeTransition = assertInterviewStatusTransition(
 			interview.data.status,
 			"completed",
 		);
-		if (!completeTransition.ok) return completeTransition;
+		if (!completeTransition.ok) {
+			return completeTransition;
+		}
 
 		const entityId = randomUUID();
 		const brandedId = parseHumanResourcesInterviewEvaluationId(entityId);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const interviewAuditId = randomUUID();
 		const evaluationAuditId = randomUUID();
 		const eventId = randomUUID();
@@ -3522,8 +3703,8 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		try {
 			const [rows] = await runNeonHttpTransaction<
 				[InterviewEvaluationSqlRow[]]
-			>((sql) => [
-				sql`
+			>((sqlValue6) => [
+				sqlValue6`
 						WITH completed_interview AS (
 							UPDATE hr_interview
 							SET status = 'completed',
@@ -3587,13 +3768,15 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 						SELECT mutated.* FROM mutated, completed_interview, interview_audited, audited, outboxed
 					`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				const again = await this.getInterviewById({
 					organizationId: record.organizationId,
 					interviewId: record.interviewId,
 				});
-				if (!again.ok) return again;
+				if (!again.ok) {
+					return again;
+				}
 				return missAfterOptimisticUpdate({
 					found: again.data !== null,
 					entityLabel: "Interview",
@@ -3601,12 +3784,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			}
 			return mapInterviewEvaluationSqlRow(row);
 		} catch (error) {
-			if (
-				isPostgresUniqueConstraint(
-					error,
-					/hr_interview_evaluation_org_interview_uidx/i,
-				)
-			) {
+			if (isPostgresUniqueConstraint(error, HR_REGEX_6)) {
 				return conflict("Interview evaluation already recorded");
 			}
 			return mapPersistenceFailure(
@@ -3631,7 +3809,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 					),
 				)
 				.limit(1);
-			const row = result[0];
+			const [row] = result;
 			if (row === undefined) {
 				return ok(null);
 			}
@@ -3657,7 +3835,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 					),
 				)
 				.limit(1);
-			const row = result[0];
+			const [row] = result;
 			if (row === undefined) {
 				return ok(null);
 			}
@@ -3682,17 +3860,21 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 					),
 				)
 				.limit(1);
-			const offerRow = result[0];
+			const [offerRow] = result;
 			if (offerRow === undefined) {
 				return ok(null);
 			}
 			const mappedOffer = mapOffer(offerRow);
-			if (!mappedOffer.ok) return mappedOffer;
+			if (!mappedOffer.ok) {
+				return mappedOffer;
+			}
 			const application = await this.getApplicationById({
 				organizationId: input.organizationId,
 				applicationId: mappedOffer.data.applicationId,
 			});
-			if (!application.ok) return application;
+			if (!application.ok) {
+				return application;
+			}
 			if (application.data === null) {
 				return fail("NOT_FOUND", "Application for accepted offer not found");
 			}
@@ -3725,18 +3907,24 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			organizationId: record.organizationId,
 			applicationId: record.applicationId,
 		});
-		if (!application.ok) return application;
+		if (!application.ok) {
+			return application;
+		}
 		if (application.data === null) {
 			return notFound("Application not found");
 		}
 		const eligible = assertApplicationEligibleForOffer(application.data.status);
-		if (!eligible.ok) return eligible;
+		if (!eligible.ok) {
+			return eligible;
+		}
 
 		const existingActive = await this.findActiveOfferByApplication({
 			organizationId: record.organizationId,
 			applicationId: record.applicationId,
 		});
-		if (!existingActive.ok) return existingActive;
+		if (!existingActive.ok) {
+			return existingActive;
+		}
 		if (existingActive.data !== null) {
 			return conflict("An active offer already exists for this application");
 		}
@@ -3749,15 +3937,20 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 				compensationProposalId: record.compensationProposalId,
 			},
 		);
-		if (!proposalCheck.ok) return proposalCheck;
+		if (!proposalCheck.ok) {
+			return proposalCheck;
+		}
 
 		const entityId = randomUUID();
 		const brandedId = parseHumanResourcesOfferId(entityId);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<[OfferSqlRow[]]>((sql) => [
-				sql`
+			const [rows] = await runNeonHttpTransaction<[OfferSqlRow[]]>(
+				(sqlValue5) => [
+					sqlValue5`
 						WITH application_ref AS (
 							SELECT id, organization_id
 							FROM hr_candidate_application
@@ -3792,31 +3985,31 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-			]);
-			const row = rows[0];
+				],
+			);
+			const [row] = rows;
 			if (!row) {
 				const applicationAgain = await this.getApplicationById({
 					organizationId: record.organizationId,
 					applicationId: record.applicationId,
 				});
-				if (!applicationAgain.ok) return applicationAgain;
+				if (!applicationAgain.ok) {
+					return applicationAgain;
+				}
 				if (applicationAgain.data === null) {
 					return notFound("Application not found");
 				}
 				const eligibleCheck = assertApplicationEligibleForOffer(
 					applicationAgain.data.status,
 				);
-				if (!eligibleCheck.ok) return eligibleCheck;
+				if (!eligibleCheck.ok) {
+					return eligibleCheck;
+				}
 				return conflict("Could not create offer");
 			}
 			return mapOfferSqlRow(row);
 		} catch (error) {
-			if (
-				isPostgresUniqueConstraint(
-					error,
-					/hr_employment_offer_org_application_draft_issued_uidx/i,
-				)
-			) {
+			if (isPostgresUniqueConstraint(error, HR_REGEX_7)) {
 				return conflict("An active offer already exists for this application");
 			}
 			return mapPersistenceFailure(error, "Failed to create offer");
@@ -3827,9 +4020,12 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		input: {
 			organizationId: string;
 			offerId: HumanResourcesOfferId;
-			termsSummary?: string;
-			expiresOn?: string;
-			compensationProposalId?: HumanResourcesCompensationProposalId | null;
+			termsSummary?: string | undefined;
+			expiresOn?: string | undefined;
+			compensationProposalId?:
+				| HumanResourcesCompensationProposalId
+				| null
+				| undefined;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -3840,7 +4036,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			organizationId: input.organizationId,
 			offerId: input.offerId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Offer not found");
 		}
@@ -3850,24 +4048,30 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			offer.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const amendable = assertOfferAmendable(offer.status);
-		if (!amendable.ok) return amendable;
+		if (!amendable.ok) {
+			return amendable;
+		}
 
 		const nextTermsSummary =
-			input.termsSummary !== undefined
-				? input.termsSummary
-				: offer.termsSummary;
+			input.termsSummary === undefined
+				? offer.termsSummary
+				: input.termsSummary;
 		const nextExpiresOn =
-			input.expiresOn !== undefined ? input.expiresOn : offer.expiresOn;
+			input.expiresOn === undefined ? offer.expiresOn : input.expiresOn;
 		const nextCompensationProposalId =
-			input.compensationProposalId !== undefined
-				? input.compensationProposalId
-				: offer.compensationProposalId;
+			input.compensationProposalId === undefined
+				? offer.compensationProposalId
+				: input.compensationProposalId;
 		if (input.compensationProposalId !== undefined) {
 			const proposalMutable = assertOfferProposalMutable(offer.status);
-			if (!proposalMutable.ok) return proposalMutable;
+			if (!proposalMutable.ok) {
+				return proposalMutable;
+			}
 		}
 		const proposalCheck = await validateOfferCompensationProposalAttachment(
 			this,
@@ -3877,13 +4081,16 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 				compensationProposalId: nextCompensationProposalId,
 			},
 		);
-		if (!proposalCheck.ok) return proposalCheck;
+		if (!proposalCheck.ok) {
+			return proposalCheck;
+		}
 
 		const auditId = randomUUID();
 		const nextVersion = input.expectedVersion + 1;
 		try {
-			const [rows] = await runNeonHttpTransaction<[OfferSqlRow[]]>((sql) => [
-				sql`
+			const [rows] = await runNeonHttpTransaction<[OfferSqlRow[]]>(
+				(sqlValue4) => [
+					sqlValue4`
 						WITH mutated AS (
 							UPDATE hr_employment_offer
 							SET terms_summary = ${nextTermsSummary},
@@ -3911,14 +4118,17 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-			]);
-			const row = rows[0];
+				],
+			);
+			const [row] = rows;
 			if (!row) {
 				const again = await this.getOfferById({
 					organizationId: input.organizationId,
 					offerId: input.offerId,
 				});
-				if (!again.ok) return again;
+				if (!again.ok) {
+					return again;
+				}
 				return missAfterOptimisticUpdate({
 					found: again.data !== null,
 					entityLabel: "Offer",
@@ -3937,7 +4147,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			status: OfferStatus;
 			expectedVersion: number;
 			actorUserId: string;
-			asOfDate?: string;
+			asOfDate?: string | undefined;
 		},
 		_ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
@@ -3946,7 +4156,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			organizationId: input.organizationId,
 			offerId: input.offerId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Offer not found");
 		}
@@ -3956,16 +4168,22 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			offer.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const transition = assertOfferStatusTransition(offer.status, input.status);
-		if (!transition.ok) return transition;
+		if (!transition.ok) {
+			return transition;
+		}
 
 		if (input.status === "approved") {
 			const ready = assertOfferReadyForApproval({
 				compensationProposalId: offer.compensationProposalId,
 			});
-			if (!ready.ok) return ready;
+			if (!ready.ok) {
+				return ready;
+			}
 			const proposalCheck = await validateOfferCompensationProposalAttachment(
 				this,
 				{
@@ -3975,7 +4193,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 					offerStatus: "approved",
 				},
 			);
-			if (!proposalCheck.ok) return proposalCheck;
+			if (!proposalCheck.ok) {
+				return proposalCheck;
+			}
 		}
 
 		if (input.status === "issued") {
@@ -3988,12 +4208,16 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 					offerStatus: "issued",
 				},
 			);
-			if (!proposalCheck.ok) return proposalCheck;
+			if (!proposalCheck.ok) {
+				return proposalCheck;
+			}
 			const application = await this.getApplicationById({
 				organizationId: input.organizationId,
 				applicationId: offer.applicationId,
 			});
-			if (!application.ok) return application;
+			if (!application.ok) {
+				return application;
+			}
 			if (application.data === null) {
 				return notFound("Application not found");
 			}
@@ -4001,7 +4225,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 				application.data.status,
 				"offered",
 			);
-			if (!applicationTransition.ok) return applicationTransition;
+			if (!applicationTransition.ok) {
+				return applicationTransition;
+			}
 		}
 
 		const auditId = randomUUID();
@@ -4027,8 +4253,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 
 		try {
 			if (input.status === "issued") {
-				const [rows] = await runNeonHttpTransaction<[OfferSqlRow[]]>((sql) => [
-					sql`
+				const [rows] = await runNeonHttpTransaction<[OfferSqlRow[]]>(
+					(sqlValue3) => [
+						sqlValue3`
 								WITH updated_offer AS (
 									UPDATE hr_employment_offer
 									SET status = 'issued',
@@ -4090,14 +4317,17 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 								)
 								SELECT updated_offer.* FROM updated_offer, offer_audited, updated_application, application_audited, outboxed
 							`,
-				]);
-				const row = rows[0];
+					],
+				);
+				const [row] = rows;
 				if (!row) {
 					const again = await this.getOfferById({
 						organizationId: input.organizationId,
 						offerId: input.offerId,
 					});
-					if (!again.ok) return again;
+					if (!again.ok) {
+						return again;
+					}
 					return missAfterOptimisticUpdate({
 						found: again.data !== null,
 						entityLabel: "Offer",
@@ -4106,8 +4336,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 				return mapOfferSqlRow(row);
 			}
 
-			const [rows] = await runNeonHttpTransaction<[OfferSqlRow[]]>((sql) => [
-				sql`
+			const [rows] = await runNeonHttpTransaction<[OfferSqlRow[]]>(
+				(sqlValue2) => [
+					sqlValue2`
 						WITH mutated AS (
 							UPDATE hr_employment_offer
 							SET status = ${input.status},
@@ -4148,14 +4379,17 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-			]);
-			const row = rows[0];
+				],
+			);
+			const [row] = rows;
 			if (!row) {
 				const again = await this.getOfferById({
 					organizationId: input.organizationId,
 					offerId: input.offerId,
 				});
-				if (!again.ok) return again;
+				if (!again.ok) {
+					return again;
+				}
 				return missAfterOptimisticUpdate({
 					found: again.data !== null,
 					entityLabel: "Offer",
@@ -4184,7 +4418,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			organizationId: input.organizationId,
 			idempotencyKey: input.idempotencyKey,
 		});
-		if (!existingByKey.ok) return existingByKey;
+		if (!existingByKey.ok) {
+			return existingByKey;
+		}
 		if (existingByKey.data !== null) {
 			return ok({
 				...existingByKey.data.handoff,
@@ -4196,7 +4432,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			organizationId: input.organizationId,
 			offerId: input.offerId,
 		});
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data === null) {
 			return notFound("Offer not found");
 		}
@@ -4206,20 +4444,26 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			offer.version,
 			input.expectedVersion,
 		);
-		if (!versionCheck.ok) return versionCheck;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
 
 		const acceptable = assertOfferAcceptable({
 			status: offer.status,
 			expiresOn: offer.expiresOn,
 			asOfDate: input.asOfDate,
 		});
-		if (!acceptable.ok) return acceptable;
+		if (!acceptable.ok) {
+			return acceptable;
+		}
 
 		const application = await this.getApplicationById({
 			organizationId: input.organizationId,
 			applicationId: offer.applicationId,
 		});
-		if (!application.ok) return application;
+		if (!application.ok) {
+			return application;
+		}
 		if (application.data === null) {
 			return notFound("Application not found");
 		}
@@ -4228,7 +4472,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			applicationRecord.status,
 			"accepted",
 		);
-		if (!applicationTransition.ok) return applicationTransition;
+		if (!applicationTransition.ok) {
+			return applicationTransition;
+		}
 
 		const offerAuditId = randomUUID();
 		const applicationAuditId = randomUUID();
@@ -4258,8 +4504,8 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 						requisition_id: string;
 					})[],
 				]
-			>((sql) => [
-				sql`
+			>((sqlValue) => [
+				sqlValue`
 						WITH updated_offer AS (
 							UPDATE hr_employment_offer
 							SET status = 'accepted',
@@ -4355,13 +4601,15 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 						LEFT JOIN reservation_audited ON true
 					`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				const idempotent = await this.findOfferByAcceptIdempotencyKey({
 					organizationId: input.organizationId,
 					idempotencyKey: input.idempotencyKey,
 				});
-				if (!idempotent.ok) return idempotent;
+				if (!idempotent.ok) {
+					return idempotent;
+				}
 				if (idempotent.data !== null) {
 					return ok({
 						...idempotent.data.handoff,
@@ -4372,7 +4620,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 					organizationId: input.organizationId,
 					offerId: input.offerId,
 				});
-				if (!again.ok) return again;
+				if (!again.ok) {
+					return again;
+				}
 				return missAfterOptimisticUpdate({
 					found: again.data !== null,
 					entityLabel: "Offer",
@@ -4380,14 +4630,20 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			}
 
 			const mappedOffer = mapOfferSqlRow(row);
-			if (!mappedOffer.ok) return mappedOffer;
+			if (!mappedOffer.ok) {
+				return mappedOffer;
+			}
 
 			const candidateId = parseHumanResourcesCandidateId(row.candidate_id);
-			if (!candidateId.ok) return candidateId;
+			if (!candidateId.ok) {
+				return candidateId;
+			}
 			const requisitionId = parseHumanResourcesRequisitionId(
 				row.requisition_id,
 			);
-			if (!requisitionId.ok) return requisitionId;
+			if (!requisitionId.ok) {
+				return requisitionId;
+			}
 
 			const acceptedAt = mappedOffer.data.respondedAt ?? new Date();
 			return ok(
@@ -4411,17 +4667,14 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 				}),
 			);
 		} catch (error) {
-			if (
-				isPostgresUniqueConstraint(
-					error,
-					/hr_employment_offer_org_accept_idempotency_uidx/i,
-				)
-			) {
+			if (isPostgresUniqueConstraint(error, HR_REGEX_8)) {
 				const idempotent = await this.findOfferByAcceptIdempotencyKey({
 					organizationId: input.organizationId,
 					idempotencyKey: input.idempotencyKey,
 				});
-				if (!idempotent.ok) return idempotent;
+				if (!idempotent.ok) {
+					return idempotent;
+				}
 				if (idempotent.data !== null) {
 					return ok({
 						...idempotent.data.handoff,
@@ -4437,8 +4690,8 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		status?: OfferStatus;
-		applicationId?: HumanResourcesApplicationId;
+		status?: OfferStatus | undefined;
+		applicationId?: HumanResourcesApplicationId | undefined;
 	}): Promise<Result<OfferListPage>> {
 		try {
 			const conditions = [

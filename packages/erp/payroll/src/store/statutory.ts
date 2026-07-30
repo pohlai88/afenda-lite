@@ -11,17 +11,16 @@ import type {
  * Persistence contract for statutory calculation outputs.
  * Slice of `PayrollStore`. Persistence only; orchestration stays in commands.
  */
-export type PayrollStatutoryStore = {
-	replaceStatutoryResultsForRun(
-		input: ReplaceStatutoryResultsForRunInput,
-		ports: MutationPorts,
-	): Promise<Result<PayrollStatutoryResult[]>>;
-
-	listStatutoryResultsForRun(input: {
+export interface PayrollStatutoryStore {
+	listStatutoryResultsForRun: (input: {
 		organizationId: string;
 		runId: PayrollRunId;
-	}): Promise<Result<PayrollStatutoryResult[]>>;
-};
+	}) => Promise<Result<PayrollStatutoryResult[]>>;
+	replaceStatutoryResultsForRun: (
+		input: ReplaceStatutoryResultsForRunInput,
+		ports: MutationPorts,
+	) => Promise<Result<PayrollStatutoryResult[]>>;
+}
 
 export type { PayrollRunId } from "../brands";
 export type { ReplaceStatutoryResultsForRunInput } from "../types";

@@ -17,11 +17,11 @@ export const HUMAN_RESOURCES_REPORTING_FACT_KINDS = [
 export type HumanResourcesReportingFactKind =
 	(typeof HUMAN_RESOURCES_REPORTING_FACT_KINDS)[number];
 
-type ReportingFactBase<Kind extends HumanResourcesReportingFactKind> = {
+interface ReportingFactBase<Kind extends HumanResourcesReportingFactKind> {
 	id: string;
 	kind: Kind;
 	organizationId: string;
-};
+}
 
 export type EmploymentReportingFact = ReportingFactBase<"employment"> & {
 	employeeId: string;
@@ -133,67 +133,36 @@ export type HumanResourcesReadModelFact =
 	| SuccessionReportingFact
 	| WorkforcePlanReportingFact;
 
-export type HumanResourcesReportingFactPage = {
+export interface HumanResourcesReportingFactPage {
 	entries: readonly HumanResourcesReadModelFact[];
-	total: number;
 	page: number;
 	pageSize: number;
-};
+	total: number;
+}
 
-export type HumanResourcesReportingSourcePort = {
-	listFacts(input: {
+export interface HumanResourcesReportingSourcePort {
+	listFacts: (input: {
 		organizationId: string;
 		kind: HumanResourcesReportingFactKind;
 		page: number;
 		pageSize: number;
-	}): Promise<Result<HumanResourcesReportingFactPage>>;
-};
+	}) => Promise<Result<HumanResourcesReportingFactPage>>;
+}
 
-export type ReportingProjectionMeta = {
-	organizationId: string;
+export interface ReportingProjectionMeta {
 	asOf: string;
-	periodStart: string;
+	organizationId: string;
 	periodEnd: string;
+	periodStart: string;
 	sourceFactCount: number;
-};
+}
 
-export type HumanResourcesReportingSnapshot = {
-	meta: ReportingProjectionMeta & { projectionVersion: 1 };
-	workforceHeadcount: {
-		headcount: number;
-		fullTimeEquivalent: string;
-	};
-	turnover: {
-		openingHeadcount: number;
-		closingHeadcount: number;
-		terminations: number;
-		averageHeadcount: string;
-		turnoverRatePercent: string;
-	};
-	hiring: {
-		requisitionsOpened: number;
-		applicationsReceived: number;
-		offersAccepted: number;
-		hires: number;
-	};
-	leave: {
-		requested: number;
-		approved: number;
-		rejected: number;
-		cancelled: number;
-		approvedMinutes: number;
-	};
+export interface HumanResourcesReportingSnapshot {
 	attendance: {
 		scheduledMinutes: number;
 		workedMinutes: number;
 		exceptionCount: number;
 		attendanceRatePercent: string;
-	};
-	overtime: {
-		requestedMinutes: number;
-		approvedMinutes: number;
-		workedMinutes: number;
-		payrollApprovedMinutes: number;
 	};
 	compensation: {
 		activeEmployees: number;
@@ -205,11 +174,31 @@ export type HumanResourcesReportingSnapshot = {
 		nonCompliant: number;
 		outstandingRequirements: number;
 	};
+	hiring: {
+		requisitionsOpened: number;
+		applicationsReceived: number;
+		offersAccepted: number;
+		hires: number;
+	};
 	learning: {
 		assigned: number;
 		completed: number;
 		overdue: number;
 		certificationsExpiring: number;
+	};
+	leave: {
+		requested: number;
+		approved: number;
+		rejected: number;
+		cancelled: number;
+		approvedMinutes: number;
+	};
+	meta: ReportingProjectionMeta & { projectionVersion: 1 };
+	overtime: {
+		requestedMinutes: number;
+		approvedMinutes: number;
+		workedMinutes: number;
+		payrollApprovedMinutes: number;
 	};
 	performance: {
 		participants: number;
@@ -223,6 +212,17 @@ export type HumanResourcesReportingSnapshot = {
 		readyNowCandidates: number;
 		coverageRatePercent: string;
 	};
+	turnover: {
+		openingHeadcount: number;
+		closingHeadcount: number;
+		terminations: number;
+		averageHeadcount: string;
+		turnoverRatePercent: string;
+	};
+	workforceHeadcount: {
+		headcount: number;
+		fullTimeEquivalent: string;
+	};
 	workforcePlanVariance: {
 		plannedHeadcount: number;
 		actualHeadcount: number;
@@ -231,4 +231,4 @@ export type HumanResourcesReportingSnapshot = {
 		actualFullTimeEquivalent: string;
 		varianceFullTimeEquivalent: string;
 	};
-};
+}

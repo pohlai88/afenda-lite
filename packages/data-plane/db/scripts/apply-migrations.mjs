@@ -12,21 +12,35 @@ import { fileURLToPath } from "node:url";
 import { neon } from "@neondatabase/serverless";
 
 import { probeMigrationDdlApplied } from "./lib/migration-ddl-probes.mjs";
+import { runSequentially } from "./lib/run-sequentially.mjs";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const repoRoot = path.join(root, "../../..");
 const drizzleDir = path.join(root, "drizzle");
 const journalPath = path.join(drizzleDir, "meta/_journal.json");
+const LINE_BREAK_PATTERN = /\r?\n/;
+const ENV_ASSIGNMENT_PATTERN = /^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/;
+const STATEMENT_BREAKPOINT_PATTERN = /--> statement-breakpoint\n/;
 
 function loadEnvLocal() {
-	if (process.env.DATABASE_URL) return;
+	if (process.env.DATABASE_URL) {
+		return;
+	}
 	const envPath = path.join(repoRoot, ".env.local");
-	if (!fs.existsSync(envPath)) return;
-	for (const line of fs.readFileSync(envPath, "utf8").split(/\r?\n/)) {
+	if (!fs.existsSync(envPath)) {
+		return;
+	}
+	for (const line of fs
+		.readFileSync(envPath, "utf8")
+		.split(LINE_BREAK_PATTERN)) {
 		const trimmed = line.trim();
-		if (!trimmed || trimmed.startsWith("#")) continue;
-		const match = /^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/.exec(trimmed);
-		if (!match || process.env[match[1]] !== undefined) continue;
+		if (!trimmed || trimmed.startsWith("#")) {
+			continue;
+		}
+		const match = ENV_ASSIGNMENT_PATTERN.exec(trimmed);
+		if (!match || process.env[match[1]] !== undefined) {
+			continue;
+		}
 		let value = match[2]?.trim() ?? "";
 		if (
 			(value.startsWith('"') && value.endsWith('"')) ||
@@ -45,7 +59,7 @@ function loadJournal() {
 
 function splitStatements(content) {
 	return content
-		.split(/--> statement-breakpoint\n/)
+		.split(STATEMENT_BREAKPOINT_PATTERN)
 		.map((statement) => statement.trim())
 		.filter(Boolean);
 }
@@ -72,7 +86,7 @@ if (!databaseUrl) {
 const journalByTag = loadJournal();
 const sql = neon(databaseUrl);
 
-for (const tag of tags) {
+await runSequentially(tags, async (tag) => {
 	const entry = journalByTag.get(tag);
 	if (!entry) {
 		console.error(`apply-migrations: unknown journal tag ${tag}`);
@@ -94,16 +108,14 @@ for (const tag of tags) {
 	`;
 	if (existingHash.length > 0) {
 		console.log(`apply-migrations: ${tag} already journaled`);
-		continue;
+		return;
 	}
 
 	const probeExists = await probeMigrationDdlApplied(sql, tag);
 
 	if (!journalOnly && probeExists !== true) {
 		const statements = splitStatements(content);
-		for (const statement of statements) {
-			await sql.query(statement);
-		}
+		await runSequentially(statements, (statement) => sql.query(statement));
 		console.log(
 			`apply-migrations: ${tag} applied ${statements.length} statements`,
 		);
@@ -120,4 +132,4 @@ for (const tag of tags) {
 	console.log(
 		`apply-migrations: ${tag} recorded in drizzle.__drizzle_migrations`,
 	);
-}
+});

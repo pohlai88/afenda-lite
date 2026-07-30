@@ -45,14 +45,14 @@ export type HumanResourcesAuthorizeOperationOptions =
 		policies?: readonly HumanResourcesAuthorizationPolicy[] | undefined;
 	};
 
-export type HumanResourcesAuthorizationDeniedDetails = {
+export interface HumanResourcesAuthorizationDeniedDetails {
+	denyCode: HumanResourcesAuthorizationDenyCode;
 	humanResourcesCode: typeof HUMAN_RESOURCES_ERROR_AUTHORIZATION_DENIED;
 	operationId: HumanResourcesOperationId;
 	policyId?: string | undefined;
-	denyCode: HumanResourcesAuthorizationDenyCode;
-	resourceKind?: string | undefined;
 	resourceId?: string | undefined;
-};
+	resourceKind?: string | undefined;
+}
 
 export const HUMAN_RESOURCES_ACTOR_SCOPES = [
 	"subject",
@@ -71,14 +71,14 @@ export const HUMAN_RESOURCES_ACTOR_SCOPES = [
 export type HumanResourcesActorScope =
 	(typeof HUMAN_RESOURCES_ACTOR_SCOPES)[number];
 
-export type HumanResourcesSensitiveResourcePolicy = {
-	resourceType: HumanResourcesSensitiveResourceType;
-	allowedScopes: readonly HumanResourcesActorScope[];
-	fieldClasses: readonly HumanResourcesSensitiveFieldClass[];
-	allowSubjectAccess: boolean;
-	allowManagerAccess: boolean;
+export interface HumanResourcesSensitiveResourcePolicy {
 	allowBreakGlass: boolean;
-};
+	allowedScopes: readonly HumanResourcesActorScope[];
+	allowManagerAccess: boolean;
+	allowSubjectAccess: boolean;
+	fieldClasses: readonly HumanResourcesSensitiveFieldClass[];
+	resourceType: HumanResourcesSensitiveResourceType;
+}
 
 export const HUMAN_RESOURCES_SENSITIVE_RESOURCE_POLICIES = {
 	personal_identifiers: {
@@ -179,15 +179,15 @@ export const HUMAN_RESOURCES_SEPARATION_OF_DUTIES = [
 export type HumanResourcesSensitiveDuty =
 	(typeof HUMAN_RESOURCES_SEPARATION_OF_DUTIES)[number][number];
 
-export type HumanResourcesDelegatedAuthority = {
+export interface HumanResourcesDelegatedAuthority {
+	delegatedByUserId: string;
 	scope: HumanResourcesActorScope;
 	validFrom: string;
 	validUntil: string | null;
-	delegatedByUserId: string;
-};
+}
 
-export type HumanResourcesBreakGlassAuditPort = {
-	record(input: {
+export interface HumanResourcesBreakGlassAuditPort {
+	record: (input: {
 		organizationId: string;
 		actorUserId: string;
 		resourceType: HumanResourcesSensitiveResourceType;
@@ -195,25 +195,10 @@ export type HumanResourcesBreakGlassAuditPort = {
 		reason: string;
 		correlationId: string;
 		occurredAt: string;
-	}): Promise<Result<{ id: string }>>;
-};
+	}) => Promise<Result<{ id: string }>>;
+}
 
-export type HumanResourcesContextualAuthorizationInput = {
-	organizationId: string;
-	resourceOrganizationId: string;
-	actorUserId: string;
-	actorEmployeeId?: HumanResourcesEmployeeId | undefined;
-	actorEmploymentStatus: "active" | "terminated";
-	directScopes: readonly HumanResourcesActorScope[];
-	delegatedAuthorities?:
-		| readonly HumanResourcesDelegatedAuthority[]
-		| undefined;
-	actorDuties?: readonly HumanResourcesSensitiveDuty[] | undefined;
-	requestedDuty?: HumanResourcesSensitiveDuty | undefined;
-	resourceType: HumanResourcesSensitiveResourceType;
-	resourceId: string;
-	subjectEmployeeId?: HumanResourcesEmployeeId | undefined;
-	ownerActorUserId?: string | undefined;
+export interface HumanResourcesContextualAuthorizationInput {
 	action:
 		| "read"
 		| "create"
@@ -223,19 +208,34 @@ export type HumanResourcesContextualAuthorizationInput = {
 		| "rectify"
 		| "anonymize"
 		| "hold";
+	actorDuties?: readonly HumanResourcesSensitiveDuty[] | undefined;
+	actorEmployeeId?: HumanResourcesEmployeeId | undefined;
+	actorEmploymentStatus: "active" | "terminated";
+	actorUserId: string;
 	asOf: string;
 	breakGlass?: {
 		reason: string;
 		correlationId: string;
 		audit: HumanResourcesBreakGlassAuditPort;
 	};
-};
+	delegatedAuthorities?:
+		| readonly HumanResourcesDelegatedAuthority[]
+		| undefined;
+	directScopes: readonly HumanResourcesActorScope[];
+	organizationId: string;
+	ownerActorUserId?: string | undefined;
+	requestedDuty?: HumanResourcesSensitiveDuty | undefined;
+	resourceId: string;
+	resourceOrganizationId: string;
+	resourceType: HumanResourcesSensitiveResourceType;
+	subjectEmployeeId?: HumanResourcesEmployeeId | undefined;
+}
 
-export type HumanResourcesContextualAuthorizationDecision = {
+export interface HumanResourcesContextualAuthorizationDecision {
 	allowedScope: HumanResourcesActorScope | "break_glass";
-	fieldClasses: readonly HumanResourcesSensitiveFieldClass[];
 	breakGlassAuditId?: string | undefined;
-};
+	fieldClasses: readonly HumanResourcesSensitiveFieldClass[];
+}
 
 function activeDelegatedScopes(
 	delegations: readonly HumanResourcesDelegatedAuthority[],
@@ -254,7 +254,9 @@ function violatesSeparationOfDuties(
 	duties: readonly HumanResourcesSensitiveDuty[],
 	requestedDuty: HumanResourcesSensitiveDuty | undefined,
 ): boolean {
-	if (!requestedDuty) return false;
+	if (!requestedDuty) {
+		return false;
+	}
 	return HUMAN_RESOURCES_SEPARATION_OF_DUTIES.some(
 		([left, right]) =>
 			(requestedDuty === left && duties.includes(right)) ||
@@ -338,7 +340,9 @@ export async function authorizeHumanResourcesSensitiveResource(
 			correlationId: input.breakGlass.correlationId,
 			occurredAt: input.asOf,
 		});
-		if (!audit.ok) return audit;
+		if (!audit.ok) {
+			return audit;
+		}
 		return ok({
 			allowedScope: "break_glass",
 			fieldClasses: policy.fieldClasses,
@@ -489,7 +493,7 @@ export async function requireHumanResourcesManifestPermission(
 		permission: HumanResourcesPermission;
 	},
 ): Promise<Result<void>> {
-	return requireHumanResourcesPermission(options.authorization, input);
+	return await requireHumanResourcesPermission(options.authorization, input);
 }
 
 /** Supplemental manifest permission probe (backdate, sensitive read, etc.). */
@@ -497,7 +501,7 @@ export async function assertHumanResourcesSupplementalAuthorization(
 	request: HumanResourcesAuthorizationRequest,
 	options: HumanResourcesAuthorizeOperationOptions,
 ): Promise<Result<void>> {
-	return requireHumanResourcesManifestPermission(options, {
+	return await requireHumanResourcesManifestPermission(options, {
 		organizationId: request.actor.organizationId,
 		actorUserId: request.actor.actorUserId,
 		permission: request.requiredPermission,

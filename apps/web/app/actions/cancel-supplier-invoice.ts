@@ -14,7 +14,7 @@ export async function cancelSupplierInvoiceAction(
 	_prev: CancelSupplierInvoiceActionState,
 	formData: FormData,
 ): Promise<CancelSupplierInvoiceActionState> {
-	return runVersionedSupplierInvoiceMutation({
+	return await runVersionedSupplierInvoiceMutation({
 		path: "cancelSupplierInvoiceAction",
 		permission: "payables.manage",
 		safeMessage:

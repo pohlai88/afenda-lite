@@ -7,6 +7,7 @@ import type {
 	OutboxFactInput,
 	OutboxPort,
 } from "../../src/ports";
+import { resolveAsync } from "../../src/resolve-async";
 
 export function createMemoryMutationPorts(): MutationPorts & {
 	audit: AuditFactPort & { calls: AuditFactInput[] };
@@ -17,16 +18,20 @@ export function createMemoryMutationPorts(): MutationPorts & {
 	return {
 		audit: {
 			calls: auditCalls,
-			async record(input): Promise<Result<{ id: string }>> {
-				auditCalls.push(input);
-				return ok({ id: randomUUID() });
+			record(input): Promise<Result<{ id: string }>> {
+				return resolveAsync(() => {
+					auditCalls.push(input);
+					return ok({ id: randomUUID() });
+				});
 			},
 		},
 		outbox: {
 			calls: outboxCalls,
-			async append(input): Promise<Result<{ id: string }>> {
-				outboxCalls.push(input);
-				return ok({ id: randomUUID() });
+			append(input): Promise<Result<{ id: string }>> {
+				return resolveAsync(() => {
+					outboxCalls.push(input);
+					return ok({ id: randomUUID() });
+				});
 			},
 		},
 	};

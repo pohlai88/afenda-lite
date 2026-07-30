@@ -16,14 +16,14 @@ describe("accounting authorization", () => {
 		const options = {
 			store: createMemoryStore(),
 			authorization: {
-				async can(input: { permission: string }) {
+				can(input: { permission: string }) {
 					seen.push(input.permission);
-					return false;
+					return Promise.resolve(false);
 				},
 			},
 			effects: {
-				async emit() {
-					return ok(undefined);
+				emit() {
+					return Promise.resolve(ok(undefined));
 				},
 			},
 		};
@@ -53,8 +53,8 @@ describe("accounting authorization", () => {
 	it("fails closed without an authorization port", async () => {
 		const store = createMemoryStore();
 		const effects = {
-			async emit() {
-				return ok(undefined);
+			emit() {
+				return Promise.resolve(ok(undefined));
 			},
 		};
 		const unauthorized = await getTrialBalance(

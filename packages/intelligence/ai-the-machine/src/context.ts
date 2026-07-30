@@ -1,12 +1,15 @@
 import type { ConversationContext } from "./types";
 
+const CJK_CHARACTER_PATTERN = /[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]/;
+const WHITESPACE_PATTERN = /\s+/;
+
 /** Rough token estimate — English ~1.3 tokens/word; CJK denser. */
 export function estimateTokens(text: string): number {
-	const hasCjk = /[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]/.test(text);
+	const hasCjk = CJK_CHARACTER_PATTERN.test(text);
 	if (hasCjk) {
 		return Math.ceil(text.length * 1.5);
 	}
-	const words = text.trim().split(/\s+/).filter(Boolean);
+	const words = text.trim().split(WHITESPACE_PATTERN).filter(Boolean);
 	return Math.ceil(words.length * 1.3);
 }
 

@@ -14,9 +14,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type CancelStockMovementActionData = {
+export interface CancelStockMovementActionData {
 	movement: StockMovement;
-};
+}
 
 export type CancelStockMovementActionState =
 	ActionResult<CancelStockMovementActionData> | null;
@@ -37,7 +37,7 @@ export async function cancelStockMovementAction(
 	_prev: CancelStockMovementActionState,
 	formData: FormData,
 ): Promise<CancelStockMovementActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "cancelStockMovementAction",
 		permission: "inventory.movement.cancel",
 		safeMessage:

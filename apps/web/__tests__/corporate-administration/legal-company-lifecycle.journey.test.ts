@@ -110,7 +110,7 @@ describe("Corporate Administration CA-1.5 lifecycle journey", () => {
 		commands.activateLegalCompany.mockImplementation(async (input) => {
 			companyState = "active";
 			companyVersion = 5;
-			return {
+			return await {
 				ok: true,
 				data: {
 					id: statusHistoryId,
@@ -244,6 +244,8 @@ describe("Corporate Administration CA-1.5 lifecycle journey", () => {
 
 function toFormData(values: Readonly<Record<string, string>>): FormData {
 	const formData = new FormData();
-	for (const [key, value] of Object.entries(values)) formData.set(key, value);
+	for (const [key, value] of Object.entries(values)) {
+		formData.set(key, value);
+	}
 	return formData;
 }

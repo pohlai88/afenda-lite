@@ -20,9 +20,9 @@ import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 
 const initialState: CreatePaymentTermActionState = null;
 
-type CreatePaymentTermFormProps = {
+interface CreatePaymentTermFormProps {
 	canManage: boolean;
-};
+}
 
 /**
  * Payment term create form — CAPABLE when `master_data.manage` is granted.
@@ -76,38 +76,38 @@ export function CreatePaymentTermForm({
 				<FormError>{state.message}</FormError>
 			) : null}
 			<FormField
+				error={codeError}
+				fieldId="payment-term-code"
 				label="Code"
 				required
-				fieldId="payment-term-code"
-				error={codeError}
 			>
-				<Input name="code" required autoComplete="off" disabled={pending} />
+				<Input autoComplete="off" disabled={pending} name="code" required />
 			</FormField>
 			<FormField
+				error={nameError}
+				fieldId="payment-term-name"
 				label="Name"
 				required
-				fieldId="payment-term-name"
-				error={nameError}
 			>
-				<Input name="name" required autoComplete="off" disabled={pending} />
+				<Input autoComplete="off" disabled={pending} name="name" required />
 			</FormField>
 			<FormField
+				error={netDaysError}
+				fieldId="payment-term-net-days"
 				label="Net days"
 				required
-				fieldId="payment-term-net-days"
-				error={netDaysError}
 			>
 				<Input
-					name="netDays"
-					type="number"
-					min={0}
-					step={1}
-					required
 					defaultValue={30}
 					disabled={pending}
+					min={0}
+					name="netDays"
+					required
+					step={1}
+					type="number"
 				/>
 			</FormField>
-			<Button type="submit" disabled={pending}>
+			<Button disabled={pending} type="submit">
 				{pending ? <Spinner /> : null}
 				Create payment term
 			</Button>

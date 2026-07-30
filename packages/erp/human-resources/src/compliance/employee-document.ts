@@ -12,6 +12,10 @@ import {
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_UPDATE_METADATA,
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_VERIFY,
 } from "../module-ids";
+import type {
+	DocumentReferencePort,
+	ValidatedDocumentReference,
+} from "../ports";
 import {
 	employeeDocumentTransitionInputSchema,
 	getEmployeeDocumentInputSchema,
@@ -55,7 +59,37 @@ const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 25;
 const DEFAULT_EXPIRING_WITHIN_DAYS = 30;
 
-export async function registerEmployeeDocument(
+async function validateEmployeeDocumentRegistration(
+	documentReference: DocumentReferencePort,
+	input: {
+		organizationId: string;
+		documentRef: string;
+		issuedOn: string;
+		expiresOn: string | null;
+	},
+): Promise<Result<ValidatedDocumentReference>> {
+	const reference = await documentReference.validateReference({
+		organizationId: input.organizationId,
+		reference: input.documentRef,
+		allowedKinds: [
+			"employee_document",
+			"passport",
+			"identity_document",
+			"other",
+		],
+		requireImmutableVersion: true,
+	});
+	if (!reference.ok) {
+		return reference;
+	}
+	const dateRange = assertValidDocumentDateRange({
+		issuedOn: input.issuedOn,
+		expiresOn: input.expiresOn,
+	});
+	return dateRange.ok ? reference : dateRange;
+}
+
+export function registerEmployeeDocument(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeDocument>> {
@@ -64,27 +98,17 @@ export async function registerEmployeeDocument(
 		invalidMessage: "Invalid employee document register input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_REGISTER,
 		execute: async (data, { store, ports, documentReference }) => {
-			const refCheck = await documentReference.validateReference({
-				organizationId: data.organizationId,
-				reference: data.documentRef,
-				allowedKinds: [
-					"employee_document",
-					"passport",
-					"identity_document",
-					"other",
-				],
-				requireImmutableVersion: true,
-			});
+			const refCheck = await validateEmployeeDocumentRegistration(
+				documentReference,
+				{
+					organizationId: data.organizationId,
+					documentRef: data.documentRef,
+					issuedOn: data.issuedOn,
+					expiresOn: data.expiresOn ?? null,
+				},
+			);
 			if (!refCheck.ok) {
 				return refCheck;
-			}
-
-			const dateRange = assertValidDocumentDateRange({
-				issuedOn: data.issuedOn,
-				expiresOn: data.expiresOn ?? null,
-			});
-			if (!dateRange.ok) {
-				return dateRange;
 			}
 
 			const requestFingerprint = fingerprintEmployeeDocumentRegister({
@@ -117,13 +141,13 @@ export async function registerEmployeeDocument(
 			}
 
 			const identifierLast4 =
-				data.documentIdentifier !== undefined
-					? last4DocumentIdentifier(data.documentIdentifier)
-					: null;
+				data.documentIdentifier === undefined
+					? null
+					: last4DocumentIdentifier(data.documentIdentifier);
 			const identifierFingerprint =
-				data.documentIdentifier !== undefined
-					? fingerprintDocumentIdentifier(data.documentIdentifier)
-					: null;
+				data.documentIdentifier === undefined
+					? null
+					: fingerprintDocumentIdentifier(data.documentIdentifier);
 
 			return store.registerEmployeeDocument(
 				{
@@ -153,7 +177,7 @@ export async function registerEmployeeDocument(
 	});
 }
 
-export async function updateEmployeeDocumentMetadata(
+export function updateEmployeeDocumentMetadata(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeDocument>> {
@@ -203,7 +227,7 @@ export async function updateEmployeeDocumentMetadata(
 	});
 }
 
-export async function verifyEmployeeDocument(
+export function verifyEmployeeDocument(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeDocument>> {
@@ -229,7 +253,7 @@ export async function verifyEmployeeDocument(
 	});
 }
 
-export async function rejectEmployeeDocument(
+export function rejectEmployeeDocument(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeDocument>> {
@@ -255,7 +279,7 @@ export async function rejectEmployeeDocument(
 	});
 }
 
-export async function revokeEmployeeDocumentVerification(
+export function revokeEmployeeDocumentVerification(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeDocument>> {
@@ -281,7 +305,7 @@ export async function revokeEmployeeDocumentVerification(
 	});
 }
 
-export async function markEmployeeDocumentExpired(
+export function markEmployeeDocumentExpired(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeDocument>> {
@@ -306,7 +330,7 @@ export async function markEmployeeDocumentExpired(
 	});
 }
 
-export async function getEmployeeDocument(
+export function getEmployeeDocument(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeDocumentListItem | EmployeeDocumentSensitiveDetail>> {
@@ -357,59 +381,56 @@ export async function getEmployeeDocument(
 	});
 }
 
-export async function listEmployeeDocuments(
+export function listEmployeeDocuments(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeDocumentListPage>> {
 	return runComplianceEmployeeScopedQuery(input, options, {
 		schema: listEmployeeDocumentsInputSchema,
 		invalidMessage: "Invalid employee document list input",
-		execute: async (data, { store }) => {
-			return store.listEmployeeDocuments({
+		execute: async (data, { store }) =>
+			store.listEmployeeDocuments({
 				organizationId: data.organizationId,
 				page: data.page ?? DEFAULT_PAGE,
 				pageSize: data.pageSize ?? DEFAULT_PAGE_SIZE,
 				employeeId: data.employeeId,
 				verificationStatus: data.verificationStatus,
-			});
-		},
+			}),
 	});
 }
 
-export async function listMissingRequiredDocuments(
+export function listMissingRequiredDocuments(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<DocumentRequirementListPage>> {
 	return runComplianceEmployeeScopedQuery(input, options, {
 		schema: listMissingRequiredDocumentsInputSchema,
 		invalidMessage: "Invalid missing required documents list input",
-		execute: async (data, { store }) => {
-			return store.listMissingRequiredDocuments({
+		execute: async (data, { store }) =>
+			store.listMissingRequiredDocuments({
 				organizationId: data.organizationId,
 				page: data.page ?? DEFAULT_PAGE,
 				pageSize: data.pageSize ?? DEFAULT_PAGE_SIZE,
 				employeeId: data.employeeId,
-			});
-		},
+			}),
 	});
 }
 
-export async function listExpiringEmployeeDocuments(
+export function listExpiringEmployeeDocuments(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeDocumentListPage>> {
 	return runComplianceEmployeeScopedQuery(input, options, {
 		schema: listExpiringEmployeeDocumentsInputSchema,
 		invalidMessage: "Invalid expiring employee documents list input",
-		execute: async (data, { store }) => {
-			return store.listExpiringEmployeeDocuments({
+		execute: async (data, { store }) =>
+			store.listExpiringEmployeeDocuments({
 				organizationId: data.organizationId,
 				asOf: data.asOf,
 				withinDays: data.withinDays ?? DEFAULT_EXPIRING_WITHIN_DAYS,
 				page: data.page ?? DEFAULT_PAGE,
 				pageSize: data.pageSize ?? DEFAULT_PAGE_SIZE,
 				employeeId: data.employeeId,
-			});
-		},
+			}),
 	});
 }

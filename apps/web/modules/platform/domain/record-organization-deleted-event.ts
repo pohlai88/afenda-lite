@@ -7,11 +7,11 @@
 import type { Result } from "@afenda/errors/result";
 import { createEventPublisher, type DomainEvent } from "@afenda/events";
 
-export type RecordOrganizationDeletedEventInput = {
-	organizationId: string;
-	deletedByUserId: string;
+export interface RecordOrganizationDeletedEventInput {
 	correlationId: string;
-};
+	deletedByUserId: string;
+	organizationId: string;
+}
 
 /**
  * Append `platform.organization.deleted` after Neon delete succeeds.
@@ -20,7 +20,7 @@ export type RecordOrganizationDeletedEventInput = {
 export async function recordOrganizationDeletedEvent(
 	input: RecordOrganizationDeletedEventInput,
 ): Promise<Result<DomainEvent>> {
-	return createEventPublisher().publish({
+	return await createEventPublisher().publish({
 		type: "platform.organization.deleted",
 		sourceModule: "platform",
 		organizationId: input.organizationId,

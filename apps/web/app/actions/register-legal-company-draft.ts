@@ -32,7 +32,7 @@ const registerLegalCompanyDraftActionSchema = z.object({
 export async function registerLegalCompanyDraftAction(
 	formData: FormData,
 ): Promise<ActionResult<{ legalCompanyId: string }>> {
-	return runMemberPermissionAction({
+	return await runMemberPermissionAction({
 		path: "registerLegalCompanyDraftAction",
 		permission: "corporate_administration.company.manage",
 		safeMessage: "Could not register legal company draft.",
@@ -67,7 +67,9 @@ export async function registerLegalCompanyDraftAction(
 				createCorporateAdministrationLegalCompanyDependencies(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 
 			revalidatePath("/client/corporate-administration");
 			revalidatePath("/admin/corporate-administration");
@@ -83,5 +85,5 @@ export async function registerLegalCompanyDraftFormAction(
 	_previousState: ActionResult<{ legalCompanyId: string }> | null,
 	formData: FormData,
 ): Promise<ActionResult<{ legalCompanyId: string }> | null> {
-	return registerLegalCompanyDraftAction(formData);
+	return await registerLegalCompanyDraftAction(formData);
 }

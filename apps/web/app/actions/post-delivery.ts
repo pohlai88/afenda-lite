@@ -13,7 +13,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type PostDeliveryActionData = { delivery: Delivery };
+export interface PostDeliveryActionData {
+	delivery: Delivery;
+}
 export type PostDeliveryActionState =
 	ActionResult<PostDeliveryActionData> | null;
 
@@ -26,7 +28,7 @@ export async function postDeliveryAction(
 	_prev: PostDeliveryActionState,
 	formData: FormData,
 ): Promise<PostDeliveryActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "postDeliveryAction",
 		permission: "fulfillment.delivery.post",
 		safeMessage: "Could not post delivery. Try again or contact an admin.",
@@ -53,7 +55,9 @@ export async function postDeliveryAction(
 				createFulfillmentCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePath("/admin/fulfillment");
 			revalidatePath("/client/fulfillment");
 			return { ok: true, data: { delivery: mapped.data } };

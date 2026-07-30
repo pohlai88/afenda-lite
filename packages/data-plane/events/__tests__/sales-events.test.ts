@@ -2,17 +2,30 @@ import { describe, expect, it } from "vitest";
 import { SALES_EVENT_IDS, SalesEventSchemas } from "../src/schemas/index";
 
 function entityType(eventType: string) {
-	if (eventType.startsWith("sales.price_book.entry_"))
+	if (eventType.startsWith("sales.price_book.entry_")) {
 		return "sales_price_book_entry";
-	if (eventType.startsWith("sales.price_book.")) return "sales_price_book";
-	if (eventType.startsWith("sales.quotation.line_"))
+	}
+	if (eventType.startsWith("sales.price_book.")) {
+		return "sales_price_book";
+	}
+	if (eventType.startsWith("sales.quotation.line_")) {
 		return "sales_quotation_line";
-	if (eventType.startsWith("sales.quotation.")) return "sales_quotation";
-	if (eventType.startsWith("sales.order.line_")) return "sales_order_line";
-	if (eventType.startsWith("sales.order.hold_")) return "sales_order_hold";
-	if (eventType.startsWith("sales.order.")) return "sales_order";
-	if (eventType.startsWith("sales.return.line_"))
+	}
+	if (eventType.startsWith("sales.quotation.")) {
+		return "sales_quotation";
+	}
+	if (eventType.startsWith("sales.order.line_")) {
+		return "sales_order_line";
+	}
+	if (eventType.startsWith("sales.order.hold_")) {
+		return "sales_order_hold";
+	}
+	if (eventType.startsWith("sales.order.")) {
+		return "sales_order";
+	}
+	if (eventType.startsWith("sales.return.line_")) {
 		return "sales_return_authorization_line";
+	}
 	return "sales_return_authorization";
 }
 

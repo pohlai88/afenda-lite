@@ -1,5 +1,3 @@
-import { expect } from "vitest";
-
 import type { HumanResourcesEmploymentId } from "../../src/brands";
 import type { HumanResourcesCommandOptions } from "../../src/command-options";
 import {
@@ -30,12 +28,17 @@ import {
 	proposeTermination,
 } from "../../src/lifecycle/termination";
 import type { OnboardingCase, Termination } from "../../src/types";
+import { helperAssert as assert } from "./helper-assert";
 
 type LifecycleTestReady = HumanResourcesCommandOptions & {
 	store: NonNullable<HumanResourcesCommandOptions["store"]>;
 };
 
-type TerminationFlowFailure = { ok: false; code: string; message: string };
+interface TerminationFlowFailure {
+	code: string;
+	message: string;
+	ok: false;
+}
 
 export async function runEmploymentTerminationFlow(
 	ready: LifecycleTestReady,
@@ -145,7 +148,9 @@ async function seedOnboardingWorkEligibility(
 		},
 		ready,
 	);
-	if (!recorded.ok) return recorded;
+	if (!recorded.ok) {
+		return recorded;
+	}
 
 	return verifyWorkEligibility(
 		{
@@ -179,7 +184,9 @@ async function completeOnboardingTaskByCode(
 		},
 		ready,
 	);
-	if (!tasks.ok) return tasks;
+	if (!tasks.ok) {
+		return tasks;
+	}
 	const task = tasks.data.find((row) => row.code === input.code);
 	if (task === undefined) {
 		throw new Error(`Expected onboarding task ${input.code}`);
@@ -210,22 +217,7 @@ export async function completeOnboardingPath(
 	},
 ) {
 	let onboardingCase: OnboardingCase;
-	if (input.onboardingCaseId !== undefined) {
-		const existing = await getOnboardingCase(
-			{
-				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId: `corr-onb-get-${input.suffix}`,
-				onboardingCaseId: input.onboardingCaseId,
-			},
-			ready,
-		);
-		if (!existing.ok) return existing;
-		if (existing.data === null) {
-			throw new Error("Expected onboarding case");
-		}
-		onboardingCase = existing.data;
-	} else {
+	if (input.onboardingCaseId === undefined) {
 		const started = await startOnboarding(
 			{
 				organizationId: input.organizationId,
@@ -244,8 +236,27 @@ export async function completeOnboardingPath(
 			},
 			ready,
 		);
-		if (!started.ok) return started;
+		if (!started.ok) {
+			return started;
+		}
 		onboardingCase = started.data;
+	} else {
+		const existing = await getOnboardingCase(
+			{
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: `corr-onb-get-${input.suffix}`,
+				onboardingCaseId: input.onboardingCaseId,
+			},
+			ready,
+		);
+		if (!existing.ok) {
+			return existing;
+		}
+		if (existing.data === null) {
+			throw new Error("Expected onboarding case");
+		}
+		onboardingCase = existing.data;
 	}
 
 	const tasks = await listOnboardingTasks(
@@ -257,8 +268,11 @@ export async function completeOnboardingPath(
 		},
 		ready,
 	);
-	if (!tasks.ok) return tasks;
-	expect(tasks.data.map((row) => row.code).toSorted()).toEqual(
+	if (!tasks.ok) {
+		return tasks;
+	}
+	assert.deepEqual(
+		tasks.data.map((row) => row.code).toSorted(),
 		GOVERNED_ONBOARDING_CHECKLIST.map((row) => row.code).toSorted(),
 	);
 
@@ -285,7 +299,9 @@ export async function completeOnboardingPath(
 		code: ONBOARDING_TASK_CODE_IDENTITY_DOCUMENTS,
 		suffix: input.suffix,
 	});
-	if (!identityDone.ok) return identityDone;
+	if (!identityDone.ok) {
+		return identityDone;
+	}
 	activeCase = identityDone.data;
 
 	const eligibilityDone = await completeOnboardingTaskByCode(ready, {
@@ -295,7 +311,9 @@ export async function completeOnboardingPath(
 		code: ONBOARDING_TASK_CODE_WORK_ELIGIBILITY,
 		suffix: input.suffix,
 	});
-	if (!eligibilityDone.ok) return eligibilityDone;
+	if (!eligibilityDone.ok) {
+		return eligibilityDone;
+	}
 	activeCase = eligibilityDone.data;
 
 	const orientation = await getOnboardingOrientationByCase(
@@ -307,7 +325,9 @@ export async function completeOnboardingPath(
 		},
 		ready,
 	);
-	if (!orientation.ok) return orientation;
+	if (!orientation.ok) {
+		return orientation;
+	}
 	if (orientation.data === null) {
 		throw new Error("Expected onboarding orientation");
 	}
@@ -322,7 +342,9 @@ export async function completeOnboardingPath(
 		},
 		ready,
 	);
-	if (!orientationRecorded.ok) return orientationRecorded;
+	if (!orientationRecorded.ok) {
+		return orientationRecorded;
+	}
 	activeCase = orientationRecorded.data;
 
 	const equipment = await getOnboardingEquipmentHandoffByCase(
@@ -334,7 +356,9 @@ export async function completeOnboardingPath(
 		},
 		ready,
 	);
-	if (!equipment.ok) return equipment;
+	if (!equipment.ok) {
+		return equipment;
+	}
 	if (equipment.data === null) {
 		throw new Error("Expected onboarding equipment handoff");
 	}
@@ -350,7 +374,9 @@ export async function completeOnboardingPath(
 		},
 		ready,
 	);
-	if (!equipmentRecorded.ok) return equipmentRecorded;
+	if (!equipmentRecorded.ok) {
+		return equipmentRecorded;
+	}
 	activeCase = equipmentRecorded.data;
 
 	const access = await getOnboardingAccessHandoffByCase(
@@ -362,7 +388,9 @@ export async function completeOnboardingPath(
 		},
 		ready,
 	);
-	if (!access.ok) return access;
+	if (!access.ok) {
+		return access;
+	}
 	if (access.data === null) {
 		throw new Error("Expected onboarding access handoff");
 	}
@@ -378,7 +406,9 @@ export async function completeOnboardingPath(
 		},
 		ready,
 	);
-	if (!accessRecorded.ok) return accessRecorded;
+	if (!accessRecorded.ok) {
+		return accessRecorded;
+	}
 	activeCase = accessRecorded.data;
 
 	return completeOnboarding(

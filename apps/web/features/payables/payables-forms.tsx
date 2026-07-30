@@ -27,14 +27,14 @@ import { postSupplierInvoiceAction } from "@/app/actions/post-supplier-invoice";
 import { reverseSupplierPaymentApplicationAction } from "@/app/actions/reverse-supplier-payment-application";
 import type { ActionResult } from "@/modules/platform/schemas/action-result";
 
-type Field = {
-	name: string;
+interface Field {
 	label: string;
-	type?: ComponentProps<"input">["type"];
+	min?: string;
+	name: string;
 	required?: boolean;
 	step?: string;
-	min?: string;
-};
+	type?: ComponentProps<"input">["type"];
+}
 
 function ManageUnavailable({ operation }: { operation: string }) {
 	return (
@@ -83,23 +83,23 @@ function PayablesActionForm({
 				const id = `payables-${field.name}`;
 				return (
 					<FormField
+						fieldId={id}
 						key={field.name}
 						label={field.label}
 						required={field.required}
-						fieldId={id}
 					>
 						<Input
 							id={id}
+							min={field.min}
 							name={field.name}
-							type={field.type ?? "text"}
 							required={field.required}
 							step={field.step}
-							min={field.min}
+							type={field.type ?? "text"}
 						/>
 					</FormField>
 				);
 			})}
-			<Button type="submit" disabled={pending}>
+			<Button disabled={pending} type="submit">
 				{pending ? <Spinner /> : null}
 				{submitLabel}
 			</Button>
@@ -126,20 +126,24 @@ const versionFields = [
 	},
 ] as const satisfies readonly Field[];
 
-type ActionFormProps = { canManage: boolean };
+interface ActionFormProps {
+	canManage: boolean;
+}
 
 export function CreateDraftSupplierInvoiceForm({ canManage }: ActionFormProps) {
 	const [state, action, pending] = useActionState(
 		createDraftSupplierInvoiceAction,
 		null,
 	);
-	if (!canManage) return <ManageUnavailable operation="Create invoice" />;
+	if (!canManage) {
+		return <ManageUnavailable operation="Create invoice" />;
+	}
 	return (
 		<PayablesActionForm
 			action={action}
+			fields={supplierFields}
 			pending={pending}
 			state={state}
-			fields={supplierFields}
 			submitLabel="Create draft supplier invoice"
 			successTitle="Supplier invoice created"
 		/>
@@ -151,12 +155,12 @@ export function AddSupplierInvoiceLineForm({ canManage }: ActionFormProps) {
 		addSupplierInvoiceLineAction,
 		null,
 	);
-	if (!canManage) return <ManageUnavailable operation="Add invoice line" />;
+	if (!canManage) {
+		return <ManageUnavailable operation="Add invoice line" />;
+	}
 	return (
 		<PayablesActionForm
 			action={action}
-			pending={pending}
-			state={state}
 			fields={[
 				{ name: "invoiceId", label: "Invoice id", required: true },
 				{ name: "itemId", label: "Item id", required: true },
@@ -178,6 +182,8 @@ export function AddSupplierInvoiceLineForm({ canManage }: ActionFormProps) {
 					required: true,
 				},
 			]}
+			pending={pending}
+			state={state}
 			submitLabel="Add supplier invoice line"
 			successTitle="Invoice line added"
 		/>
@@ -189,12 +195,12 @@ export function MatchSupplierInvoiceForm({ canManage }: ActionFormProps) {
 		matchSupplierInvoiceAction,
 		null,
 	);
-	if (!canManage) return <ManageUnavailable operation="Match invoice" />;
+	if (!canManage) {
+		return <ManageUnavailable operation="Match invoice" />;
+	}
 	return (
 		<PayablesActionForm
 			action={action}
-			pending={pending}
-			state={state}
 			fields={[
 				{ name: "invoiceId", label: "Invoice id", required: true },
 				{ name: "purchaseOrderId", label: "Purchase order id", required: true },
@@ -207,6 +213,8 @@ export function MatchSupplierInvoiceForm({ canManage }: ActionFormProps) {
 					required: true,
 				},
 			]}
+			pending={pending}
+			state={state}
 			submitLabel="Match supplier invoice"
 			successTitle="Supplier invoice matched"
 		/>
@@ -218,13 +226,15 @@ export function PostSupplierInvoiceForm({ canManage }: ActionFormProps) {
 		postSupplierInvoiceAction,
 		null,
 	);
-	if (!canManage) return <ManageUnavailable operation="Post invoice" />;
+	if (!canManage) {
+		return <ManageUnavailable operation="Post invoice" />;
+	}
 	return (
 		<PayablesActionForm
 			action={action}
+			fields={versionFields}
 			pending={pending}
 			state={state}
-			fields={versionFields}
 			submitLabel="Post supplier invoice"
 			successTitle="Supplier invoice posted"
 		/>
@@ -238,13 +248,15 @@ export function CreateDraftSupplierCreditNoteForm({
 		createDraftSupplierCreditNoteAction,
 		null,
 	);
-	if (!canManage) return <ManageUnavailable operation="Create credit draft" />;
+	if (!canManage) {
+		return <ManageUnavailable operation="Create credit draft" />;
+	}
 	return (
 		<PayablesActionForm
 			action={action}
+			fields={supplierFields}
 			pending={pending}
 			state={state}
-			fields={supplierFields}
 			submitLabel="Create draft supplier credit note"
 			successTitle="Supplier credit note draft created"
 		/>
@@ -256,12 +268,12 @@ export function AddSupplierCreditNoteLineForm({ canManage }: ActionFormProps) {
 		addSupplierCreditNoteLineAction,
 		null,
 	);
-	if (!canManage) return <ManageUnavailable operation="Add credit line" />;
+	if (!canManage) {
+		return <ManageUnavailable operation="Add credit line" />;
+	}
 	return (
 		<PayablesActionForm
 			action={action}
-			pending={pending}
-			state={state}
 			fields={[
 				{ name: "creditNoteId", label: "Credit note id", required: true },
 				{ name: "itemId", label: "Item id", required: true },
@@ -283,6 +295,8 @@ export function AddSupplierCreditNoteLineForm({ canManage }: ActionFormProps) {
 					required: true,
 				},
 			]}
+			pending={pending}
+			state={state}
 			submitLabel="Add supplier credit note line"
 			successTitle="Credit note line added"
 		/>
@@ -294,12 +308,12 @@ export function PostSupplierCreditNoteForm({ canManage }: ActionFormProps) {
 		postSupplierCreditNoteAction,
 		null,
 	);
-	if (!canManage) return <ManageUnavailable operation="Post credit note" />;
+	if (!canManage) {
+		return <ManageUnavailable operation="Post credit note" />;
+	}
 	return (
 		<PayablesActionForm
 			action={action}
-			pending={pending}
-			state={state}
 			fields={[
 				{ name: "creditNoteId", label: "Credit note id", required: true },
 				{
@@ -310,6 +324,8 @@ export function PostSupplierCreditNoteForm({ canManage }: ActionFormProps) {
 					required: true,
 				},
 			]}
+			pending={pending}
+			state={state}
 			submitLabel="Post supplier credit note"
 			successTitle="Supplier credit note posted"
 		/>
@@ -321,12 +337,12 @@ export function IssueSupplierCreditNoteForm({ canManage }: ActionFormProps) {
 		issueSupplierCreditNoteAction,
 		null,
 	);
-	if (!canManage) return <ManageUnavailable operation="Issue credit note" />;
+	if (!canManage) {
+		return <ManageUnavailable operation="Issue credit note" />;
+	}
 	return (
 		<PayablesActionForm
 			action={action}
-			pending={pending}
-			state={state}
 			fields={[
 				...supplierFields,
 				{ name: "itemId", label: "Item id", required: true },
@@ -339,6 +355,8 @@ export function IssueSupplierCreditNoteForm({ canManage }: ActionFormProps) {
 					required: true,
 				},
 			]}
+			pending={pending}
+			state={state}
 			submitLabel="Issue supplier credit note"
 			successTitle="Supplier credit note issued"
 		/>
@@ -350,12 +368,12 @@ export function ApplySupplierCreditForm({ canManage }: ActionFormProps) {
 		applySupplierCreditAction,
 		null,
 	);
-	if (!canManage) return <ManageUnavailable operation="Apply credit" />;
+	if (!canManage) {
+		return <ManageUnavailable operation="Apply credit" />;
+	}
 	return (
 		<PayablesActionForm
 			action={action}
-			pending={pending}
-			state={state}
 			fields={[
 				{ name: "invoiceId", label: "Invoice id", required: true },
 				{ name: "creditNoteId", label: "Credit note id", required: true },
@@ -369,6 +387,8 @@ export function ApplySupplierCreditForm({ canManage }: ActionFormProps) {
 				},
 				{ name: "idempotencyKey", label: "Idempotency key", required: true },
 			]}
+			pending={pending}
+			state={state}
 			submitLabel="Apply supplier credit"
 			successTitle="Supplier credit applied"
 		/>
@@ -380,12 +400,12 @@ export function ApplySupplierPaymentForm({ canManage }: ActionFormProps) {
 		applySupplierPaymentAction,
 		null,
 	);
-	if (!canManage) return <ManageUnavailable operation="Apply payment" />;
+	if (!canManage) {
+		return <ManageUnavailable operation="Apply payment" />;
+	}
 	return (
 		<PayablesActionForm
 			action={action}
-			pending={pending}
-			state={state}
 			fields={[
 				{ name: "invoiceId", label: "Invoice id", required: true },
 				{
@@ -404,6 +424,8 @@ export function ApplySupplierPaymentForm({ canManage }: ActionFormProps) {
 				},
 				{ name: "idempotencyKey", label: "Idempotency key", required: true },
 			]}
+			pending={pending}
+			state={state}
 			submitLabel="Apply supplier payment"
 			successTitle="Supplier payment applied"
 		/>
@@ -417,16 +439,18 @@ export function ReverseSupplierPaymentApplicationForm({
 		reverseSupplierPaymentApplicationAction,
 		null,
 	);
-	if (!canManage) return <ManageUnavailable operation="Reverse application" />;
+	if (!canManage) {
+		return <ManageUnavailable operation="Reverse application" />;
+	}
 	return (
 		<PayablesActionForm
 			action={action}
-			pending={pending}
-			state={state}
 			fields={[
 				{ name: "paymentId", label: "Payment id", required: true },
 				{ name: "idempotencyKey", label: "Idempotency key", required: true },
 			]}
+			pending={pending}
+			state={state}
 			submitLabel="Reverse supplier payment application"
 			successTitle="Supplier payment application reversed"
 		/>
@@ -438,13 +462,15 @@ export function CancelSupplierInvoiceForm({ canManage }: ActionFormProps) {
 		cancelSupplierInvoiceAction,
 		null,
 	);
-	if (!canManage) return <ManageUnavailable operation="Cancel invoice" />;
+	if (!canManage) {
+		return <ManageUnavailable operation="Cancel invoice" />;
+	}
 	return (
 		<PayablesActionForm
 			action={action}
+			fields={versionFields}
 			pending={pending}
 			state={state}
-			fields={versionFields}
 			submitLabel="Cancel supplier invoice"
 			successTitle="Supplier invoice cancelled"
 		/>

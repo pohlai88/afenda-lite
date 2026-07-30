@@ -24,7 +24,7 @@ import type {
 	PersonIdentityAtAsOf,
 } from "../workforce-foundation/types";
 
-export async function createPerson(
+export function createPerson(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Person>> {
@@ -79,7 +79,7 @@ export async function createPerson(
 	});
 }
 
-export async function updatePersonName(
+export function updatePersonName(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Person>> {
@@ -87,8 +87,8 @@ export async function updatePersonName(
 		schema: updatePersonNameInputSchema,
 		invalidMessage: "Invalid person update input",
 		command: HUMAN_RESOURCES_COMMAND_PERSON_UPDATE,
-		execute: async (data, { store, ports }) => {
-			return store.updatePersonName(
+		execute: async (data, { store, ports }) =>
+			store.updatePersonName(
 				{
 					organizationId: data.organizationId,
 					personId: data.personId,
@@ -104,12 +104,11 @@ export async function updatePersonName(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_PERSON_UPDATE,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function getPersonById(
+export function getPersonById(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Person>> {
@@ -133,7 +132,7 @@ export async function getPersonById(
 	});
 }
 
-export async function getPersonAsOf(
+export function getPersonAsOf(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PersonIdentityAtAsOf>> {

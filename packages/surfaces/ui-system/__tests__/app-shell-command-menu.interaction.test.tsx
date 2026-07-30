@@ -11,6 +11,8 @@ import { CommandMenu } from "../src/app-shell/command-menu";
 
 afterEach(cleanup);
 
+const noop = () => undefined;
+
 const groups = [
 	{
 		id: "workspace",
@@ -79,7 +81,7 @@ describe("CommandMenu", () => {
 			<>
 				<label htmlFor="workspace-note">Workspace note</label>
 				<input id="workspace-note" />
-				<CommandMenu groups={groups} onCommand={() => undefined} />
+				<CommandMenu groups={groups} onCommand={noop} />
 			</>,
 		);
 
@@ -126,8 +128,8 @@ describe("CommandMenu", () => {
 		expect(dialog).toBeVisible();
 	});
 
-	it("ignores repeated, composing, and shifted global shortcuts", async () => {
-		render(<CommandMenu groups={groups} onCommand={() => undefined} />);
+	it("ignores repeated, composing, and shifted global shortcuts", () => {
+		render(<CommandMenu groups={groups} onCommand={noop} />);
 
 		document.dispatchEvent(
 			new KeyboardEvent("keydown", {
@@ -163,9 +165,9 @@ describe("CommandMenu", () => {
 		const user = userEvent.setup();
 		render(
 			<CommandMenu
-				groups={groups}
-				onCommand={() => undefined}
 				enableSlashShortcut={false}
+				groups={groups}
+				onCommand={noop}
 			/>,
 		);
 
@@ -178,7 +180,7 @@ describe("CommandMenu", () => {
 
 	it("reports trigger state and restores focus after keyboard dismissal", async () => {
 		const user = userEvent.setup();
-		render(<CommandMenu groups={groups} onCommand={() => undefined} />);
+		render(<CommandMenu groups={groups} onCommand={noop} />);
 
 		const trigger = screen.getByRole("button", {
 			name: "Open command menu",

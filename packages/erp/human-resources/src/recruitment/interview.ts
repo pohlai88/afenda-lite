@@ -44,7 +44,7 @@ export const HUMAN_RESOURCES_AGGREGATE_INTERVIEW = "interview" as const;
 export type HumanResourcesInterviewAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_INTERVIEW;
 
-export async function scheduleInterview(
+export function scheduleInterview(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Interview>> {
@@ -70,7 +70,7 @@ export async function scheduleInterview(
 	});
 }
 
-export async function cancelInterview(
+export function cancelInterview(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Interview>> {
@@ -95,7 +95,7 @@ export async function cancelInterview(
 	});
 }
 
-export async function assignInterviewInterviewer(
+export function assignInterviewInterviewer(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Interview>> {
@@ -144,7 +144,7 @@ export async function assignInterviewInterviewer(
 	});
 }
 
-export async function recordInterviewEvaluation(
+export function recordInterviewEvaluation(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<InterviewEvaluation>> {
@@ -173,7 +173,7 @@ export async function recordInterviewEvaluation(
 	});
 }
 
-export async function getInterview(
+export function getInterview(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Interview>> {
@@ -201,7 +201,7 @@ export async function getInterview(
 	});
 }
 
-export async function listInterviews(
+export function listInterviews(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<InterviewListPage>> {
@@ -219,7 +219,7 @@ export async function listInterviews(
 	});
 }
 
-export async function getInterviewEvaluation(
+export function getInterviewEvaluation(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<InterviewEvaluation>> {

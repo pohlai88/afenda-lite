@@ -14,19 +14,21 @@ import type {
 /**
  * Persistence port for domain-event outbox. Production adapter: DrizzleEventStore.
  */
-export type EventStore = {
-	append(entry: DomainEventWriteInput): Promise<Result<DomainEvent>>;
-	query(options: DomainEventQueryOptions): Promise<Result<DomainEvent[]>>;
-	count(options: DomainEventQueryOptions): Promise<Result<number>>;
-	claimPending(
+export interface EventStore {
+	append: (entry: DomainEventWriteInput) => Promise<Result<DomainEvent>>;
+	claimPending: (
 		options: DomainEventClaimOptions,
-	): Promise<Result<DomainEvent[]>>;
-	markProcessed(
-		input: DomainEventMarkProcessedInput,
-	): Promise<Result<DomainEvent | null>>;
-	markFailed(
+	) => Promise<Result<DomainEvent[]>>;
+	count: (options: DomainEventQueryOptions) => Promise<Result<number>>;
+	markFailed: (
 		input: DomainEventMarkFailedInput,
-	): Promise<Result<DomainEvent | null>>;
-	requeue(input: DomainEventRequeueInput): Promise<Result<DomainEvent | null>>;
-	purgeProcessed(options: DomainEventPurgeOptions): Promise<Result<number>>;
-};
+	) => Promise<Result<DomainEvent | null>>;
+	markProcessed: (
+		input: DomainEventMarkProcessedInput,
+	) => Promise<Result<DomainEvent | null>>;
+	purgeProcessed: (options: DomainEventPurgeOptions) => Promise<Result<number>>;
+	query: (options: DomainEventQueryOptions) => Promise<Result<DomainEvent[]>>;
+	requeue: (
+		input: DomainEventRequeueInput,
+	) => Promise<Result<DomainEvent | null>>;
+}

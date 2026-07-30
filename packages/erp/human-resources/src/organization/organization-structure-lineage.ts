@@ -9,95 +9,95 @@ import {
 } from "../shared/effective-lineage";
 import type { LineageSegmentStatus } from "../workforce-foundation/types";
 
-export type DepartmentStructureVersion = {
-	id: string;
-	organizationId: string;
+export interface DepartmentStructureVersion {
+	createdAt: Date;
+	createdBy: string;
 	departmentId: HumanResourcesDepartmentId;
-	name: string;
-	parentDepartmentId: HumanResourcesDepartmentId | null;
 	effectiveFrom: string;
 	effectiveTo: string | null;
+	evidenceRef: string | null;
+	id: string;
+	lineageStatus: LineageSegmentStatus;
+	name: string;
+	organizationId: string;
+	parentDepartmentId: HumanResourcesDepartmentId | null;
+	reasonCode: string;
 	supersedesStructureVersionId: string | null;
-	lineageStatus: LineageSegmentStatus;
-	reasonCode: string;
-	evidenceRef: string | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type DepartmentStructureAtAsOf = {
+export interface DepartmentStructureAtAsOf {
+	asOf: string;
 	departmentId: HumanResourcesDepartmentId;
-	organizationId: string;
+	effectiveFrom: string;
+	effectiveTo: string | null;
 	name: string;
+	organizationId: string;
 	parentDepartmentId: HumanResourcesDepartmentId | null;
-	asOf: string;
-	effectiveFrom: string;
-	effectiveTo: string | null;
 	structureVersionId: string;
-};
+}
 
-export type JobDefinitionVersion = {
-	id: string;
-	organizationId: string;
-	jobId: HumanResourcesJobId;
-	title: string;
-	effectiveFrom: string;
-	effectiveTo: string | null;
-	supersedesDefinitionVersionId: string | null;
-	lineageStatus: LineageSegmentStatus;
-	reasonCode: string;
-	evidenceRef: string | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
+export interface JobDefinitionVersion {
 	createdAt: Date;
+	createdBy: string;
+	effectiveFrom: string;
+	effectiveTo: string | null;
+	evidenceRef: string | null;
+	id: string;
+	jobId: HumanResourcesJobId;
+	lineageStatus: LineageSegmentStatus;
+	organizationId: string;
+	reasonCode: string;
+	supersedesDefinitionVersionId: string | null;
+	title: string;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type JobDefinitionAtAsOf = {
+export interface JobDefinitionAtAsOf {
+	asOf: string;
+	definitionVersionId: string;
+	effectiveFrom: string;
+	effectiveTo: string | null;
 	jobId: HumanResourcesJobId;
 	organizationId: string;
 	title: string;
-	asOf: string;
+}
+
+export interface PositionDefinitionVersion {
+	createdAt: Date;
+	createdBy: string;
+	departmentId: HumanResourcesDepartmentId | null;
 	effectiveFrom: string;
 	effectiveTo: string | null;
-	definitionVersionId: string;
-};
-
-export type PositionDefinitionVersion = {
+	evidenceRef: string | null;
 	id: string;
+	jobId: HumanResourcesJobId | null;
+	lineageStatus: LineageSegmentStatus;
+	organizationId: string;
+	positionId: HumanResourcesPositionId;
+	reasonCode: string;
+	supersedesDefinitionVersionId: string | null;
+	title: string;
+	updatedAt: Date;
+	updatedBy: string;
+	version: number;
+}
+
+export interface PositionDefinitionAtAsOf {
+	asOf: string;
+	definitionVersionId: string;
+	departmentId: HumanResourcesDepartmentId | null;
+	effectiveFrom: string;
+	effectiveTo: string | null;
+	jobId: HumanResourcesJobId | null;
 	organizationId: string;
 	positionId: HumanResourcesPositionId;
 	title: string;
-	departmentId: HumanResourcesDepartmentId | null;
-	jobId: HumanResourcesJobId | null;
-	effectiveFrom: string;
-	effectiveTo: string | null;
-	supersedesDefinitionVersionId: string | null;
-	lineageStatus: LineageSegmentStatus;
-	reasonCode: string;
-	evidenceRef: string | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type PositionDefinitionAtAsOf = {
-	positionId: HumanResourcesPositionId;
-	organizationId: string;
-	title: string;
-	departmentId: HumanResourcesDepartmentId | null;
-	jobId: HumanResourcesJobId | null;
-	asOf: string;
-	effectiveFrom: string;
-	effectiveTo: string | null;
-	definitionVersionId: string;
-};
+}
 
 function isLineageEligible(version: {
 	lineageStatus: LineageSegmentStatus;

@@ -1,76 +1,78 @@
-export type PrivacyExportPackage = {
+export interface PrivacyExportPackage {
+	createdAt: string;
 	exportId: string;
 	exportReference: string;
-	organizationId: string;
 	moduleId: string;
-	subjectId: string;
+	organizationId: string;
 	recordCount: number;
 	recordIds: readonly string[];
-	createdAt: string;
-};
-
-export type PrivacyLegalHoldRecord = {
-	legalHoldId: string;
-	organizationId: string;
-	moduleId: string;
 	subjectId: string;
-	holdReference: string;
+}
+
+export interface PrivacyLegalHoldRecord {
 	classifications: readonly string[];
+	holdReference: string;
+	legalHoldId: string;
+	moduleId: string;
+	organizationId: string;
 	placedAt: string;
 	releasedAt: string | null;
 	releaseReason: string | null;
-};
-
-export type PrivacyOperationRecord = {
-	operationId: string;
-	kind: "rectify" | "anonymize" | "redact_downstream";
-	organizationId: string;
-	moduleId: string;
 	subjectId: string;
+}
+
+export interface PrivacyOperationRecord {
 	affectedCount: number;
 	createdAt: string;
-};
+	kind: "rectify" | "anonymize" | "redact_downstream";
+	moduleId: string;
+	operationId: string;
+	organizationId: string;
+	subjectId: string;
+}
 
-export type PrivacyOperationStore = {
-	saveExport(
-		input: Omit<PrivacyExportPackage, "exportReference"> & {
-			exportReference?: string;
-		},
-	): PrivacyExportPackage;
-	getExport(input: {
+export interface PrivacyOperationStore {
+	getExport: (input: {
 		organizationId: string;
 		exportId: string;
-	}): PrivacyExportPackage | null;
-	listExportsForSubject(input: {
-		organizationId: string;
-		moduleId: string;
-		subjectId: string;
-	}): readonly PrivacyExportPackage[];
-	placeLegalHold(
-		input: Omit<PrivacyLegalHoldRecord, "releasedAt" | "releaseReason">,
-	): PrivacyLegalHoldRecord;
-	getLegalHold(input: { legalHoldId: string }): PrivacyLegalHoldRecord | null;
-	listActiveLegalHolds(input: {
-		organizationId: string;
-		moduleId: string;
-		subjectId: string;
-	}): readonly PrivacyLegalHoldRecord[];
-	releaseLegalHold(input: {
-		organizationId: string;
+	}) => PrivacyExportPackage | null;
+	getLegalHold: (input: {
 		legalHoldId: string;
-		releasedAt: string;
-		reason: string;
-	}): PrivacyLegalHoldRecord | null;
-	recordOperation(
-		input: Omit<PrivacyOperationRecord, "operationId">,
-	): PrivacyOperationRecord;
-	listOperationsForSubject(input: {
+	}) => PrivacyLegalHoldRecord | null;
+	listActiveLegalHolds: (input: {
+		organizationId: string;
+		moduleId: string;
+		subjectId: string;
+	}) => readonly PrivacyLegalHoldRecord[];
+	listExportsForSubject: (input: {
+		organizationId: string;
+		moduleId: string;
+		subjectId: string;
+	}) => readonly PrivacyExportPackage[];
+	listOperationsForSubject: (input: {
 		organizationId: string;
 		moduleId: string;
 		subjectId: string;
 		limit?: number;
-	}): readonly PrivacyOperationRecord[];
-};
+	}) => readonly PrivacyOperationRecord[];
+	placeLegalHold: (
+		input: Omit<PrivacyLegalHoldRecord, "releasedAt" | "releaseReason">,
+	) => PrivacyLegalHoldRecord;
+	recordOperation: (
+		input: Omit<PrivacyOperationRecord, "operationId">,
+	) => PrivacyOperationRecord;
+	releaseLegalHold: (input: {
+		organizationId: string;
+		legalHoldId: string;
+		releasedAt: string;
+		reason: string;
+	}) => PrivacyLegalHoldRecord | null;
+	saveExport: (
+		input: Omit<PrivacyExportPackage, "exportReference"> & {
+			exportReference?: string;
+		},
+	) => PrivacyExportPackage;
+}
 
 function exportReferenceFor(input: {
 	organizationId: string;

@@ -31,15 +31,15 @@ function WorkbenchSection({
 	children,
 }: WorkbenchSectionProps) {
 	return (
-		<section className="grid gap-4" aria-labelledby={id}>
+		<section aria-labelledby={id} className="grid gap-4">
 			<div className="grid gap-1">
 				<h2
-					className="text-base font-semibold tracking-tight text-foreground"
+					className="font-semibold text-base text-foreground tracking-tight"
 					id={id}
 				>
 					{title}
 				</h2>
-				<p className="max-w-5xl text-sm leading-5 text-foreground-secondary">
+				<p className="max-w-5xl text-foreground-secondary text-sm leading-5">
 					{description}
 				</p>
 			</div>
@@ -97,14 +97,14 @@ export const Overview: Story = {
 			<div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-5 border-b pb-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
 					<div className="grid gap-2">
-						<p className="text-sm font-medium text-foreground-secondary">
+						<p className="font-medium text-foreground-secondary text-sm">
 							Accounts payable
 						</p>
 						<div className="grid gap-1">
-							<h1 className="text-2xl font-semibold tracking-tight">
+							<h1 className="font-semibold text-2xl tracking-tight">
 								Invoice queue view options
 							</h1>
-							<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+							<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 								Toggle owns pressed interaction. Feature Actions own whether the
 								pinned filter is stored for the operator session.
 							</p>
@@ -112,25 +112,25 @@ export const Overview: Story = {
 					</div>
 					<dl className="grid grid-cols-2 gap-x-8 gap-y-3 rounded-lg border bg-card p-4">
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Subject
 							</dt>
 							<dd className="text-sm">Invoice queue</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Scope
 							</dt>
 							<dd className="text-sm">Transient view options</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Ownership
 							</dt>
 							<dd className="text-sm">Feature state</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Lifecycle
 							</dt>
 							<dd className="text-sm">Pressed or unpressed</dd>
@@ -149,20 +149,20 @@ export const Overview: Story = {
 							</div>
 							<div className="flex flex-wrap items-center gap-2">
 								<Badge variant="outline">Payables</Badge>
-								<StatusBadge status="pending" label="Draft view" />
+								<StatusBadge label="Draft view" status="pending" />
 							</div>
 						</div>
 					</CardHeader>
 					<CardContent className="flex flex-wrap items-center gap-2">
-						<Toggle defaultPressed aria-label="Pin overdue filter">
+						<Toggle aria-label="Pin overdue filter" defaultPressed>
 							<PinIcon />
 							Pin overdue
 						</Toggle>
-						<Toggle variant="outline" aria-label="Bold amounts">
+						<Toggle aria-label="Bold amounts" variant="outline">
 							<BoldIcon />
 							Bold amounts
 						</Toggle>
-						<Toggle size="sm" aria-label="Italic notes" disabled>
+						<Toggle aria-label="Italic notes" disabled size="sm">
 							<ItalicIcon />
 							Italic notes
 						</Toggle>
@@ -187,31 +187,31 @@ export const Usage: Story = {
 	render: () => (
 		<div className="grid w-full max-w-5xl gap-6 sm:grid-cols-2">
 			<WorkbenchSection
+				description="Use Toggle for a transient pressed state that the operator can switch on or off without leaving the screen."
 				id="pin-filter"
 				title="default · pin filter"
-				description="Use Toggle for a transient pressed state that the operator can switch on or off without leaving the screen."
 			>
-				<Toggle defaultPressed aria-label="Pin overdue filter">
+				<Toggle aria-label="Pin overdue filter" defaultPressed>
 					<PinIcon />
 					Pin overdue
 				</Toggle>
 			</WorkbenchSection>
 			<WorkbenchSection
+				description="Formatting toggles preserve the same pressed semantics even when the visual treatment changes."
 				id="formatting"
 				title="outline · formatting"
-				description="Formatting toggles preserve the same pressed semantics even when the visual treatment changes."
 			>
-				<Toggle variant="outline" aria-label="Bold amounts">
+				<Toggle aria-label="Bold amounts" variant="outline">
 					<BoldIcon />
 					Bold amounts
 				</Toggle>
 			</WorkbenchSection>
 			<WorkbenchSection
+				description="Command actions that commit, save, or navigate should stay on Button, not Toggle."
 				id="button-contrast"
 				title="command contrast · Button"
-				description="Command actions that commit, save, or navigate should stay on Button, not Toggle."
 			>
-				<Button type="button" size="sm">
+				<Button size="sm" type="button">
 					Export queue
 				</Button>
 			</WorkbenchSection>
@@ -232,7 +232,7 @@ export const ControlledUsage: Story = {
 	render: (args) => (
 		<div className="grid w-full max-w-sm gap-3">
 			<Toggle {...args} />
-			<p className="text-sm text-foreground-secondary">
+			<p className="text-foreground-secondary text-sm">
 				Pressed presentation is transient chrome — persistence stays with the
 				feature.
 			</p>
@@ -254,10 +254,10 @@ export const StatesAndAccessibility: Story = {
 		<div className="grid w-full max-w-5xl gap-4">
 			<div className="flex flex-wrap items-center gap-3">
 				<Toggle aria-label="Pin overdue filter">Pin overdue</Toggle>
-				<Toggle defaultPressed aria-label="Pin overdue filter on">
+				<Toggle aria-label="Pin overdue filter on" defaultPressed>
 					Pin overdue
 				</Toggle>
-				<Toggle disabled aria-label="Pin overdue filter locked">
+				<Toggle aria-label="Pin overdue filter locked" disabled>
 					Pin overdue
 				</Toggle>
 				<Toggle aria-label="Pin overdue filter" variant="outline">
@@ -265,7 +265,7 @@ export const StatesAndAccessibility: Story = {
 					<span className="sr-only">Pin overdue</span>
 				</Toggle>
 			</div>
-			<p className="text-sm text-foreground-secondary">
+			<p className="text-foreground-secondary text-sm">
 				The accessible name must describe the action independently of pressed
 				state or icon treatment.
 			</p>
@@ -286,17 +286,17 @@ export const VariantsAndSizes: Story = {
 	render: () => (
 		<div className="grid w-full max-w-5xl gap-6">
 			{(["default", "outline"] as const).map((variant) => (
-				<div key={variant} className="grid gap-2">
-					<p className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+				<div className="grid gap-2" key={variant}>
+					<p className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 						{variant}
 					</p>
 					<div className="flex flex-wrap items-center gap-2">
 						{(["sm", "default", "lg"] as const).map((size) => (
 							<Toggle
-								key={`${variant}-${size}`}
-								variant={variant}
-								size={size}
 								defaultPressed={size === "default"}
+								key={`${variant}-${size}`}
+								size={size}
+								variant={variant}
 							>
 								{variant} {size}
 							</Toggle>
@@ -328,16 +328,16 @@ export const Composition: Story = {
 					</div>
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="secondary">Finance</Badge>
-						<StatusBadge status="pending" label="Awaiting approval" />
+						<StatusBadge label="Awaiting approval" status="pending" />
 					</div>
 				</div>
 			</CardHeader>
 			<CardContent className="flex flex-wrap gap-2">
-				<Toggle defaultPressed aria-label="Bold amounts">
+				<Toggle aria-label="Bold amounts" defaultPressed>
 					<BoldIcon />
 					Bold amounts
 				</Toggle>
-				<Toggle variant="outline" aria-label="Italic notes">
+				<Toggle aria-label="Italic notes" variant="outline">
 					<ItalicIcon />
 					Italic notes
 				</Toggle>
@@ -359,13 +359,13 @@ export const DoAndDoNot: Story = {
 	render: () => (
 		<div className="grid max-w-5xl gap-6 sm:grid-cols-2">
 			<StorySection title="Do: named transient option">
-				<Toggle defaultPressed aria-label="Pin overdue filter">
+				<Toggle aria-label="Pin overdue filter" defaultPressed>
 					<PinIcon />
 					Pin overdue
 				</Toggle>
 			</StorySection>
 			<StorySection title="Do not: unlabeled or destructive toggle">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Do not ship an icon-only Toggle without an accessible name, and do not
 					use pressed state for void, delete, or approval commands — use Button.
 				</p>

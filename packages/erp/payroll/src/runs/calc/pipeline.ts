@@ -26,16 +26,16 @@ const CURRENCY_MISMATCH_CODE = "CURRENCY_MISMATCH";
 const UNKNOWN_CALCULATOR_CODE = "UNKNOWN_CALCULATOR";
 const STATUTORY_CALCULATION_FAILED_CODE = "STATUTORY_CALCULATION_FAILED";
 
-type CalculationContext = {
-	snapshot: PayrollEmployeeCalcSnapshot;
-	policy: PayrollRoundingPolicy;
+interface CalculationContext {
 	exceptions: PayrollCalcException[];
-	trace: PayrollCalcTraceStep[];
 	lines: PayrollCalcResultLine[];
-	statutoryResults: PayrollCalcStatutoryResult[];
+	policy: PayrollRoundingPolicy;
 	sequence: number;
+	snapshot: PayrollEmployeeCalcSnapshot;
+	statutoryResults: PayrollCalcStatutoryResult[];
+	trace: PayrollCalcTraceStep[];
 	traceCounter: number;
-};
+}
 
 function nextSequence(ctx: CalculationContext): number {
 	ctx.sequence += 1;
@@ -380,6 +380,7 @@ function calculateEarnings(ctx: CalculationContext): bigint {
 	return grossTotal;
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The deduction matrix keeps explicit tax timing and exception evidence branches auditable.
 function calculateDeductions(input: {
 	ctx: CalculationContext;
 	gross: bigint;
@@ -498,6 +499,7 @@ function calculateDeductions(input: {
 	return total;
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The statutory matrix keeps calculator, rounding, and exception evidence branches auditable.
 function calculateStatutory(input: {
 	ctx: CalculationContext;
 	gross: bigint;
@@ -532,17 +534,19 @@ function calculateStatutory(input: {
 			});
 
 			if (
-				!assertNonNegativeAmount(
-					input.ctx,
-					result.employeeAmount,
-					rule.code,
-					`Statutory employee amount ${rule.code}`,
-				) ||
-				!assertNonNegativeAmount(
-					input.ctx,
-					result.employerAmount,
-					rule.code,
-					`Statutory employer amount ${rule.code}`,
+				!(
+					assertNonNegativeAmount(
+						input.ctx,
+						result.employeeAmount,
+						rule.code,
+						`Statutory employee amount ${rule.code}`,
+					) &&
+					assertNonNegativeAmount(
+						input.ctx,
+						result.employerAmount,
+						rule.code,
+						`Statutory employer amount ${rule.code}`,
+					)
 				)
 			) {
 				continue;

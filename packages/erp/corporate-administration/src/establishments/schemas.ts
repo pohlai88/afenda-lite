@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+function isNullish(value: unknown): value is null | undefined {
+	return value === null || value === undefined;
+}
+
 import {
 	establishmentStatusHistoryIdSchema,
 	legalCompanyIdSchema,
@@ -197,7 +201,7 @@ export const setRegisteredAddressInputSchema = z
 	.strict()
 	.refine(
 		(value) =>
-			value.effectiveTo == null || value.effectiveFrom < value.effectiveTo,
+			isNullish(value.effectiveTo) || value.effectiveFrom < value.effectiveTo,
 		{ path: ["effectiveTo"], message: "effectiveTo must follow effectiveFrom" },
 	)
 	.readonly();
@@ -217,7 +221,7 @@ export const registerPremiseInputSchema = z
 	.strict()
 	.refine(
 		(value) =>
-			value.effectiveTo == null || value.effectiveFrom < value.effectiveTo,
+			isNullish(value.effectiveTo) || value.effectiveFrom < value.effectiveTo,
 		{ path: ["effectiveTo"], message: "effectiveTo must follow effectiveFrom" },
 	)
 	.readonly();

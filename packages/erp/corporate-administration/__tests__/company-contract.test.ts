@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/useAwait: Contract fixtures implement asynchronous store ports.
 import { randomUUID } from "node:crypto";
 import {
 	type CompanyJurisdictionProfile,
@@ -256,7 +257,9 @@ describe("Corporate Administration company contracts", () => {
 		);
 
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 		expect(result.data).toMatchObject({
 			organizationId,
 			companyCode: "af-my",

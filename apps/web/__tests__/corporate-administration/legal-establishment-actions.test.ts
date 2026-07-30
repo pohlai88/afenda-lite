@@ -170,6 +170,8 @@ describe("Corporate Administration legal establishment Actions", () => {
 
 function toFormData(values: Readonly<Record<string, string>>): FormData {
 	const formData = new FormData();
-	for (const [key, value] of Object.entries(values)) formData.set(key, value);
+	for (const [key, value] of Object.entries(values)) {
+		formData.set(key, value);
+	}
 	return formData;
 }

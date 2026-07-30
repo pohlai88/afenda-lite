@@ -53,7 +53,7 @@ export async function resolveTalentProfileResourceForEmployee(
 	},
 	options: HumanResourcesCommandOptions,
 ): Promise<HumanResourcesResourceContext> {
-	return withPrimaryManagerOnResource(
+	return await withPrimaryManagerOnResource(
 		talentProfileResource(input),
 		input.employeeId,
 		options,
@@ -90,7 +90,7 @@ export async function resolveTalentProfileResourceFromCareerPlan(
 ): Promise<HumanResourcesResourceContext | undefined> {
 	const parsedId = parseHumanResourcesCareerPlanId(data.careerPlanId);
 	if (!parsedId.ok) {
-		return undefined;
+		return;
 	}
 	const { store } = resolveCommandDeps(options);
 	const loaded = await store.getCareerPlanById({
@@ -98,7 +98,7 @@ export async function resolveTalentProfileResourceFromCareerPlan(
 		careerPlanId: parsedId.data,
 	});
 	if (!loaded.ok || loaded.data === null) {
-		return undefined;
+		return;
 	}
 	return withPrimaryManagerOnResource(
 		talentProfileResource({
@@ -120,7 +120,7 @@ export async function resolveTalentProfileResourceFromTalentProfile(
 ): Promise<HumanResourcesResourceContext | undefined> {
 	const parsedId = parseHumanResourcesTalentProfileId(data.talentProfileId);
 	if (!parsedId.ok) {
-		return undefined;
+		return;
 	}
 	const { store } = resolveCommandDeps(options);
 	const loaded = await store.getTalentProfileById({
@@ -128,7 +128,7 @@ export async function resolveTalentProfileResourceFromTalentProfile(
 		talentProfileId: parsedId.data,
 	});
 	if (!loaded.ok || loaded.data === null) {
-		return undefined;
+		return;
 	}
 	return withPrimaryManagerOnResource(
 		talentProfileResource({
@@ -150,7 +150,7 @@ export async function resolveCompetencyAssessmentResource(
 ): Promise<HumanResourcesResourceContext | undefined> {
 	const parsedId = parseHumanResourcesCompetencyAssessmentId(data.assessmentId);
 	if (!parsedId.ok) {
-		return undefined;
+		return;
 	}
 	const { store } = resolveCommandDeps(options);
 	const loaded = await store.getCompetencyAssessmentById({
@@ -158,7 +158,7 @@ export async function resolveCompetencyAssessmentResource(
 		assessmentId: parsedId.data,
 	});
 	if (!loaded.ok || loaded.data === null) {
-		return undefined;
+		return;
 	}
 	const context: HumanResourcesResourceContext = {
 		organizationId: data.organizationId,

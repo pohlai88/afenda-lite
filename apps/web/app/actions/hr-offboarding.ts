@@ -56,7 +56,7 @@ const startOffboardingActionSchema = hrActionSchema(
 export async function startOffboardingAction(
 	input: unknown,
 ): Promise<ActionResult<{ offboardingCase: OffboardingCase }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "startOffboardingAction",
 		permission: "human-resources.offboarding.manage",
 		safeMessage: "Could not start offboarding.",
@@ -74,7 +74,9 @@ export async function startOffboardingAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { offboardingCase: mapped.data } };
 		},
 	});
@@ -87,7 +89,7 @@ const completeOffboardingTaskActionSchema = hrActionSchema(
 export async function completeOffboardingTaskAction(
 	input: unknown,
 ): Promise<ActionResult<{ offboardingCase: OffboardingCase }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "completeOffboardingTaskAction",
 		permission: "human-resources.offboarding.manage",
 		safeMessage: "Could not complete offboarding task.",
@@ -105,7 +107,9 @@ export async function completeOffboardingTaskAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { offboardingCase: mapped.data } };
 		},
 	});
@@ -118,7 +122,7 @@ const recordExitInterviewActionSchema = hrActionSchema(
 export async function recordExitInterviewAction(
 	input: unknown,
 ): Promise<ActionResult<{ offboardingCase: OffboardingCase }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "recordExitInterviewAction",
 		permission: "human-resources.offboarding.manage",
 		safeMessage: "Could not record exit interview.",
@@ -136,7 +140,9 @@ export async function recordExitInterviewAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { offboardingCase: mapped.data } };
 		},
 	});
@@ -147,7 +153,7 @@ const recordClearanceActionSchema = hrActionSchema(recordClearanceInputSchema);
 export async function recordClearanceAction(
 	input: unknown,
 ): Promise<ActionResult<{ offboardingCase: OffboardingCase }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "recordClearanceAction",
 		permission: "human-resources.offboarding.manage",
 		safeMessage: "Could not record clearance.",
@@ -165,7 +171,9 @@ export async function recordClearanceAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { offboardingCase: mapped.data } };
 		},
 	});
@@ -178,7 +186,7 @@ const recordOffboardingAccessRevocationActionSchema = hrActionSchema(
 export async function recordOffboardingAccessRevocationAction(
 	input: unknown,
 ): Promise<ActionResult<{ offboardingCase: OffboardingCase }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "recordOffboardingAccessRevocationAction",
 		permission: "human-resources.offboarding.manage",
 		safeMessage: "Could not record offboarding access revocation.",
@@ -199,7 +207,9 @@ export async function recordOffboardingAccessRevocationAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { offboardingCase: mapped.data } };
 		},
 	});
@@ -212,7 +222,7 @@ const recordOffboardingPayrollHandoffActionSchema = hrActionSchema(
 export async function recordOffboardingPayrollHandoffAction(
 	input: unknown,
 ): Promise<ActionResult<{ offboardingCase: OffboardingCase }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "recordOffboardingPayrollHandoffAction",
 		permission: "human-resources.offboarding.manage",
 		safeMessage: "Could not record offboarding payroll handoff.",
@@ -233,7 +243,9 @@ export async function recordOffboardingPayrollHandoffAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { offboardingCase: mapped.data } };
 		},
 	});
@@ -246,7 +258,7 @@ const completeOffboardingActionSchema = hrActionSchema(
 export async function completeOffboardingAction(
 	input: unknown,
 ): Promise<ActionResult<{ offboardingCase: OffboardingCase }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "completeOffboardingAction",
 		permission: "human-resources.offboarding.manage",
 		safeMessage: "Could not complete offboarding.",
@@ -264,7 +276,9 @@ export async function completeOffboardingAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { offboardingCase: mapped.data } };
 		},
 	});
@@ -277,7 +291,7 @@ const getOffboardingCaseActionSchema = hrActionSchema(
 export async function getOffboardingCaseAction(
 	input: unknown,
 ): Promise<ActionResult<{ offboardingCase: OffboardingCase | null }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getOffboardingCaseAction",
 		permission: "human-resources.employee.read",
 		safeMessage: "Could not get offboarding case.",
@@ -295,7 +309,9 @@ export async function getOffboardingCaseAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { offboardingCase: mapped.data } };
 		},
 	});
@@ -308,7 +324,7 @@ const listOffboardingTasksActionSchema = hrActionSchema(
 export async function listOffboardingTasksAction(
 	input: unknown,
 ): Promise<ActionResult<{ tasks: OffboardingTask[] }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listOffboardingTasksAction",
 		permission: "human-resources.employee.read",
 		safeMessage: "Could not list offboarding tasks.",
@@ -326,7 +342,9 @@ export async function listOffboardingTasksAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { tasks: mapped.data } };
 		},
 	});
@@ -339,7 +357,7 @@ const getClearanceByOffboardingCaseActionSchema = hrActionSchema(
 export async function getClearanceByOffboardingCaseAction(
 	input: unknown,
 ): Promise<ActionResult<{ clearance: Clearance | null }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getClearanceByOffboardingCaseAction",
 		permission: "human-resources.employee.read",
 		safeMessage: "Could not get clearance.",
@@ -360,7 +378,9 @@ export async function getClearanceByOffboardingCaseAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { clearance: mapped.data } };
 		},
 	});
@@ -375,7 +395,7 @@ export async function getOffboardingAccessRevocationByCaseAction(
 ): Promise<
 	ActionResult<{ accessRevocation: OffboardingAccessRevocation | null }>
 > {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getOffboardingAccessRevocationByCaseAction",
 		permission: "human-resources.employee.read",
 		safeMessage: "Could not get offboarding access revocation.",
@@ -396,7 +416,9 @@ export async function getOffboardingAccessRevocationByCaseAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { accessRevocation: mapped.data } };
 		},
 	});
@@ -409,7 +431,7 @@ const getOffboardingPayrollHandoffByCaseActionSchema = hrActionSchema(
 export async function getOffboardingPayrollHandoffByCaseAction(
 	input: unknown,
 ): Promise<ActionResult<{ payrollHandoff: OffboardingPayrollHandoff | null }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getOffboardingPayrollHandoffByCaseAction",
 		permission: "human-resources.employee.read",
 		safeMessage: "Could not get offboarding payroll handoff.",
@@ -430,7 +452,9 @@ export async function getOffboardingPayrollHandoffByCaseAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { payrollHandoff: mapped.data } };
 		},
 	});

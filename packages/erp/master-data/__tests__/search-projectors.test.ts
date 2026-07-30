@@ -26,6 +26,7 @@ import {
 	activatePartyRole,
 	createPartyRole,
 } from "../src/capabilities/extensions";
+import { resolveAsync } from "../src/resolve-async";
 import { createMasterDataTestHarness } from "./helpers/harness";
 import { approvedActivatePartyChangeRequest } from "./helpers/mdg-approve";
 
@@ -41,10 +42,12 @@ describe("@afenda/master-data search projectors", () => {
 	it("does not turn a committed party mutation into a failure when search throws", async () => {
 		const { options: harnessOptions } = createMasterDataTestHarness();
 		class ThrowingSearchStore extends MemorySearchStore {
-			override async upsert(
+			override upsert(
 				_input: Parameters<MemorySearchStore["upsert"]>[0],
 			): Promise<never> {
-				throw new Error("search unavailable");
+				return resolveAsync(() => {
+					throw new Error("search unavailable");
+				});
 			}
 		}
 		const result = await createParty(
@@ -58,22 +61,28 @@ describe("@afenda/master-data search projectors", () => {
 		);
 
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 		const persisted = await harnessOptions.store.getPartyById(
 			result.data.organizationId,
 			result.data.id,
 		);
 		expect(persisted.ok).toBe(true);
-		if (persisted.ok) expect(persisted.data?.id).toBe(result.data.id);
+		if (persisted.ok) {
+			expect(persisted.data?.id).toBe(result.data.id);
+		}
 	});
 
 	it("does not turn a committed item-group mutation into a failure when search throws", async () => {
 		const { options: harnessOptions } = createMasterDataTestHarness();
 		class ThrowingSearchStore extends MemorySearchStore {
-			override async upsert(
+			override upsert(
 				_input: Parameters<MemorySearchStore["upsert"]>[0],
 			): Promise<never> {
-				throw new Error("search unavailable");
+				return resolveAsync(() => {
+					throw new Error("search unavailable");
+				});
 			}
 		}
 		const result = await createItemGroup(
@@ -82,13 +91,17 @@ describe("@afenda/master-data search projectors", () => {
 		);
 
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 		const persisted = await harnessOptions.store.getItemGroupById(
 			result.data.organizationId,
 			result.data.id,
 		);
 		expect(persisted.ok).toBe(true);
-		if (persisted.ok) expect(persisted.data?.id).toBe(result.data.id);
+		if (persisted.ok) {
+			expect(persisted.data?.id).toBe(result.data.id);
+		}
 	});
 
 	it("does not turn a committed item mutation into a failure when search throws", async () => {
@@ -98,18 +111,24 @@ describe("@afenda/master-data search projectors", () => {
 			harnessOptions,
 		);
 		expect(group.ok).toBe(true);
-		if (!group.ok) return;
+		if (!group.ok) {
+			return;
+		}
 		const activeGroup = await activateItemGroup(
 			{ ...ctx(), id: group.data.id, expectedVersion: group.data.version },
 			harnessOptions,
 		);
 		expect(activeGroup.ok).toBe(true);
-		if (!activeGroup.ok) return;
+		if (!activeGroup.ok) {
+			return;
+		}
 		class ThrowingSearchStore extends MemorySearchStore {
-			override async upsert(
+			override upsert(
 				_input: Parameters<MemorySearchStore["upsert"]>[0],
 			): Promise<never> {
-				throw new Error("search unavailable");
+				return resolveAsync(() => {
+					throw new Error("search unavailable");
+				});
 			}
 		}
 		const result = await createItem(
@@ -125,22 +144,28 @@ describe("@afenda/master-data search projectors", () => {
 		);
 
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 		const persisted = await harnessOptions.store.getItemById(
 			result.data.organizationId,
 			result.data.id,
 		);
 		expect(persisted.ok).toBe(true);
-		if (persisted.ok) expect(persisted.data?.id).toBe(result.data.id);
+		if (persisted.ok) {
+			expect(persisted.data?.id).toBe(result.data.id);
+		}
 	});
 
 	it("does not turn a committed warehouse mutation into a failure when search throws", async () => {
 		const { options: harnessOptions } = createMasterDataTestHarness();
 		class ThrowingSearchStore extends MemorySearchStore {
-			override async upsert(
+			override upsert(
 				_input: Parameters<MemorySearchStore["upsert"]>[0],
 			): Promise<never> {
-				throw new Error("search unavailable");
+				return resolveAsync(() => {
+					throw new Error("search unavailable");
+				});
 			}
 		}
 		const result = await createWarehouse(
@@ -154,22 +179,28 @@ describe("@afenda/master-data search projectors", () => {
 		);
 
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 		const persisted = await harnessOptions.store.getWarehouseById(
 			result.data.organizationId,
 			result.data.id,
 		);
 		expect(persisted.ok).toBe(true);
-		if (persisted.ok) expect(persisted.data?.id).toBe(result.data.id);
+		if (persisted.ok) {
+			expect(persisted.data?.id).toBe(result.data.id);
+		}
 	});
 
 	it("does not turn a committed payment-term mutation into a failure when search throws", async () => {
 		const { options: harnessOptions } = createMasterDataTestHarness();
 		class ThrowingSearchStore extends MemorySearchStore {
-			override async upsert(
+			override upsert(
 				_input: Parameters<MemorySearchStore["upsert"]>[0],
 			): Promise<never> {
-				throw new Error("search unavailable");
+				return resolveAsync(() => {
+					throw new Error("search unavailable");
+				});
 			}
 		}
 		const result = await createPaymentTerm(
@@ -183,13 +214,17 @@ describe("@afenda/master-data search projectors", () => {
 		);
 
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 		const persisted = await harnessOptions.store.getPaymentTermById(
 			result.data.organizationId,
 			result.data.id,
 		);
 		expect(persisted.ok).toBe(true);
-		if (persisted.ok) expect(persisted.data?.id).toBe(result.data.id);
+		if (persisted.ok) {
+			expect(persisted.data?.id).toBe(result.data.id);
+		}
 	});
 
 	it("upserts md_party on create and removes on retire", async () => {
@@ -340,7 +375,7 @@ describe("@afenda/master-data search projectors", () => {
 			options,
 		);
 		expect(a.ok && b.ok).toBe(true);
-		if (!a.ok || !b.ok) {
+		if (!(a.ok && b.ok)) {
 			return;
 		}
 

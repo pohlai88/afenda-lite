@@ -112,7 +112,7 @@ describe("operator permission denial observability", () => {
 			path: "deniedAction",
 			permission: "human-resources.privacy.manage",
 			safeMessage: "Could not run action.",
-			onPermissionDenied: async () => {
+			onPermissionDenied: () => {
 				throw new Error("telemetry unavailable");
 			},
 			execute: vi.fn(),

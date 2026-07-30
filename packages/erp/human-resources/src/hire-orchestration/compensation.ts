@@ -11,14 +11,14 @@ import {
 } from "../workforce-foundation/worker";
 import type { HireAttempt, HireCompensationLogEntry } from "./types";
 
-type CompensationContext = {
-	organizationId: string;
+interface CompensationContext {
 	actorUserId: string;
-	correlationId: string;
-	startsOn: string;
 	attempt: HireAttempt;
+	correlationId: string;
 	options: HumanResourcesCommandOptions;
-};
+	organizationId: string;
+	startsOn: string;
+}
 
 function compensationEffectiveOn(startsOn: string): string {
 	const date = new Date(`${startsOn}T00:00:00.000Z`);

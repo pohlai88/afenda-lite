@@ -23,18 +23,18 @@ export type AttendanceImportDryRunRow =
 			errorMessage: string;
 	  };
 
-export type AttendanceImportDryRunResult = {
+export interface AttendanceImportDryRunResult {
+	batchId: string;
 	mode: "dry_run";
 	organizationId: string;
-	batchId: string;
-	sourceKey: string;
 	reconciliationKey: string;
 	rows: readonly AttendanceImportDryRunRow[];
+	sourceKey: string;
 	totals: {
 		accepted: number;
 		rejected: number;
 	};
-};
+}
 
 export function dryRunAttendanceImport(
 	input: unknown,

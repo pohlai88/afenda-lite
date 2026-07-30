@@ -39,9 +39,11 @@ import type {
 } from "./types";
 
 function ErrorNotice({ message }: { message?: string | undefined }) {
-	if (!message) return null;
+	if (!message) {
+		return null;
+	}
 	return (
-		<Alert variant="destructive" role="alert">
+		<Alert role="alert" variant="destructive">
 			<AlertTitle>Recruitment information unavailable</AlertTitle>
 			<AlertDescription>{message}</AlertDescription>
 		</Alert>
@@ -53,12 +55,19 @@ function status(value: string) {
 }
 
 function defaultTab(capabilities: RecruitmentCapabilities) {
-	if (capabilities.canManageRequisitions) return "requisitions";
-	if (capabilities.canManageCandidates) return "pipeline";
-	if (capabilities.canReadInterviews) return "interviews";
+	if (capabilities.canManageRequisitions) {
+		return "requisitions";
+	}
+	if (capabilities.canManageCandidates) {
+		return "pipeline";
+	}
+	if (capabilities.canReadInterviews) {
+		return "interviews";
+	}
 	return "offers";
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Capability branches intentionally map independent recruitment workflows.
 export function RecruitmentWorkspace({
 	capabilities,
 	data,
@@ -73,13 +82,13 @@ export function RecruitmentWorkspace({
 	return (
 		<section className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-6 py-10">
 			<header className="space-y-3">
-				<p className="text-sm font-medium text-foreground-secondary">
+				<p className="font-medium text-foreground-secondary text-sm">
 					Operator · Human resources
 				</p>
-				<h1 className="text-2xl font-semibold tracking-tight">
+				<h1 className="font-semibold text-2xl tracking-tight">
 					Recruitment workspace
 				</h1>
-				<p className="max-w-3xl text-sm text-foreground-secondary">
+				<p className="max-w-3xl text-foreground-secondary text-sm">
 					Manage requisitions, candidate progression, interviews, offers,
 					consent, and accepted-offer conversion within the current
 					organization.
@@ -93,7 +102,7 @@ export function RecruitmentWorkspace({
 				) : null}
 			</header>
 
-			<Tabs defaultValue={defaultTab(capabilities)} className="space-y-6">
+			<Tabs className="space-y-6" defaultValue={defaultTab(capabilities)}>
 				<TabsList className="h-auto flex-wrap justify-start">
 					{capabilities.canManageRequisitions ? (
 						<TabsTrigger value="requisitions">Requisitions</TabsTrigger>
@@ -116,7 +125,7 @@ export function RecruitmentWorkspace({
 				</TabsList>
 
 				{capabilities.canManageRequisitions ? (
-					<TabsContent value="requisitions" className="space-y-6">
+					<TabsContent className="space-y-6" value="requisitions">
 						<ErrorNotice message={data.errors.requisitions} />
 						<Card>
 							<CardHeader>
@@ -166,7 +175,7 @@ export function RecruitmentWorkspace({
 				) : null}
 
 				{capabilities.canManageCandidates ? (
-					<TabsContent value="pipeline" className="space-y-6">
+					<TabsContent className="space-y-6" value="pipeline">
 						<ErrorNotice message={data.errors.candidates} />
 						<Card>
 							<CardHeader>
@@ -215,7 +224,7 @@ export function RecruitmentWorkspace({
 				) : null}
 
 				{capabilities.canReadInterviews ? (
-					<TabsContent value="interviews" className="space-y-6">
+					<TabsContent className="space-y-6" value="interviews">
 						<ErrorNotice message={data.errors.interviews} />
 						{capabilities.canRecordInterviews ? (
 							<Card>
@@ -229,8 +238,8 @@ export function RecruitmentWorkspace({
 									{data.applications
 										.filter((item) => item.status === "interviewing")
 										.map((item) => (
-											<div key={item.id} className="space-y-3">
-												<p className="text-sm font-medium">
+											<div className="space-y-3" key={item.id}>
+												<p className="font-medium text-sm">
 													{candidates.get(item.candidateId)?.displayName ??
 														"Candidate"}
 												</p>
@@ -277,7 +286,7 @@ export function RecruitmentWorkspace({
 				) : null}
 
 				{capabilities.canManageOffers ? (
-					<TabsContent value="offers" className="space-y-6">
+					<TabsContent className="space-y-6" value="offers">
 						<ErrorNotice message={data.errors.offers} />
 						<Card>
 							<CardHeader>
@@ -290,8 +299,8 @@ export function RecruitmentWorkspace({
 								{data.applications
 									.filter((item) => item.status === "interviewing")
 									.map((item) => (
-										<div key={item.id} className="space-y-3">
-											<p className="text-sm font-medium">
+										<div className="space-y-3" key={item.id}>
+											<p className="font-medium text-sm">
 												{candidates.get(item.candidateId)?.displayName ??
 													"Candidate"}
 											</p>
@@ -392,7 +401,7 @@ export function RecruitmentWorkspace({
 				) : null}
 
 				{capabilities.canHire ? (
-					<TabsContent value="hire" className="space-y-6">
+					<TabsContent className="space-y-6" value="hire">
 						<Alert>
 							<AlertTitle>Accepted-offer conversion</AlertTitle>
 							<AlertDescription>

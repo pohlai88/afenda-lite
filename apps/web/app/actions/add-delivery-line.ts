@@ -13,7 +13,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type AddDeliveryLineActionData = { line: DeliveryLine };
+export interface AddDeliveryLineActionData {
+	line: DeliveryLine;
+}
 export type AddDeliveryLineActionState =
 	ActionResult<AddDeliveryLineActionData> | null;
 
@@ -42,7 +44,7 @@ export async function addDeliveryLineAction(
 	_prev: AddDeliveryLineActionState,
 	formData: FormData,
 ): Promise<AddDeliveryLineActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "addDeliveryLineAction",
 		permission: "fulfillment.delivery.update",
 		safeMessage: "Could not add delivery line. Try again or contact an admin.",
@@ -73,7 +75,9 @@ export async function addDeliveryLineAction(
 				createFulfillmentCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePath("/admin/fulfillment");
 			revalidatePath("/client/fulfillment");
 			return { ok: true, data: { line: mapped.data } };

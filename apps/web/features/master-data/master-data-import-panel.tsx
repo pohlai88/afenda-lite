@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noJsxPropsBind: The enabled React Compiler stabilizes JSX callback props.
 "use client";
 
 import {
@@ -30,16 +31,16 @@ function isImportMode(value: string): value is ImportMode {
 	return IMPORT_MODES.some((mode) => mode === value);
 }
 
-type ImportPanelProps = {
-	canImportValidate: boolean;
+interface ImportPanelProps {
 	canImportApply: boolean;
-};
+	canImportValidate: boolean;
+}
 
-type RowPreview = {
+interface RowPreview {
 	code: string;
-	outcome: string;
 	message?: string | undefined;
-};
+	outcome: string;
+}
 
 /**
  * Party import validate (dry-run) + apply — JSON rows, max 100.
@@ -155,7 +156,7 @@ export function MasterDataImportPanel({
 		});
 	}
 
-	if (!canImportValidate && !canImportApply) {
+	if (!(canImportValidate || canImportApply)) {
 		return (
 			<Alert role="status">
 				<AlertTitle>Import unavailable</AlertTitle>
@@ -176,25 +177,25 @@ export function MasterDataImportPanel({
 				</Alert>
 			) : null}
 			{error ? <FormError>{error}</FormError> : null}
-			<FormField label="Source system" required fieldId="md-import-source">
+			<FormField fieldId="md-import-source" label="Source system" required>
 				<Input
-					id="md-import-source"
-					value={sourceSystem}
-					onChange={(event) => setSourceSystem(event.target.value)}
-					disabled={pending}
 					autoComplete="off"
+					disabled={pending}
+					id="md-import-source"
+					onChange={(event) => setSourceSystem(event.target.value)}
+					value={sourceSystem}
 				/>
 			</FormField>
-			<FormField label="Mode" required fieldId="md-import-mode">
+			<FormField fieldId="md-import-mode" label="Mode" required>
 				<NativeSelect
+					disabled={pending}
 					id="md-import-mode"
-					value={mode}
 					onChange={(event) => {
 						if (isImportMode(event.currentTarget.value)) {
 							setMode(event.currentTarget.value);
 						}
 					}}
-					disabled={pending}
+					value={mode}
 				>
 					<NativeSelectOption value="create_or_update">
 						create_or_update
@@ -207,25 +208,25 @@ export function MasterDataImportPanel({
 					</NativeSelectOption>
 				</NativeSelect>
 			</FormField>
-			<FormField label="Party rows (JSON)" required fieldId="md-import-rows">
+			<FormField fieldId="md-import-rows" label="Party rows (JSON)" required>
 				<Textarea
-					id="md-import-rows"
-					value={rowsJson}
-					onChange={(event) => setRowsJson(event.target.value)}
-					disabled={pending}
-					rows={8}
 					className="font-mono text-xs"
+					disabled={pending}
+					id="md-import-rows"
+					onChange={(event) => setRowsJson(event.target.value)}
+					rows={8}
+					value={rowsJson}
 				/>
 			</FormField>
 			<div className="flex flex-wrap gap-2">
 				{canImportValidate ? (
-					<Button type="button" onClick={onValidate} disabled={pending}>
+					<Button disabled={pending} onClick={onValidate} type="button">
 						{pending ? <Spinner /> : null}
 						Validate (dry-run)
 					</Button>
 				) : null}
 				{canImportApply ? (
-					<Button type="button" onClick={onApply} disabled={pending}>
+					<Button disabled={pending} onClick={onApply} type="button">
 						{pending ? <Spinner /> : null}
 						Apply import
 					</Button>

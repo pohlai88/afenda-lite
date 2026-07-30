@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/useAwait: The deterministic memory adapter implements asynchronous payroll assignment and input ports.
 import { randomUUID } from "node:crypto";
 
 import { ok, type Result } from "@afenda/errors/result";
@@ -490,6 +491,7 @@ export function createMemoryInputsMethods(
 			});
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors source idempotency, validation, audit, and rollback behavior.
 		async createVariableInput(record, ports) {
 			const bySource = await this.findVariableInputBySource({
 				organizationId: record.organizationId,

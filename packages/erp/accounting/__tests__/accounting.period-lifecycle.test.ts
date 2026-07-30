@@ -12,13 +12,13 @@ import {
 const organizationId = "f47ac10b-58cc-4372-a567-0e02b2c3d479";
 const actorUserId = "a47ac10b-58cc-4372-a567-0e02b2c3d479";
 const authorization = {
-	async can() {
-		return true;
+	can() {
+		return Promise.resolve(true);
 	},
 };
 const effects = {
-	async emit() {
-		return ok(undefined);
+	emit() {
+		return Promise.resolve(ok(undefined));
 	},
 };
 
@@ -46,7 +46,9 @@ describe("accounting period lifecycle", () => {
 			options,
 		);
 		expect(period.ok).toBe(true);
-		if (!period.ok) throw new Error("unexpected");
+		if (!period.ok) {
+			throw new Error("unexpected");
+		}
 		expect(period.data.status).toBe("open");
 
 		const softClosed = await softCloseAccountingPeriod(
@@ -60,7 +62,9 @@ describe("accounting period lifecycle", () => {
 			options,
 		);
 		expect(softClosed.ok).toBe(true);
-		if (!softClosed.ok) throw new Error("unexpected");
+		if (!softClosed.ok) {
+			throw new Error("unexpected");
+		}
 		expect(softClosed.data.status).toBe("soft_closed");
 		expect(softClosed.data.softClosed).toBe(true);
 
@@ -75,7 +79,9 @@ describe("accounting period lifecycle", () => {
 			options,
 		);
 		expect(closed.ok).toBe(true);
-		if (!closed.ok) throw new Error("unexpected");
+		if (!closed.ok) {
+			throw new Error("unexpected");
+		}
 		expect(closed.data.status).toBe("closed");
 	});
 
@@ -93,7 +99,9 @@ describe("accounting period lifecycle", () => {
 			},
 			options,
 		);
-		if (!period.ok) throw new Error("unexpected");
+		if (!period.ok) {
+			throw new Error("unexpected");
+		}
 
 		const closed = await closeAccountingPeriod(
 			{
@@ -122,7 +130,9 @@ describe("accounting period lifecycle", () => {
 			},
 			options,
 		);
-		if (!period.ok) throw new Error("unexpected");
+		if (!period.ok) {
+			throw new Error("unexpected");
+		}
 
 		await softCloseAccountingPeriod(
 			{
@@ -147,7 +157,9 @@ describe("accounting period lifecycle", () => {
 			options,
 		);
 		expect(reopened.ok).toBe(true);
-		if (!reopened.ok) throw new Error("unexpected");
+		if (!reopened.ok) {
+			throw new Error("unexpected");
+		}
 		expect(reopened.data.status).toBe("open");
 		expect(reopened.data.reopenReason).toBe("Late adjustments needed");
 	});
@@ -166,7 +178,9 @@ describe("accounting period lifecycle", () => {
 			},
 			options,
 		);
-		if (!period.ok) throw new Error("unexpected");
+		if (!period.ok) {
+			throw new Error("unexpected");
+		}
 
 		await softCloseAccountingPeriod(
 			{
@@ -201,7 +215,9 @@ describe("accounting period lifecycle", () => {
 			options,
 		);
 		expect(reopened.ok).toBe(true);
-		if (!reopened.ok) throw new Error("unexpected");
+		if (!reopened.ok) {
+			throw new Error("unexpected");
+		}
 		expect(reopened.data.status).toBe("open");
 	});
 
@@ -219,7 +235,9 @@ describe("accounting period lifecycle", () => {
 			},
 			options,
 		);
-		if (!period.ok) throw new Error("unexpected");
+		if (!period.ok) {
+			throw new Error("unexpected");
+		}
 
 		const reopened = await reopenAccountingPeriod(
 			{

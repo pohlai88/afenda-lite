@@ -16,9 +16,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type RecordProofOfDeliveryActionData = {
+export interface RecordProofOfDeliveryActionData {
 	proofOfDelivery: ProofOfDelivery;
-};
+}
 export type RecordProofOfDeliveryActionState =
 	ActionResult<RecordProofOfDeliveryActionData> | null;
 
@@ -51,7 +51,7 @@ export async function recordProofOfDeliveryAction(
 	_prev: RecordProofOfDeliveryActionState,
 	formData: FormData,
 ): Promise<RecordProofOfDeliveryActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "recordProofOfDeliveryAction",
 		permission: "fulfillment.pod.record",
 		safeMessage:
@@ -86,7 +86,9 @@ export async function recordProofOfDeliveryAction(
 				createFulfillmentCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePath("/admin/fulfillment");
 			revalidatePath("/client/fulfillment");
 			return { ok: true, data: { proofOfDelivery: mapped.data } };

@@ -22,10 +22,10 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type CreatePartyActionData = {
-	party: Party;
+export interface CreatePartyActionData {
 	duplicateWarnings: DuplicatePartyWarning[];
-};
+	party: Party;
+}
 
 /** `null` = form idle (`useActionState`); otherwise API-002 `ActionResult`. */
 export type CreatePartyActionState = ActionResult<CreatePartyActionData> | null;

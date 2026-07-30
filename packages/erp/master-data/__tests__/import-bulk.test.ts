@@ -461,7 +461,9 @@ describe("@afenda/master-data import bulk", () => {
 			options,
 		);
 		expect(conflicting.ok).toBe(false);
-		if (conflicting.ok) return;
+		if (conflicting.ok) {
+			return;
+		}
 		expect(conflicting.details).toMatchObject({
 			reason: "MASTER_IDEMPOTENCY_CONFLICT",
 			errorCode: "MASTER_DATA_IDEMPOTENCY_CONFLICT",
@@ -513,7 +515,7 @@ describe("@afenda/master-data import bulk", () => {
 			organizationId: "org-import",
 			batchId,
 			leaseOwner,
-			leaseExpiresAt: new Date(Date.now() - 1_000),
+			leaseExpiresAt: new Date(Date.now() - 1000),
 		});
 		expect(leased.ok).toBe(true);
 		const initiallyApplied = await createParty(
@@ -548,7 +550,9 @@ describe("@afenda/master-data import bulk", () => {
 			options,
 		);
 		expect(resumed.ok).toBe(true);
-		if (!resumed.ok) return;
+		if (!resumed.ok) {
+			return;
+		}
 		expect(resumed.data.created).toBe(1);
 		const parties = await store.listParties({
 			organizationId: "org-import",

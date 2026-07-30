@@ -37,12 +37,12 @@ import { parseSchema } from "@/modules/platform/schemas/common";
 const isoDateSchema = z.string().date();
 const expectedVersionSchema = z.coerce.number().int().positive();
 
-export type HrAdminJourneyActionData = {
+export interface HrAdminJourneyActionData {
 	employeeId: string;
 	operation: string;
 	recordId: string;
 	version: number;
-};
+}
 
 export type HrAdminJourneyActionState =
 	ActionResult<HrAdminJourneyActionData> | null;
@@ -131,7 +131,9 @@ async function loadOwnedEmployment(input: {
 		createHumanResourcesCommandOptions(),
 	);
 	const mapped = mapPackageResult(result);
-	if (!mapped.ok) return mapped;
+	if (!mapped.ok) {
+		return mapped;
+	}
 	if (mapped.data.employeeId !== input.employeeId) {
 		return actionFail("NOT_FOUND", "Employment record not found.");
 	}
@@ -158,11 +160,12 @@ export async function runEmploymentJourneyAction(
 	_prev: HrAdminJourneyActionState,
 	formData: FormData,
 ): Promise<HrAdminJourneyActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "runEmploymentJourneyAction",
 		permission: "human-resources.employment.manage",
 		safeMessage:
 			"Could not update employment. Try again or contact HR support.",
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Assignment intents share one permission and validation transaction boundary.
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(employmentJourneySchema, {
 				intent: formData.get("intent"),
@@ -195,7 +198,9 @@ export async function runEmploymentJourneyAction(
 					options,
 				);
 				const mapped = mapPackageResult(result);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				revalidateEmployee(parsed.data.employeeId);
 				return success({
 					employeeId: parsed.data.employeeId,
@@ -211,7 +216,9 @@ export async function runEmploymentJourneyAction(
 				employeeId: parsed.data.employeeId,
 				employmentId: parsed.data.employmentId,
 			});
-			if (!owned.ok) return owned;
+			if (!owned.ok) {
+				return owned;
+			}
 			const command = {
 				suspend: suspendEmployment,
 				reactivate: reactivateEmployment,
@@ -229,7 +236,9 @@ export async function runEmploymentJourneyAction(
 				options,
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidateEmployee(parsed.data.employeeId);
 			return success({
 				employeeId: parsed.data.employeeId,
@@ -244,7 +253,7 @@ export async function runAssignmentJourneyAction(
 	_prev: HrAdminJourneyActionState,
 	formData: FormData,
 ): Promise<HrAdminJourneyActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "runAssignmentJourneyAction",
 		permission: "human-resources.employment.manage",
 		safeMessage:
@@ -275,7 +284,9 @@ export async function runAssignmentJourneyAction(
 				employeeId: parsed.data.employeeId,
 				employmentId: parsed.data.employmentId,
 			});
-			if (!owned.ok) return owned;
+			if (!owned.ok) {
+				return owned;
+			}
 			const options = createHumanResourcesCommandOptions();
 
 			if (parsed.data.intent === "end") {
@@ -289,7 +300,9 @@ export async function runAssignmentJourneyAction(
 					options,
 				);
 				const assignment = mapPackageResult(assignmentResult);
-				if (!assignment.ok) return assignment;
+				if (!assignment.ok) {
+					return assignment;
+				}
 				if (
 					assignment.data.employeeId !== parsed.data.employeeId ||
 					assignment.data.employmentId !== parsed.data.employmentId
@@ -308,7 +321,9 @@ export async function runAssignmentJourneyAction(
 					options,
 				);
 				const mapped = mapPackageResult(result);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				revalidateEmployee(parsed.data.employeeId);
 				return success({
 					employeeId: parsed.data.employeeId,
@@ -328,7 +343,9 @@ export async function runAssignmentJourneyAction(
 				options,
 			);
 			const context = mapPackageResult(contextResult);
-			if (!context.ok) return context;
+			if (!context.ok) {
+				return context;
+			}
 			const result = await transferAssignment(
 				{
 					organizationId: session.orgId,
@@ -348,7 +365,9 @@ export async function runAssignmentJourneyAction(
 				options,
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidateEmployee(parsed.data.employeeId);
 			return success({
 				employeeId: parsed.data.employeeId,
@@ -363,7 +382,7 @@ export async function runEmploymentLifecycleJourneyAction(
 	_prev: HrAdminJourneyActionState,
 	formData: FormData,
 ): Promise<HrAdminJourneyActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "runEmploymentLifecycleJourneyAction",
 		permission: "human-resources.employment.manage",
 		safeMessage:
@@ -394,7 +413,9 @@ export async function runEmploymentLifecycleJourneyAction(
 				employeeId: parsed.data.employeeId,
 				employmentId: parsed.data.employmentId,
 			});
-			if (!owned.ok) return owned;
+			if (!owned.ok) {
+				return owned;
+			}
 			const options = createHumanResourcesCommandOptions();
 			if (parsed.data.intent === "open_probation") {
 				const result = await openProbation(
@@ -410,7 +431,9 @@ export async function runEmploymentLifecycleJourneyAction(
 					options,
 				);
 				const mapped = mapPackageResult(result);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				revalidateEmployee(parsed.data.employeeId);
 				return success({
 					employeeId: parsed.data.employeeId,
@@ -433,7 +456,9 @@ export async function runEmploymentLifecycleJourneyAction(
 				options,
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidateEmployee(parsed.data.employeeId);
 			return success({
 				employeeId: parsed.data.employeeId,
@@ -468,7 +493,7 @@ export async function startOnboardingJourneyAction(
 	_prev: HrAdminJourneyActionState,
 	formData: FormData,
 ): Promise<HrAdminJourneyActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "startOnboardingJourneyAction",
 		permission: "human-resources.onboarding.manage",
 		safeMessage: "Could not start onboarding. Try again or contact HR support.",
@@ -490,7 +515,9 @@ export async function startOnboardingJourneyAction(
 				correlationId,
 				...parsed.data,
 			});
-			if (!owned.ok) return owned;
+			if (!owned.ok) {
+				return owned;
+			}
 			const result = await startOnboarding(
 				{
 					organizationId: session.orgId,
@@ -504,7 +531,9 @@ export async function startOnboardingJourneyAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidateEmployee(parsed.data.employeeId);
 			return success({
 				employeeId: parsed.data.employeeId,
@@ -519,7 +548,7 @@ export async function startOffboardingJourneyAction(
 	_prev: HrAdminJourneyActionState,
 	formData: FormData,
 ): Promise<HrAdminJourneyActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "startOffboardingJourneyAction",
 		permission: "human-resources.offboarding.manage",
 		safeMessage:
@@ -542,7 +571,9 @@ export async function startOffboardingJourneyAction(
 				correlationId,
 				...parsed.data,
 			});
-			if (!owned.ok) return owned;
+			if (!owned.ok) {
+				return owned;
+			}
 			const result = await startOffboarding(
 				{
 					organizationId: session.orgId,
@@ -556,7 +587,9 @@ export async function startOffboardingJourneyAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidateEmployee(parsed.data.employeeId);
 			return success({
 				employeeId: parsed.data.employeeId,

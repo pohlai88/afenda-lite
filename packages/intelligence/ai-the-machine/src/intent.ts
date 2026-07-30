@@ -1,12 +1,12 @@
 import type { MachineModule } from "./schemas";
 import type { IntentClassification } from "./types";
 
-type IntentPattern = {
-	readonly regex: RegExp;
-	readonly module: MachineModule;
+interface IntentPattern {
 	readonly action: IntentClassification["action"];
 	readonly confidence: number;
-};
+	readonly module: MachineModule;
+	readonly regex: RegExp;
+}
 
 const INTENT_PATTERNS: readonly IntentPattern[] = [
 	{

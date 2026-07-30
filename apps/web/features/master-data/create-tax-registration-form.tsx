@@ -22,17 +22,17 @@ import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 
 const initialState: CreateTaxRegistrationActionState = null;
 
-type PartyOption = {
+interface PartyOption {
 	id: string;
 	label: string;
-};
+}
 
-type CreateTaxRegistrationFormProps = {
+interface CreateTaxRegistrationFormProps {
 	canManage: boolean;
-	parties: PartyOption[];
 	countryCodes: readonly string[];
+	parties: PartyOption[];
 	registrationTypes: readonly string[];
-};
+}
 
 /**
  * Tax registration create form — CAPABLE when `master_data.manage` is granted.
@@ -62,7 +62,7 @@ export function CreateTaxRegistrationForm({
 
 	if (parties.length === 0) {
 		return (
-			<p className="text-sm text-muted-foreground">
+			<p className="text-muted-foreground text-sm">
 				Create a party before attaching a tax registration.
 			</p>
 		);
@@ -95,17 +95,17 @@ export function CreateTaxRegistrationForm({
 				<FormError>{state.message}</FormError>
 			) : null}
 			<FormField
+				error={partyError}
+				fieldId="tax-registration-party"
 				label="Party"
 				required
-				fieldId="tax-registration-party"
-				error={partyError}
 			>
 				<NativeSelect
+					defaultValue={parties[0]?.id}
+					disabled={pending}
 					id="tax-registration-party"
 					name="partyId"
 					required
-					disabled={pending}
-					defaultValue={parties[0]?.id}
 				>
 					{parties.map((party) => (
 						<NativeSelectOption key={party.id} value={party.id}>
@@ -115,16 +115,16 @@ export function CreateTaxRegistrationForm({
 				</NativeSelect>
 			</FormField>
 			<FormField
+				fieldId="tax-registration-country"
 				label="Jurisdiction (country)"
 				required
-				fieldId="tax-registration-country"
 			>
 				<NativeSelect
+					defaultValue={countryCodes[0] ?? "MY"}
+					disabled={pending}
 					id="tax-registration-country"
 					name="jurisdictionCountryCode"
 					required
-					disabled={pending}
-					defaultValue={countryCodes[0] ?? "MY"}
 				>
 					{countryCodes.map((code) => (
 						<NativeSelectOption key={code} value={code}>
@@ -134,16 +134,16 @@ export function CreateTaxRegistrationForm({
 				</NativeSelect>
 			</FormField>
 			<FormField
+				fieldId="tax-registration-type"
 				label="Registration type"
 				required
-				fieldId="tax-registration-type"
 			>
 				<NativeSelect
+					defaultValue="vat_gst"
+					disabled={pending}
 					id="tax-registration-type"
 					name="registrationType"
 					required
-					disabled={pending}
-					defaultValue="vat_gst"
 				>
 					{registrationTypes.map((type) => (
 						<NativeSelectOption key={type} value={type}>
@@ -153,25 +153,25 @@ export function CreateTaxRegistrationForm({
 				</NativeSelect>
 			</FormField>
 			<FormField
+				error={numberError}
+				fieldId="tax-registration-number"
 				label="Registration number"
 				required
-				fieldId="tax-registration-number"
-				error={numberError}
 			>
 				<Input
-					name="registrationNumber"
-					required
 					autoComplete="off"
 					disabled={pending}
+					name="registrationNumber"
+					required
 				/>
 			</FormField>
-			<FormField label="Display name" fieldId="tax-registration-name">
-				<Input name="name" autoComplete="off" disabled={pending} />
+			<FormField fieldId="tax-registration-name" label="Display name">
+				<Input autoComplete="off" disabled={pending} name="name" />
 			</FormField>
-			<FormField label="Valid from" fieldId="tax-registration-valid-from">
-				<Input name="validFrom" type="datetime-local" disabled={pending} />
+			<FormField fieldId="tax-registration-valid-from" label="Valid from">
+				<Input disabled={pending} name="validFrom" type="datetime-local" />
 			</FormField>
-			<Button type="submit" disabled={pending}>
+			<Button disabled={pending} type="submit">
 				{pending ? <Spinner /> : null}
 				Create tax registration
 			</Button>

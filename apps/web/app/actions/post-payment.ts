@@ -26,7 +26,7 @@ export async function postPaymentAction(
 	_prev: PostPaymentActionState,
 	formData: FormData,
 ): Promise<PostPaymentActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "postPaymentAction",
 		permission: "payments.payment.post",
 		safeMessage: "Could not post payment. Try again or contact an admin.",
@@ -35,12 +35,13 @@ export async function postPaymentAction(
 				paymentId: formData.get("paymentId"),
 				expectedVersion: formData.get("expectedVersion"),
 			});
-			if (!parsed.success)
+			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
 					"Enter a valid payment and expected version.",
 					parsed.details,
 				);
+			}
 			const mapped = mapPackageResult(
 				await postPayment(
 					{
@@ -53,14 +54,18 @@ export async function postPaymentAction(
 					createPaymentsCommandOptions(),
 				),
 			);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			const applications = await applyPaymentInstructionsAfterPost({
 				organizationId: session.orgId,
 				actorUserId: session.userId,
 				correlationId,
 				payment: mapped.data,
 			});
-			if (!applications.ok) return mapPackageResult(applications);
+			if (!applications.ok) {
+				return mapPackageResult(applications);
+			}
 			revalidatePath("/admin/payments");
 			revalidatePath("/client/payments");
 			return { ok: true, data: { payment: mapped.data } };

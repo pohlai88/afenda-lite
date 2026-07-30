@@ -31,10 +31,8 @@ function authorizationFor(
 ): HumanResourcesAuthorizationPort {
 	return {
 		async can(input) {
-			return (
-				input.organizationId === organizationId &&
-				permissions.has(input.permission)
-			);
+			return await (input.organizationId === organizationId &&
+				permissions.has(input.permission));
 		},
 	};
 }
@@ -76,7 +74,9 @@ describe("workforce planning authorization enforcement", () => {
 		);
 
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 		expect(result.data).toMatchObject({ id: "plan-1", status: "approved" });
 		expect(result.data).not.toHaveProperty("employeeActuals");
 		expect(result.data).not.toHaveProperty("actualEmployeeIds");

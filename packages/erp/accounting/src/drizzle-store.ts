@@ -58,32 +58,32 @@ const postingProfileLineSqlSchema = z.object({
 	accountRole: z.string().min(1),
 });
 
-type AccountRoleMappingSqlRow = {
-	id: string;
-	organization_id: string;
+interface AccountRoleMappingSqlRow {
 	account_role: string;
-	ledger_account_id: string;
-	version: number;
-	created_by: string;
-	updated_by: string;
 	created_at: Date;
-	updated_at: Date;
-};
-
-type SourcePostingLinkSqlRow = {
+	created_by: string;
 	id: string;
+	ledger_account_id: string;
 	organization_id: string;
-	source_module: string;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+}
+
+interface SourcePostingLinkSqlRow {
+	causation_id: string | null;
+	created_at: Date;
+	created_by: string;
+	id: string;
+	journal_id: string;
+	organization_id: string;
+	posting_rule_id: string;
+	posting_rule_version: number;
 	source_aggregate_id: string;
 	source_event_id: string;
 	source_event_version: number;
-	posting_rule_id: string;
-	posting_rule_version: number;
-	journal_id: string;
-	causation_id: string | null;
-	created_by: string;
-	created_at: Date;
-};
+	source_module: string;
+}
 
 function mapAccountRoleSql(row: AccountRoleMappingSqlRow): AccountRoleMapping {
 	return {
@@ -119,14 +119,16 @@ function mapSourcePostingLinkSql(
 }
 
 function periodStatus(value: string): AccountingPeriodStatus {
-	if (value === "open" || value === "soft_closed" || value === "closed")
+	if (value === "open" || value === "soft_closed" || value === "closed") {
 		return value;
+	}
 	throw new Error(`Invalid accounting_period.status: ${value}`);
 }
 
 function journalStatus(value: string): JournalStatus {
-	if (value === "draft" || value === "posted" || value === "reversed")
+	if (value === "draft" || value === "posted" || value === "reversed") {
 		return value;
+	}
 	throw new Error(`Invalid journal.status: ${value}`);
 }
 
@@ -277,23 +279,23 @@ function mapJournal(
 	};
 }
 
-type LedgerAccountSqlRow = {
-	id: string;
-	organization_id: string;
+interface LedgerAccountSqlRow {
+	account_type: string;
 	chart_of_account_id: string;
 	code: string;
-	normalized_code: string;
-	name: string;
-	account_type: string;
-	normal_balance: string;
-	is_control: boolean;
-	status: string;
-	version: number;
-	created_by: string;
-	updated_by: string;
 	created_at: Date;
+	created_by: string;
+	id: string;
+	is_control: boolean;
+	name: string;
+	normal_balance: string;
+	normalized_code: string;
+	organization_id: string;
+	status: string;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+}
 
 function mapLedgerAccountSql(row: LedgerAccountSqlRow): LedgerAccount {
 	const status = row.status === "inactive" ? "inactive" : "active";
@@ -323,7 +325,9 @@ async function reloadJournal(
 	message: string,
 ): Promise<Result<Journal>> {
 	const loaded = await store.getById(organizationId, id);
-	if (!loaded.ok) return loaded;
+	if (!loaded.ok) {
+		return loaded;
+	}
 	return loaded.data === null
 		? fail("INTERNAL_ERROR", message)
 		: ok(loaded.data);
@@ -564,9 +568,10 @@ export class DrizzleAccountingStore implements AccountingStore {
 					SELECT inserted.* FROM inserted
 				`,
 			]);
-			const row = rows[0];
-			if (row === undefined)
+			const [row] = rows;
+			if (row === undefined) {
 				return fail("CONFLICT", "Journal line add conflict");
+			}
 			return ok({
 				id: row.id,
 				organizationId: row.organization_id,
@@ -650,8 +655,9 @@ export class DrizzleAccountingStore implements AccountingStore {
 					SELECT mutated.id FROM mutated, outboxed
 				`,
 			]);
-			if (rows[0] === undefined)
+			if (rows[0] === undefined) {
 				return fail("CONFLICT", "Journal post conflict");
+			}
 			return reloadJournal(
 				this,
 				record.organizationId,
@@ -784,7 +790,9 @@ export class DrizzleAccountingStore implements AccountingStore {
 					and(eq(journal.organizationId, organizationId), eq(journal.id, id)),
 				)
 				.limit(1);
-			if (header === undefined) return ok(null);
+			if (header === undefined) {
+				return ok(null);
+			}
 			const [lines, postings] = await Promise.all([
 				db
 					.select()
@@ -836,7 +844,9 @@ export class DrizzleAccountingStore implements AccountingStore {
 			);
 			const journals: Journal[] = [];
 			for (const result of loaded) {
-				if (!result.ok) return result;
+				if (!result.ok) {
+					return result;
+				}
 				if (result.data === null) {
 					return fail("INTERNAL_ERROR", "Listed journal missing");
 				}
@@ -904,8 +914,9 @@ export class DrizzleAccountingStore implements AccountingStore {
 					RETURNING id
 				`,
 			]);
-			if (rows[0] === undefined)
+			if (rows[0] === undefined) {
 				return fail("CONFLICT", "Chart of accounts code already exists");
+			}
 			return ok({
 				id,
 				organizationId: record.organizationId,
@@ -942,8 +953,9 @@ export class DrizzleAccountingStore implements AccountingStore {
 					) RETURNING id
 				`,
 			]);
-			if (rows[0] === undefined)
+			if (rows[0] === undefined) {
 				return fail("CONFLICT", "Ledger account code already exists");
+			}
 			const now = new Date();
 			return ok({
 				id,
@@ -984,8 +996,10 @@ export class DrizzleAccountingStore implements AccountingStore {
 				`,
 				],
 			);
-			const row = rows[0];
-			if (row === undefined) return fail("CONFLICT", "Version mismatch");
+			const [row] = rows;
+			if (row === undefined) {
+				return fail("CONFLICT", "Version mismatch");
+			}
 			return ok(mapLedgerAccountSql(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to update ledger account");
@@ -1008,8 +1022,10 @@ export class DrizzleAccountingStore implements AccountingStore {
 				`,
 				],
 			);
-			const row = rows[0];
-			if (row === undefined) return fail("CONFLICT", "Deactivation conflict");
+			const [row] = rows;
+			if (row === undefined) {
+				return fail("CONFLICT", "Deactivation conflict");
+			}
 			return ok(mapLedgerAccountSql(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to deactivate ledger account");
@@ -1056,7 +1072,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 				],
 				{ readOnly: true },
 			);
-			const row = rows[0];
+			const [row] = rows;
 			return ok(row === undefined ? null : mapLedgerAccountSql(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to resolve ledger account");
@@ -1080,9 +1096,10 @@ export class DrizzleAccountingStore implements AccountingStore {
 				`,
 				],
 			);
-			const row = rows[0];
-			if (row === undefined)
+			const [row] = rows;
+			if (row === undefined) {
 				return fail("INTERNAL_ERROR", "Upsert returned nothing");
+			}
 			return ok(mapAccountRoleSql(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to map account role");
@@ -1104,7 +1121,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 				],
 				{ readOnly: true },
 			);
-			const row = rows[0];
+			const [row] = rows;
 			return ok(row === undefined ? null : mapAccountRoleSql(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to resolve account role");
@@ -1170,7 +1187,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 				}
 				return statements;
 			});
-			const profile = profileRows[0];
+			const [profile] = profileRows;
 			if (profile === undefined) {
 				return fail(
 					"INTERNAL_ERROR",
@@ -1237,8 +1254,10 @@ export class DrizzleAccountingStore implements AccountingStore {
 				],
 				{ readOnly: true },
 			);
-			const r = rows[0];
-			if (r === undefined) return ok(null);
+			const [r] = rows;
+			if (r === undefined) {
+				return ok(null);
+			}
 			const parsedLines = z
 				.array(postingProfileLineSqlSchema)
 				.safeParse(r.lines ?? []);
@@ -1283,7 +1302,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 				],
 				{ readOnly: true },
 			);
-			const row = rows[0];
+			const [row] = rows;
 			return ok(row === undefined ? null : mapSourcePostingLinkSql(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to find source posting link");
@@ -1484,9 +1503,10 @@ export class DrizzleAccountingStore implements AccountingStore {
 					RETURNING *
 				`,
 			]);
-			const r = rows[0];
-			if (r === undefined)
+			const [r] = rows;
+			if (r === undefined) {
 				return fail("CONFLICT", "Exception resolve conflict");
+			}
 			return ok({
 				id: r.id,
 				organizationId: r.organization_id,
@@ -1551,30 +1571,35 @@ export class DrizzleAccountingStore implements AccountingStore {
 				],
 				{ readOnly: true },
 			);
-			const traces: SourcePostingTrace[] = [];
-			for (const r of rows) {
-				const link: SourcePostingLink = {
-					id: r.id,
-					organizationId: r.organization_id,
-					sourceModule: r.source_module,
-					sourceAggregateId: r.source_aggregate_id,
-					sourceEventId: r.source_event_id,
-					sourceEventVersion: r.source_event_version,
-					postingRuleId: r.posting_rule_id,
-					postingRuleVersion: r.posting_rule_version,
-					journalId: r.journal_id,
-					causationId: r.causation_id,
-					createdBy: r.created_by,
-					createdAt: r.created_at,
-				};
-				const journalResult = await this.getById(
-					filter.organizationId,
-					link.journalId,
-				);
-				if (journalResult.ok && journalResult.data) {
-					traces.push({ link, journal: journalResult.data });
-				}
-			}
+			const loadedTraces = await Promise.all(
+				rows.map(async (r): Promise<SourcePostingTrace | null> => {
+					const link: SourcePostingLink = {
+						id: r.id,
+						organizationId: r.organization_id,
+						sourceModule: r.source_module,
+						sourceAggregateId: r.source_aggregate_id,
+						sourceEventId: r.source_event_id,
+						sourceEventVersion: r.source_event_version,
+						postingRuleId: r.posting_rule_id,
+						postingRuleVersion: r.posting_rule_version,
+						journalId: r.journal_id,
+						causationId: r.causation_id,
+						createdBy: r.created_by,
+						createdAt: r.created_at,
+					};
+					const journalResult = await this.getById(
+						filter.organizationId,
+						link.journalId,
+					);
+					if (journalResult.ok && journalResult.data) {
+						return { link, journal: journalResult.data };
+					}
+					return null;
+				}),
+			);
+			const traces = loadedTraces.filter(
+				(trace): trace is SourcePostingTrace => trace !== null,
+			);
 			return ok(traces);
 		} catch (error) {
 			return failFromPersistence(error, "Failed to get source posting trace");

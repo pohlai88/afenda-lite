@@ -9,6 +9,7 @@ import {
 	goodsReceiptLine,
 	inArray,
 	isNull,
+	type NeonHttpSql,
 	ne,
 	receivingDiscrepancy,
 	runNeonHttpTransaction,
@@ -70,7 +71,59 @@ function failFromPersistence(error: unknown, fallbackMessage: string) {
 		: failFromAppError(mapped);
 }
 
-type TxIdRow = { id: string };
+interface TxIdRow {
+	id: string;
+}
+
+interface PostGuardRow {
+	over_count: number;
+	receipt_id: string | null;
+}
+
+interface PostGuardSqlParams {
+	ceilings: string[];
+	lineIds: string[];
+	purchaseOrderId: string | null;
+	thisAccepted: string[];
+}
+
+function postGuardSqlParams(
+	guard: ReceiptPostRecord["poConsumptionGuard"],
+): PostGuardSqlParams {
+	if (guard === undefined) {
+		return {
+			ceilings: [],
+			lineIds: [],
+			purchaseOrderId: null,
+			thisAccepted: [],
+		};
+	}
+	return {
+		ceilings: guard.lines.map((line) => String(line.ceiling)),
+		lineIds: guard.lines.map((line) => line.purchaseOrderLineId),
+		purchaseOrderId: guard.purchaseOrderId,
+		thisAccepted: guard.lines.map((line) => String(line.thisAccepted)),
+	};
+}
+
+function decideDrizzleReceiptPost(
+	receipt: GoodsReceipt,
+	record: ReceiptPostRecord,
+): Result<"proceed" | "replay"> {
+	if (receipt.postIdempotencyKey === record.postIdempotencyKey) {
+		return ok("replay");
+	}
+	if (receipt.status !== "draft") {
+		return fail("CONFLICT", "Goods receipt is not in draft status");
+	}
+	if (receipt.version !== record.expectedVersion) {
+		return fail("CONFLICT", "Goods receipt version conflict");
+	}
+	if (receipt.lines.length === 0) {
+		return fail("CONFLICT", "Cannot post goods receipt without lines");
+	}
+	return ok("proceed");
+}
 
 function parseEnum<T extends string>(
 	value: string,
@@ -78,7 +131,9 @@ function parseEnum<T extends string>(
 	field: string,
 ): T {
 	const found = values.find((candidate) => candidate === value);
-	if (found === undefined) throw new Error(`Invalid ${field}: ${value}`);
+	if (found === undefined) {
+		throw new Error(`Invalid ${field}: ${value}`);
+	}
 	return found;
 }
 
@@ -207,13 +262,13 @@ function readErrorStringProperty(
 	key: PropertyKey,
 ): string | undefined {
 	if (typeof error !== "object" || error === null) {
-		return undefined;
+		return;
 	}
 	try {
 		const value = Reflect.get(error, key);
 		return typeof value === "string" ? value : undefined;
 	} catch {
-		return undefined;
+		// Proxies may reject property reads; an unreadable field is treated as absent.
 	}
 }
 
@@ -251,9 +306,11 @@ function isIdempotencyConflict(error: unknown, key: string): boolean {
 
 async function hydrateReceipts(
 	organizationId: string,
-	headers: Array<typeof goodsReceipt.$inferSelect>,
+	headers: (typeof goodsReceipt.$inferSelect)[],
 ): Promise<GoodsReceipt[]> {
-	if (headers.length === 0) return [];
+	if (headers.length === 0) {
+		return [];
+	}
 	const ids = headers.map((row) => row.id);
 	const [lines, discrepancies] = await Promise.all([
 		db
@@ -281,8 +338,11 @@ async function hydrateReceipts(
 	for (const row of lines) {
 		const mapped = mapLine(row);
 		const bucket = linesByReceipt.get(row.goodsReceiptId);
-		if (bucket === undefined) linesByReceipt.set(row.goodsReceiptId, [mapped]);
-		else bucket.push(mapped);
+		if (bucket === undefined) {
+			linesByReceipt.set(row.goodsReceiptId, [mapped]);
+		} else {
+			bucket.push(mapped);
+		}
 	}
 	const discrepanciesByReceipt = new Map<string, ReceivingDiscrepancy[]>();
 	for (const row of discrepancies) {
@@ -290,7 +350,9 @@ async function hydrateReceipts(
 		const bucket = discrepanciesByReceipt.get(row.goodsReceiptId);
 		if (bucket === undefined) {
 			discrepanciesByReceipt.set(row.goodsReceiptId, [mapped]);
-		} else bucket.push(mapped);
+		} else {
+			bucket.push(mapped);
+		}
 	}
 	return headers.map((header) =>
 		mapReceipt(
@@ -308,7 +370,9 @@ export class DrizzleReceivingStore implements ReceivingStore {
 		message: string,
 	): Promise<Result<GoodsReceipt>> {
 		const result = await this.getReceiptById(organizationId, id);
-		if (!result.ok) return result;
+		if (!result.ok) {
+			return result;
+		}
 		return result.data === null
 			? fail("INTERNAL_ERROR", message)
 			: ok(result.data);
@@ -323,8 +387,12 @@ export class DrizzleReceivingStore implements ReceivingStore {
 			record.organizationId,
 			record.createIdempotencyKey,
 		);
-		if (!replay.ok) return replay;
-		if (replay.data !== null) return ok(replay.data);
+		if (!replay.ok) {
+			return replay;
+		}
+		if (replay.data !== null) {
+			return ok(replay.data);
+		}
 
 		const id = randomUUID();
 		const auditId = randomUUID();
@@ -398,8 +466,12 @@ export class DrizzleReceivingStore implements ReceivingStore {
 					record.organizationId,
 					record.createIdempotencyKey,
 				);
-				if (!existing.ok) return existing;
-				if (existing.data !== null) return ok(existing.data);
+				if (!existing.ok) {
+					return existing;
+				}
+				if (existing.data !== null) {
+					return ok(existing.data);
+				}
 			}
 			return writeError(
 				error,
@@ -418,13 +490,18 @@ export class DrizzleReceivingStore implements ReceivingStore {
 			record.organizationId,
 			record.receiptId,
 		);
-		if (!existing.ok) return existing;
-		if (existing.data === null)
+		if (!existing.ok) {
+			return existing;
+		}
+		if (existing.data === null) {
 			return fail("NOT_FOUND", "Goods receipt not found");
+		}
 		const replayLine = existing.data.lines.find(
 			(line) => line.lineIdempotencyKey === record.lineIdempotencyKey,
 		);
-		if (replayLine !== undefined) return ok({ ...replayLine });
+		if (replayLine !== undefined) {
+			return ok({ ...replayLine });
+		}
 		if (existing.data.status !== "draft") {
 			return fail("CONFLICT", "Cannot add lines to a non-draft goods receipt");
 		}
@@ -528,11 +605,15 @@ export class DrizzleReceivingStore implements ReceivingStore {
 					record.organizationId,
 					record.receiptId,
 				);
-				if (!again.ok) return again;
+				if (!again.ok) {
+					return again;
+				}
 				const found = again.data?.lines.find(
 					(line) => line.lineIdempotencyKey === record.lineIdempotencyKey,
 				);
-				if (found !== undefined) return ok({ ...found });
+				if (found !== undefined) {
+					return ok({ ...found });
+				}
 			}
 			return writeError(
 				error,
@@ -551,20 +632,18 @@ export class DrizzleReceivingStore implements ReceivingStore {
 			record.organizationId,
 			record.receiptId,
 		);
-		if (!existing.ok) return existing;
-		if (existing.data === null)
+		if (!existing.ok) {
+			return existing;
+		}
+		if (existing.data === null) {
 			return fail("NOT_FOUND", "Goods receipt not found");
-		if (existing.data.postIdempotencyKey === record.postIdempotencyKey) {
+		}
+		const decision = decideDrizzleReceiptPost(existing.data, record);
+		if (!decision.ok) {
+			return decision;
+		}
+		if (decision.data === "replay") {
 			return ok(existing.data);
-		}
-		if (existing.data.status !== "draft") {
-			return fail("CONFLICT", "Goods receipt is not in draft status");
-		}
-		if (existing.data.version !== record.expectedVersion) {
-			return fail("CONFLICT", "Goods receipt version conflict");
-		}
-		if (existing.data.lines.length === 0) {
-			return fail("CONFLICT", "Cannot post goods receipt without lines");
 		}
 		const nextVersion = record.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -587,18 +666,12 @@ export class DrizzleReceivingStore implements ReceivingStore {
 			warehouseId: existing.data.warehouseId,
 		});
 		const guard = record.poConsumptionGuard;
-		const guardLineIds =
-			guard?.lines.map((line) => line.purchaseOrderLineId) ?? [];
-		const guardThisAccepted =
-			guard?.lines.map((line) => String(line.thisAccepted)) ?? [];
-		const guardCeilings =
-			guard?.lines.map((line) => String(line.ceiling)) ?? [];
-		type PostGuardRow = { over_count: number; receipt_id: string | null };
+		const guardParams = postGuardSqlParams(guard);
 		try {
 			const txResults = await runNeonHttpTransaction<
 				[unknown[], PostGuardRow[]] | [PostGuardRow[]]
 			>((txSql) => {
-				const statements = [];
+				const statements: ReturnType<NeonHttpSql>[] = [];
 				if (guard !== undefined) {
 					// Serialize concurrent PO posts (neon-http cannot interleave JS).
 					statements.push(txSql`
@@ -612,9 +685,9 @@ export class DrizzleReceivingStore implements ReceivingStore {
 					WITH need AS (
 						SELECT *
 						FROM unnest(
-							${guardLineIds}::uuid[],
-							${guardThisAccepted}::numeric[],
-							${guardCeilings}::numeric[]
+							${guardParams.lineIds}::uuid[],
+							${guardParams.thisAccepted}::numeric[],
+							${guardParams.ceilings}::numeric[]
 						) AS t(line_id, this_qty, ceiling)
 					),
 					sums AS (
@@ -626,12 +699,12 @@ export class DrizzleReceivingStore implements ReceivingStore {
 						WHERE ${guard !== undefined}
 							AND gr.organization_id = ${record.organizationId}
 							AND gr.source_type = 'purchase_order'
-							AND gr.source_id = ${guard?.purchaseOrderId ?? null}
+						AND gr.source_id = ${guardParams.purchaseOrderId}
 							AND gr.status = 'posted'
 							AND gr.reversed_by_receipt_id IS NULL
 							AND gr.reverses_receipt_id IS NULL
 							AND gr.id <> ${record.receiptId}
-							AND grl.purchase_order_line_id = ANY(${guardLineIds}::uuid[])
+						AND grl.purchase_order_line_id = ANY(${guardParams.lineIds}::uuid[])
 						GROUP BY grl.purchase_order_line_id
 					),
 					over AS (
@@ -701,11 +774,11 @@ export class DrizzleReceivingStore implements ReceivingStore {
 				return statements;
 			});
 			const rows = (
-				guard !== undefined
-					? (txResults as [unknown[], PostGuardRow[]])[1]
-					: (txResults as [PostGuardRow[]])[0]
+				guard === undefined
+					? (txResults as [PostGuardRow[]])[0]
+					: (txResults as [unknown[], PostGuardRow[]])[1]
 			) as PostGuardRow[];
-			const outcome = rows[0];
+			const [outcome] = rows;
 			if (outcome === undefined) {
 				return fail("CONFLICT", "Goods receipt version conflict");
 			}
@@ -730,7 +803,9 @@ export class DrizzleReceivingStore implements ReceivingStore {
 					record.organizationId,
 					record.receiptId,
 				);
-				if (!again.ok) return again;
+				if (!again.ok) {
+					return again;
+				}
 				if (
 					again.data !== null &&
 					again.data.postIdempotencyKey === record.postIdempotencyKey
@@ -755,9 +830,12 @@ export class DrizzleReceivingStore implements ReceivingStore {
 			record.organizationId,
 			record.receiptId,
 		);
-		if (!existing.ok) return existing;
-		if (existing.data === null)
+		if (!existing.ok) {
+			return existing;
+		}
+		if (existing.data === null) {
 			return fail("NOT_FOUND", "Goods receipt not found");
+		}
 		if (existing.data.cancelIdempotencyKey === record.cancelIdempotencyKey) {
 			return ok(existing.data);
 		}
@@ -848,7 +926,9 @@ export class DrizzleReceivingStore implements ReceivingStore {
 					record.organizationId,
 					record.receiptId,
 				);
-				if (!again.ok) return again;
+				if (!again.ok) {
+					return again;
+				}
 				if (
 					again.data !== null &&
 					again.data.cancelIdempotencyKey === record.cancelIdempotencyKey
@@ -891,7 +971,9 @@ export class DrizzleReceivingStore implements ReceivingStore {
 			record.organizationId,
 			record.originalReceiptId,
 		);
-		if (!originalResult.ok) return originalResult;
+		if (!originalResult.ok) {
+			return originalResult;
+		}
 		if (originalResult.data === null) {
 			return fail("NOT_FOUND", "Goods receipt not found");
 		}
@@ -1118,13 +1200,18 @@ export class DrizzleReceivingStore implements ReceivingStore {
 			record.organizationId,
 			record.receiptId,
 		);
-		if (!existing.ok) return existing;
-		if (existing.data === null)
+		if (!existing.ok) {
+			return existing;
+		}
+		if (existing.data === null) {
 			return fail("NOT_FOUND", "Goods receipt not found");
+		}
 		const replay = existing.data.discrepancies.find(
 			(row) => row.recordIdempotencyKey === record.recordIdempotencyKey,
 		);
-		if (replay !== undefined) return ok({ ...replay });
+		if (replay !== undefined) {
+			return ok({ ...replay });
+		}
 		if (existing.data.status !== "draft" && existing.data.status !== "posted") {
 			return fail("CONFLICT", "Discrepancy requires a draft or posted receipt");
 		}
@@ -1221,11 +1308,15 @@ export class DrizzleReceivingStore implements ReceivingStore {
 					record.organizationId,
 					record.receiptId,
 				);
-				if (!again.ok) return again;
+				if (!again.ok) {
+					return again;
+				}
 				const found = again.data?.discrepancies.find(
 					(row) => row.recordIdempotencyKey === record.recordIdempotencyKey,
 				);
-				if (found !== undefined) return ok({ ...found });
+				if (found !== undefined) {
+					return ok({ ...found });
+				}
 			}
 			return writeError(
 				error,
@@ -1244,9 +1335,12 @@ export class DrizzleReceivingStore implements ReceivingStore {
 			record.organizationId,
 			record.receiptId,
 		);
-		if (!existing.ok) return existing;
-		if (existing.data === null)
+		if (!existing.ok) {
+			return existing;
+		}
+		if (existing.data === null) {
 			return fail("NOT_FOUND", "Goods receipt not found");
+		}
 		const discrepancy = existing.data.discrepancies.find(
 			(row) => row.id === record.discrepancyId,
 		);
@@ -1362,7 +1456,9 @@ export class DrizzleReceivingStore implements ReceivingStore {
 						),
 					)
 					.limit(1);
-				if (row !== undefined) return ok(mapDiscrepancy(row));
+				if (row !== undefined) {
+					return ok(mapDiscrepancy(row));
+				}
 			}
 			return writeError(
 				error,
@@ -1412,10 +1508,16 @@ export class DrizzleReceivingStore implements ReceivingStore {
 				.where(and(...conditions))
 				.groupBy(goodsReceiptLine.purchaseOrderLineId);
 			for (const row of rows) {
-				if (row.purchaseOrderLineId === null) continue;
-				if (!totals.has(row.purchaseOrderLineId)) continue;
+				if (row.purchaseOrderLineId === null) {
+					continue;
+				}
+				if (!totals.has(row.purchaseOrderLineId)) {
+					continue;
+				}
 				const qty = Number(row.acceptedQuantity);
-				if (!Number.isFinite(qty)) continue;
+				if (!Number.isFinite(qty)) {
+					continue;
+				}
 				totals.set(row.purchaseOrderLineId, qty);
 			}
 			return ok(
@@ -1449,7 +1551,9 @@ export class DrizzleReceivingStore implements ReceivingStore {
 					),
 				)
 				.limit(1);
-			if (header === undefined) return ok(null);
+			if (header === undefined) {
+				return ok(null);
+			}
 			const [hydrated] = await hydrateReceipts(organizationId, [header]);
 			return ok(hydrated ?? null);
 		} catch (error) {
@@ -1472,7 +1576,9 @@ export class DrizzleReceivingStore implements ReceivingStore {
 					),
 				)
 				.limit(1);
-			if (header === undefined) return ok(null);
+			if (header === undefined) {
+				return ok(null);
+			}
 			const [hydrated] = await hydrateReceipts(organizationId, [header]);
 			return ok(hydrated ?? null);
 		} catch (error) {

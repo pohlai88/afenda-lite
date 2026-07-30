@@ -34,7 +34,7 @@ type Story = StoryObj<typeof meta>;
 
 function SupplierHoverCard() {
 	return (
-		<HoverCard openDelay={0} closeDelay={0}>
+		<HoverCard closeDelay={0} openDelay={0}>
 			<HoverCardTrigger asChild>
 				<Button type="button" variant="link">
 					Northwind Trading Sdn. Bhd.
@@ -46,14 +46,14 @@ function SupplierHoverCard() {
 						<AvatarFallback className="text-foreground">NT</AvatarFallback>
 					</Avatar>
 					<div className="grid gap-1">
-						<p className="text-sm font-medium text-foreground">
+						<p className="font-medium text-foreground text-sm">
 							Northwind Trading Sdn. Bhd.
 						</p>
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							Supplier <Code>SUP-004821</Code> · Net 30 · MYR
 						</p>
 						<div className="pt-1">
-							<StatusBadge size="sm" status="active" label="Active" />
+							<StatusBadge label="Active" size="sm" status="active" />
 						</div>
 					</div>
 				</div>
@@ -64,7 +64,7 @@ function SupplierHoverCard() {
 
 function OperatorHoverCard() {
 	return (
-		<HoverCard openDelay={0} closeDelay={0}>
+		<HoverCard closeDelay={0} openDelay={0}>
 			<HoverCardTrigger asChild>
 				<Button type="button" variant="link">
 					Aisha Rahman
@@ -76,13 +76,13 @@ function OperatorHoverCard() {
 						<AvatarFallback className="text-foreground">AR</AvatarFallback>
 					</Avatar>
 					<div className="grid gap-1">
-						<p className="text-sm font-medium text-foreground">Aisha Rahman</p>
-						<p className="text-sm text-foreground-secondary">
+						<p className="font-medium text-foreground text-sm">Aisha Rahman</p>
+						<p className="text-foreground-secondary text-sm">
 							Finance controller · remittance owner
 						</p>
 						<div className="flex flex-wrap gap-2 pt-1">
 							<Badge variant="secondary">Finance</Badge>
-							<StatusBadge size="sm" status="active" label="Active" />
+							<StatusBadge label="Active" size="sm" status="active" />
 						</div>
 					</div>
 				</div>
@@ -109,32 +109,32 @@ export const Overview: Story = {
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="outline">Accounts receivable</Badge>
 						<StatusBadge
+							label="Evidence incomplete"
 							size="sm"
 							status="warning"
-							label="Evidence incomplete"
 						/>
 					</div>
-					<h1 className="text-2xl font-semibold tracking-tight">
+					<h1 className="font-semibold text-2xl tracking-tight">
 						Invoice INV-1042
 					</h1>
-					<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+					<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 						Hover or focus a link to preview supplier or operator context.
 						Feature code owns whether preview data may be shown.
 					</p>
 				</header>
 
 				<section
-					className="grid gap-3"
 					aria-labelledby="hover-card-supplier-title"
+					className="grid gap-3"
 				>
 					<div className="grid gap-1">
 						<h2
-							className="text-base font-semibold tracking-tight text-foreground"
+							className="font-semibold text-base text-foreground tracking-tight"
 							id="hover-card-supplier-title"
 						>
 							Supplier preview
 						</h2>
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							Trigger remains a readable supplier name without the preview.
 						</p>
 					</div>
@@ -158,41 +158,41 @@ export const Overview: Story = {
 				</section>
 
 				<section
-					className="grid gap-3"
 					aria-labelledby="hover-card-operator-title"
+					className="grid gap-3"
 				>
 					<div className="grid gap-1">
 						<h2
-							className="text-base font-semibold tracking-tight text-foreground"
+							className="font-semibold text-base text-foreground tracking-tight"
 							id="hover-card-operator-title"
 						>
 							Operator preview
 						</h2>
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							Identity chrome uses Avatar; lifecycle stays on StatusBadge.
 						</p>
 					</div>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						Assigned remittance owner <OperatorHoverCard />
 					</p>
 				</section>
 
 				<section
-					className="grid gap-3"
 					aria-labelledby="hover-card-fallback-title"
+					className="grid gap-3"
 				>
 					<div className="grid gap-1">
 						<h2
-							className="text-base font-semibold tracking-tight text-foreground"
+							className="font-semibold text-base text-foreground tracking-tight"
 							id="hover-card-fallback-title"
 						>
 							Quiet fallback
 						</h2>
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							Required facts stay on the page when the preview never opens.
 						</p>
 					</div>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						Invoice <Code>INV-1042</Code> · Posted state uses StatusBadge on the
 						record header — not only inside a hover preview.
 					</p>
@@ -215,13 +215,13 @@ export const Usage: Story = {
 	render: () => (
 		<div className="grid max-w-5xl gap-6">
 			<StorySection title="Supplier identity preview">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Bill to <SupplierHoverCard />
 				</p>
 			</StorySection>
 
 			<StorySection title="Operator identity preview">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Owner <OperatorHoverCard />
 				</p>
 			</StorySection>
@@ -241,13 +241,13 @@ export const StatesAndAccessibility: Story = {
 	},
 	render: () => (
 		<div className="grid max-w-5xl gap-4">
-			<p className="text-sm text-foreground-secondary">
+			<p className="text-foreground-secondary text-sm">
 				Focus or hover <SupplierHoverCard /> — Tab to the trigger, then confirm
 				preview content without relying on colour alone.
 			</p>
-			<p className="text-sm text-foreground-secondary">
+			<p className="text-foreground-secondary text-sm">
 				Without opening the preview: supplier <Code>SUP-004821</Code> ·{" "}
-				<StatusBadge size="sm" status="active" label="Active" />
+				<StatusBadge label="Active" size="sm" status="active" />
 			</p>
 		</div>
 	),
@@ -271,9 +271,9 @@ export const Composition: Story = {
 						<Badge variant="outline">Invoice</Badge>
 						<Code>INV-1042</Code>
 						<StatusBadge
+							label="Evidence incomplete"
 							size="sm"
 							status="warning"
-							label="Evidence incomplete"
 						/>
 					</div>
 					<CardTitle>Receivables follow-up</CardTitle>
@@ -281,7 +281,7 @@ export const Composition: Story = {
 						Preview the supplier without leaving the queue row.
 					</CardDescription>
 				</CardHeader>
-				<CardContent className="text-sm text-foreground-secondary">
+				<CardContent className="text-foreground-secondary text-sm">
 					Customer <SupplierHoverCard /> · Owner <OperatorHoverCard />
 				</CardContent>
 			</Card>
@@ -302,39 +302,39 @@ export const DoAndDoNot: Story = {
 	render: () => (
 		<div className="grid max-w-5xl gap-6 sm:grid-cols-2">
 			<StorySection title="Do: preview supplemental identity">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Supplier <SupplierHoverCard />
 				</p>
 			</StorySection>
 
 			<StorySection title="Do not: put critical actions only in the preview">
-				<div className="rounded-md border border-dashed p-4 text-sm text-foreground-tertiary">
+				<div className="rounded-md border border-dashed p-4 text-foreground-tertiary text-sm">
 					Approve, Void, and Attach evidence must remain on the record surface —
 					never only inside a hover preview.
 				</div>
 			</StorySection>
 
 			<StorySection title="Do: keep required facts outside">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Code <Code>SUP-004821</Code> stays visible beside the trigger.
 				</p>
 			</StorySection>
 
 			<StorySection title="Do not: use HoverCard as Tooltip">
-				<div className="rounded-md border border-dashed p-4 text-sm text-foreground-tertiary">
+				<div className="rounded-md border border-dashed p-4 text-foreground-tertiary text-sm">
 					Short labels such as “Net 30” belong on Tooltip — not a full identity
 					card.
 				</div>
 			</StorySection>
 
 			<StorySection title="Do: open from keyboard focus">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Tab to the trigger and confirm the preview without a pointer.
 				</p>
 			</StorySection>
 
 			<StorySection title="Do not: nest forms or menus">
-				<div className="rounded-md border border-dashed p-4 text-sm text-foreground-tertiary">
+				<div className="rounded-md border border-dashed p-4 text-foreground-tertiary text-sm">
 					Interactive edit, menu, or confirmation work belongs in Popover,
 					Dialog, or Sheet.
 				</div>

@@ -519,8 +519,8 @@ export type GovernanceOutboxRecord = Readonly<{
 }>;
 
 export interface GovernanceTransaction {
-	insertAuditFact(input: GovernanceAuditFact): Promise<void>;
-	insertOutboxEvent(input: GovernanceOutboxRecord): Promise<void>;
+	insertAuditFact: (input: GovernanceAuditFact) => Promise<void>;
+	insertOutboxEvent: (input: GovernanceOutboxRecord) => Promise<void>;
 }
 
 function assertNonEmpty(name: string, value: string): void {

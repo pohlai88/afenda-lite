@@ -98,13 +98,13 @@ export const Overview: Story = {
 		<div className="min-h-screen bg-canvas text-foreground">
 			<div className="mx-auto grid w-full max-w-4xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-2 border-b pb-6">
-					<p className="text-sm font-medium text-foreground-secondary">
+					<p className="font-medium text-foreground-secondary text-sm">
 						Accounting · journal operations
 					</p>
-					<h1 className="text-2xl font-semibold tracking-tight">
+					<h1 className="font-semibold text-2xl tracking-tight">
 						Journal JV-2026-1042
 					</h1>
-					<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+					<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 						Menubar is a desktop command strip. Authorization and posting
 						outcomes stay in feature code — visible items are not proof of
 						permission.
@@ -115,10 +115,10 @@ export const Overview: Story = {
 					<CardHeader className="gap-4">
 						<div className="flex flex-wrap items-center gap-2">
 							<Badge variant="outline">Accounting</Badge>
-							<span className="font-mono text-xs text-foreground-tertiary">
+							<span className="font-mono text-foreground-tertiary text-xs">
 								JV-2026-1042
 							</span>
-							<StatusBadge size="sm" status="pending" label="Awaiting post" />
+							<StatusBadge label="Awaiting post" size="sm" status="pending" />
 						</div>
 						<CardTitle>Afenda Holdings · July 2026</CardTitle>
 						<CardDescription>
@@ -199,7 +199,7 @@ export const StatesAndAccessibility: Story = {
 						</MenubarMenu>
 					</Menubar>
 				</div>
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Posted journals cannot be deleted from this surface. The command
 					remains visible and disabled so operators understand the constraint.
 				</p>
@@ -247,7 +247,7 @@ export const Composition: Story = {
 				<CardHeader className="gap-4">
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="outline">Accounting</Badge>
-						<StatusBadge size="sm" status="success" label="Balanced" />
+						<StatusBadge label="Balanced" size="sm" status="success" />
 					</div>
 					<CardTitle>Journal command strip</CardTitle>
 					<CardDescription>
@@ -291,14 +291,14 @@ export const DoAndDoNot: Story = {
 							</MenubarMenu>
 						</Menubar>
 					</div>
-					<Button type="button" size="sm">
+					<Button size="sm" type="button">
 						Post journal
 					</Button>
 				</div>
 			</StorySection>
 
 			<StorySection title="Do not: bury the only critical action">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					If Post journal is the primary workflow for this surface, do not make
 					Menubar the only place it appears. Keep the command visible in
 					CardFooter or PageHeader actions.
@@ -306,14 +306,14 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do: disable unauthorized destructive commands">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Delete posted record stays visible and disabled so operators learn the
 					constraint without inventing a fake success path.
 				</p>
 			</StorySection>
 
 			<StorySection title="Do not: use Menubar as product navigation">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Module routing belongs in Sidebar or app chrome. Menubar groups
 					commands for the current desktop workspace subject.
 				</p>

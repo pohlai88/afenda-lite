@@ -20,39 +20,39 @@ import {
 } from "../shared/money";
 import type { PayrollRoundingPolicy } from "../shared/rounding-policy";
 
-export type ApprovedPayrollHandoffParsedComponent = {
-	code: string;
-	kind: HandoffCompensationComponent["kind"];
+export interface ApprovedPayrollHandoffParsedComponent {
 	amount: string;
 	amountScaled: bigint;
+	code: string;
+	currencyCode: string;
 	decimalScale: number;
-	currencyCode: string;
-	sourceType: string;
+	kind: HandoffCompensationComponent["kind"];
 	sourceId: string;
+	sourceType: string;
 	sourceVersion: number;
-};
+}
 
-export type ApprovedPayrollHandoffParsed = {
-	contractVersion: ApprovedPayrollHandoff["contractVersion"];
-	organizationId: string;
-	employeeId: string;
-	employmentId: string;
+export interface ApprovedPayrollHandoffParsed {
+	approvalEvidence: HandoffApprovalEvidence;
 	assignment: HandoffAssignment;
-	effectiveDate: string;
-	currencyCode: string;
 	baseAmount: string;
 	baseAmountScaled: bigint;
+	components: ApprovedPayrollHandoffParsedComponent[];
+	contractVersion: ApprovedPayrollHandoff["contractVersion"];
+	currencyCode: string;
 	decimalScale: number;
+	effectiveDate: string;
+	employeeId: string;
+	employmentId: string;
+	leaveFacts: readonly HandoffLeaveFact[];
+	organizationId: string;
+	overtimeFacts: readonly HandoffOvertimeFact[];
+	payFrequency: HandoffPayFrequency;
 	roundingMode: ApprovedPayrollHandoff["roundingMode"];
 	roundingPolicy: PayrollRoundingPolicy;
-	payFrequency: HandoffPayFrequency;
-	components: ApprovedPayrollHandoffParsedComponent[];
-	leaveFacts: readonly HandoffLeaveFact[];
-	timeFacts: HandoffTimeFacts | null;
-	overtimeFacts: readonly HandoffOvertimeFact[];
 	sourceVersion: HandoffSourceVersion;
-	approvalEvidence: HandoffApprovalEvidence;
-};
+	timeFacts: HandoffTimeFacts | null;
+}
 
 export type ParsedApprovedPayrollHandoffInput = ApprovedPayrollHandoffParsed;
 export type ParsedPayrollHandoffComponent =

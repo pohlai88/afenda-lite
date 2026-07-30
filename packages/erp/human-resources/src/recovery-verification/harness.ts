@@ -1,21 +1,21 @@
-export type LocalRecoveryDrillEvidence = {
-	scope: "local_recovery_drill_only";
-	drill: string;
-	injectedFailure: string;
-	expectedControl: string;
-	passed: boolean;
+export interface LocalRecoveryDrillEvidence {
 	details: Readonly<Record<string, string | number | boolean | null>>;
-};
-
-export type LocalRecoveryDrill = {
-	name: string;
-	injectedFailure: string;
+	drill: string;
 	expectedControl: string;
-	execute(): Promise<{
+	injectedFailure: string;
+	passed: boolean;
+	scope: "local_recovery_drill_only";
+}
+
+export interface LocalRecoveryDrill {
+	execute: () => Promise<{
 		passed: boolean;
 		details: Readonly<Record<string, string | number | boolean | null>>;
 	}>;
-};
+	expectedControl: string;
+	injectedFailure: string;
+	name: string;
+}
 
 export async function runLocalRecoveryDrill(
 	drill: LocalRecoveryDrill,

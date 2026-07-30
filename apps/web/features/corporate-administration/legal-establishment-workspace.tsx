@@ -90,10 +90,10 @@ export function LegalEstablishmentWorkspace(props: {
 			className="space-y-6 border-t pt-6"
 		>
 			<div>
-				<h2 id="legal-presence-heading" className="text-lg font-medium">
+				<h2 className="font-medium text-lg" id="legal-presence-heading">
 					Legal presence and premises
 				</h2>
-				<p className="text-sm text-muted-foreground">
+				<p className="text-muted-foreground text-sm">
 					Statutory establishments, registered addresses, and physical premises
 					are maintained as separate histories.
 				</p>
@@ -103,13 +103,13 @@ export function LegalEstablishmentWorkspace(props: {
 				<form action={registerAction} className="space-y-3 border-t pt-4">
 					<h3 className="font-medium">Register establishment</h3>
 					<input
-						type="hidden"
 						name="legalCompanyId"
+						type="hidden"
 						value={props.company.legalCompanyId}
 					/>
 					<input
-						type="hidden"
 						name="expectedCompanyVersion"
+						type="hidden"
 						value={props.company.version}
 					/>
 					<SelectField
@@ -124,26 +124,26 @@ export function LegalEstablishmentWorkspace(props: {
 					/>
 					<TextField
 						label="Jurisdiction"
-						name="jurisdictionCode"
 						maxLength={2}
+						name="jurisdictionCode"
 						pattern="[A-Za-z]{2}"
 					/>
 					<TextField
 						label="Registration identifier"
-						name="registrationIdentifier"
 						maxLength={256}
+						name="registrationIdentifier"
 					/>
-					<TextField label="Display name" name="displayName" maxLength={256} />
+					<TextField label="Display name" maxLength={256} name="displayName" />
 					<TextField
+						defaultValue={today}
 						label="Registered from"
 						name="registeredFrom"
 						type="date"
-						defaultValue={today}
 					/>
 					<TextField
 						label="Source document reference"
-						name="sourceDocumentId"
 						maxLength={128}
+						name="sourceDocumentId"
 					/>
 					<SubmitButton disabled={!props.canWrite}>
 						Register establishment
@@ -157,13 +157,13 @@ export function LegalEstablishmentWorkspace(props: {
 				<form action={addressAction} className="space-y-3 border-t pt-4">
 					<h3 className="font-medium">Set statutory address</h3>
 					<input
-						type="hidden"
 						name="legalCompanyId"
+						type="hidden"
 						value={props.company.legalCompanyId}
 					/>
 					<input
-						type="hidden"
 						name="expectedCompanyVersion"
+						type="hidden"
 						value={props.company.version}
 					/>
 					<SelectField
@@ -178,21 +178,21 @@ export function LegalEstablishmentWorkspace(props: {
 					<EstablishmentScopeSelect establishments={props.establishments} />
 					<AddressSelect addresses={props.partyAddresses} />
 					<TextField
+						defaultValue={today}
 						label="Effective from"
 						name="effectiveFrom"
 						type="date"
-						defaultValue={today}
 					/>
 					<TextField
 						label="Effective to (optional)"
 						name="effectiveTo"
-						type="date"
 						required={false}
+						type="date"
 					/>
 					<TextField
 						label="Source document reference"
-						name="sourceDocumentId"
 						maxLength={128}
+						name="sourceDocumentId"
 					/>
 					<SubmitButton
 						disabled={!props.canWrite || props.partyAddresses.length === 0}
@@ -208,13 +208,13 @@ export function LegalEstablishmentWorkspace(props: {
 				<form action={premiseAction} className="space-y-3 border-t pt-4">
 					<h3 className="font-medium">Register premise</h3>
 					<input
-						type="hidden"
 						name="legalCompanyId"
+						type="hidden"
 						value={props.company.legalCompanyId}
 					/>
 					<input
-						type="hidden"
 						name="expectedCompanyVersion"
+						type="hidden"
 						value={props.company.version}
 					/>
 					<SelectField
@@ -228,24 +228,24 @@ export function LegalEstablishmentWorkspace(props: {
 						]}
 					/>
 					<EstablishmentScopeSelect establishments={props.establishments} />
-					<TextField label="Premise name" name="displayName" maxLength={256} />
+					<TextField label="Premise name" maxLength={256} name="displayName" />
 					<AddressSelect addresses={props.partyAddresses} />
 					<TextField
+						defaultValue={today}
 						label="Effective from"
 						name="effectiveFrom"
 						type="date"
-						defaultValue={today}
 					/>
 					<TextField
 						label="Effective to (optional)"
 						name="effectiveTo"
-						type="date"
 						required={false}
+						type="date"
 					/>
 					<TextField
 						label="Source document reference"
-						name="sourceDocumentId"
 						maxLength={128}
+						name="sourceDocumentId"
 					/>
 					<SubmitButton
 						disabled={!props.canWrite || props.partyAddresses.length === 0}
@@ -259,7 +259,7 @@ export function LegalEstablishmentWorkspace(props: {
 			<div className="space-y-3">
 				<h3 className="font-medium">Establishment history</h3>
 				{props.establishments.length === 0 ? (
-					<p className="text-sm text-muted-foreground">
+					<p className="text-muted-foreground text-sm">
 						No statutory establishments recorded.
 					</p>
 				) : (
@@ -275,9 +275,9 @@ export function LegalEstablishmentWorkspace(props: {
 						<TableBody>
 							{props.establishments.map((item) => (
 								<EstablishmentRow
-									key={item.id}
-									item={item}
 									canWrite={props.canWrite}
+									item={item}
+									key={item.id}
 								/>
 							))}
 						</TableBody>
@@ -287,7 +287,6 @@ export function LegalEstablishmentWorkspace(props: {
 
 			<div className="grid gap-6 lg:grid-cols-2">
 				<HistoryTable
-					title="Statutory addresses"
 					empty="No statutory addresses recorded."
 					rows={props.registeredAddresses.map((item) => [
 						item.type,
@@ -295,11 +294,12 @@ export function LegalEstablishmentWorkspace(props: {
 						item.address,
 						item.effectiveFrom,
 					])}
+					title="Statutory addresses"
 				/>
 				<div className="space-y-3">
 					<h3 className="font-medium">Premises</h3>
 					{props.premises.length === 0 ? (
-						<p className="text-sm text-muted-foreground">
+						<p className="text-muted-foreground text-sm">
 							No physical premises recorded.
 						</p>
 					) : (
@@ -314,9 +314,9 @@ export function LegalEstablishmentWorkspace(props: {
 							<TableBody>
 								{props.premises.map((item) => (
 									<PremiseRow
-										key={item.id}
-										item={item}
 										canWrite={props.canWrite}
+										item={item}
+										key={item.id}
 									/>
 								))}
 							</TableBody>
@@ -353,8 +353,8 @@ function EstablishmentRow({
 	);
 	const common = (
 		<>
-			<input type="hidden" name="legalEstablishmentId" value={item.id} />
-			<input type="hidden" name="expectedVersion" value={item.version} />
+			<input name="legalEstablishmentId" type="hidden" value={item.id} />
+			<input name="expectedVersion" type="hidden" value={item.version} />
 		</>
 	);
 	return (
@@ -362,7 +362,7 @@ function EstablishmentRow({
 			<TableCell>
 				<span className="font-medium">{item.displayName}</span>
 				<br />
-				<span className="text-xs text-muted-foreground">
+				<span className="text-muted-foreground text-xs">
 					{item.type} · {item.jurisdictionCode} · {item.registrationIdentifier}
 				</span>
 			</TableCell>
@@ -374,9 +374,9 @@ function EstablishmentRow({
 				<form action={updateAction} className="grid gap-2 sm:grid-cols-2">
 					{common}
 					<TextField
+						defaultValue={item.displayName}
 						label="Updated display name"
 						name="displayName"
-						defaultValue={item.displayName}
 					/>
 					<TextField label="Update evidence" name="sourceDocumentId" />
 					<SubmitButton disabled={!canWrite}>Update</SubmitButton>
@@ -384,27 +384,27 @@ function EstablishmentRow({
 				{item.status === "registered" || item.status === "suspended" ? (
 					<TransitionForm
 						action={activateAction}
+						disabled={!canWrite}
 						item={item}
 						label="Activate"
-						disabled={!canWrite}
 					/>
 				) : null}
 				{item.status === "active" ? (
 					<TransitionForm
 						action={suspendAction}
+						disabled={!canWrite}
 						item={item}
 						label="Suspend"
-						disabled={!canWrite}
 					/>
 				) : null}
-				{item.status !== "closed" ? (
+				{item.status === "closed" ? null : (
 					<TransitionForm
 						action={closeAction}
+						disabled={!canWrite}
 						item={item}
 						label="Close"
-						disabled={!canWrite}
 					/>
-				) : null}
+				)}
 				<ActionFeedback
 					state={updateState ?? activateState ?? suspendState ?? closeState}
 					success="Establishment updated."
@@ -427,8 +427,8 @@ function TransitionForm({
 }) {
 	return (
 		<form action={action} className="grid gap-2 sm:grid-cols-3">
-			<input type="hidden" name="legalEstablishmentId" value={item.id} />
-			<input type="hidden" name="expectedVersion" value={item.version} />
+			<input name="legalEstablishmentId" type="hidden" value={item.id} />
+			<input name="expectedVersion" type="hidden" value={item.version} />
 			<TextField label={`${label} date`} name="effectiveFrom" type="date" />
 			<TextField label={`${label} reason`} name="reason" />
 			<TextField label={`${label} evidence`} name="sourceDocumentId" />
@@ -453,7 +453,7 @@ function PremiseRow({
 			<TableCell>
 				{item.displayName}
 				<br />
-				<span className="text-xs text-muted-foreground">
+				<span className="text-muted-foreground text-xs">
 					{item.type} · {item.address}
 				</span>
 			</TableCell>
@@ -461,8 +461,8 @@ function PremiseRow({
 			<TableCell>
 				{item.status === "active" ? (
 					<form action={action} className="space-y-2">
-						<input type="hidden" name="premiseId" value={item.id} />
-						<input type="hidden" name="expectedVersion" value={item.version} />
+						<input name="premiseId" type="hidden" value={item.id} />
+						<input name="expectedVersion" type="hidden" value={item.version} />
 						<TextField label="End date" name="endedOn" type="date" />
 						<TextField label="End reason" name="reason" />
 						<TextField label="End evidence" name="sourceDocumentId" />
@@ -489,13 +489,13 @@ function TextField(props: {
 		<div className="space-y-1">
 			<Label htmlFor={id}>{props.label}</Label>
 			<Input
-				id={id}
-				name={props.name}
-				type={props.type}
 				defaultValue={props.defaultValue}
+				id={id}
 				maxLength={props.maxLength}
+				name={props.name}
 				pattern={props.pattern}
 				required={props.required ?? true}
+				type={props.type}
 			/>
 		</div>
 	);
@@ -568,7 +568,7 @@ function AddressSelect({
 				))}
 			</NativeSelect>
 			{addresses.length === 0 ? (
-				<p className="text-xs text-muted-foreground">
+				<p className="text-muted-foreground text-xs">
 					Add an active party address in Master Data first.
 				</p>
 			) : null}
@@ -589,7 +589,7 @@ function HistoryTable({
 		<div className="space-y-3">
 			<h3 className="font-medium">{title}</h3>
 			{rows.length === 0 ? (
-				<p className="text-sm text-muted-foreground">{empty}</p>
+				<p className="text-muted-foreground text-sm">{empty}</p>
 			) : (
 				<Table>
 					<TableBody>
@@ -616,8 +616,8 @@ function SubmitButton({
 }) {
 	const status = useFormStatus();
 	return (
-		<Button type="submit" disabled={disabled || status.pending}>
-			{status.pending ? "Saving..." : children}
+		<Button disabled={disabled || status.pending} type="submit">
+			{status.pending ? "Saving..." : <span>{children}</span>}
 		</Button>
 	);
 }
@@ -629,17 +629,19 @@ function ActionFeedback({
 	state: MutationState;
 	success: string;
 }) {
-	if (state === null) return null;
+	if (state === null) {
+		return null;
+	}
 	return state.ok ? (
 		<p
-			role="status"
 			aria-live="polite"
 			className="text-sm text-success-subtle-foreground"
+			role="status"
 		>
 			{success}
 		</p>
 	) : (
-		<Alert variant="destructive" role="alert">
+		<Alert role="alert" variant="destructive">
 			<AlertTitle>Change not saved</AlertTitle>
 			<AlertDescription>{state.message}</AlertDescription>
 		</Alert>

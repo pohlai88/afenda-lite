@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+function isNullish(value: unknown): value is null | undefined {
+	return value === null || value === undefined;
+}
+
 import {
 	governanceBodyIdSchema,
 	governanceMembershipIdSchema,
@@ -155,7 +159,7 @@ export const appointGovernanceMemberInputSchema = z
 			roleSeatCode: codeSchema,
 		}),
 	])
-	.refine((value) => value.termTo == null || value.termFrom < value.termTo, {
+	.refine((value) => isNullish(value.termTo) || value.termFrom < value.termTo, {
 		path: ["termTo"],
 		message: "termTo must follow termFrom",
 	})
@@ -174,7 +178,7 @@ export const changeGovernanceMembershipInputSchema = z
 		expectedVersion: z.number().int().positive(),
 	})
 	.strict()
-	.refine((value) => value.termTo == null || value.termFrom < value.termTo, {
+	.refine((value) => isNullish(value.termTo) || value.termFrom < value.termTo, {
 		path: ["termTo"],
 		message: "termTo must follow termFrom",
 	})

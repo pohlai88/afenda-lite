@@ -1,3 +1,4 @@
+// biome-ignore-all lint/style/noExportedImports: Branded identifiers are both local schema types and public domain contracts.
 import type { z } from "zod";
 
 import type {

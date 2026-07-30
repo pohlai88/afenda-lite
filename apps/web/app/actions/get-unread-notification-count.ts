@@ -6,9 +6,9 @@ import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runMemberSessionAction } from "@/app/actions/run-member-session-action";
 import type { ActionResult } from "@/modules/platform/schemas/action-result";
 
-export type GetUnreadNotificationCountActionData = {
+export interface GetUnreadNotificationCountActionData {
 	unreadCount: number;
-};
+}
 
 /** `null` = form idle (`useActionState`); otherwise API-002 `ActionResult`. */
 export type GetUnreadNotificationCountActionState =
@@ -21,7 +21,7 @@ export async function getUnreadNotificationCountAction(
 	_prev: GetUnreadNotificationCountActionState,
 	_formData: FormData,
 ): Promise<GetUnreadNotificationCountActionState> {
-	return runMemberSessionAction({
+	return await runMemberSessionAction({
 		path: "getUnreadNotificationCountAction",
 		safeMessage: "Could not load unread count. Try again or contact an admin.",
 		execute: async (session) => {

@@ -6,10 +6,10 @@ import {
 	humanResourcesErrorDetails,
 } from "../../error-codes";
 
-type AttendanceConnectorCursorPayload = {
+interface AttendanceConnectorCursorPayload {
 	organizationId: string;
 	token: string;
-};
+}
 
 function encodePayload(payload: AttendanceConnectorCursorPayload): string {
 	return Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
@@ -72,7 +72,7 @@ export function bindAttendanceConnectorCursor(input: {
 	nextToken?: string;
 }): string | undefined {
 	if (input.nextToken === undefined || input.nextToken.length === 0) {
-		return undefined;
+		return;
 	}
 	return encodePayload({
 		organizationId: input.organizationId,

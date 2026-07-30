@@ -113,62 +113,62 @@ export type EndOfficerAppointmentStoreInput = TransactionalWrite &
 	}>;
 
 export interface OfficerStore {
-	getStatutoryOffice(input: {
-		organizationId: OrganizationId;
-		statutoryOfficeId: StatutoryOfficeId;
-	}): Promise<Result<StatutoryOffice | null>>;
-	listStatutoryOffices(input: {
-		organizationId: OrganizationId;
-		legalCompanyId: LegalCompanyId;
-	}): Promise<Result<readonly StatutoryOffice[]>>;
-	listRequiredStatutoryOffices(input: {
-		organizationId: OrganizationId;
-		legalCompanyId: LegalCompanyId;
-		asOf: CanonicalDate;
-		jurisdictionCode?: string | undefined;
-		includeOptional?: boolean | undefined;
-	}): Promise<Result<readonly StatutoryOffice[]>>;
-	defineStatutoryOffice(
+	amendOfficerAppointment: (
+		input: AmendOfficerAppointmentStoreInput,
+	) => Promise<Result<OfficerAppointment>>;
+	appointOfficer: (
+		input: AppointOfficerStoreInput,
+	) => Promise<Result<OfficerAppointment>>;
+	defineStatutoryOffice: (
 		input: DefineStatutoryOfficeStoreInput,
-	): Promise<Result<StatutoryOffice>>;
-	getOfficerAppointment(input: {
+	) => Promise<Result<StatutoryOffice>>;
+	endOfficerAppointment: (
+		input: EndOfficerAppointmentStoreInput,
+	) => Promise<Result<OfficerAppointment>>;
+	getOfficerAppointment: (input: {
 		organizationId: OrganizationId;
 		officerAppointmentId: OfficerAppointmentId;
-	}): Promise<Result<OfficerAppointment | null>>;
-	listOfficerAppointments(input: {
+	}) => Promise<Result<OfficerAppointment | null>>;
+	getStatutoryOffice: (input: {
 		organizationId: OrganizationId;
 		statutoryOfficeId: StatutoryOfficeId;
-	}): Promise<Result<readonly OfficerAppointment[]>>;
-	listOfficersAsOf(input: {
+	}) => Promise<Result<StatutoryOffice | null>>;
+	listOfficerAppointments: (input: {
+		organizationId: OrganizationId;
+		statutoryOfficeId: StatutoryOfficeId;
+	}) => Promise<Result<readonly OfficerAppointment[]>>;
+	listOfficerQualifications: (input: {
+		organizationId: OrganizationId;
+		officerAppointmentId: OfficerAppointmentId;
+	}) => Promise<Result<readonly OfficerQualification[]>>;
+	listOfficersAsOf: (input: {
 		organizationId: OrganizationId;
 		legalCompanyId: LegalCompanyId;
 		asOf: CanonicalDate;
 		statutoryOfficeId?: StatutoryOfficeId | undefined;
 		officerPartyId?: string | undefined;
-	}): Promise<Result<readonly OfficerAppointment[]>>;
-	appointOfficer(
-		input: AppointOfficerStoreInput,
-	): Promise<Result<OfficerAppointment>>;
-	amendOfficerAppointment(
-		input: AmendOfficerAppointmentStoreInput,
-	): Promise<Result<OfficerAppointment>>;
-	endOfficerAppointment(
-		input: EndOfficerAppointmentStoreInput,
-	): Promise<Result<OfficerAppointment>>;
-	recordOfficerQualification(
-		input: RecordOfficerQualificationStoreInput,
-	): Promise<Result<OfficerQualification>>;
-	listOfficerQualifications(input: {
+	}) => Promise<Result<readonly OfficerAppointment[]>>;
+	listRequiredStatutoryOffices: (input: {
 		organizationId: OrganizationId;
-		officerAppointmentId: OfficerAppointmentId;
-	}): Promise<Result<readonly OfficerQualification[]>>;
+		legalCompanyId: LegalCompanyId;
+		asOf: CanonicalDate;
+		jurisdictionCode?: string | undefined;
+		includeOptional?: boolean | undefined;
+	}) => Promise<Result<readonly StatutoryOffice[]>>;
+	listStatutoryOffices: (input: {
+		organizationId: OrganizationId;
+		legalCompanyId: LegalCompanyId;
+	}) => Promise<Result<readonly StatutoryOffice[]>>;
+	recordOfficerQualification: (
+		input: RecordOfficerQualificationStoreInput,
+	) => Promise<Result<OfficerQualification>>;
 }
 
 export type OfficerReferencePort = Readonly<{
-	validateSourceDocument(input: {
+	validateSourceDocument: (input: {
 		organizationId: OrganizationId;
 		sourceDocumentId: string;
-	}): Promise<Result<{ sourceDocumentId: string; active: boolean } | null>>;
+	}) => Promise<Result<{ sourceDocumentId: string; active: boolean } | null>>;
 }>;
 
 export type OfficerCommandDependencies =

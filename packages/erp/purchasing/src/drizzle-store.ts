@@ -59,71 +59,71 @@ function failFromPersistence(error: unknown, fallbackMessage: string) {
 		: failFromAppError(mapped);
 }
 
-type OrderSqlRow = {
-	id: string;
-	organization_id: string;
-	code: string;
-	normalized_code: string;
-	status: string;
-	party_id: string;
-	party_code: string;
-	party_name: string;
-	payment_term_id: string | null;
-	payment_term_code: string | null;
-	payment_term_name: string | null;
-	net_days: number | null;
-	warehouse_id: string | null;
-	warehouse_code: string | null;
-	warehouse_name: string | null;
-	currency_code: string;
-	exchange_rate: string | null;
-	subtotal_amount: string | null;
-	discount_total: string | null;
-	tax_total: string | null;
-	document_total: string | null;
-	create_idempotency_key: string;
-	post_idempotency_key: string | null;
+interface OrderSqlRow {
 	cancel_idempotency_key: string | null;
-	close_idempotency_key: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	posted_at: Date | null;
-	posted_by: string | null;
 	cancelled_at: Date | null;
 	cancelled_by: string | null;
+	close_idempotency_key: string | null;
 	closed_at: Date | null;
 	closed_by: string | null;
+	code: string;
+	create_idempotency_key: string;
 	created_at: Date;
-	updated_at: Date;
-};
-
-type LineSqlRow = {
-	id: string;
-	organization_id: string;
-	order_id: string;
-	line_no: number;
-	item_id: string;
-	item_code: string;
-	item_name: string;
-	base_uom_id: string;
-	base_uom_code: string;
-	quantity: string;
-	unit_price: string;
-	discount_amount: string;
-	tax_classification: string | null;
-	line_amount: string;
-	over_receipt_percent: string;
-	under_receipt_percent: string;
-	invoice_quantity_tolerance_percent: string;
-	invoice_price_tolerance_percent: string;
-	line_idempotency_key: string;
-	version: number;
 	created_by: string;
-	updated_by: string;
-	created_at: Date;
+	currency_code: string;
+	discount_total: string | null;
+	document_total: string | null;
+	exchange_rate: string | null;
+	id: string;
+	net_days: number | null;
+	normalized_code: string;
+	organization_id: string;
+	party_code: string;
+	party_id: string;
+	party_name: string;
+	payment_term_code: string | null;
+	payment_term_id: string | null;
+	payment_term_name: string | null;
+	post_idempotency_key: string | null;
+	posted_at: Date | null;
+	posted_by: string | null;
+	status: string;
+	subtotal_amount: string | null;
+	tax_total: string | null;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+	warehouse_code: string | null;
+	warehouse_id: string | null;
+	warehouse_name: string | null;
+}
+
+interface LineSqlRow {
+	base_uom_code: string;
+	base_uom_id: string;
+	created_at: Date;
+	created_by: string;
+	discount_amount: string;
+	id: string;
+	invoice_price_tolerance_percent: string;
+	invoice_quantity_tolerance_percent: string;
+	item_code: string;
+	item_id: string;
+	item_name: string;
+	line_amount: string;
+	line_idempotency_key: string;
+	line_no: number;
+	order_id: string;
+	organization_id: string;
+	over_receipt_percent: string;
+	quantity: string;
+	tax_classification: string | null;
+	under_receipt_percent: string;
+	unit_price: string;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+}
 
 function mapLine(row: LineSqlRow): PurchaseOrderLine {
 	return {
@@ -294,19 +294,23 @@ function valueSnapshotJson(value: Record<string, unknown>): string {
 }
 
 const SQLSTATE_UNIQUE_VIOLATION = "23505";
+const CREATE_IDEMPOTENCY_CONSTRAINT_PATTERN =
+	/purchase_order_org_create_idempotency_uidx|create_idempotency_key/i;
+const LINE_IDEMPOTENCY_CONSTRAINT_PATTERN =
+	/purchase_order_line_org_order_idempotency_uidx|line_idempotency_key/i;
 
 function readErrorStringProperty(
 	error: unknown,
 	key: PropertyKey,
 ): string | undefined {
 	if (typeof error !== "object" || error === null) {
-		return undefined;
+		return;
 	}
 	try {
 		const value = Reflect.get(error, key);
 		return typeof value === "string" ? value : undefined;
 	} catch {
-		return undefined;
+		// Proxies may reject property reads; an unreadable field is treated as absent.
 	}
 }
 
@@ -323,15 +327,11 @@ function isUniqueViolation(error: unknown): boolean {
 }
 
 function isCreateIdempotencyConflict(error: unknown): boolean {
-	return /purchase_order_org_create_idempotency_uidx|create_idempotency_key/i.test(
-		readConstraintName(error),
-	);
+	return CREATE_IDEMPOTENCY_CONSTRAINT_PATTERN.test(readConstraintName(error));
 }
 
 function isLineIdempotencyConflict(error: unknown): boolean {
-	return /purchase_order_line_org_order_idempotency_uidx|line_idempotency_key/i.test(
-		readConstraintName(error),
-	);
+	return LINE_IDEMPOTENCY_CONSTRAINT_PATTERN.test(readConstraintName(error));
 }
 
 function mapWriteError(
@@ -416,7 +416,7 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 					SELECT mutated.* FROM mutated, audited, outboxed
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return fail("INTERNAL_ERROR", "Purchase order create returned no row");
 			}
@@ -562,7 +562,7 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 					SELECT mutated.* FROM mutated, bumped, audited, outboxed
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return fail(
 					"INTERNAL_ERROR",
@@ -760,7 +760,7 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 				}
 				return statements;
 			});
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return fail(
 					"CONFLICT",
@@ -906,7 +906,7 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 					SELECT mutated.* FROM mutated, audited, outboxed
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return fail(
 					"CONFLICT",
@@ -1048,7 +1048,7 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 					SELECT mutated.* FROM mutated, audited, outboxed
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return fail(
 					"CONFLICT",

@@ -2,10 +2,10 @@ import type { HttpContext } from "./context";
 import { CORRELATION_HEADER } from "./correlation";
 import { applyServerTimingHeader } from "./server-timing";
 
-export type StampHttpResponseOptions = {
+export interface StampHttpResponseOptions {
 	readonly includeServerTiming?: boolean;
 	readonly serverTimingMetric?: string;
-};
+}
 
 /**
  * Stamp correlation (+ optional Server-Timing) onto a Fetch Response in place.
@@ -19,9 +19,9 @@ export function stampHttpResponse(
 	response.headers.set(CORRELATION_HEADER, ctx.correlationId);
 	if (options?.includeServerTiming !== false) {
 		applyServerTimingHeader(response.headers, ctx.startTime, {
-			...(options?.serverTimingMetric !== undefined
-				? { metric: options.serverTimingMetric }
-				: {}),
+			...(options?.serverTimingMetric === undefined
+				? {}
+				: { metric: options.serverTimingMetric }),
 		});
 	}
 	return response;

@@ -77,6 +77,7 @@ import {
 	activatePartyRole,
 	createPartyRole,
 } from "../src/capabilities/extensions";
+import { resolveAsync, runSequentially } from "../src/resolve-async";
 import type { DependencyInspector, RefUom } from "../src/types";
 import { createMasterDataTestHarness } from "./helpers/harness";
 import { approvedActivatePartyChangeRequest } from "./helpers/mdg-approve";
@@ -115,7 +116,6 @@ async function withActiveCustomerRole(
 		},
 		options,
 	);
-	expect(role.ok).toBe(true);
 	if (!role.ok) {
 		return role;
 	}
@@ -144,7 +144,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(party.ok).toBe(true);
-		if (!party.ok) return;
+		if (!party.ok) {
+			return;
+		}
 
 		const role = await withActiveCustomerRole(party.data.id, options);
 		expect(role.ok).toBe(true);
@@ -160,7 +162,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(byRole.ok).toBe(true);
-		if (!byRole.ok) return;
+		if (!byRole.ok) {
+			return;
+		}
 		expect(byRole.data.map((row) => row.id)).toContain(party.data.id);
 
 		const taxRegistration = await createTaxRegistration(
@@ -185,7 +189,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(byTax.ok).toBe(true);
-		if (!byTax.ok) return;
+		if (!byTax.ok) {
+			return;
+		}
 		expect(byTax.data?.id).toBe(party.data.id);
 
 		const group = await createItemGroup(
@@ -197,7 +203,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(group.ok).toBe(true);
-		if (!group.ok) return;
+		if (!group.ok) {
+			return;
+		}
 		const activeGroup = await activateItemGroup(
 			{
 				...ctx(),
@@ -207,7 +215,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(activeGroup.ok).toBe(true);
-		if (!activeGroup.ok) return;
+		if (!activeGroup.ok) {
+			return;
+		}
 
 		const item = await createItem(
 			{
@@ -221,7 +231,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(item.ok).toBe(true);
-		if (!item.ok) return;
+		if (!item.ok) {
+			return;
+		}
 
 		const itemExists = await existsItemByCode(
 			{ ...queryCtx(), code: "q-item" },
@@ -234,7 +246,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(byGroup.ok).toBe(true);
-		if (!byGroup.ok) return;
+		if (!byGroup.ok) {
+			return;
+		}
 		expect(byGroup.data.map((row) => row.id)).toEqual([item.data.id]);
 
 		const warehouse = await createWarehouse(
@@ -279,7 +293,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(activeGroup.ok).toBe(true);
-		if (!activeGroup.ok) return;
+		if (!activeGroup.ok) {
+			return;
+		}
 
 		const item = await createItem(
 			{
@@ -313,13 +329,17 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(root.ok).toBe(true);
-		if (!root.ok) return;
+		if (!root.ok) {
+			return;
+		}
 		const activeRoot = await activateItemGroup(
 			{ ...ctx(), id: root.data.id, expectedVersion: root.data.version },
 			options,
 		);
 		expect(activeRoot.ok).toBe(true);
-		if (!activeRoot.ok) return;
+		if (!activeRoot.ok) {
+			return;
+		}
 
 		const child = await createItemGroup(
 			{
@@ -331,13 +351,17 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(child.ok).toBe(true);
-		if (!child.ok) return;
+		if (!child.ok) {
+			return;
+		}
 		const activeChild = await activateItemGroup(
 			{ ...ctx(), id: child.data.id, expectedVersion: child.data.version },
 			options,
 		);
 		expect(activeChild.ok).toBe(true);
-		if (!activeChild.ok) return;
+		if (!activeChild.ok) {
+			return;
+		}
 
 		const path = await resolveItemGroupPath(
 			{
@@ -348,7 +372,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(path.ok).toBe(true);
-		if (!path.ok) return;
+		if (!path.ok) {
+			return;
+		}
 		expect(path.data?.normalizedPath).toBe("MD3-ROOT/MD3-CHILD");
 
 		const cycle = await updateItemGroup(
@@ -385,7 +411,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(item.ok).toBe(true);
-		if (!item.ok) return;
+		if (!item.ok) {
+			return;
+		}
 		expect(item.data).toMatchObject({
 			description: "Item core profile",
 			trackingPolicy: "lot",
@@ -405,7 +433,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(service.ok).toBe(true);
-		if (!service.ok) return;
+		if (!service.ok) {
+			return;
+		}
 		expect(service.data).toMatchObject({
 			itemType: "service",
 			trackingPolicy: "none",
@@ -422,7 +452,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(activeItem.ok).toBe(true);
-		if (!activeItem.ok) return;
+		if (!activeItem.ok) {
+			return;
+		}
 
 		const suspended = await suspendItem(
 			{
@@ -433,7 +465,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(suspended.ok).toBe(true);
-		if (!suspended.ok) return;
+		if (!suspended.ok) {
+			return;
+		}
 		expect(suspended.data.status).toBe("inactive");
 
 		const archived = await archiveItem(
@@ -445,7 +479,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(archived.ok).toBe(true);
-		if (!archived.ok) return;
+		if (!archived.ok) {
+			return;
+		}
 		expect(archived.data.status).toBe("retired");
 
 		const restored = await restoreItem(
@@ -457,7 +493,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(restored.ok).toBe(true);
-		if (!restored.ok) return;
+		if (!restored.ok) {
+			return;
+		}
 		expect(restored.data.status).toBe("draft");
 	});
 
@@ -468,13 +506,17 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(group.ok).toBe(true);
-		if (!group.ok) return;
+		if (!group.ok) {
+			return;
+		}
 		const activeGroup = await activateItemGroup(
 			{ ...ctx(), id: group.data.id, expectedVersion: group.data.version },
 			options,
 		);
 		expect(activeGroup.ok).toBe(true);
-		if (!activeGroup.ok) return;
+		if (!activeGroup.ok) {
+			return;
+		}
 		const item = await createItem(
 			{
 				...ctx(),
@@ -487,12 +529,16 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(item.ok).toBe(true);
-		if (!item.ok) return;
+		if (!item.ok) {
+			return;
+		}
 
 		const uoms = Reflect.get(store, "uoms") as Map<string, RefUom>;
 		const baseUom = uoms.get(EA_UOM_ID);
 		expect(baseUom).toBeDefined();
-		if (baseUom === undefined) return;
+		if (baseUom === undefined) {
+			return;
+		}
 		uoms.set(EA_UOM_ID, { ...baseUom, active: false });
 
 		const activated = await activateItem(
@@ -550,13 +596,17 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(group.ok).toBe(true);
-		if (!group.ok) return;
+		if (!group.ok) {
+			return;
+		}
 		const activeGroup = await activateItemGroup(
 			{ ...ctx(), id: group.data.id, expectedVersion: group.data.version },
 			options,
 		);
 		expect(activeGroup.ok).toBe(true);
-		if (!activeGroup.ok) return;
+		if (!activeGroup.ok) {
+			return;
+		}
 		const item = await createItem(
 			{
 				...ctx(),
@@ -569,7 +619,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(item.ok).toBe(true);
-		if (!item.ok) return;
+		if (!item.ok) {
+			return;
+		}
 
 		const baseChange = await updateItem(
 			{
@@ -592,7 +644,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(activated.ok).toBe(true);
-		if (!activated.ok) return;
+		if (!activated.ok) {
+			return;
+		}
 		const typeChange = await updateItem(
 			{
 				...ctx(),
@@ -759,14 +813,18 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const got = await getParty(
 			{ organizationId: "org-a", actorUserId: "user-1", id: created.data.id },
 			options,
 		);
 		expect(got.ok).toBe(true);
-		if (!got.ok) return;
+		if (!got.ok) {
+			return;
+		}
 		expect(got.data?.id).toBe(created.data.id);
 
 		const search = await searchParties(
@@ -778,12 +836,16 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(search.ok).toBe(true);
-		if (!search.ok) return;
+		if (!search.ok) {
+			return;
+		}
 		expect(search.data.map((party) => party.id)).toContain(created.data.id);
 
 		const roleReady = await withActiveCustomerRole(created.data.id, options);
 		expect(roleReady.ok).toBe(true);
-		if (!roleReady.ok) return;
+		if (!roleReady.ok) {
+			return;
+		}
 		const cr = await approvedActivatePartyChangeRequest(
 			{ organizationId: "org-a", partyId: created.data.id },
 			options,
@@ -798,7 +860,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(activated.ok).toBe(true);
-		if (!activated.ok) return;
+		if (!activated.ok) {
+			return;
+		}
 
 		const suspended = await suspendParty(
 			{
@@ -809,7 +873,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(suspended.ok).toBe(true);
-		if (!suspended.ok) return;
+		if (!suspended.ok) {
+			return;
+		}
 		expect(suspended.data.status).toBe("blocked");
 
 		const archived = await archiveParty(
@@ -821,7 +887,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(archived.ok).toBe(true);
-		if (!archived.ok) return;
+		if (!archived.ok) {
+			return;
+		}
 		expect(archived.data.status).toBe("retired");
 
 		const restored = await restoreParty(
@@ -833,7 +901,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(restored.ok).toBe(true);
-		if (!restored.ok) return;
+		if (!restored.ok) {
+			return;
+		}
 		expect(restored.data.status).toBe("draft");
 	});
 
@@ -868,7 +938,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 		const cr = await approvedActivatePartyChangeRequest(
 			{ organizationId: created.data.organizationId, partyId: created.data.id },
 			options,
@@ -952,15 +1024,15 @@ describe("@afenda/master-data domain", () => {
 		expect(created.data.addressCity).toBe("Kuala Lumpur");
 
 		const inspector: DependencyInspector = {
-			async listBlockers() {
-				return [
+			listBlockers() {
+				return resolveAsync(() => [
 					{
 						module: "inventory",
 						entityType: "stock_balance",
 						entityId: "bal-1",
 						reason: "open balance",
 					},
-				];
+				]);
 			},
 		};
 		const blocked = await retireWarehouse(
@@ -993,7 +1065,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const invalidCountry = await updateWarehouse(
 			{
@@ -1017,7 +1091,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(updated.ok).toBe(true);
-		if (!updated.ok) return;
+		if (!updated.ok) {
+			return;
+		}
 		expect(updated.data.addressCity).toBe("Singapore");
 
 		const activated = await activateWarehouse(
@@ -1025,7 +1101,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(activated.ok).toBe(true);
-		if (!activated.ok) return;
+		if (!activated.ok) {
+			return;
+		}
 		const suspended = await suspendWarehouse(
 			{
 				...ctx(),
@@ -1035,7 +1113,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(suspended.ok).toBe(true);
-		if (!suspended.ok) return;
+		if (!suspended.ok) {
+			return;
+		}
 		const archived = await archiveWarehouse(
 			{
 				...ctx(),
@@ -1147,7 +1227,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(parent.ok).toBe(true);
-		if (!parent.ok) return;
+		if (!parent.ok) {
+			return;
+		}
 
 		const underDraft = await createItemGroup(
 			{
@@ -1169,7 +1251,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(activeParent.ok).toBe(true);
-		if (!activeParent.ok) return;
+		if (!activeParent.ok) {
+			return;
+		}
 
 		const child = await createItemGroup(
 			{
@@ -1181,7 +1265,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(child.ok).toBe(true);
-		if (!child.ok) return;
+		if (!child.ok) {
+			return;
+		}
 
 		const activeChild = await activateItemGroup(
 			{
@@ -1192,7 +1278,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(activeChild.ok).toBe(true);
-		if (!activeChild.ok) return;
+		if (!activeChild.ok) {
+			return;
+		}
 
 		const cycle = await updateItemGroup(
 			{
@@ -1235,7 +1323,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(group.ok).toBe(true);
-		if (!group.ok) return;
+		if (!group.ok) {
+			return;
+		}
 		const activeGroup = await activateItemGroup(
 			{
 				...ctx(),
@@ -1245,7 +1335,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(activeGroup.ok).toBe(true);
-		if (!activeGroup.ok) return;
+		if (!activeGroup.ok) {
+			return;
+		}
 		const item = await createItem(
 			{
 				...ctx(),
@@ -1258,7 +1350,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(item.ok).toBe(true);
-		if (!item.ok) return;
+		if (!item.ok) {
+			return;
+		}
 
 		const retired = await retireItemGroup(
 			{
@@ -1315,7 +1409,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(activatedGroup.ok).toBe(true);
-		if (!activatedGroup.ok) return;
+		if (!activatedGroup.ok) {
+			return;
+		}
 		const item = await createItem(
 			{
 				...ctx(),
@@ -1328,7 +1424,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(item.ok).toBe(true);
-		if (!item.ok) return;
+		if (!item.ok) {
+			return;
+		}
 
 		const inactiveGroup = await inactiveItemGroup(
 			{
@@ -1339,7 +1437,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(inactiveGroup.ok).toBe(true);
-		if (!inactiveGroup.ok) return;
+		if (!inactiveGroup.ok) {
+			return;
+		}
 		const storeBlocked = await store.transitionItem(
 			{
 				organizationId: item.data.organizationId,
@@ -1362,10 +1462,11 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(blocked.ok).toBe(false);
-		if (!blocked.ok)
+		if (!blocked.ok) {
 			expect((blocked.details as { reason?: string }).reason).toBe(
 				"MASTER_INVALID_STATE",
 			);
+		}
 
 		const reactivatedGroup = await activateItemGroup(
 			{
@@ -1376,7 +1477,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(reactivatedGroup.ok).toBe(true);
-		if (!reactivatedGroup.ok) return;
+		if (!reactivatedGroup.ok) {
+			return;
+		}
 
 		const activated = await activateItem(
 			{
@@ -1428,7 +1531,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(activeParent.ok).toBe(true);
-		if (!activeParent.ok) return;
+		if (!activeParent.ok) {
+			return;
+		}
 
 		const child = await createWarehouse(
 			{
@@ -1449,7 +1554,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(activeChild.ok).toBe(true);
-		if (!activeChild.ok) return;
+		if (!activeChild.ok) {
+			return;
+		}
 		const activeMove = await moveWarehouse(
 			{
 				...ctx(),
@@ -1485,7 +1592,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(inactiveParent.ok).toBe(true);
-		if (!inactiveParent.ok) return;
+		if (!inactiveParent.ok) {
+			return;
+		}
 
 		const cycle = await moveWarehouse(
 			{
@@ -1530,13 +1639,17 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(parent.ok).toBe(true);
-		if (!parent.ok) return;
+		if (!parent.ok) {
+			return;
+		}
 		const activeParent = await activateWarehouse(
 			{ ...ctx(), id: parent.data.id, expectedVersion: parent.data.version },
 			options,
 		);
 		expect(activeParent.ok).toBe(true);
-		if (!activeParent.ok) return;
+		if (!activeParent.ok) {
+			return;
+		}
 		const child = await createWarehouse(
 			{
 				...ctx(),
@@ -1548,7 +1661,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(child.ok).toBe(true);
-		if (!child.ok) return;
+		if (!child.ok) {
+			return;
+		}
 		const inactiveParent = await inactiveWarehouse(
 			{
 				...ctx(),
@@ -1558,7 +1673,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(inactiveParent.ok).toBe(true);
-		if (!inactiveParent.ok) return;
+		if (!inactiveParent.ok) {
+			return;
+		}
 
 		const activated = await activateWarehouse(
 			{ ...ctx(), id: child.data.id, expectedVersion: child.data.version },
@@ -1714,7 +1831,7 @@ describe("@afenda/master-data domain", () => {
 	it("payment term create + getByCode + CAS + lifecycle outbox", async () => {
 		const { options, ports, store } = createMasterDataTestHarness();
 
-		for (const netDays of [-1, 1.5, 1000]) {
+		await runSequentially([-1, 1.5, 1000], async (netDays) => {
 			const invalid = await createPaymentTerm(
 				{
 					...ctx(),
@@ -1725,7 +1842,7 @@ describe("@afenda/master-data domain", () => {
 				options,
 			);
 			expect(invalid.ok).toBe(false);
-		}
+		});
 
 		const immediate = await createPaymentTerm(
 			{
@@ -1842,7 +1959,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(installmentUpdate.ok).toBe(true);
-		if (!installmentUpdate.ok) return;
+		if (!installmentUpdate.ok) {
+			return;
+		}
 		expect(installmentUpdate.data.installmentPolicy).toBe("equal_installments");
 		expect(installmentUpdate.data.installmentCount).toBe(3);
 
@@ -1882,7 +2001,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(retired.ok).toBe(true);
-		if (!retired.ok) return;
+		if (!retired.ok) {
+			return;
+		}
 
 		const updateRetired = await updatePaymentTerm(
 			{
@@ -1986,7 +2107,9 @@ describe("@afenda/master-data domain", () => {
 			created.data.id,
 		);
 		expect(storedRegistration.ok).toBe(true);
-		if (!storedRegistration.ok || storedRegistration.data === null) return;
+		if (!storedRegistration.ok || storedRegistration.data === null) {
+			return;
+		}
 		expect(storedRegistration.data.normalizedRegistrationNumber).toBe(
 			"VAT123AB",
 		);
@@ -2160,7 +2283,9 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(adjacent.ok).toBe(true);
-		if (!adjacent.ok) return;
+		if (!adjacent.ok) {
+			return;
+		}
 		const adjacentActivated = await activateTaxRegistration(
 			{
 				...ctx(),

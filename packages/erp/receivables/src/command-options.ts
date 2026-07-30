@@ -11,19 +11,21 @@ import type {
 import { resolveReceivablesStore } from "./resolve-store";
 import type { ReceivablesStore } from "./store";
 
-export type ReceivablesCommandOptions = {
-	store?: ReceivablesStore;
+export interface ReceivablesCommandOptions {
 	authorization?: ReceivablesAuthorizationPort;
-	effects?: ReceivablesEffects;
-	salesSource?: SalesInvoiceSourceQueryPort;
 	deliverySource?: DeliveryInvoiceSourceQueryPort;
+	effects?: ReceivablesEffects;
 	paymentApplication?: PaymentApplicationQueryPort;
-};
+	salesSource?: SalesInvoiceSourceQueryPort;
+	store?: ReceivablesStore;
+}
 
 export function resolveEffects(
 	effects?: ReceivablesEffects,
 ): ReceivablesEffects {
-	if (effects !== undefined) return effects;
+	if (effects !== undefined) {
+		return effects;
+	}
 	const publisher = createEventPublisher();
 	return {
 		async emit(event) {

@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noJsxPropsBind: The enabled React Compiler stabilizes JSX callback props.
 "use client";
 
 import {
@@ -56,13 +57,13 @@ import {
 import { formatInstantUtc } from "@/modules/platform/format/instant";
 import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 
-export type OrgConsoleRow = {
+export interface OrgConsoleRow {
 	id: string;
-	slug: string;
-	name: string | null;
 	/** ISO-8601 or null when no RBAC audit activity. */
 	lastActivityAt: string | null;
-};
+	name: string | null;
+	slug: string;
+}
 
 export type OrgListLoadState =
 	| { status: "ready"; organizations: OrgConsoleRow[] }
@@ -73,11 +74,11 @@ export type UsageLoadState =
 	| { status: "ready"; metrics: GetOrganizationUsageActionData }
 	| { status: "unavailable"; message: string };
 
-type OrgConsolePanelsProps = {
+interface OrgConsolePanelsProps {
+	activeOrgId: string;
 	orgList: OrgListLoadState;
 	usage: UsageLoadState;
-	activeOrgId: string;
-};
+}
 
 /** Display order + copy for living usage-position metrics (UI owns labels). */
 const USAGE_METRIC_CARDS: ReadonlyArray<{
@@ -90,19 +91,19 @@ const USAGE_METRIC_CARDS: ReadonlyArray<{
 		key: "activeMembers",
 		title: "Active members",
 		descriptionSuffix: "Period",
-		icon: <Users className="size-4" aria-hidden />,
+		icon: <Users aria-hidden className="size-4" />,
 	},
 	{
 		key: "rbacAuditEvents",
 		title: "RBAC audit events",
 		descriptionSuffix: "UTC month",
-		icon: <ClipboardList className="size-4" aria-hidden />,
+		icon: <ClipboardList aria-hidden className="size-4" />,
 	},
 	{
 		key: "activeRoleAssignments",
 		title: "Active role assignments",
 		descriptionSuffix: "Active rows",
-		icon: <Activity className="size-4" aria-hidden />,
+		icon: <Activity aria-hidden className="size-4" />,
 	},
 ];
 
@@ -177,7 +178,7 @@ function readProperty(value: object, key: PropertyKey): unknown {
 	try {
 		return Reflect.get(value, key);
 	} catch {
-		return undefined;
+		return;
 	}
 }
 
@@ -205,13 +206,13 @@ function ProvisionOrganizationSheet() {
 			: null;
 
 	return (
-		<Sheet open={open} onOpenChange={setOpen}>
+		<Sheet onOpenChange={setOpen} open={open}>
 			<SheetTrigger asChild>
 				<Button type="button">Provision organization</Button>
 			</SheetTrigger>
 			<SheetContent
-				side="right"
 				className="flex w-full flex-col gap-(--section-gap) sm:max-w-md"
+				side="right"
 			>
 				<SheetHeader>
 					<SheetTitle>Provision organization</SheetTitle>
@@ -227,57 +228,57 @@ function ProvisionOrganizationSheet() {
 					className="flex flex-1 flex-col gap-(--field-gap) overflow-y-auto px-4 pb-4"
 				>
 					<FormField
+						error={nameError}
+						fieldId="provision-org-name"
 						label="Name"
 						required
-						fieldId="provision-org-name"
-						error={nameError}
 					>
 						<Input
-							name="name"
-							required
 							disabled={pending}
+							name="name"
 							placeholder="Acme Operations"
+							required
 						/>
 					</FormField>
 					<FormField
+						error={slugError}
+						fieldId="provision-org-slug"
 						label="Slug"
 						required
-						fieldId="provision-org-slug"
-						error={slugError}
 					>
 						<Input
-							name="slug"
-							required
-							disabled={pending}
-							placeholder="acme-operations"
 							autoComplete="off"
+							disabled={pending}
+							name="slug"
+							placeholder="acme-operations"
+							required
 						/>
 					</FormField>
 					<FormField
+						error={emailError}
+						fieldId="provision-org-admin-email"
 						label="Admin email"
 						required
-						fieldId="provision-org-admin-email"
-						error={emailError}
 					>
 						<Input
-							name="adminEmail"
-							type="email"
-							required
-							disabled={pending}
-							placeholder="admin@example.com"
 							autoComplete="email"
+							disabled={pending}
+							name="adminEmail"
+							placeholder="admin@example.com"
+							required
+							type="email"
 						/>
 					</FormField>
 					<FormField
+						error={roleError}
+						fieldId="provision-org-admin-role"
 						label="Admin role"
 						required
-						fieldId="provision-org-admin-role"
-						error={roleError}
 					>
 						<NativeSelect
-							name="adminRole"
 							defaultValue="admin"
 							disabled={pending}
+							name="adminRole"
 						>
 							{ADMIN_ROLE_OPTIONS.map((role) => (
 								<NativeSelectOption key={role.value} value={role.value}>
@@ -287,13 +288,13 @@ function ProvisionOrganizationSheet() {
 						</NativeSelect>
 					</FormField>
 
-					<Button type="submit" disabled={pending}>
+					<Button disabled={pending} type="submit">
 						{pending ? (
 							<>
 								<Spinner
-									size="sm"
-									label="Provisioning organization"
 									className="text-primary-foreground"
+									label="Provisioning organization"
+									size="sm"
 								/>
 								Provisioning…
 							</>
@@ -319,7 +320,7 @@ function ProvisionOrganizationSheet() {
 						<>
 							<FormError message={state.message} />
 							{partialFailure ? (
-								<Alert variant="destructive" role="alert">
+								<Alert role="alert" variant="destructive">
 									<AlertTitle>Partial provision</AlertTitle>
 									<AlertDescription>
 										Disposition <Code>{partialFailure.disposition}</Code>. Org{" "}
@@ -360,7 +361,7 @@ function DeleteOrganizationDialog({
 	const showFormError = !pending && state?.ok === false;
 
 	return (
-		<AlertDialog open={open} onOpenChange={onOpenChange}>
+		<AlertDialog onOpenChange={onOpenChange} open={open}>
 			<AlertDialogContent>
 				{organization ? (
 					<form
@@ -368,7 +369,7 @@ function DeleteOrganizationDialog({
 						aria-busy={pending}
 						className="flex flex-col gap-(--field-gap)"
 					>
-						<input type="hidden" name="orgId" value={organization.id} />
+						<input name="orgId" type="hidden" value={organization.id} />
 						<AlertDialogHeader>
 							<AlertDialogTitle>
 								Permanently delete organization
@@ -380,7 +381,6 @@ function DeleteOrganizationDialog({
 							</AlertDialogDescription>
 						</AlertDialogHeader>
 						<KeyValueList
-							size="sm"
 							items={[
 								{
 									label: "Name",
@@ -395,17 +395,18 @@ function DeleteOrganizationDialog({
 									value: <Code>{organization.id}</Code>,
 								},
 							]}
+							size="sm"
 						/>
 						{showFormError ? <FormError message={state.message} /> : null}
 						<AlertDialogFooter>
 							<AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
-							<Button type="submit" variant="destructive" disabled={pending}>
+							<Button disabled={pending} type="submit" variant="destructive">
 								{pending ? (
 									<>
 										<Spinner
-											size="sm"
-											label="Deleting organization"
 											className="text-primary-foreground"
+											label="Deleting organization"
+											size="sm"
 										/>
 										Deleting…
 									</>
@@ -464,28 +465,28 @@ function UsageMetricsPanel({
 					className="flex flex-wrap items-end gap-(--field-gap)"
 				>
 					<FormField
+						className="min-w-40 flex-1"
+						error={periodError}
+						fieldId="usage-period"
 						label="Period (YYYY-MM)"
 						required
-						fieldId="usage-period"
-						error={periodError}
-						className="min-w-40 flex-1"
 					>
 						<Input
-							name="period"
-							required
-							disabled={pending}
-							defaultValue={defaultPeriod}
-							placeholder="2026-07"
 							autoComplete="off"
+							defaultValue={defaultPeriod}
+							disabled={pending}
+							name="period"
+							placeholder="2026-07"
+							required
 						/>
 					</FormField>
-					<Button type="submit" disabled={pending}>
+					<Button disabled={pending} type="submit">
 						{pending ? (
 							<>
 								<Spinner
-									size="sm"
-									label="Loading usage"
 									className="text-primary-foreground"
+									label="Loading usage"
+									size="sm"
 								/>
 								Loading…
 							</>
@@ -584,9 +585,9 @@ export function OrgConsolePanels({
 
 					{orgList.status === "empty" ? (
 						<Empty
-							title="No organizations in session"
 							description="Provision an organization or join one via Neon Auth invitation."
 							size="sm"
+							title="No organizations in session"
 						/>
 					) : null}
 
@@ -594,42 +595,42 @@ export function OrgConsolePanels({
 						<DataTable
 							columns={orgColumns}
 							data={sortedOrgs}
+							density="compact"
+							emptyDescription="Provision an organization or join one via Neon Auth invitation."
+							emptyTitle="No organizations in session"
 							getRowId={(row) => row.id}
-							sortBy={sortBy}
-							sortDirection={sortDirection}
 							onSort={(key, direction) => {
 								setSortBy(key);
 								setSortDirection(direction);
 							}}
-							emptyTitle="No organizations in session"
-							emptyDescription="Provision an organization or join one via Neon Auth invitation."
-							density="compact"
 							rowActions={(row) => (
 								<Button
+									onClick={() => setDeleteTarget(row)}
+									size="sm"
 									type="button"
 									variant="outline"
-									size="sm"
-									onClick={() => setDeleteTarget(row)}
 								>
 									Delete
 								</Button>
 							)}
+							sortBy={sortBy}
 						/>
 					) : null}
 				</CardContent>
 			</Card>
 
-			<UsageMetricsPanel usage={usage} activeOrgId={activeOrgId} />
+			<UsageMetricsPanel activeOrgId={activeOrgId} usage={usage} />
 
 			<DeleteOrganizationDialog
-				organization={deleteTarget}
-				open={deleteTarget !== null}
 				onOpenChange={(open) => {
 					if (!open) {
 						setDeleteTarget(null);
 					}
 				}}
+				open={deleteTarget !== null}
+				organization={deleteTarget}
 			/>
 		</div>
 	);
 }
+// biome-ignore-all lint/style/noNestedTernary: Exhaustive status and tri-state view mappings remain explicit at their use sites.

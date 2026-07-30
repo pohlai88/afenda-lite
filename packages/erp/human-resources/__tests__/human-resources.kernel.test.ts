@@ -59,7 +59,7 @@ describe("@afenda/human-resources kernel", () => {
 			expect(humanResourcesCodeFromResult(parsed)).toBe(
 				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 			);
-			const details = parsed.details;
+			const { details } = parsed;
 			expect(
 				typeof details === "object" &&
 					details !== null &&

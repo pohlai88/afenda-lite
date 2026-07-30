@@ -48,7 +48,9 @@ export async function createItemAlias(
 		return aliasResult;
 	}
 	const source = normalizeItemAliasSource(parsed.data.source);
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	const { store, roots, ports, authorization } = resolveItemExtensionDeps(
 		options,
 		["createItemAlias"],
@@ -66,7 +68,9 @@ export async function createItemAlias(
 		parsed.data.organizationId,
 		parsed.data.itemId,
 	);
-	if (!parent.ok) return parent;
+	if (!parent.ok) {
+		return parent;
+	}
 	return store.createItemAlias(
 		{
 			organizationId: parsed.data.organizationId,
@@ -93,7 +97,9 @@ export async function listItemAliases(
 		input,
 		"Invalid item alias list input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const { store, authorization } = resolveItemExtensionDeps(options, [
 		"listItemAliases",
 	]);
@@ -102,7 +108,9 @@ export async function listItemAliases(
 		actorUserId: parsed.data.actorUserId,
 		query: MASTER_QUERY_ITEM_ALIAS_LIST,
 	});
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return store.listItemAliases({
 		organizationId: parsed.data.organizationId,
 		itemId: parsed.data.itemId,
@@ -155,9 +163,13 @@ export async function listItemsByAlias(
 		input,
 		"Invalid item alias search input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const aliasResult = normalizeItemAlias(parsed.data.aliasValue);
-	if (!aliasResult.ok) return aliasResult;
+	if (!aliasResult.ok) {
+		return aliasResult;
+	}
 
 	const { store, authorization } = resolveItemExtensionDeps(options, [
 		"listItemsByAlias",
@@ -167,7 +179,9 @@ export async function listItemsByAlias(
 		actorUserId: parsed.data.actorUserId,
 		query: MASTER_QUERY_ITEM_LIST_BY_ALIAS,
 	});
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return store.listItemsByAlias({
 		organizationId: parsed.data.organizationId,
 		normalizedValue: aliasResult.data.normalizedValue,

@@ -35,7 +35,7 @@ export const HUMAN_RESOURCES_AGGREGATE_TALENT_PROFILE_MOBILITY =
 export type HumanResourcesTalentProfileMobilityAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_TALENT_PROFILE_MOBILITY;
 
-export async function recordTalentProfileMobility(
+export function recordTalentProfileMobility(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TalentProfileMobility>> {
@@ -74,7 +74,7 @@ export async function recordTalentProfileMobility(
 				return ok(existingByKey.data.mobility);
 			}
 
-			return await store.recordTalentProfileMobility(
+			return store.recordTalentProfileMobility(
 				{
 					organizationId: data.organizationId,
 					talentProfileId: data.talentProfileId,
@@ -98,7 +98,7 @@ export async function recordTalentProfileMobility(
 	});
 }
 
-export async function listTalentProfileMobility(
+export function listTalentProfileMobility(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ProjectedTalentProfileMobilityListPage>> {
@@ -108,9 +108,9 @@ export async function listTalentProfileMobility(
 		"Invalid talent profile mobility list input",
 	);
 	if (!parsed.ok) {
-		return parsed;
+		return Promise.resolve(parsed);
 	}
-	const includeSensitive = parsed.data.includeSensitive;
+	const { includeSensitive } = parsed.data;
 
 	return runTalentQuery(parsed.data, options, {
 		schema: listTalentProfileMobilityInputSchema,

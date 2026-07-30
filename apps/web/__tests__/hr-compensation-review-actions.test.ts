@@ -246,3 +246,4 @@ describe("HR Compensation Review Server Actions", () => {
 		);
 	});
 });
+// biome-ignore-all lint/performance/noAwaitInLoops: Cases run serially to isolate mutable test state and ordered transitions.

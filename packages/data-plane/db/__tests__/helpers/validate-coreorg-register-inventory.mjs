@@ -27,7 +27,7 @@ export function validateCoreorgRegisterInventory({ register, pgTableNames }) {
 	];
 	const missing = pgTableNames.filter((name) => !all.includes(name));
 	const extra = all.filter(
-		(name) => !pgTableNames.includes(name) && !scaffolds.includes(name),
+		(name) => !(pgTableNames.includes(name) || scaffolds.includes(name)),
 	);
 
 	return {

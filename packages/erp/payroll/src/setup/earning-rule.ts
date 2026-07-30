@@ -22,7 +22,7 @@ import {
 } from "../shared/setup-command";
 import type { PayrollEarningRule, PayrollRuleSupersedeResult } from "../types";
 
-export async function createPayrollEarningRule(
+export function createPayrollEarningRule(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollEarningRule>> {
@@ -30,7 +30,7 @@ export async function createPayrollEarningRule(
 		schema: createPayrollEarningRuleInputSchema,
 		invalidMessage: "Invalid payroll earning rule create input",
 		command: PAYROLL_COMMAND_SETUP_EARNING_RULE_CREATE,
-		execute: async (data, { store, ports }) => {
+		execute: (data, { store, ports }) => {
 			const fingerprint = buildPayrollCreateFingerprint({
 				payGroupId: data.payGroupId,
 				code: data.code,
@@ -67,7 +67,7 @@ export async function createPayrollEarningRule(
 	});
 }
 
-export async function updatePayrollEarningRule(
+export function updatePayrollEarningRule(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollEarningRule>> {
@@ -93,7 +93,7 @@ export async function updatePayrollEarningRule(
 	});
 }
 
-export async function archivePayrollEarningRule(
+export function archivePayrollEarningRule(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollEarningRule>> {
@@ -115,7 +115,7 @@ export async function archivePayrollEarningRule(
 	});
 }
 
-export async function supersedePayrollEarningRule(
+export function supersedePayrollEarningRule(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollRuleSupersedeResult<PayrollEarningRule>>> {
@@ -123,7 +123,7 @@ export async function supersedePayrollEarningRule(
 		schema: supersedePayrollEarningRuleInputSchema,
 		invalidMessage: "Invalid payroll earning rule supersede input",
 		command: PAYROLL_COMMAND_SETUP_EARNING_RULE_SUPERSEDE,
-		execute: async (data, { store, ports }) => {
+		execute: (data, { store, ports }) => {
 			const fingerprint = buildPayrollCreateFingerprint({
 				ruleId: data.ruleId,
 				name: data.name ?? null,
@@ -159,7 +159,7 @@ export async function supersedePayrollEarningRule(
 	});
 }
 
-export async function getPayrollEarningRule(
+export function getPayrollEarningRule(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollEarningRule | null>> {

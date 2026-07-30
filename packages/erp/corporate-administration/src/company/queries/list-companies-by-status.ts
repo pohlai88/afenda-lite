@@ -24,7 +24,9 @@ export async function listCompaniesByStatus(
 		listCompaniesByStatusInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 
 	const authorized = await requireCorporateAdministrationPermission(
 		options.authorization,
@@ -35,7 +37,9 @@ export async function listCompaniesByStatus(
 				CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS.listCompaniesByStatus,
 		},
 	);
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 
 	return dependencies.store.listCompaniesByStatus({
 		organizationId: options.organizationId,

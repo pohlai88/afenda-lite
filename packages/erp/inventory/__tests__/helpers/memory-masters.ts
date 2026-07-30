@@ -3,11 +3,11 @@ import type { Item, RefUom, Warehouse } from "@afenda/master-data";
 
 import type { MasterLookupPort } from "../../src/ports";
 
-export type MemoryMastersSeed = {
+export interface MemoryMastersSeed {
 	items?: Item[];
 	uoms?: RefUom[];
 	warehouses?: Warehouse[];
-};
+}
 
 export function createMemoryMasterLookup(
 	seed: MemoryMastersSeed = {},
@@ -19,34 +19,34 @@ export function createMemoryMasterLookup(
 	);
 
 	return {
-		async getItemById(
+		getItemById(
 			organizationId: string,
 			id: string,
 			_actorUserId: string,
 		): Promise<Result<Item | null>> {
 			const row = items.get(id);
 			if (row === undefined || row.organizationId !== organizationId) {
-				return ok(null);
+				return Promise.resolve(ok(null));
 			}
-			return ok(row);
+			return Promise.resolve(ok(row));
 		},
-		async getRefUomById(
+		getRefUomById(
 			_organizationId: string,
 			id: string,
 			_actorUserId: string,
 		): Promise<Result<RefUom | null>> {
-			return ok(uoms.get(id) ?? null);
+			return Promise.resolve(ok(uoms.get(id) ?? null));
 		},
-		async getWarehouseById(
+		getWarehouseById(
 			organizationId: string,
 			id: string,
 			_actorUserId: string,
 		): Promise<Result<Warehouse | null>> {
 			const row = warehouses.get(id);
 			if (row === undefined || row.organizationId !== organizationId) {
-				return ok(null);
+				return Promise.resolve(ok(null));
 			}
-			return ok(row);
+			return Promise.resolve(ok(row));
 		},
 	};
 }

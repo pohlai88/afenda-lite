@@ -47,7 +47,7 @@ export const HUMAN_RESOURCES_AGGREGATE_TALENT_POOL = "talent-pool" as const;
 export type HumanResourcesTalentPoolAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_TALENT_POOL;
 
-export async function createTalentPool(
+export function createTalentPool(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TalentPool>> {
@@ -83,7 +83,7 @@ export async function createTalentPool(
 				return ok(existingByKey.data.pool);
 			}
 
-			return await store.createTalentPool(
+			return store.createTalentPool(
 				{
 					organizationId: data.organizationId,
 					code: data.code,
@@ -103,7 +103,7 @@ export async function createTalentPool(
 	});
 }
 
-export async function updateTalentPool(
+export function updateTalentPool(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TalentPool>> {
@@ -113,8 +113,8 @@ export async function updateTalentPool(
 		command: HUMAN_RESOURCES_COMMAND_TALENT_POOL_UPDATE,
 		resolveResource: (data, opts) =>
 			resolveActorTalentProfileResource(data, opts),
-		execute: async (data, { store, ports }) => {
-			return await store.updateTalentPool(
+		execute: async (data, { store, ports }) =>
+			await store.updateTalentPool(
 				{
 					organizationId: data.organizationId,
 					poolId: data.poolId,
@@ -128,12 +128,11 @@ export async function updateTalentPool(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_TALENT_POOL_UPDATE,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function closeTalentPool(
+export function closeTalentPool(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TalentPool>> {
@@ -143,8 +142,8 @@ export async function closeTalentPool(
 		command: HUMAN_RESOURCES_COMMAND_TALENT_POOL_CLOSE,
 		resolveResource: (data, opts) =>
 			resolveActorTalentProfileResource(data, opts),
-		execute: async (data, { store, ports }) => {
-			return await store.closeTalentPool(
+		execute: async (data, { store, ports }) =>
+			await store.closeTalentPool(
 				{
 					organizationId: data.organizationId,
 					poolId: data.poolId,
@@ -156,12 +155,11 @@ export async function closeTalentPool(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_TALENT_POOL_CLOSE,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function nominateTalentPoolMember(
+export function nominateTalentPoolMember(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TalentPoolMember>> {
@@ -204,7 +202,7 @@ export async function nominateTalentPoolMember(
 				return ok(existingByKey.data.member);
 			}
 
-			return await store.nominateTalentPoolMember(
+			return store.nominateTalentPoolMember(
 				{
 					organizationId: data.organizationId,
 					poolId: data.poolId,
@@ -224,7 +222,7 @@ export async function nominateTalentPoolMember(
 	});
 }
 
-export async function approveTalentPoolMember(
+export function approveTalentPoolMember(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TalentPoolMember>> {
@@ -234,8 +232,8 @@ export async function approveTalentPoolMember(
 		command: HUMAN_RESOURCES_COMMAND_TALENT_POOL_MEMBER_APPROVE,
 		resolveResource: (data, opts) =>
 			resolveActorTalentProfileResource(data, opts),
-		execute: async (data, { store, ports }) => {
-			return await store.approveTalentPoolMember(
+		execute: async (data, { store, ports }) =>
+			await store.approveTalentPoolMember(
 				{
 					organizationId: data.organizationId,
 					memberId: data.memberId,
@@ -248,12 +246,11 @@ export async function approveTalentPoolMember(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_TALENT_POOL_MEMBER_APPROVE,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function removeTalentPoolMember(
+export function removeTalentPoolMember(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TalentPoolMember>> {
@@ -263,8 +260,8 @@ export async function removeTalentPoolMember(
 		command: HUMAN_RESOURCES_COMMAND_TALENT_POOL_MEMBER_REMOVE,
 		resolveResource: (data, opts) =>
 			resolveActorTalentProfileResource(data, opts),
-		execute: async (data, { store, ports }) => {
-			return await store.removeTalentPoolMember(
+		execute: async (data, { store, ports }) =>
+			await store.removeTalentPoolMember(
 				{
 					organizationId: data.organizationId,
 					memberId: data.memberId,
@@ -276,12 +273,11 @@ export async function removeTalentPoolMember(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_TALENT_POOL_MEMBER_REMOVE,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function listTalentPoolMembers(
+export function listTalentPoolMembers(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TalentPoolMemberListPage>> {
@@ -294,14 +290,13 @@ export async function listTalentPoolMembers(
 		resolveRequestedFields: () => talentSensitiveQueryRequestedFields(),
 		project: (value: TalentPoolMemberListPage, projection) =>
 			projectTalentPoolMemberListFromDecision(value, projection),
-		execute: async (data, { store }) => {
-			return await store.listTalentPoolMembers({
+		execute: async (data, { store }) =>
+			await store.listTalentPoolMembers({
 				organizationId: data.organizationId,
 				poolId: data.poolId,
 				page: data.page ?? 1,
 				pageSize: data.pageSize ?? 20,
 				status: data.status,
-			});
-		},
+			}),
 	});
 }

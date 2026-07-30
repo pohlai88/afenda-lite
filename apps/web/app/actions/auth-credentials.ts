@@ -25,7 +25,9 @@ const AUTH_SIGN_IN_PATH = AUTH_LOGIN_PATH;
 const UNKNOWN_CLIENT_IP = "unknown";
 const INVALID_EMAIL_KEY = "_invalid";
 
-export type SignInActionData = { redirected: true };
+export interface SignInActionData {
+	redirected: true;
+}
 export type SignInActionState = ActionResult<SignInActionData> | null;
 
 function mapCredentialFailure(

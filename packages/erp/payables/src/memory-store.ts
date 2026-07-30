@@ -34,6 +34,25 @@ function multiply(left: string, right: string): string {
 	return format((decimal(left) * decimal(right)) / SCALE);
 }
 
+function resolveResult<T>(result: Result<T>): Promise<Result<T>> {
+	return Promise.resolve(result);
+}
+
+async function runSequentially<T>(
+	items: readonly T[],
+	operation: (item: T) => Promise<Result<void>>,
+): Promise<Result<void>> {
+	const [item, ...remaining] = items;
+	if (item === undefined) {
+		return ok(undefined);
+	}
+	const current = await operation(item);
+	if (!current.ok) {
+		return current;
+	}
+	return runSequentially(remaining, operation);
+}
+
 function cloneInvoice(invoice: SupplierInvoice): SupplierInvoice {
 	return {
 		...invoice,
@@ -151,19 +170,17 @@ export class MemoryPayablesStore implements PayablesStore {
 		return ok(cloneInvoice(created.data));
 	}
 
-	// biome-ignore lint/suspicious/useAwait: Async signature implements the PayablesStore contract.
-	async addLine(
+	addLine(
 		record: Parameters<PayablesStore["addLine"]>[0],
 	): Promise<Result<SupplierInvoiceLine>> {
 		const found = this.findInvoice(record.organizationId, record.invoiceId);
 		if (!found.ok) {
-			return found;
+			return resolveResult(found);
 		}
 		const invoice = found.data;
 		if (invoice.status !== "draft") {
-			return fail(
-				"CONFLICT",
-				"Lines can only be added to draft supplier documents",
+			return resolveResult(
+				fail("CONFLICT", "Lines can only be added to draft supplier documents"),
 			);
 		}
 		const now = new Date();
@@ -187,7 +204,7 @@ export class MemoryPayablesStore implements PayablesStore {
 		invoice.version += 1;
 		invoice.updatedBy = record.actorUserId;
 		invoice.updatedAt = now;
-		return ok({ ...line });
+		return resolveResult(ok({ ...line }));
 	}
 
 	async matchInvoice(
@@ -313,16 +330,15 @@ export class MemoryPayablesStore implements PayablesStore {
 		return ok(cloneInvoice(invoice));
 	}
 
-	// biome-ignore lint/suspicious/useAwait: Async signature implements the PayablesStore contract.
-	async createCredit(
+	createCredit(
 		record: SupplierInvoiceCreateRecord,
 	): Promise<Result<SupplierInvoice>> {
 		const created = this.newInvoice(record);
 		if (!created.ok) {
-			return created;
+			return resolveResult(created);
 		}
 		this.invoices.set(created.data.id, created.data);
-		return ok(cloneInvoice(created.data));
+		return resolveResult(ok(cloneInvoice(created.data)));
 	}
 
 	addCreditLine(
@@ -468,8 +484,7 @@ export class MemoryPayablesStore implements PayablesStore {
 		return ok({ ...allocation });
 	}
 
-	// biome-ignore lint/suspicious/useAwait: Async signature implements the PayablesStore contract.
-	async applyCredit(
+	applyCredit(
 		record: Parameters<PayablesStore["applyCredit"]>[0],
 	): Promise<Result<SupplierAllocation>> {
 		const invoiceResult = this.findInvoice(
@@ -477,14 +492,14 @@ export class MemoryPayablesStore implements PayablesStore {
 			record.invoiceId,
 		);
 		if (!invoiceResult.ok) {
-			return invoiceResult;
+			return resolveResult(invoiceResult);
 		}
 		const creditResult = this.findInvoice(
 			record.organizationId,
 			record.creditNoteId,
 		);
 		if (!creditResult.ok) {
-			return creditResult;
+			return resolveResult(creditResult);
 		}
 		const invoice = invoiceResult.data;
 		const credit = creditResult.data;
@@ -496,9 +511,11 @@ export class MemoryPayablesStore implements PayablesStore {
 			invoice.supplierId !== credit.supplierId ||
 			invoice.currencyCode !== credit.currencyCode
 		) {
-			return fail(
-				"CONFLICT",
-				"Supplier credit application requires matching posted documents",
+			return resolveResult(
+				fail(
+					"CONFLICT",
+					"Supplier credit application requires matching posted documents",
+				),
 			);
 		}
 		const replay = [...this.allocations.values()].find(
@@ -507,7 +524,7 @@ export class MemoryPayablesStore implements PayablesStore {
 				candidateAllocation.applyIdempotencyKey === record.idempotencyKey,
 		);
 		if (replay !== undefined) {
-			return ok({ ...replay });
+			return resolveResult(ok({ ...replay }));
 		}
 		const amount = decimal(record.amount);
 		if (
@@ -515,9 +532,8 @@ export class MemoryPayablesStore implements PayablesStore {
 			amount > decimal(invoice.openAmount) ||
 			amount > decimal(credit.openAmount)
 		) {
-			return fail(
-				"CONFLICT",
-				"Supplier credit application exceeds an open amount",
+			return resolveResult(
+				fail("CONFLICT", "Supplier credit application exceeds an open amount"),
 			);
 		}
 		const now = new Date();
@@ -547,7 +563,7 @@ export class MemoryPayablesStore implements PayablesStore {
 		credit.updatedBy = record.actorUserId;
 		this.allocations.set(allocation.id, allocation);
 		this.adjustBalance(invoice, -amount);
-		return ok({ ...allocation });
+		return resolveResult(ok({ ...allocation }));
 	}
 
 	async reversePaymentApplication(
@@ -561,13 +577,18 @@ export class MemoryPayablesStore implements PayablesStore {
 		);
 		const invoices = new Map<string, SupplierInvoice>();
 		const balances = new Map(this.balances);
-		for (const allocation of allocations) {
+		const previousAllocations = allocations.map((allocation) => ({
+			...allocation,
+		}));
+		const reversed = await runSequentially(allocations, (allocation) => {
 			const found = this.findInvoice(
 				record.organizationId,
 				allocation.invoiceId,
 			);
 			if (!found.ok) {
-				return fail("INTERNAL_ERROR", "Supplier allocation invoice is missing");
+				return resolveResult(
+					fail("INTERNAL_ERROR", "Supplier allocation invoice is missing"),
+				);
 			}
 			const invoice = found.data;
 			invoices.set(invoice.id, cloneInvoice(invoice));
@@ -580,8 +601,7 @@ export class MemoryPayablesStore implements PayablesStore {
 			allocation.status = "reversed";
 			allocation.reversedAt = new Date();
 			allocation.reversedBy = record.actorUserId;
-			// biome-ignore lint/performance/noAwaitInLoops: Events must remain ordered so rollback can restore the exact prior state.
-			const emitted = await record.effects.emit({
+			return record.effects.emit({
 				actorUserId: record.actorUserId,
 				correlationId: record.correlationId,
 				organizationId: invoice.organizationId,
@@ -596,19 +616,19 @@ export class MemoryPayablesStore implements PayablesStore {
 				},
 				type: "payables.payment_application.reversed.v1",
 			});
-			if (!emitted.ok) {
-				for (const [id, previous] of invoices) {
-					this.invoices.set(id, previous);
-				}
-				this.balances.clear();
-				for (const [key, balance] of balances) {
-					this.balances.set(key, balance);
-				}
-				for (const removed of allocations) {
-					this.allocations.set(removed.id, removed);
-				}
-				return emitted;
+		});
+		if (!reversed.ok) {
+			for (const [id, previous] of invoices) {
+				this.invoices.set(id, previous);
 			}
+			this.balances.clear();
+			for (const [key, balance] of balances) {
+				this.balances.set(key, balance);
+			}
+			for (const previous of previousAllocations) {
+				this.allocations.set(previous.id, previous);
+			}
+			return reversed;
 		}
 		return ok(allocations.map((allocation) => ({ ...allocation })));
 	}
@@ -664,110 +684,114 @@ export class MemoryPayablesStore implements PayablesStore {
 		return ok(cloneInvoice(invoice));
 	}
 
-	// biome-ignore lint/suspicious/useAwait: Async signature implements the PayablesStore contract.
-	async getById(
+	getById(
 		organizationId: string,
 		id: string,
 	): Promise<Result<SupplierInvoice | null>> {
 		const invoice = this.invoices.get(id);
-		return ok(
-			invoice !== undefined && invoice.organizationId === organizationId
-				? cloneInvoice(invoice)
-				: null,
+		return resolveResult(
+			ok(
+				invoice !== undefined && invoice.organizationId === organizationId
+					? cloneInvoice(invoice)
+					: null,
+			),
 		);
 	}
 
-	// biome-ignore lint/suspicious/useAwait: Async signature implements the PayablesStore contract.
-	async list(
+	list(
 		filter: Parameters<PayablesStore["list"]>[0],
 	): Promise<Result<SupplierInvoice[]>> {
 		const start = (filter.page - 1) * filter.pageSize;
-		return ok(
-			[...this.invoices.values()]
-				.filter((row) => row.organizationId === filter.organizationId)
-				.filter(
-					(row) => filter.status === undefined || row.status === filter.status,
-				)
-				.filter(
-					(row) =>
-						filter.supplierId === undefined ||
-						row.supplierId === filter.supplierId,
-				)
-				.filter(
-					(row) =>
-						filter.currencyCode === undefined ||
-						row.currencyCode === filter.currencyCode,
-				)
-				.filter(
-					(row) =>
-						filter.documentType === undefined ||
-						row.documentType === filter.documentType,
-				)
-				.sort(
-					(a, b) =>
-						b.updatedAt.getTime() - a.updatedAt.getTime() ||
-						b.id.localeCompare(a.id),
-				)
-				.slice(start, start + filter.pageSize)
-				.map(cloneInvoice),
+		return resolveResult(
+			ok(
+				[...this.invoices.values()]
+					.filter((row) => row.organizationId === filter.organizationId)
+					.filter(
+						(row) =>
+							filter.status === undefined || row.status === filter.status,
+					)
+					.filter(
+						(row) =>
+							filter.supplierId === undefined ||
+							row.supplierId === filter.supplierId,
+					)
+					.filter(
+						(row) =>
+							filter.currencyCode === undefined ||
+							row.currencyCode === filter.currencyCode,
+					)
+					.filter(
+						(row) =>
+							filter.documentType === undefined ||
+							row.documentType === filter.documentType,
+					)
+					.sort(
+						(a, b) =>
+							b.updatedAt.getTime() - a.updatedAt.getTime() ||
+							b.id.localeCompare(a.id),
+					)
+					.slice(start, start + filter.pageSize)
+					.map(cloneInvoice),
+			),
 		);
 	}
 
-	// biome-ignore lint/suspicious/useAwait: Async signature implements the PayablesStore contract.
-	async getBalance(
+	getBalance(
 		organizationId: string,
 		supplierId: string,
 		currencyCode?: string,
 	): Promise<Result<SupplierBalance[]>> {
-		return ok(
-			[...this.balances.values()]
-				.filter((row) => row.organizationId === organizationId)
-				.filter((row) => row.supplierId === supplierId)
-				.filter(
-					(row) =>
-						currencyCode === undefined || row.currencyCode === currencyCode,
-				)
-				.map((row) => {
-					const documents = [...this.invoices.values()].filter(
-						(document) =>
-							document.organizationId === row.organizationId &&
-							document.supplierId === row.supplierId &&
-							document.currencyCode === row.currencyCode &&
-							document.status === "posted",
-					);
-					const invoicedAmount = documents
-						.filter((document) => document.documentType === "invoice")
-						.reduce(
-							(total, document) => total + decimal(document.totalAmount),
-							0n,
+		return resolveResult(
+			ok(
+				[...this.balances.values()]
+					.filter((row) => row.organizationId === organizationId)
+					.filter((row) => row.supplierId === supplierId)
+					.filter(
+						(row) =>
+							currencyCode === undefined || row.currencyCode === currencyCode,
+					)
+					.map((row) => {
+						const documents = [...this.invoices.values()].filter(
+							(document) =>
+								document.organizationId === row.organizationId &&
+								document.supplierId === row.supplierId &&
+								document.currencyCode === row.currencyCode &&
+								document.status === "posted",
 						);
-					const creditedAmount = documents
-						.filter((document) => document.documentType === "credit_note")
-						.reduce(
-							(total, document) => total + decimal(document.totalAmount),
-							0n,
-						);
-					const paidAmount = [...this.allocations.values()]
-						.filter(
-							(allocation) =>
-								allocation.organizationId === row.organizationId &&
-								allocation.supplierId === row.supplierId &&
-								allocation.status === "active" &&
-								allocation.paymentId !== null,
-						)
-						.reduce(
-							(total, allocation) => total + decimal(allocation.amount),
-							0n,
-						);
-					return {
-						...row,
-						asOf: new Date(),
-						creditedAmount: format(creditedAmount),
-						invoicedAmount: format(invoicedAmount),
-						outstandingAmount: row.openBalance,
-						paidAmount: format(paidAmount),
-					};
-				}),
+						const invoicedAmount = documents
+							.filter((document) => document.documentType === "invoice")
+							.reduce(
+								(total, document) => total + decimal(document.totalAmount),
+								0n,
+							);
+						const creditedAmount = documents
+							.filter((document) => document.documentType === "credit_note")
+							.reduce(
+								(total, document) => total + decimal(document.totalAmount),
+								0n,
+							);
+						const paidAmount = [...this.allocations.values()]
+							.filter(
+								(allocation) =>
+									allocation.organizationId === row.organizationId &&
+									allocation.supplierId === row.supplierId &&
+									allocation.status === "active" &&
+									allocation.paymentId !== null,
+							)
+							.reduce(
+								(total, allocation) => total + decimal(allocation.amount),
+								0n,
+							);
+						return {
+							...row,
+							asOf: new Date(),
+							creditedAmount: format(creditedAmount),
+							invoicedAmount: format(invoicedAmount),
+							outstandingAmount: row.openBalance,
+							paidAmount: format(paidAmount),
+						};
+					}),
+			),
 		);
 	}
 }

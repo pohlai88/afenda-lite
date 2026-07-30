@@ -17,13 +17,21 @@ import { contractEvidence, StorySection } from "./evidence";
 
 const evidence = contractEvidence("ui.bulk-action-bar");
 
+function invoiceSelectionLabel(count: number): string {
+	return `${count} invoices selected`;
+}
+
+function filteredSupplierSelectionLabel(count: number): string {
+	return `${count} supplier records selected in the current filtered result`;
+}
+
 const meta = {
 	title: "UI System/Bulk Action Bar",
 	component: BulkActionBar,
 	tags: ["autodocs", "test"],
 	args: {
 		selectedCount: 3,
-		selectionLabel: (count: number) => `${count} invoices selected`,
+		selectionLabel: invoiceSelectionLabel,
 		actions: <></>,
 	},
 	parameters: {
@@ -88,19 +96,19 @@ function InvoiceSelectionCard() {
 						className="flex flex-col gap-3 rounded-lg border border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
 						key={invoice.id}
 					>
-						<div className="min-w-0 grid gap-0.5">
-							<p className="truncate text-sm font-medium text-foreground">
+						<div className="grid min-w-0 gap-0.5">
+							<p className="truncate font-medium text-foreground text-sm">
 								{invoice.id} · {invoice.party}
 							</p>
-							<p className="truncate text-sm text-foreground-secondary">
+							<p className="truncate text-foreground-secondary text-sm">
 								{invoice.amount} · due {invoice.dueDate}
 							</p>
 						</div>
 						<div className="flex shrink-0 flex-wrap items-center gap-2">
 							<Badge variant={invoice.badgeVariant}>{invoice.badge}</Badge>
 							<StatusBadge
-								status={invoice.status}
 								label={invoice.statusLabel}
+								status={invoice.status}
 							/>
 						</div>
 					</div>
@@ -124,14 +132,14 @@ export const Overview: Story = {
 	render: () => (
 		<div className="min-h-screen bg-canvas text-foreground">
 			<div className="mx-auto grid w-full max-w-4xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
-				<header className="grid gap-2 border-b border-border pb-6">
-					<p className="text-sm font-medium text-foreground-secondary">
+				<header className="grid gap-2 border-border border-b pb-6">
+					<p className="font-medium text-foreground-secondary text-sm">
 						Accounts receivable
 					</p>
-					<h1 className="text-2xl font-semibold tracking-tight">
+					<h1 className="font-semibold text-2xl tracking-tight">
 						July invoice queue
 					</h1>
-					<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+					<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 						The action surface remains contextual, role-aware, adaptive, and
 						operationally explicit while retaining Afenda's own visual language.
 						Selection identifies scope; feature code still proves permission and
@@ -140,9 +148,6 @@ export const Overview: Story = {
 				</header>
 
 				<BulkActionBar
-					aria-label="Invoice bulk actions"
-					selectedCount={3}
-					selectionLabel={(count) => `${count} invoices selected`}
 					actions={
 						<>
 							<Button size="sm" type="button" variant="outline">
@@ -159,6 +164,9 @@ export const Overview: Story = {
 							</Button>
 						</>
 					}
+					aria-label="Invoice bulk actions"
+					selectedCount={3}
+					selectionLabel={invoiceSelectionLabel}
 				/>
 
 				<InvoiceSelectionCard />
@@ -181,43 +189,43 @@ export const Usage: Story = {
 		<div className="grid w-full max-w-5xl gap-6">
 			<StorySection title="Transfer selected records">
 				<BulkActionBar
-					aria-label="Authorized payment actions"
-					selectedCount={3}
-					selectionLabel={(count) => `${count} invoices selected`}
 					actions={
 						<Button size="sm" type="button" variant="outline">
 							<DownloadIcon />
 							Export selected
 						</Button>
 					}
+					aria-label="Authorized payment actions"
+					selectedCount={3}
+					selectionLabel={invoiceSelectionLabel}
 				/>
 			</StorySection>
 
 			<StorySection title="Advance a governed workflow">
 				<BulkActionBar
-					aria-label="Authorized export actions"
-					selectedCount={3}
-					selectionLabel={(count) => `${count} invoices selected`}
 					actions={
 						<Button size="sm" type="button">
 							<SendIcon />
 							Submit for approval
 						</Button>
 					}
+					aria-label="Authorized export actions"
+					selectedCount={3}
+					selectionLabel={invoiceSelectionLabel}
 				/>
 			</StorySection>
 
 			<StorySection title="Initiate a destructive command">
 				<BulkActionBar
-					aria-label="Authorized archive actions"
-					selectedCount={2}
-					selectionLabel={(count) => `${count} invoices selected`}
 					actions={
 						<Button size="sm" type="button" variant="destructive">
 							<Trash2Icon />
 							Void selected
 						</Button>
 					}
+					aria-label="Authorized archive actions"
+					selectedCount={2}
+					selectionLabel={invoiceSelectionLabel}
 				/>
 			</StorySection>
 		</div>
@@ -239,9 +247,6 @@ export const AuthorizationAndEligibility: Story = {
 			<StorySection title="Authorized and eligible selection">
 				<div className="grid gap-3">
 					<BulkActionBar
-						aria-label="Eligible posting actions"
-						selectedCount={3}
-						selectionLabel={(count) => `${count} invoices selected`}
 						actions={
 							<>
 								<Button size="sm" type="button" variant="outline">
@@ -252,8 +257,11 @@ export const AuthorizationAndEligibility: Story = {
 								</Button>
 							</>
 						}
+						aria-label="Eligible posting actions"
+						selectedCount={3}
+						selectionLabel={invoiceSelectionLabel}
 					/>
-					<p className="text-sm leading-6 text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm leading-6">
 						Feature code has already determined that both commands are visible
 						to the operator. The command handler must still revalidate
 						eligibility at execution time.
@@ -264,16 +272,16 @@ export const AuthorizationAndEligibility: Story = {
 			<StorySection title="Unauthorized commands are omitted">
 				<div className="grid gap-3">
 					<BulkActionBar
-						aria-label="Ineligible posting actions"
-						selectedCount={3}
-						selectionLabel={(count) => `${count} invoices selected`}
 						actions={
 							<Button size="sm" type="button" variant="outline">
 								Export selected
 							</Button>
 						}
+						aria-label="Ineligible posting actions"
+						selectedCount={3}
+						selectionLabel={invoiceSelectionLabel}
 					/>
-					<p className="text-sm leading-6 text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm leading-6">
 						Do not expose a permanently disabled Void command merely to
 						advertise that another role has more authority.
 					</p>
@@ -296,11 +304,8 @@ export const AdaptiveLayout: Story = {
 	render: () => (
 		<div className="grid w-full max-w-4xl gap-8">
 			<StorySection title="Narrow workbench region">
-				<div className="w-full max-w-sm rounded-xl border border-dashed border-border p-3">
+				<div className="w-full max-w-sm rounded-xl border border-border border-dashed p-3">
 					<BulkActionBar
-						aria-label="Mixed eligibility actions"
-						selectedCount={3}
-						selectionLabel={(count) => `${count} invoices selected`}
 						actions={
 							<>
 								<Button size="sm" type="button" variant="outline">
@@ -314,17 +319,15 @@ export const AdaptiveLayout: Story = {
 								</Button>
 							</>
 						}
+						aria-label="Mixed eligibility actions"
+						selectedCount={3}
+						selectionLabel={invoiceSelectionLabel}
 					/>
 				</div>
 			</StorySection>
 
 			<StorySection title="Large filtered selection">
 				<BulkActionBar
-					aria-label="Adaptive invoice actions"
-					selectedCount={128}
-					selectionLabel={(count) =>
-						`${count} supplier records selected in the current filtered result`
-					}
 					actions={
 						<>
 							<Button size="sm" type="button" variant="outline">
@@ -335,6 +338,9 @@ export const AdaptiveLayout: Story = {
 							</Button>
 						</>
 					}
+					aria-label="Adaptive invoice actions"
+					selectedCount={128}
+					selectionLabel={filteredSupplierSelectionLabel}
 				/>
 			</StorySection>
 		</div>
@@ -354,18 +360,15 @@ export const StatesAndAccessibility: Story = {
 	render: () => (
 		<div className="grid w-full max-w-2xl gap-8">
 			<StorySection title="No selection">
-				<div className="rounded-lg border border-dashed border-border px-4 py-6 text-sm text-foreground-secondary">
+				<div className="rounded-lg border border-border border-dashed px-4 py-6 text-foreground-secondary text-sm">
 					BulkActionBar returns null when selectedCount is 0. The surrounding
 					layout does not reserve an empty toolbar.
-					<BulkActionBar selectedCount={0} actions={null} />
+					<BulkActionBar actions={null} selectedCount={0} />
 				</div>
 			</StorySection>
 
 			<StorySection title="Keyboard-operable active selection">
 				<BulkActionBar
-					aria-label="Interactive invoice actions"
-					selectedCount={3}
-					selectionLabel={(count) => `${count} invoices selected`}
 					actions={
 						<>
 							<Button size="sm" type="button" variant="outline">
@@ -382,6 +385,9 @@ export const StatesAndAccessibility: Story = {
 							</Button>
 						</>
 					}
+					aria-label="Interactive invoice actions"
+					selectedCount={3}
+					selectionLabel={invoiceSelectionLabel}
 				/>
 			</StorySection>
 		</div>
@@ -420,9 +426,6 @@ export const Composition: Story = {
 	render: () => (
 		<div className="grid w-full max-w-2xl gap-4">
 			<BulkActionBar
-				aria-label="Composed invoice actions"
-				selectedCount={2}
-				selectionLabel={(count) => `${count} invoices selected`}
 				actions={
 					<>
 						<Button size="sm" type="button" variant="outline">
@@ -436,6 +439,9 @@ export const Composition: Story = {
 						</Button>
 					</>
 				}
+				aria-label="Composed invoice actions"
+				selectedCount={2}
+				selectionLabel={invoiceSelectionLabel}
 			/>
 
 			<Card className="shadow-none">
@@ -443,7 +449,7 @@ export const Composition: Story = {
 					<CardTitle>Invoice selection</CardTitle>
 					<CardDescription>INV-1048 and INV-1051 selected</CardDescription>
 				</CardHeader>
-				<CardContent className="grid gap-2 text-sm text-foreground-secondary">
+				<CardContent className="grid gap-2 text-foreground-secondary text-sm">
 					<p>INV-1048 · Northwind Trading · awaiting approval</p>
 					<p>INV-1051 · Contoso Logistics · awaiting approval</p>
 				</CardContent>
@@ -466,29 +472,29 @@ export const DoAndDoNot: Story = {
 		<div className="grid max-w-5xl gap-6 sm:grid-cols-2">
 			<StorySection title="Do: name the selected record type">
 				<BulkActionBar
-					aria-label="Approved bulk actions"
-					selectedCount={3}
-					selectionLabel={(count) => `${count} invoices selected`}
 					actions={
 						<Button size="sm" type="button" variant="outline">
 							Export selected
 						</Button>
 					}
+					aria-label="Approved bulk actions"
+					selectedCount={3}
+					selectionLabel={invoiceSelectionLabel}
 				/>
 			</StorySection>
 
 			<StorySection title="Do not: use vague scope and commands">
 				<div className="grid gap-2">
 					<BulkActionBar
-						aria-label="Overloaded bulk actions"
-						selectedCount={3}
 						actions={
 							<Button size="sm" type="button" variant="outline">
 								Go
 							</Button>
 						}
+						aria-label="Overloaded bulk actions"
+						selectedCount={3}
 					/>
-					<p className="text-sm leading-6 text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm leading-6">
 						“3 selected” and “Go” do not communicate record type, operation, or
 						consequence.
 					</p>
@@ -497,33 +503,33 @@ export const DoAndDoNot: Story = {
 
 			<StorySection title="Do: omit unauthorized actions">
 				<BulkActionBar
-					aria-label="Destructive bulk actions"
-					selectedCount={3}
-					selectionLabel={(count) => `${count} invoices selected`}
 					actions={
 						<Button size="sm" type="button" variant="outline">
 							Export selected
 						</Button>
 					}
+					aria-label="Destructive bulk actions"
+					selectedCount={3}
+					selectionLabel={invoiceSelectionLabel}
 				/>
 			</StorySection>
 
 			<StorySection title="Do not: advertise unavailable authority">
-				<p className="text-sm leading-6 text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm leading-6">
 					Do not render permanently disabled approval or destructive commands
 					solely to reveal capabilities the current operator does not possess.
 				</p>
 			</StorySection>
 
 			<StorySection title="Do: hide the bar at zero selection">
-				<p className="text-sm leading-6 text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm leading-6">
 					selectedCount below 1 renders null. Contextual commands should not
 					become permanent page furniture.
 				</p>
 			</StorySection>
 
 			<StorySection title="Do not: imply atomic success">
-				<p className="text-sm leading-6 text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm leading-6">
 					Bulk execution may be rejected, partially applied, or become stale.
 					Revalidation, confirmation, progress, and result reporting belong to
 					the owning feature workflow.

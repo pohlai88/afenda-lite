@@ -46,7 +46,7 @@ export const Overview: Story = {
 			<div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<PageHeader aria-labelledby="payables-page-title">
 					<div className="grid gap-1">
-						<p className="text-sm font-medium text-foreground-secondary">
+						<p className="font-medium text-foreground-secondary text-sm">
 							Accounts payable
 						</p>
 						<PageHeaderHeading id="payables-page-title">
@@ -72,7 +72,7 @@ export const Overview: Story = {
 							14 invoices await finance review · org-fragrant-lake
 						</CardDescription>
 					</CardHeader>
-					<CardContent className="text-sm text-foreground-secondary">
+					<CardContent className="text-foreground-secondary text-sm">
 						Collection filters and column controls belong in a toolbar below the
 						page header — not inside PageHeader actions.
 					</CardContent>
@@ -113,14 +113,14 @@ export const SemanticUsage: Story = {
 			<StorySection title="SectionHeader · section layout with real heading">
 				<SectionHeader>
 					<div className="grid gap-1">
-						<h2 className="text-base font-semibold tracking-tight">
+						<h2 className="font-semibold text-base tracking-tight">
 							Commercial terms
 						</h2>
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							Payment and delivery conditions for this supplier.
 						</p>
 					</div>
-					<Button type="button" size="sm" variant="outline">
+					<Button size="sm" type="button" variant="outline">
 						Edit terms
 					</Button>
 				</SectionHeader>
@@ -128,20 +128,19 @@ export const SemanticUsage: Story = {
 
 			<StorySection title="EntityHeader · record subject">
 				<EntityHeader
-					title="INV-1042"
-					status={<StatusBadge status="active" label="Approved" />}
-					description="Northwind Trading Sdn. Bhd."
+					actions={
+						<Button type="button" variant="outline">
+							More actions
+						</Button>
+					}
 					metadata={
 						<>
 							<span>MYR 18,420.00</span>
 							<span>Due 15 Aug 2026</span>
 						</>
 					}
-					actions={
-						<Button type="button" variant="outline">
-							More actions
-						</Button>
-					}
+					status={<StatusBadge label="Approved" status="active" />}
+					title="INV-1042"
 				/>
 			</StorySection>
 		</div>
@@ -215,16 +214,6 @@ export const Composition: Story = {
 	render: () => (
 		<div className="grid w-full max-w-4xl gap-8">
 			<EntityHeader
-				title="INV-1042"
-				status={<StatusBadge status="active" label="Approved" />}
-				description="Northwind Trading Sdn. Bhd."
-				metadata={
-					<>
-						<span>MYR 18,420.00</span>
-						<span>Due 15 Aug 2026</span>
-						<span>Owner Aisha Rahman</span>
-					</>
-				}
 				actions={
 					<>
 						<Button type="button" variant="outline">
@@ -233,6 +222,15 @@ export const Composition: Story = {
 						<Button type="button">Post to ledger</Button>
 					</>
 				}
+				metadata={
+					<>
+						<span>MYR 18,420.00</span>
+						<span>Due 15 Aug 2026</span>
+						<span>Owner Aisha Rahman</span>
+					</>
+				}
+				status={<StatusBadge label="Approved" status="active" />}
+				title="INV-1042"
 			/>
 			<Card className="shadow-none">
 				<CardHeader>
@@ -241,7 +239,7 @@ export const Composition: Story = {
 						Record body content stays below EntityHeader.
 					</CardDescription>
 				</CardHeader>
-				<CardContent className="text-sm text-foreground-secondary">
+				<CardContent className="text-foreground-secondary text-sm">
 					Do not overload entity metadata with editable fields or full line
 					tables.
 				</CardContent>
@@ -265,20 +263,20 @@ export const DoAndDoNot: Story = {
 				<PageHeaderHeading>Purchase orders</PageHeaderHeading>
 			</StorySection>
 			<StorySection title="Do not: let actions compete with the title">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Keep secondary commands visually subordinate to the page subject. Move
 					filters, columns, and pagination out of PageHeader.
 				</p>
 			</StorySection>
 			<StorySection title="Do: StatusBadge for approval state">
 				<EntityHeader
-					title="INV-1048"
-					status={<StatusBadge status="pending" label="Awaiting approval" />}
 					description="Contoso Logistics Pte. Ltd."
+					status={<StatusBadge label="Awaiting approval" status="pending" />}
+					title="INV-1048"
 				/>
 			</StorySection>
 			<StorySection title="Do not: EntityHeader on list pages">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					List and report workspaces use PageHeader. EntityHeader is for the
 					record itself as the page subject.
 				</p>

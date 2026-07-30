@@ -12,24 +12,24 @@ import {
 	verifyHumanResourcesPrivacyProcessorBoundary,
 } from "./processor-boundary";
 
-export type HumanResourcesDeletionDecisionInput = {
-	organizationId: string;
-	actorUserId: string;
-	correlationId: string;
-	subjectEmployeeId: string;
-	requestedAt: string;
-	legalBasis: string;
-	classifications: readonly {
-		classification: HumanResourcesRetentionClassification;
-		retentionEndsAt: string | null;
-	}[];
+export interface HumanResourcesDeletionDecisionInput {
 	activeLegalHolds: readonly {
 		legalHoldId: string;
 		classifications: readonly HumanResourcesRetentionClassification[];
 	}[];
-};
+	actorUserId: string;
+	classifications: readonly {
+		classification: HumanResourcesRetentionClassification;
+		retentionEndsAt: string | null;
+	}[];
+	correlationId: string;
+	legalBasis: string;
+	organizationId: string;
+	requestedAt: string;
+	subjectEmployeeId: string;
+}
 
-export type HumanResourcesDeletionDisposition = {
+export interface HumanResourcesDeletionDisposition {
 	classification: HumanResourcesRetentionClassification;
 	disposition: "delete" | "anonymize" | "retain";
 	reason:
@@ -39,45 +39,45 @@ export type HumanResourcesDeletionDisposition = {
 		| "legal_hold"
 		| "legal_record_required"
 		| "processor_boundary_unsupported";
-};
+}
 
-export type HumanResourcesDeletionDecision = {
-	decisionId: string;
-	organizationId: string;
+export interface HumanResourcesDeletionDecision {
 	correlationId: string;
-	requestedAt: string;
-	legalBasis: string;
-	status: "approved" | "partially_approved" | "denied";
+	decisionId: string;
 	dispositions: readonly HumanResourcesDeletionDisposition[];
-	processorBoundaryVersion: string;
-	subjectReferenceHash: string;
 	evidenceHash: string;
 	evidenceReference: string;
-};
+	legalBasis: string;
+	organizationId: string;
+	processorBoundaryVersion: string;
+	requestedAt: string;
+	status: "approved" | "partially_approved" | "denied";
+	subjectReferenceHash: string;
+}
 
 export type HumanResourcesDeletionDecisionEvidence = Omit<
 	HumanResourcesDeletionDecision,
 	"evidenceReference"
 > & { actorUserId: string };
 
-export type HumanResourcesPrivacyDeletionPort = {
-	getProcessorBoundary(input: {
-		organizationId: string;
-		correlationId: string;
-	}): Promise<Result<HumanResourcesPrivacyProcessorBoundary>>;
-	recordDeletionDecision(
-		input: HumanResourcesDeletionDecisionEvidence,
-	): Promise<Result<{ evidenceReference: string }>>;
-	executeDeletionDecision(input: {
+export interface HumanResourcesPrivacyDeletionPort {
+	executeDeletionDecision: (input: {
 		organizationId: string;
 		decisionId: string;
 		evidenceReference: string;
 		correlationId: string;
 		dispositions: readonly HumanResourcesDeletionDisposition[];
-	}): Promise<
+	}) => Promise<
 		Result<{ affectedRecordCount: number; executionReference: string }>
 	>;
-};
+	getProcessorBoundary: (input: {
+		organizationId: string;
+		correlationId: string;
+	}) => Promise<Result<HumanResourcesPrivacyProcessorBoundary>>;
+	recordDeletionDecision: (
+		input: HumanResourcesDeletionDecisionEvidence,
+	) => Promise<Result<{ evidenceReference: string }>>;
+}
 
 function hash(value: unknown): string {
 	return createHash("sha256").update(JSON.stringify(value)).digest("hex");
@@ -94,20 +94,23 @@ function validateInput(
 		input.legalBasis.trim().length === 0 ||
 		Number.isNaN(Date.parse(input.requestedAt)) ||
 		input.classifications.length === 0
-	)
+	) {
 		return fail("VALIDATION_ERROR", "Invalid privacy deletion decision input");
+	}
 	const classifications = new Set<HumanResourcesRetentionClassification>();
 	for (const item of input.classifications) {
-		if (classifications.has(item.classification))
+		if (classifications.has(item.classification)) {
 			return fail(
 				"VALIDATION_ERROR",
 				"Deletion classifications must be unique",
 			);
+		}
 		if (
 			item.retentionEndsAt !== null &&
 			Number.isNaN(Date.parse(item.retentionEndsAt))
-		)
+		) {
 			return fail("VALIDATION_ERROR", "Retention end date is invalid");
+		}
 		classifications.add(item.classification);
 	}
 	return ok(undefined);
@@ -122,32 +125,38 @@ function dispositionForClassification(input: {
 	const held = input.request.activeLegalHolds.some((hold) =>
 		hold.classifications.includes(input.classification),
 	);
-	if (held)
+	if (held) {
 		return {
 			classification: input.classification,
 			disposition: "retain",
 			reason: "legal_hold",
 		};
-	if (input.retentionEndsAt === null)
+	}
+	if (input.retentionEndsAt === null) {
 		return {
 			classification: input.classification,
 			disposition: "retain",
 			reason: "retention_evidence_missing",
 		};
-	if (Date.parse(input.retentionEndsAt) > Date.parse(input.request.requestedAt))
+	}
+	if (
+		Date.parse(input.retentionEndsAt) > Date.parse(input.request.requestedAt)
+	) {
 		return {
 			classification: input.classification,
 			disposition: "retain",
 			reason: "retention_active",
 		};
+	}
 	const mode =
 		HUMAN_RESOURCES_RETENTION_POLICIES[input.classification].anonymizationMode;
-	if (mode === "retain_legal_record")
+	if (mode === "retain_legal_record") {
 		return {
 			classification: input.classification,
 			disposition: "retain",
 			reason: "legal_record_required",
 		};
+	}
 	const disposition = mode === "delete_identifiers" ? "delete" : "anonymize";
 	if (
 		!processorBoundarySupportsDisposition({
@@ -155,12 +164,13 @@ function dispositionForClassification(input: {
 			classification: input.classification,
 			disposition,
 		})
-	)
+	) {
 		return {
 			classification: input.classification,
 			disposition: "retain",
 			reason: "processor_boundary_unsupported",
 		};
+	}
 	return {
 		classification: input.classification,
 		disposition,
@@ -173,18 +183,25 @@ export async function decideHumanResourcesSubjectDeletion(
 	port: HumanResourcesPrivacyDeletionPort,
 ): Promise<Result<HumanResourcesDeletionDecision>> {
 	const validated = validateInput(input);
-	if (!validated.ok) return validated;
+	if (!validated.ok) {
+		return validated;
+	}
 	const boundaryResult = await port.getProcessorBoundary({
 		organizationId: input.organizationId,
 		correlationId: input.correlationId,
 	});
-	if (!boundaryResult.ok) return boundaryResult;
-	if (boundaryResult.data.organizationId !== input.organizationId)
+	if (!boundaryResult.ok) {
+		return boundaryResult;
+	}
+	if (boundaryResult.data.organizationId !== input.organizationId) {
 		return fail("FORBIDDEN", "Privacy processor boundary crossed the tenant");
+	}
 	const verifiedBoundary = verifyHumanResourcesPrivacyProcessorBoundary(
 		boundaryResult.data,
 	);
-	if (!verifiedBoundary.ok) return verifiedBoundary;
+	if (!verifiedBoundary.ok) {
+		return verifiedBoundary;
+	}
 	const dispositions = input.classifications.map((item) =>
 		dispositionForClassification({
 			request: input,
@@ -196,12 +213,12 @@ export async function decideHumanResourcesSubjectDeletion(
 	const actionable = dispositions.filter(
 		(item) => item.disposition !== "retain",
 	).length;
-	const status: HumanResourcesDeletionDecision["status"] =
-		actionable === 0
-			? "denied"
-			: actionable === dispositions.length
-				? "approved"
-				: "partially_approved";
+	let status: HumanResourcesDeletionDecision["status"] = "partially_approved";
+	if (actionable === 0) {
+		status = "denied";
+	} else if (actionable === dispositions.length) {
+		status = "approved";
+	}
 	const subjectReferenceHash = hash({
 		organizationId: input.organizationId,
 		subjectEmployeeId: input.subjectEmployeeId,
@@ -225,7 +242,9 @@ export async function decideHumanResourcesSubjectDeletion(
 		actorUserId: input.actorUserId,
 	};
 	const recorded = await port.recordDeletionDecision(evidence);
-	if (!recorded.ok) return recorded;
+	if (!recorded.ok) {
+		return recorded;
+	}
 	return ok({
 		...evidenceSeed,
 		decisionId,
@@ -234,14 +253,17 @@ export async function decideHumanResourcesSubjectDeletion(
 	});
 }
 
-export async function executeHumanResourcesDeletionDecision(
+export function executeHumanResourcesDeletionDecision(
 	decision: HumanResourcesDeletionDecision,
 	port: HumanResourcesPrivacyDeletionPort,
 ): Promise<
 	Result<{ affectedRecordCount: number; executionReference: string }>
 > {
-	if (decision.status === "denied")
-		return fail("CONFLICT", "Denied deletion decision cannot be executed");
+	if (decision.status === "denied") {
+		return Promise.resolve(
+			fail("CONFLICT", "Denied deletion decision cannot be executed"),
+		);
+	}
 	return port.executeDeletionDecision({
 		organizationId: decision.organizationId,
 		decisionId: decision.decisionId,

@@ -59,7 +59,6 @@ async function createDraftReceipt(
 		},
 		ctx,
 	);
-	expect(created.ok).toBe(true);
 	if (!created.ok) {
 		throw new Error(created.message);
 	}
@@ -86,7 +85,6 @@ async function addReceiptLine(
 		},
 		ctx,
 	);
-	expect(line.ok).toBe(true);
 	if (!line.ok) {
 		throw new Error(line.message);
 	}
@@ -142,13 +140,15 @@ describe("@afenda/inventory transactions", () => {
 	it("rolls back create when audit recording fails", async () => {
 		const failingAudit: MutationPorts = {
 			audit: {
-				async record() {
-					return fail("INTERNAL_ERROR", "forced audit failure");
+				record() {
+					return Promise.resolve(
+						fail("INTERNAL_ERROR", "forced audit failure"),
+					);
 				},
 			},
 			outbox: {
-				async append(_input: OutboxFactInput): Promise<Result<{ id: string }>> {
-					return ok({ id: "outbox-1" });
+				append(_input: OutboxFactInput): Promise<Result<{ id: string }>> {
+					return Promise.resolve(ok({ id: "outbox-1" }));
 				},
 			},
 		};
@@ -186,13 +186,15 @@ describe("@afenda/inventory transactions", () => {
 
 		const failingOutbox: MutationPorts = {
 			audit: {
-				async record() {
-					return ok({ id: "audit-1" });
+				record() {
+					return Promise.resolve(ok({ id: "audit-1" }));
 				},
 			},
 			outbox: {
-				async append(_input: OutboxFactInput): Promise<Result<{ id: string }>> {
-					return fail("INTERNAL_ERROR", "forced outbox failure");
+				append(_input: OutboxFactInput): Promise<Result<{ id: string }>> {
+					return Promise.resolve(
+						fail("INTERNAL_ERROR", "forced outbox failure"),
+					);
 				},
 			},
 		};
@@ -259,13 +261,15 @@ describe("@afenda/inventory transactions", () => {
 
 		const failingOutbox: MutationPorts = {
 			audit: {
-				async record() {
-					return ok({ id: "audit-1" });
+				record() {
+					return Promise.resolve(ok({ id: "audit-1" }));
 				},
 			},
 			outbox: {
-				async append(_input: OutboxFactInput): Promise<Result<{ id: string }>> {
-					return fail("INTERNAL_ERROR", "forced outbox failure");
+				append(_input: OutboxFactInput): Promise<Result<{ id: string }>> {
+					return Promise.resolve(
+						fail("INTERNAL_ERROR", "forced outbox failure"),
+					);
 				},
 			},
 		};

@@ -9,7 +9,9 @@ export function decideMigrationRecovery(input: {
 	previousApplicationCompatible: boolean;
 	dataWriteObserved: boolean;
 }): MigrationRecoveryDecision {
-	if (!input.migrationApplied) return "rollback_application";
+	if (!input.migrationApplied) {
+		return "rollback_application";
+	}
 	if (
 		input.migrationReversible &&
 		input.previousApplicationCompatible &&
@@ -23,12 +25,12 @@ export function decideMigrationRecovery(input: {
 	return "halt_and_escalate";
 }
 
-export type PrivacyContainmentDecision = {
+export interface PrivacyContainmentDecision {
 	action: "contain" | "monitor";
-	revokeConnector: boolean;
-	quarantineQueue: boolean;
 	preserveAuditEvidence: true;
-};
+	quarantineQueue: boolean;
+	revokeConnector: boolean;
+}
 
 export function decidePrivacyContainment(input: {
 	crossTenantExposure: boolean;
@@ -65,14 +67,14 @@ export function decideRollbackCompatibility(input: {
 		: "rollback_blocked";
 }
 
-export type EffectiveDatedVersion = {
-	id: string;
+export interface EffectiveDatedVersion {
 	effectiveFrom: string;
 	effectiveTo: string | null;
+	id: string;
 	status: "active" | "superseded";
-	value: string;
 	supersedesId: string | null;
-};
+	value: string;
+}
 
 function dayBefore(isoDate: string): string {
 	const date = new Date(`${isoDate}T00:00:00.000Z`);

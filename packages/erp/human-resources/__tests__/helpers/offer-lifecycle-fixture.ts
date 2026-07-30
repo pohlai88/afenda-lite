@@ -168,7 +168,7 @@ export async function createAndIssueOffer(
 	const opts = withOfferLifecycleDeps(ready);
 	const tag = input.correlationPrefix;
 
-	let compensationProposalId = input.compensationProposalId;
+	let { compensationProposalId } = input;
 	if (compensationProposalId === undefined) {
 		const proposal = await seedApprovedCompensationProposal(opts, {
 			organizationId: input.organizationId,

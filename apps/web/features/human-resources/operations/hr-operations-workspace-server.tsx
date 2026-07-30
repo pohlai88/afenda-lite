@@ -18,7 +18,9 @@ export async function HrOperationsWorkspaceServer({
 }) {
 	const session = await requireRole("operator");
 	const capabilities = await resolveHrOperationsCapabilities(session);
-	if (!hasHrOperationsCapability(capabilities)) forbidPermissionAccess();
+	if (!hasHrOperationsCapability(capabilities)) {
+		forbidPermissionAccess();
+	}
 	const data = await loadHrOperations(capabilities);
 	const integrationHealth = capabilities.canViewIntegrationHealth
 		? await OperationsHrShell({ page, preferences })

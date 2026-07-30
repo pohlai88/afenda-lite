@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noJsxPropsBind: The enabled React Compiler stabilizes JSX callback props.
 "use client";
 
 import {
@@ -22,9 +23,7 @@ import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 
 const initialState: CreateItemVariantActionState = null;
 
-export type VariantTemplateOption = {
-	id: string;
-	label: string;
+export interface VariantTemplateOption {
 	attributes: Array<{
 		id: string;
 		code: string;
@@ -32,15 +31,17 @@ export type VariantTemplateOption = {
 		valueKind: "text" | "option";
 		options: Array<{ id: string; label: string }>;
 	}>;
-};
+	id: string;
+	label: string;
+}
 
-type CreateItemVariantFormProps = {
-	canManage: boolean;
-	templates: VariantTemplateOption[];
-	itemGroups: Array<{ id: string; label: string }>;
+interface CreateItemVariantFormProps {
 	baseUomId: string;
+	canManage: boolean;
+	itemGroups: Array<{ id: string; label: string }>;
 	itemTypes: readonly string[];
-};
+	templates: VariantTemplateOption[];
+}
 
 /**
  * Concrete variant item form — own item code; typed attribute values (no JSON bag).
@@ -98,12 +99,12 @@ export function CreateItemVariantForm({
 			aria-busy={pending}
 			className="flex max-w-md flex-col gap-(--field-gap)"
 		>
-			<input type="hidden" name="baseUomId" value={baseUomId} />
+			<input name="baseUomId" type="hidden" value={baseUomId} />
 			{attributes.map((attribute) => (
 				<input
 					key={attribute.id}
-					type="hidden"
 					name="attributeIds"
+					type="hidden"
 					value={attribute.id}
 				/>
 			))}
@@ -119,13 +120,13 @@ export function CreateItemVariantForm({
 			{showFormError && state?.ok === false ? (
 				<FormError>{state.message}</FormError>
 			) : null}
-			<FormField label="Template" required fieldId="variant-template">
+			<FormField fieldId="variant-template" label="Template" required>
 				<NativeSelect
-					name="templateId"
-					required
 					disabled={pending}
-					value={templateId}
+					name="templateId"
 					onChange={(event) => setTemplateId(event.target.value)}
+					required
+					value={templateId}
 				>
 					{templates.map((template) => (
 						<NativeSelectOption key={template.id} value={template.id}>
@@ -134,18 +135,18 @@ export function CreateItemVariantForm({
 					))}
 				</NativeSelect>
 			</FormField>
-			<FormField label="Code" required fieldId="variant-code" error={codeError}>
-				<Input name="code" required autoComplete="off" disabled={pending} />
+			<FormField error={codeError} fieldId="variant-code" label="Code" required>
+				<Input autoComplete="off" disabled={pending} name="code" required />
 			</FormField>
-			<FormField label="Name" required fieldId="variant-name" error={nameError}>
-				<Input name="name" required autoComplete="off" disabled={pending} />
+			<FormField error={nameError} fieldId="variant-name" label="Name" required>
+				<Input autoComplete="off" disabled={pending} name="name" required />
 			</FormField>
-			<FormField label="Item type" required fieldId="variant-item-type">
+			<FormField fieldId="variant-item-type" label="Item type" required>
 				<NativeSelect
+					defaultValue="stock"
+					disabled={pending}
 					name="itemType"
 					required
-					disabled={pending}
-					defaultValue="stock"
 				>
 					{itemTypes.map((type) => (
 						<NativeSelectOption key={type} value={type}>
@@ -154,8 +155,8 @@ export function CreateItemVariantForm({
 					))}
 				</NativeSelect>
 			</FormField>
-			<FormField label="Item group" required fieldId="variant-item-group">
-				<NativeSelect name="itemGroupId" required disabled={pending}>
+			<FormField fieldId="variant-item-group" label="Item group" required>
+				<NativeSelect disabled={pending} name="itemGroupId" required>
 					{itemGroups.map((group) => (
 						<NativeSelectOption key={group.id} value={group.id}>
 							{group.label}
@@ -166,15 +167,15 @@ export function CreateItemVariantForm({
 			{attributes.map((attribute) =>
 				attribute.valueKind === "option" ? (
 					<FormField
+						fieldId={`variant-option-${attribute.id}`}
 						key={attribute.id}
 						label={attribute.name}
 						required
-						fieldId={`variant-option-${attribute.id}`}
 					>
 						<NativeSelect
+							disabled={pending || attribute.options.length === 0}
 							name={`optionId_${attribute.id}`}
 							required
-							disabled={pending || attribute.options.length === 0}
 						>
 							{attribute.options.map((option) => (
 								<NativeSelectOption key={option.id} value={option.id}>
@@ -185,22 +186,22 @@ export function CreateItemVariantForm({
 					</FormField>
 				) : (
 					<FormField
+						fieldId={`variant-text-${attribute.id}`}
 						key={attribute.id}
 						label={attribute.name}
 						required
-						fieldId={`variant-text-${attribute.id}`}
 					>
 						<Input
-							name={`valueText_${attribute.id}`}
-							required
 							autoComplete="off"
 							disabled={pending}
+							name={`valueText_${attribute.id}`}
+							required
 						/>
 					</FormField>
 				),
 			)}
 			{attributes.length === 0 ? (
-				<Alert variant="destructive" role="alert">
+				<Alert role="alert" variant="destructive">
 					<AlertTitle>No attributes</AlertTitle>
 					<AlertDescription>
 						Selected template has no attributes. Add attributes while the
@@ -208,7 +209,7 @@ export function CreateItemVariantForm({
 					</AlertDescription>
 				</Alert>
 			) : null}
-			<Button type="submit" disabled={pending || attributes.length === 0}>
+			<Button disabled={pending || attributes.length === 0} type="submit">
 				{pending ? (
 					<>
 						<Spinner className="size-4" /> Creating…

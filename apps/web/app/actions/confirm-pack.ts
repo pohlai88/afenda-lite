@@ -13,7 +13,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type ConfirmPackActionData = { pack: DeliveryPack };
+export interface ConfirmPackActionData {
+	pack: DeliveryPack;
+}
 export type ConfirmPackActionState = ActionResult<ConfirmPackActionData> | null;
 
 const optionalText = (max: number) =>
@@ -34,7 +36,7 @@ export async function confirmPackAction(
 	_prev: ConfirmPackActionState,
 	formData: FormData,
 ): Promise<ConfirmPackActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "confirmPackAction",
 		permission: "fulfillment.packing.confirm",
 		safeMessage: "Could not confirm pack. Try again or contact an admin.",
@@ -63,7 +65,9 @@ export async function confirmPackAction(
 				createFulfillmentCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePath("/admin/fulfillment");
 			revalidatePath("/client/fulfillment");
 			return { ok: true, data: { pack: mapped.data } };

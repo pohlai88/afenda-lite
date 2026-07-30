@@ -5,6 +5,7 @@ import {
 	type LocalBenchmarkEvidence,
 	runLocalBenchmark,
 } from "../src/performance-verification";
+import { runSequential } from "../src/shared/run-sequential";
 
 describe("HR local performance verification", () => {
 	it("executes all eight deterministic workloads and reports local threshold evidence", async () => {
@@ -20,7 +21,7 @@ describe("HR local performance verification", () => {
 			"large_tenant_isolation",
 		]);
 		const evidence: LocalBenchmarkEvidence[] = [];
-		for (const workload of workloads) {
+		await runSequential(workloads, async (workload) => {
 			evidence.push(
 				await runLocalBenchmark(workload, {
 					warmupRuns: 1,
@@ -28,7 +29,7 @@ describe("HR local performance verification", () => {
 					enforceThreshold: false,
 				}),
 			);
-		}
+		});
 		expect(evidence).toHaveLength(8);
 		for (const result of evidence) {
 			expect(result).toMatchObject({

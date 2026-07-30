@@ -46,7 +46,9 @@ export async function addItemTemplateAttribute(
 		parsed.data.dataType,
 		parsed.data.validationRules,
 	);
-	if (!validationRules.ok) return validationRules;
+	if (!validationRules.ok) {
+		return validationRules;
+	}
 	const isVariantDefining = parsed.data.isVariantDefining ?? false;
 	const isRequired = parsed.data.isRequired ?? false;
 	const isSearchable = parsed.data.isSearchable ?? false;

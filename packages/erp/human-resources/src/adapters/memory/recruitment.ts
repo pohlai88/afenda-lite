@@ -62,6 +62,7 @@ import {
 	type OfferStatus,
 	type RequisitionStatus,
 } from "../../shared/recruitment-status";
+import { runSequential, sequentialReturn } from "../../shared/run-sequential";
 import { validateOfferCompensationProposalAttachment } from "../../shared/validate-offer-compensation-proposal-attachment";
 import type {
 	ApplicationCreateRecord,
@@ -160,7 +161,9 @@ async function validateRequisitionReferences(
 			organizationId: input.organizationId,
 			jobId: input.jobId,
 		});
-		if (!job.ok) return job;
+		if (!job.ok) {
+			return job;
+		}
 		if (job.data === null) {
 			return notFound(
 				"Job not found",
@@ -173,7 +176,9 @@ async function validateRequisitionReferences(
 			organizationId: input.organizationId,
 			positionId: input.positionId,
 		});
-		if (!position.ok) return position;
+		if (!position.ok) {
+			return position;
+		}
 		if (position.data === null) {
 			return notFound(
 				"Position not found",
@@ -186,7 +191,9 @@ async function validateRequisitionReferences(
 			organizationId: input.organizationId,
 			departmentId: input.departmentId,
 		});
-		if (!department.ok) return department;
+		if (!department.ok) {
+			return department;
+		}
 		if (department.data === null) {
 			return notFound(
 				"Department not found",
@@ -220,23 +227,89 @@ function appendApplicationHistoryToState(
 	return { ...row };
 }
 
-export type RecruitmentMemoryState = {
-	requisitions: Map<HumanResourcesRequisitionId, JobRequisition>;
-	requisitionIdempotencyByKey: Map<string, IdempotentRequisitionRecord>;
-	candidates: Map<HumanResourcesCandidateId, Candidate>;
-	candidateIdempotencyByKey: Map<string, IdempotentCandidateRecord>;
-	candidateByNormalizedEmail: Map<string, string>;
-	applications: Map<HumanResourcesApplicationId, CandidateApplication>;
+export interface RecruitmentMemoryState {
 	applicationStatusHistory: Map<string, ApplicationStatusHistory>;
-	interviews: Map<HumanResourcesInterviewId, Interview>;
+	applications: Map<HumanResourcesApplicationId, CandidateApplication>;
+	candidateByNormalizedEmail: Map<string, string>;
+	candidateIdempotencyByKey: Map<string, IdempotentCandidateRecord>;
+	candidates: Map<HumanResourcesCandidateId, Candidate>;
+	interviewEvaluationByInterviewId: Map<string, string>;
 	interviewEvaluations: Map<
 		HumanResourcesInterviewEvaluationId,
 		InterviewEvaluation
 	>;
-	interviewEvaluationByInterviewId: Map<string, string>;
-	offers: Map<HumanResourcesOfferId, EmploymentOffer>;
+	interviews: Map<HumanResourcesInterviewId, Interview>;
 	offerAcceptIdempotencyByKey: Map<string, IdempotentOfferAcceptRecord>;
-};
+	offers: Map<HumanResourcesOfferId, EmploymentOffer>;
+	requisitionIdempotencyByKey: Map<string, IdempotentRequisitionRecord>;
+	requisitions: Map<HumanResourcesRequisitionId, JobRequisition>;
+}
+
+function resolveRequisitionAmendmentValues(
+	requisition: JobRequisition,
+	input: {
+		title?: string | undefined;
+		jobId?: HumanResourcesJobId | null | undefined;
+		positionId?: HumanResourcesPositionId | null | undefined;
+		departmentId?: HumanResourcesDepartmentId | null | undefined;
+		hiringManagerEmployeeId?: HumanResourcesEmployeeId | null | undefined;
+	},
+) {
+	return {
+		title: input.title === undefined ? requisition.title : input.title,
+		jobId: input.jobId === undefined ? requisition.jobId : input.jobId,
+		positionId:
+			input.positionId === undefined
+				? requisition.positionId
+				: input.positionId,
+		departmentId:
+			input.departmentId === undefined
+				? requisition.departmentId
+				: input.departmentId,
+		hiringManagerEmployeeId:
+			input.hiringManagerEmployeeId === undefined
+				? requisition.hiringManagerEmployeeId
+				: input.hiringManagerEmployeeId,
+	};
+}
+
+function resolveApplicationReferences(
+	state: RecruitmentMemoryState,
+	record: ApplicationCreateRecord,
+): Result<{ candidate: Candidate; requisition: JobRequisition }> {
+	const candidate = state.candidates.get(record.candidateId);
+	if (candidate === undefined) {
+		return notFound("Candidate not found");
+	}
+	const candidateOrg = assertRecruitmentOrgMatch(
+		candidate,
+		record.organizationId,
+		"Candidate",
+	);
+	if (!candidateOrg.ok) {
+		return candidateOrg;
+	}
+	const activeCandidate = assertCandidateActive(candidate.status);
+	if (!activeCandidate.ok) {
+		return activeCandidate;
+	}
+	const requisition = state.requisitions.get(record.requisitionId);
+	if (requisition === undefined) {
+		return notFound("Requisition not found");
+	}
+	const requisitionOrg = assertRecruitmentOrgMatch(
+		requisition,
+		record.organizationId,
+		"Requisition",
+	);
+	if (!requisitionOrg.ok) {
+		return requisitionOrg;
+	}
+	const openRequisition = assertRequisitionOpenForApplication(
+		requisition.status,
+	);
+	return openRequisition.ok ? ok({ candidate, requisition }) : openRequisition;
+}
 
 export type MemoryRecruitmentMethods = Pick<
 	HumanResourcesStore,
@@ -340,9 +413,9 @@ export function createMemoryRecruitmentMethods(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
 			if (record === undefined) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({
+			return await ok({
 				requisition: cloneRequisition(record.requisition),
 				createRequestFingerprint: record.createRequestFingerprint,
 			});
@@ -354,7 +427,7 @@ export function createMemoryRecruitmentMethods(
 		}): Promise<Result<JobRequisition | null>> {
 			const requisition = state.requisitions.get(input.requisitionId);
 			if (requisition === undefined) {
-				return ok(null);
+				return await ok(null);
 			}
 			const orgCheck = assertRecruitmentOrgMatch(
 				requisition,
@@ -362,24 +435,30 @@ export function createMemoryRecruitmentMethods(
 				"Requisition",
 			);
 			if (!orgCheck.ok) {
-				return notFound("Requisition not found");
+				return await notFound("Requisition not found");
 			}
-			return ok(cloneRequisition(requisition));
+			return await ok(cloneRequisition(requisition));
 		},
 
 		async findRequisitionByCode(input: {
 			organizationId: string;
 			code: string;
 		}): Promise<Result<JobRequisition | null>> {
-			for (const requisition of state.requisitions.values()) {
-				if (
-					requisition.organizationId === input.organizationId &&
-					requisition.code === input.code
-				) {
-					return ok(cloneRequisition(requisition));
-				}
+			const sequentialOutcome1 = await runSequential(
+				state.requisitions.values(),
+				async (requisition) => {
+					if (
+						requisition.organizationId === input.organizationId &&
+						requisition.code === input.code
+					) {
+						return sequentialReturn(await ok(cloneRequisition(requisition)));
+					}
+				},
+			);
+			if (sequentialOutcome1.kind === "return") {
+				return sequentialOutcome1.value;
 			}
-			return ok(null);
+			return await ok(null);
 		},
 
 		async createDraftRequisition(
@@ -479,11 +558,11 @@ export function createMemoryRecruitmentMethods(
 			input: {
 				organizationId: string;
 				requisitionId: HumanResourcesRequisitionId;
-				title?: string;
-				jobId?: HumanResourcesJobId | null;
-				positionId?: HumanResourcesPositionId | null;
-				departmentId?: HumanResourcesDepartmentId | null;
-				hiringManagerEmployeeId?: HumanResourcesEmployeeId | null;
+				title?: string | undefined;
+				jobId?: HumanResourcesJobId | null | undefined;
+				positionId?: HumanResourcesPositionId | null | undefined;
+				departmentId?: HumanResourcesDepartmentId | null | undefined;
+				hiringManagerEmployeeId?: HumanResourcesEmployeeId | null | undefined;
 				expectedVersion: number;
 				actorUserId: string;
 			},
@@ -516,28 +595,13 @@ export function createMemoryRecruitmentMethods(
 				return amendable;
 			}
 
-			const nextTitle =
-				input.title !== undefined ? input.title : requisition.title;
-			const nextJobId =
-				input.jobId !== undefined ? input.jobId : requisition.jobId;
-			const nextPositionId =
-				input.positionId !== undefined
-					? input.positionId
-					: requisition.positionId;
-			const nextDepartmentId =
-				input.departmentId !== undefined
-					? input.departmentId
-					: requisition.departmentId;
-			const nextHiringManagerEmployeeId =
-				input.hiringManagerEmployeeId !== undefined
-					? input.hiringManagerEmployeeId
-					: requisition.hiringManagerEmployeeId;
+			const amendments = resolveRequisitionAmendmentValues(requisition, input);
 
 			const refs = await validateRequisitionReferences.call(this, {
 				organizationId: input.organizationId,
-				jobId: nextJobId,
-				positionId: nextPositionId,
-				departmentId: nextDepartmentId,
+				jobId: amendments.jobId,
+				positionId: amendments.positionId,
+				departmentId: amendments.departmentId,
 			});
 			if (!refs.ok) {
 				return refs;
@@ -546,11 +610,11 @@ export function createMemoryRecruitmentMethods(
 			const now = new Date();
 			const updated: JobRequisition = {
 				...requisition,
-				title: nextTitle,
-				jobId: nextJobId,
-				positionId: nextPositionId,
-				departmentId: nextDepartmentId,
-				hiringManagerEmployeeId: nextHiringManagerEmployeeId,
+				title: amendments.title,
+				jobId: amendments.jobId,
+				positionId: amendments.positionId,
+				departmentId: amendments.departmentId,
+				hiringManagerEmployeeId: amendments.hiringManagerEmployeeId,
 				version: requisition.version + 1,
 				updatedBy: input.actorUserId,
 				updatedAt: now,
@@ -649,7 +713,7 @@ export function createMemoryRecruitmentMethods(
 				status: RequisitionStatus;
 				expectedVersion: number;
 				actorUserId: string;
-				emitApprovedEvent?: boolean;
+				emitApprovedEvent?: boolean | undefined;
 			},
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
@@ -748,7 +812,7 @@ export function createMemoryRecruitmentMethods(
 			organizationId: string;
 			page: number;
 			pageSize: number;
-			status?: RequisitionStatus;
+			status?: RequisitionStatus | undefined;
 		}): Promise<Result<RequisitionListPage>> {
 			let filtered = Array.from(state.requisitions.values()).filter(
 				(r) => r.organizationId === input.organizationId,
@@ -762,7 +826,7 @@ export function createMemoryRecruitmentMethods(
 			const requisitions = filtered
 				.slice(start, start + input.pageSize)
 				.map((r) => cloneRequisition(r));
-			return ok({
+			return await ok({
 				requisitions,
 				totalCount,
 				page: input.page,
@@ -779,9 +843,9 @@ export function createMemoryRecruitmentMethods(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
 			if (record === undefined) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({
+			return await ok({
 				candidate: cloneCandidate(record.candidate),
 				createRequestFingerprint: record.createRequestFingerprint,
 			});
@@ -793,7 +857,7 @@ export function createMemoryRecruitmentMethods(
 		}): Promise<Result<Candidate | null>> {
 			const candidate = state.candidates.get(input.candidateId);
 			if (candidate === undefined) {
-				return ok(null);
+				return await ok(null);
 			}
 			const orgCheck = assertRecruitmentOrgMatch(
 				candidate,
@@ -801,9 +865,9 @@ export function createMemoryRecruitmentMethods(
 				"Candidate",
 			);
 			if (!orgCheck.ok) {
-				return notFound("Candidate not found");
+				return await notFound("Candidate not found");
 			}
-			return ok(cloneCandidate(candidate));
+			return await ok(cloneCandidate(candidate));
 		},
 
 		async findCandidateByNormalizedEmail(input: {
@@ -814,15 +878,15 @@ export function createMemoryRecruitmentMethods(
 				`${input.organizationId}:${input.normalizedEmail}`,
 			);
 			if (candidateId === undefined) {
-				return ok(null);
+				return await ok(null);
 			}
 			const candidate = state.candidates.get(
 				candidateId as HumanResourcesCandidateId,
 			);
 			if (candidate === undefined) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok(cloneCandidate(candidate));
+			return await ok(cloneCandidate(candidate));
 		},
 
 		async createCandidate(
@@ -940,8 +1004,8 @@ export function createMemoryRecruitmentMethods(
 			input: {
 				organizationId: string;
 				candidateId: HumanResourcesCandidateId;
-				displayName?: string;
-				phone?: string | null;
+				displayName?: string | undefined;
+				phone?: string | null | undefined;
 				expectedVersion: number;
 				actorUserId: string;
 			},
@@ -978,10 +1042,10 @@ export function createMemoryRecruitmentMethods(
 			const updated: Candidate = {
 				...candidate,
 				displayName:
-					input.displayName !== undefined
-						? input.displayName
-						: candidate.displayName,
-				phone: input.phone !== undefined ? input.phone : candidate.phone,
+					input.displayName === undefined
+						? candidate.displayName
+						: input.displayName,
+				phone: input.phone === undefined ? candidate.phone : input.phone,
 				version: candidate.version + 1,
 				updatedBy: input.actorUserId,
 				updatedAt: now,
@@ -1285,9 +1349,9 @@ export function createMemoryRecruitmentMethods(
 			organizationId: string;
 			page: number;
 			pageSize: number;
-			status?: CandidateStatus;
-			retentionDueAsOf?: string;
-			query?: string;
+			status?: CandidateStatus | undefined;
+			retentionDueAsOf?: string | undefined;
+			query?: string | undefined;
 		}): Promise<Result<CandidateListPage>> {
 			let filtered = Array.from(state.candidates.values()).filter(
 				(c) => c.organizationId === input.organizationId,
@@ -1296,7 +1360,7 @@ export function createMemoryRecruitmentMethods(
 				filtered = filtered.filter((c) => c.status === input.status);
 			}
 			if (input.retentionDueAsOf !== undefined) {
-				const retentionDueAsOf = input.retentionDueAsOf;
+				const { retentionDueAsOf } = input;
 				filtered = filtered.filter(
 					(candidate) =>
 						candidate.retentionUntil !== null &&
@@ -1320,7 +1384,7 @@ export function createMemoryRecruitmentMethods(
 			const candidates = filtered
 				.slice(start, start + input.pageSize)
 				.map((c) => cloneCandidate(c));
-			return ok({
+			return await ok({
 				candidates,
 				totalCount,
 				page: input.page,
@@ -1330,8 +1394,8 @@ export function createMemoryRecruitmentMethods(
 
 		async detectCandidateDuplicates(input: {
 			organizationId: string;
-			email?: string;
-			displayName?: string;
+			email?: string | undefined;
+			displayName?: string | undefined;
 		}): Promise<Result<readonly CandidateDuplicateMatch[]>> {
 			const matches = new Map<
 				HumanResourcesCandidateId,
@@ -1347,13 +1411,13 @@ export function createMemoryRecruitmentMethods(
 			};
 
 			const normalizedEmail =
-				input.email !== undefined
-					? normalizeCandidateEmail(input.email)
-					: undefined;
+				input.email === undefined
+					? undefined
+					: normalizeCandidateEmail(input.email);
 			const normalizedDisplayName =
-				input.displayName !== undefined
-					? input.displayName.trim().toLowerCase()
-					: undefined;
+				input.displayName === undefined
+					? undefined
+					: input.displayName.trim().toLowerCase();
 
 			for (const candidate of state.candidates.values()) {
 				if (candidate.organizationId !== input.organizationId) {
@@ -1390,7 +1454,7 @@ export function createMemoryRecruitmentMethods(
 				});
 			}
 			results.sort((a, b) => a.displayName.localeCompare(b.displayName));
-			return ok(results);
+			return await ok(results);
 		},
 
 		// Application methods
@@ -1400,7 +1464,7 @@ export function createMemoryRecruitmentMethods(
 		}): Promise<Result<CandidateApplication | null>> {
 			const application = state.applications.get(input.applicationId);
 			if (application === undefined) {
-				return ok(null);
+				return await ok(null);
 			}
 			const orgCheck = assertRecruitmentOrgMatch(
 				application,
@@ -1408,9 +1472,9 @@ export function createMemoryRecruitmentMethods(
 				"Application",
 			);
 			if (!orgCheck.ok) {
-				return notFound("Application not found");
+				return await notFound("Application not found");
 			}
-			return ok(cloneApplication(application));
+			return await ok(cloneApplication(application));
 		},
 
 		async findActiveApplicationByCandidateRequisition(input: {
@@ -1418,17 +1482,23 @@ export function createMemoryRecruitmentMethods(
 			candidateId: HumanResourcesCandidateId;
 			requisitionId: HumanResourcesRequisitionId;
 		}): Promise<Result<CandidateApplication | null>> {
-			for (const application of state.applications.values()) {
-				if (
-					application.organizationId === input.organizationId &&
-					application.candidateId === input.candidateId &&
-					application.requisitionId === input.requisitionId &&
-					!isApplicationTerminal(application.status)
-				) {
-					return ok(cloneApplication(application));
-				}
+			const sequentialOutcome2 = await runSequential(
+				state.applications.values(),
+				async (application) => {
+					if (
+						application.organizationId === input.organizationId &&
+						application.candidateId === input.candidateId &&
+						application.requisitionId === input.requisitionId &&
+						!isApplicationTerminal(application.status)
+					) {
+						return sequentialReturn(await ok(cloneApplication(application)));
+					}
+				},
+			);
+			if (sequentialOutcome2.kind === "return") {
+				return sequentialOutcome2.value;
 			}
-			return ok(null);
+			return await ok(null);
 		},
 
 		async createApplication(
@@ -1436,42 +1506,9 @@ export function createMemoryRecruitmentMethods(
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<CandidateApplication>> {
-			const candidate = state.candidates.get(record.candidateId);
-			if (candidate === undefined) {
-				return notFound("Candidate not found");
-			}
-			const candidateOrg = assertRecruitmentOrgMatch(
-				candidate,
-				record.organizationId,
-				"Candidate",
-			);
-			if (!candidateOrg.ok) {
-				return candidateOrg;
-			}
-
-			const activeCandidate = assertCandidateActive(candidate.status);
-			if (!activeCandidate.ok) {
-				return activeCandidate;
-			}
-
-			const requisition = state.requisitions.get(record.requisitionId);
-			if (requisition === undefined) {
-				return notFound("Requisition not found");
-			}
-			const requisitionOrg = assertRecruitmentOrgMatch(
-				requisition,
-				record.organizationId,
-				"Requisition",
-			);
-			if (!requisitionOrg.ok) {
-				return requisitionOrg;
-			}
-
-			const openRequisition = assertRequisitionOpenForApplication(
-				requisition.status,
-			);
-			if (!openRequisition.ok) {
-				return openRequisition;
+			const references = resolveApplicationReferences(state, record);
+			if (!references.ok) {
+				return references;
 			}
 
 			const existingActive =
@@ -1563,8 +1600,8 @@ export function createMemoryRecruitmentMethods(
 				status: ApplicationStatus;
 				expectedVersion: number;
 				actorUserId: string;
-				reason?: string | null;
-				reasonCode?: string | null;
+				reason?: string | null | undefined;
+				reasonCode?: string | null | undefined;
 			},
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
@@ -1661,8 +1698,8 @@ export function createMemoryRecruitmentMethods(
 				applicationId: HumanResourcesApplicationId;
 				expectedVersion: number;
 				actorUserId: string;
-				reason?: string | null;
-				reasonCode?: string | null;
+				reason?: string | null | undefined;
+				reasonCode?: string | null | undefined;
 			},
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
@@ -1737,22 +1774,22 @@ export function createMemoryRecruitmentMethods(
 					(left, right) => left.createdAt.getTime() - right.createdAt.getTime(),
 				)
 				.map((row) => ({ ...row }));
-			return ok(rows);
+			return await ok(rows);
 		},
 
 		async appendApplicationStatusHistory(
 			record: ApplicationStatusHistoryAppendRecord,
 		): Promise<Result<ApplicationStatusHistory>> {
-			return ok(appendApplicationHistoryToState(state, record));
+			return await ok(appendApplicationHistoryToState(state, record));
 		},
 
 		async listApplications(input: {
 			organizationId: string;
 			page: number;
 			pageSize: number;
-			status?: ApplicationStatus;
-			candidateId?: HumanResourcesCandidateId;
-			requisitionId?: HumanResourcesRequisitionId;
+			status?: ApplicationStatus | undefined;
+			candidateId?: HumanResourcesCandidateId | undefined;
+			requisitionId?: HumanResourcesRequisitionId | undefined;
 		}): Promise<Result<ApplicationListPage>> {
 			let filtered = Array.from(state.applications.values()).filter(
 				(a) => a.organizationId === input.organizationId,
@@ -1774,7 +1811,7 @@ export function createMemoryRecruitmentMethods(
 			const applications = filtered
 				.slice(start, start + input.pageSize)
 				.map((a) => cloneApplication(a));
-			return ok({
+			return await ok({
 				applications,
 				totalCount,
 				page: input.page,
@@ -1789,7 +1826,7 @@ export function createMemoryRecruitmentMethods(
 		}): Promise<Result<Interview | null>> {
 			const interview = state.interviews.get(input.interviewId);
 			if (interview === undefined) {
-				return ok(null);
+				return await ok(null);
 			}
 			const orgCheck = assertRecruitmentOrgMatch(
 				interview,
@@ -1797,9 +1834,9 @@ export function createMemoryRecruitmentMethods(
 				"Interview",
 			);
 			if (!orgCheck.ok) {
-				return notFound("Interview not found");
+				return await notFound("Interview not found");
 			}
-			return ok(cloneInterview(interview));
+			return await ok(cloneInterview(interview));
 		},
 
 		async scheduleInterview(
@@ -2013,7 +2050,7 @@ export function createMemoryRecruitmentMethods(
 			organizationId: string;
 			page: number;
 			pageSize: number;
-			applicationId?: HumanResourcesApplicationId;
+			applicationId?: HumanResourcesApplicationId | undefined;
 		}): Promise<Result<InterviewListPage>> {
 			let filtered = Array.from(state.interviews.values()).filter(
 				(i) => i.organizationId === input.organizationId,
@@ -2031,7 +2068,7 @@ export function createMemoryRecruitmentMethods(
 			const interviews = filtered
 				.slice(start, start + input.pageSize)
 				.map((i) => cloneInterview(i));
-			return ok({
+			return await ok({
 				interviews,
 				totalCount,
 				page: input.page,
@@ -2048,13 +2085,13 @@ export function createMemoryRecruitmentMethods(
 				input.interviewId,
 			);
 			if (evaluationId === undefined) {
-				return ok(null);
+				return await ok(null);
 			}
 			const evaluation = state.interviewEvaluations.get(
 				evaluationId as HumanResourcesInterviewEvaluationId,
 			);
 			if (evaluation === undefined) {
-				return ok(null);
+				return await ok(null);
 			}
 			const orgCheck = assertRecruitmentOrgMatch(
 				evaluation,
@@ -2062,9 +2099,9 @@ export function createMemoryRecruitmentMethods(
 				"Interview evaluation",
 			);
 			if (!orgCheck.ok) {
-				return notFound("Interview evaluation not found");
+				return await notFound("Interview evaluation not found");
 			}
-			return ok(cloneEvaluation(evaluation));
+			return await ok(cloneEvaluation(evaluation));
 		},
 
 		async recordInterviewEvaluation(
@@ -2208,7 +2245,7 @@ export function createMemoryRecruitmentMethods(
 		}): Promise<Result<EmploymentOffer | null>> {
 			const offer = state.offers.get(input.offerId);
 			if (offer === undefined) {
-				return ok(null);
+				return await ok(null);
 			}
 			const orgCheck = assertRecruitmentOrgMatch(
 				offer,
@@ -2216,25 +2253,31 @@ export function createMemoryRecruitmentMethods(
 				"Offer",
 			);
 			if (!orgCheck.ok) {
-				return notFound("Offer not found");
+				return await notFound("Offer not found");
 			}
-			return ok(cloneOffer(offer));
+			return await ok(cloneOffer(offer));
 		},
 
 		async findActiveOfferByApplication(input: {
 			organizationId: string;
 			applicationId: HumanResourcesApplicationId;
 		}): Promise<Result<EmploymentOffer | null>> {
-			for (const offer of state.offers.values()) {
-				if (
-					offer.organizationId === input.organizationId &&
-					offer.applicationId === input.applicationId &&
-					isOfferActive(offer.status)
-				) {
-					return ok(cloneOffer(offer));
-				}
+			const sequentialOutcome3 = await runSequential(
+				state.offers.values(),
+				async (offer) => {
+					if (
+						offer.organizationId === input.organizationId &&
+						offer.applicationId === input.applicationId &&
+						isOfferActive(offer.status)
+					) {
+						return sequentialReturn(await ok(cloneOffer(offer)));
+					}
+				},
+			);
+			if (sequentialOutcome3.kind === "return") {
+				return sequentialOutcome3.value;
 			}
-			return ok(null);
+			return await ok(null);
 		},
 
 		async findOfferByAcceptIdempotencyKey(input: {
@@ -2245,9 +2288,9 @@ export function createMemoryRecruitmentMethods(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
 			if (record === undefined) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({
+			return await ok({
 				handoff: cloneHandoff(record.handoff),
 				acceptRequestFingerprint: record.acceptRequestFingerprint,
 			});
@@ -2345,9 +2388,12 @@ export function createMemoryRecruitmentMethods(
 			input: {
 				organizationId: string;
 				offerId: HumanResourcesOfferId;
-				termsSummary?: string;
-				expiresOn?: string;
-				compensationProposalId?: HumanResourcesCompensationProposalId | null;
+				termsSummary?: string | undefined;
+				expiresOn?: string | undefined;
+				compensationProposalId?:
+					| HumanResourcesCompensationProposalId
+					| null
+					| undefined;
 				expectedVersion: number;
 				actorUserId: string;
 			},
@@ -2381,9 +2427,9 @@ export function createMemoryRecruitmentMethods(
 			}
 
 			const nextCompensationProposalId =
-				input.compensationProposalId !== undefined
-					? input.compensationProposalId
-					: offer.compensationProposalId;
+				input.compensationProposalId === undefined
+					? offer.compensationProposalId
+					: input.compensationProposalId;
 			if (input.compensationProposalId !== undefined) {
 				const proposalMutable = assertOfferProposalMutable(offer.status);
 				if (!proposalMutable.ok) {
@@ -2406,11 +2452,11 @@ export function createMemoryRecruitmentMethods(
 			const updated: EmploymentOffer = {
 				...offer,
 				termsSummary:
-					input.termsSummary !== undefined
-						? input.termsSummary
-						: offer.termsSummary,
+					input.termsSummary === undefined
+						? offer.termsSummary
+						: input.termsSummary,
 				expiresOn:
-					input.expiresOn !== undefined ? input.expiresOn : offer.expiresOn,
+					input.expiresOn === undefined ? offer.expiresOn : input.expiresOn,
 				compensationProposalId: nextCompensationProposalId,
 				version: offer.version + 1,
 				updatedBy: input.actorUserId,
@@ -2823,8 +2869,8 @@ export function createMemoryRecruitmentMethods(
 			organizationId: string;
 			page: number;
 			pageSize: number;
-			status?: OfferStatus;
-			applicationId?: HumanResourcesApplicationId;
+			status?: OfferStatus | undefined;
+			applicationId?: HumanResourcesApplicationId | undefined;
 		}): Promise<Result<OfferListPage>> {
 			let filtered = Array.from(state.offers.values()).filter(
 				(o) => o.organizationId === input.organizationId,
@@ -2843,7 +2889,7 @@ export function createMemoryRecruitmentMethods(
 			const offers = filtered
 				.slice(start, start + input.pageSize)
 				.map((o) => cloneOffer(o));
-			return ok({
+			return await ok({
 				offers,
 				totalCount,
 				page: input.page,

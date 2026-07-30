@@ -28,8 +28,12 @@ function JourneyResult({
 }: {
 	state: { ok: boolean; message?: string } | null;
 }) {
-	if (state === null) return null;
-	if (!state.ok) return <FormError>{state.message}</FormError>;
+	if (state === null) {
+		return null;
+	}
+	if (!state.ok) {
+		return <FormError>{state.message}</FormError>;
+	}
 	return (
 		<Alert role="status">
 			<AlertTitle>Request completed</AlertTitle>
@@ -62,24 +66,24 @@ export function LeaveDraftForm({
 			<div className="grid gap-4 sm:grid-cols-3">
 				<div className="space-y-2">
 					<Label htmlFor="leave-start">Start date</Label>
-					<Input id="leave-start" name="startDate" type="date" required />
+					<Input id="leave-start" name="startDate" required type="date" />
 				</div>
 				<div className="space-y-2">
 					<Label htmlFor="leave-end">End date</Label>
-					<Input id="leave-end" name="endDate" type="date" required />
+					<Input id="leave-end" name="endDate" required type="date" />
 				</div>
 				<div className="space-y-2">
 					<Label htmlFor="leave-quantity">Quantity</Label>
 					<Input
 						id="leave-quantity"
-						name="requestedQuantity"
 						inputMode="decimal"
+						name="requestedQuantity"
 						required
 					/>
 				</div>
 			</div>
 			<JourneyResult state={state} />
-			<Button type="submit" disabled={pending}>
+			<Button disabled={pending} type="submit">
 				{pending ? <Spinner /> : null}
 				Create leave draft
 			</Button>
@@ -100,32 +104,34 @@ export function LeaveRequestTransitionForm({
 		const [state, action, pending] = cancel;
 		return (
 			<form action={action} aria-busy={pending} className="space-y-3">
-				<input type="hidden" name="requestId" value={request.id} />
-				<input type="hidden" name="expectedVersion" value={request.version} />
+				<input name="requestId" type="hidden" value={request.id} />
+				<input name="expectedVersion" type="hidden" value={request.version} />
 				<Label htmlFor={`cancel-note-${request.id}`}>Cancellation note</Label>
 				<Textarea
 					id={`cancel-note-${request.id}`}
-					name="note"
 					maxLength={2000}
+					name="note"
 				/>
 				<JourneyResult state={state} />
-				<Button type="submit" variant="destructive" disabled={pending}>
+				<Button disabled={pending} type="submit" variant="destructive">
 					{pending ? <Spinner /> : null}
 					Cancel approved leave
 				</Button>
 			</form>
 		);
 	}
-	if (request.status !== "draft" && request.status !== "submitted") return null;
+	if (request.status !== "draft" && request.status !== "submitted") {
+		return null;
+	}
 	const [state, action, pending] = transition;
 	const intent = request.status === "draft" ? "submit" : "withdraw";
 	return (
 		<form action={action} aria-busy={pending} className="space-y-3">
-			<input type="hidden" name="requestId" value={request.id} />
-			<input type="hidden" name="expectedVersion" value={request.version} />
-			<input type="hidden" name="intent" value={intent} />
+			<input name="requestId" type="hidden" value={request.id} />
+			<input name="expectedVersion" type="hidden" value={request.version} />
+			<input name="intent" type="hidden" value={intent} />
 			<JourneyResult state={state} />
-			<Button type="submit" variant="outline" disabled={pending}>
+			<Button disabled={pending} type="submit" variant="outline">
 				{pending ? <Spinner /> : null}
 				{intent === "submit" ? "Submit request" : "Withdraw request"}
 			</Button>
@@ -144,10 +150,10 @@ export function TimesheetSubmitForm({
 	);
 	return (
 		<form action={action} aria-busy={pending} className="space-y-3">
-			<input type="hidden" name="timesheetId" value={timesheet.id} />
-			<input type="hidden" name="expectedVersion" value={timesheet.version} />
+			<input name="timesheetId" type="hidden" value={timesheet.id} />
+			<input name="expectedVersion" type="hidden" value={timesheet.version} />
 			<JourneyResult state={state} />
-			<Button type="submit" disabled={pending}>
+			<Button disabled={pending} type="submit">
 				{pending ? <Spinner /> : null}
 				Submit timesheet
 			</Button>
@@ -167,17 +173,17 @@ export function PolicyAcknowledgementForm({
 	return (
 		<form action={action} aria-busy={pending} className="space-y-3">
 			<input
-				type="hidden"
 				name="acknowledgementId"
+				type="hidden"
 				value={acknowledgement.id}
 			/>
 			<input
-				type="hidden"
 				name="expectedVersion"
+				type="hidden"
 				value={acknowledgement.version}
 			/>
 			<JourneyResult state={state} />
-			<Button type="submit" variant="outline" disabled={pending}>
+			<Button disabled={pending} type="submit" variant="outline">
 				{pending ? <Spinner /> : null}
 				Acknowledge policy
 			</Button>

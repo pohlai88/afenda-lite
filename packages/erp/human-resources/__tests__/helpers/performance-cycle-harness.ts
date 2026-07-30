@@ -28,13 +28,13 @@ export const DEFAULT_PERFORMANCE_CYCLE_REVIEW_PERIODS = [
 	},
 ];
 
-type PublishHarnessInput = {
-	organizationId: string;
+interface PublishHarnessInput {
 	actorUserId: string;
 	correlationIdPrefix: string;
 	cycle: PerformanceCycle;
+	organizationId: string;
 	ports?: MutationPorts;
-};
+}
 
 type PublishOpenHarnessInput = PublishHarnessInput & {
 	participant: {
@@ -57,7 +57,7 @@ async function publishPerformanceCycleFromDraft(
 	input: PublishHarnessInput,
 ): Promise<Result<PerformanceCycle>> {
 	const options = input.ports ? { ...ready, ports: input.ports } : ready;
-	let version = input.cycle.version;
+	let { version } = input.cycle;
 
 	const periods = await setPerformanceCycleReviewPeriods(
 		{
@@ -109,7 +109,7 @@ export async function publishPerformanceCycleReady(
 	ready: HumanResourcesCommandOptions,
 	input: PublishHarnessInput,
 ): Promise<Result<PerformanceCycle>> {
-	return publishPerformanceCycleFromDraft(ready, input);
+	return await publishPerformanceCycleFromDraft(ready, input);
 }
 
 /** Configure, publish, enroll a participant, and open a draft performance cycle. */

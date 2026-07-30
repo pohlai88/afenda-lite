@@ -32,12 +32,12 @@ function WorkbenchSection({
 	children,
 }: WorkbenchSectionProps) {
 	return (
-		<section className="grid gap-4" aria-labelledby={id}>
+		<section aria-labelledby={id} className="grid gap-4">
 			<div className="grid gap-1">
-				<h2 className="text-base font-semibold tracking-tight" id={id}>
+				<h2 className="font-semibold text-base tracking-tight" id={id}>
 					{title}
 				</h2>
-				<p className="max-w-5xl text-sm leading-5 text-foreground-secondary">
+				<p className="max-w-5xl text-foreground-secondary text-sm leading-5">
 					{description}
 				</p>
 			</div>
@@ -83,16 +83,16 @@ export const Overview: Story = {
 						<div className="flex flex-wrap items-center gap-2">
 							<Badge variant="outline">Accounts receivable</Badge>
 							<StatusBadge
+								label="Operator shortcuts"
 								size="sm"
 								status="active"
-								label="Operator shortcuts"
 							/>
 						</div>
 						<div className="grid gap-1">
-							<h1 className="text-2xl font-semibold tracking-tight">
+							<h1 className="font-semibold text-2xl tracking-tight">
 								Invoice queue · keyboard guidance
 							</h1>
-							<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+							<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 								Kbd and KbdGroup display implemented shortcuts beside labelled
 								actions. Feature code owns registration, platform mapping, and
 								whether a shortcut is available.
@@ -101,25 +101,25 @@ export const Overview: Story = {
 					</div>
 					<dl className="grid grid-cols-2 gap-x-8 gap-y-3 rounded-lg border bg-card p-4">
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Subject
 							</dt>
 							<dd className="text-sm">Keyboard notation</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Scope
 							</dt>
 							<dd className="text-sm">Shortcuts only</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Ownership
 							</dt>
 							<dd className="text-sm">Notation and grouping</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Lifecycle
 							</dt>
 							<dd className="text-sm">Implemented and discoverable</dd>
@@ -127,15 +127,15 @@ export const Overview: Story = {
 					</dl>
 				</header>
 
-				<section className="grid gap-3" aria-labelledby="kbd-palette-title">
+				<section aria-labelledby="kbd-palette-title" className="grid gap-3">
 					<div className="grid gap-1">
 						<h2
-							className="text-base font-semibold tracking-tight text-foreground"
+							className="font-semibold text-base text-foreground tracking-tight"
 							id="kbd-palette-title"
 						>
 							Command palette
 						</h2>
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							Open search without making the shortcut the only path.
 						</p>
 					</div>
@@ -147,7 +147,7 @@ export const Overview: Story = {
 							</CardDescription>
 						</CardHeader>
 						<CardContent className="flex flex-wrap items-center justify-between gap-3">
-							<p className="text-sm text-foreground-secondary">
+							<p className="text-foreground-secondary text-sm">
 								Open command palette
 							</p>
 							<KbdGroup aria-label="Ctrl plus K">
@@ -157,22 +157,22 @@ export const Overview: Story = {
 							</KbdGroup>
 						</CardContent>
 						<CardFooter className="justify-end border-t">
-							<Button type="button" size="sm">
+							<Button size="sm" type="button">
 								Open palette
 							</Button>
 						</CardFooter>
 					</Card>
 				</section>
 
-				<section className="grid gap-3" aria-labelledby="kbd-row-title">
+				<section aria-labelledby="kbd-row-title" className="grid gap-3">
 					<div className="grid gap-1">
 						<h2
-							className="text-base font-semibold tracking-tight text-foreground"
+							className="font-semibold text-base text-foreground tracking-tight"
 							id="kbd-row-title"
 						>
 							Row actions
 						</h2>
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							Shortcuts apply only to the focused work context and never bypass
 							confirmation, authorization, or validation.
 						</p>
@@ -180,7 +180,7 @@ export const Overview: Story = {
 					<Card className="shadow-none">
 						<CardContent className="grid gap-4 pt-6">
 							<div className="flex flex-wrap items-center justify-between gap-3">
-								<p className="text-sm text-foreground">
+								<p className="text-foreground text-sm">
 									Confirm selected invoice
 								</p>
 								<KbdGroup aria-label="Command plus Enter">
@@ -190,7 +190,7 @@ export const Overview: Story = {
 								</KbdGroup>
 							</div>
 							<div className="flex flex-wrap items-center justify-between gap-3">
-								<p className="text-sm text-foreground">Dismiss focus</p>
+								<p className="text-foreground text-sm">Dismiss focus</p>
 								<Kbd>Esc</Kbd>
 							</div>
 						</CardContent>
@@ -212,24 +212,24 @@ export const Usage: Story = {
 	},
 	render: () => (
 		<WorkbenchSection
+			description="Kbd labels a shortcut only when the action is implemented and discoverable through an equivalent control."
 			id="kbd-usage-title"
 			title="Implemented shortcut notation"
-			description="Kbd labels a shortcut only when the action is implemented and discoverable through an equivalent control."
 		>
 			<div className="grid w-full max-w-md gap-6">
 				<StorySection
-					title="Single key"
 					description="One key when the action uses a solitary press."
+					title="Single key"
 				>
-					<p className="text-sm text-foreground">
+					<p className="text-foreground text-sm">
 						Close the drawer with <Kbd>Esc</Kbd>.
 					</p>
 				</StorySection>
 				<StorySection
-					title="Chord sequence"
 					description="Keep press order in a KbdGroup with separators."
+					title="Chord sequence"
 				>
-					<p className="text-sm text-foreground">
+					<p className="text-foreground text-sm">
 						Search with{" "}
 						<KbdGroup aria-label="Ctrl plus K">
 							<Kbd>Ctrl</Kbd>
@@ -256,10 +256,10 @@ export const StatesAndAccessibility: Story = {
 	render: () => (
 		<div className="grid w-full max-w-md gap-6">
 			<StorySection
-				title="Named chord"
 				description="Group carries an accessible label for the full sequence."
+				title="Named chord"
 			>
-				<p className="text-sm text-foreground">
+				<p className="text-foreground text-sm">
 					Save draft{" "}
 					<KbdGroup aria-label="Control plus S">
 						<Kbd>Ctrl</Kbd>
@@ -269,10 +269,10 @@ export const StatesAndAccessibility: Story = {
 				</p>
 			</StorySection>
 			<StorySection
-				title="Platform symbol"
 				description="Symbol keys need understandable accessible text on the group."
+				title="Platform symbol"
 			>
-				<p className="text-sm text-foreground">
+				<p className="text-foreground text-sm">
 					Confirm row{" "}
 					<KbdGroup aria-label="Command plus Enter">
 						<Kbd>⌘</Kbd>
@@ -282,10 +282,10 @@ export const StatesAndAccessibility: Story = {
 				</p>
 			</StorySection>
 			<StorySection
-				title="Instructional context"
 				description="Surrounding sentence remains the primary instruction."
+				title="Instructional context"
 			>
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Press <Kbd>?</Kbd> to open the shortcut legend, or use Help in the
 					toolbar if keyboard shortcuts are unavailable.
 				</p>
@@ -313,7 +313,7 @@ export const Composition: Story = {
 			</CardHeader>
 			<CardContent className="grid gap-3">
 				<div className="flex flex-wrap items-center justify-between gap-3">
-					<span className="text-sm text-foreground">Review differences</span>
+					<span className="text-foreground text-sm">Review differences</span>
 					<KbdGroup aria-label="Ctrl plus D">
 						<Kbd>Ctrl</Kbd>
 						<span className="text-muted-foreground">+</span>
@@ -321,7 +321,7 @@ export const Composition: Story = {
 					</KbdGroup>
 				</div>
 				<div className="flex flex-wrap items-center justify-between gap-3">
-					<span className="text-sm text-foreground">Post batch</span>
+					<span className="text-foreground text-sm">Post batch</span>
 					<KbdGroup aria-label="Ctrl plus Enter">
 						<Kbd>Ctrl</Kbd>
 						<span className="text-muted-foreground">+</span>
@@ -330,10 +330,10 @@ export const Composition: Story = {
 				</div>
 			</CardContent>
 			<CardFooter className="justify-end gap-2 border-t">
-				<Button type="button" variant="outline" size="sm">
+				<Button size="sm" type="button" variant="outline">
 					Review differences
 				</Button>
-				<Button type="button" size="sm">
+				<Button size="sm" type="button">
 					Post batch
 				</Button>
 			</CardFooter>
@@ -353,13 +353,13 @@ export const DoAndDoNot: Story = {
 	render: () => (
 		<div className="grid w-full max-w-5xl gap-6 md:grid-cols-2">
 			<StorySection
-				title="Do"
 				description="Implemented shortcut with a labelled primary button."
+				title="Do"
 			>
 				<div className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3">
 					<div className="grid gap-1">
-						<p className="text-sm font-medium text-foreground">Open palette</p>
-						<p className="text-xs text-foreground-secondary">
+						<p className="font-medium text-foreground text-sm">Open palette</p>
+						<p className="text-foreground-secondary text-xs">
 							<KbdGroup aria-label="Ctrl plus K">
 								<Kbd>Ctrl</Kbd>
 								<span className="text-muted-foreground">+</span>
@@ -367,17 +367,17 @@ export const DoAndDoNot: Story = {
 							</KbdGroup>
 						</p>
 					</div>
-					<Button type="button" size="sm">
+					<Button size="sm" type="button">
 						Open palette
 					</Button>
 				</div>
 			</StorySection>
 			<StorySection
-				title="Do not"
 				description="Do not advertise shortcuts that are not registered, or use Kbd as a click target."
+				title="Do not"
 			>
 				<div className="grid gap-2 rounded-md border border-destructive/40 p-3">
-					<p className="text-sm text-foreground">
+					<p className="text-foreground text-sm">
 						Delete forever{" "}
 						<KbdGroup aria-label="Ctrl plus Shift plus Delete">
 							<Kbd>Ctrl</Kbd>
@@ -387,7 +387,7 @@ export const DoAndDoNot: Story = {
 							<Kbd>Del</Kbd>
 						</KbdGroup>
 					</p>
-					<p className="text-xs text-destructive">
+					<p className="text-destructive text-xs">
 						Unimplemented shortcut guidance and no alternate control path.
 					</p>
 				</div>

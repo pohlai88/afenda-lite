@@ -105,7 +105,9 @@ describe("Human Resources privacy verification kernel", () => {
 		);
 
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 		expect(result.data.status).toBe("partially_approved");
 		expect(result.data.dispositions).toEqual([
 			{
@@ -160,7 +162,9 @@ describe("Human Resources privacy verification kernel", () => {
 		);
 
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 		expect(result.data.status).toBe("denied");
 		expect(result.data.dispositions).toEqual([
 			expect.objectContaining({ reason: "legal_hold", disposition: "retain" }),
@@ -187,7 +191,9 @@ describe("Human Resources privacy verification kernel", () => {
 		);
 
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 		expect(result.data).toMatchObject({
 			status: "denied",
 			dispositions: [
@@ -235,7 +241,9 @@ describe("Human Resources privacy verification kernel", () => {
 			port,
 		);
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 		const executed = await executeHumanResourcesDeletionDecision(
 			approved.data,
 			port,
@@ -262,7 +270,9 @@ describe("Human Resources privacy verification kernel", () => {
 			port,
 		);
 		expect(denied.ok).toBe(true);
-		if (!denied.ok) return;
+		if (!denied.ok) {
+			return;
+		}
 		const blocked = await executeHumanResourcesDeletionDecision(
 			denied.data,
 			port,

@@ -12,7 +12,7 @@ import {
 	StatusBadge,
 } from "@afenda/ui-system";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useCallback, useState } from "react";
 import { expect, userEvent, within } from "storybook/test";
 import { contractDocsParameters } from "./contract-docs";
 import { contractEvidence, StorySection } from "./evidence";
@@ -34,15 +34,15 @@ function WorkbenchSection({
 	children,
 }: WorkbenchSectionProps) {
 	return (
-		<section className="grid gap-4" aria-labelledby={id}>
+		<section aria-labelledby={id} className="grid gap-4">
 			<div className="grid gap-1">
 				<h2
-					className="text-base font-semibold tracking-tight text-foreground"
+					className="font-semibold text-base text-foreground tracking-tight"
 					id={id}
 				>
 					{title}
 				</h2>
-				<p className="max-w-5xl text-sm leading-5 text-foreground-secondary">
+				<p className="max-w-5xl text-foreground-secondary text-sm leading-5">
 					{description}
 				</p>
 			</div>
@@ -86,13 +86,13 @@ export const Overview: Story = {
 					<div className="grid gap-2">
 						<div className="flex flex-wrap items-center gap-2">
 							<Badge variant="outline">Accounts receivable</Badge>
-							<StatusBadge size="sm" status="active" label="Operational" />
+							<StatusBadge label="Operational" size="sm" status="active" />
 						</div>
 						<div className="grid gap-1">
-							<h1 className="text-2xl font-semibold tracking-tight">
+							<h1 className="font-semibold text-2xl tracking-tight">
 								Invoice queue scope
 							</h1>
-							<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+							<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 								Checkbox is the selection primitive for independent boolean
 								choices and aggregate row selection. It must remain labelled,
 								keyboard operable, and understandable in high-contrast
@@ -102,25 +102,25 @@ export const Overview: Story = {
 					</div>
 					<dl className="grid grid-cols-2 gap-x-8 gap-y-3 rounded-lg border bg-card p-4">
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Subject
 							</dt>
 							<dd className="text-sm">Invoice queue</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Scope
 							</dt>
 							<dd className="text-sm">Boolean selection</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Ownership
 							</dt>
 							<dd className="text-sm">Feature policy</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Lifecycle
 							</dt>
 							<dd className="text-sm">Checked / mixed / off</dd>
@@ -129,9 +129,9 @@ export const Overview: Story = {
 				</header>
 
 				<WorkbenchSection
+					description="Each checked value can coexist with the others; none is exclusive."
 					id="checkbox-filters-title"
 					title="Independent inclusions"
-					description="Each checked value can coexist with the others; none is exclusive."
 				>
 					<Card className="shadow-none">
 						<CardHeader>
@@ -155,7 +155,7 @@ export const Overview: Story = {
 							</Label>
 						</CardContent>
 						<CardFooter className="justify-end border-t">
-							<Button type="button" size="sm">
+							<Button size="sm" type="button">
 								Apply filters
 							</Button>
 						</CardFooter>
@@ -163,9 +163,9 @@ export const Overview: Story = {
 				</WorkbenchSection>
 
 				<WorkbenchSection
+					description="Mixed means some, but not all, selectable descendants are checked."
 					id="checkbox-selection-title"
 					title="Aggregate page selection"
-					description="Mixed means some, but not all, selectable descendants are checked."
 				>
 					<Card className="shadow-none">
 						<CardContent className="grid gap-3 pt-6">
@@ -173,7 +173,7 @@ export const Overview: Story = {
 								<Checkbox checked="indeterminate" />
 								Select current page
 							</Label>
-							<p className="text-sm text-foreground-secondary">
+							<p className="text-foreground-secondary text-sm">
 								3 of 12 eligible invoices are selected. The table selection
 								model owns descendant state and exclusion rules.
 							</p>
@@ -182,9 +182,9 @@ export const Overview: Story = {
 				</WorkbenchSection>
 
 				<WorkbenchSection
+					description="Disabled communicates that the value is visible but not editable."
 					id="checkbox-locked-title"
 					title="Readable locked value"
-					description="Disabled communicates that the value is visible but not editable."
 				>
 					<Label className="flex items-center gap-2 text-foreground-secondary">
 						<Checkbox disabled />
@@ -227,7 +227,7 @@ export const Usage: Story = {
 						<Checkbox checked="indeterminate" />
 						Select current page
 					</Label>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						Mixed state is paired with a count or explanation of descendant
 						state.
 					</p>
@@ -240,7 +240,7 @@ export const Usage: Story = {
 						<Checkbox />I confirm supporting tax evidence is attached
 					</Label>
 					<div>
-						<Button type="button" size="sm">
+						<Button size="sm" type="button">
 							Submit for posting
 						</Button>
 					</div>
@@ -252,17 +252,18 @@ export const Usage: Story = {
 
 function ControlledSelectionExample() {
 	const [included, setIncluded] = useState(false);
+	const handleIncludedChange = useCallback(
+		(checked: boolean | "indeterminate") => setIncluded(checked === true),
+		[],
+	);
 
 	return (
 		<div className="grid max-w-md gap-3">
 			<Label className="flex items-center gap-2">
-				<Checkbox
-					checked={included}
-					onCheckedChange={(checked) => setIncluded(checked === true)}
-				/>
+				<Checkbox checked={included} onCheckedChange={handleIncludedChange} />
 				Include disputed invoices
 			</Label>
-			<p className="text-sm text-foreground-secondary" aria-live="polite">
+			<p aria-live="polite" className="text-foreground-secondary text-sm">
 				Current filter: {included ? "included" : "excluded"}
 			</p>
 		</div>
@@ -326,7 +327,7 @@ export const StatesAndAccessibility: Story = {
 					<Checkbox aria-invalid />
 					Confirmation required before apply
 				</Label>
-				<p className="pl-6 text-sm text-destructive">
+				<p className="pl-6 text-destructive text-sm">
 					Confirm the evidence requirement before continuing.
 				</p>
 			</div>
@@ -378,7 +379,7 @@ export const Composition: Story = {
 							INV queue · Northwind and Contoso customers
 						</CardDescription>
 					</div>
-					<StatusBadge size="sm" status="pending" label="Draft selection" />
+					<StatusBadge label="Draft selection" size="sm" status="pending" />
 				</div>
 			</CardHeader>
 			<CardContent className="grid gap-3">
@@ -396,10 +397,10 @@ export const Composition: Story = {
 				</Label>
 			</CardContent>
 			<CardFooter className="justify-end gap-2 border-t">
-				<Button type="button" size="sm" variant="outline">
+				<Button size="sm" type="button" variant="outline">
 					Clear
 				</Button>
-				<Button type="button" size="sm">
+				<Button size="sm" type="button">
 					Continue
 				</Button>
 			</CardFooter>
@@ -432,7 +433,7 @@ export const DoAndDoNot: Story = {
 						<Checkbox />
 						Enable
 					</Label>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						The operator cannot determine what becomes enabled.
 					</p>
 				</div>
@@ -444,7 +445,7 @@ export const DoAndDoNot: Story = {
 						<Checkbox checked="indeterminate" />
 						Select current page
 					</Label>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						3 of 12 eligible rows selected — mixed means partial.
 					</p>
 				</div>
@@ -452,8 +453,8 @@ export const DoAndDoNot: Story = {
 
 			<StorySection title="Do not: leave mixed unexplained">
 				<div className="grid gap-2">
-					<Checkbox checked="indeterminate" aria-label="Selection state" />
-					<p className="text-sm text-foreground-secondary">
+					<Checkbox aria-label="Selection state" checked="indeterminate" />
+					<p className="text-foreground-secondary text-sm">
 						An isolated mixed mark can look broken or unresolved.
 					</p>
 				</div>
@@ -466,7 +467,7 @@ export const DoAndDoNot: Story = {
 						Confirm tax evidence attached
 					</Label>
 					<div>
-						<Button type="button" size="sm">
+						<Button size="sm" type="button">
 							Submit for posting
 						</Button>
 					</div>
@@ -474,7 +475,7 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do not: execute a command on check">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Checking a box must not itself post, void, release, or approve a
 					record. Use an explicit authorized action with visible outcome and
 					error handling.
@@ -482,14 +483,14 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do: use RadioGroup for one-of-many">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Payment method, approval outcome, and posting strategy are exclusive
 					choices and should not be represented by independent Checkboxes.
 				</p>
 			</StorySection>
 
 			<StorySection title="Do not: use disabled as authorization">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Disabled presentation is UX guidance. Feature and server policy must
 					still reject unauthorized state changes.
 				</p>

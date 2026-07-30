@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import * as queries from "../src/capabilities/extensions/extension-queries";
-
 describe("extension query public surface", () => {
-	it("exports only governed extension queries", () => {
+	it("exports only governed extension queries", async () => {
+		const queries = await import(
+			"../src/capabilities/extensions/extension-queries"
+		);
 		expect(Object.keys(queries).sort()).toEqual(
 			[
 				"findItemByAlias",

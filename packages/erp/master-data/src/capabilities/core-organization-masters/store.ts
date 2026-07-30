@@ -20,13 +20,12 @@ import type {
 } from "./core-master-events";
 import type { OrganizationDimensionStore } from "./organization-dimension-store";
 
-export type ImportMutationContext = {
-	organizationId: string;
+export interface ImportMutationContext {
 	batchId: string;
-	sourceRowNumber: number;
-	leaseOwner: string;
 	intendedOperation: Extract<ImportRowOperation, "create" | "update">;
+	leaseOwner: string;
 	matchedEntityId: string | null;
+	organizationId: string;
 	partyExternalIds?:
 		| readonly {
 				id: string;
@@ -39,13 +38,14 @@ export type ImportMutationContext = {
 				createdBy: string;
 		  }[]
 		| undefined;
-};
+	sourceRowNumber: number;
+}
 
-export type MutationMeta = {
+export interface MutationMeta {
 	correlationId: string;
 	/** Internal import execution context; the store commits the row result with the mutation. */
 	importMutation?: ImportMutationContext | undefined;
-};
+}
 
 export type {
 	ItemAliasCreateRecord,
@@ -101,43 +101,38 @@ import type {
 	WarehouseLocationType,
 } from "../../types";
 
-export type PartyCreateRecord = {
-	organizationId: string;
+export interface PartyCreateRecord {
 	code: string;
-	normalizedCode: string;
-	name: string;
-	partyKind: PartyKind;
 	createdBy: string;
-	legalName?: string | null | undefined;
-	tradingName?: string | null | undefined;
-	registrationNumber?: string | null | undefined;
-	registrationCountryId?: string | null | undefined;
-	preferredLanguageId?: string | null | undefined;
 	defaultCurrencyId?: string | null | undefined;
-};
-
-export type PartyUpdateRecord = {
+	legalName?: string | null | undefined;
+	name: string;
+	normalizedCode: string;
 	organizationId: string;
-	id: string;
-	expectedVersion: number;
-	updatedBy: string;
-	name?: string | undefined;
-	legalName?: string | null | undefined;
-	tradingName?: string | null | undefined;
-	registrationNumber?: string | null | undefined;
-	registrationCountryId?: string | null | undefined;
+	partyKind: PartyKind;
 	preferredLanguageId?: string | null | undefined;
+	registrationCountryId?: string | null | undefined;
+	registrationNumber?: string | null | undefined;
+	tradingName?: string | null | undefined;
+}
+
+export interface PartyUpdateRecord {
 	defaultCurrencyId?: string | null | undefined;
-};
+	expectedVersion: number;
+	id: string;
+	legalName?: string | null | undefined;
+	name?: string | undefined;
+	organizationId: string;
+	preferredLanguageId?: string | null | undefined;
+	registrationCountryId?: string | null | undefined;
+	registrationNumber?: string | null | undefined;
+	tradingName?: string | null | undefined;
+	updatedBy: string;
+}
 
 export type PartyMergeFieldDecision = "source" | "target";
 
-export type PartyMergeRecord = {
-	organizationId: string;
-	sourcePartyId: string;
-	targetPartyId: string;
-	sourceExpectedVersion: number;
-	targetExpectedVersion: number;
+export interface PartyMergeRecord {
 	actorUserId: string;
 	/** Approved CR claimed → applied in same TX as merge. */
 	changeRequestId: string;
@@ -150,17 +145,22 @@ export type PartyMergeRecord = {
 		preferredLanguageId?: PartyMergeFieldDecision | undefined;
 		defaultCurrencyId?: PartyMergeFieldDecision | undefined;
 	};
-};
-
-export type LifecycleRecord = {
 	organizationId: string;
-	id: string;
-	expectedVersion: number;
+	sourceExpectedVersion: number;
+	sourcePartyId: string;
+	targetExpectedVersion: number;
+	targetPartyId: string;
+}
+
+export interface LifecycleRecord {
 	actorUserId: string;
-	toStatus: MasterStatus;
 	/** When set (activate_party), claim approved CR → applied in same TX. */
 	changeRequestId?: string;
-};
+	expectedVersion: number;
+	id: string;
+	organizationId: string;
+	toStatus: MasterStatus;
+}
 
 type PartyNonActivationStatus = Exclude<MasterStatus, "active">;
 
@@ -176,209 +176,209 @@ export type PartyLifecycleRecord =
 			requireActiveRole?: never;
 	  });
 
-export type ChangeRequestCreateRecord = {
-	organizationId: string;
+export interface ChangeRequestCreateRecord {
 	code: string;
-	normalizedCode: string;
 	commandKind: ChangeRequestCommandKind;
-	payload: ChangeRequestPayload;
-	subjectEntityType: "party";
-	subjectEntityId: string;
-	submittedBy: string;
-};
-
-export type ChangeRequestReviewRecord = {
+	normalizedCode: string;
 	organizationId: string;
-	id: string;
-	expectedVersion: number;
-	actorUserId: string;
-	toStatus: "approved" | "rejected";
-	reviewNote: string | null;
-};
+	payload: ChangeRequestPayload;
+	subjectEntityId: string;
+	subjectEntityType: "party";
+	submittedBy: string;
+}
 
-export type ChangeRequestListFilter = {
+export interface ChangeRequestReviewRecord {
+	actorUserId: string;
+	expectedVersion: number;
+	id: string;
+	organizationId: string;
+	reviewNote: string | null;
+	toStatus: "approved" | "rejected";
+}
+
+export interface ChangeRequestListFilter {
+	commandKind?: ChangeRequestCommandKind | undefined;
 	organizationId: string;
 	page: number;
 	pageSize: number;
 	status?: ChangeRequestStatus | undefined;
-	commandKind?: ChangeRequestCommandKind | undefined;
-};
+}
 
-export type ItemGroupCreateRecord = {
-	organizationId: string;
+export interface ItemGroupCreateRecord {
 	code: string;
-	normalizedCode: string;
-	name: string;
 	createdBy: string;
-	parentId?: string | null | undefined;
-};
-
-export type ItemGroupUpdateRecord = {
+	name: string;
+	normalizedCode: string;
 	organizationId: string;
-	id: string;
-	expectedVersion: number;
-	updatedBy: string;
-	name?: string | undefined;
 	parentId?: string | null | undefined;
-};
+}
+
+export interface ItemGroupUpdateRecord {
+	expectedVersion: number;
+	id: string;
+	name?: string | undefined;
+	organizationId: string;
+	parentId?: string | null | undefined;
+	updatedBy: string;
+}
 
 export type ItemGroupLifecycleRecord = Omit<LifecycleRecord, "toStatus"> & {
 	toStatus: "active" | "inactive" | "retired";
 };
 
-export type ItemCreateRecord = {
-	organizationId: string;
-	code: string;
-	normalizedCode: string;
-	name: string;
-	description?: string | null | undefined;
-	itemType: ItemType;
+export interface ItemCreateRecord {
 	baseUomId: string;
-	itemGroupId: string;
-	trackingPolicy?: ItemTrackingPolicy | undefined;
-	sellable?: boolean | undefined;
-	purchasable?: boolean | undefined;
-	stocked?: boolean | undefined;
-	serviceIndicator?: boolean | undefined;
+	code: string;
 	createdBy: string;
-};
-
-export type ItemUpdateRecord = {
-	organizationId: string;
-	id: string;
-	expectedVersion: number;
-	updatedBy: string;
-	name?: string | undefined;
 	description?: string | null | undefined;
-	itemType?: ItemType | undefined;
-	baseUomId?: string | undefined;
-	itemGroupId?: string | undefined;
-	trackingPolicy?: ItemTrackingPolicy | undefined;
-	sellable?: boolean | undefined;
+	itemGroupId: string;
+	itemType: ItemType;
+	name: string;
+	normalizedCode: string;
+	organizationId: string;
 	purchasable?: boolean | undefined;
-	stocked?: boolean | undefined;
+	sellable?: boolean | undefined;
 	serviceIndicator?: boolean | undefined;
-};
+	stocked?: boolean | undefined;
+	trackingPolicy?: ItemTrackingPolicy | undefined;
+}
+
+export interface ItemUpdateRecord {
+	baseUomId?: string | undefined;
+	description?: string | null | undefined;
+	expectedVersion: number;
+	id: string;
+	itemGroupId?: string | undefined;
+	itemType?: ItemType | undefined;
+	name?: string | undefined;
+	organizationId: string;
+	purchasable?: boolean | undefined;
+	sellable?: boolean | undefined;
+	serviceIndicator?: boolean | undefined;
+	stocked?: boolean | undefined;
+	trackingPolicy?: ItemTrackingPolicy | undefined;
+	updatedBy: string;
+}
 
 export type ItemLifecycleRecord = Omit<LifecycleRecord, "toStatus"> & {
 	toStatus: "draft" | "active" | "inactive" | "retired";
 };
 
-export type WarehouseCreateRecord = {
-	organizationId: string;
+export interface WarehouseCreateRecord {
+	addressCity?: string | null | undefined;
+	addressCountryId?: string | null | undefined;
+	addressLine1?: string | null | undefined;
+	addressLine2?: string | null | undefined;
+	addressPostalCode?: string | null | undefined;
+	addressRegion?: string | null | undefined;
 	code: string;
-	normalizedCode: string;
-	name: string;
-	locationType: WarehouseLocationType;
 	createdBy: string;
+	locationType: WarehouseLocationType;
+	name: string;
+	normalizedCode: string;
+	organizationId: string;
 	parentId?: string | null | undefined;
+}
+
+export interface WarehouseUpdateRecord {
+	addressCity?: string | null | undefined;
 	addressCountryId?: string | null | undefined;
 	addressLine1?: string | null | undefined;
 	addressLine2?: string | null | undefined;
-	addressCity?: string | null | undefined;
-	addressRegion?: string | null | undefined;
 	addressPostalCode?: string | null | undefined;
-};
-
-export type WarehouseUpdateRecord = {
-	organizationId: string;
-	id: string;
+	addressRegion?: string | null | undefined;
 	expectedVersion: number;
-	updatedBy: string;
-	name?: string | undefined;
+	id: string;
 	locationType?: WarehouseLocationType | undefined;
-	addressCountryId?: string | null | undefined;
-	addressLine1?: string | null | undefined;
-	addressLine2?: string | null | undefined;
-	addressCity?: string | null | undefined;
-	addressRegion?: string | null | undefined;
-	addressPostalCode?: string | null | undefined;
-};
-
-export type WarehouseMoveRecord = {
+	name?: string | undefined;
 	organizationId: string;
-	id: string;
-	expectedVersion: number;
 	updatedBy: string;
+}
+
+export interface WarehouseMoveRecord {
+	expectedVersion: number;
+	id: string;
+	organizationId: string;
 	parentId: string | null;
-};
+	updatedBy: string;
+}
 
 export type WarehouseLifecycleRecord = Omit<LifecycleRecord, "toStatus"> & {
 	toStatus: "active" | "inactive" | "retired";
 };
 
-export type PaymentTermCreateRecord = {
-	organizationId: string;
+export interface PaymentTermCreateRecord {
 	code: string;
-	normalizedCode: string;
+	createdBy: string;
+	currencyRestrictionId?: string | null | undefined;
+	discountDays?: number | null | undefined;
+	discountPercent?: string | null | undefined;
+	dueDayRule?: PaymentTerm["dueDayRule"] | undefined;
+	endOfMonth?: boolean | undefined;
+	installmentCount?: number | null | undefined;
+	installmentPolicy?: PaymentTerm["installmentPolicy"] | undefined;
 	name: string;
 	netDays: number;
-	createdBy: string;
+	normalizedCode: string;
+	organizationId: string;
+	validFrom?: Date | null | undefined;
+	validTo?: Date | null | undefined;
+}
+
+export interface PaymentTermUpdateRecord {
+	currencyRestrictionId?: string | null | undefined;
 	discountDays?: number | null | undefined;
 	discountPercent?: string | null | undefined;
 	dueDayRule?: PaymentTerm["dueDayRule"] | undefined;
 	endOfMonth?: boolean | undefined;
-	installmentPolicy?: PaymentTerm["installmentPolicy"] | undefined;
-	installmentCount?: number | null | undefined;
-	validFrom?: Date | null | undefined;
-	validTo?: Date | null | undefined;
-	currencyRestrictionId?: string | null | undefined;
-};
-
-export type PaymentTermUpdateRecord = {
-	organizationId: string;
-	id: string;
 	expectedVersion: number;
-	updatedBy: string;
+	id: string;
+	installmentCount?: number | null | undefined;
+	installmentPolicy?: PaymentTerm["installmentPolicy"] | undefined;
 	name?: string | undefined;
 	netDays?: number | undefined;
-	discountDays?: number | null | undefined;
-	discountPercent?: string | null | undefined;
-	dueDayRule?: PaymentTerm["dueDayRule"] | undefined;
-	endOfMonth?: boolean | undefined;
-	installmentPolicy?: PaymentTerm["installmentPolicy"] | undefined;
-	installmentCount?: number | null | undefined;
+	organizationId: string;
+	updatedBy: string;
 	validFrom?: Date | null | undefined;
 	validTo?: Date | null | undefined;
-	currencyRestrictionId?: string | null | undefined;
-};
+}
 
 export type PaymentTermLifecycleRecord = Omit<LifecycleRecord, "toStatus"> & {
 	toStatus: "active" | "inactive" | "retired";
 };
 
-export type TaxRegistrationCreateRecord = {
+export interface TaxRegistrationCreateRecord {
+	createdBy: string;
+	jurisdictionCountryId: string;
+	name: string | null;
+	normalizedRegistrationNumber: string;
 	organizationId: string;
 	partyId: string;
-	jurisdictionCountryId: string;
-	registrationType: TaxRegistrationType;
 	registrationNumber: string;
-	normalizedRegistrationNumber: string;
-	name: string | null;
+	registrationType: TaxRegistrationType;
 	validFrom: Date | null;
 	validTo: Date | null;
-	createdBy: string;
-};
+}
 
-export type TaxRegistrationUpdateRecord = {
-	organizationId: string;
-	id: string;
+export interface TaxRegistrationUpdateRecord {
 	expectedVersion: number;
-	updatedBy: string;
+	id: string;
 	name?: string | null | undefined;
+	organizationId: string;
+	updatedBy: string;
 	validFrom?: Date | null | undefined;
 	validTo?: Date | null | undefined;
-};
+}
 
-export type TaxRegistrationOverlapQuery = {
+export interface TaxRegistrationOverlapQuery {
+	excludeId?: string;
+	jurisdictionCountryId: string;
 	organizationId: string;
 	partyId: string;
-	jurisdictionCountryId: string;
 	registrationType: TaxRegistrationType;
 	validFrom: Date;
 	validTo: Date | null;
-	excludeId?: string;
-};
+}
 
 export type TaxRegistrationLifecycleRecord = Omit<
 	LifecycleRecord,
@@ -387,13 +387,13 @@ export type TaxRegistrationLifecycleRecord = Omit<
 	toStatus: "active" | "blocked" | "retired";
 };
 
-export type ListFilter = {
+export interface ListFilter {
 	organizationId: string;
 	page: number;
 	pageSize: number;
 	status?: MasterStatus | undefined;
 	updatedSince?: Date | undefined;
-};
+}
 
 export type PartySearchFilter = ListFilter & {
 	query: string;
@@ -404,12 +404,12 @@ export type PartyByRoleFilter = ListFilter & {
 	activeOnly: boolean;
 };
 
-export type PartyTaxRegistrationLookup = {
-	organizationId: string;
+export interface PartyTaxRegistrationLookup {
 	jurisdictionCountryId: string;
-	registrationType: TaxRegistrationType;
 	normalizedRegistrationNumber: string;
-};
+	organizationId: string;
+	registrationType: TaxRegistrationType;
+}
 
 export type TaxRegistrationListFilter = ListFilter & {
 	partyId?: string | undefined;
@@ -424,266 +424,271 @@ export type ItemListFilter = ListFilter & {
  * Physical `ref_*` table definition and seeding remain outside this package.
  */
 export interface ReferenceQueryStore {
-	getRefCountryByCode(code: string): Promise<Result<RefCountry | null>>;
-	getRefCountryById(id: string): Promise<Result<RefCountry | null>>;
-	getRefCurrencyByCode(code: string): Promise<Result<RefCurrency | null>>;
-	getRefCurrencyById(id: string): Promise<Result<RefCurrency | null>>;
-	getRefLanguageByCode(code: string): Promise<Result<RefLanguage | null>>;
-	getRefTimeZoneByIana(ianaName: string): Promise<Result<RefTimeZone | null>>;
-	getRefUomDimensionByCode(
+	getRefCountryByCode: (code: string) => Promise<Result<RefCountry | null>>;
+	getRefCountryById: (id: string) => Promise<Result<RefCountry | null>>;
+	getRefCurrencyByCode: (code: string) => Promise<Result<RefCurrency | null>>;
+	getRefCurrencyById: (id: string) => Promise<Result<RefCurrency | null>>;
+	getRefLanguageByCode: (code: string) => Promise<Result<RefLanguage | null>>;
+	getRefTimeZoneByIana: (
+		ianaName: string,
+	) => Promise<Result<RefTimeZone | null>>;
+	getRefUomByCode: (code: string) => Promise<Result<RefUom | null>>;
+	getRefUomById: (id: string) => Promise<Result<RefUom | null>>;
+	getRefUomDimensionByCode: (
 		code: string,
-	): Promise<Result<RefUomDimension | null>>;
-	getRefUomById(id: string): Promise<Result<RefUom | null>>;
-	getRefUomByCode(code: string): Promise<Result<RefUom | null>>;
-	listRefUoms(): Promise<Result<RefUom[]>>;
+	) => Promise<Result<RefUomDimension | null>>;
+	listRefUoms: () => Promise<Result<RefUom[]>>;
 }
 
 /** Persistence boundary required by the party aggregate. */
 export interface PartyStore {
-	getPartyById(
-		organizationId: string,
-		id: string,
-	): Promise<Result<Party | null>>;
-	getPartyByCode(
-		organizationId: string,
-		normalizedCode: string,
-	): Promise<Result<Party | null>>;
-	listParties(filter: ListFilter): Promise<Result<Party[]>>;
-	listPartiesByRole(filter: PartyByRoleFilter): Promise<Result<Party[]>>;
-	findPartyByTaxRegistration(
-		filter: PartyTaxRegistrationLookup,
-	): Promise<Result<Party | null>>;
-	searchParties(filter: PartySearchFilter): Promise<Result<Party[]>>;
-	createParty(
+	createParty: (
 		record: PartyCreateRecord,
 		ports: MutationPorts,
 		meta: MutationMeta,
-	): Promise<Result<Party>>;
-	updateParty(
-		record: PartyUpdateRecord,
-		ports: MutationPorts,
-		meta: MutationMeta,
-	): Promise<Result<Party>>;
-	transitionParty(
+	) => Promise<Result<Party>>;
+	findPartyByTaxRegistration: (
+		filter: PartyTaxRegistrationLookup,
+	) => Promise<Result<Party | null>>;
+	getPartyByCode: (
+		organizationId: string,
+		normalizedCode: string,
+	) => Promise<Result<Party | null>>;
+	getPartyById: (
+		organizationId: string,
+		id: string,
+	) => Promise<Result<Party | null>>;
+	listParties: (filter: ListFilter) => Promise<Result<Party[]>>;
+	listPartiesByRole: (filter: PartyByRoleFilter) => Promise<Result<Party[]>>;
+	searchParties: (filter: PartySearchFilter) => Promise<Result<Party[]>>;
+	transitionParty: (
 		record: PartyLifecycleRecord,
 		ports: MutationPorts,
 		meta: {
 			correlationId: string;
 			eventSuffix: PartyLifecycleEventSuffix;
 		},
-	): Promise<Result<Party>>;
+	) => Promise<Result<Party>>;
+	updateParty: (
+		record: PartyUpdateRecord,
+		ports: MutationPorts,
+		meta: MutationMeta,
+	) => Promise<Result<Party>>;
 }
 
 /** Merge persistence stays named and domain-specific; no generic executor. */
 export interface MergeStore {
-	mergeParties(
+	mergeParties: (
 		record: PartyMergeRecord,
 		ports: MutationPorts,
 		meta: { correlationId: string },
-	): Promise<Result<{ survivor: Party; merged: Party }>>;
+	) => Promise<Result<{ survivor: Party; merged: Party }>>;
 }
 
 /** Persistence boundary for governed change requests. */
 export interface ChangeRequestStore {
-	getChangeRequestById(
-		organizationId: string,
-		id: string,
-	): Promise<Result<ChangeRequest | null>>;
-	listChangeRequests(
-		filter: ChangeRequestListFilter,
-	): Promise<Result<ChangeRequest[]>>;
-	createChangeRequest(
+	createChangeRequest: (
 		record: ChangeRequestCreateRecord,
 		ports: MutationPorts,
 		meta: { correlationId: string },
-	): Promise<Result<ChangeRequest>>;
-	transitionChangeRequest(
+	) => Promise<Result<ChangeRequest>>;
+	getChangeRequestById: (
+		organizationId: string,
+		id: string,
+	) => Promise<Result<ChangeRequest | null>>;
+	listChangeRequests: (
+		filter: ChangeRequestListFilter,
+	) => Promise<Result<ChangeRequest[]>>;
+	transitionChangeRequest: (
 		record: ChangeRequestReviewRecord,
 		ports: MutationPorts,
 		meta: { correlationId: string; eventSuffix: "approved" | "rejected" },
-	): Promise<Result<ChangeRequest>>;
+	) => Promise<Result<ChangeRequest>>;
 }
 
 /** Persistence boundary required by the item-group aggregate. */
 export interface ItemGroupStore {
-	getItemGroupById(
-		organizationId: string,
-		id: string,
-	): Promise<Result<ItemGroup | null>>;
-	getItemGroupByCode(
-		organizationId: string,
-		normalizedCode: string,
-	): Promise<Result<ItemGroup | null>>;
-	listItemGroups(filter: ListFilter): Promise<Result<ItemGroup[]>>;
-	createItemGroup(
+	createItemGroup: (
 		record: ItemGroupCreateRecord,
 		ports: MutationPorts,
 		meta: MutationMeta,
-	): Promise<Result<ItemGroup>>;
-	updateItemGroup(
-		record: ItemGroupUpdateRecord,
-		ports: MutationPorts,
-		meta: MutationMeta,
-	): Promise<Result<ItemGroup>>;
-	transitionItemGroup(
+	) => Promise<Result<ItemGroup>>;
+	getItemGroupByCode: (
+		organizationId: string,
+		normalizedCode: string,
+	) => Promise<Result<ItemGroup | null>>;
+	getItemGroupById: (
+		organizationId: string,
+		id: string,
+	) => Promise<Result<ItemGroup | null>>;
+	listItemGroups: (filter: ListFilter) => Promise<Result<ItemGroup[]>>;
+	transitionItemGroup: (
 		record: ItemGroupLifecycleRecord,
 		ports: MutationPorts,
 		meta: {
 			correlationId: string;
 			eventSuffix: ItemGroupLifecycleEventSuffix;
 		},
-	): Promise<Result<ItemGroup>>;
+	) => Promise<Result<ItemGroup>>;
+	updateItemGroup: (
+		record: ItemGroupUpdateRecord,
+		ports: MutationPorts,
+		meta: MutationMeta,
+	) => Promise<Result<ItemGroup>>;
 }
 
 /** Persistence boundary required by the item aggregate. */
 export interface ItemStore {
-	getItemById(organizationId: string, id: string): Promise<Result<Item | null>>;
-	getItemByCode(
-		organizationId: string,
-		normalizedCode: string,
-	): Promise<Result<Item | null>>;
-	listItems(filter: ItemListFilter): Promise<Result<Item[]>>;
-	createItem(
+	createItem: (
 		record: ItemCreateRecord,
 		ports: MutationPorts,
 		meta: MutationMeta,
-	): Promise<Result<Item>>;
-	updateItem(
-		record: ItemUpdateRecord,
-		ports: MutationPorts,
-		meta: MutationMeta,
-	): Promise<Result<Item>>;
-	transitionItem(
+	) => Promise<Result<Item>>;
+	getItemByCode: (
+		organizationId: string,
+		normalizedCode: string,
+	) => Promise<Result<Item | null>>;
+	getItemById: (
+		organizationId: string,
+		id: string,
+	) => Promise<Result<Item | null>>;
+	listItems: (filter: ItemListFilter) => Promise<Result<Item[]>>;
+	transitionItem: (
 		record: ItemLifecycleRecord,
 		ports: MutationPorts,
 		meta: {
 			correlationId: string;
 			eventSuffix: ItemLifecycleEventSuffix;
 		},
-	): Promise<Result<Item>>;
+	) => Promise<Result<Item>>;
+	updateItem: (
+		record: ItemUpdateRecord,
+		ports: MutationPorts,
+		meta: MutationMeta,
+	) => Promise<Result<Item>>;
 }
 
 /** Persistence boundary required by the warehouse aggregate. */
 export interface WarehouseStore {
-	getWarehouseById(
-		organizationId: string,
-		id: string,
-	): Promise<Result<Warehouse | null>>;
-	getWarehouseByCode(
-		organizationId: string,
-		normalizedCode: string,
-	): Promise<Result<Warehouse | null>>;
-	listWarehouses(filter: ListFilter): Promise<Result<Warehouse[]>>;
-	createWarehouse(
+	createWarehouse: (
 		record: WarehouseCreateRecord,
 		ports: MutationPorts,
 		meta: MutationMeta,
-	): Promise<Result<Warehouse>>;
-	updateWarehouse(
-		record: WarehouseUpdateRecord,
-		ports: MutationPorts,
-		meta: MutationMeta,
-	): Promise<Result<Warehouse>>;
-	moveWarehouse(
+	) => Promise<Result<Warehouse>>;
+	getWarehouseByCode: (
+		organizationId: string,
+		normalizedCode: string,
+	) => Promise<Result<Warehouse | null>>;
+	getWarehouseById: (
+		organizationId: string,
+		id: string,
+	) => Promise<Result<Warehouse | null>>;
+	listWarehouses: (filter: ListFilter) => Promise<Result<Warehouse[]>>;
+	moveWarehouse: (
 		record: WarehouseMoveRecord,
 		ports: MutationPorts,
 		meta: { correlationId: string },
-	): Promise<Result<Warehouse>>;
-	transitionWarehouse(
+	) => Promise<Result<Warehouse>>;
+	transitionWarehouse: (
 		record: WarehouseLifecycleRecord,
 		ports: MutationPorts,
 		meta: {
 			correlationId: string;
 			eventSuffix: WarehouseLifecycleEventSuffix;
 		},
-	): Promise<Result<Warehouse>>;
+	) => Promise<Result<Warehouse>>;
+	updateWarehouse: (
+		record: WarehouseUpdateRecord,
+		ports: MutationPorts,
+		meta: MutationMeta,
+	) => Promise<Result<Warehouse>>;
 }
 
 /** Persistence boundary required by commercial masters. */
 export interface CommercialMasterStore {
-	getPaymentTermById(
-		organizationId: string,
-		id: string,
-	): Promise<Result<PaymentTerm | null>>;
-	getPaymentTermByCode(
-		organizationId: string,
-		normalizedCode: string,
-	): Promise<Result<PaymentTerm | null>>;
-	listPaymentTerms(filter: ListFilter): Promise<Result<PaymentTerm[]>>;
-	createPaymentTerm(
+	createPaymentTerm: (
 		record: PaymentTermCreateRecord,
 		ports: MutationPorts,
 		meta: { correlationId: string },
-	): Promise<Result<PaymentTerm>>;
-	updatePaymentTerm(
-		record: PaymentTermUpdateRecord,
+	) => Promise<Result<PaymentTerm>>;
+	createTaxRegistration: (
+		record: TaxRegistrationCreateRecord,
 		ports: MutationPorts,
 		meta: { correlationId: string },
-	): Promise<Result<PaymentTerm>>;
-	transitionPaymentTerm(
+	) => Promise<Result<TaxRegistration>>;
+	findOverlappingActiveTaxRegistration: (
+		query: TaxRegistrationOverlapQuery,
+	) => Promise<Result<TaxRegistration | null>>;
+	findTaxRegistrationsByParty: (
+		organizationId: string,
+		partyId: string,
+	) => Promise<Result<TaxRegistration[]>>;
+	getPaymentTermByCode: (
+		organizationId: string,
+		normalizedCode: string,
+	) => Promise<Result<PaymentTerm | null>>;
+	getPaymentTermById: (
+		organizationId: string,
+		id: string,
+	) => Promise<Result<PaymentTerm | null>>;
+
+	getTaxRegistrationById: (
+		organizationId: string,
+		id: string,
+	) => Promise<Result<TaxRegistration | null>>;
+	listPaymentTerms: (filter: ListFilter) => Promise<Result<PaymentTerm[]>>;
+	listTaxRegistrations: (
+		filter: TaxRegistrationListFilter,
+	) => Promise<Result<TaxRegistration[]>>;
+	transitionPaymentTerm: (
 		record: PaymentTermLifecycleRecord,
 		ports: MutationPorts,
 		meta: {
 			correlationId: string;
 			eventSuffix: PaymentTermLifecycleEventSuffix;
 		},
-	): Promise<Result<PaymentTerm>>;
-
-	getTaxRegistrationById(
-		organizationId: string,
-		id: string,
-	): Promise<Result<TaxRegistration | null>>;
-	listTaxRegistrations(
-		filter: TaxRegistrationListFilter,
-	): Promise<Result<TaxRegistration[]>>;
-	findTaxRegistrationsByParty(
-		organizationId: string,
-		partyId: string,
-	): Promise<Result<TaxRegistration[]>>;
-	findOverlappingActiveTaxRegistration(
-		query: TaxRegistrationOverlapQuery,
-	): Promise<Result<TaxRegistration | null>>;
-	createTaxRegistration(
-		record: TaxRegistrationCreateRecord,
-		ports: MutationPorts,
-		meta: { correlationId: string },
-	): Promise<Result<TaxRegistration>>;
-	updateTaxRegistration(
-		record: TaxRegistrationUpdateRecord,
-		ports: MutationPorts,
-		meta: { correlationId: string },
-	): Promise<Result<TaxRegistration>>;
-	transitionTaxRegistration(
+	) => Promise<Result<PaymentTerm>>;
+	transitionTaxRegistration: (
 		record: TaxRegistrationLifecycleRecord,
 		ports: MutationPorts,
 		meta: {
 			correlationId: string;
 			eventSuffix: TaxRegistrationLifecycleEventSuffix;
 		},
-	): Promise<Result<TaxRegistration>>;
+	) => Promise<Result<TaxRegistration>>;
+	updatePaymentTerm: (
+		record: PaymentTermUpdateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	) => Promise<Result<PaymentTerm>>;
+	updateTaxRegistration: (
+		record: TaxRegistrationUpdateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	) => Promise<Result<TaxRegistration>>;
 }
 
 export type ItemTemplateStore = ItemVariantExtensionStore;
 
 /** Persistence boundary for idempotent import batch replay evidence. */
 export interface ImportBatchStore {
-	getImportBatchByIdempotencyKey(
+	acquireImportBatchLease: (
+		record: ImportBatchLeaseRequest,
+	) => Promise<Result<ImportBatchLeaseResult>>;
+	claimImportBatch: (
+		record: ImportBatchClaimRecord,
+	) => Promise<Result<ImportBatchClaimResult>>;
+	completeImportBatch: (
+		record: ImportBatchCompletionRecord,
+	) => Promise<Result<ImportBatchRecord>>;
+	getImportBatchByIdempotencyKey: (
 		organizationId: string,
 		idempotencyKey: string,
-	): Promise<Result<ImportBatchRecord | null>>;
-	claimImportBatch(
-		record: ImportBatchClaimRecord,
-	): Promise<Result<ImportBatchClaimResult>>;
-	acquireImportBatchLease(
-		record: ImportBatchLeaseRequest,
-	): Promise<Result<ImportBatchLeaseResult>>;
-	listImportBatchRows(
+	) => Promise<Result<ImportBatchRecord | null>>;
+	listImportBatchRows: (
 		organizationId: string,
 		batchId: string,
-	): Promise<Result<ImportBatchRowRecord[]>>;
-	completeImportBatch(
-		record: ImportBatchCompletionRecord,
-	): Promise<Result<ImportBatchRecord>>;
+	) => Promise<Result<ImportBatchRowRecord[]>>;
 }
 
 /**
@@ -732,25 +737,25 @@ export type ImportBatchEntityType =
 	| "item_group"
 	| "warehouse";
 
-export type ImportBatchRecord = {
-	id: string;
-	organizationId: string;
-	idempotencyKey: string;
-	payloadHash: string;
-	operationType: string;
-	entityType: ImportBatchEntityType;
-	sourceSystem: string;
-	mode: string;
-	status: ImportBatchStatus;
-	report: unknown | null;
-	leaseOwner: string | null;
-	leaseExpiresAt: Date | null;
+export interface ImportBatchRecord {
 	actorUserId: string;
-	correlationId: string;
 	completedAt: Date | null;
+	correlationId: string;
 	createdAt: Date;
+	entityType: ImportBatchEntityType;
+	id: string;
+	idempotencyKey: string;
+	leaseExpiresAt: Date | null;
+	leaseOwner: string | null;
+	mode: string;
+	operationType: string;
+	organizationId: string;
+	payloadHash: string;
+	report: unknown | null;
+	sourceSystem: string;
+	status: ImportBatchStatus;
 	updatedAt: Date;
-};
+}
 
 export type ImportBatchRowStatus =
 	| "pending"
@@ -759,71 +764,70 @@ export type ImportBatchRowStatus =
 	| "failed"
 	| "skipped";
 
-export type ImportBatchRowRecord = {
-	id: string;
-	organizationId: string;
-	batchId: string;
-	sourceRowNumber: number;
-	payloadHash: string;
-	normalizedPayload: Readonly<Record<string, unknown>>;
-	intendedOperation: ImportRowOperation | null;
-	matchedEntityId: string | null;
-	status: ImportBatchRowStatus;
-	errorCode: string | null;
-	errorDetails: Readonly<Record<string, unknown>> | null;
-	resultEntityId: string | null;
-	resultVersion: number | null;
+export interface ImportBatchRowRecord {
 	attemptCount: number;
-	leaseOwner: string | null;
-	leaseExpiresAt: Date | null;
-	startedAt: Date | null;
+	batchId: string;
 	completedAt: Date | null;
 	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type ImportBatchRowClaimRecord = {
+	errorCode: string | null;
+	errorDetails: Readonly<Record<string, unknown>> | null;
 	id: string;
-	sourceRowNumber: number;
-	payloadHash: string;
+	intendedOperation: ImportRowOperation | null;
+	leaseExpiresAt: Date | null;
+	leaseOwner: string | null;
+	matchedEntityId: string | null;
 	normalizedPayload: Readonly<Record<string, unknown>>;
-};
-
-export type ImportBatchClaimRecord = {
-	id: string;
 	organizationId: string;
-	idempotencyKey: string;
 	payloadHash: string;
-	operationType: string;
-	entityType: ImportBatchEntityType;
-	sourceSystem: string;
-	mode: string;
+	resultEntityId: string | null;
+	resultVersion: number | null;
+	sourceRowNumber: number;
+	startedAt: Date | null;
+	status: ImportBatchRowStatus;
+	updatedAt: Date;
+}
+
+export interface ImportBatchRowClaimRecord {
+	id: string;
+	normalizedPayload: Readonly<Record<string, unknown>>;
+	payloadHash: string;
+	sourceRowNumber: number;
+}
+
+export interface ImportBatchClaimRecord {
 	actorUserId: string;
 	correlationId: string;
+	entityType: ImportBatchEntityType;
+	id: string;
+	idempotencyKey: string;
+	mode: string;
+	operationType: string;
+	organizationId: string;
+	payloadHash: string;
 	rows: readonly ImportBatchRowClaimRecord[];
-};
+	sourceSystem: string;
+}
 
 export type ImportBatchClaimResult =
 	| { kind: "claimed"; batch: ImportBatchRecord }
 	| { kind: "existing"; batch: ImportBatchRecord };
 
-export type ImportBatchLeaseRequest = {
-	organizationId: string;
+export interface ImportBatchLeaseRequest {
 	batchId: string;
-	leaseOwner: string;
 	leaseExpiresAt: Date;
-};
+	leaseOwner: string;
+	organizationId: string;
+}
 
 export type ImportBatchLeaseResult =
 	| { kind: "acquired"; batch: ImportBatchRecord }
 	| { kind: "busy"; batch: ImportBatchRecord }
 	| { kind: "completed"; batch: ImportBatchRecord };
 
-export type ImportBatchCompletionRecord = {
-	organizationId: string;
+export interface ImportBatchCompletionRecord {
 	batchId: string;
 	leaseOwner: string;
-	status: "partially_applied" | "applied" | "failed";
+	organizationId: string;
 	report: unknown;
 	rows: readonly {
 		sourceRowNumber: number;
@@ -835,4 +839,5 @@ export type ImportBatchCompletionRecord = {
 		resultEntityId: string | null;
 		resultVersion: number | null;
 	}[];
-};
+	status: "partially_applied" | "applied" | "failed";
+}

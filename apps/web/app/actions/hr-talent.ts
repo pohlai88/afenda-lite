@@ -165,7 +165,7 @@ async function runTalentAction<Key extends string, Value>(config: {
 	dataKey: Key;
 	execute: (input: never) => Promise<Result<Value>>;
 }): Promise<ActionResult<TalentActionData<Key, Value>>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: config.path,
 		permission: config.permission,
 		safeMessage: config.safeMessage,
@@ -186,7 +186,9 @@ async function runTalentAction<Key extends string, Value>(config: {
 				) as never,
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return {
 				ok: true,
 				data: { [config.dataKey]: mapped.data } as TalentActionData<Key, Value>,
@@ -198,7 +200,7 @@ async function runTalentAction<Key extends string, Value>(config: {
 export async function createTalentProfileAction(
 	input: unknown,
 ): Promise<ActionResult<{ profile: TalentProfile }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(createTalentProfileInputSchema),
 		path: "createTalentProfileAction",
@@ -214,7 +216,7 @@ export async function createTalentProfileAction(
 export async function updateTalentProfileAction(
 	input: unknown,
 ): Promise<ActionResult<{ profile: TalentProfile }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(updateTalentProfileInputSchema),
 		path: "updateTalentProfileAction",
@@ -230,7 +232,7 @@ export async function updateTalentProfileAction(
 export async function archiveTalentProfileAction(
 	input: unknown,
 ): Promise<ActionResult<{ profile: TalentProfile }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(archiveTalentProfileInputSchema),
 		path: "archiveTalentProfileAction",
@@ -246,7 +248,7 @@ export async function archiveTalentProfileAction(
 export async function getTalentProfileByEmployeeAction(
 	input: unknown,
 ): Promise<ActionResult<{ profile: TalentProfile | null }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(getTalentProfileByEmployeeInputSchema),
 		path: "getTalentProfileByEmployeeAction",
@@ -262,7 +264,7 @@ export async function getTalentProfileByEmployeeAction(
 export async function recordTalentProfileAssessmentAction(
 	input: unknown,
 ): Promise<ActionResult<{ assessment: TalentProfileAssessment }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(recordTalentProfileAssessmentInputSchema),
 		path: "recordTalentProfileAssessmentAction",
@@ -278,7 +280,7 @@ export async function recordTalentProfileAssessmentAction(
 export async function confirmTalentProfileAssessmentAction(
 	input: unknown,
 ): Promise<ActionResult<{ assessment: TalentProfileAssessment }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(confirmTalentProfileAssessmentInputSchema),
 		path: "confirmTalentProfileAssessmentAction",
@@ -297,7 +299,7 @@ export async function confirmTalentProfileAssessmentAction(
 export async function listTalentProfileAssessmentsAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: ProjectedTalentProfileAssessmentListPage }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(listTalentProfileAssessmentsInputSchema),
 		path: "listTalentProfileAssessmentsAction",
@@ -313,7 +315,7 @@ export async function listTalentProfileAssessmentsAction(
 export async function recordTalentProfileMobilityAction(
 	input: unknown,
 ): Promise<ActionResult<{ mobility: TalentProfileMobility }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(recordTalentProfileMobilityInputSchema),
 		path: "recordTalentProfileMobilityAction",
@@ -329,7 +331,7 @@ export async function recordTalentProfileMobilityAction(
 export async function listTalentProfileMobilityAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: ProjectedTalentProfileMobilityListPage }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(listTalentProfileMobilityInputSchema),
 		path: "listTalentProfileMobilityAction",
@@ -345,7 +347,7 @@ export async function listTalentProfileMobilityAction(
 export async function createCompetencyAction(
 	input: unknown,
 ): Promise<ActionResult<{ competency: Competency }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(createCompetencyInputSchema),
 		path: "createCompetencyAction",
@@ -361,7 +363,7 @@ export async function createCompetencyAction(
 export async function updateCompetencyAction(
 	input: unknown,
 ): Promise<ActionResult<{ competency: Competency }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(updateCompetencyInputSchema),
 		path: "updateCompetencyAction",
@@ -377,7 +379,7 @@ export async function updateCompetencyAction(
 export async function retireCompetencyAction(
 	input: unknown,
 ): Promise<ActionResult<{ competency: Competency }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(retireCompetencyInputSchema),
 		path: "retireCompetencyAction",
@@ -393,7 +395,7 @@ export async function retireCompetencyAction(
 export async function mapCompetencyToJobAction(
 	input: unknown,
 ): Promise<ActionResult<{ jobCompetency: JobCompetency }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(mapCompetencyToJobInputSchema),
 		path: "mapCompetencyToJobAction",
@@ -409,7 +411,7 @@ export async function mapCompetencyToJobAction(
 export async function removeCompetencyFromJobAction(
 	input: unknown,
 ): Promise<ActionResult<{ jobCompetency: JobCompetency }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(removeCompetencyFromJobInputSchema),
 		path: "removeCompetencyFromJobAction",
@@ -425,7 +427,7 @@ export async function removeCompetencyFromJobAction(
 export async function assessEmployeeCompetencyAction(
 	input: unknown,
 ): Promise<ActionResult<{ assessment: CompetencyAssessment }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(assessEmployeeCompetencyInputSchema),
 		path: "assessEmployeeCompetencyAction",
@@ -441,7 +443,7 @@ export async function assessEmployeeCompetencyAction(
 export async function supersedeCompetencyAssessmentAction(
 	input: unknown,
 ): Promise<ActionResult<{ assessment: CompetencyAssessment }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(supersedeCompetencyAssessmentInputSchema),
 		path: "supersedeCompetencyAssessmentAction",
@@ -457,7 +459,7 @@ export async function supersedeCompetencyAssessmentAction(
 export async function expireCompetencyAssessmentAction(
 	input: unknown,
 ): Promise<ActionResult<{ assessment: CompetencyAssessment }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(expireCompetencyAssessmentInputSchema),
 		path: "expireCompetencyAssessmentAction",
@@ -473,7 +475,7 @@ export async function expireCompetencyAssessmentAction(
 export async function getCompetencyByIdAction(
 	input: unknown,
 ): Promise<ActionResult<{ competency: Competency | null }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(getCompetencyByIdInputSchema),
 		path: "getCompetencyByIdAction",
@@ -489,7 +491,7 @@ export async function getCompetencyByIdAction(
 export async function listCompetenciesAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: CompetencyListPage }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(listCompetenciesInputSchema),
 		path: "listCompetenciesAction",
@@ -505,7 +507,7 @@ export async function listCompetenciesAction(
 export async function listJobCompetenciesAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: JobCompetencyListPage }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(listJobCompetenciesInputSchema),
 		path: "listJobCompetenciesAction",
@@ -521,7 +523,7 @@ export async function listJobCompetenciesAction(
 export async function getEmployeeCompetencyProfileAction(
 	input: unknown,
 ): Promise<ActionResult<{ profile: ProjectedEmployeeCompetencyProfile }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(getEmployeeCompetencyProfileInputSchema),
 		path: "getEmployeeCompetencyProfileAction",
@@ -537,7 +539,7 @@ export async function getEmployeeCompetencyProfileAction(
 export async function createCareerPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: CareerPlan }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(createCareerPlanInputSchema),
 		path: "createCareerPlanAction",
@@ -553,7 +555,7 @@ export async function createCareerPlanAction(
 export async function updateCareerPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: CareerPlan }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(updateCareerPlanInputSchema),
 		path: "updateCareerPlanAction",
@@ -569,7 +571,7 @@ export async function updateCareerPlanAction(
 export async function acknowledgeCareerPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: CareerPlan }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(acknowledgeCareerPlanInputSchema),
 		path: "acknowledgeCareerPlanAction",
@@ -585,7 +587,7 @@ export async function acknowledgeCareerPlanAction(
 export async function addCareerPlanItemAction(
 	input: unknown,
 ): Promise<ActionResult<{ action: CareerPlanAction }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(addCareerPlanActionInputSchema),
 		path: "addCareerPlanItemAction",
@@ -601,7 +603,7 @@ export async function addCareerPlanItemAction(
 export async function completeCareerPlanItemAction(
 	input: unknown,
 ): Promise<ActionResult<{ action: CareerPlanAction }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(completeCareerPlanActionInputSchema),
 		path: "completeCareerPlanItemAction",
@@ -620,7 +622,7 @@ export async function completeCareerPlanItemAction(
 export async function closeCareerPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: CareerPlan }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(closeCareerPlanInputSchema),
 		path: "closeCareerPlanAction",
@@ -636,7 +638,7 @@ export async function closeCareerPlanAction(
 export async function getCareerPlanByIdAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: CareerPlanWithActions | null }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(getCareerPlanByIdInputSchema),
 		path: "getCareerPlanByIdAction",
@@ -652,7 +654,7 @@ export async function getCareerPlanByIdAction(
 export async function listEmployeeCareerPlansAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: CareerPlanListPage }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(listEmployeeCareerPlansInputSchema),
 		path: "listEmployeeCareerPlansAction",
@@ -668,7 +670,7 @@ export async function listEmployeeCareerPlansAction(
 export async function recordCriticalRoleReadinessAction(
 	input: unknown,
 ): Promise<ActionResult<{ readiness: TalentCriticalRoleReadiness }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(recordCriticalRoleReadinessInputSchema),
 		path: "recordCriticalRoleReadinessAction",
@@ -686,7 +688,7 @@ export async function listCriticalRoleReadinessAction(
 ): Promise<
 	ActionResult<{ page: ProjectedTalentCriticalRoleReadinessListPage }>
 > {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(listCriticalRoleReadinessInputSchema),
 		path: "listCriticalRoleReadinessAction",
@@ -702,7 +704,7 @@ export async function listCriticalRoleReadinessAction(
 export async function createTalentPoolAction(
 	input: unknown,
 ): Promise<ActionResult<{ pool: TalentPool }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(createTalentPoolInputSchema),
 		path: "createTalentPoolAction",
@@ -718,7 +720,7 @@ export async function createTalentPoolAction(
 export async function updateTalentPoolAction(
 	input: unknown,
 ): Promise<ActionResult<{ pool: TalentPool }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(updateTalentPoolInputSchema),
 		path: "updateTalentPoolAction",
@@ -734,7 +736,7 @@ export async function updateTalentPoolAction(
 export async function closeTalentPoolAction(
 	input: unknown,
 ): Promise<ActionResult<{ pool: TalentPool }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(closeTalentPoolInputSchema),
 		path: "closeTalentPoolAction",
@@ -750,7 +752,7 @@ export async function closeTalentPoolAction(
 export async function nominateTalentPoolMemberAction(
 	input: unknown,
 ): Promise<ActionResult<{ member: TalentPoolMember }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(nominateTalentPoolMemberInputSchema),
 		path: "nominateTalentPoolMemberAction",
@@ -766,7 +768,7 @@ export async function nominateTalentPoolMemberAction(
 export async function approveTalentPoolMemberAction(
 	input: unknown,
 ): Promise<ActionResult<{ member: TalentPoolMember }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(approveTalentPoolMemberInputSchema),
 		path: "approveTalentPoolMemberAction",
@@ -782,7 +784,7 @@ export async function approveTalentPoolMemberAction(
 export async function removeTalentPoolMemberAction(
 	input: unknown,
 ): Promise<ActionResult<{ member: TalentPoolMember }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(removeTalentPoolMemberInputSchema),
 		path: "removeTalentPoolMemberAction",
@@ -798,7 +800,7 @@ export async function removeTalentPoolMemberAction(
 export async function listTalentPoolMembersAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: TalentPoolMemberListPage }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(listTalentPoolMembersInputSchema),
 		path: "listTalentPoolMembersAction",
@@ -814,7 +816,7 @@ export async function listTalentPoolMembersAction(
 export async function createSuccessionPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: SuccessionPlan }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(createSuccessionPlanInputSchema),
 		path: "createSuccessionPlanAction",
@@ -830,7 +832,7 @@ export async function createSuccessionPlanAction(
 export async function updateSuccessionPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: SuccessionPlan }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(updateSuccessionPlanInputSchema),
 		path: "updateSuccessionPlanAction",
@@ -846,7 +848,7 @@ export async function updateSuccessionPlanAction(
 export async function closeSuccessionPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: SuccessionPlan }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(successionPlanStatusTransitionInputSchema),
 		path: "closeSuccessionPlanAction",
@@ -862,7 +864,7 @@ export async function closeSuccessionPlanAction(
 export async function nominateSuccessionCandidateAction(
 	input: unknown,
 ): Promise<ActionResult<{ candidate: SuccessionCandidate }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(nominateSuccessionCandidateInputSchema),
 		path: "nominateSuccessionCandidateAction",
@@ -878,7 +880,7 @@ export async function nominateSuccessionCandidateAction(
 export async function assessSuccessionReadinessAction(
 	input: unknown,
 ): Promise<ActionResult<{ candidate: SuccessionCandidate }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(assessSuccessionReadinessInputSchema),
 		path: "assessSuccessionReadinessAction",
@@ -894,7 +896,7 @@ export async function assessSuccessionReadinessAction(
 export async function approveSuccessionCandidateAction(
 	input: unknown,
 ): Promise<ActionResult<{ candidate: SuccessionCandidate }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(approveSuccessionCandidateInputSchema),
 		path: "approveSuccessionCandidateAction",
@@ -910,7 +912,7 @@ export async function approveSuccessionCandidateAction(
 export async function removeSuccessionCandidateAction(
 	input: unknown,
 ): Promise<ActionResult<{ candidate: SuccessionCandidate }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(removeSuccessionCandidateInputSchema),
 		path: "removeSuccessionCandidateAction",
@@ -926,7 +928,7 @@ export async function removeSuccessionCandidateAction(
 export async function getSuccessionPlanByIdAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: SuccessionPlan | null }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(getSuccessionPlanByIdInputSchema),
 		path: "getSuccessionPlanByIdAction",
@@ -942,7 +944,7 @@ export async function getSuccessionPlanByIdAction(
 export async function listSuccessionPlansAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: SuccessionPlanListPage }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(listSuccessionPlansInputSchema),
 		path: "listSuccessionPlansAction",
@@ -958,7 +960,7 @@ export async function listSuccessionPlansAction(
 export async function listSuccessionCandidatesAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: ProjectedSuccessionCandidateListPage }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(listSuccessionCandidatesInputSchema),
 		path: "listSuccessionCandidatesAction",
@@ -974,7 +976,7 @@ export async function listSuccessionCandidatesAction(
 export async function getPositionSuccessionCoverageAction(
 	input: unknown,
 ): Promise<ActionResult<{ coverage: PositionSuccessionCoverage }>> {
-	return runTalentAction({
+	return await runTalentAction({
 		input,
 		schema: hrActionSchema(getPositionSuccessionCoverageInputSchema),
 		path: "getPositionSuccessionCoverageAction",

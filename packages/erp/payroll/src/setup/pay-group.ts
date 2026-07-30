@@ -22,7 +22,7 @@ import {
 } from "../shared/setup-command";
 import type { PayrollPayGroup } from "../types";
 
-export async function createPayrollPayGroup(
+export function createPayrollPayGroup(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollPayGroup>> {
@@ -30,7 +30,7 @@ export async function createPayrollPayGroup(
 		schema: createPayrollPayGroupInputSchema,
 		invalidMessage: "Invalid payroll pay group create input",
 		command: PAYROLL_COMMAND_SETUP_PAY_GROUP_CREATE,
-		execute: async (data, { store, ports }) => {
+		execute: (data, { store, ports }) => {
 			const fingerprint = buildPayrollCreateFingerprint({
 				calendarId: data.calendarId,
 				code: data.code,
@@ -55,7 +55,7 @@ export async function createPayrollPayGroup(
 	});
 }
 
-export async function updatePayrollPayGroup(
+export function updatePayrollPayGroup(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollPayGroup>> {
@@ -79,7 +79,7 @@ export async function updatePayrollPayGroup(
 	});
 }
 
-export async function archivePayrollPayGroup(
+export function archivePayrollPayGroup(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollPayGroup>> {
@@ -101,7 +101,7 @@ export async function archivePayrollPayGroup(
 	});
 }
 
-export async function getPayrollPayGroup(
+export function getPayrollPayGroup(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollPayGroup | null>> {
@@ -117,7 +117,7 @@ export async function getPayrollPayGroup(
 	});
 }
 
-export async function listPayrollPayGroups(
+export function listPayrollPayGroups(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollPayGroup[]>> {

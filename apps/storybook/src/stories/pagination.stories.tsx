@@ -53,13 +53,13 @@ export const Overview: Story = {
 		<div className="min-h-screen bg-canvas text-foreground">
 			<div className="mx-auto grid w-full max-w-4xl gap-6 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-2 border-b pb-6">
-					<p className="text-sm font-medium text-foreground-secondary">
+					<p className="font-medium text-foreground-secondary text-sm">
 						Accounts payable
 					</p>
-					<h1 className="text-2xl font-semibold tracking-tight">
+					<h1 className="font-semibold text-2xl tracking-tight">
 						Supplier invoice register
 					</h1>
-					<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+					<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 						Page 2 of 12 · filters for July 2026 remain active across page
 						changes.
 					</p>
@@ -272,7 +272,7 @@ export const Composition: Story = {
 	},
 	render: () => (
 		<div className="grid w-full max-w-5xl gap-4">
-			<p className="text-sm text-foreground-secondary">
+			<p className="text-foreground-secondary text-sm">
 				Showing 21–40 of 236 suppliers · filter: Malaysia preferred
 			</p>
 			<div className="overflow-hidden rounded-lg border">
@@ -350,7 +350,7 @@ export const DoAndDoNot: Story = {
 				</Pagination>
 			</StorySection>
 			<StorySection title="Do not: invent page chrome without destinations">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Feature code owns URLs and fetch. Pagination only presents navigation
 					structure for destinations the consumer provides.
 				</p>

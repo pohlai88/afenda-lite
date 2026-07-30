@@ -50,15 +50,15 @@ export {
 	STANDARD_CHILD_LIFECYCLE_STATUSES,
 } from "./capabilities/extensions/extension-lifecycle";
 
-type MutableExtensionRecord = {
+interface MutableExtensionRecord {
+	createdAt: Date;
+	createdBy: string;
 	id: string;
 	organizationId: string;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
 type EffectiveDatedExtensionRecord = MutableExtensionRecord & {
 	validFrom: Date | null;
@@ -106,23 +106,23 @@ export {
 	type UomDimensionCode,
 } from "./capabilities/platform-references";
 
-type OrgMasterBase = {
-	id: string;
-	organizationId: string;
-	code: string;
-	normalizedCode: string;
-	name: string;
-	status: MasterStatus;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
+interface OrgMasterBase {
 	activatedAt: Date | null;
 	activatedBy: string | null;
+	code: string;
+	createdAt: Date;
+	createdBy: string;
+	id: string;
+	name: string;
+	normalizedCode: string;
+	organizationId: string;
 	retiredAt: Date | null;
 	retiredBy: string | null;
-	createdAt: Date;
+	status: MasterStatus;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
 /** Unified party — roles live in md_party_role (closed catalog). */
 export type Party = OrgMasterBase & {
@@ -283,42 +283,42 @@ export const TAX_REGISTRATION_TYPES = [
 export type TaxRegistrationType = (typeof TAX_REGISTRATION_TYPES)[number];
 
 /** Party-linked tax registration identity — no mnemonic `code` column. */
-export type TaxRegistration = {
-	id: string;
-	organizationId: string;
-	partyId: string;
-	jurisdictionCountryId: string;
-	registrationType: TaxRegistrationType;
-	registrationNumber: string;
-	normalizedRegistrationNumber: string;
-	name: string | null;
-	status: MasterStatus;
-	version: number;
-	validFrom: Date | null;
-	validTo: Date | null;
-	createdBy: string;
-	updatedBy: string;
+export interface TaxRegistration {
 	activatedAt: Date | null;
 	activatedBy: string | null;
 	blockedAt: Date | null;
 	blockedBy: string | null;
-	retiredAt: Date | null;
-	retiredBy: string | null;
+	createdAt: Date;
+	createdBy: string;
 	deletedAt: Date | null;
 	deletedBy: string | null;
-	createdAt: Date;
+	id: string;
+	jurisdictionCountryId: string;
+	name: string | null;
+	normalizedRegistrationNumber: string;
+	organizationId: string;
+	partyId: string;
+	registrationNumber: string;
+	registrationType: TaxRegistrationType;
+	retiredAt: Date | null;
+	retiredBy: string | null;
+	status: MasterStatus;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	validFrom: Date | null;
+	validTo: Date | null;
+	version: number;
+}
 
-export type MasterDependency = {
-	module: string;
-	entityType: string;
+export interface MasterDependency {
 	entityId: string;
+	entityType: string;
+	module: string;
 	reason: string;
-};
+}
 
-export type DependencyInspector = {
-	listBlockers(input: {
+export interface DependencyInspector {
+	listBlockers: (input: {
 		organizationId: string;
 		entityType:
 			| "party"
@@ -328,8 +328,8 @@ export type DependencyInspector = {
 			| "warehouse"
 			| "payment_term";
 		entityId: string;
-	}): Promise<MasterDependency[]>;
-};
+	}) => Promise<MasterDependency[]>;
+}
 
 export const PARTY_ROLE_CODES = [
 	"customer",
@@ -596,13 +596,11 @@ export type ChangeRequestCommandKind =
 export const CHANGE_REQUEST_STATUSES = GOVERNANCE_WORKFLOW_STATES;
 export type ChangeRequestStatus = GovernanceWorkflowState;
 
-export type ActivatePartyChangePayload = {
+export interface ActivatePartyChangePayload {
 	partyId: string;
-};
+}
 
-export type MergePartiesChangePayload = {
-	sourcePartyId: string;
-	targetPartyId: string;
+export interface MergePartiesChangePayload {
 	fieldDecisions?:
 		| {
 				name?: "source" | "target" | undefined;
@@ -614,30 +612,32 @@ export type MergePartiesChangePayload = {
 				defaultCurrencyId?: "source" | "target" | undefined;
 		  }
 		| undefined;
-};
+	sourcePartyId: string;
+	targetPartyId: string;
+}
 
 export type ChangeRequestPayload =
 	| ActivatePartyChangePayload
 	| MergePartiesChangePayload;
 
-export type ChangeRequest = {
-	id: string;
-	organizationId: string;
-	code: string;
-	normalizedCode: string;
-	commandKind: ChangeRequestCommandKind;
-	status: ChangeRequestStatus;
-	version: number;
-	payload: ChangeRequestPayload;
-	subjectEntityType: "party";
-	subjectEntityId: string;
-	submittedBy: string;
-	submittedAt: Date;
-	reviewedBy: string | null;
-	reviewedAt: Date | null;
-	reviewNote: string | null;
-	appliedBy: string | null;
+export interface ChangeRequest {
 	appliedAt: Date | null;
+	appliedBy: string | null;
+	code: string;
+	commandKind: ChangeRequestCommandKind;
 	createdAt: Date;
+	id: string;
+	normalizedCode: string;
+	organizationId: string;
+	payload: ChangeRequestPayload;
+	reviewedAt: Date | null;
+	reviewedBy: string | null;
+	reviewNote: string | null;
+	status: ChangeRequestStatus;
+	subjectEntityId: string;
+	subjectEntityType: "party";
+	submittedAt: Date;
+	submittedBy: string;
 	updatedAt: Date;
-};
+	version: number;
+}

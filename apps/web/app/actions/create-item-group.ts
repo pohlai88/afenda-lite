@@ -12,7 +12,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type CreateItemGroupActionData = { itemGroup: ItemGroup };
+export interface CreateItemGroupActionData {
+	itemGroup: ItemGroup;
+}
 export type CreateItemGroupActionState =
 	ActionResult<CreateItemGroupActionData> | null;
 
@@ -36,7 +38,7 @@ export async function createItemGroupAction(
 			parsed.details,
 		);
 	}
-	return runMemberPermissionAction({
+	return await runMemberPermissionAction({
 		path: "createItemGroupAction",
 		permission: "master_data.manage",
 		safeMessage: "Could not create item group. Try again or contact an admin.",

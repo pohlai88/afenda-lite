@@ -19,7 +19,7 @@ import type {
 	TheMachine,
 } from "./types";
 
-const MAX_SYSTEM_CONTEXT_TOKENS = 2_000;
+const MAX_SYSTEM_CONTEXT_TOKENS = 2000;
 
 function resolveAssistants(
 	custom: readonly MachineAssistant[] | undefined,

@@ -3,88 +3,88 @@ import type { Result } from "@afenda/errors/result";
 import type { DayPortion, LeaveUnit } from "../shared/leave-status";
 import type { WorkCalendarDateOverrideKind } from "../types";
 
-export type WorkCalendarSegmentInput = {
-	organizationId: string;
+export interface WorkCalendarSegmentInput {
 	employeeId: string;
 	employmentId: string;
-	startDate: string;
 	endDate: string;
-	unit: LeaveUnit;
+	organizationId: string;
 	partialDay?: DayPortion | undefined;
-};
+	startDate: string;
+	unit: LeaveUnit;
+}
 
-export type WorkCalendarSegment = {
-	date: string;
-	quantity: string;
-	dayPortion: DayPortion;
+export interface WorkCalendarSegment {
 	/** Calendar definition version / id used for this segment. */
 	calendarVersion: string;
-};
-
-export type WorkCalendarHoliday = {
 	date: string;
-	locationCode: string | null;
+	dayPortion: DayPortion;
+	quantity: string;
+}
+
+export interface WorkCalendarHoliday {
+	date: string;
+	expectedMinutes: number | null;
+	isWorkingDay: boolean;
 	jurisdiction: string | null;
 	label: string | null;
+	locationCode: string | null;
 	overrideKind: WorkCalendarDateOverrideKind;
-	isWorkingDay: boolean;
-	expectedMinutes: number | null;
-};
+}
 
-export type WorkCalendarDayResolution = {
-	isWorkingDay: boolean;
+export interface WorkCalendarDayResolution {
 	expectedMinutes: number | null;
+	isWorkingDay: boolean;
 	overrideKind: WorkCalendarDateOverrideKind | null;
-};
+}
 
-export type WorkCalendarShiftWindow = {
-	/** Local wall-clock HH:mm */
-	startTime: string;
+export interface WorkCalendarShiftWindow {
 	/** Local wall-clock HH:mm — may be before startTime when overnight */
 	endTime: string;
-	overnight: boolean;
 	expectedMinutes: number;
-};
+	overnight: boolean;
+	/** Local wall-clock HH:mm */
+	startTime: string;
+}
 
 /** Day-of-week bitmask: 0 = Sunday … 6 = Saturday (JS getUTCDay / local weekday). */
-export type WorkWeekDayPattern = {
+export interface WorkWeekDayPattern {
 	dayOfWeek: 0 | 1 | 2 | 3 | 4 | 5 | 6;
 	isWorkingDay: boolean;
-	standardStartTime: string | null;
 	standardEndTime: string | null;
 	standardMinutes: number | null;
-};
+	standardStartTime: string | null;
+}
 
-export type ResolvedWorkCalendarContext = {
+export interface ResolvedWorkCalendarContext {
 	calendarId: string;
 	calendarVersion: string;
+	holidays: readonly WorkCalendarHoliday[];
+	jurisdiction: string | null;
+	locationCode: string | null;
+	shiftWindows: readonly WorkCalendarShiftWindow[];
+	standardHoursPerDay: number;
 	timezone: string;
 	workWeek: readonly WorkWeekDayPattern[];
-	standardHoursPerDay: number;
-	holidays: readonly WorkCalendarHoliday[];
-	shiftWindows: readonly WorkCalendarShiftWindow[];
-	locationCode: string | null;
-	jurisdiction: string | null;
-};
+}
 
-export type WorkCalendarLookupPort = {
-	resolveCalendarContext(input: {
+export interface WorkCalendarLookupPort {
+	resolveCalendarContext: (input: {
 		organizationId: string;
 		employeeId: string;
 		employmentId: string;
 		fromDate: string;
 		toDate: string;
-	}): Promise<Result<ResolvedWorkCalendarContext>>;
-};
+	}) => Promise<Result<ResolvedWorkCalendarContext>>;
+}
 
-export type WorkCalendarPort = {
-	isWorkingDay(input: {
+export interface WorkCalendarPort {
+	expandLeaveSegments: (
+		input: WorkCalendarSegmentInput,
+	) => Promise<Result<WorkCalendarSegment[]>>;
+	isWorkingDay: (input: {
 		organizationId: string;
 		employeeId: string;
 		employmentId: string;
 		date: string;
-	}): Promise<Result<boolean>>;
-	expandLeaveSegments(
-		input: WorkCalendarSegmentInput,
-	): Promise<Result<WorkCalendarSegment[]>>;
-};
+	}) => Promise<Result<boolean>>;
+}

@@ -46,22 +46,22 @@ export const Overview: Story = {
 		<div className="min-h-screen bg-canvas text-foreground">
 			<div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-2 border-b pb-6">
-					<p className="text-sm font-medium text-foreground-secondary">
+					<p className="font-medium text-foreground-secondary text-sm">
 						Accounts receivable
 					</p>
-					<h1 className="text-2xl font-semibold tracking-tight">
+					<h1 className="font-semibold text-2xl tracking-tight">
 						Collection queue
 					</h1>
-					<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+					<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 						Skeleton reduces layout shift. Feature code replaces it with rows,
 						Empty, or error — never leave it after failure.
 					</p>
 				</header>
 
 				<Card
-					className="shadow-none"
 					aria-busy="true"
 					aria-describedby="skeleton-queue-status"
+					className="shadow-none"
 				>
 					<p className="sr-only" id="skeleton-queue-status" role="status">
 						Loading overdue invoices.
@@ -85,15 +85,15 @@ export const Overview: Story = {
 								{["row-a", "row-b", "row-c"].map((row) => (
 									<TableRow key={row}>
 										<TableCell>
-											<Skeleton className="h-4 w-24" aria-hidden="true" />
+											<Skeleton aria-hidden="true" className="h-4 w-24" />
 										</TableCell>
 										<TableCell>
-											<Skeleton className="h-4 w-40" aria-hidden="true" />
+											<Skeleton aria-hidden="true" className="h-4 w-40" />
 										</TableCell>
 										<TableCell className="text-right">
 											<Skeleton
-												className="ml-auto h-4 w-20"
 												aria-hidden="true"
+												className="ml-auto h-4 w-20"
 											/>
 										</TableCell>
 									</TableRow>
@@ -122,19 +122,19 @@ export const SemanticUsage: Story = {
 			<StorySection title="Table rows">
 				<div className="grid gap-3 rounded-lg border p-4">
 					{["a", "b", "c"].map((id) => (
-						<div key={id} className="flex items-center justify-between gap-4">
-							<Skeleton className="h-4 w-32" aria-hidden="true" />
-							<Skeleton className="h-4 w-20" aria-hidden="true" />
+						<div className="flex items-center justify-between gap-4" key={id}>
+							<Skeleton aria-hidden="true" className="h-4 w-32" />
+							<Skeleton aria-hidden="true" className="h-4 w-20" />
 						</div>
 					))}
 				</div>
 			</StorySection>
 			<StorySection title="Identity block">
 				<div className="flex items-center gap-4 rounded-lg border p-4">
-					<Skeleton className="size-12 rounded-full" aria-hidden="true" />
+					<Skeleton aria-hidden="true" className="size-12 rounded-full" />
 					<div className="grid flex-1 gap-2">
-						<Skeleton className="h-4 w-1/3" aria-hidden="true" />
-						<Skeleton className="h-4 w-2/3" aria-hidden="true" />
+						<Skeleton aria-hidden="true" className="h-4 w-1/3" />
+						<Skeleton aria-hidden="true" className="h-4 w-2/3" />
 					</div>
 				</div>
 			</StorySection>
@@ -154,14 +154,14 @@ export const Usage: Story = {
 	},
 	render: () => (
 		<div
-			className="grid w-80 gap-2 rounded-lg border p-4"
-			role="status"
 			aria-busy="true"
 			aria-label="Supplier summary loading"
+			className="grid w-80 gap-2 rounded-lg border p-4"
+			role="status"
 		>
-			<Skeleton className="h-4 w-40" aria-hidden="true" />
-			<Skeleton className="h-4 w-full" aria-hidden="true" />
-			<Skeleton className="h-4 w-2/3" aria-hidden="true" />
+			<Skeleton aria-hidden="true" className="h-4 w-40" />
+			<Skeleton aria-hidden="true" className="h-4 w-full" />
+			<Skeleton aria-hidden="true" className="h-4 w-2/3" />
 		</div>
 	),
 };
@@ -179,17 +179,17 @@ export const StatesAndAccessibility: Story = {
 	render: () => (
 		<div className="grid w-full max-w-xl gap-6">
 			<section
-				className="grid gap-3 rounded-lg border p-4"
 				aria-busy="true"
 				aria-label="Invoice detail loading"
+				className="grid gap-3 rounded-lg border p-4"
 			>
-				<Skeleton className="h-5 w-48" aria-hidden="true" />
-				<Skeleton className="h-4 w-full" aria-hidden="true" />
-				<Skeleton className="h-4 w-3/4" aria-hidden="true" />
+				<Skeleton aria-hidden="true" className="h-5 w-48" />
+				<Skeleton aria-hidden="true" className="h-4 w-full" />
+				<Skeleton aria-hidden="true" className="h-4 w-3/4" />
 			</section>
 			<div className="flex items-center gap-3 rounded-lg border px-4 py-3">
 				<Spinner label="Saving remittance" />
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Busy controls use Spinner — not Skeleton chrome.
 				</p>
 			</div>
@@ -200,10 +200,10 @@ export const StatesAndAccessibility: Story = {
 function SeparatorLikeSkeletons() {
 	return (
 		<div className="grid gap-3">
-			<Skeleton className="h-px w-full" aria-hidden="true" />
+			<Skeleton aria-hidden="true" className="h-px w-full" />
 			<div className="grid gap-2 sm:grid-cols-2">
-				<Skeleton className="h-4 w-full" aria-hidden="true" />
-				<Skeleton className="h-4 w-full" aria-hidden="true" />
+				<Skeleton aria-hidden="true" className="h-4 w-full" />
+				<Skeleton aria-hidden="true" className="h-4 w-full" />
 			</div>
 		</div>
 	);
@@ -220,17 +220,17 @@ export const Composition: Story = {
 		},
 	},
 	render: () => (
-		<Card className="w-full max-w-xl shadow-none" aria-busy="true">
+		<Card aria-busy="true" className="w-full max-w-xl shadow-none">
 			<CardHeader>
 				<CardTitle>Supplier master</CardTitle>
 				<CardDescription>Loading preferred supplier roster</CardDescription>
 			</CardHeader>
 			<CardContent className="grid gap-4">
 				<div className="flex items-center gap-4">
-					<Skeleton className="size-10 rounded-full" aria-hidden="true" />
+					<Skeleton aria-hidden="true" className="size-10 rounded-full" />
 					<div className="grid flex-1 gap-2">
-						<Skeleton className="h-4 w-48" aria-hidden="true" />
-						<Skeleton className="h-4 w-32" aria-hidden="true" />
+						<Skeleton aria-hidden="true" className="h-4 w-48" />
+						<Skeleton aria-hidden="true" className="h-4 w-32" />
 					</div>
 				</div>
 				<SeparatorLikeSkeletons />
@@ -252,14 +252,14 @@ export const DoAndDoNot: Story = {
 	render: () => (
 		<div className="grid gap-6 sm:grid-cols-2">
 			<StorySection title="Do: shape-matched placeholders">
-				<div className="grid gap-2 rounded-lg border p-4" aria-busy="true">
-					<Skeleton className="h-4 w-28" aria-hidden="true" />
-					<Skeleton className="h-4 w-full" aria-hidden="true" />
-					<Skeleton className="h-4 w-2/3" aria-hidden="true" />
+				<div aria-busy="true" className="grid gap-2 rounded-lg border p-4">
+					<Skeleton aria-hidden="true" className="h-4 w-28" />
+					<Skeleton aria-hidden="true" className="h-4 w-full" />
+					<Skeleton aria-hidden="true" className="h-4 w-2/3" />
 				</div>
 			</StorySection>
 			<StorySection title="Do not: forever after failure">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					When loading ends in error, replace Skeleton with an explicit failure
 					notice. Do not imply success with pulsing chrome.
 				</p>
@@ -282,25 +282,25 @@ export const AdaptiveAndHighContrast: Story = {
 		<div className="grid w-full max-w-4xl gap-6 lg:grid-cols-2">
 			<StorySection title="Narrow record summary">
 				<section
-					className="grid gap-3 rounded-lg border p-4"
 					aria-busy="true"
 					aria-label="Invoice summary loading"
+					className="grid gap-3 rounded-lg border p-4"
 				>
-					<Skeleton className="h-5 w-36 max-w-full" aria-hidden="true" />
-					<Skeleton className="h-4 w-full" aria-hidden="true" />
-					<Skeleton className="h-4 w-2/3" aria-hidden="true" />
+					<Skeleton aria-hidden="true" className="h-5 w-36 max-w-full" />
+					<Skeleton aria-hidden="true" className="h-4 w-full" />
+					<Skeleton aria-hidden="true" className="h-4 w-2/3" />
 				</section>
 			</StorySection>
 			<StorySection title="Wide metric row">
 				<section
-					className="grid gap-4 rounded-lg border p-4 sm:grid-cols-3"
 					aria-busy="true"
 					aria-label="Receivables metrics loading"
+					className="grid gap-4 rounded-lg border p-4 sm:grid-cols-3"
 				>
 					{["invoiced", "paid", "open"].map((metric) => (
 						<div className="grid gap-2" key={metric}>
-							<Skeleton className="h-3 w-16" aria-hidden="true" />
-							<Skeleton className="h-7 w-28 max-w-full" aria-hidden="true" />
+							<Skeleton aria-hidden="true" className="h-3 w-16" />
+							<Skeleton aria-hidden="true" className="h-7 w-28 max-w-full" />
 						</div>
 					))}
 				</section>

@@ -1,15 +1,15 @@
 import type { HumanResourcesMutationMeta } from "./mutation-meta";
 
-export type HumanResourcesEntityEventPayload = {
-	organizationId: string;
-	entityType: string;
-	entityId: string;
+export interface HumanResourcesEntityEventPayload {
 	actorId: string;
-	correlationId: string;
-	operation: string;
 	causationId?: string | undefined;
+	correlationId: string;
+	entityId: string;
+	entityType: string;
 	idempotencyKey?: string | undefined;
-};
+	operation: string;
+	organizationId: string;
+}
 
 export function buildHumanResourcesEntityEventPayload(input: {
 	organizationId: string;

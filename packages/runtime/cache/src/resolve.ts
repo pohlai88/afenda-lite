@@ -23,7 +23,6 @@ function upstashCredentials(): { url: string; token: string } | undefined {
 	) {
 		return { url, token };
 	}
-	return undefined;
 }
 
 function redisFromCredentials(credentials: {
@@ -44,12 +43,12 @@ function pickConfig(
 	options: CreateCacheManagerOptions,
 ): Partial<{ defaultTTL: number; l1MaxSize: number }> {
 	return {
-		...(options.defaultTTL !== undefined
-			? { defaultTTL: options.defaultTTL }
-			: {}),
-		...(options.l1MaxSize !== undefined
-			? { l1MaxSize: options.l1MaxSize }
-			: {}),
+		...(options.defaultTTL === undefined
+			? {}
+			: { defaultTTL: options.defaultTTL }),
+		...(options.l1MaxSize === undefined
+			? {}
+			: { l1MaxSize: options.l1MaxSize }),
 	};
 }
 

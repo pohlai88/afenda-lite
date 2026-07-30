@@ -1,4 +1,5 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
+import type { z } from "zod";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -37,6 +38,12 @@ import { assertValidDateRange } from "../shared/employment-status";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import type { HumanResourcesCoreStore } from "../store/core";
 import type { Employment, EmploymentContract } from "../types";
+
+interface ValidatedContractSupersession {
+	endsOn: string | null;
+	predecessor: EmploymentContract;
+	referenceCode: string;
+}
 
 async function loadEmploymentForContract(
 	store: HumanResourcesCoreStore,
@@ -122,7 +129,7 @@ async function validateActiveContractMutationRange(
 	return ok(employment.data);
 }
 
-async function resolveEmploymentContractAsOf(
+function resolveEmploymentContractAsOf(
 	store: HumanResourcesCoreStore,
 	input: {
 		organizationId: string;
@@ -133,7 +140,99 @@ async function resolveEmploymentContractAsOf(
 	return store.findEmploymentContractByEmploymentAsOf(input);
 }
 
-export async function createEmploymentContract(
+async function validateContractSupersession(
+	store: HumanResourcesCoreStore,
+	data: z.output<typeof supersedeEmploymentContractInputSchema>,
+): Promise<Result<ValidatedContractSupersession>> {
+	const predecessor = await store.getEmploymentContractById({
+		organizationId: data.organizationId,
+		employmentContractId: data.employmentContractId,
+	});
+	if (!predecessor.ok) {
+		return predecessor;
+	}
+	if (predecessor.data === null) {
+		return fail(
+			"NOT_FOUND",
+			"Employment contract not found",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+		);
+	}
+	if (predecessor.data.lineageStatus !== "active") {
+		return fail(
+			"VALIDATION_ERROR",
+			"Only active contracts can be superseded",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
+		);
+	}
+	const activePredecessor = predecessor.data;
+	const employment = await loadEmploymentForContract(store, {
+		organizationId: data.organizationId,
+		employmentId: activePredecessor.employmentId,
+	});
+	if (!employment.ok) {
+		return employment;
+	}
+	const endsOn = data.endsOn ?? null;
+	const dateCheck = assertValidDateRange(data.startsOn, endsOn);
+	if (!dateCheck.ok) {
+		return dateCheck;
+	}
+	if (data.startsOn <= activePredecessor.startsOn) {
+		return fail(
+			"VALIDATION_ERROR",
+			"Successor start date must be after the predecessor start date",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
+		);
+	}
+	const withinEmployment = assertContractWithinEmployment({
+		contractStartsOn: data.startsOn,
+		contractEndsOn: endsOn,
+		employmentStartsOn: employment.data.startsOn,
+		employmentEndsOn: employment.data.endsOn,
+	});
+	if (!withinEmployment.ok) {
+		return withinEmployment;
+	}
+	const siblings = await store.listActiveContractsByEmployment({
+		organizationId: data.organizationId,
+		employmentId: activePredecessor.employmentId,
+	});
+	if (!siblings.ok) {
+		return siblings;
+	}
+	const overlapCheck = assertNoEmploymentContractOverlap({
+		candidateStartsOn: data.startsOn,
+		candidateEndsOn: endsOn,
+		existing: siblings.data.filter(
+			(contract) => contract.id !== activePredecessor.id,
+		),
+	});
+	if (!overlapCheck.ok) {
+		return overlapCheck;
+	}
+	const referenceCode = data.referenceCode ?? activePredecessor.referenceCode;
+	if (referenceCode !== activePredecessor.referenceCode) {
+		const duplicate = await store.findContractByEmploymentAndCode({
+			organizationId: data.organizationId,
+			employmentId: activePredecessor.employmentId,
+			referenceCode,
+		});
+		if (!duplicate.ok) {
+			return duplicate;
+		}
+		if (duplicate.data !== null) {
+			return fail(
+				"CONFLICT",
+				"Contract with this reference code already exists",
+				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+			);
+		}
+	}
+	return ok({ endsOn, predecessor: activePredecessor, referenceCode });
+}
+
+export function createEmploymentContract(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentContract>> {
@@ -204,7 +303,7 @@ export async function createEmploymentContract(
 	});
 }
 
-export async function correctEmploymentContract(
+export function correctEmploymentContract(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentContract>> {
@@ -230,7 +329,7 @@ export async function correctEmploymentContract(
 
 			const startsOn = data.startsOn ?? existing.data.startsOn;
 			const endsOn =
-				data.endsOn !== undefined ? data.endsOn : existing.data.endsOn;
+				data.endsOn === undefined ? existing.data.endsOn : data.endsOn;
 			const referenceCode = data.referenceCode ?? existing.data.referenceCode;
 
 			const validated = await validateActiveContractMutationRange(store, {
@@ -283,7 +382,7 @@ export async function correctEmploymentContract(
 	});
 }
 
-export async function supersedeEmploymentContract(
+export function supersedeEmploymentContract(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<
@@ -294,105 +393,18 @@ export async function supersedeEmploymentContract(
 		invalidMessage: "Invalid employment contract supersede input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_SUPERSEDE,
 		execute: async (data, { store, ports }) => {
-			const predecessor = await store.getEmploymentContractById({
-				organizationId: data.organizationId,
-				employmentContractId: data.employmentContractId,
-			});
-			if (!predecessor.ok) {
-				return predecessor;
-			}
-			if (predecessor.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Employment contract not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
-			}
-			if (predecessor.data.lineageStatus !== "active") {
-				return fail(
-					"VALIDATION_ERROR",
-					"Only active contracts can be superseded",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-				);
-			}
-			const activePredecessor = predecessor.data;
-
-			const employment = await loadEmploymentForContract(store, {
-				organizationId: data.organizationId,
-				employmentId: activePredecessor.employmentId,
-			});
-			if (!employment.ok) {
-				return employment;
-			}
-
-			const endsOn = data.endsOn ?? null;
-			const dateCheck = assertValidDateRange(data.startsOn, endsOn);
-			if (!dateCheck.ok) {
-				return dateCheck;
-			}
-			if (data.startsOn <= activePredecessor.startsOn) {
-				return fail(
-					"VALIDATION_ERROR",
-					"Successor start date must be after the predecessor start date",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-				);
-			}
-
-			const withinEmployment = assertContractWithinEmployment({
-				contractStartsOn: data.startsOn,
-				contractEndsOn: endsOn,
-				employmentStartsOn: employment.data.startsOn,
-				employmentEndsOn: employment.data.endsOn,
-			});
-			if (!withinEmployment.ok) {
-				return withinEmployment;
-			}
-
-			const siblings = await store.listActiveContractsByEmployment({
-				organizationId: data.organizationId,
-				employmentId: activePredecessor.employmentId,
-			});
-			if (!siblings.ok) {
-				return siblings;
-			}
-			const overlapCheck = assertNoEmploymentContractOverlap({
-				candidateStartsOn: data.startsOn,
-				candidateEndsOn: endsOn,
-				existing: siblings.data.filter(
-					(contract) => contract.id !== activePredecessor.id,
-				),
-			});
-			if (!overlapCheck.ok) {
-				return overlapCheck;
-			}
-
-			const referenceCode =
-				data.referenceCode ?? activePredecessor.referenceCode;
-			if (referenceCode !== activePredecessor.referenceCode) {
-				const duplicate = await store.findContractByEmploymentAndCode({
-					organizationId: data.organizationId,
-					employmentId: activePredecessor.employmentId,
-					referenceCode,
-				});
-				if (!duplicate.ok) {
-					return duplicate;
-				}
-				if (duplicate.data !== null) {
-					return fail(
-						"CONFLICT",
-						"Contract with this reference code already exists",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
-				}
+			const validated = await validateContractSupersession(store, data);
+			if (!validated.ok) {
+				return validated;
 			}
 
 			return store.supersedeEmploymentContract(
 				{
 					organizationId: data.organizationId,
 					employmentContractId: data.employmentContractId,
-					referenceCode,
+					referenceCode: validated.data.referenceCode,
 					startsOn: data.startsOn,
-					endsOn,
+					endsOn: validated.data.endsOn,
 					reasonCode: data.reasonCode,
 					sourceReference: data.sourceReference,
 					predecessorEffectiveTo: previousIsoDate(data.startsOn),
@@ -409,7 +421,7 @@ export async function supersedeEmploymentContract(
 	});
 }
 
-export async function endEmploymentContract(
+export function endEmploymentContract(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentContract>> {
@@ -465,7 +477,7 @@ export async function endEmploymentContract(
 	});
 }
 
-export async function getEmploymentContract(
+export function getEmploymentContract(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentContract>> {
@@ -493,7 +505,7 @@ export async function getEmploymentContract(
 	});
 }
 
-export async function getEmploymentContractAsOf(
+export function getEmploymentContractAsOf(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentContract | null>> {
@@ -510,7 +522,7 @@ export async function getEmploymentContractAsOf(
 	});
 }
 
-export async function getCurrentEmploymentContract(
+export function getCurrentEmploymentContract(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentContract | null>> {
@@ -527,7 +539,7 @@ export async function getCurrentEmploymentContract(
 	});
 }
 
-export async function listEmploymentContracts(
+export function listEmploymentContracts(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentContract[]>> {
@@ -535,11 +547,10 @@ export async function listEmploymentContracts(
 		schema: listEmploymentContractsInputSchema,
 		invalidMessage: "Invalid employment contract list input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYMENT_CONTRACT_LIST,
-		execute: async (data, { store }) => {
-			return store.listEmploymentContractsByEmployment({
+		execute: async (data, { store }) =>
+			store.listEmploymentContractsByEmployment({
 				organizationId: data.organizationId,
 				employmentId: data.employmentId,
-			});
-		},
+			}),
 	});
 }

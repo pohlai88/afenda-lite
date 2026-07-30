@@ -1,3 +1,5 @@
+// biome-ignore-all lint/complexity/noExcessiveCognitiveComplexity: Legal-form mutation coordinates policy, CAS, idempotency, audit, and outbox atomically.
+// biome-ignore-all lint/style/useDestructuring: Explicit company state access keeps command evidence visible.
 import { fail, type Result } from "@afenda/errors/result";
 import {
 	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
@@ -44,7 +46,9 @@ export async function setCompanyLegalForm(
 		setCompanyLegalFormInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 
 	const authorized = await requireCorporateAdministrationPermission(
 		options.authorization,
@@ -55,7 +59,9 @@ export async function setCompanyLegalForm(
 				CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS.setCompanyLegalForm,
 		},
 	);
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 
 	const identity = createCorporateAdministrationCommandFingerprint({
 		schema: setCompanyLegalFormInputSchema,
@@ -63,7 +69,9 @@ export async function setCompanyLegalForm(
 		commandId: "corporate-administration.legal-company.set-company-legal-form",
 		input: parsed.data,
 	});
-	if (!identity.ok) return identity;
+	if (!identity.ok) {
+		return identity;
+	}
 	const approved = await requireCorporateAdministrationApprovalIfConfigured(
 		dependencies,
 		{
@@ -74,14 +82,18 @@ export async function setCompanyLegalForm(
 			commandFingerprint: identity.data.fingerprint,
 		},
 	);
-	if (!approved.ok) return approved;
+	if (!approved.ok) {
+		return approved;
+	}
 
 	const sourceDocument =
 		await dependencies.referenceData.validateSourceDocument({
 			organizationId: options.organizationId,
 			sourceDocumentId: parsed.data.sourceDocumentId,
 		});
-	if (!sourceDocument.ok) return sourceDocument;
+	if (!sourceDocument.ok) {
+		return sourceDocument;
+	}
 	if (sourceDocument.data === null) {
 		return fail(
 			"NOT_FOUND",
@@ -109,7 +121,9 @@ export async function setCompanyLegalForm(
 		legalCompanyId: parsed.data.legalCompanyId,
 		expectedVersion: parsed.data.expectedCompanyVersion,
 	});
-	if (!current.ok) return current;
+	if (!current.ok) {
+		return current;
+	}
 	if (current.data === null) {
 		return fail(
 			"NOT_FOUND",
@@ -154,7 +168,9 @@ export async function setCompanyLegalForm(
 		legalFormCode: parsed.data.legalFormCode,
 		effectiveDate: parsed.data.effectiveFrom,
 	});
-	if (!legalForm.ok) return legalForm;
+	if (!legalForm.ok) {
+		return legalForm;
+	}
 	if (legalForm.data === null) {
 		return fail(
 			"VALIDATION_ERROR",
@@ -184,7 +200,9 @@ export async function setCompanyLegalForm(
 			legalFormCode: parsed.data.legalFormCode,
 			effectiveDate: parsed.data.effectiveFrom,
 		});
-	if (!compatible.ok) return compatible;
+	if (!compatible.ok) {
+		return compatible;
+	}
 	if (!compatible.data.active) {
 		return fail(
 			"CONFLICT",
@@ -215,7 +233,9 @@ export async function setCompanyLegalForm(
 			legalCompanyId: parsed.data.legalCompanyId,
 			effectivePeriod,
 		});
-	if (!overlap.ok) return overlap;
+	if (!overlap.ok) {
+		return overlap;
+	}
 	if (overlap.data !== null) {
 		return fail(
 			"CONFLICT",

@@ -22,8 +22,10 @@ function blockBetween(
 	fromIndex = 0,
 ): string {
 	const startIndex = source.indexOf(start, fromIndex);
+	// biome-ignore lint/suspicious/noMisplacedAssertion: This parser helper executes only inside test cases.
 	expect(startIndex, `missing block start ${start}`).toBeGreaterThanOrEqual(0);
 	const endIndex = source.indexOf(end, startIndex + start.length);
+	// biome-ignore lint/suspicious/noMisplacedAssertion: This parser helper executes only inside test cases.
 	expect(endIndex, `missing block end ${end}`).toBeGreaterThan(startIndex);
 	return source.slice(startIndex, endIndex);
 }
@@ -59,11 +61,16 @@ function resolveColor(
 	name: string,
 	seen = new Set<string>(),
 ): string {
-	if (seen.has(name)) throw new Error(`Circular color alias: ${name}`);
+	if (seen.has(name)) {
+		throw new Error(`Circular color alias: ${name}`);
+	}
 	seen.add(name);
 	const value = palette.get(name);
+	// biome-ignore lint/suspicious/noMisplacedAssertion: This resolver helper executes only inside test cases.
 	expect(value, `missing --${name}`).toBeTruthy();
-	if (!value) throw new Error(`Missing color token: --${name}`);
+	if (!value) {
+		throw new Error(`Missing color token: --${name}`);
+	}
 	const alias = value.match(/^var\(--([\w-]+)\)$/);
 	return alias?.[1] ? resolveColor(palette, alias[1], seen) : value;
 }
@@ -73,15 +80,18 @@ const toRgb = converter("rgb");
 function rgbChannels(value: string): readonly [number, number, number] {
 	const parsed = parse(value);
 	const rgb = parsed ? toRgb(parsed) : undefined;
+	// biome-ignore lint/suspicious/noMisplacedAssertion: This conversion helper executes only inside test cases.
 	expect(rgb, `could not parse ${value}`).toBeTruthy();
-	if (!rgb) throw new Error(`Could not parse color: ${value}`);
+	if (!rgb) {
+		throw new Error(`Could not parse color: ${value}`);
+	}
 	const inSrgbGamut = (channel: number) => Math.max(0, Math.min(1, channel));
 	return [inSrgbGamut(rgb.r), inSrgbGamut(rgb.g), inSrgbGamut(rgb.b)];
 }
 
 function relativeLuminance(value: string): number {
 	const linear = rgbChannels(value).map((channel) =>
-		channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4,
+		channel <= 0.040_45 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4,
 	);
 	return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
 }
@@ -103,16 +113,16 @@ function apcaContrast(foreground: string, background: string): number {
 	);
 }
 
-type Pair = {
-	name: string;
-	foreground: string;
-	background: string;
-	minimumWcag: number;
+interface Pair {
 	apca:
 		| { kind: "font-lookup"; fontSizePx: number; fontWeight: number }
 		| { kind: "spot-text"; minimumLc: number }
 		| null;
-};
+	background: string;
+	foreground: string;
+	minimumWcag: number;
+	name: string;
+}
 
 const readablePairs: readonly Pair[] = [
 	{
@@ -237,7 +247,9 @@ describe("@afenda/ui-system — APCA and WCAG color contracts", () => {
 				`${pair.name} WCAG ${wcag.toFixed(2)}`,
 			).toBeGreaterThanOrEqual(pair.minimumWcag);
 
-			if (!pair.apca) continue;
+			if (!pair.apca) {
+				continue;
+			}
 
 			if (pair.apca.kind === "spot-text") {
 				expect(
@@ -332,9 +344,12 @@ function sourceFiles(directory: string): string[] {
 				"node_modules",
 				"shadcn-studio",
 			].includes(entry)
-		)
+		) {
 			return [];
-		if (statSync(absolute).isDirectory()) return sourceFiles(absolute);
+		}
+		if (statSync(absolute).isDirectory()) {
+			return sourceFiles(absolute);
+		}
 		return absolute.endsWith(".tsx") ? [absolute] : [];
 	});
 }
@@ -350,7 +365,7 @@ describe("@afenda/ui-system — readable status token usage", () => {
 					"ui",
 					"status-badge.tsx",
 				),
-				contract: "text-sm font-medium",
+				contract: "font-medium text-sm",
 			},
 			{
 				file: path.join(
@@ -360,7 +375,7 @@ describe("@afenda/ui-system — readable status token usage", () => {
 					"ui",
 					"metric-card.tsx",
 				),
-				contract: "text-sm font-bold",
+				contract: "font-bold text-sm",
 			},
 			{
 				file: path.join(
@@ -370,7 +385,7 @@ describe("@afenda/ui-system — readable status token usage", () => {
 					"ui",
 					"form-error.tsx",
 				),
-				contract: "text-sm font-bold",
+				contract: "font-bold text-sm",
 			},
 			{
 				file: path.join(

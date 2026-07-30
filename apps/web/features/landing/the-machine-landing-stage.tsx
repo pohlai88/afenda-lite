@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noJsxPropsBind: The enabled React Compiler stabilizes JSX callback props.
 "use client";
 
 import {
@@ -26,15 +27,15 @@ import {
 
 import "./the-machine-landing.css";
 
-type SensorUiState = {
+interface SensorUiState {
 	armed: boolean;
 	detecting: boolean;
 	reacting: boolean;
-};
+}
 
-type TheMachineLandingStageProps = {
+interface TheMachineLandingStageProps {
 	fontClassName?: string;
-};
+}
 
 function phaseFromState(state: SensorUiState): SensorPhase {
 	if (state.reacting) {
@@ -252,7 +253,7 @@ export function TheMachineLandingStage({
 		.join(" ");
 
 	return (
-		<div ref={rootRef} className={rootClass}>
+		<div className={rootClass} ref={rootRef}>
 			<main className="stage" id={MAIN_CONTENT_ID} tabIndex={-1}>
 				<div aria-hidden="true" className="art-plane art-zoom">
 					<div className="hero-base" />
@@ -273,8 +274,6 @@ export function TheMachineLandingStage({
 						aria-pressed={ui.reacting}
 						className="sensor"
 						id="lynx-sensor"
-						ref={sensorRef}
-						type="button"
 						onClick={() => toggleReaction()}
 						onPointerEnter={() => {
 							const finePointer = window.matchMedia(
@@ -286,6 +285,8 @@ export function TheMachineLandingStage({
 								setUi({ armed: true, detecting: true, reacting: false });
 							}
 						}}
+						ref={sensorRef}
+						type="button"
 					>
 						<span aria-live="polite" className="sensor__label">
 							{sensorLabel(phase)}
@@ -313,9 +314,9 @@ export function TheMachineLandingStage({
 				<section aria-labelledby="hero-title" className="copy">
 					<p className="kicker">
 						Secure
-						<span className="kicker__sep" aria-hidden="true" />
+						<span aria-hidden="true" className="kicker__sep" />
 						Confidential
-						<span className="kicker__sep" aria-hidden="true" />
+						<span aria-hidden="true" className="kicker__sep" />
 						Verified
 					</p>
 

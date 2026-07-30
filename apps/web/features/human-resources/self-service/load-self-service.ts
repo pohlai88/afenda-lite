@@ -29,6 +29,7 @@ const PAGE_SIZE = 50;
 const LOAD_ERROR =
 	"This information is temporarily unavailable. Retry shortly.";
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The loader preserves partial-failure handling across self-service domains.
 export async function loadSelfServiceSnapshot(input: {
 	organizationId: string;
 	actorUserId: string;
@@ -222,9 +223,9 @@ export async function loadSelfServiceSnapshot(input: {
 	const activeEvents = eventsResult.ok
 		? eventsResult.data.filter((event) => event.voidedAt === null)
 		: [];
-	const latestEvent = [...activeEvents].sort(
+	const [latestEvent] = [...activeEvents].sort(
 		(a, b) => b.occurredAt.getTime() - a.occurredAt.getTime(),
-	)[0];
+	);
 	const currentStatus =
 		latestEvent?.eventType === "clock_in" ||
 		latestEvent?.eventType === "break_end"
@@ -234,20 +235,32 @@ export async function loadSelfServiceSnapshot(input: {
 				: "Clocked out";
 
 	const errors: SelfServiceSnapshot["errors"] = {};
-	if (!profileResult.ok) errors.profile = LOAD_ERROR;
-	if (!entitlementsResult.ok || !policiesResult.ok || !leaveResult.ok)
+	if (!profileResult.ok) {
+		errors.profile = LOAD_ERROR;
+	}
+	if (!(entitlementsResult.ok && policiesResult.ok && leaveResult.ok)) {
 		errors.leave = LOAD_ERROR;
-	if (!eventsResult.ok || !sessionsResult.ok) errors.attendance = LOAD_ERROR;
+	}
+	if (!(eventsResult.ok && sessionsResult.ok)) {
+		errors.attendance = LOAD_ERROR;
+	}
 	if (
 		!timesheetsResult.ok ||
-		(currentTimesheet && (!entriesResult?.ok || !totalsResult?.ok))
-	)
+		(currentTimesheet && !(entriesResult?.ok && totalsResult?.ok))
+	) {
 		errors.timesheet = LOAD_ERROR;
-	if (!assignmentsResult.ok || !coursesResult.ok || !certificationsResult.ok)
+	}
+	if (!(assignmentsResult.ok && coursesResult.ok && certificationsResult.ok)) {
 		errors.learning = LOAD_ERROR;
-	if (!goalsResult.ok || !reviewsResult.ok) errors.performance = LOAD_ERROR;
-	if (!documentsResult.ok || !complianceResult.ok || !acknowledgementsResult.ok)
+	}
+	if (!(goalsResult.ok && reviewsResult.ok)) {
+		errors.performance = LOAD_ERROR;
+	}
+	if (
+		!(documentsResult.ok && complianceResult.ok && acknowledgementsResult.ok)
+	) {
 		errors.compliance = LOAD_ERROR;
+	}
 
 	return {
 		profile: profileResult.ok
@@ -412,3 +425,4 @@ export async function loadSelfServiceSnapshot(input: {
 		errors,
 	};
 }
+// biome-ignore-all lint/style/noNestedTernary: Exhaustive status and tri-state view mappings remain explicit at their use sites.

@@ -44,13 +44,13 @@ export const Overview: Story = {
 		<div className="min-h-screen bg-canvas text-foreground">
 			<div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-2 border-b pb-6">
-					<p className="text-sm font-medium text-foreground-secondary">
+					<p className="font-medium text-foreground-secondary text-sm">
 						Accounts receivable
 					</p>
-					<h1 className="text-2xl font-semibold tracking-tight">
+					<h1 className="font-semibold text-2xl tracking-tight">
 						INV-1048 actions
 					</h1>
-					<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+					<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 						Toolbar owns related-control layout. Feature Actions own
 						authorization and whether Approve is eligible.
 					</p>
@@ -67,29 +67,29 @@ export const Overview: Story = {
 							</div>
 							<div className="flex flex-wrap items-center gap-2">
 								<Badge variant="outline">Invoice</Badge>
-								<StatusBadge status="pending" label="Awaiting approval" />
+								<StatusBadge label="Awaiting approval" status="pending" />
 							</div>
 						</div>
 					</CardHeader>
 					<CardContent>
 						<Toolbar aria-label="Invoice actions">
 							<ToolbarGroup>
-								<Button type="button" size="sm" variant="ghost">
+								<Button size="sm" type="button" variant="ghost">
 									Edit
 								</Button>
-								<Button type="button" size="sm" variant="ghost">
+								<Button size="sm" type="button" variant="ghost">
 									Duplicate
 								</Button>
 								<ToolbarSeparator />
-								<Button type="button" size="sm" variant="ghost">
+								<Button size="sm" type="button" variant="ghost">
 									Archive
 								</Button>
 							</ToolbarGroup>
 							<ToolbarGroup>
-								<Button type="button" size="sm" variant="outline">
+								<Button size="sm" type="button" variant="outline">
 									Export
 								</Button>
-								<Button type="button" size="sm">
+								<Button size="sm" type="button">
 									Approve
 								</Button>
 							</ToolbarGroup>
@@ -115,22 +115,22 @@ export const Usage: Story = {
 		<div className="grid w-full max-w-5xl gap-4">
 			<Toolbar aria-label="Invoice actions">
 				<ToolbarGroup>
-					<Button type="button" size="sm" variant="ghost">
+					<Button size="sm" type="button" variant="ghost">
 						Edit
 					</Button>
-					<Button type="button" size="sm" variant="ghost">
+					<Button size="sm" type="button" variant="ghost">
 						Duplicate
 					</Button>
 					<ToolbarSeparator />
-					<Button type="button" size="sm" variant="ghost">
+					<Button size="sm" type="button" variant="ghost">
 						Archive
 					</Button>
 				</ToolbarGroup>
 				<ToolbarGroup>
-					<Button type="button" size="sm" variant="outline">
+					<Button size="sm" type="button" variant="outline">
 						Export
 					</Button>
-					<Button type="button" size="sm">
+					<Button size="sm" type="button">
 						Approve
 					</Button>
 				</ToolbarGroup>
@@ -153,20 +153,20 @@ export const ControlledUsage: Story = {
 		<div className="grid w-full max-w-5xl gap-3">
 			<Toolbar aria-label="Queue tools">
 				<ToolbarGroup>
-					<Button type="button" size="sm" variant="ghost">
+					<Button size="sm" type="button" variant="ghost">
 						Refresh
 					</Button>
-					<Button type="button" size="sm" variant="ghost">
+					<Button size="sm" type="button" variant="ghost">
 						Columns
 					</Button>
 				</ToolbarGroup>
 				<ToolbarGroup>
-					<Button type="button" size="sm">
+					<Button size="sm" type="button">
 						New invoice
 					</Button>
 				</ToolbarGroup>
 			</Toolbar>
-			<p className="text-sm text-foreground-secondary">
+			<p className="text-foreground-secondary text-sm">
 				Authorization and command outcomes stay with feature Actions.
 			</p>
 		</div>
@@ -186,16 +186,16 @@ export const StatesAndAccessibility: Story = {
 	render: () => (
 		<Toolbar aria-label="Accessible invoice actions">
 			<ToolbarGroup>
-				<Button type="button" size="sm" variant="ghost">
+				<Button size="sm" type="button" variant="ghost">
 					Edit
 				</Button>
 				<ToolbarSeparator />
-				<Button type="button" size="sm" variant="ghost" disabled>
+				<Button disabled size="sm" type="button" variant="ghost">
 					Archive
 				</Button>
 			</ToolbarGroup>
 			<ToolbarGroup>
-				<Button type="button" size="sm">
+				<Button size="sm" type="button">
 					Approve
 				</Button>
 			</ToolbarGroup>
@@ -216,28 +216,28 @@ export const VariantsAndSizes: Story = {
 	render: () => (
 		<div className="grid w-full max-w-5xl gap-6">
 			<div className="grid gap-2">
-				<p className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+				<p className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 					sm children
 				</p>
 				<Toolbar aria-label="Compact tools">
 					<ToolbarGroup>
-						<Button type="button" size="sm" variant="ghost">
+						<Button size="sm" type="button" variant="ghost">
 							Edit
 						</Button>
 						<ToolbarSeparator />
-						<Button type="button" size="sm" variant="ghost">
+						<Button size="sm" type="button" variant="ghost">
 							Duplicate
 						</Button>
 					</ToolbarGroup>
 					<ToolbarGroup>
-						<Button type="button" size="sm">
+						<Button size="sm" type="button">
 							Approve
 						</Button>
 					</ToolbarGroup>
 				</Toolbar>
 			</div>
 			<div className="grid gap-2">
-				<p className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+				<p className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 					default children
 				</p>
 				<Toolbar aria-label="Standard tools">
@@ -279,22 +279,22 @@ export const Composition: Story = {
 					</div>
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="secondary">Finance</Badge>
-						<StatusBadge status="pending" label="Awaiting approval" />
+						<StatusBadge label="Awaiting approval" status="pending" />
 					</div>
 				</div>
 			</CardHeader>
 			<CardContent>
 				<Toolbar aria-label="Invoice actions">
 					<ToolbarGroup>
-						<Button type="button" size="sm" variant="ghost">
+						<Button size="sm" type="button" variant="ghost">
 							Edit
 						</Button>
-						<Button type="button" size="sm" variant="ghost">
+						<Button size="sm" type="button" variant="ghost">
 							Duplicate
 						</Button>
 					</ToolbarGroup>
 					<ToolbarGroup>
-						<Button type="button" size="sm">
+						<Button size="sm" type="button">
 							Approve
 						</Button>
 					</ToolbarGroup>
@@ -319,19 +319,19 @@ export const DoAndDoNot: Story = {
 			<StorySection title="Do: related subject actions">
 				<Toolbar aria-label="Invoice actions">
 					<ToolbarGroup>
-						<Button type="button" size="sm" variant="ghost">
+						<Button size="sm" type="button" variant="ghost">
 							Edit
 						</Button>
 					</ToolbarGroup>
 					<ToolbarGroup>
-						<Button type="button" size="sm">
+						<Button size="sm" type="button">
 							Approve
 						</Button>
 					</ToolbarGroup>
 				</Toolbar>
 			</StorySection>
 			<StorySection title="Do not: unrelated page wrapper">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Do not mix navigation, filters, and row bulk commands in one Toolbar.
 					Use PageHeader, FilterBar, and BulkActionBar for those jobs.
 				</p>
@@ -353,24 +353,24 @@ export const AdaptiveAndHighContrast: Story = {
 	render: () => (
 		<div className="grid w-full max-w-4xl gap-6 lg:grid-cols-2">
 			<StorySection title="Narrow action region">
-				<Toolbar className="flex-wrap" aria-label="Adaptive invoice actions">
+				<Toolbar aria-label="Adaptive invoice actions" className="flex-wrap">
 					<ToolbarGroup className="flex-wrap">
-						<Button type="button" size="sm" variant="ghost">
+						<Button size="sm" type="button" variant="ghost">
 							Edit
 						</Button>
-						<Button type="button" size="sm" variant="ghost">
+						<Button size="sm" type="button" variant="ghost">
 							Duplicate
 						</Button>
 						<ToolbarSeparator />
-						<Button type="button" size="sm" variant="ghost">
+						<Button size="sm" type="button" variant="ghost">
 							Archive
 						</Button>
 					</ToolbarGroup>
 					<ToolbarGroup>
-						<Button type="button" size="sm" variant="outline">
+						<Button size="sm" type="button" variant="outline">
 							Export
 						</Button>
-						<Button type="button" size="sm">
+						<Button size="sm" type="button">
 							Approve invoice
 						</Button>
 					</ToolbarGroup>
@@ -380,15 +380,15 @@ export const AdaptiveAndHighContrast: Story = {
 				<div className="grid gap-3">
 					<Toolbar aria-label="Read-only invoice tools">
 						<ToolbarGroup>
-							<Button type="button" size="sm" variant="outline">
+							<Button size="sm" type="button" variant="outline">
 								Export
 							</Button>
-							<Button type="button" size="sm" variant="ghost">
+							<Button size="sm" type="button" variant="ghost">
 								Copy link
 							</Button>
 						</ToolbarGroup>
 					</Toolbar>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						Do not leave Approve visible merely because Toolbar supports it.
 						Feature composition omits commands the operator cannot invoke.
 					</p>

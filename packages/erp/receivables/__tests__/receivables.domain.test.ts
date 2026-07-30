@@ -21,13 +21,13 @@ const itemId = "00000000-0000-4000-8000-000000000002";
 const paymentId = "00000000-0000-4000-8000-000000000010";
 const instructionId = "00000000-0000-4000-8000-000000000011";
 const authorization = {
-	async can() {
-		return true;
+	can() {
+		return Promise.resolve(true);
 	},
 };
 const effects = {
-	async emit() {
-		return ok(undefined);
+	emit() {
+		return Promise.resolve(ok(undefined));
 	},
 };
 
@@ -53,7 +53,9 @@ describe("receivables lifecycle", () => {
 			options,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const line = await addSalesInvoiceLine(
 			{
@@ -167,7 +169,9 @@ describe("receivables lifecycle", () => {
 			},
 			options,
 		);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 		const cancelled = await cancelDraftSalesInvoice(
 			{
 				organizationId,

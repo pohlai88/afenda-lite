@@ -9,9 +9,9 @@ import { redirect } from "next/navigation";
 import { UnresolvedOrganizationShell } from "@/features/auth/unresolved-organization-shell";
 import { TheMachineLanding } from "@/features/landing/the-machine-landing";
 
-type HomePageProps = {
+interface HomePageProps {
 	searchParams: Promise<Record<string, string | string[] | undefined>>;
-};
+}
 
 export const metadata: Metadata = {
 	title: "Afenda — The Machine",

@@ -15,9 +15,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type ListPartyRolesActionData = {
+export interface ListPartyRolesActionData {
 	roles: PartyRole[];
-};
+}
 
 const listPartyRolesQuerySchema = z.object({
 	partyId: z.string().uuid(),

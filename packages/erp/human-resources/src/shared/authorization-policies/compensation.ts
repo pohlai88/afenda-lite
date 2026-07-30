@@ -85,7 +85,7 @@ async function resolveCompensationTier(
 	request: HumanResourcesAuthorizationRequest,
 	options: HumanResourcesCommandOptions,
 ): Promise<CompensationFieldAccessTier | null> {
-	const resource = request.resource;
+	const { resource } = request;
 	if (resource === undefined) {
 		return null;
 	}
@@ -156,7 +156,7 @@ export const compensationPolicy: HumanResourcesAuthorizationPolicy = {
 		request: HumanResourcesAuthorizationRequest,
 		options: HumanResourcesCommandOptions,
 	) {
-		const resource = request.resource;
+		const { resource } = request;
 		if (resource === undefined) {
 			return denyAuthorization(
 				"resource_context_required",

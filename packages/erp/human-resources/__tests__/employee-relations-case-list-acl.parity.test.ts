@@ -3,7 +3,6 @@
  */
 
 import { afterAll, describe, expect, it } from "vitest";
-
 import { createEmployee } from "../src/core/employee";
 import { createEmployment } from "../src/core/employment";
 import {
@@ -18,6 +17,7 @@ import {
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
 } from "../src/permissions";
+import { runSequential } from "../src/shared/run-sequential";
 import { runDrizzleParity } from "./helpers/database-gate";
 import { createHrParityHarness } from "./helpers/hr-parity-harness";
 import {
@@ -164,7 +164,7 @@ describe.skipIf(!runDrizzleParity)(
 				ownerActorUserId?: string;
 			},
 		) {
-			return openEmployeeCase(
+			return await openEmployeeCase(
 				{
 					organizationId: input.organizationId,
 					actorUserId: OWNER,
@@ -194,7 +194,9 @@ describe.skipIf(!runDrizzleParity)(
 				employmentId: employment.id,
 			});
 			expect(opened.ok).toBe(true);
-			if (!opened.ok) return;
+			if (!opened.ok) {
+				return;
+			}
 
 			const listed = await listEmployeeCases(
 				{
@@ -226,7 +228,9 @@ describe.skipIf(!runDrizzleParity)(
 				employmentId: employment.id,
 			});
 			expect(visible.ok).toBe(true);
-			if (!visible.ok) return;
+			if (!visible.ok) {
+				return;
+			}
 
 			const hidden = await openSeededCase(ready, {
 				organizationId,
@@ -235,7 +239,9 @@ describe.skipIf(!runDrizzleParity)(
 				ownerActorUserId: PARTICIPANT,
 			});
 			expect(hidden.ok).toBe(true);
-			if (!hidden.ok) return;
+			if (!hidden.ok) {
+				return;
+			}
 
 			const ownerList = await listEmployeeCases(
 				{
@@ -246,7 +252,9 @@ describe.skipIf(!runDrizzleParity)(
 				ready,
 			);
 			expect(ownerList.ok).toBe(true);
-			if (!ownerList.ok) return;
+			if (!ownerList.ok) {
+				return;
+			}
 			expect(ownerList.data.totalCount).toBe(1);
 			expect(ownerList.data.cases.map((item) => item.id)).toEqual([
 				visible.data.id,
@@ -258,14 +266,14 @@ describe.skipIf(!runDrizzleParity)(
 			const { organizationId, subjectEmployee, employment } =
 				await seedCaseActors(ready, "pagination");
 
-			for (let index = 0; index < 3; index += 1) {
+			await runSequential([0, 1, 2], async () => {
 				const opened = await openSeededCase(ready, {
 					organizationId,
 					employeeId: subjectEmployee.id,
 					employmentId: employment.id,
 				});
 				expect(opened.ok).toBe(true);
-			}
+			});
 
 			const pageOne = await listEmployeeCases(
 				{
@@ -278,7 +286,9 @@ describe.skipIf(!runDrizzleParity)(
 				ready,
 			);
 			expect(pageOne.ok).toBe(true);
-			if (!pageOne.ok) return;
+			if (!pageOne.ok) {
+				return;
+			}
 			expect(pageOne.data.totalCount).toBe(3);
 			expect(pageOne.data.cases).toHaveLength(2);
 
@@ -293,7 +303,9 @@ describe.skipIf(!runDrizzleParity)(
 				ready,
 			);
 			expect(pageTwo.ok).toBe(true);
-			if (!pageTwo.ok) return;
+			if (!pageTwo.ok) {
+				return;
+			}
 			expect(pageTwo.data.totalCount).toBe(3);
 			expect(pageTwo.data.cases).toHaveLength(1);
 		});
@@ -311,7 +323,9 @@ describe.skipIf(!runDrizzleParity)(
 				employmentId: employment.id,
 			});
 			expect(opened.ok).toBe(true);
-			if (!opened.ok) return;
+			if (!opened.ok) {
+				return;
+			}
 
 			const crossOrg = await listEmployeeCases(
 				{

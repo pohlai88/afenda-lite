@@ -62,6 +62,7 @@ import {
 	hasCanonicalPartyRelationshipPath,
 	hasPartyParentPath,
 } from "../src/capabilities/extensions/party-relationship-policy";
+import { runSequentially } from "../src/resolve-async";
 import type { PartyContactType } from "../src/types";
 import { createMasterDataTestHarness } from "./helpers/harness";
 import { approvedActivatePartyChangeRequest } from "./helpers/mdg-approve";
@@ -85,7 +86,9 @@ async function createItemGroup(
 	options: NonNullable<Parameters<typeof createDraftItemGroup>[1]>,
 ) {
 	const group = await createDraftItemGroup(input, options);
-	if (!group.ok) return group;
+	if (!group.ok) {
+		return group;
+	}
 	return activateItemGroup(
 		{
 			...ctx(input.organizationId),
@@ -107,7 +110,9 @@ async function createActivePartyForRelationship(
 		},
 		options,
 	);
-	if (!party.ok) return party;
+	if (!party.ok) {
+		return party;
+	}
 	const role = await createPartyRole(
 		{
 			...ctx(input.organizationId),
@@ -116,7 +121,9 @@ async function createActivePartyForRelationship(
 		},
 		options,
 	);
-	if (!role.ok) return role;
+	if (!role.ok) {
+		return role;
+	}
 	const activeRole = await activatePartyRole(
 		{
 			...ctx(input.organizationId),
@@ -125,7 +132,9 @@ async function createActivePartyForRelationship(
 		},
 		options,
 	);
-	if (!activeRole.ok) return activeRole;
+	if (!activeRole.ok) {
+		return activeRole;
+	}
 	const cr = await approvedActivatePartyChangeRequest(
 		{ organizationId: input.organizationId, partyId: party.data.id },
 		options,
@@ -192,7 +201,9 @@ describe("@afenda/master-data extensions", () => {
 	] as const)("accepts valid %s barcode checksums", (symbology, rawValue) => {
 		const normalized = normalizeBarcode({ symbology, rawValue });
 		expect(normalized.ok).toBe(true);
-		if (!normalized.ok) return;
+		if (!normalized.ok) {
+			return;
+		}
 		expect(normalized.data.normalizedValue).toBe(rawValue);
 	});
 
@@ -214,7 +225,7 @@ describe("@afenda/master-data extensions", () => {
 	it("returns barcode policy failures instead of throwing on invalid runtime input", () => {
 		expect(
 			normalizeBarcode({
-				rawValue: 12345 as unknown as string,
+				rawValue: 12_345 as unknown as string,
 				symbology: "EAN_13",
 			}),
 		).toMatchObject({
@@ -584,7 +595,9 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(party.ok).toBe(true);
-		if (!party.ok) return;
+		if (!party.ok) {
+			return;
+		}
 
 		const first = await createPartyAddress(
 			{
@@ -606,7 +619,9 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 
 		const second = await createPartyAddress(
 			{
@@ -622,14 +637,18 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(second.ok).toBe(true);
-		if (!second.ok) return;
+		if (!second.ok) {
+			return;
+		}
 
 		const previous = await getPartyAddressById(
 			{ ...ctx(), partyId: party.data.id, id: first.data.id },
 			options,
 		);
 		expect(previous.ok).toBe(true);
-		if (!previous.ok || previous.data === null) return;
+		if (!previous.ok || previous.data === null) {
+			return;
+		}
 		expect(previous.data.isPrimary).toBe(false);
 		expect(previous.data.version).toBe(2);
 		expect(second.data).toMatchObject({
@@ -676,7 +695,9 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(party.ok).toBe(true);
-		if (!party.ok) return;
+		if (!party.ok) {
+			return;
+		}
 
 		const address = await createPartyAddress(
 			{
@@ -705,7 +726,9 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(party.ok).toBe(true);
-		if (!party.ok) return;
+		if (!party.ok) {
+			return;
+		}
 		const first = await createPartyRole(
 			{ ...ctx(), partyId: party.data.id, roleCode: "supplier" },
 			options,
@@ -716,7 +739,9 @@ describe("@afenda/master-data extensions", () => {
 		);
 		expect(first.ok).toBe(true);
 		expect(second.ok).toBe(true);
-		if (!first.ok || !second.ok) return;
+		if (!(first.ok && second.ok)) {
+			return;
+		}
 		const updated = await updatePartyRole(
 			{
 				...ctx(),
@@ -732,13 +757,17 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(active.ok).toBe(true);
-		if (!active.ok) return;
+		if (!active.ok) {
+			return;
+		}
 		const duplicate = await createPartyRole(
 			{ ...ctx(), partyId: party.data.id, roleCode: "supplier" },
 			options,
 		);
 		expect(duplicate.ok).toBe(true);
-		if (!duplicate.ok) return;
+		if (!duplicate.ok) {
+			return;
+		}
 		const duplicateActivation = await activatePartyRole(
 			{
 				...ctx(),
@@ -759,7 +788,9 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(activeRoles.ok).toBe(true);
-		if (!activeRoles.ok) return;
+		if (!activeRoles.ok) {
+			return;
+		}
 		expect(activeRoles.data.items.map((role) => role.id)).toEqual([
 			first.data.id,
 		]);
@@ -777,7 +808,9 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(party.ok).toBe(true);
-		if (!party.ok) return;
+		if (!party.ok) {
+			return;
+		}
 
 		const first = await createPartyContact(
 			{
@@ -805,7 +838,9 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(replacement.ok).toBe(true);
-		if (!first.ok || !replacement.ok) return;
+		if (!(first.ok && replacement.ok)) {
+			return;
+		}
 		expect(replacement.data.maskedValue.endsWith("test")).toBe(true);
 		expect(replacement.data).not.toHaveProperty("normalizedValue");
 
@@ -814,7 +849,9 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(contacts.ok).toBe(true);
-		if (!contacts.ok) return;
+		if (!contacts.ok) {
+			return;
+		}
 		const previous = contacts.data.find(
 			(contact) => contact.id === first.data.id,
 		);
@@ -832,7 +869,9 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(verified.ok).toBe(true);
-		if (!verified.ok) return;
+		if (!verified.ok) {
+			return;
+		}
 		expect(verified.data.verificationStatus).toBe("verified");
 		const verifiedContact = await store.getPrimaryPartyContact(
 			ctx().organizationId,
@@ -841,7 +880,9 @@ describe("@afenda/master-data extensions", () => {
 			"billing",
 		);
 		expect(verifiedContact.ok).toBe(true);
-		if (!verifiedContact.ok || verifiedContact.data === null) return;
+		if (!verifiedContact.ok || verifiedContact.data === null) {
+			return;
+		}
 		expect(verifiedContact.data.verifiedAt).toEqual(verifiedAt);
 		expect(isPartyContactTrustedDestination(verifiedContact.data)).toBe(true);
 		expect(
@@ -871,7 +912,9 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(changedValue.ok).toBe(true);
-		if (!changedValue.ok) return;
+		if (!changedValue.ok) {
+			return;
+		}
 		expect(changedValue.data).toMatchObject({
 			verificationStatus: "unverified",
 		});
@@ -883,7 +926,9 @@ describe("@afenda/master-data extensions", () => {
 			"billing",
 		);
 		expect(changedContact.ok).toBe(true);
-		if (!changedContact.ok || changedContact.data === null) return;
+		if (!changedContact.ok || changedContact.data === null) {
+			return;
+		}
 		expect(changedContact.data).toMatchObject({
 			normalizedValue: "Replacement@example.test",
 			verificationStatus: "unverified",
@@ -904,7 +949,9 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(party.ok).toBe(true);
-		if (!party.ok) return;
+		if (!party.ok) {
+			return;
+		}
 
 		const crossOrg = await createPartyRole(
 			{
@@ -925,7 +972,9 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(retired.ok).toBe(true);
-		if (!retired.ok) return;
+		if (!retired.ok) {
+			return;
+		}
 
 		const afterRetirement = await createPartyRole(
 			{
@@ -936,7 +985,9 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(afterRetirement.ok).toBe(false);
-		if (afterRetirement.ok) return;
+		if (afterRetirement.ok) {
+			return;
+		}
 		expect((afterRetirement.details as { reason?: string }).reason).toBe(
 			"MASTER_INVALID_STATE",
 		);
@@ -995,7 +1046,9 @@ describe("@afenda/master-data extensions", () => {
 				options,
 			);
 			expect(party.ok).toBe(true);
-			if (!party.ok) return null;
+			if (!party.ok) {
+				return null;
+			}
 
 			const role = await createPartyRole(
 				{
@@ -1006,7 +1059,9 @@ describe("@afenda/master-data extensions", () => {
 				options,
 			);
 			expect(role.ok).toBe(true);
-			if (!role.ok) return null;
+			if (!role.ok) {
+				return null;
+			}
 
 			const activatedRole = await activatePartyRole(
 				{
@@ -1017,7 +1072,9 @@ describe("@afenda/master-data extensions", () => {
 				options,
 			);
 			expect(activatedRole.ok).toBe(true);
-			if (!activatedRole.ok) return null;
+			if (!activatedRole.ok) {
+				return null;
+			}
 
 			const cr = await approvedActivatePartyChangeRequest(
 				{ organizationId: ctx().organizationId, partyId: party.data.id },
@@ -1033,7 +1090,9 @@ describe("@afenda/master-data extensions", () => {
 				options,
 			);
 			expect(activatedParty.ok).toBe(true);
-			if (!activatedParty.ok) return null;
+			if (!activatedParty.ok) {
+				return null;
+			}
 			return activatedRole.data;
 		}
 
@@ -1055,9 +1114,11 @@ describe("@afenda/master-data extensions", () => {
 			},
 		] as const;
 
-		for (const attempt of lifecycleAttempts) {
+		await runSequentially(lifecycleAttempts, async (attempt) => {
 			const activeRole = await createActivePartyWithOneRole(attempt.code);
-			if (activeRole === null) return;
+			if (activeRole === null) {
+				throw new Error(`Failed to create active role for ${attempt.code}`);
+			}
 			const result = await attempt.run(
 				{
 					...ctx(),
@@ -1068,11 +1129,13 @@ describe("@afenda/master-data extensions", () => {
 				options,
 			);
 			expect(result.ok).toBe(false);
-			if (result.ok) return;
+			if (result.ok) {
+				throw new Error(`Expected final-role protection for ${attempt.code}`);
+			}
 			expect((result.details as { reason?: string }).reason).toBe(
 				"MASTER_FINAL_ACTIVE_ROLE",
 			);
-		}
+		});
 	});
 
 	it("uses reasoned standard lifecycle transitions and keeps archived roles readable", async () => {
@@ -1087,19 +1150,25 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(party.ok).toBe(true);
-		if (!party.ok) return;
+		if (!party.ok) {
+			return;
+		}
 		const role = await createPartyRole(
 			{ ...ctx(), partyId: party.data.id, roleCode: "supplier" },
 			options,
 		);
 		expect(role.ok).toBe(true);
-		if (!role.ok) return;
+		if (!role.ok) {
+			return;
+		}
 		const active = await activatePartyRole(
 			{ ...ctx(), id: role.data.id, expectedVersion: role.data.version },
 			options,
 		);
 		expect(active.ok).toBe(true);
-		if (!active.ok) return;
+		if (!active.ok) {
+			return;
+		}
 
 		const missingReason = await deactivatePartyRole(
 			{ ...ctx(), id: active.data.id, expectedVersion: active.data.version },
@@ -1117,7 +1186,9 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(inactive.ok).toBe(true);
-		if (!inactive.ok) return;
+		if (!inactive.ok) {
+			return;
+		}
 		const retired = await retirePartyRole(
 			{
 				...ctx(),
@@ -1128,7 +1199,9 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(retired.ok).toBe(true);
-		if (!retired.ok) return;
+		if (!retired.ok) {
+			return;
+		}
 		expect(retired.data).toMatchObject({
 			status: "retired",
 			retiredBy: ctx().actorUserId,
@@ -1145,7 +1218,9 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(archived.ok).toBe(true);
-		if (!archived.ok) return;
+		if (!archived.ok) {
+			return;
+		}
 		expect(archived.data.status).toBe("archived");
 
 		const listed = await listPartyRoles(
@@ -1153,7 +1228,9 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(listed.ok).toBe(true);
-		if (!listed.ok) return;
+		if (!listed.ok) {
+			return;
+		}
 		expect(listed.data.items).toContainEqual(
 			expect.objectContaining({ id: role.data.id, status: "archived" }),
 		);
@@ -1243,7 +1320,9 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(otherParty.ok).toBe(true);
-		if (!otherParty.ok) return;
+		if (!otherParty.ok) {
+			return;
+		}
 
 		const dup = await createPartyExternalId(
 			{
@@ -1266,7 +1345,9 @@ describe("@afenda/master-data extensions", () => {
 
 		const partyExternalIds = Reflect.get(store, "partyExternalIds");
 		expect(partyExternalIds).toBeInstanceOf(Map);
-		if (!(partyExternalIds instanceof Map)) return;
+		if (!(partyExternalIds instanceof Map)) {
+			return;
+		}
 		partyExternalIds.set(randomUUID(), {
 			...ext.data,
 			id: randomUUID(),
@@ -1438,7 +1519,7 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(from.ok && to.ok).toBe(true);
-		if (!from.ok || !to.ok) {
+		if (!(from.ok && to.ok)) {
 			return;
 		}
 
@@ -1465,7 +1546,9 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(okRel.ok).toBe(true);
-		if (!okRel.ok) return;
+		if (!okRel.ok) {
+			return;
+		}
 		expect(okRel.data).toMatchObject({
 			sourcePartyId: from.data.id,
 			targetPartyId: to.data.id,
@@ -1489,7 +1572,9 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(third.ok).toBe(true);
-		if (!third.ok) return;
+		if (!third.ok) {
+			return;
+		}
 
 		const secondEdge = await createPartyRelationship(
 			{
@@ -1501,7 +1586,9 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(secondEdge.ok).toBe(true);
-		if (!secondEdge.ok) return;
+		if (!secondEdge.ok) {
+			return;
+		}
 
 		const cycle = await createPartyRelationship(
 			{
@@ -1545,7 +1632,9 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(listedForTarget.ok).toBe(true);
-		if (!listedForTarget.ok) return;
+		if (!listedForTarget.ok) {
+			return;
+		}
 		expect(listedForTarget.data).toMatchObject({
 			page: 1,
 			pageSize: 2,
@@ -1659,7 +1748,9 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(good.ok).toBe(true);
-		if (!good.ok) return;
+		if (!good.ok) {
+			return;
+		}
 
 		const replacement = await createItemUom(
 			{
@@ -1685,7 +1776,9 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(rows.ok).toBe(true);
-		if (!rows.ok) return;
+		if (!rows.ok) {
+			return;
+		}
 		const formerDefault = rows.data.items.find(
 			(row) => row.alternateUomId === CARTON_UOM_ID,
 		);
@@ -1807,7 +1900,9 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(group.ok).toBe(true);
-		if (!group.ok) return;
+		if (!group.ok) {
+			return;
+		}
 		const item = await createItem(
 			{
 				...ctx(),
@@ -1820,7 +1915,9 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(item.ok).toBe(true);
-		if (!item.ok) return;
+		if (!item.ok) {
+			return;
+		}
 
 		const duplicateBase = await createItemUom(
 			{
@@ -1832,7 +1929,9 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(duplicateBase.ok).toBe(false);
-		if (duplicateBase.ok) return;
+		if (duplicateBase.ok) {
+			return;
+		}
 		expect(duplicateBase.details).toMatchObject({
 			reason: "MASTER_INVALID_UOM_CONVERSION",
 			field: "alternateUomId",
@@ -1846,7 +1945,9 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(group.ok).toBe(true);
-		if (!group.ok) return;
+		if (!group.ok) {
+			return;
+		}
 		const item = await createItem(
 			{
 				...ctx(),
@@ -1859,7 +1960,9 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(item.ok).toBe(true);
-		if (!item.ok) return;
+		if (!item.ok) {
+			return;
+		}
 
 		const invalidPackaging = await createItemBarcode(
 			{
@@ -1886,7 +1989,9 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(itemUom.ok).toBe(true);
-		if (!itemUom.ok) return;
+		if (!itemUom.ok) {
+			return;
+		}
 
 		const barcode = await createItemBarcode(
 			{
@@ -1901,7 +2006,9 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(barcode.ok).toBe(true);
-		if (!barcode.ok) return;
+		if (!barcode.ok) {
+			return;
+		}
 		expect(barcode.data).toMatchObject({
 			barcodeValue: "400-6381 333931",
 			normalizedValue: "4006381333931",
@@ -1919,7 +2026,9 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(found.ok).toBe(true);
-		if (!found.ok || found.data === null) return;
+		if (!found.ok || found.data === null) {
+			return;
+		}
 		expect(found.data.id).toBe(item.data.id);
 	});
 
@@ -1930,7 +2039,9 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(group.ok).toBe(true);
-		if (!group.ok) return;
+		if (!group.ok) {
+			return;
+		}
 		const item = await createItem(
 			{
 				...ctx(),
@@ -1943,7 +2054,9 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(item.ok).toBe(true);
-		if (!item.ok) return;
+		if (!item.ok) {
+			return;
+		}
 
 		const created = await createItemExternalId(
 			{
@@ -1958,7 +2071,9 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 		expect(created.data).toMatchObject({
 			sourceSystem: "sap-s4",
 			externalIdType: "material.id",
@@ -1980,7 +2095,9 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(found.ok).toBe(true);
-		if (!found.ok || found.data === null) return;
+		if (!found.ok || found.data === null) {
+			return;
+		}
 		expect(found.data.id).toBe(item.data.id);
 	});
 

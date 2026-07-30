@@ -47,11 +47,11 @@ export const Usage: Story = {
 	render: () => (
 		<StorySection title="Bounded approximate input">
 			<Slider
+				aria-label="Discount cap percentage"
 				defaultValue={[40]}
 				step={5}
-				aria-label="Discount cap percentage"
 			/>
-			<p className="text-sm text-foreground-secondary">
+			<p className="text-foreground-secondary text-sm">
 				40% discount cap. Feature validation owns the persisted value.
 			</p>
 		</StorySection>
@@ -60,15 +60,15 @@ export const Usage: Story = {
 export const StatesAndAccessibility: Story = {
 	render: () => (
 		<div className="grid max-w-xl gap-6">
-			<Slider defaultValue={[30]} aria-label="Risk threshold percentage" />
-			<Slider defaultValue={[20, 70]} aria-label="Approved allocation range" />
-			<Slider defaultValue={[50]} aria-label="Locked threshold" disabled />
+			<Slider aria-label="Risk threshold percentage" defaultValue={[30]} />
+			<Slider aria-label="Approved allocation range" defaultValue={[20, 70]} />
+			<Slider aria-label="Locked threshold" defaultValue={[50]} disabled />
 		</div>
 	),
 };
 export const VariantsAndSizes: Story = {
 	render: () => (
-		<p className="text-sm text-foreground-secondary">
+		<p className="text-foreground-secondary text-sm">
 			Slider has one governed presentation; domain bounds, step, units, and
 			precision are consumer-owned.
 		</p>
@@ -82,8 +82,8 @@ export const Composition: Story = {
 			</CardHeader>
 			<CardContent>
 				<Slider
-					defaultValue={[65]}
 					aria-label="Approval threshold percentage"
+					defaultValue={[65]}
 				/>
 			</CardContent>
 		</Card>
@@ -93,12 +93,12 @@ export const DoAndDoNot: Story = {
 	render: () => (
 		<div className="grid gap-6 sm:grid-cols-2">
 			<StorySection title="Do: show exact output">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Pair the control with 65% and its business unit.
 				</p>
 			</StorySection>
 			<StorySection title="Do not: imply precision from position">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Use NumericInput when exact entry is the primary task.
 				</p>
 			</StorySection>

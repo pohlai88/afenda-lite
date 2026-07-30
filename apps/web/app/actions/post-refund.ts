@@ -34,7 +34,7 @@ export async function postRefundAction(
 	_prev: PostRefundActionState,
 	formData: FormData,
 ): Promise<PostRefundActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "postRefundAction",
 		permission: "payments.refund.create",
 		safeMessage: "Could not post refund. Try again or contact an admin.",
@@ -43,7 +43,9 @@ export async function postRefundAction(
 				session,
 				"payments.refund.post",
 			);
-			if (postingDenied) return postingDenied;
+			if (postingDenied) {
+				return postingDenied;
+			}
 			const parsed = parseSchema(schema, {
 				code: formData.get("code"),
 				originalPaymentId: formData.get("originalPaymentId"),
@@ -52,12 +54,13 @@ export async function postRefundAction(
 				amount: formData.get("amount"),
 				reference: formData.get("reference"),
 			});
-			if (!parsed.success)
+			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
 					"Enter a valid refund code, original payment, and amount.",
 					parsed.details,
 				);
+			}
 			const mapped = mapPackageResult(
 				await postRefund(
 					{
@@ -70,7 +73,9 @@ export async function postRefundAction(
 					createPaymentsCommandOptions(),
 				),
 			);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePath("/admin/payments");
 			revalidatePath("/client/payments");
 			return { ok: true, data: { payment: mapped.data } };

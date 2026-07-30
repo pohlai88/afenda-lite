@@ -60,8 +60,10 @@ export async function validateOfferCompensationProposalAttachment(
 	}
 
 	if (
-		!isCompensationProposalDraft(proposal.status) &&
-		!isCompensationProposalApproved(proposal.status)
+		!(
+			isCompensationProposalDraft(proposal.status) ||
+			isCompensationProposalApproved(proposal.status)
+		)
 	) {
 		return invalidState("Compensation proposal must be draft or approved");
 	}

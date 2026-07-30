@@ -39,21 +39,29 @@ export async function getOfficerEligibilityAsOf(
 		getOfficerEligibilityAsOfInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "getOfficerEligibilityAsOf");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const declarations =
 		await dependencies.officerComplianceStore.listOfficerDeclarations({
 			organizationId: options.organizationId,
 			officerAppointmentId: parsed.data.officerAppointmentId,
 		});
-	if (!declarations.ok) return declarations;
+	if (!declarations.ok) {
+		return declarations;
+	}
 	const disqualifications =
 		await dependencies.officerComplianceStore.listOfficerDisqualifications({
 			organizationId: options.organizationId,
 			officerAppointmentId: parsed.data.officerAppointmentId,
 		});
-	if (!disqualifications.ok) return disqualifications;
+	if (!disqualifications.ok) {
+		return disqualifications;
+	}
 	return ok(
 		calculateOfficerEligibilityAsOf({
 			officerAppointmentId: parsed.data.officerAppointmentId,
@@ -73,9 +81,13 @@ export async function listExpiringDeclarations(
 		listExpiringDeclarationsInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "listExpiringDeclarations");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return dependencies.officerComplianceStore.listExpiringDeclarations({
 		organizationId: options.organizationId,
 		legalCompanyId: parsed.data.legalCompanyId,
@@ -94,9 +106,13 @@ export async function listActiveDisqualifications(
 		listActiveDisqualificationsInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "listActiveDisqualifications");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return dependencies.officerComplianceStore.listActiveDisqualifications({
 		organizationId: options.organizationId,
 		legalCompanyId: parsed.data.legalCompanyId,
@@ -114,9 +130,13 @@ export async function listConflictsForMatter(
 		listConflictsForMatterInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "listConflictsForMatter");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return dependencies.officerComplianceStore.listConflictsForMatter({
 		organizationId: options.organizationId,
 		legalCompanyId: parsed.data.legalCompanyId,

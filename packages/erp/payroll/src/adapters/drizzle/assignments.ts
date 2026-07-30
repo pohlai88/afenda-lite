@@ -33,7 +33,7 @@ import type {
 	PayrollRecurringEarning,
 } from "../../types";
 
-async function recordAudit(
+function recordAudit(
 	ports: MutationPorts,
 	input: {
 		organizationId: string;
@@ -240,7 +240,7 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 					),
 				)
 				.limit(1);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return ok(null);
 			}
@@ -308,7 +308,7 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 					updatedBy: record.createdBy,
 				})
 				.returning();
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return mapPersistenceFailure(
 					new Error("Missing returning row"),
@@ -351,7 +351,7 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 					),
 				)
 				.limit(1);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return ok(null);
 			}
@@ -379,7 +379,7 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 					),
 				)
 				.limit(1);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return ok(null);
 			}
@@ -450,7 +450,7 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 					updatedBy: record.createdBy,
 				})
 				.returning();
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return mapPersistenceFailure(
 					new Error("Missing returning row"),
@@ -493,7 +493,7 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 					),
 				)
 				.limit(1);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return ok(null);
 			}
@@ -521,7 +521,7 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 					),
 				)
 				.limit(1);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return ok(null);
 			}
@@ -592,7 +592,7 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 					updatedBy: record.createdBy,
 				})
 				.returning();
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return mapPersistenceFailure(
 					new Error("Missing returning row"),
@@ -635,7 +635,7 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 					),
 				)
 				.limit(1);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return ok(null);
 			}
@@ -791,7 +791,7 @@ export const drizzleAssignmentRuleLookups = {
 					),
 				)
 				.limit(1);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return ok(null);
 			}
@@ -819,7 +819,7 @@ export const drizzleAssignmentRuleLookups = {
 					),
 				)
 				.limit(1);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return ok(null);
 			}

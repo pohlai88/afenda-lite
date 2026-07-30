@@ -179,7 +179,9 @@ async function reload(
 	message: string,
 ): Promise<Result<SalesInvoice>> {
 	const result = await store.getById(organizationId, id);
-	if (!result.ok) return result;
+	if (!result.ok) {
+		return result;
+	}
 	return result.data === null
 		? fail("INTERNAL_ERROR", message)
 		: ok(result.data);
@@ -231,8 +233,9 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 					RETURNING id
 				`,
 			]);
-			if (rows[0] === undefined)
+			if (rows[0] === undefined) {
 				return fail("CONFLICT", "Sales invoice create conflict");
+			}
 			return reload(this, record.organizationId, id, "Created invoice missing");
 		} catch (error) {
 			return failFromPersistence(error, "Failed to create sales invoice");
@@ -253,7 +256,9 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 					),
 				)
 				.limit(1);
-			if (existing !== undefined) return ok(mapLine(existing));
+			if (existing !== undefined) {
+				return ok(mapLine(existing));
+			}
 
 			const id = randomUUID();
 			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
@@ -289,8 +294,9 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 					SELECT inserted.id FROM inserted, bumped
 				`,
 			]);
-			if (rows[0] === undefined)
+			if (rows[0] === undefined) {
 				return fail("CONFLICT", "Sales invoice line conflict");
+			}
 			const [line] = await db
 				.select()
 				.from(salesInvoiceLine)
@@ -331,13 +337,14 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 					),
 				)
 				.limit(1);
-			if (alreadyPosted !== undefined)
+			if (alreadyPosted !== undefined) {
 				return reload(
 					this,
 					record.organizationId,
 					alreadyPosted.id,
 					"Posted invoice missing",
 				);
+			}
 
 			const eventId = randomUUID();
 			const balanceId = randomUUID();
@@ -387,8 +394,9 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 					SELECT id FROM totaled, projected, outboxed
 				`,
 			]);
-			if (rows[0] === undefined)
+			if (rows[0] === undefined) {
 				return fail("CONFLICT", "Sales invoice post conflict");
+			}
 			return reload(
 				this,
 				record.organizationId,
@@ -414,7 +422,9 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 					),
 				)
 				.limit(1);
-			if (existing !== undefined) return ok(mapCredit(existing));
+			if (existing !== undefined) {
+				return ok(mapCredit(existing));
+			}
 
 			const id = randomUUID();
 			const eventId = randomUUID();
@@ -478,8 +488,9 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 					SELECT credited.id FROM credited, bumped, projected, outboxed
 				`,
 			]);
-			if (rows[0] === undefined)
+			if (rows[0] === undefined) {
 				return fail("CONFLICT", "Credit note issue conflict");
+			}
 			const [credit] = await db
 				.select()
 				.from(salesCreditNote)
@@ -512,7 +523,9 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 					),
 				)
 				.limit(1);
-			if (existing !== undefined) return ok(mapAllocation(existing));
+			if (existing !== undefined) {
+				return ok(mapAllocation(existing));
+			}
 
 			const id = randomUUID();
 			const eventId = randomUUID();
@@ -571,8 +584,9 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 					SELECT allocated.id FROM allocated, projected, outboxed
 				`,
 			]);
-			if (rows[0] === undefined)
+			if (rows[0] === undefined) {
 				return fail("CONFLICT", "Customer receipt application conflict");
+			}
 			const [allocation] = await db
 				.select()
 				.from(customerAllocation)
@@ -701,7 +715,9 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 			);
 			const reversed: CustomerAllocation[] = [];
 			for (const result of results) {
-				if (!result.ok) return result;
+				if (!result.ok) {
+					return result;
+				}
 				reversed.push(result.data);
 			}
 			return ok(reversed);
@@ -727,13 +743,14 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 					),
 				)
 				.limit(1);
-			if (existing !== undefined)
+			if (existing !== undefined) {
 				return reload(
 					this,
 					record.organizationId,
 					existing.id,
 					"Cancelled invoice missing",
 				);
+			}
 			const eventId = randomUUID();
 			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
 				sql`
@@ -755,8 +772,9 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 					SELECT mutated.id FROM mutated, outboxed
 				`,
 			]);
-			if (rows[0] === undefined)
+			if (rows[0] === undefined) {
 				return fail("CONFLICT", "Only draft sales invoices can be cancelled");
+			}
 			return reload(
 				this,
 				record.organizationId,
@@ -782,13 +800,14 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 					),
 				)
 				.limit(1);
-			if (existing !== undefined)
+			if (existing !== undefined) {
 				return reload(
 					this,
 					record.organizationId,
 					existing.id,
 					"Closed invoice missing",
 				);
+			}
 			const eventId = randomUUID();
 			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
 				sql`
@@ -820,8 +839,9 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 					SELECT mutated.id FROM mutated, outboxed
 				`,
 			]);
-			if (rows[0] === undefined)
+			if (rows[0] === undefined) {
 				return fail("CONFLICT", "Invoice open amount must be zero to close");
+			}
 			return reload(
 				this,
 				record.organizationId,
@@ -848,7 +868,9 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 					),
 				)
 				.limit(1);
-			if (header === undefined) return ok(null);
+			if (header === undefined) {
+				return ok(null);
+			}
 			const [lines, allocations, credits] = await Promise.all([
 				db
 					.select()
@@ -903,8 +925,9 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 			const conditions = [
 				eq(salesInvoice.organizationId, filter.organizationId),
 			];
-			if (filter.status !== undefined)
+			if (filter.status !== undefined) {
 				conditions.push(eq(salesInvoice.status, filter.status));
+			}
 			const headers = await db
 				.select()
 				.from(salesInvoice)
@@ -912,7 +935,9 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				.orderBy(desc(salesInvoice.updatedAt), desc(salesInvoice.id))
 				.limit(filter.pageSize)
 				.offset((filter.page - 1) * filter.pageSize);
-			if (headers.length === 0) return ok([]);
+			if (headers.length === 0) {
+				return ok([]);
+			}
 			const ids = headers.map((header) => header.id);
 			const [lines, allocations, credits] = await Promise.all([
 				db
@@ -947,24 +972,28 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 					),
 			]);
 			const linesByInvoice = new Map<string, SalesInvoiceLine[]>();
-			for (const line of lines)
+			for (const line of lines) {
 				linesByInvoice.set(line.invoiceId, [
 					...(linesByInvoice.get(line.invoiceId) ?? []),
 					mapLine(line),
 				]);
+			}
 			const appliedByInvoice = new Map<string, number>();
-			for (const row of allocations)
+			for (const row of allocations) {
 				appliedByInvoice.set(
 					row.salesInvoiceId,
 					(appliedByInvoice.get(row.salesInvoiceId) ?? 0) + Number(row.amount),
 				);
-			for (const credit of credits)
-				if (credit.salesInvoiceId !== null)
+			}
+			for (const credit of credits) {
+				if (credit.salesInvoiceId !== null) {
 					appliedByInvoice.set(
 						credit.salesInvoiceId,
 						(appliedByInvoice.get(credit.salesInvoiceId) ?? 0) +
 							Number(credit.amount),
 					);
+				}
+			}
 			return ok(
 				headers.map((header) =>
 					mapInvoice(
@@ -989,10 +1018,11 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				eq(customerBalanceProjection.organizationId, organizationId),
 				eq(customerBalanceProjection.customerPartyId, customerId),
 			];
-			if (currencyCode !== undefined)
+			if (currencyCode !== undefined) {
 				conditions.push(
 					eq(customerBalanceProjection.currencyCode, currencyCode),
 				);
+			}
 			const rows = await db
 				.select()
 				.from(customerBalanceProjection)
@@ -1021,7 +1051,9 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 			pageSize: 100,
 			status: "posted",
 		});
-		if (!invoices.ok) return invoices;
+		if (!invoices.ok) {
+			return invoices;
+		}
 		const asOf = new Date(`${input.asOfDate}T23:59:59.999Z`);
 		const buckets = {
 			current: 0,
@@ -1035,19 +1067,30 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				invoice.customerId !== input.customerId ||
 				invoice.currencyCode !== input.currencyCode ||
 				Number(invoice.openAmount) <= 0
-			)
+			) {
 				continue;
+			}
 			const due = invoice.dueDate ?? invoice.postedAt ?? invoice.createdAt;
 			const days = Math.floor((asOf.getTime() - due.getTime()) / 86_400_000);
-			if (days <= 0) buckets.current += Number(invoice.openAmount);
-			else if (days <= 30) buckets.days1to30 += Number(invoice.openAmount);
-			else if (days <= 60) buckets.days31to60 += Number(invoice.openAmount);
-			else if (days <= 90) buckets.days61to90 += Number(invoice.openAmount);
-			else buckets.over90 += Number(invoice.openAmount);
+			if (days <= 0) {
+				buckets.current += Number(invoice.openAmount);
+			} else if (days <= 30) {
+				buckets.days1to30 += Number(invoice.openAmount);
+			} else if (days <= 60) {
+				buckets.days31to60 += Number(invoice.openAmount);
+			} else if (days <= 90) {
+				buckets.days61to90 += Number(invoice.openAmount);
+			} else {
+				buckets.over90 += Number(invoice.openAmount);
+			}
 		}
-		const formatted = Object.fromEntries(
-			Object.entries(buckets).map(([key, value]) => [key, String(value)]),
-		) as CustomerAging["buckets"];
+		const formatted: CustomerAging["buckets"] = {
+			current: String(buckets.current),
+			days1to30: String(buckets.days1to30),
+			days31to60: String(buckets.days31to60),
+			days61to90: String(buckets.days61to90),
+			over90: String(buckets.over90),
+		};
 		return ok({
 			organizationId: input.organizationId,
 			customerId: input.customerId,
@@ -1076,19 +1119,23 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 			const ids = headers
 				.filter((header) => header.id !== input.excludeInvoiceId)
 				.map((header) => header.id);
-			if (ids.length === 0) return ok("0");
+			if (ids.length === 0) {
+				return ok("0");
+			}
 			const conditions = [
 				eq(salesInvoiceLine.organizationId, input.organizationId),
 				inArray(salesInvoiceLine.invoiceId, ids),
 			];
-			if (input.salesOrderLineId !== undefined)
+			if (input.salesOrderLineId !== undefined) {
 				conditions.push(
 					eq(salesInvoiceLine.salesOrderLineId, input.salesOrderLineId),
 				);
-			if (input.deliveryLineId !== undefined)
+			}
+			if (input.deliveryLineId !== undefined) {
 				conditions.push(
 					eq(salesInvoiceLine.deliveryLineId, input.deliveryLineId),
 				);
+			}
 			const lines = await db
 				.select({ quantity: salesInvoiceLine.quantity })
 				.from(salesInvoiceLine)
@@ -1152,14 +1199,18 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 						),
 					),
 			]);
-			if (!invoiceResult.ok) return invoiceResult;
+			if (!invoiceResult.ok) {
+				return invoiceResult;
+			}
 			const closed = await this.list({
 				organizationId,
 				page: 1,
 				pageSize: 100,
 				status: "closed",
 			});
-			if (!closed.ok) return closed;
+			if (!closed.ok) {
+				return closed;
+			}
 			const balanceRows = await db
 				.select()
 				.from(customerBalanceProjection)

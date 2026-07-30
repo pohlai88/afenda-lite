@@ -16,9 +16,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type ApplyCustomerReceiptActionData = {
+export interface ApplyCustomerReceiptActionData {
 	allocation: CustomerAllocation;
-};
+}
 export type ApplyCustomerReceiptActionState =
 	ActionResult<ApplyCustomerReceiptActionData> | null;
 
@@ -35,7 +35,7 @@ export async function applyCustomerReceiptAction(
 	_prev: ApplyCustomerReceiptActionState,
 	formData: FormData,
 ): Promise<ApplyCustomerReceiptActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "applyCustomerReceiptAction",
 		permission: "receivables.receipt.apply",
 		safeMessage:
@@ -69,7 +69,9 @@ export async function applyCustomerReceiptAction(
 					createReceivablesCommandOptions(),
 				),
 			);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePath("/admin/receivables");
 			revalidatePath("/client/receivables");
 			return { ok: true, data: { allocation: mapped.data } };

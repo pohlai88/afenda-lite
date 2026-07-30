@@ -1,4 +1,4 @@
-import { ok } from "@afenda/errors/result";
+import { fail, ok } from "@afenda/errors/result";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -458,6 +458,41 @@ describe("payables lifecycle", () => {
 			},
 			options,
 		);
+		const failedReversal = await reverseSupplierPaymentApplication(
+			{
+				actorUserId,
+				correlationId: "reverse-failed",
+				idempotencyKey: "reverse-supplier-failed",
+				organizationId,
+				paymentId,
+			},
+			{
+				...options,
+				effects: {
+					emit() {
+						return Promise.resolve(
+							fail("INTERNAL_ERROR", "reversal event failed"),
+						);
+					},
+				},
+			},
+		);
+		expect(failedReversal.ok).toBe(false);
+		const afterFailedReversal = await store.getById(
+			organizationId,
+			created.data.id,
+		);
+		expect(afterFailedReversal.ok && afterFailedReversal.data?.openAmount).toBe(
+			"75",
+		);
+		const balanceAfterFailedReversal = await getSupplierBalance(
+			{ actorUserId, currencyCode: "USD", organizationId, supplierId },
+			options,
+		);
+		expect(
+			balanceAfterFailedReversal.ok &&
+				balanceAfterFailedReversal.data[0]?.openBalance,
+		).toBe("75");
 		const reversed = await reverseSupplierPaymentApplication(
 			{
 				actorUserId,

@@ -80,7 +80,7 @@ describe("Corporate Administration CA-1.4 establishment journey", () => {
 				registeredFrom: input.registeredFrom,
 				version: 1,
 			});
-			return { ok: true, data: { id: legalEstablishmentId, version: 1 } };
+			return await { ok: true, data: { id: legalEstablishmentId, version: 1 } };
 		});
 
 		const result = await registerLegalEstablishmentAction(
@@ -165,6 +165,8 @@ describe("Corporate Administration CA-1.4 establishment journey", () => {
 
 function toFormData(values: Readonly<Record<string, string>>): FormData {
 	const formData = new FormData();
-	for (const [key, value] of Object.entries(values)) formData.set(key, value);
+	for (const [key, value] of Object.entries(values)) {
+		formData.set(key, value);
+	}
 	return formData;
 }

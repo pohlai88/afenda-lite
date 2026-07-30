@@ -14,13 +14,14 @@ import {
 	TableRow,
 } from "@afenda/ui-system";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { useState } from "react";
+import { type ChangeEvent, useCallback, useState } from "react";
 import { expect, userEvent, within } from "storybook/test";
 import { contractDocsParameters } from "./contract-docs";
 import { contractEvidence, StorySection } from "./evidence";
 import { interactionFor } from "./interactions";
 
 const evidence = contractEvidence("ui.search-field");
+const ignoreSearchChange = () => undefined;
 
 const meta = {
 	title: "UI System/Search Field",
@@ -42,6 +43,10 @@ const suppliers = [
 
 function SupplierSearchWorkbench() {
 	const [query, setQuery] = useState("Northwind");
+	const handleChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+		setQuery(event.target.value);
+	}, []);
+	const handleClear = useCallback(() => setQuery(""), []);
 	const normalized = query.trim().toLocaleLowerCase("en-US");
 	const results =
 		normalized.length === 0
@@ -56,13 +61,13 @@ function SupplierSearchWorkbench() {
 		<div className="min-h-screen bg-canvas text-foreground">
 			<div className="mx-auto grid w-full max-w-5xl gap-6 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-2 border-b pb-6">
-					<p className="text-sm font-medium text-foreground-secondary">
+					<p className="font-medium text-foreground-secondary text-sm">
 						Master data · suppliers
 					</p>
-					<h1 className="text-2xl font-semibold tracking-tight">
+					<h1 className="font-semibold text-2xl tracking-tight">
 						Supplier directory
 					</h1>
-					<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+					<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 						SearchField owns query chrome and clear. Feature code owns debounce,
 						URL state, ranking, and authorization.
 					</p>
@@ -79,15 +84,15 @@ function SupplierSearchWorkbench() {
 						<div className="grid gap-2">
 							<Label htmlFor="supplier-search">Suppliers</Label>
 							<SearchField
-								id="supplier-search"
-								value={query}
-								onChange={(event) => setQuery(event.target.value)}
-								onClear={() => setQuery("")}
 								aria-label="Search suppliers"
+								id="supplier-search"
+								onChange={handleChange}
+								onClear={handleClear}
 								placeholder="Name or reference"
+								value={query}
 							/>
 						</div>
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							{results.length} matching supplier
 							{results.length === 1 ? "" : "s"}
 						</p>
@@ -130,17 +135,21 @@ function ControlledSearchField({
 	disabled?: boolean;
 }) {
 	const [value, setValue] = useState(initialValue);
+	const handleChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+		setValue(event.target.value);
+	}, []);
+	const handleClear = useCallback(() => setValue(""), []);
 	return (
 		<div className="grid gap-2">
 			<Label htmlFor={id}>{label}</Label>
 			<SearchField
-				id={id}
-				value={value}
-				onChange={(event) => setValue(event.target.value)}
-				onClear={() => setValue("")}
 				aria-label={ariaLabel ?? label}
-				placeholder={placeholder}
 				disabled={disabled}
+				id={id}
+				onChange={handleChange}
+				onClear={handleClear}
+				placeholder={placeholder}
+				value={value}
 			/>
 		</div>
 	);
@@ -175,18 +184,18 @@ export const SemanticUsage: Story = {
 		<div className="grid w-full max-w-xl gap-6">
 			<StorySection title="Invoice register search">
 				<ControlledSearchField
-					id="invoice-search"
-					label="Invoices"
 					ariaLabel="Search invoices"
-					placeholder="Invoice or supplier"
+					id="invoice-search"
 					initialValue="INV-104"
+					label="Invoices"
+					placeholder="Invoice or supplier"
 				/>
 			</StorySection>
 			<StorySection title="Purchase order search">
 				<ControlledSearchField
+					ariaLabel="Search purchase orders"
 					id="po-search"
 					label="Purchase orders"
-					ariaLabel="Search purchase orders"
 					placeholder="PO number"
 				/>
 			</StorySection>
@@ -207,11 +216,11 @@ export const Usage: Story = {
 	render: () => (
 		<div className="w-96">
 			<ControlledSearchField
-				id="usage-search"
-				label="Journals"
 				ariaLabel="Search journals"
-				placeholder="Batch or account"
+				id="usage-search"
 				initialValue="JB-22"
+				label="Journals"
+				placeholder="Batch or account"
 			/>
 		</div>
 	),
@@ -230,18 +239,18 @@ export const StatesAndAccessibility: Story = {
 	render: () => (
 		<div className="grid w-96 gap-4">
 			<ControlledSearchField
-				id="a11y-search"
-				label="Suppliers"
 				ariaLabel="Search suppliers"
+				id="a11y-search"
 				initialValue="Northwind"
+				label="Suppliers"
 			/>
 			<div className="grid gap-2">
 				<Label htmlFor="disabled-search">Locked directory</Label>
 				<SearchField
+					aria-label="Locked supplier search"
+					disabled
 					id="disabled-search"
 					value="Read only"
-					disabled
-					aria-label="Locked supplier search"
 				/>
 			</div>
 		</div>
@@ -260,19 +269,23 @@ export const StatesAndAccessibility: Story = {
 
 function SearchFieldCompositionDemo() {
 	const [query, setQuery] = useState("SUP");
+	const handleChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+		setQuery(event.target.value);
+	}, []);
+	const handleClear = useCallback(() => setQuery(""), []);
 	return (
 		<div className="grid w-full max-w-5xl gap-4">
 			<div className="flex flex-wrap items-end justify-between gap-3">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Showing suppliers matching “{query || "all"}”
 				</p>
 				<div className="w-72">
 					<SearchField
-						value={query}
-						onChange={(event) => setQuery(event.target.value)}
-						onClear={() => setQuery("")}
 						aria-label="Search suppliers"
+						onChange={handleChange}
+						onClear={handleClear}
 						placeholder="Name or reference"
+						value={query}
 					/>
 				</div>
 			</div>
@@ -327,20 +340,20 @@ export const DoAndDoNot: Story = {
 		<div className="grid gap-6 sm:grid-cols-2">
 			<StorySection title="Do: labelled collection search">
 				<ControlledSearchField
-					id="do-search"
-					label="Invoices"
 					ariaLabel="Search invoices"
-					placeholder="INV or supplier"
+					id="do-search"
 					initialValue="INV"
+					label="Invoices"
+					placeholder="INV or supplier"
 				/>
 			</StorySection>
 			<StorySection title="Do not: placeholder as the only name">
 				<SearchField
-					value=""
-					onChange={() => undefined}
+					onChange={ignoreSearchChange}
 					placeholder="Search something"
+					value=""
 				/>
-				<p className="mt-2 text-sm text-foreground-secondary">
+				<p className="mt-2 text-foreground-secondary text-sm">
 					Placeholder is not an accessible name. Collection search needs a real
 					label or aria-label.
 				</p>

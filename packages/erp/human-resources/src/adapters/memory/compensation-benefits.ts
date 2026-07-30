@@ -71,6 +71,7 @@ import {
 import { previousIsoDate } from "../../shared/effective-dates";
 import { selectUniqueEffectiveRangeRecord } from "../../shared/effective-range";
 import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
+import { runRollbacks } from "../../shared/rollback";
 import type { HumanResourcesStore } from "../../store";
 import type { IdempotentCompensationReviewCycleRecord } from "../../store/compensation";
 import type {
@@ -124,41 +125,41 @@ function benefitEligibilityMapKey(
 	return `${organizationId}:${planId}`;
 }
 
-export type CompensationBenefitsMemoryState = {
-	compensationGrades: Map<HumanResourcesCompensationGradeId, CompensationGrade>;
-	salaryBands: Map<HumanResourcesSalaryBandId, SalaryBand>;
+export interface CompensationBenefitsMemoryState {
+	benefitEligibility: Map<string, BenefitPlanEligibility>;
+	benefitEnrollmentDependents: Map<
+		HumanResourcesBenefitEnrollmentDependentId,
+		BenefitEnrollmentDependent
+	>;
+	benefitEnrollments: Map<HumanResourcesBenefitEnrollmentId, BenefitEnrollment>;
+	benefitPlans: Map<HumanResourcesBenefitPlanId, BenefitPlan>;
 	compensationGradeProgressionRules: Map<
 		HumanResourcesCompensationGradeProgressionRuleId,
 		CompensationGradeProgressionRule
 	>;
-	employeeCompensations: Map<
-		HumanResourcesEmployeeCompensationId,
-		EmployeeCompensation
-	>;
+	compensationGrades: Map<HumanResourcesCompensationGradeId, CompensationGrade>;
 	compensationIdempotencyByKey: Map<string, EmployeeCompensation>;
-	compensationReviews: Map<
-		HumanResourcesCompensationReviewId,
-		CompensationReview
+	compensationProposals: Map<
+		HumanResourcesCompensationProposalId,
+		CompensationProposal
 	>;
 	compensationReviewCycles: Map<
 		HumanResourcesCompensationReviewCycleId,
 		CompensationReviewCycle
 	>;
-	cycleIdempotencyByKey: Map<string, IdempotentCompensationReviewCycleRecord>;
-	compensationProposals: Map<
-		HumanResourcesCompensationProposalId,
-		CompensationProposal
+	compensationReviews: Map<
+		HumanResourcesCompensationReviewId,
+		CompensationReview
 	>;
-	reviewIdempotencyByKey: Map<string, CompensationReview>;
-	benefitPlans: Map<HumanResourcesBenefitPlanId, BenefitPlan>;
-	benefitEligibility: Map<string, BenefitPlanEligibility>;
-	benefitEnrollments: Map<HumanResourcesBenefitEnrollmentId, BenefitEnrollment>;
-	benefitEnrollmentDependents: Map<
-		HumanResourcesBenefitEnrollmentDependentId,
-		BenefitEnrollmentDependent
+	cycleIdempotencyByKey: Map<string, IdempotentCompensationReviewCycleRecord>;
+	employeeCompensations: Map<
+		HumanResourcesEmployeeCompensationId,
+		EmployeeCompensation
 	>;
 	enrollmentIdempotencyByKey: Map<string, BenefitEnrollment>;
-};
+	reviewIdempotencyByKey: Map<string, CompensationReview>;
+	salaryBands: Map<HumanResourcesSalaryBandId, SalaryBand>;
+}
 
 export type MemoryCompensationBenefitsMethods = Pick<
 	HumanResourcesStore,
@@ -289,9 +290,9 @@ export function createMemoryCompensationBenefitsMethods(
 		}): Promise<Result<CompensationGrade | null>> {
 			const grade = state.compensationGrades.get(input.gradeId);
 			if (!grade || grade.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...grade });
+			return await ok({ ...grade });
 		},
 
 		async findCompensationGradeByCode(input: {
@@ -303,7 +304,7 @@ export function createMemoryCompensationBenefitsMethods(
 					(g) =>
 						g.organizationId === input.organizationId && g.code === input.code,
 				) ?? null;
-			return ok(grade === null ? null : { ...grade });
+			return await ok(grade === null ? null : { ...grade });
 		},
 
 		async createCompensationGrade(
@@ -325,7 +326,9 @@ export function createMemoryCompensationBenefitsMethods(
 			}
 
 			const idResult = parseHumanResourcesCompensationGradeId(randomUUID());
-			if (!idResult.ok) return idResult;
+			if (!idResult.ok) {
+				return idResult;
+			}
 			const id = idResult.data;
 
 			const now = new Date();
@@ -364,7 +367,7 @@ export function createMemoryCompensationBenefitsMethods(
 			input: {
 				organizationId: string;
 				gradeId: HumanResourcesCompensationGradeId;
-				name?: string;
+				name?: string | undefined;
 				expectedVersion: number;
 				actorUserId: string;
 			},
@@ -495,7 +498,7 @@ export function createMemoryCompensationBenefitsMethods(
 			const totalCount = grades.length;
 			const offset = (input.page - 1) * input.pageSize;
 			const paginated = grades.slice(offset, offset + input.pageSize);
-			return ok({
+			return await ok({
 				grades: paginated.map((g) => ({ ...g })),
 				totalCount,
 				page: input.page,
@@ -510,9 +513,9 @@ export function createMemoryCompensationBenefitsMethods(
 		}): Promise<Result<SalaryBand | null>> {
 			const band = state.salaryBands.get(input.salaryBandId);
 			if (!band || band.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...band });
+			return await ok({ ...band });
 		},
 
 		async createSalaryBand(
@@ -551,14 +554,15 @@ export function createMemoryCompensationBenefitsMethods(
 			}
 
 			const overlapping = Array.from(state.salaryBands.values()).find(
-				(band) =>
-					band.organizationId === record.organizationId &&
-					band.gradeId === record.gradeId &&
-					band.currencyCode === record.currencyCode &&
-					(band.status === "active" || band.status === "superseded") &&
+				(bandValue) =>
+					bandValue.organizationId === record.organizationId &&
+					bandValue.gradeId === record.gradeId &&
+					bandValue.currencyCode === record.currencyCode &&
+					(bandValue.status === "active" ||
+						bandValue.status === "superseded") &&
 					rangesOverlap(
-						band.effectiveFrom,
-						band.effectiveTo,
+						bandValue.effectiveFrom,
+						bandValue.effectiveTo,
 						record.effectiveFrom,
 						record.effectiveTo,
 					),
@@ -570,7 +574,9 @@ export function createMemoryCompensationBenefitsMethods(
 			}
 
 			const idResult = parseHumanResourcesSalaryBandId(randomUUID());
-			if (!idResult.ok) return idResult;
+			if (!idResult.ok) {
+				return idResult;
+			}
 			const id = idResult.data;
 
 			const now = new Date();
@@ -621,7 +627,7 @@ export function createMemoryCompensationBenefitsMethods(
 				maxAmount: string;
 				effectiveFrom: string;
 				effectiveTo: string | null;
-				supersededSalaryBandId?: HumanResourcesSalaryBandId;
+				supersededSalaryBandId?: HumanResourcesSalaryBandId | undefined;
 				actorUserId: string;
 			},
 			ports: MutationPorts,
@@ -670,10 +676,10 @@ export function createMemoryCompensationBenefitsMethods(
 						"Ambiguous active salary band for grade and currency",
 					);
 				}
-				predecessor = activeBands[0];
+				[predecessor] = activeBands;
 			}
 
-			if (!predecessor || !isSalaryBandActive(predecessor.status)) {
+			if (!(predecessor && isSalaryBandActive(predecessor.status))) {
 				return invalidState("Only active salary bands can be superseded");
 			}
 			if (
@@ -733,7 +739,9 @@ export function createMemoryCompensationBenefitsMethods(
 			}
 
 			const idResult = parseHumanResourcesSalaryBandId(randomUUID());
-			if (!idResult.ok) return idResult;
+			if (!idResult.ok) {
+				return idResult;
+			}
 			const id = idResult.data;
 
 			const now = new Date();
@@ -784,7 +792,7 @@ export function createMemoryCompensationBenefitsMethods(
 				changes: [],
 			});
 			if (!auditNew.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return auditNew;
 			}
 
@@ -798,7 +806,7 @@ export function createMemoryCompensationBenefitsMethods(
 				changes: [],
 			});
 			if (!auditSupersede.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return auditSupersede;
 			}
 
@@ -870,7 +878,7 @@ export function createMemoryCompensationBenefitsMethods(
 		}): Promise<Result<SalaryBandListPage>> {
 			const grade = state.compensationGrades.get(input.gradeId);
 			if (!grade || grade.organizationId !== input.organizationId) {
-				return notFound(
+				return await notFound(
 					"Compensation grade not found",
 					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 				);
@@ -888,7 +896,7 @@ export function createMemoryCompensationBenefitsMethods(
 			const totalCount = bands.length;
 			const offset = (input.page - 1) * input.pageSize;
 			const paginated = bands.slice(offset, offset + input.pageSize);
-			return ok({
+			return await ok({
 				bands: paginated.map((b) => ({ ...b })),
 				totalCount,
 				page: input.page,
@@ -913,7 +921,7 @@ export function createMemoryCompensationBenefitsMethods(
 				records,
 				asOf: input.asOf,
 			});
-			return ok(selected === null ? null : { ...selected });
+			return await ok(selected === null ? null : { ...selected });
 		},
 
 		async getCompensationGradeProgressionRule(input: {
@@ -924,9 +932,9 @@ export function createMemoryCompensationBenefitsMethods(
 				input.progressionRuleId,
 			);
 			if (!rule || rule.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...rule });
+			return await ok({ ...rule });
 		},
 
 		async createCompensationGradeProgressionRule(
@@ -955,8 +963,10 @@ export function createMemoryCompensationBenefitsMethods(
 				return notFound("To compensation grade not found");
 			}
 			if (
-				!isCompensationGradeActive(fromGrade.status) ||
-				!isCompensationGradeActive(toGrade.status)
+				!(
+					isCompensationGradeActive(fromGrade.status) &&
+					isCompensationGradeActive(toGrade.status)
+				)
 			) {
 				return invalidState("Grades must be active");
 			}
@@ -964,14 +974,14 @@ export function createMemoryCompensationBenefitsMethods(
 			const overlapping = Array.from(
 				state.compensationGradeProgressionRules.values(),
 			).some(
-				(rule) =>
-					rule.organizationId === record.organizationId &&
-					rule.fromGradeId === record.fromGradeId &&
-					rule.toGradeId === record.toGradeId &&
-					isCompensationGradeProgressionRuleActive(rule.status) &&
+				(ruleValue) =>
+					ruleValue.organizationId === record.organizationId &&
+					ruleValue.fromGradeId === record.fromGradeId &&
+					ruleValue.toGradeId === record.toGradeId &&
+					isCompensationGradeProgressionRuleActive(ruleValue.status) &&
 					rangesOverlap(
-						rule.effectiveFrom,
-						rule.effectiveTo,
+						ruleValue.effectiveFrom,
+						ruleValue.effectiveTo,
 						record.effectiveFrom,
 						record.effectiveTo,
 					),
@@ -985,7 +995,9 @@ export function createMemoryCompensationBenefitsMethods(
 			const idResult = parseHumanResourcesCompensationGradeProgressionRuleId(
 				randomUUID(),
 			);
-			if (!idResult.ok) return idResult;
+			if (!idResult.ok) {
+				return idResult;
+			}
 
 			const now = new Date();
 			const rule: CompensationGradeProgressionRule = {
@@ -1042,7 +1054,9 @@ export function createMemoryCompensationBenefitsMethods(
 				rule.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 
 			const now = new Date();
 			const previous = { ...rule };
@@ -1077,7 +1091,7 @@ export function createMemoryCompensationBenefitsMethods(
 			fromGradeId: HumanResourcesCompensationGradeId;
 			page: number;
 			pageSize: number;
-			asOf?: string;
+			asOf?: string | undefined;
 		}): Promise<Result<CompensationGradeProgressionRuleListPage>> {
 			let rules = Array.from(
 				state.compensationGradeProgressionRules.values(),
@@ -1100,7 +1114,7 @@ export function createMemoryCompensationBenefitsMethods(
 			const totalCount = rules.length;
 			const offset = (input.page - 1) * input.pageSize;
 			const paginated = rules.slice(offset, offset + input.pageSize);
-			return ok({
+			return await ok({
 				rules: paginated.map((rule) => ({ ...rule })),
 				totalCount,
 				page: input.page,
@@ -1120,7 +1134,9 @@ export function createMemoryCompensationBenefitsMethods(
 				pageSize: 10_000,
 				asOf: input.asOf,
 			});
-			if (!listed.ok) return listed;
+			if (!listed.ok) {
+				return listed;
+			}
 			return ok(listed.data.rules);
 		},
 
@@ -1131,9 +1147,9 @@ export function createMemoryCompensationBenefitsMethods(
 		}): Promise<Result<EmployeeCompensation | null>> {
 			const comp = state.employeeCompensations.get(input.compensationId);
 			if (!comp || comp.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...comp });
+			return await ok({ ...comp });
 		},
 
 		async findEmployeeCompensationByIdempotencyKey(input: {
@@ -1142,15 +1158,21 @@ export function createMemoryCompensationBenefitsMethods(
 		}): Promise<Result<EmployeeCompensation | null>> {
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const comp = state.compensationIdempotencyByKey.get(key);
-			return ok(comp === undefined ? null : { ...comp });
+			return await ok(comp === undefined ? null : { ...comp });
 		},
 
 		async createEmployeeCompensation(record, ports, meta) {
-			return memoryCreateEmployeeCompensation(state, core, record, ports, meta);
+			return await memoryCreateEmployeeCompensation(
+				state,
+				core,
+				record,
+				ports,
+				meta,
+			);
 		},
 
 		async amendEmployeeCompensation(input, ports, meta) {
-			return memoryAmendEmployeeCompensation(
+			return await memoryAmendEmployeeCompensation(
 				state,
 				{
 					organizationId: input.organizationId,
@@ -1187,11 +1209,11 @@ export function createMemoryCompensationBenefitsMethods(
 		},
 
 		async approveEmployeeCompensation(input, ports, meta) {
-			return memoryApproveEmployeeCompensation(state, input, ports, meta);
+			return await memoryApproveEmployeeCompensation(state, input, ports, meta);
 		},
 
 		async scheduleEmployeeCompensationChange(input, ports, meta) {
-			return memoryScheduleEmployeeCompensationChange(
+			return await memoryScheduleEmployeeCompensationChange(
 				state,
 				core,
 				input,
@@ -1201,15 +1223,26 @@ export function createMemoryCompensationBenefitsMethods(
 		},
 
 		async activateEmployeeCompensation(input, ports, meta) {
-			return memoryActivateEmployeeCompensation(state, input, ports, meta);
+			return await memoryActivateEmployeeCompensation(
+				state,
+				input,
+				ports,
+				meta,
+			);
 		},
 
 		async correctEmployeeCompensation(input, ports, meta) {
-			return memoryCorrectEmployeeCompensation(state, core, input, ports, meta);
+			return await memoryCorrectEmployeeCompensation(
+				state,
+				core,
+				input,
+				ports,
+				meta,
+			);
 		},
 
 		async endEmployeeCompensation(input, ports, meta) {
-			return memoryEndEmployeeCompensation(state, input, ports, meta);
+			return await memoryEndEmployeeCompensation(state, input, ports, meta);
 		},
 
 		async listEmployeeCompensationsByEmployee(input: {
@@ -1231,7 +1264,7 @@ export function createMemoryCompensationBenefitsMethods(
 			const totalCount = compensations.length;
 			const offset = (input.page - 1) * input.pageSize;
 			const paginated = compensations.slice(offset, offset + input.pageSize);
-			return ok({
+			return await ok({
 				compensations: paginated.map((c) => ({ ...c })),
 				totalCount,
 				page: input.page,
@@ -1250,7 +1283,7 @@ export function createMemoryCompensationBenefitsMethods(
 						c.employmentId === input.employmentId &&
 						isEmployeeCompensationActive(c.status),
 				) ?? null;
-			return ok(comp === null ? null : { ...comp });
+			return await ok(comp === null ? null : { ...comp });
 		},
 
 		async findEmployeeCompensationByEmploymentAsOf(input) {
@@ -1258,7 +1291,7 @@ export function createMemoryCompensationBenefitsMethods(
 				state,
 				input,
 			);
-			return ok(selected === null ? null : { ...selected });
+			return await ok(selected === null ? null : { ...selected });
 		},
 
 		// --- Compensation Review ---
@@ -1269,9 +1302,9 @@ export function createMemoryCompensationBenefitsMethods(
 		}): Promise<Result<CompensationReview | null>> {
 			const review = state.compensationReviews.get(input.reviewId) ?? null;
 			if (review && review.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok(review === null ? null : { ...review });
+			return await ok(review === null ? null : { ...review });
 		},
 
 		async findCompensationReviewByIdempotencyKey(input: {
@@ -1280,7 +1313,7 @@ export function createMemoryCompensationBenefitsMethods(
 		}): Promise<Result<CompensationReview | null>> {
 			const key = `${input.organizationId}:${input.idempotencyKey}`;
 			const review = state.reviewIdempotencyByKey.get(key) ?? null;
-			return ok(review === null ? null : { ...review });
+			return await ok(review === null ? null : { ...review });
 		},
 
 		async createCompensationReviewDraft(
@@ -1337,7 +1370,9 @@ export function createMemoryCompensationBenefitsMethods(
 			}
 
 			const idResult = parseHumanResourcesCompensationReviewId(randomUUID());
-			if (!idResult.ok) return idResult;
+			if (!idResult.ok) {
+				return idResult;
+			}
 			const id = idResult.data;
 
 			const now = new Date();
@@ -1389,7 +1424,7 @@ export function createMemoryCompensationBenefitsMethods(
 		},
 
 		async recordCompensationRecommendation(input, ports, meta) {
-			return memoryRecordCompensationRecommendation(
+			return await memoryRecordCompensationRecommendation(
 				state,
 				reviewLifecycleDeps,
 				input,
@@ -1399,7 +1434,7 @@ export function createMemoryCompensationBenefitsMethods(
 		},
 
 		async finalizeCompensationReview(input, ports, meta) {
-			return memoryFinalizeCompensationReview(
+			return await memoryFinalizeCompensationReview(
 				state,
 				reviewLifecycleDeps,
 				input,
@@ -1437,9 +1472,11 @@ export function createMemoryCompensationBenefitsMethods(
 			}
 
 			if (
-				!review.proposedBaseAmount ||
-				!review.proposedCurrencyCode ||
-				!review.effectiveFrom
+				!(
+					review.proposedBaseAmount &&
+					review.proposedCurrencyCode &&
+					review.effectiveFrom
+				)
 			) {
 				return invalidState(
 					"Review must have proposed amount, currency, and effective date",
@@ -1488,7 +1525,7 @@ export function createMemoryCompensationBenefitsMethods(
 					changes: [],
 				});
 				if (!audit.ok) {
-					for (const undo of rollback) undo();
+					runRollbacks(rollback);
 					return audit;
 				}
 
@@ -1506,13 +1543,15 @@ export function createMemoryCompensationBenefitsMethods(
 					},
 				});
 				if (!outbox.ok) {
-					for (const undo of rollback) undo();
+					runRollbacks(rollback);
 					return outbox;
 				}
 			}
 
 			const idResult = parseHumanResourcesEmployeeCompensationId(randomUUID());
-			if (!idResult.ok) return idResult;
+			if (!idResult.ok) {
+				return idResult;
+			}
 			const id = idResult.data;
 
 			const newComp = memoryNewEmployeeCompensationFromReview({
@@ -1549,7 +1588,7 @@ export function createMemoryCompensationBenefitsMethods(
 				changes: [],
 			});
 			if (!audit.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return audit;
 			}
 
@@ -1567,7 +1606,7 @@ export function createMemoryCompensationBenefitsMethods(
 				},
 			});
 			if (!outbox.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return outbox;
 			}
 
@@ -1578,7 +1617,7 @@ export function createMemoryCompensationBenefitsMethods(
 				input.actorUserId,
 			);
 			if (!linked.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return linked;
 			}
 
@@ -1604,7 +1643,7 @@ export function createMemoryCompensationBenefitsMethods(
 			const totalCount = reviews.length;
 			const offset = (input.page - 1) * input.pageSize;
 			const paginated = reviews.slice(offset, offset + input.pageSize);
-			return ok({
+			return await ok({
 				reviews: paginated.map((r) => ({ ...r })),
 				totalCount,
 				page: input.page,
@@ -1621,9 +1660,9 @@ export function createMemoryCompensationBenefitsMethods(
 			const proposal =
 				state.compensationProposals.get(input.proposalId) ?? null;
 			if (proposal && proposal.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok(proposal === null ? null : { ...proposal });
+			return await ok(proposal === null ? null : { ...proposal });
 		},
 
 		async createCompensationProposal(
@@ -1652,7 +1691,9 @@ export function createMemoryCompensationBenefitsMethods(
 			}
 
 			const idResult = parseHumanResourcesCompensationProposalId(randomUUID());
-			if (!idResult.ok) return idResult;
+			if (!idResult.ok) {
+				return idResult;
+			}
 			const id = idResult.data;
 
 			const now = new Date();
@@ -1695,11 +1736,11 @@ export function createMemoryCompensationBenefitsMethods(
 			input: {
 				organizationId: string;
 				proposalId: HumanResourcesCompensationProposalId;
-				proposedBaseAmount?: string | null;
-				proposedCurrencyCode?: string | null;
-				proposedGradeId?: HumanResourcesCompensationGradeId | null;
-				proposedSalaryBandId?: HumanResourcesSalaryBandId | null;
-				confidentialNote?: string | null;
+				proposedBaseAmount?: string | null | undefined;
+				proposedCurrencyCode?: string | null | undefined;
+				proposedGradeId?: HumanResourcesCompensationGradeId | null | undefined;
+				proposedSalaryBandId?: HumanResourcesSalaryBandId | null | undefined;
+				confidentialNote?: string | null | undefined;
 				expectedVersion: number;
 				actorUserId: string;
 			},
@@ -1736,25 +1777,25 @@ export function createMemoryCompensationBenefitsMethods(
 			const updated: CompensationProposal = {
 				...proposal,
 				proposedBaseAmount:
-					input.proposedBaseAmount !== undefined
-						? input.proposedBaseAmount
-						: proposal.proposedBaseAmount,
+					input.proposedBaseAmount === undefined
+						? proposal.proposedBaseAmount
+						: input.proposedBaseAmount,
 				proposedCurrencyCode:
-					input.proposedCurrencyCode !== undefined
-						? input.proposedCurrencyCode
-						: proposal.proposedCurrencyCode,
+					input.proposedCurrencyCode === undefined
+						? proposal.proposedCurrencyCode
+						: input.proposedCurrencyCode,
 				proposedGradeId:
-					input.proposedGradeId !== undefined
-						? input.proposedGradeId
-						: proposal.proposedGradeId,
+					input.proposedGradeId === undefined
+						? proposal.proposedGradeId
+						: input.proposedGradeId,
 				proposedSalaryBandId:
-					input.proposedSalaryBandId !== undefined
-						? input.proposedSalaryBandId
-						: proposal.proposedSalaryBandId,
+					input.proposedSalaryBandId === undefined
+						? proposal.proposedSalaryBandId
+						: input.proposedSalaryBandId,
 				confidentialNote:
-					input.confidentialNote !== undefined
-						? input.confidentialNote
-						: proposal.confidentialNote,
+					input.confidentialNote === undefined
+						? proposal.confidentialNote
+						: input.confidentialNote,
 				version: proposal.version + 1,
 				updatedBy: input.actorUserId,
 				updatedAt: now,
@@ -1775,7 +1816,7 @@ export function createMemoryCompensationBenefitsMethods(
 				changes: [],
 			});
 			if (!audit.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return audit;
 			}
 
@@ -1812,7 +1853,7 @@ export function createMemoryCompensationBenefitsMethods(
 			if (!versionCheck.ok) {
 				return versionCheck;
 			}
-			if (!proposal.proposedBaseAmount || !proposal.proposedCurrencyCode) {
+			if (!(proposal.proposedBaseAmount && proposal.proposedCurrencyCode)) {
 				return invalidState(
 					"Proposal must have proposed base amount and currency before approval",
 				);
@@ -1850,7 +1891,7 @@ export function createMemoryCompensationBenefitsMethods(
 				changes: [],
 			});
 			if (!audit.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return audit;
 			}
 
@@ -1863,7 +1904,7 @@ export function createMemoryCompensationBenefitsMethods(
 				eventEntityType: "hr_compensation_proposal",
 			});
 			if (!outbox.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return outbox;
 			}
 
@@ -1872,7 +1913,7 @@ export function createMemoryCompensationBenefitsMethods(
 
 		async listCompensationProposals(input: {
 			organizationId: string;
-			applicationId?: HumanResourcesApplicationId;
+			applicationId?: HumanResourcesApplicationId | undefined;
 			page: number;
 			pageSize: number;
 		}): Promise<Result<CompensationProposalListPage>> {
@@ -1892,7 +1933,7 @@ export function createMemoryCompensationBenefitsMethods(
 			const totalCount = proposals.length;
 			const offset = (input.page - 1) * input.pageSize;
 			const paginated = proposals.slice(offset, offset + input.pageSize);
-			return ok({
+			return await ok({
 				proposals: paginated.map((proposal) => ({ ...proposal })),
 				totalCount,
 				page: input.page,
@@ -1908,9 +1949,9 @@ export function createMemoryCompensationBenefitsMethods(
 		}): Promise<Result<BenefitPlan | null>> {
 			const plan = state.benefitPlans.get(input.planId) ?? null;
 			if (plan && plan.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok(plan === null ? null : { ...plan });
+			return await ok(plan === null ? null : { ...plan });
 		},
 
 		async findBenefitPlanByCode(input: {
@@ -1922,7 +1963,7 @@ export function createMemoryCompensationBenefitsMethods(
 					(p) =>
 						p.organizationId === input.organizationId && p.code === input.code,
 				) ?? null;
-			return ok(plan === null ? null : { ...plan });
+			return await ok(plan === null ? null : { ...plan });
 		},
 
 		async createBenefitPlan(
@@ -1945,7 +1986,9 @@ export function createMemoryCompensationBenefitsMethods(
 			}
 
 			const idResult = parseHumanResourcesBenefitPlanId(randomUUID());
-			if (!idResult.ok) return idResult;
+			if (!idResult.ok) {
+				return idResult;
+			}
 			const id = idResult.data;
 			const now = new Date();
 			const plan: BenefitPlan = {
@@ -1984,8 +2027,8 @@ export function createMemoryCompensationBenefitsMethods(
 			input: {
 				organizationId: string;
 				planId: HumanResourcesBenefitPlanId;
-				name?: string;
-				eligibilityNote?: string | null;
+				name?: string | undefined;
+				eligibilityNote?: string | null | undefined;
 				actorUserId: string;
 				expectedVersion: number;
 			},
@@ -2016,9 +2059,9 @@ export function createMemoryCompensationBenefitsMethods(
 				...plan,
 				name: input.name ?? plan.name,
 				eligibilityNote:
-					input.eligibilityNote !== undefined
-						? input.eligibilityNote
-						: plan.eligibilityNote,
+					input.eligibilityNote === undefined
+						? plan.eligibilityNote
+						: input.eligibilityNote,
 				version: plan.version + 1,
 				updatedBy: input.actorUserId,
 				updatedAt: now,
@@ -2039,7 +2082,7 @@ export function createMemoryCompensationBenefitsMethods(
 				changes: [],
 			});
 			if (!audit.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return audit;
 			}
 
@@ -2111,7 +2154,7 @@ export function createMemoryCompensationBenefitsMethods(
 				changes: [],
 			});
 			if (!audit.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return audit;
 			}
 
@@ -2130,7 +2173,7 @@ export function createMemoryCompensationBenefitsMethods(
 			const totalCount = plans.length;
 			const offset = (input.page - 1) * input.pageSize;
 			const paginated = plans.slice(offset, offset + input.pageSize);
-			return ok({
+			return await ok({
 				plans: paginated.map((p) => ({ ...p })),
 				totalCount,
 				page: input.page,
@@ -2146,7 +2189,7 @@ export function createMemoryCompensationBenefitsMethods(
 				state.benefitEligibility.get(
 					benefitEligibilityMapKey(input.organizationId, input.planId),
 				) ?? null;
-			return ok(eligibility === null ? null : { ...eligibility });
+			return await ok(eligibility === null ? null : { ...eligibility });
 		},
 
 		async setBenefitPlanEligibility(
@@ -2204,7 +2247,7 @@ export function createMemoryCompensationBenefitsMethods(
 				changes: [],
 			});
 			if (!audit.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return audit;
 			}
 
@@ -2220,9 +2263,9 @@ export function createMemoryCompensationBenefitsMethods(
 			const enrollment =
 				state.benefitEnrollments.get(input.enrollmentId) ?? null;
 			if (enrollment && enrollment.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok(enrollment === null ? null : { ...enrollment });
+			return await ok(enrollment === null ? null : { ...enrollment });
 		},
 
 		async findBenefitEnrollmentByIdempotencyKey(input: {
@@ -2231,7 +2274,7 @@ export function createMemoryCompensationBenefitsMethods(
 		}): Promise<Result<BenefitEnrollment | null>> {
 			const key = `${input.organizationId}:${input.idempotencyKey}`;
 			const enrollment = state.enrollmentIdempotencyByKey.get(key) ?? null;
-			return ok(enrollment === null ? null : { ...enrollment });
+			return await ok(enrollment === null ? null : { ...enrollment });
 		},
 
 		async enrolBenefit(
@@ -2269,7 +2312,9 @@ export function createMemoryCompensationBenefitsMethods(
 				effectiveFrom: record.effectiveFrom,
 				effectiveTo: record.effectiveTo,
 			});
-			if (!rangeCheck.ok) return rangeCheck;
+			if (!rangeCheck.ok) {
+				return rangeCheck;
+			}
 
 			const contributionCheck = assertBenefitContributionFacts({
 				employeeContributionAmount: record.employeeContributionAmount,
@@ -2277,7 +2322,9 @@ export function createMemoryCompensationBenefitsMethods(
 				contributionCurrencyCode: record.contributionCurrencyCode,
 				contributionFrequency: record.contributionFrequency,
 			});
-			if (!contributionCheck.ok) return contributionCheck;
+			if (!contributionCheck.ok) {
+				return contributionCheck;
+			}
 
 			const employee = core.employees.get(record.employeeId);
 			if (!employee || employee.organizationId !== record.organizationId) {
@@ -2338,7 +2385,9 @@ export function createMemoryCompensationBenefitsMethods(
 			}
 
 			const idResult = parseHumanResourcesBenefitEnrollmentId(randomUUID());
-			if (!idResult.ok) return idResult;
+			if (!idResult.ok) {
+				return idResult;
+			}
 			const id = idResult.data;
 			const now = new Date();
 			const enrollment: BenefitEnrollment = {
@@ -2383,7 +2432,7 @@ export function createMemoryCompensationBenefitsMethods(
 				changes: [],
 			});
 			if (!audit.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return audit;
 			}
 
@@ -2401,7 +2450,7 @@ export function createMemoryCompensationBenefitsMethods(
 				},
 			});
 			if (!outbox.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return outbox;
 			}
 
@@ -2445,7 +2494,9 @@ export function createMemoryCompensationBenefitsMethods(
 				effectiveFrom: enrollment.effectiveFrom,
 				effectiveTo: input.effectiveTo,
 			});
-			if (!rangeCheck.ok) return rangeCheck;
+			if (!rangeCheck.ok) {
+				return rangeCheck;
+			}
 
 			const now = new Date();
 			const previous = { ...enrollment };
@@ -2479,7 +2530,7 @@ export function createMemoryCompensationBenefitsMethods(
 				changes: [],
 			});
 			if (!audit.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return audit;
 			}
 
@@ -2497,7 +2548,7 @@ export function createMemoryCompensationBenefitsMethods(
 				},
 			});
 			if (!outbox.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return outbox;
 			}
 
@@ -2540,7 +2591,9 @@ export function createMemoryCompensationBenefitsMethods(
 				effectiveFrom: enrollment.effectiveFrom,
 				effectiveTo: input.endsOn,
 			});
-			if (!rangeCheck.ok) return rangeCheck;
+			if (!rangeCheck.ok) {
+				return rangeCheck;
+			}
 
 			const now = new Date();
 			const previous = { ...enrollment };
@@ -2573,7 +2626,7 @@ export function createMemoryCompensationBenefitsMethods(
 				changes: [],
 			});
 			if (!audit.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return audit;
 			}
 
@@ -2591,7 +2644,7 @@ export function createMemoryCompensationBenefitsMethods(
 				},
 			});
 			if (!outbox.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return outbox;
 			}
 
@@ -2659,7 +2712,7 @@ export function createMemoryCompensationBenefitsMethods(
 				changes: [],
 			});
 			if (!audit.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return audit;
 			}
 
@@ -2677,7 +2730,7 @@ export function createMemoryCompensationBenefitsMethods(
 				},
 			});
 			if (!outbox.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return outbox;
 			}
 
@@ -2701,7 +2754,7 @@ export function createMemoryCompensationBenefitsMethods(
 			const totalCount = enrollments.length;
 			const offset = (input.page - 1) * input.pageSize;
 			const paginated = enrollments.slice(offset, offset + input.pageSize);
-			return ok({
+			return await ok({
 				enrollments: paginated.map((e) => ({ ...e })),
 				totalCount,
 				page: input.page,
@@ -2717,9 +2770,9 @@ export function createMemoryCompensationBenefitsMethods(
 				input.dependentId,
 			);
 			if (!dependent || dependent.organizationId !== input.organizationId) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({ ...dependent });
+			return await ok({ ...dependent });
 		},
 
 		async listBenefitEnrollmentDependentsByEnrollment(input: {
@@ -2734,7 +2787,7 @@ export function createMemoryCompensationBenefitsMethods(
 					dependent.enrollmentId === input.enrollmentId,
 			);
 			dependents.sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom));
-			return ok(dependents.map((dependent) => ({ ...dependent })));
+			return await ok(dependents.map((dependent) => ({ ...dependent })));
 		},
 
 		async addBenefitEnrollmentDependent(
@@ -2766,7 +2819,9 @@ export function createMemoryCompensationBenefitsMethods(
 				effectiveFrom: input.effectiveFrom,
 				effectiveTo: enrollment.effectiveTo,
 			});
-			if (!rangeCheck.ok) return rangeCheck;
+			if (!rangeCheck.ok) {
+				return rangeCheck;
+			}
 			if (input.effectiveFrom < enrollment.effectiveFrom) {
 				return invalidInput(
 					"Dependent effective date must be on or after enrollment effective date",
@@ -2776,7 +2831,9 @@ export function createMemoryCompensationBenefitsMethods(
 			const idResult = parseHumanResourcesBenefitEnrollmentDependentId(
 				randomUUID(),
 			);
-			if (!idResult.ok) return idResult;
+			if (!idResult.ok) {
+				return idResult;
+			}
 			const now = new Date();
 			const dependent: BenefitEnrollmentDependent = {
 				id: idResult.data,
@@ -2808,7 +2865,7 @@ export function createMemoryCompensationBenefitsMethods(
 				changes: [],
 			});
 			if (!audit.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return audit;
 			}
 
@@ -2839,7 +2896,9 @@ export function createMemoryCompensationBenefitsMethods(
 				dependent.version,
 				input.expectedVersion,
 			);
-			if (!versionCheck.ok) return versionCheck;
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
 			if (dependent.effectiveTo !== null) {
 				return invalidState("Benefit enrollment dependent is already ended");
 			}
@@ -2848,7 +2907,9 @@ export function createMemoryCompensationBenefitsMethods(
 				effectiveFrom: dependent.effectiveFrom,
 				effectiveTo: input.endsOn,
 			});
-			if (!rangeCheck.ok) return rangeCheck;
+			if (!rangeCheck.ok) {
+				return rangeCheck;
+			}
 
 			const now = new Date();
 			const previous = { ...dependent };
@@ -2875,7 +2936,7 @@ export function createMemoryCompensationBenefitsMethods(
 				changes: [],
 			});
 			if (!audit.ok) {
-				for (const undo of rollback) undo();
+				runRollbacks(rollback);
 				return audit;
 			}
 
@@ -2890,7 +2951,7 @@ export function createMemoryCompensationBenefitsMethods(
 		}): Promise<Result<ApprovedCompensationHandoff | null>> {
 			const employee = core.employees.get(input.employeeId);
 			if (!employee || employee.organizationId !== input.organizationId) {
-				return notFound(
+				return await notFound(
 					"Employee not found",
 					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 				);
@@ -2915,7 +2976,7 @@ export function createMemoryCompensationBenefitsMethods(
 			}
 
 			if (!activeCompensation) {
-				return ok(null);
+				return await ok(null);
 			}
 
 			const activeBenefitEnrollments = Array.from(
@@ -2936,7 +2997,7 @@ export function createMemoryCompensationBenefitsMethods(
 				})),
 			};
 
-			return ok(handoff);
+			return await ok(handoff);
 		},
 
 		// Learning Course methods

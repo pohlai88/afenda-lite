@@ -88,7 +88,9 @@ export function normalizeExternalId(input: {
 		value: input.externalValue,
 		caseSensitive: input.caseSensitivity === "sensitive",
 	});
-	if (!externalValue.ok) return externalValue;
+	if (!externalValue.ok) {
+		return externalValue;
+	}
 
 	return ok({
 		sourceSystem: sourceSystem.data,

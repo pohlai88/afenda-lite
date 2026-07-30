@@ -23,7 +23,7 @@ import {
 	StatusBadge,
 } from "@afenda/ui-system";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import * as React from "react";
+import { useCallback, useState } from "react";
 import { contractDocsParameters } from "./contract-docs";
 import { contractEvidence, StorySection } from "./evidence";
 import { interactionFor } from "./interactions";
@@ -57,8 +57,12 @@ function InvoiceRecordContextMenu({
 	triggerLabel?: string;
 	className?: string;
 }) {
-	const [pinned, setPinned] = React.useState(true);
-	const [visibility, setVisibility] = React.useState("team");
+	const [pinned, setPinned] = useState(true);
+	const [visibility, setVisibility] = useState("team");
+	const handlePinnedChange = useCallback(
+		(checked: boolean | "indeterminate") => setPinned(checked === true),
+		[],
+	);
 
 	return (
 		<ContextMenu>
@@ -74,12 +78,12 @@ function InvoiceRecordContextMenu({
 				<ContextMenuItem>Copy invoice number</ContextMenuItem>
 				<ContextMenuCheckboxItem
 					checked={pinned}
-					onCheckedChange={(checked) => setPinned(checked === true)}
+					onCheckedChange={handlePinnedChange}
 				>
 					Pin in workbench
 				</ContextMenuCheckboxItem>
 				<ContextMenuSeparator />
-				<ContextMenuRadioGroup value={visibility} onValueChange={setVisibility}>
+				<ContextMenuRadioGroup onValueChange={setVisibility} value={visibility}>
 					<ContextMenuLabel inset>Share scope</ContextMenuLabel>
 					<ContextMenuRadioItem value="team">Team review</ContextMenuRadioItem>
 					<ContextMenuRadioItem value="private">
@@ -118,18 +122,18 @@ export const Overview: Story = {
 		<div className="min-h-screen bg-canvas text-foreground">
 			<div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-2 border-b pb-6">
-					<p className="text-sm font-medium text-foreground-secondary">
+					<p className="font-medium text-foreground-secondary text-sm">
 						Accounts receivable · invoice review
 					</p>
-					<h1 className="text-2xl font-semibold tracking-tight">
+					<h1 className="font-semibold text-2xl tracking-tight">
 						Invoice INV-1048
 					</h1>
-					<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+					<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 						ContextMenu offers supplemental actions for this clearly identified
 						record target. Approve remains a visible Button, shortcuts remain
 						optional accelerators, and authorization stays in feature policy.
 					</p>
-					<p className="max-w-5xl text-xs leading-5 text-foreground-tertiary">
+					<p className="max-w-5xl text-foreground-tertiary text-xs leading-5">
 						Operational standard: target meaning, item grouping, focus
 						restoration, and consequences must remain understandable without
 						colour or pointer interaction.
@@ -141,9 +145,9 @@ export const Overview: Story = {
 						<div className="flex flex-wrap items-center gap-2">
 							<Badge variant="outline">Invoice</Badge>
 							<StatusBadge
+								label="Awaiting approval"
 								size="sm"
 								status="pending"
-								label="Awaiting approval"
 							/>
 						</div>
 						<CardTitle>Northwind Trading Sdn. Bhd.</CardTitle>
@@ -186,7 +190,7 @@ export const Usage: Story = {
 			<StorySection title="Attachment region target">
 				<ContextMenu>
 					<ContextMenuTrigger
-						className="flex h-28 items-center justify-center rounded-md border border-dashed text-sm text-foreground-secondary"
+						className="flex h-28 items-center justify-center rounded-md border border-dashed text-foreground-secondary text-sm"
 						tabIndex={0}
 					>
 						Right-click bank letter attachment
@@ -220,7 +224,7 @@ export const VariantsAndSizes: Story = {
 		<StorySection title="Approved item treatments">
 			<ContextMenu>
 				<ContextMenuTrigger
-					className="flex h-28 w-full max-w-xl items-center justify-center rounded-md border border-dashed text-sm text-foreground-secondary"
+					className="flex h-28 w-full max-w-xl items-center justify-center rounded-md border border-dashed text-foreground-secondary text-sm"
 					tabIndex={0}
 				>
 					Right-click invoice INV-1048
@@ -253,7 +257,7 @@ export const StatesAndAccessibility: Story = {
 			<StorySection title="Checked, radio, and disabled items">
 				<ContextMenu>
 					<ContextMenuTrigger
-						className="flex h-32 items-center justify-center rounded-md border border-dashed text-sm text-foreground-secondary"
+						className="flex h-32 items-center justify-center rounded-md border border-dashed text-foreground-secondary text-sm"
 						tabIndex={0}
 					>
 						Right-click supplier row
@@ -284,7 +288,7 @@ export const StatesAndAccessibility: Story = {
 			<StorySection title="Destructive item with concrete consequence">
 				<ContextMenu>
 					<ContextMenuTrigger
-						className="flex h-28 items-center justify-center rounded-md border border-dashed text-sm text-foreground-secondary"
+						className="flex h-28 items-center justify-center rounded-md border border-dashed text-foreground-secondary text-sm"
 						tabIndex={0}
 					>
 						Right-click draft payment run
@@ -320,7 +324,7 @@ export const Composition: Story = {
 				<CardHeader>
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="outline">Receivables</Badge>
-						<StatusBadge size="sm" status="pending" label="Awaiting approval" />
+						<StatusBadge label="Awaiting approval" size="sm" status="pending" />
 					</div>
 					<CardTitle>Invoice INV-1048</CardTitle>
 					<CardDescription>
@@ -329,8 +333,8 @@ export const Composition: Story = {
 				</CardHeader>
 				<CardContent>
 					<InvoiceRecordContextMenu
+						className="flex h-36 items-center justify-center rounded-md border bg-muted/30 text-foreground-secondary text-sm"
 						triggerLabel="Right-click evidence region"
-						className="flex h-36 items-center justify-center rounded-md border bg-muted/30 text-sm text-foreground-secondary"
 					/>
 				</CardContent>
 				<CardFooter className="justify-end gap-2 border-t">
@@ -345,7 +349,7 @@ export const Composition: Story = {
 				<CardHeader>
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="secondary">Master data</Badge>
-						<StatusBadge size="sm" status="active" label="Active" />
+						<StatusBadge label="Active" size="sm" status="active" />
 					</div>
 					<CardTitle>Supplier Northwind Trading</CardTitle>
 					<CardDescription>
@@ -355,7 +359,7 @@ export const Composition: Story = {
 				<CardContent>
 					<ContextMenu>
 						<ContextMenuTrigger
-							className="flex h-36 items-center justify-center rounded-md border border-dashed text-sm text-foreground-secondary"
+							className="flex h-36 items-center justify-center rounded-md border border-dashed text-foreground-secondary text-sm"
 							tabIndex={0}
 						>
 							Right-click supplier summary
@@ -400,14 +404,14 @@ export const DoAndDoNot: Story = {
 			<StorySection title="Do: keep primary actions visible">
 				<div className="grid gap-3 rounded-lg border p-4">
 					<InvoiceRecordContextMenu
+						className="flex h-24 items-center justify-center rounded-md border border-dashed text-foreground-secondary text-sm"
 						triggerLabel="Right-click record target"
-						className="flex h-24 items-center justify-center rounded-md border border-dashed text-sm text-foreground-secondary"
 					/>
 					<div className="flex justify-end gap-2">
-						<Button type="button" size="sm" variant="outline">
+						<Button size="sm" type="button" variant="outline">
 							Request correction
 						</Button>
-						<Button type="button" size="sm">
+						<Button size="sm" type="button">
 							Approve invoice
 						</Button>
 					</div>
@@ -415,7 +419,7 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do not: hide Approve only in the menu">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Critical Approve and Submit actions must remain visible Buttons.
 					ContextMenu is supplemental discovery — never the sole path.
 				</p>
@@ -424,7 +428,7 @@ export const DoAndDoNot: Story = {
 			<StorySection title="Do: use destructive only for real consequences">
 				<ContextMenu>
 					<ContextMenuTrigger
-						className="flex h-24 items-center justify-center rounded-md border border-dashed text-sm text-foreground-secondary"
+						className="flex h-24 items-center justify-center rounded-md border border-dashed text-foreground-secondary text-sm"
 						tabIndex={0}
 					>
 						Right-click draft attachment
@@ -439,7 +443,7 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do not: use disabled items as fake auth">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					A disabled Escalate item does not replace server authorization.
 					Feature code must enforce permissions; disabled state is not
 					StatusBadge lifecycle.
@@ -447,14 +451,14 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do: preserve an unmistakable target">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					The trigger region must make the affected invoice, attachment, row, or
 					record obvious before the menu opens.
 				</p>
 			</StorySection>
 
 			<StorySection title="Do not: attach actions to ambiguous whitespace">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					A menu opened from an unlabeled page region leaves operators uncertain
 					which record or evidence item will be affected.
 				</p>

@@ -114,56 +114,56 @@ export type EndGovernanceMembershipStoreInput = TransactionalWrite &
 	}>;
 
 export interface GovernanceStore {
-	getGovernanceBody(input: {
+	amendGovernanceBody: (
+		input: AmendGovernanceBodyStoreInput,
+	) => Promise<Result<GovernanceBody>>;
+	appointGovernanceMember: (
+		input: AppointGovernanceMemberStoreInput,
+	) => Promise<Result<GovernanceMembership>>;
+	changeGovernanceMembership: (
+		input: ChangeGovernanceMembershipStoreInput,
+	) => Promise<Result<GovernanceMembership>>;
+	createGovernanceBody: (
+		input: CreateGovernanceBodyStoreInput,
+	) => Promise<Result<GovernanceBody>>;
+	endGovernanceMembership: (
+		input: EndGovernanceMembershipStoreInput,
+	) => Promise<Result<GovernanceMembership>>;
+	getGovernanceBody: (input: {
 		organizationId: OrganizationId;
 		governanceBodyId: GovernanceBodyId;
-	}): Promise<Result<GovernanceBody | null>>;
-	listGovernanceBodiesAsOf(input: {
+	}) => Promise<Result<GovernanceBody | null>>;
+	getGovernanceMembership: (input: {
+		organizationId: OrganizationId;
+		governanceMembershipId: GovernanceMembershipId;
+	}) => Promise<Result<GovernanceMembership | null>>;
+	listGovernanceBodiesAsOf: (input: {
 		organizationId: OrganizationId;
 		legalCompanyId: LegalCompanyId;
 		asOf: CanonicalDate;
 		bodyType?: GovernanceBodyType | undefined;
 		includeRetired?: boolean | undefined;
-	}): Promise<Result<readonly GovernanceBody[]>>;
-	createGovernanceBody(
-		input: CreateGovernanceBodyStoreInput,
-	): Promise<Result<GovernanceBody>>;
-	amendGovernanceBody(
-		input: AmendGovernanceBodyStoreInput,
-	): Promise<Result<GovernanceBody>>;
-	retireGovernanceBody(
-		input: RetireGovernanceBodyStoreInput,
-	): Promise<Result<GovernanceBody>>;
-	getGovernanceMembership(input: {
-		organizationId: OrganizationId;
-		governanceMembershipId: GovernanceMembershipId;
-	}): Promise<Result<GovernanceMembership | null>>;
-	listGovernanceMemberships(input: {
+	}) => Promise<Result<readonly GovernanceBody[]>>;
+	listGovernanceMemberships: (input: {
 		organizationId: OrganizationId;
 		governanceBodyId: GovernanceBodyId;
-	}): Promise<Result<readonly GovernanceMembership[]>>;
-	listGovernanceMembershipsAsOf(input: {
+	}) => Promise<Result<readonly GovernanceMembership[]>>;
+	listGovernanceMembershipsAsOf: (input: {
 		organizationId: OrganizationId;
 		governanceBodyId: GovernanceBodyId;
 		asOf: CanonicalDate;
 		memberPartyId?: string | undefined;
-	}): Promise<Result<readonly GovernanceMembership[]>>;
-	appointGovernanceMember(
-		input: AppointGovernanceMemberStoreInput,
-	): Promise<Result<GovernanceMembership>>;
-	changeGovernanceMembership(
-		input: ChangeGovernanceMembershipStoreInput,
-	): Promise<Result<GovernanceMembership>>;
-	endGovernanceMembership(
-		input: EndGovernanceMembershipStoreInput,
-	): Promise<Result<GovernanceMembership>>;
+	}) => Promise<Result<readonly GovernanceMembership[]>>;
+	retireGovernanceBody: (
+		input: RetireGovernanceBodyStoreInput,
+	) => Promise<Result<GovernanceBody>>;
 }
 
 export type GovernanceReferencePort = Readonly<{
-	validateSourceDocument(input: {
+	validateSourceDocument: (input: {
 		organizationId: OrganizationId;
 		sourceDocumentId: string;
-	}): Promise<Result<{ sourceDocumentId: string; active: boolean } | null>>;
+	}) => Promise<Result<{ sourceDocumentId: string; active: boolean } | null>>;
 }>;
 
 export type GovernanceCommandDependencies = Readonly<{

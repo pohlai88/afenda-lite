@@ -61,7 +61,7 @@ export async function grantLeaveEntitlement(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LeaveEntitlement>> {
-	return runLeaveCommand(input, options, {
+	return await runLeaveCommand(input, options, {
 		schema: grantLeaveEntitlementInputSchema,
 		invalidMessage: "Invalid leave entitlement grant input",
 		command: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_GRANT,
@@ -79,7 +79,9 @@ export async function grantLeaveEntitlement(
 				organizationId: data.organizationId,
 				idempotencyKey: data.idempotencyKey,
 			});
-			if (!existing.ok) return existing;
+			if (!existing.ok) {
+				return existing;
+			}
 			if (existing.data !== null) {
 				if (existing.data.createRequestFingerprint !== fingerprint) {
 					return fail(
@@ -95,12 +97,16 @@ export async function grantLeaveEntitlement(
 				organizationId: data.organizationId,
 				policyId: data.policyId,
 			});
-			if (!policy.ok) return policy;
+			if (!policy.ok) {
+				return policy;
+			}
 			if (policy.data === null) {
 				return fail("NOT_FOUND", "Leave policy not found");
 			}
 			const published = assertLeavePolicyPublished(policy.data.status);
-			if (!published.ok) return published;
+			if (!published.ok) {
+				return published;
+			}
 
 			return store.grantLeaveEntitlement(
 				{
@@ -129,7 +135,7 @@ export async function accrueLeaveEntitlement(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LeaveAdjustment>> {
-	return runLeaveCommand(input, options, {
+	return await runLeaveCommand(input, options, {
 		schema: accrueLeaveEntitlementInputSchema,
 		invalidMessage: "Invalid leave entitlement accrual input",
 		command: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ACCRUE,
@@ -138,7 +144,9 @@ export async function accrueLeaveEntitlement(
 				organizationId: data.organizationId,
 				entitlementId: data.entitlementId,
 			});
-			if (!entitlement.ok) return entitlement;
+			if (!entitlement.ok) {
+				return entitlement;
+			}
 
 			const policyContext = await loadPublishedLeavePolicyForEntitlement(
 				store,
@@ -147,13 +155,17 @@ export async function accrueLeaveEntitlement(
 					entitlement: entitlement.data,
 				},
 			);
-			if (!policyContext.ok) return policyContext;
+			if (!policyContext.ok) {
+				return policyContext;
+			}
 
 			const accrualAllowed = assertLeaveAccrualAllowed({
 				balanceRules: policyContext.data.balanceRules,
 				quantity: data.quantity,
 			});
-			if (!accrualAllowed.ok) return accrualAllowed;
+			if (!accrualAllowed.ok) {
+				return accrualAllowed;
+			}
 
 			const source = `accrual:${data.accrualPeriodStart}:${data.accrualPeriodEnd}`;
 			const fingerprint = fingerprintLeaveAdjustment({
@@ -190,7 +202,7 @@ export async function carryForwardLeaveEntitlement(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LeaveEntitlement>> {
-	return runLeaveCommand(input, options, {
+	return await runLeaveCommand(input, options, {
 		schema: carryForwardLeaveEntitlementInputSchema,
 		invalidMessage: "Invalid leave entitlement carry-forward input",
 		command: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_CARRY_FORWARD,
@@ -199,7 +211,9 @@ export async function carryForwardLeaveEntitlement(
 				organizationId: data.organizationId,
 				entitlementId: data.entitlementId,
 			});
-			if (!source.ok) return source;
+			if (!source.ok) {
+				return source;
+			}
 
 			const policyContext = await loadPublishedLeavePolicyForEntitlement(
 				store,
@@ -208,13 +222,17 @@ export async function carryForwardLeaveEntitlement(
 					entitlement: source.data,
 				},
 			);
-			if (!policyContext.ok) return policyContext;
+			if (!policyContext.ok) {
+				return policyContext;
+			}
 
 			const sourceBalance = await store.getLeaveBalance({
 				organizationId: data.organizationId,
 				entitlementId: data.entitlementId,
 			});
-			if (!sourceBalance.ok) return sourceBalance;
+			if (!sourceBalance.ok) {
+				return sourceBalance;
+			}
 			if (sourceBalance.data === null) {
 				return fail("NOT_FOUND", "Leave entitlement not found");
 			}
@@ -224,7 +242,9 @@ export async function carryForwardLeaveEntitlement(
 				carriedQuantity: data.carriedQuantity,
 				sourceBalance: sourceBalance.data.balance,
 			});
-			if (!carryAllowed.ok) return carryAllowed;
+			if (!carryAllowed.ok) {
+				return carryAllowed;
+			}
 
 			const fingerprint = fingerprintLeaveEntitlementGrant({
 				employeeId: source.data.employeeId,
@@ -260,7 +280,7 @@ export async function expireLeaveEntitlement(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LeaveEntitlement>> {
-	return runLeaveCommand(input, options, {
+	return await runLeaveCommand(input, options, {
 		schema: expireLeaveEntitlementInputSchema,
 		invalidMessage: "Invalid leave entitlement expire input",
 		command: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_EXPIRE,
@@ -285,7 +305,7 @@ export async function adjustLeaveEntitlement(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LeaveAdjustment>> {
-	return runLeaveCommand(input, options, {
+	return await runLeaveCommand(input, options, {
 		schema: adjustLeaveEntitlementInputSchema,
 		invalidMessage: "Invalid leave entitlement adjust input",
 		command: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ADJUST,
@@ -294,7 +314,9 @@ export async function adjustLeaveEntitlement(
 				organizationId: data.organizationId,
 				entitlementId: data.entitlementId,
 			});
-			if (!entitlement.ok) return entitlement;
+			if (!entitlement.ok) {
+				return entitlement;
+			}
 
 			const policyContext = await loadPublishedLeavePolicyForEntitlement(
 				store,
@@ -303,13 +325,17 @@ export async function adjustLeaveEntitlement(
 					entitlement: entitlement.data,
 				},
 			);
-			if (!policyContext.ok) return policyContext;
+			if (!policyContext.ok) {
+				return policyContext;
+			}
 
 			const posted = await store.listPostedLeaveAdjustments({
 				organizationId: data.organizationId,
 				entitlementId: data.entitlementId,
 			});
-			if (!posted.ok) return posted;
+			if (!posted.ok) {
+				return posted;
+			}
 
 			const balanceAllowed = assertLeaveAdjustmentBalanceAllowed({
 				openingQuantity: entitlement.data.openingQuantity,
@@ -317,7 +343,9 @@ export async function adjustLeaveEntitlement(
 				delta: data.delta,
 				allowsNegativeBalance: policyContext.data.policy.allowsNegativeBalance,
 			});
-			if (!balanceAllowed.ok) return balanceAllowed;
+			if (!balanceAllowed.ok) {
+				return balanceAllowed;
+			}
 
 			const fingerprint = fingerprintLeaveAdjustment({
 				entitlementId: data.entitlementId,
@@ -352,7 +380,7 @@ export async function getLeaveEntitlement(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LeaveEntitlement | null>> {
-	return runLeaveQuery(input, options, {
+	return await runLeaveQuery(input, options, {
 		schema: getLeaveEntitlementInputSchema,
 		invalidMessage: "Invalid leave entitlement get input",
 		query: HUMAN_RESOURCES_QUERY_LEAVE_ENTITLEMENT_GET,
@@ -368,7 +396,7 @@ export async function listLeaveEntitlements(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LeaveEntitlementListPage>> {
-	return runLeaveQuery(input, options, {
+	return await runLeaveQuery(input, options, {
 		schema: listLeaveEntitlementsInputSchema,
 		invalidMessage: "Invalid leave entitlement list input",
 		query: HUMAN_RESOURCES_QUERY_LEAVE_ENTITLEMENT_LIST,
@@ -388,7 +416,7 @@ export async function reconcileLeaveBalance(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LeaveBalanceReconciliation | null>> {
-	return runLeaveQuery(input, options, {
+	return await runLeaveQuery(input, options, {
 		schema: getLeaveBalanceInputSchema,
 		invalidMessage: "Invalid leave balance reconciliation input",
 		query: HUMAN_RESOURCES_QUERY_LEAVE_BALANCE_RECONCILE,
@@ -397,13 +425,19 @@ export async function reconcileLeaveBalance(
 				organizationId: data.organizationId,
 				entitlementId: data.entitlementId,
 			});
-			if (!entitlement.ok) return entitlement;
-			if (entitlement.data === null) return ok(null);
+			if (!entitlement.ok) {
+				return entitlement;
+			}
+			if (entitlement.data === null) {
+				return ok(null);
+			}
 			const posted = await store.listPostedLeaveAdjustments({
 				organizationId: data.organizationId,
 				entitlementId: data.entitlementId,
 			});
-			if (!posted.ok) return posted;
+			if (!posted.ok) {
+				return posted;
+			}
 			const adjustments = sortLeaveAdjustmentsForLedger(
 				posted.data.map(({ id, kind, delta, reason, source, createdAt }) => ({
 					id,
@@ -433,7 +467,7 @@ export async function getLeaveBalance(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LeaveBalance | null>> {
-	return runLeaveQuery(input, options, {
+	return await runLeaveQuery(input, options, {
 		schema: getLeaveBalanceInputSchema,
 		invalidMessage: "Invalid leave balance get input",
 		query: HUMAN_RESOURCES_QUERY_LEAVE_BALANCE_GET,

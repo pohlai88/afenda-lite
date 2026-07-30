@@ -59,7 +59,9 @@ export async function resolveTenantScopedCasMiss(input: {
 	unchangedMissMessage: string;
 }): Promise<Result<never>> {
 	const current = await input.loadCurrent();
-	if (!current.ok) return current;
+	if (!current.ok) {
+		return current;
+	}
 	if (current.data === null) {
 		return fail("NOT_FOUND", input.notFoundMessage, {
 			reason: "MASTER_NOT_FOUND",

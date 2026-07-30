@@ -6,8 +6,12 @@ import {
 } from "@afenda/human-resources";
 import { describe, expect, it, vi } from "vitest";
 
-type Row = { value: string };
-type Output = { id: string };
+interface Row {
+	value: string;
+}
+interface Output {
+	id: string;
+}
 
 function request(
 	overrides: Partial<BulkImportRequest<Row>> = {},
@@ -69,7 +73,9 @@ describe("Human Resources generic bulk kernel", () => {
 		);
 
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 		expect(result.data.status).toBe("dry_run_completed");
 		expect(result.data.totals).toEqual({
 			accepted: 1,
@@ -93,7 +99,9 @@ describe("Human Resources generic bulk kernel", () => {
 		);
 
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 		expect(result.data.rows[1]).toMatchObject({
 			status: "rejected",
 			issues: [{ code: "DUPLICATE_SOURCE_REFERENCE" }],
@@ -118,7 +126,9 @@ describe("Human Resources generic bulk kernel", () => {
 		);
 
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 		expect(result.data.status).toBe("completed_with_rejections");
 		expect(result.data.rows.map((row) => row.status)).toEqual([
 			"rejected",
@@ -136,7 +146,9 @@ describe("Human Resources generic bulk kernel", () => {
 			dependencies,
 		);
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 		expect(first.data).toMatchObject({
 			status: "checkpointed",
 			nextRowIndex: 1,
@@ -151,7 +163,9 @@ describe("Human Resources generic bulk kernel", () => {
 			dependencies,
 		);
 		expect(resumed.ok).toBe(true);
-		if (!resumed.ok) return;
+		if (!resumed.ok) {
+			return;
+		}
 		expect(resumed.data.status).toBe("completed");
 		expect(dependencies.execute).toHaveBeenCalledTimes(2);
 		const checkpoint = await dependencies.checkpoints.load({
@@ -159,7 +173,9 @@ describe("Human Resources generic bulk kernel", () => {
 			idempotencyKey: "bulk-1",
 		});
 		expect(checkpoint.ok).toBe(true);
-		if (!checkpoint.ok || checkpoint.data === null) return;
+		if (!checkpoint.ok || checkpoint.data === null) {
+			return;
+		}
 		expect(checkpoint.data.auditTrail.map((entry) => entry.event)).toEqual([
 			"BATCH_STARTED",
 			"ROW_ACCEPTED",
@@ -181,12 +197,13 @@ describe("Human Resources generic bulk kernel", () => {
 		const dependencies = ports({
 			execute: vi.fn(async ({ sourceReference }) => {
 				attempts += 1;
-				if (attempts === 1)
-					return {
+				if (attempts === 1) {
+					return await {
 						status: "retryable_failure" as const,
 						issue: { code: "RATE_LIMITED", message: "Try later" },
 					};
-				return {
+				}
+				return await {
 					status: "applied" as const,
 					output: { id: sourceReference },
 				};
@@ -194,7 +211,9 @@ describe("Human Resources generic bulk kernel", () => {
 		});
 		const first = await runHumanResourcesBulkImport(request(), dependencies);
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 		expect(first.data).toMatchObject({
 			status: "retryable_failed",
 			nextRowIndex: 0,
@@ -208,7 +227,9 @@ describe("Human Resources generic bulk kernel", () => {
 			dependencies,
 		);
 		expect(resumed.ok).toBe(true);
-		if (!resumed.ok) return;
+		if (!resumed.ok) {
+			return;
+		}
 		expect(resumed.data.status).toBe("completed");
 		expect(resumed.data.nextRowIndex).toBe(2);
 	});

@@ -48,7 +48,7 @@ async function auditReliabilityOperation(input: {
 	entityId: string;
 	action: string;
 }) {
-	return createAuditRecorder().record({
+	return await createAuditRecorder().record({
 		...input,
 		module: "human-resources",
 		metadata: { surface: "reliability_operator" },
@@ -58,7 +58,7 @@ async function auditReliabilityOperation(input: {
 export async function replayHumanResourcesReliabilityDeadLetterAction(input: {
 	deadLetterId: string;
 }): Promise<ActionResult<{ workItemId: string; status: string }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "replayHumanResourcesReliabilityDeadLetterAction",
 		permission: "human-resources.reliability.operate",
 		safeMessage: "Could not replay the reliability dead letter.",
@@ -80,7 +80,9 @@ export async function replayHumanResourcesReliabilityDeadLetterAction(input: {
 					`${parsed.data.deadLetterId}:${correlationId}`,
 				),
 			});
-			if (!result.ok) return mapPackageResult(result);
+			if (!result.ok) {
+				return mapPackageResult(result);
+			}
 			const audited = await auditReliabilityOperation({
 				organizationId: session.orgId,
 				actorUserId: session.userId,
@@ -89,7 +91,9 @@ export async function replayHumanResourcesReliabilityDeadLetterAction(input: {
 				entityId: parsed.data.deadLetterId,
 				action: "REPLAY",
 			});
-			if (!audited.ok) return mapPackageResult(audited);
+			if (!audited.ok) {
+				return mapPackageResult(audited);
+			}
 			return {
 				ok: true,
 				data: { workItemId: result.data.id, status: result.data.status },
@@ -104,7 +108,7 @@ export async function repairHumanResourcesConnectorCursorAction(input: {
 	cursor: string;
 	expectedVersion: number | null;
 }): Promise<ActionResult<{ version: number }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "repairHumanResourcesConnectorCursorAction",
 		permission: "human-resources.connector-cursor.manage",
 		safeMessage: "Could not repair the connector cursor.",
@@ -121,7 +125,9 @@ export async function repairHumanResourcesConnectorCursorAction(input: {
 				organizationId: session.orgId,
 				...parsed.data,
 			});
-			if (!result.ok) return mapPackageResult(result);
+			if (!result.ok) {
+				return mapPackageResult(result);
+			}
 			const audited = await auditReliabilityOperation({
 				organizationId: session.orgId,
 				actorUserId: session.userId,
@@ -130,7 +136,9 @@ export async function repairHumanResourcesConnectorCursorAction(input: {
 				entityId: `${parsed.data.connector}:${parsed.data.stream}`,
 				action: "REPAIR",
 			});
-			if (!audited.ok) return mapPackageResult(audited);
+			if (!audited.ok) {
+				return mapPackageResult(audited);
+			}
 			return { ok: true, data: { version: result.data.version } };
 		},
 	});
@@ -144,7 +152,7 @@ export async function acknowledgeHumanResourcesReliabilityWorkAction(input: {
 	errorCode?: string;
 	errorMessage?: string;
 }): Promise<ActionResult<{ status: string }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "acknowledgeHumanResourcesReliabilityWorkAction",
 		permission: "human-resources.reliability.operate",
 		safeMessage: "Could not acknowledge reliability work.",
@@ -170,7 +178,9 @@ export async function acknowledgeHumanResourcesReliabilityWorkAction(input: {
 					? {}
 					: { errorMessage: parsed.data.errorMessage }),
 			});
-			if (!result.ok) return mapPackageResult(result);
+			if (!result.ok) {
+				return mapPackageResult(result);
+			}
 			const audited = await auditReliabilityOperation({
 				organizationId: session.orgId,
 				actorUserId: session.userId,
@@ -180,7 +190,9 @@ export async function acknowledgeHumanResourcesReliabilityWorkAction(input: {
 				action:
 					parsed.data.outcome === "acknowledged" ? "ACKNOWLEDGE" : "REJECT",
 			});
-			if (!audited.ok) return mapPackageResult(audited);
+			if (!audited.ok) {
+				return mapPackageResult(audited);
+			}
 			return { ok: true, data: { status: result.data.status } };
 		},
 	});

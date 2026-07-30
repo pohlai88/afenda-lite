@@ -18,8 +18,25 @@ const MAX_MAX_ATTEMPTS = 10;
 const PAYROLL_DELIVERY_PUBLISH_FAILED_MESSAGE =
 	"Payroll delivery publish failed";
 
+function resolveMaxAttempts(value: number | undefined): Result<number> {
+	const maxAttempts = value ?? DEFAULT_MAX_ATTEMPTS;
+	if (
+		!Number.isInteger(maxAttempts) ||
+		maxAttempts < 1 ||
+		maxAttempts > MAX_MAX_ATTEMPTS
+	) {
+		return fail(
+			"VALIDATION_ERROR",
+			`Payroll delivery max attempts must be between 1 and ${MAX_MAX_ATTEMPTS}`,
+		);
+	}
+	return ok(maxAttempts);
+}
+
 function canonicalize(value: unknown): unknown {
-	if (Array.isArray(value)) return value.map(canonicalize);
+	if (Array.isArray(value)) {
+		return value.map(canonicalize);
+	}
 	if (value !== null && typeof value === "object") {
 		return Object.fromEntries(
 			Object.entries(value)
@@ -59,8 +76,12 @@ async function requireDelivery(
 	input: { organizationId: string; deliveryId: string; correlationId: string },
 ): Promise<Result<PayrollDeliveryRecord>> {
 	const found = await ports.store.getById(input);
-	if (!found.ok) return found;
-	if (!found.data) return fail("NOT_FOUND", "Payroll delivery not found");
+	if (!found.ok) {
+		return found;
+	}
+	if (!found.data) {
+		return fail("NOT_FOUND", "Payroll delivery not found");
+	}
 	if (found.data.correlationId !== input.correlationId) {
 		return fail("NOT_FOUND", "Payroll delivery not found");
 	}
@@ -80,24 +101,25 @@ export async function queuePayrollDelivery(
 	ports: PayrollDeliveryPorts,
 ): Promise<Result<PayrollDeliveryRecord>> {
 	const boundary = validateBoundary(input);
-	if (!boundary.ok) return boundary;
-	const maxAttempts = input.maxAttempts ?? DEFAULT_MAX_ATTEMPTS;
-	if (!Number.isInteger(maxAttempts) || maxAttempts < 1 || maxAttempts > 10) {
-		return fail(
-			"VALIDATION_ERROR",
-			`Payroll delivery max attempts must be between 1 and ${MAX_MAX_ATTEMPTS}`,
-		);
+	if (!boundary.ok) {
+		return boundary;
+	}
+	const maxAttempts = resolveMaxAttempts(input.maxAttempts);
+	if (!maxAttempts.ok) {
+		return maxAttempts;
 	}
 	const payloadHash = sha256(boundary.data);
 	const requestFingerprint = sha256({
 		organizationId: input.organizationId,
 		correlationId: input.correlationId,
 		payloadHash,
-		maxAttempts,
+		maxAttempts: maxAttempts.data,
 		supersedesDeliveryId: input.supersedesDeliveryId ?? null,
 	});
 	const replay = await ports.store.findByIdempotencyKey(input);
-	if (!replay.ok) return replay;
+	if (!replay.ok) {
+		return replay;
+	}
 	if (replay.data) {
 		return replay.data.requestFingerprint === requestFingerprint
 			? ok(replay.data)
@@ -111,7 +133,9 @@ export async function queuePayrollDelivery(
 			deliveryId: input.supersedesDeliveryId,
 			correlationId: input.correlationId,
 		});
-		if (!source.ok) return source;
+		if (!source.ok) {
+			return source;
+		}
 		if (source.data.status !== "correction_required") {
 			return fail("CONFLICT", "Payroll delivery does not require correction");
 		}
@@ -136,7 +160,7 @@ export async function queuePayrollDelivery(
 		status: "pending",
 		version: 1,
 		attemptCount: 0,
-		maxAttempts,
+		maxAttempts: maxAttempts.data,
 		lastAttemptAt: null,
 		lastError: null,
 		deliveredAt: null,
@@ -158,7 +182,9 @@ export async function queuePayrollDelivery(
 				correction: record,
 			})
 		: await ports.store.create(record);
-	if (!created.ok) return created;
+	if (!created.ok) {
+		return created;
+	}
 	return created;
 }
 
@@ -172,9 +198,13 @@ export async function deliverPayrollHandoff(
 	ports: PayrollDeliveryPorts,
 ): Promise<Result<PayrollDeliveryRecord>> {
 	const found = await requireDelivery(ports, input);
-	if (!found.ok) return found;
+	if (!found.ok) {
+		return found;
+	}
 	const current = found.data;
-	if (current.status !== "pending") return ok(current);
+	if (current.status !== "pending") {
+		return ok(current);
+	}
 	if (current.attemptCount >= current.maxAttempts) {
 		return fail("CONFLICT", "Payroll delivery attempt limit reached");
 	}
@@ -231,9 +261,13 @@ export async function recordPayrollDeliveryFeedback(
 	ports: PayrollDeliveryPorts,
 ): Promise<Result<PayrollDeliveryRecord>> {
 	const found = await requireDelivery(ports, input);
-	if (!found.ok) return found;
+	if (!found.ok) {
+		return found;
+	}
 	const current = found.data;
-	if (current.status === input.status) return ok(current);
+	if (current.status === input.status) {
+		return ok(current);
+	}
 	if (
 		isPayrollDeliveryTerminal(current.status) ||
 		current.status !== "delivered"

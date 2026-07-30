@@ -4,11 +4,11 @@ import { cn } from "../../lib/utils";
 function Toolbar({ className, ...props }: React.ComponentProps<"div">) {
 	return (
 		<div
-			role="toolbar"
 			className={cn(
 				"flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-card p-2",
 				className,
 			)}
+			role="toolbar"
 			{...props}
 		/>
 	);
@@ -17,8 +17,8 @@ function Toolbar({ className, ...props }: React.ComponentProps<"div">) {
 function ToolbarGroup({ className, ...props }: React.ComponentProps<"div">) {
 	return (
 		<div
-			role="group"
 			className={cn("flex flex-wrap items-center gap-1", className)}
+			role="group"
 			{...props}
 		/>
 	);

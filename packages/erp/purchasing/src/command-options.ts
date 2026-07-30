@@ -11,20 +11,20 @@ import { createProductionMutationPorts } from "./production-ports";
 import { resolvePurchasingStore } from "./resolve-store";
 import type { PurchasingStore } from "./store";
 
-export type PurchasingCommandOptions = {
-	store?: PurchasingStore;
-	ports?: MutationPorts;
-	masters?: MasterLookupPort;
+export interface PurchasingCommandOptions {
 	/** Composition-root injected — never import `@afenda/admin` here. */
 	authorization?: PurchasingAuthorizationPort;
-	/** Forwarded to master-data public lookups (read permission). */
-	masterAuthorization?: MasterAuthorizationPort;
 	/**
 	 * Required for `closePurchaseOrder` — apps/web injects SQL adapter;
 	 * tests inject memory zero-commitment helper.
 	 */
 	commitmentQuery?: PurchaseOrderCommitmentQueryPort;
-};
+	/** Forwarded to master-data public lookups (read permission). */
+	masterAuthorization?: MasterAuthorizationPort;
+	masters?: MasterLookupPort;
+	ports?: MutationPorts;
+	store?: PurchasingStore;
+}
 
 export function resolvePorts(ports?: MutationPorts): MutationPorts {
 	return ports ?? createProductionMutationPorts();

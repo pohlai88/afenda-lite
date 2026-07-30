@@ -8,8 +8,8 @@ import { cn } from "../../lib/utils";
 function Code({ className, ...props }: React.ComponentProps<"code">) {
 	return (
 		<code
+			className={cn("font-mono text-foreground-tertiary text-sm", className)}
 			data-slot="code"
-			className={cn("font-mono text-sm text-foreground-tertiary", className)}
 			{...props}
 		/>
 	);

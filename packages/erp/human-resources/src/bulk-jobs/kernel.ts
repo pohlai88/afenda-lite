@@ -19,11 +19,13 @@ import type {
 	HumanResourcesBulkJobStore,
 } from "./types";
 
-const IMPORT_PAYLOAD_RETENTION_MS = 7 * 24 * 60 * 60 * 1_000;
-export const EXPORT_ARTIFACT_RETENTION_MS = 24 * 60 * 60 * 1_000;
+const IMPORT_PAYLOAD_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
+export const EXPORT_ARTIFACT_RETENTION_MS = 24 * 60 * 60 * 1000;
 
 function canonicalize(value: unknown): unknown {
-	if (Array.isArray(value)) return value.map(canonicalize);
+	if (Array.isArray(value)) {
+		return value.map(canonicalize);
+	}
 	if (value !== null && typeof value === "object") {
 		return Object.fromEntries(
 			Object.entries(value)
@@ -105,7 +107,9 @@ export async function enqueueHumanResourcesBulkImport<Row>(
 	}
 	const requestFingerprint = fingerprintHumanResourcesBulkJob(input);
 	const existing = await store.findImportJob(input);
-	if (!existing.ok) return existing;
+	if (!existing.ok) {
+		return existing;
+	}
 	if (existing.data) {
 		return existing.data.requestFingerprint === requestFingerprint
 			? ok(existing.data)
@@ -180,7 +184,9 @@ export async function enqueueHumanResourcesBulkExport(
 ): Promise<Result<HumanResourcesBulkExportJob>> {
 	const requestFingerprint = fingerprintHumanResourcesBulkJob(input);
 	const existing = await store.findExportJob(input);
-	if (!existing.ok) return existing;
+	if (!existing.ok) {
+		return existing;
+	}
 	if (existing.data) {
 		return existing.data.requestFingerprint === requestFingerprint
 			? ok(existing.data)

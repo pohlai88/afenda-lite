@@ -1,3 +1,4 @@
+// biome-ignore-all lint/style/useDestructuring: Explicit receipt payload access keeps replay evidence visible.
 import { and, caMutationReceipt, eq, type NeonHttpSql, sql } from "@afenda/db";
 import { fail, ok, type Result } from "@afenda/errors/result";
 
@@ -138,7 +139,9 @@ export class DrizzleCorporateAdministrationIdempotencyPort
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -186,7 +189,9 @@ export class DrizzleCorporateAdministrationIdempotencyPort
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}
@@ -210,7 +215,9 @@ export class DrizzleCorporateAdministrationIdempotencyPort
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}

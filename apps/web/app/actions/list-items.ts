@@ -12,9 +12,9 @@ import {
 	actionFailInternal,
 } from "@/modules/platform/schemas/action-result";
 
-export type ListItemsActionData = {
+export interface ListItemsActionData {
 	items: Item[];
-};
+}
 
 /**
  * Master-data item list — session org stamp + `master_data.read`.

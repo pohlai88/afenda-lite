@@ -2,17 +2,17 @@ import type { ElementType, ReactNode } from "react";
 
 import { MAIN_CONTENT_ID } from "@/features/auth/main-content";
 
-type PublicMessageShellProps = {
-	title: string;
-	children: ReactNode;
-	footer?: ReactNode;
+interface PublicMessageShellProps {
 	/**
 	 * When false, render a div so a parent layout can own the sole `<main>`
 	 * (join island under AuthIslandLayout). Also drops blank-chrome page plane
 	 * so content fills the auth-surface panel body like Path A forms.
 	 */
 	asLandmark?: boolean;
-};
+	children: ReactNode;
+	footer?: ReactNode;
+	title: string;
+}
 
 /**
  * Shared message shell for gate / 403 / workspace not-found / join missing.
@@ -39,7 +39,7 @@ export function PublicMessageShell({
 			className={rootClassName}
 		>
 			<div className="flex flex-col gap-1">
-				<h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+				<h1 className="font-semibold text-2xl tracking-tight">{title}</h1>
 			</div>
 			<div className={bodyClassName}>{children}</div>
 			{footer}

@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/useTopLevelRegex: Decimal normalization expressions are small and policy-local.
 import { z } from "zod";
 
 const DECIMAL_INPUT_PATTERN = /^[+-]?(?:0|[1-9]\d*|0\d+)(?:\.\d+)?$/;
@@ -23,7 +24,7 @@ export function normalizeDecimalString(value: string): string {
 
 function tryNormalizeDecimalString(value: string): string | undefined {
 	if (!DECIMAL_INPUT_PATTERN.test(value)) {
-		return undefined;
+		return;
 	}
 
 	return normalizeDecimalString(value);

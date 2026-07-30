@@ -64,7 +64,6 @@ async function seedSetupChain(
 		},
 		options,
 	);
-	expect(calendar.ok).toBe(true);
 	if (!calendar.ok) {
 		throw new Error(calendar.message);
 	}
@@ -80,7 +79,6 @@ async function seedSetupChain(
 		},
 		options,
 	);
-	expect(payGroup.ok).toBe(true);
 	if (!payGroup.ok) {
 		throw new Error(payGroup.message);
 	}
@@ -96,7 +94,6 @@ async function seedSetupChain(
 		},
 		options,
 	);
-	expect(period.ok).toBe(true);
 	if (!period.ok) {
 		throw new Error(period.message);
 	}
@@ -117,7 +114,6 @@ async function seedSetupChain(
 		},
 		options,
 	);
-	expect(earningRule.ok).toBe(true);
 	if (!earningRule.ok) {
 		throw new Error(earningRule.message);
 	}
@@ -327,7 +323,7 @@ describe("payroll assignment and input commands", () => {
 
 		expect(first.ok).toBe(true);
 		expect(second.ok).toBe(true);
-		if (!first.ok || !second.ok) {
+		if (!(first.ok && second.ok)) {
 			throw new Error("expected duplicate source replay");
 		}
 		expect(second.data.id).toBe(first.data.id);

@@ -32,48 +32,48 @@ export type GovernanceTransactionContext = Readonly<{
 }>;
 
 export interface ChangeRequestStore {
-	getChangeRequestForUpdate(input: {
+	getChangeRequestForUpdate: (input: {
 		organizationId: string;
 		changeRequestId: string;
-	}): Promise<Result<ChangeRequestRecord | null>>;
-	transitionApprovedRequestToApplied(
+	}) => Promise<Result<ChangeRequestRecord | null>>;
+	recordChangeRequestTransition: (
+		input: {
+			request: ChangeRequestRecord;
+			event: GovernanceEventPayload;
+		},
+		context: GovernanceTransactionContext,
+	) => Promise<Result<ChangeRequestRecord>>;
+	transitionApprovedRequestToApplied: (
 		input: ChangeRequestApplyGateInput & {
 			organizationId: string;
 			requestId: string;
 			appliedBy: string;
 		},
 		context: GovernanceTransactionContext,
-	): Promise<Result<ChangeRequestRecord>>;
-	recordChangeRequestTransition(
-		input: {
-			request: ChangeRequestRecord;
-			event: GovernanceEventPayload;
-		},
-		context: GovernanceTransactionContext,
-	): Promise<Result<ChangeRequestRecord>>;
+	) => Promise<Result<ChangeRequestRecord>>;
 }
 
 export interface ImportBatchStore {
-	getImportRowByIdempotencyKey(input: {
+	getImportRowByIdempotencyKey: (input: {
 		organizationId: string;
 		idempotencyKey: string;
-	}): Promise<Result<ImportRowEvidence | null>>;
-	recordImportRowOutcome(
+	}) => Promise<Result<ImportRowEvidence | null>>;
+	recordImportRowOutcome: (
 		input: {
 			row: ImportRowEvidence;
 			counters: ImportBatchCounters;
 			event: GovernanceEventPayload;
 		},
 		context: GovernanceTransactionContext,
-	): Promise<Result<ImportRowEvidence>>;
+	) => Promise<Result<ImportRowEvidence>>;
 }
 
 export interface DuplicateWarningStore {
-	recordDuplicateWarning(
+	recordDuplicateWarning: (
 		input: DuplicateWarningRecord,
 		context: GovernanceTransactionContext,
-	): Promise<Result<DuplicateWarningRecord>>;
-	reviewDuplicateWarning(
+	) => Promise<Result<DuplicateWarningRecord>>;
+	reviewDuplicateWarning: (
 		input: {
 			organizationId: string;
 			duplicateWarningId: string;
@@ -84,16 +84,16 @@ export interface DuplicateWarningStore {
 			relatedChangeRequestId: string | null;
 		},
 		context: GovernanceTransactionContext,
-	): Promise<Result<DuplicateWarningRecord>>;
+	) => Promise<Result<DuplicateWarningRecord>>;
 }
 
 export interface MergeGovernanceStore {
-	findMergeAuthorization(input: {
+	findMergeAuthorization: (input: {
 		organizationId: string;
 		mergeRequestId: string;
-	}): Promise<Result<ApprovedMergeAuthorization | null>>;
-	recordMergeAuthorization(
+	}) => Promise<Result<ApprovedMergeAuthorization | null>>;
+	recordMergeAuthorization: (
 		input: ApprovedMergeAuthorization & { event: GovernanceEventPayload },
 		context: GovernanceTransactionContext,
-	): Promise<Result<ApprovedMergeAuthorization>>;
+	) => Promise<Result<ApprovedMergeAuthorization>>;
 }

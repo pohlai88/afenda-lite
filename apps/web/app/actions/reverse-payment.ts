@@ -29,7 +29,7 @@ export async function reversePaymentAction(
 	_prev: ReversePaymentActionState,
 	formData: FormData,
 ): Promise<ReversePaymentActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "reversePaymentAction",
 		permission: "payments.payment.reverse",
 		safeMessage: "Could not reverse payment. Try again or contact an admin.",
@@ -39,12 +39,13 @@ export async function reversePaymentAction(
 				expectedVersion: formData.get("expectedVersion"),
 				reason: formData.get("reason"),
 			});
-			if (!parsed.success)
+			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
 					"Enter a valid payment, expected version, and reversal reason.",
 					parsed.details,
 				);
+			}
 			const mapped = mapPackageResult(
 				await reversePayment(
 					{
@@ -57,14 +58,18 @@ export async function reversePaymentAction(
 					createPaymentsCommandOptions(),
 				),
 			);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			const applications = await reversePaymentApplications({
 				organizationId: session.orgId,
 				actorUserId: session.userId,
 				correlationId,
 				paymentId: mapped.data.id,
 			});
-			if (!applications.ok) return mapPackageResult(applications);
+			if (!applications.ok) {
+				return mapPackageResult(applications);
+			}
 			revalidatePath("/admin/payments");
 			revalidatePath("/client/payments");
 			return { ok: true, data: { payment: mapped.data } };

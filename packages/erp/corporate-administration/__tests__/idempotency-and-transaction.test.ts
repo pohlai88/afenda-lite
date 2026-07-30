@@ -1,3 +1,7 @@
+// biome-ignore-all lint/performance/noAwaitInLoops: Ordered mutation sequences are the transaction behavior under test.
+// biome-ignore-all lint/suspicious/noEmptyBlockStatements: Expected injected failures are asserted through resulting state.
+// biome-ignore-all lint/suspicious/noMisplacedAssertion: Shared assertion helpers are invoked only from test cases.
+// biome-ignore-all lint/suspicious/useAwait: Transaction probes implement asynchronous production ports.
 import { randomUUID } from "node:crypto";
 
 import type {
@@ -63,8 +67,8 @@ function createDurableTransactionPort() {
 type IdempotencyHarness = Readonly<{
 	port: CorporateAdministrationIdempotencyPort;
 	scope: CorporateAdministrationIdempotencyScope;
-	cleanup(): Promise<void>;
-	countRows?(): Promise<number>;
+	cleanup: () => Promise<void>;
+	countRows?: () => Promise<number>;
 }>;
 
 function memoryHarness(): IdempotencyHarness {
@@ -136,7 +140,9 @@ async function beginOutcome(
 	inputFingerprint = fingerprint,
 ): Promise<CorporateAdministrationIdempotencyBeginOutcome> {
 	const result = await port.begin({ scope, fingerprint: inputFingerprint });
-	if (!result.ok) throw new Error("expected an idempotency decision");
+	if (!result.ok) {
+		throw new Error("expected an idempotency decision");
+	}
 	return result.data;
 }
 
@@ -145,7 +151,9 @@ async function acquireToken(
 	scope: CorporateAdministrationIdempotencyScope,
 ) {
 	const outcome = await beginOutcome(port, scope);
-	if (outcome.status !== "acquired") throw new Error("expected acquisition");
+	if (outcome.status !== "acquired") {
+		throw new Error("expected acquisition");
+	}
 	return outcome.reservationToken;
 }
 
@@ -532,7 +540,9 @@ describe("Corporate Administration transaction contract", () => {
 			context: CorporateAdministrationTransactionContext,
 		) {
 			started += 1;
-			if (started === 2) bothStarted.resolve();
+			if (started === 2) {
+				bothStarted.resolve();
+			}
 			await bothStarted.promise;
 			context.enqueue(() => Promise.resolve());
 			return commitCorporateAdministrationTransaction(ok(started));

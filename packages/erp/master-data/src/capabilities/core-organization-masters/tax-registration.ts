@@ -27,6 +27,7 @@ import {
 	type MasterCommandId,
 } from "../../module-ids";
 import { parseMasterInput } from "../../parse-input";
+import { resolveAsync } from "../../resolve-async";
 import type { TaxRegistration } from "../../types";
 import { assertNoLifecycleControlledFieldMutation } from "../lifecycle-governance";
 import type { TaxRegistrationLifecycleEventSuffix } from "./core-master-events";
@@ -80,7 +81,9 @@ async function assertActiveCountry(
 	jurisdictionCountryId: string,
 ): Promise<Result<true>> {
 	const country = await store.getRefCountryById(jurisdictionCountryId);
-	if (!country.ok) return country;
+	if (!country.ok) {
+		return country;
+	}
 	if (country.data === null || !country.data.active) {
 		return fail("BAD_REQUEST", "Active jurisdiction country not found", {
 			reason: "MASTER_VALIDATION_FAILED",
@@ -109,7 +112,9 @@ async function assertNoActiveOverlap(
 		validTo: candidate.validTo,
 		excludeId: candidate.id,
 	});
-	if (!conflict.ok) return conflict;
+	if (!conflict.ok) {
+		return conflict;
+	}
 	if (conflict.data !== null) {
 		return fail("CONFLICT", "Active tax registration validity ranges overlap", {
 			reason: "MASTER_VALIDITY_OVERLAP",
@@ -135,7 +140,9 @@ async function projectTaxRegistrationResult(
 	resultPromise: Promise<Result<TaxRegistration>>,
 ): Promise<Result<TaxRegistrationProjection>> {
 	const result = await resultPromise;
-	if (!result.ok) return result;
+	if (!result.ok) {
+		return result;
+	}
 	return ok(toTaxRegistrationProjection(result.data));
 }
 
@@ -149,7 +156,7 @@ export async function createTaxRegistration(
 		"Invalid tax registration create input",
 	);
 	if (!parsed.ok) {
-		return parsed;
+		return Promise.resolve(parsed);
 	}
 	const { store, ports, authorization } = resolveCommandDeps(options);
 	const authorized = await requireMasterCommandPermission(authorization, {
@@ -184,7 +191,9 @@ export async function createTaxRegistration(
 		store,
 		parsed.data.jurisdictionCountryId,
 	);
-	if (!countryOk.ok) return countryOk;
+	if (!countryOk.ok) {
+		return countryOk;
+	}
 	return projectTaxRegistrationResult(
 		store.createTaxRegistration(
 			{
@@ -246,13 +255,13 @@ export async function updateTaxRegistration(
 		} satisfies MasterFailureDetails);
 	}
 	const nextValidFrom =
-		parsed.data.validFrom !== undefined
-			? parsed.data.validFrom
-			: current.data.validFrom;
+		parsed.data.validFrom === undefined
+			? current.data.validFrom
+			: parsed.data.validFrom;
 	const nextValidTo =
-		parsed.data.validTo !== undefined
-			? parsed.data.validTo
-			: current.data.validTo;
+		parsed.data.validTo === undefined
+			? current.data.validTo
+			: parsed.data.validTo;
 	const validity = assertValidity({
 		validFrom: nextValidFrom,
 		validTo: nextValidTo,
@@ -350,12 +359,16 @@ async function transitionTaxRegistrationStatus(
 			current.data.organizationId,
 			current.data.partyId,
 		);
-		if (!partyOk.ok) return partyOk;
+		if (!partyOk.ok) {
+			return partyOk;
+		}
 		const countryOk = await assertActiveCountry(
 			store,
 			current.data.jurisdictionCountryId,
 		);
-		if (!countryOk.ok) return countryOk;
+		if (!countryOk.ok) {
+			return countryOk;
+		}
 		const overlap = await assertNoActiveOverlap(store, current.data);
 		if (!overlap.ok) {
 			return overlap;
@@ -376,7 +389,7 @@ async function transitionTaxRegistrationStatus(
 	);
 }
 
-export async function activateTaxRegistration(
+export function activateTaxRegistration(
 	input: unknown,
 	options: MasterCommandOptions = {},
 ): Promise<Result<TaxRegistrationProjection>> {
@@ -389,7 +402,7 @@ export async function activateTaxRegistration(
 	);
 }
 
-export async function blockTaxRegistration(
+export function blockTaxRegistration(
 	input: unknown,
 	options: MasterCommandOptions = {},
 ): Promise<Result<TaxRegistrationProjection>> {
@@ -404,7 +417,7 @@ export async function blockTaxRegistration(
 
 export const revokeTaxRegistration = blockTaxRegistration;
 
-export async function retireTaxRegistration(
+export function retireTaxRegistration(
 	input: unknown,
 	options: MasterCommandOptions = {},
 ): Promise<Result<TaxRegistrationProjection>> {
@@ -419,7 +432,7 @@ export async function retireTaxRegistration(
 
 export const archiveTaxRegistration = retireTaxRegistration;
 
-export async function restoreTaxRegistration(
+export function restoreTaxRegistration(
 	input: unknown,
 	options: MasterCommandOptions = {},
 ): Promise<Result<TaxRegistrationProjection>> {
@@ -459,8 +472,12 @@ export async function getTaxRegistration(
 		parsed.data.organizationId,
 		parsed.data.id,
 	);
-	if (!result.ok) return result;
-	if (result.data === null) return ok(null);
+	if (!result.ok) {
+		return result;
+	}
+	if (result.data === null) {
+		return ok(null);
+	}
 	return ok(toTaxRegistrationProjection(result.data));
 }
 
@@ -494,27 +511,35 @@ export async function listTaxRegistrations(
 		partyId: parsed.data.partyId,
 		updatedSince: parsed.data.updatedSince,
 	});
-	if (!result.ok) return result;
+	if (!result.ok) {
+		return result;
+	}
 	return ok(result.data.map(toTaxRegistrationProjection));
 }
 
-export async function listTaxRegistrationsUpdatedSince(
+export function listTaxRegistrationsUpdatedSince(
 	input: unknown,
 	options: MasterQueryOptions = {},
 ): Promise<Result<TaxRegistrationProjection[]>> {
-	const parsed = parseMasterInput(
-		listTaxRegistrationsInputSchema,
-		input,
-		"Invalid tax registration updated-since list input",
-	);
-	if (!parsed.ok) return parsed;
-	if (parsed.data.updatedSince === undefined) {
-		return fail("BAD_REQUEST", "updatedSince is required", {
-			reason: "MASTER_VALIDATION_FAILED",
-			field: "updatedSince",
-		} satisfies MasterFailureDetails);
-	}
-	return listTaxRegistrations(parsed.data, options);
+	return resolveAsync(() => {
+		const parsed = parseMasterInput(
+			listTaxRegistrationsInputSchema,
+			input,
+			"Invalid tax registration updated-since list input",
+		);
+		if (!parsed.ok) {
+			return parsed;
+		}
+		if (parsed.data.updatedSince === undefined) {
+			return Promise.resolve(
+				fail("BAD_REQUEST", "updatedSince is required", {
+					reason: "MASTER_VALIDATION_FAILED",
+					field: "updatedSince",
+				} satisfies MasterFailureDetails),
+			);
+		}
+		return listTaxRegistrations(parsed.data, options);
+	});
 }
 
 export async function findTaxRegistrationsByParty(
@@ -543,7 +568,9 @@ export async function findTaxRegistrationsByParty(
 		parsed.data.organizationId,
 		parsed.data.partyId,
 	);
-	if (!result.ok) return result;
+	if (!result.ok) {
+		return result;
+	}
 	return ok(result.data.map(toTaxRegistrationProjection));
 }
 
@@ -556,20 +583,28 @@ export async function getSensitiveTaxRegistration(
 		input,
 		"Invalid sensitive tax registration input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const store = resolveStore(options.store);
 	const authorized = await requireMasterQueryPermission(options.authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		query: MASTER_QUERY_TAX_REGISTRATION_GET_SENSITIVE,
 	});
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const result = await store.getTaxRegistrationById(
 		parsed.data.organizationId,
 		parsed.data.id,
 	);
-	if (!result.ok) return result;
-	if (result.data === null) return ok(null);
+	if (!result.ok) {
+		return result;
+	}
+	if (result.data === null) {
+		return ok(null);
+	}
 	return ok(toSensitiveTaxRegistrationProjection(result.data));
 }
 
@@ -582,14 +617,18 @@ export async function listSensitiveTaxRegistrations(
 		input,
 		"Invalid sensitive tax registration list input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const store = resolveStore(options.store);
 	const authorized = await requireMasterQueryPermission(options.authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		query: MASTER_QUERY_TAX_REGISTRATION_LIST_SENSITIVE,
 	});
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const result = await store.listTaxRegistrations({
 		organizationId: parsed.data.organizationId,
 		page: parsed.data.page,
@@ -598,7 +637,9 @@ export async function listSensitiveTaxRegistrations(
 		partyId: parsed.data.partyId,
 		updatedSince: parsed.data.updatedSince,
 	});
-	if (!result.ok) return result;
+	if (!result.ok) {
+		return result;
+	}
 	return ok(result.data.map(toSensitiveTaxRegistrationProjection));
 }
 
@@ -611,18 +652,24 @@ export async function findSensitiveTaxRegistrationsByParty(
 		input,
 		"Invalid sensitive tax registration find-by-party input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const store = resolveStore(options.store);
 	const authorized = await requireMasterQueryPermission(options.authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		query: MASTER_QUERY_TAX_REGISTRATION_FIND_SENSITIVE_BY_PARTY,
 	});
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const result = await store.findTaxRegistrationsByParty(
 		parsed.data.organizationId,
 		parsed.data.partyId,
 	);
-	if (!result.ok) return result;
+	if (!result.ok) {
+		return result;
+	}
 	return ok(result.data.map(toSensitiveTaxRegistrationProjection));
 }

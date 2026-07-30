@@ -50,7 +50,7 @@ export async function createEmployeeAction(input: {
 	employeeNumber: string;
 	legalName: string;
 }): Promise<ActionResult<{ employee: Employee }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "createEmployeeAction",
 		permission: "human-resources.employee.create",
 		safeMessage: "Could not create employee.",
@@ -68,7 +68,9 @@ export async function createEmployeeAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { employee: mapped.data } };
 		},
 	});
@@ -80,7 +82,7 @@ export async function updateEmployeeAction(input: {
 	legalName: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ employee: Employee }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "updateEmployeeAction",
 		permission: "human-resources.employee.update",
 		safeMessage: "Could not update employee.",
@@ -98,7 +100,9 @@ export async function updateEmployeeAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { employee: mapped.data } };
 		},
 	});
@@ -108,7 +112,7 @@ export async function getEmployeeAction(input: {
 	correlationId?: string;
 	employeeId: string;
 }): Promise<ActionResult<{ employee: Employee }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getEmployeeAction",
 		permission: "human-resources.employee.read",
 		safeMessage: "Could not get employee.",
@@ -126,7 +130,9 @@ export async function getEmployeeAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { employee: mapped.data } };
 		},
 	});
@@ -140,7 +146,7 @@ export async function listEmployeesAction(input?: {
 	legalNamePrefix?: string;
 	employmentStatus?: "active" | "notice" | "terminated";
 }): Promise<ActionResult<{ page: EmployeeListPage }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listEmployeesAction",
 		permission: "human-resources.employee.read",
 		safeMessage: "Could not list employees.",
@@ -158,7 +164,9 @@ export async function listEmployeesAction(input?: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { page: mapped.data } };
 		},
 	});
@@ -170,7 +178,7 @@ export async function getEmployeeProfileAction(input: {
 	asOf: string;
 	actorEmployeeId?: string;
 }): Promise<ActionResult<{ profile: EmployeeProfile }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getEmployeeProfileAction",
 		permission: "human-resources.employee.read",
 		safeMessage: "Could not get employee profile.",
@@ -188,7 +196,9 @@ export async function getEmployeeProfileAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { profile: mapped.data } };
 		},
 	});
@@ -198,7 +208,7 @@ export async function getOwnEmployeeProfileAction(input: {
 	correlationId?: string;
 	asOf: string;
 }): Promise<ActionResult<{ profile: EmployeeProfile }>> {
-	return runMemberPermissionAction({
+	return await runMemberPermissionAction({
 		path: "getOwnEmployeeProfileAction",
 		permission: "human-resources.employee.read",
 		safeMessage: "Could not get your employee profile.",
@@ -237,7 +247,9 @@ export async function getOwnEmployeeProfileAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { profile: mapped.data } };
 		},
 	});

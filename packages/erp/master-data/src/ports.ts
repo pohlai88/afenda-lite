@@ -3,28 +3,27 @@ import type { Result } from "@afenda/errors/result";
 import type { MasterDataEventType } from "@afenda/events";
 
 /** Same-TX audit fact — production adapter writes `platform_audit_log`. */
-export type AuditFactInput = {
-	organizationId: string;
+export interface AuditFactInput {
+	action: "CREATE" | "UPDATE" | "DELETE";
 	actorUserId: string;
+	changes: Change[];
 	correlationId: string;
 	entity: string;
 	entityId: string;
-	action: "CREATE" | "UPDATE" | "DELETE";
-	changes: Change[];
-	oldValue?: Record<string, unknown> | null;
 	newValue?: Record<string, unknown> | null;
-};
+	oldValue?: Record<string, unknown> | null;
+	organizationId: string;
+}
 
-export type AuditFactPort = {
-	record(input: AuditFactInput): Promise<Result<{ id: string }>>;
-};
+export interface AuditFactPort {
+	record: (input: AuditFactInput) => Promise<Result<{ id: string }>>;
+}
 
 /** Same-TX outbox — production adapter appends `platform_domain_event`. */
-export type OutboxFactInput = {
-	organizationId: string;
+export interface OutboxFactInput {
 	actorUserId: string;
 	correlationId: string;
-	type: MasterDataEventType;
+	organizationId: string;
 	payload: {
 		organizationId: string;
 		entityType: string;
@@ -36,23 +35,24 @@ export type OutboxFactInput = {
 		causationId?: string;
 		changedPaths?: string[];
 	};
-};
+	type: MasterDataEventType;
+}
 
-export type OutboxPort = {
-	append(input: OutboxFactInput): Promise<Result<{ id: string }>>;
-};
+export interface OutboxPort {
+	append: (input: OutboxFactInput) => Promise<Result<{ id: string }>>;
+}
 
-export type ClockPort = {
-	now(): Date;
-};
+export interface ClockPort {
+	now: () => Date;
+}
 
 /**
  * Memory/test composition only. Production Drizzle mutations persist state,
  * audit, and outbox in one database transaction and do not call these ports.
  * Do not wrap Drizzle in fake port invocations.
  */
-export type MutationPorts = {
+export interface MutationPorts {
 	audit: AuditFactPort;
-	outbox: OutboxPort;
 	clock: ClockPort;
-};
+	outbox: OutboxPort;
+}

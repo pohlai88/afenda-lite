@@ -3,7 +3,6 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import * as drizzleAdapter from "../src/adapters/drizzle";
 import {
 	buildPendingOutboxRecord,
 	canTransitionOutboxStatus,
@@ -114,7 +113,8 @@ describe("integration projections public contract", () => {
 		}
 	});
 
-	it("keeps Drizzle integration helpers on the declared adapter subpath", () => {
+	it("keeps Drizzle integration helpers on the declared adapter subpath", async () => {
+		const drizzleAdapter = await import("../src/adapters/drizzle");
 		expect(drizzleAdapter.prepareDrizzleAuditWrite).toBeTypeOf("function");
 		expect(drizzleAdapter.buildPendingOutboxRecord).toBeTypeOf("function");
 	});

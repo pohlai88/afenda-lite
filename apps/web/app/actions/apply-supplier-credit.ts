@@ -27,7 +27,7 @@ export async function applySupplierCreditAction(
 	_prev: ApplySupplierCreditActionState,
 	formData: FormData,
 ): Promise<ApplySupplierCreditActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "applySupplierCreditAction",
 		permission: "payables.manage",
 		safeMessage:
@@ -39,12 +39,13 @@ export async function applySupplierCreditAction(
 				amount: formData.get("amount"),
 				idempotencyKey: formData.get("idempotencyKey"),
 			});
-			if (!parsed.success)
+			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
 					"Enter a valid invoice, credit note, amount, and idempotency key.",
 					parsed.details,
 				);
+			}
 			const mapped = mapPackageResult(
 				await applySupplierCredit(
 					{
@@ -56,7 +57,9 @@ export async function applySupplierCreditAction(
 					createPayablesCommandOptions(session.userId),
 				),
 			);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePayablesPaths();
 			return { ok: true, data: { allocation: mapped.data } };
 		},

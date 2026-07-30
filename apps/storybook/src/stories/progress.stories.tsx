@@ -17,6 +17,34 @@ import { contractEvidence, StorySection } from "./evidence";
 
 const evidence = contractEvidence("ui.progress");
 
+function completePercentLabel(value: number, max: number): string {
+	return `${value} of ${max} percent complete`;
+}
+
+function importedRowsLabel(value: number, max: number): string {
+	return `${value} of ${max} rows imported`;
+}
+
+function writtenRowsLabel(value: number, max: number): string {
+	return `${value} of ${max} rows written`;
+}
+
+function validatedRowsLabel(value: number, max: number): string {
+	return `${value} of ${max} rows validated`;
+}
+
+function uploadedPercentLabel(value: number): string {
+	return `${value} percent uploaded`;
+}
+
+function syncedPercentLabel(value: number): string {
+	return `${value} percent synced`;
+}
+
+function processedRowsLabel(value: number, max: number): string {
+	return `${value} of ${max} rows processed`;
+}
+
 const meta = {
 	title: "UI System/Progress",
 	component: Progress,
@@ -50,13 +78,13 @@ export const Overview: Story = {
 		<div className="min-h-screen bg-canvas text-foreground">
 			<div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-2 border-b pb-6">
-					<p className="text-sm font-medium text-foreground-secondary">
+					<p className="font-medium text-foreground-secondary text-sm">
 						Financial close
 					</p>
-					<h1 className="text-2xl font-semibold tracking-tight">
+					<h1 className="font-semibold text-2xl tracking-tight">
 						July pack export
 					</h1>
-					<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+					<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 						Feature code owns polling and failure handling. Progress only
 						presents the bounded value the consumer supplies.
 					</p>
@@ -70,23 +98,21 @@ export const Overview: Story = {
 								Building the July 2026 close pack for org-fragrant-lake
 							</CardDescription>
 						</div>
-						<StatusBadge size="sm" status="pending" label="Running" />
+						<StatusBadge label="Running" size="sm" status="pending" />
 					</CardHeader>
 					<CardContent className="grid gap-3">
 						<div className="flex items-center justify-between gap-3 text-sm">
 							<p className="text-foreground-secondary">
 								Writing ledger worksheets
 							</p>
-							<p className="font-medium tabular-nums text-foreground">68%</p>
+							<p className="font-medium text-foreground tabular-nums">68%</p>
 						</div>
 						<Progress
-							value={68}
 							aria-label="Trial balance export progress"
-							getValueLabel={(value, max) =>
-								`${value} of ${max} percent complete`
-							}
+							getValueLabel={completePercentLabel}
+							value={68}
 						/>
-						<p className="text-xs text-foreground-tertiary">
+						<p className="text-foreground-tertiary text-xs">
 							Visual fill is not authoritative commit success.
 						</p>
 					</CardContent>
@@ -121,7 +147,7 @@ export const SemanticUsage: Story = {
 						</span>
 						<span className="tabular-nums">12%</span>
 					</div>
-					<Progress value={12} aria-label="Invoice line validation" />
+					<Progress aria-label="Invoice line validation" value={12} />
 				</div>
 			</StorySection>
 			<StorySection title="Mid · bounded work">
@@ -132,7 +158,7 @@ export const SemanticUsage: Story = {
 						</span>
 						<span className="tabular-nums">55%</span>
 					</div>
-					<Progress value={55} aria-label="Remittance allocation" />
+					<Progress aria-label="Remittance allocation" value={55} />
 				</div>
 			</StorySection>
 			<StorySection title="Near complete · still not committed">
@@ -143,7 +169,7 @@ export const SemanticUsage: Story = {
 						</span>
 						<span className="tabular-nums">96%</span>
 					</div>
-					<Progress value={96} aria-label="Close package seal" />
+					<Progress aria-label="Close package seal" value={96} />
 				</div>
 			</StorySection>
 		</div>
@@ -162,12 +188,12 @@ export const ControlledUsage: Story = {
 	},
 	render: () => (
 		<div className="grid w-96 gap-2">
-			<p className="text-sm text-foreground-secondary">Import 40 of 100 rows</p>
+			<p className="text-foreground-secondary text-sm">Import 40 of 100 rows</p>
 			<Progress
-				value={40}
-				max={100}
 				aria-label="Supplier import progress"
-				getValueLabel={(value, max) => `${value} of ${max} rows imported`}
+				getValueLabel={importedRowsLabel}
+				max={100}
+				value={40}
 			/>
 		</div>
 	),
@@ -194,7 +220,7 @@ export const LifecycleAndCompletion: Story = {
 								All 1,240 rows written to the transfer package.
 							</CardDescription>
 						</div>
-						<StatusBadge size="sm" status="pending" label="Confirming commit" />
+						<StatusBadge label="Confirming commit" size="sm" status="pending" />
 					</CardHeader>
 					<CardContent className="grid gap-2">
 						<div className="flex justify-between text-sm">
@@ -202,16 +228,16 @@ export const LifecycleAndCompletion: Story = {
 							<span className="font-medium tabular-nums">1,240 / 1,240</span>
 						</div>
 						<Progress
-							value={1240}
-							max={1240}
 							aria-label="Ledger export row progress"
-							getValueLabel={(value, max) => `${value} of ${max} rows written`}
+							getValueLabel={writtenRowsLabel}
+							max={1240}
+							value={1240}
 						/>
 					</CardContent>
 				</Card>
 			</StorySection>
 			<StorySection title="Failure is not represented by reversing the bar">
-				<p className="text-sm leading-6 text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm leading-6">
 					Keep the last trustworthy measured value and present failure through
 					the owning job state or error surface. Do not reset to zero or colour
 					a full bar as the only failure signal.
@@ -243,12 +269,10 @@ export const AdaptiveLayout: Story = {
 							<span className="font-medium tabular-nums">320 of 500 rows</span>
 						</div>
 						<Progress
-							value={320}
-							max={500}
 							aria-label="Supplier import validation progress"
-							getValueLabel={(value, max) =>
-								`${value} of ${max} rows validated`
-							}
+							getValueLabel={validatedRowsLabel}
+							max={500}
+							value={320}
 						/>
 					</div>
 				</div>
@@ -262,8 +286,8 @@ export const AdaptiveLayout: Story = {
 						<span className="font-medium tabular-nums">84%</span>
 					</div>
 					<Progress
-						value={84}
 						aria-label="Consolidated close package progress"
+						value={84}
 					/>
 				</div>
 			</StorySection>
@@ -284,19 +308,19 @@ export const StatesAndAccessibility: Story = {
 	render: () => (
 		<div className="grid w-full max-w-xl gap-4">
 			<div className="grid gap-2">
-				<p className="text-sm font-medium">Document upload</p>
+				<p className="font-medium text-sm">Document upload</p>
 				<Progress
-					value={25}
 					aria-label="Document upload progress"
-					getValueLabel={(value) => `${value} percent uploaded`}
+					getValueLabel={uploadedPercentLabel}
+					value={25}
 				/>
 			</div>
 			<div className="grid gap-2">
-				<p className="text-sm font-medium">Permission sync</p>
+				<p className="font-medium text-sm">Permission sync</p>
 				<Progress
-					value={80}
 					aria-label="Permission sync progress"
-					getValueLabel={(value) => `${value} percent synced`}
+					getValueLabel={syncedPercentLabel}
+					value={80}
 				/>
 			</div>
 		</div>
@@ -334,7 +358,7 @@ export const Composition: Story = {
 					<CardTitle>Bank statement import</CardTitle>
 					<CardDescription>Statement file STM-441 · 1,240 rows</CardDescription>
 				</div>
-				<StatusBadge size="sm" status="pending" label="In progress" />
+				<StatusBadge label="In progress" size="sm" status="pending" />
 			</CardHeader>
 			<CardContent className="grid gap-3">
 				<div className="flex justify-between text-sm">
@@ -342,10 +366,10 @@ export const Composition: Story = {
 					<span className="font-medium tabular-nums">740 / 1,240</span>
 				</div>
 				<Progress
-					value={740}
-					max={1240}
 					aria-label="Bank statement import progress"
-					getValueLabel={(value, max) => `${value} of ${max} rows processed`}
+					getValueLabel={processedRowsLabel}
+					max={1240}
+					value={740}
 				/>
 			</CardContent>
 			<CardFooter className="justify-end gap-2">
@@ -371,16 +395,16 @@ export const DoAndDoNot: Story = {
 		<div className="grid gap-6 sm:grid-cols-2">
 			<StorySection title="Do: bounded value with label">
 				<div className="grid gap-2">
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						Reconciliation 72% complete
 					</p>
-					<Progress value={72} aria-label="Bank reconciliation progress" />
+					<Progress aria-label="Bank reconciliation progress" value={72} />
 				</div>
 			</StorySection>
 			<StorySection title="Do not: fake percent for unknown total">
 				<div className="flex items-center gap-3 rounded-lg border px-4 py-3">
 					<Spinner label="Waiting for server response" />
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						Waiting for the posting service — total work is unknown.
 					</p>
 				</div>

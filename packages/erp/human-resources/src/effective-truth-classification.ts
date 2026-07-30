@@ -46,13 +46,13 @@ export type EffectiveTruthClassificationDomain =
 
 export type EffectiveTruthClassificationCluster = "A" | "B" | "C";
 
-export type EffectiveTruthClassificationRow = {
-	table: HumanResourcesMutationTable;
+export interface EffectiveTruthClassificationRow {
 	category: EffectiveTruthClassificationCategory;
-	domain: EffectiveTruthClassificationDomain;
 	cluster: EffectiveTruthClassificationCluster;
+	domain: EffectiveTruthClassificationDomain;
 	rationale: string;
-};
+	table: HumanResourcesMutationTable;
+}
 
 /** Maps Phase 3 adoption decisions to Slice 4.1 taxonomy categories. */
 export function adoptionDecisionToClassificationCategory(
@@ -1114,18 +1114,27 @@ export function validateEffectiveTruthClassificationRegister(
 	>();
 	const issues: EffectiveTruthClassificationIssue[] = [];
 
-	for (const row of rows) {
-		if (classifiedTables.has(row.table)) {
-			issues.push({ kind: "duplicate-table", table: row.table });
+	for (const classificationRow of rows) {
+		if (classifiedTables.has(classificationRow.table)) {
+			issues.push({
+				kind: "duplicate-table",
+				table: classificationRow.table,
+			});
 		}
-		classifiedTables.add(row.table);
-		classificationByTable.set(row.table, row);
+		classifiedTables.add(classificationRow.table);
+		classificationByTable.set(classificationRow.table, classificationRow);
 
-		if (!knownTables.has(row.table)) {
-			issues.push({ kind: "unknown-mutation-table", table: row.table });
+		if (!knownTables.has(classificationRow.table)) {
+			issues.push({
+				kind: "unknown-mutation-table",
+				table: classificationRow.table,
+			});
 		}
-		if (row.rationale.trim().length === 0) {
-			issues.push({ kind: "missing-rationale", table: row.table });
+		if (classificationRow.rationale.trim().length === 0) {
+			issues.push({
+				kind: "missing-rationale",
+				table: classificationRow.table,
+			});
 		}
 	}
 
@@ -1170,8 +1179,8 @@ export function summarizeEffectiveTruthClassificationByCategory(
 		EFFECTIVE_TRUTH_CLASSIFICATION_CATEGORIES.map((category) => [category, 0]),
 	) as Record<EffectiveTruthClassificationCategory, number>;
 
-	for (const row of rows) {
-		totals[row.category] += 1;
+	for (const classificationRow of rows) {
+		totals[classificationRow.category] += 1;
 	}
 
 	return totals;

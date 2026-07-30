@@ -72,7 +72,9 @@ describe("@afenda/human-resources transaction rollback", () => {
 			{ store, ports: portsOk, authorization },
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const failingPorts = createMemoryMutationPorts({ outboxFailAfter: 0 });
 		const employment = await createEmployment(
@@ -120,7 +122,9 @@ describe("@afenda/human-resources transaction rollback", () => {
 			{ store, ports: portsOk, authorization },
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const employment = await createEmployment(
 			{
@@ -134,7 +138,9 @@ describe("@afenda/human-resources transaction rollback", () => {
 			{ store, ports: portsOk, authorization },
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const failingPorts = createMemoryMutationPorts({ outboxFailAfter: 0 });
 		const amended = await amendEmployment(

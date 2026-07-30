@@ -22,15 +22,15 @@ import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 
 const initialState: AddItemTemplateAttributeOptionActionState = null;
 
-type DraftOptionAttribute = {
+interface DraftOptionAttribute {
 	id: string;
 	label: string;
-};
+}
 
-type AddItemTemplateAttributeOptionFormProps = {
+interface AddItemTemplateAttributeOptionFormProps {
 	canManage: boolean;
 	draftOptionAttributes: DraftOptionAttribute[];
-};
+}
 
 /** Add closed option while template (and attribute) remain draft. */
 export function AddItemTemplateAttributeOptionForm({
@@ -48,7 +48,7 @@ export function AddItemTemplateAttributeOptionForm({
 
 	if (draftOptionAttributes.length === 0) {
 		return (
-			<p className="text-sm text-muted-foreground">
+			<p className="text-muted-foreground text-sm">
 				No draft option-attributes — add an attribute with value kind
 				&quot;option&quot; first.
 			</p>
@@ -80,8 +80,8 @@ export function AddItemTemplateAttributeOptionForm({
 			{showFormError && state?.ok === false ? (
 				<FormError>{state.message}</FormError>
 			) : null}
-			<FormField label="Option attribute" required fieldId="opt-attribute">
-				<NativeSelect name="attributeId" required disabled={pending}>
+			<FormField fieldId="opt-attribute" label="Option attribute" required>
+				<NativeSelect disabled={pending} name="attributeId" required>
 					{draftOptionAttributes.map((attribute) => (
 						<NativeSelectOption key={attribute.id} value={attribute.id}>
 							{attribute.label}
@@ -89,13 +89,13 @@ export function AddItemTemplateAttributeOptionForm({
 					))}
 				</NativeSelect>
 			</FormField>
-			<FormField label="Code" required fieldId="opt-code" error={codeError}>
-				<Input name="code" required autoComplete="off" disabled={pending} />
+			<FormField error={codeError} fieldId="opt-code" label="Code" required>
+				<Input autoComplete="off" disabled={pending} name="code" required />
 			</FormField>
-			<FormField label="Label" required fieldId="opt-label" error={labelError}>
-				<Input name="label" required autoComplete="off" disabled={pending} />
+			<FormField error={labelError} fieldId="opt-label" label="Label" required>
+				<Input autoComplete="off" disabled={pending} name="label" required />
 			</FormField>
-			<Button type="submit" disabled={pending}>
+			<Button disabled={pending} type="submit">
 				{pending ? (
 					<>
 						<Spinner className="size-4" /> Adding…

@@ -111,18 +111,23 @@ export class DrizzleSearchStore implements SearchStore {
 		}
 	}
 
-	async upsertBatch(
-		inputs: SearchUpsertInput[],
-	): Promise<Result<SearchDocument[]>> {
-		const documents: SearchDocument[] = [];
-		for (const input of inputs) {
-			const result = await this.upsert(input);
-			if (!result.ok) {
-				return result;
-			}
-			documents.push(result.data);
-		}
-		return ok(documents);
+	upsertBatch(inputs: SearchUpsertInput[]): Promise<Result<SearchDocument[]>> {
+		return inputs.reduce<Promise<Result<SearchDocument[]>>>(
+			async (previousResult, input) => {
+				const accumulated = await previousResult;
+				if (!accumulated.ok) {
+					return accumulated;
+				}
+
+				const result = await this.upsert(input);
+				if (!result.ok) {
+					return result;
+				}
+				accumulated.data.push(result.data);
+				return accumulated;
+			},
+			Promise.resolve(ok<SearchDocument[]>([])),
+		);
 	}
 
 	async delete(

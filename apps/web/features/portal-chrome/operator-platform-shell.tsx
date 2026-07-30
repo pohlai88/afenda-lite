@@ -10,9 +10,9 @@ import type { ReactNode } from "react";
 import { OperatorPlatformChrome } from "@/features/portal-chrome/operator-platform-chrome";
 import { resolveOperatorShellNav } from "@/features/portal-chrome/resolve-shell-access";
 
-type OperatorPlatformShellProps = {
+interface OperatorPlatformShellProps {
 	children: ReactNode;
-};
+}
 
 /**
  * Shared ERP operator platform shell (N16 · ARCH-015/018).

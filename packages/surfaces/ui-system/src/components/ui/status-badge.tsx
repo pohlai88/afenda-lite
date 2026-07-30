@@ -9,12 +9,12 @@ import {
 	PlayCircleIcon,
 	XCircleIcon,
 } from "lucide-react";
-import * as React from "react";
+import type { HTMLAttributes, RefObject } from "react";
 import { cn } from "../../lib/utils";
 
 const statusBadgeVariants = cva(
 	// font-medium matches Badge weight; text-sm keeps APCA-readable status labels.
-	"inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border px-2 py-0.5 text-sm font-medium whitespace-nowrap transition-colors [&_svg]:pointer-events-none [&_svg]:size-3",
+	"inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-full border px-2 py-0.5 font-medium text-sm transition-colors [&_svg]:pointer-events-none [&_svg]:size-3",
 	{
 		variants: {
 			status: {
@@ -52,42 +52,38 @@ const statusIcons = {
 } as const;
 
 interface StatusBadgeProps
-	extends React.HTMLAttributes<HTMLSpanElement>,
+	extends HTMLAttributes<HTMLSpanElement>,
 		VariantProps<typeof statusBadgeVariants> {
 	label?: string;
 	showIcon?: boolean;
 }
 
-const StatusBadge = React.forwardRef<HTMLSpanElement, StatusBadgeProps>(
-	(
-		{
-			className,
-			status = "inactive",
-			size,
-			label,
-			showIcon = true,
-			children,
-			...props
-		},
-		ref,
-	) => {
-		const content = label || children;
-		const IconComponent = status ? statusIcons[status] : null;
+const StatusBadge = ({
+	className,
+	status = "inactive",
+	size,
+	label,
+	showIcon = true,
+	children,
+	ref,
+	...props
+}: StatusBadgeProps & { ref?: RefObject<HTMLSpanElement | null> }) => {
+	const content = label || children;
+	const IconComponent = status ? statusIcons[status] : null;
 
-		return (
-			<span
-				ref={ref}
-				className={cn(statusBadgeVariants({ status, size }), className)}
-				role="status"
-				aria-label={`Status: ${content}`}
-				{...props}
-			>
-				{showIcon && IconComponent && <IconComponent aria-hidden="true" />}
-				{content}
-			</span>
-		);
-	},
-);
+	return (
+		<span
+			aria-label={`Status: ${content}`}
+			className={cn(statusBadgeVariants({ status, size }), className)}
+			ref={ref}
+			role="status"
+			{...props}
+		>
+			{showIcon && IconComponent ? <IconComponent aria-hidden="true" /> : null}
+			{content}
+		</span>
+	);
+};
 StatusBadge.displayName = "StatusBadge";
 
 export { StatusBadge, statusBadgeVariants };

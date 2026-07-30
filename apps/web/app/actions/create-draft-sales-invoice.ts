@@ -16,7 +16,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type CreateDraftSalesInvoiceActionData = { invoice: SalesInvoice };
+export interface CreateDraftSalesInvoiceActionData {
+	invoice: SalesInvoice;
+}
 export type CreateDraftSalesInvoiceActionState =
 	ActionResult<CreateDraftSalesInvoiceActionData> | null;
 
@@ -39,7 +41,7 @@ export async function createDraftSalesInvoiceAction(
 	_prev: CreateDraftSalesInvoiceActionState,
 	formData: FormData,
 ): Promise<CreateDraftSalesInvoiceActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "createDraftSalesInvoiceAction",
 		permission: "receivables.invoice.create",
 		safeMessage:
@@ -72,7 +74,9 @@ export async function createDraftSalesInvoiceAction(
 				createReceivablesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePath("/admin/receivables");
 			revalidatePath("/client/receivables");
 			return { ok: true, data: { invoice: mapped.data } };

@@ -45,15 +45,15 @@ import { authorizeHumanResourcesOperation } from "../shared/contextual-authoriza
 import { authorizationDecisionToFailure } from "../shared/run-authorized-operation";
 import { collectHumanResourcesSubjectData } from "./subject-data-collector";
 
-export type HumanResourcesPrivacyOperationInput = {
-	organizationId: string;
+export interface HumanResourcesPrivacyOperationInput {
 	actorUserId: string;
+	classifications?: readonly HumanResourcesRetentionClassification[];
 	correlationId: string;
+	legalBasis?: string;
+	organizationId: string;
 	personId: HumanResourcesEmployeeId;
 	requestedAt?: string;
-	legalBasis?: string;
-	classifications?: readonly HumanResourcesRetentionClassification[];
-};
+}
 
 export type ExportHumanResourcesSubjectDataInput =
 	HumanResourcesPrivacyOperationInput;
@@ -70,14 +70,14 @@ export type PlaceHumanResourcesLegalHoldInput =
 		classifications: readonly HumanResourcesRetentionClassification[];
 	};
 
-export type ReleaseHumanResourcesLegalHoldInput = {
-	organizationId: string;
+export interface ReleaseHumanResourcesLegalHoldInput {
 	actorUserId: string;
 	correlationId: string;
 	legalHoldId: string;
+	organizationId: string;
 	reason: string;
 	releasedAt?: string;
-};
+}
 
 export type AnonymizeHumanResourcesSubjectInput =
 	HumanResourcesPrivacyOperationInput & {

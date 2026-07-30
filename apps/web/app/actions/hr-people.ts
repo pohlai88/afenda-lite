@@ -147,7 +147,7 @@ export async function createPersonAction(input: {
 		| "employee_relations_and_legal"
 		| "performance_and_talent";
 }): Promise<ActionResult<{ person: Person }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "createPersonAction",
 		permission: "human-resources.person.manage",
 		safeMessage: "Could not create person.",
@@ -181,7 +181,9 @@ export async function createPersonAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { person: mapped.data } };
 		},
 	});
@@ -196,7 +198,7 @@ export async function updatePersonNameAction(input: {
 	evidenceRef?: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ person: Person }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "updatePersonNameAction",
 		permission: "human-resources.person.manage",
 		safeMessage: "Could not update person name.",
@@ -224,7 +226,9 @@ export async function updatePersonNameAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { person: mapped.data } };
 		},
 	});
@@ -236,7 +240,7 @@ export async function updatePersonPreferredNameAction(input: {
 	preferredName: string | null;
 	expectedVersion: number;
 }): Promise<ActionResult<{ person: Person }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "updatePersonPreferredNameAction",
 		permission: "human-resources.person.manage",
 		safeMessage: "Could not update person preferred name.",
@@ -261,7 +265,9 @@ export async function updatePersonPreferredNameAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { person: mapped.data } };
 		},
 	});
@@ -279,7 +285,7 @@ export async function setPersonPrivacyClassificationAction(input: {
 		| "performance_and_talent";
 	expectedVersion: number;
 }): Promise<ActionResult<{ person: Person }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "setPersonPrivacyClassificationAction",
 		permission: "human-resources.person.manage",
 		safeMessage: "Could not set person privacy classification.",
@@ -304,7 +310,9 @@ export async function setPersonPrivacyClassificationAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { person: mapped.data } };
 		},
 	});
@@ -318,7 +326,7 @@ export async function addPersonContactAction(input: {
 	valueText: string;
 	isPrimary?: boolean;
 }): Promise<ActionResult<{ contact: PersonContact }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "addPersonContactAction",
 		permission: "human-resources.personal-details.manage",
 		safeMessage: "Could not add person contact.",
@@ -345,7 +353,9 @@ export async function addPersonContactAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { contact: mapped.data } };
 		},
 	});
@@ -359,7 +369,7 @@ export async function updatePersonContactAction(input: {
 	isPrimary?: boolean;
 	expectedVersion: number;
 }): Promise<ActionResult<{ contact: PersonContact }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "updatePersonContactAction",
 		permission: "human-resources.personal-details.manage",
 		safeMessage: "Could not update person contact.",
@@ -386,7 +396,9 @@ export async function updatePersonContactAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { contact: mapped.data } };
 		},
 	});
@@ -398,7 +410,7 @@ export async function retirePersonContactAction(input: {
 	contactId: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ contact: PersonContact }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "retirePersonContactAction",
 		permission: "human-resources.personal-details.manage",
 		safeMessage: "Could not retire person contact.",
@@ -423,7 +435,9 @@ export async function retirePersonContactAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { contact: mapped.data } };
 		},
 	});
@@ -433,7 +447,7 @@ export async function listPersonContactsAction(input: {
 	correlationId?: string;
 	personId: string;
 }): Promise<ActionResult<{ contacts: readonly PersonContact[] }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listPersonContactsAction",
 		permission: "human-resources.personal-details.read",
 		safeMessage: "Could not list person contacts.",
@@ -456,7 +470,9 @@ export async function listPersonContactsAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { contacts: mapped.data } };
 		},
 	});
@@ -471,7 +487,7 @@ export async function addPersonIdentifierAction(input: {
 	documentRef?: string | null;
 	effectiveFrom: string;
 }): Promise<ActionResult<{ identifier: PersonIdentifier }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "addPersonIdentifierAction",
 		permission: "human-resources.sensitive-identifiers.manage",
 		safeMessage: "Could not add person identifier.",
@@ -499,7 +515,9 @@ export async function addPersonIdentifierAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { identifier: mapped.data } };
 		},
 	});
@@ -512,7 +530,7 @@ export async function retirePersonIdentifierAction(input: {
 	effectiveTo: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ identifier: PersonIdentifier }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "retirePersonIdentifierAction",
 		permission: "human-resources.sensitive-identifiers.manage",
 		safeMessage: "Could not retire person identifier.",
@@ -538,7 +556,9 @@ export async function retirePersonIdentifierAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { identifier: mapped.data } };
 		},
 	});
@@ -548,7 +568,7 @@ export async function listPersonIdentifiersAction(input: {
 	correlationId?: string;
 	personId: string;
 }): Promise<ActionResult<{ identifiers: readonly PersonIdentifier[] }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listPersonIdentifiersAction",
 		permission: "human-resources.sensitive-identifiers.read",
 		safeMessage: "Could not list person identifiers.",
@@ -571,7 +591,9 @@ export async function listPersonIdentifiersAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { identifiers: mapped.data } };
 		},
 	});
@@ -581,7 +603,7 @@ export async function detectPersonDuplicatesAction(input: {
 	correlationId?: string;
 	personId: string;
 }): Promise<ActionResult<{ candidates: readonly PersonDuplicateCandidate[] }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "detectPersonDuplicatesAction",
 		permission: "human-resources.person.read",
 		safeMessage: "Could not detect person duplicates.",
@@ -604,7 +626,9 @@ export async function detectPersonDuplicatesAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { candidates: mapped.data } };
 		},
 	});
@@ -614,7 +638,7 @@ export async function getPersonAction(input: {
 	correlationId?: string;
 	personId: string;
 }): Promise<ActionResult<{ person: Person }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getPersonAction",
 		permission: "human-resources.person.read",
 		safeMessage: "Could not get person.",
@@ -637,7 +661,9 @@ export async function getPersonAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { person: mapped.data } };
 		},
 	});
@@ -648,7 +674,7 @@ export async function getPersonAsOfAction(input: {
 	personId: string;
 	asOf: string;
 }): Promise<ActionResult<{ person: PersonIdentityAtAsOf }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getPersonAsOfAction",
 		permission: "human-resources.person.read",
 		safeMessage: "Could not get person as-of.",
@@ -672,7 +698,9 @@ export async function getPersonAsOfAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { person: mapped.data } };
 		},
 	});
@@ -703,7 +731,7 @@ type CreateWorkerActionInput =
 export async function createWorkerAction(
 	input: CreateWorkerActionInput,
 ): Promise<ActionResult<{ worker: Worker }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "createWorkerAction",
 		permission: "human-resources.worker.manage",
 		safeMessage: "Could not create worker.",
@@ -721,7 +749,9 @@ export async function createWorkerAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { worker: mapped.data } };
 		},
 	});
@@ -752,7 +782,7 @@ type ChangeWorkerTypeActionInput =
 export async function changeWorkerTypeAction(
 	input: ChangeWorkerTypeActionInput,
 ): Promise<ActionResult<{ worker: Worker }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "changeWorkerTypeAction",
 		permission: "human-resources.worker.manage",
 		safeMessage: "Could not change worker type.",
@@ -770,7 +800,9 @@ export async function changeWorkerTypeAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { worker: mapped.data } };
 		},
 	});
@@ -785,7 +817,7 @@ export async function changeWorkerStatusAction(input: {
 	evidenceRef?: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ worker: Worker }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "changeWorkerStatusAction",
 		permission: "human-resources.worker.manage",
 		safeMessage: "Could not change worker status.",
@@ -813,7 +845,9 @@ export async function changeWorkerStatusAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { worker: mapped.data } };
 		},
 	});
@@ -823,7 +857,7 @@ export async function getWorkerAction(input: {
 	correlationId?: string;
 	workerId: string;
 }): Promise<ActionResult<{ worker: Worker }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getWorkerAction",
 		permission: "human-resources.worker.read",
 		safeMessage: "Could not get worker.",
@@ -846,7 +880,9 @@ export async function getWorkerAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { worker: mapped.data } };
 		},
 	});
@@ -857,7 +893,7 @@ export async function getWorkerAsOfAction(input: {
 	workerId: string;
 	asOf: string;
 }): Promise<ActionResult<{ worker: WorkerClassificationAtAsOf }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getWorkerAsOfAction",
 		permission: "human-resources.worker.read",
 		safeMessage: "Could not get worker as-of.",
@@ -881,7 +917,9 @@ export async function getWorkerAsOfAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { worker: mapped.data } };
 		},
 	});

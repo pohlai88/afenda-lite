@@ -16,7 +16,7 @@ import {
 import type { PayrollStatutoryStore } from "../../store/statutory";
 import type { PayrollStatutoryResult } from "../../types";
 
-async function recordAudit(
+function recordAudit(
 	ports: MutationPorts,
 	input: {
 		organizationId: string;
@@ -93,7 +93,7 @@ async function assertRunAllowsStatutoryMutation(input: {
 				),
 			)
 			.limit(1);
-		const statusRow = statusRows[0];
+		const [statusRow] = statusRows;
 		if (statusRow === undefined) {
 			return mapNotFound("Payroll run not found");
 		}
@@ -127,38 +127,35 @@ export const drizzleStatutoryMethods: PayrollStatutoryStore = {
 				);
 
 			const results: PayrollStatutoryResult[] = [];
-			for (const result of input.results) {
+			if (input.results.length > 0) {
 				const rows = await db
 					.insert(payrollStatutoryResult)
-					.values({
-						id: result.id,
-						organizationId: input.organizationId,
-						runId: input.runId,
-						runEmployeeId: result.runEmployeeId,
-						employeeId: result.employeeId,
-						jurisdictionCode: result.jurisdictionCode,
-						ruleCode: result.ruleCode,
-						ruleVersion: result.ruleVersion,
-						calculatorId: result.calculatorId,
-						baseAmount: result.baseAmount,
-						employeeAmount: result.employeeAmount,
-						employerAmount: result.employerAmount,
-						currencyCode: result.currencyCode,
-						configSnapshotJson: result.configSnapshotJson,
-					})
+					.values(
+						input.results.map((result) => ({
+							id: result.id,
+							organizationId: input.organizationId,
+							runId: input.runId,
+							runEmployeeId: result.runEmployeeId,
+							employeeId: result.employeeId,
+							jurisdictionCode: result.jurisdictionCode,
+							ruleCode: result.ruleCode,
+							ruleVersion: result.ruleVersion,
+							calculatorId: result.calculatorId,
+							baseAmount: result.baseAmount,
+							employeeAmount: result.employeeAmount,
+							employerAmount: result.employerAmount,
+							currencyCode: result.currencyCode,
+							configSnapshotJson: result.configSnapshotJson,
+						})),
+					)
 					.returning();
-				const row = rows[0];
-				if (row === undefined) {
-					return mapPersistenceFailure(
-						new Error("Missing returning row"),
-						"Failed to create payroll statutory result",
-					);
+				for (const row of rows) {
+					const mapped = mapStatutoryResultRow(row);
+					if (!mapped.ok) {
+						return mapped;
+					}
+					results.push(mapped.data);
 				}
-				const mapped = mapStatutoryResultRow(row);
-				if (!mapped.ok) {
-					return mapped;
-				}
-				results.push(mapped.data);
 			}
 
 			const audit = await recordAudit(ports, {

@@ -138,7 +138,9 @@ function defineWorkforcePlanningParitySuite(
 			suffix,
 		});
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 
 		const requisition = await seedRequisitionPipeline(ready, {
 			organizationId: ORG,
@@ -148,7 +150,9 @@ function defineWorkforcePlanningParitySuite(
 			title: "Parity hire",
 		});
 		expect(requisition.ok).toBe(true);
-		if (!requisition.ok) return;
+		if (!requisition.ok) {
+			return;
+		}
 
 		const reserved = await reserveHeadcount(
 			{
@@ -164,7 +168,9 @@ function defineWorkforcePlanningParitySuite(
 			ready,
 		);
 		expect(reserved.ok).toBe(true);
-		if (!reserved.ok) return;
+		if (!reserved.ok) {
+			return;
+		}
 
 		const availabilityAfterReserve = await getHeadcountAvailability(
 			{
@@ -233,7 +239,9 @@ function defineWorkforcePlanningParitySuite(
 			suffix: `over-${suffix}`,
 		});
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 
 		const requisition = await seedRequisitionPipeline(ready, {
 			organizationId: ORG,
@@ -243,7 +251,9 @@ function defineWorkforcePlanningParitySuite(
 			title: "Parity hire",
 		});
 		expect(requisition.ok).toBe(true);
-		if (!requisition.ok) return;
+		if (!requisition.ok) {
+			return;
+		}
 
 		const reserved = await reserveHeadcount(
 			{
@@ -274,7 +284,9 @@ function defineWorkforcePlanningParitySuite(
 			suffix: `variance-${suffix}`,
 		});
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 
 		const employee = await createEmployee(
 			{
@@ -288,7 +300,9 @@ function defineWorkforcePlanningParitySuite(
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 		const employment = await createEmployment(
 			{
 				organizationId: ORG,
@@ -300,7 +314,9 @@ function defineWorkforcePlanningParitySuite(
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 		const position = await createPosition(
 			{
 				organizationId: ORG,
@@ -315,7 +331,9 @@ function defineWorkforcePlanningParitySuite(
 			ready,
 		);
 		expect(position.ok).toBe(true);
-		if (!position.ok) return;
+		if (!position.ok) {
+			return;
+		}
 		const assignment = await createAssignment(
 			{
 				organizationId: ORG,
@@ -333,7 +351,9 @@ function defineWorkforcePlanningParitySuite(
 			ready,
 		);
 		expect(assignment.ok).toBe(true);
-		if (!assignment.ok) return;
+		if (!assignment.ok) {
+			return;
+		}
 
 		const variance = await getWorkforcePlanVariance(
 			{
@@ -346,7 +366,9 @@ function defineWorkforcePlanningParitySuite(
 			ready,
 		);
 		expect(variance.ok).toBe(true);
-		if (!variance.ok) return;
+		if (!variance.ok) {
+			return;
+		}
 		expect(variance.data.lines[0]).toMatchObject({
 			actualHeadcount: 1,
 			actualFte: "1.0000",

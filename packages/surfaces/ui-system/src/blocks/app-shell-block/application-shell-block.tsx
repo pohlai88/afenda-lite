@@ -1,12 +1,12 @@
 "use client";
 
-import type { AppShellProps } from "./app-shell";
-import { AppShell } from "./app-shell";
+import type { AppShellProps as ApplicationShellProps } from "./app-shell";
+import { AppShell as ApplicationShell } from "./app-shell";
 
-export type { AppShellProps };
+export type { AppShellProps } from "./app-shell";
 
-export function ApplicationShellBlock(props: AppShellProps) {
-	return <AppShell {...props} />;
+export function ApplicationShellBlock(props: ApplicationShellProps) {
+	return <ApplicationShell {...props} />;
 }
 
-export { AppShell };
+export { AppShell } from "./app-shell";

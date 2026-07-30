@@ -8,13 +8,13 @@ import type { ReactNode } from "react";
 import { MAIN_CONTENT_ID } from "@/features/auth/main-content";
 import type { ShellNavItem } from "@/features/portal-chrome/nav-config";
 
-type OperatorPlatformChromeProps = {
-	navItems: ShellNavItem[];
-	orgId: string;
+interface OperatorPlatformChromeProps {
+	children: ReactNode;
 	defaultSidebarOpen?: boolean;
 	initialSettings: ApplicationShellSettings;
-	children: ReactNode;
-};
+	navItems: ShellNavItem[];
+	orgId: string;
+}
 
 /** Thin operator adapter over the reusable application-shell block. */
 export function OperatorPlatformChrome({
@@ -34,8 +34,8 @@ export function OperatorPlatformChrome({
 			footerText={orgId}
 			initialSettings={initialSettings}
 			mainContentId={MAIN_CONTENT_ID}
-			navigationLink={Link}
 			navigationItems={navItems}
+			navigationLink={Link}
 		>
 			{children}
 		</AppShell>

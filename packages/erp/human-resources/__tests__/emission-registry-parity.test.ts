@@ -44,7 +44,9 @@ describe("mutation emission registry parity", () => {
 	it("domain_event registry entries map to known emit types", () => {
 		const emitSet = new Set(humanResourcesModuleManifest.events.emits);
 		for (const entry of HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY) {
-			if (entry.emission !== "domain_event") continue;
+			if (entry.emission !== "domain_event") {
+				continue;
+			}
 			expect(entry.eventTypes?.length).toBeGreaterThan(0);
 			for (const eventType of entry.eventTypes ?? []) {
 				expect(emitSet.has(eventType)).toBe(true);

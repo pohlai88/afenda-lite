@@ -2,21 +2,21 @@ import type { ManifestContractInput } from "../contracts/manifest.contract";
 
 type ExpectFalse<TValue extends false> = TValue;
 
-type ValidInput = {
-	readonly id: "ui.type-test.contract";
+interface ValidInput {
+	readonly accessibility: readonly ["Preserve semantics."];
 	readonly component: "ui.type-test";
-	readonly purpose: "Type fixture.";
+	readonly id: "ui.type-test.contract";
 	readonly ownership: {
 		readonly componentOwns: readonly ["Primitive presentation."];
 		readonly consumerOwns: readonly ["Feature policy."];
 	};
+	readonly prohibitedUsage: readonly ["Do not infer authority."];
+	readonly purpose: "Type fixture.";
+	readonly rules: readonly ["Use intentionally."];
 	readonly semanticBoundaries: readonly [
 		"Presentation does not decide policy.",
 	];
-	readonly rules: readonly ["Use intentionally."];
-	readonly accessibility: readonly ["Preserve semantics."];
-	readonly prohibitedUsage: readonly ["Do not infer authority."];
-};
+}
 
 type MissingSemanticBoundary = Omit<ValidInput, "semanticBoundaries">;
 type MissingOwnership = Omit<ValidInput, "ownership">;

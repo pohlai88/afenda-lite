@@ -102,7 +102,8 @@ export function decideImportRowApplication(input: {
 	>;
 }): Result<ImportRowApplicationDecision> {
 	const { row } = input;
-	switch (row.applyStatus) {
+	const applyStatus: string = row.applyStatus;
+	switch (applyStatus) {
 		case "applied":
 		case "replayed":
 			return ok({
@@ -119,7 +120,7 @@ export function decideImportRowApplication(input: {
 		case "failed":
 			return ok({ kind: "apply", rowId: row.rowId });
 		default:
-			return assertNever(row.applyStatus);
+			return unsupportedApplyStatus(applyStatus);
 	}
 }
 
@@ -159,7 +160,8 @@ export function summarizeImportApplyRows(
 		if (row.validationStatus === "invalid") {
 			invalidCount += 1;
 		}
-		switch (row.applyStatus) {
+		const applyStatus: string = row.applyStatus;
+		switch (applyStatus) {
 			case "applied":
 				appliedCount += 1;
 				break;
@@ -179,7 +181,7 @@ export function summarizeImportApplyRows(
 				applyingCount += 1;
 				break;
 			default:
-				assertNever(row.applyStatus);
+				unsupportedApplyStatus(applyStatus);
 		}
 	}
 
@@ -206,6 +208,6 @@ function encodeKeyPart(label: string, value: string): string {
 	return `${normalized.length}:${normalized}`;
 }
 
-function assertNever(value: never): never {
-	throw new Error(`Unsupported import row apply status: ${String(value)}`);
+function unsupportedApplyStatus(value: string): never {
+	throw new Error(`Unsupported import row apply status: ${value}`);
 }

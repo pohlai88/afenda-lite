@@ -12,9 +12,9 @@ import {
 	actionFailInternal,
 } from "@/modules/platform/schemas/action-result";
 
-export type ListItemTemplatesActionData = {
+export interface ListItemTemplatesActionData {
 	templates: ItemTemplate[];
-};
+}
 
 /** List item templates — `master_data.read`. */
 export async function listItemTemplatesAction(): Promise<

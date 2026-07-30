@@ -20,12 +20,12 @@ export type HumanResourcesSubjectPolicy =
 	| "assigned_or_privileged"
 	| "privileged_only";
 
-export type HumanResourcesSensitiveOperationPolicy = {
+export interface HumanResourcesSensitiveOperationPolicy {
+	fieldClasses: readonly HumanResourcesSensitiveFieldClass[];
 	operationPrefixes: readonly string[];
 	resourceType: HumanResourcesSensitiveResourceType;
 	subjectPolicy: HumanResourcesSubjectPolicy;
-	fieldClasses: readonly HumanResourcesSensitiveFieldClass[];
-};
+}
 
 /**
  * Explicit policy families for every HR operation that handles sensitive data.

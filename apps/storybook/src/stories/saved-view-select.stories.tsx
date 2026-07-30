@@ -21,6 +21,7 @@ import { contractEvidence, StorySection } from "./evidence";
 import { interactionFor } from "./interactions";
 
 const evidence = contractEvidence("ui.saved-view-select");
+const ignoreViewChange = () => undefined;
 
 const invoiceViews = [
 	{ id: "overdue", label: "Overdue invoices" },
@@ -60,13 +61,13 @@ function PayablesViewWorkbench() {
 		<div className="min-h-screen bg-canvas text-foreground">
 			<div className="mx-auto grid w-full max-w-4xl gap-6 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-2 border-b pb-6">
-					<p className="text-sm font-medium text-foreground-secondary">
+					<p className="font-medium text-foreground-secondary text-sm">
 						Accounts payable
 					</p>
-					<h1 className="text-2xl font-semibold tracking-tight">
+					<h1 className="font-semibold text-2xl tracking-tight">
 						Invoice register
 					</h1>
-					<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+					<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 						SavedViewSelect applies a stored collection configuration. Feature
 						code owns filters, authorization, and URL state.
 					</p>
@@ -74,15 +75,15 @@ function PayablesViewWorkbench() {
 
 				<div className="flex flex-wrap items-end justify-between gap-4">
 					<div className="grid gap-1">
-						<p className="text-sm font-medium text-foreground">Saved view</p>
-						<p className="text-sm text-foreground-secondary">
+						<p className="font-medium text-foreground text-sm">Saved view</p>
+						<p className="text-foreground-secondary text-sm">
 							Active: {active?.label ?? "None"}
 						</p>
 					</div>
 					<SavedViewSelect
+						onValueChange={setViewId}
 						value={viewId}
 						views={invoiceViews}
-						onValueChange={setViewId}
 					/>
 				</div>
 
@@ -136,9 +137,9 @@ function ControlledSavedViewSelect({
 	const [value, setValue] = useState(initialValue);
 	return (
 		<SavedViewSelect
+			onValueChange={setValue}
 			value={value}
 			views={views}
-			onValueChange={setValue}
 			{...(disabled === undefined ? {} : { disabled })}
 			{...(placeholder === undefined ? {} : { placeholder })}
 		/>
@@ -174,12 +175,12 @@ export const SemanticUsage: Story = {
 		<div className="grid w-full max-w-xl gap-6">
 			<StorySection title="Personal and shared views">
 				<ControlledSavedViewSelect
+					initialValue="team"
 					views={[
 						{ id: "mine", label: "Owned by me" },
 						{ id: "team", label: "Shared · AP team" },
 						{ id: "default", label: "Organization default" },
 					]}
-					initialValue="team"
 				/>
 			</StorySection>
 			<StorySection title="Unavailable view remains explicit">
@@ -225,21 +226,23 @@ export const StatesAndAccessibility: Story = {
 		<div className="grid w-72 gap-4">
 			<ControlledSavedViewSelect />
 			<SavedViewSelect
+				disabled
+				onValueChange={ignoreViewChange}
 				value="overdue"
 				views={invoiceViews}
-				onValueChange={() => undefined}
-				disabled
 			/>
 		</div>
 	),
 	play: async ({ canvasElement }) => {
 		const canvas = within(canvasElement);
-		const selects = canvas.getAllByRole("combobox", { name: "Saved view" });
-		await expect(selects[0]).toBeEnabled();
-		await expect(selects[1]).toBeDisabled();
-		const enabledSelect = selects[0];
-		if (!enabledSelect)
-			throw new Error("Expected an enabled Saved View select.");
+		const [enabledSelect, disabledSelect] = canvas.getAllByRole("combobox", {
+			name: "Saved view",
+		});
+		if (!(enabledSelect && disabledSelect)) {
+			throw new Error("Expected enabled and disabled Saved View selects.");
+		}
+		await expect(enabledSelect).toBeEnabled();
+		await expect(disabledSelect).toBeDisabled();
 		await userEvent.selectOptions(enabledSelect, "awaiting");
 		await expect(enabledSelect).toHaveValue("awaiting");
 	},
@@ -258,7 +261,7 @@ export const Composition: Story = {
 	render: () => (
 		<div className="grid w-full max-w-5xl gap-4">
 			<div className="flex flex-wrap items-center justify-between gap-3">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					236 suppliers · Malaysia preferred
 				</p>
 				<ControlledSavedViewSelect
@@ -304,15 +307,15 @@ export const DoAndDoNot: Story = {
 		<div className="grid gap-6 sm:grid-cols-2">
 			<StorySection title="Do: stable identifiers">
 				<ControlledSavedViewSelect
+					initialValue="view_overdue_v3"
 					views={[
 						{ id: "view_overdue_v3", label: "Overdue invoices" },
 						{ id: "view_mine_v1", label: "Owned by me" },
 					]}
-					initialValue="view_overdue_v3"
 				/>
 			</StorySection>
 			<StorySection title="Do not: trust display names as ids">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Labels change with locale and rename. Persist view_overdue_v3 — not
 					the string “Overdue invoices”.
 				</p>

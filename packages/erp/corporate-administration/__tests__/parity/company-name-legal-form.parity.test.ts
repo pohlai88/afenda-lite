@@ -32,7 +32,9 @@ async function seedCompany(store: CompanyHistoryStore) {
 		createdAt: "2026-01-01T00:00:00.000Z",
 		correlationId,
 	});
-	if (!registered.ok) throw new Error("seed company failed");
+	if (!registered.ok) {
+		throw new Error("seed company failed");
+	}
 	return registered.data.legalCompanyId;
 }
 

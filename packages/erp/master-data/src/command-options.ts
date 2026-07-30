@@ -12,18 +12,18 @@ import { createProductionMutationPorts } from "./production-ports";
 import { resolveMasterDataStore } from "./resolve-store";
 import type { DependencyInspector } from "./types";
 
-export type MasterCommandOptions = {
-	store?: MasterDataStore | undefined;
-	ports?: MutationPorts | undefined;
-	dependencyInspector?: DependencyInspector | undefined;
-	organizationDimensionStore?: OrganizationDimensionStore | undefined;
-	/** Optional derived search store for projectors (defaults to Drizzle). */
-	searchStore?: SearchStore | undefined;
+export interface MasterCommandOptions {
 	/** Composition-root injected — never import `@afenda/admin` here. */
 	authorization?: MasterAuthorizationPort | undefined;
+	dependencyInspector?: DependencyInspector | undefined;
 	/** Package-internal import row context; never accept this from a public boundary. */
 	importMutation?: ImportMutationContext | undefined;
-};
+	organizationDimensionStore?: OrganizationDimensionStore | undefined;
+	ports?: MutationPorts | undefined;
+	/** Optional derived search store for projectors (defaults to Drizzle). */
+	searchStore?: SearchStore | undefined;
+	store?: MasterDataStore | undefined;
+}
 
 export type MasterQueryOptions = Pick<
 	MasterCommandOptions,

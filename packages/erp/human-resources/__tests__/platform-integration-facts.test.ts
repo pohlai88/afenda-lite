@@ -41,7 +41,9 @@ describe("Human Resources platform facts", () => {
 		);
 
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 		expect(result.data.workflow).toMatchObject({
 			kind: "workflow_transition",
 			workflow: "onboarding",
@@ -81,7 +83,9 @@ describe("Human Resources platform facts", () => {
 		expect(
 			types.map((type) => {
 				const result = projectHumanResourcesPlatformFacts(event(type));
-				if (!result.ok) throw new Error(result.message);
+				if (!result.ok) {
+					throw new Error(result.message);
+				}
 				return result.data.identity?.lifecycle;
 			}),
 		).toEqual(["joiner", "mover", "leaver"]);
@@ -95,7 +99,9 @@ describe("Human Resources platform facts", () => {
 		);
 
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 		expect(result.data.notification).toMatchObject({
 			recipientUserId: "employee-user-1",
 			deduplicationKey: "event:event-1",
@@ -116,7 +122,9 @@ describe("Human Resources platform facts", () => {
 		);
 
 		expect(result.ok).toBe(true);
-		if (!result.ok) return;
+		if (!result.ok) {
+			return;
+		}
 		expect(result.data.workItems).toEqual([
 			expect.objectContaining({
 				kind,

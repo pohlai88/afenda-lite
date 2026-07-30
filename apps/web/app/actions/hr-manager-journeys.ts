@@ -54,10 +54,10 @@ export type ManagerJourneyActionState = ActionResult<{
 	message: string;
 }> | null;
 
-type ManagerSession = {
+interface ManagerSession {
 	orgId: string;
 	userId: string;
-};
+}
 
 const targetSchema = z.object({
 	targetId: z.string().uuid(),
@@ -207,9 +207,11 @@ async function completeJourney<T>(
 	message: string,
 ): Promise<ActionResult<{ message: string }>> {
 	const mapped = mapPackageResult(result);
-	if (!mapped.ok) return mapped;
+	if (!mapped.ok) {
+		return mapped;
+	}
 	revalidatePath("/client/human-resources/manager");
-	return actionOk({ message });
+	return await actionOk({ message });
 }
 
 async function runManagerJourney(input: {
@@ -221,17 +223,18 @@ async function runManagerJourney(input: {
 		correlationId: string,
 	) => Promise<ActionResult<{ message: string }>>;
 }) {
-	return runMemberPermissionAction(input);
+	return await runMemberPermissionAction(input);
 }
 
 export async function managerLeaveDecisionAction(
 	_previous: ManagerJourneyActionState,
 	formData: FormData,
 ): Promise<ActionResult<{ message: string }>> {
-	return runManagerJourney({
+	return await runManagerJourney({
 		path: "managerLeaveDecisionAction",
 		permission: "human-resources.leave-request.approve-team",
 		safeMessage: "Could not complete the leave decision.",
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Performance decisions share one permission and audit transaction boundary.
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(leaveDecisionSchema, {
 				...targetFormValues(formData),
@@ -246,7 +249,9 @@ export async function managerLeaveDecisionAction(
 				);
 			}
 			const scope = await resolveManagerScope(session);
-			if (!scope.ok) return scopeFailure();
+			if (!scope.ok) {
+				return scopeFailure();
+			}
 			const options = createHumanResourcesCommandOptions();
 			const request = await getLeaveRequest(
 				{
@@ -285,7 +290,7 @@ export async function managerTimesheetDecisionAction(
 	_previous: ManagerJourneyActionState,
 	formData: FormData,
 ): Promise<ActionResult<{ message: string }>> {
-	return runManagerJourney({
+	return await runManagerJourney({
 		path: "managerTimesheetDecisionAction",
 		permission: "human-resources.time.timesheet.approve",
 		safeMessage: "Could not complete the timesheet decision.",
@@ -303,7 +308,9 @@ export async function managerTimesheetDecisionAction(
 				);
 			}
 			const scope = await resolveManagerScope(session);
-			if (!scope.ok) return scopeFailure();
+			if (!scope.ok) {
+				return scopeFailure();
+			}
 			const options = createHumanResourcesCommandOptions();
 			const timesheet = await getTimesheet(
 				{
@@ -361,7 +368,7 @@ export async function managerAttendanceDecisionAction(
 	_previous: ManagerJourneyActionState,
 	formData: FormData,
 ): Promise<ActionResult<{ message: string }>> {
-	return runManagerJourney({
+	return await runManagerJourney({
 		path: "managerAttendanceDecisionAction",
 		permission: "human-resources.time.exception.resolve",
 		safeMessage: "Could not complete the attendance exception decision.",
@@ -380,7 +387,9 @@ export async function managerAttendanceDecisionAction(
 				);
 			}
 			const scope = await resolveManagerScope(session);
-			if (!scope.ok) return scopeFailure();
+			if (!scope.ok) {
+				return scopeFailure();
+			}
 			const options = createHumanResourcesCommandOptions();
 			const exception = await getAttendanceException(
 				{
@@ -438,7 +447,7 @@ export async function managerProbationDecisionAction(
 	_previous: ManagerJourneyActionState,
 	formData: FormData,
 ): Promise<ActionResult<{ message: string }>> {
-	return runManagerJourney({
+	return await runManagerJourney({
 		path: "managerProbationDecisionAction",
 		permission: "human-resources.employment.manage",
 		safeMessage: "Could not complete the probation decision.",
@@ -459,7 +468,9 @@ export async function managerProbationDecisionAction(
 				);
 			}
 			const scope = await resolveManagerScope(session);
-			if (!scope.ok) return scopeFailure();
+			if (!scope.ok) {
+				return scopeFailure();
+			}
 			const options = createHumanResourcesCommandOptions();
 			const review = await getProbationReview(
 				{
@@ -531,7 +542,7 @@ export async function managerPerformanceDecisionAction(
 	_previous: ManagerJourneyActionState,
 	formData: FormData,
 ): Promise<ActionResult<{ message: string }>> {
-	return runManagerJourney({
+	return await runManagerJourney({
 		path: "managerPerformanceDecisionAction",
 		permission: "human-resources.performance.manager.manage",
 		safeMessage: "Could not complete the performance decision.",
@@ -551,7 +562,9 @@ export async function managerPerformanceDecisionAction(
 				);
 			}
 			const scope = await resolveManagerScope(session);
-			if (!scope.ok) return scopeFailure();
+			if (!scope.ok) {
+				return scopeFailure();
+			}
 			const options = createHumanResourcesCommandOptions();
 			const context = packageContext(session, correlationId);
 			if (parsed.data.resourceKind === "goal") {
@@ -643,7 +656,7 @@ export async function managerTalentDecisionAction(
 	_previous: ManagerJourneyActionState,
 	formData: FormData,
 ): Promise<ActionResult<{ message: string }>> {
-	return runManagerJourney({
+	return await runManagerJourney({
 		path: "managerTalentDecisionAction",
 		permission: "human-resources.talent.admin",
 		safeMessage: "Could not record the talent assessment.",
@@ -664,8 +677,10 @@ export async function managerTalentDecisionAction(
 			}
 			const scope = await resolveManagerScope(session);
 			if (
-				!scope.ok ||
-				!isEmployeeInManagerScope(scope.data, parsed.data.employeeId)
+				!(
+					scope.ok &&
+					isEmployeeInManagerScope(scope.data, parsed.data.employeeId)
+				)
 			) {
 				return scopeFailure();
 			}
@@ -707,7 +722,7 @@ export async function managerSuccessionDecisionAction(
 	_previous: ManagerJourneyActionState,
 	formData: FormData,
 ): Promise<ActionResult<{ message: string }>> {
-	return runManagerJourney({
+	return await runManagerJourney({
 		path: "managerSuccessionDecisionAction",
 		permission: "human-resources.succession.admin",
 		safeMessage: "Could not complete the succession decision.",
@@ -730,8 +745,10 @@ export async function managerSuccessionDecisionAction(
 			}
 			const scope = await resolveManagerScope(session);
 			if (
-				!scope.ok ||
-				!isEmployeeInManagerScope(scope.data, parsed.data.employeeId)
+				!(
+					scope.ok &&
+					isEmployeeInManagerScope(scope.data, parsed.data.employeeId)
+				)
 			) {
 				return scopeFailure();
 			}

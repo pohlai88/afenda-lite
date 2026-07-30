@@ -13,17 +13,18 @@ import {
 	postJournal,
 	reverseJournal,
 } from "../src/index";
+import { collectSequentially } from "../src/resolve-async";
 
 const organizationId = "f47ac10b-58cc-4372-a567-0e02b2c3d479";
 const actorUserId = "a47ac10b-58cc-4372-a567-0e02b2c3d479";
 const authorization = {
-	async can() {
-		return true;
+	can() {
+		return Promise.resolve(true);
 	},
 };
 const successfulEffects = {
-	async emit() {
-		return ok(undefined);
+	emit() {
+		return Promise.resolve(ok(undefined));
 	},
 };
 
@@ -41,7 +42,9 @@ async function postedJournal() {
 		},
 		options,
 	);
-	if (!coa.ok) throw new Error(coa.message);
+	if (!coa.ok) {
+		throw new Error(coa.message);
+	}
 	await createLedgerAccount(
 		{
 			organizationId,
@@ -80,7 +83,9 @@ async function postedJournal() {
 		},
 		options,
 	);
-	if (!period.ok) throw new Error(period.message);
+	if (!period.ok) {
+		throw new Error(period.message);
+	}
 	const created = await createDraftJournal(
 		{
 			organizationId,
@@ -92,21 +97,28 @@ async function postedJournal() {
 		},
 		options,
 	);
-	if (!created.ok) throw new Error(created.message);
-	for (const line of [
-		{ accountCode: "1000", debit: "10", credit: "0" },
-		{ accountCode: "2000", debit: "0", credit: "10" },
-	]) {
-		await addJournalLine(
-			{
-				organizationId,
-				actorUserId,
-				correlationId: "add-line",
-				journalId: created.data.id,
-				...line,
-			},
-			options,
-		);
+	if (!created.ok) {
+		throw new Error(created.message);
+	}
+	const lineResults = await collectSequentially(
+		[
+			{ accountCode: "1000", debit: "10", credit: "0" },
+			{ accountCode: "2000", debit: "0", credit: "10" },
+		],
+		(line) =>
+			addJournalLine(
+				{
+					organizationId,
+					actorUserId,
+					correlationId: "add-line",
+					journalId: created.data.id,
+					...line,
+				},
+				options,
+			),
+	);
+	if (!lineResults.ok) {
+		throw new Error(lineResults.message);
 	}
 	return { options, journalId: created.data.id };
 }
@@ -125,8 +137,8 @@ describe("accounting transaction rollback", () => {
 			{
 				...options,
 				effects: {
-					async emit() {
-						return fail("INTERNAL_ERROR", "outbox failed");
+					emit() {
+						return Promise.resolve(fail("INTERNAL_ERROR", "outbox failed"));
 					},
 				},
 			},
@@ -152,7 +164,9 @@ describe("accounting transaction rollback", () => {
 			},
 			options,
 		);
-		if (!posted.ok) throw new Error(posted.message);
+		if (!posted.ok) {
+			throw new Error(posted.message);
+		}
 		const reversed = await reverseJournal(
 			{
 				organizationId,
@@ -165,8 +179,8 @@ describe("accounting transaction rollback", () => {
 			{
 				...options,
 				effects: {
-					async emit() {
-						return fail("INTERNAL_ERROR", "outbox failed");
+					emit() {
+						return Promise.resolve(fail("INTERNAL_ERROR", "outbox failed"));
 					},
 				},
 			},

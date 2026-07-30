@@ -11,13 +11,13 @@ export type WorkCalendarScopeType =
 	| "legal_entity"
 	| "organization";
 
-export type ScopedCalendarAssignmentCandidate = {
-	scopeType: WorkCalendarScopeType;
-	scopeKey: string;
+export interface ScopedCalendarAssignmentCandidate {
 	calendarId: string;
 	effectiveFrom: string;
 	effectiveTo: string | null;
-};
+	scopeKey: string;
+	scopeType: WorkCalendarScopeType;
+}
 
 const SCOPE_PRECEDENCE: readonly WorkCalendarScopeType[] = [
 	"employment",

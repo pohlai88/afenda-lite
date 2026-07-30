@@ -7,5 +7,5 @@ import { handleSyncSessionCookiesRequest } from "@afenda/auth";
  * cannot write when `auth.getSession()` refreshes or mints session_data.
  */
 export async function GET(request: Request): Promise<Response> {
-	return handleSyncSessionCookiesRequest(request);
+	return await handleSyncSessionCookiesRequest(request);
 }

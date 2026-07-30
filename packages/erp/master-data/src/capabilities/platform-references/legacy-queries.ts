@@ -56,7 +56,7 @@ const ianaQuerySchema = orgQueryActorSchema.extend({
 const uomIdQuerySchema = orgQueryActorSchema.extend({ id: refUomIdSchema });
 const listRefUomsQuerySchema = orgQueryActorSchema;
 
-async function authorizeRefQuery(
+function authorizeRefQuery(
 	options: MasterCommandOptions,
 	input: { organizationId: string; actorUserId: string },
 	query: MasterQueryId,
@@ -78,13 +78,17 @@ export async function getRefCountryByCode(
 		input,
 		"Invalid country code query",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorizeRefQuery(
 		options,
 		parsed.data,
 		MASTER_QUERY_REF_COUNTRY_GET_BY_CODE,
 	);
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return resolveCommandDeps(options).store.getRefCountryByCode(
 		parsed.data.code,
 	);
@@ -99,13 +103,17 @@ export async function getRefCurrencyByCode(
 		input,
 		"Invalid currency code query",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorizeRefQuery(
 		options,
 		parsed.data,
 		MASTER_QUERY_REF_CURRENCY_GET_BY_CODE,
 	);
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return resolveCommandDeps(options).store.getRefCurrencyByCode(
 		parsed.data.code,
 	);
@@ -120,13 +128,17 @@ export async function getRefLanguageByCode(
 		input,
 		"Invalid language code query",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorizeRefQuery(
 		options,
 		parsed.data,
 		MASTER_QUERY_REF_LANGUAGE_GET_BY_CODE,
 	);
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return resolveCommandDeps(options).store.getRefLanguageByCode(
 		parsed.data.code,
 	);
@@ -141,13 +153,17 @@ export async function getRefTimeZoneByIana(
 		input,
 		"Invalid time zone query",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorizeRefQuery(
 		options,
 		parsed.data,
 		MASTER_QUERY_REF_TIME_ZONE_GET_BY_IANA,
 	);
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return resolveCommandDeps(options).store.getRefTimeZoneByIana(
 		parsed.data.ianaName,
 	);
@@ -162,13 +178,17 @@ export async function getRefUomDimensionByCode(
 		input,
 		"Invalid UoM dimension code query",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorizeRefQuery(
 		options,
 		parsed.data,
 		MASTER_QUERY_REF_UOM_DIMENSION_GET_BY_CODE,
 	);
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return resolveCommandDeps(options).store.getRefUomDimensionByCode(
 		parsed.data.code,
 	);
@@ -183,13 +203,17 @@ export async function getRefUomById(
 		input,
 		"Invalid UoM id query",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorizeRefQuery(
 		options,
 		parsed.data,
 		MASTER_QUERY_REF_UOM_GET_BY_ID,
 	);
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return resolveCommandDeps(options).store.getRefUomById(parsed.data.id);
 }
 
@@ -202,13 +226,17 @@ export async function getRefUomByCode(
 		input,
 		"Invalid UoM code query",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorizeRefQuery(
 		options,
 		parsed.data,
 		MASTER_QUERY_REF_UOM_GET_BY_CODE,
 	);
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return resolveCommandDeps(options).store.getRefUomByCode(parsed.data.code);
 }
 
@@ -221,12 +249,16 @@ export async function listRefUoms(
 		input,
 		"Invalid UoM list query",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorizeRefQuery(
 		options,
 		parsed.data,
 		MASTER_QUERY_REF_UOM_LIST,
 	);
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return resolveCommandDeps(options).store.listRefUoms();
 }

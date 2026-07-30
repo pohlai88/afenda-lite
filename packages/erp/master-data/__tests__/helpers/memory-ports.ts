@@ -11,10 +11,12 @@ import type {
 	OutboxPort,
 } from "../../src/ports";
 
+import { resolveAsync } from "../../src/resolve-async";
+
 /** In-memory audit port for Vitest — records calls for assertions. */
 export function createMemoryAuditPort(): AuditFactPort & {
 	calls: AuditFactInput[];
-	reset(): void;
+	reset: () => void;
 } {
 	const calls: AuditFactInput[] = [];
 	return {
@@ -22,9 +24,11 @@ export function createMemoryAuditPort(): AuditFactPort & {
 		reset() {
 			calls.length = 0;
 		},
-		async record(input: AuditFactInput): Promise<Result<{ id: string }>> {
-			calls.push(input);
-			return ok({ id: randomUUID() });
+		record(input: AuditFactInput): Promise<Result<{ id: string }>> {
+			return resolveAsync(() => {
+				calls.push(input);
+				return ok({ id: randomUUID() });
+			});
 		},
 	};
 }
@@ -32,7 +36,7 @@ export function createMemoryAuditPort(): AuditFactPort & {
 /** In-memory outbox port for Vitest — records calls for assertions. */
 export function createMemoryOutboxPort(): OutboxPort & {
 	calls: OutboxFactInput[];
-	reset(): void;
+	reset: () => void;
 } {
 	const calls: OutboxFactInput[] = [];
 	return {
@@ -40,9 +44,11 @@ export function createMemoryOutboxPort(): OutboxPort & {
 		reset() {
 			calls.length = 0;
 		},
-		async append(input: OutboxFactInput): Promise<Result<{ id: string }>> {
-			calls.push(input);
-			return ok({ id: randomUUID() });
+		append(input: OutboxFactInput): Promise<Result<{ id: string }>> {
+			return resolveAsync(() => {
+				calls.push(input);
+				return ok({ id: randomUUID() });
+			});
 		},
 	};
 }
@@ -52,7 +58,7 @@ export function createMemoryMutationPorts(): MutationPorts & {
 	outbox: ReturnType<typeof createMemoryOutboxPort>;
 	clock: ClockPort & {
 		current: Date;
-		set(value: Date): void;
+		set: (value: Date) => void;
 	};
 } {
 	const audit = createMemoryAuditPort();

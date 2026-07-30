@@ -99,3 +99,4 @@ describe.skipIf(!hasDatabase)("recordRbacAudit tenancy write (I2.3)", () => {
 		);
 	});
 });
+// biome-ignore-all lint/performance/noAwaitInLoops: Cases run serially to isolate mutable test state and ordered transitions.

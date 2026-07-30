@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/useAwait: The deterministic memory adapter implements asynchronous officer-compliance ports.
 import { randomUUID } from "node:crypto";
 import { fail, ok } from "@afenda/errors/result";
 
@@ -99,7 +100,9 @@ export function createMemoryCorporateAdministrationOfficerComplianceStore(): Off
 			const current = declarations.get(
 				key(input.organizationId, input.officerDeclarationId),
 			);
-			if (current === undefined) return notFound();
+			if (current === undefined) {
+				return notFound();
+			}
 			if (current.version !== input.expectedVersion) {
 				return stale(input.expectedVersion, current.version);
 			}
@@ -183,7 +186,9 @@ export function createMemoryCorporateAdministrationOfficerComplianceStore(): Off
 			const current = disqualifications.get(
 				key(input.organizationId, input.officerDisqualificationId),
 			);
-			if (current === undefined) return notFound();
+			if (current === undefined) {
+				return notFound();
+			}
 			if (current.version !== input.expectedVersion) {
 				return stale(input.expectedVersion, current.version);
 			}
@@ -256,7 +261,9 @@ export function createMemoryCorporateAdministrationOfficerComplianceStore(): Off
 			const current = conflicts.get(
 				key(input.organizationId, input.conflictDisclosureId),
 			);
-			if (current === undefined) return notFound();
+			if (current === undefined) {
+				return notFound();
+			}
 			if (current.version !== input.expectedVersion) {
 				return stale(input.expectedVersion, current.version);
 			}

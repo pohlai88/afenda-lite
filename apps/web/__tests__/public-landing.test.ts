@@ -56,7 +56,7 @@ describe("public landing (PL-S2)", () => {
 		expect(page).not.toContain("PublicMessageShell");
 		expect(landing).toContain("TheMachineLandingStage");
 		expect(landing).toContain("machineFontVariables");
-		expect(stage).toContain(`id={MAIN_CONTENT_ID}`);
+		expect(stage).toContain("id={MAIN_CONTENT_ID}");
 		expect(stage).toContain("tabIndex={-1}");
 		expect(stage).toContain('id="hero-title"');
 		expect(stage).toContain("<h1");

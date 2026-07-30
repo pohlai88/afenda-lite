@@ -24,238 +24,240 @@ function parseDate(value: Date | string): Date {
 }
 
 function parseNullableDate(value: Date | string | null): Date | null {
-	if (value === null) return null;
+	if (value === null) {
+		return null;
+	}
 	return parseDate(value);
 }
 
-export type WorkCalendarSqlRow = {
-	id: string;
-	organization_id: string;
-	code: string;
-	name: string;
-	timezone: string;
+export interface WorkCalendarSqlRow {
 	calendar_version: string;
-	work_week_json: unknown;
+	code: string;
+	create_idempotency_key: string;
+	create_request_fingerprint: string;
+	created_at: Date;
+	created_by: string;
+	effective_from: string;
+	effective_to: string | null;
+	id: string;
+	name: string;
+	organization_id: string;
 	standard_hours_per_day: string;
 	status: string;
-	effective_from: string;
-	effective_to: string | null;
 	supersedes_calendar_id: string | null;
-	version: number;
-	create_idempotency_key: string;
-	create_request_fingerprint: string;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
+	timezone: string;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+	work_week_json: unknown;
+}
 
-export type TimePolicySqlRow = {
-	id: string;
-	organization_id: string;
-	code: string;
-	name: string;
-	status: string;
-	effective_from: string;
-	effective_to: string | null;
-	minimum_rest_minutes: number;
+export interface TimePolicySqlRow {
+	approval_steps: unknown;
 	automatic_break_after_minutes: number | null;
 	automatic_break_minutes: number;
-	approval_steps: unknown;
-	supersedes_policy_id: string | null;
-	version: number;
+	code: string;
 	create_idempotency_key: string;
 	create_request_fingerprint: string;
-	created_by: string;
-	updated_by: string;
 	created_at: Date;
+	created_by: string;
+	effective_from: string;
+	effective_to: string | null;
+	id: string;
+	minimum_rest_minutes: number;
+	name: string;
+	organization_id: string;
+	status: string;
+	supersedes_policy_id: string | null;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+}
 
-export type TimePolicyAssignmentSqlRow = {
+export interface TimePolicyAssignmentSqlRow {
+	created_at: Date;
+	created_by: string;
+	effective_from: string;
+	effective_to: string | null;
+	employment_id: string;
 	id: string;
 	organization_id: string;
 	policy_id: string;
-	employment_id: string;
-	effective_from: string;
-	effective_to: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+}
 
-export type TimeApprovalAuthorityAssignmentSqlRow = {
-	id: string;
-	organization_id: string;
+export interface TimeApprovalAuthorityAssignmentSqlRow {
 	actor_user_id: string;
 	authority: string;
+	created_at: Date;
+	created_by: string;
 	effective_from: string;
 	effective_to: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
-	updated_at: Date;
-};
-
-export type ShiftSqlRow = {
 	id: string;
 	organization_id: string;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+}
+
+export interface ShiftSqlRow {
 	code: string;
-	name: string;
-	shift_kind: string;
-	start_local: string;
+	create_idempotency_key: string;
+	create_request_fingerprint: string;
+	created_at: Date;
+	created_by: string;
+	earliest_clock_in_local: string | null;
+	effective_from: string;
+	effective_to: string | null;
 	end_local: string;
-	is_overnight: boolean;
 	expected_minutes: number;
 	grace_early_minutes: number;
 	grace_late_minutes: number;
-	min_duration_minutes: number | null;
-	max_duration_minutes: number | null;
-	earliest_clock_in_local: string | null;
+	id: string;
+	is_overnight: boolean;
 	latest_clock_out_local: string | null;
+	location_key: string | null;
+	max_duration_minutes: number | null;
+	min_duration_minutes: number | null;
+	name: string;
+	organization_id: string;
 	overtime_eligible: boolean;
-	timezone: string | null;
-	location_key: string | null;
+	shift_kind: string;
+	start_local: string;
 	status: string;
-	effective_from: string;
-	effective_to: string | null;
 	supersedes_shift_id: string | null;
-	version: number;
-	create_idempotency_key: string;
-	create_request_fingerprint: string;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
+	timezone: string | null;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+}
 
-export type ShiftAssignmentSqlRow = {
-	id: string;
-	organization_id: string;
-	employee_id: string;
-	employment_id: string | null;
-	shift_id: string;
-	scheduled_date: string;
-	starts_at: Date;
-	ends_at: Date;
-	location_key: string | null;
-	timezone: string;
-	publication_status: string;
+export interface ShiftAssignmentSqlRow {
 	assignment_source: string;
-	version: number;
 	create_idempotency_key: string;
 	create_request_fingerprint: string;
-	created_by: string;
-	updated_by: string;
 	created_at: Date;
-	updated_at: Date;
-};
-
-export type AttendanceEventSqlRow = {
-	id: string;
-	organization_id: string;
+	created_by: string;
 	employee_id: string;
 	employment_id: string | null;
-	shift_assignment_id: string | null;
-	event_type: string;
+	ends_at: Date;
+	id: string;
+	location_key: string | null;
+	organization_id: string;
+	publication_status: string;
+	scheduled_date: string;
+	shift_id: string;
+	starts_at: Date;
+	timezone: string;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+}
+
+export interface AttendanceEventSqlRow {
+	captured_notes: string | null;
 	captured_occurred_at: Date | null;
-	occurred_at: Date;
-	source_sequence: number;
-	source_timezone: string;
+	create_idempotency_key: string;
+	create_request_fingerprint: string;
+	created_at: Date;
+	created_by: string;
+	device_metadata: unknown;
+	employee_id: string;
+	employment_id: string | null;
+	event_type: string;
+	id: string;
 	local_work_date: string;
+	location_key: string | null;
+	notes: string | null;
+	occurred_at: Date;
+	organization_id: string;
+	payload_checksum: string | null;
+	shift_assignment_id: string | null;
 	source: string;
 	source_reference: string | null;
-	device_metadata: unknown;
-	location_key: string | null;
-	captured_notes: string | null;
-	notes: string | null;
-	payload_checksum: string | null;
-	voided_at: Date | null;
-	void_reason: string | null;
-	version: number;
-	create_idempotency_key: string;
-	create_request_fingerprint: string;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
+	source_sequence: number;
+	source_timezone: string;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+	void_reason: string | null;
+	voided_at: Date | null;
+}
 
-export type AttendanceAdjustmentSqlRow = {
-	id: string;
-	organization_id: string;
-	event_id: string;
-	sequence: number | null;
-	event_version_before: number | null;
-	event_version_after: number | null;
-	previous_occurred_at: Date;
-	new_occurred_at: Date;
-	previous_notes: string | null;
-	new_notes: string | null;
-	adjustment_reason: string;
-	evidence_reference: string | null;
+export interface AttendanceAdjustmentSqlRow {
 	actor_user_id: string;
+	adjustment_reason: string;
 	correlation_id: string | null;
 	created_at: Date;
-};
-
-export type TimesheetSqlRow = {
+	event_id: string;
+	event_version_after: number | null;
+	event_version_before: number | null;
+	evidence_reference: string | null;
 	id: string;
+	new_notes: string | null;
+	new_occurred_at: Date;
 	organization_id: string;
-	employee_id: string;
-	employment_id: string | null;
-	period_start: string;
-	period_end: string;
-	status: string;
-	total_recorded_minutes: number;
-	total_approved_minutes: number;
-	submitted_at: Date | null;
-	submission_reference: string | null;
+	previous_notes: string | null;
+	previous_occurred_at: Date;
+	sequence: number | null;
+}
+
+export interface TimesheetSqlRow {
 	approval_policy_id: string | null;
-	required_approval_steps: unknown;
-	completed_approval_steps: number;
 	approved_at: Date | null;
 	approved_by: string | null;
-	returned_at: Date | null;
-	rejected_at: Date | null;
-	locked_at: Date | null;
 	approver_notes: string | null;
-	rejection_reason: string | null;
-	supersedes_timesheet_id: string | null;
-	version: number;
+	completed_approval_steps: number;
 	create_idempotency_key: string;
 	create_request_fingerprint: string;
-	created_by: string;
-	updated_by: string;
 	created_at: Date;
+	created_by: string;
+	employee_id: string;
+	employment_id: string | null;
+	id: string;
+	locked_at: Date | null;
+	organization_id: string;
+	period_end: string;
+	period_start: string;
+	rejected_at: Date | null;
+	rejection_reason: string | null;
+	required_approval_steps: unknown;
+	returned_at: Date | null;
+	status: string;
+	submission_reference: string | null;
+	submitted_at: Date | null;
+	supersedes_timesheet_id: string | null;
+	total_approved_minutes: number;
+	total_recorded_minutes: number;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+}
 
-export type TimesheetApprovalDecisionSqlRow = {
+export interface TimesheetApprovalDecisionSqlRow {
+	actor_user_id: string;
+	authority: string;
+	authority_assignment_id: string;
+	comment: string | null;
+	correlation_id: string;
+	created_at: Date;
+	decided_at: Date;
 	id: string;
 	organization_id: string;
-	timesheet_id: string;
-	submission_reference: string;
 	policy_id: string | null;
-	authority_assignment_id: string;
 	step_index: number;
-	authority: string;
-	actor_user_id: string;
-	comment: string | null;
+	submission_reference: string;
+	timesheet_id: string;
 	version_approved: number;
-	correlation_id: string;
-	decided_at: Date;
-	created_at: Date;
-};
+}
 
 export async function runTimeTransaction<T extends unknown[]>(
 	queriesOrFn: Parameters<typeof runNeonHttpTransaction<T>>[0],
 	options?: Parameters<typeof runNeonHttpTransaction<T>>[1],
 ): Promise<T> {
-	return runNeonHttpTransaction<T>(queriesOrFn, {
+	return await runNeonHttpTransaction<T>(queriesOrFn, {
 		isolationLevel: "ReadCommitted",
 		...options,
 	});

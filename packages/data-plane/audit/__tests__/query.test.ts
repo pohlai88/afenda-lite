@@ -101,6 +101,21 @@ describe("@afenda/audit query helpers", () => {
 		}
 	});
 
+	it("keeps synchronous store failures on the promise boundary", async () => {
+		const store = new MemoryAuditStore();
+		store.count = () => {
+			throw new Error("synchronous count failure");
+		};
+
+		const pending = countByAction(
+			{ organizationId: "org-1", action: "CREATE" },
+			store,
+		);
+
+		expect(pending).toBeInstanceOf(Promise);
+		await expect(pending).rejects.toThrow("synchronous count failure");
+	});
+
 	it("exports json and purges only the target org older rows", async () => {
 		const store = new MemoryAuditStore();
 		await seed(store);

@@ -5,7 +5,7 @@ import type * as React from "react";
 import { cn } from "../../lib/utils";
 
 const buttonVariants = cva(
-	"inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[1.5px] focus-visible:ring-ring-focus disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-ring-destructive-focus dark:aria-invalid:ring-ring-destructive-focus-strong [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+	"inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-all focus-visible:border-ring focus-visible:ring-[1.5px] focus-visible:ring-ring-focus disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-ring-destructive-focus dark:aria-invalid:ring-ring-destructive-focus-strong [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
 	{
 		variants: {
 			variant: {
@@ -22,7 +22,7 @@ const buttonVariants = cva(
 			},
 			size: {
 				default:
-					"h-(--control-height) px-4 py-2 has-[>svg]:px-3 transition-[color,background-color,box-shadow] duration-(--duration-fast) ease-(--ease-standard)",
+					"h-(--control-height) px-4 py-2 transition-[color,background-color,box-shadow] duration-(--duration-fast) ease-(--ease-standard) has-[>svg]:px-3",
 				xs: "h-6 gap-1 rounded-sm px-2 text-xs has-[>svg]:px-1.5 [&_svg:not([class*='size-'])]:size-3",
 				sm: "h-(--control-height-sm) gap-1.5 rounded-md px-3 has-[>svg]:px-2.5",
 				lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
@@ -53,10 +53,10 @@ function Button({
 
 	return (
 		<Comp
+			className={cn(buttonVariants({ variant, size, className }))}
+			data-size={size}
 			data-slot="button"
 			data-variant={variant}
-			data-size={size}
-			className={cn(buttonVariants({ variant, size, className }))}
 			{...props}
 		/>
 	);

@@ -31,9 +31,18 @@ export type NormalizedVariantAttributeValue = Readonly<{
 	normalizedValue: string;
 }>;
 
+type NormalizeVariantAttributeValueInput = Readonly<{
+	dataType: ItemTemplateAttributeDataType;
+	validationRules: ItemTemplateAttributeValidationRules;
+	value: VariantAttributeValueInput;
+}>;
+
 const INTEGER_RE = /^-?(?:0|[1-9]\d*)$/;
 const DECIMAL_RE = /^-?(?:0|[1-9]\d*)(?:\.\d+)?$/;
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const LEADING_DECIMAL_ZERO_RE = /^0+(?=\d)/;
+const TRAILING_DECIMAL_ZERO_RE = /0+$/;
+const LEADING_ZERO_RE = /^0+/;
 
 function validationFailure(message: string): Result<never> {
 	return fail("BAD_REQUEST", message, {
@@ -60,12 +69,14 @@ function populatedRepresentationCount(
 function canonicalDecimal(raw: number | string): string | null {
 	const value =
 		typeof raw === "number" ? String(raw) : raw.normalize("NFC").trim();
-	if (!DECIMAL_RE.test(value)) return null;
+	if (!DECIMAL_RE.test(value)) {
+		return null;
+	}
 	const negative = value.startsWith("-");
 	const unsigned = negative ? value.slice(1) : value;
 	const [integerPart = "0", fractionPart] = unsigned.split(".");
-	const integer = integerPart.replace(/^0+(?=\d)/, "");
-	const fraction = fractionPart?.replace(/0+$/, "");
+	const integer = integerPart.replace(LEADING_DECIMAL_ZERO_RE, "");
+	const fraction = fractionPart?.replace(TRAILING_DECIMAL_ZERO_RE, "");
 	const magnitude = fraction ? `${integer}.${fraction}` : integer;
 	return negative && magnitude !== "0" ? `-${magnitude}` : magnitude;
 }
@@ -83,9 +94,12 @@ function decimalRule(
 	key: "minimum" | "maximum",
 ): string | undefined {
 	const value = rules[key];
-	if (typeof value === "string" && DECIMAL_RE.test(value)) return value;
-	if (typeof value === "number" && Number.isFinite(value)) return String(value);
-	return undefined;
+	if (typeof value === "string" && DECIMAL_RE.test(value)) {
+		return value;
+	}
+	if (typeof value === "number" && Number.isFinite(value)) {
+		return String(value);
+	}
 }
 
 function validateNumericRules(
@@ -111,7 +125,7 @@ function validateNumericRules(
 	const precision = numericRule(rules, "precision");
 	const scale = numericRule(rules, "scale");
 	const digitCount =
-		`${integerPart}${fractionPart}`.replace(/^0+/, "").length || 1;
+		`${integerPart}${fractionPart}`.replace(LEADING_ZERO_RE, "").length || 1;
 	if (digitCount > 38 || fractionPart.length > 18) {
 		return validationFailure(
 			"Numeric attribute value exceeds supported precision or scale",
@@ -153,133 +167,211 @@ export function normalizeVariantAttributeValue(input: {
 			"Each attribute requires exactly one value representation",
 		);
 	}
-	const base = emptyValue(input.dataType);
-	if (input.dataType === "text") {
-		if (input.value.textValue === undefined) {
-			return validationFailure("Text attribute requires textValue");
-		}
-		const textValue = input.value.textValue.normalize("NFC").trim();
-		const minLength = numericRule(input.validationRules, "minLength");
-		const maxLength = numericRule(input.validationRules, "maxLength");
-		const pattern = input.validationRules.pattern;
-		if (textValue.length === 0)
-			return validationFailure("Text attribute value is required");
-		if (minLength !== undefined && textValue.length < minLength) {
-			return validationFailure(
-				"Text attribute value is shorter than its configured minimum",
-			);
-		}
-		if (maxLength !== undefined && textValue.length > maxLength) {
-			return validationFailure(
-				"Text attribute value exceeds its configured maximum",
-			);
-		}
-		if (
-			typeof pattern === "string" &&
-			!new RegExp(pattern, "u").test(textValue)
-		) {
-			return validationFailure(
-				"Text attribute value does not match its configured pattern",
-			);
-		}
-		return ok({
-			...base,
-			textValue,
-			normalizedValue: textValue
-				.normalize("NFKC")
-				.replace(/\s+/gu, " ")
-				.toUpperCase(),
-		});
+
+	switch (input.dataType) {
+		case "text":
+			return normalizeTextValue(input);
+		case "integer":
+			return normalizeIntegerValue(input);
+		case "decimal":
+			return normalizeDecimalValue(input);
+		case "boolean":
+			return normalizeBooleanValue(input);
+		case "date":
+			return normalizeDateValue(input);
+		case "single_option":
+			return normalizeSingleOptionValue(input);
+		case "multiple_option":
+			return normalizeMultipleOptionValue(input);
+		case "reference":
+			return normalizeReferenceValue(input);
+		default:
+			return assertNever(input.dataType);
 	}
-	if (input.dataType === "integer") {
-		const raw = input.value.integerValue;
-		if (raw === undefined)
-			return validationFailure("Integer attribute requires integerValue");
-		if (typeof raw === "number" && !Number.isSafeInteger(raw)) {
-			return validationFailure(
-				"Numeric integer input must be a safe integer or decimal string",
-			);
-		}
-		const integerValue = typeof raw === "number" ? String(raw) : raw.trim();
-		if (!INTEGER_RE.test(integerValue))
-			return validationFailure("Invalid integer attribute value");
-		const canonical = BigInt(integerValue).toString();
-		const rules = validateNumericRules(canonical, input.validationRules);
-		if (!rules.ok) return rules;
-		return ok({ ...base, integerValue: canonical, normalizedValue: canonical });
+}
+
+function assertNever(value: never): never {
+	throw new Error(`Unsupported attribute data type: ${String(value)}`);
+}
+
+function normalizeTextValue(
+	input: NormalizeVariantAttributeValueInput,
+): Result<NormalizedVariantAttributeValue> {
+	if (input.value.textValue === undefined) {
+		return validationFailure("Text attribute requires textValue");
 	}
-	if (input.dataType === "decimal") {
-		const raw = input.value.decimalValue;
-		if (raw === undefined)
-			return validationFailure("Decimal attribute requires decimalValue");
-		const decimalValue = canonicalDecimal(raw);
-		if (decimalValue === null)
-			return validationFailure("Invalid decimal attribute value");
-		const rules = validateNumericRules(decimalValue, input.validationRules);
-		if (!rules.ok) return rules;
-		return ok({ ...base, decimalValue, normalizedValue: decimalValue });
+	const textValue = input.value.textValue.normalize("NFC").trim();
+	const minLength = numericRule(input.validationRules, "minLength");
+	const maxLength = numericRule(input.validationRules, "maxLength");
+	const { pattern } = input.validationRules;
+	if (textValue.length === 0) {
+		return validationFailure("Text attribute value is required");
 	}
-	if (input.dataType === "boolean") {
-		if (input.value.booleanValue === undefined) {
-			return validationFailure("Boolean attribute requires booleanValue");
-		}
-		return ok({
-			...base,
-			booleanValue: input.value.booleanValue,
-			normalizedValue: input.value.booleanValue ? "TRUE" : "FALSE",
-		});
+	if (minLength !== undefined && textValue.length < minLength) {
+		return validationFailure(
+			"Text attribute value is shorter than its configured minimum",
+		);
 	}
-	if (input.dataType === "date") {
-		const dateValue = input.value.dateValue;
-		if (dateValue === undefined || !ISO_DATE_RE.test(dateValue)) {
-			return validationFailure("Date attribute requires an ISO calendar date");
-		}
-		const parsed = new Date(`${dateValue}T00:00:00.000Z`);
-		if (
-			Number.isNaN(parsed.valueOf()) ||
-			parsed.toISOString().slice(0, 10) !== dateValue
-		) {
-			return validationFailure("Invalid calendar date attribute value");
-		}
-		const minimum = input.validationRules.minimum;
-		const maximum = input.validationRules.maximum;
-		if (typeof minimum === "string" && dateValue < minimum) {
-			return validationFailure(
-				"Date attribute value is before its configured minimum",
-			);
-		}
-		if (typeof maximum === "string" && dateValue > maximum) {
-			return validationFailure(
-				"Date attribute value exceeds its configured maximum",
-			);
-		}
-		return ok({ ...base, dateValue, normalizedValue: dateValue });
+	if (maxLength !== undefined && textValue.length > maxLength) {
+		return validationFailure(
+			"Text attribute value exceeds its configured maximum",
+		);
 	}
-	if (input.dataType === "single_option") {
-		if (input.value.optionId === undefined) {
-			return validationFailure("Single-option attribute requires optionId");
-		}
-		return ok({ ...base, optionId: input.value.optionId, normalizedValue: "" });
+	if (
+		typeof pattern === "string" &&
+		!new RegExp(pattern, "u").test(textValue)
+	) {
+		return validationFailure(
+			"Text attribute value does not match its configured pattern",
+		);
 	}
-	if (input.dataType === "multiple_option") {
-		const optionIds = input.value.optionIds;
-		if (
-			optionIds === undefined ||
-			optionIds.length === 0 ||
-			optionIds.length > 100
-		) {
-			return validationFailure(
-				"Multiple-option attribute requires 1 to 100 optionIds",
-			);
-		}
-		const uniqueOptionIds = [...new Set(optionIds)].sort();
-		if (uniqueOptionIds.length !== optionIds.length) {
-			return validationFailure(
-				"Multiple-option attribute contains duplicate optionIds",
-			);
-		}
-		return ok({ ...base, optionIds: uniqueOptionIds, normalizedValue: "" });
+	return ok({
+		...emptyValue("text"),
+		textValue,
+		normalizedValue: textValue
+			.normalize("NFKC")
+			.replace(/\s+/gu, " ")
+			.toUpperCase(),
+	});
+}
+
+function normalizeIntegerValue(
+	input: NormalizeVariantAttributeValueInput,
+): Result<NormalizedVariantAttributeValue> {
+	const raw = input.value.integerValue;
+	if (raw === undefined) {
+		return validationFailure("Integer attribute requires integerValue");
 	}
+	if (typeof raw === "number" && !Number.isSafeInteger(raw)) {
+		return validationFailure(
+			"Numeric integer input must be a safe integer or decimal string",
+		);
+	}
+	const integerValue = typeof raw === "number" ? String(raw) : raw.trim();
+	if (!INTEGER_RE.test(integerValue)) {
+		return validationFailure("Invalid integer attribute value");
+	}
+	const canonical = BigInt(integerValue).toString();
+	const rules = validateNumericRules(canonical, input.validationRules);
+	if (!rules.ok) {
+		return rules;
+	}
+	return ok({
+		...emptyValue("integer"),
+		integerValue: canonical,
+		normalizedValue: canonical,
+	});
+}
+
+function normalizeDecimalValue(
+	input: NormalizeVariantAttributeValueInput,
+): Result<NormalizedVariantAttributeValue> {
+	const raw = input.value.decimalValue;
+	if (raw === undefined) {
+		return validationFailure("Decimal attribute requires decimalValue");
+	}
+	const decimalValue = canonicalDecimal(raw);
+	if (decimalValue === null) {
+		return validationFailure("Invalid decimal attribute value");
+	}
+	const rules = validateNumericRules(decimalValue, input.validationRules);
+	if (!rules.ok) {
+		return rules;
+	}
+	return ok({
+		...emptyValue("decimal"),
+		decimalValue,
+		normalizedValue: decimalValue,
+	});
+}
+
+function normalizeBooleanValue(
+	input: NormalizeVariantAttributeValueInput,
+): Result<NormalizedVariantAttributeValue> {
+	if (input.value.booleanValue === undefined) {
+		return validationFailure("Boolean attribute requires booleanValue");
+	}
+	return ok({
+		...emptyValue("boolean"),
+		booleanValue: input.value.booleanValue,
+		normalizedValue: input.value.booleanValue ? "TRUE" : "FALSE",
+	});
+}
+
+function normalizeDateValue(
+	input: NormalizeVariantAttributeValueInput,
+): Result<NormalizedVariantAttributeValue> {
+	const { dateValue } = input.value;
+	if (dateValue === undefined || !ISO_DATE_RE.test(dateValue)) {
+		return validationFailure("Date attribute requires an ISO calendar date");
+	}
+	const parsed = new Date(`${dateValue}T00:00:00.000Z`);
+	if (
+		Number.isNaN(parsed.valueOf()) ||
+		parsed.toISOString().slice(0, 10) !== dateValue
+	) {
+		return validationFailure("Invalid calendar date attribute value");
+	}
+	const { minimum, maximum } = input.validationRules;
+	if (typeof minimum === "string" && dateValue < minimum) {
+		return validationFailure(
+			"Date attribute value is before its configured minimum",
+		);
+	}
+	if (typeof maximum === "string" && dateValue > maximum) {
+		return validationFailure(
+			"Date attribute value exceeds its configured maximum",
+		);
+	}
+	return ok({
+		...emptyValue("date"),
+		dateValue,
+		normalizedValue: dateValue,
+	});
+}
+
+function normalizeSingleOptionValue(
+	input: NormalizeVariantAttributeValueInput,
+): Result<NormalizedVariantAttributeValue> {
+	if (input.value.optionId === undefined) {
+		return validationFailure("Single-option attribute requires optionId");
+	}
+	return ok({
+		...emptyValue("single_option"),
+		optionId: input.value.optionId,
+		normalizedValue: "",
+	});
+}
+
+function normalizeMultipleOptionValue(
+	input: NormalizeVariantAttributeValueInput,
+): Result<NormalizedVariantAttributeValue> {
+	const { optionIds } = input.value;
+	if (
+		optionIds === undefined ||
+		optionIds.length === 0 ||
+		optionIds.length > 100
+	) {
+		return validationFailure(
+			"Multiple-option attribute requires 1 to 100 optionIds",
+		);
+	}
+	const uniqueOptionIds = [...new Set(optionIds)].sort();
+	if (uniqueOptionIds.length !== optionIds.length) {
+		return validationFailure(
+			"Multiple-option attribute contains duplicate optionIds",
+		);
+	}
+	return ok({
+		...emptyValue("multiple_option"),
+		optionIds: uniqueOptionIds,
+		normalizedValue: "",
+	});
+}
+
+function normalizeReferenceValue(
+	input: NormalizeVariantAttributeValueInput,
+): Result<NormalizedVariantAttributeValue> {
 	if (input.value.referenceValue === undefined) {
 		return validationFailure("Reference attribute requires referenceValue");
 	}
@@ -290,7 +382,7 @@ export function normalizeVariantAttributeValue(input: {
 		);
 	}
 	return ok({
-		...base,
+		...emptyValue("reference"),
 		referenceValue,
 		normalizedValue: referenceValue.normalize("NFKC").toUpperCase(),
 	});

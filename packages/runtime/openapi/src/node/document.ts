@@ -23,10 +23,10 @@ export type OpenApiHttpMethod =
 	| "head"
 	| "options";
 
-export type OperationMetadata = {
+export interface OperationMetadata {
 	operationId: string;
 	status: AfendaOperationStatus;
-};
+}
 
 /** path → HTTP method → Afenda op metadata */
 export type OperationMetadataMap = Readonly<
@@ -38,25 +38,25 @@ export type OperationMetadataMap = Readonly<
 	>
 >;
 
-export type AfendaDocumentMeta = {
+export interface AfendaDocumentMeta {
+	generatedAt: string;
 	id: string;
 	version: string;
-	generatedAt: string;
-};
+}
 
-type OpenApiOperation = {
+interface OpenApiOperation {
 	operationId?: string;
 	"x-afenda-status"?: AfendaOperationStatus;
-};
+}
 
 type OpenApiPathItem = Partial<
 	Record<OpenApiHttpMethod, OpenApiOperation | undefined>
 >;
 
-export type StampableOpenApiDocument = {
+export interface StampableOpenApiDocument {
 	paths?: Record<string, OpenApiPathItem | undefined>;
 	"x-afenda-document"?: AfendaDocumentMeta;
-};
+}
 
 function isOpenApiHttpMethod(value: string): value is OpenApiHttpMethod {
 	switch (value) {
@@ -89,9 +89,11 @@ export function stampOperationMetadata(
 	metadata: OperationMetadataMap,
 ): void {
 	for (const [route, methods] of Object.entries(metadata)) {
-		if (!methods) continue;
+		if (!methods) {
+			continue;
+		}
 		for (const [method, opMeta] of Object.entries(methods)) {
-			if (!opMeta || !isOpenApiHttpMethod(method)) {
+			if (!(opMeta && isOpenApiHttpMethod(method))) {
 				throw new Error(
 					`Invalid OpenAPI method metadata ${method.toUpperCase()} ${route}`,
 				);

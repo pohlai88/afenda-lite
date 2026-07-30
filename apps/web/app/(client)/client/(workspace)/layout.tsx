@@ -21,9 +21,9 @@ export default async function ClientWorkspaceLayout({
 		<>
 			<ClientWorkspaceNav />
 			<main
+				className="min-h-dvh bg-background"
 				id={MAIN_CONTENT_ID}
 				tabIndex={-1}
-				className="min-h-dvh bg-background"
 			>
 				{children}
 			</main>

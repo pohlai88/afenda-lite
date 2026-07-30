@@ -89,10 +89,10 @@ function renderPanels(
 ) {
 	return render(
 		<OrgAdminPanels
-			roles={overrides?.roles ?? ROLES}
 			assignments={overrides?.assignments ?? ASSIGNMENTS}
 			auditRows={overrides?.auditRows ?? AUDIT_ROWS}
 			memberDirectory={READY_DIRECTORY}
+			roles={overrides?.roles ?? ROLES}
 		/>,
 	);
 }

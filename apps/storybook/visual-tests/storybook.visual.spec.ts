@@ -1,16 +1,16 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
 
-type StoryIndexEntry = {
+interface StoryIndexEntry {
 	id: string;
+	tags?: string[];
 	title: string;
 	type: "docs" | "story";
-	tags?: string[];
-};
+}
 
-type StoryIndex = {
+interface StoryIndex {
 	entries: Record<string, StoryIndexEntry>;
-};
+}
 
 type Theme = "light" | "dark";
 
@@ -49,6 +49,7 @@ test("all tagged UI-system stories match canonical screenshots @visual", async (
 
 	for (const story of stories) {
 		for (const theme of ["light", "dark"] as const) {
+			// biome-ignore lint/performance/noAwaitInLoops: visual captures share one page and must remain serial.
 			await test.step(`${story.id} · ${theme}`, async () => {
 				await openStory(page, story.id, theme);
 				await page.keyboard.press("Escape");
@@ -87,6 +88,7 @@ test("open Drawer and Menubar portals preserve themed elevation @visual", async 
 
 	for (const overlay of overlays) {
 		for (const theme of ["light", "dark"] as const) {
+			// biome-ignore lint/performance/noAwaitInLoops: overlay captures share one page and must remain serial.
 			await test.step(`${overlay.storyId} · open · ${theme}`, async () => {
 				await openStory(page, overlay.storyId, theme);
 				await page
@@ -120,6 +122,7 @@ test("Button governed states and compositions remain visually explicit @visual",
 
 	for (const theme of ["light", "dark"] as const) {
 		for (const evidence of staticEvidence) {
+			// biome-ignore lint/performance/noAwaitInLoops: button captures share one page and must remain serial.
 			await test.step(`${evidence.label} · ${theme}`, async () => {
 				await openStory(page, `ui-system-button--${evidence.story}`, theme);
 				await expect(page).toHaveScreenshot(
@@ -173,8 +176,9 @@ test("Button Docs preserve governed typography and accessibility", async ({
 
 	const typography = await docs.evaluate((root) => {
 		function stylesFor(element: Element | null) {
-			if (!element)
+			if (!element) {
 				throw new Error("Expected Docs typography element is missing.");
+			}
 			const styles = getComputedStyle(element);
 			return {
 				fontFamily: styles.fontFamily,

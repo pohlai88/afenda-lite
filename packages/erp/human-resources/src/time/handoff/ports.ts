@@ -18,62 +18,62 @@ import type { AttendanceEventType } from "../../types";
  * resolved employment work calendar for that segment date (fail-closed when calendar lookup is
  * wired). Payroll handoff minute totals omit timezone — consumers read entry `timezone`.
  */
-export type ApprovedLeaveFact = {
-	requestId: HumanResourcesLeaveRequestId;
-	segmentId: HumanResourcesLeaveRequestSegmentId;
-	employeeId: HumanResourcesEmployeeId;
-	employmentId: HumanResourcesEmploymentId;
-	workDate: string;
-	timezone: string;
-	paid: boolean;
+export interface ApprovedLeaveFact {
 	approvedMinutes: number;
 	dayPortion: DayPortion;
-};
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId;
+	paid: boolean;
+	requestId: HumanResourcesLeaveRequestId;
+	segmentId: HumanResourcesLeaveRequestSegmentId;
+	timezone: string;
+	workDate: string;
+}
 
-export type ApprovedLeaveQueryPort = {
-	listApprovedLeaveForEmployeePeriod(input: {
+export interface ApprovedLeaveQueryPort {
+	listApprovedLeaveForEmployeePeriod: (input: {
 		organizationId: string;
 		employeeId: HumanResourcesEmployeeId;
 		periodStart: string;
 		periodEnd: string;
-	}): Promise<Result<readonly ApprovedLeaveFact[]>>;
-};
+	}) => Promise<Result<readonly ApprovedLeaveFact[]>>;
+}
 
 /**
  * External attendance event after adapter mapping (employee identity resolved).
  * HR package does not implement biometric/device drivers.
  */
-export type AttendanceSourceEvent = {
-	sourceReference: string;
+export interface AttendanceSourceEvent {
+	deviceMetadata?: Record<string, unknown> | null | undefined;
 	employeeId: HumanResourcesEmployeeId;
 	employmentId?: HumanResourcesEmploymentId | null | undefined;
-	shiftAssignmentId?: HumanResourcesShiftAssignmentId | null | undefined;
 	eventType: AttendanceEventType;
-	occurredAt: string;
-	sourceTimezone: string;
 	localWorkDate: string;
 	locationKey?: string | null | undefined;
-	deviceMetadata?: Record<string, unknown> | null | undefined;
-	payloadChecksum?: string | null | undefined;
 	notes?: string | null | undefined;
-	sourceSequence?: number | undefined;
-};
-
-export type AttendanceSourceRejectedRow = {
-	rowIndex: number;
+	occurredAt: string;
+	payloadChecksum?: string | null | undefined;
+	shiftAssignmentId?: HumanResourcesShiftAssignmentId | null | undefined;
 	sourceReference: string;
+	sourceSequence?: number | undefined;
+	sourceTimezone: string;
+}
+
+export interface AttendanceSourceRejectedRow {
 	errorCode:
 		| "DUPLICATE_SOURCE_REFERENCE"
 		| "INVALID_TIMEZONE"
 		| "INVALID_EVENT_ROW";
 	errorMessage: string;
-};
+	rowIndex: number;
+	sourceReference: string;
+}
 
-export type AttendanceSourceBatch = {
+export interface AttendanceSourceBatch {
 	events: readonly AttendanceSourceEvent[];
 	nextCursor?: string | undefined;
 	rejectedRows?: readonly AttendanceSourceRejectedRow[] | undefined;
-};
+}
 
 export type AttendanceSourcePreviewRow =
 	| {
@@ -89,8 +89,9 @@ export type AttendanceSourcePreviewRow =
 			errorMessage: string;
 	  };
 
-export type AttendanceSourcePreviewResult = {
+export interface AttendanceSourcePreviewResult {
 	mode: "preview";
+	nextCursor?: string | undefined;
 	organizationId: string;
 	reconciliationKey: string;
 	rows: readonly AttendanceSourcePreviewRow[];
@@ -98,49 +99,51 @@ export type AttendanceSourcePreviewResult = {
 		accepted: number;
 		rejected: number;
 	};
-	nextCursor?: string | undefined;
-};
+}
 
 /**
  * Thin pull transport wired at composition root. HR does not implement device drivers.
  */
-export type AttendanceConnectorPullPort = {
-	pull(input: { organizationId: string; cursor?: string | undefined }): Promise<
+export interface AttendanceConnectorPullPort {
+	pull: (input: {
+		organizationId: string;
+		cursor?: string | undefined;
+	}) => Promise<
 		Result<{
 			events: readonly AttendanceSourceEvent[];
 			nextCursor?: string | undefined;
 		}>
 	>;
-};
+}
 
 /**
  * Port for pulling attendance from approved external systems.
  * Wired at composition root; optional when import command receives inline events.
  */
-export type AttendanceSourcePort = {
-	fetchEvents(input: {
+export interface AttendanceSourcePort {
+	fetchEvents: (input: {
 		organizationId: string;
 		cursor?: string | undefined;
-	}): Promise<Result<AttendanceSourceBatch>>;
-	previewEvents(input: {
+	}) => Promise<Result<AttendanceSourceBatch>>;
+	previewEvents: (input: {
 		organizationId: string;
 		cursor?: string | undefined;
-	}): Promise<Result<AttendanceSourcePreviewResult>>;
-};
+	}) => Promise<Result<AttendanceSourcePreviewResult>>;
+}
 
-export type EmployeeAssignmentContext = {
-	employmentId: string;
-	employeeId: string;
+export interface EmployeeAssignmentContext {
 	departmentId: string | null;
-	locationKey: string | null;
+	employeeId: string;
+	employmentId: string;
 	legalEntityKey: string | null;
-};
+	locationKey: string | null;
+}
 
-export type AssignmentContextQueryPort = {
-	resolveAsOf(input: {
+export interface AssignmentContextQueryPort {
+	resolveAsOf: (input: {
 		organizationId: string;
 		employeeId: string;
 		employmentId: string;
 		asOf: string;
-	}): Promise<Result<EmployeeAssignmentContext>>;
-};
+	}) => Promise<Result<EmployeeAssignmentContext>>;
+}

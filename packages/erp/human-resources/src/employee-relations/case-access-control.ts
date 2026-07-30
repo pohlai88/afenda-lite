@@ -4,6 +4,7 @@ import {
 	HUMAN_RESOURCES_ERROR_FORBIDDEN,
 	humanResourcesErrorDetails,
 } from "../error-codes";
+import type { HumanResourcesPermission } from "../permissions";
 import {
 	HUMAN_RESOURCES_PERMISSION_COMPLIANCE_ADMINISTER,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CASE_EXCEPTIONAL_ADMIN,
@@ -12,7 +13,6 @@ import {
 import type { HumanResourcesAuthorizationPort } from "../shared/authorization-types";
 import type { HumanResourcesStore } from "../store";
 import {
-	applyCaseFieldProjection,
 	BASIC_CASE_FIELDS,
 	caseProjectionFields,
 	INVESTIGATOR_CASE_FIELDS,
@@ -24,16 +24,32 @@ export type CaseAccessType = "read" | "write" | "investigate" | "legal_hold";
 
 export interface CaseAccessResult {
 	allowed: boolean;
-	projectedFields: string[];
 	employeeCase: EmployeeCase;
+	projectedFields: string[];
 	reason?: string;
 }
 
-export { applyCaseFieldProjection };
+export { applyCaseFieldProjection } from "./case-field-projection";
 
 const INVESTIGATOR_FIELDS = caseProjectionFields(INVESTIGATOR_CASE_FIELDS);
 const PARTICIPANT_FIELDS = caseProjectionFields(PARTICIPANT_CASE_FIELDS);
 const BASIC_FIELDS = caseProjectionFields(BASIC_CASE_FIELDS);
+
+async function hasPermissionAtIndex(
+	authorization: HumanResourcesAuthorizationPort,
+	input: { organizationId: string; actorUserId: string },
+	permissions: readonly HumanResourcesPermission[],
+	index: number,
+): Promise<boolean> {
+	const permission = permissions[index];
+	if (permission === undefined) {
+		return false;
+	}
+	const allowed = await authorization.can({ ...input, permission });
+	return allowed
+		? true
+		: hasPermissionAtIndex(authorization, input, permissions, index + 1);
+}
 
 export async function evaluateCaseReadAccess(
 	store: HumanResourcesStore,
@@ -61,20 +77,19 @@ export async function evaluateCaseReadAccess(
 		HUMAN_RESOURCES_PERMISSION_COMPLIANCE_ADMINISTER,
 	] as const;
 
-	for (const permission of adminPermissions) {
-		const hasAdmin = await authorization.can({
-			organizationId: input.organizationId,
-			actorUserId: input.actorUserId,
-			permission,
+	const hasAdmin = await hasPermissionAtIndex(
+		authorization,
+		{ organizationId: input.organizationId, actorUserId: input.actorUserId },
+		adminPermissions,
+		0,
+	);
+	if (hasAdmin) {
+		return ok({
+			allowed: true,
+			projectedFields: INVESTIGATOR_FIELDS,
+			employeeCase,
+			reason: "Administrative access",
 		});
-		if (hasAdmin) {
-			return ok({
-				allowed: true,
-				projectedFields: INVESTIGATOR_FIELDS,
-				employeeCase,
-				reason: "Administrative access",
-			});
-		}
 	}
 
 	if (input.accessType === "legal_hold") {
@@ -178,7 +193,7 @@ async function checkCaseInvestigatorAccess(
 		organizationId: input.organizationId,
 		userId: input.employeeCase.ownerActorUserId,
 	});
-	if (!ownerMapping.ok || !ownerMapping.data) {
+	if (!(ownerMapping.ok && ownerMapping.data)) {
 		return ok(false);
 	}
 	return ok(ownerMapping.data.employeeId === input.employeeId);
@@ -192,7 +207,7 @@ async function checkCaseParticipantAccess(
 		employeeId: HumanResourcesEmployeeId;
 	},
 ): Promise<Result<boolean>> {
-	const employeeCase = input.employeeCase;
+	const { employeeCase } = input;
 
 	if (employeeCase.employeeId === input.employeeId) {
 		return ok(true);
@@ -213,28 +228,41 @@ async function checkCaseParticipantAccess(
 	}
 
 	if (Array.isArray(employeeCase.participants)) {
-		for (const participant of employeeCase.participants) {
-			if (
-				typeof participant === "object" &&
-				participant !== null &&
-				participant.actorUserId
-			) {
-				const participantMapping = await store.getUserEmployeeMapping({
-					organizationId: input.organizationId,
-					userId: participant.actorUserId,
-				});
-				if (
-					participantMapping.ok &&
-					participantMapping.data &&
-					participantMapping.data.employeeId === input.employeeId
-				) {
-					return ok(true);
-				}
-			}
-		}
+		return checkParticipantEmployeeAtIndex(
+			store,
+			input,
+			employeeCase.participants,
+			0,
+		);
 	}
 
 	return ok(false);
+}
+
+async function checkParticipantEmployeeAtIndex(
+	store: HumanResourcesStore,
+	input: { organizationId: string; employeeId: HumanResourcesEmployeeId },
+	participants: EmployeeCase["participants"],
+	index: number,
+): Promise<Result<boolean>> {
+	const participant = participants[index];
+	if (participant === undefined) {
+		return ok(false);
+	}
+	if (participant.actorUserId) {
+		const mapping = await store.getUserEmployeeMapping({
+			organizationId: input.organizationId,
+			userId: participant.actorUserId,
+		});
+		if (
+			mapping.ok &&
+			mapping.data &&
+			mapping.data.employeeId === input.employeeId
+		) {
+			return ok(true);
+		}
+	}
+	return checkParticipantEmployeeAtIndex(store, input, participants, index + 1);
 }
 
 async function checkManagerCaseAccess(
@@ -245,7 +273,7 @@ async function checkManagerCaseAccess(
 		managerEmployeeId: HumanResourcesEmployeeId;
 	},
 ): Promise<Result<boolean>> {
-	const employeeCase = input.employeeCase;
+	const { employeeCase } = input;
 	const currentDate = new Date().toISOString().slice(0, 10);
 
 	const isPrimaryManager = await store.getPrimaryManagerForEmployee({
@@ -262,35 +290,54 @@ async function checkManagerCaseAccess(
 	}
 
 	if (Array.isArray(employeeCase.participants)) {
-		for (const participant of employeeCase.participants) {
-			if (
-				typeof participant === "object" &&
-				participant !== null &&
-				participant.actorUserId
-			) {
-				const participantMapping = await store.getUserEmployeeMapping({
-					organizationId: input.organizationId,
-					userId: participant.actorUserId,
-					asOf: currentDate,
-				});
-
-				if (participantMapping.ok && participantMapping.data) {
-					const participantManager = await store.getPrimaryManagerForEmployee({
-						organizationId: input.organizationId,
-						employeeId: participantMapping.data.employeeId,
-						asOf: currentDate,
-					});
-
-					if (
-						participantManager.ok &&
-						participantManager.data === input.managerEmployeeId
-					) {
-						return ok(true);
-					}
-				}
-			}
-		}
+		return checkParticipantManagerAtIndex(
+			store,
+			input,
+			employeeCase.participants,
+			currentDate,
+			0,
+		);
 	}
 
 	return ok(false);
+}
+
+async function checkParticipantManagerAtIndex(
+	store: HumanResourcesStore,
+	input: {
+		organizationId: string;
+		managerEmployeeId: HumanResourcesEmployeeId;
+	},
+	participants: EmployeeCase["participants"],
+	asOf: string,
+	index: number,
+): Promise<Result<boolean>> {
+	const participant = participants[index];
+	if (participant === undefined) {
+		return ok(false);
+	}
+	if (participant.actorUserId) {
+		const mapping = await store.getUserEmployeeMapping({
+			organizationId: input.organizationId,
+			userId: participant.actorUserId,
+			asOf,
+		});
+		if (mapping.ok && mapping.data) {
+			const manager = await store.getPrimaryManagerForEmployee({
+				organizationId: input.organizationId,
+				employeeId: mapping.data.employeeId,
+				asOf,
+			});
+			if (manager.ok && manager.data === input.managerEmployeeId) {
+				return ok(true);
+			}
+		}
+	}
+	return checkParticipantManagerAtIndex(
+		store,
+		input,
+		participants,
+		asOf,
+		index + 1,
+	);
 }

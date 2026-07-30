@@ -14,7 +14,7 @@ async function listHumanResourcesSubjectRecords(input: {
 	subjectId: string;
 }): Promise<Result<readonly PrivacySubjectRecord[]>> {
 	const store = resolveHumanResourcesStore();
-	return listHumanResourcesSubjectInventoryRecords({
+	return await listHumanResourcesSubjectInventoryRecords({
 		organizationId: input.organizationId,
 		subjectEmployeeId: input.subjectId as HumanResourcesEmployeeId,
 		store,
@@ -25,9 +25,9 @@ export function createHumanResourcesSubjectInventory(): PrivacySubjectInventoryP
 	return {
 		async listSubjectRecords(input) {
 			if (input.moduleId !== "human-resources") {
-				return ok([]);
+				return await ok([]);
 			}
-			return listHumanResourcesSubjectRecords({
+			return await listHumanResourcesSubjectRecords({
 				organizationId: input.organizationId,
 				subjectId: input.subjectId,
 			});
@@ -43,7 +43,7 @@ export function createModuleSubjectInventory(
 	}
 	return {
 		async listSubjectRecords() {
-			return ok([]);
+			return await ok([]);
 		},
 	};
 }

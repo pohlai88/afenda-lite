@@ -15,17 +15,18 @@ import {
 	reverseJournal,
 	softCloseAccountingPeriod,
 } from "../src/index";
+import { collectSequentially } from "../src/resolve-async";
 
 const organizationId = "f47ac10b-58cc-4372-a567-0e02b2c3d479";
 const actorUserId = "a47ac10b-58cc-4372-a567-0e02b2c3d479";
 const authorization = {
-	async can() {
-		return true;
+	can() {
+		return Promise.resolve(true);
 	},
 };
 const effects = {
-	async emit() {
-		return ok(undefined);
+	emit() {
+		return Promise.resolve(ok(undefined));
 	},
 };
 
@@ -43,7 +44,9 @@ async function setup() {
 		},
 		options,
 	);
-	if (!coa.ok) throw new Error(coa.message);
+	if (!coa.ok) {
+		throw new Error(coa.message);
+	}
 
 	await createLedgerAccount(
 		{
@@ -96,7 +99,9 @@ async function setup() {
 		},
 		options,
 	);
-	if (!period.ok) throw new Error(period.message);
+	if (!period.ok) {
+		throw new Error(period.message);
+	}
 	const journal = await createDraftJournal(
 		{
 			organizationId,
@@ -109,29 +114,33 @@ async function setup() {
 		},
 		options,
 	);
-	if (!journal.ok) throw new Error(journal.message);
+	if (!journal.ok) {
+		throw new Error(journal.message);
+	}
 	return { options, period: period.data, journal: journal.data, coa: coa.data };
 }
 
 describe("accounting journal lifecycle", () => {
 	it("requires balanced debits and credits and creates ledger postings", async () => {
 		const { options, period, journal } = await setup();
-		for (const line of [
-			{ accountCode: "1000", debit: "100", credit: "0" },
-			{ accountCode: "4000", debit: "0", credit: "90" },
-		]) {
-			const result = await addJournalLine(
-				{
-					organizationId,
-					actorUserId,
-					correlationId: "add-line",
-					journalId: journal.id,
-					...line,
-				},
-				options,
-			);
-			expect(result.ok).toBe(true);
-		}
+		const lineResults = await collectSequentially(
+			[
+				{ accountCode: "1000", debit: "100", credit: "0" },
+				{ accountCode: "4000", debit: "0", credit: "90" },
+			],
+			(line) =>
+				addJournalLine(
+					{
+						organizationId,
+						actorUserId,
+						correlationId: "add-line",
+						journalId: journal.id,
+						...line,
+					},
+					options,
+				),
+		);
+		expect(lineResults.ok).toBe(true);
 		const unbalanced = await postJournal(
 			{
 				organizationId,
@@ -167,7 +176,9 @@ describe("accounting journal lifecycle", () => {
 			options,
 		);
 		expect(posted.ok).toBe(true);
-		if (!posted.ok) throw new Error("unexpected");
+		if (!posted.ok) {
+			throw new Error("unexpected");
+		}
 		expect(posted.data.status).toBe("posted");
 		expect(posted.data.postings).toHaveLength(3);
 
@@ -176,7 +187,9 @@ describe("accounting journal lifecycle", () => {
 			options,
 		);
 		expect(balance.ok).toBe(true);
-		if (!balance.ok) throw new Error("unexpected");
+		if (!balance.ok) {
+			throw new Error("unexpected");
+		}
 		expect(balance.data).toEqual([
 			{
 				accountCode: "1000",
@@ -243,7 +256,9 @@ describe("accounting journal lifecycle", () => {
 			options,
 		);
 		expect(closed.ok).toBe(true);
-		if (!closed.ok) throw new Error("unexpected");
+		if (!closed.ok) {
+			throw new Error("unexpected");
+		}
 		expect(closed.data.status).toBe("closed");
 
 		const posted = await postJournal(
@@ -261,21 +276,24 @@ describe("accounting journal lifecycle", () => {
 
 	it("reverses with a new linked reversal journal preserving original lines", async () => {
 		const { options, journal } = await setup();
-		for (const line of [
-			{ accountCode: "1000", debit: "25", credit: "0" },
-			{ accountCode: "2000", debit: "0", credit: "25" },
-		]) {
-			await addJournalLine(
-				{
-					organizationId,
-					actorUserId,
-					correlationId: "add-line",
-					journalId: journal.id,
-					...line,
-				},
-				options,
-			);
-		}
+		const lineResults = await collectSequentially(
+			[
+				{ accountCode: "1000", debit: "25", credit: "0" },
+				{ accountCode: "2000", debit: "0", credit: "25" },
+			],
+			(line) =>
+				addJournalLine(
+					{
+						organizationId,
+						actorUserId,
+						correlationId: "add-line",
+						journalId: journal.id,
+						...line,
+					},
+					options,
+				),
+		);
+		expect(lineResults.ok).toBe(true);
 		const posted = await postJournal(
 			{
 				organizationId,
@@ -286,7 +304,9 @@ describe("accounting journal lifecycle", () => {
 			},
 			options,
 		);
-		if (!posted.ok) throw new Error(posted.message);
+		if (!posted.ok) {
+			throw new Error(posted.message);
+		}
 
 		const reversalResult = await reverseJournal(
 			{
@@ -300,7 +320,9 @@ describe("accounting journal lifecycle", () => {
 			options,
 		);
 		expect(reversalResult.ok).toBe(true);
-		if (!reversalResult.ok) throw new Error("unexpected");
+		if (!reversalResult.ok) {
+			throw new Error("unexpected");
+		}
 
 		const reversalJournal = reversalResult.data;
 		expect(reversalJournal.status).toBe("posted");
@@ -314,7 +336,9 @@ describe("accounting journal lifecycle", () => {
 			options,
 		);
 		expect(original.ok).toBe(true);
-		if (!original.ok) throw new Error("unexpected");
+		if (!original.ok) {
+			throw new Error("unexpected");
+		}
 		expect(original.data?.status).toBe("reversed");
 		expect(original.data?.reversedByJournalId).toBe(reversalJournal.id);
 		expect(original.data?.lines).toHaveLength(2);

@@ -26,10 +26,18 @@ function addReason(
 function inactiveReason(
 	state: string | null | undefined,
 ): LifecycleAvailabilityReason {
-	if (state === "blocked") return "blocked";
-	if (state === "retired") return "retired";
-	if (state === "archived") return "archived";
-	if (state === "merged") return "merged";
+	if (state === "blocked") {
+		return "blocked";
+	}
+	if (state === "retired") {
+		return "retired";
+	}
+	if (state === "archived") {
+		return "archived";
+	}
+	if (state === "merged") {
+		return "merged";
+	}
 	return "not_active";
 }
 
@@ -49,7 +57,7 @@ export function evaluateLifecycleAvailability(
 		};
 	}
 
-	const state = input.state;
+	const { state } = input;
 	const active = state === "active";
 	const merged =
 		input.mergedIntoId !== null && input.mergedIntoId !== undefined;

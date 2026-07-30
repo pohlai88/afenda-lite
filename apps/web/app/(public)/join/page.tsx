@@ -10,16 +10,16 @@ import { JoinShell } from "@/features/auth/join-shell";
 import { PublicMessageShell } from "@/features/auth/public-message-shell";
 import { SignInButton } from "@/features/auth/sign-in-button";
 
-type JoinPageProps = {
+interface JoinPageProps {
 	searchParams: Promise<{ invitationId?: string | string[] }>;
-};
+}
 
 export const metadata: Metadata = {
 	title: "Join",
 };
 
 function joinMessageFooter(): ReactNode {
-	return <SignInButton variant="outline" className="mt-2" />;
+	return <SignInButton className="mt-2" variant="outline" />;
 }
 
 function renderJoinState(query: JoinInvitationQuery): ReactNode {
@@ -27,9 +27,9 @@ function renderJoinState(query: JoinInvitationQuery): ReactNode {
 		case "missing":
 			return (
 				<PublicMessageShell
-					title="Invitation required"
-					footer={joinMessageFooter()}
 					asLandmark={false}
+					footer={joinMessageFooter()}
+					title="Invitation required"
 				>
 					<p>
 						Open the link from your invitation email. Expected shape:{" "}
@@ -40,9 +40,9 @@ function renderJoinState(query: JoinInvitationQuery): ReactNode {
 		case "invalid":
 			return (
 				<PublicMessageShell
-					title="Invalid invitation link"
-					footer={joinMessageFooter()}
 					asLandmark={false}
+					footer={joinMessageFooter()}
+					title="Invalid invitation link"
 				>
 					<p>
 						This invitation link is not valid. Open the link from your

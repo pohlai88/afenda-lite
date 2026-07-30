@@ -24,12 +24,12 @@ import {
 import { fingerprintHireFromAcceptedOffer } from "../shared/fingerprint";
 import { runHireOrchestrationCommand } from "../shared/hire-orchestration-command";
 import { buildMutationMeta } from "../shared/mutation-meta";
+import { runSequential, sequentialReturn } from "../shared/run-sequential";
 import type { HumanResourcesStore } from "../store";
 import type { OfferAcceptanceHandoff } from "../types";
 import { createPerson } from "../workforce-foundation/person";
 import { createWorker } from "../workforce-foundation/worker";
 import { listHeadcountReservations } from "../workforce-planning/headcount-reservation";
-
 import { compensateHireAttemptProgress } from "./compensation";
 import {
 	type HireAttempt,
@@ -39,21 +39,21 @@ import {
 	isHireStepComplete,
 } from "./types";
 
-type SagaDeps = {
-	store: HumanResourcesStore;
+interface SagaDeps {
 	ports: MutationPorts;
-};
+	store: HumanResourcesStore;
+}
 
-type SagaContext = {
-	input: HireFromAcceptedOfferInput;
-	requestFingerprint: string;
-	handoff: OfferAcceptanceHandoff;
-	legalName: string;
-	positionId: string;
+interface SagaContext {
 	attempt: HireAttempt;
 	deps: SagaDeps;
+	handoff: OfferAcceptanceHandoff;
+	input: HireFromAcceptedOfferInput;
+	legalName: string;
 	options: HumanResourcesCommandOptions;
-};
+	positionId: string;
+	requestFingerprint: string;
+}
 
 async function persistAttemptProgress(
 	ctx: SagaContext,
@@ -73,7 +73,7 @@ async function persistAttemptProgress(
 		correlationId: ctx.input.correlationId,
 		operationId: HUMAN_RESOURCES_COMMAND_HIRE_FROM_ACCEPTED_OFFER,
 	});
-	return ctx.deps.store.updateHireAttemptProgress(
+	return await ctx.deps.store.updateHireAttemptProgress(
 		{
 			organizationId: ctx.input.organizationId,
 			attemptId: ctx.attempt.id,
@@ -433,12 +433,15 @@ async function executeHireSaga(ctx: SagaContext): Promise<Result<HireAttempt>> {
 		runOnboardingStep,
 	] as const;
 
-	for (const step of steps) {
+	const sequentialOutcome1 = await runSequential(steps, async (step) => {
 		const result = await step(ctx);
 		if (!result.ok) {
-			return result;
+			return sequentialReturn(result);
 		}
 		ctx.attempt = result.data;
+	});
+	if (sequentialOutcome1.kind === "return") {
+		return sequentialOutcome1.value;
 	}
 
 	return ok(ctx.attempt);
@@ -591,7 +594,7 @@ export async function hireFromAcceptedOffer(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<HireFromAcceptedOfferResult>> {
-	return runHireOrchestrationCommand(input, options, {
+	return await runHireOrchestrationCommand(input, options, {
 		schema: hireFromAcceptedOfferInputSchema,
 		invalidMessage: "Invalid hire from accepted offer input",
 		command: HUMAN_RESOURCES_COMMAND_HIRE_FROM_ACCEPTED_OFFER,

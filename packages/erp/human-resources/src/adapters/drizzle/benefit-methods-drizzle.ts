@@ -57,7 +57,9 @@ import type {
 export function parseBenefitEnrollmentContributionFrequency(
 	value: string | null,
 ): Result<BenefitEnrollment["contributionFrequency"]> {
-	if (value === null) return ok(null);
+	if (value === null) {
+		return ok(null);
+	}
 	const parsed = payFrequencySchema.safeParse(value);
 	if (!parsed.success) {
 		return fail(
@@ -68,40 +70,48 @@ export function parseBenefitEnrollmentContributionFrequency(
 	return ok(parsed.data);
 }
 
-export type BenefitEnrollmentSqlRow = {
-	id: string;
-	organization_id: string;
-	employee_id: string;
-	employment_id: string;
-	plan_id: string;
-	effective_from: string;
-	effective_to: string | null;
-	status: string;
-	employee_contribution_amount: string | null;
-	employer_contribution_amount: string | null;
+export interface BenefitEnrollmentSqlRow {
 	contribution_currency_code: string | null;
 	contribution_frequency: string | null;
-	waiver_reason: string | null;
 	create_idempotency_key: string;
 	create_request_fingerprint: string;
-	version: number;
-	created_by: string;
-	updated_by: string;
 	created_at: Date;
+	created_by: string;
+	effective_from: string;
+	effective_to: string | null;
+	employee_contribution_amount: string | null;
+	employee_id: string;
+	employer_contribution_amount: string | null;
+	employment_id: string;
+	id: string;
+	organization_id: string;
+	plan_id: string;
+	status: string;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+	waiver_reason: string | null;
+}
 
 export function mapBenefitEnrollmentSql(
 	row: BenefitEnrollmentSqlRow,
 ): Result<BenefitEnrollment> {
 	const id = parseHumanResourcesBenefitEnrollmentId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const employeeId = parseHumanResourcesEmployeeId(row.employee_id);
-	if (!employeeId.ok) return employeeId;
+	if (!employeeId.ok) {
+		return employeeId;
+	}
 	const employmentId = parseHumanResourcesEmploymentId(row.employment_id);
-	if (!employmentId.ok) return employmentId;
+	if (!employmentId.ok) {
+		return employmentId;
+	}
 	const planId = parseHumanResourcesBenefitPlanId(row.plan_id);
-	if (!planId.ok) return planId;
+	if (!planId.ok) {
+		return planId;
+	}
 	const status = benefitEnrollmentStatusSchema.safeParse(row.status);
 	if (!status.success) {
 		return fail("INTERNAL_ERROR", "Invalid benefit enrollment status");
@@ -109,7 +119,9 @@ export function mapBenefitEnrollmentSql(
 	const contributionFrequency = parseBenefitEnrollmentContributionFrequency(
 		row.contribution_frequency,
 	);
-	if (!contributionFrequency.ok) return contributionFrequency;
+	if (!contributionFrequency.ok) {
+		return contributionFrequency;
+	}
 	return ok({
 		id: id.data,
 		organizationId: row.organization_id,
@@ -138,13 +150,21 @@ export function mapBenefitEnrollmentFromDbRow(
 	row: typeof hrBenefitEnrollment.$inferSelect,
 ): Result<BenefitEnrollment> {
 	const id = parseHumanResourcesBenefitEnrollmentId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const employeeId = parseHumanResourcesEmployeeId(row.employeeId);
-	if (!employeeId.ok) return employeeId;
+	if (!employeeId.ok) {
+		return employeeId;
+	}
 	const employmentId = parseHumanResourcesEmploymentId(row.employmentId);
-	if (!employmentId.ok) return employmentId;
+	if (!employmentId.ok) {
+		return employmentId;
+	}
 	const planId = parseHumanResourcesBenefitPlanId(row.planId);
-	if (!planId.ok) return planId;
+	if (!planId.ok) {
+		return planId;
+	}
 	const status = benefitEnrollmentStatusSchema.safeParse(row.status);
 	if (!status.success) {
 		return fail("INTERNAL_ERROR", "Invalid benefit enrollment status");
@@ -152,7 +172,9 @@ export function mapBenefitEnrollmentFromDbRow(
 	const contributionFrequency = parseBenefitEnrollmentContributionFrequency(
 		row.contributionFrequency,
 	);
-	if (!contributionFrequency.ok) return contributionFrequency;
+	if (!contributionFrequency.ok) {
+		return contributionFrequency;
+	}
 	return ok({
 		id: id.data,
 		organizationId: row.organizationId,
@@ -181,38 +203,40 @@ function eventPayloadJson(value: Record<string, unknown>): string {
 	return JSON.stringify(value);
 }
 
-type BenefitEligibilitySqlRow = {
+interface BenefitEligibilitySqlRow {
+	allowed_employment_statuses: string;
+	created_at: Date;
+	created_by: string;
 	id: string;
+	min_tenure_days: number | null;
 	organization_id: string;
 	plan_id: string;
-	min_tenure_days: number | null;
-	allowed_employment_statuses: string;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
 	updated_at: Date;
-};
+	updated_by: string;
+}
 
-type BenefitEnrollmentDependentSqlRow = {
-	id: string;
-	organization_id: string;
-	enrollment_id: string;
+interface BenefitEnrollmentDependentSqlRow {
+	created_at: Date;
+	created_by: string;
 	dependent_name: string;
-	relationship: string;
 	effective_from: string;
 	effective_to: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
+	enrollment_id: string;
+	id: string;
+	organization_id: string;
+	relationship: string;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+}
 
 function mapBenefitPlanEligibility(
 	row: BenefitEligibilitySqlRow,
 ): Result<BenefitPlanEligibility> {
 	const planId = parseHumanResourcesBenefitPlanId(row.plan_id);
-	if (!planId.ok) return planId;
+	if (!planId.ok) {
+		return planId;
+	}
 	const statuses = row.allowed_employment_statuses
 		.split(",")
 		.map((value) => value.trim())
@@ -246,11 +270,15 @@ function mapBenefitEnrollmentDependent(
 	row: BenefitEnrollmentDependentSqlRow,
 ): Result<BenefitEnrollmentDependent> {
 	const id = parseHumanResourcesBenefitEnrollmentDependentId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const enrollmentId = parseHumanResourcesBenefitEnrollmentId(
 		row.enrollment_id,
 	);
-	if (!enrollmentId.ok) return enrollmentId;
+	if (!enrollmentId.ok) {
+		return enrollmentId;
+	}
 	const relationship = benefitDependentRelationshipSchema.safeParse(
 		row.relationship,
 	);
@@ -293,8 +321,10 @@ export async function drizzleGetBenefitPlanEligibility(input: {
 				),
 			)
 			.limit(1);
-		const row = rows[0];
-		if (!row) return ok(null);
+		const [row] = rows;
+		if (!row) {
+			return ok(null);
+		}
 		return mapBenefitPlanEligibility({
 			id: row.id,
 			organization_id: row.organizationId,
@@ -330,7 +360,9 @@ export async function drizzleSetBenefitPlanEligibility(
 		organizationId: input.organizationId,
 		planId: input.planId,
 	});
-	if (!plan.ok) return plan;
+	if (!plan.ok) {
+		return plan;
+	}
 	if (plan.data === null) {
 		return notFound(
 			"Benefit plan not found",
@@ -342,7 +374,9 @@ export async function drizzleSetBenefitPlanEligibility(
 		organizationId: input.organizationId,
 		planId: input.planId,
 	});
-	if (!existing.ok) return existing;
+	if (!existing.ok) {
+		return existing;
+	}
 
 	const id = existing.data?.id ?? randomUUID();
 	const auditId = randomUUID();
@@ -385,7 +419,7 @@ export async function drizzleSetBenefitPlanEligibility(
 				`,
 			],
 		);
-		const row = rows[0];
+		const [row] = rows;
 		if (!row) {
 			return fail("INTERNAL_ERROR", "Failed to set benefit plan eligibility");
 		}
@@ -415,7 +449,9 @@ export async function drizzleWaiveBenefit(
 		organizationId: input.organizationId,
 		enrollmentId: input.enrollmentId,
 	});
-	if (!existing.ok) return existing;
+	if (!existing.ok) {
+		return existing;
+	}
 	if (existing.data === null) {
 		return notFound("Benefit enrollment not found");
 	}
@@ -423,7 +459,9 @@ export async function drizzleWaiveBenefit(
 		existing.data.version,
 		input.expectedVersion,
 	);
-	if (!versionCheck.ok) return versionCheck;
+	if (!versionCheck.ok) {
+		return versionCheck;
+	}
 	if (!isBenefitEnrollmentActive(existing.data.status)) {
 		return invalidState("Only active benefit enrollments can be waived");
 	}
@@ -431,7 +469,9 @@ export async function drizzleWaiveBenefit(
 		effectiveFrom: existing.data.effectiveFrom,
 		effectiveTo: input.effectiveTo,
 	});
-	if (!rangeCheck.ok) return rangeCheck;
+	if (!rangeCheck.ok) {
+		return rangeCheck;
+	}
 
 	const nextVersion = input.expectedVersion + 1;
 	const auditId = randomUUID();
@@ -489,7 +529,7 @@ export async function drizzleWaiveBenefit(
 				`,
 			],
 		);
-		const row = rows[0];
+		const [row] = rows;
 		if (!row) {
 			return missAfterOptimisticUpdate({
 				found: true,
@@ -517,8 +557,10 @@ export async function drizzleGetBenefitEnrollmentDependent(input: {
 				),
 			)
 			.limit(1);
-		const row = rows[0];
-		if (!row) return ok(null);
+		const [row] = rows;
+		if (!row) {
+			return ok(null);
+		}
 		return mapBenefitEnrollmentDependent({
 			id: row.id,
 			organization_id: row.organizationId,
@@ -571,7 +613,9 @@ export async function drizzleListBenefitEnrollmentDependentsByEnrollment(input: 
 				created_at: row.createdAt,
 				updated_at: row.updatedAt,
 			});
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			dependents.push(mapped.data);
 		}
 		dependents.sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom));
@@ -601,7 +645,9 @@ export async function drizzleAddBenefitEnrollmentDependent(
 		organizationId: input.organizationId,
 		enrollmentId: input.enrollmentId,
 	});
-	if (!enrollment.ok) return enrollment;
+	if (!enrollment.ok) {
+		return enrollment;
+	}
 	if (enrollment.data === null) {
 		return notFound(
 			"Benefit enrollment not found",
@@ -617,7 +663,9 @@ export async function drizzleAddBenefitEnrollmentDependent(
 		effectiveFrom: input.effectiveFrom,
 		effectiveTo: enrollment.data.effectiveTo,
 	});
-	if (!rangeCheck.ok) return rangeCheck;
+	if (!rangeCheck.ok) {
+		return rangeCheck;
+	}
 	if (input.effectiveFrom < enrollment.data.effectiveFrom) {
 		return invalidInput(
 			"Dependent effective date must be on or after enrollment effective date",
@@ -626,7 +674,9 @@ export async function drizzleAddBenefitEnrollmentDependent(
 
 	const id = randomUUID();
 	const brandedId = parseHumanResourcesBenefitEnrollmentDependentId(id);
-	if (!brandedId.ok) return brandedId;
+	if (!brandedId.ok) {
+		return brandedId;
+	}
 	const auditId = randomUUID();
 
 	try {
@@ -660,7 +710,7 @@ export async function drizzleAddBenefitEnrollmentDependent(
 				SELECT mutated.* FROM mutated, audited
 			`,
 		]);
-		const row = rows[0];
+		const [row] = rows;
 		if (!row) {
 			return fail(
 				"INTERNAL_ERROR",
@@ -691,7 +741,9 @@ export async function drizzleEndBenefitEnrollmentDependent(
 		organizationId: input.organizationId,
 		dependentId: input.dependentId,
 	});
-	if (!existing.ok) return existing;
+	if (!existing.ok) {
+		return existing;
+	}
 	if (existing.data === null) {
 		return notFound(
 			"Benefit enrollment dependent not found",
@@ -702,7 +754,9 @@ export async function drizzleEndBenefitEnrollmentDependent(
 		existing.data.version,
 		input.expectedVersion,
 	);
-	if (!versionCheck.ok) return versionCheck;
+	if (!versionCheck.ok) {
+		return versionCheck;
+	}
 	if (existing.data.effectiveTo !== null) {
 		return invalidState("Benefit enrollment dependent is already ended");
 	}
@@ -710,7 +764,9 @@ export async function drizzleEndBenefitEnrollmentDependent(
 		effectiveFrom: existing.data.effectiveFrom,
 		effectiveTo: input.endsOn,
 	});
-	if (!rangeCheck.ok) return rangeCheck;
+	if (!rangeCheck.ok) {
+		return rangeCheck;
+	}
 
 	const nextVersion = input.expectedVersion + 1;
 	const auditId = randomUUID();
@@ -746,7 +802,7 @@ export async function drizzleEndBenefitEnrollmentDependent(
 				SELECT mutated.* FROM mutated, audited
 			`,
 		]);
-		const row = rows[0];
+		const [row] = rows;
 		if (!row) {
 			return missAfterOptimisticUpdate({
 				found: true,
@@ -777,13 +833,17 @@ export async function assertDrizzleBenefitEnrollmentPreconditions(
 		effectiveFrom: record.effectiveFrom,
 		effectiveTo: record.effectiveTo,
 	});
-	if (!rangeCheck.ok) return rangeCheck;
+	if (!rangeCheck.ok) {
+		return rangeCheck;
+	}
 
 	const plan = await host.getBenefitPlan({
 		organizationId: record.organizationId,
 		planId: record.planId,
 	});
-	if (!plan.ok) return plan;
+	if (!plan.ok) {
+		return plan;
+	}
 	if (plan.data === null) {
 		return notFound(
 			"Benefit plan not found",
@@ -798,7 +858,9 @@ export async function assertDrizzleBenefitEnrollmentPreconditions(
 		organizationId: record.organizationId,
 		employmentId: record.employmentId,
 	});
-	if (!employment.ok) return employment;
+	if (!employment.ok) {
+		return employment;
+	}
 	if (employment.data === null) {
 		return notFound(
 			"Employment not found",
@@ -813,7 +875,9 @@ export async function assertDrizzleBenefitEnrollmentPreconditions(
 		organizationId: record.organizationId,
 		planId: record.planId,
 	});
-	if (!eligibility.ok) return eligibility;
+	if (!eligibility.ok) {
+		return eligibility;
+	}
 	if (eligibility.data !== null) {
 		const eligible = isEmployeeEligibleForBenefitPlan({
 			eligibility: eligibility.data,

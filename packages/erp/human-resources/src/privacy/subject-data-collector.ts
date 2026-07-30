@@ -18,13 +18,13 @@ import type { HumanResourcesStore } from "../store";
 
 const DEFAULT_PAGE_SIZE = 100;
 
-export type CollectHumanResourcesSubjectDataInput = {
-	organizationId: string;
-	subjectEmployeeId: HumanResourcesEmployeeId;
+export interface CollectHumanResourcesSubjectDataInput {
 	correlationId: string;
-	store: HumanResourcesStore;
 	generatedAt?: string | undefined;
-};
+	organizationId: string;
+	store: HumanResourcesStore;
+	subjectEmployeeId: HumanResourcesEmployeeId;
+}
 
 function exportRecord(
 	input: Omit<HumanResourcesSubjectExportRecord, "data"> & {
@@ -48,7 +48,7 @@ function asExportData(value: unknown): Record<string, unknown> {
 	return { ...(value as Record<string, unknown>) };
 }
 
-async function collectAllPages<
+function collectAllPages<
 	TItem,
 	TPage extends {
 		page: number;
@@ -60,8 +60,7 @@ async function collectAllPages<
 	selectItems: (page: TPage) => readonly TItem[],
 ): Promise<Result<readonly TItem[]>> {
 	const items: TItem[] = [];
-	let page = 1;
-	for (;;) {
+	async function collectPage(page: number): Promise<Result<readonly TItem[]>> {
 		const pageResult = await fetchPage(page);
 		if (!pageResult.ok) {
 			return pageResult;
@@ -70,14 +69,15 @@ async function collectAllPages<
 		const hasMore =
 			pageResult.data.page * pageResult.data.pageSize <
 			pageResult.data.totalCount;
-		if (!hasMore) {
-			break;
+		if (hasMore) {
+			return collectPage(page + 1);
 		}
-		page += 1;
+		return ok(items);
 	}
-	return ok(items);
+	return collectPage(1);
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Privacy export reads are intentionally serial and fail-fast to preserve evidence ordering.
 export async function collectHumanResourcesSubjectData(
 	input: CollectHumanResourcesSubjectDataInput,
 ): Promise<

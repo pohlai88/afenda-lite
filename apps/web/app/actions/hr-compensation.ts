@@ -188,17 +188,17 @@ const COMPENSATION_PROPOSAL_APPROVE =
 const COMPENSATION_PROPOSAL_READ =
 	"human-resources.compensation-proposal.read" as const;
 
-type EmployeeCompensationListPagePartial = {
+interface EmployeeCompensationListPagePartial {
 	compensations: Partial<EmployeeCompensation>[];
-	totalCount: number;
 	page: number;
 	pageSize: number;
-};
+	totalCount: number;
+}
 
 export async function createCompensationGradeAction(
 	input: unknown,
 ): Promise<ActionResult<{ grade: CompensationGrade }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		CompensationGrade,
 		{ grade: CompensationGrade }
 	>({
@@ -209,14 +209,14 @@ export async function createCompensationGradeAction(
 		actionSchema: createCompensationGradeActionSchema,
 		input,
 		invoke: invokeHrPackage(createCompensationGrade),
-		mapData: (grade) => ({ grade: grade }),
+		mapData: (grade) => ({ grade }),
 	});
 }
 
 export async function updateCompensationGradeAction(
 	input: unknown,
 ): Promise<ActionResult<{ grade: CompensationGrade }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		CompensationGrade,
 		{ grade: CompensationGrade }
 	>({
@@ -227,14 +227,14 @@ export async function updateCompensationGradeAction(
 		actionSchema: updateCompensationGradeActionSchema,
 		input,
 		invoke: invokeHrPackage(updateCompensationGrade),
-		mapData: (grade) => ({ grade: grade }),
+		mapData: (grade) => ({ grade }),
 	});
 }
 
 export async function archiveCompensationGradeAction(
 	input: unknown,
 ): Promise<ActionResult<{ grade: CompensationGrade }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		CompensationGrade,
 		{ grade: CompensationGrade }
 	>({
@@ -245,14 +245,14 @@ export async function archiveCompensationGradeAction(
 		actionSchema: archiveCompensationGradeActionSchema,
 		input,
 		invoke: invokeHrPackage(archiveCompensationGrade),
-		mapData: (grade) => ({ grade: grade }),
+		mapData: (grade) => ({ grade }),
 	});
 }
 
 export async function getCompensationGradeAction(
 	input: unknown,
 ): Promise<ActionResult<{ grade: CompensationGrade | null }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		CompensationGrade | null,
 		{ grade: CompensationGrade | null }
 	>({
@@ -263,14 +263,14 @@ export async function getCompensationGradeAction(
 		actionSchema: getCompensationGradeActionSchema,
 		input,
 		invoke: invokeHrPackage(getCompensationGrade),
-		mapData: (grade) => ({ grade: grade }),
+		mapData: (grade) => ({ grade }),
 	});
 }
 
 export async function listCompensationGradesAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: CompensationGradeListPage }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		CompensationGradeListPage,
 		{ page: CompensationGradeListPage }
 	>({
@@ -281,14 +281,14 @@ export async function listCompensationGradesAction(
 		actionSchema: listCompensationGradesActionSchema,
 		input,
 		invoke: invokeHrPackage(listCompensationGrades),
-		mapData: (page) => ({ page: page }),
+		mapData: (page) => ({ page }),
 	});
 }
 
 export async function createSalaryBandAction(
 	input: unknown,
 ): Promise<ActionResult<{ band: SalaryBand }>> {
-	return runHrHumanResourcesAction<SalaryBand, { band: SalaryBand }>({
+	return await runHrHumanResourcesAction<SalaryBand, { band: SalaryBand }>({
 		path: "createSalaryBandAction",
 		permission: COMPENSATION_MANAGE,
 		safeMessage: "Could not create salary band.",
@@ -296,14 +296,14 @@ export async function createSalaryBandAction(
 		actionSchema: createSalaryBandActionSchema,
 		input,
 		invoke: invokeHrPackage(createSalaryBand),
-		mapData: (band) => ({ band: band }),
+		mapData: (band) => ({ band }),
 	});
 }
 
 export async function supersedeSalaryBandAction(
 	input: unknown,
 ): Promise<ActionResult<{ band: SalaryBand }>> {
-	return runHrHumanResourcesAction<SalaryBand, { band: SalaryBand }>({
+	return await runHrHumanResourcesAction<SalaryBand, { band: SalaryBand }>({
 		path: "supersedeSalaryBandAction",
 		permission: COMPENSATION_MANAGE,
 		safeMessage: "Could not supersede salary band.",
@@ -311,14 +311,14 @@ export async function supersedeSalaryBandAction(
 		actionSchema: supersedeSalaryBandActionSchema,
 		input,
 		invoke: invokeHrPackage(supersedeSalaryBand),
-		mapData: (band) => ({ band: band }),
+		mapData: (band) => ({ band }),
 	});
 }
 
 export async function archiveSalaryBandAction(
 	input: unknown,
 ): Promise<ActionResult<{ band: SalaryBand }>> {
-	return runHrHumanResourcesAction<SalaryBand, { band: SalaryBand }>({
+	return await runHrHumanResourcesAction<SalaryBand, { band: SalaryBand }>({
 		path: "archiveSalaryBandAction",
 		permission: COMPENSATION_MANAGE,
 		safeMessage: "Could not archive salary band.",
@@ -326,14 +326,14 @@ export async function archiveSalaryBandAction(
 		actionSchema: archiveSalaryBandActionSchema,
 		input,
 		invoke: invokeHrPackage(archiveSalaryBand),
-		mapData: (band) => ({ band: band }),
+		mapData: (band) => ({ band }),
 	});
 }
 
 export async function getSalaryBandAction(
 	input: unknown,
 ): Promise<ActionResult<{ band: SalaryBand | null }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		SalaryBand | null,
 		{ band: SalaryBand | null }
 	>({
@@ -344,14 +344,14 @@ export async function getSalaryBandAction(
 		actionSchema: getSalaryBandActionSchema,
 		input,
 		invoke: invokeHrPackage(getSalaryBand),
-		mapData: (band) => ({ band: band }),
+		mapData: (band) => ({ band }),
 	});
 }
 
 export async function listSalaryBandsByGradeAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: SalaryBandListPage }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		SalaryBandListPage,
 		{ page: SalaryBandListPage }
 	>({
@@ -362,14 +362,14 @@ export async function listSalaryBandsByGradeAction(
 		actionSchema: listSalaryBandsByGradeActionSchema,
 		input,
 		invoke: invokeHrPackage(listSalaryBandsByGrade),
-		mapData: (page) => ({ page: page }),
+		mapData: (page) => ({ page }),
 	});
 }
 
 export async function findSalaryBandByGradeAndCurrencyAsOfAction(
 	input: unknown,
 ): Promise<ActionResult<{ band: SalaryBand }>> {
-	return runHrHumanResourcesAction<SalaryBand, { band: SalaryBand }>({
+	return await runHrHumanResourcesAction<SalaryBand, { band: SalaryBand }>({
 		path: "findSalaryBandByGradeAndCurrencyAsOfAction",
 		permission: COMPENSATION_READ,
 		safeMessage: "Could not find salary band as of date.",
@@ -377,14 +377,14 @@ export async function findSalaryBandByGradeAndCurrencyAsOfAction(
 		actionSchema: findSalaryBandByGradeAndCurrencyAsOfActionSchema,
 		input,
 		invoke: invokeHrPackage(findSalaryBandByGradeAndCurrencyAsOf),
-		mapData: (band) => ({ band: band }),
+		mapData: (band) => ({ band }),
 	});
 }
 
 export async function createCompensationGradeProgressionRuleAction(
 	input: unknown,
 ): Promise<ActionResult<{ rule: CompensationGradeProgressionRule }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		CompensationGradeProgressionRule,
 		{ rule: CompensationGradeProgressionRule }
 	>({
@@ -395,14 +395,14 @@ export async function createCompensationGradeProgressionRuleAction(
 		actionSchema: createCompensationGradeProgressionRuleActionSchema,
 		input,
 		invoke: invokeHrPackage(createCompensationGradeProgressionRule),
-		mapData: (rule) => ({ rule: rule }),
+		mapData: (rule) => ({ rule }),
 	});
 }
 
 export async function archiveCompensationGradeProgressionRuleAction(
 	input: unknown,
 ): Promise<ActionResult<{ rule: CompensationGradeProgressionRule }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		CompensationGradeProgressionRule,
 		{ rule: CompensationGradeProgressionRule }
 	>({
@@ -413,14 +413,14 @@ export async function archiveCompensationGradeProgressionRuleAction(
 		actionSchema: archiveCompensationGradeProgressionRuleActionSchema,
 		input,
 		invoke: invokeHrPackage(archiveCompensationGradeProgressionRule),
-		mapData: (rule) => ({ rule: rule }),
+		mapData: (rule) => ({ rule }),
 	});
 }
 
 export async function getCompensationGradeProgressionRuleAction(
 	input: unknown,
 ): Promise<ActionResult<{ rule: CompensationGradeProgressionRule | null }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		CompensationGradeProgressionRule | null,
 		{ rule: CompensationGradeProgressionRule | null }
 	>({
@@ -431,14 +431,14 @@ export async function getCompensationGradeProgressionRuleAction(
 		actionSchema: getCompensationGradeProgressionRuleActionSchema,
 		input,
 		invoke: invokeHrPackage(getCompensationGradeProgressionRule),
-		mapData: (rule) => ({ rule: rule }),
+		mapData: (rule) => ({ rule }),
 	});
 }
 
 export async function listCompensationGradeProgressionRulesFromGradeAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: CompensationGradeProgressionRuleListPage }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		CompensationGradeProgressionRuleListPage,
 		{ page: CompensationGradeProgressionRuleListPage }
 	>({
@@ -449,14 +449,14 @@ export async function listCompensationGradeProgressionRulesFromGradeAction(
 		actionSchema: listCompensationGradeProgressionRulesFromGradeActionSchema,
 		input,
 		invoke: invokeHrPackage(listCompensationGradeProgressionRulesFromGrade),
-		mapData: (page) => ({ page: page }),
+		mapData: (page) => ({ page }),
 	});
 }
 
 export async function listEligibleProgressionTargetsAction(
 	input: unknown,
 ): Promise<ActionResult<{ targets: CompensationGradeProgressionRule[] }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		CompensationGradeProgressionRule[],
 		{ targets: CompensationGradeProgressionRule[] }
 	>({
@@ -467,14 +467,14 @@ export async function listEligibleProgressionTargetsAction(
 		actionSchema: listEligibleProgressionTargetsActionSchema,
 		input,
 		invoke: invokeHrPackage(listEligibleProgressionTargets),
-		mapData: (targets) => ({ targets: targets }),
+		mapData: (targets) => ({ targets }),
 	});
 }
 
 export async function createEmployeeCompensationAction(
 	input: unknown,
 ): Promise<ActionResult<{ compensation: EmployeeCompensation }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		EmployeeCompensation,
 		{ compensation: EmployeeCompensation }
 	>({
@@ -485,14 +485,14 @@ export async function createEmployeeCompensationAction(
 		actionSchema: createEmployeeCompensationActionSchema,
 		input,
 		invoke: invokeHrPackage(createEmployeeCompensation),
-		mapData: (compensation) => ({ compensation: compensation }),
+		mapData: (compensation) => ({ compensation }),
 	});
 }
 
 export async function amendEmployeeCompensationAction(
 	input: unknown,
 ): Promise<ActionResult<{ compensation: EmployeeCompensation }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		EmployeeCompensation,
 		{ compensation: EmployeeCompensation }
 	>({
@@ -503,14 +503,14 @@ export async function amendEmployeeCompensationAction(
 		actionSchema: amendEmployeeCompensationActionSchema,
 		input,
 		invoke: invokeHrPackage(amendEmployeeCompensation),
-		mapData: (compensation) => ({ compensation: compensation }),
+		mapData: (compensation) => ({ compensation }),
 	});
 }
 
 export async function approveEmployeeCompensationAction(
 	input: unknown,
 ): Promise<ActionResult<{ compensation: EmployeeCompensation }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		EmployeeCompensation,
 		{ compensation: EmployeeCompensation }
 	>({
@@ -521,14 +521,14 @@ export async function approveEmployeeCompensationAction(
 		actionSchema: approveEmployeeCompensationActionSchema,
 		input,
 		invoke: invokeHrPackage(approveEmployeeCompensation),
-		mapData: (compensation) => ({ compensation: compensation }),
+		mapData: (compensation) => ({ compensation }),
 	});
 }
 
 export async function scheduleEmployeeCompensationChangeAction(
 	input: unknown,
 ): Promise<ActionResult<{ compensation: EmployeeCompensation }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		EmployeeCompensation,
 		{ compensation: EmployeeCompensation }
 	>({
@@ -539,14 +539,14 @@ export async function scheduleEmployeeCompensationChangeAction(
 		actionSchema: scheduleEmployeeCompensationChangeActionSchema,
 		input,
 		invoke: invokeHrPackage(scheduleEmployeeCompensationChange),
-		mapData: (compensation) => ({ compensation: compensation }),
+		mapData: (compensation) => ({ compensation }),
 	});
 }
 
 export async function activateEmployeeCompensationAction(
 	input: unknown,
 ): Promise<ActionResult<{ compensation: EmployeeCompensation }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		EmployeeCompensation,
 		{ compensation: EmployeeCompensation }
 	>({
@@ -557,14 +557,14 @@ export async function activateEmployeeCompensationAction(
 		actionSchema: activateEmployeeCompensationActionSchema,
 		input,
 		invoke: invokeHrPackage(activateEmployeeCompensation),
-		mapData: (compensation) => ({ compensation: compensation }),
+		mapData: (compensation) => ({ compensation }),
 	});
 }
 
 export async function correctEmployeeCompensationAction(
 	input: unknown,
 ): Promise<ActionResult<{ compensation: EmployeeCompensation }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		EmployeeCompensation,
 		{ compensation: EmployeeCompensation }
 	>({
@@ -575,14 +575,14 @@ export async function correctEmployeeCompensationAction(
 		actionSchema: correctEmployeeCompensationActionSchema,
 		input,
 		invoke: invokeHrPackage(correctEmployeeCompensation),
-		mapData: (compensation) => ({ compensation: compensation }),
+		mapData: (compensation) => ({ compensation }),
 	});
 }
 
 export async function endEmployeeCompensationAction(
 	input: unknown,
 ): Promise<ActionResult<{ compensation: EmployeeCompensation }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		EmployeeCompensation,
 		{ compensation: EmployeeCompensation }
 	>({
@@ -593,14 +593,14 @@ export async function endEmployeeCompensationAction(
 		actionSchema: endEmployeeCompensationActionSchema,
 		input,
 		invoke: invokeHrPackage(endEmployeeCompensation),
-		mapData: (compensation) => ({ compensation: compensation }),
+		mapData: (compensation) => ({ compensation }),
 	});
 }
 
 export async function getEmployeeCompensationAction(
 	input: unknown,
 ): Promise<ActionResult<{ compensation: Partial<EmployeeCompensation> }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		Partial<EmployeeCompensation>,
 		{ compensation: Partial<EmployeeCompensation> }
 	>({
@@ -611,14 +611,14 @@ export async function getEmployeeCompensationAction(
 		actionSchema: getEmployeeCompensationActionSchema,
 		input,
 		invoke: invokeHrPackage(getEmployeeCompensation),
-		mapData: (compensation) => ({ compensation: compensation }),
+		mapData: (compensation) => ({ compensation }),
 	});
 }
 
 export async function listEmployeeCompensationsByEmployeeAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: EmployeeCompensationListPagePartial }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		EmployeeCompensationListPagePartial,
 		{ page: EmployeeCompensationListPagePartial }
 	>({
@@ -629,14 +629,14 @@ export async function listEmployeeCompensationsByEmployeeAction(
 		actionSchema: listEmployeeCompensationsActionSchema,
 		input,
 		invoke: invokeHrPackage(listEmployeeCompensationsByEmployee),
-		mapData: (page) => ({ page: page }),
+		mapData: (page) => ({ page }),
 	});
 }
 
 export async function createCompensationProposalAction(
 	input: unknown,
 ): Promise<ActionResult<{ proposal: CompensationProposal }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		CompensationProposal,
 		{ proposal: CompensationProposal }
 	>({
@@ -647,14 +647,14 @@ export async function createCompensationProposalAction(
 		actionSchema: createCompensationProposalActionSchema,
 		input,
 		invoke: invokeHrPackage(createCompensationProposal),
-		mapData: (proposal) => ({ proposal: proposal }),
+		mapData: (proposal) => ({ proposal }),
 	});
 }
 
 export async function amendCompensationProposalAction(
 	input: unknown,
 ): Promise<ActionResult<{ proposal: CompensationProposal }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		CompensationProposal,
 		{ proposal: CompensationProposal }
 	>({
@@ -665,14 +665,14 @@ export async function amendCompensationProposalAction(
 		actionSchema: amendCompensationProposalActionSchema,
 		input,
 		invoke: invokeHrPackage(amendCompensationProposal),
-		mapData: (proposal) => ({ proposal: proposal }),
+		mapData: (proposal) => ({ proposal }),
 	});
 }
 
 export async function approveCompensationProposalAction(
 	input: unknown,
 ): Promise<ActionResult<{ proposal: CompensationProposal }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		CompensationProposal,
 		{ proposal: CompensationProposal }
 	>({
@@ -683,14 +683,14 @@ export async function approveCompensationProposalAction(
 		actionSchema: approveCompensationProposalActionSchema,
 		input,
 		invoke: invokeHrPackage(approveCompensationProposal),
-		mapData: (proposal) => ({ proposal: proposal }),
+		mapData: (proposal) => ({ proposal }),
 	});
 }
 
 export async function getCompensationProposalAction(
 	input: unknown,
 ): Promise<ActionResult<{ proposal: CompensationProposal | null }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		CompensationProposal | null,
 		{ proposal: CompensationProposal | null }
 	>({
@@ -701,14 +701,14 @@ export async function getCompensationProposalAction(
 		actionSchema: getCompensationProposalActionSchema,
 		input,
 		invoke: invokeHrPackage(getCompensationProposal),
-		mapData: (proposal) => ({ proposal: proposal }),
+		mapData: (proposal) => ({ proposal }),
 	});
 }
 
 export async function listCompensationProposalsAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: CompensationProposalListPage }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		CompensationProposalListPage,
 		{ page: CompensationProposalListPage }
 	>({
@@ -719,14 +719,14 @@ export async function listCompensationProposalsAction(
 		actionSchema: listCompensationProposalsActionSchema,
 		input,
 		invoke: invokeHrPackage(listCompensationProposals),
-		mapData: (page) => ({ page: page }),
+		mapData: (page) => ({ page }),
 	});
 }
 
 export async function getApprovedCompensationHandoffAction(
 	input: unknown,
 ): Promise<ActionResult<{ handoff: ApprovedCompensationHandoff | null }>> {
-	return runHrHumanResourcesAction<
+	return await runHrHumanResourcesAction<
 		ApprovedCompensationHandoff | null,
 		{ handoff: ApprovedCompensationHandoff | null }
 	>({
@@ -737,6 +737,6 @@ export async function getApprovedCompensationHandoffAction(
 		actionSchema: getApprovedCompensationHandoffActionSchema,
 		input,
 		invoke: invokeHrPackage(getApprovedCompensationHandoff),
-		mapData: (handoff) => ({ handoff: handoff }),
+		mapData: (handoff) => ({ handoff }),
 	});
 }

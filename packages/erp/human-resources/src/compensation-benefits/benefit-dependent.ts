@@ -17,7 +17,7 @@ export const HUMAN_RESOURCES_AGGREGATE_BENEFIT_ENROLLMENT_DEPENDENT =
 export type HumanResourcesBenefitEnrollmentDependentAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_BENEFIT_ENROLLMENT_DEPENDENT;
 
-export async function addBenefitEnrollmentDependent(
+export function addBenefitEnrollmentDependent(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<BenefitEnrollmentDependent>> {
@@ -44,7 +44,7 @@ export async function addBenefitEnrollmentDependent(
 	});
 }
 
-export async function endBenefitEnrollmentDependent(
+export function endBenefitEnrollmentDependent(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<BenefitEnrollmentDependent>> {

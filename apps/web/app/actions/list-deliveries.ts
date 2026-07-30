@@ -16,7 +16,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type ListDeliveriesActionData = { deliveries: Delivery[] };
+export interface ListDeliveriesActionData {
+	deliveries: Delivery[];
+}
 
 const listDeliveriesActionSchema = z
 	.object({
@@ -35,7 +37,7 @@ export async function listDeliveriesAction(input?: {
 	warehouseId?: string;
 	salesOrderId?: string;
 }): Promise<ActionResult<ListDeliveriesActionData>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listDeliveriesAction",
 		permission: "fulfillment.delivery.read",
 		safeMessage: "Could not list deliveries. Try again or contact an admin.",
@@ -57,7 +59,9 @@ export async function listDeliveriesAction(input?: {
 				createFulfillmentCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { deliveries: mapped.data } };
 		},
 	});

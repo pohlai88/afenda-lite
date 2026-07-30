@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/useAwait: The deterministic memory adapter implements asynchronous payroll statutory ports.
 import { ok, type Result } from "@afenda/errors/result";
 
 import type { PayrollRunId } from "../../brands";

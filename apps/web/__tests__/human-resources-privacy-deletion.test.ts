@@ -15,7 +15,9 @@ function employeeFixtureId() {
 	const parsed = parseHumanResourcesEmployeeId(
 		"00000000-0000-4000-8000-000000000701",
 	);
-	if (!parsed.ok) throw new Error("Invalid employee test fixture");
+	if (!parsed.ok) {
+		throw new Error("Invalid employee test fixture");
+	}
 	return parsed.data;
 }
 
@@ -67,7 +69,7 @@ function auditRecorder() {
 				action: "CREATE";
 				metadata: Record<string, unknown>;
 			};
-			return ok({
+			return await ok({
 				id: "audit-decision-1",
 				...record,
 				changes: [],

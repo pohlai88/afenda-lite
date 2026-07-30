@@ -51,26 +51,26 @@ export const Overview: Story = {
 				<header className="grid gap-2 border-b pb-6">
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="outline">Accounts receivable</Badge>
-						<StatusBadge size="sm" status="pending" label="Awaiting evidence" />
+						<StatusBadge label="Awaiting evidence" size="sm" status="pending" />
 					</div>
-					<h1 className="text-2xl font-semibold tracking-tight">
+					<h1 className="font-semibold text-2xl tracking-tight">
 						Invoice INV-1048
 					</h1>
-					<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+					<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 						Tabs switch peer views of one local context. Feature code owns URL
 						sync, permissions, and panel loading.
 					</p>
 				</header>
 
-				<section className="grid gap-3" aria-labelledby="tabs-invoice-title">
+				<section aria-labelledby="tabs-invoice-title" className="grid gap-3">
 					<div className="grid gap-1">
 						<h2
-							className="text-base font-semibold tracking-tight text-foreground"
+							className="font-semibold text-base text-foreground tracking-tight"
 							id="tabs-invoice-title"
 						>
 							Record views
 						</h2>
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							Peer panels — not a sequential stepper.
 						</p>
 					</div>
@@ -86,22 +86,22 @@ export const Overview: Story = {
 								<TabsList>
 									<TabsTrigger value="overview">Overview</TabsTrigger>
 									<TabsTrigger value="activity">Activity</TabsTrigger>
-									<TabsTrigger value="disabled" disabled>
+									<TabsTrigger disabled value="disabled">
 										Disabled
 									</TabsTrigger>
 								</TabsList>
-								<TabsContent value="overview" className="rounded-md border p-4">
-									<p className="text-sm text-foreground-secondary">
+								<TabsContent className="rounded-md border p-4" value="overview">
+									<p className="text-foreground-secondary text-sm">
 										Finance contact Aisha Rahman · Remittance currency MYR
 									</p>
 								</TabsContent>
-								<TabsContent value="activity" className="rounded-md border p-4">
+								<TabsContent className="rounded-md border p-4" value="activity">
 									Recent activity
 								</TabsContent>
 							</Tabs>
 						</CardContent>
 						<CardFooter className="justify-end border-t">
-							<Button type="button" size="sm" variant="outline">
+							<Button size="sm" type="button" variant="outline">
 								Open full record
 							</Button>
 						</CardFooter>
@@ -128,11 +128,11 @@ export const SemanticUsage: Story = {
 					<TabsTrigger value="terms">Terms</TabsTrigger>
 					<TabsTrigger value="contacts">Contacts</TabsTrigger>
 				</TabsList>
-				<TabsContent value="terms" className="rounded-md border p-4">
-					<p className="text-sm text-foreground-secondary">Net 30 · MYR</p>
+				<TabsContent className="rounded-md border p-4" value="terms">
+					<p className="text-foreground-secondary text-sm">Net 30 · MYR</p>
 				</TabsContent>
-				<TabsContent value="contacts" className="rounded-md border p-4">
-					<p className="text-sm text-foreground-secondary">
+				<TabsContent className="rounded-md border p-4" value="contacts">
+					<p className="text-foreground-secondary text-sm">
 						finance@northwind.example
 					</p>
 				</TabsContent>
@@ -153,35 +153,35 @@ export const Variants: Story = {
 	render: () => (
 		<div className="grid w-full max-w-lg gap-6">
 			<StorySection
-				title="default"
 				description="Contained tab list with grouped control background."
+				title="default"
 			>
 				<Tabs defaultValue="overview">
 					<TabsList variant="default">
 						<TabsTrigger value="overview">Overview</TabsTrigger>
 						<TabsTrigger value="activity">Activity</TabsTrigger>
 					</TabsList>
-					<TabsContent value="overview" className="pt-3 text-sm">
+					<TabsContent className="pt-3 text-sm" value="overview">
 						default panel
 					</TabsContent>
-					<TabsContent value="activity" className="pt-3 text-sm">
+					<TabsContent className="pt-3 text-sm" value="activity">
 						Activity panel
 					</TabsContent>
 				</Tabs>
 			</StorySection>
 			<StorySection
-				title="line"
 				description="Underline-style list for lighter surface chrome."
+				title="line"
 			>
 				<Tabs defaultValue="overview">
 					<TabsList variant="line">
 						<TabsTrigger value="overview">Overview</TabsTrigger>
 						<TabsTrigger value="activity">Activity</TabsTrigger>
 					</TabsList>
-					<TabsContent value="overview" className="pt-3 text-sm">
+					<TabsContent className="pt-3 text-sm" value="overview">
 						line panel
 					</TabsContent>
-					<TabsContent value="activity" className="pt-3 text-sm">
+					<TabsContent className="pt-3 text-sm" value="activity">
 						Activity panel
 					</TabsContent>
 				</Tabs>
@@ -205,14 +205,14 @@ export const StatesAndAccessibility: Story = {
 				<TabsList>
 					<TabsTrigger value="overview">Overview</TabsTrigger>
 					<TabsTrigger value="activity">Activity</TabsTrigger>
-					<TabsTrigger value="audit" disabled>
+					<TabsTrigger disabled value="audit">
 						Audit (restricted)
 					</TabsTrigger>
 				</TabsList>
-				<TabsContent value="overview" className="rounded-md border p-4 text-sm">
+				<TabsContent className="rounded-md border p-4 text-sm" value="overview">
 					Selected panel remains keyboard reachable with visible focus.
 				</TabsContent>
-				<TabsContent value="activity" className="rounded-md border p-4 text-sm">
+				<TabsContent className="rounded-md border p-4 text-sm" value="activity">
 					Peer panel content
 				</TabsContent>
 			</Tabs>
@@ -243,16 +243,16 @@ export const Composition: Story = {
 						<TabsTrigger value="identity">Identity</TabsTrigger>
 						<TabsTrigger value="remittance">Remittance</TabsTrigger>
 					</TabsList>
-					<TabsContent value="identity" className="pt-4">
+					<TabsContent className="pt-4" value="identity">
 						<KeyValue label="Legal name" value="Northwind Trading Sdn. Bhd." />
 					</TabsContent>
-					<TabsContent value="remittance" className="pt-4">
+					<TabsContent className="pt-4" value="remittance">
 						<KeyValue label="Currency" value="MYR" />
 					</TabsContent>
 				</Tabs>
 			</CardContent>
 			<CardFooter className="justify-end border-t">
-				<Button type="button" size="sm">
+				<Button size="sm" type="button">
 					Edit supplier
 				</Button>
 			</CardFooter>
@@ -272,25 +272,25 @@ export const DoAndDoNot: Story = {
 	render: () => (
 		<div className="grid w-full max-w-5xl gap-6 md:grid-cols-2">
 			<StorySection
-				title="Do"
 				description="Peer panels for one invoice record."
+				title="Do"
 			>
 				<Tabs defaultValue="overview">
 					<TabsList>
 						<TabsTrigger value="overview">Overview</TabsTrigger>
 						<TabsTrigger value="lines">Lines</TabsTrigger>
 					</TabsList>
-					<TabsContent value="overview" className="pt-3 text-sm">
+					<TabsContent className="pt-3 text-sm" value="overview">
 						INV-1048 summary
 					</TabsContent>
-					<TabsContent value="lines" className="pt-3 text-sm">
+					<TabsContent className="pt-3 text-sm" value="lines">
 						Line items
 					</TabsContent>
 				</Tabs>
 			</StorySection>
 			<StorySection
-				title="Do not"
 				description="Do not encode sequential workflow steps as tabs."
+				title="Do not"
 			>
 				<div className="grid gap-2 rounded-md border border-destructive/40 p-3">
 					<Tabs defaultValue="step-1">
@@ -299,11 +299,11 @@ export const DoAndDoNot: Story = {
 							<TabsTrigger value="step-2">2 · Approve</TabsTrigger>
 							<TabsTrigger value="step-3">3 · Post</TabsTrigger>
 						</TabsList>
-						<TabsContent value="step-1" className="pt-3 text-sm">
+						<TabsContent className="pt-3 text-sm" value="step-1">
 							Step content
 						</TabsContent>
 					</Tabs>
-					<p className="text-xs text-destructive">
+					<p className="text-destructive text-xs">
 						Sequential posting belongs in Stepper — not Tabs.
 					</p>
 				</div>

@@ -84,7 +84,7 @@ function findImportViolations(input: {
 		}
 	}
 
-	return violations.toSorted();
+	return violations.toSorted((left, right) => left.localeCompare(right));
 }
 
 function findForbiddenSourceMarkers(input: {
@@ -100,7 +100,7 @@ function findForbiddenSourceMarkers(input: {
 			}
 		}
 	}
-	return violations.toSorted();
+	return violations.toSorted((left, right) => left.localeCompare(right));
 }
 
 describe("@afenda/human-resources authorization facade boundary (Slice 2.10)", () => {

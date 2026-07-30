@@ -1,7 +1,7 @@
-export type ValidityRange = {
+export interface ValidityRange {
 	validFrom: Date | null;
 	validTo: Date | null;
-};
+}
 
 /** Reject when both ends are set and exclusive end is not after start. */
 export function isInvalidValidityRange(range: ValidityRange): boolean {

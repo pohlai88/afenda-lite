@@ -10,7 +10,7 @@ import type { ActionResult } from "@/modules/platform/schemas/action-result";
 export async function listPaymentAccountsAction(): Promise<
 	ActionResult<{ accounts: PaymentAccount[] }>
 > {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listPaymentAccountsAction",
 		permission: "payments.account.read",
 		safeMessage:

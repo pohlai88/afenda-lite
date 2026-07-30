@@ -36,6 +36,7 @@ import {
 	runParsedAuthorizedQuery,
 } from "./domain-runner";
 import type { HumanResourcesAuthorizedActorInput } from "./run-authorized-operation";
+import { runSequential, sequentialReturn } from "./run-sequential";
 import {
 	requireAdminResourceAccess,
 	requireOwnResourceAccess,
@@ -56,10 +57,12 @@ function resolveComplianceCommandResource(
 	command: HumanResourcesCommandId,
 ): HumanResourcesResourceContext | undefined {
 	if (
-		!command.startsWith("human-resources.employee-document.") &&
-		!command.startsWith("human-resources.work-eligibility.")
+		!(
+			command.startsWith("human-resources.employee-document.") ||
+			command.startsWith("human-resources.work-eligibility.")
+		)
 	) {
-		return undefined;
+		return;
 	}
 	return {
 		organizationId: data.organizationId,
@@ -70,17 +73,17 @@ function resolveComplianceCommandResource(
 	};
 }
 
-type CommandDeps = {
-	store: HumanResourcesStore;
-	ports: MutationPorts;
+interface CommandDeps {
 	documentReference: DocumentReferencePort;
-};
-
-type QueryDeps = {
+	ports: MutationPorts;
 	store: HumanResourcesStore;
+}
+
+interface QueryDeps {
 	authorization: HumanResourcesAuthorizationPort | undefined;
 	identityResolver: HumanResourcesIdentityResolverPort | undefined;
-};
+	store: HumanResourcesStore;
+}
 
 export async function runComplianceCommand<
 	TSchema extends z.ZodType<ActorScoped>,
@@ -98,7 +101,7 @@ export async function runComplianceCommand<
 		) => Promise<Result<TOut>>;
 	},
 ): Promise<Result<TOut>> {
-	return runParsedAuthorizedCommand(input, options, {
+	return await runParsedAuthorizedCommand(input, options, {
 		schema: config.schema,
 		invalidMessage: config.invalidMessage,
 		command: config.command,
@@ -133,7 +136,7 @@ export async function runComplianceQuery<
 		execute: (data: z.infer<TSchema>, deps: QueryDeps) => Promise<Result<TOut>>;
 	},
 ): Promise<Result<TOut>> {
-	return runParsedAuthorizedQuery(input, options, {
+	return await runParsedAuthorizedQuery(input, options, {
 		schema: config.schema,
 		invalidMessage: config.invalidMessage,
 		query: config.query,
@@ -235,18 +238,24 @@ export async function requireComplianceEmployeeReadScope(
 		HUMAN_RESOURCES_PERMISSION_EMPLOYEE_DOCUMENT_VERIFY,
 		HUMAN_RESOURCES_PERMISSION_WORK_ELIGIBILITY_VERIFY,
 	] as const;
-	for (const permission of hrOperatorPermissions) {
-		const hrCheck = await requireAdminResourceAccess(
-			{ authorization },
-			{
-				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				permission,
-			},
-		);
-		if (hrCheck.ok) {
-			return ok(undefined);
-		}
+	const sequentialOutcome1 = await runSequential(
+		hrOperatorPermissions,
+		async (permission) => {
+			const hrCheck = await requireAdminResourceAccess(
+				{ authorization },
+				{
+					organizationId: input.organizationId,
+					actorUserId: input.actorUserId,
+					permission,
+				},
+			);
+			if (hrCheck.ok) {
+				return sequentialReturn(ok(undefined));
+			}
+		},
+	);
+	if (sequentialOutcome1.kind === "return") {
+		return sequentialOutcome1.value;
 	}
 
 	const identity = await identityResolver.resolveEmployeeForActor({
@@ -254,7 +263,9 @@ export async function requireComplianceEmployeeReadScope(
 		actorUserId: input.actorUserId,
 		...(input.asOf === undefined ? {} : { asOf: input.asOf }),
 	});
-	if (!identity.ok) return identity;
+	if (!identity.ok) {
+		return identity;
+	}
 	if (!identity.data) {
 		return fail(
 			"FORBIDDEN",
@@ -308,7 +319,7 @@ export async function requireIdentityDocumentSensitiveRead(
 		actorUserId: string;
 	},
 ): Promise<Result<void>> {
-	return requireHumanResourcesManifestPermission(options, {
+	return await requireHumanResourcesManifestPermission(options, {
 		...input,
 		permission: HUMAN_RESOURCES_PERMISSION_IDENTITY_DOCUMENT_SENSITIVE_READ,
 	});

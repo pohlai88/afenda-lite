@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noNamespaceImport: This contract test verifies the complete public package surface.
 import * as corporateAdministration from "@afenda/corporate-administration";
 import { describe, expect, it } from "vitest";
 

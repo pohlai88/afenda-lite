@@ -28,7 +28,7 @@ export const HUMAN_RESOURCES_AGGREGATE_LEARNING_ATTENDANCE =
 export type HumanResourcesLearningAttendanceAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_LEARNING_ATTENDANCE;
 
-export async function recordLearningAttendance(
+export function recordLearningAttendance(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningAttendance>> {
@@ -41,7 +41,9 @@ export async function recordLearningAttendance(
 				organizationId: data.organizationId,
 				assignmentId: data.assignmentId,
 			});
-			if (!assignment.ok) return assignment;
+			if (!assignment.ok) {
+				return assignment;
+			}
 			if (assignment.data === null) {
 				return fail(
 					"NOT_FOUND",
@@ -82,7 +84,7 @@ export async function recordLearningAttendance(
 				return ok(existingByKey.data.attendance);
 			}
 
-			return await store.recordLearningAttendance(
+			return store.recordLearningAttendance(
 				{
 					organizationId: data.organizationId,
 					sessionId: data.sessionId,
@@ -105,7 +107,7 @@ export async function recordLearningAttendance(
 	});
 }
 
-export async function getLearningAttendance(
+export function getLearningAttendance(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningAttendance | null>> {
@@ -113,16 +115,15 @@ export async function getLearningAttendance(
 		schema: getLearningAttendanceInputSchema,
 		invalidMessage: "Invalid learning attendance get input",
 		query: HUMAN_RESOURCES_QUERY_LEARNING_ATTENDANCE_GET,
-		execute: async (data, { store }) => {
-			return await store.getLearningAttendanceById({
+		execute: async (data, { store }) =>
+			await store.getLearningAttendanceById({
 				organizationId: data.organizationId,
 				attendanceId: data.attendanceId,
-			});
-		},
+			}),
 	});
 }
 
-export async function listLearningAttendance(
+export function listLearningAttendance(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningAttendanceListPage>> {
@@ -130,14 +131,13 @@ export async function listLearningAttendance(
 		schema: listLearningAttendanceInputSchema,
 		invalidMessage: "Invalid learning attendance list input",
 		query: HUMAN_RESOURCES_QUERY_LEARNING_ATTENDANCE_LIST,
-		execute: async (data, { store }) => {
-			return await store.listLearningAttendance({
+		execute: async (data, { store }) =>
+			await store.listLearningAttendance({
 				organizationId: data.organizationId,
 				page: data.page ?? 1,
 				pageSize: data.pageSize ?? 20,
 				sessionId: data.sessionId,
 				employeeId: data.employeeId,
-			});
-		},
+			}),
 	});
 }

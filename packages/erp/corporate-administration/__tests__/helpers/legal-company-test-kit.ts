@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/useAwait: Deterministic fixtures implement asynchronous company ports.
 import { randomUUID } from "node:crypto";
 import {
 	type CompanyJurisdictionProfile,
@@ -399,7 +400,7 @@ export async function countCaAuditFacts(
 }
 
 export function failingOutboxPort(): {
-	append(): Promise<Result<void>>;
+	append: () => Promise<Result<void>>;
 } {
 	return {
 		append: async () => ({

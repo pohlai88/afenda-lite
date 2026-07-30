@@ -45,22 +45,22 @@ import {
 
 type ActorScoped = HumanResourcesAuthorizedActorInput;
 
-type CommandDeps = {
-	store: HumanResourcesStore;
+interface CommandDeps {
+	authorization: HumanResourcesAuthorizationPort | undefined;
+	identityResolver: HumanResourcesIdentityResolverPort | undefined;
 	ports: MutationPorts;
-	authorization: HumanResourcesAuthorizationPort | undefined;
-	identityResolver: HumanResourcesIdentityResolverPort | undefined;
-};
-
-type QueryDeps = {
 	store: HumanResourcesStore;
+}
+
+interface QueryDeps {
 	authorization: HumanResourcesAuthorizationPort | undefined;
 	identityResolver: HumanResourcesIdentityResolverPort | undefined;
-};
+	store: HumanResourcesStore;
+}
 
 const CUSTOM_AUTHORIZE_PROVEN: HumanResourcesAuthorizationPort = {
 	async can() {
-		return true;
+		return await true;
 	},
 };
 
@@ -86,7 +86,7 @@ export async function runPerformanceCommand<
 		) => Promise<Result<TOut>>;
 	},
 ): Promise<Result<TOut>> {
-	return runParsedAuthorizedCommand(input, options, {
+	return await runParsedAuthorizedCommand(input, options, {
 		schema: config.schema,
 		invalidMessage: config.invalidMessage,
 		command: config.command,
@@ -254,7 +254,7 @@ export async function runPerformanceQuery<
 		execute: (data: z.infer<TSchema>, deps: QueryDeps) => Promise<Result<TOut>>;
 	},
 ): Promise<Result<TOut>> {
-	return runParsedAuthorizedQuery(input, options, {
+	return await runParsedAuthorizedQuery(input, options, {
 		schema: config.schema,
 		invalidMessage: config.invalidMessage,
 		query: config.query,
@@ -391,6 +391,51 @@ export async function requirePerformanceEmployeeReadScope(
 	});
 }
 
+type PerformanceResourceScope = ActorScoped & {
+	goalId?: string;
+	reviewId?: string;
+};
+
+async function resolvePerformanceResourceEmployee(
+	store: HumanResourcesStore,
+	input: PerformanceResourceScope,
+): Promise<Result<HumanResourcesEmployeeId | null>> {
+	if (input.goalId) {
+		const goalId = parseHumanResourcesGoalId(input.goalId);
+		if (!goalId.ok) {
+			return goalId;
+		}
+		const goal = await store.getPerformanceGoalById({
+			organizationId: input.organizationId,
+			goalId: goalId.data,
+		});
+		if (!goal.ok) {
+			return goal;
+		}
+		return goal.data === null
+			? fail("NOT_FOUND", "Performance goal not found")
+			: ok(goal.data.employeeId);
+	}
+	if (input.reviewId) {
+		const reviewId = parseHumanResourcesReviewId(input.reviewId);
+		if (!reviewId.ok) {
+			return reviewId;
+		}
+		const review = await store.getPerformanceReviewById({
+			organizationId: input.organizationId,
+			reviewId: reviewId.data,
+			includeConfidential: false,
+		});
+		if (!review.ok) {
+			return review;
+		}
+		return review.data === null
+			? fail("NOT_FOUND", "Performance review not found")
+			: ok(review.data.review.employeeId);
+	}
+	return ok(null);
+}
+
 /** Query path for resource-specific performance reads (goal, review) with ownership validation. */
 export async function runPerformanceResourceScopedQuery<
 	TSchema extends z.ZodType<
@@ -450,52 +495,22 @@ export async function runPerformanceResourceScopedQuery<
 		});
 	}
 
-	// For resource-specific access, get the resource and validate ownership
-	let targetEmployeeId: HumanResourcesEmployeeId | null = null;
-
-	if (parsed.data.goalId) {
-		const goalIdResult = parseHumanResourcesGoalId(parsed.data.goalId);
-		if (!goalIdResult.ok) {
-			return goalIdResult;
-		}
-		const goalResult = await store.getPerformanceGoalById({
-			organizationId: parsed.data.organizationId,
-			goalId: goalIdResult.data,
-		});
-		if (!goalResult.ok) {
-			return goalResult;
-		}
-		if (goalResult.data === null) {
-			return fail("NOT_FOUND", "Performance goal not found");
-		}
-		targetEmployeeId = goalResult.data.employeeId;
-	} else if (parsed.data.reviewId) {
-		const reviewIdResult = parseHumanResourcesReviewId(parsed.data.reviewId);
-		if (!reviewIdResult.ok) {
-			return reviewIdResult;
-		}
-		const reviewResult = await store.getPerformanceReviewById({
-			organizationId: parsed.data.organizationId,
-			reviewId: reviewIdResult.data,
-			includeConfidential: false,
-		});
-		if (!reviewResult.ok) {
-			return reviewResult;
-		}
-		if (reviewResult.data === null) {
-			return fail("NOT_FOUND", "Performance review not found");
-		}
-		targetEmployeeId = reviewResult.data.review.employeeId;
+	const targetEmployee = await resolvePerformanceResourceEmployee(
+		store,
+		parsed.data,
+	);
+	if (!targetEmployee.ok) {
+		return targetEmployee;
 	}
 
-	if (targetEmployeeId) {
+	if (targetEmployee.data) {
 		const ownCheck = await requireOwnResourceAccess(
 			identityResolver,
 			{ authorization },
 			{
 				organizationId: parsed.data.organizationId,
 				actorUserId: parsed.data.actorUserId,
-				targetEmployeeId,
+				targetEmployeeId: targetEmployee.data,
 				permission: HUMAN_RESOURCES_PERMISSION_PERFORMANCE_OWN_READ,
 			},
 		);
@@ -521,9 +536,9 @@ export async function requirePerformanceConfidentialRead(
 	},
 ): Promise<Result<void>> {
 	if (!input.includeConfidential) {
-		return ok(undefined);
+		return await ok(undefined);
 	}
-	return requireHumanResourcesManifestPermission(options, {
+	return await requireHumanResourcesManifestPermission(options, {
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		permission: HUMAN_RESOURCES_PERMISSION_PERFORMANCE_CONFIDENTIAL_READ,

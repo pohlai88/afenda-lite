@@ -10,7 +10,7 @@ export async function getApprovedTimeHandoff(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ApprovedTimeHandoff | null>> {
-	return runTimeQuery(input, options, {
+	return await runTimeQuery(input, options, {
 		schema: getApprovedTimeHandoffInputSchema,
 		invalidMessage: "Invalid approved time handoff get input",
 		query: HUMAN_RESOURCES_QUERY_APPROVED_TIME_HANDOFF_GET,

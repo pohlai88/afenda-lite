@@ -3,7 +3,6 @@ import { z } from "zod";
 
 import { stockMovementIdSchema, stockReservationIdSchema } from "./brands";
 import {
-	INVENTORY_MOVEMENT_SOURCES,
 	STOCK_MOVEMENT_STATUSES,
 	STOCK_MOVEMENT_TYPES,
 	STOCK_RESERVATION_STATUSES,
@@ -219,8 +218,5 @@ export const getStockAvailabilityInputSchema = z.object({
 	itemId: itemIdSchema.optional(),
 });
 
-export {
-	INVENTORY_MOVEMENT_SOURCES,
-	positiveQuantitySchema,
-	signedNonZeroQuantitySchema,
-};
+export { INVENTORY_MOVEMENT_SOURCES } from "./types";
+export { positiveQuantitySchema, signedNonZeroQuantitySchema };

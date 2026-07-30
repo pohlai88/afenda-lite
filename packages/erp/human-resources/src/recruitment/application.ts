@@ -38,7 +38,7 @@ export const HUMAN_RESOURCES_AGGREGATE_APPLICATION = "application" as const;
 export type HumanResourcesApplicationAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_APPLICATION;
 
-export async function createApplication(
+export function createApplication(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CandidateApplication>> {
@@ -63,7 +63,7 @@ export async function createApplication(
 	});
 }
 
-async function transitionApplication(
+function transitionApplication(
 	input: unknown,
 	options: HumanResourcesCommandOptions,
 	config: {
@@ -100,7 +100,7 @@ async function transitionApplication(
 	});
 }
 
-export async function moveApplicationToInReview(
+export function moveApplicationToInReview(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CandidateApplication>> {
@@ -111,7 +111,7 @@ export async function moveApplicationToInReview(
 	});
 }
 
-export async function moveApplicationToInterviewing(
+export function moveApplicationToInterviewing(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CandidateApplication>> {
@@ -122,7 +122,7 @@ export async function moveApplicationToInterviewing(
 	});
 }
 
-export async function rejectApplication(
+export function rejectApplication(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CandidateApplication>> {
@@ -133,7 +133,7 @@ export async function rejectApplication(
 	});
 }
 
-export async function withdrawApplication(
+export function withdrawApplication(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CandidateApplication>> {
@@ -144,7 +144,7 @@ export async function withdrawApplication(
 	});
 }
 
-export async function reopenApplication(
+export function reopenApplication(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CandidateApplication>> {
@@ -171,7 +171,7 @@ export async function reopenApplication(
 	});
 }
 
-export async function getApplication(
+export function getApplication(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CandidateApplication>> {
@@ -199,7 +199,7 @@ export async function getApplication(
 	});
 }
 
-export async function listApplications(
+export function listApplications(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ApplicationListPage>> {
@@ -219,7 +219,7 @@ export async function listApplications(
 	});
 }
 
-export async function listApplicationStatusHistory(
+export function listApplicationStatusHistory(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ApplicationStatusHistory[]>> {

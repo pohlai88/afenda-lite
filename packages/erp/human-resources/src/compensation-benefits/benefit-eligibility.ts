@@ -20,7 +20,7 @@ export const HUMAN_RESOURCES_AGGREGATE_BENEFIT_PLAN_ELIGIBILITY =
 export type HumanResourcesBenefitPlanEligibilityAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_BENEFIT_PLAN_ELIGIBILITY;
 
-export async function setBenefitPlanEligibility(
+export function setBenefitPlanEligibility(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<BenefitPlanEligibility>> {
@@ -46,7 +46,7 @@ export async function setBenefitPlanEligibility(
 	});
 }
 
-export async function getBenefitPlanEligibility(
+export function getBenefitPlanEligibility(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<BenefitPlanEligibility | null>> {

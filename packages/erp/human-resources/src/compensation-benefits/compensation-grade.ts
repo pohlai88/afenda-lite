@@ -27,7 +27,7 @@ export const HUMAN_RESOURCES_AGGREGATE_COMPENSATION_GRADE =
 export type HumanResourcesCompensationGradeAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_COMPENSATION_GRADE;
 
-export async function createCompensationGrade(
+export function createCompensationGrade(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationGrade>> {
@@ -52,7 +52,7 @@ export async function createCompensationGrade(
 	});
 }
 
-export async function updateCompensationGrade(
+export function updateCompensationGrade(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationGrade>> {
@@ -78,7 +78,7 @@ export async function updateCompensationGrade(
 	});
 }
 
-export async function archiveCompensationGrade(
+export function archiveCompensationGrade(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationGrade>> {
@@ -103,7 +103,7 @@ export async function archiveCompensationGrade(
 	});
 }
 
-export async function getCompensationGrade(
+export function getCompensationGrade(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationGrade>> {
@@ -127,7 +127,7 @@ export async function getCompensationGrade(
 	});
 }
 
-export async function listCompensationGrades(
+export function listCompensationGrades(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationGradeListPage>> {

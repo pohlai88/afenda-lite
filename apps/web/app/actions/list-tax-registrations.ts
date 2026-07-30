@@ -15,9 +15,9 @@ import {
 	actionFailInternal,
 } from "@/modules/platform/schemas/action-result";
 
-export type ListTaxRegistrationsActionData = {
+export interface ListTaxRegistrationsActionData {
 	taxRegistrations: TaxRegistrationProjection[];
-};
+}
 
 /**
  * Master-data tax registration list — session org stamp + `master_data.read`.

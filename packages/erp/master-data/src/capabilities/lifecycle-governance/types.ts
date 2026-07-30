@@ -379,26 +379,26 @@ export type LifecycleControlledField =
 	(typeof LIFECYCLE_CONTROLLED_FIELDS)[number];
 
 export interface LifecycleTransitionDocumentation {
-	requiredParentState: string | null;
-	requiredChildEvidence: readonly string[];
-	effectiveDateBehavior: string;
 	canonicalIdentityBehavior: string;
-	searchProjectionConsequence: string;
+	effectiveDateBehavior: string;
 	permitsNewTransactionalUse: boolean;
+	requiredChildEvidence: readonly string[];
+	requiredParentState: string | null;
+	searchProjectionConsequence: string;
 }
 
 export interface LifecycleTransitionDefinition<State extends string>
 	extends LifecycleTransitionDocumentation {
-	operation: string;
-	from: readonly State[];
-	to: State;
-	requiredPermission: string;
-	reasonPolicy: LifecycleReasonPolicy;
-	expectedVersionRequired: boolean;
+	auditAction: LifecycleAuditAction;
 	dependencyPolicy?: string;
 	eventType: string;
-	auditAction: LifecycleAuditAction;
+	expectedVersionRequired: boolean;
+	from: readonly State[];
+	operation: string;
+	reasonPolicy: LifecycleReasonPolicy;
+	requiredPermission: string;
 	reversible: boolean;
+	to: State;
 }
 
 export type LifecycleTransitionDefinitionInput<State extends string> = Omit<
@@ -424,10 +424,10 @@ export type LifecyclePolicyInput<State extends string> = Readonly<{
 }>;
 
 export interface LifecycleDecision<State extends string> {
-	from: State;
-	to: State;
-	operation: string;
 	definition: LifecycleTransitionDefinition<State>;
+	from: State;
+	operation: string;
+	to: State;
 }
 
 export const LIFECYCLE_STATE_SOURCE = "authoritative_record" as const;

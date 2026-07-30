@@ -742,13 +742,13 @@ describe("Corporate Administration CA-0.1 core contracts", () => {
 	});
 
 	it("rejects non-finite numbers and normalizes negative zero", () => {
-		expect(() => canonicalJsonStringify(NaN)).toThrow(
+		expect(() => canonicalJsonStringify(Number.NaN)).toThrow(
 			"Canonical JSON rejects non-finite numbers",
 		);
-		expect(() => canonicalJsonStringify(Infinity)).toThrow(
+		expect(() => canonicalJsonStringify(Number.POSITIVE_INFINITY)).toThrow(
 			"Canonical JSON rejects non-finite numbers",
 		);
-		expect(() => canonicalJsonStringify(-Infinity)).toThrow(
+		expect(() => canonicalJsonStringify(Number.NEGATIVE_INFINITY)).toThrow(
 			"Canonical JSON rejects non-finite numbers",
 		);
 		expect(canonicalJsonStringify(-0)).toBe("0");

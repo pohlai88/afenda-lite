@@ -32,9 +32,8 @@ import { createDrizzleTestOrganizationDimensionDirectory } from "./drizzle-organ
 import { createStoreBackedIdentityResolver } from "./identity-resolver";
 import { createGrantingHumanResourcesAuthorization } from "./memory-authorization";
 import { createMemoryMutationPorts } from "./memory-ports";
-import { seedDepartmentAndJob } from "./seed-department-and-job";
 
-export { seedDepartmentAndJob };
+export { seedDepartmentAndJob } from "./seed-department-and-job";
 
 export type WorkforceStoreAdapter = "memory" | "drizzle";
 
@@ -49,27 +48,23 @@ export type TestLeavePolicy = LeavePolicy;
 export type TestLeaveEntitlement = LeaveEntitlement;
 export type TestLeaveRequest = LeaveRequest;
 
-export type WorkforceTestHarness = {
-	organizationId: string;
+export interface WorkforceTestHarness {
 	actorUserId: string;
-	ports: MutationPorts;
-	meta: HumanResourcesMutationMeta;
-	store: ReturnType<typeof createDrizzleHumanResourcesStore>;
 	commandOptions: WorkforceHarness;
 	createEmployee: (options?: {
 		employeeNumber?: string;
 		legalName?: string;
 	}) => Promise<TestEmployee>;
 	createEmployment: (employee: TestEmployee) => Promise<TestEmployment>;
-	createLeavePolicy: (options?: {
-		status?: "draft" | "published";
-	}) => Promise<TestLeavePolicy>;
 	createLeaveEntitlement: (
 		employee: TestEmployee,
 		employment: TestEmployment,
 		policy: TestLeavePolicy,
 		options?: { status?: "active" | "expired" | "carried_forward" },
 	) => Promise<TestLeaveEntitlement>;
+	createLeavePolicy: (options?: {
+		status?: "draft" | "published";
+	}) => Promise<TestLeavePolicy>;
 	createLeaveRequest: (
 		employee: TestEmployee,
 		employment: TestEmployment,
@@ -81,7 +76,11 @@ export type WorkforceTestHarness = {
 			endDate?: string;
 		},
 	) => Promise<TestLeaveRequest>;
-};
+	meta: HumanResourcesMutationMeta;
+	organizationId: string;
+	ports: MutationPorts;
+	store: ReturnType<typeof createDrizzleHumanResourcesStore>;
+}
 
 /** Shared Memory / Drizzle harness for HR domain semantic parity suites. */
 export function createHrParityHarness(
@@ -134,13 +133,13 @@ export async function createTestHarness(options?: {
 		operationId: HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_CREATE,
 	});
 
-	async function createHarnessEmployee(options?: {
+	async function createHarnessEmployee(optionsValue2?: {
 		employeeNumber?: string;
 		legalName?: string;
 	}): Promise<TestEmployee> {
 		const employeeNumber =
-			options?.employeeNumber ?? `E-${randomUUID().slice(0, 8)}`;
-		const legalName = options?.legalName ?? "Test Employee";
+			optionsValue2?.employeeNumber ?? `E-${randomUUID().slice(0, 8)}`;
+		const legalName = optionsValue2?.legalName ?? "Test Employee";
 		const created = await createEmployee(
 			{
 				organizationId,
@@ -181,7 +180,7 @@ export async function createTestHarness(options?: {
 		return created.data;
 	}
 
-	async function createHarnessLeavePolicy(options?: {
+	async function createHarnessLeavePolicy(optionsValue4?: {
 		status?: "draft" | "published";
 	}): Promise<TestLeavePolicy> {
 		const code = `POL-${randomUUID().slice(0, 8)}`;
@@ -206,7 +205,7 @@ export async function createTestHarness(options?: {
 				`createLeavePolicy failed: ${created.code} ${created.message}`,
 			);
 		}
-		if (options?.status === "draft") {
+		if (optionsValue4?.status === "draft") {
 			return created.data;
 		}
 		const published = await publishLeavePolicy(
@@ -231,7 +230,7 @@ export async function createTestHarness(options?: {
 		employee: TestEmployee,
 		employment: TestEmployment,
 		policy: TestLeavePolicy,
-		options?: {
+		optionsValue3?: {
 			status?: "active" | "expired" | "carried_forward";
 			openingQuantity?: string;
 			periodStart?: string;
@@ -246,9 +245,9 @@ export async function createTestHarness(options?: {
 				employeeId: employee.id,
 				employmentId: employment.id,
 				policyId: policy.id,
-				periodStart: options?.periodStart ?? "2024-01-01",
-				periodEnd: options?.periodEnd ?? "2024-12-31",
-				openingQuantity: options?.openingQuantity ?? "10",
+				periodStart: optionsValue3?.periodStart ?? "2024-01-01",
+				periodEnd: optionsValue3?.periodEnd ?? "2024-12-31",
+				openingQuantity: optionsValue3?.openingQuantity ?? "10",
 				idempotencyKey: `idem-ent-${randomUUID()}`,
 			},
 			commandOptions,
@@ -266,16 +265,16 @@ export async function createTestHarness(options?: {
 		_employment: TestEmployment,
 		entitlement: TestLeaveEntitlement,
 		_policy: TestLeavePolicy,
-		options?: {
+		optionsValue5?: {
 			requestedQuantity?: string;
 			startDate?: string;
 			endDate?: string;
 		},
 	): Promise<TestLeaveRequest> {
-		const requestedQuantity = options?.requestedQuantity ?? "5";
-		const startDate = options?.startDate ?? "2024-01-15";
+		const requestedQuantity = optionsValue5?.requestedQuantity ?? "5";
+		const startDate = optionsValue5?.startDate ?? "2024-01-15";
 		const endDate =
-			options?.endDate ??
+			optionsValue5?.endDate ??
 			(requestedQuantity === "5" ? "2024-01-19" : startDate);
 		const created = await createDraftLeaveRequest(
 			{
@@ -299,7 +298,7 @@ export async function createTestHarness(options?: {
 		return created.data;
 	}
 
-	return {
+	return await {
 		organizationId,
 		actorUserId,
 		ports: commandOptions.ports,

@@ -27,7 +27,7 @@ import { lineageEligibleWorkCalendar } from "./work-calendar-lineage";
  *
  * UTC residual: stored instants remain UTC `Date` / ISO; handoff aggregates omit timezone.
  */
-export { civilDateInTimeZone as organizationLocalWorkDate };
+export { civilDateInTimeZone as organizationLocalWorkDate } from "./legal-minute-allocation";
 
 /** Org-local civil date for an instant when calendar IANA timezone is already resolved. */
 export function resolveOrganizationLocalWorkDateFromCalendar(input: {
@@ -112,7 +112,7 @@ export async function resolveEmploymentOrganizationLocalWorkDate(
 		return calendarTimezone;
 	}
 
-	let timezone = calendarTimezone.data.timezone;
+	let { timezone } = calendarTimezone.data;
 	let workDate = civilDateInTimeZone(input.instant, timezone);
 
 	if (workDate !== provisionalAsOf) {
@@ -136,7 +136,7 @@ export async function resolveEmploymentOrganizationLocalWorkDate(
 		if (!reCalendarTimezone.ok) {
 			return reCalendarTimezone;
 		}
-		timezone = reCalendarTimezone.data.timezone;
+		({ timezone } = reCalendarTimezone.data);
 		workDate = civilDateInTimeZone(input.instant, timezone);
 	}
 

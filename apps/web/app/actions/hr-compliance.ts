@@ -172,7 +172,7 @@ const detectComplianceExpiryOperationsActionSchema = hrActionSchema(
 export async function createDocumentRequirementAction(
 	input: unknown,
 ): Promise<ActionResult<{ requirement: DocumentRequirement }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "createDocumentRequirementAction",
 		permission: DOCUMENT_REQUIREMENT_MANAGE,
 		safeMessage: "Could not create document requirement.",
@@ -187,7 +187,7 @@ export async function createDocumentRequirementAction(
 export async function updateDocumentRequirementAction(
 	input: unknown,
 ): Promise<ActionResult<{ requirement: DocumentRequirement }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "updateDocumentRequirementAction",
 		permission: DOCUMENT_REQUIREMENT_MANAGE,
 		safeMessage: "Could not update document requirement.",
@@ -202,7 +202,7 @@ export async function updateDocumentRequirementAction(
 export async function publishDocumentRequirementAction(
 	input: unknown,
 ): Promise<ActionResult<{ requirement: DocumentRequirement }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "publishDocumentRequirementAction",
 		permission: DOCUMENT_REQUIREMENT_MANAGE,
 		safeMessage: "Could not publish document requirement.",
@@ -217,7 +217,7 @@ export async function publishDocumentRequirementAction(
 export async function retireDocumentRequirementAction(
 	input: unknown,
 ): Promise<ActionResult<{ requirement: DocumentRequirement }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "retireDocumentRequirementAction",
 		permission: DOCUMENT_REQUIREMENT_MANAGE,
 		safeMessage: "Could not retire document requirement.",
@@ -232,7 +232,7 @@ export async function retireDocumentRequirementAction(
 export async function registerEmployeeDocumentAction(
 	input: unknown,
 ): Promise<ActionResult<{ document: EmployeeDocument }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "registerEmployeeDocumentAction",
 		permission: EMPLOYEE_DOCUMENT_OWN_REGISTER,
 		safeMessage: "Could not register employee document.",
@@ -247,7 +247,7 @@ export async function registerEmployeeDocumentAction(
 export async function updateEmployeeDocumentMetadataAction(
 	input: unknown,
 ): Promise<ActionResult<{ document: EmployeeDocument }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "updateEmployeeDocumentMetadataAction",
 		permission: EMPLOYEE_DOCUMENT_VERIFY,
 		safeMessage: "Could not update employee document.",
@@ -262,7 +262,7 @@ export async function updateEmployeeDocumentMetadataAction(
 export async function verifyEmployeeDocumentAction(
 	input: unknown,
 ): Promise<ActionResult<{ document: EmployeeDocument }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "verifyEmployeeDocumentAction",
 		permission: EMPLOYEE_DOCUMENT_VERIFY,
 		safeMessage: "Could not verify employee document.",
@@ -277,7 +277,7 @@ export async function verifyEmployeeDocumentAction(
 export async function rejectEmployeeDocumentAction(
 	input: unknown,
 ): Promise<ActionResult<{ document: EmployeeDocument }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "rejectEmployeeDocumentAction",
 		permission: EMPLOYEE_DOCUMENT_VERIFY,
 		safeMessage: "Could not reject employee document.",
@@ -292,7 +292,7 @@ export async function rejectEmployeeDocumentAction(
 export async function revokeEmployeeDocumentVerificationAction(
 	input: unknown,
 ): Promise<ActionResult<{ document: EmployeeDocument }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "revokeEmployeeDocumentVerificationAction",
 		permission: EMPLOYEE_DOCUMENT_VERIFY,
 		safeMessage: "Could not revoke employee document verification.",
@@ -307,7 +307,7 @@ export async function revokeEmployeeDocumentVerificationAction(
 export async function markEmployeeDocumentExpiredAction(
 	input: unknown,
 ): Promise<ActionResult<{ document: EmployeeDocument }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "markEmployeeDocumentExpiredAction",
 		permission: EMPLOYEE_DOCUMENT_VERIFY,
 		safeMessage: "Could not mark employee document expired.",
@@ -324,7 +324,7 @@ export async function getEmployeeDocumentAction(input: unknown): Promise<
 		document: EmployeeDocumentListItem | EmployeeDocumentSensitiveDetail;
 	}>
 > {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "getEmployeeDocumentAction",
 		permission: EMPLOYEE_DOCUMENT_OWN_READ,
 		safeMessage: "Could not get employee document.",
@@ -341,7 +341,7 @@ export async function getEmployeeDocumentAction(input: unknown): Promise<
 export async function listMissingRequiredDocumentsAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: DocumentRequirementListPage }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "listMissingRequiredDocumentsAction",
 		permission: COMPLIANCE_ADMIN,
 		safeMessage: "Could not list missing documents.",
@@ -356,7 +356,7 @@ export async function listMissingRequiredDocumentsAction(
 export async function listExpiringEmployeeDocumentsAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: EmployeeDocumentListPage }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "listExpiringEmployeeDocumentsAction",
 		permission: COMPLIANCE_ADMIN,
 		safeMessage: "Could not list expiring employee documents.",
@@ -371,7 +371,7 @@ export async function listExpiringEmployeeDocumentsAction(
 export async function recordWorkEligibilityAction(
 	input: unknown,
 ): Promise<ActionResult<{ eligibility: WorkEligibility }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "recordWorkEligibilityAction",
 		permission: WORK_ELIGIBILITY_VERIFY,
 		safeMessage: "Could not record work eligibility.",
@@ -386,7 +386,7 @@ export async function recordWorkEligibilityAction(
 export async function verifyWorkEligibilityAction(
 	input: unknown,
 ): Promise<ActionResult<{ eligibility: WorkEligibility }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "verifyWorkEligibilityAction",
 		permission: WORK_ELIGIBILITY_VERIFY,
 		safeMessage: "Could not verify work eligibility.",
@@ -401,7 +401,7 @@ export async function verifyWorkEligibilityAction(
 export async function suspendWorkEligibilityAction(
 	input: unknown,
 ): Promise<ActionResult<{ eligibility: WorkEligibility }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "suspendWorkEligibilityAction",
 		permission: WORK_ELIGIBILITY_VERIFY,
 		safeMessage: "Could not suspend work eligibility.",
@@ -416,7 +416,7 @@ export async function suspendWorkEligibilityAction(
 export async function renewWorkEligibilityAction(
 	input: unknown,
 ): Promise<ActionResult<{ eligibility: WorkEligibility }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "renewWorkEligibilityAction",
 		permission: WORK_ELIGIBILITY_VERIFY,
 		safeMessage: "Could not renew work eligibility.",
@@ -431,7 +431,7 @@ export async function renewWorkEligibilityAction(
 export async function closeWorkEligibilityAction(
 	input: unknown,
 ): Promise<ActionResult<{ eligibility: WorkEligibility }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "closeWorkEligibilityAction",
 		permission: WORK_ELIGIBILITY_VERIFY,
 		safeMessage: "Could not close work eligibility.",
@@ -446,7 +446,7 @@ export async function closeWorkEligibilityAction(
 export async function getEmployeeWorkEligibilityAction(
 	input: unknown,
 ): Promise<ActionResult<{ eligibility: WorkEligibility | null }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "getEmployeeWorkEligibilityAction",
 		permission: EMPLOYEE_DOCUMENT_OWN_READ,
 		safeMessage: "Could not get work eligibility.",
@@ -461,7 +461,7 @@ export async function getEmployeeWorkEligibilityAction(
 export async function listEmployeesWithWorkEligibilityRiskAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: WorkEligibilityRiskListPage }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "listEmployeesWithWorkEligibilityRiskAction",
 		permission: COMPLIANCE_ADMIN,
 		safeMessage: "Could not list work eligibility risk.",
@@ -476,7 +476,7 @@ export async function listEmployeesWithWorkEligibilityRiskAction(
 export async function issuePolicyAcknowledgementRequirementAction(
 	input: unknown,
 ): Promise<ActionResult<{ acknowledgement: PolicyAcknowledgement }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "issuePolicyAcknowledgementRequirementAction",
 		permission: POLICY_ACK_ADMIN,
 		safeMessage: "Could not issue policy acknowledgement.",
@@ -491,7 +491,7 @@ export async function issuePolicyAcknowledgementRequirementAction(
 export async function acknowledgePolicyAction(
 	input: unknown,
 ): Promise<ActionResult<{ acknowledgement: PolicyAcknowledgement }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "acknowledgePolicyAction",
 		permission: EMPLOYEE_DOCUMENT_OWN_READ,
 		safeMessage: "Could not acknowledge policy.",
@@ -506,7 +506,7 @@ export async function acknowledgePolicyAction(
 export async function revokePolicyAcknowledgementAction(
 	input: unknown,
 ): Promise<ActionResult<{ acknowledgement: PolicyAcknowledgement }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "revokePolicyAcknowledgementAction",
 		permission: POLICY_ACK_ADMIN,
 		safeMessage: "Could not revoke policy acknowledgement.",
@@ -521,7 +521,7 @@ export async function revokePolicyAcknowledgementAction(
 export async function supersedePolicyAcknowledgementRequirementAction(
 	input: unknown,
 ): Promise<ActionResult<{ acknowledgement: PolicyAcknowledgement }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "supersedePolicyAcknowledgementRequirementAction",
 		permission: POLICY_ACK_ADMIN,
 		safeMessage: "Could not supersede policy acknowledgement.",
@@ -537,7 +537,7 @@ export async function supersedePolicyAcknowledgementRequirementAction(
 export async function getPolicyAcknowledgementStatusAction(
 	input: unknown,
 ): Promise<ActionResult<{ acknowledgement: PolicyAcknowledgement | null }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "getPolicyAcknowledgementStatusAction",
 		permission: EMPLOYEE_DOCUMENT_OWN_READ,
 		safeMessage: "Could not get policy acknowledgement status.",
@@ -554,7 +554,7 @@ export async function getPolicyAcknowledgementStatusAction(
 export async function listOutstandingPolicyAcknowledgementsAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: PolicyAcknowledgementListPage }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "listOutstandingPolicyAcknowledgementsAction",
 		permission: COMPLIANCE_ADMIN,
 		safeMessage: "Could not list outstanding policy acknowledgements.",
@@ -569,7 +569,7 @@ export async function listOutstandingPolicyAcknowledgementsAction(
 export async function getEmployeeComplianceSummaryAction(
 	input: unknown,
 ): Promise<ActionResult<{ summary: EmployeeComplianceSummary }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "getEmployeeComplianceSummaryAction",
 		permission: COMPLIANCE_ADMIN,
 		safeMessage: "Could not get employee compliance summary.",
@@ -584,7 +584,7 @@ export async function getEmployeeComplianceSummaryAction(
 export async function detectComplianceExpiryOperationsAction(
 	input: unknown,
 ): Promise<ActionResult<{ operations: ComplianceExpiryOperations }>> {
-	return runHrHumanResourcesAction({
+	return await runHrHumanResourcesAction({
 		path: "detectComplianceExpiryOperationsAction",
 		permission: COMPLIANCE_ADMIN,
 		safeMessage: "Could not detect compliance expiry operations.",

@@ -36,7 +36,9 @@ export async function createWarehouseExternalId(
 		return parsed;
 	}
 	const identity = normalizeExternalId(parsed.data);
-	if (!identity.ok) return identity;
+	if (!identity.ok) {
+		return identity;
+	}
 	const { store, roots, ports, authorization } = resolveWarehouseExtensionDeps(
 		options,
 		["createWarehouseExternalId"],
@@ -54,7 +56,9 @@ export async function createWarehouseExternalId(
 		parsed.data.organizationId,
 		parsed.data.warehouseId,
 	);
-	if (!parent.ok) return parent;
+	if (!parent.ok) {
+		return parent;
+	}
 	return store.createWarehouseExternalId(
 		{
 			organizationId: parsed.data.organizationId,
@@ -80,7 +84,9 @@ export async function findWarehouseByExternalId(
 		return parsed;
 	}
 	const identity = normalizeExternalId(parsed.data);
-	if (!identity.ok) return identity;
+	if (!identity.ok) {
+		return identity;
+	}
 	const { store, authorization } = resolveWarehouseExtensionDeps(options, [
 		"findWarehouseByExternalId",
 	]);

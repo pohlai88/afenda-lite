@@ -10,7 +10,7 @@ import {
 	TreeView,
 } from "@afenda/ui-system";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import * as React from "react";
+import { useCallback, useState } from "react";
 import { contractDocsParameters } from "./contract-docs";
 import { contractEvidence, StorySection } from "./evidence";
 import { interactionFor } from "./interactions";
@@ -57,14 +57,18 @@ function ModuleNavigationTree({
 }: {
 	initialSelectedId?: string;
 }) {
-	const [selectedId, setSelectedId] = React.useState(initialSelectedId);
+	const [selectedId, setSelectedId] = useState(initialSelectedId);
+	const handleSelect = useCallback(
+		(node: { id: string }) => setSelectedId(node.id),
+		[],
+	);
 
 	return (
 		<TreeView
-			nodes={moduleNodes}
-			selectedId={selectedId}
-			onSelect={(node) => setSelectedId(node.id)}
 			aria-label="Module navigation"
+			nodes={moduleNodes}
+			onSelect={handleSelect}
+			selectedId={selectedId}
 		/>
 	);
 }
@@ -99,11 +103,11 @@ export const Overview: Story = {
 		<div className="min-h-screen bg-canvas text-foreground">
 			<div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-2 border-b pb-6">
-					<p className="text-sm font-medium text-foreground-secondary">
+					<p className="font-medium text-foreground-secondary text-sm">
 						Workspace navigation
 					</p>
-					<h1 className="text-2xl font-semibold tracking-tight">Module tree</h1>
-					<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+					<h1 className="font-semibold text-2xl tracking-tight">Module tree</h1>
+					<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 						TreeView owns hierarchy chrome and selection presentation. Feature
 						code owns routing, lazy load, and whether a node is authorized.
 					</p>
@@ -120,7 +124,7 @@ export const Overview: Story = {
 							</div>
 							<div className="flex flex-wrap items-center gap-2">
 								<Badge variant="outline">Navigation</Badge>
-								<StatusBadge status="active" label="Live modules" />
+								<StatusBadge label="Live modules" status="active" />
 							</div>
 						</div>
 					</CardHeader>
@@ -151,9 +155,9 @@ export const Usage: Story = {
 			</StorySection>
 			<StorySection title="Chart of accounts">
 				<TreeView
+					aria-label="Chart of accounts"
 					nodes={chartNodes}
 					selectedId="ar"
-					aria-label="Chart of accounts"
 				/>
 			</StorySection>
 		</div>
@@ -173,7 +177,7 @@ export const ControlledUsage: Story = {
 	render: () => (
 		<div className="grid w-full max-w-sm gap-3">
 			<ModuleNavigationTree initialSelectedId="payables" />
-			<p className="text-sm text-foreground-secondary">
+			<p className="text-foreground-secondary text-sm">
 				Selection meaning and route changes stay with the feature — not
 				TreeView.
 			</p>
@@ -194,10 +198,10 @@ export const StatesAndAccessibility: Story = {
 	render: () => (
 		<div className="w-full max-w-sm">
 			<TreeView
+				aria-label="Module states"
+				expandedIds={new Set(["finance", "operations"])}
 				nodes={moduleNodes}
 				selectedId="receivables"
-				expandedIds={new Set(["finance", "operations"])}
-				aria-label="Module states"
 			/>
 		</div>
 	),
@@ -216,20 +220,20 @@ export const VariantsAndSizes: Story = {
 	render: () => (
 		<div className="grid w-full max-w-5xl gap-6 sm:grid-cols-2">
 			<div className="grid gap-2">
-				<p className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+				<p className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 					Collapsed roots
 				</p>
-				<TreeView nodes={moduleNodes} aria-label="Collapsed modules" />
+				<TreeView aria-label="Collapsed modules" nodes={moduleNodes} />
 			</div>
 			<div className="grid gap-2">
-				<p className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+				<p className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 					Expanded roots
 				</p>
 				<TreeView
-					nodes={moduleNodes}
-					expandedIds={new Set(["finance", "operations"])}
-					selectedId="payables"
 					aria-label="Expanded modules"
+					expandedIds={new Set(["finance", "operations"])}
+					nodes={moduleNodes}
+					selectedId="payables"
 				/>
 			</div>
 		</div>
@@ -256,7 +260,7 @@ export const Composition: Story = {
 					</div>
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="secondary">Platform</Badge>
-						<StatusBadge status="active" label="Live" />
+						<StatusBadge label="Live" status="active" />
 					</div>
 				</div>
 			</CardHeader>
@@ -281,14 +285,14 @@ export const DoAndDoNot: Story = {
 		<div className="grid max-w-5xl gap-6 sm:grid-cols-2">
 			<StorySection title="Do: stable ids and disabled leaves">
 				<TreeView
-					nodes={moduleNodes}
-					expandedIds={new Set(["operations"])}
-					selectedId="inventory"
 					aria-label="Stable module tree"
+					expandedIds={new Set(["operations"])}
+					nodes={moduleNodes}
+					selectedId="inventory"
 				/>
 			</StorySection>
 			<StorySection title="Do not: position as identity or auth from collapse">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Do not treat “second child under Finance” as identity, and do not
 					assume collapsed nodes are unauthorized — feature Actions revalidate
 					before navigation.
@@ -313,22 +317,22 @@ export const AdaptiveAndHighContrast: Story = {
 			<StorySection title="Narrow module navigator">
 				<div className="max-w-64 overflow-x-auto rounded-lg border p-3">
 					<TreeView
-						nodes={moduleNodes}
-						expandedIds={new Set(["finance", "operations"])}
-						selectedId="receivables"
 						aria-label="Narrow module navigation"
+						expandedIds={new Set(["finance", "operations"])}
+						nodes={moduleNodes}
+						selectedId="receivables"
 					/>
 				</div>
 			</StorySection>
 			<StorySection title="Hierarchy is not permission">
 				<div className="grid gap-3">
 					<TreeView
-						nodes={chartNodes}
-						expandedIds={new Set(["assets", "liabilities"])}
-						selectedId="ar"
 						aria-label="Chart of accounts hierarchy"
+						expandedIds={new Set(["assets", "liabilities"])}
+						nodes={chartNodes}
+						selectedId="ar"
 					/>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						Visible ancestry explains structure only. Feature Actions must still
 						authorize every destination and record read.
 					</p>

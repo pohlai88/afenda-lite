@@ -64,10 +64,14 @@ describe("authorization policy coverage", () => {
 		const policies = [...HUMAN_RESOURCES_AUTHORIZATION_POLICIES];
 		for (let i = 0; i < policies.length; i += 1) {
 			const left = policies[i];
-			if (left === undefined) continue;
+			if (left === undefined) {
+				continue;
+			}
 			for (let j = i + 1; j < policies.length; j += 1) {
 				const right = policies[j];
-				if (right === undefined) continue;
+				if (right === undefined) {
+					continue;
+				}
 				for (const leftPrefix of left.operationPrefixes) {
 					for (const rightPrefix of right.operationPrefixes) {
 						const overlaps =

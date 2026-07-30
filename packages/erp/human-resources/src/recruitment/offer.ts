@@ -47,7 +47,7 @@ function todayUtcDate(): string {
 	return new Date().toISOString().slice(0, 10);
 }
 
-export async function createOffer(
+export function createOffer(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentOffer>> {
@@ -74,7 +74,7 @@ export async function createOffer(
 	});
 }
 
-export async function amendOfferDraft(
+export function amendOfferDraft(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentOffer>> {
@@ -102,7 +102,7 @@ export async function amendOfferDraft(
 	});
 }
 
-async function transitionOffer(
+function transitionOffer(
 	input: unknown,
 	options: HumanResourcesCommandOptions,
 	config: {
@@ -135,7 +135,7 @@ async function transitionOffer(
 	});
 }
 
-export async function approveOffer(
+export function approveOffer(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentOffer>> {
@@ -146,7 +146,7 @@ export async function approveOffer(
 	});
 }
 
-export async function issueOffer(
+export function issueOffer(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentOffer>> {
@@ -157,7 +157,7 @@ export async function issueOffer(
 	});
 }
 
-export async function acceptOffer(
+export function acceptOffer(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OfferAcceptanceHandoff>> {
@@ -211,7 +211,7 @@ export async function acceptOffer(
 	});
 }
 
-export async function declineOffer(
+export function declineOffer(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentOffer>> {
@@ -222,7 +222,7 @@ export async function declineOffer(
 	});
 }
 
-export async function expireOffer(
+export function expireOffer(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentOffer>> {
@@ -234,7 +234,7 @@ export async function expireOffer(
 	});
 }
 
-export async function withdrawOffer(
+export function withdrawOffer(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentOffer>> {
@@ -245,7 +245,7 @@ export async function withdrawOffer(
 	});
 }
 
-export async function getOffer(
+export function getOffer(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentOffer>> {
@@ -273,7 +273,7 @@ export async function getOffer(
 	});
 }
 
-export async function listOffers(
+export function listOffers(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OfferListPage>> {

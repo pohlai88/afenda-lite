@@ -46,7 +46,9 @@ async function assertPartyCanLoseActiveRole(
 		input.organizationId,
 		input.id,
 	);
-	if (!context.ok) return context;
+	if (!context.ok) {
+		return context;
+	}
 	if (context.data.role === null) {
 		return fail("NOT_FOUND", "Party role not found", {
 			reason: "MASTER_NOT_FOUND",
@@ -95,7 +97,9 @@ export async function createPartyRole(
 		parsed.data.organizationId,
 		parsed.data.partyId,
 	);
-	if (!parent.ok) return parent;
+	if (!parent.ok) {
+		return parent;
+	}
 	return store.createPartyRole(
 		{
 			organizationId: parsed.data.organizationId,
@@ -119,7 +123,9 @@ export async function updatePartyRole(
 		input,
 		"Invalid party role update input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const { store, ports, authorization } = resolvePartyExtensionDeps(options, [
 		"updatePartyRole",
 	]);
@@ -128,7 +134,9 @@ export async function updatePartyRole(
 		actorUserId: parsed.data.actorUserId,
 		command: MASTER_COMMAND_PARTY_ROLE_UPDATE,
 	});
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return store.updatePartyRole(
 		{
 			organizationId: parsed.data.organizationId,
@@ -190,7 +198,9 @@ export async function deactivatePartyRole(
 		input,
 		"Invalid party role lifecycle input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const { store, ports, authorization } = resolvePartyExtensionDeps(options, [
 		"getPartyRoleLifecycleContext",
 		"transitionPartyRole",
@@ -200,12 +210,16 @@ export async function deactivatePartyRole(
 		actorUserId: parsed.data.actorUserId,
 		command: MASTER_COMMAND_PARTY_ROLE_INACTIVE,
 	});
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const activeRoleInvariant = await assertPartyCanLoseActiveRole(
 		store,
 		parsed.data,
 	);
-	if (!activeRoleInvariant.ok) return activeRoleInvariant;
+	if (!activeRoleInvariant.ok) {
+		return activeRoleInvariant;
+	}
 	return store.transitionPartyRole(
 		{
 			organizationId: parsed.data.organizationId,
@@ -229,7 +243,9 @@ export async function archivePartyRole(
 		input,
 		"Invalid party role lifecycle input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const { store, ports, authorization } = resolvePartyExtensionDeps(options, [
 		"getPartyRoleLifecycleContext",
 		"transitionPartyRole",
@@ -239,12 +255,16 @@ export async function archivePartyRole(
 		actorUserId: parsed.data.actorUserId,
 		command: MASTER_COMMAND_PARTY_ROLE_ARCHIVE,
 	});
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const activeRoleInvariant = await assertPartyCanLoseActiveRole(
 		store,
 		parsed.data,
 	);
-	if (!activeRoleInvariant.ok) return activeRoleInvariant;
+	if (!activeRoleInvariant.ok) {
+		return activeRoleInvariant;
+	}
 	return store.transitionPartyRole(
 		{
 			organizationId: parsed.data.organizationId,
@@ -287,7 +307,9 @@ export async function retirePartyRole(
 		store,
 		parsed.data,
 	);
-	if (!activeRoleInvariant.ok) return activeRoleInvariant;
+	if (!activeRoleInvariant.ok) {
+		return activeRoleInvariant;
+	}
 	return store.transitionPartyRole(
 		{
 			organizationId: parsed.data.organizationId,
@@ -342,7 +364,9 @@ export async function listActivePartyRoles(
 		input,
 		"Invalid active party role list input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const { store, authorization } = resolvePartyExtensionDeps(options, [
 		"listActivePartyRoles",
 	]);
@@ -351,7 +375,9 @@ export async function listActivePartyRoles(
 		actorUserId: parsed.data.actorUserId,
 		query: MASTER_QUERY_PARTY_ROLE_LIST_ACTIVE,
 	});
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return store.listActivePartyRoles({
 		organizationId: parsed.data.organizationId,
 		partyId: parsed.data.partyId,
@@ -369,7 +395,9 @@ export async function getPartyRoleById(
 		input,
 		"Invalid party role get input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const { store, authorization } = resolvePartyExtensionDeps(options, [
 		"getPartyRoleById",
 	]);
@@ -378,7 +406,9 @@ export async function getPartyRoleById(
 		actorUserId: parsed.data.actorUserId,
 		query: MASTER_QUERY_PARTY_ROLE_GET,
 	});
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return store.getPartyRoleById(
 		parsed.data.organizationId,
 		parsed.data.partyId,

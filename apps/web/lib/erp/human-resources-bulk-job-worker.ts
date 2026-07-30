@@ -42,8 +42,9 @@ function parseRows<Row>(
 	const parsed: Array<{ sourceReference: string; payload: Row }> = [];
 	for (const row of rows) {
 		const payload = schema.safeParse(row.payload);
-		if (!payload.success)
+		if (!payload.success) {
 			return fail("INTERNAL_ERROR", "Persisted bulk import payload is invalid");
+		}
 		parsed.push({
 			sourceReference: row.sourceReference,
 			payload: payload.data,
@@ -68,10 +69,11 @@ async function runImport(
 			? {}
 			: { expectedCheckpointVersion: job.checkpointVersion }),
 	};
+	// biome-ignore lint/style/useDefaultSwitchClause: The import entity union is exhaustive so additions require a worker.
 	switch (job.entityType) {
 		case "employee": {
 			const parsed = parseRows(rows, employeeBulkRowSchema);
-			return parsed.ok
+			return (await parsed.ok)
 				? runEmployeeBulkImportWorker({
 						...common,
 						entityType: "employee",
@@ -81,7 +83,7 @@ async function runImport(
 		}
 		case "assignment": {
 			const parsed = parseRows(rows, assignmentBulkRowSchema);
-			return parsed.ok
+			return (await parsed.ok)
 				? runAssignmentBulkImportWorker({
 						...common,
 						entityType: "assignment",
@@ -91,7 +93,7 @@ async function runImport(
 		}
 		case "leave_entitlement": {
 			const parsed = parseRows(rows, leaveEntitlementBulkRowSchema);
-			return parsed.ok
+			return (await parsed.ok)
 				? runLeaveEntitlementBulkImportWorker({
 						...common,
 						entityType: "leave_entitlement",
@@ -101,7 +103,7 @@ async function runImport(
 		}
 		case "attendance": {
 			const parsed = parseRows(rows, attendanceBulkRowSchema);
-			return parsed.ok
+			return (await parsed.ok)
 				? runAttendanceBulkImportWorker({
 						...common,
 						entityType: "attendance",
@@ -111,7 +113,7 @@ async function runImport(
 		}
 		case "compensation": {
 			const parsed = parseRows(rows, compensationBulkRowSchema);
-			return parsed.ok
+			return (await parsed.ok)
 				? runCompensationBulkImportWorker({
 						...common,
 						entityType: "compensation",
@@ -121,7 +123,7 @@ async function runImport(
 		}
 		case "learning_assignment": {
 			const parsed = parseRows(rows, learningAssignmentBulkRowSchema);
-			return parsed.ok
+			return (await parsed.ok)
 				? runLearningAssignmentBulkImportWorker({
 						...common,
 						entityType: "learning_assignment",
@@ -135,6 +137,7 @@ async function runImport(
 function bulkBatchStatusToJobStatus(
 	status: "dry_run_completed" | BulkBatchStatus,
 ): HumanResourcesBulkJobStatus {
+	// biome-ignore lint/style/useDefaultSwitchClause: The batch-status union is exhaustively mapped.
 	switch (status) {
 		case "completed":
 		case "completed_with_rejections":
@@ -146,6 +149,7 @@ function bulkBatchStatusToJobStatus(
 	}
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The worker keeps lease, checkpoint, validation, and terminal-state transitions atomic.
 export async function processHumanResourcesBulkImportJob(
 	item: ReliabilityWorkItem,
 ): Promise<Result<ReliabilityExecutionOutcome>> {
@@ -154,34 +158,50 @@ export async function processHumanResourcesBulkImportJob(
 		organizationId: item.organizationId,
 		jobId: item.targetId,
 	});
-	if (!found.ok) return found;
-	if (!found.data) return fail("NOT_FOUND", "Bulk import job not found");
+	if (!found.ok) {
+		return found;
+	}
+	if (!found.data) {
+		return fail("NOT_FOUND", "Bulk import job not found");
+	}
 	const job = found.data;
-	if (job.status === "completed" || job.status === "completed_with_rejections")
+	if (
+		job.status === "completed" ||
+		job.status === "completed_with_rejections"
+	) {
 		return ok({
 			kind: "acknowledged",
 			receiptId: `bulk-import:${job.id}:${job.version}`,
 		});
-	if (job.payloadPurgedAt !== null)
+	}
+	if (job.payloadPurgedAt !== null) {
 		return fail("CONFLICT", "Bulk import payload has expired");
+	}
 	const allowed = await createHumanResourcesAuthorizationPort().can({
 		organizationId: job.organizationId,
 		actorUserId: job.actorUserId,
 		permission: job.requiredPermission,
 	});
-	if (!allowed) return fail("FORBIDDEN", "Bulk import permission was revoked");
+	if (!allowed) {
+		return fail("FORBIDDEN", "Bulk import permission was revoked");
+	}
 	const loadedRows = await jobs.listImportRows({
 		organizationId: job.organizationId,
 		jobId: job.id,
 	});
-	if (!loadedRows.ok) return loadedRows;
+	if (!loadedRows.ok) {
+		return loadedRows;
+	}
 	if (
 		loadedRows.data.length !== job.rowCount ||
 		loadedRows.data.some((row) => row.payload === null)
-	)
+	) {
 		return fail("INTERNAL_ERROR", "Bulk import source rows are incomplete");
+	}
 	const result = await runImport(job, loadedRows.data);
-	if (!result.ok) return result;
+	if (!result.ok) {
+		return result;
+	}
 	const now = new Date();
 	if (result.data.status === "retryable_failed") {
 		const committed = await jobs.commitImportJob({
@@ -266,20 +286,27 @@ export async function processHumanResourcesBulkExportJob(
 		organizationId: item.organizationId,
 		jobId: item.targetId,
 	});
-	if (!found.ok) return found;
-	if (!found.data) return fail("NOT_FOUND", "Bulk export job not found");
+	if (!found.ok) {
+		return found;
+	}
+	if (!found.data) {
+		return fail("NOT_FOUND", "Bulk export job not found");
+	}
 	const job = found.data;
-	if (job.status === "completed")
+	if (job.status === "completed") {
 		return ok({
 			kind: "acknowledged",
 			receiptId: `bulk-export:${job.id}:${job.version}`,
 		});
+	}
 	const allowed = await createHumanResourcesAuthorizationPort().can({
 		organizationId: job.organizationId,
 		actorUserId: job.actorUserId,
 		permission: job.requiredPermission,
 	});
-	if (!allowed) return fail("FORBIDDEN", "Bulk export permission was revoked");
+	if (!allowed) {
+		return fail("FORBIDDEN", "Bulk export permission was revoked");
+	}
 	const exported = await runHumanResourcesBulkExportWorker({
 		organizationId: job.organizationId,
 		actorUserId: job.actorUserId,
@@ -290,7 +317,9 @@ export async function processHumanResourcesBulkExportJob(
 		...(job.dateTo ? { dateTo: job.dateTo } : {}),
 		...(job.effectiveOn ? { effectiveOn: job.effectiveOn } : {}),
 	});
-	if (!exported.ok) return exported;
+	if (!exported.ok) {
+		return exported;
+	}
 	const now = new Date();
 	const csv = createHumanResourcesBulkExportCsv(
 		exported.data.fields,

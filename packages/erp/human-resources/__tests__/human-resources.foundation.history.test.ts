@@ -29,9 +29,7 @@ function nextIsoDate(value: string): string {
 	return date.toISOString().slice(0, 10);
 }
 
-export function defineFoundationHistorySuite(
-	adapter: WorkforceStoreAdapter,
-): void {
+function defineFoundationHistorySuite(adapter: WorkforceStoreAdapter): void {
 	const suffix = `${adapter}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 	const neonOrgs = createNeonOrgTracker();
 	const ORG = neonOrgs.trackOrg(`org-hr-foundation-history-${suffix}`);
@@ -56,19 +54,25 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(person.ok).toBe(true);
-		if (!person.ok) return;
+		if (!person.ok) {
+			return;
+		}
 
 		const rootVersions = await ready.store.listPersonIdentityVersions({
 			organizationId: ORG,
 			personId: person.data.id,
 		});
 		expect(rootVersions.ok).toBe(true);
-		if (!rootVersions.ok) return;
+		if (!rootVersions.ok) {
+			return;
+		}
 		const openRoot = rootVersions.data.find(
 			(version) => version.effectiveTo === null,
 		);
 		expect(openRoot).toBeDefined();
-		if (openRoot === undefined) return;
+		if (openRoot === undefined) {
+			return;
+		}
 
 		const correctionEffectiveOn = nextIsoDate(openRoot.effectiveFrom);
 		const renamed = await updatePersonName(
@@ -85,7 +89,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(renamed.ok, resultFailureMessage(renamed)).toBe(true);
-		if (!renamed.ok) return;
+		if (!renamed.ok) {
+			return;
+		}
 
 		const beforeCorrection = await getPersonAsOf(
 			{
@@ -98,7 +104,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(beforeCorrection.ok).toBe(true);
-		if (!beforeCorrection.ok) return;
+		if (!beforeCorrection.ok) {
+			return;
+		}
 		expect(beforeCorrection.data.legalName).toBe("Original Name");
 
 		const onBoundary = await getPersonAsOf(
@@ -112,7 +120,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(onBoundary.ok).toBe(true);
-		if (!onBoundary.ok) return;
+		if (!onBoundary.ok) {
+			return;
+		}
 		expect(onBoundary.data.legalName).toBe("Original Name");
 
 		const afterCorrection = await getPersonAsOf(
@@ -126,7 +136,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(afterCorrection.ok).toBe(true);
-		if (!afterCorrection.ok) return;
+		if (!afterCorrection.ok) {
+			return;
+		}
 		expect(afterCorrection.data.legalName).toBe("Corrected Name");
 
 		const lineage = await ready.store.listPersonIdentityVersions({
@@ -134,7 +146,9 @@ export function defineFoundationHistorySuite(
 			personId: person.data.id,
 		});
 		expect(lineage.ok).toBe(true);
-		if (!lineage.ok) return;
+		if (!lineage.ok) {
+			return;
+		}
 		expect(lineage.data).toHaveLength(2);
 		const predecessor = lineage.data.find(
 			(version) => version.lineageStatus === "superseded",
@@ -158,17 +172,23 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(person.ok).toBe(true);
-		if (!person.ok) return;
+		if (!person.ok) {
+			return;
+		}
 
 		const versions = await ready.store.listPersonIdentityVersions({
 			organizationId: ORG,
 			personId: person.data.id,
 		});
 		expect(versions.ok).toBe(true);
-		if (!versions.ok) return;
+		if (!versions.ok) {
+			return;
+		}
 		const open = versions.data.find((version) => version.effectiveTo === null);
 		expect(open).toBeDefined();
-		if (open === undefined) return;
+		if (open === undefined) {
+			return;
+		}
 
 		const conflict = await updatePersonName(
 			{
@@ -184,7 +204,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(conflict.ok).toBe(false);
-		if (conflict.ok) return;
+		if (conflict.ok) {
+			return;
+		}
 		expect(conflict.code).toBe("CONFLICT");
 	});
 
@@ -201,7 +223,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(person.ok).toBe(true);
-		if (!person.ok) return;
+		if (!person.ok) {
+			return;
+		}
 
 		const worker = await createWorker(
 			{
@@ -216,7 +240,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(worker.ok).toBe(true);
-		if (!worker.ok) return;
+		if (!worker.ok) {
+			return;
+		}
 
 		const retyped = await changeWorkerType(
 			{
@@ -233,7 +259,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(retyped.ok).toBe(true);
-		if (!retyped.ok) return;
+		if (!retyped.ok) {
+			return;
+		}
 		expect(retyped.data.workerType).toBe("intern");
 
 		const statusChanged = await changeWorkerStatus(
@@ -250,7 +278,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(statusChanged.ok).toBe(true);
-		if (!statusChanged.ok) return;
+		if (!statusChanged.ok) {
+			return;
+		}
 		expect(statusChanged.data.status).toBe("inactive");
 
 		const lineage = await ready.store.listWorkerClassificationVersions({
@@ -258,7 +288,9 @@ export function defineFoundationHistorySuite(
 			workerId: worker.data.id,
 		});
 		expect(lineage.ok).toBe(true);
-		if (!lineage.ok) return;
+		if (!lineage.ok) {
+			return;
+		}
 		expect(lineage.data).toHaveLength(3);
 
 		const sorted = [...lineage.data].sort((left, right) =>
@@ -286,7 +318,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(contractorAsOf.ok).toBe(true);
-		if (!contractorAsOf.ok) return;
+		if (!contractorAsOf.ok) {
+			return;
+		}
 		expect(contractorAsOf.data.workerType).toBe("contractor");
 		expect(contractorAsOf.data.status).toBe("active");
 
@@ -301,7 +335,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(internActiveAsOf.ok).toBe(true);
-		if (!internActiveAsOf.ok) return;
+		if (!internActiveAsOf.ok) {
+			return;
+		}
 		expect(internActiveAsOf.data.workerType).toBe("intern");
 		expect(internActiveAsOf.data.status).toBe("active");
 
@@ -316,7 +352,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(inactiveAsOf.ok).toBe(true);
-		if (!inactiveAsOf.ok) return;
+		if (!inactiveAsOf.ok) {
+			return;
+		}
 		expect(inactiveAsOf.data.status).toBe("inactive");
 	});
 
@@ -333,7 +371,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(person.ok).toBe(true);
-		if (!person.ok) return;
+		if (!person.ok) {
+			return;
+		}
 
 		const createInput = {
 			organizationId: ORG,
@@ -346,11 +386,15 @@ export function defineFoundationHistorySuite(
 		};
 		const first = await createWorker(createInput, ready);
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 
 		const replay = await createWorker(createInput, ready);
 		expect(replay.ok).toBe(true);
-		if (!replay.ok) return;
+		if (!replay.ok) {
+			return;
+		}
 		expect(replay.data.id).toBe(first.data.id);
 
 		const conflict = await createWorker(
@@ -362,7 +406,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(conflict.ok).toBe(false);
-		if (conflict.ok) return;
+		if (conflict.ok) {
+			return;
+		}
 		expect(conflict.code).toBe("CONFLICT");
 	});
 
@@ -379,7 +425,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(person.ok).toBe(true);
-		if (!person.ok) return;
+		if (!person.ok) {
+			return;
+		}
 
 		const first = await createWorker(
 			{
@@ -394,7 +442,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 
 		const duplicate = await createWorker(
 			{
@@ -409,7 +459,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(duplicate.ok).toBe(false);
-		if (duplicate.ok) return;
+		if (duplicate.ok) {
+			return;
+		}
 		expect(duplicate.code).toBe("CONFLICT");
 	});
 
@@ -428,7 +480,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(missingPerson.ok).toBe(false);
-		if (missingPerson.ok) return;
+		if (missingPerson.ok) {
+			return;
+		}
 		expect(missingPerson.code).toBe("NOT_FOUND");
 	});
 
@@ -445,7 +499,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(person.ok).toBe(true);
-		if (!person.ok) return;
+		if (!person.ok) {
+			return;
+		}
 
 		const worker = await createWorker(
 			{
@@ -460,7 +516,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(worker.ok).toBe(true);
-		if (!worker.ok) return;
+		if (!worker.ok) {
+			return;
+		}
 		expect(worker.data.workerType).toBe("contingent_worker");
 		expect(worker.data.employeeId).toBeNull();
 
@@ -479,7 +537,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(retyped.ok).toBe(true);
-		if (!retyped.ok) return;
+		if (!retyped.ok) {
+			return;
+		}
 		expect(retyped.data.workerType).toBe("contractor");
 
 		const contingentAsOf = await getWorkerAsOf(
@@ -493,7 +553,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(contingentAsOf.ok).toBe(true);
-		if (!contingentAsOf.ok) return;
+		if (!contingentAsOf.ok) {
+			return;
+		}
 		expect(contingentAsOf.data.workerType).toBe("contingent_worker");
 
 		const contractorAsOf = await getWorkerAsOf(
@@ -507,7 +569,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(contractorAsOf.ok).toBe(true);
-		if (!contractorAsOf.ok) return;
+		if (!contractorAsOf.ok) {
+			return;
+		}
 		expect(contractorAsOf.data.workerType).toBe("contractor");
 	});
 
@@ -524,7 +588,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(person.ok).toBe(true);
-		if (!person.ok) return;
+		if (!person.ok) {
+			return;
+		}
 
 		const employee = await createEmployee(
 			{
@@ -538,7 +604,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const worker = await createWorker(
 			{
@@ -554,9 +622,13 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(worker.ok).toBe(true);
-		if (!worker.ok) return;
+		if (!worker.ok) {
+			return;
+		}
 		expect(worker.data.workerType).toBe("employee");
-		if (worker.data.workerType !== "employee") return;
+		if (worker.data.workerType !== "employee") {
+			return;
+		}
 		expect(worker.data.employeeId).toBe(employee.data.id);
 
 		const otherPerson = await createPerson(
@@ -570,7 +642,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(otherPerson.ok).toBe(true);
-		if (!otherPerson.ok) return;
+		if (!otherPerson.ok) {
+			return;
+		}
 
 		const duplicateEmployeeLink = await createWorker(
 			{
@@ -586,7 +660,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(duplicateEmployeeLink.ok).toBe(false);
-		if (duplicateEmployeeLink.ok) return;
+		if (duplicateEmployeeLink.ok) {
+			return;
+		}
 		expect(duplicateEmployeeLink.code).toBe("CONFLICT");
 
 		const unlinked = await changeWorkerType(
@@ -604,7 +680,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(unlinked.ok).toBe(true);
-		if (!unlinked.ok) return;
+		if (!unlinked.ok) {
+			return;
+		}
 		expect(unlinked.data.workerType).toBe("contractor");
 		expect(unlinked.data.employeeId).toBeNull();
 	});
@@ -622,7 +700,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(person.ok).toBe(true);
-		if (!person.ok) return;
+		if (!person.ok) {
+			return;
+		}
 
 		const worker = await createWorker(
 			{
@@ -637,7 +717,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(worker.ok).toBe(true);
-		if (!worker.ok) return;
+		if (!worker.ok) {
+			return;
+		}
 
 		const staleType = await changeWorkerType(
 			{
@@ -654,7 +736,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(staleType.ok).toBe(false);
-		if (staleType.ok) return;
+		if (staleType.ok) {
+			return;
+		}
 		expect(staleType.code).toBe("CONFLICT");
 
 		const noOpType = await changeWorkerType(
@@ -672,7 +756,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(noOpType.ok).toBe(false);
-		if (noOpType.ok) return;
+		if (noOpType.ok) {
+			return;
+		}
 		expect(noOpType.code).toBe("CONFLICT");
 
 		const statusChanged = await changeWorkerStatus(
@@ -689,7 +775,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(statusChanged.ok).toBe(true);
-		if (!statusChanged.ok) return;
+		if (!statusChanged.ok) {
+			return;
+		}
 		expect(statusChanged.data.status).toBe("former");
 
 		const staleStatus = await changeWorkerStatus(
@@ -706,7 +794,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(staleStatus.ok).toBe(false);
-		if (staleStatus.ok) return;
+		if (staleStatus.ok) {
+			return;
+		}
 		expect(staleStatus.code).toBe("CONFLICT");
 
 		const noOpStatus = await changeWorkerStatus(
@@ -723,7 +813,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(noOpStatus.ok).toBe(false);
-		if (noOpStatus.ok) return;
+		if (noOpStatus.ok) {
+			return;
+		}
 		expect(noOpStatus.code).toBe("CONFLICT");
 	});
 
@@ -740,7 +832,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(person.ok).toBe(true);
-		if (!person.ok) return;
+		if (!person.ok) {
+			return;
+		}
 
 		const worker = await createWorker(
 			{
@@ -755,7 +849,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(worker.ok).toBe(true);
-		if (!worker.ok) return;
+		if (!worker.ok) {
+			return;
+		}
 
 		const retyped = await changeWorkerType(
 			{
@@ -772,7 +868,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(retyped.ok).toBe(true);
-		if (!retyped.ok) return;
+		if (!retyped.ok) {
+			return;
+		}
 
 		const dayBefore = await getWorkerAsOf(
 			{
@@ -785,7 +883,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(dayBefore.ok).toBe(true);
-		if (!dayBefore.ok) return;
+		if (!dayBefore.ok) {
+			return;
+		}
 		expect(dayBefore.data.workerType).toBe("contractor");
 
 		const dayOf = await getWorkerAsOf(
@@ -799,7 +899,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(dayOf.ok).toBe(true);
-		if (!dayOf.ok) return;
+		if (!dayOf.ok) {
+			return;
+		}
 		expect(dayOf.data.workerType).toBe("intern");
 
 		const dayAfter = await getWorkerAsOf(
@@ -813,7 +915,9 @@ export function defineFoundationHistorySuite(
 			ready,
 		);
 		expect(dayAfter.ok).toBe(true);
-		if (!dayAfter.ok) return;
+		if (!dayAfter.ok) {
+			return;
+		}
 		expect(dayAfter.data.workerType).toBe("intern");
 	});
 }

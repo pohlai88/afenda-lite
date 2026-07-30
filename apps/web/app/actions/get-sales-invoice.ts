@@ -12,14 +12,16 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type GetSalesInvoiceActionData = { invoice: SalesInvoice };
+export interface GetSalesInvoiceActionData {
+	invoice: SalesInvoice;
+}
 
 const schema = z.string().uuid();
 
 export async function getSalesInvoiceAction(
 	invoiceId: string,
 ): Promise<ActionResult<GetSalesInvoiceActionData>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getSalesInvoiceAction",
 		permission: "receivables.invoice.read",
 		safeMessage: "Could not load sales invoice. Try again or contact an admin.",
@@ -41,7 +43,9 @@ export async function getSalesInvoiceAction(
 				createReceivablesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			if (mapped.data === null) {
 				return actionFail("NOT_FOUND", "Sales invoice not found");
 			}

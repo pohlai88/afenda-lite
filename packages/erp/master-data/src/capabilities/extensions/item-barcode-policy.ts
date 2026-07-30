@@ -38,6 +38,9 @@ const CONTROL_CHARACTER_RE = /\p{Cc}/u;
 const UNSAFE_INVISIBLE_CHARACTER_RE =
 	/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/u;
 const PACK_QUANTITY_RE = /^(\d+)(?:\.(\d+))?$/u;
+const LEADING_DECIMAL_ZERO_RE = /^0+(?=\d)/u;
+const TRAILING_DECIMAL_ZERO_RE = /0+$/u;
+const NONZERO_DIGIT_RE = /[1-9]/u;
 
 export type NormalizedItemBarcode = Readonly<{
 	barcodeValue: string;
@@ -139,14 +142,16 @@ export function normalizeBarcodePackQuantity(raw: string): Result<string> {
 	}
 	const value = raw.trim();
 	const match = PACK_QUANTITY_RE.exec(value);
-	if (match === null) return invalidPackQuantity();
+	if (match === null) {
+		return invalidPackQuantity();
+	}
 
-	const integerPart = (match[1] ?? "").replace(/^0+(?=\d)/u, "");
-	const fractionPart = (match[2] ?? "").replace(/0+$/u, "");
+	const integerPart = (match[1] ?? "").replace(LEADING_DECIMAL_ZERO_RE, "");
+	const fractionPart = (match[2] ?? "").replace(TRAILING_DECIMAL_ZERO_RE, "");
 	if (
 		integerPart.length > 12 ||
 		fractionPart.length > MAX_ITEM_BARCODE_PACK_QUANTITY_SCALE ||
-		!/[1-9]/u.test(`${integerPart}${fractionPart}`)
+		!NONZERO_DIGIT_RE.test(`${integerPart}${fractionPart}`)
 	) {
 		return invalidPackQuantity();
 	}
@@ -165,7 +170,9 @@ function hasValidGtinCheckDigit(value: string): boolean {
 }
 
 function hasValidUpcECheckDigit(value: string): boolean {
-	if (!UPC_E_RE.test(value)) return false;
+	if (!UPC_E_RE.test(value)) {
+		return false;
+	}
 
 	const numberSystem = value[0] ?? "";
 	const digits = value.slice(1, 7);
@@ -188,7 +195,7 @@ function calculateGtinCheckDigit(body: string): number {
 	for (
 		let index = body.length - 1, position = 0;
 		index >= 0;
-		index--, position++
+		index -= 1, position += 1
 	) {
 		const digit = Number(body[index]);
 		sum += digit * (position % 2 === 0 ? 3 : 1);

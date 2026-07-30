@@ -5,21 +5,24 @@ export function createHumanResourcesDocumentObjectResolverPort(): DocumentObject
 	return {
 		async assertObjectAcceptable(input) {
 			if (input.validated.organizationId !== input.organizationId) {
-				return fail(
+				return await fail(
 					"FORBIDDEN",
 					"Document reference belongs to another organization.",
 				);
 			}
 			if (input.validated.version === null) {
-				return fail(
+				return await fail(
 					"BAD_REQUEST",
 					"Human Resources requires immutable document object references.",
 				);
 			}
 			if (input.reference !== input.validated.reference) {
-				return fail("BAD_REQUEST", "Document reference must be canonical.");
+				return await fail(
+					"BAD_REQUEST",
+					"Document reference must be canonical.",
+				);
 			}
-			return ok(undefined);
+			return await ok(undefined);
 		},
 	};
 }

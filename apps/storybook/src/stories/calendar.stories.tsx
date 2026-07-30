@@ -15,6 +15,8 @@ import { contractDocsParameters } from "./contract-docs";
 import { contractEvidence, StorySection } from "./evidence";
 
 const evidence = contractEvidence("ui.calendar");
+const JULY_28_PATTERN = /July 28/i;
+const JULY_29_PATTERN = /July 29/i;
 
 /** Fixed dates keep visual, interaction, and documentation evidence deterministic. */
 const periodMonth = new Date(2026, 6, 1);
@@ -43,25 +45,25 @@ function ControlledPostingCalendar() {
 		<div className="grid gap-4">
 			<div className="grid gap-1">
 				<p
-					className="text-sm font-medium text-foreground"
+					className="font-medium text-foreground text-sm"
 					id="controlled-label"
 				>
 					Posting cut-off date
 				</p>
-				<p className="text-sm text-foreground-secondary" id="controlled-help">
+				<p className="text-foreground-secondary text-sm" id="controlled-help">
 					Choose an open ledger day on or before 31 July 2026.
 				</p>
 			</div>
 			<Calendar
-				mode="single"
-				defaultMonth={periodMonth}
-				selected={selected}
-				onSelect={setSelected}
-				disabled={[closedLedgerDay, { after: finalPostingDay }]}
-				aria-labelledby="controlled-label"
 				aria-describedby="controlled-help"
+				aria-labelledby="controlled-label"
+				defaultMonth={periodMonth}
+				disabled={[closedLedgerDay, { after: finalPostingDay }]}
+				mode="single"
+				onSelect={setSelected}
+				selected={selected}
 			/>
-			<p className="text-sm text-foreground-secondary" aria-live="polite">
+			<p aria-live="polite" className="text-foreground-secondary text-sm">
 				Selected:{" "}
 				{selected?.toLocaleDateString("en-US", {
 					year: "numeric",
@@ -88,13 +90,13 @@ export const Overview: Story = {
 		<div className="min-h-screen bg-canvas text-foreground">
 			<div className="mx-auto grid w-full max-w-4xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-2 border-b pb-6">
-					<p className="text-sm font-medium text-foreground-secondary">
+					<p className="font-medium text-foreground-secondary text-sm">
 						Accounts receivable · Period close
 					</p>
-					<h1 className="text-2xl font-semibold tracking-tight">
+					<h1 className="font-semibold text-2xl tracking-tight">
 						Confirm July posting cut-off
 					</h1>
-					<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+					<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 						Calendar is the embedded date-grid primitive for governed
 						scheduling. Its surrounding workflow must explain the operator role,
 						business meaning, eligibility rules, and resulting action. Use
@@ -113,24 +115,24 @@ export const Overview: Story = {
 							</div>
 							<div className="flex flex-wrap items-center gap-2">
 								<Badge variant="outline">Period close</Badge>
-								<StatusBadge status="pending" label="Awaiting confirmation" />
+								<StatusBadge label="Awaiting confirmation" status="pending" />
 							</div>
 						</div>
 					</CardHeader>
 					<CardContent className="grid gap-4">
-						<p className="text-sm text-foreground-secondary" id="cutoff-label">
+						<p className="text-foreground-secondary text-sm" id="cutoff-label">
 							Select the final posting date for this close cycle. Closed ledger
 							days and dates outside the permitted period remain unavailable.
 						</p>
 						<Calendar
+							aria-labelledby="cutoff-label"
+							defaultMonth={periodMonth}
+							disabled={[closedLedgerDay, { after: finalPostingDay }]}
 							mode="single"
 							month={periodMonth}
-							defaultMonth={periodMonth}
 							selected={periodCloseDate}
-							disabled={[closedLedgerDay, { after: finalPostingDay }]}
-							aria-labelledby="cutoff-label"
 						/>
-						<div className="grid gap-1 border-t pt-4 text-sm text-foreground-secondary">
+						<div className="grid gap-1 border-t pt-4 text-foreground-secondary text-sm">
 							<p>
 								<strong className="font-medium text-foreground">
 									Selected:
@@ -163,43 +165,43 @@ export const Usage: Story = {
 		<div className="grid w-full max-w-5xl gap-6 lg:grid-cols-3">
 			<StorySection title="Single operational date">
 				<div className="grid gap-2">
-					<p className="text-sm text-foreground-secondary" id="single-label">
+					<p className="text-foreground-secondary text-sm" id="single-label">
 						Posting cut-off
 					</p>
 					<Calendar
-						mode="single"
-						defaultMonth={periodMonth}
-						selected={periodCloseDate}
 						aria-labelledby="single-label"
+						defaultMonth={periodMonth}
+						mode="single"
+						selected={periodCloseDate}
 					/>
 				</div>
 			</StorySection>
 
 			<StorySection title="Inclusive reporting range">
 				<div className="grid gap-2">
-					<p className="text-sm text-foreground-secondary" id="range-label">
+					<p className="text-foreground-secondary text-sm" id="range-label">
 						Collection follow-up window
 					</p>
 					<Calendar
-						mode="range"
-						defaultMonth={periodMonth}
-						selected={{ from: rangeStart, to: rangeEnd }}
 						aria-labelledby="range-label"
+						defaultMonth={periodMonth}
+						mode="range"
+						selected={{ from: rangeStart, to: rangeEnd }}
 					/>
 				</div>
 			</StorySection>
 
 			<StorySection title="Policy-unavailable date">
 				<div className="grid gap-2">
-					<p className="text-sm text-foreground-secondary" id="disabled-label">
+					<p className="text-foreground-secondary text-sm" id="disabled-label">
 						15 July is closed in the ledger and cannot be selected.
 					</p>
 					<Calendar
-						mode="single"
-						defaultMonth={periodMonth}
-						selected={periodCloseDate}
-						disabled={closedLedgerDay}
 						aria-labelledby="disabled-label"
+						defaultMonth={periodMonth}
+						disabled={closedLedgerDay}
+						mode="single"
+						selected={periodCloseDate}
 					/>
 				</div>
 			</StorySection>
@@ -221,35 +223,35 @@ export const VariantsAndSizes: Story = {
 		<div className="grid w-full max-w-5xl gap-8 lg:grid-cols-2">
 			<div className="grid gap-3">
 				<div className="grid gap-1">
-					<p className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+					<p className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 						mode=single
 					</p>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						Use when one date becomes the authoritative operational value.
 					</p>
 				</div>
 				<Calendar
-					mode="single"
-					defaultMonth={periodMonth}
-					selected={periodCloseDate}
 					aria-label="Single posting date"
+					defaultMonth={periodMonth}
+					mode="single"
+					selected={periodCloseDate}
 				/>
 			</div>
 
 			<div className="grid gap-3">
 				<div className="grid gap-1">
-					<p className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+					<p className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 						mode=range
 					</p>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						Use when both boundaries are meaningful and inclusive.
 					</p>
 				</div>
 				<Calendar
-					mode="range"
-					defaultMonth={periodMonth}
-					selected={{ from: rangeStart, to: rangeEnd }}
 					aria-label="Inclusive collection range"
+					defaultMonth={periodMonth}
+					mode="range"
+					selected={{ from: rangeStart, to: rangeEnd }}
 				/>
 			</div>
 		</div>
@@ -273,7 +275,7 @@ export const ControlledSelection: Story = {
 	),
 	play: async ({ canvasElement }) => {
 		const canvas = within(canvasElement);
-		const nextDate = canvas.getByRole("button", { name: /July 29/i });
+		const nextDate = canvas.getByRole("button", { name: JULY_29_PATTERN });
 
 		await userEvent.click(nextDate);
 
@@ -298,23 +300,23 @@ export const StatesAndAccessibility: Story = {
 	render: () => (
 		<div className="grid w-full max-w-2xl gap-5">
 			<div className="grid gap-1">
-				<p className="text-sm font-medium text-foreground" id="a11y-label">
+				<p className="font-medium text-foreground text-sm" id="a11y-label">
 					Period close cut-off
 				</p>
-				<p className="text-sm text-foreground-secondary" id="a11y-help">
+				<p className="text-foreground-secondary text-sm" id="a11y-help">
 					Closed ledger days and dates after the posting boundary are
 					unavailable.
 				</p>
 			</div>
 			<Calendar
-				mode="single"
-				defaultMonth={periodMonth}
-				selected={periodCloseDate}
-				disabled={[closedLedgerDay, { after: finalPostingDay }]}
-				aria-labelledby="a11y-label"
 				aria-describedby="a11y-help"
+				aria-labelledby="a11y-label"
+				defaultMonth={periodMonth}
+				disabled={[closedLedgerDay, { after: finalPostingDay }]}
+				mode="single"
+				selected={periodCloseDate}
 			/>
-			<div className="grid gap-2 border-t pt-4 text-sm text-foreground-secondary">
+			<div className="grid gap-2 border-t pt-4 text-foreground-secondary text-sm">
 				<p>
 					<strong className="font-medium text-foreground">Keyboard:</strong> Tab
 					enters the calendar controls; arrow keys move through the day grid;
@@ -348,7 +350,7 @@ export const KeyboardOperation: Story = {
 	play: async ({ canvasElement }) => {
 		const canvas = within(canvasElement);
 		const selectedDate = canvas.getByRole("button", {
-			name: /July 28/i,
+			name: JULY_28_PATTERN,
 		});
 
 		selectedDate.focus();
@@ -356,7 +358,7 @@ export const KeyboardOperation: Story = {
 
 		await userEvent.keyboard("{ArrowRight}");
 		const nextDate = canvas.getByRole("button", {
-			name: /July 29/i,
+			name: JULY_29_PATTERN,
 		});
 		await expect(nextDate).toHaveFocus();
 
@@ -390,21 +392,21 @@ export const Composition: Story = {
 					</div>
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="secondary">Finance</Badge>
-						<StatusBadge status="pending" label="Awaiting approval" />
+						<StatusBadge label="Awaiting approval" status="pending" />
 					</div>
 				</div>
 			</CardHeader>
 			<CardContent className="grid gap-4">
-				<p className="text-sm text-foreground-secondary" id="composition-label">
+				<p className="text-foreground-secondary text-sm" id="composition-label">
 					Select the inclusive dates used by the collection follow-up queue.
 				</p>
 				<Calendar
-					mode="range"
-					defaultMonth={periodMonth}
-					selected={{ from: rangeStart, to: rangeEnd }}
 					aria-labelledby="composition-label"
+					defaultMonth={periodMonth}
+					mode="range"
+					selected={{ from: rangeStart, to: rangeEnd }}
 				/>
-				<p className="border-t pt-4 text-sm text-foreground-secondary">
+				<p className="border-t pt-4 text-foreground-secondary text-sm">
 					The approval state belongs to the workflow. The selected dates remain
 					plain scheduling data until the feature validates and submits them.
 				</p>
@@ -428,22 +430,22 @@ export const DoAndDoNot: Story = {
 			<StorySection title="Do: preserve operational context">
 				<div className="grid gap-2">
 					<p
-						className="text-sm text-foreground-secondary"
+						className="text-foreground-secondary text-sm"
 						id="do-context-label"
 					>
 						Posting cut-off date for July receivables
 					</p>
 					<Calendar
-						mode="single"
-						defaultMonth={periodMonth}
-						selected={periodCloseDate}
 						aria-labelledby="do-context-label"
+						defaultMonth={periodMonth}
+						mode="single"
+						selected={periodCloseDate}
 					/>
 				</div>
 			</StorySection>
 
 			<StorySection title="Do not: present an unexplained date grid">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					An operator must not have to infer whether the grid controls posting,
 					delivery, reporting, leave, or another business event.
 				</p>
@@ -451,23 +453,23 @@ export const DoAndDoNot: Story = {
 
 			<StorySection title="Do: derive unavailable days from policy">
 				<Calendar
-					mode="single"
-					defaultMonth={periodMonth}
-					selected={periodCloseDate}
-					disabled={[closedLedgerDay, { after: finalPostingDay }]}
 					aria-label="Posting calendar with policy-unavailable dates"
+					defaultMonth={periodMonth}
+					disabled={[closedLedgerDay, { after: finalPostingDay }]}
+					mode="single"
+					selected={periodCloseDate}
 				/>
 			</StorySection>
 
 			<StorySection title="Do not: treat disabled styling as enforcement">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Disabled dates guide interaction. Commands and server-side handlers
 					must still reject unauthorized, stale, or otherwise invalid dates.
 				</p>
 			</StorySection>
 
 			<StorySection title="Do: use DatePicker for form-field chrome">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Use Calendar for embedded scheduling surfaces. Use DatePicker when the
 					workflow needs a text value, trigger, popover, validation message, and
 					standard form-field relationship.
@@ -475,21 +477,21 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do not: infer locale or persistence rules">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Feature code owns locale, week start, time zone, date serialization,
 					and boundary conversion. Calendar presents and selects civil dates.
 				</p>
 			</StorySection>
 
 			<StorySection title="Do: keep focus and state visible">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Focused, selected, today, outside-month, and disabled days must remain
 					distinguishable in default, dark, and high-contrast themes.
 				</p>
 			</StorySection>
 
 			<StorySection title="Do not: override day-button semantics">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Do not replace day buttons with decorative spans, remove accessible
 					names, suppress focus rings, or intercept arrow-key navigation.
 				</p>

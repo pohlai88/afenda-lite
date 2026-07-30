@@ -41,7 +41,7 @@ export type HumanResourcesWorkEligibilityAggregate =
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 25;
 
-export async function recordWorkEligibility(
+export function recordWorkEligibility(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<WorkEligibility>> {
@@ -130,7 +130,7 @@ export async function recordWorkEligibility(
 	});
 }
 
-export async function verifyWorkEligibility(
+export function verifyWorkEligibility(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<WorkEligibility>> {
@@ -156,7 +156,7 @@ export async function verifyWorkEligibility(
 	});
 }
 
-export async function suspendWorkEligibility(
+export function suspendWorkEligibility(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<WorkEligibility>> {
@@ -181,7 +181,7 @@ export async function suspendWorkEligibility(
 	});
 }
 
-export async function renewWorkEligibility(
+export function renewWorkEligibility(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<WorkEligibility>> {
@@ -237,7 +237,7 @@ export async function renewWorkEligibility(
 	});
 }
 
-export async function closeWorkEligibility(
+export function closeWorkEligibility(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<WorkEligibility>> {
@@ -262,23 +262,22 @@ export async function closeWorkEligibility(
 	});
 }
 
-export async function getEmployeeWorkEligibility(
+export function getEmployeeWorkEligibility(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<WorkEligibility | null>> {
 	return runComplianceEmployeeScopedQuery(input, options, {
 		schema: getEmployeeWorkEligibilityInputSchema,
 		invalidMessage: "Invalid work eligibility get input",
-		execute: async (data, { store }) => {
-			return store.getActiveWorkEligibilityForEmployee({
+		execute: async (data, { store }) =>
+			store.getActiveWorkEligibilityForEmployee({
 				organizationId: data.organizationId,
 				employeeId: data.employeeId,
-			});
-		},
+			}),
 	});
 }
 
-export async function listEmployeesWithWorkEligibilityRisk(
+export function listEmployeesWithWorkEligibilityRisk(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<WorkEligibilityRiskListPage>> {

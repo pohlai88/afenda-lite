@@ -32,10 +32,10 @@ import {
 function EmptyQueue({ title }: { title: string }) {
 	return (
 		<Empty
-			size="sm"
-			icon={<InboxIcon />}
-			title={title}
 			description="There are no items in this manager-scoped queue."
+			icon={<InboxIcon />}
+			size="sm"
+			title={title}
 		/>
 	);
 }
@@ -51,6 +51,7 @@ function Unavailable() {
 	);
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Capability branches intentionally map independent manager workflows.
 export function ManagerWorkspace({
 	data,
 	preferences,
@@ -66,23 +67,23 @@ export function ManagerWorkspace({
 					<Badge variant="outline">Manager self-service</Badge>
 					<Badge variant="secondary">{data.team.length} direct reports</Badge>
 				</div>
-				<h1 className="text-2xl font-semibold tracking-normal text-foreground">
+				<h1 className="font-semibold text-2xl text-foreground tracking-normal">
 					Team decisions
 				</h1>
-				<p className="max-w-3xl text-sm text-muted-foreground">
+				<p className="max-w-3xl text-muted-foreground text-sm">
 					Review current team work queues, employee context, talent readiness,
 					and staffing gaps as of {asOfLabel}.
 				</p>
 			</header>
 			{data.errors.length > 0 ? (
-				<Alert variant="destructive" role="alert">
+				<Alert role="alert" variant="destructive">
 					<AlertTitle>Some manager data could not be loaded</AlertTitle>
 					<AlertDescription>{data.errors.join(" ")}</AlertDescription>
 				</Alert>
 			) : null}
-			<Tabs defaultValue="team" className="min-w-0">
+			<Tabs className="min-w-0" defaultValue="team">
 				<div className="overflow-x-auto pb-1">
-					<TabsList variant="line" aria-label="Manager work queues">
+					<TabsList aria-label="Manager work queues" variant="line">
 						<TabsTrigger value="team">Team</TabsTrigger>
 						<TabsTrigger value="leave">Leave</TabsTrigger>
 						<TabsTrigger value="timesheets">Timesheets</TabsTrigger>
@@ -93,13 +94,13 @@ export function ManagerWorkspace({
 						<TabsTrigger value="staffing">Staffing</TabsTrigger>
 					</TabsList>
 				</div>
-				<TabsContent value="team" className="pt-4">
+				<TabsContent className="pt-4" value="team">
 					{data.team.length === 0 ? (
 						<Empty
-							size="sm"
-							icon={<UsersIcon />}
-							title="No direct reports"
 							description="No effective primary reporting lines were found for this manager."
+							icon={<UsersIcon />}
+							size="sm"
+							title="No direct reports"
 						/>
 					) : (
 						<Table>
@@ -122,10 +123,10 @@ export function ManagerWorkspace({
 										<TableCell>{member.employeeNumber}</TableCell>
 										<TableCell>
 											<StatusBadge
+												label={member.employmentStatus ?? "No employment"}
 												status={managerStatusTone(
 													member.employmentStatus ?? "inactive",
 												)}
-												label={member.employmentStatus ?? "No employment"}
 											/>
 										</TableCell>
 										<TableCell>{member.departmentId ?? "Unassigned"}</TableCell>
@@ -139,211 +140,217 @@ export function ManagerWorkspace({
 						</Table>
 					)}
 				</TabsContent>
-				<TabsContent value="leave" className="pt-4">
-					{!data.capabilities.leave ? (
-						<Unavailable />
-					) : data.leave.length === 0 ? (
-						<EmptyQueue title="No pending leave decisions" />
-					) : (
-						<Table>
-							<TableHeader>
-								<TableRow>
-									<TableHead>Employee</TableHead>
-									<TableHead>Dates</TableHead>
-									<TableHead>Quantity</TableHead>
-									<TableHead>Status</TableHead>
-									<TableHead>Action</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{data.leave.map((row) => (
-									<TableRow key={row.id}>
-										<TableCell className="font-medium">
-											{row.displayName}
-										</TableCell>
-										<TableCell>
-											{row.startDate} to {row.endDate}
-										</TableCell>
-										<TableCell>
-											{row.requestedQuantity} {row.unit}
-										</TableCell>
-										<TableCell>
-											<StatusBadge
-												status={managerStatusTone(row.status)}
-												label={row.status}
-											/>
-										</TableCell>
-										<TableCell>
-											<ManagerDecisionDialog
-												kind="leave"
-												targetId={row.id}
-												version={row.version}
-												label={`Leave decision for ${row.displayName}`}
-												asOf={data.asOf}
-											/>
-										</TableCell>
+				<TabsContent className="pt-4" value="leave">
+					{data.capabilities.leave ? (
+						data.leave.length === 0 ? (
+							<EmptyQueue title="No pending leave decisions" />
+						) : (
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>Employee</TableHead>
+										<TableHead>Dates</TableHead>
+										<TableHead>Quantity</TableHead>
+										<TableHead>Status</TableHead>
+										<TableHead>Action</TableHead>
 									</TableRow>
-								))}
-							</TableBody>
-						</Table>
+								</TableHeader>
+								<TableBody>
+									{data.leave.map((row) => (
+										<TableRow key={row.id}>
+											<TableCell className="font-medium">
+												{row.displayName}
+											</TableCell>
+											<TableCell>
+												{row.startDate} to {row.endDate}
+											</TableCell>
+											<TableCell>
+												{row.requestedQuantity} {row.unit}
+											</TableCell>
+											<TableCell>
+												<StatusBadge
+													label={row.status}
+													status={managerStatusTone(row.status)}
+												/>
+											</TableCell>
+											<TableCell>
+												<ManagerDecisionDialog
+													asOf={data.asOf}
+													kind="leave"
+													label={`Leave decision for ${row.displayName}`}
+													targetId={row.id}
+													version={row.version}
+												/>
+											</TableCell>
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
+						)
+					) : (
+						<Unavailable />
 					)}
 				</TabsContent>
-				<TabsContent value="timesheets" className="pt-4">
-					{!data.capabilities.timesheets ? (
-						<Unavailable />
-					) : data.timesheets.length === 0 ? (
-						<EmptyQueue title="No submitted timesheets" />
-					) : (
-						<Table>
-							<TableHeader>
-								<TableRow>
-									<TableHead>Employee</TableHead>
-									<TableHead>Period</TableHead>
-									<TableHead>Recorded</TableHead>
-									<TableHead>Approval step</TableHead>
-									<TableHead>Status</TableHead>
-									<TableHead>Action</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{data.timesheets.map((row) => (
-									<TableRow key={row.id}>
-										<TableCell className="font-medium">
-											{row.displayName}
-										</TableCell>
-										<TableCell>
-											{row.periodStart} to {row.periodEnd}
-										</TableCell>
-										<TableCell>{row.totalRecordedMinutes} min</TableCell>
-										<TableCell>
-											{row.completedApprovalSteps + 1} of{" "}
-											{row.requiredApprovalSteps}
-										</TableCell>
-										<TableCell>
-											<StatusBadge
-												status={managerStatusTone(row.status)}
-												label={row.status}
-											/>
-										</TableCell>
-										<TableCell>
-											<ManagerDecisionDialog
-												kind="timesheet"
-												targetId={row.id}
-												version={row.version}
-												label={`Timesheet decision for ${row.displayName}`}
-												asOf={data.asOf}
-											/>
-										</TableCell>
+				<TabsContent className="pt-4" value="timesheets">
+					{data.capabilities.timesheets ? (
+						data.timesheets.length === 0 ? (
+							<EmptyQueue title="No submitted timesheets" />
+						) : (
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>Employee</TableHead>
+										<TableHead>Period</TableHead>
+										<TableHead>Recorded</TableHead>
+										<TableHead>Approval step</TableHead>
+										<TableHead>Status</TableHead>
+										<TableHead>Action</TableHead>
 									</TableRow>
-								))}
-							</TableBody>
-						</Table>
+								</TableHeader>
+								<TableBody>
+									{data.timesheets.map((row) => (
+										<TableRow key={row.id}>
+											<TableCell className="font-medium">
+												{row.displayName}
+											</TableCell>
+											<TableCell>
+												{row.periodStart} to {row.periodEnd}
+											</TableCell>
+											<TableCell>{row.totalRecordedMinutes} min</TableCell>
+											<TableCell>
+												{row.completedApprovalSteps + 1} of{" "}
+												{row.requiredApprovalSteps}
+											</TableCell>
+											<TableCell>
+												<StatusBadge
+													label={row.status}
+													status={managerStatusTone(row.status)}
+												/>
+											</TableCell>
+											<TableCell>
+												<ManagerDecisionDialog
+													asOf={data.asOf}
+													kind="timesheet"
+													label={`Timesheet decision for ${row.displayName}`}
+													targetId={row.id}
+													version={row.version}
+												/>
+											</TableCell>
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
+						)
+					) : (
+						<Unavailable />
 					)}
 				</TabsContent>
-				<TabsContent value="attendance" className="pt-4">
-					{!data.capabilities.attendance ? (
-						<Unavailable />
-					) : data.attendance.length === 0 ? (
-						<EmptyQueue title="No attendance exceptions" />
-					) : (
-						<Table>
-							<TableHeader>
-								<TableRow>
-									<TableHead>Employee</TableHead>
-									<TableHead>Exception</TableHead>
-									<TableHead>Severity</TableHead>
-									<TableHead>Status</TableHead>
-									<TableHead>Remarks</TableHead>
-									<TableHead>Action</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{data.attendance.map((row) => (
-									<TableRow key={row.id}>
-										<TableCell className="font-medium">
-											{row.displayName}
-										</TableCell>
-										<TableCell>{row.exceptionType}</TableCell>
-										<TableCell>
-											<StatusBadge
-												status={managerStatusTone(row.severity)}
-												label={row.severity}
-											/>
-										</TableCell>
-										<TableCell>{row.reviewStatus}</TableCell>
-										<TableCell className="max-w-64 whitespace-normal">
-											{row.remarks ?? "None"}
-										</TableCell>
-										<TableCell>
-											<ManagerDecisionDialog
-												kind="attendance"
-												targetId={row.id}
-												version={row.version}
-												label={`Attendance review for ${row.displayName}`}
-												asOf={data.asOf}
-											/>
-										</TableCell>
+				<TabsContent className="pt-4" value="attendance">
+					{data.capabilities.attendance ? (
+						data.attendance.length === 0 ? (
+							<EmptyQueue title="No attendance exceptions" />
+						) : (
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>Employee</TableHead>
+										<TableHead>Exception</TableHead>
+										<TableHead>Severity</TableHead>
+										<TableHead>Status</TableHead>
+										<TableHead>Remarks</TableHead>
+										<TableHead>Action</TableHead>
 									</TableRow>
-								))}
-							</TableBody>
-						</Table>
+								</TableHeader>
+								<TableBody>
+									{data.attendance.map((row) => (
+										<TableRow key={row.id}>
+											<TableCell className="font-medium">
+												{row.displayName}
+											</TableCell>
+											<TableCell>{row.exceptionType}</TableCell>
+											<TableCell>
+												<StatusBadge
+													label={row.severity}
+													status={managerStatusTone(row.severity)}
+												/>
+											</TableCell>
+											<TableCell>{row.reviewStatus}</TableCell>
+											<TableCell className="max-w-64 whitespace-normal">
+												{row.remarks ?? "None"}
+											</TableCell>
+											<TableCell>
+												<ManagerDecisionDialog
+													asOf={data.asOf}
+													kind="attendance"
+													label={`Attendance review for ${row.displayName}`}
+													targetId={row.id}
+													version={row.version}
+												/>
+											</TableCell>
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
+						)
+					) : (
+						<Unavailable />
 					)}
 				</TabsContent>
-				<TabsContent value="probation" className="pt-4">
-					{!data.capabilities.probation ? (
-						<Unavailable />
-					) : data.probation.length === 0 ? (
-						<EmptyQueue title="No probation or confirmation decisions" />
-					) : (
-						<Table>
-							<TableHeader>
-								<TableRow>
-									<TableHead>Employee</TableHead>
-									<TableHead>Period</TableHead>
-									<TableHead>Status</TableHead>
-									<TableHead>Outcome</TableHead>
-									<TableHead>Action</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{data.probation.map((row) => (
-									<TableRow key={row.id}>
-										<TableCell className="font-medium">
-											{row.displayName}
-										</TableCell>
-										<TableCell>
-											{row.startsOn} to {row.endsOn}
-										</TableCell>
-										<TableCell>
-											<StatusBadge
-												status={managerStatusTone(row.status)}
-												label={row.status}
-											/>
-										</TableCell>
-										<TableCell>{row.outcome ?? "Pending"}</TableCell>
-										<TableCell>
-											<ManagerDecisionDialog
-												kind="probation"
-												targetId={row.id}
-												relatedId={row.employmentId}
-												version={row.version}
-												label={`Probation decision for ${row.displayName}`}
-												asOf={data.asOf}
-											/>
-										</TableCell>
+				<TabsContent className="pt-4" value="probation">
+					{data.capabilities.probation ? (
+						data.probation.length === 0 ? (
+							<EmptyQueue title="No probation or confirmation decisions" />
+						) : (
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>Employee</TableHead>
+										<TableHead>Period</TableHead>
+										<TableHead>Status</TableHead>
+										<TableHead>Outcome</TableHead>
+										<TableHead>Action</TableHead>
 									</TableRow>
-								))}
-							</TableBody>
-						</Table>
+								</TableHeader>
+								<TableBody>
+									{data.probation.map((row) => (
+										<TableRow key={row.id}>
+											<TableCell className="font-medium">
+												{row.displayName}
+											</TableCell>
+											<TableCell>
+												{row.startsOn} to {row.endsOn}
+											</TableCell>
+											<TableCell>
+												<StatusBadge
+													label={row.status}
+													status={managerStatusTone(row.status)}
+												/>
+											</TableCell>
+											<TableCell>{row.outcome ?? "Pending"}</TableCell>
+											<TableCell>
+												<ManagerDecisionDialog
+													asOf={data.asOf}
+													kind="probation"
+													label={`Probation decision for ${row.displayName}`}
+													relatedId={row.employmentId}
+													targetId={row.id}
+													version={row.version}
+												/>
+											</TableCell>
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
+						)
+					) : (
+						<Unavailable />
 					)}
 				</TabsContent>
-				<TabsContent value="performance" className="space-y-6 pt-4">
-					{!data.capabilities.performance ? (
-						<Unavailable />
-					) : (
+				<TabsContent className="space-y-6 pt-4" value="performance">
+					{data.capabilities.performance ? (
 						<>
 							<section aria-labelledby="reviews-heading" className="space-y-3">
-								<h2 id="reviews-heading" className="text-lg font-semibold">
+								<h2 className="font-semibold text-lg" id="reviews-heading">
 									Review decisions
 								</h2>
 								{data.performanceReviews.length === 0 ? (
@@ -366,8 +373,8 @@ export function ManagerWorkspace({
 													</TableCell>
 													<TableCell>
 														<StatusBadge
-															status={managerStatusTone(row.status)}
 															label={row.status}
+															status={managerStatusTone(row.status)}
 														/>
 													</TableCell>
 													<TableCell>
@@ -375,11 +382,11 @@ export function ManagerWorkspace({
 													</TableCell>
 													<TableCell>
 														<ManagerDecisionDialog
+															asOf={data.asOf}
 															kind="performance-review"
+															label={`Performance review for ${row.displayName}`}
 															targetId={row.id}
 															version={row.version}
-															label={`Performance review for ${row.displayName}`}
-															asOf={data.asOf}
 														/>
 													</TableCell>
 												</TableRow>
@@ -389,7 +396,7 @@ export function ManagerWorkspace({
 								)}
 							</section>
 							<section aria-labelledby="goals-heading" className="space-y-3">
-								<h2 id="goals-heading" className="text-lg font-semibold">
+								<h2 className="font-semibold text-lg" id="goals-heading">
 									Goal decisions
 								</h2>
 								{data.goals.length === 0 ? (
@@ -418,11 +425,11 @@ export function ManagerWorkspace({
 													<TableCell>{row.status}</TableCell>
 													<TableCell>
 														<ManagerDecisionDialog
+															asOf={data.asOf}
 															kind="performance-goal"
+															label={`Goal decision for ${row.displayName}`}
 															targetId={row.id}
 															version={row.version}
-															label={`Goal decision for ${row.displayName}`}
-															asOf={data.asOf}
 														/>
 													</TableCell>
 												</TableRow>
@@ -432,164 +439,175 @@ export function ManagerWorkspace({
 								)}
 							</section>
 						</>
+					) : (
+						<Unavailable />
 					)}
 				</TabsContent>
-				<TabsContent value="talent" className="space-y-6 pt-4">
-					{!data.capabilities.talent && !data.capabilities.succession ? (
-						<Unavailable />
-					) : (
+				<TabsContent className="space-y-6 pt-4" value="talent">
+					{data.capabilities.talent || data.capabilities.succession ? (
 						<>
 							<section aria-labelledby="talent-heading" className="space-y-3">
-								<h2 id="talent-heading" className="text-lg font-semibold">
+								<h2 className="font-semibold text-lg" id="talent-heading">
 									Talent profiles
 								</h2>
-								{!data.capabilities.talent ? (
-									<Unavailable />
-								) : data.talent.length === 0 ? (
-									<EmptyQueue title="No scoped talent profiles" />
-								) : (
-									<Table>
-										<TableHeader>
-											<TableRow>
-												<TableHead>Employee</TableHead>
-												<TableHead>Classification</TableHead>
-												<TableHead>Status</TableHead>
-												<TableHead>Action</TableHead>
-											</TableRow>
-										</TableHeader>
-										<TableBody>
-											{data.talent.map((row) => (
-												<TableRow key={row.id}>
-													<TableCell className="font-medium">
-														{row.displayName}
-													</TableCell>
-													<TableCell>
-														{row.classification ?? "Not classified"}
-													</TableCell>
-													<TableCell>
-														<StatusBadge
-															status={managerStatusTone(row.status)}
-															label={row.status}
-														/>
-													</TableCell>
-													<TableCell>
-														<ManagerDecisionDialog
-															kind="talent"
-															targetId={row.id}
-															employeeId={row.employeeId}
-															version={row.version}
-															label={`Talent assessment for ${row.displayName}`}
-															asOf={data.asOf}
-														/>
-													</TableCell>
+								{data.capabilities.talent ? (
+									data.talent.length === 0 ? (
+										<EmptyQueue title="No scoped talent profiles" />
+									) : (
+										<Table>
+											<TableHeader>
+												<TableRow>
+													<TableHead>Employee</TableHead>
+													<TableHead>Classification</TableHead>
+													<TableHead>Status</TableHead>
+													<TableHead>Action</TableHead>
 												</TableRow>
-											))}
-										</TableBody>
-									</Table>
+											</TableHeader>
+											<TableBody>
+												{data.talent.map((row) => (
+													<TableRow key={row.id}>
+														<TableCell className="font-medium">
+															{row.displayName}
+														</TableCell>
+														<TableCell>
+															{row.classification ?? "Not classified"}
+														</TableCell>
+														<TableCell>
+															<StatusBadge
+																label={row.status}
+																status={managerStatusTone(row.status)}
+															/>
+														</TableCell>
+														<TableCell>
+															<ManagerDecisionDialog
+																asOf={data.asOf}
+																employeeId={row.employeeId}
+																kind="talent"
+																label={`Talent assessment for ${row.displayName}`}
+																targetId={row.id}
+																version={row.version}
+															/>
+														</TableCell>
+													</TableRow>
+												))}
+											</TableBody>
+										</Table>
+									)
+								) : (
+									<Unavailable />
 								)}
 							</section>
 							<section
 								aria-labelledby="succession-heading"
 								className="space-y-3"
 							>
-								<h2 id="succession-heading" className="text-lg font-semibold">
+								<h2 className="font-semibold text-lg" id="succession-heading">
 									Succession readiness
 								</h2>
-								{!data.capabilities.succession ? (
-									<Unavailable />
-								) : data.succession.length === 0 ? (
-									<EmptyQueue title="No scoped succession candidates" />
-								) : (
-									<Table>
-										<TableHeader>
-											<TableRow>
-												<TableHead>Employee</TableHead>
-												<TableHead>Plan</TableHead>
-												<TableHead>Readiness</TableHead>
-												<TableHead>Status</TableHead>
-												<TableHead>Action</TableHead>
-											</TableRow>
-										</TableHeader>
-										<TableBody>
-											{data.succession.map((row) => (
-												<TableRow key={row.id}>
-													<TableCell className="font-medium">
-														{row.displayName}
-													</TableCell>
-													<TableCell>{row.planTitle}</TableCell>
-													<TableCell>
-														<StatusBadge
-															status={managerStatusTone(
-																row.readiness ?? "restricted",
-															)}
-															label={row.readiness ?? "Restricted"}
-														/>
-													</TableCell>
-													<TableCell>{row.status}</TableCell>
-													<TableCell>
-														<ManagerDecisionDialog
-															kind="succession"
-															targetId={row.id}
-															employeeId={row.employeeId}
-															relatedId={row.planId}
-															version={row.version}
-															label={`Succession readiness for ${row.displayName}`}
-															asOf={data.asOf}
-														/>
-													</TableCell>
+								{data.capabilities.succession ? (
+									data.succession.length === 0 ? (
+										<EmptyQueue title="No scoped succession candidates" />
+									) : (
+										<Table>
+											<TableHeader>
+												<TableRow>
+													<TableHead>Employee</TableHead>
+													<TableHead>Plan</TableHead>
+													<TableHead>Readiness</TableHead>
+													<TableHead>Status</TableHead>
+													<TableHead>Action</TableHead>
 												</TableRow>
-											))}
-										</TableBody>
-									</Table>
+											</TableHeader>
+											<TableBody>
+												{data.succession.map((row) => (
+													<TableRow key={row.id}>
+														<TableCell className="font-medium">
+															{row.displayName}
+														</TableCell>
+														<TableCell>{row.planTitle}</TableCell>
+														<TableCell>
+															<StatusBadge
+																label={row.readiness ?? "Restricted"}
+																status={managerStatusTone(
+																	row.readiness ?? "restricted",
+																)}
+															/>
+														</TableCell>
+														<TableCell>{row.status}</TableCell>
+														<TableCell>
+															<ManagerDecisionDialog
+																asOf={data.asOf}
+																employeeId={row.employeeId}
+																kind="succession"
+																label={`Succession readiness for ${row.displayName}`}
+																relatedId={row.planId}
+																targetId={row.id}
+																version={row.version}
+															/>
+														</TableCell>
+													</TableRow>
+												))}
+											</TableBody>
+										</Table>
+									)
+								) : (
+									<Unavailable />
 								)}
 							</section>
 						</>
+					) : (
+						<Unavailable />
 					)}
 				</TabsContent>
-				<TabsContent value="staffing" className="pt-4">
-					{!data.capabilities.staffing ? (
-						<Unavailable />
-					) : data.staffingGaps.length === 0 ? (
-						<EmptyQueue title="No scoped staffing gaps" />
-					) : (
-						<Table>
-							<TableHeader>
-								<TableRow>
-									<TableHead>Plan</TableHead>
-									<TableHead>Scope</TableHead>
-									<TableHead>Actual / planned</TableHead>
-									<TableHead>Headcount variance</TableHead>
-									<TableHead>FTE variance</TableHead>
-									<TableHead>Available</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{data.staffingGaps.map((row) => (
-									<TableRow key={`${row.planId}-${row.planLineId}`}>
-										<TableCell className="font-medium">
-											{row.planTitle}
-										</TableCell>
-										<TableCell>{row.planningScopeKey}</TableCell>
-										<TableCell>
-											{row.actualHeadcount} / {row.plannedHeadcount}
-										</TableCell>
-										<TableCell>
-											<StatusBadge
-												status={row.varianceHeadcount < 0 ? "error" : "success"}
-												label={String(row.varianceHeadcount)}
-											/>
-										</TableCell>
-										<TableCell>{row.varianceFte}</TableCell>
-										<TableCell>
-											{row.availableHeadcount} ({row.availableFte} FTE)
-										</TableCell>
+				<TabsContent className="pt-4" value="staffing">
+					{data.capabilities.staffing ? (
+						data.staffingGaps.length === 0 ? (
+							<EmptyQueue title="No scoped staffing gaps" />
+						) : (
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>Plan</TableHead>
+										<TableHead>Scope</TableHead>
+										<TableHead>Actual / planned</TableHead>
+										<TableHead>Headcount variance</TableHead>
+										<TableHead>FTE variance</TableHead>
+										<TableHead>Available</TableHead>
 									</TableRow>
-								))}
-							</TableBody>
-						</Table>
+								</TableHeader>
+								<TableBody>
+									{data.staffingGaps.map((row) => (
+										<TableRow key={`${row.planId}-${row.planLineId}`}>
+											<TableCell className="font-medium">
+												{row.planTitle}
+											</TableCell>
+											<TableCell>{row.planningScopeKey}</TableCell>
+											<TableCell>
+												{row.actualHeadcount} / {row.plannedHeadcount}
+											</TableCell>
+											<TableCell>
+												<StatusBadge
+													label={String(row.varianceHeadcount)}
+													status={
+														row.varianceHeadcount < 0 ? "error" : "success"
+													}
+												/>
+											</TableCell>
+											<TableCell>{row.varianceFte}</TableCell>
+											<TableCell>
+												{row.availableHeadcount} ({row.availableFte} FTE)
+											</TableCell>
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
+						)
+					) : (
+						<Unavailable />
 					)}
 				</TabsContent>
 			</Tabs>
 		</main>
 	);
 }
+// biome-ignore-all lint/style/noNestedTernary: Exhaustive status and tri-state view mappings remain explicit at their use sites.

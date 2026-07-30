@@ -50,8 +50,8 @@ function ErpWorkspaceShell({
 			<Sidebar>
 				<SidebarHeader>
 					<div className="flex items-center gap-2 px-2 py-1.5">
-						<span className="text-sm font-semibold tracking-tight">Afenda</span>
-						<span className="text-xs text-sidebar-foreground/70">Lite</span>
+						<span className="font-semibold text-sm tracking-tight">Afenda</span>
+						<span className="text-sidebar-foreground/70 text-xs">Lite</span>
 					</div>
 				</SidebarHeader>
 				<SidebarSeparator />
@@ -117,13 +117,13 @@ function ErpWorkspaceShell({
 				<header className="flex h-14 items-center gap-2 border-b px-4">
 					<SidebarTrigger />
 					<div className="grid gap-0.5">
-						<p className="text-sm font-medium">Supplier invoices</p>
-						<p className="text-xs text-foreground-secondary">
+						<p className="font-medium text-sm">Supplier invoices</p>
+						<p className="text-foreground-secondary text-xs">
 							Accounts payable · July 2026
 						</p>
 					</div>
 				</header>
-				<div className="grid gap-2 p-6 text-sm text-foreground-secondary">
+				<div className="grid gap-2 p-6 text-foreground-secondary text-sm">
 					<p>
 						Active styling is derived from the current route in feature code —
 						not from local click state alone.
@@ -214,7 +214,7 @@ export const Usage: Story = {
 						<SidebarTrigger />
 						<span className="text-sm">Payables workspace</span>
 					</header>
-					<div className="p-4 text-sm text-foreground-secondary">
+					<div className="p-4 text-foreground-secondary text-sm">
 						Main content inset
 					</div>
 				</SidebarInset>
@@ -238,7 +238,7 @@ export const StatesAndAccessibility: Story = {
 			<SidebarProvider defaultOpen>
 				<Sidebar>
 					<SidebarHeader>
-						<span className="px-2 text-sm font-medium">Navigation</span>
+						<span className="px-2 font-medium text-sm">Navigation</span>
 					</SidebarHeader>
 					<SidebarContent>
 						<nav aria-label="Workspace modules">
@@ -269,7 +269,7 @@ export const StatesAndAccessibility: Story = {
 						<SidebarTrigger />
 						<span className="text-sm">Accessible workspace</span>
 					</header>
-					<div className="p-4 text-sm text-foreground-secondary">
+					<div className="p-4 text-foreground-secondary text-sm">
 						Active styling is presentation only — not route authorization.
 					</div>
 				</SidebarInset>
@@ -308,7 +308,7 @@ export const DoAndDoNot: Story = {
 	render: () => (
 		<div className="grid gap-6 sm:grid-cols-2">
 			<StorySection title="Do: route-derived active item">
-				<SidebarProvider defaultOpen className="min-h-0">
+				<SidebarProvider className="min-h-0" defaultOpen>
 					<div className="w-64 rounded-lg border p-3">
 						<SidebarMenu>
 							<SidebarMenuItem>
@@ -328,7 +328,7 @@ export const DoAndDoNot: Story = {
 				</SidebarProvider>
 			</StorySection>
 			<StorySection title="Do not: encode authz in isActive">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					isActive is presentation for the current route. Authorization hides
 					destinations from the composed menu before render.
 				</p>

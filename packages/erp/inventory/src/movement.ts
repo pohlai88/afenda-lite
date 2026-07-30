@@ -46,6 +46,7 @@ import {
 } from "./module-ids";
 import { parseInventoryInput } from "./parse-input";
 import { INVENTORY_PERMISSION_ADJUSTMENT_POST } from "./permissions";
+import { runSequentiallyUntil } from "./resolve-async";
 import {
 	addStockMovementLineInputSchema,
 	cancelStockMovementInputSchema,
@@ -80,19 +81,19 @@ type FailureCode = Parameters<typeof fail>[0];
 type ResolvedDeps = ReturnType<typeof resolveCommandDeps>;
 type CreateStockMovementInput = z.infer<typeof createStockMovementInputSchema>;
 
-type WarehouseSnapshot = {
-	warehouseId: string;
+interface WarehouseSnapshot {
 	warehouseCode: string;
+	warehouseId: string;
 	warehouseName: string;
-};
+}
 
-type ItemSnapshot = {
-	itemId: string;
-	itemCode: string;
-	itemName: string;
-	baseUomId: string;
+interface ItemSnapshot {
 	baseUomCode: string;
-};
+	baseUomId: string;
+	itemCode: string;
+	itemId: string;
+	itemName: string;
+}
 
 function inventoryFail(
 	code: FailureCode,
@@ -166,15 +167,79 @@ function sameQuantity(left: string, right: string): boolean {
 	return parseQuantity(left) === parseQuantity(right);
 }
 
+interface CreateReplayVariant {
+	adjustmentNote: string | null;
+	adjustmentReasonCode: string | null;
+	fromWarehouseId: string | null;
+	reservationId: string | null;
+	toWarehouseId: string | null;
+	warehouseId: string | null;
+}
+
+function inputCreateReplayVariant(
+	input: CreateStockMovementInput,
+): CreateReplayVariant {
+	if ("fromWarehouseId" in input) {
+		return {
+			adjustmentNote: null,
+			adjustmentReasonCode: null,
+			fromWarehouseId: input.fromWarehouseId ?? null,
+			reservationId: null,
+			toWarehouseId: input.toWarehouseId ?? null,
+			warehouseId: null,
+		};
+	}
+	return {
+		adjustmentNote:
+			"adjustmentNote" in input ? (input.adjustmentNote ?? null) : null,
+		adjustmentReasonCode:
+			"adjustmentReasonCode" in input
+				? (input.adjustmentReasonCode ?? null)
+				: null,
+		fromWarehouseId: null,
+		reservationId:
+			"reservationId" in input ? (input.reservationId ?? null) : null,
+		toWarehouseId: null,
+		warehouseId: input.warehouseId ?? null,
+	};
+}
+
+function movementCreateReplayVariant(
+	existing: StockMovement,
+): CreateReplayVariant {
+	return {
+		adjustmentNote: existing.adjustmentNote,
+		adjustmentReasonCode: existing.adjustmentReasonCode,
+		fromWarehouseId: existing.fromWarehouseId,
+		reservationId: existing.reservationId,
+		toWarehouseId: existing.toWarehouseId,
+		warehouseId: existing.warehouseId,
+	};
+}
+
+function matchesCreateReplayVariant(
+	existing: CreateReplayVariant,
+	expected: CreateReplayVariant,
+): boolean {
+	return (
+		existing.adjustmentNote === expected.adjustmentNote &&
+		existing.adjustmentReasonCode === expected.adjustmentReasonCode &&
+		existing.fromWarehouseId === expected.fromWarehouseId &&
+		existing.reservationId === expected.reservationId &&
+		existing.toWarehouseId === expected.toWarehouseId &&
+		existing.warehouseId === expected.warehouseId
+	);
+}
+
 function assertMatchingCreateReplay(
 	existing: StockMovement,
 	input: CreateStockMovementInput,
 ): Result<void> {
 	const matchesCommonFields =
+		existing.movementType === input.movementType &&
 		existing.organizationId === input.organizationId &&
 		existing.createdBy === input.actorUserId &&
 		existing.code === input.code &&
-		existing.movementType === input.movementType &&
 		existing.source === input.source &&
 		existing.createIdempotencyKey === input.idempotencyKey &&
 		existing.sourceModule === (input.sourceModule ?? null) &&
@@ -182,64 +247,16 @@ function assertMatchingCreateReplay(
 		existing.sourceEventId === (input.sourceEventId ?? null) &&
 		existing.sourceEventVersion === (input.sourceEventVersion ?? null) &&
 		existing.sourceLineId === (input.sourceLineId ?? null);
-	if (!matchesCommonFields) {
+	const matchesVariant = matchesCreateReplayVariant(
+		movementCreateReplayVariant(existing),
+		inputCreateReplayVariant(input),
+	);
+	if (!(matchesCommonFields && matchesVariant)) {
 		return idempotencyConflict(
 			"Stock movement idempotency key was reused with different payload",
 		);
 	}
-
-	switch (input.movementType) {
-		case "receipt":
-			if (
-				existing.warehouseId !== input.warehouseId ||
-				existing.reservationId !== null ||
-				existing.adjustmentReasonCode !== null ||
-				existing.adjustmentNote !== null
-			) {
-				return idempotencyConflict(
-					"Stock movement idempotency key was reused with different payload",
-				);
-			}
-			return ok(undefined);
-		case "issue":
-			if (
-				existing.warehouseId !== input.warehouseId ||
-				existing.reservationId !== (input.reservationId ?? null) ||
-				existing.adjustmentReasonCode !== null ||
-				existing.adjustmentNote !== null
-			) {
-				return idempotencyConflict(
-					"Stock movement idempotency key was reused with different payload",
-				);
-			}
-			return ok(undefined);
-		case "transfer":
-			if (
-				existing.fromWarehouseId !== input.fromWarehouseId ||
-				existing.toWarehouseId !== input.toWarehouseId ||
-				existing.warehouseId !== null ||
-				existing.reservationId !== null ||
-				existing.adjustmentReasonCode !== null ||
-				existing.adjustmentNote !== null
-			) {
-				return idempotencyConflict(
-					"Stock movement idempotency key was reused with different payload",
-				);
-			}
-			return ok(undefined);
-		case "adjustment":
-			if (
-				existing.warehouseId !== input.warehouseId ||
-				existing.reservationId !== null ||
-				existing.adjustmentReasonCode !== input.adjustmentReasonCode ||
-				existing.adjustmentNote !== (input.adjustmentNote ?? null)
-			) {
-				return idempotencyConflict(
-					"Stock movement idempotency key was reused with different payload",
-				);
-			}
-			return ok(undefined);
-	}
+	return ok(undefined);
 }
 
 function assertMatchingAddLineReplay(input: {
@@ -399,6 +416,28 @@ async function resolveItemSnapshot(
 	});
 }
 
+type WarehouseMovementInput = Exclude<
+	CreateStockMovementInput,
+	{ movementType: "transfer" }
+>;
+
+function warehouseMovementVariantFields(input: WarehouseMovementInput): {
+	adjustmentNote: string | null;
+	adjustmentReasonCode: string | null;
+	reservationId: string | null;
+} {
+	return {
+		adjustmentNote:
+			"adjustmentNote" in input ? (input.adjustmentNote ?? null) : null,
+		adjustmentReasonCode:
+			"adjustmentReasonCode" in input
+				? (input.adjustmentReasonCode ?? null)
+				: null,
+		reservationId:
+			"reservationId" in input ? (input.reservationId ?? null) : null,
+	};
+}
+
 async function resolveCreateMovementRecord(
 	input: CreateStockMovementInput,
 	deps: ResolvedDeps,
@@ -463,6 +502,7 @@ async function resolveCreateMovementRecord(
 	if (!warehouse.ok) {
 		return warehouse;
 	}
+	const variantFields = warehouseMovementVariantFields(input);
 
 	return ok({
 		organizationId: input.organizationId,
@@ -479,15 +519,10 @@ async function resolveCreateMovementRecord(
 		toWarehouseId: null,
 		toWarehouseCode: null,
 		toWarehouseName: null,
-		reservationId:
-			input.movementType === "issue" ? (input.reservationId ?? null) : null,
+		reservationId: variantFields.reservationId,
 		reversesMovementId: null,
-		adjustmentReasonCode:
-			input.movementType === "adjustment" ? input.adjustmentReasonCode : null,
-		adjustmentNote:
-			input.movementType === "adjustment"
-				? (input.adjustmentNote ?? null)
-				: null,
+		adjustmentReasonCode: variantFields.adjustmentReasonCode,
+		adjustmentNote: variantFields.adjustmentNote,
 		sourceModule: input.sourceModule ?? null,
 		sourceAggregateId: input.sourceAggregateId ?? null,
 		sourceEventId: input.sourceEventId ?? null,
@@ -788,6 +823,62 @@ function buildReversalCreateRecord(input: {
 			);
 		}
 	}
+}
+
+async function addReversalLines(input: {
+	actorUserId: string;
+	correlationId: string;
+	deps: ResolvedDeps;
+	idempotencyKey: string;
+	movement: StockMovement;
+	original: StockMovement;
+}): Promise<Result<StockMovement>> {
+	let currentMovement = input.movement;
+	const terminal = await runSequentiallyUntil<
+		StockMovementLine,
+		Result<StockMovement>
+	>(input.original.lines, async (line) => {
+		const added = await input.deps.store.addLine(
+			{
+				organizationId: input.original.organizationId,
+				movementId: currentMovement.id,
+				itemId: line.itemId,
+				itemCode: line.itemCode,
+				itemName: line.itemName,
+				baseUomId: line.baseUomId,
+				baseUomCode: line.baseUomCode,
+				quantity: getReversalQuantity(input.original.movementType, line),
+				lineIdempotencyKey: deriveIdempotencyKey(
+					input.idempotencyKey,
+					`line-${line.lineNo}`,
+				),
+				expectedVersion: currentMovement.version,
+				createdBy: input.actorUserId,
+			},
+			input.deps.ports,
+			{ correlationId: input.correlationId },
+		);
+		if (!added.ok) {
+			return added;
+		}
+
+		const reloaded = await input.deps.store.getMovementById(
+			input.original.organizationId,
+			currentMovement.id,
+		);
+		if (!reloaded.ok) {
+			return reloaded;
+		}
+		if (reloaded.data === null) {
+			return inventoryFail(
+				"INTERNAL_ERROR",
+				"Reversal stock movement disappeared after line create",
+				INVENTORY_ERROR_MOVEMENT_NOT_FOUND,
+			);
+		}
+		currentMovement = reloaded.data;
+	});
+	return terminal ?? ok(currentMovement);
 }
 
 export async function createStockMovement(
@@ -1242,48 +1333,18 @@ export async function createReversalMovement(
 		return annotateCreateMovementFailure(created);
 	}
 
-	let currentMovement = created.data;
-	for (const line of original.lines) {
-		const added = await deps.store.addLine(
-			{
-				organizationId: parsed.data.organizationId,
-				movementId: currentMovement.id,
-				itemId: line.itemId,
-				itemCode: line.itemCode,
-				itemName: line.itemName,
-				baseUomId: line.baseUomId,
-				baseUomCode: line.baseUomCode,
-				quantity: getReversalQuantity(original.movementType, line),
-				lineIdempotencyKey: deriveIdempotencyKey(
-					parsed.data.idempotencyKey,
-					`line-${line.lineNo}`,
-				),
-				expectedVersion: currentMovement.version,
-				createdBy: parsed.data.actorUserId,
-			},
-			deps.ports,
-			{ correlationId: parsed.data.correlationId },
-		);
-		if (!added.ok) {
-			return added;
-		}
-
-		const reloaded = await deps.store.getMovementById(
-			parsed.data.organizationId,
-			currentMovement.id,
-		);
-		if (!reloaded.ok) {
-			return reloaded;
-		}
-		if (reloaded.data === null) {
-			return inventoryFail(
-				"INTERNAL_ERROR",
-				"Reversal stock movement disappeared after line create",
-				INVENTORY_ERROR_MOVEMENT_NOT_FOUND,
-			);
-		}
-		currentMovement = reloaded.data;
+	const reversalLines = await addReversalLines({
+		actorUserId: parsed.data.actorUserId,
+		correlationId: parsed.data.correlationId,
+		deps,
+		idempotencyKey: parsed.data.idempotencyKey,
+		movement: created.data,
+		original,
+	});
+	if (!reversalLines.ok) {
+		return reversalLines;
 	}
+	const currentMovement = reversalLines.data;
 
 	const posted = await deps.store.postMovement(
 		{
@@ -1496,7 +1557,7 @@ async function terminateReservationCommand(
 	);
 }
 
-export async function releaseReservation(
+export function releaseReservation(
 	input: unknown,
 	options: InventoryCommandOptions = {},
 ): Promise<Result<StockReservation>> {
@@ -1507,7 +1568,7 @@ export async function releaseReservation(
 	});
 }
 
-export async function expireReservation(
+export function expireReservation(
 	input: unknown,
 	options: InventoryCommandOptions = {},
 ): Promise<Result<StockReservation>> {
@@ -1518,7 +1579,7 @@ export async function expireReservation(
 	});
 }
 
-export async function cancelReservation(
+export function cancelReservation(
 	input: unknown,
 	options: InventoryCommandOptions = {},
 ): Promise<Result<StockReservation>> {

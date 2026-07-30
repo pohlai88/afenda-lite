@@ -56,10 +56,10 @@ import type {
 } from "./types";
 
 export type MeetingReferencePort = Readonly<{
-	validateSourceDocument(input: {
+	validateSourceDocument: (input: {
 		organizationId: string;
 		sourceDocumentId: string;
-	}): Promise<Result<{ sourceDocumentId: string; active: boolean } | null>>;
+	}) => Promise<Result<{ sourceDocumentId: string; active: boolean } | null>>;
 }>;
 
 type Dependencies = DurableLegalCompanyCommandDependencies &
@@ -78,15 +78,23 @@ export async function scheduleGovernanceMeeting(
 		scheduleGovernanceMeetingInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "scheduleGovernanceMeeting");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const body = await dependencies.governanceStore.getGovernanceBody({
 		organizationId: options.organizationId,
 		governanceBodyId: parsed.data.governanceBodyId,
 	});
-	if (!body.ok) return body;
-	if (body.data === null) return notFound("governanceBody");
+	if (!body.ok) {
+		return body;
+	}
+	if (body.data === null) {
+		return notFound("governanceBody");
+	}
 	if (body.data.legalCompanyId !== parsed.data.legalCompanyId) {
 		return invalidReference("governanceBodyId");
 	}
@@ -98,7 +106,9 @@ export async function scheduleGovernanceMeeting(
 		options.organizationId,
 		parsed.data.sourceDocumentId,
 	);
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	return runDurableCompanyCommand({
 		commandId: "corporate-administration.meeting.schedule",
 		fingerprintSchema: scheduleGovernanceMeetingInputSchema,
@@ -146,15 +156,21 @@ export async function issueMeetingNotice(
 		issueMeetingNoticeInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "issueMeetingNotice");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const meeting = await loadMeeting(
 		options,
 		dependencies,
 		parsed.data.governanceMeetingId,
 	);
-	if (!meeting.ok) return meeting;
+	if (!meeting.ok) {
+		return meeting;
+	}
 	if (meeting.data.version !== parsed.data.expectedMeetingVersion) {
 		return stale(parsed.data.expectedMeetingVersion, meeting.data.version);
 	}
@@ -175,7 +191,9 @@ export async function issueMeetingNotice(
 		options.organizationId,
 		parsed.data.sourceDocumentId,
 	);
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	return runDurableCompanyCommand({
 		commandId: "corporate-administration.meeting.issue-notice",
 		fingerprintSchema: issueMeetingNoticeInputSchema,
@@ -220,15 +238,23 @@ export async function recordNoticeDelivery(
 		recordNoticeDeliveryInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "recordNoticeDelivery");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const current = await dependencies.meetingStore.getMeetingNotice({
 		organizationId: options.organizationId,
 		meetingNoticeId: parsed.data.meetingNoticeId,
 	});
-	if (!current.ok) return current;
-	if (current.data === null) return notFound("meetingNotice");
+	if (!current.ok) {
+		return current;
+	}
+	if (current.data === null) {
+		return notFound("meetingNotice");
+	}
 	if (current.data.version !== parsed.data.expectedVersion) {
 		return stale(parsed.data.expectedVersion, current.data.version);
 	}
@@ -237,7 +263,9 @@ export async function recordNoticeDelivery(
 		options.organizationId,
 		parsed.data.sourceDocumentId,
 	);
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	return runNoticeUpdateCommand({
 		commandId: "corporate-administration.meeting.record-notice-delivery",
 		eventType: "corporate_administration.meeting_notice.delivered.v1",
@@ -268,15 +296,23 @@ export async function waiveNotice(
 		waiveNoticeInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "waiveNotice");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const current = await dependencies.meetingStore.getMeetingNotice({
 		organizationId: options.organizationId,
 		meetingNoticeId: parsed.data.meetingNoticeId,
 	});
-	if (!current.ok) return current;
-	if (current.data === null) return notFound("meetingNotice");
+	if (!current.ok) {
+		return current;
+	}
+	if (current.data === null) {
+		return notFound("meetingNotice");
+	}
 	if (current.data.version !== parsed.data.expectedVersion) {
 		return stale(parsed.data.expectedVersion, current.data.version);
 	}
@@ -285,7 +321,9 @@ export async function waiveNotice(
 		options.organizationId,
 		parsed.data.sourceDocumentId,
 	);
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	return runNoticeUpdateCommand({
 		commandId: "corporate-administration.meeting.waive-notice",
 		eventType: "corporate_administration.meeting_notice.waived.v1",
@@ -317,15 +355,21 @@ export async function recordMeetingParticipant(
 		recordMeetingParticipantInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "recordMeetingParticipant");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const meeting = await loadMeeting(
 		options,
 		dependencies,
 		parsed.data.governanceMeetingId,
 	);
-	if (!meeting.ok) return meeting;
+	if (!meeting.ok) {
+		return meeting;
+	}
 	if (meeting.data.version !== parsed.data.expectedMeetingVersion) {
 		return stale(parsed.data.expectedMeetingVersion, meeting.data.version);
 	}
@@ -334,7 +378,9 @@ export async function recordMeetingParticipant(
 		options.organizationId,
 		parsed.data.governanceMembershipId,
 	);
-	if (!membership.ok) return membership;
+	if (!membership.ok) {
+		return membership;
+	}
 	if (membership.data.governanceBodyId !== meeting.data.governanceBodyId) {
 		return invalidReference("governanceMembershipId");
 	}
@@ -392,15 +438,21 @@ export async function openMeeting(
 		openMeetingInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "openMeeting");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const meeting = await loadMeeting(
 		options,
 		dependencies,
 		parsed.data.governanceMeetingId,
 	);
-	if (!meeting.ok) return meeting;
+	if (!meeting.ok) {
+		return meeting;
+	}
 	if (meeting.data.version !== parsed.data.expectedVersion) {
 		return stale(parsed.data.expectedVersion, meeting.data.version);
 	}
@@ -409,7 +461,9 @@ export async function openMeeting(
 		options.organizationId,
 		parsed.data.sourceDocumentId,
 	);
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	return runMeetingStatusCommand({
 		commandId: "corporate-administration.meeting.open",
 		eventType: "corporate_administration.governance_meeting.opened.v1",
@@ -441,15 +495,21 @@ export async function recordQuorum(
 		recordQuorumInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "recordQuorum");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const meeting = await loadMeeting(
 		options,
 		dependencies,
 		parsed.data.governanceMeetingId,
 	);
-	if (!meeting.ok) return meeting;
+	if (!meeting.ok) {
+		return meeting;
+	}
 	if (meeting.data.version !== parsed.data.expectedMeetingVersion) {
 		return stale(parsed.data.expectedMeetingVersion, meeting.data.version);
 	}
@@ -459,12 +519,16 @@ export async function recordQuorum(
 			governanceBodyId: meeting.data.governanceBodyId,
 			asOf: datePart(meeting.data.scheduledStartAt),
 		});
-	if (!members.ok) return members;
+	if (!members.ok) {
+		return members;
+	}
 	const participants = await dependencies.meetingStore.listMeetingParticipants({
 		organizationId: options.organizationId,
 		governanceMeetingId: meeting.data.id,
 	});
-	if (!participants.ok) return participants;
+	if (!participants.ok) {
+		return participants;
+	}
 	const quorum = calculateMeetingQuorum({
 		meeting: meeting.data,
 		memberships: members.data,
@@ -474,13 +538,17 @@ export async function recordQuorum(
 		eligibleVotingOnly: parsed.data.eligibleVotingOnly,
 		noQuorumReason: parsed.data.noQuorumReason ?? null,
 	});
-	if (!quorum.ok) return quorum;
+	if (!quorum.ok) {
+		return quorum;
+	}
 	const source = await validateSource(
 		dependencies,
 		options.organizationId,
 		parsed.data.sourceDocumentId,
 	);
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	return runDurableCompanyCommand({
 		commandId: "corporate-administration.meeting.record-quorum",
 		fingerprintSchema: recordQuorumInputSchema,
@@ -539,9 +607,13 @@ export async function adjournMeeting(
 		adjournMeetingInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "adjournMeeting");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return changeMeeting({
 		commandId: "corporate-administration.meeting.adjourn",
 		eventType: "corporate_administration.governance_meeting.adjourned.v1",
@@ -574,15 +646,21 @@ export async function closeMeeting(
 		closeMeetingInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "closeMeeting");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const meeting = await loadMeeting(
 		options,
 		dependencies,
 		parsed.data.governanceMeetingId,
 	);
-	if (!meeting.ok) return meeting;
+	if (!meeting.ok) {
+		return meeting;
+	}
 	if (meeting.data.version !== parsed.data.expectedVersion) {
 		return stale(parsed.data.expectedVersion, meeting.data.version);
 	}
@@ -590,12 +668,16 @@ export async function closeMeeting(
 		organizationId: options.organizationId,
 		governanceMeetingId: meeting.data.id,
 	});
-	if (!quorum.ok) return quorum;
+	if (!quorum.ok) {
+		return quorum;
+	}
 	const closeable = canCloseMeeting({
 		meeting: meeting.data,
 		quorumResult: quorum.data,
 	});
-	if (!closeable.ok) return closeable;
+	if (!closeable.ok) {
+		return closeable;
+	}
 	return changeMeeting({
 		commandId: "corporate-administration.meeting.close",
 		eventType: "corporate_administration.governance_meeting.closed.v1",
@@ -717,7 +799,9 @@ async function loadMeeting(
 		organizationId: options.organizationId,
 		governanceMeetingId: governanceMeetingId as GovernanceMeetingId,
 	});
-	if (!meeting.ok) return meeting;
+	if (!meeting.ok) {
+		return meeting;
+	}
 	return meeting.data === null
 		? notFound("governanceMeeting")
 		: ok(meeting.data);
@@ -734,7 +818,9 @@ async function loadMembership(
 			governanceMembershipId: governanceMembershipId as GovernanceMembershipId,
 		},
 	);
-	if (!membership.ok) return membership;
+	if (!membership.ok) {
+		return membership;
+	}
 	return membership.data === null
 		? notFound("governanceMembership")
 		: ok(membership.data);
@@ -749,7 +835,9 @@ async function validateSource(
 		organizationId,
 		sourceDocumentId,
 	});
-	if (!result.ok) return result;
+	if (!result.ok) {
+		return result;
+	}
 	if (result.data === null) {
 		return invalidReference("sourceDocumentId");
 	}

@@ -1,3 +1,5 @@
+// biome-ignore-all lint/complexity/noExcessiveCognitiveComplexity: Identifier registration coordinates policy, idempotency, audit, and outbox atomically.
+// biome-ignore-all lint/style/useDestructuring: Explicit company state access keeps command evidence visible.
 import { fail, type Result } from "@afenda/errors/result";
 import {
 	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
@@ -52,13 +54,17 @@ export async function registerCompanyIdentifier(
 	dependencies: RegisterCompanyIdentifierDependencies,
 ): Promise<Result<CompanyIdentifier>> {
 	const nonTaxInput = assertNonTaxCompanyIdentifierType(input.identifierType);
-	if (!nonTaxInput.ok) return nonTaxInput;
+	if (!nonTaxInput.ok) {
+		return nonTaxInput;
+	}
 
 	const parsed = parseCorporateAdministrationInput(
 		registerCompanyIdentifierInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 
 	const authorized = await requireCorporateAdministrationPermission(
 		options.authorization,
@@ -69,7 +75,9 @@ export async function registerCompanyIdentifier(
 				CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS.registerCompanyIdentifier,
 		},
 	);
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 
 	const identity = createCorporateAdministrationCommandFingerprint({
 		schema: registerCompanyIdentifierInputSchema,
@@ -78,7 +86,9 @@ export async function registerCompanyIdentifier(
 			"corporate-administration.legal-company.register-company-identifier",
 		input: parsed.data,
 	});
-	if (!identity.ok) return identity;
+	if (!identity.ok) {
+		return identity;
+	}
 	const approved = await requireCorporateAdministrationApprovalIfConfigured(
 		dependencies,
 		{
@@ -89,24 +99,34 @@ export async function registerCompanyIdentifier(
 			commandFingerprint: identity.data.fingerprint,
 		},
 	);
-	if (!approved.ok) return approved;
+	if (!approved.ok) {
+		return approved;
+	}
 
 	const nonTax = assertNonTaxCompanyIdentifierType(parsed.data.identifierType);
-	if (!nonTax.ok) return nonTax;
+	if (!nonTax.ok) {
+		return nonTax;
+	}
 	const jurisdiction = validateIdentifierJurisdiction(
 		parsed.data.jurisdictionCode,
 	);
-	if (!jurisdiction.ok) return jurisdiction;
+	if (!jurisdiction.ok) {
+		return jurisdiction;
+	}
 	const authority = validateIdentifierAuthority(
 		parsed.data.issuingAuthorityCode,
 	);
-	if (!authority.ok) return authority;
+	if (!authority.ok) {
+		return authority;
+	}
 	const current = await dependencies.store.lockLegalCompany({
 		organizationId: options.organizationId,
 		legalCompanyId: parsed.data.legalCompanyId,
 		expectedVersion: parsed.data.expectedCompanyVersion,
 	});
-	if (!current.ok) return current;
+	if (!current.ok) {
+		return current;
+	}
 	if (current.data === null) {
 		return fail(
 			"NOT_FOUND",
@@ -135,7 +155,9 @@ export async function registerCompanyIdentifier(
 		countryCode: parsed.data.jurisdictionCode,
 		effectiveDate: parsed.data.effectiveFrom,
 	});
-	if (!country.ok) return country;
+	if (!country.ok) {
+		return country;
+	}
 	if (country.data === null || !country.data.active) {
 		return fail(
 			country.data === null ? "VALIDATION_ERROR" : "CONFLICT",
@@ -155,7 +177,9 @@ export async function registerCompanyIdentifier(
 			authorityCode: authority.data,
 			effectiveDate: parsed.data.effectiveFrom,
 		});
-	if (!resolvedAuthority.ok) return resolvedAuthority;
+	if (!resolvedAuthority.ok) {
+		return resolvedAuthority;
+	}
 	if (resolvedAuthority.data === null || !resolvedAuthority.data.active) {
 		return fail(
 			resolvedAuthority.data === null ? "VALIDATION_ERROR" : "CONFLICT",
@@ -172,7 +196,9 @@ export async function registerCompanyIdentifier(
 		organizationId: options.organizationId,
 		sourceDocumentId: parsed.data.sourceDocumentId,
 	});
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	if (source.data === null || !source.data.active) {
 		return fail(
 			source.data === null ? "VALIDATION_ERROR" : "CONFLICT",
@@ -207,7 +233,9 @@ export async function registerCompanyIdentifier(
 			normalizedIdentifierValue,
 			effectivePeriod,
 		});
-	if (!overlap.ok) return overlap;
+	if (!overlap.ok) {
+		return overlap;
+	}
 	const effectiveRange = validateIdentifierEffectiveRange({
 		candidate: effectivePeriod,
 		identifierType: parsed.data.identifierType,
@@ -217,7 +245,9 @@ export async function registerCompanyIdentifier(
 		existing: overlap.data === null ? [] : [overlap.data],
 		legalCompanyId: parsed.data.legalCompanyId,
 	});
-	if (!effectiveRange.ok) return effectiveRange;
+	if (!effectiveRange.ok) {
+		return effectiveRange;
+	}
 
 	return runDurableCompanyCommand({
 		commandId:

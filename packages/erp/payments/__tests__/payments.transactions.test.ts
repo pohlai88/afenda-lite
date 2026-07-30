@@ -21,8 +21,8 @@ import { createMemoryPaymentsStore } from "../src/testing";
 const organizationId = "org-1";
 const actorUserId = "user-1";
 const authorization = {
-	async can() {
-		return true;
+	can() {
+		return Promise.resolve(true);
 	},
 };
 
@@ -42,7 +42,9 @@ describe("payments domain conflicts", () => {
 			},
 			options,
 		);
-		if (!account.ok) return;
+		if (!account.ok) {
+			return;
+		}
 
 		const created = await createDraftPayment(
 			{
@@ -59,7 +61,9 @@ describe("payments domain conflicts", () => {
 			},
 			options,
 		);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const stalePost = await postPayment(
 			{
@@ -86,7 +90,9 @@ describe("payments domain conflicts", () => {
 			options,
 		);
 		expect(posted.ok).toBe(true);
-		if (!posted.ok) return;
+		if (!posted.ok) {
+			return;
+		}
 
 		const staleReverse = await reversePayment(
 			{
@@ -124,7 +130,9 @@ describe("payments domain conflicts", () => {
 			},
 			options,
 		);
-		if (!account.ok) return;
+		if (!account.ok) {
+			return;
+		}
 		const created = await createDraftPayment(
 			{
 				organizationId,
@@ -141,7 +149,9 @@ describe("payments domain conflicts", () => {
 			},
 			options,
 		);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 		const posted = await postPayment(
 			{
 				organizationId,
@@ -153,7 +163,9 @@ describe("payments domain conflicts", () => {
 			},
 			options,
 		);
-		if (!posted.ok) return;
+		if (!posted.ok) {
+			return;
+		}
 
 		const first = await postRefund(
 			{
@@ -186,7 +198,9 @@ describe("payments domain conflicts", () => {
 			options,
 		);
 		expect(excessive.ok).toBe(false);
-		if (excessive.ok) return;
+		if (excessive.ok) {
+			return;
+		}
 		expect(
 			(excessive.details as { paymentsCode?: string } | undefined)
 				?.paymentsCode,
@@ -225,7 +239,9 @@ describe("payments domain conflicts", () => {
 			options,
 		);
 		expect(account.ok).toBe(true);
-		if (!account.ok) return;
+		if (!account.ok) {
+			return;
+		}
 
 		const sameAccount = await (store as PaymentsStore).createAndPostTransfer({
 			organizationId,
@@ -265,7 +281,9 @@ describe("payments domain conflicts", () => {
 			options,
 		);
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 
 		const creditTarget = await addPaymentApplicationInstruction(
 			{
@@ -317,7 +335,9 @@ describe("payments domain conflicts", () => {
 			},
 			options,
 		);
-		if (!from.ok || !to.ok) return;
+		if (!(from.ok && to.ok)) {
+			return;
+		}
 		const transfer = await createAndPostPaymentTransfer(
 			{
 				organizationId,
@@ -333,7 +353,9 @@ describe("payments domain conflicts", () => {
 			options,
 		);
 		expect(transfer.ok).toBe(true);
-		if (!transfer.ok) return;
+		if (!transfer.ok) {
+			return;
+		}
 		const reconciled = reconcilePayments({
 			payments: [transfer.data.outgoing, transfer.data.incoming],
 		});

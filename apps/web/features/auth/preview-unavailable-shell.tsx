@@ -8,8 +8,8 @@ import { SignInButton } from "@/features/auth/sign-in-button";
 export function PreviewUnavailableShell() {
 	return (
 		<PublicMessageShell
+			footer={<SignInButton className="mt-2" variant="outline" />}
 			title="Preview unavailable"
-			footer={<SignInButton variant="outline" className="mt-2" />}
 		>
 			<p>
 				This client preview is not available. Sign in with an invited account or

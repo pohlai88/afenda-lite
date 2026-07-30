@@ -3,16 +3,16 @@ import type { HumanResourcesEmployeeId } from "@afenda/human-resources/brands";
 
 import { createHumanResourcesIdentityResolverPort } from "@/lib/erp/human-resources-identity-resolver-port";
 
-export type ManagerScope = {
-	managerEmployeeId: HumanResourcesEmployeeId;
-	employeeIds: HumanResourcesEmployeeId[];
+export interface ManagerScope {
 	asOf: string;
-};
+	employeeIds: HumanResourcesEmployeeId[];
+	managerEmployeeId: HumanResourcesEmployeeId;
+}
 
-type ManagerSession = {
+interface ManagerSession {
 	orgId: string;
 	userId: string;
-};
+}
 
 export async function resolveManagerScope(
 	session: ManagerSession,
@@ -32,8 +32,12 @@ export async function resolveManagerScope(
 		}),
 	]);
 
-	if (!identity.ok) return identity;
-	if (!directReports.ok) return directReports;
+	if (!identity.ok) {
+		return identity;
+	}
+	if (!directReports.ok) {
+		return directReports;
+	}
 	if (identity.data === null) {
 		return fail(
 			"FORBIDDEN",

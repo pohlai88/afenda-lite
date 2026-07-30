@@ -8,31 +8,30 @@ import type {
 	PayrollVariableInputCreateRecord,
 } from "../types";
 
-export type PayrollInputsStore = {
-	findVariableInputBySource(input: {
+export interface PayrollInputsStore {
+	createVariableInput: (
+		record: PayrollVariableInputCreateRecord,
+		ports: MutationPorts,
+	) => Promise<Result<PayrollVariableInput>>;
+
+	findVariableInputByIdempotencyKey: (input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}) => Promise<Result<IdempotentPayrollVariableInputRecord | null>>;
+	findVariableInputBySource: (input: {
 		organizationId: string;
 		sourceType: string;
 		sourceId: string;
-	}): Promise<Result<IdempotentPayrollVariableInputRecord | null>>;
+	}) => Promise<Result<IdempotentPayrollVariableInputRecord | null>>;
 
-	findVariableInputByIdempotencyKey(input: {
-		organizationId: string;
-		idempotencyKey: string;
-	}): Promise<Result<IdempotentPayrollVariableInputRecord | null>>;
-
-	createVariableInput(
-		record: PayrollVariableInputCreateRecord,
-		ports: MutationPorts,
-	): Promise<Result<PayrollVariableInput>>;
-
-	getVariableInput(input: {
+	getVariableInput: (input: {
 		organizationId: string;
 		variableInputId: PayrollVariableInputId;
-	}): Promise<Result<PayrollVariableInput | null>>;
+	}) => Promise<Result<PayrollVariableInput | null>>;
 
-	listVariableInputsForPeriod(input: {
+	listVariableInputsForPeriod: (input: {
 		organizationId: string;
 		periodId: PayrollPeriodId;
 		status?: PayrollVariableInput["status"];
-	}): Promise<Result<PayrollVariableInput[]>>;
-};
+	}) => Promise<Result<PayrollVariableInput[]>>;
+}

@@ -23,7 +23,7 @@ import {
 } from "../shared/setup-command";
 import type { PayrollCalendar } from "../types";
 
-export async function createPayrollCalendar(
+export function createPayrollCalendar(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollCalendar>> {
@@ -75,7 +75,7 @@ export async function createPayrollCalendar(
 	});
 }
 
-export async function updatePayrollCalendar(
+export function updatePayrollCalendar(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollCalendar>> {
@@ -100,7 +100,7 @@ export async function updatePayrollCalendar(
 	});
 }
 
-export async function archivePayrollCalendar(
+export function archivePayrollCalendar(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollCalendar>> {
@@ -122,7 +122,7 @@ export async function archivePayrollCalendar(
 	});
 }
 
-export async function getPayrollCalendar(
+export function getPayrollCalendar(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollCalendar | null>> {
@@ -138,7 +138,7 @@ export async function getPayrollCalendar(
 	});
 }
 
-export async function listPayrollCalendars(
+export function listPayrollCalendars(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollCalendar[]>> {

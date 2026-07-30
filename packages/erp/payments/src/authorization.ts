@@ -4,13 +4,13 @@ import type { PaymentsPermission } from "./permissions";
 
 export type { PaymentsPermission } from "./permissions";
 
-export type PaymentsAuthorizationPort = {
-	can(input: {
+export interface PaymentsAuthorizationPort {
+	can: (input: {
 		organizationId: string;
 		actorUserId: string;
 		permission: PaymentsPermission;
-	}): Promise<boolean>;
-};
+	}) => Promise<boolean>;
+}
 
 export async function requirePaymentsPermission(
 	authorization: PaymentsAuthorizationPort | undefined,

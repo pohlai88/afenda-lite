@@ -96,8 +96,10 @@ const partyReferences: CompanyPartyReferencePort = {
 				),
 			)
 			.limit(1);
-		const row = rows[0];
-		if (row === undefined) return ok(null);
+		const [row] = rows;
+		if (row === undefined) {
+			return ok(null);
+		}
 		return ok({
 			partyId: row.partyId,
 			kind: row.partyKind === "organization" ? "organization" : "person",
@@ -116,7 +118,7 @@ const referenceData: CompanyReferenceDataPort = {
 			.from(refLanguage)
 			.where(eq(refLanguage.code, input.languageCode))
 			.limit(1);
-		const row = rows[0];
+		const [row] = rows;
 		return ok(
 			row === undefined ? null : { languageCode: row.code, active: row.active },
 		);
@@ -177,7 +179,7 @@ const referenceData: CompanyReferenceDataPort = {
 			.from(refCurrency)
 			.where(eq(refCurrency.code, input.currencyCode))
 			.limit(1);
-		const row = rows[0];
+		const [row] = rows;
 		return ok(
 			row === undefined
 				? null
@@ -255,8 +257,10 @@ const addressReferences: AddressReferencePort = {
 				),
 			)
 			.limit(1);
-		const row = rows[0];
-		if (row === undefined) return ok(null);
+		const [row] = rows;
+		if (row === undefined) {
+			return ok(null);
+		}
 		const activeFrom = row.effectiveFrom?.toISOString().slice(0, 10);
 		const activeTo = row.effectiveTo?.toISOString().slice(0, 10);
 		return ok({
@@ -288,7 +292,9 @@ const taxRegistrations: TaxRegistrationReadPort = {
 			},
 			{ authorization: createMasterDataAuthorizationPort() },
 		);
-		if (!result.ok) return result;
+		if (!result.ok) {
+			return result;
+		}
 		return ok(result.data === null ? null : toTaxReadModel(result.data));
 	},
 	findTaxRegistrationsForParty: async (input) => {
@@ -300,14 +306,18 @@ const taxRegistrations: TaxRegistrationReadPort = {
 			},
 			{ authorization: createMasterDataAuthorizationPort() },
 		);
-		if (!result.ok) return result;
+		if (!result.ok) {
+			return result;
+		}
 		return ok(result.data.map(toTaxReadModel));
 	},
 	findPotentialDuplicateTaxRegistration: async (input) => {
 		const normalized = normalizeTaxRegistrationNumber(
 			input.normalizedRegistrationNumber,
 		);
-		if (!normalized.ok) return ok(null);
+		if (!normalized.ok) {
+			return ok(null);
+		}
 		const result = await listSensitiveTaxRegistrations(
 			{
 				organizationId: input.organizationId,
@@ -317,7 +327,9 @@ const taxRegistrations: TaxRegistrationReadPort = {
 			},
 			{ authorization: createMasterDataAuthorizationPort() },
 		);
-		if (!result.ok) return result;
+		if (!result.ok) {
+			return result;
+		}
 		const duplicate =
 			result.data.find(
 				(row) =>
@@ -470,7 +482,7 @@ function normalizedTaxRegistrationNumber(value: string): string {
 export async function listCorporateAdministrationActiveOrganizationParties(input: {
 	organizationId: string;
 }): Promise<readonly { id: string; code: string; name: string }[]> {
-	return db
+	return await db
 		.select({
 			id: mdParty.id,
 			code: mdParty.code,

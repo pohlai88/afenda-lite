@@ -15,9 +15,9 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { neon } from "@neondatabase/serverless";
-
 import { requireMigrationDatabaseUrl } from "./lib/database-url.mjs";
 import { loadEnvLocal } from "./lib/migration-journal-rows.mjs";
+import { runSequentially } from "./lib/run-sequentially.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const repoRoot = join(root, "../../..");
@@ -118,9 +118,9 @@ const missingFoundation = foundationTables.filter(
 	(table) => !currentTables.has(table),
 );
 if (missingFoundation.length === 0) {
-	for (const statement of recordedRangeRepairStatements) {
-		await sql.query(statement);
-	}
+	await runSequentially(recordedRangeRepairStatements, (statement) =>
+		sql.query(statement),
+	);
 	console.log(
 		"repair-ca-demo-foundation: CA foundation tables already present; recorded-range invariants repaired",
 	);
@@ -134,7 +134,7 @@ if (missingFoundation.length !== foundationTables.length) {
 }
 
 const statements = [
-	`CREATE EXTENSION IF NOT EXISTS btree_gist`,
+	"CREATE EXTENSION IF NOT EXISTS btree_gist",
 	`DO $$
 BEGIN
 	IF NOT EXISTS (
@@ -360,9 +360,7 @@ END $$`,
 	`ALTER TABLE "ca_company_activity" ADD CONSTRAINT "ca_company_activity_no_overlap_excl" EXCLUDE USING gist ("organization_id" WITH =, "legal_company_id" WITH =, "activity_type" WITH =, "classification_system" WITH =, "activity_code" WITH =, "jurisdiction_code" WITH =, daterange("effective_from", COALESCE("effective_to", 'infinity'::date), '[)') WITH &&) WHERE ("status" = 'active')`,
 ];
 
-for (const statement of statements) {
-	await sql.query(statement);
-}
+await runSequentially(statements, (statement) => sql.query(statement));
 
 console.log(
 	`repair-ca-demo-foundation: created ${foundationTables.length} CA foundation tables and invariants`,

@@ -213,1525 +213,1527 @@ import type {
 	HeadcountReservationStatus,
 } from "./shared/workforce-planning-status";
 
-export type Employee = {
-	id: HumanResourcesEmployeeId;
-	organizationId: string;
-	employeeNumber: string;
-	legalName: string;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
+export interface Employee {
 	createdAt: Date;
+	createdBy: string;
+	employeeNumber: string;
+	id: HumanResourcesEmployeeId;
+	legalName: string;
+	organizationId: string;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type Employment = {
+export interface Employment {
+	createdAt: Date;
+	createdBy: string;
+	employeeId: HumanResourcesEmployeeId;
+	endsOn: string | null;
 	id: HumanResourcesEmploymentId;
 	organizationId: string;
-	employeeId: HumanResourcesEmployeeId;
-	status: EmploymentStatus;
 	startsOn: string;
-	endsOn: string | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
+	status: EmploymentStatus;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
 export type { ApplicationStatusHistory } from "./shared/application-history";
 export type { EmploymentStatusHistory } from "./shared/employment-history";
 
 export type EmploymentContractLineageStatus = "active" | "superseded";
 
-export type EmploymentContract = {
-	id: HumanResourcesEmploymentContractId;
-	organizationId: string;
-	employmentId: HumanResourcesEmploymentId;
-	employeeId: HumanResourcesEmployeeId;
-	referenceCode: string;
-	startsOn: string;
-	endsOn: string | null;
-	lineageStatus: EmploymentContractLineageStatus;
-	supersedesContractId: HumanResourcesEmploymentContractId | null;
-	supersededByContractId: HumanResourcesEmploymentContractId | null;
-	reasonCode: string;
-	sourceReference: string | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
+export interface EmploymentContract {
 	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type Department = {
-	id: HumanResourcesDepartmentId;
+	createdBy: string;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId;
+	endsOn: string | null;
+	id: HumanResourcesEmploymentContractId;
+	lineageStatus: EmploymentContractLineageStatus;
 	organizationId: string;
+	reasonCode: string;
+	referenceCode: string;
+	sourceReference: string | null;
+	startsOn: string;
+	supersededByContractId: HumanResourcesEmploymentContractId | null;
+	supersedesContractId: HumanResourcesEmploymentContractId | null;
+	updatedAt: Date;
+	updatedBy: string;
+	version: number;
+}
+
+export interface Department {
 	code: string;
+	createdAt: Date;
+	createdBy: string;
+	id: HumanResourcesDepartmentId;
 	name: string;
+	organizationId: string;
 	parentDepartmentId: HumanResourcesDepartmentId | null;
 	status: DepartmentStatus;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type Job = {
+export interface Job {
+	code: string;
+	createdAt: Date;
+	createdBy: string;
 	id: HumanResourcesJobId;
 	organizationId: string;
-	code: string;
-	title: string;
 	status: JobStatus;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type Position = {
-	id: HumanResourcesPositionId;
-	organizationId: string;
-	code: string;
 	title: string;
-	departmentId: HumanResourcesDepartmentId | null;
-	jobId: HumanResourcesJobId | null;
-	status: PositionStatus;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type WorkAssignment = {
-	id: HumanResourcesAssignmentId;
+export interface Position {
+	code: string;
+	createdAt: Date;
+	createdBy: string;
+	departmentId: HumanResourcesDepartmentId | null;
+	id: HumanResourcesPositionId;
+	jobId: HumanResourcesJobId | null;
 	organizationId: string;
-	employmentId: HumanResourcesEmploymentId;
+	status: PositionStatus;
+	title: string;
+	updatedAt: Date;
+	updatedBy: string;
+	version: number;
+}
+
+export interface WorkAssignment {
+	createdAt: Date;
+	createdBy: string;
 	employeeId: HumanResourcesEmployeeId;
-	positionId: HumanResourcesPositionId;
+	employmentId: HumanResourcesEmploymentId;
+	endsOn: string | null;
+	id: HumanResourcesAssignmentId;
+	managerEmployeeIdSnapshot: HumanResourcesEmployeeId | null;
 	/** Null only for rows created before governed organization dimensions. */
 	organizationDimensions: HumanResourcesOrganizationDimensions | null;
+	organizationId: string;
+	positionId: HumanResourcesPositionId;
 	predecessorAssignmentId: HumanResourcesAssignmentId | null;
+	startsOn: string;
 	successorAssignmentId: HumanResourcesAssignmentId | null;
 	transferMovementId: HumanResourcesEmploymentMovementId | null;
-	managerEmployeeIdSnapshot: HumanResourcesEmployeeId | null;
-	workCalendarIdSnapshot: HumanResourcesWorkCalendarId | null;
-	startsOn: string;
-	endsOn: string | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+	workCalendarIdSnapshot: HumanResourcesWorkCalendarId | null;
+}
 
-export type PositionOccupancyAsOf = {
-	position: Position;
+export interface PositionOccupancyAsOf {
 	asOf: string;
 	assignment: WorkAssignment | null;
+	position: Position;
 	state: "vacant" | "occupied";
-};
+}
 
-export type ReportingLine = {
-	id: HumanResourcesReportingLineId;
-	organizationId: string;
+export interface ReportingLine {
+	createdAt: Date;
+	createdBy: string;
 	employeeId: HumanResourcesEmployeeId;
+	endsOn: string | null;
+	id: HumanResourcesReportingLineId;
 	managerEmployeeId: HumanResourcesEmployeeId;
+	organizationId: string;
 	relationshipKind: ReportingRelationshipKind;
 	startsOn: string;
-	endsOn: string | null;
-	supersedesReportingLineId: HumanResourcesReportingLineId | null;
 	supersededByReportingLineId: HumanResourcesReportingLineId | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
+	supersedesReportingLineId: HumanResourcesReportingLineId | null;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type OrganizationTreeNode = {
-	id: HumanResourcesDepartmentId;
-	parentDepartmentId: HumanResourcesDepartmentId | null;
+export interface OrganizationTreeNode {
 	code: string;
-	name: string;
-	status: DepartmentStatus;
 	depth: number;
-};
+	id: HumanResourcesDepartmentId;
+	name: string;
+	parentDepartmentId: HumanResourcesDepartmentId | null;
+	status: DepartmentStatus;
+}
 
-export type OrganizationTreePage = {
+export interface OrganizationTreePage {
 	nodes: OrganizationTreeNode[];
 	truncated: boolean;
-};
+}
 
-export type EmployeeListPage = {
+export interface EmployeeListPage {
 	employees: Employee[];
-	totalCount: number;
 	page: number;
 	pageSize: number;
-};
+	totalCount: number;
+}
 
-export type JobRequisition = {
-	id: HumanResourcesRequisitionId;
-	organizationId: string;
+export interface JobRequisition {
 	code: string;
-	title: string;
-	status: RequisitionStatus;
-	jobId: HumanResourcesJobId | null;
-	positionId: HumanResourcesPositionId | null;
+	createdAt: Date;
+	createdBy: string;
 	departmentId: HumanResourcesDepartmentId | null;
 	hiringManagerEmployeeId: HumanResourcesEmployeeId | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type Candidate = {
-	id: HumanResourcesCandidateId;
+	id: HumanResourcesRequisitionId;
+	jobId: HumanResourcesJobId | null;
 	organizationId: string;
+	positionId: HumanResourcesPositionId | null;
+	status: RequisitionStatus;
+	title: string;
+	updatedAt: Date;
+	updatedBy: string;
+	version: number;
+}
+
+export interface Candidate {
+	consentCapturedAt: Date | null;
+	consentPolicyVersion: string | null;
+	consentSource: CandidateConsentSource | null;
+	consentWithdrawnAt: Date | null;
+	createdAt: Date;
+	createdBy: string;
 	displayName: string;
 	email: string;
+	id: HumanResourcesCandidateId;
+	organizationId: string;
 	phone: string | null;
-	consentPolicyVersion: string | null;
-	consentCapturedAt: Date | null;
-	consentSource: CandidateConsentSource | null;
 	retentionUntil: string | null;
-	consentWithdrawnAt: Date | null;
 	status: CandidateStatus;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
 export type CandidateDuplicateMatchReason = "email" | "display_name";
 
-export type CandidateDuplicateMatch = {
+export interface CandidateDuplicateMatch {
 	candidateId: HumanResourcesCandidateId;
-	matchReasons: readonly CandidateDuplicateMatchReason[];
 	displayName: string;
 	email: string;
-};
+	matchReasons: readonly CandidateDuplicateMatchReason[];
+}
 
-export type CandidateApplication = {
+export interface CandidateApplication {
+	candidateId: HumanResourcesCandidateId;
+	createdAt: Date;
+	createdBy: string;
 	id: HumanResourcesApplicationId;
 	organizationId: string;
-	candidateId: HumanResourcesCandidateId;
 	requisitionId: HumanResourcesRequisitionId;
 	status: ApplicationStatus;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type Interview = {
-	id: HumanResourcesInterviewId;
-	organizationId: string;
+export interface Interview {
 	applicationId: HumanResourcesApplicationId;
+	createdAt: Date;
+	createdBy: string;
+	id: HumanResourcesInterviewId;
+	interviewerActorId: string;
+	organizationId: string;
 	scheduledAt: Date;
 	status: InterviewStatus;
-	interviewerActorId: string;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
 /** Public interview list row — never includes private evaluator notes. */
 export type InterviewListItem = Interview;
 
-export type InterviewScorecardCriterion = {
+export interface InterviewScorecardCriterion {
+	comment: string | null;
 	criterionCode: string;
 	label: string;
 	rating: number;
-	comment: string | null;
-};
+}
 
-export type InterviewScorecard = {
+export interface InterviewScorecard {
 	criteria: InterviewScorecardCriterion[];
-};
+}
 
-export type InterviewEvaluation = {
+export interface InterviewEvaluation {
+	createdAt: Date;
+	createdBy: string;
+	evaluatorActorId: string;
 	id: HumanResourcesInterviewEvaluationId;
-	organizationId: string;
 	interviewId: HumanResourcesInterviewId;
+	organizationId: string;
+	privateNotes: string | null;
+	recordedAt: Date;
 	result: InterviewEvaluationResult;
 	scorecard: InterviewScorecard;
-	privateNotes: string | null;
-	evaluatorActorId: string;
-	recordedAt: Date;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type EmploymentOffer = {
-	id: HumanResourcesOfferId;
-	organizationId: string;
+export interface EmploymentOffer {
 	applicationId: HumanResourcesApplicationId;
 	compensationProposalId: HumanResourcesCompensationProposalId | null;
+	createdAt: Date;
+	createdBy: string;
+	expiresOn: string;
+	id: HumanResourcesOfferId;
+	issuedAt: Date | null;
+	organizationId: string;
+	respondedAt: Date | null;
 	status: OfferStatus;
 	termsSummary: string;
-	expiresOn: string;
-	issuedAt: Date | null;
-	respondedAt: Date | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
 /**
  * Explicit conversion handoff after offer acceptance.
  * Does not create an employee — caller must invoke createEmployee (HR-02 / HR6).
  */
-export type OfferAcceptanceHandoff = {
-	organizationId: string;
-	offerId: HumanResourcesOfferId;
+export interface OfferAcceptanceHandoff {
+	acceptedAt: Date;
 	applicationId: HumanResourcesApplicationId;
 	candidateId: HumanResourcesCandidateId;
-	requisitionId: HumanResourcesRequisitionId;
 	correlationId: string;
-	acceptedAt: Date;
 	offer: EmploymentOffer;
-};
+	offerId: HumanResourcesOfferId;
+	organizationId: string;
+	requisitionId: HumanResourcesRequisitionId;
+}
 
-export type RequisitionListPage = {
+export interface RequisitionListPage {
+	page: number;
+	pageSize: number;
 	requisitions: JobRequisition[];
 	totalCount: number;
-	page: number;
-	pageSize: number;
-};
+}
 
-export type CandidateListPage = {
+export interface CandidateListPage {
 	candidates: Candidate[];
-	totalCount: number;
 	page: number;
 	pageSize: number;
-};
+	totalCount: number;
+}
 
-export type ApplicationListPage = {
+export interface ApplicationListPage {
 	applications: CandidateApplication[];
-	totalCount: number;
 	page: number;
 	pageSize: number;
-};
+	totalCount: number;
+}
 
-export type InterviewListPage = {
+export interface InterviewListPage {
 	interviews: InterviewListItem[];
-	totalCount: number;
 	page: number;
 	pageSize: number;
-};
+	totalCount: number;
+}
 
-export type OfferListPage = {
+export interface OfferListPage {
 	offers: EmploymentOffer[];
-	totalCount: number;
 	page: number;
 	pageSize: number;
-};
+	totalCount: number;
+}
 
-export type OnboardingCase = {
+export interface OnboardingCase {
+	completedAt: Date | null;
+	createdAt: Date;
+	createdBy: string;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId;
 	id: HumanResourcesOnboardingCaseId;
 	organizationId: string;
-	employmentId: HumanResourcesEmploymentId;
-	employeeId: HumanResourcesEmployeeId;
-	status: OnboardingCaseStatus;
 	sourceOfferId: HumanResourcesOfferId | null;
 	startedAt: Date;
-	completedAt: Date | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
+	status: OnboardingCaseStatus;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type OnboardingTask = {
-	id: HumanResourcesOnboardingTaskId;
-	organizationId: string;
+export interface OnboardingTask {
 	caseId: HumanResourcesOnboardingCaseId;
 	code: string;
-	title: string;
-	mandatory: boolean;
-	status: LifecycleTaskStatus;
 	completedAt: Date | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
 	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type OnboardingOrientation = {
-	id: HumanResourcesOnboardingOrientationId;
+	createdBy: string;
+	id: HumanResourcesOnboardingTaskId;
+	mandatory: boolean;
 	organizationId: string;
-	onboardingCaseId: HumanResourcesOnboardingCaseId;
-	employmentId: HumanResourcesEmploymentId;
-	status: OnboardingOrientationStatus;
+	status: LifecycleTaskStatus;
+	title: string;
+	updatedAt: Date;
+	updatedBy: string;
+	version: number;
+}
+
+export interface OnboardingOrientation {
 	acknowledgedOn: string | null;
+	createdAt: Date;
+	createdBy: string;
+	employmentId: HumanResourcesEmploymentId;
+	id: HumanResourcesOnboardingOrientationId;
 	notes: string | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type OnboardingEquipmentHandoff = {
-	id: HumanResourcesOnboardingEquipmentHandoffId;
-	organizationId: string;
 	onboardingCaseId: HumanResourcesOnboardingCaseId;
+	organizationId: string;
+	status: OnboardingOrientationStatus;
+	updatedAt: Date;
+	updatedBy: string;
+	version: number;
+}
+
+export interface OnboardingEquipmentHandoff {
+	createdAt: Date;
+	createdBy: string;
 	employmentId: HumanResourcesEmploymentId;
-	status: OnboardingEquipmentHandoffStatus;
 	handedOverOn: string | null;
-	summary: string | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type OnboardingAccessHandoff = {
-	id: HumanResourcesOnboardingAccessHandoffId;
-	organizationId: string;
+	id: HumanResourcesOnboardingEquipmentHandoffId;
 	onboardingCaseId: HumanResourcesOnboardingCaseId;
-	employmentId: HumanResourcesEmploymentId;
-	status: OnboardingAccessHandoffStatus;
-	grantedOn: string | null;
-	summary: string | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type ProbationReview = {
-	id: HumanResourcesProbationReviewId;
 	organizationId: string;
+	status: OnboardingEquipmentHandoffStatus;
+	summary: string | null;
+	updatedAt: Date;
+	updatedBy: string;
+	version: number;
+}
+
+export interface OnboardingAccessHandoff {
+	createdAt: Date;
+	createdBy: string;
 	employmentId: HumanResourcesEmploymentId;
+	grantedOn: string | null;
+	id: HumanResourcesOnboardingAccessHandoffId;
+	onboardingCaseId: HumanResourcesOnboardingCaseId;
+	organizationId: string;
+	status: OnboardingAccessHandoffStatus;
+	summary: string | null;
+	updatedAt: Date;
+	updatedBy: string;
+	version: number;
+}
+
+export interface ProbationReview {
+	createdAt: Date;
+	createdBy: string;
 	employeeId: HumanResourcesEmployeeId;
-	status: ProbationStatus;
-	startsOn: string;
+	employmentId: HumanResourcesEmploymentId;
 	endsOn: string;
+	id: HumanResourcesProbationReviewId;
+	lastExtensionEvidenceReference: string | null;
+	lastExtensionReason: string | null;
+	organizationId: string;
 	outcome: ProbationOutcome | null;
 	outcomeActorId: string | null;
-	outcomeRecordedOn: string | null;
-	lastExtensionReason: string | null;
-	lastExtensionEvidenceReference: string | null;
-	outcomeReason: string | null;
 	outcomeEvidenceReference: string | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
+	outcomeReason: string | null;
+	outcomeRecordedOn: string | null;
+	startsOn: string;
+	status: ProbationStatus;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type ProbationAssessment = {
+export interface ProbationAssessment {
+	actorUserId: string;
+	createdAt: Date;
+	createdBy: string;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId;
+	evidenceReference: string | null;
 	id: HumanResourcesProbationAssessmentId;
 	organizationId: string;
 	probationReviewId: HumanResourcesProbationReviewId;
-	employmentId: HumanResourcesEmploymentId;
-	employeeId: HumanResourcesEmployeeId;
-	reviewedOn: string;
 	reason: string;
-	evidenceReference: string | null;
-	actorUserId: string;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
+	reviewedOn: string;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type EmploymentConfirmation = {
+export interface EmploymentConfirmation {
+	confirmedBy: string;
+	confirmedOn: string;
+	createdAt: Date;
+	createdBy: string;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId;
+	evidenceNote: string;
 	id: HumanResourcesEmploymentConfirmationId;
 	organizationId: string;
-	employmentId: HumanResourcesEmploymentId;
-	employeeId: HumanResourcesEmployeeId;
-	confirmedOn: string;
-	confirmedBy: string;
-	evidenceNote: string;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
 	updatedAt: Date;
-};
-
-export type EmploymentMovement = {
-	id: HumanResourcesEmploymentMovementId;
-	organizationId: string;
-	employmentId: HumanResourcesEmploymentId;
-	employeeId: HumanResourcesEmployeeId;
-	movementKind: MovementKind;
-	fromAssignmentId: HumanResourcesAssignmentId;
-	toAssignmentId: HumanResourcesAssignmentId;
-	fromPositionId: HumanResourcesPositionId;
-	toPositionId: HumanResourcesPositionId;
-	effectiveOn: string;
-	reason: string;
-	version: number;
-	createdBy: string;
 	updatedBy: string;
+	version: number;
+}
+
+export interface EmploymentMovement {
 	/** ISO datetime string (offset) at the public store boundary. */
 	createdAt: string;
+	createdBy: string;
+	effectiveOn: string;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId;
+	fromAssignmentId: HumanResourcesAssignmentId;
+	fromPositionId: HumanResourcesPositionId;
+	id: HumanResourcesEmploymentMovementId;
+	movementKind: MovementKind;
+	organizationId: string;
+	reason: string;
+	toAssignmentId: HumanResourcesAssignmentId;
+	toPositionId: HumanResourcesPositionId;
 	/** ISO datetime string (offset) at the public store boundary. */
 	updatedAt: string;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type Termination = {
+export interface Termination {
+	approvedAt: Date | null;
+	approvedBy: string | null;
+	createdAt: Date;
+	createdBy: string;
+	effectiveOn: string;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId;
+	finalizedAt: Date | null;
 	id: HumanResourcesTerminationId;
 	organizationId: string;
-	employmentId: HumanResourcesEmploymentId;
-	employeeId: HumanResourcesEmployeeId;
-	status: TerminationStatus;
 	reasonCode: string;
 	reasonDetail: string;
-	effectiveOn: string;
-	approvedAt: Date | null;
-	approvedBy: string | null;
 	rehireEligible: boolean;
-	finalizedAt: Date | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
+	status: TerminationStatus;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type OffboardingCase = {
+export interface OffboardingCase {
+	completedAt: Date | null;
+	createdAt: Date;
+	createdBy: string;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId;
 	id: HumanResourcesOffboardingCaseId;
 	organizationId: string;
-	employmentId: HumanResourcesEmploymentId;
-	employeeId: HumanResourcesEmployeeId;
-	terminationId: HumanResourcesTerminationId | null;
-	status: OffboardingCaseStatus;
 	startedAt: Date;
-	completedAt: Date | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
+	status: OffboardingCaseStatus;
+	terminationId: HumanResourcesTerminationId | null;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type OffboardingTask = {
-	id: HumanResourcesOffboardingTaskId;
-	organizationId: string;
+export interface OffboardingTask {
 	caseId: HumanResourcesOffboardingCaseId;
 	code: string;
-	title: string;
-	mandatory: boolean;
-	status: LifecycleTaskStatus;
 	completedAt: Date | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
 	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type ExitInterview = {
-	id: HumanResourcesExitInterviewId;
+	createdBy: string;
+	id: HumanResourcesOffboardingTaskId;
+	mandatory: boolean;
 	organizationId: string;
-	offboardingCaseId: HumanResourcesOffboardingCaseId;
-	employmentId: HumanResourcesEmploymentId;
+	status: LifecycleTaskStatus;
+	title: string;
+	updatedAt: Date;
+	updatedBy: string;
+	version: number;
+}
+
+export interface ExitInterview {
 	conductedOn: string;
+	createdAt: Date;
+	createdBy: string;
+	employmentId: HumanResourcesEmploymentId;
+	id: HumanResourcesExitInterviewId;
 	notes: string;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type Clearance = {
-	id: HumanResourcesClearanceId;
-	organizationId: string;
 	offboardingCaseId: HumanResourcesOffboardingCaseId;
-	employmentId: HumanResourcesEmploymentId;
-	status: ClearanceStatus;
+	organizationId: string;
+	updatedAt: Date;
+	updatedBy: string;
+	version: number;
+}
+
+export interface Clearance {
 	clearedOn: string | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
 	createdAt: Date;
+	createdBy: string;
+	employmentId: HumanResourcesEmploymentId;
+	id: HumanResourcesClearanceId;
+	offboardingCaseId: HumanResourcesOffboardingCaseId;
+	organizationId: string;
+	status: ClearanceStatus;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type OffboardingAccessRevocation = {
+export interface OffboardingAccessRevocation {
+	createdAt: Date;
+	createdBy: string;
+	employmentId: HumanResourcesEmploymentId;
 	id: HumanResourcesOffboardingAccessRevocationId;
-	organizationId: string;
 	offboardingCaseId: HumanResourcesOffboardingCaseId;
-	employmentId: HumanResourcesEmploymentId;
-	status: OffboardingAccessRevocationStatus;
+	organizationId: string;
 	revokedOn: string | null;
+	status: OffboardingAccessRevocationStatus;
 	summary: string | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type OffboardingPayrollHandoff = {
+export interface OffboardingPayrollHandoff {
+	createdAt: Date;
+	createdBy: string;
+	employmentId: HumanResourcesEmploymentId;
 	id: HumanResourcesOffboardingPayrollHandoffId;
-	organizationId: string;
 	offboardingCaseId: HumanResourcesOffboardingCaseId;
-	employmentId: HumanResourcesEmploymentId;
-	status: OffboardingPayrollHandoffStatus;
+	organizationId: string;
 	readyOn: string | null;
+	status: OffboardingPayrollHandoffStatus;
 	summary: string | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type CompensationGrade = {
-	id: HumanResourcesCompensationGradeId;
-	organizationId: string;
+export interface CompensationGrade {
 	code: string;
+	createdAt: Date;
+	createdBy: string;
+	id: HumanResourcesCompensationGradeId;
 	name: string;
+	organizationId: string;
 	status: CompensationGradeStatus;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type SalaryBand = {
-	id: HumanResourcesSalaryBandId;
-	organizationId: string;
+export interface SalaryBand {
+	createdAt: Date;
+	createdBy: string;
+	currencyCode: string;
+	effectiveFrom: string;
+	effectiveTo: string | null;
 	gradeId: HumanResourcesCompensationGradeId;
-	currencyCode: string;
-	minAmount: string;
-	midAmount: string;
+	id: HumanResourcesSalaryBandId;
 	maxAmount: string;
-	effectiveFrom: string;
-	effectiveTo: string | null;
-	supersedesSalaryBandId: HumanResourcesSalaryBandId | null;
+	midAmount: string;
+	minAmount: string;
+	organizationId: string;
 	status: SalaryBandStatus;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
+	supersedesSalaryBandId: HumanResourcesSalaryBandId | null;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type CompensationGradeProgressionRule = {
-	id: HumanResourcesCompensationGradeProgressionRuleId;
-	organizationId: string;
+export interface CompensationGradeProgressionRule {
+	createdAt: Date;
+	createdBy: string;
+	effectiveFrom: string;
+	effectiveTo: string | null;
 	fromGradeId: HumanResourcesCompensationGradeId;
-	toGradeId: HumanResourcesCompensationGradeId;
-	effectiveFrom: string;
-	effectiveTo: string | null;
+	id: HumanResourcesCompensationGradeProgressionRuleId;
 	minMonthsInGrade: number | null;
-	status: CompensationGradeProgressionRuleStatus;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type EmployeeCompensation = {
-	id: HumanResourcesEmployeeCompensationId;
 	organizationId: string;
-	employeeId: HumanResourcesEmployeeId;
-	employmentId: HumanResourcesEmploymentId;
-	gradeId: HumanResourcesCompensationGradeId | null;
-	salaryBandId: HumanResourcesSalaryBandId | null;
-	baseAmount: string;
-	currencyCode: string;
-	payFrequency: PayFrequency;
-	effectiveFrom: string;
-	effectiveTo: string | null;
-	reason: string;
-	status: EmployeeCompensationStatus;
-	confidentialNote: string | null;
-	supersedesCompensationId: HumanResourcesEmployeeCompensationId | null;
+	status: CompensationGradeProgressionRuleStatus;
+	toGradeId: HumanResourcesCompensationGradeId;
+	updatedAt: Date;
+	updatedBy: string;
+	version: number;
+}
+
+export interface EmployeeCompensation {
 	approvedAt: Date | null;
 	approvedBy: string | null;
-	sourceReviewId: HumanResourcesCompensationReviewId | null;
-	createIdempotencyKey: string;
-	fingerprint: string;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
+	baseAmount: string;
+	confidentialNote: string | null;
 	createdAt: Date;
+	createdBy: string;
+	createIdempotencyKey: string;
+	currencyCode: string;
+	effectiveFrom: string;
+	effectiveTo: string | null;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId;
+	fingerprint: string;
+	gradeId: HumanResourcesCompensationGradeId | null;
+	id: HumanResourcesEmployeeCompensationId;
+	organizationId: string;
+	payFrequency: PayFrequency;
+	reason: string;
+	salaryBandId: HumanResourcesSalaryBandId | null;
+	sourceReviewId: HumanResourcesCompensationReviewId | null;
+	status: EmployeeCompensationStatus;
+	supersedesCompensationId: HumanResourcesEmployeeCompensationId | null;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type CompensationProposal = {
+export interface CompensationProposal {
+	applicationId: HumanResourcesApplicationId;
+	confidentialNote: string | null;
+	createdAt: Date;
+	createdBy: string;
 	id: HumanResourcesCompensationProposalId;
 	organizationId: string;
-	applicationId: HumanResourcesApplicationId;
-	status: CompensationProposalStatus;
 	proposedBaseAmount: string | null;
 	proposedCurrencyCode: string | null;
 	proposedGradeId: HumanResourcesCompensationGradeId | null;
 	proposedSalaryBandId: HumanResourcesSalaryBandId | null;
-	confidentialNote: string | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
+	status: CompensationProposalStatus;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type CompensationProposalListPage = {
-	proposals: CompensationProposal[];
-	totalCount: number;
+export interface CompensationProposalListPage {
 	page: number;
 	pageSize: number;
-};
+	proposals: CompensationProposal[];
+	totalCount: number;
+}
 
-export type CompensationReview = {
-	id: HumanResourcesCompensationReviewId;
-	organizationId: string;
+export interface CompensationReview {
+	appliedCompensationId: HumanResourcesEmployeeCompensationId | null;
+	createdAt: Date;
+	createdBy: string;
+	createIdempotencyKey: string;
 	cycleId: HumanResourcesCompensationReviewCycleId;
+	effectiveFrom: string | null;
 	employeeId: HumanResourcesEmployeeId;
 	employmentId: HumanResourcesEmploymentId;
-	status: CompensationReviewStatus;
+	finalizedAt: Date | null;
+	fingerprint: string;
+	id: HumanResourcesCompensationReviewId;
+	organizationId: string;
 	proposedBaseAmount: string | null;
 	proposedCurrencyCode: string | null;
 	proposedGradeId: HumanResourcesCompensationGradeId | null;
 	proposedSalaryBandId: HumanResourcesSalaryBandId | null;
 	recommendationNote: string | null;
-	effectiveFrom: string | null;
-	finalizedAt: Date | null;
-	appliedCompensationId: HumanResourcesEmployeeCompensationId | null;
-	createIdempotencyKey: string;
-	fingerprint: string;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
+	status: CompensationReviewStatus;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type CompensationReviewCycle = {
-	id: HumanResourcesCompensationReviewCycleId;
-	organizationId: string;
-	code: string;
-	name: string;
-	periodStart: string;
-	periodEnd: string;
-	status: CompensationReviewCycleStatus;
-	budgetTotalAmount: string;
+export interface CompensationReviewCycle {
 	budgetCurrencyCode: string;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
+	budgetTotalAmount: string;
+	code: string;
 	createdAt: Date;
+	createdBy: string;
+	id: HumanResourcesCompensationReviewCycleId;
+	name: string;
+	organizationId: string;
+	periodEnd: string;
+	periodStart: string;
+	status: CompensationReviewCycleStatus;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type CompensationReviewCycleListPage = {
+export interface CompensationReviewCycleListPage {
 	cycles: CompensationReviewCycle[];
-	totalCount: number;
 	page: number;
 	pageSize: number;
-};
+	totalCount: number;
+}
 
-export type BenefitPlan = {
-	id: HumanResourcesBenefitPlanId;
-	organizationId: string;
+export interface BenefitPlan {
 	code: string;
-	name: string;
+	createdAt: Date;
+	createdBy: string;
 	eligibilityNote: string | null;
+	id: HumanResourcesBenefitPlanId;
+	name: string;
+	organizationId: string;
 	status: BenefitPlanStatus;
+	updatedAt: Date;
+	updatedBy: string;
 	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
-};
+}
 
-export type BenefitPlanEligibility = {
-	id: string;
-	organizationId: string;
-	planId: HumanResourcesBenefitPlanId;
-	minTenureDays: number | null;
+export interface BenefitPlanEligibility {
 	allowedEmploymentStatuses: EmploymentStatus[];
-	createdBy: string;
-	updatedBy: string;
 	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type BenefitEnrollment = {
-	id: HumanResourcesBenefitEnrollmentId;
+	createdBy: string;
+	id: string;
+	minTenureDays: number | null;
 	organizationId: string;
-	employeeId: HumanResourcesEmployeeId;
-	employmentId: HumanResourcesEmploymentId;
 	planId: HumanResourcesBenefitPlanId;
-	effectiveFrom: string;
-	effectiveTo: string | null;
-	status: BenefitEnrollmentStatus;
-	employeeContributionAmount: string | null;
-	employerContributionAmount: string | null;
+	updatedAt: Date;
+	updatedBy: string;
+}
+
+export interface BenefitEnrollment {
 	contributionCurrencyCode: string | null;
 	contributionFrequency: PayFrequency | null;
-	waiverReason: string | null;
-	createIdempotencyKey: string;
-	fingerprint: string;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
 	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type BenefitEnrollmentDependent = {
-	id: HumanResourcesBenefitEnrollmentDependentId;
-	organizationId: string;
-	enrollmentId: HumanResourcesBenefitEnrollmentId;
-	dependentName: string;
-	relationship: BenefitDependentRelationship;
+	createdBy: string;
+	createIdempotencyKey: string;
 	effectiveFrom: string;
 	effectiveTo: string | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
+	employeeContributionAmount: string | null;
+	employeeId: HumanResourcesEmployeeId;
+	employerContributionAmount: string | null;
+	employmentId: HumanResourcesEmploymentId;
+	fingerprint: string;
+	id: HumanResourcesBenefitEnrollmentId;
+	organizationId: string;
+	planId: HumanResourcesBenefitPlanId;
+	status: BenefitEnrollmentStatus;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+	waiverReason: string | null;
+}
 
-export type CompensationGradeListPage = {
+export interface BenefitEnrollmentDependent {
+	createdAt: Date;
+	createdBy: string;
+	dependentName: string;
+	effectiveFrom: string;
+	effectiveTo: string | null;
+	enrollmentId: HumanResourcesBenefitEnrollmentId;
+	id: HumanResourcesBenefitEnrollmentDependentId;
+	organizationId: string;
+	relationship: BenefitDependentRelationship;
+	updatedAt: Date;
+	updatedBy: string;
+	version: number;
+}
+
+export interface CompensationGradeListPage {
 	grades: CompensationGrade[];
-	totalCount: number;
 	page: number;
 	pageSize: number;
-};
+	totalCount: number;
+}
 
-export type SalaryBandListPage = {
+export interface SalaryBandListPage {
 	bands: SalaryBand[];
-	totalCount: number;
 	page: number;
 	pageSize: number;
-};
+	totalCount: number;
+}
 
-export type CompensationGradeProgressionRuleListPage = {
+export interface CompensationGradeProgressionRuleListPage {
+	page: number;
+	pageSize: number;
 	rules: CompensationGradeProgressionRule[];
 	totalCount: number;
-	page: number;
-	pageSize: number;
-};
+}
 
-export type EmployeeCompensationListPage = {
+export interface EmployeeCompensationListPage {
 	compensations: EmployeeCompensation[];
-	totalCount: number;
 	page: number;
 	pageSize: number;
-};
+	totalCount: number;
+}
 
-export type CompensationReviewListPage = {
+export interface CompensationReviewListPage {
+	page: number;
+	pageSize: number;
 	reviews: CompensationReview[];
 	totalCount: number;
+}
+
+export interface BenefitPlanListPage {
 	page: number;
 	pageSize: number;
-};
-
-export type BenefitPlanListPage = {
 	plans: BenefitPlan[];
 	totalCount: number;
-	page: number;
-	pageSize: number;
-};
+}
 
-export type BenefitEnrollmentListPage = {
+export interface BenefitEnrollmentListPage {
 	enrollments: BenefitEnrollment[];
-	totalCount: number;
 	page: number;
 	pageSize: number;
-};
+	totalCount: number;
+}
 
-export type LearningCourse = {
-	id: HumanResourcesCourseId;
-	organizationId: string;
+export interface LearningCourse {
 	code: string;
-	title: string;
+	createdAt: Date;
+	createdBy: string;
 	description: string | null;
 	durationHours: string | null;
+	id: HumanResourcesCourseId;
+	organizationId: string;
 	status: CourseStatus;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
+	title: string;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type LearningSession = {
+export interface LearningSession {
+	actualEndsAt: Date | null;
+	actualStartsAt: Date | null;
+	capacity: number | null;
+	code: string;
+	courseId: HumanResourcesCourseId;
+	createdAt: Date;
+	createdBy: string;
 	id: HumanResourcesSessionId;
 	organizationId: string;
-	courseId: HumanResourcesCourseId;
-	code: string;
-	title: string;
-	scheduledStartsAt: Date;
-	scheduledEndsAt: Date;
-	actualStartsAt: Date | null;
-	actualEndsAt: Date | null;
-	capacity: number | null;
 	primaryInstructorUserId: string | null;
+	scheduledEndsAt: Date;
+	scheduledStartsAt: Date;
 	status: SessionStatus;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
+	title: string;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type LearningAssignment = {
+export interface LearningAssignment {
+	assignedAt: Date;
+	assignedBy: string;
+	courseId: HumanResourcesCourseId;
+	createdAt: Date;
+	createdBy: string;
+	dueOn: string | null;
+	employeeId: HumanResourcesEmployeeId;
 	id: HumanResourcesLearningAssignmentId;
 	organizationId: string;
-	employeeId: HumanResourcesEmployeeId;
-	courseId: HumanResourcesCourseId;
 	sessionId: HumanResourcesSessionId | null;
-	assignedBy: string;
-	assignedAt: Date;
-	dueOn: string | null;
 	status: AssignmentStatus;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type LearningCompletion = {
-	id: HumanResourcesCompletionId;
-	organizationId: string;
-	assignmentId: HumanResourcesLearningAssignmentId;
-	employeeId: HumanResourcesEmployeeId;
-	courseId: HumanResourcesCourseId;
-	sessionId: HumanResourcesSessionId | null;
-	completedAt: Date;
-	outcome: string;
+export interface LearningCompletion {
 	assessorUserId: string | null;
-	notes: string | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
+	assignmentId: HumanResourcesLearningAssignmentId;
+	completedAt: Date;
+	courseId: HumanResourcesCourseId;
 	createdAt: Date;
+	createdBy: string;
+	employeeId: HumanResourcesEmployeeId;
+	id: HumanResourcesCompletionId;
+	notes: string | null;
+	organizationId: string;
+	outcome: string;
+	sessionId: HumanResourcesSessionId | null;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type LearningAttendance = {
+export interface LearningAttendance {
+	assignmentId: HumanResourcesLearningAssignmentId;
+	createdAt: Date;
+	createdBy: string;
+	employeeId: HumanResourcesEmployeeId;
 	id: HumanResourcesLearningAttendanceId;
 	organizationId: string;
-	sessionId: HumanResourcesSessionId;
-	assignmentId: HumanResourcesLearningAssignmentId;
-	employeeId: HumanResourcesEmployeeId;
-	status: LearningAttendanceStatus;
 	recordedAt: Date;
 	recordedBy: string;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
+	sessionId: HumanResourcesSessionId;
+	status: LearningAttendanceStatus;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type EmployeeCertification = {
-	id: HumanResourcesCertificationId;
-	organizationId: string;
-	employeeId: HumanResourcesEmployeeId;
-	courseId: HumanResourcesCourseId;
-	completionId: HumanResourcesCompletionId;
+export interface EmployeeCertification {
 	certificationCode: string;
-	issuedOn: string;
+	completionId: HumanResourcesCompletionId;
+	courseId: HumanResourcesCourseId;
+	createdAt: Date;
+	createdBy: string;
+	employeeId: HumanResourcesEmployeeId;
 	expiresOn: string | null;
-	status: CertificationStatus;
+	id: HumanResourcesCertificationId;
+	issuedOn: string;
+	organizationId: string;
 	renewedFromCertificationId: HumanResourcesCertificationId | null;
 	revokedAt: Date | null;
 	revokedBy: string | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
+	status: CertificationStatus;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type CourseListPage = {
+export interface CourseListPage {
 	courses: LearningCourse[];
-	totalCount: number;
 	page: number;
 	pageSize: number;
-};
+	totalCount: number;
+}
 
-export type SessionListPage = {
+export interface SessionListPage {
+	page: number;
+	pageSize: number;
 	sessions: LearningSession[];
 	totalCount: number;
-	page: number;
-	pageSize: number;
-};
+}
 
-export type LearningAssignmentListPage = {
+export interface LearningAssignmentListPage {
 	assignments: LearningAssignment[];
-	totalCount: number;
 	page: number;
 	pageSize: number;
-};
+	totalCount: number;
+}
 
-export type CompletionListPage = {
+export interface CompletionListPage {
 	completions: LearningCompletion[];
-	totalCount: number;
 	page: number;
 	pageSize: number;
-};
+	totalCount: number;
+}
 
-export type CertificationListPage = {
+export interface CertificationListPage {
 	certifications: EmployeeCertification[];
-	totalCount: number;
 	page: number;
 	pageSize: number;
-};
+	totalCount: number;
+}
 
-export type LearningAttendanceListPage = {
+export interface LearningAttendanceListPage {
 	attendanceRecords: LearningAttendance[];
-	totalCount: number;
 	page: number;
 	pageSize: number;
-};
+	totalCount: number;
+}
 
-export type ApprovedCompensationHandoff = {
-	organizationId: string;
-	employeeId: HumanResourcesEmployeeId;
-	activeCompensation: EmployeeCompensation | null;
+export interface ApprovedCompensationHandoff {
 	activeBenefitEnrollments: BenefitEnrollment[];
-};
-
-export type LeavePolicy = {
-	id: HumanResourcesLeavePolicyId;
+	activeCompensation: EmployeeCompensation | null;
+	employeeId: HumanResourcesEmployeeId;
 	organizationId: string;
-	code: string;
-	name: string;
-	leaveType: LeaveType;
-	unit: LeaveUnit;
-	paid: boolean;
-	sensitive: boolean;
-	allowsNegativeBalance: boolean;
-	allowSelfApproval: boolean;
-	allowsPartialDay: boolean;
+}
+
+export interface LeavePolicy {
 	accrualBasis: LeavePolicyAccrualBasis;
 	accrualFrequency: LeavePolicyAccrualFrequency | null;
 	accrualQuantityPerPeriod: string | null;
+	allowSelfApproval: boolean;
+	allowsNegativeBalance: boolean;
+	allowsPartialDay: boolean;
 	carryForwardEnabled: boolean;
 	carryForwardMaxQuantity: string | null;
-	entitlementExpiryRule: LeavePolicyEntitlementExpiryRule;
-	entitlementExpiryDays: number | null;
+	code: string;
+	createdAt: Date;
+	createdBy: string;
 	effectiveFrom: string;
 	effectiveTo: string | null;
+	entitlementExpiryDays: number | null;
+	entitlementExpiryRule: LeavePolicyEntitlementExpiryRule;
+	id: HumanResourcesLeavePolicyId;
+	leaveType: LeaveType;
+	name: string;
+	organizationId: string;
+	paid: boolean;
+	sensitive: boolean;
 	status: LeavePolicyStatus;
 	supersedesPolicyId: HumanResourcesLeavePolicyId | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
+	unit: LeaveUnit;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type LeavePolicyEligibility = {
+export interface LeavePolicyEligibility {
+	allowedEmploymentStatuses: EmploymentStatus[];
+	createdAt: Date;
+	createdBy: string;
 	id: string;
+	minTenureDays: number | null;
 	organizationId: string;
 	policyId: HumanResourcesLeavePolicyId;
-	minTenureDays: number | null;
-	allowedEmploymentStatuses: EmploymentStatus[];
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
 	updatedAt: Date;
-};
+	updatedBy: string;
+}
 
-export type LeaveEntitlement = {
-	id: HumanResourcesLeaveEntitlementId;
-	organizationId: string;
+export interface LeaveEntitlement {
+	createdAt: Date;
+	createdBy: string;
+	createIdempotencyKey: string;
 	employeeId: HumanResourcesEmployeeId;
 	employmentId: HumanResourcesEmploymentId;
-	policyId: HumanResourcesLeavePolicyId;
-	periodStart: string;
-	periodEnd: string;
-	openingQuantity: string;
-	status: LeaveEntitlementStatus;
-	createIdempotencyKey: string;
 	fingerprint: string;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type LeaveAdjustment = {
-	id: HumanResourcesLeaveAdjustmentId;
+	id: HumanResourcesLeaveEntitlementId;
+	openingQuantity: string;
 	organizationId: string;
-	entitlementId: HumanResourcesLeaveEntitlementId;
-	sourceRequestId: HumanResourcesLeaveRequestId | null;
-	kind: LeaveAdjustmentKind;
+	periodEnd: string;
+	periodStart: string;
+	policyId: HumanResourcesLeavePolicyId;
+	status: LeaveEntitlementStatus;
+	updatedAt: Date;
+	updatedBy: string;
+	version: number;
+}
+
+export interface LeaveAdjustment {
+	createdAt: Date;
+	createdBy: string;
+	createIdempotencyKey: string;
 	delta: string;
+	entitlementId: HumanResourcesLeaveEntitlementId;
+	fingerprint: string;
+	id: HumanResourcesLeaveAdjustmentId;
+	kind: LeaveAdjustmentKind;
+	organizationId: string;
 	reason: string;
 	source: string;
+	sourceRequestId: HumanResourcesLeaveRequestId | null;
 	status: LeaveAdjustmentStatus;
-	createIdempotencyKey: string;
-	fingerprint: string;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type LeaveRequest = {
-	id: HumanResourcesLeaveRequestId;
-	organizationId: string;
+export interface LeaveRequest {
+	approvedAt: Date | null;
+	backdateJustification: string | null;
+	createdAt: Date;
+	createdBy: string;
+	createIdempotencyKey: string;
 	employeeId: HumanResourcesEmployeeId;
 	employmentId: HumanResourcesEmploymentId;
-	entitlementId: HumanResourcesLeaveEntitlementId;
-	policyId: HumanResourcesLeavePolicyId;
-	startDate: string;
 	endDate: string;
-	requestedQuantity: string;
-	unit: LeaveUnit;
-	status: LeaveRequestStatus;
-	isBackdated: boolean;
-	backdateJustification: string | null;
-	approvedAt: Date | null;
-	createIdempotencyKey: string;
+	entitlementId: HumanResourcesLeaveEntitlementId;
 	fingerprint: string;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
+	id: HumanResourcesLeaveRequestId;
+	isBackdated: boolean;
+	organizationId: string;
+	policyId: HumanResourcesLeavePolicyId;
+	requestedQuantity: string;
+	startDate: string;
+	status: LeaveRequestStatus;
+	unit: LeaveUnit;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type LeaveRequestSegment = {
+export interface LeaveRequestSegment {
+	createdAt: Date;
+	dayPortion: DayPortion;
 	id: HumanResourcesLeaveRequestSegmentId;
 	organizationId: string;
+	quantity: string;
 	requestId: HumanResourcesLeaveRequestId;
 	segmentDate: string;
-	quantity: string;
-	dayPortion: DayPortion;
-	createdAt: Date;
 	updatedAt: Date;
-};
+}
 
-export type LeaveApprovalDecision = {
-	id: HumanResourcesLeaveApprovalDecisionId;
-	organizationId: string;
-	requestId: HumanResourcesLeaveRequestId;
-	decision: ApprovalDecision;
-	decidedBy: string;
+export interface LeaveApprovalDecision {
+	createdAt: Date;
 	decidedAt: Date;
+	decidedBy: string;
+	decision: ApprovalDecision;
+	id: HumanResourcesLeaveApprovalDecisionId;
 	note: string | null;
-	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type LeaveBalance = {
-	entitlementId: HumanResourcesLeaveEntitlementId;
-	employeeId: HumanResourcesEmployeeId;
-	policyId: HumanResourcesLeavePolicyId;
-	unit: LeaveUnit;
-	openingQuantity: string;
-	balance: string;
-};
-
-export type LeaveBalanceReconciliation = {
-	entitlementId: HumanResourcesLeaveEntitlementId;
-	openingQuantity: string;
-	adjustments: Array<
-		Pick<
-			LeaveAdjustment,
-			"id" | "kind" | "delta" | "reason" | "source" | "createdAt"
-		>
-	>;
-	adjustmentCount: number;
-	balance: string;
-	latestAdjustmentAt: Date | null;
-};
-
-export type ApprovedLeaveHandoff = {
 	organizationId: string;
-	employeeId: HumanResourcesEmployeeId;
-	employmentId: HumanResourcesEmploymentId;
 	requestId: HumanResourcesLeaveRequestId;
+	updatedAt: Date;
+}
+
+export interface LeaveBalance {
+	balance: string;
+	employeeId: HumanResourcesEmployeeId;
+	entitlementId: HumanResourcesLeaveEntitlementId;
+	openingQuantity: string;
 	policyId: HumanResourcesLeavePolicyId;
-	policyVersion: number;
-	paid: boolean;
 	unit: LeaveUnit;
-	startDate: string;
-	endDate: string;
-	quantity: string;
-	segments: Array<{ date: string; quantity: string; dayPortion: string }>;
+}
+
+export interface LeaveBalanceReconciliation {
+	adjustmentCount: number;
+	adjustments: Pick<
+		LeaveAdjustment,
+		"id" | "kind" | "delta" | "reason" | "source" | "createdAt"
+	>[];
+	balance: string;
+	entitlementId: HumanResourcesLeaveEntitlementId;
+	latestAdjustmentAt: Date | null;
+	openingQuantity: string;
+}
+
+export interface ApprovedLeaveHandoff {
 	approvedAt: string;
 	correlationId: string;
-};
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId;
+	endDate: string;
+	organizationId: string;
+	paid: boolean;
+	policyId: HumanResourcesLeavePolicyId;
+	policyVersion: number;
+	quantity: string;
+	requestId: HumanResourcesLeaveRequestId;
+	segments: Array<{ date: string; quantity: string; dayPortion: string }>;
+	startDate: string;
+	unit: LeaveUnit;
+}
 
-export type ResolvedLeavePolicy = {
-	policy: LeavePolicy;
+export interface ResolvedLeavePolicy {
 	eligibility: LeavePolicyEligibility;
-};
+	policy: LeavePolicy;
+}
 
-export type LeavePolicyListPage = {
+export interface LeavePolicyListPage {
+	page: number;
+	pageSize: number;
 	policies: LeavePolicy[];
 	totalCount: number;
-	page: number;
-	pageSize: number;
-};
+}
 
-export type LeaveEntitlementListPage = {
+export interface LeaveEntitlementListPage {
 	entitlements: LeaveEntitlement[];
-	totalCount: number;
 	page: number;
 	pageSize: number;
-};
+	totalCount: number;
+}
 
-export type LeaveRequestListPage = {
+export interface LeaveRequestListPage {
+	page: number;
+	pageSize: number;
 	requests: LeaveRequest[];
 	totalCount: number;
-	page: number;
-	pageSize: number;
-};
+}
 
-export type TeamCalendarLeaveEntry = {
+export interface TeamCalendarLeaveEntry {
 	request: LeaveRequest;
 	segments: LeaveRequestSegment[];
-};
+}
 
-export type TeamCalendarLeavePage = {
+export interface TeamCalendarLeavePage {
 	entries: TeamCalendarLeaveEntry[];
-	totalCount: number;
 	page: number;
 	pageSize: number;
-};
+	totalCount: number;
+}
 
-export type PerformanceCycle = {
-	id: HumanResourcesPerformanceCycleId;
-	organizationId: string;
+export interface PerformanceCycle {
 	code: string;
+	createdAt: Date;
+	createdBy: string;
+	id: HumanResourcesPerformanceCycleId;
 	name: string;
-	periodStart: string;
+	organizationId: string;
 	periodEnd: string;
+	periodStart: string;
 	ratingScale: PerformanceRatingScale;
-	weightingModel: PerformanceWeightingModel;
 	status: PerformanceCycleStatus;
+	updatedAt: Date;
+	updatedBy: string;
 	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
-};
+	weightingModel: PerformanceWeightingModel;
+}
 
-export type PerformanceCycleReviewPeriod = {
-	id: string;
-	organizationId: string;
+export interface PerformanceCycleReviewPeriod {
+	createdAt: Date;
+	createdBy: string;
 	cycleId: HumanResourcesPerformanceCycleId;
+	id: string;
 	kind: PerformanceCycleReviewPeriodKind;
-	periodStart: string;
-	periodEnd: string;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type PerformanceCycleEligibility = {
-	id: string;
 	organizationId: string;
-	cycleId: HumanResourcesPerformanceCycleId;
-	minTenureDays: number | null;
-	allowedEmploymentStatuses: EmploymentStatus[];
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
+	periodEnd: string;
+	periodStart: string;
 	updatedAt: Date;
-};
+	updatedBy: string;
+}
 
-export type PerformanceCycleParticipant = {
+export interface PerformanceCycleEligibility {
+	allowedEmploymentStatuses: EmploymentStatus[];
+	createdAt: Date;
+	createdBy: string;
+	cycleId: HumanResourcesPerformanceCycleId;
+	id: string;
+	minTenureDays: number | null;
+	organizationId: string;
+	updatedAt: Date;
+	updatedBy: string;
+}
+
+export interface PerformanceCycleParticipant {
+	createdAt: Date;
+	createdBy: string;
+	cycleId: HumanResourcesPerformanceCycleId;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId;
 	id: HumanResourcesPerformanceCycleParticipantId;
 	organizationId: string;
-	cycleId: HumanResourcesPerformanceCycleId;
-	employeeId: HumanResourcesEmployeeId;
-	employmentId: HumanResourcesEmploymentId;
 	status: PerformanceCycleParticipantStatus;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type PerformanceGoal = {
-	id: HumanResourcesGoalId;
-	organizationId: string;
+export interface PerformanceGoal {
+	alignedToGoalId: HumanResourcesGoalId | null;
+	completionEvidenceReference: string | null;
+	completionNote: string | null;
+	createdAt: Date;
+	createdBy: string;
 	cycleId: HumanResourcesPerformanceCycleId;
+	description: string | null;
 	employeeId: HumanResourcesEmployeeId;
 	employmentId: HumanResourcesEmploymentId;
-	title: string;
-	description: string | null;
-	weight: string | null;
-	periodStart: string;
-	periodEnd: string;
 	exceptionOutsideCycle: boolean;
 	goalKind: PerformanceGoalKind;
-	alignedToGoalId: HumanResourcesGoalId | null;
-	completionNote: string | null;
-	completionEvidenceReference: string | null;
+	id: HumanResourcesGoalId;
+	organizationId: string;
+	periodEnd: string;
+	periodStart: string;
 	status: PerformanceGoalStatus;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
+	title: string;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+	weight: string | null;
+}
 
-export type PerformanceGoalProgress = {
+export interface PerformanceGoalProgress {
+	createdAt: Date;
+	evidenceReference: string | null;
+	goalId: HumanResourcesGoalId;
 	id: HumanResourcesGoalProgressId;
 	organizationId: string;
-	goalId: HumanResourcesGoalId;
-	recordedAt: Date;
 	progressNote: string;
 	progressValue: string | null;
-	evidenceReference: string | null;
+	recordedAt: Date;
 	recordedBy: string;
-	createdAt: Date;
 	updatedAt: Date;
-};
+}
 
 export const PERFORMANCE_REVIEW_SELF_SEQUENCE = 0 as const;
 export const PERFORMANCE_REVIEW_MANAGER_SEQUENCE = 1000 as const;
 
-export type PerformanceReview = {
-	id: HumanResourcesReviewId;
-	organizationId: string;
+export interface PerformanceReview {
+	acknowledgementNote: string | null;
+	calibrationNote: string | null;
+	createdAt: Date;
+	createdBy: string;
 	cycleId: HumanResourcesPerformanceCycleId;
 	employeeId: HumanResourcesEmployeeId;
 	employmentId: HumanResourcesEmploymentId;
+	id: HumanResourcesReviewId;
+	organizationId: string;
 	overallRating: string | null;
-	acknowledgementNote: string | null;
-	calibrationNote: string | null;
 	status: PerformanceReviewStatus;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type PerformanceReviewParticipant = {
+export interface PerformanceReviewParticipant {
+	createdAt: Date;
+	createdBy: string;
+	employeeId: HumanResourcesEmployeeId | null;
 	id: HumanResourcesReviewParticipantId;
 	organizationId: string;
 	reviewId: HumanResourcesReviewId;
 	role: "self" | "manager" | "delegated";
-	employeeId: HumanResourcesEmployeeId | null;
-	userId: string | null;
 	sequenceNumber: number;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	userId: string | null;
+	version: number;
+}
 
-export type PerformanceAssessment = {
-	id: HumanResourcesAssessmentId;
-	organizationId: string;
-	reviewId: HumanResourcesReviewId;
-	participantId: HumanResourcesReviewParticipantId;
-	kind: PerformanceAssessmentKind;
-	rating: string | null;
+export interface PerformanceAssessment {
 	commentsSensitive: string | null;
-	submittedAt: Date | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
 	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type PerformanceImprovementPlan = {
-	id: HumanResourcesImprovementPlanId;
+	createdBy: string;
+	id: HumanResourcesAssessmentId;
+	kind: PerformanceAssessmentKind;
 	organizationId: string;
+	participantId: HumanResourcesReviewParticipantId;
+	rating: string | null;
 	reviewId: HumanResourcesReviewId;
+	submittedAt: Date | null;
+	updatedAt: Date;
+	updatedBy: string;
+	version: number;
+}
+
+export interface PerformanceImprovementPlan {
+	accountableManagerEmployeeId: HumanResourcesEmployeeId;
+	createdAt: Date;
+	createdBy: string;
+	dueDate: string;
 	employeeId: HumanResourcesEmployeeId;
 	employmentId: HumanResourcesEmploymentId;
-	performanceGap: string;
 	expectedOutcome: string;
-	measurableActions: string;
-	supportResources: string;
-	dueDate: string;
-	accountableManagerEmployeeId: HumanResourcesEmployeeId;
-	status: PerformanceImprovementPlanStatus;
-	outcomeReason: string | null;
-	outcomeEvidenceReference: string | null;
-	lastExtensionReason: string | null;
+	id: HumanResourcesImprovementPlanId;
 	lastExtensionEvidenceReference: string | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type PerformanceImprovementCheckpoint = {
-	id: HumanResourcesImprovementCheckpointId;
+	lastExtensionReason: string | null;
+	measurableActions: string;
 	organizationId: string;
-	planId: HumanResourcesImprovementPlanId;
-	sequenceNumber: number;
-	dueDate: string;
-	outcome: PerformanceCheckpointOutcome;
-	notes: string | null;
-	evidenceReference: string | null;
-	recordedBy: string | null;
-	recordedAt: Date | null;
-	createdAt: Date;
+	outcomeEvidenceReference: string | null;
+	outcomeReason: string | null;
+	performanceGap: string;
+	reviewId: HumanResourcesReviewId;
+	status: PerformanceImprovementPlanStatus;
+	supportResources: string;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type PerformanceImprovementCheckpointListPage = {
+export interface PerformanceImprovementCheckpoint {
+	createdAt: Date;
+	dueDate: string;
+	evidenceReference: string | null;
+	id: HumanResourcesImprovementCheckpointId;
+	notes: string | null;
+	organizationId: string;
+	outcome: PerformanceCheckpointOutcome;
+	planId: HumanResourcesImprovementPlanId;
+	recordedAt: Date | null;
+	recordedBy: string | null;
+	sequenceNumber: number;
+	updatedAt: Date;
+}
+
+export interface PerformanceImprovementCheckpointListPage {
 	checkpoints: PerformanceImprovementCheckpoint[];
 	totalCount: number;
-};
+}
 
-export type PerformanceCycleListPage = {
+export interface PerformanceCycleListPage {
 	cycles: PerformanceCycle[];
-	totalCount: number;
 	page: number;
 	pageSize: number;
-};
+	totalCount: number;
+}
 
-export type PerformanceCycleParticipantListPage = {
+export interface PerformanceCycleParticipantListPage {
+	page: number;
+	pageSize: number;
 	participants: PerformanceCycleParticipant[];
 	totalCount: number;
-	page: number;
-	pageSize: number;
-};
+}
 
-export type PerformanceGoalListPage = {
+export interface PerformanceGoalListPage {
 	goals: PerformanceGoal[];
-	totalCount: number;
 	page: number;
 	pageSize: number;
-};
+	totalCount: number;
+}
 
-export type PerformanceGoalProgressListPage = {
+export interface PerformanceGoalProgressListPage {
+	page: number;
+	pageSize: number;
 	progress: PerformanceGoalProgress[];
 	totalCount: number;
+}
+
+export interface PerformanceReviewListPage {
 	page: number;
 	pageSize: number;
-};
-
-export type PerformanceReviewListPage = {
 	reviews: PerformanceReview[];
 	totalCount: number;
+}
+
+export interface PerformanceImprovementPlanListPage {
 	page: number;
 	pageSize: number;
-};
-
-export type PerformanceImprovementPlanListPage = {
 	plans: PerformanceImprovementPlan[];
 	totalCount: number;
-	page: number;
-	pageSize: number;
-};
+}
 
-export type PerformanceAssessmentProjection = {
-	id: HumanResourcesAssessmentId;
-	participantId: HumanResourcesReviewParticipantId;
-	kind: PerformanceAssessmentKind;
-	rating: string | null;
+export interface PerformanceAssessmentProjection {
 	commentsSensitive: string | null;
+	id: HumanResourcesAssessmentId;
+	kind: PerformanceAssessmentKind;
+	participantId: HumanResourcesReviewParticipantId;
+	rating: string | null;
 	submittedAt: Date | null;
 	version: number;
-};
+}
 
-export type PerformanceReviewDetail = {
-	review: PerformanceReview;
-	participants: PerformanceReviewParticipant[];
+export interface PerformanceReviewDetail {
 	assessments: PerformanceAssessmentProjection[];
-};
-
-export type EmployeePerformanceHistoryEntry = {
+	participants: PerformanceReviewParticipant[];
 	review: PerformanceReview;
-	overallRating: string | null;
+}
+
+export interface EmployeePerformanceHistoryEntry {
 	assessments: PerformanceAssessmentProjection[];
 	goals: PerformanceGoal[];
 	improvementPlans: PerformanceImprovementPlan[];
-};
+	overallRating: string | null;
+	review: PerformanceReview;
+}
 
-export type EmployeePerformanceHistory = {
+export interface EmployeePerformanceHistory {
 	employeeId: HumanResourcesEmployeeId;
 	entries: EmployeePerformanceHistoryEntry[];
-};
+}
 
-export type HeadcountPlan = {
-	id: HumanResourcesHeadcountPlanId;
-	organizationId: string;
-	code: string;
-	title: string;
-	planningScopeKey: string;
-	periodStart: string;
-	periodEnd: string;
-	status: HeadcountPlanStatus;
-	planVersion: number;
-	supersedesPlanId: HumanResourcesHeadcountPlanId | null;
-	approvedBy: string | null;
+export interface HeadcountPlan {
 	approvedAt: Date | null;
-	rejectedBy: string | null;
-	rejectedAt: Date | null;
-	rejectionReason: string | null;
+	approvedBy: string | null;
+	code: string;
 	costEnvelopeAmount: string | null;
 	costEnvelopeCurrencyCode: string | null;
+	createdAt: Date;
+	createdBy: string;
 	createIdempotencyKey: string;
 	createRequestFingerprint: string;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type HeadcountPlanLine = {
-	id: HumanResourcesHeadcountPlanLineId;
+	id: HumanResourcesHeadcountPlanId;
 	organizationId: string;
-	planId: HumanResourcesHeadcountPlanId;
-	departmentId: HumanResourcesDepartmentId | null;
-	jobId: HumanResourcesJobId | null;
-	positionId: HumanResourcesPositionId | null;
-	locationCode: string | null;
-	employmentType: HeadcountEmploymentType | null;
-	plannedFte: string;
-	plannedHeadcount: number;
+	periodEnd: string;
+	periodStart: string;
+	planningScopeKey: string;
+	planVersion: number;
+	rejectedAt: Date | null;
+	rejectedBy: string | null;
+	rejectionReason: string | null;
+	status: HeadcountPlanStatus;
+	supersedesPlanId: HumanResourcesHeadcountPlanId | null;
+	title: string;
+	updatedAt: Date;
+	updatedBy: string;
+	version: number;
+}
+
+export interface HeadcountPlanLine {
 	costEnvelopeAmount: string | null;
 	costEnvelopeCurrencyCode: string | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
 	createdAt: Date;
+	createdBy: string;
+	departmentId: HumanResourcesDepartmentId | null;
+	employmentType: HeadcountEmploymentType | null;
+	id: HumanResourcesHeadcountPlanLineId;
+	jobId: HumanResourcesJobId | null;
+	locationCode: string | null;
+	organizationId: string;
+	planId: HumanResourcesHeadcountPlanId;
+	plannedFte: string;
+	plannedHeadcount: number;
+	positionId: HumanResourcesPositionId | null;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type HeadcountReservation = {
+export interface HeadcountReservation {
+	createdAt: Date;
+	createdBy: string;
+	createIdempotencyKey: string;
+	createRequestFingerprint: string;
 	id: HumanResourcesHeadcountReservationId;
 	organizationId: string;
 	planId: HumanResourcesHeadcountPlanId;
@@ -1740,57 +1742,52 @@ export type HeadcountReservation = {
 	reservedFte: string;
 	reservedHeadcount: number;
 	status: HeadcountReservationStatus;
-	createIdempotencyKey: string;
-	createRequestFingerprint: string;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type HeadcountPlanListPage = {
+export interface HeadcountPlanListPage {
+	page: number;
+	pageSize: number;
 	plans: HeadcountPlan[];
 	totalCount: number;
+}
+
+export interface HeadcountReservationListPage {
 	page: number;
 	pageSize: number;
-};
-
-export type HeadcountReservationListPage = {
 	reservations: HeadcountReservation[];
 	totalCount: number;
-	page: number;
-	pageSize: number;
-};
+}
 
-export type HeadcountLineAvailability = {
+export interface HeadcountLineAvailability {
+	availableFte: string;
+	availableHeadcount: number;
+	consumedFte: string;
+	consumedHeadcount: number;
 	planLineId: string;
 	plannedFte: string;
 	plannedHeadcount: number;
 	reservedFte: string;
 	reservedHeadcount: number;
-	consumedFte: string;
-	consumedHeadcount: number;
-	availableFte: string;
-	availableHeadcount: number;
-};
+}
 
-export type HeadcountAvailability = {
+export interface HeadcountAvailability {
+	lines: HeadcountLineAvailability[];
 	planId: HumanResourcesHeadcountPlanId;
 	planLineId: HumanResourcesHeadcountPlanLineId;
-	lines: HeadcountLineAvailability[];
-};
+}
 
-export type RecruitmentHeadcountHandoff = {
-	organizationId: string;
-	requisitionId: HumanResourcesRequisitionId;
+export interface RecruitmentHeadcountHandoff {
+	activeReservation: HeadcountReservation | null;
 	approvedPlan: HeadcountPlan | null;
 	availability: HeadcountLineAvailability | null;
-	activeReservation: HeadcountReservation | null;
-};
+	organizationId: string;
+	requisitionId: HumanResourcesRequisitionId;
+}
 
-export type WorkforcePlanVariance = {
-	planId: HumanResourcesHeadcountPlanId;
+export interface WorkforcePlanVariance {
 	asOf: string;
 	lines: Array<
 		HeadcountLineAvailability & {
@@ -1800,64 +1797,65 @@ export type WorkforcePlanVariance = {
 			varianceHeadcount: number;
 		}
 	>;
-};
+	planId: HumanResourcesHeadcountPlanId;
+}
 
-export type DocumentRequirement = {
-	id: HumanResourcesDocumentRequirementId;
-	organizationId: string;
-	code: string;
-	name: string;
-	documentType: string;
-	issuingJurisdiction: string | null;
-	appliesToNote: string | null;
+export interface DocumentRequirement {
 	applicability: DocumentRequirementApplicability;
+	appliesToNote: string | null;
+	code: string;
+	createdAt: Date;
+	createdBy: string;
+	documentType: string;
+	id: HumanResourcesDocumentRequirementId;
+	issuingJurisdiction: string | null;
+	name: string;
+	organizationId: string;
 	status: DocumentRequirementStatus;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type EmployeeDocument = {
-	id: HumanResourcesEmployeeDocumentId;
-	organizationId: string;
-	employeeId: HumanResourcesEmployeeId;
-	requirementId: HumanResourcesDocumentRequirementId | null;
-	documentType: string;
-	issuingJurisdiction: string | null;
-	issuedOn: string;
-	expiresOn: string | null;
-	verificationStatus: EmployeeDocumentVerificationStatus;
-	verifiedBy: string | null;
-	verifiedAt: Date | null;
-	rejectionReason: string | null;
+export interface EmployeeDocument {
+	createdAt: Date;
+	createdBy: string;
 	documentRef: string;
-	identifierLast4: string | null;
-	identifierFingerprint: string | null;
-	metadata: Record<string, unknown> | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type EmployeeDocumentListItem = {
-	id: HumanResourcesEmployeeDocumentId;
-	organizationId: string;
-	employeeId: HumanResourcesEmployeeId;
-	requirementId: HumanResourcesDocumentRequirementId | null;
 	documentType: string;
-	issuingJurisdiction: string | null;
-	issuedOn: string;
+	employeeId: HumanResourcesEmployeeId;
 	expiresOn: string | null;
+	id: HumanResourcesEmployeeDocumentId;
+	identifierFingerprint: string | null;
+	identifierLast4: string | null;
+	issuedOn: string;
+	issuingJurisdiction: string | null;
+	metadata: Record<string, unknown> | null;
+	organizationId: string;
+	rejectionReason: string | null;
+	requirementId: HumanResourcesDocumentRequirementId | null;
+	updatedAt: Date;
+	updatedBy: string;
+	verificationStatus: EmployeeDocumentVerificationStatus;
+	verifiedAt: Date | null;
+	verifiedBy: string | null;
+	version: number;
+}
+
+export interface EmployeeDocumentListItem {
+	createdAt: Date;
+	documentType: string;
+	employeeId: HumanResourcesEmployeeId;
+	expiresOn: string | null;
+	id: HumanResourcesEmployeeDocumentId;
+	issuedOn: string;
+	issuingJurisdiction: string | null;
+	organizationId: string;
+	requirementId: HumanResourcesDocumentRequirementId | null;
+	updatedAt: Date;
 	verificationStatus: EmployeeDocumentVerificationStatus;
 	verifiedAt: Date | null;
 	version: number;
-	createdAt: Date;
-	updatedAt: Date;
-};
+}
 
 export type EmployeeDocumentSensitiveDetail = EmployeeDocumentListItem & {
 	identifierLast4: string | null;
@@ -1867,449 +1865,449 @@ export type EmployeeDocumentSensitiveDetail = EmployeeDocumentListItem & {
 	verifiedBy: string | null;
 };
 
-export type WorkEligibility = {
-	id: HumanResourcesWorkEligibilityId;
-	organizationId: string;
-	employeeId: HumanResourcesEmployeeId;
+export interface WorkEligibility {
 	countryCode: string;
-	jurisdiction: string | null;
-	status: WorkEligibilityStatus;
-	issuedOn: string;
-	expiresOn: string | null;
-	verifiedBy: string | null;
-	verifiedAt: Date | null;
-	documentRef: string | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
 	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type PolicyAcknowledgement = {
-	id: HumanResourcesPolicyAcknowledgementId;
-	organizationId: string;
+	createdBy: string;
+	documentRef: string | null;
 	employeeId: HumanResourcesEmployeeId;
+	expiresOn: string | null;
+	id: HumanResourcesWorkEligibilityId;
+	issuedOn: string;
+	jurisdiction: string | null;
+	organizationId: string;
+	status: WorkEligibilityStatus;
+	updatedAt: Date;
+	updatedBy: string;
+	verifiedAt: Date | null;
+	verifiedBy: string | null;
+	version: number;
+}
+
+export interface PolicyAcknowledgement {
+	acknowledgedAt: Date | null;
+	acknowledgedBy: string | null;
+	createdAt: Date;
+	createdBy: string;
+	dueOn: string;
+	employeeId: HumanResourcesEmployeeId;
+	id: HumanResourcesPolicyAcknowledgementId;
+	issuedAt: Date;
+	organizationId: string;
 	policyCode: string;
 	policyVersion: string;
 	requirementStatus: PolicyAcknowledgementStatus;
-	issuedAt: Date;
-	dueOn: string;
-	acknowledgedAt: Date | null;
-	acknowledgedBy: string | null;
 	supersedesAcknowledgementId: HumanResourcesPolicyAcknowledgementId | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type DocumentRequirementListPage = {
+export interface DocumentRequirementListPage {
+	page: number;
+	pageSize: number;
 	requirements: DocumentRequirement[];
 	totalCount: number;
-	page: number;
-	pageSize: number;
-};
+}
 
-export type EmployeeDocumentListPage = {
+export interface EmployeeDocumentListPage {
 	documents: EmployeeDocumentListItem[];
-	totalCount: number;
 	page: number;
 	pageSize: number;
-};
+	totalCount: number;
+}
 
-export type WorkEligibilityRiskListPage = {
+export interface WorkEligibilityRiskListPage {
 	eligibilities: WorkEligibility[];
-	totalCount: number;
 	page: number;
 	pageSize: number;
-};
+	totalCount: number;
+}
 
-export type PolicyAcknowledgementListPage = {
+export interface PolicyAcknowledgementListPage {
 	acknowledgements: PolicyAcknowledgement[];
-	totalCount: number;
 	page: number;
 	pageSize: number;
-};
+	totalCount: number;
+}
 
-export type ComplianceExpiryOperations = {
+export interface ComplianceExpiryOperations {
 	asOf: string;
-	withinDays: number;
-	expiringDocuments: EmployeeDocumentListPage;
-	workEligibilityRisks: WorkEligibilityRiskListPage;
-	overduePolicyAcknowledgements: PolicyAcknowledgementListPage;
 	expiringCertifications: CertificationListPage;
-};
+	expiringDocuments: EmployeeDocumentListPage;
+	overduePolicyAcknowledgements: PolicyAcknowledgementListPage;
+	withinDays: number;
+	workEligibilityRisks: WorkEligibilityRiskListPage;
+}
 
-export type EmployeeComplianceSummary = {
-	organizationId: string;
+export interface EmployeeComplianceSummary {
 	employeeId: HumanResourcesEmployeeId;
-	missingRequiredDocumentCount: number;
 	expiringDocumentCount: number;
-	workEligibilityAtRisk: boolean;
+	missingRequiredDocumentCount: number;
+	organizationId: string;
 	outstandingPolicyAcknowledgementCount: number;
-};
+	workEligibilityAtRisk: boolean;
+}
 
-export type IdempotentEmployeeDocumentRecord = {
+export interface IdempotentEmployeeDocumentRecord {
+	createRequestFingerprint: string;
 	document: EmployeeDocument;
-	createRequestFingerprint: string;
-};
+}
 
-export type IdempotentWorkEligibilityRecord = {
+export interface IdempotentWorkEligibilityRecord {
+	createRequestFingerprint: string;
 	eligibility: WorkEligibility;
-	createRequestFingerprint: string;
-};
+}
 
-export type IdempotentPolicyAcknowledgementRecord = {
+export interface IdempotentPolicyAcknowledgementRecord {
 	acknowledgement: PolicyAcknowledgement;
 	createRequestFingerprint: string;
-};
+}
 
-export type Competency = {
-	id: HumanResourcesCompetencyId;
-	organizationId: string;
-	code: string;
-	name: string;
-	description: string | null;
+export interface Competency {
 	category: string | null;
+	code: string;
+	createdAt: Date;
+	createdBy: string;
+	description: string | null;
+	id: HumanResourcesCompetencyId;
+	name: string;
+	organizationId: string;
 	scaleCode: CompetencyScaleCode;
 	status: CompetencyStatus;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type CompetencyListPage = {
+export interface CompetencyListPage {
 	competencies: Competency[];
-	totalCount: number;
 	page: number;
 	pageSize: number;
-};
+	totalCount: number;
+}
 
-export type JobCompetency = {
-	id: HumanResourcesJobCompetencyId;
-	organizationId: string;
-	jobId: HumanResourcesJobId;
+export interface JobCompetency {
 	competencyId: HumanResourcesCompetencyId;
+	createdAt: Date;
+	createdBy: string;
+	id: HumanResourcesJobCompetencyId;
+	jobId: HumanResourcesJobId;
+	organizationId: string;
 	requiredLevel: number;
 	status: JobCompetencyStatus;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type JobCompetencyListPage = {
+export interface JobCompetencyListPage {
 	jobCompetencies: JobCompetency[];
-	totalCount: number;
 	page: number;
 	pageSize: number;
-};
+	totalCount: number;
+}
 
-export type CompetencyAssessment = {
-	id: HumanResourcesCompetencyAssessmentId;
-	organizationId: string;
-	employeeId: HumanResourcesEmployeeId;
-	competencyId: HumanResourcesCompetencyId;
+export interface CompetencyAssessment {
 	assessorUserId: string;
-	evidenceSource: string;
-	scaleCode: CompetencyScaleCode;
-	level: number;
-	effectiveOn: string;
-	expiresOn: string | null;
-	status: CompetencyAssessmentStatus;
-	supersedesAssessmentId: HumanResourcesCompetencyAssessmentId | null;
-	supersededByAssessmentId: HumanResourcesCompetencyAssessmentId | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
+	competencyId: HumanResourcesCompetencyId;
 	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type EmployeeCompetencyProfile = {
-	organizationId: string;
+	createdBy: string;
+	effectiveOn: string;
 	employeeId: HumanResourcesEmployeeId;
-	assessments: CompetencyAssessment[];
-};
+	evidenceSource: string;
+	expiresOn: string | null;
+	id: HumanResourcesCompetencyAssessmentId;
+	level: number;
+	organizationId: string;
+	scaleCode: CompetencyScaleCode;
+	status: CompetencyAssessmentStatus;
+	supersededByAssessmentId: HumanResourcesCompetencyAssessmentId | null;
+	supersedesAssessmentId: HumanResourcesCompetencyAssessmentId | null;
+	updatedAt: Date;
+	updatedBy: string;
+	version: number;
+}
 
-export type TalentProfile = {
+export interface EmployeeCompetencyProfile {
+	assessments: CompetencyAssessment[];
+	employeeId: HumanResourcesEmployeeId;
+	organizationId: string;
+}
+
+export interface TalentProfile {
+	createdAt: Date;
+	createdBy: string;
+	currentClassification: string | null;
+	employeeId: HumanResourcesEmployeeId;
 	id: HumanResourcesTalentProfileId;
 	organizationId: string;
-	employeeId: HumanResourcesEmployeeId;
-	summary: string | null;
-	currentClassification: string | null;
 	status: TalentProfileStatus;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
+	summary: string | null;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type TalentProfileAssessment = {
-	id: HumanResourcesTalentProfileAssessmentId;
-	organizationId: string;
-	talentProfileId: HumanResourcesTalentProfileId;
-	methodCode: TalentProfileAssessmentMethodCode;
-	classification: string;
-	evidenceSummary: string;
+export interface TalentProfileAssessment {
 	assessorUserId: string;
-	status: TalentProfileAssessmentStatus;
+	classification: string;
 	confirmedAt: Date | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
 	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type TalentProfileMobility = {
-	id: HumanResourcesTalentProfileMobilityId;
-	organizationId: string;
-	talentProfileId: HumanResourcesTalentProfileId;
-	dimension: TalentMobilityDimension;
-	preferenceCode: TalentMobilityPreference;
-	scopeDetail: string | null;
+	createdBy: string;
 	evidenceSummary: string;
+	id: HumanResourcesTalentProfileAssessmentId;
+	methodCode: TalentProfileAssessmentMethodCode;
+	organizationId: string;
+	status: TalentProfileAssessmentStatus;
+	talentProfileId: HumanResourcesTalentProfileId;
+	updatedAt: Date;
+	updatedBy: string;
+	version: number;
+}
+
+export interface TalentProfileMobility {
+	createdAt: Date;
+	createdBy: string;
+	dimension: TalentMobilityDimension;
 	effectiveFrom: string;
 	effectiveTo: string | null;
+	evidenceSummary: string;
+	id: HumanResourcesTalentProfileMobilityId;
+	organizationId: string;
+	preferenceCode: TalentMobilityPreference;
+	scopeDetail: string | null;
 	status: TalentProfileMobilityStatus;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
+	talentProfileId: HumanResourcesTalentProfileId;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type TalentCriticalRoleReadiness = {
+export interface TalentCriticalRoleReadiness {
+	assessorUserId: string;
+	createdAt: Date;
+	createdBy: string;
+	evidenceSummary: string;
 	id: HumanResourcesTalentCriticalRoleReadinessId;
 	organizationId: string;
-	talentProfileId: HumanResourcesTalentProfileId;
 	positionId: HumanResourcesPositionId;
 	readiness: SuccessionReadinessCode;
 	readinessEffectiveOn: string;
-	evidenceSummary: string;
-	assessorUserId: string;
 	status: TalentCriticalRoleReadinessStatus;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
+	talentProfileId: HumanResourcesTalentProfileId;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type TalentPool = {
-	id: HumanResourcesTalentPoolId;
-	organizationId: string;
+export interface TalentPool {
 	code: string;
-	name: string;
-	description: string | null;
-	status: TalentPoolStatus;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
 	createdAt: Date;
+	createdBy: string;
+	description: string | null;
+	id: HumanResourcesTalentPoolId;
+	name: string;
+	organizationId: string;
+	status: TalentPoolStatus;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type TalentPoolMember = {
+export interface TalentPoolMember {
+	approvedAt: Date | null;
+	approverUserId: string | null;
+	createdAt: Date;
+	createdBy: string;
+	employeeId: HumanResourcesEmployeeId;
 	id: HumanResourcesTalentPoolMemberId;
+	nominatedAt: Date;
+	nominatorUserId: string;
 	organizationId: string;
 	poolId: HumanResourcesTalentPoolId;
-	employeeId: HumanResourcesEmployeeId;
-	nominatorUserId: string;
-	status: TalentPoolMemberStatus;
-	nominatedAt: Date;
-	approvedAt: Date | null;
 	removedAt: Date | null;
-	approverUserId: string | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
+	status: TalentPoolMemberStatus;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type TalentPoolMemberListPage = {
+export interface TalentPoolMemberListPage {
 	members: TalentPoolMember[];
-	totalCount: number;
 	page: number;
 	pageSize: number;
-};
+	totalCount: number;
+}
 
-export type TalentProfileMobilityListPage = {
+export interface TalentProfileMobilityListPage {
 	mobilities: TalentProfileMobility[];
-};
+}
 
-export type TalentCriticalRoleReadinessListPage = {
+export interface TalentCriticalRoleReadinessListPage {
 	readinessRecords: TalentCriticalRoleReadiness[];
-};
+}
 
-export type TalentProfileAssessmentListPage = {
+export interface TalentProfileAssessmentListPage {
 	assessments: TalentProfileAssessment[];
-};
+}
 
-export type CareerPlan = {
+export interface CareerPlan {
+	acknowledgedAt: Date | null;
+	code: string;
+	createdAt: Date;
+	createdBy: string;
+	employeeId: HumanResourcesEmployeeId;
 	id: HumanResourcesCareerPlanId;
 	organizationId: string;
-	employeeId: HumanResourcesEmployeeId;
 	ownerUserId: string;
-	code: string;
-	title: string;
 	status: CareerPlanStatus;
-	acknowledgedAt: Date | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type CareerPlanAction = {
-	id: HumanResourcesCareerPlanActionId;
-	organizationId: string;
-	careerPlanId: HumanResourcesCareerPlanId;
 	title: string;
-	dueOn: string | null;
-	status: CareerPlanActionStatus;
-	learningAssignmentId: HumanResourcesLearningAssignmentId | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
+
+export interface CareerPlanAction {
+	careerPlanId: HumanResourcesCareerPlanId;
+	createdAt: Date;
+	createdBy: string;
+	dueOn: string | null;
+	id: HumanResourcesCareerPlanActionId;
+	learningAssignmentId: HumanResourcesLearningAssignmentId | null;
+	organizationId: string;
+	status: CareerPlanActionStatus;
+	title: string;
+	updatedAt: Date;
+	updatedBy: string;
+	version: number;
+}
 
 export type CareerPlanWithActions = CareerPlan & {
 	actions: CareerPlanAction[];
 };
 
-export type CareerPlanListPage = {
+export interface CareerPlanListPage {
 	careerPlans: CareerPlan[];
-	totalCount: number;
 	page: number;
 	pageSize: number;
-};
+	totalCount: number;
+}
 
-export type SuccessionPlan = {
+export interface SuccessionPlan {
+	allowsExternalCandidates: boolean;
+	code: string;
+	createdAt: Date;
+	createdBy: string;
 	id: HumanResourcesSuccessionPlanId;
 	organizationId: string;
-	code: string;
-	title: string;
 	positionId: HumanResourcesPositionId;
 	status: SuccessionPlanStatus;
-	allowsExternalCandidates: boolean;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
+	title: string;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type SuccessionPlanListPage = {
-	successionPlans: SuccessionPlan[];
-	totalCount: number;
+export interface SuccessionPlanListPage {
 	page: number;
 	pageSize: number;
-};
+	successionPlans: SuccessionPlan[];
+	totalCount: number;
+}
 
-export type SuccessionCandidate = {
-	id: HumanResourcesSuccessionCandidateId;
-	organizationId: string;
-	successionPlanId: HumanResourcesSuccessionPlanId;
+export interface SuccessionCandidate {
+	createdAt: Date;
+	createdBy: string;
 	employeeId: HumanResourcesEmployeeId | null;
+	evidenceSummary: string;
 	externalCandidateRef: string | null;
+	id: HumanResourcesSuccessionCandidateId;
 	nominatorUserId: string;
+	organizationId: string;
 	readiness: SuccessionReadinessCode;
 	readinessEffectiveOn: string;
-	evidenceSummary: string;
 	status: SuccessionCandidateStatus;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
+	successionPlanId: HumanResourcesSuccessionPlanId;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type SuccessionCandidateListPage = {
+export interface SuccessionCandidateListPage {
 	candidates: SuccessionCandidate[];
-	totalCount: number;
 	page: number;
 	pageSize: number;
-};
+	totalCount: number;
+}
 
-export type PositionSuccessionCoverage = {
+export interface PositionSuccessionCoverage {
 	organizationId: string;
 	positionId: HumanResourcesPositionId;
-	successionPlans: SuccessionPlan[];
 	readyNowCandidateCount: number;
 	readySoonCandidateCount: number;
+	successionPlans: SuccessionPlan[];
 	totalActiveCandidateCount: number;
-};
+}
 
-export type IdempotentCompetencyRecord = {
+export interface IdempotentCompetencyRecord {
 	competency: Competency;
 	createRequestFingerprint: string;
-};
+}
 
-export type IdempotentCompetencyAssessmentRecord = {
+export interface IdempotentCompetencyAssessmentRecord {
 	assessment: CompetencyAssessment;
 	createRequestFingerprint: string;
-};
+}
 
-export type IdempotentTalentProfileRecord = {
+export interface IdempotentTalentProfileRecord {
+	createRequestFingerprint: string;
 	profile: TalentProfile;
-	createRequestFingerprint: string;
-};
+}
 
-export type IdempotentTalentPoolRecord = {
+export interface IdempotentTalentPoolRecord {
+	createRequestFingerprint: string;
 	pool: TalentPool;
-	createRequestFingerprint: string;
-};
+}
 
-export type IdempotentTalentPoolMemberRecord = {
+export interface IdempotentTalentPoolMemberRecord {
+	createRequestFingerprint: string;
 	member: TalentPoolMember;
-	createRequestFingerprint: string;
-};
+}
 
-export type IdempotentTalentProfileMobilityRecord = {
+export interface IdempotentTalentProfileMobilityRecord {
+	createRequestFingerprint: string;
 	mobility: TalentProfileMobility;
-	createRequestFingerprint: string;
-};
+}
 
-export type IdempotentTalentCriticalRoleReadinessRecord = {
+export interface IdempotentTalentCriticalRoleReadinessRecord {
+	createRequestFingerprint: string;
 	readiness: TalentCriticalRoleReadiness;
-	createRequestFingerprint: string;
-};
+}
 
-export type IdempotentCareerPlanRecord = {
+export interface IdempotentCareerPlanRecord {
 	careerPlan: CareerPlan;
 	createRequestFingerprint: string;
-};
+}
 
-export type IdempotentSuccessionPlanRecord = {
-	successionPlan: SuccessionPlan;
+export interface IdempotentSuccessionPlanRecord {
 	createRequestFingerprint: string;
-};
+	successionPlan: SuccessionPlan;
+}
 
-export type IdempotentSuccessionCandidateRecord = {
+export interface IdempotentSuccessionCandidateRecord {
 	candidate: SuccessionCandidate;
 	createRequestFingerprint: string;
-};
+}
 
 // Time Management Types
-export type WorkWeekDayPatternJson = {
+export interface WorkWeekDayPatternJson {
 	dayOfWeek: 0 | 1 | 2 | 3 | 4 | 5 | 6;
 	isWorkingDay: boolean;
-	standardStartTime: string | null;
 	standardEndTime: string | null;
 	standardMinutes: number | null;
-};
+	standardStartTime: string | null;
+}
 
 export type WorkCalendarDateOverrideKind =
 	| "holiday"
@@ -2318,59 +2316,59 @@ export type WorkCalendarDateOverrideKind =
 	| "replacement_workday"
 	| "closure";
 
-export type WorkCalendar = {
-	id: HumanResourcesWorkCalendarId;
-	organizationId: string;
-	code: string;
-	name: string;
-	timezone: string;
+export interface WorkCalendar {
 	calendarVersion: string;
-	workWeek: readonly WorkWeekDayPatternJson[];
+	code: string;
+	createdAt: Date;
+	createdBy: string;
+	effectiveFrom: string;
+	effectiveTo: string | null;
+	id: HumanResourcesWorkCalendarId;
+	name: string;
+	organizationId: string;
 	standardHoursPerDay: string;
 	status: "active" | "superseded" | "archived";
-	effectiveFrom: string;
-	effectiveTo: string | null;
 	supersedesCalendarId: HumanResourcesWorkCalendarId | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
+	timezone: string;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+	workWeek: readonly WorkWeekDayPatternJson[];
+}
 
-export type WorkCalendarHolidayRecord = {
-	id: HumanResourcesWorkCalendarHolidayId;
-	organizationId: string;
+export interface WorkCalendarHolidayRecord {
 	calendarId: HumanResourcesWorkCalendarId;
+	createdAt: Date;
+	createdBy: string;
+	expectedMinutes: number | null;
 	holidayDate: string;
+	id: HumanResourcesWorkCalendarHolidayId;
+	isWorkingDay: boolean;
+	jurisdiction: string | null;
 	label: string | null;
 	locationCode: string | null;
-	jurisdiction: string | null;
-	overrideKind: WorkCalendarDateOverrideKind;
-	isWorkingDay: boolean;
-	expectedMinutes: number | null;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type EmploymentCalendarAssignment = {
-	id: HumanResourcesEmploymentCalendarAssignmentId;
 	organizationId: string;
-	employeeId: HumanResourcesEmployeeId;
-	employmentId: HumanResourcesEmploymentId;
+	overrideKind: WorkCalendarDateOverrideKind;
+	updatedAt: Date;
+	updatedBy: string;
+}
+
+export interface EmploymentCalendarAssignment {
 	calendarId: HumanResourcesWorkCalendarId;
+	createdAt: Date;
+	createdBy: string;
 	effectiveFrom: string;
 	effectiveTo: string | null;
-	locationCode: string | null;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId;
+	id: HumanResourcesEmploymentCalendarAssignmentId;
 	jurisdiction: string | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
+	locationCode: string | null;
+	organizationId: string;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
 export type WorkCalendarScopeType =
 	| "employment"
@@ -2380,20 +2378,20 @@ export type WorkCalendarScopeType =
 	| "legal_entity"
 	| "organization";
 
-export type WorkCalendarScopeAssignment = {
-	id: HumanResourcesWorkCalendarScopeAssignmentId;
-	organizationId: string;
-	scopeType: WorkCalendarScopeType;
-	scopeKey: string;
+export interface WorkCalendarScopeAssignment {
 	calendarId: HumanResourcesWorkCalendarId;
+	createdAt: Date;
+	createdBy: string;
 	effectiveFrom: string;
 	effectiveTo: string | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
+	id: HumanResourcesWorkCalendarScopeAssignmentId;
+	organizationId: string;
+	scopeKey: string;
+	scopeType: WorkCalendarScopeType;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
 export type ShiftKind =
 	| "fixed"
@@ -2409,98 +2407,98 @@ export type TimeApprovalAuthority =
 	| "payroll";
 export type TimePolicyStatus = "draft" | "active" | "superseded" | "archived";
 
-export type TimePolicy = {
-	id: HumanResourcesTimePolicyId;
-	organizationId: string;
-	code: string;
-	name: string;
-	status: TimePolicyStatus;
-	effectiveFrom: string;
-	effectiveTo: string | null;
-	minimumRestMinutes: number;
+export interface TimePolicy {
+	approvalSteps: readonly TimeApprovalAuthority[];
 	automaticBreakAfterMinutes: number | null;
 	automaticBreakMinutes: number;
-	approvalSteps: readonly TimeApprovalAuthority[];
-	supersedesPolicyId: HumanResourcesTimePolicyId | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
+	code: string;
 	createdAt: Date;
+	createdBy: string;
+	effectiveFrom: string;
+	effectiveTo: string | null;
+	id: HumanResourcesTimePolicyId;
+	minimumRestMinutes: number;
+	name: string;
+	organizationId: string;
+	status: TimePolicyStatus;
+	supersedesPolicyId: HumanResourcesTimePolicyId | null;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type TimePolicyAssignment = {
+export interface TimePolicyAssignment {
+	createdAt: Date;
+	createdBy: string;
+	effectiveFrom: string;
+	effectiveTo: string | null;
+	employmentId: HumanResourcesEmploymentId;
 	id: HumanResourcesTimePolicyAssignmentId;
 	organizationId: string;
 	policyId: HumanResourcesTimePolicyId;
-	employmentId: HumanResourcesEmploymentId;
-	effectiveFrom: string;
-	effectiveTo: string | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type TimeApprovalAuthorityAssignment = {
-	id: HumanResourcesTimeApprovalAuthorityAssignmentId;
-	organizationId: string;
+export interface TimeApprovalAuthorityAssignment {
 	actorUserId: string;
 	authority: TimeApprovalAuthority;
+	createdAt: Date;
+	createdBy: string;
 	effectiveFrom: string;
 	effectiveTo: string | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
+	id: HumanResourcesTimeApprovalAuthorityAssignmentId;
+	organizationId: string;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
 export type ShiftStatus = "draft" | "active" | "superseded" | "inactive";
 
-export type Shift = {
-	id: HumanResourcesShiftId;
-	organizationId: string;
+export interface Shift {
 	code: string;
-	name: string;
-	shiftKind: ShiftKind;
-	startLocal: string;
+	createdAt: Date;
+	createdBy: string;
+	earliestClockInLocal: string | null;
+	effectiveFrom: string;
+	effectiveTo: string | null;
 	endLocal: string;
-	isOvernight: boolean;
 	expectedMinutes: number;
 	graceEarlyMinutes: number;
 	graceLateMinutes: number;
-	minDurationMinutes: number | null;
-	maxDurationMinutes: number | null;
-	earliestClockInLocal: string | null;
+	id: HumanResourcesShiftId;
+	isOvernight: boolean;
 	latestClockOutLocal: string | null;
-	overtimeEligible: boolean;
-	timezone: string | null;
 	locationKey: string | null;
-	status: ShiftStatus;
-	effectiveFrom: string;
-	effectiveTo: string | null;
-	supersedesShiftId: HumanResourcesShiftId | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type ShiftBreak = {
-	id: HumanResourcesShiftBreakId;
+	maxDurationMinutes: number | null;
+	minDurationMinutes: number | null;
+	name: string;
 	organizationId: string;
-	shiftId: HumanResourcesShiftId;
+	overtimeEligible: boolean;
+	shiftKind: ShiftKind;
+	startLocal: string;
+	status: ShiftStatus;
+	supersedesShiftId: HumanResourcesShiftId | null;
+	timezone: string | null;
+	updatedAt: Date;
+	updatedBy: string;
+	version: number;
+}
+
+export interface ShiftBreak {
 	breakOrder: number;
-	startOffsetMinutes: number | null;
+	createdAt: Date;
 	durationMinutes: number;
+	id: HumanResourcesShiftBreakId;
 	isPaid: boolean;
 	label: string | null;
-	createdAt: Date;
+	organizationId: string;
+	shiftId: HumanResourcesShiftId;
+	startOffsetMinutes: number | null;
 	updatedAt: Date;
-};
+}
 
 export type ShiftAssignmentPublicationStatus =
 	| "planned"
@@ -2509,36 +2507,36 @@ export type ShiftAssignmentPublicationStatus =
 	| "cancelled"
 	| "completed";
 
-export type ShiftAssignment = {
-	id: HumanResourcesShiftAssignmentId;
-	organizationId: string;
+export interface ShiftAssignment {
+	assignmentSource: string;
+	createdAt: Date;
+	createdBy: string;
 	employeeId: HumanResourcesEmployeeId;
 	employmentId: HumanResourcesEmploymentId | null;
-	shiftId: HumanResourcesShiftId;
-	scheduledDate: string;
-	startsAt: Date;
 	endsAt: Date;
+	id: HumanResourcesShiftAssignmentId;
 	locationKey: string | null;
-	timezone: string;
+	organizationId: string;
 	publicationStatus: ShiftAssignmentPublicationStatus;
-	assignmentSource: string;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
+	scheduledDate: string;
+	shiftId: HumanResourcesShiftId;
+	startsAt: Date;
+	timezone: string;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type ShiftAssignmentSegment = {
+export interface ShiftAssignmentSegment {
+	assignmentId: HumanResourcesShiftAssignmentId;
+	createdAt: Date;
+	endsAt: Date;
 	id: HumanResourcesShiftAssignmentSegmentId;
 	organizationId: string;
-	assignmentId: HumanResourcesShiftAssignmentId;
 	segmentOrder: number;
 	startsAt: Date;
-	endsAt: Date;
-	createdAt: Date;
 	updatedAt: Date;
-};
+}
 
 export type AttendanceEventType =
 	| "clock_in"
@@ -2554,94 +2552,94 @@ export type AttendanceEventSource =
 	| "system"
 	| "manual";
 
-export type AttendanceEvent = {
-	id: HumanResourcesAttendanceEventId;
-	organizationId: string;
+export interface AttendanceEvent {
+	capturedNotes: string | null;
+	capturedOccurredAt: Date | null;
+	createdAt: Date;
+	createdBy: string;
+	deviceMetadata: Record<string, unknown> | null;
 	employeeId: HumanResourcesEmployeeId;
 	employmentId: HumanResourcesEmploymentId | null;
-	shiftAssignmentId: HumanResourcesShiftAssignmentId | null;
 	eventType: AttendanceEventType;
-	capturedOccurredAt: Date | null;
-	occurredAt: Date;
-	sourceSequence: number;
-	sourceTimezone: string;
+	id: HumanResourcesAttendanceEventId;
 	localWorkDate: string;
+	locationKey: string | null;
+	notes: string | null;
+	occurredAt: Date;
+	organizationId: string;
+	payloadChecksum: string | null;
+	shiftAssignmentId: HumanResourcesShiftAssignmentId | null;
 	source: AttendanceEventSource;
 	sourceReference: string | null;
-	locationKey: string | null;
-	deviceMetadata: Record<string, unknown> | null;
-	payloadChecksum: string | null;
-	capturedNotes: string | null;
-	notes: string | null;
+	sourceSequence: number;
+	sourceTimezone: string;
+	updatedAt: Date;
+	updatedBy: string;
+	version: number;
 	voidedAt: Date | null;
 	voidReason: string | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
-};
+}
 
-export type AttendanceAdjustment = {
-	id: HumanResourcesAttendanceAdjustmentId;
-	organizationId: string;
-	eventId: HumanResourcesAttendanceEventId;
-	sequence: number | null;
-	eventVersionBefore: number | null;
-	eventVersionAfter: number | null;
-	previousOccurredAt: Date;
-	newOccurredAt: Date;
-	previousNotes: string | null;
-	newNotes: string | null;
-	adjustmentReason: string;
-	evidenceReference: string | null;
+export interface AttendanceAdjustment {
 	actorUserId: string;
+	adjustmentReason: string;
 	correlationId: string | null;
 	createdAt: Date;
-};
+	eventId: HumanResourcesAttendanceEventId;
+	eventVersionAfter: number | null;
+	eventVersionBefore: number | null;
+	evidenceReference: string | null;
+	id: HumanResourcesAttendanceAdjustmentId;
+	newNotes: string | null;
+	newOccurredAt: Date;
+	organizationId: string;
+	previousNotes: string | null;
+	previousOccurredAt: Date;
+	sequence: number | null;
+}
 
 export type AttendanceImportBatchStatus = "completed" | "partial" | "failed";
 
-export type AttendanceImportAcceptedRow = {
-	rowIndex: number;
-	sourceReference: string;
+export interface AttendanceImportAcceptedRow {
 	eventId: HumanResourcesAttendanceEventId;
-};
-
-export type AttendanceImportSkippedRow = {
 	rowIndex: number;
 	sourceReference: string;
+}
+
+export interface AttendanceImportSkippedRow {
 	eventId: HumanResourcesAttendanceEventId;
 	reason: "already_imported";
-};
-
-export type AttendanceImportRejectedRow = {
 	rowIndex: number;
-	sourceReference: string | null;
+	sourceReference: string;
+}
+
+export interface AttendanceImportRejectedRow {
 	errorCode: string;
 	errorMessage: string;
-};
+	rowIndex: number;
+	sourceReference: string | null;
+}
 
-export type AttendanceImportResult = {
-	importBatchId: string;
+export interface AttendanceImportResult {
+	accepted: readonly AttendanceImportAcceptedRow[];
 	batchId: string;
+	importBatchId: string;
+	nextCursor?: string | undefined;
+	rejected: readonly AttendanceImportRejectedRow[];
+	skipped: readonly AttendanceImportSkippedRow[];
 	sourceKey: string;
 	status: AttendanceImportBatchStatus;
-	accepted: readonly AttendanceImportAcceptedRow[];
-	skipped: readonly AttendanceImportSkippedRow[];
-	rejected: readonly AttendanceImportRejectedRow[];
 	totals: {
 		accepted: number;
 		skipped: number;
 		rejected: number;
 	};
-	nextCursor?: string | undefined;
-};
+}
 
-export type IdempotentAttendanceImportBatchRecord = {
-	result: AttendanceImportResult;
+export interface IdempotentAttendanceImportBatchRecord {
 	createRequestFingerprint: string;
-};
+	result: AttendanceImportResult;
+}
 
 export type AttendanceSessionResolutionStatus =
 	| "incomplete"
@@ -2649,19 +2647,18 @@ export type AttendanceSessionResolutionStatus =
 	| "needs_review"
 	| "voided";
 
-export type AttendanceSession = {
-	id: HumanResourcesAttendanceSessionId;
-	organizationId: string;
+export interface AttendanceSession {
+	breakMinutes: number;
+	createdAt: Date;
+	createdBy: string;
 	employeeId: HumanResourcesEmployeeId;
 	employmentId: HumanResourcesEmploymentId | null;
-	shiftAssignmentId: HumanResourcesShiftAssignmentId | null;
-	localWorkDate: string;
-	timezone: string;
-	firstClockInAt: Date | null;
 	finalClockOutAt: Date | null;
-	breakMinutes: number;
-	workedMinutes: number;
+	firstClockInAt: Date | null;
 	grossMinutes: number;
+	id: HumanResourcesAttendanceSessionId;
+	localWorkDate: string;
+	organizationId: string;
 	provenance: {
 		automaticBreak: {
 			policyId: HumanResourcesTimePolicyId;
@@ -2675,32 +2672,33 @@ export type AttendanceSession = {
 			  }[]
 			| undefined;
 	};
-	resolutionStatus: AttendanceSessionResolutionStatus;
 	requiresReview: boolean;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
+	resolutionStatus: AttendanceSessionResolutionStatus;
+	shiftAssignmentId: HumanResourcesShiftAssignmentId | null;
+	timezone: string;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+	workedMinutes: number;
+}
 
-export type AttendanceBreakWaiverDecision = {
+export interface AttendanceBreakWaiverDecision {
+	actorUserId: string;
+	authority: TimeApprovalAuthority;
+	authorityAssignmentId: HumanResourcesTimeApprovalAuthorityAssignmentId;
+	automaticBreakMinutes: number;
+	correlationId: string;
+	createdAt: Date;
+	decidedAt: Date;
+	evidenceReference: string;
 	id: HumanResourcesAttendanceBreakWaiverDecisionId;
 	organizationId: string;
-	sessionId: HumanResourcesAttendanceSessionId;
 	policyId: HumanResourcesTimePolicyId;
-	authorityAssignmentId: HumanResourcesTimeApprovalAuthorityAssignmentId;
-	authority: TimeApprovalAuthority;
-	actorUserId: string;
 	reason: string;
-	evidenceReference: string;
-	automaticBreakMinutes: number;
 	recordedBreakMinutes: number;
+	sessionId: HumanResourcesAttendanceSessionId;
 	sessionVersion: number;
-	correlationId: string;
-	decidedAt: Date;
-	createdAt: Date;
-};
+}
 
 export type AttendanceRecord = AttendanceSession;
 
@@ -2718,46 +2716,46 @@ export type AttendanceExceptionType =
 	| "location_mismatch"
 	| "overtime_candidate";
 
-export type AttendanceException = {
+export interface AttendanceException {
+	createdAt: Date;
+	createdBy: string;
+	employeeId: HumanResourcesEmployeeId;
+	eventId: HumanResourcesAttendanceEventId | null;
+	evidenceReference: string | null;
+	exceptionType: AttendanceExceptionType;
 	id: HumanResourcesAttendanceExceptionId;
 	organizationId: string;
-	employeeId: HumanResourcesEmployeeId;
-	sessionId: HumanResourcesAttendanceSessionId | null;
-	eventId: HumanResourcesAttendanceEventId | null;
-	shiftAssignmentId: HumanResourcesShiftAssignmentId | null;
-	exceptionType: AttendanceExceptionType;
-	severity: "info" | "warning" | "critical";
-	reviewStatus: "open" | "in_review" | "excused" | "rejected" | "resolved";
+	remarks: string | null;
 	resolution: string | null;
 	reviewerUserId: string | null;
-	evidenceReference: string | null;
-	remarks: string | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
+	reviewStatus: "open" | "in_review" | "excused" | "rejected" | "resolved";
+	sessionId: HumanResourcesAttendanceSessionId | null;
+	severity: "info" | "warning" | "critical";
+	shiftAssignmentId: HumanResourcesShiftAssignmentId | null;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type DailyAttendanceSummary = {
-	organizationId: string;
+export interface DailyAttendanceSummary {
+	breakMinutes: number;
 	employeeId: HumanResourcesEmployeeId;
+	events: AttendanceEvent[];
 	localWorkDate: string;
-	timezone: string;
+	organizationId: string;
 	scheduledAssignment: ShiftAssignment | null;
 	session: AttendanceSession | null;
-	events: AttendanceEvent[];
+	timezone: string;
 	unresolvedExceptions: AttendanceException[];
 	workedMinutes: number;
-	breakMinutes: number;
-};
+}
 
-export type TimesheetTotals = {
-	timesheetId: HumanResourcesTimesheetId;
-	totalRecordedMinutes: number;
-	totalApprovedMinutes: number;
+export interface TimesheetTotals {
 	entryCount: number;
-};
+	timesheetId: HumanResourcesTimesheetId;
+	totalApprovedMinutes: number;
+	totalRecordedMinutes: number;
+}
 
 export type TimesheetStatus =
 	| "draft"
@@ -2768,49 +2766,49 @@ export type TimesheetStatus =
 	| "locked"
 	| "superseded";
 
-export type Timesheet = {
-	id: HumanResourcesTimesheetId;
-	organizationId: string;
-	employeeId: HumanResourcesEmployeeId;
-	employmentId: HumanResourcesEmploymentId | null;
-	periodStart: string;
-	periodEnd: string;
-	status: TimesheetStatus;
-	totalRecordedMinutes: number;
-	totalApprovedMinutes: number;
-	submittedAt: Date | null;
-	submissionReference: string | null;
+export interface Timesheet {
 	approvalPolicyId: HumanResourcesTimePolicyId | null;
-	requiredApprovalSteps: readonly TimeApprovalAuthority[];
-	completedApprovalSteps: number;
 	approvedAt: Date | null;
 	approvedBy: string | null;
 	approverNotes: string | null;
-	rejectionReason: string | null;
-	lockedAt: Date | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
+	completedApprovalSteps: number;
 	createdAt: Date;
+	createdBy: string;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId | null;
+	id: HumanResourcesTimesheetId;
+	lockedAt: Date | null;
+	organizationId: string;
+	periodEnd: string;
+	periodStart: string;
+	rejectionReason: string | null;
+	requiredApprovalSteps: readonly TimeApprovalAuthority[];
+	status: TimesheetStatus;
+	submissionReference: string | null;
+	submittedAt: Date | null;
+	totalApprovedMinutes: number;
+	totalRecordedMinutes: number;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type TimesheetApprovalDecision = {
+export interface TimesheetApprovalDecision {
+	actorUserId: string;
+	authority: TimeApprovalAuthority;
+	authorityAssignmentId: HumanResourcesTimeApprovalAuthorityAssignmentId;
+	comment: string | null;
+	correlationId: string;
+	createdAt: Date;
+	decidedAt: Date;
 	id: HumanResourcesTimesheetApprovalDecisionId;
 	organizationId: string;
-	timesheetId: HumanResourcesTimesheetId;
-	submissionReference: string;
 	policyId: HumanResourcesTimePolicyId | null;
-	authorityAssignmentId: HumanResourcesTimeApprovalAuthorityAssignmentId;
 	stepIndex: number;
-	authority: TimeApprovalAuthority;
-	actorUserId: string;
-	comment: string | null;
+	submissionReference: string;
+	timesheetId: HumanResourcesTimesheetId;
 	versionApproved: number;
-	correlationId: string;
-	decidedAt: Date;
-	createdAt: Date;
-};
+}
 
 export type TimesheetEntrySourceType =
 	| "attendance"
@@ -2831,32 +2829,32 @@ export type TimesheetEntryTimeType =
 	| "standby"
 	| "unpaid";
 
-export type TimesheetEntry = {
-	id: HumanResourcesTimesheetEntryId;
-	organizationId: string;
-	timesheetId: HumanResourcesTimesheetId;
-	employeeId: HumanResourcesEmployeeId;
-	workDate: string;
-	timezone: string;
-	sourceType: TimesheetEntrySourceType;
-	sourceReference: string | null;
-	timeType: TimesheetEntryTimeType;
-	startedAt: Date | null;
-	endedAt: Date | null;
-	recordedMinutes: number;
+export interface TimesheetEntry {
+	approvalReference: string | null;
 	approvedMinutes: number;
 	costCenterId: string | null;
-	projectId: string | null;
-	locationId: string | null;
-	departmentId: string | null;
-	approvalReference: string | null;
-	evidenceReference: string | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
 	createdAt: Date;
+	createdBy: string;
+	departmentId: string | null;
+	employeeId: HumanResourcesEmployeeId;
+	endedAt: Date | null;
+	evidenceReference: string | null;
+	id: HumanResourcesTimesheetEntryId;
+	locationId: string | null;
+	organizationId: string;
+	projectId: string | null;
+	recordedMinutes: number;
+	sourceReference: string | null;
+	sourceType: TimesheetEntrySourceType;
+	startedAt: Date | null;
+	timesheetId: HumanResourcesTimesheetId;
+	timeType: TimesheetEntryTimeType;
+	timezone: string;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+	workDate: string;
+}
 
 export type OvertimeType =
 	| "weekday_overtime"
@@ -2874,198 +2872,198 @@ export type OvertimeRequestStatus =
 	| "verified"
 	| "cancelled";
 
-export type OvertimeRequest = {
-	id: HumanResourcesOvertimeRequestId;
-	organizationId: string;
+export interface OvertimeRequest {
+	actualMinutes: number | null;
+	approvedMaximumMinutes: number | null;
+	createdAt: Date;
+	createdBy: string;
 	employeeId: HumanResourcesEmployeeId;
 	employmentId: HumanResourcesEmploymentId | null;
+	evidenceReference: string | null;
+	id: HumanResourcesOvertimeRequestId;
+	organizationId: string;
 	overtimeType: OvertimeType;
-	requestedStartsAt: Date;
-	requestedEndsAt: Date;
-	requestedMinutes: number;
-	approvedMaximumMinutes: number | null;
-	actualMinutes: number | null;
 	payrollApprovedMinutes: number | null;
 	reason: string;
-	evidenceReference: string | null;
+	requestedEndsAt: Date;
+	requestedMinutes: number;
+	requestedStartsAt: Date;
 	status: OvertimeRequestStatus;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
 	updatedAt: Date;
-};
+	updatedBy: string;
+	version: number;
+}
 
 /**
  * Approved payroll handoff minute aggregates for a locked timesheet.
  * Does not carry timezone — read underlying `TimesheetEntry.timezone` / employment calendar for
  * display timezone. Stored attendance instants remain UTC.
  */
-export type ApprovedTimeHandoff = {
-	organizationId: string;
+export interface ApprovedTimeHandoff {
+	approvalReference: string;
+	approvedAt: string;
 	employeeId: HumanResourcesEmployeeId;
 	employmentId: HumanResourcesEmploymentId | null;
-	periodStart: string;
-	periodEnd: string;
-	regularMinutes: number;
+	nightMinutes: number;
+	organizationId: string;
 	overtime: readonly {
 		type: OvertimeType;
 		minutes: number;
 		payrollApprovedMinutes?: number | null;
 	}[];
-	publicHolidayMinutes: number;
-	restDayMinutes: number;
-	nightMinutes: number;
-	unpaidMinutes: number;
 	paidLeaveMinutes: number;
-	unpaidLeaveMinutes: number;
+	periodEnd: string;
+	periodStart: string;
+	publicHolidayMinutes: number;
+	regularMinutes: number;
+	restDayMinutes: number;
 	timesheetId: HumanResourcesTimesheetId;
 	timesheetVersion: number;
-	approvedAt: string;
-	approvalReference: string;
-};
+	unpaidLeaveMinutes: number;
+	unpaidMinutes: number;
+}
 
-export type IdempotentShiftRecord = {
+export interface IdempotentShiftRecord {
+	createRequestFingerprint: string;
 	shift: Shift;
-	createRequestFingerprint: string;
-};
+}
 
-export type IdempotentAttendanceEventRecord = {
+export interface IdempotentAttendanceEventRecord {
+	createRequestFingerprint: string;
 	event: AttendanceEvent;
-	createRequestFingerprint: string;
-};
+}
 
-export type IdempotentAttendanceSessionRecord = {
-	session: AttendanceSession;
+export interface IdempotentAttendanceSessionRecord {
 	createRequestFingerprint: string;
-};
+	session: AttendanceSession;
+}
 
 export type IdempotentAttendanceRecordRecord =
 	IdempotentAttendanceSessionRecord;
 
-export type IdempotentTimesheetRecord = {
+export interface IdempotentTimesheetRecord {
+	createRequestFingerprint: string;
 	timesheet: Timesheet;
-	createRequestFingerprint: string;
-};
+}
 
-export type IdempotentOvertimeRequestRecord = {
+export interface IdempotentOvertimeRequestRecord {
+	createRequestFingerprint: string;
 	request: OvertimeRequest;
-	createRequestFingerprint: string;
-};
+}
 
-export type IdempotentShiftAssignmentRecord = {
+export interface IdempotentShiftAssignmentRecord {
 	assignment: ShiftAssignment;
 	createRequestFingerprint: string;
-};
+}
 
-export type IdempotentWorkCalendarRecord = {
+export interface IdempotentWorkCalendarRecord {
 	calendar: WorkCalendar;
 	createRequestFingerprint: string;
-};
+}
 
-export type ShiftCreateRecord = {
-	organizationId: string;
+export interface ShiftCreateRecord {
 	code: string;
-	name: string;
-	shiftKind: ShiftKind;
-	startLocal: string;
+	correlationId: string;
+	createdBy: string;
+	createRequestFingerprint: string;
+	earliestClockInLocal: string | null;
+	effectiveFrom: string;
+	effectiveTo: string | null;
 	endLocal: string;
-	isOvernight: boolean;
 	expectedMinutes: number;
 	graceEarlyMinutes: number;
 	graceLateMinutes: number;
-	minDurationMinutes: number | null;
-	maxDurationMinutes: number | null;
-	earliestClockInLocal: string | null;
-	latestClockOutLocal: string | null;
-	overtimeEligible: boolean;
-	timezone: string | null;
-	locationKey: string | null;
-	effectiveFrom: string;
-	effectiveTo: string | null;
 	idempotencyKey: string;
-	createRequestFingerprint: string;
-	createdBy: string;
-	correlationId: string;
-};
-
-export type AttendanceEventRecordInput = {
+	isOvernight: boolean;
+	latestClockOutLocal: string | null;
+	locationKey: string | null;
+	maxDurationMinutes: number | null;
+	minDurationMinutes: number | null;
+	name: string;
 	organizationId: string;
+	overtimeEligible: boolean;
+	shiftKind: ShiftKind;
+	startLocal: string;
+	timezone: string | null;
+}
+
+export interface AttendanceEventRecordInput {
+	correlationId: string;
+	createdBy: string;
+	createRequestFingerprint: string;
+	deviceMetadata?: Record<string, unknown> | null | undefined;
 	employeeId: HumanResourcesEmployeeId;
 	employmentId?: HumanResourcesEmploymentId | null | undefined;
-	shiftAssignmentId?: HumanResourcesShiftAssignmentId | null | undefined;
 	eventType: AttendanceEventType;
-	occurredAt: Date;
-	sourceTimezone: string;
+	idempotencyKey: string;
 	localWorkDate: string;
+	locationKey?: string | null | undefined;
+	notes?: string | null | undefined;
+	occurredAt: Date;
+	organizationId: string;
+	payloadChecksum?: string | null | undefined;
+	shiftAssignmentId?: HumanResourcesShiftAssignmentId | null | undefined;
 	source: AttendanceEventSource;
 	sourceReference?: string | null | undefined;
-	locationKey?: string | null | undefined;
-	deviceMetadata?: Record<string, unknown> | null | undefined;
-	payloadChecksum?: string | null | undefined;
-	notes?: string | null | undefined;
 	sourceSequence?: number | undefined;
-	idempotencyKey: string;
-	createRequestFingerprint: string;
-	createdBy: string;
-	correlationId: string;
-};
+	sourceTimezone: string;
+}
 
-export type AttendanceImportEventRowInput = {
+export interface AttendanceImportEventRowInput {
+	deviceMetadata?: Record<string, unknown> | null | undefined;
 	employeeId: HumanResourcesEmployeeId;
 	employmentId?: HumanResourcesEmploymentId | null | undefined;
-	shiftAssignmentId?: HumanResourcesShiftAssignmentId | null | undefined;
 	eventType: AttendanceEventType;
-	occurredAt: Date;
-	sourceTimezone: string;
 	localWorkDate: string;
-	sourceReference: string;
 	locationKey?: string | null | undefined;
-	deviceMetadata?: Record<string, unknown> | null | undefined;
-	payloadChecksum?: string | null | undefined;
 	notes?: string | null | undefined;
+	occurredAt: Date;
+	payloadChecksum?: string | null | undefined;
+	shiftAssignmentId?: HumanResourcesShiftAssignmentId | null | undefined;
+	sourceReference: string;
 	sourceSequence?: number | undefined;
-};
+	sourceTimezone: string;
+}
 
-export type AttendanceImportBatchInput = {
-	organizationId: string;
+export interface AttendanceImportBatchInput {
 	batchId: string;
-	sourceKey: string;
+	correlationId?: string | undefined;
+	createdBy: string;
+	createRequestFingerprint: string;
 	events: readonly AttendanceImportEventRowInput[];
 	idempotencyKey: string;
-	createRequestFingerprint: string;
-	createdBy: string;
-	correlationId?: string | undefined;
 	nextCursor?: string | undefined;
-};
-
-export type AttendanceSessionResolveInput = {
 	organizationId: string;
-	employeeId: HumanResourcesEmployeeId;
-	employmentId: HumanResourcesEmploymentId;
-	localWorkDate: string;
-	timezone: string;
+	sourceKey: string;
+}
+
+export interface AttendanceSessionResolveInput {
 	automaticBreakPolicy: {
 		policyId: HumanResourcesTimePolicyId;
 		afterMinutes: number;
 		deductionMinutes: number;
 	} | null;
-	idempotencyKey: string;
-	createRequestFingerprint: string;
-	createdBy: string;
 	correlationId: string;
-};
+	createdBy: string;
+	createRequestFingerprint: string;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId;
+	idempotencyKey: string;
+	localWorkDate: string;
+	organizationId: string;
+	timezone: string;
+}
 
 export type AttendanceRecordGenerateInput = AttendanceSessionResolveInput;
 
-export type TimesheetCreateRecord = {
-	organizationId: string;
+export interface TimesheetCreateRecord {
+	correlationId: string;
+	createdBy: string;
+	createRequestFingerprint: string;
 	employeeId: HumanResourcesEmployeeId;
 	employmentId?: HumanResourcesEmploymentId | null;
-	periodStart: string;
-	periodEnd: string;
 	idempotencyKey: string;
-	createRequestFingerprint: string;
-	createdBy: string;
-	correlationId: string;
-};
+	organizationId: string;
+	periodEnd: string;
+	periodStart: string;
+}

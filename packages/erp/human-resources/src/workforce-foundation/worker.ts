@@ -28,7 +28,7 @@ import type {
 	WorkerClassificationAtAsOf,
 } from "./types";
 
-export async function createWorker(
+export function createWorker(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Worker>> {
@@ -103,7 +103,7 @@ export async function createWorker(
 	});
 }
 
-export async function changeWorkerType(
+export function changeWorkerType(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeWorker | NonEmployeeWorker>> {
@@ -111,7 +111,7 @@ export async function changeWorkerType(
 		schema: changeWorkerTypeInputSchema,
 		invalidMessage: "Invalid worker type change input",
 		command: HUMAN_RESOURCES_COMMAND_WORKER_CHANGE_TYPE,
-		execute: async (data, { store, ports }) => {
+		execute: (data, { store, ports }) => {
 			const shared = {
 				organizationId: data.organizationId,
 				workerId: data.workerId,
@@ -146,7 +146,7 @@ export async function changeWorkerType(
 	});
 }
 
-export async function changeWorkerStatus(
+export function changeWorkerStatus(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Worker>> {
@@ -154,8 +154,8 @@ export async function changeWorkerStatus(
 		schema: changeWorkerStatusInputSchema,
 		invalidMessage: "Invalid worker status change input",
 		command: HUMAN_RESOURCES_COMMAND_WORKER_CHANGE_STATUS,
-		execute: async (data, { store, ports }) => {
-			return store.changeWorkerStatus(
+		execute: async (data, { store, ports }) =>
+			store.changeWorkerStatus(
 				{
 					organizationId: data.organizationId,
 					workerId: data.workerId,
@@ -171,12 +171,11 @@ export async function changeWorkerStatus(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_WORKER_CHANGE_STATUS,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function getWorkerById(
+export function getWorkerById(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Worker>> {
@@ -200,7 +199,7 @@ export async function getWorkerById(
 	});
 }
 
-export async function getWorkerAsOf(
+export function getWorkerAsOf(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<WorkerClassificationAtAsOf>> {

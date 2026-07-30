@@ -22,7 +22,7 @@ import {
 } from "../shared/setup-command";
 import type { PayrollPeriod } from "../types";
 
-export async function createPayrollPeriod(
+export function createPayrollPeriod(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollPeriod>> {
@@ -30,7 +30,7 @@ export async function createPayrollPeriod(
 		schema: createPayrollPeriodInputSchema,
 		invalidMessage: "Invalid payroll period create input",
 		command: PAYROLL_COMMAND_SETUP_PERIOD_CREATE,
-		execute: async (data, { store, ports }) => {
+		execute: (data, { store, ports }) => {
 			const fingerprint = buildPayrollCreateFingerprint({
 				payGroupId: data.payGroupId,
 				periodStart: data.periodStart,
@@ -55,7 +55,7 @@ export async function createPayrollPeriod(
 	});
 }
 
-export async function updatePayrollPeriod(
+export function updatePayrollPeriod(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollPeriod>> {
@@ -78,7 +78,7 @@ export async function updatePayrollPeriod(
 	});
 }
 
-export async function closePayrollPeriod(
+export function closePayrollPeriod(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollPeriod>> {
@@ -100,7 +100,7 @@ export async function closePayrollPeriod(
 	});
 }
 
-export async function getPayrollPeriod(
+export function getPayrollPeriod(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollPeriod | null>> {
@@ -116,7 +116,7 @@ export async function getPayrollPeriod(
 	});
 }
 
-export async function listPayrollPeriods(
+export function listPayrollPeriods(
 	input: unknown,
 	options: PayrollCommandOptions = {},
 ): Promise<Result<PayrollPeriod[]>> {

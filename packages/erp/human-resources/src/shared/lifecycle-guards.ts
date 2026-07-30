@@ -63,7 +63,9 @@ export function canTransitionLifecycleTaskStatus(
 	current: LifecycleTaskStatus,
 	next: LifecycleTaskStatus,
 ): boolean {
-	if (current === next) return false;
+	if (current === next) {
+		return false;
+	}
 	if (current === "pending" && (next === "completed" || next === "waived")) {
 		return true;
 	}
@@ -171,7 +173,9 @@ export function canTransitionTerminationStatus(
 	current: TerminationStatus,
 	next: TerminationStatus,
 ): boolean {
-	if (current === next) return false;
+	if (current === next) {
+		return false;
+	}
 	if (current === "draft" && next === "finalized") {
 		return true;
 	}
@@ -284,7 +288,9 @@ export function canTransitionOffboardingAccessRevocationStatus(
 	current: OffboardingAccessRevocationStatus,
 	next: OffboardingAccessRevocationStatus,
 ): boolean {
-	if (current === next) return false;
+	if (current === next) {
+		return false;
+	}
 	if (current === "pending" && next === "revoked") {
 		return true;
 	}
@@ -308,7 +314,9 @@ export function canTransitionOffboardingPayrollHandoffStatus(
 	current: OffboardingPayrollHandoffStatus,
 	next: OffboardingPayrollHandoffStatus,
 ): boolean {
-	if (current === next) return false;
+	if (current === next) {
+		return false;
+	}
 	if (current === "pending" && next === "ready") {
 		return true;
 	}
@@ -332,7 +340,9 @@ export function canTransitionClearanceStatus(
 	current: ClearanceStatus,
 	next: ClearanceStatus,
 ): boolean {
-	if (current === next) return false;
+	if (current === next) {
+		return false;
+	}
 	if (current === "pending" && next === "cleared") {
 		return true;
 	}
@@ -377,7 +387,9 @@ export function canTransitionOnboardingOrientationStatus(
 	current: OnboardingOrientationStatus,
 	next: OnboardingOrientationStatus,
 ): boolean {
-	if (current === next) return false;
+	if (current === next) {
+		return false;
+	}
 	return current === "pending" && next === "acknowledged";
 }
 
@@ -398,7 +410,9 @@ export function canTransitionOnboardingEquipmentHandoffStatus(
 	current: OnboardingEquipmentHandoffStatus,
 	next: OnboardingEquipmentHandoffStatus,
 ): boolean {
-	if (current === next) return false;
+	if (current === next) {
+		return false;
+	}
 	return current === "pending" && next === "handed_over";
 }
 
@@ -419,7 +433,9 @@ export function canTransitionOnboardingAccessHandoffStatus(
 	current: OnboardingAccessHandoffStatus,
 	next: OnboardingAccessHandoffStatus,
 ): boolean {
-	if (current === next) return false;
+	if (current === next) {
+		return false;
+	}
 	return current === "pending" && next === "granted";
 }
 

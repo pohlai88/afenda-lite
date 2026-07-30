@@ -55,6 +55,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 afterEach(cleanup);
 
+const noop = () => undefined;
+const getNamedRowId = (row: { name: string }) => String(row.name);
+
 async function expectNoA11yViolations(container: HTMLElement) {
 	const results = await axe.run(container, {
 		rules: {
@@ -62,6 +65,7 @@ async function expectNoA11yViolations(container: HTMLElement) {
 			"color-contrast": { enabled: false },
 		},
 	});
+	// biome-ignore lint/suspicious/noMisplacedAssertion: This helper is awaited only from test bodies.
 	expect(
 		results.violations,
 		JSON.stringify(results.violations, null, 2),
@@ -80,7 +84,6 @@ describe("@afenda/ui-system — axe a11y suite", () => {
 		const { container } = render(
 			<AppShell
 				header={{ title: "Dashboard" }}
-				themeConfig={{ brand: { name: "Afenda", homeHref: "/" } }}
 				navConfig={{
 					currentPath: "/dashboard",
 					linkComponent: TestLink,
@@ -100,6 +103,7 @@ describe("@afenda/ui-system — axe a11y suite", () => {
 					],
 				}}
 				showScrollToTop={false}
+				themeConfig={{ brand: { name: "Afenda", homeHref: "/" } }}
 			>
 				<h1>Dashboard workspace</h1>
 			</AppShell>,
@@ -139,7 +143,6 @@ describe("@afenda/ui-system — axe a11y suite", () => {
 		const onDecision = vi.fn();
 		render(
 			<NotificationDropdown
-				trigger={<Button type="button">Open notifications</Button>}
 				notifications={[
 					{
 						id: "notification-1",
@@ -152,6 +155,7 @@ describe("@afenda/ui-system — axe a11y suite", () => {
 					},
 				]}
 				onDecision={onDecision}
+				trigger={<Button type="button">Open notifications</Button>}
 			/>,
 		);
 		await user.click(
@@ -167,7 +171,6 @@ describe("@afenda/ui-system — axe a11y suite", () => {
 		const user = userEvent.setup();
 		render(
 			<ActivityDialog
-				trigger={<Button type="button">Open activity</Button>}
 				activities={[
 					{
 						kind: "attachment",
@@ -178,6 +181,7 @@ describe("@afenda/ui-system — axe a11y suite", () => {
 						fileName: "bank-reconciliation.pdf",
 					},
 				]}
+				trigger={<Button type="button">Open activity</Button>}
 			/>,
 		);
 
@@ -288,12 +292,12 @@ describe("@afenda/ui-system — axe a11y suite", () => {
 	it("FormField with Input has no serious violations", async () => {
 		const { container } = render(
 			<FormField
-				label="Email"
 				description="Work email address"
 				error="Email is required"
+				label="Email"
 				required
 			>
-				<Input type="email" defaultValue="" />
+				<Input defaultValue="" type="email" />
 			</FormField>,
 		);
 		await expectNoA11yViolations(container);
@@ -303,8 +307,8 @@ describe("@afenda/ui-system — axe a11y suite", () => {
 		const { container } = render(
 			<div>
 				<FormError message="Email is required" />
-				<FormError variant="warning" message="Password should be stronger" />
-				<FormError variant="info" message="Check your connection" />
+				<FormError message="Password should be stronger" variant="warning" />
+				<FormError message="Check your connection" variant="info" />
 			</div>,
 		);
 		await expectNoA11yViolations(container);
@@ -328,13 +332,13 @@ describe("@afenda/ui-system — axe a11y suite", () => {
 	it("Combobox closed tree has no serious violations", async () => {
 		const { container } = render(
 			<Combobox
+				onValueChange={noop}
 				options={[
 					{ value: "a", label: "Alpha" },
 					{ value: "b", label: "Beta" },
 				]}
-				value=""
-				onValueChange={() => undefined}
 				placeholder="Pick one"
+				value=""
 			/>,
 		);
 		await expectNoA11yViolations(container);
@@ -343,14 +347,14 @@ describe("@afenda/ui-system — axe a11y suite", () => {
 	it("Combobox with stable aria-label has no serious violations", async () => {
 		const { container } = render(
 			<Combobox
+				aria-label="Organization member"
+				onValueChange={noop}
 				options={[
 					{ value: "a", label: "Alpha" },
 					{ value: "b", label: "Beta" },
 				]}
-				value="a"
-				onValueChange={() => undefined}
 				placeholder="Pick one"
-				aria-label="Organization member"
+				value="a"
 			/>,
 		);
 		await expectNoA11yViolations(container);
@@ -358,7 +362,7 @@ describe("@afenda/ui-system — axe a11y suite", () => {
 
 	it("DatePicker closed tree has no serious violations", async () => {
 		const { container } = render(
-			<DatePicker placeholder="Pick a date" onChange={() => undefined} />,
+			<DatePicker onChange={noop} placeholder="Pick a date" />,
 		);
 		await expectNoA11yViolations(container);
 	});
@@ -368,10 +372,10 @@ describe("@afenda/ui-system — axe a11y suite", () => {
 			<DataTable
 				columns={[{ key: "name", title: "Name" }]}
 				data={[{ name: "Row 1" }, { name: "Row 2" }]}
-				getRowId={(row) => String(row.name)}
+				getRowId={getNamedRowId}
+				onSelectionChange={noop}
 				selectable
 				selectedRowIds={new Set(["Row 1"])}
-				onSelectionChange={() => undefined}
 			/>,
 		);
 		await expectNoA11yViolations(container);

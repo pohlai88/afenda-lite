@@ -1,11 +1,11 @@
 "use client";
 
-import * as React from "react";
+import { type ComponentProps, useId } from "react";
 import { DayPicker } from "react-day-picker";
 
 import { cn } from "../../lib/utils";
 
-export type CalendarProps = React.ComponentProps<typeof DayPicker>;
+export type CalendarProps = ComponentProps<typeof DayPicker>;
 
 function Calendar({
 	className,
@@ -14,11 +14,10 @@ function Calendar({
 	showOutsideDays = true,
 	...props
 }: CalendarProps) {
-	const navigationLabelId = React.useId();
+	const navigationLabelId = useId();
 
 	return (
 		<DayPicker
-			showOutsideDays={showOutsideDays}
 			className={cn("p-3", className)}
 			classNames={{
 				months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
@@ -47,6 +46,7 @@ function Calendar({
 				labelNav: () => `Calendar navigation ${navigationLabelId}`,
 				...labels,
 			}}
+			showOutsideDays={showOutsideDays}
 			{...props}
 		/>
 	);

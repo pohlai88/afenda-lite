@@ -28,9 +28,14 @@ export async function requireAnyPermission(
 	session: Session,
 	codes: readonly ProductPermissionCode[],
 ): Promise<void> {
-	if (codes.length === 0) forbidPermissionAccess();
-	for (const code of codes) {
-		if (await sessionHasPermission(session, code)) return;
+	if (codes.length === 0) {
+		forbidPermissionAccess();
+	}
+	const permissionChecks = await Promise.all(
+		codes.map((code) => sessionHasPermission(session, code)),
+	);
+	if (permissionChecks.some(Boolean)) {
+		return;
 	}
 	forbidPermissionAccess();
 }

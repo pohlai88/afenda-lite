@@ -1,5 +1,13 @@
 import { expect, userEvent, waitFor, within } from "storybook/test";
 
+const ADDITIONAL_AUDIT_EVIDENCE_PATTERN =
+	/Additional audit evidence appears here/;
+const DUPLICATE_DRAFT_PATTERN = /Duplicate draft/;
+const FINANCE_TREE_ITEM_PATTERN = /Finance/;
+const OPEN_RECORD_PATTERN = /Open record/;
+const SECONDARY_DETAIL_PATTERN =
+	/Secondary explanatory detail remains collapsed/;
+
 export type InteractiveComponent =
 	| "accordion"
 	| "alert-dialog"
@@ -27,8 +35,9 @@ export type InteractiveComponent =
 	| "tree-view";
 
 function requiredElement<T extends Element>(element: T | undefined): T {
-	if (!element)
+	if (!element) {
 		throw new Error("Expected interaction target was not rendered.");
+	}
 	return element;
 }
 
@@ -42,9 +51,7 @@ export function interactionFor(component: InteractiveComponent) {
 				await userEvent.click(
 					canvas.getByRole("button", { name: "Closed until requested" }),
 				);
-				await expect(
-					canvas.getByText(/Secondary explanatory detail remains collapsed/),
-				).toBeVisible();
+				await expect(canvas.getByText(SECONDARY_DETAIL_PATTERN)).toBeVisible();
 				break;
 			case "alert-dialog":
 				await userEvent.click(
@@ -69,9 +76,7 @@ export function interactionFor(component: InteractiveComponent) {
 			}
 			case "collapsible": {
 				const trigger = canvas.getByRole("button", { name: "Toggle details" });
-				const content = canvas.getByText(
-					/Additional audit evidence appears here/,
-				);
+				const content = canvas.getByText(ADDITIONAL_AUDIT_EVIDENCE_PATTERN);
 
 				await expect(trigger).toHaveAttribute("aria-expanded", "true");
 				await expect(content).toBeVisible();
@@ -220,11 +225,11 @@ export function interactionFor(component: InteractiveComponent) {
 				).toHaveAttribute("data-disabled");
 				await userEvent.keyboard("{Home}");
 				await expect(
-					page.getByRole("menuitem", { name: /Open record/ }),
+					page.getByRole("menuitem", { name: OPEN_RECORD_PATTERN }),
 				).toHaveFocus();
 				await userEvent.keyboard("{ArrowDown}");
 				await expect(
-					page.getByRole("menuitem", { name: /Duplicate draft/ }),
+					page.getByRole("menuitem", { name: DUPLICATE_DRAFT_PATTERN }),
 				).toHaveFocus();
 				await userEvent.keyboard("{Escape}");
 				await waitFor(() =>
@@ -319,7 +324,7 @@ export function interactionFor(component: InteractiveComponent) {
 					canvas.getByRole("button", { name: "Expand Finance" }),
 				);
 				await expect(
-					canvas.getByRole("treeitem", { name: /Finance/ }),
+					canvas.getByRole("treeitem", { name: FINANCE_TREE_ITEM_PATTERN }),
 				).toHaveAttribute("aria-expanded", "true");
 				await userEvent.click(canvas.getByRole("button", { name: "Payables" }));
 				await expect(
@@ -330,6 +335,12 @@ export function interactionFor(component: InteractiveComponent) {
 					),
 				).toHaveTextContent("Payables");
 				break;
+			default: {
+				const exhaustiveComponent: never = component;
+				throw new Error(
+					`Unsupported interactive component: ${exhaustiveComponent}`,
+				);
+			}
 		}
 	};
 }

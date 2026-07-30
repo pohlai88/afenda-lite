@@ -2,13 +2,13 @@ import { parseHrDisplayPreferences } from "@/features/human-resources/display-pr
 import { CandidateHrShell } from "@/features/human-resources/human-resources-shell";
 import { parseHrPage } from "@/features/human-resources/pagination";
 
-type PageProps = {
+interface PageProps {
 	searchParams: Promise<{
 		page?: string | string[];
 		locale?: string | string[];
 		timeZone?: string | string[];
 	}>;
-};
+}
 
 export default async function CandidateHumanResourcesPage({
 	searchParams,

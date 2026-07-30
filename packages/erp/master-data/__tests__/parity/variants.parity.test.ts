@@ -68,7 +68,9 @@ async function createVariant(harness: ParityHarness) {
 		},
 		harness.options,
 	);
-	if (!template.ok) return template;
+	if (!template.ok) {
+		return template;
+	}
 	const attribute = await addItemTemplateAttribute(
 		{
 			...harness.context(),
@@ -81,7 +83,9 @@ async function createVariant(harness: ParityHarness) {
 		},
 		harness.options,
 	);
-	if (!attribute.ok) return attribute;
+	if (!attribute.ok) {
+		return attribute;
+	}
 	const option = await addItemTemplateAttributeOption(
 		{
 			...harness.context(),
@@ -91,7 +95,9 @@ async function createVariant(harness: ParityHarness) {
 		},
 		harness.options,
 	);
-	if (!option.ok) return option;
+	if (!option.ok) {
+		return option;
+	}
 	const activeTemplate = await activateItemTemplate(
 		{
 			...harness.context(),
@@ -100,7 +106,9 @@ async function createVariant(harness: ParityHarness) {
 		},
 		harness.options,
 	);
-	if (!activeTemplate.ok) return activeTemplate;
+	if (!activeTemplate.ok) {
+		return activeTemplate;
+	}
 	const group = await createItemGroup(
 		{
 			...harness.context(),
@@ -109,7 +117,9 @@ async function createVariant(harness: ParityHarness) {
 		},
 		harness.options,
 	);
-	if (!group.ok) return group;
+	if (!group.ok) {
+		return group;
+	}
 	return createItemVariant(
 		{
 			...harness.context(),
@@ -145,7 +155,9 @@ function defineItemVariantContractTests(
 		it("returns a tenant-safe miss for an existing variant", async () => {
 			const created = await createVariant(harness);
 			expect(created.ok, JSON.stringify(created)).toBe(true);
-			if (!created.ok || !("combinationKey" in created.data)) return;
+			if (!(created.ok && "combinationKey" in created.data)) {
+				return;
+			}
 			const result = await getItemVariantById(
 				{
 					...harness.queryContext(harness.otherOrganizationId),
@@ -159,7 +171,9 @@ function defineItemVariantContractTests(
 		it("rejects a stale variant lifecycle version", async () => {
 			const created = await createVariant(harness);
 			expect(created.ok, JSON.stringify(created)).toBe(true);
-			if (!created.ok || !("combinationKey" in created.data)) return;
+			if (!(created.ok && "combinationKey" in created.data)) {
+				return;
+			}
 			const stale = await retireItemVariant(
 				{
 					...harness.context(),

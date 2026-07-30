@@ -44,7 +44,9 @@ export async function retireCompanyName(
 		retireCompanyNameInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 
 	const authorized = await requireCorporateAdministrationPermission(
 		options.authorization,
@@ -55,7 +57,9 @@ export async function retireCompanyName(
 				CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS.retireCompanyName,
 		},
 	);
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 
 	const identity = createCorporateAdministrationCommandFingerprint({
 		schema: retireCompanyNameInputSchema,
@@ -63,7 +67,9 @@ export async function retireCompanyName(
 		commandId: "corporate-administration.legal-company.retire-company-name",
 		input: parsed.data,
 	});
-	if (!identity.ok) return identity;
+	if (!identity.ok) {
+		return identity;
+	}
 	const approved = await requireCorporateAdministrationApprovalIfConfigured(
 		dependencies,
 		{
@@ -74,7 +80,9 @@ export async function retireCompanyName(
 			commandFingerprint: identity.data.fingerprint,
 		},
 	);
-	if (!approved.ok) return approved;
+	if (!approved.ok) {
+		return approved;
+	}
 
 	const sourceDocument =
 		parsed.data.sourceDocumentId === undefined ||
@@ -85,7 +93,9 @@ export async function retireCompanyName(
 					sourceDocumentId: parsed.data.sourceDocumentId,
 				});
 	if (sourceDocument !== null) {
-		if (!sourceDocument.ok) return sourceDocument;
+		if (!sourceDocument.ok) {
+			return sourceDocument;
+		}
 		if (sourceDocument.data === null) {
 			return fail(
 				"NOT_FOUND",
@@ -113,12 +123,16 @@ export async function retireCompanyName(
 		legalCompanyId: parsed.data.legalCompanyId,
 		companyNameId: parsed.data.companyNameId,
 	});
-	if (!existing.ok) return existing;
+	if (!existing.ok) {
+		return existing;
+	}
 	const eligible = validateCompanyNameSupersession({
 		name: existing.data,
 		expectedVersion: parsed.data.expectedNameVersion,
 	});
-	if (!eligible.ok) return eligible;
+	if (!eligible.ok) {
+		return eligible;
+	}
 	if (
 		eligible.data.nameType !== "trading" &&
 		eligible.data.nameType !== "translated"

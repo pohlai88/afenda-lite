@@ -16,82 +16,81 @@ import type {
 	PayrollRecurringEarningCreateRecord,
 } from "../types";
 
-export type PayrollAssignmentsStore = {
-	findEmployeeAssignmentByIdempotencyKey(input: {
+export interface PayrollAssignmentsStore {
+	createEmployeeAssignment: (
+		record: PayrollEmployeeAssignmentCreateRecord,
+		ports: MutationPorts,
+	) => Promise<Result<PayrollEmployeeAssignment>>;
+
+	createRecurringDeduction: (
+		record: PayrollRecurringDeductionCreateRecord,
+		ports: MutationPorts,
+	) => Promise<Result<PayrollRecurringDeduction>>;
+
+	createRecurringEarning: (
+		record: PayrollRecurringEarningCreateRecord,
+		ports: MutationPorts,
+	) => Promise<Result<PayrollRecurringEarning>>;
+	findEmployeeAssignmentByIdempotencyKey: (input: {
 		organizationId: string;
 		idempotencyKey: string;
-	}): Promise<
+	}) => Promise<
 		Result<{
 			assignment: PayrollEmployeeAssignment;
 			createRequestFingerprint: string;
 		} | null>
 	>;
 
-	createEmployeeAssignment(
-		record: PayrollEmployeeAssignmentCreateRecord,
-		ports: MutationPorts,
-	): Promise<Result<PayrollEmployeeAssignment>>;
-
-	getEmployeeAssignment(input: {
-		organizationId: string;
-		assignmentId: PayrollEmployeeAssignmentId;
-	}): Promise<Result<PayrollEmployeeAssignment | null>>;
-
-	findRecurringEarningByIdempotencyKey(input: {
+	findRecurringDeductionByIdempotencyKey: (input: {
 		organizationId: string;
 		idempotencyKey: string;
-	}): Promise<
-		Result<{
-			recurringEarning: PayrollRecurringEarning;
-			createRequestFingerprint: string;
-		} | null>
-	>;
-
-	createRecurringEarning(
-		record: PayrollRecurringEarningCreateRecord,
-		ports: MutationPorts,
-	): Promise<Result<PayrollRecurringEarning>>;
-
-	getRecurringEarning(input: {
-		organizationId: string;
-		recurringEarningId: PayrollRecurringEarningId;
-	}): Promise<Result<PayrollRecurringEarning | null>>;
-
-	findRecurringDeductionByIdempotencyKey(input: {
-		organizationId: string;
-		idempotencyKey: string;
-	}): Promise<
+	}) => Promise<
 		Result<{
 			recurringDeduction: PayrollRecurringDeduction;
 			createRequestFingerprint: string;
 		} | null>
 	>;
 
-	createRecurringDeduction(
-		record: PayrollRecurringDeductionCreateRecord,
-		ports: MutationPorts,
-	): Promise<Result<PayrollRecurringDeduction>>;
+	findRecurringEarningByIdempotencyKey: (input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}) => Promise<
+		Result<{
+			recurringEarning: PayrollRecurringEarning;
+			createRequestFingerprint: string;
+		} | null>
+	>;
 
-	getRecurringDeduction(input: {
+	getEmployeeAssignment: (input: {
+		organizationId: string;
+		assignmentId: PayrollEmployeeAssignmentId;
+	}) => Promise<Result<PayrollEmployeeAssignment | null>>;
+
+	getRecurringDeduction: (input: {
 		organizationId: string;
 		recurringDeductionId: PayrollRecurringDeductionId;
-	}): Promise<Result<PayrollRecurringDeduction | null>>;
+	}) => Promise<Result<PayrollRecurringDeduction | null>>;
 
-	listActiveAssignmentsForPayGroup(input: {
+	getRecurringEarning: (input: {
+		organizationId: string;
+		recurringEarningId: PayrollRecurringEarningId;
+	}) => Promise<Result<PayrollRecurringEarning | null>>;
+
+	listActiveAssignmentsForPayGroup: (input: {
 		organizationId: string;
 		payGroupId: PayrollPayGroupId;
 		effectiveDate: string;
-	}): Promise<Result<PayrollEmployeeAssignment[]>>;
+	}) => Promise<Result<PayrollEmployeeAssignment[]>>;
 
-	listRecurringEarningsForAssignment(input: {
+	listRecurringDeductionsForAssignment: (input: {
 		organizationId: string;
 		assignmentId: PayrollEmployeeAssignmentId;
 		effectiveDate: string;
-	}): Promise<Result<PayrollRecurringEarning[]>>;
+	}) => Promise<Result<PayrollRecurringDeduction[]>>;
 
-	listRecurringDeductionsForAssignment(input: {
+	listRecurringEarningsForAssignment: (input: {
 		organizationId: string;
 		assignmentId: PayrollEmployeeAssignmentId;
 		effectiveDate: string;
-	}): Promise<Result<PayrollRecurringDeduction[]>>;
-};
+	}) => Promise<Result<PayrollRecurringEarning[]>>;
+}

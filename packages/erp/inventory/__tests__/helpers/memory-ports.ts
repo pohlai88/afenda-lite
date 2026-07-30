@@ -16,9 +16,9 @@ export function createMemoryAuditPort(): AuditFactPort & {
 	const calls: AuditFactInput[] = [];
 	return {
 		calls,
-		async record(input: AuditFactInput): Promise<Result<{ id: string }>> {
+		record(input: AuditFactInput): Promise<Result<{ id: string }>> {
 			calls.push(input);
-			return ok({ id: randomUUID() });
+			return Promise.resolve(ok({ id: randomUUID() }));
 		},
 	};
 }
@@ -29,9 +29,9 @@ export function createMemoryOutboxPort(): OutboxPort & {
 	const calls: OutboxFactInput[] = [];
 	return {
 		calls,
-		async append(input: OutboxFactInput): Promise<Result<{ id: string }>> {
+		append(input: OutboxFactInput): Promise<Result<{ id: string }>> {
 			calls.push(input);
-			return ok({ id: randomUUID() });
+			return Promise.resolve(ok({ id: randomUUID() }));
 		},
 	};
 }

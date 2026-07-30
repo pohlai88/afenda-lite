@@ -7,15 +7,15 @@ import { createProductionMutationPorts } from "./production-ports";
 import { resolveInventoryStore } from "./resolve-store";
 import type { InventoryStore } from "./store";
 
-export type InventoryCommandOptions = {
-	store?: InventoryStore;
-	ports?: MutationPorts;
-	masters?: MasterLookupPort;
+export interface InventoryCommandOptions {
 	/** Composition-root injected — never import `@afenda/admin` here. */
 	authorization?: InventoryAuthorizationPort;
 	/** Forwarded to master-data public lookups (read permission). */
 	masterAuthorization?: MasterAuthorizationPort;
-};
+	masters?: MasterLookupPort;
+	ports?: MutationPorts;
+	store?: InventoryStore;
+}
 
 export function resolvePorts(ports?: MutationPorts): MutationPorts {
 	return ports ?? createProductionMutationPorts();

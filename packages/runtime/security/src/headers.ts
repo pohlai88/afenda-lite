@@ -5,25 +5,25 @@ import {
 	STRICT_CSP_DIRECTIVES,
 } from "./csp";
 
-export type NextSecurityHeader = {
+export interface NextSecurityHeader {
 	readonly key: string;
 	readonly value: string;
-};
+}
 
-export type SecurityHeadersConfig = {
+export interface SecurityHeadersConfig {
 	readonly cspDirectives?: CspDirectives;
-	readonly includeCsp?: boolean;
 	readonly frameAncestors?: readonly string[];
-	readonly hsts?: boolean;
-	readonly hstsMaxAge?: number;
-	readonly hstsIncludeSubdomains?: boolean;
-	readonly hstsPreload?: boolean;
 	readonly frameOptions?: "DENY" | "SAMEORIGIN";
-	readonly referrerPolicy?: string;
+	readonly hsts?: boolean;
+	readonly hstsIncludeSubdomains?: boolean;
+	readonly hstsMaxAge?: number;
+	readonly hstsPreload?: boolean;
+	readonly includeCsp?: boolean;
 	readonly permissionsPolicy?: string;
-	readonly reportUri?: string;
+	readonly referrerPolicy?: string;
 	readonly reportTo?: string;
-};
+	readonly reportUri?: string;
+}
 
 export const DNS_PREFETCH_CONTROL_HEADER = "X-DNS-Prefetch-Control" as const;
 export const FRAME_OPTIONS_HEADER = "X-Frame-Options" as const;
@@ -37,7 +37,7 @@ const DEFAULT_FRAME_OPTIONS = "SAMEORIGIN" as const;
 const DEFAULT_REFERRER_POLICY = "strict-origin-when-cross-origin" as const;
 const DEFAULT_PERMISSIONS_POLICY =
 	"camera=(), microphone=(), geolocation=(), payment=()" as const;
-const DEFAULT_HSTS_MAX_AGE = 31536000;
+const DEFAULT_HSTS_MAX_AGE = 31_536_000;
 const FRAME_ANCESTORS_NONE = "'none'" as const;
 
 /**

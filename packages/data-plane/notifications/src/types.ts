@@ -26,71 +26,71 @@ export const NOTIFICATION_CHANNELS = ["IN_APP"] as const;
 
 export type NotificationChannel = (typeof NOTIFICATION_CHANNELS)[number];
 
-export type Notification = {
-	id: string;
-	organizationId: string;
-	userId: string;
-	type: NotificationType;
-	priority: NotificationPriority;
-	channel: NotificationChannel;
-	title: string;
-	body: string;
-	module: string;
-	deduplicationKey: string | null;
+export interface Notification {
 	actionUrl: string | null;
-	metadata: Record<string, unknown> | null;
-	read: boolean;
-	expiresAt: Date | null;
-	createdAt: Date;
-};
-
-export type NotificationWriteInput = {
-	organizationId: string;
-	userId: string;
-	type: NotificationType;
-	priority: NotificationPriority;
-	channel: NotificationChannel;
-	title: string;
 	body: string;
+	channel: NotificationChannel;
+	createdAt: Date;
+	deduplicationKey: string | null;
+	expiresAt: Date | null;
+	id: string;
+	metadata: Record<string, unknown> | null;
 	module: string;
-	deduplicationKey?: string | null;
-	actionUrl?: string | null;
-	metadata?: Record<string, unknown> | null;
-	expiresAt?: Date | null;
-	createdAt?: Date;
-};
-
-export type NotificationListOptions = {
 	organizationId: string;
+	priority: NotificationPriority;
+	read: boolean;
+	title: string;
+	type: NotificationType;
 	userId: string;
+}
+
+export interface NotificationWriteInput {
+	actionUrl?: string | null;
+	body: string;
+	channel: NotificationChannel;
+	createdAt?: Date;
+	deduplicationKey?: string | null;
+	expiresAt?: Date | null;
+	metadata?: Record<string, unknown> | null;
+	module: string;
+	organizationId: string;
+	priority: NotificationPriority;
+	title: string;
+	type: NotificationType;
+	userId: string;
+}
+
+export interface NotificationListOptions {
+	organizationId: string;
 	page: number;
 	pageSize: number;
 	unreadOnly?: boolean | undefined;
-};
+	userId: string;
+}
 
-export type NotificationUnreadCountOptions = {
+export interface NotificationUnreadCountOptions {
 	organizationId: string;
 	userId: string;
-};
+}
 
-export type NotificationMarkReadOptions = {
-	organizationId: string;
-	userId: string;
+export interface NotificationMarkReadOptions {
 	id: string;
-};
-
-export type NotificationMarkAllReadOptions = {
 	organizationId: string;
 	userId: string;
-};
+}
 
-export type NotificationDeleteOptions = {
+export interface NotificationMarkAllReadOptions {
 	organizationId: string;
 	userId: string;
+}
+
+export interface NotificationDeleteOptions {
 	id: string;
-};
-
-export type NotificationPurgeOptions = {
 	organizationId: string;
+	userId: string;
+}
+
+export interface NotificationPurgeOptions {
 	olderThan?: Date | undefined;
-};
+	organizationId: string;
+}

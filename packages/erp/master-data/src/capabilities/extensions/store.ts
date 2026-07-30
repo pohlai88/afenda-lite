@@ -31,473 +31,478 @@ import type { ItemAliasType } from "./item-alias-policy";
 import type { ItemBarcodeSymbology } from "./item-barcode-policy";
 import type { ItemUomCompatibilityMode } from "./item-uom-policy";
 
-export type PartyRoleLifecycleRecord = {
-	organizationId: string;
-	id: string;
-	expectedVersion: number;
+export interface PartyRoleLifecycleRecord {
 	actorUserId: string;
-	toStatus: StandardChildLifecycleStatus;
+	expectedVersion: number;
+	id: string;
+	organizationId: string;
 	reason: string | null;
-};
+	toStatus: StandardChildLifecycleStatus;
+}
 
-export type PartyRoleCreateRecord = {
+export interface PartyRoleCreateRecord {
+	createdBy: string;
 	organizationId: string;
 	partyId: string;
 	roleCode: PartyRoleCode;
-	createdBy: string;
 	validFrom?: Date | null | undefined;
 	validTo?: Date | null | undefined;
-};
+}
 
-export type PartyRoleUpdateRecord = {
-	organizationId: string;
-	id: string;
+export interface PartyRoleUpdateRecord {
 	expectedVersion: number;
-	updatedBy: string;
+	id: string;
+	organizationId: string;
 	roleCode?: PartyRoleCode | undefined;
+	updatedBy: string;
 	validFrom?: Date | null | undefined;
 	validTo?: Date | null | undefined;
-};
+}
 
-export type PartyRoleListFilter = {
+export interface PartyRoleListFilter {
 	organizationId: string;
-	partyId: string;
 	page: number;
 	pageSize: number;
-};
-
-export type PartyRoleLifecycleContext = {
-	role: PartyRole | null;
-	party: Party | null;
-	activeRoleCount: number;
-};
-
-export type PartyAddressCreateRecord = {
-	organizationId: string;
 	partyId: string;
+}
+
+export interface PartyRoleLifecycleContext {
+	activeRoleCount: number;
+	party: Party | null;
+	role: PartyRole | null;
+}
+
+export interface PartyAddressCreateRecord {
 	addressType: PartyAddressType;
-	purpose: PartyAddressPurpose;
+	administrativeArea?: string | null | undefined;
+	attention?: string | null | undefined;
+	city: string;
+	countryId: string;
+	createdBy: string;
+	effectiveFrom?: Date | null | undefined;
+	effectiveTo?: Date | null | undefined;
+	isPrimary?: boolean | undefined;
 	line1: string;
 	line2?: string | null | undefined;
 	line3?: string | null | undefined;
-	city: string;
-	administrativeArea?: string | null | undefined;
+	organizationId: string;
+	partyId: string;
 	postalCode?: string | null | undefined;
-	countryId: string;
-	attention?: string | null | undefined;
-	isPrimary?: boolean | undefined;
+	purpose: PartyAddressPurpose;
 	validationStatus?: PartyAddressValidationStatus | undefined;
+}
+
+export interface PartyAddressUpdateRecord {
+	addressType?: PartyAddressType | undefined;
+	administrativeArea?: string | null | undefined;
+	attention?: string | null | undefined;
+	city?: string | undefined;
+	countryId?: string | undefined;
 	effectiveFrom?: Date | null | undefined;
 	effectiveTo?: Date | null | undefined;
-	createdBy: string;
-};
-
-export type PartyAddressUpdateRecord = {
-	organizationId: string;
-	id: string;
 	expectedVersion: number;
-	updatedBy: string;
-	addressType?: PartyAddressType | undefined;
-	purpose?: PartyAddressPurpose | undefined;
+	id: string;
+	isPrimary?: boolean | undefined;
 	line1?: string | undefined;
 	line2?: string | null | undefined;
 	line3?: string | null | undefined;
-	city?: string | undefined;
-	administrativeArea?: string | null | undefined;
+	organizationId: string;
 	postalCode?: string | null | undefined;
-	countryId?: string | undefined;
-	attention?: string | null | undefined;
-	isPrimary?: boolean | undefined;
+	purpose?: PartyAddressPurpose | undefined;
+	updatedBy: string;
 	validationStatus?: PartyAddressValidationStatus | undefined;
+}
+
+export interface PartyContactCreateRecord {
+	contactType: PartyContactType;
+	createdBy: string;
 	effectiveFrom?: Date | null | undefined;
 	effectiveTo?: Date | null | undefined;
-};
-
-export type PartyContactCreateRecord = {
+	isPrimary?: boolean | undefined;
+	label?: string | null | undefined;
+	normalizedValue: string;
 	organizationId: string;
 	partyId: string;
-	contactType: PartyContactType;
+	purpose?: string | null | undefined;
 	value: string;
-	normalizedValue: string;
-	label?: string | null | undefined;
-	purpose?: string | null | undefined;
-	isPrimary?: boolean | undefined;
-	effectiveFrom?: Date | null | undefined;
-	effectiveTo?: Date | null | undefined;
-	createdBy: string;
-};
+}
 
-export type PartyContactUpdateRecord = {
-	organizationId: string;
-	id: string;
-	expectedVersion: number;
-	updatedBy: string;
+export interface PartyContactUpdateRecord {
 	contactType?: PartyContactType | undefined;
-	value?: string | undefined;
-	normalizedValue?: string | undefined;
-	label?: string | null | undefined;
-	purpose?: string | null | undefined;
-	isPrimary?: boolean | undefined;
 	effectiveFrom?: Date | null | undefined;
 	effectiveTo?: Date | null | undefined;
+	expectedVersion: number;
+	id: string;
+	isPrimary?: boolean | undefined;
+	label?: string | null | undefined;
+	normalizedValue?: string | undefined;
+	organizationId: string;
+	purpose?: string | null | undefined;
+	updatedBy: string;
+	value?: string | undefined;
 	verificationStatus?: PartyContactVerificationStatus | undefined;
 	verifiedAt?: Date | null | undefined;
-};
+}
 
-export type PartyContactVerificationRecord = {
-	organizationId: string;
-	id: string;
+export interface PartyContactVerificationRecord {
 	expectedVersion: number;
+	id: string;
+	organizationId: string;
 	updatedBy: string;
 	verificationStatus: PartyContactVerificationStatus;
 	verifiedAt: Date | null;
-};
+}
 
-export type PartyExternalIdCreateRecord = {
+export interface PartyExternalIdCreateRecord {
+	caseSensitivity: PartyExternalIdCaseSensitivity;
+	createdBy: string;
+	externalIdType: string;
+	externalValue: string;
+	isPrimary: boolean;
+	normalizedValue: string;
 	organizationId: string;
 	partyId: string;
 	sourceSystem: string;
-	externalIdType: string;
-	externalValue: string;
-	normalizedValue: string;
-	caseSensitivity: PartyExternalIdCaseSensitivity;
-	isPrimary: boolean;
-	createdBy: string;
-};
+}
 
-export type PartyExternalIdLookup = {
+export interface PartyExternalIdLookup {
+	caseSensitivity: PartyExternalIdCaseSensitivity;
+	externalIdType: string;
+	normalizedValue: string;
 	organizationId: string;
 	sourceSystem: string;
-	externalIdType: string;
-	normalizedValue: string;
-	caseSensitivity: PartyExternalIdCaseSensitivity;
-};
+}
 
-export type PartyRelationshipCreateRecord = {
-	organizationId: string;
-	sourcePartyId: string;
-	targetPartyId: string;
-	relationshipType: PartyRelationshipType;
+export interface PartyRelationshipCreateRecord {
+	createdBy: string;
 	direction: PartyRelationshipDirection;
 	effectiveFrom: Date | null;
 	effectiveTo: Date | null;
-	createdBy: string;
-};
-
-export type PartyRelationshipListFilter = {
 	organizationId: string;
-	partyId: string;
+	relationshipType: PartyRelationshipType;
+	sourcePartyId: string;
+	targetPartyId: string;
+}
+
+export interface PartyRelationshipListFilter {
+	organizationId: string;
 	page: number;
 	pageSize: number;
-};
+	partyId: string;
+}
 
-export type ItemUomCreateRecord = {
-	organizationId: string;
-	itemId: string;
+export interface ItemUomCreateRecord {
 	alternateUomId: string;
+	compatibilityMode: ItemUomCompatibilityMode;
 	conversionFactor: string;
-	roundingScale: number;
-	isPurchaseUom: boolean;
-	isSalesUom: boolean;
-	isInventoryUom: boolean;
+	createdBy: string;
 	isDefaultPurchaseUom: boolean;
 	isDefaultSalesUom: boolean;
-	compatibilityMode: ItemUomCompatibilityMode;
-	packagingApprovalReference: string | null;
-	createdBy: string;
-};
-
-export type ItemUomCompatibilityContextFilter = {
+	isInventoryUom: boolean;
+	isPurchaseUom: boolean;
+	isSalesUom: boolean;
+	itemId: string;
 	organizationId: string;
-	itemId: string;
-	alternateUomId: string;
-};
+	packagingApprovalReference: string | null;
+	roundingScale: number;
+}
 
-export type ItemUomCompatibilityContext = {
+export interface ItemUomCompatibilityContextFilter {
+	alternateUomId: string;
 	itemId: string;
-	baseUomId: string;
+	organizationId: string;
+}
+
+export interface ItemUomCompatibilityContext {
+	alternateDimensionCode: string;
 	alternateUomId: string;
 	baseDimensionCode: string;
-	alternateDimensionCode: string;
-};
-
-export type ItemUomListFilter = {
-	organizationId: string;
+	baseUomId: string;
 	itemId: string;
+}
+
+export interface ItemUomListFilter {
+	itemId: string;
+	organizationId: string;
 	page: number;
 	pageSize: number;
-};
+}
 
-export type ItemUomDefaultFilter = {
-	organizationId: string;
+export interface ItemUomDefaultFilter {
 	itemId: string;
-};
+	organizationId: string;
+}
 
-export type ItemBarcodeCreateRecord = {
-	organizationId: string;
-	itemId: string;
+export interface ItemBarcodeCreateRecord {
 	barcodeValue: string;
+	createdBy: string;
+	isPrimary: boolean;
+	itemId: string;
 	normalizedValue: string;
+	organizationId: string;
+	packQuantity: string | null;
 	symbology: ItemBarcodeSymbology;
 	uomId: string | null;
-	packQuantity: string | null;
-	isPrimary: boolean;
-	createdBy: string;
-};
+}
 
-export type ItemBarcodeLookup = {
+export interface ItemBarcodeLookup {
+	includeArchived: boolean;
+	normalizedValue: string;
 	organizationId: string;
 	symbology: ItemBarcodeSymbology;
-	normalizedValue: string;
-	includeArchived: boolean;
-};
+}
 
-export type ItemExternalIdCreateRecord = {
-	organizationId: string;
-	itemId: string;
-	sourceSystem: string;
+export interface ItemExternalIdCreateRecord {
+	caseSensitivity: ExternalIdCaseSensitivity;
+	createdBy: string;
 	externalIdType: string;
 	externalValue: string;
-	normalizedValue: string;
-	caseSensitivity: ExternalIdCaseSensitivity;
 	isPrimary: boolean;
-	createdBy: string;
-};
-
-export type ItemExternalIdLookup = {
+	itemId: string;
+	normalizedValue: string;
 	organizationId: string;
 	sourceSystem: string;
+}
+
+export interface ItemExternalIdLookup {
+	caseSensitivity: ExternalIdCaseSensitivity;
 	externalIdType: string;
 	normalizedValue: string;
-	caseSensitivity: ExternalIdCaseSensitivity;
-};
-
-export type ItemAliasCreateRecord = {
 	organizationId: string;
-	itemId: string;
+	sourceSystem: string;
+}
+
+export interface ItemAliasCreateRecord {
 	aliasType: ItemAliasType;
 	aliasValue: string;
-	normalizedValue: string;
-	languageId: string | null;
-	source: string;
-	isSearchable: boolean;
 	createdBy: string;
-};
-
-export type ItemAliasLookup = {
-	organizationId: string;
+	isSearchable: boolean;
+	itemId: string;
+	languageId: string | null;
 	normalizedValue: string;
+	organizationId: string;
+	source: string;
+}
+
+export interface ItemAliasLookup {
 	aliasType?: ItemAliasType | undefined;
 	/**
 	 * undefined searches any language; null searches language-neutral aliases only.
 	 */
 	languageId?: string | null | undefined;
-};
+	normalizedValue: string;
+	organizationId: string;
+}
 
-export type ExtensionListPage<TItem> = {
+export interface ExtensionListPage<TItem> {
+	hasNextPage: boolean;
 	items: TItem[];
 	page: number;
 	pageSize: number;
-	hasNextPage: boolean;
-};
+}
 
-export type ItemAliasListFilter = {
-	organizationId: string;
+export interface ItemAliasListFilter {
 	itemId: string;
+	organizationId: string;
 	page: number;
 	pageSize: number;
-};
+}
 
 export type ItemAliasSearchFilter = ItemAliasLookup & {
 	page: number;
 	pageSize: number;
 };
 
-export type WarehouseExternalIdCreateRecord = {
-	organizationId: string;
-	warehouseId: string;
-	sourceSystem: string;
+export interface WarehouseExternalIdCreateRecord {
+	caseSensitivity: PartyExternalIdCaseSensitivity;
+	createdBy: string;
 	externalIdType: string;
 	externalValue: string;
 	normalizedValue: string;
-	caseSensitivity: PartyExternalIdCaseSensitivity;
-	createdBy: string;
-};
-
-export type ParentListFilter = {
 	organizationId: string;
-	parentId: string;
+	sourceSystem: string;
+	warehouseId: string;
+}
+
+export interface ParentListFilter {
+	organizationId: string;
 	page: number;
 	pageSize: number;
-};
+	parentId: string;
+}
 
 /** Party-owned child persistence boundary. */
 export interface PartyExtensionStore {
-	countActivePartyRoles(
+	countActivePartyRoles: (
 		organizationId: string,
 		partyId: string,
-	): Promise<Result<number>>;
-	listPartyRoles(
-		filter: PartyRoleListFilter,
-	): Promise<Result<ExtensionListPage<PartyRole>>>;
-	listActivePartyRoles(
-		filter: PartyRoleListFilter,
-	): Promise<Result<ExtensionListPage<PartyRole>>>;
-	getPartyRoleById(
-		organizationId: string,
-		partyId: string,
-		id: string,
-	): Promise<Result<PartyRole | null>>;
-	getPartyRoleLifecycleContext(
-		organizationId: string,
-		id: string,
-	): Promise<Result<PartyRoleLifecycleContext>>;
-	createPartyRole(
+	) => Promise<Result<number>>;
+	createPartyAddress: (
+		record: PartyAddressCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	) => Promise<Result<PartyAddress>>;
+	createPartyContact: (
+		record: PartyContactCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	) => Promise<Result<PartyContact>>;
+
+	createPartyExternalId: (
+		record: PartyExternalIdCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	) => Promise<Result<PartyExternalId>>;
+
+	createPartyRelationship: (
+		record: PartyRelationshipCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	) => Promise<Result<PartyRelationship>>;
+	createPartyRole: (
 		record: PartyRoleCreateRecord,
 		ports: MutationPorts,
 		meta: { correlationId: string },
-	): Promise<Result<PartyRole>>;
-	updatePartyRole(
-		record: PartyRoleUpdateRecord,
-		ports: MutationPorts,
-		meta: { correlationId: string },
-	): Promise<Result<PartyRole>>;
-	transitionPartyRole(
+	) => Promise<Result<PartyRole>>;
+	findPartyByExternalId: (
+		filter: PartyExternalIdLookup,
+	) => Promise<Result<Party | null>>;
+	getPartyAddressById: (
+		organizationId: string,
+		partyId: string,
+		id: string,
+	) => Promise<Result<PartyAddress | null>>;
+	getPartyRoleById: (
+		organizationId: string,
+		partyId: string,
+		id: string,
+	) => Promise<Result<PartyRole | null>>;
+	getPartyRoleLifecycleContext: (
+		organizationId: string,
+		id: string,
+	) => Promise<Result<PartyRoleLifecycleContext>>;
+	getPrimaryPartyAddress: (
+		organizationId: string,
+		partyId: string,
+		purpose: PartyAddressPurpose,
+	) => Promise<Result<PartyAddress | null>>;
+	getPrimaryPartyContact: (
+		organizationId: string,
+		partyId: string,
+		contactType: PartyContactType,
+		purpose: string | null,
+	) => Promise<Result<PartyContact | null>>;
+	listActivePartyRoles: (
+		filter: PartyRoleListFilter,
+	) => Promise<Result<ExtensionListPage<PartyRole>>>;
+
+	listPartyAddresses: (
+		filter: ParentListFilter,
+	) => Promise<Result<PartyAddress[]>>;
+
+	listPartyContacts: (
+		filter: ParentListFilter,
+	) => Promise<Result<PartyContact[]>>;
+	listPartyRelationships: (
+		filter: PartyRelationshipListFilter,
+	) => Promise<Result<ExtensionListPage<PartyRelationship>>>;
+	listPartyRoles: (
+		filter: PartyRoleListFilter,
+	) => Promise<Result<ExtensionListPage<PartyRole>>>;
+	transitionPartyRole: (
 		record: PartyRoleLifecycleRecord,
 		ports: MutationPorts,
 		meta: {
 			correlationId: string;
 			eventSuffix: PartyRoleLifecycleEventSuffix;
 		},
-	): Promise<Result<PartyRole>>;
-
-	listPartyAddresses(filter: ParentListFilter): Promise<Result<PartyAddress[]>>;
-	getPartyAddressById(
-		organizationId: string,
-		partyId: string,
-		id: string,
-	): Promise<Result<PartyAddress | null>>;
-	getPrimaryPartyAddress(
-		organizationId: string,
-		partyId: string,
-		purpose: PartyAddressPurpose,
-	): Promise<Result<PartyAddress | null>>;
-	createPartyAddress(
-		record: PartyAddressCreateRecord,
-		ports: MutationPorts,
-		meta: { correlationId: string },
-	): Promise<Result<PartyAddress>>;
-	updatePartyAddress(
+	) => Promise<Result<PartyRole>>;
+	updatePartyAddress: (
 		record: PartyAddressUpdateRecord,
 		ports: MutationPorts,
 		meta: { correlationId: string },
-	): Promise<Result<PartyAddress>>;
-
-	listPartyContacts(filter: ParentListFilter): Promise<Result<PartyContact[]>>;
-	getPrimaryPartyContact(
-		organizationId: string,
-		partyId: string,
-		contactType: PartyContactType,
-		purpose: string | null,
-	): Promise<Result<PartyContact | null>>;
-	createPartyContact(
-		record: PartyContactCreateRecord,
-		ports: MutationPorts,
-		meta: { correlationId: string },
-	): Promise<Result<PartyContact>>;
-	updatePartyContact(
+	) => Promise<Result<PartyAddress>>;
+	updatePartyContact: (
 		record: PartyContactUpdateRecord,
 		ports: MutationPorts,
 		meta: { correlationId: string },
-	): Promise<Result<PartyContact>>;
-	updatePartyContactVerification(
+	) => Promise<Result<PartyContact>>;
+	updatePartyContactVerification: (
 		record: PartyContactVerificationRecord,
 		ports: MutationPorts,
 		meta: { correlationId: string },
-	): Promise<Result<PartyContact>>;
-
-	createPartyExternalId(
-		record: PartyExternalIdCreateRecord,
+	) => Promise<Result<PartyContact>>;
+	updatePartyRole: (
+		record: PartyRoleUpdateRecord,
 		ports: MutationPorts,
 		meta: { correlationId: string },
-	): Promise<Result<PartyExternalId>>;
-	findPartyByExternalId(
-		filter: PartyExternalIdLookup,
-	): Promise<Result<Party | null>>;
-
-	createPartyRelationship(
-		record: PartyRelationshipCreateRecord,
-		ports: MutationPorts,
-		meta: { correlationId: string },
-	): Promise<Result<PartyRelationship>>;
-	listPartyRelationships(
-		filter: PartyRelationshipListFilter,
-	): Promise<Result<ExtensionListPage<PartyRelationship>>>;
+	) => Promise<Result<PartyRole>>;
 }
 
 /** Item-owned child persistence boundary. */
 export interface ItemExtensionStore {
-	resolveItemUomCompatibilityContext(
-		filter: ItemUomCompatibilityContextFilter,
-	): Promise<Result<ItemUomCompatibilityContext>>;
-	createItemUom(
-		record: ItemUomCreateRecord,
-		ports: MutationPorts,
-		meta: { correlationId: string },
-	): Promise<Result<ItemUom>>;
-	listItemUoms(
-		filter: ItemUomListFilter,
-	): Promise<Result<ExtensionListPage<ItemUom>>>;
-	getDefaultItemSalesUom(
-		filter: ItemUomDefaultFilter,
-	): Promise<Result<ItemUom | null>>;
-	getDefaultItemPurchaseUom(
-		filter: ItemUomDefaultFilter,
-	): Promise<Result<ItemUom | null>>;
-
-	createItemBarcode(
-		record: ItemBarcodeCreateRecord,
-		ports: MutationPorts,
-		meta: { correlationId: string },
-	): Promise<Result<ItemBarcode>>;
-	findItemByBarcode(filter: ItemBarcodeLookup): Promise<Result<Item | null>>;
-
-	createItemExternalId(
-		record: ItemExternalIdCreateRecord,
-		ports: MutationPorts,
-		meta: { correlationId: string },
-	): Promise<Result<ItemExternalId>>;
-	findItemByExternalId(
-		filter: ItemExternalIdLookup,
-	): Promise<Result<Item | null>>;
-
-	createItemAlias(
+	createItemAlias: (
 		record: ItemAliasCreateRecord,
 		ports: MutationPorts,
 		meta: { correlationId: string },
-	): Promise<Result<ItemAlias>>;
-	listItemAliases(
+	) => Promise<Result<ItemAlias>>;
+
+	createItemBarcode: (
+		record: ItemBarcodeCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	) => Promise<Result<ItemBarcode>>;
+
+	createItemExternalId: (
+		record: ItemExternalIdCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	) => Promise<Result<ItemExternalId>>;
+	createItemUom: (
+		record: ItemUomCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	) => Promise<Result<ItemUom>>;
+	findItemByAlias: (filter: ItemAliasLookup) => Promise<Result<Item | null>>;
+	findItemByBarcode: (
+		filter: ItemBarcodeLookup,
+	) => Promise<Result<Item | null>>;
+	findItemByExternalId: (
+		filter: ItemExternalIdLookup,
+	) => Promise<Result<Item | null>>;
+	getDefaultItemPurchaseUom: (
+		filter: ItemUomDefaultFilter,
+	) => Promise<Result<ItemUom | null>>;
+	getDefaultItemSalesUom: (
+		filter: ItemUomDefaultFilter,
+	) => Promise<Result<ItemUom | null>>;
+	listItemAliases: (
 		filter: ItemAliasListFilter,
-	): Promise<Result<ExtensionListPage<ItemAlias>>>;
-	findItemByAlias(filter: ItemAliasLookup): Promise<Result<Item | null>>;
-	listItemsByAlias(
+	) => Promise<Result<ExtensionListPage<ItemAlias>>>;
+	listItemsByAlias: (
 		filter: ItemAliasSearchFilter,
-	): Promise<Result<ExtensionListPage<Item>>>;
+	) => Promise<Result<ExtensionListPage<Item>>>;
+	listItemUoms: (
+		filter: ItemUomListFilter,
+	) => Promise<Result<ExtensionListPage<ItemUom>>>;
+	resolveItemUomCompatibilityContext: (
+		filter: ItemUomCompatibilityContextFilter,
+	) => Promise<Result<ItemUomCompatibilityContext>>;
 }
 
 /** Warehouse-owned child persistence boundary. */
 export interface WarehouseExtensionStore {
-	createWarehouseExternalId(
+	createWarehouseExternalId: (
 		record: WarehouseExternalIdCreateRecord,
 		ports: MutationPorts,
 		meta: { correlationId: string },
-	): Promise<Result<WarehouseExternalId>>;
-	findWarehouseByExternalId(
+	) => Promise<Result<WarehouseExternalId>>;
+	findWarehouseByExternalId: (
 		organizationId: string,
 		sourceSystem: string,
 		externalIdType: string,
 		normalizedValue: string,
-	): Promise<Result<Warehouse | null>>;
+	) => Promise<Result<Warehouse | null>>;
 }
 
 /** Package-level composition of non-variant extension stores. */

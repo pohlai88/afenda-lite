@@ -51,16 +51,21 @@ async function expectLifecycle(
 	toStatus: PlatformWorkItemStatus,
 ): Promise<void> {
 	const recorded = await store.record(input(organizationId, kind));
+	// biome-ignore lint/suspicious/noMisplacedAssertion: Shared contract helper is invoked only by test cases.
 	expect(recorded.ok).toBe(true);
-	if (!recorded.ok) return;
+	if (!recorded.ok) {
+		return;
+	}
 
 	const replay = await store.record(input(organizationId, kind));
+	// biome-ignore lint/suspicious/noMisplacedAssertion: Shared contract helper is invoked only by test cases.
 	expect(replay).toEqual(recorded);
 
 	const otherTenant = await store.find({
 		organizationId: "another-organization",
 		workItemId: recorded.data.id,
 	});
+	// biome-ignore lint/suspicious/noMisplacedAssertion: Shared contract helper is invoked only by test cases.
 	expect(otherTenant).toEqual({ ok: true, data: null });
 
 	const transitioned = await store.transition({
@@ -72,6 +77,7 @@ async function expectLifecycle(
 		correlationId: `transition-${kind}`,
 		reason: "Reviewed",
 	});
+	// biome-ignore lint/suspicious/noMisplacedAssertion: Shared contract helper is invoked only by test cases.
 	expect(transitioned).toMatchObject({
 		ok: true,
 		data: { status: toStatus, version: 2, updatedBy: "actor-2" },
@@ -85,12 +91,14 @@ async function expectLifecycle(
 		actorUserId: "actor-3",
 		correlationId: `stale-${kind}`,
 	});
+	// biome-ignore lint/suspicious/noMisplacedAssertion: Shared contract helper is invoked only by test cases.
 	expect(stale).toMatchObject({ ok: false, code: "CONFLICT" });
 
 	const activity = await store.listActivity({
 		organizationId,
 		workItemId: recorded.data.id,
 	});
+	// biome-ignore lint/suspicious/noMisplacedAssertion: Shared contract helper is invoked only by test cases.
 	expect(activity).toMatchObject({
 		ok: true,
 		data: [
@@ -125,7 +133,9 @@ describe("platform work-item owner", () => {
 		const original = input("memory-conflict", "approval");
 		const recorded = await store.record(original);
 		expect(recorded.ok).toBe(true);
-		if (!recorded.ok) return;
+		if (!recorded.ok) {
+			return;
+		}
 
 		expect(
 			await store.record({ ...original, title: "Different command" }),
@@ -226,3 +236,4 @@ describe.runIf(hasDatabase)("platform work-item Drizzle parity", () => {
 		);
 	});
 });
+// biome-ignore-all lint/performance/noAwaitInLoops: Cases run serially to isolate mutable test state and ordered transitions.

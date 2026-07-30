@@ -71,7 +71,9 @@ function parseEnum<T extends string>(
 }
 
 function parseSnapshot(value: string | null): Record<string, unknown> | null {
-	if (value === null || value.trim().length === 0) return null;
+	if (value === null || value.trim().length === 0) {
+		return null;
+	}
 	const parsed: unknown = JSON.parse(value);
 	if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
 		throw new Error("Invalid payment.counterparty_snapshot");
@@ -236,7 +238,9 @@ async function reload(
 	message: string,
 ): Promise<Result<Payment>> {
 	const result = await store.getById(organizationId, id);
-	if (!result.ok) return result;
+	if (!result.ok) {
+		return result;
+	}
 	return result.data === null
 		? fail("INTERNAL_ERROR", message)
 		: ok(result.data);
@@ -453,7 +457,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 					SELECT allocated.* FROM allocated, bumped, outboxed
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return failPayments(
 					"CONFLICT",
@@ -729,8 +733,12 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 				this.getById(record.organizationId, outgoingId),
 				this.getById(record.organizationId, incomingId),
 			]);
-			if (!outgoing.ok) return outgoing;
-			if (!incoming.ok) return incoming;
+			if (!outgoing.ok) {
+				return outgoing;
+			}
+			if (!incoming.ok) {
+				return incoming;
+			}
 			if (outgoing.data === null || incoming.data === null) {
 				return fail("INTERNAL_ERROR", "Posted transfer payments missing");
 			}
@@ -903,7 +911,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 					SELECT mutated.* FROM mutated, outboxed
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return failPayments(
 					"CONFLICT",
@@ -1004,7 +1012,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 					SELECT mutated.* FROM mutated, outboxed
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (row === undefined) {
 				return failPayments(
 					"CONFLICT",
@@ -1049,7 +1057,9 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 					and(eq(payment.organizationId, organizationId), eq(payment.id, id)),
 				)
 				.limit(1);
-			if (header === undefined) return ok(null);
+			if (header === undefined) {
+				return ok(null);
+			}
 			const [instructions, reversals] = await Promise.all([
 				db
 					.select()
@@ -1106,7 +1116,9 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 			);
 			const payments: Payment[] = [];
 			for (const result of results) {
-				if (!result.ok) return result;
+				if (!result.ok) {
+					return result;
+				}
 				if (result.data === null) {
 					return fail("INTERNAL_ERROR", "Listed payment missing");
 				}
@@ -1124,7 +1136,9 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 	): Promise<Result<PaymentApplicationAvailability>> {
 		try {
 			const loaded = await this.getById(organizationId, paymentId);
-			if (!loaded.ok) return loaded;
+			if (!loaded.ok) {
+				return loaded;
+			}
 			if (loaded.data === null) {
 				return failPayments(
 					"NOT_FOUND",

@@ -4,9 +4,12 @@ import type { PayrollRoundingPolicy } from "./rounding-policy";
 export const PAYROLL_MONEY_SCALE = 12;
 
 const SCALE_FACTOR = 10n ** BigInt(PAYROLL_MONEY_SCALE);
+const DECIMAL_PATTERN = /^-?\d+(\.\d+)?$/;
+const LEADING_ZERO_PATTERN = /^0+(?=\d)/;
+const TRAILING_ZERO_PATTERN = /0+$/;
 
 function assertValidDecimal(value: string): void {
-	if (!/^-?\d+(\.\d+)?$/.test(value.trim())) {
+	if (!DECIMAL_PATTERN.test(value.trim())) {
 		throw new RangeError(`Invalid payroll decimal: ${value}`);
 	}
 }
@@ -21,7 +24,10 @@ export function parseDecimalToScaled(value: string): bigint {
 	const normalizedFraction = fractionalPart
 		.padEnd(PAYROLL_MONEY_SCALE, "0")
 		.slice(0, PAYROLL_MONEY_SCALE);
-	const digits = `${integerPart}${normalizedFraction}`.replace(/^0+(?=\d)/, "");
+	const digits = `${integerPart}${normalizedFraction}`.replace(
+		LEADING_ZERO_PATTERN,
+		"",
+	);
 	const magnitude = BigInt(digits.length > 0 ? digits : "0");
 	return negative ? -magnitude : magnitude;
 }
@@ -36,7 +42,9 @@ export function formatScaledToDecimal(scaled: bigint): string {
 	const digits = absolute.toString().padStart(PAYROLL_MONEY_SCALE + 1, "0");
 	const integerPartRaw = digits.slice(0, -PAYROLL_MONEY_SCALE);
 	const integerPart = integerPartRaw.length > 0 ? integerPartRaw : "0";
-	const fractionalPart = digits.slice(-PAYROLL_MONEY_SCALE).replace(/0+$/, "");
+	const fractionalPart = digits
+		.slice(-PAYROLL_MONEY_SCALE)
+		.replace(TRAILING_ZERO_PATTERN, "");
 	const unsigned = fractionalPart
 		? `${integerPart}.${fractionalPart}`
 		: integerPart;

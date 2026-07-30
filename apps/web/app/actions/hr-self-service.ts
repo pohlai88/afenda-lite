@@ -40,7 +40,7 @@ export async function recordOwnAttendanceAction(
 	_previous: ActionResult<{ eventId: string; eventType: string }> | null,
 	formData: FormData,
 ): Promise<ActionResult<{ eventId: string; eventType: string }>> {
-	return runMemberPermissionAction({
+	return await runMemberPermissionAction({
 		path: "recordOwnAttendanceAction",
 		permission: "human-resources.time.attendance.self.record",
 		safeMessage: "Could not record attendance. Retry or contact HR.",
@@ -93,7 +93,9 @@ export async function recordOwnAttendanceAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 
 			revalidatePath("/client/human-resources");
 			return {

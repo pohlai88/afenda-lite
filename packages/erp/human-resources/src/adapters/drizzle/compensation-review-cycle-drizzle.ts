@@ -44,30 +44,32 @@ import type {
 } from "../../types";
 import { mapCompensationReviewFromDbRow } from "./compensation-benefits";
 
-type CompensationReviewCycleSqlRow = {
-	id: string;
-	organization_id: string;
-	code: string;
-	name: string;
-	period_start: string;
-	period_end: string;
-	status: string;
-	budget_total_amount: string;
+interface CompensationReviewCycleSqlRow {
 	budget_currency_code: string;
+	budget_total_amount: string;
+	code: string;
 	create_idempotency_key: string;
 	create_request_fingerprint: string;
-	version: number;
-	created_by: string;
-	updated_by: string;
 	created_at: Date;
+	created_by: string;
+	id: string;
+	name: string;
+	organization_id: string;
+	period_end: string;
+	period_start: string;
+	status: string;
 	updated_at: Date;
-};
+	updated_by: string;
+	version: number;
+}
 
 export function mapCompensationReviewCycleFromDbRow(
 	row: typeof hrCompensationReviewCycle.$inferSelect,
 ): Result<CompensationReviewCycle> {
 	const id = parseHumanResourcesCompensationReviewCycleId(row.id);
-	if (!id.ok) return id;
+	if (!id.ok) {
+		return id;
+	}
 	const status = compensationReviewCycleStatusSchema.safeParse(row.status);
 	if (!status.success) {
 		return fail("INTERNAL_ERROR", "Invalid compensation review cycle status");
@@ -128,7 +130,9 @@ async function transitionReviewCycleStatus(
 			organizationId: input.organizationId,
 			cycleId: input.cycleId,
 		});
-	if (!existing.ok) return existing;
+	if (!existing.ok) {
+		return existing;
+	}
 	if (existing.data === null) {
 		return notFound(
 			"Compensation review cycle not found",
@@ -140,12 +144,16 @@ async function transitionReviewCycleStatus(
 		cycle.version,
 		input.expectedVersion,
 	);
-	if (!versionCheck.ok) return versionCheck;
+	if (!versionCheck.ok) {
+		return versionCheck;
+	}
 	const transition = assertReviewCycleStatusTransition(
 		cycle.status,
 		nextStatus,
 	);
-	if (!transition.ok) return transition;
+	if (!transition.ok) {
+		return transition;
+	}
 
 	const nextVersion = input.expectedVersion + 1;
 	const auditId = randomUUID();
@@ -180,7 +188,7 @@ async function transitionReviewCycleStatus(
 				SELECT mutated.* FROM mutated, audited
 			`,
 		]);
-		const row = rows[0];
+		const [row] = rows;
 		if (!row) {
 			return missAfterOptimisticUpdate({
 				found: true,
@@ -212,8 +220,10 @@ export const drizzleCompensationReviewCycleMethods = {
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			return mapCompensationReviewCycleFromDbRow(row);
 		} catch (error) {
 			return mapPersistenceFailure(
@@ -241,10 +251,14 @@ export const drizzleCompensationReviewCycleMethods = {
 					),
 				)
 				.limit(1);
-			const row = rows[0];
-			if (!row) return ok(null);
+			const [row] = rows;
+			if (!row) {
+				return ok(null);
+			}
 			const mapped = mapCompensationReviewCycleFromDbRow(row);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return ok({
 				cycle: mapped.data,
 				createRequestFingerprint: row.createRequestFingerprint,
@@ -269,7 +283,9 @@ export const drizzleCompensationReviewCycleMethods = {
 					idempotencyKey: record.createIdempotencyKey,
 				},
 			);
-		if (!existing.ok) return existing;
+		if (!existing.ok) {
+			return existing;
+		}
 		if (existing.data !== null) {
 			if (
 				existing.data.createRequestFingerprint ===
@@ -284,11 +300,15 @@ export const drizzleCompensationReviewCycleMethods = {
 			periodStart: record.periodStart,
 			periodEnd: record.periodEnd,
 		});
-		if (!periodCheck.ok) return periodCheck;
+		if (!periodCheck.ok) {
+			return periodCheck;
+		}
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesCompensationReviewCycleId(id);
-		if (!brandedId.ok) return brandedId;
+		if (!brandedId.ok) {
+			return brandedId;
+		}
 		const auditId = randomUUID();
 
 		try {
@@ -326,7 +346,7 @@ export const drizzleCompensationReviewCycleMethods = {
 					SELECT mutated.* FROM mutated, audited
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			if (!row) {
 				return conflict(
 					"Compensation review cycle with this code already exists",
@@ -342,7 +362,9 @@ export const drizzleCompensationReviewCycleMethods = {
 							idempotencyKey: record.createIdempotencyKey,
 						},
 					);
-				if (!replay.ok) return replay;
+				if (!replay.ok) {
+					return replay;
+				}
 				if (
 					replay.data !== null &&
 					replay.data.createRequestFingerprint ===
@@ -369,7 +391,7 @@ export const drizzleCompensationReviewCycleMethods = {
 		_ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
 	): Promise<Result<CompensationReviewCycle>> {
-		return transitionReviewCycleStatus(input, meta, "open");
+		return await transitionReviewCycleStatus(input, meta, "open");
 	},
 
 	async closeCompensationReviewCycle(
@@ -382,7 +404,7 @@ export const drizzleCompensationReviewCycleMethods = {
 		_ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
 	): Promise<Result<CompensationReviewCycle>> {
-		return transitionReviewCycleStatus(input, meta, "closed");
+		return await transitionReviewCycleStatus(input, meta, "closed");
 	},
 
 	async cancelCompensationReviewCycle(
@@ -395,14 +417,14 @@ export const drizzleCompensationReviewCycleMethods = {
 		_ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
 	): Promise<Result<CompensationReviewCycle>> {
-		return transitionReviewCycleStatus(input, meta, "cancelled");
+		return await transitionReviewCycleStatus(input, meta, "cancelled");
 	},
 
 	async listCompensationReviewCycles(input: {
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		status?: CompensationReviewCycle["status"];
+		status?: CompensationReviewCycle["status"] | undefined;
 	}): Promise<Result<CompensationReviewCycleListPage>> {
 		try {
 			const conditions = [
@@ -419,7 +441,9 @@ export const drizzleCompensationReviewCycleMethods = {
 			const cycles: CompensationReviewCycle[] = [];
 			for (const row of allRows) {
 				const mapped = mapCompensationReviewCycleFromDbRow(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				cycles.push(mapped.data);
 			}
 			const totalCount = cycles.length;
@@ -456,7 +480,9 @@ export const drizzleCompensationReviewCycleMethods = {
 			const reviews: CompensationReview[] = [];
 			for (const row of rows) {
 				const mapped = mapCompensationReviewFromDbRow(row);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				reviews.push(mapped.data);
 			}
 			return ok(reviews);

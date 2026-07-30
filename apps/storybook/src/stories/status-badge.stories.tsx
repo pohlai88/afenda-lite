@@ -42,10 +42,10 @@ export const Overview: Story = {
 	render: () => (
 		<div className="grid w-full max-w-5xl gap-6">
 			<header>
-				<h1 className="text-2xl font-semibold tracking-tight">
+				<h1 className="font-semibold text-2xl tracking-tight">
 					Invoice posting state
 				</h1>
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					StatusBadge presents one authoritative state supplied by accounting.
 				</p>
 			</header>
@@ -53,10 +53,10 @@ export const Overview: Story = {
 				<CardHeader>
 					<div className="flex items-center justify-between gap-4">
 						<CardTitle>INV-1048</CardTitle>
-						<StatusBadge status="pending" label="Awaiting approval" />
+						<StatusBadge label="Awaiting approval" status="pending" />
 					</div>
 				</CardHeader>
-				<CardContent className="text-sm text-foreground-secondary">
+				<CardContent className="text-foreground-secondary text-sm">
 					MYR 18,420.00 · Northwind Trading
 				</CardContent>
 			</Card>
@@ -67,7 +67,7 @@ export const Usage: Story = {
 	render: () => (
 		<div className="flex flex-wrap gap-3">
 			<Badge variant="outline">Supplier invoice</Badge>
-			<StatusBadge status="warning" label="Evidence expiring" />
+			<StatusBadge label="Evidence expiring" status="warning" />
 		</div>
 	),
 };
@@ -75,7 +75,7 @@ export const Variants: Story = {
 	render: () => (
 		<div className="flex flex-wrap gap-3">
 			{statusEntries.map(([status, label]) => (
-				<StatusBadge key={status} status={status} label={label} />
+				<StatusBadge key={status} label={label} status={status} />
 			))}
 		</div>
 	),
@@ -84,7 +84,7 @@ export const Sizes: Story = {
 	render: () => (
 		<div className="flex items-center gap-3">
 			{statusSizes.map((size) => (
-				<StatusBadge key={size} size={size} status="success" label="Posted" />
+				<StatusBadge key={size} label="Posted" size={size} status="success" />
 			))}
 		</div>
 	),
@@ -92,8 +92,8 @@ export const Sizes: Story = {
 export const StatesAndAccessibility: Story = {
 	render: () => (
 		<StorySection title="Text, icon, and colour agree">
-			<StatusBadge status="error" label="Posting failed" />
-			<p className="text-sm text-foreground-secondary">
+			<StatusBadge label="Posting failed" status="error" />
+			<p className="text-foreground-secondary text-sm">
 				The explicit label preserves meaning without colour or icon.
 			</p>
 		</StorySection>
@@ -105,7 +105,7 @@ export const Composition: Story = {
 			<CardHeader>
 				<div className="flex items-center justify-between gap-4">
 					<CardTitle>Supplier SUP-1042</CardTitle>
-					<StatusBadge status="active" label="Active" />
+					<StatusBadge label="Active" status="active" />
 				</div>
 			</CardHeader>
 		</Card>
@@ -115,11 +115,11 @@ export const DoAndDoNot: Story = {
 	render: () => (
 		<div className="grid gap-6 sm:grid-cols-2">
 			<StorySection title="Do: authoritative lifecycle">
-				<StatusBadge status="success" label="Posted" />
+				<StatusBadge label="Posted" status="success" />
 			</StorySection>
 			<StorySection title="Do not: taxonomy">
 				<Badge variant="secondary">Finance</Badge>
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Categories belong on Badge.
 				</p>
 			</StorySection>

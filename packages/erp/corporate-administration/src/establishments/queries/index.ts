@@ -34,14 +34,20 @@ export async function getLegalEstablishment(
 		getLegalEstablishmentInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "getLegalEstablishment");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const result = await dependencies.establishmentStore.getLegalEstablishment({
 		organizationId: options.organizationId,
 		legalEstablishmentId: parsed.data.legalEstablishmentId,
 	});
-	if (!result.ok) return result;
+	if (!result.ok) {
+		return result;
+	}
 	return result.data === null
 		? notFound("legalEstablishment")
 		: { ok: true, data: result.data };
@@ -56,9 +62,13 @@ export async function listLegalEstablishmentsAsOf(
 		listLegalEstablishmentsAsOfInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "listLegalEstablishmentsAsOf");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return dependencies.establishmentStore.listLegalEstablishmentsAsOf({
 		organizationId: options.organizationId,
 		legalCompanyId: parsed.data.legalCompanyId,
@@ -80,9 +90,13 @@ export async function findRegisteredAddressAsOf(
 		findRegisteredAddressAsOfInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "findRegisteredAddressAsOf");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return dependencies.establishmentStore.findRegisteredAddressAsOf({
 		organizationId: options.organizationId,
 		legalCompanyId: parsed.data.legalCompanyId,
@@ -105,9 +119,13 @@ export async function listPremisesAsOf(
 		listPremisesAsOfInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "listPremisesAsOf");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return dependencies.establishmentStore.listPremisesAsOf({
 		organizationId: options.organizationId,
 		legalCompanyId: parsed.data.legalCompanyId,

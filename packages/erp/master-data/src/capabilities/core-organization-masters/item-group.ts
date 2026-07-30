@@ -23,6 +23,7 @@ import {
 	type MasterCommandId,
 } from "../../module-ids";
 import { parseMasterInput } from "../../parse-input";
+import { resolveAsync } from "../../resolve-async";
 import type { ItemGroup } from "../../types";
 import {
 	MASTER_SEARCH_ENTITY,
@@ -43,12 +44,48 @@ import {
 	updateItemGroupInputSchema,
 } from "./schemas";
 
-export type ItemGroupPath = {
-	groupId: string;
-	path: ItemGroup[];
+export interface ItemGroupPath {
 	codePath: string[];
+	groupId: string;
 	normalizedPath: string;
-};
+	path: ItemGroup[];
+}
+
+async function loadItemGroupPath(
+	store: ReturnType<typeof resolveStore>,
+	organizationId: string,
+	currentId: string,
+	visited: Set<string>,
+	path: ItemGroup[],
+): Promise<Result<ItemGroup[] | null>> {
+	if (visited.has(currentId)) {
+		return fail("CONFLICT", "Item group hierarchy contains a cycle", {
+			reason: "MASTER_INVALID_STATE",
+		} satisfies MasterFailureDetails);
+	}
+	visited.add(currentId);
+	const current = await store.getItemGroupById(organizationId, currentId);
+	if (!current.ok) {
+		return current;
+	}
+	if (current.data === null) {
+		return path.length === 0
+			? ok(null)
+			: fail("NOT_FOUND", "Item group parent is missing", {
+					reason: "MASTER_CROSS_ORG_REFERENCE",
+				} satisfies MasterFailureDetails);
+	}
+	path.unshift(current.data);
+	return current.data.parentId === null
+		? ok(path)
+		: loadItemGroupPath(
+				store,
+				organizationId,
+				current.data.parentId,
+				visited,
+				path,
+			);
+}
 
 async function afterItemGroupMutation(
 	result: Result<ItemGroup>,
@@ -79,7 +116,7 @@ export async function createItemGroup(
 		"Invalid item group create input",
 	);
 	if (!parsed.ok) {
-		return parsed;
+		return Promise.resolve(parsed);
 	}
 	const { store, ports, authorization } = resolveCommandDeps(options);
 	const authorized = await requireMasterCommandPermission(authorization, {
@@ -129,7 +166,7 @@ export async function updateItemGroup(
 		"Invalid item group update input",
 	);
 	if (!parsed.ok) {
-		return parsed;
+		return Promise.resolve(parsed);
 	}
 	const { store, ports, authorization } = resolveCommandDeps(options);
 	const authorized = await requireMasterCommandPermission(authorization, {
@@ -171,7 +208,7 @@ async function transitionItemGroupStatus(
 		"Invalid item group lifecycle input",
 	);
 	if (!parsed.ok) {
-		return parsed;
+		return Promise.resolve(parsed);
 	}
 	const { store, ports, dependencyInspector, authorization } =
 		resolveCommandDeps(options);
@@ -226,7 +263,7 @@ async function transitionItemGroupStatus(
 	return afterItemGroupMutation(result, options);
 }
 
-export async function activateItemGroup(
+export function activateItemGroup(
 	input: unknown,
 	options: MasterCommandOptions = {},
 ): Promise<Result<ItemGroup>> {
@@ -239,7 +276,7 @@ export async function activateItemGroup(
 	);
 }
 
-export async function inactiveItemGroup(
+export function inactiveItemGroup(
 	input: unknown,
 	options: MasterCommandOptions = {},
 ): Promise<Result<ItemGroup>> {
@@ -252,7 +289,7 @@ export async function inactiveItemGroup(
 	);
 }
 
-export async function retireItemGroup(
+export function retireItemGroup(
 	input: unknown,
 	options: MasterCommandOptions = {},
 ): Promise<Result<ItemGroup>> {
@@ -288,33 +325,20 @@ export async function resolveItemGroupPath(
 		return authorized;
 	}
 
-	const visited = new Set<string>();
-	const path: ItemGroup[] = [];
-	let currentId: string | null = parsed.data.id;
-	while (currentId !== null) {
-		if (visited.has(currentId)) {
-			return fail("CONFLICT", "Item group hierarchy contains a cycle", {
-				reason: "MASTER_INVALID_STATE",
-			} satisfies MasterFailureDetails);
-		}
-		visited.add(currentId);
-		const current = await store.getItemGroupById(
-			parsed.data.organizationId,
-			currentId,
-		);
-		if (!current.ok) {
-			return current;
-		}
-		if (current.data === null) {
-			return path.length === 0
-				? ok(null)
-				: fail("NOT_FOUND", "Item group parent is missing", {
-						reason: "MASTER_CROSS_ORG_REFERENCE",
-					} satisfies MasterFailureDetails);
-		}
-		path.unshift(current.data);
-		currentId = current.data.parentId;
+	const loadedPath = await loadItemGroupPath(
+		store,
+		parsed.data.organizationId,
+		parsed.data.id,
+		new Set<string>(),
+		[],
+	);
+	if (!loadedPath.ok) {
+		return loadedPath;
 	}
+	if (loadedPath.data === null) {
+		return ok(null);
+	}
+	const path = loadedPath.data;
 
 	return {
 		ok: true,
@@ -389,7 +413,9 @@ export async function existsItemGroupByCode(
 	options: MasterQueryOptions = {},
 ): Promise<Result<boolean>> {
 	const result = await getItemGroupByCode(input, options);
-	if (!result.ok) return result;
+	if (!result.ok) {
+		return result;
+	}
 	return ok(result.data !== null);
 }
 
@@ -424,41 +450,53 @@ export async function listItemGroups(
 	});
 }
 
-export async function listActiveItemGroups(
+export function listActiveItemGroups(
 	input: unknown,
 	options: MasterQueryOptions = {},
 ): Promise<Result<ItemGroup[]>> {
-	const parsed = parseMasterInput(
-		masterListOptionsSchema,
-		input,
-		"Invalid active item group list input",
-	);
-	if (!parsed.ok) return parsed;
-	return listItemGroups({ ...parsed.data, status: "active" }, options);
+	return resolveAsync(() => {
+		const parsed = parseMasterInput(
+			masterListOptionsSchema,
+			input,
+			"Invalid active item group list input",
+		);
+		if (!parsed.ok) {
+			return parsed;
+		}
+		return listItemGroups({ ...parsed.data, status: "active" }, options);
+	});
 }
 
-export async function listItemGroupsByStatus(
+export function listItemGroupsByStatus(
 	input: unknown,
 	options: MasterQueryOptions = {},
 ): Promise<Result<ItemGroup[]>> {
-	const parsed = parseMasterInput(
-		listByStatusInputSchema,
-		input,
-		"Invalid item group list-by-status input",
-	);
-	if (!parsed.ok) return parsed;
-	return listItemGroups(parsed.data, options);
+	return resolveAsync(() => {
+		const parsed = parseMasterInput(
+			listByStatusInputSchema,
+			input,
+			"Invalid item group list-by-status input",
+		);
+		if (!parsed.ok) {
+			return parsed;
+		}
+		return listItemGroups(parsed.data, options);
+	});
 }
 
-export async function listItemGroupsUpdatedSince(
+export function listItemGroupsUpdatedSince(
 	input: unknown,
 	options: MasterQueryOptions = {},
 ): Promise<Result<ItemGroup[]>> {
-	const parsed = parseMasterInput(
-		listUpdatedSinceInputSchema,
-		input,
-		"Invalid item group updated-since list input",
-	);
-	if (!parsed.ok) return parsed;
-	return listItemGroups(parsed.data, options);
+	return resolveAsync(() => {
+		const parsed = parseMasterInput(
+			listUpdatedSinceInputSchema,
+			input,
+			"Invalid item group updated-since list input",
+		);
+		if (!parsed.ok) {
+			return parsed;
+		}
+		return listItemGroups(parsed.data, options);
+	});
 }

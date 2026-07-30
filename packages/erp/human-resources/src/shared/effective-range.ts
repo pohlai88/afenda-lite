@@ -1,8 +1,8 @@
-export type EffectiveRangeRecord = {
-	id: string;
+export interface EffectiveRangeRecord {
 	effectiveFrom: string;
 	effectiveTo: string | null;
-};
+	id: string;
+}
 
 export type EffectiveRangeFailureReason =
 	| "DUPLICATE_ID"
@@ -13,11 +13,11 @@ export type EffectiveRangeResolution<TRecord> =
 	| { ok: true; record: TRecord | null }
 	| { ok: false; reason: EffectiveRangeFailureReason };
 
-type EffectiveRangeAccessors<TRecord> = {
+interface EffectiveRangeAccessors<TRecord> {
 	getEffectiveFrom: (record: TRecord) => string;
 	getEffectiveTo: (record: TRecord) => string | null;
 	getId: (record: TRecord) => string;
-};
+}
 
 function resolveEffectiveRange<TRecord>(
 	input: {
@@ -49,7 +49,9 @@ function resolveEffectiveRange<TRecord>(
 	for (let index = 1; index < ordered.length; index += 1) {
 		const previous = ordered[index - 1];
 		const current = ordered[index];
-		if (previous === undefined || current === undefined) continue;
+		if (previous === undefined || current === undefined) {
+			continue;
+		}
 		const previousTo = getEffectiveTo(previous);
 		if (previousTo === null || previousTo >= getEffectiveFrom(current)) {
 			return { ok: false, reason: "OVERLAP" };
@@ -58,8 +60,12 @@ function resolveEffectiveRange<TRecord>(
 
 	const effective = records.filter((record) => {
 		const effectiveTo = getEffectiveTo(record);
-		if (getEffectiveFrom(record) > input.asOf) return false;
-		if (effectiveTo === null) return true;
+		if (getEffectiveFrom(record) > input.asOf) {
+			return false;
+		}
+		if (effectiveTo === null) {
+			return true;
+		}
 		return effectiveTo >= input.asOf;
 	});
 	return { ok: true, record: effective[0] ?? null };

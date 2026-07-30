@@ -23,31 +23,25 @@ type ResourceResolution =
 	| undefined
 	| Result<HumanResourcesResourceContext | undefined>;
 
-type ParsedAuthorizedConfig<
+interface ParsedAuthorizedConfig<
 	TSchema extends z.ZodType,
 	TDeps,
 	TOut,
 	TProjected = TOut,
-> = {
-	schema: TSchema & z.ZodType<HumanResourcesAuthorizedActorInput>;
+> {
+	execute: (data: z.output<TSchema>, deps: TDeps) => Promise<Result<TOut>>;
 	invalidMessage: string;
 	parityResourceKind?: HumanResourcesResourceKind | undefined;
-	resolveResource?:
-		| ((
-				input: z.output<TSchema>,
-				options: HumanResourcesCommandOptions,
-				deps: TDeps,
-		  ) => ResourceResolution | Promise<ResourceResolution>)
-		| undefined;
 	project?:
 		| ((
 				value: TOut,
 				projection: HumanResourcesFieldProjection | undefined,
 		  ) => TProjected)
 		| undefined;
-	resolveRequestedFields?:
-		| ((input: z.output<TSchema>) => readonly string[] | undefined)
-		| undefined;
+	resolveDeps: (
+		options: HumanResourcesCommandOptions,
+		data: z.output<TSchema>,
+	) => Result<TDeps> | Promise<Result<TDeps>>;
 	/**
 	 * Optional options override after parse (e.g. leave custom authorize proof).
 	 */
@@ -57,12 +51,18 @@ type ParsedAuthorizedConfig<
 				data: z.output<TSchema>,
 		  ) => Promise<Result<HumanResourcesCommandOptions>>)
 		| undefined;
-	resolveDeps: (
-		options: HumanResourcesCommandOptions,
-		data: z.output<TSchema>,
-	) => Result<TDeps> | Promise<Result<TDeps>>;
-	execute: (data: z.output<TSchema>, deps: TDeps) => Promise<Result<TOut>>;
-};
+	resolveRequestedFields?:
+		| ((input: z.output<TSchema>) => readonly string[] | undefined)
+		| undefined;
+	resolveResource?:
+		| ((
+				input: z.output<TSchema>,
+				options: HumanResourcesCommandOptions,
+				deps: TDeps,
+		  ) => ResourceResolution | Promise<ResourceResolution>)
+		| undefined;
+	schema: TSchema & z.ZodType<HumanResourcesAuthorizedActorInput>;
+}
 
 async function runParsedAuthorizedOperation<
 	TSchema extends z.ZodType,
@@ -163,7 +163,7 @@ export async function runParsedAuthorizedCommand<
 		command: HumanResourcesCommandId;
 	},
 ): Promise<Result<TProjected>> {
-	return runParsedAuthorizedOperation({
+	return await runParsedAuthorizedOperation({
 		input,
 		options,
 		operationId: config.command,
@@ -184,7 +184,7 @@ export async function runParsedAuthorizedQuery<
 		query: HumanResourcesQueryId;
 	},
 ): Promise<Result<TProjected>> {
-	return runParsedAuthorizedOperation({
+	return await runParsedAuthorizedOperation({
 		input,
 		options,
 		operationId: config.query,

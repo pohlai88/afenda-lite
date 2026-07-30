@@ -105,62 +105,62 @@ export type RecordRecusalStoreInput = TransactionalWrite &
 	}>;
 
 export interface OfficerComplianceStore {
-	getOfficerDeclaration(input: {
+	discloseConflict: (
+		input: DiscloseConflictStoreInput,
+	) => Promise<Result<ConflictDisclosure>>;
+	endOfficerDisqualification: (
+		input: EndOfficerDisqualificationStoreInput,
+	) => Promise<Result<OfficerDisqualification>>;
+	getConflictDisclosure: (input: {
+		organizationId: OrganizationId;
+		conflictDisclosureId: OfficerConflictDisclosureId;
+	}) => Promise<Result<ConflictDisclosure | null>>;
+	getOfficerDeclaration: (input: {
 		organizationId: OrganizationId;
 		officerDeclarationId: OfficerDeclarationId;
-	}): Promise<Result<OfficerDeclaration | null>>;
-	listOfficerDeclarations(input: {
-		organizationId: OrganizationId;
-		officerAppointmentId: OfficerAppointmentId;
-	}): Promise<Result<readonly OfficerDeclaration[]>>;
-	listExpiringDeclarations(input: {
-		organizationId: OrganizationId;
-		legalCompanyId: LegalCompanyId;
-		asOf: CanonicalDate;
-		windowDays: number;
-		declarationType?: OfficerDeclarationType | undefined;
-	}): Promise<Result<readonly OfficerDeclaration[]>>;
-	recordOfficerDeclaration(
-		input: RecordOfficerDeclarationStoreInput,
-	): Promise<Result<OfficerDeclaration>>;
-	supersedeOfficerDeclaration(
-		input: SupersedeOfficerDeclarationStoreInput,
-	): Promise<Result<OfficerDeclaration>>;
-	getOfficerDisqualification(input: {
+	}) => Promise<Result<OfficerDeclaration | null>>;
+	getOfficerDisqualification: (input: {
 		organizationId: OrganizationId;
 		officerDisqualificationId: OfficerDisqualificationId;
-	}): Promise<Result<OfficerDisqualification | null>>;
-	listOfficerDisqualifications(input: {
-		organizationId: OrganizationId;
-		officerAppointmentId: OfficerAppointmentId;
-	}): Promise<Result<readonly OfficerDisqualification[]>>;
-	listActiveDisqualifications(input: {
+	}) => Promise<Result<OfficerDisqualification | null>>;
+	listActiveDisqualifications: (input: {
 		organizationId: OrganizationId;
 		legalCompanyId: LegalCompanyId;
 		asOf: CanonicalDate;
 		officerAppointmentId?: OfficerAppointmentId | undefined;
-	}): Promise<Result<readonly OfficerDisqualification[]>>;
-	recordOfficerDisqualification(
-		input: RecordOfficerDisqualificationStoreInput,
-	): Promise<Result<OfficerDisqualification>>;
-	endOfficerDisqualification(
-		input: EndOfficerDisqualificationStoreInput,
-	): Promise<Result<OfficerDisqualification>>;
-	getConflictDisclosure(input: {
-		organizationId: OrganizationId;
-		conflictDisclosureId: OfficerConflictDisclosureId;
-	}): Promise<Result<ConflictDisclosure | null>>;
-	listConflictsForMatter(input: {
+	}) => Promise<Result<readonly OfficerDisqualification[]>>;
+	listConflictsForMatter: (input: {
 		organizationId: OrganizationId;
 		legalCompanyId: LegalCompanyId;
 		matterType: ConflictMatterType;
 		matterId: string;
 		includeCleared?: boolean | undefined;
-	}): Promise<Result<readonly ConflictDisclosure[]>>;
-	discloseConflict(
-		input: DiscloseConflictStoreInput,
-	): Promise<Result<ConflictDisclosure>>;
-	recordRecusal(
+	}) => Promise<Result<readonly ConflictDisclosure[]>>;
+	listExpiringDeclarations: (input: {
+		organizationId: OrganizationId;
+		legalCompanyId: LegalCompanyId;
+		asOf: CanonicalDate;
+		windowDays: number;
+		declarationType?: OfficerDeclarationType | undefined;
+	}) => Promise<Result<readonly OfficerDeclaration[]>>;
+	listOfficerDeclarations: (input: {
+		organizationId: OrganizationId;
+		officerAppointmentId: OfficerAppointmentId;
+	}) => Promise<Result<readonly OfficerDeclaration[]>>;
+	listOfficerDisqualifications: (input: {
+		organizationId: OrganizationId;
+		officerAppointmentId: OfficerAppointmentId;
+	}) => Promise<Result<readonly OfficerDisqualification[]>>;
+	recordOfficerDeclaration: (
+		input: RecordOfficerDeclarationStoreInput,
+	) => Promise<Result<OfficerDeclaration>>;
+	recordOfficerDisqualification: (
+		input: RecordOfficerDisqualificationStoreInput,
+	) => Promise<Result<OfficerDisqualification>>;
+	recordRecusal: (
 		input: RecordRecusalStoreInput,
-	): Promise<Result<ConflictDisclosure>>;
+	) => Promise<Result<ConflictDisclosure>>;
+	supersedeOfficerDeclaration: (
+		input: SupersedeOfficerDeclarationStoreInput,
+	) => Promise<Result<OfficerDeclaration>>;
 }

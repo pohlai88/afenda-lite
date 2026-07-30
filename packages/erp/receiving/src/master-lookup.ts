@@ -55,7 +55,9 @@ export function requireMaster<T>(
 	result: Result<T | null>,
 	notFoundMessage: string,
 ): Result<T> {
-	if (!result.ok) return result;
+	if (!result.ok) {
+		return result;
+	}
 	return result.data === null
 		? fail("NOT_FOUND", notFoundMessage)
 		: ok(result.data);

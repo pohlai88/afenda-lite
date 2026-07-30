@@ -13,19 +13,19 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-type HrHumanResourcesActionConfig<
+interface HrHumanResourcesActionConfig<
 	TData,
 	TPayload extends Record<string, unknown>,
-> = {
-	path: string;
-	permission: ProductPermissionCode;
-	safeMessage: string;
-	validationMessage: string;
+> {
 	actionSchema: z.ZodTypeAny;
 	input: unknown;
 	invoke: (stampedInput: Record<string, unknown>) => Promise<Result<TData>>;
 	mapData: (data: TData) => TPayload;
-};
+	path: string;
+	permission: ProductPermissionCode;
+	safeMessage: string;
+	validationMessage: string;
+}
 
 function createHrHumanResourcesActionRunner(area: HrObservabilityArea) {
 	const runOperatorPermissionAction =
@@ -36,7 +36,7 @@ function createHrHumanResourcesActionRunner(area: HrObservabilityArea) {
 	>(
 		config: HrHumanResourcesActionConfig<TData, TPayload>,
 	): Promise<ActionResult<TPayload>> {
-		return runHrHumanResourcesAction(config, runOperatorPermissionAction);
+		return await runHrHumanResourcesAction(config, runOperatorPermissionAction);
 	};
 }
 
@@ -50,7 +50,7 @@ export async function runHrHumanResourcesAction<
 		typeof createHrOperatorPermissionActionRunner
 	>,
 ): Promise<ActionResult<TPayload>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: config.path,
 		permission: config.permission,
 		safeMessage: config.safeMessage,
@@ -70,7 +70,9 @@ export async function runHrHumanResourcesAction<
 			);
 			const result = await config.invoke(stamped);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: config.mapData(mapped.data) };
 		},
 	});

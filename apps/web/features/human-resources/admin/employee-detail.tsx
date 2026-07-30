@@ -44,12 +44,15 @@ function statusTone(
 		["active", "verified", "completed", "passed", "acknowledged"].includes(
 			status,
 		)
-	)
+	) {
 		return "success";
-	if (["notice", "pending", "open", "proposed"].includes(status))
+	}
+	if (["notice", "pending", "open", "proposed"].includes(status)) {
 		return "warning";
-	if (["terminated", "expired", "rejected", "failed"].includes(status))
+	}
+	if (["terminated", "expired", "rejected", "failed"].includes(status)) {
 		return "error";
+	}
 	return "inactive";
 }
 
@@ -63,6 +66,7 @@ function DateValue({
 	return value ? formatHrLocalDate(value, preferences) : "Not set";
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The detail RSC maps independent HR capabilities to governed panels.
 export async function EmployeeAdminDetail({
 	employeeId,
 	preferences,
@@ -84,12 +88,14 @@ export async function EmployeeAdminDetail({
 		sessionHasPermission(session, "human-resources.onboarding.manage"),
 		sessionHasPermission(session, "human-resources.offboarding.manage"),
 	]);
-	if (!record.ok && record.code === "NOT_FOUND") notFound();
+	if (!record.ok && record.code === "NOT_FOUND") {
+		notFound();
+	}
 	if (!record.ok) {
 		return (
 			<main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6">
-				<h1 className="text-2xl font-semibold">Employee record</h1>
-				<Alert variant="destructive" role="alert">
+				<h1 className="font-semibold text-2xl">Employee record</h1>
+				<Alert role="alert" variant="destructive">
 					<AlertTitle>Employee record unavailable</AlertTitle>
 					<AlertDescription>Retry or contact HR support.</AlertDescription>
 				</Alert>
@@ -97,7 +103,7 @@ export async function EmployeeAdminDetail({
 		);
 	}
 
-	const data = record.data;
+	const { data } = record;
 	const employmentContext = data.currentEmployment
 		? {
 				employeeId: data.employee.id,
@@ -110,18 +116,18 @@ export async function EmployeeAdminDetail({
 	return (
 		<main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6">
 			<header className="space-y-3">
-				<Button asChild variant="ghost" size="sm">
+				<Button asChild size="sm" variant="ghost">
 					<Link href="/admin/human-resources">Back to employee directory</Link>
 				</Button>
 				<div className="flex flex-wrap items-start justify-between gap-3">
 					<div className="space-y-1">
-						<p className="text-sm text-muted-foreground">
+						<p className="text-muted-foreground text-sm">
 							{data.employee.employeeNumber}
 						</p>
-						<h1 className="text-2xl font-semibold">
+						<h1 className="font-semibold text-2xl">
 							{data.employee.legalName}
 						</h1>
-						<p className="text-sm text-muted-foreground">
+						<p className="text-muted-foreground text-sm">
 							Employee record as of {asOf}
 						</p>
 					</div>
@@ -142,7 +148,7 @@ export async function EmployeeAdminDetail({
 
 			<Tabs defaultValue="overview">
 				<div className="overflow-x-auto">
-					<TabsList variant="line" aria-label="Employee record areas">
+					<TabsList aria-label="Employee record areas" variant="line">
 						<TabsTrigger value="overview">Overview</TabsTrigger>
 						<TabsTrigger value="employment">Employment</TabsTrigger>
 						<TabsTrigger value="organization">Organization</TabsTrigger>
@@ -152,12 +158,12 @@ export async function EmployeeAdminDetail({
 					</TabsList>
 				</div>
 
-				<TabsContent value="overview" className="pt-5">
+				<TabsContent className="pt-5" value="overview">
 					<section
 						aria-labelledby="employee-overview-heading"
 						className="space-y-4"
 					>
-						<h2 id="employee-overview-heading" className="text-lg font-medium">
+						<h2 className="font-medium text-lg" id="employee-overview-heading">
 							Record overview
 						</h2>
 						<KeyValueList
@@ -186,12 +192,12 @@ export async function EmployeeAdminDetail({
 					</section>
 				</TabsContent>
 
-				<TabsContent value="employment" className="space-y-6 pt-5">
+				<TabsContent className="space-y-6 pt-5" value="employment">
 					<section
 						aria-labelledby="employment-history-heading"
 						className="space-y-3"
 					>
-						<h2 id="employment-history-heading" className="text-lg font-medium">
+						<h2 className="font-medium text-lg" id="employment-history-heading">
 							Employment history
 						</h2>
 						<div className="overflow-x-auto rounded-md border">
@@ -226,7 +232,7 @@ export async function EmployeeAdminDetail({
 						aria-labelledby="contract-history-heading"
 						className="space-y-3"
 					>
-						<h2 id="contract-history-heading" className="text-lg font-medium">
+						<h2 className="font-medium text-lg" id="contract-history-heading">
 							Contract history
 						</h2>
 						{data.contracts.length === 0 ? (
@@ -270,7 +276,7 @@ export async function EmployeeAdminDetail({
 						aria-labelledby="assignment-history-heading"
 						className="space-y-3"
 					>
-						<h2 id="assignment-history-heading" className="text-lg font-medium">
+						<h2 className="font-medium text-lg" id="assignment-history-heading">
 							Assignment history
 						</h2>
 						{data.assignments.length === 0 ? (
@@ -305,12 +311,12 @@ export async function EmployeeAdminDetail({
 					</section>
 				</TabsContent>
 
-				<TabsContent value="organization" className="space-y-6 pt-5">
+				<TabsContent className="space-y-6 pt-5" value="organization">
 					<section
 						aria-labelledby="position-context-heading"
 						className="space-y-4"
 					>
-						<h2 id="position-context-heading" className="text-lg font-medium">
+						<h2 className="font-medium text-lg" id="position-context-heading">
 							Position and reporting context
 						</h2>
 						<KeyValueList
@@ -351,7 +357,7 @@ export async function EmployeeAdminDetail({
 						aria-labelledby="direct-reports-heading"
 						className="space-y-3"
 					>
-						<h2 id="direct-reports-heading" className="text-lg font-medium">
+						<h2 className="font-medium text-lg" id="direct-reports-heading">
 							Direct reports
 						</h2>
 						{data.directReports.length === 0 ? (
@@ -360,13 +366,13 @@ export async function EmployeeAdminDetail({
 							<ul className="divide-y divide-border">
 								{data.directReports.map((employee) => (
 									<li
-										key={employee.id}
 										className="flex items-center justify-between gap-3 px-4 py-3 text-sm"
+										key={employee.id}
 									>
 										<span>
 											{employee.employeeNumber} · {employee.legalName}
 										</span>
-										<Button asChild variant="ghost" size="sm">
+										<Button asChild size="sm" variant="ghost">
 											<Link
 												href={`/admin/human-resources/employees/${employee.id}`}
 											>
@@ -380,18 +386,18 @@ export async function EmployeeAdminDetail({
 					</section>
 				</TabsContent>
 
-				<TabsContent value="lifecycle" className="pt-5">
+				<TabsContent className="pt-5" value="lifecycle">
 					<section
 						aria-labelledby="lifecycle-timeline-heading"
 						className="space-y-3"
 					>
-						<h2 id="lifecycle-timeline-heading" className="text-lg font-medium">
+						<h2 className="font-medium text-lg" id="lifecycle-timeline-heading">
 							Lifecycle timeline
 						</h2>
 						{data.timeline.length === 0 ? (
 							<Empty
-								title="No lifecycle facts recorded"
 								description="Lifecycle facts will appear as governed operations are completed."
+								title="No lifecycle facts recorded"
 							/>
 						) : (
 							<div className="overflow-x-auto rounded-md border">
@@ -413,7 +419,7 @@ export async function EmployeeAdminDetail({
 												</TableCell>
 												<TableCell>
 													<div className="font-medium">{entry.title}</div>
-													<div className="text-sm text-muted-foreground">
+													<div className="text-muted-foreground text-sm">
 														{entry.detail}
 													</div>
 												</TableCell>
@@ -431,12 +437,12 @@ export async function EmployeeAdminDetail({
 					</section>
 				</TabsContent>
 
-				<TabsContent value="compliance" className="space-y-6 pt-5">
+				<TabsContent className="space-y-6 pt-5" value="compliance">
 					<section
 						aria-labelledby="compliance-summary-heading"
 						className="space-y-4"
 					>
-						<h2 id="compliance-summary-heading" className="text-lg font-medium">
+						<h2 className="font-medium text-lg" id="compliance-summary-heading">
 							Compliance summary
 						</h2>
 						{data.complianceSummary &&
@@ -445,7 +451,7 @@ export async function EmployeeAdminDetail({
 							data.complianceSummary.workEligibilityAtRisk ||
 							data.complianceSummary.outstandingPolicyAcknowledgementCount >
 								0) ? (
-							<Alert variant="destructive" role="alert">
+							<Alert role="alert" variant="destructive">
 								<AlertTitle>Compliance action required</AlertTitle>
 								<AlertDescription>
 									Review missing or expiring documents, work eligibility, and
@@ -494,7 +500,7 @@ export async function EmployeeAdminDetail({
 						/>
 					</section>
 					<section aria-labelledby="documents-heading" className="space-y-3">
-						<h2 id="documents-heading" className="text-lg font-medium">
+						<h2 className="font-medium text-lg" id="documents-heading">
 							Documents
 						</h2>
 						{data.documents.length === 0 ? (
@@ -536,7 +542,7 @@ export async function EmployeeAdminDetail({
 						)}
 					</section>
 					<section aria-labelledby="eligibility-heading" className="space-y-3">
-						<h2 id="eligibility-heading" className="text-lg font-medium">
+						<h2 className="font-medium text-lg" id="eligibility-heading">
 							Work eligibility
 						</h2>
 						{data.workEligibility ? (
@@ -560,7 +566,7 @@ export async function EmployeeAdminDetail({
 						aria-labelledby="acknowledgements-heading"
 						className="space-y-3"
 					>
-						<h2 id="acknowledgements-heading" className="text-lg font-medium">
+						<h2 className="font-medium text-lg" id="acknowledgements-heading">
 							Outstanding acknowledgements
 						</h2>
 						{data.outstandingAcknowledgements.length === 0 ? (
@@ -600,18 +606,18 @@ export async function EmployeeAdminDetail({
 					</section>
 				</TabsContent>
 
-				<TabsContent value="actions" className="space-y-8 pt-5">
+				<TabsContent className="space-y-8 pt-5" value="actions">
 					<section
 						aria-labelledby="employment-actions-heading"
 						className="space-y-4"
 					>
-						<h2 id="employment-actions-heading" className="text-lg font-medium">
+						<h2 className="font-medium text-lg" id="employment-actions-heading">
 							Employment transition
 						</h2>
 						<EmploymentJourneyForm
+							canManage={canManageEmployment}
 							employeeId={data.employee.id}
 							employment={employmentContext}
-							canManage={canManageEmployment}
 						/>
 					</section>
 					{employmentContext ? (
@@ -621,13 +627,12 @@ export async function EmployeeAdminDetail({
 								className="space-y-4 border-t pt-6"
 							>
 								<h2
+									className="font-medium text-lg"
 									id="assignment-actions-heading"
-									className="text-lg font-medium"
 								>
 									Assignment transition
 								</h2>
 								<AssignmentJourneyForm
-									context={employmentContext}
 									assignment={
 										data.currentAssignment
 											? {
@@ -636,6 +641,8 @@ export async function EmployeeAdminDetail({
 												}
 											: null
 									}
+									canManage={canManageEmployment}
+									context={employmentContext}
 									positions={data.availablePositions
 										.filter(
 											(position) =>
@@ -646,7 +653,6 @@ export async function EmployeeAdminDetail({
 											code: position.code,
 											title: position.title,
 										}))}
-									canManage={canManageEmployment}
 								/>
 							</section>
 							{canManageEmployment ? (
@@ -655,8 +661,8 @@ export async function EmployeeAdminDetail({
 									className="space-y-4 border-t pt-6"
 								>
 									<h2
+										className="font-medium text-lg"
 										id="lifecycle-actions-heading"
-										className="text-lg font-medium"
 									>
 										Probation and termination
 									</h2>
@@ -669,8 +675,8 @@ export async function EmployeeAdminDetail({
 									className="space-y-4 border-t pt-6"
 								>
 									<h2
+										className="font-medium text-lg"
 										id="onboarding-actions-heading"
-										className="text-lg font-medium"
 									>
 										Onboarding
 									</h2>
@@ -683,8 +689,8 @@ export async function EmployeeAdminDetail({
 									className="space-y-4 border-t pt-6"
 								>
 									<h2
+										className="font-medium text-lg"
 										id="offboarding-actions-heading"
-										className="text-lg font-medium"
 									>
 										Offboarding
 									</h2>
@@ -698,3 +704,4 @@ export async function EmployeeAdminDetail({
 		</main>
 	);
 }
+// biome-ignore-all lint/style/noNestedTernary: Exhaustive status and tri-state view mappings remain explicit at their use sites.

@@ -16,16 +16,16 @@ import {
 	type HumanResourcesBulkExportType,
 } from "@/lib/erp/human-resources-bulk-export-registry";
 
-export type HumanResourcesBulkExportWorkerInput = {
-	organizationId: string;
+export interface HumanResourcesBulkExportWorkerInput {
 	actorUserId: string;
 	correlationId: string;
-	exportType: HumanResourcesBulkExportType;
-	requestedFields: readonly string[];
 	dateFrom?: string;
 	dateTo?: string;
 	effectiveOn?: string;
-};
+	exportType: HumanResourcesBulkExportType;
+	organizationId: string;
+	requestedFields: readonly string[];
+}
 
 export function createHumanResourcesBulkExportPorts(
 	dependencies: {
@@ -62,7 +62,9 @@ export function createHumanResourcesBulkExportPorts(
 					effectiveOn: input.effectiveOn,
 				},
 			});
-			if (!recorded.ok) return recorded;
+			if (!recorded.ok) {
+				return recorded;
+			}
 			if (recorded.data.organizationId !== input.organizationId) {
 				return fail(
 					"INTERNAL_ERROR",

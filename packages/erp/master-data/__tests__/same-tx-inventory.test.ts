@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 
 import { createParty } from "../src";
 import type { MutationPorts } from "../src/ports";
+import { resolveAsync } from "../src/resolve-async";
 import { createMasterDataTestHarness } from "./helpers/harness";
 
 const drizzleStorePath = join(
@@ -138,8 +139,8 @@ describe("@afenda/master-data same-TX inventory", () => {
 		const failingPorts: MutationPorts = {
 			...ports,
 			outbox: {
-				async append() {
-					return fail("INTERNAL", "outbox unavailable");
+				append() {
+					return resolveAsync(() => fail("INTERNAL", "outbox unavailable"));
 				},
 			},
 		};

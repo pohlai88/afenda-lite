@@ -19,7 +19,7 @@ export const HUMAN_RESOURCES_AGGREGATE_HEADCOUNT_PLAN_LINE =
 export type HumanResourcesHeadcountPlanLineAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_HEADCOUNT_PLAN_LINE;
 
-export async function addHeadcountPlanLine(
+export function addHeadcountPlanLine(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<HeadcountPlanLine>> {
@@ -52,7 +52,7 @@ export async function addHeadcountPlanLine(
 	});
 }
 
-export async function updateHeadcountPlanLine(
+export function updateHeadcountPlanLine(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<HeadcountPlanLine>> {
@@ -86,7 +86,7 @@ export async function updateHeadcountPlanLine(
 	});
 }
 
-export async function removeHeadcountPlanLine(
+export function removeHeadcountPlanLine(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<void>> {

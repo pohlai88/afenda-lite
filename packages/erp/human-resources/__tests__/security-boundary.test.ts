@@ -10,6 +10,7 @@ import {
 	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_OWN_READ,
 } from "../src/permissions";
 import { requireComplianceEmployeeReadScope } from "../src/shared/compliance-command";
+import { runSequential } from "../src/shared/run-sequential";
 import {
 	requireManagerResourceAccess,
 	requireOwnResourceAccess,
@@ -37,15 +38,15 @@ describe("Security Boundary Tests", () => {
 		authPort = {
 			async can(input) {
 				if (input.permission === "human-resources.compliance.administer") {
-					return false; // No admin permissions for these tests
+					return await false; // No admin permissions for these tests
 				}
 				if (
 					input.permission === "human-resources.employee-document.own.read" &&
 					input.actorUserId === validActorUserId
 				) {
-					return true;
+					return await true;
 				}
-				return false;
+				return await false;
 			},
 		};
 
@@ -57,17 +58,17 @@ describe("Security Boundary Tests", () => {
 					input.organizationId === organizationId &&
 					input.actorUserId === validActorUserId
 				) {
-					return ok({
+					return await ok({
 						employeeId: validEmployeeId,
 						relationshipType: "self" as const,
 						effectiveFrom: "2024-01-01",
 						effectiveUntil: null,
 					});
 				}
-				return ok(null);
+				return await ok(null);
 			},
 			async resolveManagerEmployeesForActor() {
-				return ok([]);
+				return await ok([]);
 			},
 		};
 	});
@@ -123,7 +124,7 @@ describe("Security Boundary Tests", () => {
 			// Use an auth port that denies the permission
 			const denyAuthPort = {
 				async can() {
-					return false;
+					return await false;
 				},
 			};
 
@@ -201,17 +202,17 @@ describe("Security Boundary Tests", () => {
 						asOf >= "2024-01-01" &&
 						asOf <= "2024-12-31"
 					) {
-						return ok({
+						return await ok({
 							employeeId: validEmployeeId,
 							relationshipType: "self" as const,
 							effectiveFrom: "2024-01-01",
 							effectiveUntil: "2024-12-31",
 						});
 					}
-					return ok(null);
+					return await ok(null);
 				},
 				async resolveManagerEmployeesForActor() {
-					return ok([]);
+					return await ok([]);
 				},
 			};
 
@@ -316,9 +317,9 @@ describe("Security Boundary Tests", () => {
 				async can(input) {
 					// Try to bypass with different case
 					if (input.permission === "EMPLOYEE-DOCUMENT.OWN.READ") {
-						return true;
+						return await true;
 					}
-					return false;
+					return await false;
 				},
 			};
 
@@ -343,9 +344,9 @@ describe("Security Boundary Tests", () => {
 				async can(input) {
 					// Try to bypass with similar but different permission
 					if (input.permission === "employee-document.own.write") {
-						return true;
+						return await true;
 					}
-					return false;
+					return await false;
 				},
 			};
 
@@ -376,37 +377,20 @@ describe("Security Boundary Tests", () => {
 			const actorUserId = "user-actor-123";
 
 			// Set up authorization that grants own.read permission
-			const authPort: HumanResourcesAuthorizationPort = {
+			const authPortValue14: HumanResourcesAuthorizationPort = {
 				async can(input) {
 					if (
 						input.permission ===
 							HUMAN_RESOURCES_PERMISSION_PERFORMANCE_OWN_READ &&
 						input.actorUserId === actorUserId
 					) {
-						return true;
+						return await true;
 					}
-					return false;
+					return await false;
 				},
 			};
 
 			// Set up identity resolver that maps actor to employeeId1 only
-			const identityResolver: HumanResourcesIdentityResolverPort = {
-				async resolveEmployeeForActor(input) {
-					if (input.actorUserId === actorUserId) {
-						return ok({
-							employeeId: employeeId1,
-							relationshipType: "self" as const,
-							effectiveFrom: "2024-01-01",
-							effectiveUntil: null,
-						});
-					}
-					return ok(null);
-				},
-				async resolveManagerEmployeesForActor() {
-					return ok([]);
-				},
-			};
-
 			// Should allow access to own employee (employeeId1)
 			const ownResult = await listEmployeeGoals(
 				{
@@ -417,7 +401,7 @@ describe("Security Boundary Tests", () => {
 				},
 				{
 					store,
-					authorization: authPort,
+					authorization: authPortValue14,
 					identityResolver,
 				},
 			);
@@ -433,7 +417,7 @@ describe("Security Boundary Tests", () => {
 				},
 				{
 					store,
-					authorization: authPort,
+					authorization: authPortValue14,
 					identityResolver,
 				},
 			);
@@ -453,34 +437,34 @@ describe("Security Boundary Tests", () => {
 			const actorUserId = "manager-user-123";
 
 			// Set up authorization that grants manager.manage permission
-			const authPort: HumanResourcesAuthorizationPort = {
+			const authPortValue15: HumanResourcesAuthorizationPort = {
 				async can(input) {
 					if (
 						input.permission ===
 							HUMAN_RESOURCES_PERMISSION_PERFORMANCE_MANAGER_MANAGE &&
 						input.actorUserId === actorUserId
 					) {
-						return true;
+						return await true;
 					}
-					return false;
+					return await false;
 				},
 			};
 
 			// Set up identity resolver that maps manager to their employee ID
-			const identityResolver: HumanResourcesIdentityResolverPort = {
+			const identityResolverValue16: HumanResourcesIdentityResolverPort = {
 				async resolveEmployeeForActor(input) {
 					if (input.actorUserId === actorUserId) {
-						return ok({
+						return await ok({
 							employeeId: managerEmployeeId,
 							relationshipType: "self" as const,
 							effectiveFrom: "2024-01-01",
 							effectiveUntil: null,
 						});
 					}
-					return ok(null);
+					return await ok(null);
 				},
 				async resolveManagerEmployeesForActor() {
-					return ok([]);
+					return await ok([]);
 				},
 			};
 
@@ -494,17 +478,17 @@ describe("Security Boundary Tests", () => {
 					employeeId: string;
 				}) {
 					if (employeeId === employeeId1) {
-						return ok(managerEmployeeId);
+						return await ok(managerEmployeeId);
 					}
-					return ok(null);
+					return await ok(null);
 				},
 			};
 
 			// Should allow manager access to direct report (employeeId1)
 			const managerAccessResult = await requireManagerResourceAccess(
-				identityResolver,
+				identityResolverValue16,
 				testStore as HumanResourcesStore,
-				{ authorization: authPort },
+				{ authorization: authPortValue15 },
 				{
 					organizationId,
 					actorUserId,
@@ -516,9 +500,9 @@ describe("Security Boundary Tests", () => {
 
 			// Should deny manager access to non-report (employeeId2)
 			const managerDeniedResult = await requireManagerResourceAccess(
-				identityResolver,
+				identityResolverValue16,
 				testStore as HumanResourcesStore,
-				{ authorization: authPort },
+				{ authorization: authPortValue15 },
 				{
 					organizationId,
 					actorUserId,
@@ -540,39 +524,39 @@ describe("Security Boundary Tests", () => {
 			const actorUserId = "attacker-user";
 
 			// Set up authorization that would grant permission if identity was spoofed
-			const authPort: HumanResourcesAuthorizationPort = {
+			const authPortValue17: HumanResourcesAuthorizationPort = {
 				async can(input) {
 					if (
 						input.permission === HUMAN_RESOURCES_PERMISSION_PERFORMANCE_OWN_READ
 					) {
-						return true;
+						return await true;
 					}
-					return false;
+					return await false;
 				},
 			};
 
 			// Identity resolver maps attacker to legitimate employee
-			const identityResolver: HumanResourcesIdentityResolverPort = {
+			const identityResolverValue18: HumanResourcesIdentityResolverPort = {
 				async resolveEmployeeForActor(input) {
 					if (input.actorUserId === actorUserId) {
-						return ok({
+						return await ok({
 							employeeId: legitEmployeeId,
 							relationshipType: "self" as const,
 							effectiveFrom: "2024-01-01",
 							effectiveUntil: null,
 						});
 					}
-					return ok(null);
+					return await ok(null);
 				},
 				async resolveManagerEmployeesForActor() {
-					return ok([]);
+					return await ok([]);
 				},
 			};
 
 			// Should allow access to legitimate employee identity
 			const legitResult = await requireOwnResourceAccess(
-				identityResolver,
-				{ authorization: authPort },
+				identityResolverValue18,
+				{ authorization: authPortValue17 },
 				{
 					organizationId,
 					actorUserId,
@@ -584,8 +568,8 @@ describe("Security Boundary Tests", () => {
 
 			// Should prevent access to spoofed employee identity
 			const spoofResult = await requireOwnResourceAccess(
-				identityResolver,
-				{ authorization: authPort },
+				identityResolverValue18,
+				{ authorization: authPortValue17 },
 				{
 					organizationId,
 					actorUserId,
@@ -604,38 +588,38 @@ describe("Security Boundary Tests", () => {
 				"550e8400-e29b-41d4-a716-446655440000" as HumanResourcesEmployeeId;
 			const actorUserId = "cross-org-user";
 
-			const authPort: HumanResourcesAuthorizationPort = {
+			const authPortValue19: HumanResourcesAuthorizationPort = {
 				async can() {
-					return true;
+					return await true;
 				},
 			};
 
 			// Identity resolver only works for specific organization
-			const identityResolver: HumanResourcesIdentityResolverPort = {
+			const identityResolverValue20: HumanResourcesIdentityResolverPort = {
 				async resolveEmployeeForActor(input) {
 					// Only resolve identity for the correct organization
 					if (
 						input.organizationId === organizationId &&
 						input.actorUserId === actorUserId
 					) {
-						return ok({
+						return await ok({
 							employeeId,
 							relationshipType: "self" as const,
 							effectiveFrom: "2024-01-01",
 							effectiveUntil: null,
 						});
 					}
-					return ok(null);
+					return await ok(null);
 				},
 				async resolveManagerEmployeesForActor() {
-					return ok([]);
+					return await ok([]);
 				},
 			};
 
 			// Should work for correct organization
 			const validOrgResult = await requireOwnResourceAccess(
-				identityResolver,
-				{ authorization: authPort },
+				identityResolverValue20,
+				{ authorization: authPortValue19 },
 				{
 					organizationId,
 					actorUserId,
@@ -647,8 +631,8 @@ describe("Security Boundary Tests", () => {
 
 			// Should fail for different organization
 			const invalidOrgResult = await requireOwnResourceAccess(
-				identityResolver,
-				{ authorization: authPort },
+				identityResolverValue20,
+				{ authorization: authPortValue19 },
 				{
 					organizationId: "different-org-456",
 					actorUserId,
@@ -665,14 +649,14 @@ describe("Security Boundary Tests", () => {
 				"550e8400-e29b-41d4-a716-446655440000" as HumanResourcesEmployeeId;
 			const actorUserId = "temporal-user";
 
-			const authPort: HumanResourcesAuthorizationPort = {
+			const authPortValue8: HumanResourcesAuthorizationPort = {
 				async can() {
-					return true;
+					return await true;
 				},
 			};
 
 			// Identity resolver with temporal boundaries
-			const identityResolver: HumanResourcesIdentityResolverPort = {
+			const identityResolverValue9: HumanResourcesIdentityResolverPort = {
 				async resolveEmployeeForActor(input) {
 					const asOf = input.asOf || new Date().toISOString().split("T")[0];
 
@@ -682,24 +666,24 @@ describe("Security Boundary Tests", () => {
 						asOf >= "2024-01-01" &&
 						asOf <= "2024-06-30"
 					) {
-						return ok({
+						return await ok({
 							employeeId,
 							relationshipType: "self" as const,
 							effectiveFrom: "2024-01-01",
 							effectiveUntil: "2024-06-30",
 						});
 					}
-					return ok(null);
+					return await ok(null);
 				},
 				async resolveManagerEmployeesForActor() {
-					return ok([]);
+					return await ok([]);
 				},
 			};
 
 			// Should work within valid period
 			const validPeriodResult = await requireOwnResourceAccess(
-				identityResolver,
-				{ authorization: authPort },
+				identityResolverValue9,
+				{ authorization: authPortValue8 },
 				{
 					organizationId,
 					actorUserId,
@@ -712,8 +696,8 @@ describe("Security Boundary Tests", () => {
 
 			// Should fail after identity expired
 			const expiredResult = await requireOwnResourceAccess(
-				identityResolver,
-				{ authorization: authPort },
+				identityResolverValue9,
+				{ authorization: authPortValue8 },
 				{
 					organizationId,
 					actorUserId,
@@ -730,37 +714,18 @@ describe("Security Boundary Tests", () => {
 	describe("Comprehensive IDOR Attack Scenarios", () => {
 		it("should prevent parameter manipulation across all attack vectors", async () => {
 			const correlationId = "test-correlation-123";
-			const legitimateEmployeeId =
-				"550e8400-e29b-41d4-a716-446655440000" as HumanResourcesEmployeeId;
 			const targetEmployeeId =
 				"6ba7b810-9dad-11d1-80b4-00c04fd430c8" as HumanResourcesEmployeeId;
 			const actorUserId = "attacker-user";
 
-			const authPort: HumanResourcesAuthorizationPort = {
+			const authPortValue10: HumanResourcesAuthorizationPort = {
 				async can(input) {
 					if (
 						input.permission === HUMAN_RESOURCES_PERMISSION_PERFORMANCE_OWN_READ
 					) {
-						return true;
+						return await true;
 					}
-					return false;
-				},
-			};
-
-			const identityResolver: HumanResourcesIdentityResolverPort = {
-				async resolveEmployeeForActor(input) {
-					if (input.actorUserId === actorUserId) {
-						return ok({
-							employeeId: legitimateEmployeeId,
-							relationshipType: "self" as const,
-							effectiveFrom: "2024-01-01",
-							effectiveUntil: null,
-						});
-					}
-					return ok(null);
-				},
-				async resolveManagerEmployeesForActor() {
-					return ok([]);
+					return await false;
 				},
 			};
 
@@ -792,7 +757,7 @@ describe("Security Boundary Tests", () => {
 				},
 			];
 
-			for (const vector of attackVectors) {
+			await runSequential(attackVectors, async (vector) => {
 				const result = await listEmployeeGoals(
 					{
 						organizationId,
@@ -802,7 +767,7 @@ describe("Security Boundary Tests", () => {
 					},
 					{
 						store,
-						authorization: authPort,
+						authorization: authPortValue10,
 						identityResolver,
 					},
 				);
@@ -817,7 +782,7 @@ describe("Security Boundary Tests", () => {
 				).toMatch(
 					/Missing required human resources permission|Cannot access other employee's resources/,
 				);
-			}
+			});
 		});
 
 		it("should prevent organization boundary violations", async () => {
@@ -826,28 +791,10 @@ describe("Security Boundary Tests", () => {
 				"550e8400-e29b-41d4-a716-446655440000" as HumanResourcesEmployeeId;
 			const actorUserId = "boundary-attacker";
 
-			const authPort: HumanResourcesAuthorizationPort = {
+			const authPortValue12: HumanResourcesAuthorizationPort = {
 				async can(input) {
-					return (
-						input.permission === HUMAN_RESOURCES_PERMISSION_PERFORMANCE_OWN_READ
-					);
-				},
-			};
-
-			const identityResolver: HumanResourcesIdentityResolverPort = {
-				async resolveEmployeeForActor(input) {
-					if (input.organizationId === organizationId) {
-						return ok({
-							employeeId,
-							relationshipType: "self" as const,
-							effectiveFrom: "2024-01-01",
-							effectiveUntil: null,
-						});
-					}
-					return ok(null);
-				},
-				async resolveManagerEmployeesForActor() {
-					return ok([]);
+					return await (input.permission ===
+						HUMAN_RESOURCES_PERMISSION_PERFORMANCE_OWN_READ);
 				},
 			};
 
@@ -860,7 +807,7 @@ describe("Security Boundary Tests", () => {
 				"../../etc/passwd",
 			];
 
-			for (const attackOrg of orgAttacks) {
+			await runSequential(orgAttacks, async (attackOrg) => {
 				const result = await listEmployeeGoals(
 					{
 						organizationId: attackOrg,
@@ -870,7 +817,7 @@ describe("Security Boundary Tests", () => {
 					},
 					{
 						store,
-						authorization: authPort,
+						authorization: authPortValue12,
 						identityResolver,
 					},
 				);
@@ -885,7 +832,7 @@ describe("Security Boundary Tests", () => {
 				).toMatch(
 					/Missing required human resources permission|Actor is not an employee/,
 				);
-			}
+			});
 		});
 	});
 });

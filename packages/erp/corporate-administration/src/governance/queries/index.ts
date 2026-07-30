@@ -30,14 +30,20 @@ export async function getGovernanceBody(
 		getGovernanceBodyInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "getGovernanceBody");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const result = await dependencies.governanceStore.getGovernanceBody({
 		organizationId: options.organizationId,
 		governanceBodyId: parsed.data.governanceBodyId,
 	});
-	if (!result.ok) return result;
+	if (!result.ok) {
+		return result;
+	}
 	return result.data === null
 		? notFound("governanceBody")
 		: { ok: true, data: result.data };
@@ -52,9 +58,13 @@ export async function listGovernanceBodiesAsOf(
 		listGovernanceBodiesAsOfInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "listGovernanceBodiesAsOf");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return dependencies.governanceStore.listGovernanceBodiesAsOf({
 		organizationId: options.organizationId,
 		legalCompanyId: parsed.data.legalCompanyId,
@@ -73,9 +83,13 @@ export async function listGovernanceMembershipsAsOf(
 		listGovernanceMembershipsAsOfInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "listGovernanceMembershipsAsOf");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return dependencies.governanceStore.listGovernanceMembershipsAsOf({
 		organizationId: options.organizationId,
 		governanceBodyId: parsed.data.governanceBodyId,

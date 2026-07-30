@@ -16,13 +16,17 @@ const DOCUMENT_KIND_SET = new Set<string>(HUMAN_RESOURCES_DOCUMENT_KINDS);
 
 const VAULT_PATH_PATTERN =
 	/^\/organizations\/([^/]+)\/([^/]+)\/([^/?#]+)(?:\?([^#]*))?$/;
+const UNSAFE_PATH_SEGMENT_PATTERN = /[/?#\\]/u;
+const LEADING_QUERY_MARKER_PATTERN = /^\?/;
 
 function isDocumentKind(value: string): value is DocumentKind {
 	return DOCUMENT_KIND_SET.has(value);
 }
 
 function isSafePathSegment(value: string): boolean {
-	if (value.length === 0 || /[/?#\\]/u.test(value)) return false;
+	if (value.length === 0 || UNSAFE_PATH_SEGMENT_PATTERN.test(value)) {
+		return false;
+	}
 	return !Array.from(value).some((character) => {
 		const codePoint = character.codePointAt(0);
 		return codePoint !== undefined && (codePoint <= 31 || codePoint === 127);
@@ -118,12 +122,12 @@ function parseVaultReference(reference: string): Result<{
 
 	// URL parser: vault://organizations/org/kind/id → host=organizations, pathname=/org/kind/id
 	// Prefer reconstructing path as /organizations/{rest}
-	const pathFromHost =
-		url.host.length > 0
-			? `/${url.host}${url.pathname}`
-			: url.pathname.startsWith("/")
-				? url.pathname
-				: `/${url.pathname}`;
+	let pathFromHost = url.pathname;
+	if (url.host.length > 0) {
+		pathFromHost = `/${url.host}${url.pathname}`;
+	} else if (!pathFromHost.startsWith("/")) {
+		pathFromHost = `/${pathFromHost}`;
+	}
 
 	const match = VAULT_PATH_PATTERN.exec(pathFromHost);
 	if (match === null) {
@@ -137,12 +141,15 @@ function parseVaultReference(reference: string): Result<{
 	const organizationId = decodeURIComponent(match[1] ?? "");
 	const kindRaw = decodeURIComponent(match[2] ?? "");
 	const documentId = decodeURIComponent(match[3] ?? "");
-	const query = match[4] ?? url.search.replace(/^\?/, "");
+	const query =
+		match[4] ?? url.search.replace(LEADING_QUERY_MARKER_PATTERN, "");
 
 	if (
-		!isSafePathSegment(organizationId) ||
-		!isSafePathSegment(kindRaw) ||
-		!isSafePathSegment(documentId)
+		!(
+			isSafePathSegment(organizationId) &&
+			isSafePathSegment(kindRaw) &&
+			isSafePathSegment(documentId)
+		)
 	) {
 		return fail(
 			"VALIDATION_ERROR",
@@ -169,14 +176,14 @@ function parseVaultReference(reference: string): Result<{
 	});
 }
 
-export type VaultDocumentReferenceAdapterDeps = {
+export interface VaultDocumentReferenceAdapterDeps {
 	resolver?: DocumentObjectResolverPort;
-};
+}
 
 export function createVaultDocumentReferenceAdapter(
 	deps: VaultDocumentReferenceAdapterDeps = {},
 ): DocumentReferencePort {
-	const resolver = deps.resolver;
+	const { resolver } = deps;
 
 	return {
 		async validateReference(

@@ -150,7 +150,7 @@ async function seedCandidate(
 	ready: ReturnType<typeof harness>,
 	input: { organizationId: string; email: string },
 ) {
-	return createCandidate(
+	return await createCandidate(
 		{
 			organizationId: input.organizationId,
 			actorUserId: ACTOR,
@@ -225,7 +225,9 @@ describe("@afenda/human-resources recruitment", () => {
 			email: "happy@example.com",
 		});
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const interview = await scheduleInterview(
 			{
@@ -239,7 +241,9 @@ describe("@afenda/human-resources recruitment", () => {
 			ready,
 		);
 		expect(interview.ok).toBe(true);
-		if (!interview.ok) return;
+		if (!interview.ok) {
+			return;
+		}
 
 		const evaluation = await recordInterviewEvaluation(
 			{
@@ -282,7 +286,9 @@ describe("@afenda/human-resources recruitment", () => {
 			correlationPrefix: "corr-happy",
 		});
 		expect(issued.ok).toBe(true);
-		if (!issued.ok) return;
+		if (!issued.ok) {
+			return;
+		}
 
 		const accepted = await acceptOffer(
 			{
@@ -297,7 +303,9 @@ describe("@afenda/human-resources recruitment", () => {
 			ready,
 		);
 		expect(accepted.ok).toBe(true);
-		if (!accepted.ok) return;
+		if (!accepted.ok) {
+			return;
+		}
 
 		expect(accepted.data.candidateId).toBe(seeded.candidate.id);
 		expect(accepted.data.requisitionId).toBe(seeded.requisition.id);
@@ -350,7 +358,9 @@ describe("@afenda/human-resources recruitment", () => {
 			ready,
 		);
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 
 		const opened = await openRequisition(
 			{
@@ -377,13 +387,17 @@ describe("@afenda/human-resources recruitment", () => {
 			code: "REQ-DUP",
 		});
 		expect(requisition.ok).toBe(true);
-		if (!requisition.ok) return;
+		if (!requisition.ok) {
+			return;
+		}
 		const candidate = await seedCandidate(ready, {
 			organizationId: ORG_A,
 			email: "dup@example.com",
 		});
 		expect(candidate.ok).toBe(true);
-		if (!candidate.ok) return;
+		if (!candidate.ok) {
+			return;
+		}
 
 		const first = await createApplication(
 			{
@@ -422,13 +436,17 @@ describe("@afenda/human-resources recruitment", () => {
 			code: "REQ-OFFER",
 		});
 		expect(requisition.ok).toBe(true);
-		if (!requisition.ok) return;
+		if (!requisition.ok) {
+			return;
+		}
 		const candidate = await seedCandidate(ready, {
 			organizationId: ORG_A,
 			email: "offer@example.com",
 		});
 		expect(candidate.ok).toBe(true);
-		if (!candidate.ok) return;
+		if (!candidate.ok) {
+			return;
+		}
 
 		const application = await createApplication(
 			{
@@ -441,7 +459,9 @@ describe("@afenda/human-resources recruitment", () => {
 			ready,
 		);
 		expect(application.ok).toBe(true);
-		if (!application.ok) return;
+		if (!application.ok) {
+			return;
+		}
 
 		const tooEarly = await createOffer(
 			{
@@ -472,7 +492,9 @@ describe("@afenda/human-resources recruitment", () => {
 			ready,
 		);
 		expect(inReview.ok).toBe(true);
-		if (!inReview.ok) return;
+		if (!inReview.ok) {
+			return;
+		}
 
 		const firstOffer = await createOffer(
 			{
@@ -514,7 +536,9 @@ describe("@afenda/human-resources recruitment", () => {
 			email: "term@example.com",
 		});
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const issued = await createAndIssueOffer(ready, {
 			organizationId: ORG_A,
@@ -525,7 +549,9 @@ describe("@afenda/human-resources recruitment", () => {
 			correlationPrefix: "corr-term",
 		});
 		expect(issued.ok).toBe(true);
-		if (!issued.ok) return;
+		if (!issued.ok) {
+			return;
+		}
 
 		const expiredAccept = await acceptOffer(
 			{
@@ -564,7 +590,9 @@ describe("@afenda/human-resources recruitment", () => {
 			email: "withdraw@example.com",
 		});
 		expect(seeded2.ok).toBe(true);
-		if (!seeded2.ok) return;
+		if (!seeded2.ok) {
+			return;
+		}
 		const issued2 = await createAndIssueOffer(ready, {
 			organizationId: ORG_A,
 			actorUserId: ACTOR,
@@ -574,7 +602,9 @@ describe("@afenda/human-resources recruitment", () => {
 			correlationPrefix: "corr-wd",
 		});
 		expect(issued2.ok).toBe(true);
-		if (!issued2.ok) return;
+		if (!issued2.ok) {
+			return;
+		}
 		const withdrawn = await withdrawOffer(
 			{
 				organizationId: ORG_A,
@@ -586,7 +616,9 @@ describe("@afenda/human-resources recruitment", () => {
 			ready,
 		);
 		expect(withdrawn.ok).toBe(true);
-		if (!withdrawn.ok) return;
+		if (!withdrawn.ok) {
+			return;
+		}
 
 		const acceptWithdrawn = await acceptOffer(
 			{
@@ -615,13 +647,17 @@ describe("@afenda/human-resources recruitment", () => {
 			code: "REQ-XORG",
 		});
 		expect(requisition.ok).toBe(true);
-		if (!requisition.ok) return;
+		if (!requisition.ok) {
+			return;
+		}
 		const candidateB = await seedCandidate(ready, {
 			organizationId: ORG_B,
 			email: "xorg@example.com",
 		});
 		expect(candidateB.ok).toBe(true);
-		if (!candidateB.ok) return;
+		if (!candidateB.ok) {
+			return;
+		}
 
 		const linked = await createApplication(
 			{
@@ -661,7 +697,9 @@ describe("@afenda/human-resources recruitment", () => {
 			email: "priv@example.com",
 		});
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const interview = await scheduleInterview(
 			{
@@ -675,7 +713,9 @@ describe("@afenda/human-resources recruitment", () => {
 			writer,
 		);
 		expect(interview.ok).toBe(true);
-		if (!interview.ok) return;
+		if (!interview.ok) {
+			return;
+		}
 		const evaluation = await recordInterviewEvaluation(
 			{
 				organizationId: ORG_A,
@@ -731,7 +771,9 @@ describe("@afenda/human-resources recruitment", () => {
 			reader,
 		);
 		expect(masked.ok).toBe(true);
-		if (!masked.ok) return;
+		if (!masked.ok) {
+			return;
+		}
 		expect(masked.data.result).toBe("hold");
 		expect(masked.data.scorecard).toEqual(SAMPLE_INTERVIEW_SCORECARD);
 		expect(masked.data.privateNotes).toBeNull();
@@ -746,7 +788,9 @@ describe("@afenda/human-resources recruitment", () => {
 			writer,
 		);
 		expect(full.ok).toBe(true);
-		if (!full.ok) return;
+		if (!full.ok) {
+			return;
+		}
 		expect(full.data.privateNotes).toBe("confidential notes");
 	});
 
@@ -764,7 +808,9 @@ describe("@afenda/human-resources recruitment", () => {
 			ready,
 		);
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 
 		const stale = await amendRequisition(
 			{
@@ -793,7 +839,9 @@ describe("@afenda/human-resources recruitment", () => {
 			email: "tx@example.com",
 		});
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const issued = await createAndIssueOffer(ready, {
 			organizationId: ORG_A,
@@ -804,7 +852,9 @@ describe("@afenda/human-resources recruitment", () => {
 			correlationPrefix: "corr-tx",
 		});
 		expect(issued.ok).toBe(true);
-		if (!issued.ok) return;
+		if (!issued.ok) {
+			return;
+		}
 
 		const failReady = {
 			store: ready.store,
@@ -861,7 +911,9 @@ describe("@afenda/human-resources recruitment", () => {
 			email: "amend@example.com",
 		});
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 		const offer = await createOffer(
 			{
 				organizationId: ORG_A,
@@ -874,7 +926,9 @@ describe("@afenda/human-resources recruitment", () => {
 			ready,
 		);
 		expect(offer.ok).toBe(true);
-		if (!offer.ok) return;
+		if (!offer.ok) {
+			return;
+		}
 		const amended = await amendOfferDraft(
 			{
 				organizationId: ORG_A,
@@ -900,7 +954,9 @@ describe("@afenda/human-resources recruitment", () => {
 			email: "eval-dup@example.com",
 		});
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const interview = await scheduleInterview(
 			{
@@ -914,7 +970,9 @@ describe("@afenda/human-resources recruitment", () => {
 			ready,
 		);
 		expect(interview.ok).toBe(true);
-		if (!interview.ok) return;
+		if (!interview.ok) {
+			return;
+		}
 
 		const first = await recordInterviewEvaluation(
 			{
@@ -966,7 +1024,9 @@ describe("@afenda/human-resources requisition lifecycle (Slice 6.1)", () => {
 			ready,
 		);
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 
 		const submitted = await submitRequisition(
 			{
@@ -993,7 +1053,9 @@ describe("@afenda/human-resources requisition lifecycle (Slice 6.1)", () => {
 			code: "REQ-S61-LC",
 		});
 		expect(open.ok).toBe(true);
-		if (!open.ok) return;
+		if (!open.ok) {
+			return;
+		}
 
 		const onHold = await placeRequisitionOnHold(
 			{
@@ -1006,7 +1068,9 @@ describe("@afenda/human-resources requisition lifecycle (Slice 6.1)", () => {
 			ready,
 		);
 		expect(onHold.ok).toBe(true);
-		if (!onHold.ok) return;
+		if (!onHold.ok) {
+			return;
+		}
 
 		const resumed = await openRequisition(
 			{
@@ -1019,7 +1083,9 @@ describe("@afenda/human-resources requisition lifecycle (Slice 6.1)", () => {
 			ready,
 		);
 		expect(resumed.ok).toBe(true);
-		if (!resumed.ok) return;
+		if (!resumed.ok) {
+			return;
+		}
 
 		const closed = await closeRequisition(
 			{
@@ -1045,7 +1111,9 @@ describe("@afenda/human-resources requisition lifecycle (Slice 6.1)", () => {
 			tag: "s61-hm",
 		});
 		expect(manager.ok).toBe(true);
-		if (!manager.ok) return;
+		if (!manager.ok) {
+			return;
+		}
 
 		const draft = await createDraftRequisition(
 			{
@@ -1060,7 +1128,9 @@ describe("@afenda/human-resources requisition lifecycle (Slice 6.1)", () => {
 			ready,
 		);
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 
 		const submitted = await submitRequisition(
 			{
@@ -1073,7 +1143,9 @@ describe("@afenda/human-resources requisition lifecycle (Slice 6.1)", () => {
 			ready,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 
 		const approved = await approveRequisition(
 			{
@@ -1086,7 +1158,9 @@ describe("@afenda/human-resources requisition lifecycle (Slice 6.1)", () => {
 			ready,
 		);
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 
 		const replacement = await seedActiveEmployee(ready, {
 			organizationId: ORG_A,
@@ -1095,7 +1169,9 @@ describe("@afenda/human-resources requisition lifecycle (Slice 6.1)", () => {
 			legalName: "Replacement Manager",
 		});
 		expect(replacement.ok).toBe(true);
-		if (!replacement.ok) return;
+		if (!replacement.ok) {
+			return;
+		}
 
 		const opened = await openRequisition(
 			{
@@ -1108,7 +1184,9 @@ describe("@afenda/human-resources requisition lifecycle (Slice 6.1)", () => {
 			ready,
 		);
 		expect(opened.ok).toBe(true);
-		if (!opened.ok) return;
+		if (!opened.ok) {
+			return;
+		}
 
 		const reassigned = await assignHiringManager(
 			{
@@ -1122,7 +1200,9 @@ describe("@afenda/human-resources requisition lifecycle (Slice 6.1)", () => {
 			ready,
 		);
 		expect(reassigned.ok).toBe(true);
-		if (!reassigned.ok) return;
+		if (!reassigned.ok) {
+			return;
+		}
 
 		const loaded = await getRequisition(
 			{
@@ -1150,7 +1230,9 @@ describe("@afenda/human-resources requisition lifecycle (Slice 6.1)", () => {
 			ready,
 		);
 		expect(inactive.ok).toBe(true);
-		if (!inactive.ok) return;
+		if (!inactive.ok) {
+			return;
+		}
 
 		const denied = await assignHiringManager(
 			{
@@ -1179,7 +1261,9 @@ describe("@afenda/human-resources requisition lifecycle (Slice 6.1)", () => {
 			tag: "s61-cross",
 		});
 		expect(managerB.ok).toBe(true);
-		if (!managerB.ok) return;
+		if (!managerB.ok) {
+			return;
+		}
 
 		const draft = await createDraftRequisition(
 			{
@@ -1193,7 +1277,9 @@ describe("@afenda/human-resources requisition lifecycle (Slice 6.1)", () => {
 			ready,
 		);
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 
 		const denied = await assignHiringManager(
 			{
@@ -1224,7 +1310,9 @@ describe("@afenda/human-resources requisition lifecycle (Slice 6.1)", () => {
 			code: "REQ-S61-CANCEL",
 		});
 		expect(open.ok).toBe(true);
-		if (!open.ok) return;
+		if (!open.ok) {
+			return;
+		}
 
 		const cancelled = await cancelRequisition(
 			{
@@ -1251,13 +1339,17 @@ describe("Slice 6.3 — Application lifecycle", () => {
 			code: "REQ-S63-HIST",
 		});
 		expect(requisition.ok).toBe(true);
-		if (!requisition.ok) return;
+		if (!requisition.ok) {
+			return;
+		}
 		const candidate = await seedCandidate(ready, {
 			organizationId: ORG_A,
 			email: "s63-history@example.com",
 		});
 		expect(candidate.ok).toBe(true);
-		if (!candidate.ok) return;
+		if (!candidate.ok) {
+			return;
+		}
 
 		const application = await createApplication(
 			{
@@ -1270,7 +1362,9 @@ describe("Slice 6.3 — Application lifecycle", () => {
 			ready,
 		);
 		expect(application.ok).toBe(true);
-		if (!application.ok) return;
+		if (!application.ok) {
+			return;
+		}
 
 		const inReview = await moveApplicationToInReview(
 			{
@@ -1283,7 +1377,9 @@ describe("Slice 6.3 — Application lifecycle", () => {
 			ready,
 		);
 		expect(inReview.ok).toBe(true);
-		if (!inReview.ok) return;
+		if (!inReview.ok) {
+			return;
+		}
 
 		const interviewing = await moveApplicationToInterviewing(
 			{
@@ -1296,7 +1392,9 @@ describe("Slice 6.3 — Application lifecycle", () => {
 			ready,
 		);
 		expect(interviewing.ok).toBe(true);
-		if (!interviewing.ok) return;
+		if (!interviewing.ok) {
+			return;
+		}
 
 		const rejected = await rejectApplication(
 			{
@@ -1310,7 +1408,9 @@ describe("Slice 6.3 — Application lifecycle", () => {
 			ready,
 		);
 		expect(rejected.ok).toBe(true);
-		if (!rejected.ok) return;
+		if (!rejected.ok) {
+			return;
+		}
 		expect(rejected.data.status).toBe("rejected");
 
 		const reopened = await reopenApplication(
@@ -1325,7 +1425,9 @@ describe("Slice 6.3 — Application lifecycle", () => {
 			ready,
 		);
 		expect(reopened.ok).toBe(true);
-		if (!reopened.ok) return;
+		if (!reopened.ok) {
+			return;
+		}
 		expect(reopened.data.status).toBe("submitted");
 
 		const history = await listApplicationStatusHistory(
@@ -1338,7 +1440,9 @@ describe("Slice 6.3 — Application lifecycle", () => {
 			ready,
 		);
 		expect(history.ok).toBe(true);
-		if (!history.ok) return;
+		if (!history.ok) {
+			return;
+		}
 		expect(history.data).toHaveLength(5);
 		expect(history.data.map((row) => row.toStatus)).toEqual([
 			"submitted",
@@ -1358,13 +1462,17 @@ describe("Slice 6.3 — Application lifecycle", () => {
 			code: "REQ-S63-ONEOPEN",
 		});
 		expect(requisition.ok).toBe(true);
-		if (!requisition.ok) return;
+		if (!requisition.ok) {
+			return;
+		}
 		const candidate = await seedCandidate(ready, {
 			organizationId: ORG_A,
 			email: "s63-oneopen@example.com",
 		});
 		expect(candidate.ok).toBe(true);
-		if (!candidate.ok) return;
+		if (!candidate.ok) {
+			return;
+		}
 
 		const application = await createApplication(
 			{
@@ -1377,7 +1485,9 @@ describe("Slice 6.3 — Application lifecycle", () => {
 			ready,
 		);
 		expect(application.ok).toBe(true);
-		if (!application.ok) return;
+		if (!application.ok) {
+			return;
+		}
 
 		const withdrawn = await withdrawApplication(
 			{
@@ -1391,7 +1501,9 @@ describe("Slice 6.3 — Application lifecycle", () => {
 			ready,
 		);
 		expect(withdrawn.ok).toBe(true);
-		if (!withdrawn.ok) return;
+		if (!withdrawn.ok) {
+			return;
+		}
 
 		const reopened = await reopenApplication(
 			{
@@ -1404,7 +1516,9 @@ describe("Slice 6.3 — Application lifecycle", () => {
 			ready,
 		);
 		expect(reopened.ok).toBe(true);
-		if (!reopened.ok) return;
+		if (!reopened.ok) {
+			return;
+		}
 
 		const duplicate = await createApplication(
 			{
@@ -1431,13 +1545,17 @@ describe("Slice 6.3 — Application lifecycle", () => {
 			code: "REQ-S63-NOREOPEN",
 		});
 		expect(requisition.ok).toBe(true);
-		if (!requisition.ok) return;
+		if (!requisition.ok) {
+			return;
+		}
 		const candidate = await seedCandidate(ready, {
 			organizationId: ORG_A,
 			email: "s63-noreopen@example.com",
 		});
 		expect(candidate.ok).toBe(true);
-		if (!candidate.ok) return;
+		if (!candidate.ok) {
+			return;
+		}
 
 		const application = await createApplication(
 			{
@@ -1450,7 +1568,9 @@ describe("Slice 6.3 — Application lifecycle", () => {
 			ready,
 		);
 		expect(application.ok).toBe(true);
-		if (!application.ok) return;
+		if (!application.ok) {
+			return;
+		}
 
 		const denied = await reopenApplication(
 			{
@@ -1477,13 +1597,17 @@ describe("Slice 6.3 — Application lifecycle", () => {
 			code: "REQ-S63-REOPEN-BLOCK",
 		});
 		expect(requisition.ok).toBe(true);
-		if (!requisition.ok) return;
+		if (!requisition.ok) {
+			return;
+		}
 		const candidate = await seedCandidate(ready, {
 			organizationId: ORG_A,
 			email: "s63-reopen-block@example.com",
 		});
 		expect(candidate.ok).toBe(true);
-		if (!candidate.ok) return;
+		if (!candidate.ok) {
+			return;
+		}
 
 		const withdrawnApplication = await createApplication(
 			{
@@ -1496,7 +1620,9 @@ describe("Slice 6.3 — Application lifecycle", () => {
 			ready,
 		);
 		expect(withdrawnApplication.ok).toBe(true);
-		if (!withdrawnApplication.ok) return;
+		if (!withdrawnApplication.ok) {
+			return;
+		}
 
 		const withdrawn = await withdrawApplication(
 			{
@@ -1509,7 +1635,9 @@ describe("Slice 6.3 — Application lifecycle", () => {
 			ready,
 		);
 		expect(withdrawn.ok).toBe(true);
-		if (!withdrawn.ok) return;
+		if (!withdrawn.ok) {
+			return;
+		}
 
 		const activeApplication = await createApplication(
 			{
@@ -1522,7 +1650,9 @@ describe("Slice 6.3 — Application lifecycle", () => {
 			ready,
 		);
 		expect(activeApplication.ok).toBe(true);
-		if (!activeApplication.ok) return;
+		if (!activeApplication.ok) {
+			return;
+		}
 
 		const deniedReopen = await reopenApplication(
 			{
@@ -1551,7 +1681,9 @@ describe("Slice 6.3 — Application lifecycle", () => {
 				email: "s64-assign@example.com",
 			});
 			expect(seeded.ok).toBe(true);
-			if (!seeded.ok) return;
+			if (!seeded.ok) {
+				return;
+			}
 
 			const interview = await scheduleInterview(
 				{
@@ -1565,7 +1697,9 @@ describe("Slice 6.3 — Application lifecycle", () => {
 				ready,
 			);
 			expect(interview.ok).toBe(true);
-			if (!interview.ok) return;
+			if (!interview.ok) {
+				return;
+			}
 			expect(interview.data.interviewerActorId).toBe("actor-original");
 
 			const reassigned = await assignInterviewInterviewer(
@@ -1580,7 +1714,9 @@ describe("Slice 6.3 — Application lifecycle", () => {
 				ready,
 			);
 			expect(reassigned.ok).toBe(true);
-			if (!reassigned.ok) return;
+			if (!reassigned.ok) {
+				return;
+			}
 			expect(reassigned.data.interviewerActorId).toBe("actor-replacement");
 			expect(reassigned.data.version).toBe(interview.data.version + 1);
 
@@ -1611,7 +1747,9 @@ describe("Slice 6.3 — Application lifecycle", () => {
 				email: "s64-score@example.com",
 			});
 			expect(seeded.ok).toBe(true);
-			if (!seeded.ok) return;
+			if (!seeded.ok) {
+				return;
+			}
 
 			const interview = await scheduleInterview(
 				{
@@ -1625,7 +1763,9 @@ describe("Slice 6.3 — Application lifecycle", () => {
 				ready,
 			);
 			expect(interview.ok).toBe(true);
-			if (!interview.ok) return;
+			if (!interview.ok) {
+				return;
+			}
 
 			const evaluation = await recordInterviewEvaluation(
 				{
@@ -1641,7 +1781,9 @@ describe("Slice 6.3 — Application lifecycle", () => {
 				ready,
 			);
 			expect(evaluation.ok).toBe(true);
-			if (!evaluation.ok) return;
+			if (!evaluation.ok) {
+				return;
+			}
 			expect(evaluation.data.result).toBe("advance");
 			expect(evaluation.data.scorecard).toEqual(SAMPLE_INTERVIEW_SCORECARD);
 
@@ -1655,7 +1797,9 @@ describe("Slice 6.3 — Application lifecycle", () => {
 				ready,
 			);
 			expect(loaded.ok).toBe(true);
-			if (!loaded.ok) return;
+			if (!loaded.ok) {
+				return;
+			}
 			expect(loaded.data.result).toBe("advance");
 			expect(loaded.data.scorecard).toEqual(SAMPLE_INTERVIEW_SCORECARD);
 			expect(loaded.data.privateNotes).toBe("decision notes");
@@ -1669,7 +1813,9 @@ describe("Slice 6.3 — Application lifecycle", () => {
 				email: "s64-complete@example.com",
 			});
 			expect(seeded.ok).toBe(true);
-			if (!seeded.ok) return;
+			if (!seeded.ok) {
+				return;
+			}
 
 			const interview = await scheduleInterview(
 				{
@@ -1683,7 +1829,9 @@ describe("Slice 6.3 — Application lifecycle", () => {
 				ready,
 			);
 			expect(interview.ok).toBe(true);
-			if (!interview.ok) return;
+			if (!interview.ok) {
+				return;
+			}
 
 			const evaluation = await recordInterviewEvaluation(
 				{
@@ -1698,7 +1846,9 @@ describe("Slice 6.3 — Application lifecycle", () => {
 				ready,
 			);
 			expect(evaluation.ok).toBe(true);
-			if (!evaluation.ok) return;
+			if (!evaluation.ok) {
+				return;
+			}
 
 			const denied = await assignInterviewInterviewer(
 				{
@@ -1730,7 +1880,9 @@ describe("Slice 6.5 — Offer + compensation proposal", () => {
 			email: "s65-gate@example.com",
 		});
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const draftOffer = await createOffer(
 			{
@@ -1744,7 +1896,9 @@ describe("Slice 6.5 — Offer + compensation proposal", () => {
 			withOfferLifecycleDeps(ready),
 		);
 		expect(draftOffer.ok).toBe(true);
-		if (!draftOffer.ok) return;
+		if (!draftOffer.ok) {
+			return;
+		}
 
 		const issueFromDraft = await issueOffer(
 			{
@@ -1790,7 +1944,9 @@ describe("Slice 6.5 — Offer + compensation proposal", () => {
 			},
 		);
 		expect(proposal.ok).toBe(true);
-		if (!proposal.ok) return;
+		if (!proposal.ok) {
+			return;
+		}
 
 		const amended = await amendOfferDraft(
 			{
@@ -1804,7 +1960,9 @@ describe("Slice 6.5 — Offer + compensation proposal", () => {
 			withOfferLifecycleDeps(ready),
 		);
 		expect(amended.ok).toBe(true);
-		if (!amended.ok) return;
+		if (!amended.ok) {
+			return;
+		}
 
 		const approved = await approveOffer(
 			{
@@ -1817,7 +1975,9 @@ describe("Slice 6.5 — Offer + compensation proposal", () => {
 			ready,
 		);
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 		expect(approved.data.status).toBe("approved");
 		expect(approved.data.compensationProposalId).toBe(proposal.data.id);
 		expect(
@@ -1837,7 +1997,9 @@ describe("Slice 6.5 — Offer + compensation proposal", () => {
 			ready,
 		);
 		expect(issued.ok).toBe(true);
-		if (!issued.ok) return;
+		if (!issued.ok) {
+			return;
+		}
 		expect(issued.data.status).toBe("issued");
 	});
 
@@ -1849,7 +2011,9 @@ describe("Slice 6.5 — Offer + compensation proposal", () => {
 			email: "s65-ref@example.com",
 		});
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const issued = await createAndIssueOffer(ready, {
 			organizationId: ORG_A,
@@ -1860,7 +2024,9 @@ describe("Slice 6.5 — Offer + compensation proposal", () => {
 			correlationPrefix: "corr-s65-ref",
 		});
 		expect(issued.ok).toBe(true);
-		if (!issued.ok) return;
+		if (!issued.ok) {
+			return;
+		}
 		expect(issued.data.compensationProposalId).not.toBeNull();
 
 		const loaded = await getOffer(
@@ -1873,7 +2039,9 @@ describe("Slice 6.5 — Offer + compensation proposal", () => {
 			ready,
 		);
 		expect(loaded.ok).toBe(true);
-		if (!loaded.ok) return;
+		if (!loaded.ok) {
+			return;
+		}
 		expect(loaded.data.compensationProposalId).toBe(
 			issued.data.compensationProposalId,
 		);
@@ -1888,7 +2056,9 @@ describe("Slice 6.5 — Offer + compensation proposal", () => {
 			ready,
 		);
 		expect(listed.ok).toBe(true);
-		if (!listed.ok) return;
+		if (!listed.ok) {
+			return;
+		}
 		expect(listed.data.offers).toHaveLength(1);
 		expect(listed.data.offers[0]?.compensationProposalId).toBe(
 			issued.data.compensationProposalId,
@@ -1903,7 +2073,9 @@ describe("Slice 6.5 — Offer + compensation proposal", () => {
 			email: "s65-nocon@example.com",
 		});
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const issued = await createAndIssueOffer(ready, {
 			organizationId: ORG_A,
@@ -1914,7 +2086,9 @@ describe("Slice 6.5 — Offer + compensation proposal", () => {
 			correlationPrefix: "corr-s65-nocon",
 		});
 		expect(issued.ok).toBe(true);
-		if (!issued.ok) return;
+		if (!issued.ok) {
+			return;
+		}
 
 		const declined = await declineOffer(
 			{

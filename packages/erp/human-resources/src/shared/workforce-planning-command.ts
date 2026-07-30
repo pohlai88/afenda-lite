@@ -24,14 +24,14 @@ import {
 
 type ActorScoped = HumanResourcesAuthorizedActorInput;
 
-type CommandDeps = {
-	store: HumanResourcesStore;
+interface CommandDeps {
 	ports: MutationPorts;
-};
-
-type QueryDeps = {
 	store: HumanResourcesStore;
-};
+}
+
+interface QueryDeps {
+	store: HumanResourcesStore;
+}
 
 const WORKFORCE_PLANNING_RESOURCE_ID_FIELDS = [
 	"planId",
@@ -79,7 +79,7 @@ export async function runWorkforcePlanningCommand<
 		) => Promise<Result<TOut>>;
 	},
 ): Promise<Result<TOut>> {
-	return runParsedAuthorizedCommand(input, options, {
+	return await runParsedAuthorizedCommand(input, options, {
 		schema: config.schema,
 		invalidMessage: config.invalidMessage,
 		command: config.command,
@@ -105,7 +105,7 @@ export async function runWorkforcePlanningQuery<
 		execute: (data: z.infer<TSchema>, deps: QueryDeps) => Promise<Result<TOut>>;
 	},
 ): Promise<Result<TOut>> {
-	return runParsedAuthorizedQuery(input, options, {
+	return await runParsedAuthorizedQuery(input, options, {
 		schema: config.schema,
 		invalidMessage: config.invalidMessage,
 		query: config.query,

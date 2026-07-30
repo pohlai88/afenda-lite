@@ -1,4 +1,5 @@
 const SCALE = 1_000_000n;
+const TRAILING_ZEROES = /0+$/;
 
 export function decimal(value: string): bigint {
 	const [whole = "0", fraction = ""] = value.split(".");
@@ -16,7 +17,7 @@ export function format(value: bigint): string {
 	const fraction = (absolute % SCALE)
 		.toString()
 		.padStart(6, "0")
-		.replace(/0+$/, "");
+		.replace(TRAILING_ZEROES, "");
 	return `${sign}${absolute / SCALE}${fraction.length > 0 ? `.${fraction}` : ""}`;
 }
 

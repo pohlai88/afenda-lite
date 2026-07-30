@@ -41,9 +41,13 @@ export async function getResolution(
 		getResolutionInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "getResolution");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return dependencies.resolutionStore.getResolution({
 		organizationId: options.organizationId,
 		resolutionId: parsed.data.resolutionId,
@@ -59,9 +63,13 @@ export async function listResolutionsAsOf(
 		listResolutionsAsOfInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "listResolutionsAsOf");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return dependencies.resolutionStore.listResolutionsAsOf({
 		organizationId: options.organizationId,
 		legalCompanyId: parsed.data.legalCompanyId,
@@ -79,20 +87,30 @@ export async function getResolutionExecutionStatus(
 		getResolutionExecutionStatusInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "getResolutionExecutionStatus");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const resolution = await dependencies.resolutionStore.getResolution({
 		organizationId: options.organizationId,
 		resolutionId: parsed.data.resolutionId,
 	});
-	if (!resolution.ok) return resolution;
-	if (resolution.data === null) return notFound("resolution");
+	if (!resolution.ok) {
+		return resolution;
+	}
+	if (resolution.data === null) {
+		return notFound("resolution");
+	}
 	const actions = await dependencies.resolutionStore.listResolutionActions({
 		organizationId: options.organizationId,
 		resolutionId: parsed.data.resolutionId,
 	});
-	if (!actions.ok) return actions;
+	if (!actions.ok) {
+		return actions;
+	}
 	return ok(
 		calculateResolutionExecutionStatus({
 			resolution: resolution.data,
@@ -111,16 +129,22 @@ export async function listOverdueResolutionActions(
 		listOverdueResolutionActionsInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "listOverdueResolutionActions");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const actions =
 		await dependencies.resolutionStore.listOverdueResolutionActions({
 			organizationId: options.organizationId,
 			legalCompanyId: parsed.data.legalCompanyId,
 			asOf: parsed.data.asOf,
 		});
-	if (!actions.ok) return actions;
+	if (!actions.ok) {
+		return actions;
+	}
 	return ok(
 		actions.data.filter((action) =>
 			isResolutionActionOverdue({ action, asOf: parsed.data.asOf }),

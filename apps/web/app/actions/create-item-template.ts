@@ -16,9 +16,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type CreateItemTemplateActionData = {
+export interface CreateItemTemplateActionData {
 	template: ItemTemplate;
-};
+}
 
 export type CreateItemTemplateActionState =
 	ActionResult<CreateItemTemplateActionData> | null;

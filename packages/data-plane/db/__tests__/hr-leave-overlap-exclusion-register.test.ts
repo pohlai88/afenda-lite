@@ -42,8 +42,9 @@ function readActiveLeaveOverlapStatusesFromLeaveGuards(): string[] {
 	const match = source.match(
 		/export const ACTIVE_LEAVE_OVERLAP_STATUSES = \[([\s\S]*?)\] as const/,
 	);
-	expect(match).not.toBeNull();
-	if (!match) return [];
+	if (!match) {
+		throw new Error("ACTIVE_LEAVE_OVERLAP_STATUSES declaration not found");
+	}
 	return [...match[1].matchAll(/"([^"]+)"/g)].map((entry) => entry[1]);
 }
 
@@ -60,7 +61,7 @@ describe("HR leave overlap exclusion register", () => {
 
 	it("records command + transaction enforcement without database exclusion", () => {
 		expect(register.overlapPolicies).toHaveLength(1);
-		const policy = register.overlapPolicies[0];
+		const [policy] = register.overlapPolicies;
 		expect(policy.table).toBe("hr_leave_request_segment");
 		expect(policy.policy).toBe(
 			"prevent_overlapping_leave_segments_per_employee",
@@ -75,14 +76,15 @@ describe("HR leave overlap exclusion register", () => {
 	it("matches ACTIVE_LEAVE_OVERLAP_STATUSES from leave-guards.ts on disk", () => {
 		const leaveGuardsStatuses = readActiveLeaveOverlapStatusesFromLeaveGuards();
 		expect(leaveGuardsStatuses.length).toBeGreaterThan(0);
-		const policy = register.overlapPolicies[0];
+		const [policy] = register.overlapPolicies;
 		expect([...policy.blockingStatuses].sort()).toEqual(
 			[...leaveGuardsStatuses].sort(),
 		);
 	});
 
 	it("lists command and adapter enforcement surfaces", () => {
-		const surfaces = register.overlapPolicies[0].enforcementSurface.join(" ");
+		const [{ enforcementSurface }] = register.overlapPolicies;
+		const surfaces = enforcementSurface.join(" ");
 		expect(surfaces).toMatch(/assertNoLeaveOverlap/);
 		expect(surfaces).toMatch(/submitLeaveRequest/);
 		expect(surfaces).toMatch(/approveLeaveRequest/);
@@ -92,7 +94,7 @@ describe("HR leave overlap exclusion register", () => {
 	});
 
 	it("documents why no Postgres EXCLUDE constraint is applied", () => {
-		const notes = register.overlapPolicies[0].notes;
+		const [{ notes }] = register.overlapPolicies;
 		expect(notes).toMatch(/morning|afternoon|full/);
 		expect(notes).toMatch(/exclusion constraint|EXCLUDE/i);
 	});

@@ -23,7 +23,7 @@ export const HUMAN_RESOURCES_AGGREGATE_EMPLOYEE_CASE_EVENT =
 export type HumanResourcesEmployeeCaseEventAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_EMPLOYEE_CASE_EVENT;
 
-export async function recordEmployeeCaseEvent(
+export function recordEmployeeCaseEvent(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCaseEvent>> {
@@ -49,13 +49,13 @@ export async function recordEmployeeCaseEvent(
 	});
 }
 
-export async function addEmployeeCaseEvidenceReference(
+export function addEmployeeCaseEvidenceReference(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCaseEvent>> {
 	const documentReference = requireDocumentReference(options);
 	if (!documentReference.ok) {
-		return documentReference;
+		return Promise.resolve(documentReference);
 	}
 
 	return runEmployeeRelationsCommand(input, options, {
@@ -91,7 +91,7 @@ export async function addEmployeeCaseEvidenceReference(
 	});
 }
 
-export async function redactEmployeeCaseEvidenceReference(
+export function redactEmployeeCaseEvidenceReference(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCaseEvent>> {

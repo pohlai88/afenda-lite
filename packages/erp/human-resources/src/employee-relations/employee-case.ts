@@ -61,7 +61,7 @@ export const HUMAN_RESOURCES_AGGREGATE_EMPLOYEE_CASE = "employee_case" as const;
 export type HumanResourcesEmployeeCaseAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_EMPLOYEE_CASE;
 
-export async function openEmployeeCase(
+export function openEmployeeCase(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCase>> {
@@ -121,7 +121,7 @@ export async function openEmployeeCase(
 	});
 }
 
-export async function updateEmployeeCaseClassification(
+export function updateEmployeeCaseClassification(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCase>> {
@@ -148,7 +148,7 @@ export async function updateEmployeeCaseClassification(
 	});
 }
 
-export async function assignEmployeeCaseOwner(
+export function assignEmployeeCaseOwner(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCase>> {
@@ -174,7 +174,7 @@ export async function assignEmployeeCaseOwner(
 	});
 }
 
-export async function addEmployeeCaseParticipant(
+export function addEmployeeCaseParticipant(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCase>> {
@@ -201,7 +201,7 @@ export async function addEmployeeCaseParticipant(
 	});
 }
 
-export async function issueInterimEmployeeMeasure(
+export function issueInterimEmployeeMeasure(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCase>> {
@@ -231,7 +231,7 @@ export async function issueInterimEmployeeMeasure(
 	});
 }
 
-export async function recordEmployeeCaseFinding(
+export function recordEmployeeCaseFinding(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCase>> {
@@ -258,7 +258,7 @@ export async function recordEmployeeCaseFinding(
 	});
 }
 
-export async function closeEmployeeCase(
+export function closeEmployeeCase(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCase>> {
@@ -284,7 +284,7 @@ export async function closeEmployeeCase(
 	});
 }
 
-export async function reopenEmployeeCase(
+export function reopenEmployeeCase(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCase>> {
@@ -310,7 +310,7 @@ export async function reopenEmployeeCase(
 	});
 }
 
-export async function getEmployeeCaseById(
+export function getEmployeeCaseById(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ProjectedEmployeeCase>> {
@@ -328,7 +328,7 @@ export async function getEmployeeCaseById(
 	});
 }
 
-export async function listEmployeeCases(
+export function listEmployeeCases(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCaseListPage>> {
@@ -356,7 +356,7 @@ export async function listEmployeeCases(
 	});
 }
 
-export async function listCasesAssignedToActor(
+export function listCasesAssignedToActor(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCaseListPage>> {
@@ -384,7 +384,7 @@ export async function listCasesAssignedToActor(
 	});
 }
 
-export async function listOpenEmployeeRelationsCases(
+export function listOpenEmployeeRelationsCases(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCaseListPage>> {
@@ -411,7 +411,7 @@ export async function listOpenEmployeeRelationsCases(
 	});
 }
 
-export async function getEmployeeRelationsHistoryByEmployee(
+export function getEmployeeRelationsHistoryByEmployee(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCaseListPage>> {
@@ -439,7 +439,7 @@ export async function getEmployeeRelationsHistoryByEmployee(
 	});
 }
 
-export async function getEmployeeCaseTimeline(
+export function getEmployeeCaseTimeline(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCaseTimeline>> {
@@ -456,7 +456,7 @@ export async function getEmployeeCaseTimeline(
 	});
 }
 
-export async function getEmployeeCaseOutcome(
+export function getEmployeeCaseOutcome(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCaseOutcome>> {

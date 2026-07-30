@@ -29,7 +29,7 @@ export async function reverseCustomerReceiptApplicationAction(
 	_prev: ReverseCustomerReceiptApplicationActionState,
 	formData: FormData,
 ): Promise<ReverseCustomerReceiptApplicationActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "reverseCustomerReceiptApplicationAction",
 		permission: "receivables.receipt_application.reverse",
 		safeMessage:
@@ -57,7 +57,9 @@ export async function reverseCustomerReceiptApplicationAction(
 					createReceivablesCommandOptions(),
 				),
 			);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePath("/admin/receivables");
 			revalidatePath("/client/receivables");
 			return { ok: true, data: { allocation: mapped.data } };

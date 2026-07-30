@@ -50,88 +50,88 @@ export type PaymentApplicationTargetDocumentType =
 	| "supplier_credit";
 export type RefundSource = "customer_payment" | "customer_credit" | "manual";
 
-export type PaymentAccount = {
-	id: string;
-	organizationId: string;
-	code: string;
-	normalizedCode: string;
-	name: string;
-	kind: PaymentAccountKind;
-	currencyCode: string;
+export interface PaymentAccount {
 	active: boolean;
-	createdBy: string;
+	code: string;
 	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type PaymentApplicationInstruction = {
+	createdBy: string;
+	currencyCode: string;
 	id: string;
+	kind: PaymentAccountKind;
+	name: string;
+	normalizedCode: string;
+	organizationId: string;
+	updatedAt: Date;
+}
+
+export interface PaymentApplicationInstruction {
+	appliedAmount: string;
+	createdAt: Date;
+	createdBy: string;
+	currencyCode: string;
+	id: string;
+	intendedAmount: string;
 	organizationId: string;
 	paymentId: string;
-	targetModule: PaymentApplicationTargetModule;
-	targetDocumentType: PaymentApplicationTargetDocumentType;
-	targetDocumentId: string;
-	intendedAmount: string;
-	appliedAmount: string;
-	currencyCode: string;
-	status: PaymentApplicationInstructionStatus;
 	rejectionCode: string | null;
-	createdBy: string;
-	createdAt: Date;
+	status: PaymentApplicationInstructionStatus;
+	targetDocumentId: string;
+	targetDocumentType: PaymentApplicationTargetDocumentType;
+	targetModule: PaymentApplicationTargetModule;
 	updatedAt: Date;
-};
+}
 
-export type PaymentReversal = {
+export interface PaymentReversal {
 	id: string;
 	organizationId: string;
 	paymentId: string;
 	reason: string;
-	reversedBy: string;
 	reversedAt: Date;
-};
+	reversedBy: string;
+}
 
-export type Payment = {
-	id: string;
-	organizationId: string;
+export interface Payment {
+	amount: string;
+	applicationInstructions: PaymentApplicationInstruction[];
 	code: string;
-	normalizedCode: string;
-	paymentAccountId: string;
-	direction: PaymentDirection;
-	purpose: PaymentPurpose;
-	status: PaymentStatus;
 	counterpartyId: string | null;
 	counterpartySnapshot: Record<string, unknown> | null;
-	transferGroupId: string | null;
-	linkedPaymentId: string | null;
-	originalPaymentId: string | null;
-	refundSource: RefundSource | null;
-	currencyCode: string;
-	amount: string;
-	reference: string | null;
-	createIdempotencyKey: string;
-	postIdempotencyKey: string | null;
-	reverseIdempotencyKey: string | null;
-	version: number;
+	createdAt: Date;
 	createdBy: string;
-	updatedBy: string;
+	createIdempotencyKey: string;
+	currencyCode: string;
+	direction: PaymentDirection;
+	id: string;
+	linkedPaymentId: string | null;
+	normalizedCode: string;
+	organizationId: string;
+	originalPaymentId: string | null;
+	paymentAccountId: string;
 	postedAt: Date | null;
 	postedBy: string | null;
+	postIdempotencyKey: string | null;
+	purpose: PaymentPurpose;
+	reference: string | null;
+	refundSource: RefundSource | null;
+	reversal: PaymentReversal | null;
 	reversedAt: Date | null;
 	reversedBy: string | null;
-	createdAt: Date;
+	reverseIdempotencyKey: string | null;
+	status: PaymentStatus;
+	transferGroupId: string | null;
 	updatedAt: Date;
-	applicationInstructions: PaymentApplicationInstruction[];
-	reversal: PaymentReversal | null;
-};
+	updatedBy: string;
+	version: number;
+}
 
-export type PaymentApplicationAvailability = {
-	paymentId: string;
-	currencyCode: string;
-	postedAmount: string;
-	intendedAmount: string;
-	refundedAmount: string;
+export interface PaymentApplicationAvailability {
 	availableToApply: string;
-};
+	currencyCode: string;
+	intendedAmount: string;
+	paymentId: string;
+	postedAmount: string;
+	refundedAmount: string;
+}
 
 export type PaymentsEventType =
 	| "payments.payment.created.v1"
@@ -143,15 +143,15 @@ export type PaymentsEventType =
 	| "payments.application_instruction.rejected.v1"
 	| "payments.transfer.posted.v1";
 
-export type PaymentsEffects = {
-	emit(event: {
+export interface PaymentsEffects {
+	emit: (event: {
 		type: PaymentsEventType;
 		organizationId: string;
 		actorUserId: string;
 		correlationId: string;
 		payload: Record<string, unknown>;
-	}): Promise<Result<void>>;
-};
+	}) => Promise<Result<void>>;
+}
 
 export type PaymentCreateRecord = Omit<
 	Payment,
@@ -175,21 +175,14 @@ export type PaymentCreateRecord = Omit<
 	correlationId: string;
 };
 
-export type PaymentsCommandOptions = {
-	store?: PaymentsStore;
+export interface PaymentsCommandOptions {
 	authorization?: PaymentsAuthorizationPort;
 	effects?: PaymentsEffects;
-};
+	store?: PaymentsStore;
+}
 
-export type PaymentsStore = {
-	createPaymentAccount(
-		record: Omit<PaymentAccount, "id" | "createdAt" | "updatedAt">,
-	): Promise<Result<PaymentAccount>>;
-	listPaymentAccounts(
-		organizationId: string,
-	): Promise<Result<PaymentAccount[]>>;
-	createDraft(record: PaymentCreateRecord): Promise<Result<Payment>>;
-	addApplicationInstruction(
+export interface PaymentsStore {
+	addApplicationInstruction: (
 		record: Omit<
 			PaymentApplicationInstruction,
 			| "id"
@@ -203,25 +196,8 @@ export type PaymentsStore = {
 			actorUserId: string;
 			correlationId: string;
 		},
-	): Promise<Result<PaymentApplicationInstruction>>;
-	post(record: {
-		organizationId: string;
-		paymentId: string;
-		expectedVersion: number;
-		actorUserId: string;
-		correlationId: string;
-		idempotencyKey: string;
-	}): Promise<Result<Payment>>;
-	reverse(record: {
-		organizationId: string;
-		paymentId: string;
-		expectedVersion: number;
-		reason: string;
-		actorUserId: string;
-		correlationId: string;
-		idempotencyKey: string;
-	}): Promise<Result<Payment>>;
-	createAndPostTransfer(record: {
+	) => Promise<Result<PaymentApplicationInstruction>>;
+	createAndPostTransfer: (record: {
 		organizationId: string;
 		code: string;
 		normalizedCode: string;
@@ -233,8 +209,54 @@ export type PaymentsStore = {
 		correlationId: string;
 		idempotencyKey: string;
 		reference: string | null;
-	}): Promise<Result<{ outgoing: Payment; incoming: Payment }>>;
-	postRefund(
+	}) => Promise<Result<{ outgoing: Payment; incoming: Payment }>>;
+	createDraft: (record: PaymentCreateRecord) => Promise<Result<Payment>>;
+	createPaymentAccount: (
+		record: Omit<PaymentAccount, "id" | "createdAt" | "updatedAt">,
+	) => Promise<Result<PaymentAccount>>;
+	getApplicationAvailability: (
+		organizationId: string,
+		paymentId: string,
+	) => Promise<Result<PaymentApplicationAvailability>>;
+	getById: (
+		organizationId: string,
+		id: string,
+	) => Promise<Result<Payment | null>>;
+	list: (filter: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		status?: PaymentStatus | undefined;
+		direction?: PaymentDirection | undefined;
+	}) => Promise<Result<Payment[]>>;
+	listPaymentAccounts: (
+		organizationId: string,
+	) => Promise<Result<PaymentAccount[]>>;
+	markInstructionApplied: (record: {
+		organizationId: string;
+		instructionId: string;
+		appliedAmount: string;
+		actorUserId: string;
+		correlationId: string;
+		idempotencyKey: string;
+	}) => Promise<Result<PaymentApplicationInstruction>>;
+	markInstructionRejected: (record: {
+		organizationId: string;
+		instructionId: string;
+		rejectionCode: string;
+		actorUserId: string;
+		correlationId: string;
+		idempotencyKey: string;
+	}) => Promise<Result<PaymentApplicationInstruction>>;
+	post: (record: {
+		organizationId: string;
+		paymentId: string;
+		expectedVersion: number;
+		actorUserId: string;
+		correlationId: string;
+		idempotencyKey: string;
+	}) => Promise<Result<Payment>>;
+	postRefund: (
 		record: Omit<
 			PaymentCreateRecord,
 			| "direction"
@@ -252,33 +274,14 @@ export type PaymentsStore = {
 			paymentAccountId: string;
 			refundSource: RefundSource;
 		},
-	): Promise<Result<Payment>>;
-	markInstructionApplied(record: {
+	) => Promise<Result<Payment>>;
+	reverse: (record: {
 		organizationId: string;
-		instructionId: string;
-		appliedAmount: string;
+		paymentId: string;
+		expectedVersion: number;
+		reason: string;
 		actorUserId: string;
 		correlationId: string;
 		idempotencyKey: string;
-	}): Promise<Result<PaymentApplicationInstruction>>;
-	markInstructionRejected(record: {
-		organizationId: string;
-		instructionId: string;
-		rejectionCode: string;
-		actorUserId: string;
-		correlationId: string;
-		idempotencyKey: string;
-	}): Promise<Result<PaymentApplicationInstruction>>;
-	getById(organizationId: string, id: string): Promise<Result<Payment | null>>;
-	list(filter: {
-		organizationId: string;
-		page: number;
-		pageSize: number;
-		status?: PaymentStatus | undefined;
-		direction?: PaymentDirection | undefined;
-	}): Promise<Result<Payment[]>>;
-	getApplicationAvailability(
-		organizationId: string,
-		paymentId: string,
-	): Promise<Result<PaymentApplicationAvailability>>;
-};
+	}) => Promise<Result<Payment>>;
+}

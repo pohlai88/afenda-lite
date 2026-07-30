@@ -14,13 +14,13 @@ import {
 const organizationId = "f47ac10b-58cc-4372-a567-0e02b2c3d479";
 const actorUserId = "a47ac10b-58cc-4372-a567-0e02b2c3d479";
 const authorization = {
-	async can() {
-		return true;
+	can() {
+		return Promise.resolve(true);
 	},
 };
 const effects = {
-	async emit() {
-		return ok(undefined);
+	emit() {
+		return Promise.resolve(ok(undefined));
 	},
 };
 
@@ -38,7 +38,9 @@ async function setupSourcePosting() {
 		},
 		options,
 	);
-	if (!coa.ok) throw new Error(coa.message);
+	if (!coa.ok) {
+		throw new Error(coa.message);
+	}
 
 	const arAccount = await createLedgerAccount(
 		{
@@ -53,7 +55,9 @@ async function setupSourcePosting() {
 		},
 		options,
 	);
-	if (!arAccount.ok) throw new Error(arAccount.message);
+	if (!arAccount.ok) {
+		throw new Error(arAccount.message);
+	}
 
 	const revenueAccount = await createLedgerAccount(
 		{
@@ -68,7 +72,9 @@ async function setupSourcePosting() {
 		},
 		options,
 	);
-	if (!revenueAccount.ok) throw new Error(revenueAccount.message);
+	if (!revenueAccount.ok) {
+		throw new Error(revenueAccount.message);
+	}
 
 	await mapAccountRole(
 		{
@@ -118,7 +124,9 @@ async function setupSourcePosting() {
 		},
 		options,
 	);
-	if (!period.ok) throw new Error(period.message);
+	if (!period.ok) {
+		throw new Error(period.message);
+	}
 
 	return { options, period: period.data };
 }
@@ -147,14 +155,18 @@ describe("accounting source posting idempotency", () => {
 
 		const first = await postFinancialSourceEvent(eventInput, options);
 		expect(first.ok).toBe(true);
-		if (!first.ok) throw new Error(first.message);
+		if (!first.ok) {
+			throw new Error(first.message);
+		}
 		expect(first.data.status).toBe("posted");
 		expect(first.data.journalType).toBe("receivables");
 		expect(first.data.postings).toHaveLength(2);
 
 		const duplicate = await postFinancialSourceEvent(eventInput, options);
 		expect(duplicate.ok).toBe(true);
-		if (!duplicate.ok) throw new Error(duplicate.message);
+		if (!duplicate.ok) {
+			throw new Error(duplicate.message);
+		}
 		expect(duplicate.data.id).toBe(first.data.id);
 	});
 

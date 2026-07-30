@@ -24,12 +24,12 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type InviteOrgMemberActionData = {
-	email: string;
+export interface InviteOrgMemberActionData {
 	auditId: string;
+	email: string;
 	/** Relative `/join?invitationId=…` when Neon returned an invitation id. */
 	joinUrl: string | null;
-};
+}
 
 /** `null` = form idle (`useActionState`); otherwise API-002 `ActionResult`. */
 export type InviteOrgMemberActionState =
@@ -151,7 +151,7 @@ export async function inviteOrgMemberAction(
 		}
 		return actionFail(invited.code, invited.message, invited.details);
 	}
-	const invitationId = invited.data.invitationId;
+	const { invitationId } = invited.data;
 
 	logProductEvent({
 		level: "info",

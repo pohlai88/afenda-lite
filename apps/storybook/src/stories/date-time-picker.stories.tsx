@@ -54,16 +54,16 @@ export const Overview: Story = {
 						<div className="flex flex-wrap items-center gap-2">
 							<Badge variant="outline">Accounts receivable</Badge>
 							<StatusBadge
+								label="Close in progress"
 								size="sm"
 								status="pending"
-								label="Close in progress"
 							/>
 						</div>
 						<div className="grid gap-1">
-							<h1 className="text-2xl font-semibold tracking-tight">
+							<h1 className="font-semibold text-2xl tracking-tight">
 								July period close schedule
 							</h1>
-							<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+							<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 								Enter posting and approval instants for the organization time
 								zone (MYT). Feature code owns conversion, allowed ranges, and
 								persistence.
@@ -72,25 +72,25 @@ export const Overview: Story = {
 					</div>
 					<dl className="grid grid-cols-2 gap-x-8 gap-y-3 rounded-lg border bg-card p-4">
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Subject
 							</dt>
 							<dd className="text-sm">Period close schedule</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Area
 							</dt>
 							<dd className="text-sm">Accounts receivable</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Scope
 							</dt>
 							<dd className="text-sm">Date-time instants with zone guidance</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								State
 							</dt>
 							<dd className="text-sm">Close in progress</dd>
@@ -98,15 +98,15 @@ export const Overview: Story = {
 					</dl>
 				</header>
 
-				<section className="grid gap-3" aria-labelledby="dtp-posting-title">
+				<section aria-labelledby="dtp-posting-title" className="grid gap-3">
 					<div className="grid gap-1">
 						<h2
-							className="text-base font-semibold tracking-tight text-foreground"
+							className="font-semibold text-base text-foreground tracking-tight"
 							id="dtp-posting-title"
 						>
 							Posting instant
 						</h2>
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							Named business instant with explicit zone guidance.
 						</p>
 					</div>
@@ -119,57 +119,57 @@ export const Overview: Story = {
 						</CardHeader>
 						<CardContent>
 							<DateTimePicker
-								label="Posting date and time"
-								description="Values use the organization time zone (MYT)."
 								defaultValue="2026-07-28T09:30"
+								description="Values use the organization time zone (MYT)."
+								label="Posting date and time"
 							/>
 						</CardContent>
 						<CardFooter className="justify-end border-t">
-							<Button type="button" size="sm">
+							<Button size="sm" type="button">
 								Schedule posting
 							</Button>
 						</CardFooter>
 					</Card>
 				</section>
 
-				<section className="grid gap-3" aria-labelledby="dtp-deadline-title">
+				<section aria-labelledby="dtp-deadline-title" className="grid gap-3">
 					<div className="grid gap-1">
 						<h2
-							className="text-base font-semibold tracking-tight text-foreground"
+							className="font-semibold text-base text-foreground tracking-tight"
 							id="dtp-deadline-title"
 						>
 							Invalid deadline
 						</h2>
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							Entered value is preserved while validation explains the failure.
 						</p>
 					</div>
 					<DateTimePicker
-						label="Approval deadline"
-						description="Must remain in the future for the open close window."
 						defaultValue="2026-07-20T17:00"
+						description="Must remain in the future for the open close window."
 						error="Deadline must be in the future."
+						label="Approval deadline"
 					/>
 				</section>
 
-				<section className="grid gap-3" aria-labelledby="dtp-locked-title">
+				<section aria-labelledby="dtp-locked-title" className="grid gap-3">
 					<div className="grid gap-1">
 						<h2
-							className="text-base font-semibold tracking-tight text-foreground"
+							className="font-semibold text-base text-foreground tracking-tight"
 							id="dtp-locked-title"
 						>
 							Locked period boundary
 						</h2>
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							Disabled remains readable when the operator cannot change the
 							instant.
 						</p>
 					</div>
 					<DateTimePicker
-						label="Locked period end"
-						description="June close is complete and cannot be reopened from this surface."
 						defaultValue="2026-06-30T23:59"
+						description="June close is complete and cannot be reopened from this surface."
 						disabled
+						label="Locked period end"
 					/>
 				</section>
 			</main>
@@ -191,17 +191,17 @@ export const SemanticUsage: Story = {
 		<div className="grid max-w-5xl gap-6">
 			<StorySection title="Posting with zone guidance">
 				<DateTimePicker
-					label="Posting date and time"
-					description="Values use the organization time zone (MYT)."
 					defaultValue="2026-07-28T09:30"
+					description="Values use the organization time zone (MYT)."
+					label="Posting date and time"
 				/>
 			</StorySection>
 
 			<StorySection title="Approval deadline">
 				<DateTimePicker
-					label="Approval deadline"
-					description="Finance-control review must complete before this instant."
 					defaultValue="2026-07-28T17:00"
+					description="Finance-control review must complete before this instant."
+					label="Approval deadline"
 				/>
 			</StorySection>
 		</div>
@@ -221,20 +221,20 @@ export const AdaptiveLayout: Story = {
 	render: () => (
 		<div className="grid w-full max-w-5xl gap-8">
 			<StorySection title="Narrow approval drawer">
-				<div className="w-full max-w-xs rounded-xl border border-dashed border-border p-4">
+				<div className="w-full max-w-xs rounded-xl border border-border border-dashed p-4">
 					<DateTimePicker
-						label="Finance-control approval deadline"
-						description="Organization time zone: Asia/Kuala_Lumpur (MYT, UTC+08:00)."
 						defaultValue="2026-07-28T17:00"
+						description="Organization time zone: Asia/Kuala_Lumpur (MYT, UTC+08:00)."
+						label="Finance-control approval deadline"
 					/>
 				</div>
 			</StorySection>
 			<StorySection title="Long validation consequence">
 				<DateTimePicker
-					label="Posting date and time"
-					description="Organization time zone: Asia/Kuala_Lumpur (MYT, UTC+08:00)."
 					defaultValue="2026-07-20T17:00"
+					description="Organization time zone: Asia/Kuala_Lumpur (MYT, UTC+08:00)."
 					error="Choose an instant inside the currently open July posting window."
+					label="Posting date and time"
 				/>
 			</StorySection>
 		</div>
@@ -254,21 +254,21 @@ export const StatesAndAccessibility: Story = {
 	render: () => (
 		<div className="grid max-w-5xl gap-6">
 			<DateTimePicker
-				label="Default posting instant"
-				description="Organization time zone (MYT)."
 				defaultValue="2026-07-28T09:30"
+				description="Organization time zone (MYT)."
+				label="Default posting instant"
 			/>
 			<DateTimePicker
-				label="Invalid approval deadline"
-				description="Must remain in the future."
 				defaultValue="2026-07-20T17:00"
+				description="Must remain in the future."
 				error="Deadline must be in the future."
+				label="Invalid approval deadline"
 			/>
 			<DateTimePicker
-				label="Disabled locked period end"
-				description="June close cannot be edited."
 				defaultValue="2026-06-30T23:59"
+				description="June close cannot be edited."
 				disabled
+				label="Disabled locked period end"
 			/>
 		</div>
 	),
@@ -303,7 +303,7 @@ export const Composition: Story = {
 				<CardHeader>
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="outline">Period close</Badge>
-						<StatusBadge size="sm" status="pending" label="Awaiting schedule" />
+						<StatusBadge label="Awaiting schedule" size="sm" status="pending" />
 					</div>
 					<CardTitle>Finance-control approval window</CardTitle>
 					<CardDescription>
@@ -312,21 +312,21 @@ export const Composition: Story = {
 				</CardHeader>
 				<CardContent className="grid gap-4">
 					<DateTimePicker
-						label="Review opens"
-						description="Operators may begin approval after this instant."
 						defaultValue="2026-07-28T08:00"
+						description="Operators may begin approval after this instant."
+						label="Review opens"
 					/>
 					<DateTimePicker
-						label="Review closes"
-						description="Unapproved journals remain blocked after this instant."
 						defaultValue="2026-07-28T17:00"
+						description="Unapproved journals remain blocked after this instant."
+						label="Review closes"
 					/>
 				</CardContent>
 				<CardFooter className="justify-end gap-2 border-t">
-					<Button type="button" size="sm" variant="outline">
+					<Button size="sm" type="button" variant="outline">
 						Cancel
 					</Button>
-					<Button type="button" size="sm">
+					<Button size="sm" type="button">
 						Save window
 					</Button>
 				</CardFooter>
@@ -349,19 +349,19 @@ export const DoAndDoNot: Story = {
 		<div className="grid max-w-5xl gap-6 sm:grid-cols-2">
 			<StorySection title="Do: name the instant and zone">
 				<DateTimePicker
-					label="Posting date and time"
-					description="Organization time zone (MYT)."
 					defaultValue="2026-07-28T09:30"
+					description="Organization time zone (MYT)."
+					label="Posting date and time"
 				/>
 			</StorySection>
 
 			<StorySection title="Do not: omit zone context">
 				<div className="grid gap-2">
 					<DateTimePicker
-						label="Posting date and time"
 						defaultValue="2026-07-28T09:30"
+						label="Posting date and time"
 					/>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						Without zone guidance, operators may assume browser local time
 						instead of organization MYT.
 					</p>
@@ -370,28 +370,28 @@ export const DoAndDoNot: Story = {
 
 			<StorySection title="Do: keep invalid values visible">
 				<DateTimePicker
-					label="Approval deadline"
 					defaultValue="2026-07-20T17:00"
 					error="Deadline must be in the future."
+					label="Approval deadline"
 				/>
 			</StorySection>
 
 			<StorySection title="Do not: treat DateTimePicker as duration">
-				<div className="rounded-md border border-dashed p-4 text-sm text-foreground-tertiary">
+				<div className="rounded-md border border-dashed p-4 text-foreground-tertiary text-sm">
 					Durations such as “30 minutes to close” belong on a dedicated duration
 					control — not a date-time instant.
 				</div>
 			</StorySection>
 
 			<StorySection title="Do: use DatePicker when time is unused">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Invoice due dates without a time-of-day requirement should use
 					DatePicker, not DateTimePicker.
 				</p>
 			</StorySection>
 
 			<StorySection title="Do not: silently convert zones">
-				<div className="rounded-md border border-dashed p-4 text-sm text-foreground-tertiary">
+				<div className="rounded-md border border-dashed p-4 text-foreground-tertiary text-sm">
 					Feature code must not rewrite MYT entry to UTC inside the control
 					without an explicit conversion surface.
 				</div>

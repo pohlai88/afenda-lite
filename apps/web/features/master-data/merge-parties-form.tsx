@@ -26,24 +26,24 @@ import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 const initialState: MergePartiesActionState = null;
 const submitInitial: SubmitChangeRequestActionState = null;
 
-type PartyOption = {
+interface PartyOption {
 	id: string;
 	label: string;
 	version: number;
-};
+}
 
-type ApprovedMergeRequest = {
+interface ApprovedMergeRequest {
 	id: string;
 	label: string;
 	sourcePartyId: string;
 	targetPartyId: string;
-};
+}
 
-type MergePartiesFormProps = {
+interface MergePartiesFormProps {
+	approvedMergeRequests: ApprovedMergeRequest[];
 	canManage: boolean;
 	parties: PartyOption[];
-	approvedMergeRequests: ApprovedMergeRequest[];
-};
+}
 
 function partyToken(party: PartyOption): string {
 	return `${party.id}:${party.version}`;
@@ -89,26 +89,25 @@ export function MergePartiesForm({
 		sourceError === undefined &&
 		targetError === undefined;
 
-	const defaultSource = parties[0];
-	const defaultTarget = parties[1];
-	const defaultApproved = approvedMergeRequests[0];
+	const [defaultSource, defaultTarget] = parties;
+	const [defaultApproved] = approvedMergeRequests;
 
 	return (
 		<div className="flex max-w-lg flex-col gap-8">
 			<form
 				action={submitAction}
-				className="flex flex-col gap-(--field-gap)"
 				aria-busy={submitPending}
+				className="flex flex-col gap-(--field-gap)"
 			>
-				<input type="hidden" name="commandKind" value="merge_parties" />
-				<p className="text-sm text-muted-foreground">
+				<input name="commandKind" type="hidden" value="merge_parties" />
+				<p className="text-muted-foreground text-sm">
 					Step 1 — submit a merge change request for checker approval.
 				</p>
 				<FormField label="Source (will retire)" required>
 					<NativeSelect
-						name="sourcePartyId"
-						disabled={submitPending}
 						defaultValue={defaultSource?.id}
+						disabled={submitPending}
+						name="sourcePartyId"
 					>
 						{parties.map((party) => (
 							<NativeSelectOption key={party.id} value={party.id}>
@@ -119,9 +118,9 @@ export function MergePartiesForm({
 				</FormField>
 				<FormField label="Target (survivor)" required>
 					<NativeSelect
-						name="targetPartyId"
-						disabled={submitPending}
 						defaultValue={defaultTarget?.id}
+						disabled={submitPending}
+						name="targetPartyId"
 					>
 						{parties.map((party) => (
 							<NativeSelectOption key={party.id} value={party.id}>
@@ -132,9 +131,9 @@ export function MergePartiesForm({
 				</FormField>
 				<FormField label="Name decision">
 					<NativeSelect
-						name="nameDecision"
 						defaultValue="target"
 						disabled={submitPending}
+						name="nameDecision"
 					>
 						<NativeSelectOption value="target">
 							Keep target name
@@ -155,7 +154,7 @@ export function MergePartiesForm({
 						</AlertDescription>
 					</Alert>
 				) : null}
-				<Button type="submit" disabled={submitPending}>
+				<Button disabled={submitPending} type="submit">
 					{submitPending ? <Spinner /> : null}
 					Submit merge request
 				</Button>
@@ -166,7 +165,7 @@ export function MergePartiesForm({
 				aria-busy={pending}
 				className="flex flex-col gap-(--field-gap)"
 			>
-				<p className="text-sm text-muted-foreground">
+				<p className="text-muted-foreground text-sm">
 					Step 2 — apply an approved merge change request.
 				</p>
 				{state?.ok === true ? (
@@ -192,9 +191,9 @@ export function MergePartiesForm({
 					<>
 						<FormField label="Approved change request" required>
 							<NativeSelect
-								name="changeRequestId"
-								disabled={pending}
 								defaultValue={defaultApproved?.id}
+								disabled={pending}
+								name="changeRequestId"
 							>
 								{approvedMergeRequests.map((request) => (
 									<NativeSelectOption key={request.id} value={request.id}>
@@ -204,17 +203,17 @@ export function MergePartiesForm({
 							</NativeSelect>
 						</FormField>
 						<FormField
+							error={sourceError}
+							fieldId="merge-source"
 							label="Source (will retire)"
 							required
-							fieldId="merge-source"
-							error={sourceError}
 						>
 							<NativeSelect
-								name="sourceParty"
-								disabled={pending}
 								defaultValue={
 									defaultSource ? partyToken(defaultSource) : undefined
 								}
+								disabled={pending}
+								name="sourceParty"
 							>
 								{parties.map((party) => (
 									<NativeSelectOption key={party.id} value={partyToken(party)}>
@@ -224,17 +223,17 @@ export function MergePartiesForm({
 							</NativeSelect>
 						</FormField>
 						<FormField
+							error={targetError}
+							fieldId="merge-target"
 							label="Target (survivor)"
 							required
-							fieldId="merge-target"
-							error={targetError}
 						>
 							<NativeSelect
-								name="targetParty"
-								disabled={pending}
 								defaultValue={
 									defaultTarget ? partyToken(defaultTarget) : undefined
 								}
+								disabled={pending}
+								name="targetParty"
 							>
 								{parties.map((party) => (
 									<NativeSelectOption key={party.id} value={partyToken(party)}>
@@ -243,11 +242,11 @@ export function MergePartiesForm({
 								))}
 							</NativeSelect>
 						</FormField>
-						<FormField label="Name decision" fieldId="merge-name-decision">
+						<FormField fieldId="merge-name-decision" label="Name decision">
 							<NativeSelect
-								name="nameDecision"
 								defaultValue="target"
 								disabled={pending}
+								name="nameDecision"
 							>
 								<NativeSelectOption value="target">
 									Keep target name
@@ -257,7 +256,7 @@ export function MergePartiesForm({
 								</NativeSelectOption>
 							</NativeSelect>
 						</FormField>
-						<Button type="submit" disabled={pending}>
+						<Button disabled={pending} type="submit">
 							{pending ? <Spinner /> : null}
 							Apply merge
 						</Button>

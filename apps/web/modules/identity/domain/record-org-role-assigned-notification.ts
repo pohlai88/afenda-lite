@@ -9,16 +9,16 @@ import {
 	type RecordNotificationCommand,
 } from "@afenda/notifications";
 
-export type RecordOrgRoleAssignedNotificationInput = {
-	organizationId: string;
-	/** Recipient — the member who received the role. */
-	userId: string;
-	roleId: string;
+export interface RecordOrgRoleAssignedNotificationInput {
+	actorUserId: string;
 	assignmentId: string;
 	eventId: string;
-	actorUserId: string;
+	organizationId: string;
 	reactivated: boolean;
-};
+	roleId: string;
+	/** Recipient — the member who received the role. */
+	userId: string;
+}
 
 const ROLE_ASSIGNED_NOTIFICATION = {
 	type: "SUCCESS",
@@ -46,7 +46,7 @@ export async function recordOrgRoleAssignedNotification(
 		? "An organization role assignment was reactivated for your account."
 		: "You were assigned an organization role.";
 
-	return createNotificationRecorder().record({
+	return await createNotificationRecorder().record({
 		organizationId: input.organizationId,
 		userId: input.userId,
 		type: ROLE_ASSIGNED_NOTIFICATION.type,

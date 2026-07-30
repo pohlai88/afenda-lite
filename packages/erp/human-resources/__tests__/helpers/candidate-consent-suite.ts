@@ -13,6 +13,10 @@ import {
 } from "../../src/recruitment/candidate";
 import { ANONYMIZED_CANDIDATE_DISPLAY_NAME } from "../../src/shared/recruitment-guards";
 import { CANDIDATE_CONSENT_SOURCES } from "../../src/shared/recruitment-status";
+import {
+	runSequential,
+	sequentialReturn,
+} from "../../src/shared/run-sequential";
 import { candidateConsentFixture } from "./candidate-consent-fixture";
 import {
 	createHrParityHarness,
@@ -60,7 +64,9 @@ export function runCandidateConsentSuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		expect(created.data.consentPolicyVersion).toBe(
 			consent.consentPolicyVersion,
@@ -82,7 +88,9 @@ export function runCandidateConsentSuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(loaded.ok).toBe(true);
-		if (!loaded.ok) return;
+		if (!loaded.ok) {
+			return;
+		}
 		expect(loaded.data.consentPolicyVersion).toBe(consent.consentPolicyVersion);
 		expect(loaded.data.retentionUntil).toBe(consent.retentionUntil);
 	});
@@ -122,7 +130,9 @@ export function runCandidateConsentSuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(due.ok).toBe(true);
-		if (!due.ok) return;
+		if (!due.ok) {
+			return;
+		}
 
 		const notDue = await createCandidate(
 			{
@@ -137,7 +147,9 @@ export function runCandidateConsentSuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(notDue.ok).toBe(true);
-		if (!notDue.ok) return;
+		if (!notDue.ok) {
+			return;
+		}
 
 		const listed = await listCandidates(
 			{
@@ -149,7 +161,9 @@ export function runCandidateConsentSuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(listed.ok).toBe(true);
-		if (!listed.ok) return;
+		if (!listed.ok) {
+			return;
+		}
 
 		const ids = listed.data.candidates.map((candidate) => candidate.id);
 		expect(ids).toContain(due.data.id);
@@ -171,7 +185,9 @@ export function runCandidateConsentSuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const crossOrg = await getCandidate(
 			{
@@ -200,7 +216,9 @@ export function runCandidateConsentSuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const withdrawn = await withdrawCandidateConsent(
 			{
@@ -213,7 +231,9 @@ export function runCandidateConsentSuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(withdrawn.ok).toBe(true);
-		if (!withdrawn.ok) return;
+		if (!withdrawn.ok) {
+			return;
+		}
 		expect(withdrawn.data.consentWithdrawnAt).not.toBeNull();
 
 		const again = await withdrawCandidateConsent(
@@ -244,7 +264,9 @@ export function runCandidateConsentSuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const changed = await changeCandidateRetention(
 			{
@@ -258,7 +280,9 @@ export function runCandidateConsentSuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(changed.ok).toBe(true);
-		if (!changed.ok) return;
+		if (!changed.ok) {
+			return;
+		}
 		expect(changed.data.retentionUntil).toBe("2029-06-01");
 
 		const withdrawn = await withdrawCandidateConsent(
@@ -272,7 +296,9 @@ export function runCandidateConsentSuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(withdrawn.ok).toBe(true);
-		if (!withdrawn.ok) return;
+		if (!withdrawn.ok) {
+			return;
+		}
 
 		const blocked = await changeCandidateRetention(
 			{
@@ -306,7 +332,9 @@ export function runCandidateConsentSuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const blocked = await changeCandidateRetention(
 			{
@@ -338,7 +366,9 @@ export function runCandidateConsentSuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 
 		const second = await createCandidate(
 			{
@@ -353,7 +383,9 @@ export function runCandidateConsentSuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(second.ok).toBe(false);
-		if (second.ok) return;
+		if (second.ok) {
+			return;
+		}
 		expect(humanResourcesCodeFromResult(second)).toBe(
 			HUMAN_RESOURCES_ERROR_DUPLICATE,
 		);
@@ -375,7 +407,9 @@ export function runCandidateConsentSuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const updated = await updateCandidateProfile(
 			{
@@ -390,29 +424,39 @@ export function runCandidateConsentSuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(updated.ok).toBe(true);
-		if (!updated.ok) return;
+		if (!updated.ok) {
+			return;
+		}
 		expect(updated.data.displayName).toBe("Profile Updated");
 		expect(updated.data.phone).toBe("+10000000002");
 	});
 
 	it("persists each consentSource for source attribution", async () => {
 		const ready = createHrParityHarness(adapter);
-		for (const consentSource of CANDIDATE_CONSENT_SOURCES) {
-			const created = await createCandidate(
-				{
-					organizationId: ORG,
-					actorUserId: ACTOR,
-					correlationId: `corr-source-${consentSource}-${suffix}`,
-					idempotencyKey: `idem-source-${consentSource}-${suffix}`,
-					displayName: `Source ${consentSource}`,
-					email: `source-${consentSource}-${suffix}@example.com`,
-					...candidateConsentFixture({ consentSource }),
-				},
-				ready,
-			);
-			expect(created.ok).toBe(true);
-			if (!created.ok) return;
-			expect(created.data.consentSource).toBe(consentSource);
+		const sequentialOutcome1 = await runSequential(
+			CANDIDATE_CONSENT_SOURCES,
+			async (consentSource) => {
+				const created = await createCandidate(
+					{
+						organizationId: ORG,
+						actorUserId: ACTOR,
+						correlationId: `corr-source-${consentSource}-${suffix}`,
+						idempotencyKey: `idem-source-${consentSource}-${suffix}`,
+						displayName: `Source ${consentSource}`,
+						email: `source-${consentSource}-${suffix}@example.com`,
+						...candidateConsentFixture({ consentSource }),
+					},
+					ready,
+				);
+				expect(created.ok).toBe(true);
+				if (!created.ok) {
+					return sequentialReturn(undefined);
+				}
+				expect(created.data.consentSource).toBe(consentSource);
+			},
+		);
+		if (sequentialOutcome1.kind === "return") {
+			return sequentialOutcome1.value;
 		}
 	});
 
@@ -431,7 +475,9 @@ export function runCandidateConsentSuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(named.ok).toBe(true);
-		if (!named.ok) return;
+		if (!named.ok) {
+			return;
+		}
 
 		const emailed = await createCandidate(
 			{
@@ -446,7 +492,9 @@ export function runCandidateConsentSuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(emailed.ok).toBe(true);
-		if (!emailed.ok) return;
+		if (!emailed.ok) {
+			return;
+		}
 
 		const byName = await listCandidates(
 			{
@@ -458,7 +506,9 @@ export function runCandidateConsentSuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(byName.ok).toBe(true);
-		if (!byName.ok) return;
+		if (!byName.ok) {
+			return;
+		}
 		expect(byName.data.candidates.map((c) => c.id)).toContain(named.data.id);
 		expect(byName.data.candidates.map((c) => c.id)).not.toContain(
 			emailed.data.id,
@@ -474,7 +524,9 @@ export function runCandidateConsentSuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(byEmail.ok).toBe(true);
-		if (!byEmail.ok) return;
+		if (!byEmail.ok) {
+			return;
+		}
 		expect(byEmail.data.candidates.map((c) => c.id)).toContain(emailed.data.id);
 		expect(byEmail.data.candidates.map((c) => c.id)).not.toContain(
 			named.data.id,
@@ -496,7 +548,9 @@ export function runCandidateConsentSuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const byEmail = await detectCandidateDuplicates(
 			{
@@ -508,7 +562,9 @@ export function runCandidateConsentSuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(byEmail.ok).toBe(true);
-		if (!byEmail.ok) return;
+		if (!byEmail.ok) {
+			return;
+		}
 		expect(byEmail.data.some((m) => m.candidateId === created.data.id)).toBe(
 			true,
 		);
@@ -526,7 +582,9 @@ export function runCandidateConsentSuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(byName.ok).toBe(true);
-		if (!byName.ok) return;
+		if (!byName.ok) {
+			return;
+		}
 		expect(byName.data.some((m) => m.candidateId === created.data.id)).toBe(
 			true,
 		);
@@ -541,7 +599,9 @@ export function runCandidateConsentSuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(crossOrg.ok).toBe(true);
-		if (!crossOrg.ok) return;
+		if (!crossOrg.ok) {
+			return;
+		}
 		expect(crossOrg.data).toHaveLength(0);
 	});
 
@@ -562,7 +622,9 @@ export function runCandidateConsentSuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const early = await anonymizeCandidate(
 			{
@@ -589,7 +651,9 @@ export function runCandidateConsentSuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(anonymized.ok).toBe(true);
-		if (!anonymized.ok) return;
+		if (!anonymized.ok) {
+			return;
+		}
 		expect(anonymized.data.status).toBe("anonymized");
 		expect(anonymized.data.displayName).toBe(ANONYMIZED_CANDIDATE_DISPLAY_NAME);
 		expect(anonymized.data.phone).toBeNull();
@@ -647,7 +711,9 @@ export function runCandidateConsentSuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(reused.ok).toBe(true);
-		if (!reused.ok) return;
+		if (!reused.ok) {
+			return;
+		}
 
 		const duplicates = await detectCandidateDuplicates(
 			{
@@ -659,7 +725,9 @@ export function runCandidateConsentSuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(duplicates.ok).toBe(true);
-		if (!duplicates.ok) return;
+		if (!duplicates.ok) {
+			return;
+		}
 		expect(
 			duplicates.data.some((m) => m.candidateId === anonymized.data.id),
 		).toBe(false);
@@ -683,7 +751,9 @@ export function runCandidateConsentSuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const withdrawn = await withdrawCandidateConsent(
 			{
@@ -696,7 +766,9 @@ export function runCandidateConsentSuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(withdrawn.ok).toBe(true);
-		if (!withdrawn.ok) return;
+		if (!withdrawn.ok) {
+			return;
+		}
 
 		const anonymized = await anonymizeCandidate(
 			{
@@ -710,7 +782,9 @@ export function runCandidateConsentSuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(anonymized.ok).toBe(true);
-		if (!anonymized.ok) return;
+		if (!anonymized.ok) {
+			return;
+		}
 		expect(anonymized.data.status).toBe("anonymized");
 	});
 }

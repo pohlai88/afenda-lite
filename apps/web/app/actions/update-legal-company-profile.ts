@@ -30,7 +30,7 @@ const updateLegalCompanyProfileActionSchema = z.object({
 export async function updateLegalCompanyProfileAction(
 	formData: FormData,
 ): Promise<ActionResult<{ legalCompanyId: string; version: number }>> {
-	return runMemberPermissionAction({
+	return await runMemberPermissionAction({
 		path: "updateLegalCompanyProfileAction",
 		permission: "corporate_administration.company.manage",
 		safeMessage: "Could not update legal company profile.",
@@ -72,7 +72,9 @@ export async function updateLegalCompanyProfileAction(
 				createCorporateAdministrationLegalCompanyDependencies(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 
 			revalidatePath("/client/corporate-administration");
 			revalidatePath("/admin/corporate-administration");
@@ -94,13 +96,15 @@ export async function updateLegalCompanyProfileFormAction(
 	}> | null,
 	formData: FormData,
 ): Promise<ActionResult<{ legalCompanyId: string; version: number }> | null> {
-	return updateLegalCompanyProfileAction(formData);
+	return await updateLegalCompanyProfileAction(formData);
 }
 
 function emptyToUndefined(
 	value: FormDataEntryValue | null,
 ): string | undefined {
-	if (typeof value !== "string") return undefined;
+	if (typeof value !== "string") {
+		return;
+	}
 	const trimmed = value.trim();
 	return trimmed.length === 0 ? undefined : trimmed;
 }

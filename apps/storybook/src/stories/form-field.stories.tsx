@@ -13,11 +13,19 @@ import {
 	StatusBadge,
 } from "@afenda/ui-system";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import type { FormEvent, ReactNode } from "react";
-import { useState } from "react";
+import type { ChangeEvent, FormEvent, ReactNode } from "react";
+import { useCallback, useState } from "react";
 import { expect, fn, userEvent, within } from "storybook/test";
 import { contractDocsParameters } from "./contract-docs";
 import { contractEvidence, StorySection } from "./evidence";
+
+const TAX_REGISTRATION_PATTERN = /Tax registration number/;
+const TAX_REGISTRATION_REQUIRED_PATTERN =
+	/Enter the identifier issued by the tax authority.*Tax registration number is required/;
+
+function preventSubmit(event: FormEvent<HTMLFormElement>): void {
+	event.preventDefault();
+}
 
 type SectionProps = Readonly<{
 	id: string;
@@ -28,15 +36,15 @@ type SectionProps = Readonly<{
 
 function WorkbenchSection({ id, title, description, children }: SectionProps) {
 	return (
-		<section className="grid gap-4" aria-labelledby={id}>
+		<section aria-labelledby={id} className="grid gap-4">
 			<div className="grid gap-1">
 				<h2
-					className="text-base font-semibold tracking-tight text-foreground"
+					className="font-semibold text-base text-foreground tracking-tight"
 					id={id}
 				>
 					{title}
 				</h2>
-				<p className="max-w-5xl text-sm leading-5 text-foreground-secondary">
+				<p className="max-w-5xl text-foreground-secondary text-sm leading-5">
 					{description}
 				</p>
 			</div>
@@ -58,14 +66,20 @@ function SupplierMasterForm() {
 			? "Tax registration number is required."
 			: undefined;
 
-	function handleSubmit(event: FormEvent<HTMLFormElement>) {
+	const handleSubmit = useCallback((event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
 		setSubmitted(true);
 
 		if (event.currentTarget.checkValidity()) {
 			saveSupplier();
 		}
-	}
+	}, []);
+	const handleTaxRegistrationChange = useCallback(
+		(event: ChangeEvent<HTMLInputElement>) => {
+			setTaxRegistration(event.currentTarget.value);
+		},
+		[],
+	);
 
 	return (
 		<Card className="shadow-none">
@@ -80,7 +94,7 @@ function SupplierMasterForm() {
 					</div>
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="outline">Master data</Badge>
-						<StatusBadge status="pending" label="Draft" />
+						<StatusBadge label="Draft" status="pending" />
 					</div>
 				</div>
 			</CardHeader>
@@ -88,76 +102,74 @@ function SupplierMasterForm() {
 			<form noValidate onSubmit={handleSubmit}>
 				<CardContent className="grid gap-6">
 					<WorkbenchSection
+						description="Registration values must match the supplier’s official records."
 						id="supplier-legal-identity"
 						title="Legal identity"
-						description="Registration values must match the supplier’s official records."
 					>
 						<div className="grid gap-4 sm:grid-cols-2">
 							<FormField
-								label="Registered supplier name"
 								description="Use the name shown on the registration certificate."
+								label="Registered supplier name"
 								required
 							>
 								<FormInput
-									name="registeredName"
 									defaultValue="Northwind Trading Sdn. Bhd."
+									name="registeredName"
 									required
 								/>
 							</FormField>
 
 							<FormField
+								description="Enter the identifier issued by the tax authority."
 								fieldId="supplier-tax-registration"
 								label="Tax registration number"
-								description="Enter the identifier issued by the tax authority."
 								{...(taxError === undefined ? {} : { error: taxError })}
 								required
 							>
 								<FormInput
 									name="taxRegistration"
-									value={taxRegistration}
-									onChange={(event) =>
-										setTaxRegistration(event.currentTarget.value)
-									}
+									onChange={handleTaxRegistrationChange}
 									required
+									value={taxRegistration}
 								/>
 							</FormField>
 						</div>
 					</WorkbenchSection>
 
 					<WorkbenchSection
+						description="This contact receives remittance and payment-query notices."
 						id="supplier-finance-contact"
 						title="Finance contact"
-						description="This contact receives remittance and payment-query notices."
 					>
 						<div className="grid gap-4 sm:grid-cols-2">
 							<FormField label="Contact name" required>
 								<FormInput
-									name="contactName"
 									defaultValue="Aisha Rahman"
+									name="contactName"
 									required
 								/>
 							</FormField>
 
 							<FormField label="Email address" required>
 								<FormInput
-									name="email"
-									type="email"
 									defaultValue="aisha@example.com"
+									name="email"
 									required
+									type="email"
 								/>
 							</FormField>
 						</div>
 					</WorkbenchSection>
 
 					<WorkbenchSection
+						description="Read-only values remain reviewable. Disabled controls do not participate in the current task."
 						id="supplier-governed-values"
 						title="Governed values"
-						description="Read-only values remain reviewable. Disabled controls do not participate in the current task."
 					>
 						<div className="grid gap-4 sm:grid-cols-2">
 							<FormField
-								label="Approved legal name"
 								description="Updated only through the legal-identity change workflow."
+								label="Approved legal name"
 							>
 								<FormInput
 									defaultValue="Northwind Trading Sdn. Bhd."
@@ -166,8 +178,8 @@ function SupplierMasterForm() {
 							</FormField>
 
 							<FormField
-								label="External integration reference"
 								description="Unavailable until the supplier is activated."
+								label="External integration reference"
 							>
 								<FormInput defaultValue="Assigned after activation" disabled />
 							</FormField>
@@ -175,15 +187,15 @@ function SupplierMasterForm() {
 					</WorkbenchSection>
 
 					<FormField
-						label="Internal review note"
 						description="Visible to procurement and finance reviewers."
+						label="Internal review note"
 					>
 						<FormTextarea defaultValue="Bank account evidence verified." />
 					</FormField>
 				</CardContent>
 
 				<CardFooter className="justify-end gap-2 border-t">
-					<Button type="button" variant="outline" onClick={cancelSupplier}>
+					<Button onClick={cancelSupplier} type="button" variant="outline">
 						Cancel
 					</Button>
 					<Button type="submit">Save supplier</Button>
@@ -222,13 +234,13 @@ export const Overview: Story = {
 		<div className="min-h-screen bg-canvas text-foreground">
 			<div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-2 border-b pb-6">
-					<p className="text-sm font-medium text-foreground-secondary">
+					<p className="font-medium text-foreground-secondary text-sm">
 						Supplier master data
 					</p>
-					<h1 className="text-2xl font-semibold tracking-tight">
+					<h1 className="font-semibold text-2xl tracking-tight">
 						Supplier registration
 					</h1>
-					<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+					<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 						FormField provides persistent labels, supporting guidance, and
 						field-level correction. Feature code owns validation, submission,
 						and business policy — Badge taxonomy and StatusBadge lifecycle stay
@@ -251,7 +263,7 @@ export const Overview: Story = {
 		);
 
 		const taxInput = canvas.getByRole("textbox", {
-			name: /Tax registration number/,
+			name: TAX_REGISTRATION_PATTERN,
 		});
 
 		await expect(taxInput).toHaveAttribute("aria-invalid", "true");
@@ -285,8 +297,8 @@ export const SemanticUsage: Story = {
 		<div className="grid w-full max-w-xl gap-6">
 			<StorySection title="Ready · helper guidance">
 				<FormField
-					label="Registered supplier name"
 					description="Use the legal name shown on the registration certificate."
+					label="Registered supplier name"
 				>
 					<FormInput defaultValue="Northwind Trading Sdn. Bhd." />
 				</FormField>
@@ -298,9 +310,9 @@ export const SemanticUsage: Story = {
 			</StorySection>
 			<StorySection title="Invalid · actionable correction">
 				<FormField
-					label="Tax registration number"
 					description="Enter the identifier issued by the tax authority."
 					error="Tax registration number is required."
+					label="Tax registration number"
 					required
 				>
 					<FormInput required />
@@ -308,16 +320,16 @@ export const SemanticUsage: Story = {
 			</StorySection>
 			<StorySection title="Read-only · reviewable governed value">
 				<FormField
-					label="Approved legal name"
 					description="Updated only through an approved legal-name change."
+					label="Approved legal name"
 				>
 					<FormInput defaultValue="Northwind Trading Sdn. Bhd." readOnly />
 				</FormField>
 			</StorySection>
 			<StorySection title="Disabled · not in this task">
 				<FormField
-					label="External integration reference"
 					description="Unavailable until the supplier is activated."
+					label="External integration reference"
 				>
 					<FormInput defaultValue="Assigned after activation" disabled />
 				</FormField>
@@ -339,23 +351,23 @@ export const Usage: Story = {
 	render: () => (
 		<div className="grid w-full max-w-xl gap-6">
 			<FormField
-				label="Registered supplier name"
 				description="Use the legal name shown on the registration certificate."
+				label="Registered supplier name"
 				required
 			>
 				<FormInput defaultValue="Northwind Trading Sdn. Bhd." required />
 			</FormField>
 
 			<FormField
-				label="Payment reference prefix"
 				description="Appears before generated remittance references, for example SUP-."
+				label="Payment reference prefix"
 			>
 				<FormInput defaultValue="SUP-" />
 			</FormField>
 
 			<FormField
-				label="Internal review note"
 				description="Visible to procurement and finance reviewers only."
+				label="Internal review note"
 			>
 				<FormTextarea defaultValue="Bank account evidence verified." />
 			</FormField>
@@ -376,25 +388,25 @@ export const StatesAndAccessibility: Story = {
 	render: () => (
 		<div className="grid w-full max-w-xl gap-6">
 			<FormField
-				fieldId="supplier-tax-id"
-				label="Tax registration number"
 				description="Enter the identifier issued by the tax authority."
 				error="Tax registration number is required."
+				fieldId="supplier-tax-id"
+				label="Tax registration number"
 				required
 			>
 				<FormInput required />
 			</FormField>
 
 			<FormField
-				label="Approved legal name"
 				description="Updated only through an approved legal-name change."
+				label="Approved legal name"
 			>
 				<FormInput defaultValue="Northwind Trading Sdn. Bhd." readOnly />
 			</FormField>
 
 			<FormField
-				label="External integration reference"
 				description="Unavailable until the supplier is activated."
+				label="External integration reference"
 			>
 				<FormInput defaultValue="Assigned after activation" disabled />
 			</FormField>
@@ -404,7 +416,7 @@ export const StatesAndAccessibility: Story = {
 		const canvas = within(canvasElement);
 
 		const taxInput = canvas.getByRole("textbox", {
-			name: /Tax registration number/,
+			name: TAX_REGISTRATION_PATTERN,
 		});
 		const legalName = canvas.getByRole("textbox", {
 			name: "Approved legal name",
@@ -416,7 +428,7 @@ export const StatesAndAccessibility: Story = {
 		await expect(taxInput).toHaveAttribute("aria-invalid", "true");
 		await expect(taxInput).toBeRequired();
 		await expect(taxInput).toHaveAccessibleDescription(
-			/Enter the identifier issued by the tax authority.*Tax registration number is required/,
+			TAX_REGISTRATION_REQUIRED_PATTERN,
 		);
 
 		await expect(legalName).toHaveAttribute("readonly");
@@ -449,23 +461,23 @@ export const VariantsAndSizes: Story = {
 	render: () => (
 		<div className="grid w-full max-w-5xl gap-6 sm:grid-cols-2">
 			<div className="grid gap-2">
-				<p className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+				<p className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 					FormInput
 				</p>
 				<FormField
-					label="Payment reference"
 					description="Single-line remittance reference."
+					label="Payment reference"
 				>
 					<FormInput defaultValue="PO-1042" />
 				</FormField>
 			</div>
 			<div className="grid gap-2">
-				<p className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+				<p className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 					FormTextarea
 				</p>
 				<FormField
-					label="Internal review note"
 					description="Multi-line reviewer context."
+					label="Internal review note"
 				>
 					<FormTextarea defaultValue="Bank account evidence verified." />
 				</FormField>
@@ -495,27 +507,27 @@ export const Composition: Story = {
 						</div>
 						<div className="flex flex-wrap items-center gap-2">
 							<Badge variant="secondary">Suppliers</Badge>
-							<StatusBadge status="pending" label="Awaiting save" />
+							<StatusBadge label="Awaiting save" status="pending" />
 						</div>
 					</div>
 				</CardHeader>
 
-				<form onSubmit={(event) => event.preventDefault()}>
+				<form onSubmit={preventSubmit}>
 					<CardContent className="grid gap-4">
 						<FormField label="Contact name" required>
 							<FormInput
-								name="contactName"
 								defaultValue="Aisha Rahman"
+								name="contactName"
 								required
 							/>
 						</FormField>
 
 						<FormField label="Email address" required>
 							<FormInput
-								name="email"
-								type="email"
 								defaultValue="aisha@example.com"
+								name="email"
 								required
+								type="email"
 							/>
 						</FormField>
 					</CardContent>
@@ -538,35 +550,35 @@ export const Composition: Story = {
 						</div>
 						<div className="flex flex-wrap items-center gap-2">
 							<Badge variant="outline">Governance</Badge>
-							<StatusBadge status="success" label="Active" />
+							<StatusBadge label="Active" status="success" />
 						</div>
 					</div>
 				</CardHeader>
 
-				<form onSubmit={(event) => event.preventDefault()}>
+				<form onSubmit={preventSubmit}>
 					<CardContent className="grid gap-4">
 						<FormField
-							label="Policy name"
 							description="Visible in audit history."
+							label="Policy name"
 							required
 						>
 							<FormInput
-								name="policyName"
 								defaultValue="High-value supplier invoices"
+								name="policyName"
 								required
 							/>
 						</FormField>
 
 						<FormField
-							label="Escalation mailbox"
 							description="Receives unresolved approval alerts."
+							label="Escalation mailbox"
 							required
 						>
 							<FormInput
-								name="mailbox"
-								type="email"
 								defaultValue="finance-control@example.com"
+								name="mailbox"
 								required
+								type="email"
 							/>
 						</FormField>
 					</CardContent>
@@ -604,10 +616,10 @@ export const DoAndDoNot: Story = {
 			<StorySection title="Do not: rely on placeholder-only instruction">
 				<div className="grid gap-2">
 					<FormInput
-						placeholder="Payment reference"
 						aria-label="Payment reference"
+						placeholder="Payment reference"
 					/>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						Placeholder text disappears after entry and is not a durable visible
 						label.
 					</p>
@@ -616,8 +628,8 @@ export const DoAndDoNot: Story = {
 
 			<StorySection title="Do: make errors actionable">
 				<FormField
-					label="Tax registration number"
 					error="Enter the tax registration number shown on the certificate."
+					label="Tax registration number"
 				>
 					<FormInput />
 				</FormField>
@@ -625,10 +637,10 @@ export const DoAndDoNot: Story = {
 
 			<StorySection title="Do not: use vague error copy">
 				<div className="grid gap-2">
-					<FormField label="Tax registration number" error="Invalid value.">
+					<FormField error="Invalid value." label="Tax registration number">
 						<FormInput />
 					</FormField>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						Vague errors do not tell the operator how to correct the field.
 					</p>
 				</div>
@@ -636,8 +648,8 @@ export const DoAndDoNot: Story = {
 
 			<StorySection title="Do: use helper text for business guidance">
 				<FormField
-					label="Registered supplier name"
 					description="Use the legal name shown on the registration certificate."
+					label="Registered supplier name"
 				>
 					<FormInput />
 				</FormField>
@@ -646,12 +658,12 @@ export const DoAndDoNot: Story = {
 			<StorySection title="Do not: repeat the label as helper text">
 				<div className="grid gap-2">
 					<FormField
-						label="Registered supplier name"
 						description="Enter the registered supplier name."
+						label="Registered supplier name"
 					>
 						<FormInput />
 					</FormField>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						Helper text should add guidance, not restate the label.
 					</p>
 				</div>
@@ -670,12 +682,12 @@ export const DoAndDoNot: Story = {
 
 			<StorySection title="Do not: hide multiple controls under one field label">
 				<div className="grid gap-2">
-					<p className="text-sm font-medium">Contact name</p>
+					<p className="font-medium text-sm">Contact name</p>
 					<div className="grid grid-cols-2 gap-2">
 						<FormInput aria-label="Given name" />
 						<FormInput aria-label="Family name" />
 					</div>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						One FormField owns exactly one logical control.
 					</p>
 				</div>

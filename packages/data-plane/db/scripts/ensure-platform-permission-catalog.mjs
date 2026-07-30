@@ -14,6 +14,8 @@ import { fileURLToPath } from "node:url";
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 // packages/data-plane/db → repo root (three levels up)
 const repoRoot = join(packageRoot, "../../..");
+const LINE_BREAK_PATTERN = /\r?\n/;
+const ENV_ASSIGNMENT_PATTERN = /^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/;
 
 function loadEnvLocal() {
 	if (process.env.DATABASE_URL) {
@@ -24,13 +26,17 @@ function loadEnvLocal() {
 		return;
 	}
 	const text = readFileSync(envPath, "utf8");
-	for (const line of text.split(/\r?\n/)) {
+	for (const line of text.split(LINE_BREAK_PATTERN)) {
 		const trimmed = line.trim();
-		if (trimmed.length === 0 || trimmed.startsWith("#")) continue;
-		const match = /^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/.exec(trimmed);
-		if (!match) continue;
-		const key = match[1];
-		let value = match[2]?.trim() ?? "";
+		if (trimmed.length === 0 || trimmed.startsWith("#")) {
+			continue;
+		}
+		const match = ENV_ASSIGNMENT_PATTERN.exec(trimmed);
+		if (!match) {
+			continue;
+		}
+		const [, key, rawValue] = match;
+		let value = rawValue?.trim() ?? "";
 		if (
 			(value.startsWith('"') && value.endsWith('"')) ||
 			(value.startsWith("'") && value.endsWith("'"))

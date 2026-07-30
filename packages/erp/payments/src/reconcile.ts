@@ -1,8 +1,8 @@
 import type { Payment, PaymentApplicationInstruction } from "./model";
 
-type ReconcileInput = {
+interface ReconcileInput {
 	payments: Payment[];
-};
+}
 
 type ReconcileResult = { ok: true } | { ok: false; findings: string[] };
 
@@ -18,6 +18,40 @@ function intendedTotal(instructions: PaymentApplicationInstruction[]): number {
 			ACTIVE_INSTRUCTION_STATUSES.has(instruction.status),
 		)
 		.reduce((sum, instruction) => sum + Number(instruction.intendedAmount), 0);
+}
+
+function findTransferDrift(
+	payment: Payment,
+	byId: ReadonlyMap<string, Payment>,
+): string[] {
+	if (
+		payment.purpose !== "internal_transfer" ||
+		payment.transferGroupId === null ||
+		payment.linkedPaymentId === null
+	) {
+		return [];
+	}
+	const peer = byId.get(payment.linkedPaymentId);
+	if (peer === undefined) {
+		return [
+			`Transfer payment ${payment.id} missing linked peer ${payment.linkedPaymentId}`,
+		];
+	}
+	const findings: string[] = [];
+	if (peer.transferGroupId !== payment.transferGroupId) {
+		findings.push(
+			`Transfer pair ${payment.id}/${peer.id} transferGroupId mismatch`,
+		);
+	}
+	if (peer.amount !== payment.amount) {
+		findings.push(`Transfer pair ${payment.id}/${peer.id} amount mismatch`);
+	}
+	if (peer.paymentAccountId === payment.paymentAccountId) {
+		findings.push(
+			`Transfer pair ${payment.id}/${peer.id} shares payment account`,
+		);
+	}
+	return findings;
 }
 
 /**
@@ -45,7 +79,9 @@ export function reconcilePayments(input: ReconcileInput): ReconcileResult {
 	}
 
 	for (const payment of input.payments) {
-		if (payment.status !== "posted") continue;
+		if (payment.status !== "posted") {
+			continue;
+		}
 		const intended = intendedTotal(payment.applicationInstructions);
 		const refunded = refundedByOriginal.get(payment.id) ?? 0;
 		const posted = Number(payment.amount);
@@ -54,32 +90,7 @@ export function reconcilePayments(input: ReconcileInput): ReconcileResult {
 				`Payment ${payment.id} over-applied (posted=${posted}, intended=${intended}, refunded=${refunded})`,
 			);
 		}
-		if (
-			payment.purpose === "internal_transfer" &&
-			payment.transferGroupId !== null &&
-			payment.linkedPaymentId !== null
-		) {
-			const peer = byId.get(payment.linkedPaymentId);
-			if (peer === undefined) {
-				findings.push(
-					`Transfer payment ${payment.id} missing linked peer ${payment.linkedPaymentId}`,
-				);
-				continue;
-			}
-			if (peer.transferGroupId !== payment.transferGroupId) {
-				findings.push(
-					`Transfer pair ${payment.id}/${peer.id} transferGroupId mismatch`,
-				);
-			}
-			if (peer.amount !== payment.amount) {
-				findings.push(`Transfer pair ${payment.id}/${peer.id} amount mismatch`);
-			}
-			if (peer.paymentAccountId === payment.paymentAccountId) {
-				findings.push(
-					`Transfer pair ${payment.id}/${peer.id} shares payment account`,
-				);
-			}
-		}
+		findings.push(...findTransferDrift(payment, byId));
 	}
 
 	return findings.length === 0 ? { ok: true } : { ok: false, findings };

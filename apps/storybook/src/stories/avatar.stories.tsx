@@ -34,12 +34,12 @@ function WorkbenchSection({
 	children,
 }: WorkbenchSectionProps) {
 	return (
-		<section className="grid gap-4" aria-labelledby={id}>
+		<section aria-labelledby={id} className="grid gap-4">
 			<div className="grid gap-1">
-				<h2 className="text-base font-semibold tracking-tight" id={id}>
+				<h2 className="font-semibold text-base tracking-tight" id={id}>
 					{title}
 				</h2>
-				<p className="max-w-5xl text-sm leading-5 text-foreground-secondary">
+				<p className="max-w-5xl text-foreground-secondary text-sm leading-5">
 					{description}
 				</p>
 			</div>
@@ -76,14 +76,14 @@ export const Overview: Story = {
 			<div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-5 border-b pb-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
 					<div className="grid gap-2">
-						<p className="text-sm font-medium text-foreground-secondary">
+						<p className="font-medium text-foreground-secondary text-sm">
 							Organization directory
 						</p>
 						<div className="grid gap-1">
-							<h1 className="text-2xl font-semibold tracking-tight">
+							<h1 className="font-semibold text-2xl tracking-tight">
 								Finance operators
 							</h1>
-							<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+							<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 								Avatar shows who the person is. Feature code owns identity data
 								and image policy. Status and department use separate primitives.
 							</p>
@@ -91,25 +91,25 @@ export const Overview: Story = {
 					</div>
 					<dl className="grid grid-cols-2 gap-x-8 gap-y-3 rounded-lg border bg-card p-4">
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Subject
 							</dt>
 							<dd className="text-sm">Directory identity</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Scope
 							</dt>
 							<dd className="text-sm">Named operator</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Ownership
 							</dt>
 							<dd className="text-sm">Identity only</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Lifecycle
 							</dt>
 							<dd className="text-sm">Roster and presence</dd>
@@ -132,18 +132,18 @@ export const Overview: Story = {
 										AR
 									</AvatarFallback>
 								</Avatar>
-								<div className="min-w-0 grid gap-0.5">
-									<p className="truncate text-sm font-medium text-foreground">
+								<div className="grid min-w-0 gap-0.5">
+									<p className="truncate font-medium text-foreground text-sm">
 										Aisha Rahman
 									</p>
-									<p className="truncate text-sm text-foreground-secondary">
+									<p className="truncate text-foreground-secondary text-sm">
 										Finance controller · remittance owner
 									</p>
 								</div>
 							</div>
 							<div className="flex shrink-0 items-center gap-2">
 								<Badge variant="secondary">Finance</Badge>
-								<StatusBadge status="active" label="Active" />
+								<StatusBadge label="Active" status="active" />
 							</div>
 						</div>
 
@@ -154,18 +154,18 @@ export const Overview: Story = {
 										JT
 									</AvatarFallback>
 								</Avatar>
-								<div className="min-w-0 grid gap-0.5">
-									<p className="truncate text-sm font-medium text-foreground">
+								<div className="grid min-w-0 gap-0.5">
+									<p className="truncate font-medium text-foreground text-sm">
 										Jordan Tan
 									</p>
-									<p className="truncate text-sm text-foreground-secondary">
+									<p className="truncate text-foreground-secondary text-sm">
 										Accounts receivable · collection follow-up
 									</p>
 								</div>
 							</div>
 							<div className="flex shrink-0 items-center gap-2">
 								<Badge variant="secondary">Finance</Badge>
-								<StatusBadge status="pending" label="Awaiting access" />
+								<StatusBadge label="Awaiting access" status="pending" />
 							</div>
 						</div>
 
@@ -177,18 +177,18 @@ export const Overview: Story = {
 									</AvatarFallback>
 									<AvatarBadge aria-hidden="true" />
 								</Avatar>
-								<div className="min-w-0 grid gap-0.5">
-									<p className="truncate text-sm font-medium text-foreground">
+								<div className="grid min-w-0 gap-0.5">
+									<p className="truncate font-medium text-foreground text-sm">
 										Nora Lim
 									</p>
-									<p className="truncate text-sm text-foreground-secondary">
+									<p className="truncate text-foreground-secondary text-sm">
 										Period close lead · July 2026
 									</p>
 								</div>
 							</div>
 							<div className="flex shrink-0 items-center gap-2">
 								<Badge variant="secondary">Finance</Badge>
-								<StatusBadge status="active" label="Active" />
+								<StatusBadge label="Active" status="active" />
 							</div>
 						</div>
 					</CardContent>
@@ -210,9 +210,9 @@ export const SemanticUsage: Story = {
 	},
 	render: () => (
 		<WorkbenchSection
+			description="Avatar identifies a person or entity and keeps status or taxonomy on the right primitive."
 			id="avatar-semantic-usage-title"
 			title="Directory identity roles"
-			description="Avatar identifies a person or entity and keeps status or taxonomy on the right primitive."
 		>
 			<div className="grid w-full max-w-5xl gap-6">
 				<StorySection title="Named operator in a directory row">
@@ -221,10 +221,10 @@ export const SemanticUsage: Story = {
 							<AvatarFallback className="text-foreground">AR</AvatarFallback>
 						</Avatar>
 						<div className="grid gap-0.5">
-							<p className="text-sm font-medium text-foreground">
+							<p className="font-medium text-foreground text-sm">
 								Aisha Rahman
 							</p>
-							<p className="text-sm text-foreground-secondary">
+							<p className="text-foreground-secondary text-sm">
 								Finance controller · remittance owner
 							</p>
 						</div>
@@ -236,10 +236,10 @@ export const SemanticUsage: Story = {
 							<AvatarFallback className="text-foreground">NT</AvatarFallback>
 						</Avatar>
 						<div className="grid gap-0.5">
-							<p className="text-sm font-medium text-foreground">
+							<p className="font-medium text-foreground text-sm">
 								Northwind Trading Sdn. Bhd.
 							</p>
-							<p className="text-sm text-foreground-secondary">
+							<p className="text-foreground-secondary text-sm">
 								Active supplier · MY-TAX-1042
 							</p>
 						</div>
@@ -258,7 +258,7 @@ export const SemanticUsage: Story = {
 								+3
 							</AvatarGroupCount>
 						</AvatarGroup>
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							Group overflow stays deterministic. Approval state stays on
 							StatusBadge outside the stack.
 						</p>
@@ -286,8 +286,8 @@ export const Usage: Story = {
 					<AvatarFallback className="text-foreground">AR</AvatarFallback>
 				</Avatar>
 				<div className="grid gap-0.5">
-					<p className="text-sm font-medium text-foreground">Aisha Rahman</p>
-					<p className="text-sm text-foreground-secondary">
+					<p className="font-medium text-foreground text-sm">Aisha Rahman</p>
+					<p className="text-foreground-secondary text-sm">
 						Finance controller
 					</p>
 				</div>
@@ -297,10 +297,10 @@ export const Usage: Story = {
 					<AvatarFallback className="text-foreground">NT</AvatarFallback>
 				</Avatar>
 				<div className="grid gap-0.5">
-					<p className="text-sm font-medium text-foreground">
+					<p className="font-medium text-foreground text-sm">
 						Northwind Trading
 					</p>
-					<p className="text-sm text-foreground-secondary">Supplier entity</p>
+					<p className="text-foreground-secondary text-sm">Supplier entity</p>
 				</div>
 			</div>
 		</div>
@@ -322,12 +322,12 @@ export const StatesAndAccessibility: Story = {
 			<div className="flex items-center gap-3">
 				<Avatar>
 					<AvatarImage
-						src="/storybook/missing-operator-photo.png"
 						alt="Aisha Rahman"
+						src="/storybook/missing-operator-photo.png"
 					/>
 					<AvatarFallback className="text-foreground">AR</AvatarFallback>
 				</Avatar>
-				<p className="text-sm text-foreground">
+				<p className="text-foreground text-sm">
 					Aisha Rahman · image fails, initials remain
 				</p>
 			</div>
@@ -336,7 +336,7 @@ export const StatesAndAccessibility: Story = {
 					<AvatarFallback className="text-foreground">NL</AvatarFallback>
 					<AvatarBadge aria-hidden="true" />
 				</Avatar>
-				<p className="text-sm text-foreground">
+				<p className="text-foreground text-sm">
 					Nora Lim · decorative badge does not encode lifecycle
 				</p>
 			</div>
@@ -360,19 +360,19 @@ export const VariantsAndSizes: Story = {
 				<Avatar size="sm">
 					<AvatarFallback className="text-foreground">AR</AvatarFallback>
 				</Avatar>
-				<p className="text-xs text-foreground-tertiary">sm</p>
+				<p className="text-foreground-tertiary text-xs">sm</p>
 			</div>
 			<div className="grid justify-items-center gap-2">
 				<Avatar size="default">
 					<AvatarFallback className="text-foreground">AR</AvatarFallback>
 				</Avatar>
-				<p className="text-xs text-foreground-tertiary">default</p>
+				<p className="text-foreground-tertiary text-xs">default</p>
 			</div>
 			<div className="grid justify-items-center gap-2">
 				<Avatar size="lg">
 					<AvatarFallback className="text-foreground">AR</AvatarFallback>
 				</Avatar>
-				<p className="text-xs text-foreground-tertiary">lg</p>
+				<p className="text-foreground-tertiary text-xs">lg</p>
 			</div>
 		</div>
 	),
@@ -402,11 +402,11 @@ export const Composition: Story = {
 						<AvatarFallback className="text-foreground">AR</AvatarFallback>
 					</Avatar>
 					<div className="grid gap-1">
-						<p className="text-sm font-medium text-foreground">Aisha Rahman</p>
-						<p className="text-sm text-foreground-secondary">
+						<p className="font-medium text-foreground text-sm">Aisha Rahman</p>
+						<p className="text-foreground-secondary text-sm">
 							finance@northwind.example
 						</p>
-						<Badge variant="secondary" className="w-fit">
+						<Badge className="w-fit" variant="secondary">
 							Finance
 						</Badge>
 					</div>
@@ -422,7 +422,7 @@ export const Composition: Story = {
 				</CardHeader>
 				<CardContent className="flex items-center justify-between gap-4">
 					<div className="grid gap-2">
-						<p className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+						<p className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 							Reviewers
 						</p>
 						<AvatarGroup aria-label="Invoice reviewers">
@@ -440,7 +440,7 @@ export const Composition: Story = {
 							</AvatarGroupCount>
 						</AvatarGroup>
 					</div>
-					<StatusBadge status="pending" label="Awaiting approval" />
+					<StatusBadge label="Awaiting approval" status="pending" />
 				</CardContent>
 			</Card>
 		</div>
@@ -464,7 +464,7 @@ export const DoAndDoNot: Story = {
 					<Avatar>
 						<AvatarFallback className="text-foreground">AR</AvatarFallback>
 					</Avatar>
-					<p className="text-sm font-medium text-foreground">Aisha Rahman</p>
+					<p className="font-medium text-foreground text-sm">Aisha Rahman</p>
 				</div>
 			</StorySection>
 
@@ -481,7 +481,7 @@ export const DoAndDoNot: Story = {
 							<AvatarFallback className="text-foreground">NL</AvatarFallback>
 						</Avatar>
 					</div>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						Without names or an accessible group label, overlapping initials are
 						not operable identity.
 					</p>
@@ -493,7 +493,7 @@ export const DoAndDoNot: Story = {
 					<Avatar>
 						<AvatarFallback className="text-foreground">AR</AvatarFallback>
 					</Avatar>
-					<StatusBadge status="active" label="Active" />
+					<StatusBadge label="Active" status="active" />
 				</div>
 			</StorySection>
 
@@ -503,7 +503,7 @@ export const DoAndDoNot: Story = {
 						<AvatarFallback className="text-foreground">AR</AvatarFallback>
 						<AvatarBadge aria-hidden="true" />
 					</Avatar>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						A decorative dot is not authoritative presence or approval state.
 					</p>
 				</div>
@@ -519,7 +519,7 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do not: treat Avatar as authentication proof">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Showing initials does not prove the operator is signed in or
 					authorized. Session and permission checks stay in feature code.
 				</p>

@@ -124,7 +124,7 @@ export function resolveAmendEndsOn(input: {
 	previousEndsOn: string | null;
 }): Result<string | null> {
 	const nextEndsOn =
-		input.endsOn !== undefined ? input.endsOn : input.previousEndsOn;
+		input.endsOn === undefined ? input.previousEndsOn : input.endsOn;
 
 	if (input.nextStatus === "terminated") {
 		const closedOn = nextEndsOn ?? input.startsOn;

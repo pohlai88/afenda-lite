@@ -10,7 +10,7 @@ export function createGrantingHumanResourcesAuthorization(
 	const allowed = new Set(grants);
 	return {
 		async can(input) {
-			return allowed.has(input.permission);
+			return await allowed.has(input.permission);
 		},
 	};
 }

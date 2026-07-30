@@ -13,22 +13,26 @@ import {
 	openRequisition,
 	submitRequisition,
 } from "../../src/recruitment/requisition";
+import {
+	runSequential,
+	sequentialReturn,
+} from "../../src/shared/run-sequential";
 import type { JobRequisition } from "../../src/types";
 import { humanResourcesCodeFromResult } from "./result-details";
 
 export type RequisitionPipelineTarget = "approved" | "open";
 
-export type RequisitionPipelineInput = {
-	organizationId: string;
+export interface RequisitionPipelineInput {
 	actorUserId: string;
+	code?: string;
+	departmentId?: JobRequisition["departmentId"];
+	jobId?: JobRequisition["jobId"];
+	organizationId: string;
+	positionId?: JobRequisition["positionId"];
 	tag: string;
 	targetStatus: RequisitionPipelineTarget;
 	title?: string;
-	code?: string;
-	jobId?: JobRequisition["jobId"];
-	positionId?: JobRequisition["positionId"];
-	departmentId?: JobRequisition["departmentId"];
-};
+}
 
 export async function seedActiveEmployee(
 	ready: HumanResourcesCommandOptions,
@@ -116,7 +120,7 @@ export async function seedDefaultHiringManager(
 		tag: string;
 	},
 ): Promise<{ ok: true; employeeId: HumanResourcesEmployeeId } | { ok: false }> {
-	return seedActiveEmployee(ready, {
+	return await seedActiveEmployee(ready, {
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		employeeNumber: `HM-${input.tag}`.slice(0, 32),
@@ -169,21 +173,27 @@ export async function seedRequisitionPipeline(
 					[openRequisition, `corr-req-open-${input.tag}`],
 				] as const);
 
-	for (const [cmd, correlationId] of transitions) {
-		const next = await cmd(
-			{
-				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId,
-				requisitionId: requisition.id,
-				expectedVersion: requisition.version,
-			},
-			ready,
-		);
-		if (!next.ok) {
-			return next;
-		}
-		requisition = next.data;
+	const sequentialOutcome1 = await runSequential(
+		transitions,
+		async ([cmd, correlationId]) => {
+			const next = await cmd(
+				{
+					organizationId: input.organizationId,
+					actorUserId: input.actorUserId,
+					correlationId,
+					requisitionId: requisition.id,
+					expectedVersion: requisition.version,
+				},
+				ready,
+			);
+			if (!next.ok) {
+				return sequentialReturn(next);
+			}
+			requisition = next.data;
+		},
+	);
+	if (sequentialOutcome1.kind === "return") {
+		return sequentialOutcome1.value;
 	}
 
 	return { ok: true, data: requisition };

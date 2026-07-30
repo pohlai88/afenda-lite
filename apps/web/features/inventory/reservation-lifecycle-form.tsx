@@ -22,22 +22,22 @@ type ReservationLifecycleActionState = ActionResult<{
 	reservation: StockReservation;
 }> | null;
 
-type ReservationLifecycleFormProps = {
-	canRelease: boolean;
-	unavailableTitle: string;
-	unavailableBody: string;
-	successTitle: string;
-	successDetail: (reservation: StockReservation) => string;
-	submitLabel: string;
-	fieldIdPrefix: string;
-	idempotencyPrefix: string;
-	defaultReservationId?: string | undefined;
-	defaultExpectedVersion?: number | undefined;
+interface ReservationLifecycleFormProps {
 	action: (
 		prev: ReservationLifecycleActionState,
 		formData: FormData,
 	) => Promise<ReservationLifecycleActionState>;
-};
+	canRelease: boolean;
+	defaultExpectedVersion?: number | undefined;
+	defaultReservationId?: string | undefined;
+	fieldIdPrefix: string;
+	idempotencyPrefix: string;
+	submitLabel: string;
+	successDetail: (reservation: StockReservation) => string;
+	successTitle: string;
+	unavailableBody: string;
+	unavailableTitle: string;
+}
 
 /**
  * Shared release / expire / cancel reservation form (action injected by kind).
@@ -56,6 +56,7 @@ export function ReservationLifecycleForm({
 	action,
 }: ReservationLifecycleFormProps) {
 	const [state, formAction, pending] = useActionState(action, null);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: Rotate the key after each completed action state.
 	const idempotencyKey = useMemo(
 		() => `${idempotencyPrefix}:${crypto.randomUUID()}`,
 		[state, idempotencyPrefix],
@@ -99,47 +100,47 @@ export function ReservationLifecycleForm({
 				<FormError>{state.message}</FormError>
 			) : null}
 			<input
-				type="hidden"
 				name="idempotencyKey"
-				value={idempotencyKey}
 				readOnly
+				type="hidden"
+				value={idempotencyKey}
 			/>
 			<FormField
+				error={reservationError}
+				fieldId={reservationIdField}
 				label="Reservation id"
 				required
-				fieldId={reservationIdField}
-				error={reservationError}
 			>
 				<Input
+					autoComplete="off"
+					defaultValue={defaultReservationId ?? ""}
+					disabled={pending}
 					id={reservationIdField}
 					name="reservationId"
 					required
-					autoComplete="off"
-					disabled={pending}
-					defaultValue={defaultReservationId ?? ""}
 				/>
 			</FormField>
 			<FormField
+				error={versionError}
+				fieldId={versionField}
 				label="Expected reservation version"
 				required
-				fieldId={versionField}
-				error={versionError}
 			>
 				<Input
-					id={versionField}
-					name="expectedVersion"
-					type="number"
-					min="1"
-					required
-					disabled={pending}
 					defaultValue={
-						defaultExpectedVersion !== undefined
-							? String(defaultExpectedVersion)
-							: undefined
+						defaultExpectedVersion === undefined
+							? undefined
+							: String(defaultExpectedVersion)
 					}
+					disabled={pending}
+					id={versionField}
+					min="1"
+					name="expectedVersion"
+					required
+					type="number"
 				/>
 			</FormField>
-			<Button type="submit" disabled={pending}>
+			<Button disabled={pending} type="submit">
 				{pending ? <Spinner /> : null}
 				{submitLabel}
 			</Button>

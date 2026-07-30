@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { type MouseEvent, useCallback, useState } from "react";
 import { Avatar, AvatarFallback } from "../components/ui/avatar";
 import { Button } from "../components/ui/button";
 
@@ -17,28 +17,35 @@ export function ProfileDropdown({
 }>) {
 	const [open, setOpen] = useState(false);
 	const fallback = initials ?? name.slice(0, 2).toUpperCase();
+	const toggleOpen = useCallback(() => setOpen((value) => !value), []);
+	const handleAction = useCallback(
+		(event: MouseEvent<HTMLButtonElement>) =>
+			onAction?.(event.currentTarget.value),
+		[onAction],
+	);
 
 	return (
 		<div>
 			<Button
+				aria-label={`Open profile menu for ${name}`}
+				onClick={toggleOpen}
+				size="icon-sm"
 				type="button"
 				variant="ghost"
-				size="icon-sm"
-				aria-label={`Open profile menu for ${name}`}
-				onClick={() => setOpen((value) => !value)}
 			>
 				<Avatar className="size-6">
 					<AvatarFallback>{fallback}</AvatarFallback>
 				</Avatar>
 			</Button>
 			{open && onAction !== undefined ? (
-				<div role="menu" aria-label="Profile menu">
+				<div aria-label="Profile menu" role="menu">
 					{actions.map((action) => (
 						<button
 							key={action.id}
-							type="button"
+							onClick={handleAction}
 							role="menuitem"
-							onClick={() => onAction(action.id)}
+							type="button"
+							value={action.id}
 						>
 							{action.label}
 						</button>

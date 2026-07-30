@@ -3,14 +3,14 @@ import type {
 	CompensationReviewCycle,
 } from "@afenda/human-resources";
 
-export type CompensationCapabilities = {
-	canRead: boolean;
+export interface CompensationCapabilities {
 	canManage: boolean;
 	canManageBenefits: boolean;
-};
+	canRead: boolean;
+}
 
-export type CompensationWorkspaceData = {
+export interface CompensationWorkspaceData {
+	errors: Partial<Record<"grades" | "reviews", string>>;
 	grades: CompensationGrade[];
 	reviewCycles: CompensationReviewCycle[];
-	errors: Partial<Record<"grades" | "reviews", string>>;
-};
+}

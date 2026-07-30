@@ -17,6 +17,7 @@ import {
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 	HUMAN_RESOURCES_ERROR_STALE_VERSION,
 } from "../src/error-codes";
+import { runSequential } from "../src/shared/run-sequential";
 import {
 	approveAttendanceBreakWaiver,
 	listAttendanceBreakWaiverDecisions,
@@ -114,7 +115,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 		const employment = await createEmployment(
 			{
 				organizationId: ORG,
@@ -126,7 +129,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 		const policy = await createTimePolicy(
 			{
 				organizationId: ORG,
@@ -144,7 +149,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(policy.ok).toBe(true);
-		if (!policy.ok) return;
+		if (!policy.ok) {
+			return;
+		}
 		const activePolicy = await activateTimePolicy(
 			{
 				organizationId: ORG,
@@ -156,7 +163,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(activePolicy.ok).toBe(true);
-		if (!activePolicy.ok) return;
+		if (!activePolicy.ok) {
+			return;
+		}
 		const policyAssignment = await assignTimePolicy(
 			{
 				organizationId: ORG,
@@ -181,7 +190,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(managerAuthority.ok).toBe(true);
-		if (!managerAuthority.ok) return;
+		if (!managerAuthority.ok) {
+			return;
+		}
 		const overlappingManagerAuthority = await assignTimeApprovalAuthority(
 			{
 				organizationId: ORG,
@@ -211,7 +222,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(hrAuthority.ok).toBe(true);
-		if (!hrAuthority.ok) return;
+		if (!hrAuthority.ok) {
+			return;
+		}
 		const clockIn = await recordClockIn(
 			{
 				organizationId: ORG,
@@ -255,7 +268,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(session.ok).toBe(true);
-		if (!session.ok) return;
+		if (!session.ok) {
+			return;
+		}
 		expect(session.data).toMatchObject({
 			grossMinutes: 480,
 			breakMinutes: 60,
@@ -336,7 +351,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(waiver.ok).toBe(true);
-		if (!waiver.ok) return;
+		if (!waiver.ok) {
+			return;
+		}
 		expect(waiver.data).toMatchObject({
 			policyId: activePolicy.data.id,
 			authority: "line_manager",
@@ -372,7 +389,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(waiverDecisions.ok).toBe(true);
-		if (!waiverDecisions.ok) return;
+		if (!waiverDecisions.ok) {
+			return;
+		}
 		expect(waiverDecisions.data).toHaveLength(1);
 
 		const timesheet = await createTimesheet(
@@ -389,7 +408,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(timesheet.ok).toBe(true);
-		if (!timesheet.ok) return;
+		if (!timesheet.ok) {
+			return;
+		}
 		const submitted = await submitTimesheet(
 			{
 				organizationId: ORG,
@@ -401,7 +422,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 		const outOfOrderApproval = await approveTimesheet(
 			{
 				organizationId: ORG,
@@ -441,7 +464,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(afterFailedApproval.ok).toBe(true);
-		if (!afterFailedApproval.ok) return;
+		if (!afterFailedApproval.ok) {
+			return;
+		}
 		expect(afterFailedApproval.data).toMatchObject({
 			status: "submitted",
 			completedApprovalSteps: 0,
@@ -458,7 +483,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(compensatedDecisions.ok).toBe(true);
-		if (!compensatedDecisions.ok) return;
+		if (!compensatedDecisions.ok) {
+			return;
+		}
 		expect(compensatedDecisions.data).toHaveLength(0);
 		const compensationAudits = ready.ports.audit.calls.slice(
 			auditCountBeforeOutboxFailure,
@@ -493,12 +520,16 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(managerApproval.ok).toBe(true);
-		if (!managerApproval.ok) return;
+		if (!managerApproval.ok) {
+			return;
+		}
 		expect(managerApproval.data.status).toBe("submitted");
 		expect(managerApproval.data.completedApprovalSteps).toBe(1);
 		const firstSubmissionReference = managerApproval.data.submissionReference;
 		expect(firstSubmissionReference).not.toBeNull();
-		if (firstSubmissionReference === null) return;
+		if (firstSubmissionReference === null) {
+			return;
+		}
 		const returnedAfterPartialApproval = await returnTimesheet(
 			{
 				organizationId: ORG,
@@ -511,7 +542,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(returnedAfterPartialApproval.ok).toBe(true);
-		if (!returnedAfterPartialApproval.ok) return;
+		if (!returnedAfterPartialApproval.ok) {
+			return;
+		}
 		const reopenedAfterPartialApproval = await reopenTimesheet(
 			{
 				organizationId: ORG,
@@ -523,7 +556,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(reopenedAfterPartialApproval.ok).toBe(true);
-		if (!reopenedAfterPartialApproval.ok) return;
+		if (!reopenedAfterPartialApproval.ok) {
+			return;
+		}
 		const resubmittedAfterPartialApproval = await submitTimesheet(
 			{
 				organizationId: ORG,
@@ -535,7 +570,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(resubmittedAfterPartialApproval.ok).toBe(true);
-		if (!resubmittedAfterPartialApproval.ok) return;
+		if (!resubmittedAfterPartialApproval.ok) {
+			return;
+		}
 		expect(resubmittedAfterPartialApproval.data.submissionReference).not.toBe(
 			firstSubmissionReference,
 		);
@@ -556,7 +593,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(managerReapproval.ok).toBe(true);
-		if (!managerReapproval.ok) return;
+		if (!managerReapproval.ok) {
+			return;
+		}
 		const hrApproval = await approveTimesheet(
 			{
 				organizationId: ORG,
@@ -569,7 +608,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(hrApproval.ok).toBe(true);
-		if (!hrApproval.ok) return;
+		if (!hrApproval.ok) {
+			return;
+		}
 		expect(hrApproval.data.status).toBe("approved");
 		const endedManagerAuthority = await endTimeApprovalAuthorityAssignment(
 			{
@@ -593,7 +634,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(approvalDecisions.ok).toBe(true);
-		if (!approvalDecisions.ok) return;
+		if (!approvalDecisions.ok) {
+			return;
+		}
 		expect(
 			approvalDecisions.data.map((decision) => ({
 				authority: decision.authority,
@@ -648,7 +691,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 		const employment = await createEmployment(
 			{
 				organizationId: ORG,
@@ -660,7 +705,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 		const calendar = await createWorkCalendar(
 			{
 				organizationId: ORG,
@@ -678,7 +725,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(calendar.ok).toBe(true);
-		if (!calendar.ok) return;
+		if (!calendar.ok) {
+			return;
+		}
 		const calendarAssignment = await assignEmploymentCalendar(
 			{
 				organizationId: ORG,
@@ -692,7 +741,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(calendarAssignment.ok).toBe(true);
-		if (!calendarAssignment.ok) return;
+		if (!calendarAssignment.ok) {
+			return;
+		}
 
 		const shift = await createShift(
 			{
@@ -711,7 +762,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(shift.ok).toBe(true);
-		if (!shift.ok) return;
+		if (!shift.ok) {
+			return;
+		}
 		expect(shift.data.isOvernight).toBe(true);
 		const firstScheduledBreak = await addShiftBreak(
 			{
@@ -727,7 +780,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(firstScheduledBreak.ok).toBe(true);
-		if (!firstScheduledBreak.ok) return;
+		if (!firstScheduledBreak.ok) {
+			return;
+		}
 		const secondScheduledBreak = await addShiftBreak(
 			{
 				organizationId: ORG,
@@ -742,7 +797,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(secondScheduledBreak.ok).toBe(true);
-		if (!secondScheduledBreak.ok) return;
+		if (!secondScheduledBreak.ok) {
+			return;
+		}
 		const activeShift = await activateShift(
 			{
 				organizationId: ORG,
@@ -754,7 +811,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(activeShift.ok).toBe(true);
-		if (!activeShift.ok) return;
+		if (!activeShift.ok) {
+			return;
+		}
 		const assignment = await assignShift(
 			{
 				organizationId: ORG,
@@ -772,7 +831,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(assignment.ok).toBe(true);
-		if (!assignment.ok) return;
+		if (!assignment.ok) {
+			return;
+		}
 		const published = await publishShiftAssignment(
 			{
 				organizationId: ORG,
@@ -784,7 +845,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(published.ok).toBe(true);
-		if (!published.ok) return;
+		if (!published.ok) {
+			return;
+		}
 		expect(calendar.data.timezone).toBe("Asia/Singapore");
 		expect(published.data.timezone).toBe("America/Los_Angeles");
 		const scheduled = await getScheduledShiftForEmployeeDate(
@@ -798,7 +861,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(scheduled.ok).toBe(true);
-		if (!scheduled.ok || scheduled.data === null) return;
+		if (!scheduled.ok || scheduled.data === null) {
+			return;
+		}
 		expect(scheduled.data.id).toBe(published.data.id);
 		expect(scheduled.data.timezone).toBe("America/Los_Angeles");
 
@@ -881,7 +946,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(session.ok).toBe(true);
-		if (!session.ok) return;
+		if (!session.ok) {
+			return;
+		}
 		expect(session.data).toMatchObject({
 			resolutionStatus: "resolved",
 			breakMinutes: 30,
@@ -904,7 +971,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(unresolved.ok).toBe(true);
-		if (!unresolved.ok) return;
+		if (!unresolved.ok) {
+			return;
+		}
 		const sessionTypes = unresolved.data
 			.filter((exception) => exception.sessionId === session.data.id)
 			.map((exception) => exception.exceptionType);
@@ -935,7 +1004,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 		const employment = await createEmployment(
 			{
 				organizationId: ORG,
@@ -947,7 +1018,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const eventBase = {
 			organizationId: ORG,
@@ -967,7 +1040,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(clockIn.ok).toBe(true);
-		if (!clockIn.ok) return;
+		if (!clockIn.ok) {
+			return;
+		}
 		const clockOut = await recordClockOut(
 			{
 				...eventBase,
@@ -978,7 +1053,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(clockOut.ok).toBe(true);
-		if (!clockOut.ok) return;
+		if (!clockOut.ok) {
+			return;
+		}
 		expect(clockIn.data.sourceTimezone).toBe("America/New_York");
 		expect(clockOut.data.sourceTimezone).toBe("America/New_York");
 
@@ -995,7 +1072,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(resolved.ok).toBe(true);
-		if (!resolved.ok) return;
+		if (!resolved.ok) {
+			return;
+		}
 		expect(resolved.data).toMatchObject({
 			localWorkDate: "2025-03-09",
 			timezone: "America/New_York",
@@ -1025,7 +1104,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 		const employment = await createEmployment(
 			{
 				organizationId: ORG,
@@ -1037,7 +1118,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const first = await importAttendanceEvents(
 			{
@@ -1062,7 +1145,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 		expect(first.data.status).toBe("completed");
 		expect(first.data.totals.accepted).toBe(1);
 
@@ -1089,7 +1174,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(second.ok).toBe(true);
-		if (!second.ok) return;
+		if (!second.ok) {
+			return;
+		}
 		expect(second.data.totals.skipped).toBe(1);
 		expect(second.data.totals.accepted).toBe(0);
 
@@ -1103,7 +1190,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(listed.ok).toBe(true);
-		if (!listed.ok) return;
+		if (!listed.ok) {
+			return;
+		}
 		expect(listed.data).toHaveLength(1);
 	});
 
@@ -1121,7 +1210,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 		const employment = await createEmployment(
 			{
 				organizationId: ORG,
@@ -1133,7 +1224,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const shift = await createShift(
 			{
@@ -1152,7 +1245,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(shift.ok).toBe(true);
-		if (!shift.ok) return;
+		if (!shift.ok) {
+			return;
+		}
 		const activated = await activateShift(
 			{
 				organizationId: ORG,
@@ -1164,7 +1259,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(activated.ok).toBe(true);
-		if (!activated.ok) return;
+		if (!activated.ok) {
+			return;
+		}
 
 		const assignment = await assignShift(
 			{
@@ -1183,7 +1280,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(assignment.ok).toBe(true);
-		if (!assignment.ok) return;
+		if (!assignment.ok) {
+			return;
+		}
 		const published = await publishShiftAssignment(
 			{
 				organizationId: ORG,
@@ -1195,7 +1294,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(published.ok).toBe(true);
-		if (!published.ok) return;
+		if (!published.ok) {
+			return;
+		}
 
 		const clockIn = await recordClockIn(
 			{
@@ -1213,7 +1314,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(clockIn.ok).toBe(true);
-		if (!clockIn.ok) return;
+		if (!clockIn.ok) {
+			return;
+		}
 		const clockOut = await recordClockOut(
 			{
 				organizationId: ORG,
@@ -1230,7 +1333,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(clockOut.ok).toBe(true);
-		if (!clockOut.ok) return;
+		if (!clockOut.ok) {
+			return;
+		}
 
 		const session = await resolveAttendanceSession(
 			{
@@ -1245,7 +1350,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(session.ok).toBe(true);
-		if (!session.ok) return;
+		if (!session.ok) {
+			return;
+		}
 
 		const unresolved = await listUnresolvedAttendanceExceptions(
 			{
@@ -1257,7 +1364,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(unresolved.ok).toBe(true);
-		if (!unresolved.ok) return;
+		if (!unresolved.ok) {
+			return;
+		}
 		const late = unresolved.data.filter((exception) => {
 			const remarks = parseExceptionDetectionRemarks(exception.remarks);
 			return (
@@ -1282,7 +1391,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 		const employment = await createEmployment(
 			{
 				organizationId: ORG,
@@ -1294,7 +1405,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const overnight = await createShift(
 			{
@@ -1313,7 +1426,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(overnight.ok).toBe(true);
-		if (!overnight.ok) return;
+		if (!overnight.ok) {
+			return;
+		}
 		expect(overnight.data).toMatchObject({
 			shiftKind: "fixed",
 			isOvernight: true,
@@ -1338,7 +1453,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(flexible.ok).toBe(true);
-		if (!flexible.ok) return;
+		if (!flexible.ok) {
+			return;
+		}
 		expect(flexible.data).toMatchObject({
 			shiftKind: "flexible",
 			earliestClockInLocal: "07:00",
@@ -1356,7 +1473,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(activeFlexible.ok).toBe(true);
-		if (!activeFlexible.ok) return;
+		if (!activeFlexible.ok) {
+			return;
+		}
 
 		const split = await createShift(
 			{
@@ -1375,33 +1494,38 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(split.ok).toBe(true);
-		if (!split.ok) return;
-		for (const shiftBreak of [
-			{
-				breakOrder: 1,
-				durationMinutes: 30,
-				startOffsetMinutes: 240,
-				label: "mid-morning",
-			},
-			{
-				breakOrder: 2,
-				durationMinutes: 60,
-				startOffsetMinutes: 420,
-				label: "meal",
-			},
-		] as const) {
-			const added = await addShiftBreak(
-				{
-					organizationId: ORG,
-					actorUserId: ACTOR,
-					correlationId: `corr-p07-split-break-${shiftBreak.breakOrder}-${suffix}`,
-					shiftId: split.data.id,
-					...shiftBreak,
-				},
-				ready,
-			);
-			expect(added.ok).toBe(true);
+		if (!split.ok) {
+			return;
 		}
+		await runSequential(
+			[
+				{
+					breakOrder: 1,
+					durationMinutes: 30,
+					startOffsetMinutes: 240,
+					label: "mid-morning",
+				},
+				{
+					breakOrder: 2,
+					durationMinutes: 60,
+					startOffsetMinutes: 420,
+					label: "meal",
+				},
+			] as const,
+			async (shiftBreak) => {
+				const added = await addShiftBreak(
+					{
+						organizationId: ORG,
+						actorUserId: ACTOR,
+						correlationId: `corr-p07-split-break-${shiftBreak.breakOrder}-${suffix}`,
+						shiftId: split.data.id,
+						...shiftBreak,
+					},
+					ready,
+				);
+				expect(added.ok).toBe(true);
+			},
+		);
 		const splitBreaks = await listShiftBreaks(
 			{
 				organizationId: ORG,
@@ -1412,7 +1536,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(splitBreaks.ok).toBe(true);
-		if (!splitBreaks.ok) return;
+		if (!splitBreaks.ok) {
+			return;
+		}
 		expect(
 			splitBreaks.data.map((shiftBreak) => ({
 				breakOrder: shiftBreak.breakOrder,
@@ -1433,7 +1559,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(activeSplit.ok).toBe(true);
-		if (!activeSplit.ok) return;
+		if (!activeSplit.ok) {
+			return;
+		}
 		const splitAssignment = await assignShift(
 			{
 				organizationId: ORG,
@@ -1463,7 +1591,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(splitAssignment.ok).toBe(true);
-		if (!splitAssignment.ok) return;
+		if (!splitAssignment.ok) {
+			return;
+		}
 		const splitSegments = await listShiftAssignmentSegments(
 			{
 				organizationId: ORG,
@@ -1474,7 +1604,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(splitSegments.ok).toBe(true);
-		if (!splitSegments.ok) return;
+		if (!splitSegments.ok) {
+			return;
+		}
 		expect(
 			splitSegments.data.map((segment) => [
 				segment.segmentOrder,
@@ -1503,7 +1635,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(planned.ok).toBe(true);
-		if (!planned.ok) return;
+		if (!planned.ok) {
+			return;
+		}
 		const published = await publishShiftAssignment(
 			{
 				organizationId: ORG,
@@ -1515,7 +1649,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(published.ok).toBe(true);
-		if (!published.ok) return;
+		if (!published.ok) {
+			return;
+		}
 		const changed = await changeShiftAssignment(
 			{
 				organizationId: ORG,
@@ -1529,7 +1665,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(changed.ok).toBe(true);
-		if (!changed.ok) return;
+		if (!changed.ok) {
+			return;
+		}
 		expect(changed.data.publicationStatus).toBe("changed");
 		expect(changed.data.startsAt.toISOString()).toBe(
 			"2025-08-02T09:00:00.000Z",
@@ -1592,7 +1730,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(manual.ok).toBe(true);
-		if (!manual.ok) return;
+		if (!manual.ok) {
+			return;
+		}
 		expect(manual.data).toMatchObject({
 			shiftAssignmentId: changed.data.id,
 			source: "manual",
@@ -1634,7 +1774,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 		const employment = await createEmployment(
 			{
 				organizationId: ORG,
@@ -1646,7 +1788,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 		const unknownEmployeeId =
 			"00000000-0000-4000-8000-000000000099" as typeof employee.data.id;
 
@@ -1682,7 +1826,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(seedBatch.ok).toBe(true);
-		if (!seedBatch.ok) return;
+		if (!seedBatch.ok) {
+			return;
+		}
 		expect(seedBatch.data).toMatchObject({
 			status: "completed",
 			totals: { accepted: 2, skipped: 0, rejected: 0 },
@@ -1740,7 +1886,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(partial.ok).toBe(true);
-		if (!partial.ok) return;
+		if (!partial.ok) {
+			return;
+		}
 		expect(partial.data).toMatchObject({
 			status: "partial",
 			totals: { accepted: 1, skipped: 1, rejected: 2 },
@@ -1768,7 +1916,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(replay.ok).toBe(true);
-		if (!replay.ok) return;
+		if (!replay.ok) {
+			return;
+		}
 		expect(replay.data).toEqual(partial.data);
 
 		const conflictingSourceReference = await importAttendanceEvents(
@@ -1794,7 +1944,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(conflictingSourceReference.ok).toBe(true);
-		if (!conflictingSourceReference.ok) return;
+		if (!conflictingSourceReference.ok) {
+			return;
+		}
 		expect(conflictingSourceReference.data).toMatchObject({
 			status: "failed",
 			totals: { accepted: 0, skipped: 0, rejected: 1 },
@@ -1813,7 +1965,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(persisted.ok).toBe(true);
-		if (!persisted.ok) return;
+		if (!persisted.ok) {
+			return;
+		}
 		expect(persisted.data).toHaveLength(3);
 		expect(
 			persisted.data.map((event) => event.sourceReference).toSorted(),
@@ -1851,7 +2005,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 		const employment = await createEmployment(
 			{
 				organizationId: ORG,
@@ -1863,7 +2019,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const imported = await importAttendanceEvents(
 			{
@@ -1899,7 +2057,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(imported.ok).toBe(true);
-		if (!imported.ok) return;
+		if (!imported.ok) {
+			return;
+		}
 
 		const session = await resolveAttendanceSession(
 			{
@@ -1914,7 +2074,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(session.ok).toBe(true);
-		if (!session.ok) return;
+		if (!session.ok) {
+			return;
+		}
 		expect(session.data.resolutionStatus).toBe("resolved");
 		expect(session.data.workedMinutes).toBe(0);
 		expect(session.data.breakMinutes).toBe(0);
@@ -1953,7 +2115,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(replay.ok).toBe(true);
-		if (!replay.ok) return;
+		if (!replay.ok) {
+			return;
+		}
 		expect(replay.data.skipped).toHaveLength(2);
 	});
 
@@ -1971,7 +2135,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 		const employment = await createEmployment(
 			{
 				organizationId: ORG,
@@ -1983,7 +2149,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const clockIn = await recordClockIn(
 			{
@@ -2000,7 +2168,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(clockIn.ok).toBe(true);
-		if (!clockIn.ok) return;
+		if (!clockIn.ok) {
+			return;
+		}
 		expect(clockIn.data.voidedAt).toBeNull();
 
 		const voided = await voidAttendanceEvent(
@@ -2015,7 +2185,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(voided.ok).toBe(true);
-		if (!voided.ok) return;
+		if (!voided.ok) {
+			return;
+		}
 		expect(voided.data).toMatchObject({
 			id: clockIn.data.id,
 			voidReason: "duplicate punch",
@@ -2033,7 +2205,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(fetched.ok).toBe(true);
-		if (!fetched.ok || fetched.data === null) return;
+		if (!fetched.ok || fetched.data === null) {
+			return;
+		}
 		expect(fetched.data.voidedAt).not.toBeNull();
 		expect(fetched.data.voidReason).toBe("duplicate punch");
 
@@ -2067,7 +2241,9 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(listed.ok).toBe(true);
-		if (!listed.ok) return;
+		if (!listed.ok) {
+			return;
+		}
 		expect(listed.data).toHaveLength(1);
 		expect(listed.data[0]?.voidedAt).not.toBeNull();
 	});

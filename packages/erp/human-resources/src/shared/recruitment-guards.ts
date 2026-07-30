@@ -9,7 +9,6 @@ import {
 	type ApplicationStatus,
 	type CandidateStatus,
 	type InterviewStatus,
-	isApplicationTerminal,
 	isOfferTerminal,
 	type OfferStatus,
 	type RequisitionStatus,
@@ -39,7 +38,9 @@ export function canTransitionRequisitionStatus(
 	current: RequisitionStatus,
 	next: RequisitionStatus,
 ): boolean {
-	if (current === next) return false;
+	if (current === next) {
+		return false;
+	}
 	if (current === "draft" && (next === "submitted" || next === "cancelled")) {
 		return true;
 	}
@@ -135,10 +136,18 @@ export function canTransitionCandidateStatus(
 	current: CandidateStatus,
 	next: CandidateStatus,
 ): boolean {
-	if (current === next) return false;
-	if (current === "anonymized") return false;
-	if (current === "active" && next === "archived") return true;
-	if (current === "archived" && next === "active") return true;
+	if (current === next) {
+		return false;
+	}
+	if (current === "anonymized") {
+		return false;
+	}
+	if (current === "active" && next === "archived") {
+		return true;
+	}
+	if (current === "archived" && next === "active") {
+		return true;
+	}
 	if (
 		(current === "active" || current === "archived") &&
 		next === "anonymized"
@@ -176,7 +185,7 @@ export function assertCandidateAnonymizationEligible(input: {
 	const withdrawn = input.consentWithdrawnAt !== null;
 	const retentionDue =
 		input.retentionUntil !== null && input.retentionUntil <= input.asOf;
-	if (!withdrawn && !retentionDue) {
+	if (!(withdrawn || retentionDue)) {
 		return invalidState(
 			"Candidate anonymization requires consent withdrawal or due retention",
 		);
@@ -211,35 +220,29 @@ export function assertCandidateActive(status: CandidateStatus): Result<void> {
 	return ok(undefined);
 }
 
+const APPLICATION_STATUS_TRANSITIONS = new Set<string>([
+	"rejected:submitted",
+	"withdrawn:submitted",
+	"submitted:in_review",
+	"submitted:rejected",
+	"submitted:withdrawn",
+	"in_review:interviewing",
+	"in_review:offered",
+	"in_review:rejected",
+	"in_review:withdrawn",
+	"interviewing:offered",
+	"interviewing:rejected",
+	"interviewing:withdrawn",
+	"offered:accepted",
+	"offered:rejected",
+	"offered:withdrawn",
+]);
+
 export function canTransitionApplicationStatus(
 	current: ApplicationStatus,
 	next: ApplicationStatus,
 ): boolean {
-	if (current === next) return false;
-	if (
-		(current === "rejected" || current === "withdrawn") &&
-		next === "submitted"
-	) {
-		return true;
-	}
-	if (isApplicationTerminal(current)) return false;
-	if (current === "submitted" && next === "in_review") return true;
-	if (current === "in_review" && next === "interviewing") return true;
-	if (
-		(current === "submitted" ||
-			current === "in_review" ||
-			current === "interviewing") &&
-		(next === "rejected" || next === "withdrawn")
-	) {
-		return true;
-	}
-	if (current === "interviewing" && next === "offered") return true;
-	if (current === "in_review" && next === "offered") return true;
-	if (current === "offered" && next === "accepted") return true;
-	if (current === "offered" && (next === "rejected" || next === "withdrawn")) {
-		return true;
-	}
-	return false;
+	return APPLICATION_STATUS_TRANSITIONS.has(`${current}:${next}`);
 }
 
 export function assertApplicationStatusTransition(
@@ -292,7 +295,9 @@ export function canTransitionInterviewStatus(
 	current: InterviewStatus,
 	next: InterviewStatus,
 ): boolean {
-	if (current === next) return false;
+	if (current === next) {
+		return false;
+	}
 	if (
 		current === "scheduled" &&
 		(next === "completed" || next === "cancelled")
@@ -334,8 +339,12 @@ export function canTransitionOfferStatus(
 	current: OfferStatus,
 	next: OfferStatus,
 ): boolean {
-	if (current === next) return false;
-	if (isOfferTerminal(current)) return false;
+	if (current === next) {
+		return false;
+	}
+	if (isOfferTerminal(current)) {
+		return false;
+	}
 	if (current === "draft" && (next === "approved" || next === "withdrawn")) {
 		return true;
 	}

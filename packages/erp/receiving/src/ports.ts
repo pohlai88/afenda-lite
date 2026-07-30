@@ -3,64 +3,67 @@ import type { Result } from "@afenda/errors/result";
 import type { ReceivingEventType } from "@afenda/events/schemas";
 import type { Item, RefUom, Warehouse } from "@afenda/master-data";
 
-export type AuditFactInput = {
-	organizationId: string;
+export interface AuditFactInput {
+	action: "CREATE" | "UPDATE" | "DELETE";
 	actorUserId: string;
+	changes: Change[];
 	correlationId: string;
 	entity: string;
 	entityId: string;
-	action: "CREATE" | "UPDATE" | "DELETE";
-	changes: Change[];
-	oldValue?: Record<string, unknown> | null;
 	newValue?: Record<string, unknown> | null;
-};
-export type AuditFactPort = {
-	record(input: AuditFactInput): Promise<Result<{ id: string }>>;
-};
-
-export type OutboxFactInput = {
+	oldValue?: Record<string, unknown> | null;
 	organizationId: string;
+}
+export interface AuditFactPort {
+	record: (input: AuditFactInput) => Promise<Result<{ id: string }>>;
+}
+
+export interface OutboxFactInput {
 	actorUserId: string;
 	correlationId: string;
-	type: ReceivingEventType;
+	organizationId: string;
 	payload: Record<string, unknown>;
-};
-export type OutboxPort = {
-	append(input: OutboxFactInput): Promise<Result<{ id: string }>>;
-};
-export type MutationPorts = { audit: AuditFactPort; outbox: OutboxPort };
+	type: ReceivingEventType;
+}
+export interface OutboxPort {
+	append: (input: OutboxFactInput) => Promise<Result<{ id: string }>>;
+}
+export interface MutationPorts {
+	audit: AuditFactPort;
+	outbox: OutboxPort;
+}
 
-export type MasterLookupPort = {
-	getItemById(
+export interface MasterLookupPort {
+	getItemById: (
 		organizationId: string,
 		id: string,
 		actorUserId: string,
-	): Promise<Result<Item | null>>;
-	getRefUomById(
+	) => Promise<Result<Item | null>>;
+	getRefUomById: (
 		organizationId: string,
 		id: string,
 		actorUserId: string,
-	): Promise<Result<RefUom | null>>;
-	getWarehouseById(
+	) => Promise<Result<RefUom | null>>;
+	getWarehouseById: (
 		organizationId: string,
 		id: string,
 		actorUserId: string,
-	): Promise<Result<Warehouse | null>>;
-};
+	) => Promise<Result<Warehouse | null>>;
+}
 
 /**
  * Receiving-owned PO snapshot for create/post guards.
  * Adapters live in apps/web — package must NOT import @afenda/purchasing.
  */
-export type PurchaseOrderReceivingLineSnapshot = {
-	purchaseOrderLineId: string;
+export interface PurchaseOrderReceivingLineSnapshot {
 	ordered: string;
+	overReceiptTolerancePercent: string;
+	purchaseOrderLineId: string;
 	/** Sum from posted|closed goods receipts for this PO line. */
 	received: string;
 	/** max(0, ordered - received) */
 	remaining: string;
-	overReceiptTolerancePercent: string;
-};
+}
 
 export type PurchaseOrderReceivingStatus =
 	| "draft"
@@ -68,15 +71,15 @@ export type PurchaseOrderReceivingStatus =
 	| "cancelled"
 	| "closed";
 
-export type PurchaseOrderReceivingSnapshot = {
+export interface PurchaseOrderReceivingSnapshot {
+	lines: PurchaseOrderReceivingLineSnapshot[];
 	status: PurchaseOrderReceivingStatus;
 	version: number;
-	lines: PurchaseOrderReceivingLineSnapshot[];
-};
+}
 
-export type PurchaseOrderReceivingQueryPort = {
-	getReceivingSnapshot(input: {
+export interface PurchaseOrderReceivingQueryPort {
+	getReceivingSnapshot: (input: {
 		organizationId: string;
 		purchaseOrderId: string;
-	}): Promise<Result<PurchaseOrderReceivingSnapshot | null>>;
-};
+	}) => Promise<Result<PurchaseOrderReceivingSnapshot | null>>;
+}

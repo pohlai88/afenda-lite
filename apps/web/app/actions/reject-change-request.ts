@@ -20,9 +20,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type RejectChangeRequestActionData = {
+export interface RejectChangeRequestActionData {
 	changeRequest: ChangeRequest;
-};
+}
 
 export type RejectChangeRequestActionState =
 	ActionResult<RejectChangeRequestActionData> | null;

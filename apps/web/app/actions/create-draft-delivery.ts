@@ -13,7 +13,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type CreateDraftDeliveryActionData = { delivery: Delivery };
+export interface CreateDraftDeliveryActionData {
+	delivery: Delivery;
+}
 export type CreateDraftDeliveryActionState =
 	ActionResult<CreateDraftDeliveryActionData> | null;
 
@@ -44,7 +46,7 @@ export async function createDraftDeliveryAction(
 	_prev: CreateDraftDeliveryActionState,
 	formData: FormData,
 ): Promise<CreateDraftDeliveryActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "createDraftDeliveryAction",
 		permission: "fulfillment.delivery.create",
 		safeMessage: "Could not create delivery. Try again or contact an admin.",
@@ -75,7 +77,9 @@ export async function createDraftDeliveryAction(
 				createFulfillmentCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePath("/admin/fulfillment");
 			revalidatePath("/client/fulfillment");
 			return { ok: true, data: { delivery: mapped.data } };

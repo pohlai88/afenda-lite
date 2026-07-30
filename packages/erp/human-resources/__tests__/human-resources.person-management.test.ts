@@ -53,7 +53,9 @@ describe("@afenda/human-resources person management (memory)", () => {
 			ready,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const preferred = await updatePersonPreferredName(
 			{
@@ -67,7 +69,9 @@ describe("@afenda/human-resources person management (memory)", () => {
 			ready,
 		);
 		expect(preferred.ok).toBe(true);
-		if (!preferred.ok) return;
+		if (!preferred.ok) {
+			return;
+		}
 		expect(preferred.data.preferredName).toBe("Ada");
 
 		const classified = await setPersonPrivacyClassification(
@@ -100,7 +104,9 @@ describe("@afenda/human-resources person management (memory)", () => {
 			ready,
 		);
 		expect(person.ok).toBe(true);
-		if (!person.ok) return;
+		if (!person.ok) {
+			return;
+		}
 
 		const email = await addPersonContact(
 			{
@@ -116,7 +122,9 @@ describe("@afenda/human-resources person management (memory)", () => {
 			ready,
 		);
 		expect(email.ok).toBe(true);
-		if (!email.ok) return;
+		if (!email.ok) {
+			return;
+		}
 
 		const listed = await listPersonContacts(
 			{
@@ -163,7 +171,9 @@ describe("@afenda/human-resources person management (memory)", () => {
 			ready,
 		);
 		expect(person.ok).toBe(true);
-		if (!person.ok) return;
+		if (!person.ok) {
+			return;
+		}
 
 		const identifier = await addPersonIdentifier(
 			{
@@ -179,7 +189,9 @@ describe("@afenda/human-resources person management (memory)", () => {
 			ready,
 		);
 		expect(identifier.ok).toBe(true);
-		if (!identifier.ok) return;
+		if (!identifier.ok) {
+			return;
+		}
 		expect(identifier.data.identifierLast4).toBe("9012");
 
 		const listed = await listPersonIdentifiers(
@@ -210,7 +222,9 @@ describe("@afenda/human-resources person management (memory)", () => {
 			ready,
 		);
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 
 		const second = await createPerson(
 			{
@@ -223,7 +237,9 @@ describe("@afenda/human-resources person management (memory)", () => {
 			ready,
 		);
 		expect(second.ok).toBe(true);
-		if (!second.ok) return;
+		if (!second.ok) {
+			return;
+		}
 
 		await addPersonContact(
 			{
@@ -260,7 +276,9 @@ describe("@afenda/human-resources person management (memory)", () => {
 			ready,
 		);
 		expect(matches.ok).toBe(true);
-		if (!matches.ok) return;
+		if (!matches.ok) {
+			return;
+		}
 
 		const other = matches.data.find(
 			(candidate) => candidate.personId === first.data.id,
@@ -294,7 +312,9 @@ describe("@afenda/human-resources person management (memory)", () => {
 			ready,
 		);
 		expect(person.ok).toBe(true);
-		if (!person.ok) return;
+		if (!person.ok) {
+			return;
+		}
 
 		const employee = await createEmployee(
 			{
@@ -308,7 +328,9 @@ describe("@afenda/human-resources person management (memory)", () => {
 			ready,
 		);
 		expect(employee.ok).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const worker = await createWorker(
 			{
@@ -324,7 +346,9 @@ describe("@afenda/human-resources person management (memory)", () => {
 			ready,
 		);
 		expect(worker.ok).toBe(true);
-		if (!worker.ok) return;
+		if (!worker.ok) {
+			return;
+		}
 
 		await updatePersonPreferredName(
 			{
@@ -345,7 +369,9 @@ describe("@afenda/human-resources person management (memory)", () => {
 			store: ready.store,
 		});
 		expect(collected.ok).toBe(true);
-		if (!collected.ok) return;
+		if (!collected.ok) {
+			return;
+		}
 
 		expect(collected.data.subject.personId).toBe(person.data.id);
 		expect(collected.data.subject.personId).not.toBe(employee.data.id);

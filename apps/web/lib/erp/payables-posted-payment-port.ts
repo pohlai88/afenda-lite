@@ -26,8 +26,12 @@ export function createPostedPaymentQueryPort(
 				},
 				createPaymentsCommandOptions(),
 			);
-			if (!result.ok) return result;
-			if (result.data === null) return ok(null);
+			if (!result.ok) {
+				return result;
+			}
+			if (result.data === null) {
+				return ok(null);
+			}
 			const payment = result.data;
 			if (payment.status !== "posted") {
 				return ok(null);

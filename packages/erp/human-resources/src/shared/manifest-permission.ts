@@ -33,5 +33,4 @@ export function resolveManifestOperationPermission(
 	if (isQueryId(operationId, operationKind)) {
 		return humanResourcesModuleManifest.authorization.queries[operationId];
 	}
-	return undefined;
 }

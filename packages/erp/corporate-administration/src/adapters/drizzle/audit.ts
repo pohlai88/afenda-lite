@@ -113,7 +113,9 @@ export function createDrizzleCorporateAdministrationAuditFactPort(
 			} catch (error) {
 				const translated =
 					translateCorporateAdministrationInfrastructureError(error);
-				if (translated !== undefined) return translated;
+				if (translated !== undefined) {
+					return translated;
+				}
 				throw error;
 			}
 		},

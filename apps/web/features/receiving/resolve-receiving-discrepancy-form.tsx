@@ -71,60 +71,60 @@ export function ResolveReceivingDiscrepancyForm({
 				<FormError>{state.message}</FormError>
 			) : null}
 			<FormField
+				error={receiptError}
+				fieldId="disc-resolve-receipt"
 				label="Receipt id"
 				required
-				fieldId="disc-resolve-receipt"
-				error={receiptError}
 			>
 				<Input
+					disabled={pending}
 					id="disc-resolve-receipt"
 					name="receiptId"
 					required
-					disabled={pending}
 				/>
 			</FormField>
 			<FormField
+				error={discrepancyError}
+				fieldId="disc-resolve-id"
 				label="Discrepancy id"
 				required
-				fieldId="disc-resolve-id"
-				error={discrepancyError}
 			>
 				<Input
+					disabled={pending}
 					id="disc-resolve-id"
 					name="discrepancyId"
 					required
-					disabled={pending}
 				/>
 			</FormField>
 			<FormField
+				error={versionError}
+				fieldId="disc-resolve-version"
 				label="Expected version"
 				required
-				fieldId="disc-resolve-version"
-				error={versionError}
 			>
 				<Input
-					id="disc-resolve-version"
-					name="expectedVersion"
-					type="number"
-					min="1"
-					required
 					disabled={pending}
+					id="disc-resolve-version"
+					min="1"
+					name="expectedVersion"
+					required
+					type="number"
 				/>
 			</FormField>
 			<FormField
+				error={resolutionError}
+				fieldId="disc-resolve-resolution"
 				label="Resolution"
 				required
-				fieldId="disc-resolve-resolution"
-				error={resolutionError}
 			>
 				<Input
+					disabled={pending}
 					id="disc-resolve-resolution"
 					name="resolution"
 					required
-					disabled={pending}
 				/>
 			</FormField>
-			<Button type="submit" disabled={pending}>
+			<Button disabled={pending} type="submit">
 				{pending ? <Spinner /> : null}
 				Resolve discrepancy
 			</Button>

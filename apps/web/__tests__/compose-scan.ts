@@ -72,5 +72,5 @@ function isDnaStaging(rel: string): boolean {
 export function productTsx(): { rel: string; src: string }[] {
 	return collectTsx(webRoot)
 		.map((full) => ({ rel: toRel(full), src: readFileSync(full, "utf8") }))
-		.filter(({ rel }) => !isAuthIsland(rel) && !isDnaStaging(rel));
+		.filter(({ rel }) => !(isAuthIsland(rel) || isDnaStaging(rel)));
 }

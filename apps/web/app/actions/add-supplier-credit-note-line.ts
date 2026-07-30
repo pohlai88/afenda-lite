@@ -31,7 +31,7 @@ export async function addSupplierCreditNoteLineAction(
 	_prev: AddSupplierCreditNoteLineActionState,
 	formData: FormData,
 ): Promise<AddSupplierCreditNoteLineActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "addSupplierCreditNoteLineAction",
 		permission: "payables.manage",
 		safeMessage:
@@ -44,12 +44,13 @@ export async function addSupplierCreditNoteLineAction(
 				quantity: formData.get("quantity"),
 				unitPrice: formData.get("unitPrice"),
 			});
-			if (!parsed.success)
+			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
 					"Enter a valid credit note, item, description, quantity, and unit price.",
 					parsed.details,
 				);
+			}
 			const mapped = mapPackageResult(
 				await addSupplierCreditNoteLine(
 					{
@@ -61,7 +62,9 @@ export async function addSupplierCreditNoteLineAction(
 					createPayablesCommandOptions(session.userId),
 				),
 			);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePayablesPaths();
 			return { ok: true, data: { line: mapped.data } };
 		},

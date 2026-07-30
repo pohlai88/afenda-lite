@@ -9,11 +9,13 @@ import {
 	StatusBadge,
 } from "@afenda/ui-system";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import type { ReactNode } from "react";
-import * as React from "react";
+import { type ComponentProps, type ReactNode, useState } from "react";
 import { expect, userEvent, within } from "storybook/test";
 import { contractDocsParameters } from "./contract-docs";
 import { contractEvidence, StorySection } from "./evidence";
+
+const ELIGIBLE_COUNT_PATTERN = /1 eligible/i;
+const MYR_7900_PATTERN = /MYR\s*7,900\.00/;
 
 type InvoiceStatus =
 	| "approved"
@@ -32,6 +34,60 @@ type Invoice = Readonly<{
 }> &
 	Record<string, unknown>;
 
+function invoiceRowId(row: Invoice): string {
+	return row.id;
+}
+
+function renderExceptionRowAction(row: Invoice) {
+	const failed = row.status === "posting-failed";
+	return (
+		<Button
+			aria-label={
+				failed ? `Retry posting ${row.id}` : `Review collection ${row.id}`
+			}
+			size="sm"
+			type="button"
+			variant={failed ? "default" : "outline"}
+		>
+			{failed ? "Retry posting" : "Review collection"}
+		</Button>
+	);
+}
+
+function renderReviewRowAction(row: Invoice) {
+	return (
+		<Button
+			aria-label={`Review invoice ${row.id}`}
+			size="sm"
+			type="button"
+			variant="ghost"
+		>
+			Review
+		</Button>
+	);
+}
+
+function renderOpenRowAction(row: Invoice) {
+	return (
+		<Button
+			aria-label={`Open invoice ${row.id}`}
+			size="sm"
+			type="button"
+			variant="ghost"
+		>
+			Open
+		</Button>
+	);
+}
+
+function renderPrimaryReviewRowAction(row: Invoice) {
+	return (
+		<Button aria-label={`Review invoice ${row.id}`} type="button">
+			Review
+		</Button>
+	);
+}
+
 type SectionProps = Readonly<{
 	id: string;
 	title: string;
@@ -41,15 +97,15 @@ type SectionProps = Readonly<{
 
 function WorkbenchSection({ id, title, description, children }: SectionProps) {
 	return (
-		<section className="grid gap-4" aria-labelledby={id}>
+		<section aria-labelledby={id} className="grid gap-4">
 			<div className="grid gap-1">
 				<h2
-					className="text-base font-semibold tracking-tight text-foreground"
+					className="font-semibold text-base text-foreground tracking-tight"
 					id={id}
 				>
 					{title}
 				</h2>
-				<p className="max-w-5xl text-sm leading-5 text-foreground-secondary">
+				<p className="max-w-5xl text-foreground-secondary text-sm leading-5">
 					{description}
 				</p>
 			</div>
@@ -85,7 +141,7 @@ const invoiceStatusPresentation = {
 } as const satisfies Record<
 	InvoiceStatus,
 	{
-		status: React.ComponentProps<typeof StatusBadge>["status"];
+		status: ComponentProps<typeof StatusBadge>["status"];
 		label: string;
 	}
 >;
@@ -193,7 +249,7 @@ const columns = [
 		title: "Invoice",
 		sortable: true,
 		render: (value: unknown) => (
-			<span className="font-mono text-xs font-medium">{String(value)}</span>
+			<span className="font-medium font-mono text-xs">{String(value)}</span>
 		),
 	},
 	{
@@ -232,9 +288,9 @@ const columns = [
 			const presentation = invoiceStatusPresentation[value];
 			return (
 				<StatusBadge
+					label={presentation.label}
 					size="sm"
 					status={presentation.status}
-					label={presentation.label}
 				/>
 			);
 		},
@@ -250,40 +306,39 @@ function InteractiveApprovalTable({
 		(row) => row.status === "awaiting-approval",
 	);
 	const eligibleIds = new Set(eligibleRows.map((row) => row.id));
-	const [selected, setSelected] = React.useState<Set<string>>(new Set());
+	const [selected, setSelected] = useState<Set<string>>(new Set());
 	const selectedEligibleCount = [...selected].filter((id) =>
 		eligibleIds.has(id),
 	).length;
 
 	return (
 		<DataTable
-			columns={columns}
-			data={[...approvalRows]}
-			getRowId={(row) => row.id}
-			selectable
-			selectedRowIds={selected}
-			onSelectionChange={setSelected}
-			density={density}
 			bulkActions={
 				<>
 					<Button size="sm" variant="outline">
 						Export selected
 					</Button>
 					<Button
-						size="sm"
-						disabled={selectedEligibleCount === 0}
 						aria-describedby="approval-eligibility"
+						disabled={selectedEligibleCount === 0}
+						size="sm"
 					>
 						Approve selected
 					</Button>
 					<span
+						className="text-foreground-tertiary text-xs"
 						id="approval-eligibility"
-						className="text-xs text-foreground-tertiary"
 					>
 						{selectedEligibleCount} eligible
 					</span>
 				</>
 			}
+			columns={columns}
+			data={[...approvalRows]}
+			density={density}
+			getRowId={invoiceRowId}
+			onSelectionChange={setSelected}
+			selectable
 		/>
 	);
 }
@@ -294,20 +349,20 @@ function DataTableOperationalOverview() {
 			<div className="mx-auto grid w-full max-w-7xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-2 border-b pb-6">
 					<div className="flex flex-wrap items-center gap-2">
-						<span className="text-sm font-medium text-foreground-secondary">
+						<span className="font-medium text-foreground-secondary text-sm">
 							Accounts payable
 						</span>
 						<span aria-hidden="true" className="text-foreground-tertiary">
 							/
 						</span>
-						<span className="text-sm text-foreground-tertiary">
+						<span className="text-foreground-tertiary text-sm">
 							Approval operations
 						</span>
 					</div>
-					<h1 className="text-2xl font-semibold tracking-tight">
+					<h1 className="font-semibold text-2xl tracking-tight">
 						Supplier invoice queue
 					</h1>
-					<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+					<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 						Review material supplier liabilities, approve eligible invoices and
 						resolve posting exceptions. Selection does not imply bulk
 						eligibility — feature code supplies eligible rows and available
@@ -317,46 +372,46 @@ function DataTableOperationalOverview() {
 
 				<main className="grid gap-9">
 					<WorkbenchSection
+						description="Aggregate pressure is communicated through values and copy rather than decorative status."
 						id="data-table-summary"
 						title="Operational summary"
-						description="Aggregate pressure is communicated through values and copy rather than decorative status."
 					>
 						<dl className="grid gap-6 border-y py-5 sm:grid-cols-3">
 							<div className="grid gap-1">
-								<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+								<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 									Open liability
 								</dt>
 								<dd className="grid gap-1">
-									<span className="text-2xl font-semibold tracking-tight tabular-nums">
+									<span className="font-semibold text-2xl tabular-nums tracking-tight">
 										{myrFormatter.format(openLiabilityMinor / 100)}
 									</span>
-									<span className="text-xs text-foreground-tertiary">
+									<span className="text-foreground-tertiary text-xs">
 										Four open supplier invoices
 									</span>
 								</dd>
 							</div>
 							<div className="grid gap-1">
-								<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+								<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 									Awaiting approval
 								</dt>
 								<dd className="grid gap-1">
-									<span className="text-2xl font-semibold tracking-tight tabular-nums">
+									<span className="font-semibold text-2xl tabular-nums tracking-tight">
 										2
 									</span>
-									<span className="text-xs text-foreground-tertiary">
+									<span className="text-foreground-tertiary text-xs">
 										One exceeds the target review window
 									</span>
 								</dd>
 							</div>
 							<div className="grid gap-1">
-								<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+								<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 									Exceptions today
 								</dt>
 								<dd className="grid gap-1">
-									<span className="text-2xl font-semibold tracking-tight tabular-nums">
+									<span className="font-semibold text-2xl tabular-nums tracking-tight">
 										{exceptionRows.length}
 									</span>
-									<span className="text-xs text-foreground-tertiary">
+									<span className="text-foreground-tertiary text-xs">
 										Overdue or failed-posting liabilities
 									</span>
 								</dd>
@@ -365,40 +420,24 @@ function DataTableOperationalOverview() {
 					</WorkbenchSection>
 
 					<WorkbenchSection
+						description="Compact selectable table with explicit row identity, ownership, materiality, age and governed state. Reject stays in a separate governed workflow."
 						id="data-table-priority"
 						title="Approval queue"
-						description="Compact selectable table with explicit row identity, ownership, materiality, age and governed state. Reject stays in a separate governed workflow."
 					>
 						<InteractiveApprovalTable />
 					</WorkbenchSection>
 
 					<WorkbenchSection
+						description="Recovery actions remain explicit controls. The row itself is not an undisclosed destination."
 						id="data-table-exceptions"
 						title="Requires attention"
-						description="Recovery actions remain explicit controls. The row itself is not an undisclosed destination."
 					>
 						<DataTable
 							columns={columns}
 							data={[...exceptionRows]}
-							getRowId={(row) => row.id}
 							density="compact"
-							rowActions={(row) => (
-								<Button
-									size="sm"
-									variant={
-										row.status === "posting-failed" ? "default" : "outline"
-									}
-									aria-label={
-										row.status === "posting-failed"
-											? `Retry posting ${row.id}`
-											: `Review collection ${row.id}`
-									}
-								>
-									{row.status === "posting-failed"
-										? "Retry posting"
-										: "Review collection"}
-								</Button>
-							)}
+							getRowId={invoiceRowId}
+							rowActions={renderExceptionRowAction}
 						/>
 					</WorkbenchSection>
 				</main>
@@ -469,24 +508,9 @@ export const SemanticUsage: Story = {
 				<DataTable
 					columns={columns}
 					data={[...exceptionRows]}
-					getRowId={(row) => row.id}
 					density="compact"
-					rowActions={(row) => (
-						<Button
-							size="sm"
-							type="button"
-							variant={row.status === "posting-failed" ? "default" : "outline"}
-							aria-label={
-								row.status === "posting-failed"
-									? `Retry posting ${row.id}`
-									: `Review collection ${row.id}`
-							}
-						>
-							{row.status === "posting-failed"
-								? "Retry posting"
-								: "Review collection"}
-						</Button>
-					)}
+					getRowId={invoiceRowId}
+					rowActions={renderExceptionRowAction}
 				/>
 			</StorySection>
 		</div>
@@ -507,19 +531,10 @@ export const ControlledUsage: Story = {
 			<DataTable
 				columns={columns}
 				data={[...approvalRows]}
-				getRowId={(row) => row.id}
-				rowActions={(row) => (
-					<Button
-						size="sm"
-						type="button"
-						variant="ghost"
-						aria-label={`Review invoice ${row.id}`}
-					>
-						Review
-					</Button>
-				)}
+				getRowId={invoiceRowId}
+				rowActions={renderReviewRowAction}
 			/>
-			<p className="text-sm text-foreground-secondary">
+			<p className="text-foreground-secondary text-sm">
 				Stable getRowId keys survive sort, filter, and refresh. Selection is
 				optional — omit selectable when the queue is read-only review.
 			</p>
@@ -542,7 +557,7 @@ export const AuthorizationAndEligibility: Story = {
 				<InteractiveApprovalTable />
 			</StorySection>
 			<StorySection title="Field authorization precedes rendering">
-				<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+				<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 					Do not pass masked or forbidden values into hidden columns and assume
 					visibility protects them. Query projections, export paths, filters,
 					and row actions must enforce the same field-level authorization
@@ -565,23 +580,14 @@ export const AdaptiveLayout: Story = {
 	render: () => (
 		<div className="grid w-full max-w-5xl gap-8">
 			<StorySection title="Constrained review panel">
-				<div className="w-full max-w-xl overflow-x-auto rounded-xl border border-dashed border-border p-3">
+				<div className="w-full max-w-xl overflow-x-auto rounded-xl border border-border border-dashed p-3">
 					<div className="min-w-[52rem]">
 						<DataTable
 							columns={columns}
 							data={[...approvalRows]}
-							getRowId={(row) => row.id}
 							density="compact"
-							rowActions={(row) => (
-								<Button
-									size="sm"
-									type="button"
-									variant="ghost"
-									aria-label={`Review invoice ${row.id}`}
-								>
-									Review
-								</Button>
-							)}
+							getRowId={invoiceRowId}
+							rowActions={renderReviewRowAction}
 						/>
 					</div>
 				</div>
@@ -605,16 +611,16 @@ export const VariantsAndSizes: Story = {
 				<DataTable
 					columns={columns}
 					data={[...approvalRows]}
-					getRowId={(row) => row.id}
 					density="comfortable"
+					getRowId={invoiceRowId}
 				/>
 			</StorySection>
 			<StorySection title="Compact operational density">
 				<DataTable
 					columns={columns}
 					data={[...approvalRows]}
-					getRowId={(row) => row.id}
 					density="compact"
+					getRowId={invoiceRowId}
 				/>
 			</StorySection>
 		</div>
@@ -640,7 +646,7 @@ export const StatesAndAccessibility: Story = {
 		await expect(
 			canvas.getByRole("columnheader", { name: "Amount" }),
 		).toBeVisible();
-		await expect(canvas.getByText(/MYR\s*7,900\.00/)).toBeVisible();
+		await expect(canvas.getByText(MYR_7900_PATTERN)).toBeVisible();
 
 		const firstRowCheckbox = canvas.getByRole("checkbox", {
 			name: "Select row 1",
@@ -653,7 +659,7 @@ export const StatesAndAccessibility: Story = {
 		await expect(
 			canvas.getByRole("button", { name: "Approve selected" }),
 		).toBeVisible();
-		await expect(canvas.getByText(/1 eligible/i)).toBeVisible();
+		await expect(canvas.getByText(ELIGIBLE_COUNT_PATTERN)).toBeVisible();
 
 		await expect(
 			canvas.getByRole("button", { name: "Export selected" }),
@@ -676,21 +682,21 @@ export const EmptyAndFilteredStates: Story = {
 				<DataTable
 					columns={columns}
 					data={[]}
-					emptyTitle="No supplier invoices"
 					emptyDescription="New supplier invoices will appear here after validation."
+					emptyTitle="No supplier invoices"
 				/>
 			</StorySection>
 			<StorySection title="Filtered empty">
 				<DataTable
 					columns={columns}
 					data={[]}
-					emptyTitle="No invoices match these filters"
-					emptyDescription="Clear supplier, owner or state filters to return to the queue."
 					emptyAction={
 						<Button size="sm" type="button" variant="outline">
 							Clear filters
 						</Button>
 					}
+					emptyDescription="Clear supplier, owner or state filters to return to the queue."
+					emptyTitle="No invoices match these filters"
 				/>
 			</StorySection>
 			<StorySection title="Loading">
@@ -716,18 +722,9 @@ export const EmptyAndFilteredStates: Story = {
 				<DataTable
 					columns={columns}
 					data={[...approvalRows.filter((row) => row.status === "approved")]}
-					getRowId={(row) => row.id}
 					density="comfortable"
-					rowActions={(row) => (
-						<Button
-							size="sm"
-							type="button"
-							variant="ghost"
-							aria-label={`Open invoice ${row.id}`}
-						>
-							Open
-						</Button>
-					)}
+					getRowId={invoiceRowId}
+					rowActions={renderOpenRowAction}
 				/>
 			</StorySection>
 		</div>
@@ -760,18 +757,9 @@ export const Composition: Story = {
 				<DataTable
 					columns={columns}
 					data={[...approvalRows]}
-					getRowId={(row) => row.id}
 					density="comfortable"
-					rowActions={(row) => (
-						<Button
-							size="sm"
-							type="button"
-							variant="ghost"
-							aria-label={`Review invoice ${row.id}`}
-						>
-							Review
-						</Button>
-					)}
+					getRowId={invoiceRowId}
+					rowActions={renderReviewRowAction}
 				/>
 			</CardContent>
 		</Card>
@@ -793,42 +781,38 @@ export const DoAndDoNot: Story = {
 				<DataTable
 					columns={columns}
 					data={approvalRows.slice(0, 1)}
-					getRowId={(row) => row.id}
-					rowActions={(row) => (
-						<Button type="button" aria-label={`Review invoice ${row.id}`}>
-							Review
-						</Button>
-					)}
+					getRowId={invoiceRowId}
+					rowActions={renderPrimaryReviewRowAction}
 				/>
 			</StorySection>
 			<StorySection title="Do: align numeric values for comparison">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Amounts use tabular numerals and right alignment so operators can
 					compare material values vertically. Source data remains amountMinor
 					until the presentation column formats MYR.
 				</p>
 			</StorySection>
 			<StorySection title="Do: gate bulk Approve on eligible selection">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Show selected count and eligible count. Revalidate permissions before
 					the Action runs — the checkbox is not authorization.
 				</p>
 			</StorySection>
 			<StorySection title="Do not: store formatted currency as table data">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Keep numeric amounts in domain-safe units. Format MYR only in the
 					presentation column so sorting, totals, and export retain meaning.
 				</p>
 			</StorySection>
 			<StorySection title="Do not: expose generic repeated names only">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Visually repeated controls need unique accessible names such as Review
 					invoice INV-1042. A bare Review label is not enough for assistive
 					technology.
 				</p>
 			</StorySection>
 			<StorySection title="Do not: make the entire row an ambiguous action">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Rows remain structural; navigation and commands use named controls.
 					Entire-row clicks hide independent destinations and break keyboard
 					clarity.

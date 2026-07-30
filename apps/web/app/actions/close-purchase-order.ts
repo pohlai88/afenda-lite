@@ -13,9 +13,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type ClosePurchaseOrderActionData = {
+export interface ClosePurchaseOrderActionData {
 	order: PurchaseOrder;
-};
+}
 
 export type ClosePurchaseOrderActionState =
 	ActionResult<ClosePurchaseOrderActionData> | null;
@@ -32,7 +32,7 @@ export async function closePurchaseOrderAction(
 	_prev: ClosePurchaseOrderActionState,
 	formData: FormData,
 ): Promise<ClosePurchaseOrderActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "closePurchaseOrderAction",
 		permission: "purchasing.order.close",
 		safeMessage:

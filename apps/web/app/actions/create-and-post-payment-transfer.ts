@@ -33,7 +33,7 @@ export async function createAndPostPaymentTransferAction(
 	_prev: CreateAndPostPaymentTransferActionState,
 	formData: FormData,
 ): Promise<CreateAndPostPaymentTransferActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "createAndPostPaymentTransferAction",
 		permission: "payments.transfer.create",
 		safeMessage:
@@ -43,7 +43,9 @@ export async function createAndPostPaymentTransferAction(
 				session,
 				"payments.transfer.post",
 			);
-			if (postingDenied) return postingDenied;
+			if (postingDenied) {
+				return postingDenied;
+			}
 			const parsed = parseSchema(schema, {
 				code: formData.get("code"),
 				fromPaymentAccountId: formData.get("fromPaymentAccountId"),
@@ -52,12 +54,13 @@ export async function createAndPostPaymentTransferAction(
 				currencyCode: formData.get("currencyCode"),
 				reference: formData.get("reference"),
 			});
-			if (!parsed.success)
+			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
 					"Enter valid transfer details.",
 					parsed.details,
 				);
+			}
 			const mapped = mapPackageResult(
 				await createAndPostPaymentTransfer(
 					{
@@ -70,7 +73,9 @@ export async function createAndPostPaymentTransferAction(
 					createPaymentsCommandOptions(),
 				),
 			);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePath("/admin/payments");
 			revalidatePath("/client/payments");
 			return { ok: true, data: mapped.data };

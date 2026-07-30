@@ -7,7 +7,7 @@ import type { PayrollEmployeeQueryPort } from "@afenda/payroll";
 export function createPayrollEmployeeQueryPort(): PayrollEmployeeQueryPort {
 	return {
 		async getPayrollEmployee() {
-			return null;
+			return await null;
 		},
 	};
 }

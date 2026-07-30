@@ -42,20 +42,20 @@ export const TIMESHEET_GENERATION_ABSENCE_SOURCE = "timesheet_generation";
 
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
 
-export type BasicAbsenceDetectionInput = {
+export interface BasicAbsenceDetectionInput {
 	activeEmployment: boolean;
+	approvedLeaveCoveredMinutes: number;
 	expectedWorkMinutes: number;
 	qualifyingWorkedMinutes: number;
-	approvedLeaveCoveredMinutes: number;
-};
+}
 
-export type AbsenceDetectionRemarks = {
-	workDate: string;
-	expectedMinutes: number;
+export interface AbsenceDetectionRemarks {
 	detectionSource: typeof TIMESHEET_GENERATION_ABSENCE_SOURCE;
+	expectedMinutes: number;
 	shiftAssignmentId: string | null;
 	timesheetId: string;
-};
+	workDate: string;
+}
 
 export function iterDatesInclusive(
 	periodStart: string,
@@ -69,7 +69,7 @@ export function iterDatesInclusive(
 	const dates: string[] = [];
 	let cursor = start;
 	const endKey = formatIsoDateFromParts(end);
-	while (true) {
+	for (;;) {
 		const date = formatIsoDateFromParts(cursor);
 		dates.push(date);
 		if (date === endKey) {
@@ -105,27 +105,28 @@ export function qualifyingWorkedMinutesForDate(
 		}
 	}
 	for (const entry of entries) {
-		if (entry.workDate !== workDate) continue;
-		if (entry.sourceType === "attendance" || entry.sourceType === "manual") {
-			if (
-				entry.timeType === "regular" ||
+		if (entry.workDate !== workDate) {
+			continue;
+		}
+		if (
+			(entry.sourceType === "attendance" || entry.sourceType === "manual") &&
+			(entry.timeType === "regular" ||
 				entry.timeType === "overtime" ||
 				entry.timeType === "night" ||
-				entry.timeType === "call_back"
-			) {
-				total += entry.approvedMinutes;
-			}
+				entry.timeType === "call_back")
+		) {
+			total += entry.approvedMinutes;
 		}
 	}
 	return total;
 }
 
-export type AttendanceTimesheetEntryPlan = {
-	workDate: string;
-	sourceReference: string;
-	recordedMinutes: number;
+export interface AttendanceTimesheetEntryPlan {
 	approvedMinutes: number;
-};
+	recordedMinutes: number;
+	sourceReference: string;
+	workDate: string;
+}
 
 export function buildAttendanceTimesheetEntryPlans(
 	session: AttendanceSession,
@@ -197,11 +198,15 @@ export function isActiveEmploymentOnDate(
 	employment: Pick<Employment, "status" | "startsOn" | "endsOn"> | null,
 	workDate: string,
 ): boolean {
-	if (employment === null) return false;
+	if (employment === null) {
+		return false;
+	}
 	if (employment.status !== "active" && employment.status !== "notice") {
 		return false;
 	}
-	if (workDate < employment.startsOn) return false;
+	if (workDate < employment.startsOn) {
+		return false;
+	}
 	if (employment.endsOn !== null && workDate > employment.endsOn) {
 		return false;
 	}
@@ -278,12 +283,15 @@ export function parseAbsenceDetectionRemarks(
 			workDate: record.workDate,
 			expectedMinutes: record.expectedMinutes,
 			detectionSource: TIMESHEET_GENERATION_ABSENCE_SOURCE,
-			shiftAssignmentId:
-				typeof record.shiftAssignmentId === "string"
-					? record.shiftAssignmentId
-					: record.shiftAssignmentId === null
-						? null
-						: null,
+			shiftAssignmentId: (() => {
+				if (typeof record.shiftAssignmentId === "string") {
+					return record.shiftAssignmentId;
+				}
+				if (record.shiftAssignmentId === null) {
+					return null;
+				}
+				return null;
+			})(),
 			timesheetId: record.timesheetId,
 		};
 	} catch {
@@ -297,8 +305,12 @@ export function hasExistingTimesheetGenerationAbsence(input: {
 	workDate: string;
 }): boolean {
 	return input.exceptions.some((exception) => {
-		if (exception.employeeId !== input.employeeId) return false;
-		if (exception.exceptionType !== "absence") return false;
+		if (exception.employeeId !== input.employeeId) {
+			return false;
+		}
+		if (exception.exceptionType !== "absence") {
+			return false;
+		}
 		if (
 			exception.reviewStatus !== "open" &&
 			exception.reviewStatus !== "in_review"
@@ -341,9 +353,11 @@ function parseIsoDateParts(value: string): {
 	const month = Number(match[2]);
 	const day = Number(match[3]);
 	if (
-		!Number.isInteger(year) ||
-		!Number.isInteger(month) ||
-		!Number.isInteger(day)
+		!(
+			Number.isInteger(year) &&
+			Number.isInteger(month) &&
+			Number.isInteger(day)
+		)
 	) {
 		return null;
 	}
@@ -374,45 +388,45 @@ function addCalendarDays(
 }
 
 /** Narrow helper for callers that need employment id branding. */
-export type TimesheetGenerationContext = {
-	timesheetId: HumanResourcesTimesheetId;
+export interface TimesheetGenerationContext {
 	employeeId: HumanResourcesEmployeeId;
 	employmentId: HumanResourcesEmploymentId | null;
 	shiftAssignmentId: HumanResourcesShiftAssignmentId | null;
-};
+	timesheetId: HumanResourcesTimesheetId;
+}
 
-export type ExpectedWorkMinutesHost = {
-	getScheduledShiftForEmployeeDate(input: {
+export interface ExpectedWorkMinutesHost {
+	getScheduledShiftForEmployeeDate: (input: {
 		organizationId: string;
 		employeeId: HumanResourcesEmployeeId;
 		scheduledDate: string;
-	}): Promise<Result<ShiftAssignment | null>>;
-	getShift(input: {
+	}) => Promise<Result<ShiftAssignment | null>>;
+	getShift: (input: {
 		organizationId: string;
 		shiftId: HumanResourcesShiftId;
-	}): Promise<Result<Shift | null>>;
-	resolveEmploymentCalendar(input: {
-		organizationId: string;
-		employeeId: HumanResourcesEmployeeId;
-		employmentId: HumanResourcesEmploymentId;
-		asOf: string;
-	}): Promise<Result<EmploymentCalendarAssignment | null>>;
-	getWorkCalendar(input: {
+	}) => Promise<Result<Shift | null>>;
+	getWorkCalendar: (input: {
 		organizationId: string;
 		calendarId: HumanResourcesWorkCalendarId;
-	}): Promise<Result<WorkCalendar | null>>;
-	listWorkCalendarHolidays(input: {
+	}) => Promise<Result<WorkCalendar | null>>;
+	listWorkCalendarHolidays: (input: {
 		organizationId: string;
 		calendarId: HumanResourcesWorkCalendarId;
 		fromDate: string;
 		toDate: string;
-	}): Promise<Result<WorkCalendarHolidayRecord[]>>;
-};
+	}) => Promise<Result<WorkCalendarHolidayRecord[]>>;
+	resolveEmploymentCalendar: (input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+		employmentId: HumanResourcesEmploymentId;
+		asOf: string;
+	}) => Promise<Result<EmploymentCalendarAssignment | null>>;
+}
 
-export type ExpectedWorkMinutesResult = {
+export interface ExpectedWorkMinutesResult {
 	expectedWorkMinutes: number;
 	shiftAssignmentId: HumanResourcesShiftAssignmentId | null;
-};
+}
 
 /**
  * Published/changed shift expected minutes win; otherwise employment calendar day.
@@ -429,7 +443,9 @@ export async function resolveExpectedWorkMinutes(input: {
 		employeeId: input.employeeId,
 		scheduledDate: input.workDate,
 	});
-	if (!scheduled.ok) return scheduled;
+	if (!scheduled.ok) {
+		return scheduled;
+	}
 
 	if (
 		scheduled.data !== null &&
@@ -440,7 +456,9 @@ export async function resolveExpectedWorkMinutes(input: {
 			organizationId: input.organizationId,
 			shiftId: scheduled.data.shiftId,
 		});
-		if (!shift.ok) return shift;
+		if (!shift.ok) {
+			return shift;
+		}
 		if (shift.data !== null && shift.data.expectedMinutes > 0) {
 			return ok({
 				expectedWorkMinutes: shift.data.expectedMinutes,
@@ -459,7 +477,9 @@ export async function resolveExpectedWorkMinutes(input: {
 		employmentId: input.employmentId,
 		asOf: input.workDate,
 	});
-	if (!assignment.ok) return assignment;
+	if (!assignment.ok) {
+		return assignment;
+	}
 	if (assignment.data === null) {
 		return ok({ expectedWorkMinutes: 0, shiftAssignmentId: null });
 	}
@@ -468,7 +488,9 @@ export async function resolveExpectedWorkMinutes(input: {
 		organizationId: input.organizationId,
 		calendarId: assignment.data.calendarId,
 	});
-	if (!calendar.ok) return calendar;
+	if (!calendar.ok) {
+		return calendar;
+	}
 	if (calendar.data === null) {
 		return ok({ expectedWorkMinutes: 0, shiftAssignmentId: null });
 	}
@@ -479,7 +501,9 @@ export async function resolveExpectedWorkMinutes(input: {
 		fromDate: input.workDate,
 		toDate: input.workDate,
 	});
-	if (!holidays.ok) return holidays;
+	if (!holidays.ok) {
+		return holidays;
+	}
 
 	const holidayFacts: WorkCalendarHoliday[] = holidays.data.map((row) => ({
 		date: row.holidayDate,

@@ -36,6 +36,27 @@ describe("@afenda/audit recorder", () => {
 		expect(store.all()).toHaveLength(0);
 	});
 
+	it("keeps synchronous store failures on the promise boundary", async () => {
+		const store = new MemoryAuditStore();
+		store.write = () => {
+			throw new Error("synchronous write failure");
+		};
+		const recorder = createAuditRecorder({ store });
+
+		const pending = recorder.record({
+			organizationId: "org-1",
+			actorUserId: "user-1",
+			correlationId: "corr-1",
+			module: "identity",
+			entity: "role",
+			entityId: "r1",
+			action: "CREATE",
+		});
+
+		expect(pending).toBeInstanceOf(Promise);
+		await expect(pending).rejects.toThrow("synchronous write failure");
+	});
+
 	it("masks sensitive snapshots and writes Change[]", async () => {
 		const store = new MemoryAuditStore();
 		const recorder = createAuditRecorder({ store });

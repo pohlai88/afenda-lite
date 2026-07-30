@@ -1,13 +1,14 @@
+// biome-ignore-all lint/performance/noJsxPropsBind: The enabled React Compiler stabilizes JSX callback props.
 "use client";
 
 import { expireReservationAction } from "@/app/actions/expire-reservation";
 import { ReservationLifecycleForm } from "@/features/inventory/reservation-lifecycle-form";
 
-type ExpireReservationFormProps = {
+interface ExpireReservationFormProps {
 	canRelease: boolean;
-	defaultReservationId?: string | undefined;
 	defaultExpectedVersion?: number | undefined;
-};
+	defaultReservationId?: string | undefined;
+}
 
 export function ExpireReservationForm({
 	canRelease,
@@ -16,19 +17,19 @@ export function ExpireReservationForm({
 }: ExpireReservationFormProps) {
 	return (
 		<ReservationLifecycleForm
+			action={expireReservationAction}
 			canRelease={canRelease}
-			unavailableTitle="Expire unavailable"
-			unavailableBody="You can view inventory but cannot expire reservations in this organization."
-			successTitle="Reservation expired"
+			defaultExpectedVersion={defaultExpectedVersion}
+			defaultReservationId={defaultReservationId}
+			fieldIdPrefix="stock-expire"
+			idempotencyPrefix="expire"
+			submitLabel="Expire reservation"
 			successDetail={(reservation) =>
 				`${reservation.code} · ${reservation.status}.`
 			}
-			submitLabel="Expire reservation"
-			fieldIdPrefix="stock-expire"
-			idempotencyPrefix="expire"
-			defaultReservationId={defaultReservationId}
-			defaultExpectedVersion={defaultExpectedVersion}
-			action={expireReservationAction}
+			successTitle="Reservation expired"
+			unavailableBody="You can view inventory but cannot expire reservations in this organization."
+			unavailableTitle="Expire unavailable"
 		/>
 	);
 }

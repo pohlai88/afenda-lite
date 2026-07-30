@@ -80,7 +80,12 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const LOCAL_TIME_PATTERN = /^\d{2}:\d{2}$/;
+const DECIMAL_HOURS_PATTERN = /^\d+(\.\d{1,2})?$/;
+const TIME_SOURCE_KEY_PATTERN = /^[a-zA-Z0-9._-]+$/;
+
+const isoDateSchema = z.string().regex(ISO_DATE_PATTERN);
 const timeApprovalAuthoritySchema = z.enum([
 	"line_manager",
 	"department",
@@ -99,14 +104,8 @@ const workWeekDaySchema = z.object({
 		z.literal(6),
 	]),
 	isWorkingDay: z.boolean(),
-	standardStartTime: z
-		.string()
-		.regex(/^\d{2}:\d{2}$/)
-		.nullable(),
-	standardEndTime: z
-		.string()
-		.regex(/^\d{2}:\d{2}$/)
-		.nullable(),
+	standardStartTime: z.string().regex(LOCAL_TIME_PATTERN).nullable(),
+	standardEndTime: z.string().regex(LOCAL_TIME_PATTERN).nullable(),
 	standardMinutes: z.number().int().nonnegative().max(1440).nullable(),
 });
 
@@ -117,7 +116,7 @@ const clockEventInputSchema = mutationContextSchema.extend({
 	shiftAssignmentId: z.string().uuid().nullable().optional(),
 	occurredAt: z.string().datetime({ offset: true }),
 	sourceTimezone: z.string().trim().min(1).max(64),
-	localWorkDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+	localWorkDate: z.string().regex(ISO_DATE_PATTERN),
 	locationKey: z.string().trim().min(1).max(128).nullable().optional(),
 	notes: z.string().trim().max(2000).nullable().optional(),
 });
@@ -125,12 +124,7 @@ const clockEventInputSchema = mutationContextSchema.extend({
 const attendanceImportActionSchema = mutationContextSchema.extend({
 	idempotencyKey: z.string().trim().min(1).max(128),
 	batchId: z.string().trim().min(1).max(200),
-	sourceKey: z
-		.string()
-		.trim()
-		.min(1)
-		.max(64)
-		.regex(/^[a-zA-Z0-9._-]+$/),
+	sourceKey: z.string().trim().min(1).max(64).regex(TIME_SOURCE_KEY_PATTERN),
 	cursor: z.string().trim().min(1).max(500).optional(),
 	events: z
 		.array(
@@ -199,7 +193,7 @@ export async function createWorkCalendarAction(input: {
 	effectiveFrom: string;
 	effectiveTo?: string | null;
 }): Promise<ActionResult<{ calendar: WorkCalendar }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "createWorkCalendarAction",
 		permission: "human-resources.time.calendar.manage",
 		safeMessage: "Could not create work calendar.",
@@ -212,13 +206,9 @@ export async function createWorkCalendarAction(input: {
 					timezone: z.string().trim().min(1).max(64),
 					calendarVersion: z.string().trim().min(1).max(64),
 					workWeek: z.array(workWeekDaySchema).length(7),
-					standardHoursPerDay: z.string().regex(/^\d+(\.\d{1,2})?$/),
-					effectiveFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-					effectiveTo: z
-						.string()
-						.regex(/^\d{4}-\d{2}-\d{2}$/)
-						.nullable()
-						.optional(),
+					standardHoursPerDay: z.string().regex(DECIMAL_HOURS_PATTERN),
+					effectiveFrom: z.string().regex(ISO_DATE_PATTERN),
+					effectiveTo: z.string().regex(ISO_DATE_PATTERN).nullable().optional(),
 				}),
 				input,
 			);
@@ -234,7 +224,9 @@ export async function createWorkCalendarAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { calendar: mapped.data } };
 		},
 	});
@@ -257,7 +249,7 @@ export async function updateWorkCalendarAction(input: {
 	standardHoursPerDay?: string;
 	effectiveTo?: string | null;
 }): Promise<ActionResult<{ calendar: WorkCalendar }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "updateWorkCalendarAction",
 		permission: "human-resources.time.calendar.manage",
 		safeMessage: "Could not update work calendar.",
@@ -272,13 +264,9 @@ export async function updateWorkCalendarAction(input: {
 					workWeek: z.array(workWeekDaySchema).length(7).optional(),
 					standardHoursPerDay: z
 						.string()
-						.regex(/^\d+(\.\d{1,2})?$/)
+						.regex(DECIMAL_HOURS_PATTERN)
 						.optional(),
-					effectiveTo: z
-						.string()
-						.regex(/^\d{4}-\d{2}-\d{2}$/)
-						.nullable()
-						.optional(),
+					effectiveTo: z.string().regex(ISO_DATE_PATTERN).nullable().optional(),
 				}),
 				input,
 			);
@@ -294,7 +282,9 @@ export async function updateWorkCalendarAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { calendar: mapped.data } };
 		},
 	});
@@ -305,7 +295,7 @@ export async function archiveWorkCalendarAction(input: {
 	calendarId: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ calendar: WorkCalendar }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "archiveWorkCalendarAction",
 		permission: "human-resources.time.calendar.manage",
 		safeMessage: "Could not archive work calendar.",
@@ -329,7 +319,9 @@ export async function archiveWorkCalendarAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { calendar: mapped.data } };
 		},
 	});
@@ -356,7 +348,7 @@ export async function supersedeWorkCalendarAction(input: {
 }): Promise<
 	ActionResult<{ superseded: WorkCalendar; successor: WorkCalendar }>
 > {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "supersedeWorkCalendarAction",
 		permission: "human-resources.time.calendar.manage",
 		safeMessage: "Could not supersede work calendar.",
@@ -367,18 +359,14 @@ export async function supersedeWorkCalendarAction(input: {
 					calendarId: z.string().uuid(),
 					expectedVersion: z.number().int().positive(),
 					calendarVersion: z.string().trim().min(1).max(64),
-					effectiveFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-					effectiveTo: z
-						.string()
-						.regex(/^\d{4}-\d{2}-\d{2}$/)
-						.nullable()
-						.optional(),
+					effectiveFrom: z.string().regex(ISO_DATE_PATTERN),
+					effectiveTo: z.string().regex(ISO_DATE_PATTERN).nullable().optional(),
 					name: z.string().trim().min(1).max(200).optional(),
 					timezone: z.string().trim().min(1).max(64).optional(),
 					workWeek: z.array(workWeekDaySchema).length(7).optional(),
 					standardHoursPerDay: z
 						.string()
-						.regex(/^\d+(\.\d{1,2})?$/)
+						.regex(DECIMAL_HOURS_PATTERN)
 						.optional(),
 				}),
 				input,
@@ -395,7 +383,9 @@ export async function supersedeWorkCalendarAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return {
 				ok: true,
 				data: {
@@ -419,7 +409,7 @@ export async function createTimePolicyAction(input: {
 	automaticBreakMinutes?: number;
 	approvalSteps: Array<"line_manager" | "department" | "hr" | "payroll">;
 }): Promise<ActionResult<{ policy: TimePolicy }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "createTimePolicyAction",
 		permission: "human-resources.time.calendar.manage",
 		safeMessage: "Could not create Time policy.",
@@ -468,7 +458,9 @@ export async function createTimePolicyAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { policy: mapped.data } };
 		},
 	});
@@ -479,7 +471,7 @@ export async function activateTimePolicyAction(input: {
 	policyId: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ policy: TimePolicy }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "activateTimePolicyAction",
 		permission: "human-resources.time.calendar.manage",
 		safeMessage: "Could not activate Time policy.",
@@ -503,7 +495,9 @@ export async function activateTimePolicyAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { policy: mapped.data } };
 		},
 	});
@@ -522,7 +516,7 @@ export async function supersedeTimePolicyAction(input: {
 	automaticBreakMinutes?: number;
 	approvalSteps: Array<"line_manager" | "department" | "hr" | "payroll">;
 }): Promise<ActionResult<{ superseded: TimePolicy; successor: TimePolicy }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "supersedeTimePolicyAction",
 		permission: "human-resources.time.calendar.manage",
 		safeMessage: "Could not supersede Time policy.",
@@ -572,7 +566,9 @@ export async function supersedeTimePolicyAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return {
 				ok: true,
 				data: {
@@ -591,7 +587,7 @@ export async function assignTimePolicyAction(input: {
 	effectiveFrom: string;
 	effectiveTo?: string | null;
 }): Promise<ActionResult<{ assignment: TimePolicyAssignment }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "assignTimePolicyAction",
 		permission: "human-resources.time.calendar.manage",
 		safeMessage: "Could not assign Time policy.",
@@ -617,7 +613,9 @@ export async function assignTimePolicyAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { assignment: mapped.data } };
 		},
 	});
@@ -630,7 +628,7 @@ export async function assignTimeApprovalAuthorityAction(input: {
 	effectiveFrom: string;
 	effectiveTo?: string | null;
 }): Promise<ActionResult<{ assignment: TimeApprovalAuthorityAssignment }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "assignTimeApprovalAuthorityAction",
 		permission: "human-resources.time.calendar.manage",
 		safeMessage: "Could not assign Time approval authority.",
@@ -656,7 +654,9 @@ export async function assignTimeApprovalAuthorityAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { assignment: mapped.data } };
 		},
 	});
@@ -668,7 +668,7 @@ export async function endTimeApprovalAuthorityAssignmentAction(input: {
 	effectiveTo: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ assignment: TimeApprovalAuthorityAssignment }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "endTimeApprovalAuthorityAssignmentAction",
 		permission: "human-resources.time.calendar.manage",
 		safeMessage: "Could not end Time approval authority.",
@@ -693,7 +693,9 @@ export async function endTimeApprovalAuthorityAssignmentAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { assignment: mapped.data } };
 		},
 	});
@@ -712,7 +714,7 @@ export async function createShiftAction(input: {
 	effectiveFrom: string;
 	effectiveTo?: string | null;
 }): Promise<ActionResult<{ shift: Shift }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "createShiftAction",
 		permission: "human-resources.time.shift.manage",
 		safeMessage: "Could not create shift.",
@@ -729,16 +731,12 @@ export async function createShiftAction(input: {
 						"rest_day",
 						"public_holiday",
 					]),
-					startLocal: z.string().regex(/^\d{2}:\d{2}$/),
-					endLocal: z.string().regex(/^\d{2}:\d{2}$/),
+					startLocal: z.string().regex(LOCAL_TIME_PATTERN),
+					endLocal: z.string().regex(LOCAL_TIME_PATTERN),
 					isOvernight: z.boolean().optional(),
 					expectedMinutes: z.number().int().positive().max(1440),
-					effectiveFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-					effectiveTo: z
-						.string()
-						.regex(/^\d{4}-\d{2}-\d{2}$/)
-						.nullable()
-						.optional(),
+					effectiveFrom: z.string().regex(ISO_DATE_PATTERN),
+					effectiveTo: z.string().regex(ISO_DATE_PATTERN).nullable().optional(),
 				}),
 				input,
 			);
@@ -754,7 +752,9 @@ export async function createShiftAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { shift: mapped.data } };
 		},
 	});
@@ -783,24 +783,20 @@ export async function supersedeShiftAction(input: {
 	timezone?: string | null;
 	locationKey?: string | null;
 }): Promise<ActionResult<{ superseded: Shift; successor: Shift }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "supersedeShiftAction",
 		permission: "human-resources.time.shift.manage",
 		safeMessage: "Could not supersede shift.",
 		execute: async (session, correlationId) => {
 			const minutes = z.number().int().min(0).max(1440);
-			const localTime = z.string().regex(/^\d{2}:\d{2}$/);
+			const localTime = z.string().regex(LOCAL_TIME_PATTERN);
 			const parsed = parseSchema(
 				mutationContextSchema.extend({
 					idempotencyKey: z.string().trim().min(1).max(128),
 					shiftId: z.string().uuid(),
 					expectedVersion: z.number().int().positive(),
-					effectiveFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-					effectiveTo: z
-						.string()
-						.regex(/^\d{4}-\d{2}-\d{2}$/)
-						.nullable()
-						.optional(),
+					effectiveFrom: z.string().regex(ISO_DATE_PATTERN),
+					effectiveTo: z.string().regex(ISO_DATE_PATTERN).nullable().optional(),
 					name: z.string().trim().min(1).max(200).optional(),
 					shiftKind: z
 						.enum(["fixed", "flexible", "split", "rest_day", "public_holiday"])
@@ -833,7 +829,9 @@ export async function supersedeShiftAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return {
 				ok: true,
 				data: {
@@ -857,7 +855,7 @@ export async function assignShiftAction(input: {
 	timezone: string;
 	locationKey?: string | null;
 }): Promise<ActionResult<{ assignment: ShiftAssignment }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "assignShiftAction",
 		permission: "human-resources.time.schedule.manage",
 		safeMessage: "Could not assign shift.",
@@ -868,7 +866,7 @@ export async function assignShiftAction(input: {
 					employeeId: z.string().uuid(),
 					employmentId: z.string().uuid().nullable().optional(),
 					shiftId: z.string().uuid(),
-					scheduledDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+					scheduledDate: z.string().regex(ISO_DATE_PATTERN),
 					startsAt: z.string().datetime({ offset: true }),
 					endsAt: z.string().datetime({ offset: true }),
 					timezone: z.string().trim().min(1).max(64),
@@ -888,7 +886,9 @@ export async function assignShiftAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { assignment: mapped.data } };
 		},
 	});
@@ -899,7 +899,7 @@ export async function publishShiftAssignmentAction(input: {
 	assignmentId: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ assignment: ShiftAssignment }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "publishShiftAssignmentAction",
 		permission: "human-resources.time.schedule.publish",
 		safeMessage: "Could not publish shift assignment.",
@@ -923,7 +923,9 @@ export async function publishShiftAssignmentAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { assignment: mapped.data } };
 		},
 	});
@@ -941,7 +943,7 @@ export async function recordClockInAction(input: {
 	locationKey?: string | null;
 	notes?: string | null;
 }): Promise<ActionResult<{ event: AttendanceEvent }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "recordClockInAction",
 		permission: "human-resources.time.attendance.self.record",
 		safeMessage: "Could not record clock-in.",
@@ -959,7 +961,9 @@ export async function recordClockInAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { event: mapped.data } };
 		},
 	});
@@ -977,7 +981,7 @@ export async function recordClockOutAction(input: {
 	locationKey?: string | null;
 	notes?: string | null;
 }): Promise<ActionResult<{ event: AttendanceEvent }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "recordClockOutAction",
 		permission: "human-resources.time.attendance.self.record",
 		safeMessage: "Could not record clock-out.",
@@ -995,7 +999,9 @@ export async function recordClockOutAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { event: mapped.data } };
 		},
 	});
@@ -1013,7 +1019,7 @@ export async function recordBreakStartAction(input: {
 	locationKey?: string | null;
 	notes?: string | null;
 }): Promise<ActionResult<{ event: AttendanceEvent }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "recordBreakStartAction",
 		permission: "human-resources.time.attendance.self.record",
 		safeMessage: "Could not record break start.",
@@ -1031,7 +1037,9 @@ export async function recordBreakStartAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { event: mapped.data } };
 		},
 	});
@@ -1049,7 +1057,7 @@ export async function recordBreakEndAction(input: {
 	locationKey?: string | null;
 	notes?: string | null;
 }): Promise<ActionResult<{ event: AttendanceEvent }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "recordBreakEndAction",
 		permission: "human-resources.time.attendance.self.record",
 		safeMessage: "Could not record break end.",
@@ -1067,7 +1075,9 @@ export async function recordBreakEndAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { event: mapped.data } };
 		},
 	});
@@ -1081,7 +1091,7 @@ export async function approveAttendanceBreakWaiverAction(input: {
 	evidenceReference: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ decision: AttendanceBreakWaiverDecision }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "approveAttendanceBreakWaiverAction",
 		permission: "human-resources.time.attendance.correct",
 		safeMessage: "Could not approve attendance break waiver.",
@@ -1108,7 +1118,9 @@ export async function approveAttendanceBreakWaiverAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { decision: mapped.data } };
 		},
 	});
@@ -1119,7 +1131,7 @@ export async function reviewAttendanceExceptionAction(input: {
 	exceptionId: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ exception: AttendanceException }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "reviewAttendanceExceptionAction",
 		permission: "human-resources.time.exception.resolve",
 		safeMessage: "Could not review attendance exception.",
@@ -1143,7 +1155,9 @@ export async function reviewAttendanceExceptionAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { exception: mapped.data } };
 		},
 	});
@@ -1155,7 +1169,7 @@ export async function excuseAttendanceExceptionAction(input: {
 	resolution: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ exception: AttendanceException }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "excuseAttendanceExceptionAction",
 		permission: "human-resources.time.exception.resolve",
 		safeMessage: "Could not excuse attendance exception.",
@@ -1180,7 +1194,9 @@ export async function excuseAttendanceExceptionAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { exception: mapped.data } };
 		},
 	});
@@ -1192,7 +1208,7 @@ export async function rejectAttendanceExceptionAction(input: {
 	resolution: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ exception: AttendanceException }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "rejectAttendanceExceptionAction",
 		permission: "human-resources.time.exception.resolve",
 		safeMessage: "Could not reject attendance exception.",
@@ -1217,7 +1233,9 @@ export async function rejectAttendanceExceptionAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { exception: mapped.data } };
 		},
 	});
@@ -1229,7 +1247,7 @@ export async function resolveAttendanceExceptionAction(input: {
 	resolution: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ exception: AttendanceException }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "resolveAttendanceExceptionAction",
 		permission: "human-resources.time.exception.resolve",
 		safeMessage: "Could not resolve attendance exception.",
@@ -1254,7 +1272,9 @@ export async function resolveAttendanceExceptionAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { exception: mapped.data } };
 		},
 	});
@@ -1268,7 +1288,7 @@ export async function createTimesheetAction(input: {
 	periodStart: string;
 	periodEnd: string;
 }): Promise<ActionResult<{ timesheet: Timesheet }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "createTimesheetAction",
 		permission: "human-resources.time.timesheet.self.edit",
 		safeMessage: "Could not create timesheet.",
@@ -1278,8 +1298,8 @@ export async function createTimesheetAction(input: {
 					idempotencyKey: z.string().trim().min(1).max(128),
 					employeeId: z.string().uuid(),
 					employmentId: z.string().uuid().nullable().optional(),
-					periodStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-					periodEnd: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+					periodStart: z.string().regex(ISO_DATE_PATTERN),
+					periodEnd: z.string().regex(ISO_DATE_PATTERN),
 				}),
 				input,
 			);
@@ -1295,7 +1315,9 @@ export async function createTimesheetAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { timesheet: mapped.data } };
 		},
 	});
@@ -1306,7 +1328,7 @@ export async function generateTimesheetEntriesAction(input: {
 	timesheetId: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ timesheet: Timesheet; entries: TimesheetEntry[] }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "generateTimesheetEntriesAction",
 		permission: "human-resources.time.timesheet.self.edit",
 		safeMessage: "Could not generate timesheet entries.",
@@ -1330,7 +1352,9 @@ export async function generateTimesheetEntriesAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return {
 				ok: true,
 				data: {
@@ -1347,7 +1371,7 @@ export async function submitTimesheetAction(input: {
 	timesheetId: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ timesheet: Timesheet }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "submitTimesheetAction",
 		permission: "human-resources.time.timesheet.submit",
 		safeMessage: "Could not submit timesheet.",
@@ -1371,7 +1395,9 @@ export async function submitTimesheetAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { timesheet: mapped.data } };
 		},
 	});
@@ -1384,7 +1410,7 @@ export async function approveTimesheetAction(input: {
 	authority: "line_manager" | "department" | "hr" | "payroll";
 	approverNotes?: string | null;
 }): Promise<ActionResult<{ timesheet: Timesheet }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "approveTimesheetAction",
 		permission: "human-resources.time.timesheet.approve",
 		safeMessage: "Could not approve timesheet.",
@@ -1410,7 +1436,9 @@ export async function approveTimesheetAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { timesheet: mapped.data } };
 		},
 	});
@@ -1433,7 +1461,7 @@ export async function createOvertimeRequestAction(input: {
 	reason: string;
 	evidenceReference?: string | null;
 }): Promise<ActionResult<{ request: OvertimeRequest }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "createOvertimeRequestAction",
 		permission: "human-resources.time.overtime.request",
 		safeMessage: "Could not create overtime request.",
@@ -1476,7 +1504,9 @@ export async function createOvertimeRequestAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { request: mapped.data } };
 		},
 	});
@@ -1490,7 +1520,7 @@ export async function approveOvertimeRequestAction(input: {
 	comment?: string | null;
 	expectedVersion: number;
 }): Promise<ActionResult<{ request: OvertimeRequest }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "approveOvertimeRequestAction",
 		permission: "human-resources.time.overtime.approve",
 		safeMessage: "Could not approve overtime request.",
@@ -1517,7 +1547,9 @@ export async function approveOvertimeRequestAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { request: mapped.data } };
 		},
 	});
@@ -1529,7 +1561,7 @@ export async function rejectOvertimeRequestAction(input: {
 	comment: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ request: OvertimeRequest }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "rejectOvertimeRequestAction",
 		permission: "human-resources.time.overtime.approve",
 		safeMessage: "Could not reject overtime request.",
@@ -1554,7 +1586,9 @@ export async function rejectOvertimeRequestAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { request: mapped.data } };
 		},
 	});
@@ -1566,7 +1600,7 @@ export async function recordOvertimeActualAction(input: {
 	actualMinutes: number;
 	expectedVersion: number;
 }): Promise<ActionResult<{ request: OvertimeRequest }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "recordOvertimeActualAction",
 		permission: "human-resources.time.attendance.correct",
 		safeMessage: "Could not record overtime actual.",
@@ -1591,7 +1625,9 @@ export async function recordOvertimeActualAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { request: mapped.data } };
 		},
 	});
@@ -1603,7 +1639,7 @@ export async function verifyOvertimeRequestAction(input: {
 	payrollApprovedMinutes: number;
 	expectedVersion: number;
 }): Promise<ActionResult<{ request: OvertimeRequest }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "verifyOvertimeRequestAction",
 		permission: "human-resources.time.overtime.approve",
 		safeMessage: "Could not verify overtime for payroll handoff.",
@@ -1628,7 +1664,9 @@ export async function verifyOvertimeRequestAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { request: mapped.data } };
 		},
 	});
@@ -1638,7 +1676,7 @@ export async function getOvertimeRequestAction(input: {
 	correlationId?: string;
 	requestId: string;
 }): Promise<ActionResult<{ request: OvertimeRequest | null }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getOvertimeRequestAction",
 		permission: "human-resources.time.overtime.read",
 		safeMessage: "Could not get overtime request.",
@@ -1661,7 +1699,9 @@ export async function getOvertimeRequestAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { request: mapped.data } };
 		},
 	});
@@ -1680,7 +1720,7 @@ export async function listOvertimeRequestsAction(input?: {
 	page?: number;
 	pageSize?: number;
 }): Promise<ActionResult<{ requests: OvertimeRequest[] }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listOvertimeRequestsAction",
 		permission: "human-resources.time.overtime.read",
 		safeMessage: "Could not list overtime requests.",
@@ -1717,7 +1757,9 @@ export async function listOvertimeRequestsAction(input?: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { requests: mapped.data } };
 		},
 	});
@@ -1729,7 +1771,7 @@ export async function listPendingOvertimeApprovalsAction(input?: {
 	page?: number;
 	pageSize?: number;
 }): Promise<ActionResult<{ requests: OvertimeRequest[] }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listPendingOvertimeApprovalsAction",
 		permission: "human-resources.time.overtime.approve",
 		safeMessage: "Could not list pending overtime approvals.",
@@ -1756,7 +1798,9 @@ export async function listPendingOvertimeApprovalsAction(input?: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { requests: mapped.data } };
 		},
 	});
@@ -1766,7 +1810,7 @@ export async function getApprovedTimeHandoffAction(input: {
 	correlationId?: string;
 	timesheetId: string;
 }): Promise<ActionResult<{ handoff: ApprovedTimeHandoff | null }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getApprovedTimeHandoffAction",
 		permission: "human-resources.time.handoff.read",
 		safeMessage: "Could not get approved time handoff.",
@@ -1789,7 +1833,9 @@ export async function getApprovedTimeHandoffAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { handoff: mapped.data } };
 		},
 	});
@@ -1801,7 +1847,7 @@ export async function returnTimesheetAction(input: {
 	expectedVersion: number;
 	approverNotes?: string | null;
 }): Promise<ActionResult<{ timesheet: Timesheet }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "returnTimesheetAction",
 		permission: "human-resources.time.timesheet.approve",
 		safeMessage: "Could not return timesheet.",
@@ -1826,7 +1872,9 @@ export async function returnTimesheetAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { timesheet: mapped.data } };
 		},
 	});
@@ -1838,7 +1886,7 @@ export async function rejectTimesheetAction(input: {
 	expectedVersion: number;
 	rejectionReason: string;
 }): Promise<ActionResult<{ timesheet: Timesheet }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "rejectTimesheetAction",
 		permission: "human-resources.time.timesheet.approve",
 		safeMessage: "Could not reject timesheet.",
@@ -1863,7 +1911,9 @@ export async function rejectTimesheetAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { timesheet: mapped.data } };
 		},
 	});
@@ -1874,7 +1924,7 @@ export async function reopenTimesheetAction(input: {
 	timesheetId: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ timesheet: Timesheet }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "reopenTimesheetAction",
 		permission: "human-resources.time.timesheet.reopen",
 		safeMessage: "Could not reopen timesheet.",
@@ -1898,7 +1948,9 @@ export async function reopenTimesheetAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { timesheet: mapped.data } };
 		},
 	});
@@ -1909,7 +1961,7 @@ export async function lockTimesheetAction(input: {
 	timesheetId: string;
 	expectedVersion: number;
 }): Promise<ActionResult<{ timesheet: Timesheet }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "lockTimesheetAction",
 		permission: "human-resources.time.timesheet.lock",
 		safeMessage: "Could not lock timesheet.",
@@ -1933,7 +1985,9 @@ export async function lockTimesheetAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { timesheet: mapped.data } };
 		},
 	});
@@ -1945,7 +1999,7 @@ export async function supersedeTimesheetAction(input: {
 	expectedVersion: number;
 	idempotencyKey: string;
 }): Promise<ActionResult<{ timesheet: Timesheet }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "supersedeTimesheetAction",
 		permission: "human-resources.time.timesheet.approve",
 		safeMessage: "Could not supersede timesheet.",
@@ -1970,7 +2024,9 @@ export async function supersedeTimesheetAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { timesheet: mapped.data } };
 		},
 	});
@@ -1983,7 +2039,7 @@ export async function validateAttendanceImportAction(
 		result: AttendanceImportDryRunResult | AttendanceSourcePreviewResult;
 	}>
 > {
-	return runOperatorPermissionAction<{
+	return await runOperatorPermissionAction<{
 		result: AttendanceImportDryRunResult | AttendanceSourcePreviewResult;
 	}>({
 		path: "validateAttendanceImportAction",
@@ -1999,8 +2055,7 @@ export async function validateAttendanceImportAction(
 				);
 			}
 			if (parsed.data.mode === "connector") {
-				const attendanceSource =
-					createHumanResourcesCommandOptions().attendanceSource;
+				const { attendanceSource } = createHumanResourcesCommandOptions();
 				if (attendanceSource === undefined) {
 					return actionFail(
 						"CONFLICT",
@@ -2014,7 +2069,9 @@ export async function validateAttendanceImportAction(
 						: { cursor: parsed.data.cursor }),
 				});
 				const mapped = mapPackageResult(result);
-				if (!mapped.ok) return mapped;
+				if (!mapped.ok) {
+					return mapped;
+				}
 				return { ok: true, data: { result: mapped.data } };
 			}
 			const { mode: _mode, ...inlineInput } = parsed.data;
@@ -2022,7 +2079,9 @@ export async function validateAttendanceImportAction(
 				withSessionContext(session, correlationId, inlineInput),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { result: mapped.data } };
 		},
 	});
@@ -2031,7 +2090,7 @@ export async function validateAttendanceImportAction(
 export async function importAttendanceEventsAction(
 	input: AttendanceImportActionInput,
 ): Promise<ActionResult<{ result: AttendanceImportResult }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "importAttendanceEventsAction",
 		permission: "human-resources.time.attendance.manage",
 		safeMessage: "Could not import attendance events.",
@@ -2049,7 +2108,9 @@ export async function importAttendanceEventsAction(
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { result: mapped.data } };
 		},
 	});
@@ -2064,7 +2125,7 @@ export async function correctAttendanceEventAction(input: {
 	evidenceReference?: string | null;
 	notes?: string | null;
 }): Promise<ActionResult<{ event: AttendanceEvent }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "correctAttendanceEventAction",
 		permission: "human-resources.time.attendance.correct",
 		safeMessage: "Could not correct attendance event.",
@@ -2098,7 +2159,9 @@ export async function correctAttendanceEventAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { event: mapped.data } };
 		},
 	});
@@ -2110,7 +2173,7 @@ export async function voidAttendanceEventAction(input: {
 	expectedVersion: number;
 	voidReason: string;
 }): Promise<ActionResult<{ event: AttendanceEvent }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "voidAttendanceEventAction",
 		permission: "human-resources.time.attendance.correct",
 		safeMessage: "Could not void attendance event.",
@@ -2135,7 +2198,9 @@ export async function voidAttendanceEventAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { event: mapped.data } };
 		},
 	});
@@ -2150,7 +2215,7 @@ export async function resolveAttendanceSessionAction(input: {
 	employmentId?: string | null;
 	shiftAssignmentId?: string | null;
 }): Promise<ActionResult<{ session: AttendanceSession }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "resolveAttendanceSessionAction",
 		permission: "human-resources.time.attendance.manage",
 		safeMessage: "Could not resolve attendance session.",
@@ -2178,7 +2243,9 @@ export async function resolveAttendanceSessionAction(input: {
 				createHumanResourcesCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { session: mapped.data } };
 		},
 	});

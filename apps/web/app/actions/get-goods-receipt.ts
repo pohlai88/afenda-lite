@@ -12,14 +12,16 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type GetGoodsReceiptActionData = { receipt: GoodsReceipt };
+export interface GetGoodsReceiptActionData {
+	receipt: GoodsReceipt;
+}
 
 const getGoodsReceiptSchema = z.string().uuid();
 
 export async function getGoodsReceiptAction(
 	receiptId: string,
 ): Promise<ActionResult<GetGoodsReceiptActionData>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getGoodsReceiptAction",
 		permission: "receiving.receipt.read",
 		safeMessage: "Could not load goods receipt. Try again or contact an admin.",
@@ -41,7 +43,9 @@ export async function getGoodsReceiptAction(
 				createReceivingCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			if (mapped.data === null) {
 				return actionFail("NOT_FOUND", "Goods receipt not found");
 			}

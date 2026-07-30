@@ -32,129 +32,71 @@ import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
  * This is a domain slice of `HumanResourcesStore`. Keep persistence behavior
  * here; cross-domain orchestration belongs in application commands/services.
  */
-export type EmployeeCaseCreateRecord = {
-	organizationId: string;
+export interface EmployeeCaseCreateRecord {
+	allegationSummary: string;
+	caseType: EmployeeCaseType;
+	classificationCode: string;
+	conflictedActorUserIds: string[];
+	createdBy: string;
+	createIdempotencyKey: string;
+	createRequestFingerprint: string;
 	employeeId: HumanResourcesEmployeeId;
 	employmentId: HumanResourcesEmploymentId;
-	caseType: EmployeeCaseType;
-	severity: EmployeeCaseSeverity;
-	allegationSummary: string;
-	classificationCode: string;
-	ownerActorUserId: string;
-	subjectActorUserId: string | null;
-	conflictedActorUserIds: string[];
-	createIdempotencyKey: string;
-	createRequestFingerprint: string;
-	createdBy: string;
-};
-
-export type IdempotentEmployeeCaseOpenRecord = {
-	caseId: HumanResourcesEmployeeCaseId;
-	createRequestFingerprint: string;
-};
-
-export type EmployeeCaseActionCreateRecord = {
 	organizationId: string;
+	ownerActorUserId: string;
+	severity: EmployeeCaseSeverity;
+	subjectActorUserId: string | null;
+}
+
+export interface IdempotentEmployeeCaseOpenRecord {
 	caseId: HumanResourcesEmployeeCaseId;
+	createRequestFingerprint: string;
+}
+
+export interface EmployeeCaseActionCreateRecord {
 	actionType: EmployeeCaseActionType;
-	recommendationNote: string | null;
+	caseId: HumanResourcesEmployeeCaseId;
 	createIdempotencyKey: string;
 	createRequestFingerprint: string;
 	expectedVersion: number;
+	organizationId: string;
+	recommendationNote: string | null;
 	recommendedBy: string;
-};
+}
 
-export type IdempotentEmployeeCaseActionOpenRecord = {
+export interface IdempotentEmployeeCaseActionOpenRecord {
 	actionId: HumanResourcesEmployeeCaseActionId;
 	createRequestFingerprint: string;
-};
+}
 
-export type EmployeeCaseAppealCreateRecord = {
-	organizationId: string;
-	caseId: HumanResourcesEmployeeCaseId;
+export interface EmployeeCaseAppealCreateRecord {
 	appealGroundsSummary: string;
+	caseId: HumanResourcesEmployeeCaseId;
+	createdBy: string;
 	createIdempotencyKey: string;
 	createRequestFingerprint: string;
 	expectedVersion: number;
-	createdBy: string;
-};
+	organizationId: string;
+}
 
-export type IdempotentEmployeeCaseAppealOpenRecord = {
+export interface IdempotentEmployeeCaseAppealOpenRecord {
 	appealId: HumanResourcesEmployeeCaseAppealId;
 	createRequestFingerprint: string;
-};
+}
 
-export type HumanResourcesEmployeeRelationsStore = {
-	// Employee relations
-	findEmployeeCaseByIdempotencyKey(input: {
-		organizationId: string;
-		idempotencyKey: string;
-	}): Promise<
-		Result<(IdempotentEmployeeCaseOpenRecord & { case: EmployeeCase }) | null>
-	>;
-
-	openEmployeeCase(
-		record: EmployeeCaseCreateRecord,
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<EmployeeCase>>;
-
-	getEmployeeCaseById(input: {
-		organizationId: string;
-		caseId: HumanResourcesEmployeeCaseId;
-		actorUserId: string;
-	}): Promise<Result<EmployeeCase>>;
-
-	/** Org-scoped case load for authorization decisions (no actor ACL). */
-	findEmployeeCaseInOrganization(input: {
-		organizationId: string;
-		caseId: HumanResourcesEmployeeCaseId;
-	}): Promise<Result<EmployeeCase | null>>;
-
-	listEmployeeCases(input: {
-		organizationId: string;
-		status?: EmployeeCaseStatus | undefined;
-	}): Promise<Result<EmployeeCase[]>>;
-
-	listCasesAssignedToActor(input: {
-		organizationId: string;
-		ownerActorUserId: string;
-	}): Promise<Result<EmployeeCase[]>>;
-
-	listOpenEmployeeRelationsCases(input: {
-		organizationId: string;
-	}): Promise<Result<EmployeeCase[]>>;
-
-	getEmployeeRelationsHistoryByEmployee(input: {
-		organizationId: string;
-		employeeId: HumanResourcesEmployeeId;
-	}): Promise<Result<EmployeeCase[]>>;
-
-	updateEmployeeCaseClassification(
+export interface HumanResourcesEmployeeRelationsStore {
+	addEmployeeCaseEvidenceReference: (
 		input: {
 			organizationId: string;
 			caseId: HumanResourcesEmployeeCaseId;
-			classificationCode: string;
-			expectedVersion: number;
+			documentRef: string;
 			actorUserId: string;
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<EmployeeCase>>;
+	) => Promise<Result<EmployeeCaseEvent>>;
 
-	assignEmployeeCaseOwner(
-		input: {
-			organizationId: string;
-			caseId: HumanResourcesEmployeeCaseId;
-			ownerActorUserId: string;
-			expectedVersion: number;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<EmployeeCase>>;
-
-	addEmployeeCaseParticipant(
+	addEmployeeCaseParticipant: (
 		input: {
 			organizationId: string;
 			caseId: HumanResourcesEmployeeCaseId;
@@ -165,44 +107,106 @@ export type HumanResourcesEmployeeRelationsStore = {
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<EmployeeCase>>;
+	) => Promise<Result<EmployeeCase>>;
 
-	recordEmployeeCaseEvent(
+	approveEmployeeCaseAction: (
 		input: {
 			organizationId: string;
 			caseId: HumanResourcesEmployeeCaseId;
-			eventKind: EmployeeCaseEventKind;
-			payloadJson?: Record<string, unknown> | null | undefined;
+			actionId: HumanResourcesEmployeeCaseActionId;
+			policyValidationRecorded: boolean;
+			expectedVersion: number;
 			actorUserId: string;
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<EmployeeCaseEvent>>;
+	) => Promise<Result<EmployeeCaseAction>>;
 
-	addEmployeeCaseEvidenceReference(
+	assignEmployeeCaseOwner: (
 		input: {
 			organizationId: string;
 			caseId: HumanResourcesEmployeeCaseId;
-			documentRef: string;
+			ownerActorUserId: string;
+			expectedVersion: number;
 			actorUserId: string;
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<EmployeeCaseEvent>>;
+	) => Promise<Result<EmployeeCase>>;
 
-	redactEmployeeCaseEvidenceReference(
+	closeEmployeeCase: (
 		input: {
 			organizationId: string;
 			caseId: HumanResourcesEmployeeCaseId;
-			eventId: HumanResourcesEmployeeCaseEventId;
-			reasonCode: string;
+			outcomeCode: string;
+			expectedVersion: number;
 			actorUserId: string;
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<EmployeeCaseEvent>>;
+	) => Promise<Result<EmployeeCase>>;
 
-	issueInterimEmployeeMeasure(
+	findEmployeeCaseActionByIdempotencyKey: (input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}) => Promise<
+		Result<
+			| (IdempotentEmployeeCaseActionOpenRecord & {
+					action: EmployeeCaseAction;
+			  })
+			| null
+		>
+	>;
+
+	findEmployeeCaseAppealByIdempotencyKey: (input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}) => Promise<
+		Result<
+			| (IdempotentEmployeeCaseAppealOpenRecord & {
+					appeal: EmployeeCaseAppeal;
+			  })
+			| null
+		>
+	>;
+	// Employee relations
+	findEmployeeCaseByIdempotencyKey: (input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}) => Promise<
+		Result<(IdempotentEmployeeCaseOpenRecord & { case: EmployeeCase }) | null>
+	>;
+
+	/** Org-scoped case load for authorization decisions (no actor ACL). */
+	findEmployeeCaseInOrganization: (input: {
+		organizationId: string;
+		caseId: HumanResourcesEmployeeCaseId;
+	}) => Promise<Result<EmployeeCase | null>>;
+
+	getEmployeeCaseById: (input: {
+		organizationId: string;
+		caseId: HumanResourcesEmployeeCaseId;
+		actorUserId: string;
+	}) => Promise<Result<EmployeeCase>>;
+
+	getEmployeeCaseOutcome: (input: {
+		organizationId: string;
+		caseId: HumanResourcesEmployeeCaseId;
+		actorUserId: string;
+	}) => Promise<Result<EmployeeCaseOutcome>>;
+
+	getEmployeeCaseTimeline: (input: {
+		organizationId: string;
+		caseId: HumanResourcesEmployeeCaseId;
+		actorUserId: string;
+	}) => Promise<Result<EmployeeCaseTimeline>>;
+
+	getEmployeeRelationsHistoryByEmployee: (input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+	}) => Promise<Result<EmployeeCase[]>>;
+
+	issueInterimEmployeeMeasure: (
 		input: {
 			organizationId: string;
 			caseId: HumanResourcesEmployeeCaseId;
@@ -215,9 +219,53 @@ export type HumanResourcesEmployeeRelationsStore = {
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<EmployeeCase>>;
+	) => Promise<Result<EmployeeCase>>;
 
-	recordEmployeeCaseFinding(
+	listCasesAssignedToActor: (input: {
+		organizationId: string;
+		ownerActorUserId: string;
+	}) => Promise<Result<EmployeeCase[]>>;
+
+	listEmployeeCases: (input: {
+		organizationId: string;
+		status?: EmployeeCaseStatus | undefined;
+	}) => Promise<Result<EmployeeCase[]>>;
+
+	listOpenEmployeeRelationsCases: (input: {
+		organizationId: string;
+	}) => Promise<Result<EmployeeCase[]>>;
+
+	openEmployeeCase: (
+		record: EmployeeCaseCreateRecord,
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<EmployeeCase>>;
+
+	recommendEmployeeCaseAction: (
+		record: EmployeeCaseActionCreateRecord,
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<EmployeeCaseAction>>;
+
+	recordEmployeeCaseAppeal: (
+		record: EmployeeCaseAppealCreateRecord,
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<EmployeeCaseAppeal>>;
+
+	recordEmployeeCaseEvent: (
+		input: {
+			organizationId: string;
+			caseId: HumanResourcesEmployeeCaseId;
+			eventKind: EmployeeCaseEventKind;
+			payloadJson?: Record<string, unknown> | null | undefined;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<EmployeeCaseEvent>>;
+
+	recordEmployeeCaseFinding: (
 		input: {
 			organizationId: string;
 			caseId: HumanResourcesEmployeeCaseId;
@@ -228,58 +276,33 @@ export type HumanResourcesEmployeeRelationsStore = {
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<EmployeeCase>>;
+	) => Promise<Result<EmployeeCase>>;
 
-	findEmployeeCaseActionByIdempotencyKey(input: {
-		organizationId: string;
-		idempotencyKey: string;
-	}): Promise<
-		Result<
-			| (IdempotentEmployeeCaseActionOpenRecord & {
-					action: EmployeeCaseAction;
-			  })
-			| null
-		>
-	>;
-
-	recommendEmployeeCaseAction(
-		record: EmployeeCaseActionCreateRecord,
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<EmployeeCaseAction>>;
-
-	approveEmployeeCaseAction(
+	redactEmployeeCaseEvidenceReference: (
 		input: {
 			organizationId: string;
 			caseId: HumanResourcesEmployeeCaseId;
-			actionId: HumanResourcesEmployeeCaseActionId;
-			policyValidationRecorded: boolean;
+			eventId: HumanResourcesEmployeeCaseEventId;
+			reasonCode: string;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<EmployeeCaseEvent>>;
+
+	reopenEmployeeCase: (
+		input: {
+			organizationId: string;
+			caseId: HumanResourcesEmployeeCaseId;
+			reasonCode: string;
 			expectedVersion: number;
 			actorUserId: string;
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<EmployeeCaseAction>>;
+	) => Promise<Result<EmployeeCase>>;
 
-	findEmployeeCaseAppealByIdempotencyKey(input: {
-		organizationId: string;
-		idempotencyKey: string;
-	}): Promise<
-		Result<
-			| (IdempotentEmployeeCaseAppealOpenRecord & {
-					appeal: EmployeeCaseAppeal;
-			  })
-			| null
-		>
-	>;
-
-	recordEmployeeCaseAppeal(
-		record: EmployeeCaseAppealCreateRecord,
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<EmployeeCaseAppeal>>;
-
-	resolveEmployeeCaseAppeal(
+	resolveEmployeeCaseAppeal: (
 		input: {
 			organizationId: string;
 			caseId: HumanResourcesEmployeeCaseId;
@@ -290,41 +313,17 @@ export type HumanResourcesEmployeeRelationsStore = {
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<EmployeeCaseAppeal>>;
+	) => Promise<Result<EmployeeCaseAppeal>>;
 
-	closeEmployeeCase(
+	updateEmployeeCaseClassification: (
 		input: {
 			organizationId: string;
 			caseId: HumanResourcesEmployeeCaseId;
-			outcomeCode: string;
+			classificationCode: string;
 			expectedVersion: number;
 			actorUserId: string;
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<EmployeeCase>>;
-
-	reopenEmployeeCase(
-		input: {
-			organizationId: string;
-			caseId: HumanResourcesEmployeeCaseId;
-			reasonCode: string;
-			expectedVersion: number;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<EmployeeCase>>;
-
-	getEmployeeCaseTimeline(input: {
-		organizationId: string;
-		caseId: HumanResourcesEmployeeCaseId;
-		actorUserId: string;
-	}): Promise<Result<EmployeeCaseTimeline>>;
-
-	getEmployeeCaseOutcome(input: {
-		organizationId: string;
-		caseId: HumanResourcesEmployeeCaseId;
-		actorUserId: string;
-	}): Promise<Result<EmployeeCaseOutcome>>;
-};
+	) => Promise<Result<EmployeeCase>>;
+}

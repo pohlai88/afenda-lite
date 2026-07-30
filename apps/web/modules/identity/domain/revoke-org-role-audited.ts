@@ -27,29 +27,29 @@ export type RevokeOrgRoleWithAuditInput = RevokeOrgRoleInput & {
 	userAgent?: string;
 };
 
-export type RevokeOrgRoleWithAuditOk = {
-	ok: true;
+export interface RevokeOrgRoleWithAuditOk {
 	assignment: typeof platformRoleAssignment.$inferSelect;
 	auditId: string;
-};
+	ok: true;
+}
 
 export type RevokeOrgRoleWithAuditResult =
 	| RevokeOrgRoleWithAuditOk
 	| Extract<RevokeOrgRoleResult, { ok: false }>;
 
-type RevokeAuditedSqlRow = {
+interface RevokeAuditedSqlRow {
+	active: boolean;
+	audit_id: string;
+	created_at: string | Date;
+	granted_by: string | null;
 	id: string;
-	user_id: string;
 	organization_id: string;
 	role_id: string;
-	scope_type: string;
 	scope_id: string | null;
-	active: boolean;
-	granted_by: string | null;
-	created_at: string | Date;
+	scope_type: string;
 	updated_at: string | Date;
-	audit_id: string;
-};
+	user_id: string;
+}
 
 function mapAssignmentRow(
 	row: RevokeAuditedSqlRow,
@@ -179,7 +179,7 @@ export async function revokeOrgRoleWithAudit(
 		],
 	);
 
-	const row = rows[0];
+	const [row] = rows;
 	if (!row) {
 		return fail(
 			"NOT_FOUND",

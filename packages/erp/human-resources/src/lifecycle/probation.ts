@@ -30,7 +30,7 @@ export const HUMAN_RESOURCES_AGGREGATE_PROBATION = "probation" as const;
 export type HumanResourcesProbationAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_PROBATION;
 
-export async function openProbation(
+export function openProbation(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ProbationReview>> {
@@ -64,7 +64,7 @@ export async function openProbation(
 	});
 }
 
-export async function extendProbation(
+export function extendProbation(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ProbationReview>> {
@@ -92,7 +92,7 @@ export async function extendProbation(
 	});
 }
 
-export async function recordProbationAssessment(
+export function recordProbationAssessment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ProbationAssessment>> {
@@ -120,7 +120,7 @@ export async function recordProbationAssessment(
 	});
 }
 
-export async function recordProbationOutcome(
+export function recordProbationOutcome(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ProbationReview>> {
@@ -149,7 +149,7 @@ export async function recordProbationOutcome(
 	});
 }
 
-export async function getProbationReview(
+export function getProbationReview(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ProbationReview | null>> {
@@ -165,7 +165,7 @@ export async function getProbationReview(
 	});
 }
 
-export async function listProbationReviewsByEmployment(
+export function listProbationReviewsByEmployment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ProbationReview[]>> {
@@ -181,7 +181,7 @@ export async function listProbationReviewsByEmployment(
 	});
 }
 
-export async function listProbationAssessments(
+export function listProbationAssessments(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ProbationAssessment[]>> {

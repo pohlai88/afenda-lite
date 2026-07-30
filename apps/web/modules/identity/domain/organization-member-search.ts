@@ -19,10 +19,10 @@ import {
 
 export const MEMBER_SEARCH_ENTITY = "member" as const;
 
-export type OrganizationMemberSearchHit = {
+export interface OrganizationMemberSearchHit {
 	id: string;
 	label: string;
-};
+}
 
 function memberSearchLabel(name: string, email: string): string {
 	return `${name} · ${email}`;
@@ -88,18 +88,22 @@ export async function syncOrganizationMemberSearchIndex(
 
 	const liveIds = new Set(users.map((user) => user.userId));
 	let pruned = 0;
-	for (const documentId of listed.data) {
-		if (liveIds.has(documentId)) {
-			continue;
-		}
-		const deleted = await deleteSearchDocument(
-			{
-				organizationId: orgId,
-				entity: MEMBER_SEARCH_ENTITY,
-				documentId,
-			},
-			store,
-		);
+	const staleDocumentIds = listed.data.filter(
+		(documentId) => !liveIds.has(documentId),
+	);
+	const deleteResults = await Promise.all(
+		staleDocumentIds.map((documentId) =>
+			deleteSearchDocument(
+				{
+					organizationId: orgId,
+					entity: MEMBER_SEARCH_ENTITY,
+					documentId,
+				},
+				store,
+			),
+		),
+	);
+	for (const deleted of deleteResults) {
 		if (!deleted.ok) {
 			return deleted;
 		}

@@ -14,15 +14,22 @@ import type {
 
 const REPORTING_PAGE_SIZE = 100;
 const MAX_REPORTING_FACTS_PER_KIND = 100_000;
+const TRAILING_ZEROES_PATTERN = /0+$/;
 
 function formatExactDecimal(value: ExactDecimal): string {
 	const negative = value.coefficient < 0n;
 	const magnitude = negative ? -value.coefficient : value.coefficient;
-	if (value.scale === 0) return `${negative ? "-" : ""}${magnitude}`;
+	if (value.scale === 0) {
+		return `${negative ? "-" : ""}${magnitude}`;
+	}
 	const digits = magnitude.toString().padStart(value.scale + 1, "0");
 	const integer = digits.slice(0, -value.scale);
-	const fractional = digits.slice(-value.scale).replace(/0+$/, "");
-	if (fractional.length === 0) return `${negative ? "-" : ""}${integer}`;
+	const fractional = digits
+		.slice(-value.scale)
+		.replace(TRAILING_ZEROES_PATTERN, "");
+	if (fractional.length === 0) {
+		return `${negative ? "-" : ""}${integer}`;
+	}
 	return `${negative ? "-" : ""}${integer}.${fractional}`;
 }
 
@@ -51,7 +58,9 @@ export function subtractReportingDecimals(
 }
 
 export function ratioPercent(numerator: number, denominator: number): string {
-	if (denominator === 0) return "0.0000";
+	if (denominator === 0) {
+		return "0.0000";
+	}
 	const scaled = (BigInt(numerator) * 1_000_000n) / BigInt(denominator);
 	const integer = scaled / 10_000n;
 	const fraction = (scaled % 10_000n).toString().padStart(4, "0");
@@ -66,7 +75,9 @@ export function averageInteger(left: number, right: number): string {
 export function averageReportingDecimals(
 	values: readonly string[],
 ): Result<string | null> {
-	if (values.length === 0) return ok(null);
+	if (values.length === 0) {
+		return ok(null);
+	}
 	let total: ExactDecimal = { coefficient: 0n, scale: 0 };
 	for (const value of values) {
 		const parsed = parseExactDecimal(value);
@@ -82,24 +93,28 @@ export function averageReportingDecimals(
 	return ok(formatExactDecimal({ coefficient: quotient, scale: outputScale }));
 }
 
-export async function loadReconciledReportingFacts(input: {
+export function loadReconciledReportingFacts(input: {
 	organizationId: string;
 	kind: HumanResourcesReportingFactKind;
 	source: HumanResourcesReportingSourcePort;
 }): Promise<Result<readonly HumanResourcesReadModelFact[]>> {
 	const facts: HumanResourcesReadModelFact[] = [];
 	const ids = new Set<string>();
-	let page = 1;
 	let expectedTotal: number | null = null;
 
-	while (true) {
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Each branch validates one source-page invariant before the next serial read.
+	async function loadPage(
+		page: number,
+	): Promise<Result<readonly HumanResourcesReadModelFact[]>> {
 		const result = await input.source.listFacts({
 			organizationId: input.organizationId,
 			kind: input.kind,
 			page,
 			pageSize: REPORTING_PAGE_SIZE,
 		});
-		if (!result.ok) return result;
+		if (!result.ok) {
+			return result;
+		}
 		const returned = result.data;
 		if (returned.page !== page || returned.pageSize !== REPORTING_PAGE_SIZE) {
 			return fail(
@@ -139,15 +154,17 @@ export async function loadReconciledReportingFacts(input: {
 				"Reporting source returned more facts than declared",
 			);
 		}
-		if (facts.length === expectedTotal) break;
+		if (facts.length === expectedTotal) {
+			return ok(facts);
+		}
 		if (returned.entries.length === 0) {
 			return fail(
 				"INTERNAL_ERROR",
 				"Reporting source pagination ended before reconciliation",
 			);
 		}
-		page += 1;
+		return loadPage(page + 1);
 	}
 
-	return ok(facts);
+	return loadPage(1);
 }

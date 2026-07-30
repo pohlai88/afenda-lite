@@ -41,8 +41,7 @@ const healthRouteState = vi.hoisted(() => {
 		timestamp: "2026-07-15T12:00:00.000Z",
 	};
 
-	type ReadinessSnapshot = {
-		status: "ready" | "degraded" | "not_ready";
+	interface ReadinessSnapshot {
 		checks: {
 			storage: {
 				provider: "postgres";
@@ -56,6 +55,7 @@ const healthRouteState = vi.hoisted(() => {
 				latencyMs: number;
 			};
 		};
+		connection: { pooler: boolean; ssl: string };
 		probes: Array<{
 			name: "postgres" | "neon_auth";
 			status: "up" | "down";
@@ -63,10 +63,10 @@ const healthRouteState = vi.hoisted(() => {
 			latencyMs: number;
 			checkedAt: string;
 		}>;
-		topology: "neon-shared-schema";
-		connection: { pooler: boolean; ssl: string };
+		status: "ready" | "degraded" | "not_ready";
 		timestamp: string;
-	};
+		topology: "neon-shared-schema";
+	}
 
 	return {
 		readySnapshot: readySnapshot as ReadinessSnapshot,

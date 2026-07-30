@@ -70,7 +70,9 @@ function assertTransition<T extends string>(
 	table: Record<T, readonly T[]>,
 	label: string,
 ): Result<void> {
-	if (current === next) return ok(undefined);
+	if (current === next) {
+		return ok(undefined);
+	}
 	const allowed = table[current] ?? [];
 	if (!allowed.includes(next)) {
 		return invalidState(
@@ -173,6 +175,8 @@ export function computeExpectedMinutes(
 ): number {
 	const start = localTimeToMinutes(startLocal);
 	const end = localTimeToMinutes(endLocal);
-	if (isOvernight) return 24 * 60 - start + end;
+	if (isOvernight) {
+		return 24 * 60 - start + end;
+	}
 	return Math.max(0, end - start);
 }

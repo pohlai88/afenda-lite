@@ -18,7 +18,7 @@ export const HUMAN_RESOURCES_AGGREGATE_TRANSFER = "transfer" as const;
 export type HumanResourcesTransferAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_TRANSFER;
 
-export async function transferAssignment(
+export function transferAssignment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentMovement>> {
@@ -28,7 +28,9 @@ export async function transferAssignment(
 		command: HUMAN_RESOURCES_COMMAND_ASSIGNMENT_TRANSFER,
 		execute: async (data, { store, ports }) => {
 			const directory = requireOrganizationDimensionDirectory(options);
-			if (!directory.ok) return directory;
+			if (!directory.ok) {
+				return directory;
+			}
 			const dimensions = await directory.data.resolveRequiredAsOf({
 				organizationId: data.organizationId,
 				actorUserId: data.actorUserId,
@@ -41,13 +43,17 @@ export async function transferAssignment(
 					project: data.projectKey,
 				},
 			});
-			if (!dimensions.ok) return dimensions;
+			if (!dimensions.ok) {
+				return dimensions;
+			}
 
 			const employment = await store.getEmploymentById({
 				organizationId: data.organizationId,
 				employmentId: data.employmentId,
 			});
-			if (!employment.ok) return employment;
+			if (!employment.ok) {
+				return employment;
+			}
 			if (employment.data === null) {
 				return fail(
 					"NOT_FOUND",

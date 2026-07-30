@@ -23,7 +23,7 @@ import { fingerprintEmployeeCreate } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import type { Employee, EmployeeListPage } from "../types";
 
-export async function createEmployee(
+export function createEmployee(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Employee>> {
@@ -82,7 +82,7 @@ export async function createEmployee(
 	});
 }
 
-export async function updateEmployee(
+export function updateEmployee(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Employee>> {
@@ -90,8 +90,8 @@ export async function updateEmployee(
 		schema: updateEmployeeInputSchema,
 		invalidMessage: "Invalid employee update input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_UPDATE,
-		execute: async (data, { store, ports }) => {
-			return store.updateEmployee(
+		execute: async (data, { store, ports }) =>
+			store.updateEmployee(
 				{
 					organizationId: data.organizationId,
 					employeeId: data.employeeId,
@@ -104,12 +104,11 @@ export async function updateEmployee(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_UPDATE,
 				}),
-			);
-		},
+			),
 	});
 }
 
-export async function getEmployeeById(
+export function getEmployeeById(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Employee>> {
@@ -137,7 +136,7 @@ export async function getEmployeeById(
 	});
 }
 
-export async function listEmployees(
+export function listEmployees(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeListPage>> {
@@ -145,7 +144,7 @@ export async function listEmployees(
 		schema: listEmployeesInputSchema,
 		invalidMessage: "Invalid employee list input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_LIST,
-		execute: async (data, { store }) => {
+		execute: (data, { store }) => {
 			const page = data.page ?? 1;
 			const pageSize = data.pageSize ?? 20;
 

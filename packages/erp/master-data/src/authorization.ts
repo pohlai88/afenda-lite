@@ -8,18 +8,19 @@ import {
 	MASTER_DATA_PERMISSION_TAX_REGISTRATION_READ,
 	MASTER_DATA_PERMISSION_TAX_REGISTRATION_SENSITIVE_READ,
 } from "./permissions";
+import { runSequentiallyUntil } from "./resolve-async";
 
 export type MasterPermission = (typeof MASTER_DATA_PERMISSION_CODES)[number];
 
-export type MasterAuthorizationPort = {
-	can(input: {
+export interface MasterAuthorizationPort {
+	can: (input: {
 		organizationId: string;
 		actorUserId: string;
 		permission: MasterPermission;
-	}): Promise<boolean>;
-};
+	}) => Promise<boolean>;
+}
 
-export async function requireMasterCommandPermission(
+export function requireMasterCommandPermission(
 	authorization: MasterAuthorizationPort | undefined,
 	input: {
 		organizationId: string;
@@ -36,7 +37,7 @@ export async function requireMasterCommandPermission(
 	});
 }
 
-export async function requireMasterQueryPermission(
+export function requireMasterQueryPermission(
 	authorization: MasterAuthorizationPort | undefined,
 	input: {
 		organizationId: string;
@@ -67,15 +68,18 @@ async function requireMasterPermission(
 		});
 	}
 	const allowed = await authorization.can(input);
-	if (allowed) return ok(undefined);
+	if (allowed) {
+		return ok(undefined);
+	}
 
 	const strongerPermissions = strongerReadPermissionsFor(input.permission);
-	for (const permission of strongerPermissions) {
-		const allowedByStrongerGrant = await authorization.can({
-			...input,
-			permission,
-		});
-		if (allowedByStrongerGrant) return ok(undefined);
+	const allowedByStrongerGrant = await runSequentiallyUntil(
+		strongerPermissions,
+		async (permission) =>
+			(await authorization.can({ ...input, permission })) ? true : undefined,
+	);
+	if (allowedByStrongerGrant === true) {
+		return ok(undefined);
 	}
 
 	return fail("FORBIDDEN", "Missing required master-data permission", {

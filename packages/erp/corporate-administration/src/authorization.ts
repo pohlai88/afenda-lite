@@ -28,7 +28,7 @@ export type CorporateAdministrationAuthorizationInput = Readonly<{
  * alone decides tenant capability.
  */
 export type CorporateAdministrationAuthorizationContext = Readonly<{
-	can(input: CorporateAdministrationAuthorizationInput): Promise<boolean>;
+	can: (input: CorporateAdministrationAuthorizationInput) => Promise<boolean>;
 }>;
 
 export type CorporateAdministrationApprovalDecision = Readonly<{
@@ -41,12 +41,12 @@ export type CorporateAdministrationApprovalDecision = Readonly<{
 }>;
 
 export type CorporateAdministrationApprovalDecisionPort = Readonly<{
-	verify(input: {
+	verify: (input: {
 		organizationId: OrganizationId;
 		approvalRequestId: ApprovalRequestId;
 		approvalDecisionId: ApprovalDecisionId;
 		commandFingerprint: CommandFingerprint;
-	}): Promise<Result<CorporateAdministrationApprovalDecision | null>>;
+	}) => Promise<Result<CorporateAdministrationApprovalDecision | null>>;
 }>;
 
 export type CorporateAdministrationApprovalVerificationDependencies = Readonly<{
@@ -232,7 +232,9 @@ export async function requireCorporateAdministrationApprovalIfConfigured(
 		approvalDecisionId: input.approvalDecisionId,
 		commandFingerprint: input.commandFingerprint,
 	});
-	if (!decision.ok) return decision;
+	if (!decision.ok) {
+		return decision;
+	}
 	if (
 		decision.data === null ||
 		decision.data.organizationId !== input.organizationId ||

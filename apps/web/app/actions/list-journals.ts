@@ -27,18 +27,19 @@ export async function listJournalsAction(input?: {
 	status?: Journal["status"];
 	periodId?: string;
 }): Promise<ActionResult<{ journals: Journal[] }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "listJournalsAction",
 		permission: "accounting.journal.read",
 		safeMessage: "Could not list journals. Try again or contact an admin.",
 		execute: async (session) => {
 			const parsed = parseSchema(schema, input);
-			if (!parsed.success)
+			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
 					"Enter valid journal filters.",
 					parsed.details,
 				);
+			}
 			const mapped = mapPackageResult(
 				await listJournals(
 					{
@@ -51,7 +52,9 @@ export async function listJournalsAction(input?: {
 					createAccountingCommandOptions(),
 				),
 			);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { journals: mapped.data } };
 		},
 	});

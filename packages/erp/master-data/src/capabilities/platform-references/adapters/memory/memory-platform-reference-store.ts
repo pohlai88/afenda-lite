@@ -1,3 +1,4 @@
+import { resolveAsync } from "../../../../resolve-async";
 import type {
 	CountryCode,
 	CurrencyCode,
@@ -31,7 +32,10 @@ import type {
 	RefUomDimension,
 } from "../../types";
 
-type CodeNameReference = { code: string; name: string };
+interface CodeNameReference {
+	code: string;
+	name: string;
+}
 
 function clone<TReference extends object>(row: TReference): TReference {
 	return { ...row };
@@ -41,7 +45,9 @@ function matchesStatus(
 	row: { active: boolean },
 	status: "active" | "inactive" | "all",
 ): boolean {
-	if (status === "all") return true;
+	if (status === "all") {
+		return true;
+	}
 	return status === "active" ? row.active : !row.active;
 }
 
@@ -49,7 +55,9 @@ function matchesCodeNameSearch(
 	row: CodeNameReference,
 	search?: string,
 ): boolean {
-	if (search === undefined) return true;
+	if (search === undefined) {
+		return true;
+	}
 	const normalized = search.toLowerCase();
 	return (
 		row.code.toLowerCase().includes(normalized) ||
@@ -58,7 +66,9 @@ function matchesCodeNameSearch(
 }
 
 function matchesTimeZoneSearch(row: RefTimeZone, search?: string): boolean {
-	if (search === undefined) return true;
+	if (search === undefined) {
+		return true;
+	}
 	const normalized = search.toLowerCase();
 	return (
 		row.ianaName.toLowerCase().includes(normalized) ||
@@ -95,193 +105,214 @@ export class MemoryPlatformReferenceStore implements PlatformReferenceStore {
 	}
 
 	seed(seed: MemoryPlatformReferenceSeed): void {
-		for (const row of seed.countries ?? [])
+		for (const row of seed.countries ?? []) {
 			this.countries.set(row.id, clone(row));
-		for (const row of seed.currencies ?? [])
+		}
+		for (const row of seed.currencies ?? []) {
 			this.currencies.set(row.id, clone(row));
-		for (const row of seed.languages ?? [])
+		}
+		for (const row of seed.languages ?? []) {
 			this.languages.set(row.id, clone(row));
-		for (const row of seed.timeZones ?? [])
+		}
+		for (const row of seed.timeZones ?? []) {
 			this.timeZones.set(row.id, clone(row));
+		}
 		for (const row of seed.uomDimensions ?? []) {
 			this.uomDimensions.set(row.id, clone(row));
 		}
-		for (const row of seed.uoms ?? []) this.uoms.set(row.id, clone(row));
+		for (const row of seed.uoms ?? []) {
+			this.uoms.set(row.id, clone(row));
+		}
 	}
 
-	async getCountryById(id: RefCountryId): Promise<RefCountry | null> {
-		return this.cloneFrom(this.countries, id);
+	getCountryById(id: RefCountryId): Promise<RefCountry | null> {
+		return resolveAsync(() => this.cloneFrom(this.countries, id));
 	}
 
-	async getCountryByCode(code: CountryCode): Promise<RefCountry | null> {
-		return this.findByCode(this.countries.values(), code);
+	getCountryByCode(code: CountryCode): Promise<RefCountry | null> {
+		return resolveAsync(() => this.findByCode(this.countries.values(), code));
 	}
 
-	async listCountries(
-		input: ListRefCountriesInput,
-	): Promise<ListPage<RefCountry>> {
-		const rows = [...this.countries.values()]
-			.filter(
-				(row) =>
-					matchesStatus(row, input.status) &&
-					matchesCodeNameSearch(row, input.search),
-			)
-			.sort((left, right) =>
-				left.name === right.name
-					? left.code.localeCompare(right.code)
-					: left.name.localeCompare(right.name),
-			)
-			.map(clone);
-		return pageFromCursor(rows, input);
+	listCountries(input: ListRefCountriesInput): Promise<ListPage<RefCountry>> {
+		return resolveAsync(() => {
+			const rows = [...this.countries.values()]
+				.filter(
+					(row) =>
+						matchesStatus(row, input.status) &&
+						matchesCodeNameSearch(row, input.search),
+				)
+				.sort((left, right) =>
+					left.name === right.name
+						? left.code.localeCompare(right.code)
+						: left.name.localeCompare(right.name),
+				)
+				.map(clone);
+			return pageFromCursor(rows, input);
+		});
 	}
 
-	async getCurrencyById(id: RefCurrencyId): Promise<RefCurrency | null> {
-		return this.cloneFrom(this.currencies, id);
+	getCurrencyById(id: RefCurrencyId): Promise<RefCurrency | null> {
+		return resolveAsync(() => this.cloneFrom(this.currencies, id));
 	}
 
-	async getCurrencyByCode(code: CurrencyCode): Promise<RefCurrency | null> {
-		return this.findByCode(this.currencies.values(), code);
+	getCurrencyByCode(code: CurrencyCode): Promise<RefCurrency | null> {
+		return resolveAsync(() => this.findByCode(this.currencies.values(), code));
 	}
 
-	async listCurrencies(
+	listCurrencies(
 		input: ListRefCurrenciesInput,
 	): Promise<ListPage<RefCurrency>> {
-		const rows = [...this.currencies.values()]
-			.filter(
-				(row) =>
-					matchesStatus(row, input.status) &&
-					matchesCodeNameSearch(row, input.search),
-			)
-			.sort((left, right) => left.code.localeCompare(right.code))
-			.map(clone);
-		return pageFromCursor(rows, input);
+		return resolveAsync(() => {
+			const rows = [...this.currencies.values()]
+				.filter(
+					(row) =>
+						matchesStatus(row, input.status) &&
+						matchesCodeNameSearch(row, input.search),
+				)
+				.sort((left, right) => left.code.localeCompare(right.code))
+				.map(clone);
+			return pageFromCursor(rows, input);
+		});
 	}
 
-	async getLanguageById(id: RefLanguageId): Promise<RefLanguage | null> {
-		return this.cloneFrom(this.languages, id);
+	getLanguageById(id: RefLanguageId): Promise<RefLanguage | null> {
+		return resolveAsync(() => this.cloneFrom(this.languages, id));
 	}
 
-	async getLanguageByCode(code: LanguageCode): Promise<RefLanguage | null> {
-		return this.findByCode(this.languages.values(), code);
+	getLanguageByCode(code: LanguageCode): Promise<RefLanguage | null> {
+		return resolveAsync(() => this.findByCode(this.languages.values(), code));
 	}
 
-	async listLanguages(
-		input: ListRefLanguagesInput,
-	): Promise<ListPage<RefLanguage>> {
-		const rows = [...this.languages.values()]
-			.filter(
-				(row) =>
-					matchesStatus(row, input.status) &&
-					matchesCodeNameSearch(row, input.search),
-			)
-			.sort((left, right) =>
-				left.name === right.name
-					? left.code.localeCompare(right.code)
-					: left.name.localeCompare(right.name),
-			)
-			.map(clone);
-		return pageFromCursor(rows, input);
+	listLanguages(input: ListRefLanguagesInput): Promise<ListPage<RefLanguage>> {
+		return resolveAsync(() => {
+			const rows = [...this.languages.values()]
+				.filter(
+					(row) =>
+						matchesStatus(row, input.status) &&
+						matchesCodeNameSearch(row, input.search),
+				)
+				.sort((left, right) =>
+					left.name === right.name
+						? left.code.localeCompare(right.code)
+						: left.name.localeCompare(right.name),
+				)
+				.map(clone);
+			return pageFromCursor(rows, input);
+		});
 	}
 
-	async getTimeZoneById(id: RefTimeZoneId): Promise<RefTimeZone | null> {
-		return this.cloneFrom(this.timeZones, id);
+	getTimeZoneById(id: RefTimeZoneId): Promise<RefTimeZone | null> {
+		return resolveAsync(() => this.cloneFrom(this.timeZones, id));
 	}
 
-	async getTimeZoneByCode(code: TimeZoneCode): Promise<RefTimeZone | null> {
-		for (const row of this.timeZones.values()) {
-			if (row.ianaName === code) return clone(row);
-		}
-		return null;
+	getTimeZoneByCode(code: TimeZoneCode): Promise<RefTimeZone | null> {
+		return resolveAsync(() => {
+			for (const row of this.timeZones.values()) {
+				if (row.ianaName === code) {
+					return clone(row);
+				}
+			}
+			return null;
+		});
 	}
 
-	async listTimeZones(
-		input: ListRefTimeZonesInput,
-	): Promise<ListPage<RefTimeZone>> {
-		const rows = [...this.timeZones.values()]
-			.filter(
-				(row) =>
-					matchesStatus(row, input.status) &&
-					matchesTimeZoneSearch(row, input.search),
-			)
-			.sort((left, right) => left.ianaName.localeCompare(right.ianaName))
-			.map(clone);
-		return pageFromCursor(rows, input);
+	listTimeZones(input: ListRefTimeZonesInput): Promise<ListPage<RefTimeZone>> {
+		return resolveAsync(() => {
+			const rows = [...this.timeZones.values()]
+				.filter(
+					(row) =>
+						matchesStatus(row, input.status) &&
+						matchesTimeZoneSearch(row, input.search),
+				)
+				.sort((left, right) => left.ianaName.localeCompare(right.ianaName))
+				.map(clone);
+			return pageFromCursor(rows, input);
+		});
 	}
 
-	async getUomDimensionById(
-		id: RefUomDimensionId,
-	): Promise<RefUomDimension | null> {
-		return this.cloneFrom(this.uomDimensions, id);
+	getUomDimensionById(id: RefUomDimensionId): Promise<RefUomDimension | null> {
+		return resolveAsync(() => this.cloneFrom(this.uomDimensions, id));
 	}
 
-	async getUomDimensionByCode(
+	getUomDimensionByCode(
 		code: UomDimensionCode,
 	): Promise<RefUomDimension | null> {
-		return this.findByCode(this.uomDimensions.values(), code);
+		return resolveAsync(() =>
+			this.findByCode(this.uomDimensions.values(), code),
+		);
 	}
 
-	async listUomDimensions(
+	listUomDimensions(
 		input: ListRefUomDimensionsInput,
 	): Promise<ListPage<RefUomDimension>> {
-		const rows = [...this.uomDimensions.values()]
-			.filter((row) => matchesCodeNameSearch(row, input.search))
-			.sort((left, right) =>
-				left.name === right.name
-					? left.code.localeCompare(right.code)
-					: left.name.localeCompare(right.name),
-			)
-			.map(clone);
-		return pageFromCursor(rows, input);
+		return resolveAsync(() => {
+			const rows = [...this.uomDimensions.values()]
+				.filter((row) => matchesCodeNameSearch(row, input.search))
+				.sort((left, right) =>
+					left.name === right.name
+						? left.code.localeCompare(right.code)
+						: left.name.localeCompare(right.name),
+				)
+				.map(clone);
+			return pageFromCursor(rows, input);
+		});
 	}
 
-	async getUomById(id: RefUomId): Promise<RefUom | null> {
-		return this.cloneFrom(this.uoms, id);
+	getUomById(id: RefUomId): Promise<RefUom | null> {
+		return resolveAsync(() => this.cloneFrom(this.uoms, id));
 	}
 
-	async getUomByCode(code: UomCode): Promise<RefUom | null> {
-		return this.findByCode(this.uoms.values(), code);
+	getUomByCode(code: UomCode): Promise<RefUom | null> {
+		return resolveAsync(() => this.findByCode(this.uoms.values(), code));
 	}
 
-	async listUoms(input: ListRefUomsInput): Promise<ListPage<RefUom>> {
-		const dimensionNameById = new Map(
-			[...this.uomDimensions.values()].map((row) => [row.id, row.name]),
-		);
-		const rows = [...this.uoms.values()]
-			.filter(
-				(row) =>
-					matchesStatus(row, input.status) &&
-					matchesCodeNameSearch(row, input.search),
-			)
-			.sort((left, right) => {
-				const byDimension = (
-					dimensionNameById.get(left.dimensionId) ?? ""
-				).localeCompare(dimensionNameById.get(right.dimensionId) ?? "");
-				if (byDimension !== 0) return byDimension;
-				if (left.name !== right.name)
-					return left.name.localeCompare(right.name);
-				return left.code.localeCompare(right.code);
-			})
-			.map(clone);
-		return pageFromCursor(rows, input);
+	listUoms(input: ListRefUomsInput): Promise<ListPage<RefUom>> {
+		return resolveAsync(() => {
+			const dimensionNameById = new Map(
+				[...this.uomDimensions.values()].map((row) => [row.id, row.name]),
+			);
+			const rows = [...this.uoms.values()]
+				.filter(
+					(row) =>
+						matchesStatus(row, input.status) &&
+						matchesCodeNameSearch(row, input.search),
+				)
+				.sort((left, right) => {
+					const byDimension = (
+						dimensionNameById.get(left.dimensionId) ?? ""
+					).localeCompare(dimensionNameById.get(right.dimensionId) ?? "");
+					if (byDimension !== 0) {
+						return byDimension;
+					}
+					if (left.name !== right.name) {
+						return left.name.localeCompare(right.name);
+					}
+					return left.code.localeCompare(right.code);
+				})
+				.map(clone);
+			return pageFromCursor(rows, input);
+		});
 	}
 
-	async listUomsByDimension(
+	listUomsByDimension(
 		input: ListRefUomsByDimensionInput,
 	): Promise<ListPage<RefUom>> {
-		const rows = [...this.uoms.values()]
-			.filter(
-				(row) =>
-					row.dimensionId === input.dimensionId &&
-					matchesStatus(row, input.status) &&
-					matchesCodeNameSearch(row, input.search),
-			)
-			.sort((left, right) =>
-				left.name === right.name
-					? left.code.localeCompare(right.code)
-					: left.name.localeCompare(right.name),
-			)
-			.map(clone);
-		return pageFromCursor(rows, input);
+		return resolveAsync(() => {
+			const rows = [...this.uoms.values()]
+				.filter(
+					(row) =>
+						row.dimensionId === input.dimensionId &&
+						matchesStatus(row, input.status) &&
+						matchesCodeNameSearch(row, input.search),
+				)
+				.sort((left, right) =>
+					left.name === right.name
+						? left.code.localeCompare(right.code)
+						: left.name.localeCompare(right.name),
+				)
+				.map(clone);
+			return pageFromCursor(rows, input);
+		});
 	}
 
 	private cloneFrom<TKey, TValue extends object>(
@@ -297,7 +328,9 @@ export class MemoryPlatformReferenceStore implements PlatformReferenceStore {
 		code: string,
 	): TReference | null {
 		for (const row of rows) {
-			if (row.code === code) return clone(row);
+			if (row.code === code) {
+				return clone(row);
+			}
 		}
 		return null;
 	}

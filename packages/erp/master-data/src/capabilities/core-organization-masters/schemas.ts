@@ -131,7 +131,7 @@ export const itemGroupLifecycleInputSchema =
 export const createItemInputSchema = orgActorContextSchema.extend({
 	code: codeInputSchema,
 	name: nameSchema,
-	description: z.string().trim().max(1_000).nullable().optional(),
+	description: z.string().trim().max(1000).nullable().optional(),
 	itemType: z.enum(ITEM_TYPES),
 	baseUomId: refUomIdSchema,
 	itemGroupId: itemGroupIdSchema,
@@ -145,7 +145,7 @@ export const createItemInputSchema = orgActorContextSchema.extend({
 export const updateItemInputSchema = versionedMutationContextSchema.extend({
 	id: itemIdSchema,
 	name: nameSchema.optional(),
-	description: z.string().trim().max(1_000).nullable().optional(),
+	description: z.string().trim().max(1000).nullable().optional(),
 	itemType: z.enum(ITEM_TYPES).optional(),
 	baseUomId: refUomIdSchema.optional(),
 	itemGroupId: itemGroupIdSchema.optional(),
@@ -436,7 +436,7 @@ export const addItemTemplateAttributeInputSchema = orgActorContextSchema
 		templateId: itemTemplateIdSchema,
 		code: codeInputSchema,
 		name: nameSchema,
-		description: z.string().trim().max(1_000).optional(),
+		description: z.string().trim().max(1000).optional(),
 		dataType: z.enum(ITEM_TEMPLATE_ATTRIBUTE_DATA_TYPES).optional(),
 		/** @deprecated Compatibility input; use dataType. */
 		valueKind: z.enum(ITEM_TEMPLATE_ATTRIBUTE_VALUE_KINDS).optional(),
@@ -456,12 +456,12 @@ export const addItemTemplateAttributeInputSchema = orgActorContextSchema
 				path: ["dataType"],
 			});
 		}
-		const legacyDataType =
-			value.valueKind === "option"
-				? "single_option"
-				: value.valueKind === "text"
-					? "text"
-					: undefined;
+		let legacyDataType: "single_option" | "text" | undefined;
+		if (value.valueKind === "option") {
+			legacyDataType = "single_option";
+		} else if (value.valueKind === "text") {
+			legacyDataType = "text";
+		}
 		if (
 			value.dataType !== undefined &&
 			legacyDataType !== undefined &&
@@ -498,7 +498,7 @@ export const addItemTemplateAttributeOptionInputSchema = orgActorContextSchema
 		attributeId: itemTemplateAttributeIdSchema,
 		code: codeInputSchema,
 		label: nameSchema,
-		description: z.string().trim().max(1_000).optional(),
+		description: z.string().trim().max(1000).optional(),
 		displayOrder: z.number().int().min(0).optional(),
 		/** @deprecated Compatibility input; use displayOrder. */
 		sortOrder: z.number().int().min(0).optional(),
@@ -524,9 +524,9 @@ export const addItemTemplateAttributeOptionInputSchema = orgActorContextSchema
 export const createItemVariantAttributeValueInputSchema = z
 	.object({
 		attributeId: itemTemplateAttributeIdSchema,
-		textValue: z.string().trim().min(1).max(4_000).optional(),
+		textValue: z.string().trim().min(1).max(4000).optional(),
 		/** @deprecated Compatibility input; use textValue. */
-		valueText: z.string().trim().min(1).max(4_000).optional(),
+		valueText: z.string().trim().min(1).max(4000).optional(),
 		integerValue: z
 			.union([
 				z.number().int(),

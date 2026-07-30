@@ -5,13 +5,13 @@ import {
 	selectEffectiveLineageRecord,
 } from "../src/shared/effective-lineage";
 
-type Record = {
-	id: string;
-	predecessorId: string | null;
+interface Record {
 	effectiveFrom: string;
 	effectiveTo: string | null;
+	id: string;
+	predecessorId: string | null;
 	status: "active" | "superseded";
-};
+}
 
 function select(records: readonly Record[], asOf: string): Record | null {
 	return selectEffectiveLineageRecord({

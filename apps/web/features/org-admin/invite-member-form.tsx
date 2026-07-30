@@ -31,10 +31,10 @@ const ROLE_LABELS: Record<Role, string> = {
 	admin: "Admin",
 };
 
-type InviteMemberFormProps = {
+interface InviteMemberFormProps {
 	inviteableRoles: Role[];
 	joinPath: string;
-};
+}
 
 /**
  * Org-admin invite form — CAPABLE when `inviteableRoles` is non-empty
@@ -79,28 +79,28 @@ export function InviteMemberForm({
 			className="flex max-w-md flex-col gap-(--field-gap)"
 		>
 			<FormField
+				error={emailError}
+				fieldId="invite-email"
 				label="Email"
 				required
-				fieldId="invite-email"
-				error={emailError}
 			>
 				<Input
-					name="email"
-					type="email"
 					autoComplete="email"
-					required
 					disabled={pending}
+					name="email"
 					placeholder="member@example.com"
+					required
+					type="email"
 				/>
 			</FormField>
 
 			<FormField
+				error={roleError}
+				fieldId="invite-role"
 				label="Membership role"
 				required
-				fieldId="invite-role"
-				error={roleError}
 			>
-				<NativeSelect name="role" defaultValue={defaultRole} disabled={pending}>
+				<NativeSelect defaultValue={defaultRole} disabled={pending} name="role">
 					{inviteableRoles.map((role) => (
 						<NativeSelectOption key={role} value={role}>
 							{ROLE_LABELS[role]}
@@ -109,13 +109,13 @@ export function InviteMemberForm({
 				</NativeSelect>
 			</FormField>
 
-			<Button type="submit" disabled={pending}>
+			<Button disabled={pending} type="submit">
 				{pending ? (
 					<>
 						<Spinner
-							size="sm"
-							label="Sending invitation"
 							className="text-primary-foreground"
+							label="Sending invitation"
+							size="sm"
 						/>
 						Sending invitation…
 					</>
@@ -135,10 +135,10 @@ export function InviteMemberForm({
 								Join link:{" "}
 								<Button
 									asChild
-									variant="link"
 									className="h-auto p-0 font-mono text-sm"
+									variant="link"
 								>
-									<Link href={state.data.joinUrl} data-testid="invite-join-url">
+									<Link data-testid="invite-join-url" href={state.data.joinUrl}>
 										{state.data.joinUrl}
 									</Link>
 								</Button>

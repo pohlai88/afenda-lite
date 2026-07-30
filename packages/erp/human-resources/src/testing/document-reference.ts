@@ -18,84 +18,91 @@ function isDocumentKind(value: string): value is DocumentKind {
 	return DOCUMENT_KIND_SET.has(value);
 }
 
+type DocumentReferenceInput = Parameters<
+	DocumentReferencePort["validateReference"]
+>[0];
+
+function invalidDocumentReference(message: string): Result<never> {
+	return fail(
+		"VALIDATION_ERROR",
+		message,
+		humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
+	);
+}
+
+function validateCanonicalDocumentReference(
+	input: DocumentReferenceInput,
+	trimmed: string,
+	canonicalPrefix: string,
+): Result<ValidatedDocumentReference> {
+	const rest = trimmed.slice(canonicalPrefix.length);
+	const [kindAndId = "", query = ""] = rest.split("?");
+	const [kindRaw = "", documentId = ""] = kindAndId.split("/");
+	if (!isDocumentKind(kindRaw) || documentId.length === 0) {
+		return invalidDocumentReference("Document reference is malformed.");
+	}
+	if (
+		input.allowedKinds !== undefined &&
+		!input.allowedKinds.includes(kindRaw)
+	) {
+		return invalidDocumentReference(
+			`Document kind "${kindRaw}" is not allowed for this command.`,
+		);
+	}
+
+	const params = new URLSearchParams(query);
+	const version = params.get("version");
+	if (input.requireImmutableVersion === true && version === null) {
+		return invalidDocumentReference(
+			"An immutable document version is required.",
+		);
+	}
+
+	return ok({
+		reference: trimmed,
+		organizationId: input.organizationId,
+		documentKind: kindRaw,
+		documentId,
+		version,
+	});
+}
+
+function validateMemoryDocumentReference(
+	input: DocumentReferenceInput,
+): Result<ValidatedDocumentReference> {
+	const trimmed = input.reference.trim();
+	if (trimmed.length === 0) {
+		return invalidDocumentReference("Document reference is required.");
+	}
+	if (trimmed.length > MAX_DOCUMENT_REF_LENGTH) {
+		return invalidDocumentReference(
+			"Document reference exceeds maximum length.",
+		);
+	}
+	if (trimmed.toLowerCase().startsWith("data:")) {
+		return invalidDocumentReference(
+			"Embedded document content is not allowed.",
+		);
+	}
+
+	const canonicalPrefix = `vault://organizations/${input.organizationId}/`;
+	if (!trimmed.startsWith(canonicalPrefix)) {
+		return invalidDocumentReference(
+			"Document reference must match vault://organizations/{organizationId}/{documentKind}/{documentId}.",
+		);
+	}
+
+	return validateCanonicalDocumentReference(input, trimmed, canonicalPrefix);
+}
+
 /**
  * Test-only document reference port.
  * Enforces the canonical organization-scoped vault reference contract.
  */
 export function createMemoryDocumentReferencePort(): DocumentReferencePort {
 	return {
-		async validateReference(
-			input,
-		): Promise<Result<ValidatedDocumentReference>> {
-			const trimmed = input.reference.trim();
-			if (trimmed.length === 0) {
-				return fail(
-					"VALIDATION_ERROR",
-					"Document reference is required.",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-				);
-			}
-			if (trimmed.length > MAX_DOCUMENT_REF_LENGTH) {
-				return fail(
-					"VALIDATION_ERROR",
-					"Document reference exceeds maximum length.",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-				);
-			}
-			const lower = trimmed.toLowerCase();
-			if (lower.startsWith("data:")) {
-				return fail(
-					"VALIDATION_ERROR",
-					"Embedded document content is not allowed.",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-				);
-			}
-
-			const canonicalPrefix = `vault://organizations/${input.organizationId}/`;
-			if (trimmed.startsWith(canonicalPrefix)) {
-				const rest = trimmed.slice(canonicalPrefix.length);
-				const [kindAndId = "", query = ""] = rest.split("?");
-				const [kindRaw = "", documentId = ""] = kindAndId.split("/");
-				if (!isDocumentKind(kindRaw) || documentId.length === 0) {
-					return fail(
-						"VALIDATION_ERROR",
-						"Document reference is malformed.",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-					);
-				}
-				if (
-					input.allowedKinds !== undefined &&
-					!input.allowedKinds.includes(kindRaw)
-				) {
-					return fail(
-						"VALIDATION_ERROR",
-						`Document kind "${kindRaw}" is not allowed for this command.`,
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-					);
-				}
-				const params = new URLSearchParams(query);
-				const version = params.get("version");
-				if (input.requireImmutableVersion === true && version === null) {
-					return fail(
-						"VALIDATION_ERROR",
-						"An immutable document version is required.",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-					);
-				}
-				return ok({
-					reference: trimmed,
-					organizationId: input.organizationId,
-					documentKind: kindRaw,
-					documentId,
-					version,
-				});
-			}
-
-			return fail(
-				"VALIDATION_ERROR",
-				"Document reference must match vault://organizations/{organizationId}/{documentKind}/{documentId}.",
-				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-			);
+		validateReference(input): Promise<Result<ValidatedDocumentReference>> {
+			return Promise.resolve(validateMemoryDocumentReference(input));
 		},
 	};
 }

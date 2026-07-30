@@ -40,7 +40,9 @@ describe("sensitive master-data projections", () => {
 			harness.options,
 		);
 		expect(party.ok).toBe(true);
-		if (!party.ok) return;
+		if (!party.ok) {
+			return;
+		}
 
 		const created = await createTaxRegistration(
 			{
@@ -53,7 +55,9 @@ describe("sensitive master-data projections", () => {
 			harness.options,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 		expect(created.data).toMatchObject({
 			maskedRegistrationNumber: "********5678",
 		});
@@ -77,7 +81,9 @@ describe("sensitive master-data projections", () => {
 			authorization: ordinaryAuthorization,
 		});
 		expect(ordinary.ok).toBe(true);
-		if (!ordinary.ok || ordinary.data === null) return;
+		if (!ordinary.ok || ordinary.data === null) {
+			return;
+		}
 		expect(ordinary.data.maskedRegistrationNumber).toBe("********5678");
 		expect(ordinary.data).not.toHaveProperty("registrationNumber");
 
@@ -92,14 +98,18 @@ describe("sensitive master-data projections", () => {
 			authorization: ordinaryAuthorization,
 		});
 		expect(deniedSensitive.ok).toBe(false);
-		if (!deniedSensitive.ok) expect(deniedSensitive.code).toBe("FORBIDDEN");
+		if (!deniedSensitive.ok) {
+			expect(deniedSensitive.code).toBe("FORBIDDEN");
+		}
 
 		const sensitive = await getSensitiveTaxRegistration(input, {
 			store: harness.store,
 			authorization: sensitiveAuthorization,
 		});
 		expect(sensitive.ok).toBe(true);
-		if (!sensitive.ok || sensitive.data === null) return;
+		if (!sensitive.ok || sensitive.data === null) {
+			return;
+		}
 		expect(sensitive.data.registrationNumber).toBe("MY-1234-5678");
 		expect(sensitive.data).not.toHaveProperty("normalizedRegistrationNumber");
 	});
@@ -116,7 +126,9 @@ describe("sensitive master-data projections", () => {
 			harness.options,
 		);
 		expect(party.ok).toBe(true);
-		if (!party.ok) return;
+		if (!party.ok) {
+			return;
+		}
 
 		const created = await createPartyContact(
 			{
@@ -131,7 +143,9 @@ describe("sensitive master-data projections", () => {
 			harness.options,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const ordinaryAuthorization = createGrantingMasterAuthorization([
 			"master_data.party_contact_read",
@@ -152,7 +166,9 @@ describe("sensitive master-data projections", () => {
 			authorization: ordinaryAuthorization,
 		});
 		expect(ordinary.ok).toBe(true);
-		if (!ordinary.ok) return;
+		if (!ordinary.ok) {
+			return;
+		}
 		expect(ordinary.data[0]?.maskedValue).toBe("**************.com");
 		expect(ordinary.data[0]).not.toHaveProperty("value");
 		expect(ordinary.data[0]).not.toHaveProperty("normalizedValue");
@@ -168,14 +184,18 @@ describe("sensitive master-data projections", () => {
 			authorization: ordinaryAuthorization,
 		});
 		expect(deniedSensitive.ok).toBe(false);
-		if (!deniedSensitive.ok) expect(deniedSensitive.code).toBe("FORBIDDEN");
+		if (!deniedSensitive.ok) {
+			expect(deniedSensitive.code).toBe("FORBIDDEN");
+		}
 
 		const sensitive = await listSensitivePartyContacts(input, {
 			...harness.options,
 			authorization: sensitiveAuthorization,
 		});
 		expect(sensitive.ok).toBe(true);
-		if (!sensitive.ok) return;
+		if (!sensitive.ok) {
+			return;
+		}
 		expect(sensitive.data[0]?.value).toBe("person@example.com");
 		expect(sensitive.data[0]).not.toHaveProperty("normalizedValue");
 	});

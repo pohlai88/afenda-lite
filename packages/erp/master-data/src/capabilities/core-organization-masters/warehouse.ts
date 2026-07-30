@@ -24,6 +24,7 @@ import {
 	type MasterCommandId,
 } from "../../module-ids";
 import { parseMasterInput } from "../../parse-input";
+import { resolveAsync } from "../../resolve-async";
 import type { Warehouse } from "../../types";
 import {
 	MASTER_SEARCH_ENTITY,
@@ -74,7 +75,7 @@ export async function createWarehouse(
 		"Invalid warehouse create input",
 	);
 	if (!parsed.ok) {
-		return parsed;
+		return Promise.resolve(parsed);
 	}
 	const { store, ports, authorization } = resolveCommandDeps(options);
 	const authorized = await requireMasterCommandPermission(authorization, {
@@ -131,7 +132,7 @@ export async function updateWarehouse(
 		"Invalid warehouse update input",
 	);
 	if (!parsed.ok) {
-		return parsed;
+		return Promise.resolve(parsed);
 	}
 	const { store, ports, authorization } = resolveCommandDeps(options);
 	const authorized = await requireMasterCommandPermission(authorization, {
@@ -176,7 +177,7 @@ export async function moveWarehouse(
 		"Invalid warehouse move input",
 	);
 	if (!parsed.ok) {
-		return parsed;
+		return Promise.resolve(parsed);
 	}
 	const { store, ports, authorization } = resolveCommandDeps(options);
 	const authorized = await requireMasterCommandPermission(authorization, {
@@ -293,7 +294,7 @@ async function transitionWarehouseStatus(
 	return afterWarehouseMutation(result, options);
 }
 
-export async function activateWarehouse(
+export function activateWarehouse(
 	input: unknown,
 	options: MasterCommandOptions = {},
 ): Promise<Result<Warehouse>> {
@@ -306,7 +307,7 @@ export async function activateWarehouse(
 	);
 }
 
-export async function inactiveWarehouse(
+export function inactiveWarehouse(
 	input: unknown,
 	options: MasterCommandOptions = {},
 ): Promise<Result<Warehouse>> {
@@ -321,7 +322,7 @@ export async function inactiveWarehouse(
 
 export const suspendWarehouse = inactiveWarehouse;
 
-export async function retireWarehouse(
+export function retireWarehouse(
 	input: unknown,
 	options: MasterCommandOptions = {},
 ): Promise<Result<Warehouse>> {
@@ -398,7 +399,9 @@ export async function existsWarehouseByCode(
 	options: MasterQueryOptions = {},
 ): Promise<Result<boolean>> {
 	const result = await getWarehouseByCode(input, options);
-	if (!result.ok) return result;
+	if (!result.ok) {
+		return result;
+	}
 	return ok(result.data !== null);
 }
 
@@ -433,41 +436,53 @@ export async function listWarehouses(
 	});
 }
 
-export async function listActiveWarehouses(
+export function listActiveWarehouses(
 	input: unknown,
 	options: MasterQueryOptions = {},
 ): Promise<Result<Warehouse[]>> {
-	const parsed = parseMasterInput(
-		masterListOptionsSchema,
-		input,
-		"Invalid active warehouse list input",
-	);
-	if (!parsed.ok) return parsed;
-	return listWarehouses({ ...parsed.data, status: "active" }, options);
+	return resolveAsync(() => {
+		const parsed = parseMasterInput(
+			masterListOptionsSchema,
+			input,
+			"Invalid active warehouse list input",
+		);
+		if (!parsed.ok) {
+			return parsed;
+		}
+		return listWarehouses({ ...parsed.data, status: "active" }, options);
+	});
 }
 
-export async function listWarehousesByStatus(
+export function listWarehousesByStatus(
 	input: unknown,
 	options: MasterQueryOptions = {},
 ): Promise<Result<Warehouse[]>> {
-	const parsed = parseMasterInput(
-		listByStatusInputSchema,
-		input,
-		"Invalid warehouse list-by-status input",
-	);
-	if (!parsed.ok) return parsed;
-	return listWarehouses(parsed.data, options);
+	return resolveAsync(() => {
+		const parsed = parseMasterInput(
+			listByStatusInputSchema,
+			input,
+			"Invalid warehouse list-by-status input",
+		);
+		if (!parsed.ok) {
+			return parsed;
+		}
+		return listWarehouses(parsed.data, options);
+	});
 }
 
-export async function listWarehousesUpdatedSince(
+export function listWarehousesUpdatedSince(
 	input: unknown,
 	options: MasterQueryOptions = {},
 ): Promise<Result<Warehouse[]>> {
-	const parsed = parseMasterInput(
-		listUpdatedSinceInputSchema,
-		input,
-		"Invalid warehouse updated-since list input",
-	);
-	if (!parsed.ok) return parsed;
-	return listWarehouses(parsed.data, options);
+	return resolveAsync(() => {
+		const parsed = parseMasterInput(
+			listUpdatedSinceInputSchema,
+			input,
+			"Invalid warehouse updated-since list input",
+		);
+		if (!parsed.ok) {
+			return parsed;
+		}
+		return listWarehouses(parsed.data, options);
+	});
 }

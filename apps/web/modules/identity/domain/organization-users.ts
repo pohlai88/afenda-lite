@@ -5,12 +5,12 @@
 
 import { findOrgMember, listOrgMembers, type OrgMember } from "@afenda/auth";
 
-export type OrganizationUser = {
-	userId: string;
+export interface OrganizationUser {
 	email: string;
 	name: string;
 	neonRole: OrgMember["role"];
-};
+	userId: string;
+}
 
 function toOrganizationUser(member: OrgMember): OrganizationUser {
 	return {

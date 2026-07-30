@@ -31,7 +31,7 @@ export const drizzleHireOrchestrationMethods: Pick<
 			)
 			.limit(1);
 
-		const row = rows[0];
+		const [row] = rows;
 		if (row === undefined) {
 			return ok(null);
 		}
@@ -139,7 +139,7 @@ export const drizzleHireOrchestrationMethods: Pick<
 			.from(hrHireAttempt)
 			.where(eq(hrHireAttempt.id, id))
 			.limit(1);
-		const row = rows[0];
+		const [row] = rows;
 		if (row === undefined) {
 			return notFound("Hire attempt not found after create");
 		}
@@ -158,7 +158,7 @@ export const drizzleHireOrchestrationMethods: Pick<
 			)
 			.limit(1);
 
-		const existing = rows[0];
+		const [existing] = rows;
 		if (existing === undefined) {
 			return notFound("Hire attempt not found");
 		}
@@ -200,7 +200,7 @@ export const drizzleHireOrchestrationMethods: Pick<
 				)
 				.returning();
 
-			const updated = updatedRows[0];
+			const [updated] = updatedRows;
 			if (updated === undefined) {
 				return conflict("Hire attempt optimistic update failed");
 			}

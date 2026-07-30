@@ -18,6 +18,8 @@ import { fileURLToPath } from "node:url";
 
 const REPOSITORY_MARKER = "pnpm-workspace.yaml";
 const LOCAL_ENV_FILE = ".env.local";
+const ENV_FILE_LINE_PATTERN = /\r?\n/;
+const DATABASE_URL_ASSIGNMENT_PATTERN = /^DATABASE_URL\s*=\s*(.*)$/;
 
 type Environment = NodeJS.ProcessEnv;
 
@@ -69,33 +71,40 @@ function isDatabaseRequired(environment: Environment): boolean {
 	);
 }
 
+function findRepositoryRootFrom(
+	currentDirectory: string,
+	startDirectory: string,
+	fileSystem: FileSystemPort,
+): string {
+	const markerPath = path.join(currentDirectory, REPOSITORY_MARKER);
+	if (fileSystem.exists(markerPath)) {
+		return currentDirectory;
+	}
+
+	const parentDirectory = path.dirname(currentDirectory);
+	if (parentDirectory === currentDirectory) {
+		throw new Error(
+			[
+				"@afenda/testing could not locate the workspace root.",
+				`Expected to find ${REPOSITORY_MARKER} while walking upward`,
+				`from ${startDirectory}.`,
+			].join(" "),
+		);
+	}
+
+	return findRepositoryRootFrom(parentDirectory, startDirectory, fileSystem);
+}
+
 function findRepositoryRoot(
 	startDirectory: string,
 	fileSystem: FileSystemPort,
 ): string {
-	let currentDirectory = path.resolve(startDirectory);
-
-	while (true) {
-		const markerPath = path.join(currentDirectory, REPOSITORY_MARKER);
-
-		if (fileSystem.exists(markerPath)) {
-			return currentDirectory;
-		}
-
-		const parentDirectory = path.dirname(currentDirectory);
-
-		if (parentDirectory === currentDirectory) {
-			throw new Error(
-				[
-					"@afenda/testing could not locate the workspace root.",
-					`Expected to find ${REPOSITORY_MARKER} while walking upward`,
-					`from ${path.resolve(startDirectory)}.`,
-				].join(" "),
-			);
-		}
-
-		currentDirectory = parentDirectory;
-	}
+	const resolvedStartDirectory = path.resolve(startDirectory);
+	return findRepositoryRootFrom(
+		resolvedStartDirectory,
+		resolvedStartDirectory,
+		fileSystem,
+	);
 }
 
 function unwrapQuotedValue(value: string): string {
@@ -103,8 +112,8 @@ function unwrapQuotedValue(value: string): string {
 		return value;
 	}
 
-	const firstCharacter = value[0];
-	const lastCharacter = value[value.length - 1];
+	const [firstCharacter] = value;
+	const lastCharacter = value.at(-1);
 	const isDoubleQuoted = firstCharacter === '"' && lastCharacter === '"';
 	const isSingleQuoted = firstCharacter === "'" && lastCharacter === "'";
 
@@ -112,14 +121,14 @@ function unwrapQuotedValue(value: string): string {
 }
 
 function parseDatabaseUrlFromEnvFile(text: string): string | undefined {
-	for (const line of text.split(/\r?\n/)) {
+	for (const line of text.split(ENV_FILE_LINE_PATTERN)) {
 		const trimmedLine = line.trim();
 
 		if (trimmedLine.length === 0 || trimmedLine.startsWith("#")) {
 			continue;
 		}
 
-		const match = /^DATABASE_URL\s*=\s*(.*)$/.exec(trimmedLine);
+		const match = DATABASE_URL_ASSIGNMENT_PATTERN.exec(trimmedLine);
 
 		if (!match) {
 			continue;
@@ -130,8 +139,6 @@ function parseDatabaseUrlFromEnvFile(text: string): string | undefined {
 
 		return normalizeNonEmptyValue(unwrappedValue);
 	}
-
-	return undefined;
 }
 
 function loadDatabaseUrlFromEnvLocal(
@@ -141,7 +148,7 @@ function loadDatabaseUrlFromEnvLocal(
 	const envFilePath = path.join(repositoryRoot, LOCAL_ENV_FILE);
 
 	if (!fileSystem.exists(envFilePath)) {
-		return undefined;
+		return;
 	}
 
 	return parseDatabaseUrlFromEnvFile(fileSystem.readText(envFilePath));
@@ -191,7 +198,7 @@ export function resolveDatabaseUrlForTests(
 		? "environment"
 		: "missing";
 
-	if (!databaseUrl && !runningInCi) {
+	if (!(databaseUrl || runningInCi)) {
 		const repositoryRoot = resolveRepositoryRoot(options, fileSystem);
 		databaseUrl = loadDatabaseUrlFromEnvLocal(repositoryRoot, fileSystem);
 

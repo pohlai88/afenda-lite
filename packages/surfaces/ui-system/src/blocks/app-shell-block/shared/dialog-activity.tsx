@@ -50,6 +50,7 @@ export function ActivityDialog({
 		},
 		[onOpenChange],
 	);
+	const openDialog = useCallback(() => setDialogOpen(true), [setDialogOpen]);
 
 	useEffect(() => {
 		if (!open) {
@@ -77,7 +78,7 @@ export function ActivityDialog({
 			},
 		})
 	) : (
-		<button type="button" onClick={() => setDialogOpen(true)}>
+		<button onClick={openDialog} type="button">
 			{trigger}
 		</button>
 	);
@@ -86,15 +87,10 @@ export function ActivityDialog({
 		<>
 			{triggerElement}
 			{open ? (
-				<div
-					role="dialog"
+				<dialog
 					aria-label="Activity"
 					className="fixed inset-0 z-50 bg-background/80 p-6"
-					onKeyDown={(event) => {
-						if (event.key === "Escape") {
-							setDialogOpen(false);
-						}
-					}}
+					open
 				>
 					<div className="mx-auto max-w-lg rounded-lg border bg-popover p-4 shadow-lg">
 						<h2>Activity</h2>
@@ -134,7 +130,7 @@ export function ActivityDialog({
 							</ScrollArea>
 						)}
 					</div>
-				</div>
+				</dialog>
 			) : null}
 		</>
 	);

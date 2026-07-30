@@ -46,7 +46,9 @@ export function canTransitionReviewCycleStatus(
 	current: CompensationReviewCycleStatus,
 	next: CompensationReviewCycleStatus,
 ): boolean {
-	if (current === next) return false;
+	if (current === next) {
+		return false;
+	}
 	if (current === "draft" && (next === "open" || next === "cancelled")) {
 		return true;
 	}
@@ -105,9 +107,11 @@ export function assertCanFinalizeCompensationReview(review: {
 		return invalidState("Compensation review must be recorded before approval");
 	}
 	if (
-		!review.proposedBaseAmount ||
-		!review.proposedCurrencyCode ||
-		!review.effectiveFrom
+		!(
+			review.proposedBaseAmount &&
+			review.proposedCurrencyCode &&
+			review.effectiveFrom
+		)
 	) {
 		return invalidState(
 			"Review must have proposed amount, currency, and effective date before approval",

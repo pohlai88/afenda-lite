@@ -3,7 +3,6 @@
  */
 
 import { describe, expect, it } from "vitest";
-
 import type { HumanResourcesPermission } from "../src/authorization";
 import { createEmployee } from "../src/core/employee";
 import { createEmployment } from "../src/core/employment";
@@ -29,6 +28,7 @@ import {
 } from "../src/permissions";
 import { createMemoryHumanResourcesStore } from "../src/testing";
 import { createTestHumanResourcesCommandOptions } from "./helpers/command-options";
+import { helperAssert as assert } from "./helpers/helper-assert";
 import {
 	createStoreBackedIdentityResolver,
 	mapActorToEmployee,
@@ -81,8 +81,10 @@ async function seedWorker(ready: ReturnType<typeof harness>) {
 		},
 		ready,
 	);
-	expect(employee.ok).toBe(true);
-	if (!employee.ok) return null;
+	assert.strictEqual(employee.ok, true);
+	if (!employee.ok) {
+		return null;
+	}
 
 	await mapActorToEmployee(ready.store, {
 		organizationId: ORG,
@@ -102,8 +104,10 @@ async function seedWorker(ready: ReturnType<typeof harness>) {
 		},
 		ready,
 	);
-	expect(employment.ok).toBe(true);
-	if (!employment.ok) return null;
+	assert.strictEqual(employment.ok, true);
+	if (!employment.ok) {
+		return null;
+	}
 
 	return { employee: employee.data, employment: employment.data };
 }
@@ -129,7 +133,9 @@ describe("Slice 7.1 — Leave policy administration", () => {
 			ready,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 		expect(created.data.allowsNegativeBalance).toBe(true);
 		expect(created.data.accrualBasis).toBe("periodic");
 		expect(created.data.carryForwardEnabled).toBe(true);
@@ -146,7 +152,9 @@ describe("Slice 7.1 — Leave policy administration", () => {
 			ready,
 		);
 		expect(loaded.ok).toBe(true);
-		if (!loaded.ok || loaded.data === null) return;
+		if (!loaded.ok || loaded.data === null) {
+			return;
+		}
 		expect(loaded.data.accrualQuantityPerPeriod).toBe("1.5");
 		expect(loaded.data.carryForwardMaxQuantity).toBe("5");
 	});
@@ -194,7 +202,9 @@ describe("Slice 7.1 — Leave policy administration", () => {
 			ready,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const updated = await updateLeavePolicy(
 			{
@@ -208,7 +218,9 @@ describe("Slice 7.1 — Leave policy administration", () => {
 			ready,
 		);
 		expect(updated.ok).toBe(true);
-		if (!updated.ok) return;
+		if (!updated.ok) {
+			return;
+		}
 		expect(updated.data.accrualBasis).toBe("periodic");
 		expect(updated.data.carryForwardMaxQuantity).toBe("5");
 	});
@@ -231,7 +243,9 @@ describe("Slice 7.1 — Leave policy administration", () => {
 			ready,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const published = await publishLeavePolicy(
 			{
@@ -244,7 +258,9 @@ describe("Slice 7.1 — Leave policy administration", () => {
 			ready,
 		);
 		expect(published.ok).toBe(true);
-		if (!published.ok) return;
+		if (!published.ok) {
+			return;
+		}
 
 		const updateAfterPublish = await updateLeavePolicy(
 			{
@@ -273,7 +289,9 @@ describe("Slice 7.1 — Leave policy administration", () => {
 			ready,
 		);
 		expect(archived.ok).toBe(true);
-		if (!archived.ok) return;
+		if (!archived.ok) {
+			return;
+		}
 		expect(archived.data.status).toBe("archived");
 
 		const updateAfterArchive = await updateLeavePolicy(
@@ -293,7 +311,9 @@ describe("Slice 7.1 — Leave policy administration", () => {
 	it("supersedes policy lineage and resolves historical as-of dates", async () => {
 		const ready = harness();
 		const worker = await seedWorker(ready);
-		if (worker === null) return;
+		if (worker === null) {
+			return;
+		}
 
 		const v1Created = await createLeavePolicy(
 			{
@@ -313,7 +333,9 @@ describe("Slice 7.1 — Leave policy administration", () => {
 			ready,
 		);
 		expect(v1Created.ok).toBe(true);
-		if (!v1Created.ok) return;
+		if (!v1Created.ok) {
+			return;
+		}
 
 		const v1Published = await publishLeavePolicy(
 			{
@@ -326,7 +348,9 @@ describe("Slice 7.1 — Leave policy administration", () => {
 			ready,
 		);
 		expect(v1Published.ok).toBe(true);
-		if (!v1Published.ok) return;
+		if (!v1Published.ok) {
+			return;
+		}
 
 		const v2 = await supersedeLeavePolicy(
 			{
@@ -348,7 +372,9 @@ describe("Slice 7.1 — Leave policy administration", () => {
 			ready,
 		);
 		expect(v2.ok).toBe(true);
-		if (!v2.ok) return;
+		if (!v2.ok) {
+			return;
+		}
 		expect(v2.data.status).toBe("published");
 		expect(v2.data.supersedesPolicyId).toBe(v1Published.data.id);
 		expect(v2.data.accrualBasis).toBe("periodic");
@@ -363,7 +389,9 @@ describe("Slice 7.1 — Leave policy administration", () => {
 			ready,
 		);
 		expect(v1Loaded.ok).toBe(true);
-		if (!v1Loaded.ok || v1Loaded.data === null) return;
+		if (!v1Loaded.ok || v1Loaded.data === null) {
+			return;
+		}
 		expect(v1Loaded.data.status).toBe("superseded");
 
 		const beforeCutover = await resolveApplicableLeavePolicy(
@@ -379,7 +407,9 @@ describe("Slice 7.1 — Leave policy administration", () => {
 			ready,
 		);
 		expect(beforeCutover.ok).toBe(true);
-		if (!beforeCutover.ok) return;
+		if (!beforeCutover.ok) {
+			return;
+		}
 		expect(beforeCutover.data?.policy.id).toBe(v1Published.data.id);
 
 		const afterCutover = await resolveApplicableLeavePolicy(
@@ -395,14 +425,18 @@ describe("Slice 7.1 — Leave policy administration", () => {
 			ready,
 		);
 		expect(afterCutover.ok).toBe(true);
-		if (!afterCutover.ok) return;
+		if (!afterCutover.ok) {
+			return;
+		}
 		expect(afterCutover.data?.policy.id).toBe(v2.data.id);
 	});
 
 	it("returns null when eligibility tenure or status does not match", async () => {
 		const ready = harness();
 		const worker = await seedWorker(ready);
-		if (worker === null) return;
+		if (worker === null) {
+			return;
+		}
 
 		const created = await createLeavePolicy(
 			{
@@ -421,7 +455,9 @@ describe("Slice 7.1 — Leave policy administration", () => {
 			ready,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const published = await publishLeavePolicy(
 			{
@@ -434,7 +470,9 @@ describe("Slice 7.1 — Leave policy administration", () => {
 			ready,
 		);
 		expect(published.ok).toBe(true);
-		if (!published.ok) return;
+		if (!published.ok) {
+			return;
+		}
 
 		const tooEarly = await resolveApplicableLeavePolicy(
 			{
@@ -449,7 +487,9 @@ describe("Slice 7.1 — Leave policy administration", () => {
 			ready,
 		);
 		expect(tooEarly.ok).toBe(true);
-		if (!tooEarly.ok) return;
+		if (!tooEarly.ok) {
+			return;
+		}
 		expect(tooEarly.data).toBeNull();
 
 		const eligible = await resolveApplicableLeavePolicy(
@@ -465,7 +505,9 @@ describe("Slice 7.1 — Leave policy administration", () => {
 			ready,
 		);
 		expect(eligible.ok).toBe(true);
-		if (!eligible.ok) return;
+		if (!eligible.ok) {
+			return;
+		}
 		expect(eligible.data?.policy.id).toBe(published.data.id);
 
 		const suspended = await suspendEmployment(
@@ -480,7 +522,9 @@ describe("Slice 7.1 — Leave policy administration", () => {
 			ready,
 		);
 		expect(suspended.ok).toBe(true);
-		if (!suspended.ok) return;
+		if (!suspended.ok) {
+			return;
+		}
 		expect(suspended.data.status).toBe("notice");
 
 		const statusMismatch = await resolveApplicableLeavePolicy(
@@ -496,7 +540,9 @@ describe("Slice 7.1 — Leave policy administration", () => {
 			ready,
 		);
 		expect(statusMismatch.ok).toBe(true);
-		if (!statusMismatch.ok) return;
+		if (!statusMismatch.ok) {
+			return;
+		}
 		expect(statusMismatch.data).toBeNull();
 	});
 });

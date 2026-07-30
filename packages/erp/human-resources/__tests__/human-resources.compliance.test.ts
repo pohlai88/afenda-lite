@@ -166,7 +166,9 @@ describe("human-resources compliance (memory)", () => {
 			ready,
 		);
 		expect(registered.ok).toBe(true);
-		if (!registered.ok) return;
+		if (!registered.ok) {
+			return;
+		}
 		expect(registered.data.verificationStatus).toBe("pending");
 		expect(registered.data.identifierLast4).toBe("5678");
 
@@ -200,7 +202,9 @@ describe("human-resources compliance (memory)", () => {
 			ready,
 		);
 		expect(registered.ok).toBe(false);
-		if (registered.ok) return;
+		if (registered.ok) {
+			return;
+		}
 		expect(humanResourcesCodeFromResult(registered)).toBe(
 			HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 		);
@@ -229,7 +233,9 @@ describe("human-resources compliance (memory)", () => {
 			ready,
 		);
 		expect(registered.ok).toBe(true);
-		if (!registered.ok) return;
+		if (!registered.ok) {
+			return;
+		}
 
 		const denied = await verifyEmployeeDocument(
 			{
@@ -243,7 +249,9 @@ describe("human-resources compliance (memory)", () => {
 			ready,
 		);
 		expect(denied.ok).toBe(false);
-		if (denied.ok) return;
+		if (denied.ok) {
+			return;
+		}
 		expect(humanResourcesCodeFromResult(denied)).toBe(
 			HUMAN_RESOURCES_ERROR_FORBIDDEN,
 		);
@@ -276,7 +284,9 @@ describe("human-resources compliance (memory)", () => {
 			ready,
 		);
 		expect(registered.ok).toBe(true);
-		if (!registered.ok) return;
+		if (!registered.ok) {
+			return;
+		}
 
 		const rejected = await rejectEmployeeDocument(
 			{
@@ -290,7 +300,9 @@ describe("human-resources compliance (memory)", () => {
 			ready,
 		);
 		expect(rejected.ok).toBe(true);
-		if (!rejected.ok) return;
+		if (!rejected.ok) {
+			return;
+		}
 		expect(rejected.data.verificationStatus).toBe("rejected");
 		expect(rejected.data.rejectionReason).toBe("Image unreadable");
 	});
@@ -319,7 +331,9 @@ describe("human-resources compliance (memory)", () => {
 			ready,
 		);
 		expect(registered.ok).toBe(true);
-		if (!registered.ok) return;
+		if (!registered.ok) {
+			return;
+		}
 
 		const firstVerify = await verifyEmployeeDocument(
 			{
@@ -333,7 +347,9 @@ describe("human-resources compliance (memory)", () => {
 			ready,
 		);
 		expect(firstVerify.ok).toBe(true);
-		if (!firstVerify.ok) return;
+		if (!firstVerify.ok) {
+			return;
+		}
 
 		const revoked = await revokeEmployeeDocumentVerification(
 			{
@@ -346,7 +362,9 @@ describe("human-resources compliance (memory)", () => {
 			ready,
 		);
 		expect(revoked.ok).toBe(true);
-		if (!revoked.ok) return;
+		if (!revoked.ok) {
+			return;
+		}
 
 		const secondVerify = await verifyEmployeeDocument(
 			{
@@ -360,7 +378,9 @@ describe("human-resources compliance (memory)", () => {
 			ready,
 		);
 		expect(secondVerify.ok).toBe(true);
-		if (!secondVerify.ok) return;
+		if (!secondVerify.ok) {
+			return;
+		}
 		expect(secondVerify.data.version).toBeGreaterThan(registered.data.version);
 		expect(
 			ready.ports.audit.calls.filter(
@@ -400,7 +420,9 @@ describe("human-resources compliance (memory)", () => {
 			ready,
 		);
 		expect(registered.ok).toBe(true);
-		if (!registered.ok) return;
+		if (!registered.ok) {
+			return;
+		}
 
 		const verified = await verifyEmployeeDocument(
 			{
@@ -414,7 +436,9 @@ describe("human-resources compliance (memory)", () => {
 			ready,
 		);
 		expect(verified.ok).toBe(true);
-		if (!verified.ok) return;
+		if (!verified.ok) {
+			return;
+		}
 
 		const expired = await markEmployeeDocumentExpired(
 			{
@@ -427,7 +451,9 @@ describe("human-resources compliance (memory)", () => {
 			ready,
 		);
 		expect(expired.ok).toBe(true);
-		if (!expired.ok) return;
+		if (!expired.ok) {
+			return;
+		}
 		expect(expired.data.verificationStatus).toBe("expired");
 		expect(expired.data.verifiedBy).toBeNull();
 	});
@@ -457,7 +483,9 @@ describe("human-resources compliance (memory)", () => {
 			ready,
 		);
 		expect(registered.ok).toBe(true);
-		if (!registered.ok) return;
+		if (!registered.ok) {
+			return;
+		}
 
 		const listed = await listEmployeeDocuments(
 			{
@@ -469,7 +497,9 @@ describe("human-resources compliance (memory)", () => {
 			ready,
 		);
 		expect(listed.ok).toBe(true);
-		if (!listed.ok) return;
+		if (!listed.ok) {
+			return;
+		}
 		expect(listed.data.documents).toHaveLength(1);
 		expect(listed.data.documents[0]).not.toHaveProperty("identifierLast4");
 		expect(listed.data.documents[0]).not.toHaveProperty("documentRef");
@@ -496,7 +526,9 @@ describe("human-resources compliance (memory)", () => {
 			ready,
 		);
 		expect(crossOrg.ok).toBe(false);
-		if (crossOrg.ok) return;
+		if (crossOrg.ok) {
+			return;
+		}
 		expect(humanResourcesCodeFromResult(crossOrg)).toBe(
 			HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 		);
@@ -526,7 +558,9 @@ describe("human-resources compliance (memory)", () => {
 			ready,
 		);
 		expect(recorded.ok).toBe(true);
-		if (!recorded.ok) return;
+		if (!recorded.ok) {
+			return;
+		}
 
 		const verified = await verifyWorkEligibility(
 			{
@@ -540,7 +574,9 @@ describe("human-resources compliance (memory)", () => {
 			ready,
 		);
 		expect(verified.ok).toBe(true);
-		if (!verified.ok) return;
+		if (!verified.ok) {
+			return;
+		}
 
 		const suspended = await suspendWorkEligibility(
 			{
@@ -553,7 +589,9 @@ describe("human-resources compliance (memory)", () => {
 			ready,
 		);
 		expect(suspended.ok).toBe(true);
-		if (!suspended.ok) return;
+		if (!suspended.ok) {
+			return;
+		}
 		expect(
 			ready.ports.outbox.calls.some(
 				(call) =>
@@ -572,7 +610,9 @@ describe("human-resources compliance (memory)", () => {
 			ready,
 		);
 		expect(summary.ok).toBe(true);
-		if (!summary.ok) return;
+		if (!summary.ok) {
+			return;
+		}
 		expect(summary.data.workEligibilityAtRisk).toBe(true);
 	});
 
@@ -600,7 +640,9 @@ describe("human-resources compliance (memory)", () => {
 			ready,
 		);
 		expect(issued.ok).toBe(true);
-		if (!issued.ok) return;
+		if (!issued.ok) {
+			return;
+		}
 		expect(
 			ready.ports.outbox.calls.some(
 				(call) =>
@@ -620,7 +662,9 @@ describe("human-resources compliance (memory)", () => {
 			ready,
 		);
 		expect(acknowledged.ok).toBe(true);
-		if (!acknowledged.ok) return;
+		if (!acknowledged.ok) {
+			return;
+		}
 		expect(
 			ready.ports.outbox.calls.some(
 				(call) =>
@@ -641,7 +685,9 @@ describe("human-resources compliance (memory)", () => {
 			ready,
 		);
 		expect(superseded.ok).toBe(true);
-		if (!superseded.ok) return;
+		if (!superseded.ok) {
+			return;
+		}
 		expect(superseded.data.policyVersion).toBe("2026.2");
 		expect(superseded.data.requirementStatus).toBe("outstanding");
 		expect(acknowledged.data.requirementStatus).toBe("acknowledged");
@@ -656,7 +702,9 @@ describe("human-resources compliance (memory)", () => {
 			ready,
 		);
 		expect(outstanding.ok).toBe(true);
-		if (!outstanding.ok) return;
+		if (!outstanding.ok) {
+			return;
+		}
 		expect(outstanding.data.acknowledgements.length).toBeGreaterThan(0);
 	});
 
@@ -725,7 +773,9 @@ describe("human-resources compliance (memory)", () => {
 			ready,
 		);
 		expect(course.ok).toBe(true);
-		if (!course.ok) return;
+		if (!course.ok) {
+			return;
+		}
 
 		const assignment = await assignLearning(
 			{
@@ -740,7 +790,9 @@ describe("human-resources compliance (memory)", () => {
 			ready,
 		);
 		expect(assignment.ok).toBe(true);
-		if (!assignment.ok) return;
+		if (!assignment.ok) {
+			return;
+		}
 
 		const completion = await recordCompletion(
 			{
@@ -757,7 +809,9 @@ describe("human-resources compliance (memory)", () => {
 			ready,
 		);
 		expect(completion.ok).toBe(true);
-		if (!completion.ok) return;
+		if (!completion.ok) {
+			return;
+		}
 
 		const certification = await issueCertification(
 			{
@@ -787,7 +841,9 @@ describe("human-resources compliance (memory)", () => {
 			ready,
 		);
 		expect(operations.ok).toBe(true);
-		if (!operations.ok) return;
+		if (!operations.ok) {
+			return;
+		}
 		expect(operations.data.expiringDocuments.documents).toHaveLength(1);
 		expect(operations.data.workEligibilityRisks.eligibilities).toHaveLength(1);
 		expect(
@@ -822,7 +878,9 @@ describe("human-resources compliance (memory)", () => {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		await registerEmployeeDocument(
 			{
@@ -867,7 +925,9 @@ describe("human-resources compliance (memory)", () => {
 			employmentId: employment.data.id,
 		});
 		expect(after.ok).toBe(true);
-		if (!after.ok || !after.data) return;
+		if (!(after.ok && after.data)) {
+			return;
+		}
 		expect(after.data.status).toBe("active");
 	});
 
@@ -902,7 +962,9 @@ describe("human-resources compliance (memory)", () => {
 			employeeId: employee.id,
 		});
 		expect(listed.ok).toBe(true);
-		if (!listed.ok) return;
+		if (!listed.ok) {
+			return;
+		}
 		expect(listed.data.totalCount).toBe(0);
 	});
 
@@ -957,7 +1019,9 @@ describe("human-resources compliance (memory)", () => {
 			ready,
 		);
 		expect(summary.ok).toBe(true);
-		if (!summary.ok) return;
+		if (!summary.ok) {
+			return;
+		}
 		expect(summary.data.missingRequiredDocumentCount).toBeGreaterThan(0);
 	});
 
@@ -982,7 +1046,9 @@ describe("human-resources compliance (memory)", () => {
 			ready,
 		);
 		expect(employment.ok).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const recorded = await recordWorkEligibility(
 			{
@@ -997,7 +1063,9 @@ describe("human-resources compliance (memory)", () => {
 			ready,
 		);
 		expect(recorded.ok).toBe(true);
-		if (!recorded.ok) return;
+		if (!recorded.ok) {
+			return;
+		}
 
 		const closed = await closeWorkEligibility(
 			{
@@ -1010,7 +1078,9 @@ describe("human-resources compliance (memory)", () => {
 			ready,
 		);
 		expect(closed.ok).toBe(true);
-		if (!closed.ok) return;
+		if (!closed.ok) {
+			return;
+		}
 		expect(closed.data.status).toBe("closed");
 
 		const after = await ready.store.getEmploymentById({
@@ -1018,7 +1088,9 @@ describe("human-resources compliance (memory)", () => {
 			employmentId: employment.data.id,
 		});
 		expect(after.ok).toBe(true);
-		if (!after.ok || !after.data) return;
+		if (!(after.ok && after.data)) {
+			return;
+		}
 		expect(after.data.status).toBe("active");
 	});
 });

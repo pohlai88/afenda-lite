@@ -45,7 +45,7 @@ export async function runVersionedSupplierInvoiceMutation(args: {
 	mutate: VersionedMutation;
 	formData: FormData;
 }): Promise<VersionedSupplierInvoiceActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: args.path,
 		permission: args.permission,
 		safeMessage: args.safeMessage,
@@ -72,7 +72,9 @@ export async function runVersionedSupplierInvoiceMutation(args: {
 					createPayablesCommandOptions(session.userId),
 				),
 			);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePayablesPaths();
 			return { ok: true, data: { invoice: mapped.data } };
 		},

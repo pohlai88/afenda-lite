@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { createMemoryHrObservabilityRecorder } from "../src/observability";
-import { HumanResourcesParityObservabilityReporter } from "../src/testing/parity-observability-reporter";
+import HumanResourcesParityObservabilityReporter from "../src/testing/parity-observability-reporter";
 
 describe("HR parity observability reporter", () => {
 	it("emits one Drizzle integration signal when the parity gate fails", async () => {

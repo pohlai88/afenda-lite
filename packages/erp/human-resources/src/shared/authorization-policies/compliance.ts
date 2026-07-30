@@ -57,7 +57,7 @@ async function canAccessComplianceSubject(
 	request: HumanResourcesAuthorizationRequest,
 	options: HumanResourcesCommandOptions,
 ): Promise<boolean> {
-	const resource = request.resource;
+	const { resource } = request;
 	if (resource === undefined) {
 		return false;
 	}
@@ -114,7 +114,7 @@ async function projectComplianceFields(
 		request.requestedFields === undefined ||
 		request.requestedFields.length === 0
 	) {
-		return undefined;
+		return;
 	}
 
 	const actorPermissions = new Set(resolveActorPermissions(request));
@@ -173,7 +173,7 @@ export const compliancePolicy: HumanResourcesAuthorizationPolicy = {
 			return allowAuthorization("hr.compliance");
 		}
 
-		const resource = request.resource;
+		const { resource } = request;
 		if (resource === undefined) {
 			return denyAuthorization(
 				"resource_context_required",

@@ -8,37 +8,37 @@ import type {
 
 export type ConversationContext = ConversationContextInput;
 
-export type MachineAssistant = {
+export interface MachineAssistant {
+	readonly buildContext: (context: ConversationContext) => string;
 	readonly module: MachineModule;
 	readonly systemPrompt: string;
-	readonly buildContext: (context: ConversationContext) => string;
-};
+}
 
-export type CreateTheMachineConfig = {
-	readonly model: LanguageModel;
-	readonly maxOutputTokens?: number;
-	readonly temperature?: number;
+export interface CreateTheMachineConfig {
 	readonly assistants?: readonly MachineAssistant[];
-};
+	readonly maxOutputTokens?: number;
+	readonly model: LanguageModel;
+	readonly temperature?: number;
+}
 
-export type StreamChatInput = {
-	readonly messages: readonly UiMessage[];
+export interface StreamChatInput {
 	readonly context: ConversationContext;
-};
+	readonly messages: readonly UiMessage[];
+}
 
-export type ChatResult = {
+export interface ChatResult {
+	readonly module: MachineModule;
 	readonly text: string;
-	readonly module: MachineModule;
-};
+}
 
-export type TheMachine = {
-	stream(input: StreamChatInput): Promise<Response>;
-	chat(input: StreamChatInput): Promise<ChatResult>;
-	getAssistant(module: MachineModule): MachineAssistant;
-};
+export interface TheMachine {
+	chat: (input: StreamChatInput) => Promise<ChatResult>;
+	getAssistant: (module: MachineModule) => MachineAssistant;
+	stream: (input: StreamChatInput) => Promise<Response>;
+}
 
-export type IntentClassification = {
-	readonly module: MachineModule;
+export interface IntentClassification {
 	readonly action: "chat" | "help" | "query";
 	readonly confidence: number;
-};
+	readonly module: MachineModule;
+}

@@ -20,14 +20,18 @@ export async function SelfServiceWorkspaceServer({
 }) {
 	const session = await getSession();
 	const permissions = await resolveSelfServicePermissions(session);
-	if (!hasSelfServiceCapability(permissions)) forbidPermissionAccess();
+	if (!hasSelfServiceCapability(permissions)) {
+		forbidPermissionAccess();
+	}
 
 	const identity =
 		await createHumanResourcesIdentityResolverPort().resolveEmployeeForActor({
 			organizationId: session.orgId,
 			actorUserId: session.userId,
 		});
-	if (!identity.ok || identity.data === null) forbidPermissionAccess();
+	if (!identity.ok || identity.data === null) {
+		forbidPermissionAccess();
+	}
 
 	const snapshot = await loadSelfServiceSnapshot({
 		organizationId: session.orgId,

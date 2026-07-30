@@ -1,11 +1,11 @@
 import { asc, db, platformPermission } from "@afenda/db";
 
-export type PermissionCatalogRow = {
+export interface PermissionCatalogRow {
 	code: string;
-	module: string;
 	description: string;
+	module: string;
 	sensitive: boolean;
-};
+}
 
 /**
  * Identity — read the platform permission catalog from `platform_permission`

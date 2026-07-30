@@ -22,11 +22,11 @@ import {
 import type { GovernancePermission } from "./permissions";
 
 export interface GovernanceAuthorizationPort {
-	can(input: {
+	can: (input: {
 		organizationId: string;
 		actorUserId: string;
 		permission: GovernancePermission;
-	}): Promise<boolean>;
+	}) => Promise<boolean>;
 }
 
 export async function requireGovernancePermission(

@@ -39,7 +39,7 @@ export async function createShift(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Shift>> {
-	return runTimeCommand(input, options, {
+	return await runTimeCommand(input, options, {
 		schema: createShiftInputSchema,
 		invalidMessage: "Invalid shift create input",
 		command: HUMAN_RESOURCES_COMMAND_SHIFT_CREATE,
@@ -61,7 +61,9 @@ export async function createShift(
 				organizationId: data.organizationId,
 				idempotencyKey: data.idempotencyKey,
 			});
-			if (!existing.ok) return existing;
+			if (!existing.ok) {
+				return existing;
+			}
 			if (existing.data !== null) {
 				if (existing.data.createRequestFingerprint !== fingerprint) {
 					return fail(
@@ -108,7 +110,7 @@ export async function updateShift(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Shift>> {
-	return runTimeCommand(input, options, {
+	return await runTimeCommand(input, options, {
 		schema: updateShiftInputSchema,
 		invalidMessage: "Invalid shift update input",
 		command: HUMAN_RESOURCES_COMMAND_SHIFT_UPDATE,
@@ -120,7 +122,7 @@ export async function supersedeShift(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<{ superseded: Shift; successor: Shift }>> {
-	return runTimeCommand(input, options, {
+	return await runTimeCommand(input, options, {
 		schema: supersedeShiftInputSchema,
 		invalidMessage: "Invalid shift supersede input",
 		command: HUMAN_RESOURCES_COMMAND_SHIFT_SUPERSEDE,
@@ -129,8 +131,12 @@ export async function supersedeShift(
 				organizationId: data.organizationId,
 				shiftId: data.shiftId,
 			});
-			if (!predecessor.ok) return predecessor;
-			if (predecessor.data === null) return invalidInput("Shift was not found");
+			if (!predecessor.ok) {
+				return predecessor;
+			}
+			if (predecessor.data === null) {
+				return invalidInput("Shift was not found");
+			}
 			if (predecessor.data.status !== "active") {
 				return invalidInput("Only active shifts can be superseded");
 			}
@@ -163,31 +169,31 @@ export async function supersedeShift(
 				graceLateMinutes:
 					data.graceLateMinutes ?? predecessor.data.graceLateMinutes,
 				minDurationMinutes:
-					data.minDurationMinutes !== undefined
-						? data.minDurationMinutes
-						: predecessor.data.minDurationMinutes,
+					data.minDurationMinutes === undefined
+						? predecessor.data.minDurationMinutes
+						: data.minDurationMinutes,
 				maxDurationMinutes:
-					data.maxDurationMinutes !== undefined
-						? data.maxDurationMinutes
-						: predecessor.data.maxDurationMinutes,
+					data.maxDurationMinutes === undefined
+						? predecessor.data.maxDurationMinutes
+						: data.maxDurationMinutes,
 				earliestClockInLocal:
-					data.earliestClockInLocal !== undefined
-						? data.earliestClockInLocal
-						: predecessor.data.earliestClockInLocal,
+					data.earliestClockInLocal === undefined
+						? predecessor.data.earliestClockInLocal
+						: data.earliestClockInLocal,
 				latestClockOutLocal:
-					data.latestClockOutLocal !== undefined
-						? data.latestClockOutLocal
-						: predecessor.data.latestClockOutLocal,
+					data.latestClockOutLocal === undefined
+						? predecessor.data.latestClockOutLocal
+						: data.latestClockOutLocal,
 				overtimeEligible:
 					data.overtimeEligible ?? predecessor.data.overtimeEligible,
 				timezone:
-					data.timezone !== undefined
-						? data.timezone
-						: predecessor.data.timezone,
+					data.timezone === undefined
+						? predecessor.data.timezone
+						: data.timezone,
 				locationKey:
-					data.locationKey !== undefined
-						? data.locationKey
-						: predecessor.data.locationKey,
+					data.locationKey === undefined
+						? predecessor.data.locationKey
+						: data.locationKey,
 				effectiveFrom: data.effectiveFrom,
 				effectiveTo: data.effectiveTo ?? null,
 			};
@@ -200,7 +206,9 @@ export async function supersedeShift(
 				organizationId: data.organizationId,
 				idempotencyKey: data.idempotencyKey,
 			});
-			if (!replay.ok) return replay;
+			if (!replay.ok) {
+				return replay;
+			}
 			if (replay.data !== null) {
 				if (replay.data.createRequestFingerprint !== fingerprint) {
 					return fail(
@@ -216,7 +224,9 @@ export async function supersedeShift(
 					organizationId: data.organizationId,
 					shiftId: data.shiftId,
 				});
-				if (!superseded.ok) return superseded;
+				if (!superseded.ok) {
+					return superseded;
+				}
 				if (superseded.data === null) {
 					return invalidInput("Stored predecessor was not found");
 				}
@@ -247,7 +257,7 @@ export async function activateShift(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Shift>> {
-	return runTimeCommand(input, options, {
+	return await runTimeCommand(input, options, {
 		schema: activateShiftInputSchema,
 		invalidMessage: "Invalid shift activate input",
 		command: HUMAN_RESOURCES_COMMAND_SHIFT_ACTIVATE,
@@ -259,7 +269,7 @@ export async function deactivateShift(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Shift>> {
-	return runTimeCommand(input, options, {
+	return await runTimeCommand(input, options, {
 		schema: deactivateShiftInputSchema,
 		invalidMessage: "Invalid shift deactivate input",
 		command: HUMAN_RESOURCES_COMMAND_SHIFT_DEACTIVATE,
@@ -272,7 +282,7 @@ export async function getShift(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Shift | null>> {
-	return runTimeQuery(input, options, {
+	return await runTimeQuery(input, options, {
 		schema: getShiftInputSchema,
 		invalidMessage: "Invalid shift get input",
 		query: HUMAN_RESOURCES_QUERY_SHIFT_GET,
@@ -288,7 +298,7 @@ export async function listShifts(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Shift[]>> {
-	return runTimeQuery(input, options, {
+	return await runTimeQuery(input, options, {
 		schema: listShiftsInputSchema,
 		invalidMessage: "Invalid shift list input",
 		query: HUMAN_RESOURCES_QUERY_SHIFT_LIST,
@@ -300,7 +310,7 @@ export async function addShiftBreak(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ShiftBreak>> {
-	return runTimeCommand(input, options, {
+	return await runTimeCommand(input, options, {
 		schema: addShiftBreakInputSchema,
 		invalidMessage: "Invalid shift break add input",
 		command: HUMAN_RESOURCES_COMMAND_SHIFT_BREAK_ADD,
@@ -325,7 +335,7 @@ export async function removeShiftBreak(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<void>> {
-	return runTimeCommand(input, options, {
+	return await runTimeCommand(input, options, {
 		schema: removeShiftBreakInputSchema,
 		invalidMessage: "Invalid shift break remove input",
 		command: HUMAN_RESOURCES_COMMAND_SHIFT_BREAK_REMOVE,
@@ -346,7 +356,7 @@ export async function listShiftBreaks(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ShiftBreak[]>> {
-	return runTimeQuery(input, options, {
+	return await runTimeQuery(input, options, {
 		schema: listShiftBreaksInputSchema,
 		invalidMessage: "Invalid shift break list input",
 		query: HUMAN_RESOURCES_QUERY_SHIFT_BREAK_LIST,

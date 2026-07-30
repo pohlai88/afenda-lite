@@ -16,6 +16,7 @@ import type {
 
 const LOAD_ERROR = "Recruitment information is temporarily unavailable.";
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The loader preserves partial-failure handling across recruitment queues.
 export async function loadRecruitmentWorkspace(input: {
 	organizationId: string;
 	actorUserId: string;
@@ -46,11 +47,18 @@ export async function loadRecruitmentWorkspace(input: {
 			input.capabilities.canManageOffers ? listOffers(context, options) : null,
 		]);
 	const errors: RecruitmentWorkspaceData["errors"] = {};
-	if (requisitions && !requisitions.ok) errors.requisitions = LOAD_ERROR;
-	if ((candidates && !candidates.ok) || (applications && !applications.ok))
+	if (requisitions && !requisitions.ok) {
+		errors.requisitions = LOAD_ERROR;
+	}
+	if ((candidates && !candidates.ok) || (applications && !applications.ok)) {
 		errors.candidates = LOAD_ERROR;
-	if (interviews && !interviews.ok) errors.interviews = LOAD_ERROR;
-	if (offers && !offers.ok) errors.offers = LOAD_ERROR;
+	}
+	if (interviews && !interviews.ok) {
+		errors.interviews = LOAD_ERROR;
+	}
+	if (offers && !offers.ok) {
+		errors.offers = LOAD_ERROR;
+	}
 	const requisitionRows = requisitions?.ok
 		? requisitions.data.requisitions
 		: [];
@@ -62,17 +70,23 @@ export async function loadRecruitmentWorkspace(input: {
 	const offerRows = offers?.ok ? offers.data.offers : [];
 	if (
 		requisitionRows.some((row) => row.organizationId !== input.organizationId)
-	)
+	) {
 		errors.requisitions = LOAD_ERROR;
+	}
 	if (
 		candidateRows.some((row) => row.organizationId !== input.organizationId) ||
 		applicationRows.some((row) => row.organizationId !== input.organizationId)
-	)
+	) {
 		errors.candidates = LOAD_ERROR;
-	if (interviewRows.some((row) => row.organizationId !== input.organizationId))
+	}
+	if (
+		interviewRows.some((row) => row.organizationId !== input.organizationId)
+	) {
 		errors.interviews = LOAD_ERROR;
-	if (offerRows.some((row) => row.organizationId !== input.organizationId))
+	}
+	if (offerRows.some((row) => row.organizationId !== input.organizationId)) {
 		errors.offers = LOAD_ERROR;
+	}
 	return {
 		requisitions: errors.requisitions ? [] : requisitionRows,
 		candidates: errors.candidates ? [] : candidateRows,

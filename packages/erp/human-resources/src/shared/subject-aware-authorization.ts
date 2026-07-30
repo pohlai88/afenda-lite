@@ -53,7 +53,9 @@ export async function resolveActorEmployeeIdentity(
 	const identity = await identityResolver.resolveEmployeeForActor(
 		actorIdentityInput(input),
 	);
-	if (!identity.ok) return identity;
+	if (!identity.ok) {
+		return identity;
+	}
 	if (!identity.data) {
 		return fail(
 			"FORBIDDEN",
@@ -93,7 +95,9 @@ export async function requireOwnResourceAccess(
 	const identity = await identityResolver.resolveEmployeeForActor(
 		actorIdentityInput(input),
 	);
-	if (!identity.ok) return identity;
+	if (!identity.ok) {
+		return identity;
+	}
 	if (!identity.data) {
 		return fail(
 			"FORBIDDEN",
@@ -144,7 +148,9 @@ export async function requireManagerResourceAccess(
 	const identity = await identityResolver.resolveEmployeeForActor(
 		actorIdentityInput(input),
 	);
-	if (!identity.ok) return identity;
+	if (!identity.ok) {
+		return identity;
+	}
 	if (!identity.data) {
 		return fail(
 			"FORBIDDEN",
@@ -160,7 +166,9 @@ export async function requireManagerResourceAccess(
 		employeeId: input.targetEmployeeId,
 		asOf: queryDate,
 	});
-	if (!primaryManager.ok) return primaryManager;
+	if (!primaryManager.ok) {
+		return primaryManager;
+	}
 
 	if (
 		!primaryManager.data ||
@@ -186,7 +194,7 @@ export async function requireAdminResourceAccess(
 		permission: HumanResourcesPermission;
 	},
 ): Promise<Result<void>> {
-	return requireHumanResourcesManifestPermission(
+	return await requireHumanResourcesManifestPermission(
 		commandOptions(options),
 		input,
 	);

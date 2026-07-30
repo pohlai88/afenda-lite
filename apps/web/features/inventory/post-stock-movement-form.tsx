@@ -20,11 +20,11 @@ import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 
 const initialState: PostStockMovementActionState = null;
 
-type PostStockMovementFormProps = {
+interface PostStockMovementFormProps {
 	canPost: boolean;
-	defaultMovementId?: string | undefined;
 	defaultExpectedVersion?: number | undefined;
-};
+	defaultMovementId?: string | undefined;
+}
 
 /**
  * Post draft stock movement — applies ledger and balance effects.
@@ -38,6 +38,7 @@ export function PostStockMovementForm({
 		postStockMovementAction,
 		initialState,
 	);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: Rotate the key after each completed action state.
 	const idempotencyKey = useMemo(() => `post:${crypto.randomUUID()}`, [state]);
 
 	if (!canPost) {
@@ -81,47 +82,47 @@ export function PostStockMovementForm({
 				<FormError>{state.message}</FormError>
 			) : null}
 			<input
-				type="hidden"
 				name="idempotencyKey"
-				value={idempotencyKey}
 				readOnly
+				type="hidden"
+				value={idempotencyKey}
 			/>
 			<FormField
+				error={movementError}
+				fieldId="stock-post-movement"
 				label="Movement id"
 				required
-				fieldId="stock-post-movement"
-				error={movementError}
 			>
 				<Input
+					autoComplete="off"
+					defaultValue={defaultMovementId ?? ""}
+					disabled={pending}
 					id="stock-post-movement"
 					name="movementId"
 					required
-					autoComplete="off"
-					disabled={pending}
-					defaultValue={defaultMovementId ?? ""}
 				/>
 			</FormField>
 			<FormField
+				error={versionError}
+				fieldId="stock-post-version"
 				label="Expected version"
 				required
-				fieldId="stock-post-version"
-				error={versionError}
 			>
 				<Input
-					id="stock-post-version"
-					name="expectedVersion"
-					type="number"
-					min="1"
-					required
-					disabled={pending}
 					defaultValue={
-						defaultExpectedVersion !== undefined
-							? String(defaultExpectedVersion)
-							: undefined
+						defaultExpectedVersion === undefined
+							? undefined
+							: String(defaultExpectedVersion)
 					}
+					disabled={pending}
+					id="stock-post-version"
+					min="1"
+					name="expectedVersion"
+					required
+					type="number"
 				/>
 			</FormField>
-			<Button type="submit" disabled={pending}>
+			<Button disabled={pending} type="submit">
 				{pending ? <Spinner /> : null}
 				Post movement
 			</Button>

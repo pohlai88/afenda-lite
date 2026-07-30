@@ -46,13 +46,13 @@ export const Overview: Story = {
 		<div className="min-h-screen bg-canvas text-foreground">
 			<div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-2 border-b pb-6">
-					<p className="text-sm font-medium text-foreground-secondary">
+					<p className="font-medium text-foreground-secondary text-sm">
 						Accounts payable · invoice lines
 					</p>
-					<h1 className="text-2xl font-semibold tracking-tight">
+					<h1 className="font-semibold text-2xl tracking-tight">
 						Line value entry
 					</h1>
-					<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+					<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 						Currency, unit, and percent chrome come from feature policy. The
 						control formats entry — it does not own rounding or ledger
 						precision.
@@ -68,23 +68,23 @@ export const Overview: Story = {
 					</CardHeader>
 					<CardContent className="grid gap-4 sm:grid-cols-2">
 						<FormField
-							label="Unit price"
 							description="Enter the net price before tax."
+							label="Unit price"
 						>
 							<MoneyInput currency="MYR" defaultValue="18.50" />
 						</FormField>
 						<FormField
-							label="Ordered quantity"
 							description="Stock unit from the item master."
+							label="Ordered quantity"
 						>
-							<QuantityInput unit="units" defaultValue="120" />
+							<QuantityInput defaultValue="120" unit="units" />
 						</FormField>
-						<FormField label="Tax rate" description="Statutory output tax.">
+						<FormField description="Statutory output tax." label="Tax rate">
 							<PercentInput defaultValue="8" />
 						</FormField>
 						<FormField
-							label="Sequence"
 							description="Generic scalar without money or unit meaning."
+							label="Sequence"
 						>
 							<NumberInput defaultValue="3" />
 						</FormField>
@@ -114,7 +114,7 @@ export const SemanticUsage: Story = {
 			</StorySection>
 			<StorySection title="QuantityInput · counted stock">
 				<FormField label="Received quantity">
-					<QuantityInput unit="kg" defaultValue="250" />
+					<QuantityInput defaultValue="250" unit="kg" />
 				</FormField>
 			</StorySection>
 			<StorySection title="PercentInput · rate">
@@ -144,13 +144,13 @@ export const Usage: Story = {
 	render: () => (
 		<div className="grid w-96 gap-4">
 			<FormField
-				label="Remittance amount"
 				description="Use the amount shown on the supplier remittance advice."
+				label="Remittance amount"
 			>
 				<MoneyInput currency="MYR" defaultValue="9200.00" />
 			</FormField>
 			<FormField label="Allocated quantity">
-				<QuantityInput unit="units" defaultValue="40" />
+				<QuantityInput defaultValue="40" unit="units" />
 			</FormField>
 		</div>
 	),
@@ -175,10 +175,10 @@ export const StatesAndAccessibility: Story = {
 				<MoneyInput currency="MYR" defaultValue="1500.00" readOnly />
 			</FormField>
 			<FormField label="Locked quantity">
-				<QuantityInput unit="units" defaultValue="25" disabled />
+				<QuantityInput defaultValue="25" disabled unit="units" />
 			</FormField>
-			<FormField label="Tax rate" error="Enter a rate between 0 and 100.">
-				<PercentInput defaultValue="120" aria-invalid />
+			<FormField error="Enter a rate between 0 and 100." label="Tax rate">
+				<PercentInput aria-invalid defaultValue="120" />
 			</FormField>
 		</div>
 	),
@@ -217,10 +217,10 @@ export const Composition: Story = {
 			</CardHeader>
 			<CardContent>
 				<FormField
-					label="Accepted quantity"
 					description="Must not exceed the ordered quantity of 120 units."
+					label="Accepted quantity"
 				>
-					<QuantityInput unit="units" defaultValue="118" min={0} max={120} />
+					<QuantityInput defaultValue="118" max={120} min={0} unit="units" />
 				</FormField>
 			</CardContent>
 			<CardFooter className="justify-end gap-2">
@@ -252,9 +252,9 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 			<StorySection title="Do not: bare number without unit meaning">
 				<NumberInput
-					placeholder="Enter money amount"
 					aria-label="Invoice amount without currency"
 					defaultValue="18420"
+					placeholder="Enter money amount"
 				/>
 			</StorySection>
 		</div>

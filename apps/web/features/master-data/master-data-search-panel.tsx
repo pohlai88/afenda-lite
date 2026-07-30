@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noJsxPropsBind: The enabled React Compiler stabilizes JSX callback props.
 "use client";
 
 import {
@@ -43,24 +44,24 @@ export function MasterDataSearchPanel() {
 	return (
 		<div className="flex flex-col gap-(--field-gap)">
 			<form
-				onSubmit={onSearch}
 				aria-busy={pending}
 				className="flex max-w-lg flex-col gap-(--field-gap)"
+				onSubmit={onSearch}
 			>
-				<FormField label="Search" required fieldId="md-search-query">
+				<FormField fieldId="md-search-query" label="Search" required>
 					<Input
-						id="md-search-query"
-						name="query"
-						value={query}
-						onChange={(event) => setQuery(event.target.value)}
-						required
 						autoComplete="off"
 						disabled={pending}
+						id="md-search-query"
+						name="query"
+						onChange={(event) => setQuery(event.target.value)}
 						placeholder="Party, item, warehouse…"
+						required
+						value={query}
 					/>
 				</FormField>
 				{error ? <FormError>{error}</FormError> : null}
-				<Button type="submit" disabled={pending || query.trim().length === 0}>
+				<Button disabled={pending || query.trim().length === 0} type="submit">
 					{pending ? <Spinner /> : null}
 					Search
 				</Button>

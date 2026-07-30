@@ -1,3 +1,4 @@
+// biome-ignore-all lint/style/useDestructuring: Explicit first-issue access keeps optional validation state visible.
 import { fail, ok, type Result } from "@afenda/errors/result";
 import type { z } from "zod";
 

@@ -27,7 +27,9 @@ export async function listVariantAttributeValues(
 		input,
 		"Invalid variant attribute value list input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const { store, authorization } = resolveItemVariantExtensionDeps(options, [
 		"getItemVariantById",
 	]);
@@ -36,12 +38,16 @@ export async function listVariantAttributeValues(
 		actorUserId: parsed.data.actorUserId,
 		query: MASTER_QUERY_ITEM_VARIANT_ATTRIBUTE_VALUE_LIST,
 	});
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const variant = await store.getItemVariantById(
 		parsed.data.organizationId,
 		parsed.data.id,
 	);
-	if (!variant.ok) return variant;
+	if (!variant.ok) {
+		return variant;
+	}
 	if (variant.data === null) {
 		return fail("NOT_FOUND", "Item variant not found", {
 			reason: "MASTER_NOT_FOUND",
@@ -60,7 +66,9 @@ export async function getVariantConfiguration(
 		input,
 		"Invalid variant configuration input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const { store, authorization } = resolveItemVariantExtensionDeps(options, [
 		"getItemVariantById",
 	]);
@@ -69,12 +77,16 @@ export async function getVariantConfiguration(
 		actorUserId: parsed.data.actorUserId,
 		query: MASTER_QUERY_ITEM_VARIANT_CONFIGURATION_GET,
 	});
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const variant = await store.getItemVariantById(
 		parsed.data.organizationId,
 		parsed.data.id,
 	);
-	if (!variant.ok) return variant;
+	if (!variant.ok) {
+		return variant;
+	}
 	if (variant.data === null) {
 		return fail("NOT_FOUND", "Item variant not found", {
 			reason: "MASTER_NOT_FOUND",

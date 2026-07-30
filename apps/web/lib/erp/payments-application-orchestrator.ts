@@ -1,4 +1,5 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
+// biome-ignore-all lint/performance/noAwaitInLoops: Payment instructions mutate a shared balance and ledger in declared order.
 import {
 	applySupplierPayment,
 	reverseSupplierPaymentApplication,
@@ -19,17 +20,19 @@ import { createPayablesCommandOptions } from "@/lib/erp/payables-command-options
 import { createPaymentsCommandOptions } from "@/lib/erp/payments-command-options";
 import { createReceivablesCommandOptions } from "@/lib/erp/receivables-command-options";
 
-type ApplicationContext = {
-	organizationId: string;
+interface ApplicationContext {
 	actorUserId: string;
 	correlationId: string;
-};
+	organizationId: string;
+}
 
 export async function applyPaymentInstructionsAfterPost(
 	input: ApplicationContext & { payment: Payment },
 ): Promise<Result<void>> {
 	for (const instruction of input.payment.applicationInstructions) {
-		if (instruction.status !== "pending") continue;
+		if (instruction.status !== "pending") {
+			continue;
+		}
 
 		const application =
 			instruction.targetModule === "receivables" &&
@@ -72,7 +75,9 @@ export async function applyPaymentInstructionsAfterPost(
 					},
 					createPaymentsCommandOptions(),
 				);
-		if (!instructionResult.ok) return instructionResult;
+		if (!instructionResult.ok) {
+			return instructionResult;
+		}
 	}
 	return ok(undefined);
 }
@@ -90,9 +95,12 @@ async function applyCustomerReceiptForInstruction(
 		},
 		options,
 	);
-	if (!invoice.ok) return invoice;
-	if (invoice.data === null)
+	if (!invoice.ok) {
+		return invoice;
+	}
+	if (invoice.data === null) {
 		return fail("NOT_FOUND", "Sales invoice not found");
+	}
 
 	return applyCustomerReceipt(
 		{
@@ -129,14 +137,22 @@ export async function reversePaymentApplications(
 			createPayablesCommandOptions(input.actorUserId),
 		),
 	]);
-	if (!customerReversal.ok) return customerReversal;
-	if (!supplierReversal.ok) return supplierReversal;
+	if (!customerReversal.ok) {
+		return customerReversal;
+	}
+	if (!supplierReversal.ok) {
+		return supplierReversal;
+	}
 	const payment = await getPaymentById(
 		{ ...input, id: input.paymentId },
 		createPaymentsCommandOptions(),
 	);
-	if (!payment.ok) return payment;
-	if (payment.data === null) return fail("NOT_FOUND", "Payment not found");
+	if (!payment.ok) {
+		return payment;
+	}
+	if (payment.data === null) {
+		return fail("NOT_FOUND", "Payment not found");
+	}
 	for (const instruction of payment.data.applicationInstructions) {
 		if (instruction.status !== "pending" && instruction.status !== "applied") {
 			continue;
@@ -150,7 +166,10 @@ export async function reversePaymentApplications(
 			},
 			createPaymentsCommandOptions(),
 		);
-		if (!marked.ok) return marked;
+		if (!marked.ok) {
+			return marked;
+		}
 	}
 	return ok(undefined);
 }
+// biome-ignore-all lint/style/noNestedTernary: Exhaustive status and tri-state view mappings remain explicit at their use sites.

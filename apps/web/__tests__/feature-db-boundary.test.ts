@@ -32,7 +32,9 @@ function collectSourceFiles(dir: string): string[] {
 	}
 	const files: string[] = [];
 	for (const entry of readdirSync(dir)) {
-		if (SKIP_DIRS.has(entry)) continue;
+		if (SKIP_DIRS.has(entry)) {
+			continue;
+		}
 		const fullPath = path.join(dir, entry);
 		const stats = statSync(fullPath);
 		if (stats.isDirectory()) {
@@ -74,8 +76,12 @@ describe("@afenda/web feature → domain → db boundary (I2.2)", () => {
 		for (const file of collectSourceFiles(modulesRoot)) {
 			const relative = toRepoPath(file);
 			const matches = dbImportMatches(readFileSync(file, "utf-8"));
-			if (matches.length === 0) continue;
-			if (/\/domain\//.test(relative)) continue;
+			if (matches.length === 0) {
+				continue;
+			}
+			if (/\/domain\//.test(relative)) {
+				continue;
+			}
 			for (const match of matches) {
 				offenders.push(`${relative} -> ${match}`);
 			}
@@ -86,7 +92,9 @@ describe("@afenda/web feature → domain → db boundary (I2.2)", () => {
 	it("domain ports that touch db exist (feature → domain path is real)", () => {
 		const domainDbImporters = collectSourceFiles(modulesRoot).filter((file) => {
 			const relative = toRepoPath(file);
-			if (!/\/domain\//.test(relative)) return false;
+			if (!/\/domain\//.test(relative)) {
+				return false;
+			}
 			return dbImportMatches(readFileSync(file, "utf-8")).length > 0;
 		});
 		expect(domainDbImporters.length).toBeGreaterThan(0);

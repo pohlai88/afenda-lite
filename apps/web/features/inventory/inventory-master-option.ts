@@ -1,5 +1,5 @@
-export type InventoryMasterOption = {
-	id: string;
+export interface InventoryMasterOption {
 	code: string;
+	id: string;
 	status: string;
-};
+}

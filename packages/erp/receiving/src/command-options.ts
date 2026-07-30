@@ -12,19 +12,19 @@ import { createProductionMutationPorts } from "./production-ports";
 import { resolveReceivingStore } from "./resolve-store";
 import type { ReceivingStore } from "./store";
 
-export type ReceivingCommandOptions = {
-	store?: ReceivingStore;
-	ports?: MutationPorts;
-	masters?: MasterLookupPort;
+export interface ReceivingCommandOptions {
 	authorization?: ReceivingAuthorizationPort;
-	masterAuthorization?: MasterAuthorizationPort;
 	inventory?: InventoryCommandOptions;
+	masterAuthorization?: MasterAuthorizationPort;
+	masters?: MasterLookupPort;
+	ports?: MutationPorts;
 	/**
 	 * Required for purchase_order source create/post — apps/web injects SQL adapter;
 	 * tests inject memory helper.
 	 */
 	purchaseOrderReceivingQuery?: PurchaseOrderReceivingQueryPort;
-};
+	store?: ReceivingStore;
+}
 
 export function resolveCommandDeps(options: ReceivingCommandOptions = {}): {
 	store: ReceivingStore;

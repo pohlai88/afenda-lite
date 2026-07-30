@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noJsxPropsBind: The enabled React Compiler stabilizes JSX callback props.
 "use client";
 
 import { Button, Textarea } from "@afenda/ui-system";
@@ -35,22 +36,22 @@ export function TheMachineChat() {
 			className="mx-auto flex w-full max-w-lg flex-col gap-4 text-left"
 		>
 			<header className="space-y-1">
-				<p className="text-sm font-medium tracking-wide text-muted-foreground">
+				<p className="font-medium text-muted-foreground text-sm tracking-wide">
 					The Machine
 				</p>
-				<h2 className="text-lg font-semibold text-foreground">
+				<h2 className="font-semibold text-foreground text-lg">
 					Ask about platform or identity
 				</h2>
 			</header>
 
 			<ul className="flex max-h-72 flex-col gap-3 overflow-y-auto rounded-md border border-border bg-surface-sunken p-3">
 				{messages.length === 0 ? (
-					<li className="text-sm text-muted-foreground">
+					<li className="text-muted-foreground text-sm">
 						No messages yet. Ask about organizations, roles, or sessions.
 					</li>
 				) : (
 					messages.map((message) => (
-						<li key={message.id} className="text-sm">
+						<li className="text-sm" key={message.id}>
 							<span className="font-medium text-foreground">
 								{message.role === "user" ? "You" : "Machine"}
 							</span>
@@ -62,33 +63,33 @@ export function TheMachineChat() {
 				)}
 			</ul>
 
-			{error !== undefined ? (
-				<p className="text-sm text-destructive" role="alert">
+			{error === undefined ? null : (
+				<p className="text-destructive text-sm" role="alert">
 					{AI_CHAT_ERROR_MESSAGE}
 				</p>
-			) : null}
+			)}
 
 			<form
 				className="flex flex-col gap-2"
-				onSubmit={(event) => {
+				onSubmit={async (event) => {
 					event.preventDefault();
 					const text = input.trim();
 					if (text.length === 0 || busy) {
 						return;
 					}
-					void sendMessage({ text });
+					await sendMessage({ text });
 					setInput("");
 				}}
 			>
 				<Textarea
-					value={input}
+					aria-label="Message for The Machine"
+					disabled={busy}
 					onChange={(event) => setInput(event.target.value)}
 					placeholder="Ask The Machine…"
 					rows={3}
-					disabled={busy}
-					aria-label="Message for The Machine"
+					value={input}
 				/>
-				<Button type="submit" disabled={busy || input.trim().length === 0}>
+				<Button disabled={busy || input.trim().length === 0} type="submit">
 					{busy ? "Thinking…" : "Send"}
 				</Button>
 			</form>

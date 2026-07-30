@@ -47,7 +47,9 @@ function sumDecimals(values: readonly string[]): Result<string> {
 	let total = "0";
 	for (const value of values) {
 		const next = addReportingDecimals(total, value);
-		if (!next.ok) return next;
+		if (!next.ok) {
+			return next;
+		}
 		total = next.data;
 	}
 	return ok(total);
@@ -63,6 +65,7 @@ function factsOfKind<Kind extends HumanResourcesReadModelFact["kind"]>(
 	);
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Projection assembly keeps every validated metric calculation visible in one auditable flow.
 export async function buildHumanResourcesReportingSnapshot(
 	rawInput: unknown,
 	source: HumanResourcesReportingSourcePort,
@@ -95,7 +98,9 @@ export async function buildHumanResourcesReportingSnapshot(
 		),
 	);
 	const failed = loaded.find((result) => !result.ok);
-	if (failed !== undefined && !failed.ok) return failed;
+	if (failed !== undefined && !failed.ok) {
+		return failed;
+	}
 	const facts = loaded.flatMap((result) => (result.ok ? result.data : []));
 
 	const employment = factsOfKind(facts, "employment");
@@ -108,7 +113,9 @@ export async function buildHumanResourcesReportingSnapshot(
 	const headcountFte = sumDecimals(
 		activeEmployment.map((fact) => fact.fullTimeEquivalent),
 	);
-	if (!headcountFte.ok) return headcountFte;
+	if (!headcountFte.ok) {
+		return headcountFte;
+	}
 	const openingHeadcount = new Set(
 		employment
 			.filter((fact) =>
@@ -156,7 +163,9 @@ export async function buildHumanResourcesReportingSnapshot(
 			annualizedByCurrency[fact.currencyCode] ?? "0",
 			fact.annualizedAmount,
 		);
-		if (!next.ok) return next;
+		if (!next.ok) {
+			return next;
+		}
 		annualizedByCurrency[fact.currencyCode] = next.data;
 	}
 	const compliance = factsOfKind(facts, "compliance").filter(
@@ -180,7 +189,9 @@ export async function buildHumanResourcesReportingSnapshot(
 		fact.rating === null ? [] : [fact.rating],
 	);
 	const averageRating = averageReportingDecimals(ratings);
-	if (!averageRating.ok) return averageRating;
+	if (!averageRating.ok) {
+		return averageRating;
+	}
 	const succession = factsOfKind(facts, "succession").filter(
 		(fact) => fact.assessedOn <= input.asOf,
 	);
@@ -199,16 +210,22 @@ export async function buildHumanResourcesReportingSnapshot(
 	const plannedFte = sumDecimals(
 		workforcePlan.map((fact) => fact.plannedFullTimeEquivalent),
 	);
-	if (!plannedFte.ok) return plannedFte;
+	if (!plannedFte.ok) {
+		return plannedFte;
+	}
 	const actualFte = sumDecimals(
 		workforcePlan.map((fact) => fact.actualFullTimeEquivalent),
 	);
-	if (!actualFte.ok) return actualFte;
+	if (!actualFte.ok) {
+		return actualFte;
+	}
 	const varianceFte = subtractReportingDecimals(
 		plannedFte.data,
 		actualFte.data,
 	);
-	if (!varianceFte.ok) return varianceFte;
+	if (!varianceFte.ok) {
+		return varianceFte;
+	}
 
 	const scheduledMinutes = sumNumbers(
 		attendance.map((fact) => fact.scheduledMinutes),

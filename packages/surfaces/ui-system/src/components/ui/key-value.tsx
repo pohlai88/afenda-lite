@@ -1,7 +1,12 @@
 "use client";
 
 import { cva, type VariantProps } from "class-variance-authority";
-import * as React from "react";
+import {
+	type HTMLAttributes,
+	type ReactNode,
+	type RefObject,
+	useCallback,
+} from "react";
 import { cn } from "../../lib/utils";
 
 const keyValueVariants = cva("flex flex-col gap-1", {
@@ -24,12 +29,12 @@ const keyValueVariants = cva("flex flex-col gap-1", {
 });
 
 interface KeyValuePairProps extends VariantProps<typeof keyValueVariants> {
-	label: string;
-	value?: React.ReactNode;
-	copyable?: boolean;
-	loading?: boolean;
-	children?: React.ReactNode;
+	children?: ReactNode;
 	className?: string;
+	copyable?: boolean;
+	label: string;
+	loading?: boolean;
+	value?: ReactNode;
 }
 
 function KeyValuePair({
@@ -44,7 +49,7 @@ function KeyValuePair({
 }: KeyValuePairProps) {
 	const content = value ?? children;
 
-	const handleCopy = React.useCallback(async () => {
+	const handleCopy = useCallback(async () => {
 		if (copyable && content && typeof content === "string") {
 			try {
 				await navigator.clipboard.writeText(content);
@@ -53,76 +58,74 @@ function KeyValuePair({
 			}
 		}
 	}, [copyable, content]);
+	let renderedContent: ReactNode = content || (
+		<span className="text-muted-foreground italic">—</span>
+	);
+	if (loading) {
+		renderedContent = (
+			<div className="h-4 w-16 animate-pulse rounded bg-muted" />
+		);
+	} else if (copyable && typeof content === "string") {
+		renderedContent = (
+			<button
+				className="cursor-pointer text-left underline-offset-4 transition-colors hover:text-primary hover:underline"
+				onClick={handleCopy}
+				title={`Copy ${label}`}
+				type="button"
+			>
+				{content}
+			</button>
+		);
+	}
 
 	return (
 		<div className={cn(keyValueVariants({ orientation, size }), className)}>
-			<dt className="text-muted-foreground font-medium">{label}</dt>
-			<dd className="text-foreground">
-				{loading ? (
-					<div className="h-4 w-16 bg-muted animate-pulse rounded" />
-				) : copyable && typeof content === "string" ? (
-					<button
-						onClick={handleCopy}
-						className="text-left hover:text-primary transition-colors cursor-pointer underline-offset-4 hover:underline"
-						title={`Copy ${label}`}
-						type="button"
-					>
-						{content}
-					</button>
-				) : (
-					content || <span className="text-muted-foreground italic">—</span>
-				)}
-			</dd>
+			<dt className="font-medium text-muted-foreground">{label}</dt>
+			<dd className="text-foreground">{renderedContent}</dd>
 		</div>
 	);
 }
 
 interface KeyValueProps
-	extends React.HTMLAttributes<HTMLDListElement>,
+	extends HTMLAttributes<HTMLDListElement>,
 		VariantProps<typeof keyValueVariants> {
-	label: string;
-	value?: React.ReactNode;
 	copyable?: boolean;
+	label: string;
 	loading?: boolean;
+	value?: ReactNode;
 }
 
-const KeyValue = React.forwardRef<HTMLDListElement, KeyValueProps>(
-	(
-		{
-			className,
-			orientation,
-			size,
-			label,
-			value,
-			copyable = false,
-			loading = false,
-			children,
-			...props
-		},
-		ref,
-	) => {
-		return (
-			<dl ref={ref} className={cn(className)} {...props}>
-				<KeyValuePair
-					orientation={orientation}
-					size={size}
-					label={label}
-					value={value}
-					copyable={copyable}
-					loading={loading}
-				>
-					{children}
-				</KeyValuePair>
-			</dl>
-		);
-	},
+const KeyValue = ({
+	className,
+	orientation,
+	size,
+	label,
+	value,
+	copyable = false,
+	loading = false,
+	children,
+	ref,
+	...props
+}: KeyValueProps & { ref?: RefObject<HTMLDListElement | null> }) => (
+	<dl className={cn(className)} ref={ref} {...props}>
+		<KeyValuePair
+			copyable={copyable}
+			label={label}
+			loading={loading}
+			orientation={orientation}
+			size={size}
+			value={value}
+		>
+			{children}
+		</KeyValuePair>
+	</dl>
 );
 KeyValue.displayName = "KeyValue";
 
-interface KeyValueListProps extends React.HTMLAttributes<HTMLDListElement> {
+interface KeyValueListProps extends HTMLAttributes<HTMLDListElement> {
 	items: Array<{
 		label: string;
-		value?: React.ReactNode;
+		value?: ReactNode;
 		copyable?: boolean;
 		loading?: boolean;
 	}>;
@@ -130,21 +133,24 @@ interface KeyValueListProps extends React.HTMLAttributes<HTMLDListElement> {
 	size?: VariantProps<typeof keyValueVariants>["size"];
 }
 
-const KeyValueList = React.forwardRef<HTMLDListElement, KeyValueListProps>(
-	({ className, items, orientation, size, ...props }, ref) => {
-		return (
-			<dl ref={ref} className={cn("space-y-3", className)} {...props}>
-				{items.map((item, index) => (
-					<KeyValuePair
-						key={`${item.label}-${index}`}
-						orientation={orientation}
-						size={size}
-						{...item}
-					/>
-				))}
-			</dl>
-		);
-	},
+const KeyValueList = ({
+	className,
+	items,
+	orientation,
+	size,
+	ref,
+	...props
+}: KeyValueListProps & { ref?: RefObject<HTMLDListElement | null> }) => (
+	<dl className={cn("space-y-3", className)} ref={ref} {...props}>
+		{items.map((item, index) => (
+			<KeyValuePair
+				key={`${item.label}-${index}`}
+				orientation={orientation}
+				size={size}
+				{...item}
+			/>
+		))}
+	</dl>
 );
 KeyValueList.displayName = "KeyValueList";
 

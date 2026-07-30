@@ -76,7 +76,9 @@ function defineRecruitmentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(candidate.ok).toBe(true);
-		if (!candidate.ok) return;
+		if (!candidate.ok) {
+			return;
+		}
 
 		const application = await createApplication(
 			{
@@ -89,7 +91,9 @@ function defineRecruitmentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(application.ok).toBe(true);
-		if (!application.ok) return;
+		if (!application.ok) {
+			return;
+		}
 
 		const inReview = await moveApplicationToInReview(
 			{
@@ -102,7 +106,9 @@ function defineRecruitmentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(inReview.ok).toBe(true);
-		if (!inReview.ok) return;
+		if (!inReview.ok) {
+			return;
+		}
 
 		const issued = await createAndIssueOffer(ready, {
 			organizationId: ORG,
@@ -113,7 +119,9 @@ function defineRecruitmentParitySuite(adapter: WorkforceStoreAdapter): void {
 			correlationPrefix: `corr-offer-${suffix}`,
 		});
 		expect(issued.ok).toBe(true);
-		if (!issued.ok) return;
+		if (!issued.ok) {
+			return;
+		}
 
 		const accepted = await acceptOffer(
 			{
@@ -127,7 +135,9 @@ function defineRecruitmentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(accepted.ok).toBe(true);
-		if (!accepted.ok) return;
+		if (!accepted.ok) {
+			return;
+		}
 		expect(accepted.data.offer.status).toBe("accepted");
 		expect(accepted.data.candidateId).toBe(candidate.data.id);
 		expect(accepted.data.requisitionId).toBe(opened.data.id);
@@ -192,7 +202,9 @@ function defineRecruitmentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(candidate.ok).toBe(true);
-		if (!candidate.ok) return;
+		if (!candidate.ok) {
+			return;
+		}
 
 		const first = await createApplication(
 			{
@@ -250,7 +262,9 @@ function defineRecruitmentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(candidate.ok).toBe(true);
-		if (!candidate.ok) return;
+		if (!candidate.ok) {
+			return;
+		}
 
 		const application = await createApplication(
 			{
@@ -263,7 +277,9 @@ function defineRecruitmentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(application.ok).toBe(true);
-		if (!application.ok) return;
+		if (!application.ok) {
+			return;
+		}
 
 		const rejected = await rejectApplication(
 			{
@@ -277,7 +293,9 @@ function defineRecruitmentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(rejected.ok).toBe(true);
-		if (!rejected.ok) return;
+		if (!rejected.ok) {
+			return;
+		}
 
 		const reopened = await reopenApplication(
 			{
@@ -291,7 +309,9 @@ function defineRecruitmentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(reopened.ok).toBe(true);
-		if (!reopened.ok) return;
+		if (!reopened.ok) {
+			return;
+		}
 		expect(reopened.data.status).toBe("submitted");
 
 		const history = await listApplicationStatusHistory(
@@ -304,7 +324,9 @@ function defineRecruitmentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(history.ok).toBe(true);
-		if (!history.ok) return;
+		if (!history.ok) {
+			return;
+		}
 		expect(history.data.length).toBeGreaterThanOrEqual(3);
 		expect(history.data.at(-2)?.toStatus).toBe("rejected");
 		expect(history.data.at(-2)?.reason).toBe("Not a fit");
@@ -336,7 +358,9 @@ function defineRecruitmentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(candidate.ok).toBe(true);
-		if (!candidate.ok) return;
+		if (!candidate.ok) {
+			return;
+		}
 
 		const application = await createApplication(
 			{
@@ -349,7 +373,9 @@ function defineRecruitmentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(application.ok).toBe(true);
-		if (!application.ok) return;
+		if (!application.ok) {
+			return;
+		}
 
 		const inReview = await moveApplicationToInReview(
 			{
@@ -362,7 +388,9 @@ function defineRecruitmentParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(inReview.ok).toBe(true);
-		if (!inReview.ok) return;
+		if (!inReview.ok) {
+			return;
+		}
 
 		const issued = await createAndIssueOffer(ready, {
 			organizationId: ORG,
@@ -373,7 +401,9 @@ function defineRecruitmentParitySuite(adapter: WorkforceStoreAdapter): void {
 			correlationPrefix: `corr-s65-${suffix}`,
 		});
 		expect(issued.ok).toBe(true);
-		if (!issued.ok) return;
+		if (!issued.ok) {
+			return;
+		}
 		expect(issued.data.status).toBe("issued");
 		expect(issued.data.compensationProposalId).not.toBeNull();
 	});

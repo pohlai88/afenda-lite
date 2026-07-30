@@ -31,7 +31,7 @@ export const HUMAN_RESOURCES_AGGREGATE_COMPENSATION_PROPOSAL =
 export type HumanResourcesCompensationProposalAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_COMPENSATION_PROPOSAL;
 
-export async function createCompensationProposal(
+export function createCompensationProposal(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationProposal>> {
@@ -70,7 +70,7 @@ export async function createCompensationProposal(
 	});
 }
 
-export async function amendCompensationProposal(
+export function amendCompensationProposal(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationProposal>> {
@@ -110,7 +110,7 @@ export async function amendCompensationProposal(
 	});
 }
 
-export async function approveCompensationProposal(
+export function approveCompensationProposal(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationProposal>> {
@@ -135,7 +135,7 @@ export async function approveCompensationProposal(
 	});
 }
 
-export async function getCompensationProposal(
+export function getCompensationProposal(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationProposal>> {
@@ -159,7 +159,7 @@ export async function getCompensationProposal(
 	});
 }
 
-export async function listCompensationProposals(
+export function listCompensationProposals(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationProposalListPage>> {

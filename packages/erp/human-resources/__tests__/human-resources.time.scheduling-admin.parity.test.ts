@@ -72,7 +72,9 @@ function defineSchedulingAdminParitySuite(
 			ready,
 		);
 		expect(shift.ok).toBe(true);
-		if (!shift.ok) return;
+		if (!shift.ok) {
+			return;
+		}
 		expect(shift.data.status).toBe("draft");
 		expect(shift.data.isOvernight).toBe(false);
 
@@ -88,7 +90,9 @@ function defineSchedulingAdminParitySuite(
 			ready,
 		);
 		expect(updated.ok).toBe(true);
-		if (!updated.ok) return;
+		if (!updated.ok) {
+			return;
+		}
 		expect(updated.data.name).toBe("Day Shift v1 updated");
 
 		const shiftBreak = await addShiftBreak(
@@ -117,7 +121,9 @@ function defineSchedulingAdminParitySuite(
 			ready,
 		);
 		expect(activated.ok).toBe(true);
-		if (!activated.ok) return;
+		if (!activated.ok) {
+			return;
+		}
 		expect(activated.data.status).toBe("active");
 
 		const supersession = await supersedeShift(
@@ -136,7 +142,9 @@ function defineSchedulingAdminParitySuite(
 			ready,
 		);
 		expect(supersession.ok).toBe(true);
-		if (!supersession.ok) return;
+		if (!supersession.ok) {
+			return;
+		}
 		expect(supersession.data.superseded).toMatchObject({
 			id: activated.data.id,
 			status: "superseded",
@@ -158,7 +166,9 @@ function defineSchedulingAdminParitySuite(
 			ready,
 		);
 		expect(clonedBreaks.ok).toBe(true);
-		if (!clonedBreaks.ok) return;
+		if (!clonedBreaks.ok) {
+			return;
+		}
 		expect(clonedBreaks.data).toHaveLength(1);
 		expect(clonedBreaks.data[0]?.durationMinutes).toBe(60);
 	});
@@ -187,7 +197,9 @@ function defineSchedulingAdminParitySuite(
 			ready,
 		);
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 
 		const second = await addShiftBreak(
 			{
@@ -203,7 +215,9 @@ function defineSchedulingAdminParitySuite(
 			ready,
 		);
 		expect(second.ok).toBe(true);
-		if (!second.ok) return;
+		if (!second.ok) {
+			return;
+		}
 
 		const listed = await listShiftBreaks(
 			{
@@ -215,7 +229,9 @@ function defineSchedulingAdminParitySuite(
 			ready,
 		);
 		expect(listed.ok).toBe(true);
-		if (!listed.ok) return;
+		if (!listed.ok) {
+			return;
+		}
 		expect(listed.data).toHaveLength(2);
 		expect(listed.data.map((row) => row.breakOrder)).toEqual([1, 2]);
 
@@ -240,7 +256,9 @@ function defineSchedulingAdminParitySuite(
 			ready,
 		);
 		expect(afterRemove.ok).toBe(true);
-		if (!afterRemove.ok) return;
+		if (!afterRemove.ok) {
+			return;
+		}
 		expect(afterRemove.data).toHaveLength(1);
 		expect(afterRemove.data[0]?.breakOrder).toBe(2);
 	});
@@ -271,7 +289,9 @@ function defineSchedulingAdminParitySuite(
 			ready,
 		);
 		expect(shift.ok).toBe(true);
-		if (!shift.ok) return;
+		if (!shift.ok) {
+			return;
+		}
 		expect(shift.data.isOvernight).toBe(true);
 
 		const activated = await activateShift(
@@ -285,7 +305,9 @@ function defineSchedulingAdminParitySuite(
 			ready,
 		);
 		expect(activated.ok).toBe(true);
-		if (!activated.ok) return;
+		if (!activated.ok) {
+			return;
+		}
 
 		const assignment = await assignShift(
 			{
@@ -304,7 +326,9 @@ function defineSchedulingAdminParitySuite(
 			ready,
 		);
 		expect(assignment.ok).toBe(true);
-		if (!assignment.ok) return;
+		if (!assignment.ok) {
+			return;
+		}
 		expect(assignment.data.publicationStatus).toBe("planned");
 
 		const published = await publishShiftAssignment(
@@ -318,7 +342,9 @@ function defineSchedulingAdminParitySuite(
 			ready,
 		);
 		expect(published.ok).toBe(true);
-		if (!published.ok) return;
+		if (!published.ok) {
+			return;
+		}
 		expect(published.data.publicationStatus).toBe("published");
 	});
 
@@ -355,7 +381,9 @@ function defineSchedulingAdminParitySuite(
 			ready,
 		);
 		expect(assignment.ok).toBe(true);
-		if (!assignment.ok) return;
+		if (!assignment.ok) {
+			return;
+		}
 		expect(assignment.data.publicationStatus).toBe("planned");
 
 		const cancelled = await cancelShiftAssignment(
@@ -369,7 +397,9 @@ function defineSchedulingAdminParitySuite(
 			ready,
 		);
 		expect(cancelled.ok).toBe(true);
-		if (!cancelled.ok) return;
+		if (!cancelled.ok) {
+			return;
+		}
 		expect(cancelled.data.publicationStatus).toBe("cancelled");
 	});
 
@@ -406,7 +436,9 @@ function defineSchedulingAdminParitySuite(
 			ready,
 		);
 		expect(assignment.ok).toBe(true);
-		if (!assignment.ok) return;
+		if (!assignment.ok) {
+			return;
+		}
 
 		const published = await publishShiftAssignment(
 			{
@@ -419,7 +451,9 @@ function defineSchedulingAdminParitySuite(
 			ready,
 		);
 		expect(published.ok).toBe(true);
-		if (!published.ok) return;
+		if (!published.ok) {
+			return;
+		}
 
 		const changed = await changeShiftAssignment(
 			{
@@ -434,7 +468,9 @@ function defineSchedulingAdminParitySuite(
 			ready,
 		);
 		expect(changed.ok).toBe(true);
-		if (!changed.ok) return;
+		if (!changed.ok) {
+			return;
+		}
 		expect(changed.data.publicationStatus).toBe("changed");
 		expect(changed.data.startsAt.toISOString()).toBe(
 			"2025-07-16T02:00:00.000Z",
@@ -476,7 +512,9 @@ function defineSchedulingAdminParitySuite(
 			ready,
 		);
 		expect(assignment.ok).toBe(true);
-		if (!assignment.ok) return;
+		if (!assignment.ok) {
+			return;
+		}
 
 		const published = await publishShiftAssignment(
 			{
@@ -489,7 +527,9 @@ function defineSchedulingAdminParitySuite(
 			ready,
 		);
 		expect(published.ok).toBe(true);
-		if (!published.ok) return;
+		if (!published.ok) {
+			return;
+		}
 
 		const scheduled = await getScheduledShiftForEmployeeDate(
 			{
@@ -502,7 +542,9 @@ function defineSchedulingAdminParitySuite(
 			ready,
 		);
 		expect(scheduled.ok).toBe(true);
-		if (!scheduled.ok) return;
+		if (!scheduled.ok) {
+			return;
+		}
 		expect(scheduled.data?.id).toBe(published.data.id);
 		expect(scheduled.data?.locationKey).toBe("WH-A");
 
@@ -517,7 +559,9 @@ function defineSchedulingAdminParitySuite(
 			ready,
 		);
 		expect(listed.ok).toBe(true);
-		if (!listed.ok) return;
+		if (!listed.ok) {
+			return;
+		}
 		expect(listed.data.some((row) => row.id === published.data.id)).toBe(true);
 	});
 
@@ -554,7 +598,9 @@ function defineSchedulingAdminParitySuite(
 			ready,
 		);
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 
 		const overlapping = await assignShift(
 			{
@@ -573,7 +619,9 @@ function defineSchedulingAdminParitySuite(
 			ready,
 		);
 		expect(overlapping.ok).toBe(false);
-		if (overlapping.ok) return;
+		if (overlapping.ok) {
+			return;
+		}
 		expect(humanResourcesCodeFromResult(overlapping)).toBe(
 			HUMAN_RESOURCES_ERROR_CONFLICT,
 		);

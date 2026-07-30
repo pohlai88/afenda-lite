@@ -23,7 +23,7 @@ export async function resolveAttendanceSession(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceSession>> {
-	return runTimeCommand(input, options, {
+	return await runTimeCommand(input, options, {
 		schema: resolveAttendanceSessionInputSchema,
 		invalidMessage: "Invalid attendance session resolve input",
 		command: HUMAN_RESOURCES_COMMAND_ATTENDANCE_SESSION_RESOLVE,
@@ -34,13 +34,17 @@ export async function resolveAttendanceSession(
 				employmentId: null,
 				workDate: data.localWorkDate,
 			});
-			if (!employment.ok) return employment;
+			if (!employment.ok) {
+				return employment;
+			}
 			const policy = await store.resolveTimePolicy({
 				organizationId: data.organizationId,
 				employmentId: employment.data.id,
 				asOf: data.localWorkDate,
 			});
-			if (!policy.ok) return policy;
+			if (!policy.ok) {
+				return policy;
+			}
 			const fingerprint = JSON.stringify({
 				employeeId: data.employeeId,
 				localWorkDate: data.localWorkDate,
@@ -50,7 +54,9 @@ export async function resolveAttendanceSession(
 				organizationId: data.organizationId,
 				idempotencyKey: data.idempotencyKey,
 			});
-			if (!existing.ok) return existing;
+			if (!existing.ok) {
+				return existing;
+			}
 			if (existing.data !== null) {
 				if (existing.data.createRequestFingerprint !== fingerprint) {
 					return fail(
@@ -93,7 +99,7 @@ export async function getAttendanceSession(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceSession | null>> {
-	return runTimeQuery(input, options, {
+	return await runTimeQuery(input, options, {
 		schema: getAttendanceSessionInputSchema,
 		invalidMessage: "Invalid attendance session get input",
 		query: HUMAN_RESOURCES_QUERY_ATTENDANCE_SESSION_GET,
@@ -109,7 +115,7 @@ export async function listAttendanceSessions(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceSession[]>> {
-	return runTimeQuery(input, options, {
+	return await runTimeQuery(input, options, {
 		schema: listAttendanceSessionsInputSchema,
 		invalidMessage: "Invalid attendance session list input",
 		query: HUMAN_RESOURCES_QUERY_ATTENDANCE_SESSION_LIST,

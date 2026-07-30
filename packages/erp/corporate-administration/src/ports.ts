@@ -14,8 +14,8 @@ import {
 import { type CanonicalDate, canonicalInstantSchema } from "./kernel/dates";
 
 export type ClockPort = Readonly<{
-	now(): Date;
-	today(timeZoneIana: string): CanonicalDate;
+	now: () => Date;
+	today: (timeZoneIana: string) => CanonicalDate;
 }>;
 
 export type ReferenceResolution = Readonly<{
@@ -67,64 +67,64 @@ export type CompatibilityResolution = Readonly<{
 }>;
 
 export type ReferenceDataPort = Readonly<{
-	resolveLanguage(input: {
+	resolveLanguage: (input: {
 		organizationId: OrganizationId;
 		languageCode: string;
-	}): Promise<Result<ReferenceResolution | null>>;
-	resolveLegalForm(input: {
+	}) => Promise<Result<ReferenceResolution | null>>;
+	resolveLegalForm: (input: {
 		organizationId: OrganizationId;
 		jurisdictionCode: string;
 		legalFormCode: string;
 		effectiveDate: CanonicalDate;
-	}): Promise<Result<LegalFormReferenceResolution | null>>;
-	validateLegalFormCompatibility(input: {
+	}) => Promise<Result<LegalFormReferenceResolution | null>>;
+	validateLegalFormCompatibility: (input: {
 		organizationId: OrganizationId;
 		jurisdictionCode: string;
 		entityTypeCode: string;
 		legalFormCode: string;
 		effectiveDate: CanonicalDate;
-	}): Promise<Result<CompatibilityResolution>>;
-	resolveCountry(input: {
+	}) => Promise<Result<CompatibilityResolution>>;
+	resolveCountry: (input: {
 		organizationId: OrganizationId;
 		countryCode: string;
 		effectiveDate?: CanonicalDate | undefined;
-	}): Promise<Result<ReferenceResolution | null>>;
-	resolveCurrency(input: {
+	}) => Promise<Result<ReferenceResolution | null>>;
+	resolveCurrency: (input: {
 		organizationId: OrganizationId;
 		currencyCode: string;
 		effectiveDate?: CanonicalDate | undefined;
-	}): Promise<Result<CurrencyReferenceResolution | null>>;
-	resolveIdentifierAuthority(input: {
+	}) => Promise<Result<CurrencyReferenceResolution | null>>;
+	resolveIdentifierAuthority: (input: {
 		organizationId: OrganizationId;
 		jurisdictionCode: string;
 		authorityCode: string;
 		effectiveDate: CanonicalDate;
-	}): Promise<Result<IdentifierAuthorityResolution | null>>;
-	resolveActivityClassification(input: {
+	}) => Promise<Result<IdentifierAuthorityResolution | null>>;
+	resolveActivityClassification: (input: {
 		organizationId: OrganizationId;
 		classificationSystem: string;
 		activityCode: string;
 		effectiveDate: CanonicalDate;
-	}): Promise<Result<ActivityClassificationResolution | null>>;
-	resolveRegulator(input: {
+	}) => Promise<Result<ActivityClassificationResolution | null>>;
+	resolveRegulator: (input: {
 		organizationId: OrganizationId;
 		jurisdictionCode: string;
 		regulatorCode: string;
 		effectiveDate: CanonicalDate;
-	}): Promise<Result<ReferenceResolution | null>>;
-	resolveRegisteredActivity(input: {
+	}) => Promise<Result<ReferenceResolution | null>>;
+	resolveRegisteredActivity: (input: {
 		organizationId: OrganizationId;
 		activityCode: string;
 		jurisdictionCode: string;
 		effectiveDate: CanonicalDate;
-	}): Promise<Result<ReferenceResolution | null>>;
+	}) => Promise<Result<ReferenceResolution | null>>;
 }>;
 
 export type DocumentObjectPort = Readonly<{
-	resolveDocumentObject(input: {
+	resolveDocumentObject: (input: {
 		organizationId: OrganizationId;
 		documentObjectRef: DocumentObjectRef;
-	}): Promise<
+	}) => Promise<
 		Result<{ documentObjectRef: DocumentObjectRef; active: boolean } | null>
 	>;
 }>;
@@ -151,23 +151,23 @@ export type TaxRegistrationReadModel = Readonly<{
  * `md_tax_registration`.
  */
 export type TaxRegistrationReadPort = Readonly<{
-	getTaxRegistrationById(input: {
+	getTaxRegistrationById: (input: {
 		organizationId: OrganizationId;
 		taxRegistrationId: string;
-	}): Promise<Result<TaxRegistrationReadModel | null>>;
-	findTaxRegistrationsForParty(input: {
+	}) => Promise<Result<TaxRegistrationReadModel | null>>;
+	findTaxRegistrationsForParty: (input: {
 		organizationId: OrganizationId;
 		partyId: string;
 		jurisdictionCode?: string;
 		asOf?: CanonicalDate;
-	}): Promise<Result<readonly TaxRegistrationReadModel[]>>;
-	findPotentialDuplicateTaxRegistration(input: {
+	}) => Promise<Result<readonly TaxRegistrationReadModel[]>>;
+	findPotentialDuplicateTaxRegistration: (input: {
 		organizationId: OrganizationId;
 		jurisdictionCode: string;
 		registrationType: string;
 		normalizedRegistrationNumber: string;
 		asOf?: CanonicalDate;
-	}): Promise<Result<TaxRegistrationReadModel | null>>;
+	}) => Promise<Result<TaxRegistrationReadModel | null>>;
 }>;
 
 export type PartyReference = Readonly<{
@@ -177,10 +177,10 @@ export type PartyReference = Readonly<{
 }>;
 
 export type PartyReferencePort = Readonly<{
-	getOrganizationParty(input: {
+	getOrganizationParty: (input: {
 		organizationId: OrganizationId;
 		partyId: string;
-	}): Promise<Result<PartyReference | null>>;
+	}) => Promise<Result<PartyReference | null>>;
 }>;
 
 export type StatutoryNameReconciliationFact = Readonly<{
@@ -194,12 +194,12 @@ export type StatutoryNameReconciliationFact = Readonly<{
 }>;
 
 export type MasterDataReconciliationPort = Readonly<{
-	recordStatutoryNameComparison(
+	recordStatutoryNameComparison: (
 		fact: StatutoryNameReconciliationFact,
 		options?: Readonly<{
 			transaction?: CorporateAdministrationTransactionContext;
 		}>,
-	): Promise<Result<void>>;
+	) => Promise<Result<void>>;
 }>;
 
 export type ApprovalDecisionPort = CorporateAdministrationApprovalDecisionPort;
@@ -223,7 +223,7 @@ export type CorporateAdministrationTransactionStatement = (
 ) => unknown;
 
 export type CorporateAdministrationTransactionContext = Readonly<{
-	enqueue(statement: CorporateAdministrationTransactionStatement): void;
+	enqueue: (statement: CorporateAdministrationTransactionStatement) => void;
 	readonly statementCount: number;
 }>;
 
@@ -234,11 +234,11 @@ export type CorporateAdministrationTransactionOutcome<TResult> = Readonly<{
 
 export type CorporateAdministrationTransactionPort = Readonly<{
 	nesting: "prohibited";
-	run<TResult>(
+	run: <TResult>(
 		work: (
 			context: CorporateAdministrationTransactionContext,
 		) => Promise<CorporateAdministrationTransactionOutcome<TResult>>,
-	): Promise<Result<TResult>>;
+	) => Promise<Result<TResult>>;
 }>;
 
 export function commitCorporateAdministrationTransaction<TResult>(
@@ -260,6 +260,7 @@ export function rollbackCorporateAdministrationTransaction<TResult>(
  * queue client, retry worker, or consumer contract.
  */
 export type CorporateAdministrationOutboxPort = Readonly<{
+	// biome-ignore lint/style/useConsistentMethodSignatures: Controlled CA runtime contract and boundary evidence require method syntax.
 	append(
 		events: readonly CorporateAdministrationPendingEvent[],
 		options?: Readonly<{
@@ -376,12 +377,12 @@ export type CorporateAdministrationAuditFactInput = z.infer<
  * completeness claim.
  */
 export type CorporateAdministrationAuditFactPort = Readonly<{
-	record(
+	record: (
 		input: CorporateAdministrationAuditFactInput,
 		options?: Readonly<{
 			transaction?: CorporateAdministrationTransactionContext;
 		}>,
-	): Promise<Result<{ id: string }>>;
+	) => Promise<Result<{ id: string }>>;
 }>;
 
 /**

@@ -21,10 +21,10 @@ import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 
 const initialState: CreateWarehouseActionState = null;
 
-type CreateWarehouseFormProps = {
+interface CreateWarehouseFormProps {
 	canManage: boolean;
 	locationTypes: readonly string[];
-};
+}
 
 export function CreateWarehouseForm({
 	canManage,
@@ -69,23 +69,23 @@ export function CreateWarehouseForm({
 				<FormError>{state.message}</FormError>
 			) : null}
 			<FormField
+				error={codeError}
+				fieldId="warehouse-code"
 				label="Code"
 				required
-				fieldId="warehouse-code"
-				error={codeError}
 			>
-				<Input name="code" required autoComplete="off" disabled={pending} />
+				<Input autoComplete="off" disabled={pending} name="code" required />
 			</FormField>
 			<FormField
+				error={nameError}
+				fieldId="warehouse-name"
 				label="Name"
 				required
-				fieldId="warehouse-name"
-				error={nameError}
 			>
-				<Input name="name" required autoComplete="off" disabled={pending} />
+				<Input autoComplete="off" disabled={pending} name="name" required />
 			</FormField>
-			<FormField label="Location type" required fieldId="warehouse-location">
-				<NativeSelect name="locationType" required disabled={pending}>
+			<FormField fieldId="warehouse-location" label="Location type" required>
+				<NativeSelect disabled={pending} name="locationType" required>
 					{locationTypes.map((type) => (
 						<option key={type} value={type}>
 							{type}
@@ -93,7 +93,7 @@ export function CreateWarehouseForm({
 					))}
 				</NativeSelect>
 			</FormField>
-			<Button type="submit" disabled={pending}>
+			<Button disabled={pending} type="submit">
 				{pending ? <Spinner /> : null}
 				Create warehouse
 			</Button>

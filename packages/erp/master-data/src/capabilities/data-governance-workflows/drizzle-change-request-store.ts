@@ -40,27 +40,27 @@ function failFromPersistence(error: unknown, fallbackMessage: string) {
 		: failFromAppError(mapped);
 }
 
-type ChangeRequestSqlRow = {
-	id: string;
-	organization_id: string;
-	code: string;
-	normalized_code: string;
-	command_kind: string;
-	status: string;
-	version: number;
-	payload: ChangeRequestPayload | string;
-	subject_entity_type: string;
-	subject_entity_id: string;
-	submitted_by: string;
-	submitted_at: string | Date;
-	reviewed_by: string | null;
-	reviewed_at: string | Date | null;
-	review_note: string | null;
-	applied_by: string | null;
+interface ChangeRequestSqlRow {
 	applied_at: string | Date | null;
+	applied_by: string | null;
+	code: string;
+	command_kind: string;
 	created_at: string | Date;
+	id: string;
+	normalized_code: string;
+	organization_id: string;
+	payload: ChangeRequestPayload | string;
+	review_note: string | null;
+	reviewed_at: string | Date | null;
+	reviewed_by: string | null;
+	status: string;
+	subject_entity_id: string;
+	subject_entity_type: string;
+	submitted_at: string | Date;
+	submitted_by: string;
 	updated_at: string | Date;
-};
+	version: number;
+}
 
 function toDate(value: string | Date | null | undefined): Date | null {
 	if (value === null || value === undefined) {
@@ -293,7 +293,7 @@ export async function drizzleCreateChangeRequest(
 				`,
 			],
 		);
-		const row = rows[0];
+		const [row] = rows;
 		if (row === undefined) {
 			return fail("INTERNAL_ERROR", "Change request create returned no row");
 		}
@@ -405,7 +405,7 @@ export async function drizzleTransitionChangeRequest(
 				`,
 			],
 		);
-		const row = rows[0];
+		const [row] = rows;
 		if (row === undefined) {
 			return fail("CONFLICT", "Change request version conflict", {
 				reason: "MASTER_VERSION_CONFLICT",

@@ -111,7 +111,9 @@ describe("@afenda/events human-resources schema compatibility", () => {
 		// Base schema is not .strict() — additive unknown keys remain parseable.
 		// Compatibility lock: required fields still validated.
 		expect(parsed.success).toBe(true);
-		if (!parsed.success) return;
+		if (!parsed.success) {
+			return;
+		}
 		expect(parsed.data.correlationId).toBe("corr-trace-1");
 	});
 

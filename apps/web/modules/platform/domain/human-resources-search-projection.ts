@@ -23,55 +23,55 @@ const HUMAN_RESOURCES_EMPLOYEE_SEARCH_ENTITY = "human_resources_employee";
 const HUMAN_RESOURCES_EMPLOYEE_SEARCH_PERMISSION =
 	"human-resources.employee.read" as const;
 
-export type RebuildHumanResourcesEmployeeSearchInput = {
-	organizationId: string;
+export interface RebuildHumanResourcesEmployeeSearchInput {
 	actorUserId: string;
 	correlationId: string;
-};
-
-export type HumanResourcesEmployeeSearchProjectionResult = {
 	organizationId: string;
+}
+
+export interface HumanResourcesEmployeeSearchProjectionResult {
+	documents: SearchDocument[];
+	organizationId: string;
+	pages: number;
 	projected: number;
 	pruned: number;
-	pages: number;
-	documents: SearchDocument[];
-};
+}
 
-export type HumanResourcesEmployeeSearchProjectionDeps = {
-	list(input: {
+export interface HumanResourcesEmployeeSearchProjectionDeps {
+	deleteDocument: (
+		input: SearchDeleteInput,
+	) => Promise<Result<{ deleted: boolean }>>;
+	list: (input: {
 		organizationId: string;
 		actorUserId: string;
 		correlationId: string;
 		page: number;
 		pageSize: number;
-	}): Promise<Result<EmployeeListPage>>;
-	upsert(input: SearchUpsertInput[]): Promise<Result<SearchDocument[]>>;
-	listIds(input: {
+	}) => Promise<Result<EmployeeListPage>>;
+	listIds: (input: {
 		organizationId: string;
 		entity: typeof HUMAN_RESOURCES_EMPLOYEE_SEARCH_ENTITY;
-	}): Promise<Result<string[]>>;
-	deleteDocument(
-		input: SearchDeleteInput,
-	): Promise<Result<{ deleted: boolean }>>;
-};
+	}) => Promise<Result<string[]>>;
+	upsert: (input: SearchUpsertInput[]) => Promise<Result<SearchDocument[]>>;
+}
 
-export type SearchHumanResourcesEmployeesInput = {
-	session: PermissionSession;
-	query: string;
+export interface SearchHumanResourcesEmployeesInput {
 	limit?: number;
 	offset?: number;
-};
+	query: string;
+	session: PermissionSession;
+}
 
-export type SearchHumanResourcesEmployeesDeps = {
-	hasPermission(session: PermissionSession): Promise<boolean>;
-	search(input: {
+export interface SearchHumanResourcesEmployeesDeps {
+	hasPermission: (session: PermissionSession) => Promise<boolean>;
+	search: (input: {
 		organizationId: string;
 		query: string;
 		entity: typeof HUMAN_RESOURCES_EMPLOYEE_SEARCH_ENTITY;
 		limit?: number;
 		offset?: number;
-	}): Promise<Result<SearchHit[]>>;
-};
+	}) => Promise<Result<SearchHit[]>>;
+}
 
 function productionDeps(): HumanResourcesEmployeeSearchProjectionDeps {
 	return {
@@ -116,7 +116,9 @@ export async function searchHumanResourcesEmployees(
 		...(input.limit === undefined ? {} : { limit: input.limit }),
 		...(input.offset === undefined ? {} : { offset: input.offset }),
 	});
-	if (!searched.ok) return searched;
+	if (!searched.ok) {
+		return searched;
+	}
 
 	const invalidHit = searched.data.some(
 		(hit) =>
@@ -135,6 +137,7 @@ export async function searchHumanResourcesEmployees(
 	return ok(searched.data);
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Projection pagination keeps tenant validation, upsert, and prune ordering explicit.
 export async function rebuildHumanResourcesEmployeeSearch(
 	input: RebuildHumanResourcesEmployeeSearchInput,
 	deps: HumanResourcesEmployeeSearchProjectionDeps = productionDeps(),
@@ -146,6 +149,7 @@ export async function rebuildHumanResourcesEmployeeSearch(
 	const liveIds = new Set<string>();
 
 	do {
+		// biome-ignore lint/performance/noAwaitInLoops: Cursor pagination depends on the preceding page's count and fail-fast result.
 		const listed = await deps.list({
 			...input,
 			page,
@@ -154,9 +158,10 @@ export async function rebuildHumanResourcesEmployeeSearch(
 		if (!listed.ok) {
 			return listed;
 		}
-		totalCount = listed.data.totalCount;
+		const { employees, totalCount: listedTotalCount } = listed.data;
+		totalCount = listedTotalCount;
 		if (
-			listed.data.employees.some(
+			employees.some(
 				(employee) => employee.organizationId !== input.organizationId,
 			)
 		) {
@@ -166,10 +171,12 @@ export async function rebuildHumanResourcesEmployeeSearch(
 			);
 		}
 
-		if (listed.data.employees.length > 0) {
-			for (const employee of listed.data.employees) liveIds.add(employee.id);
+		if (employees.length > 0) {
+			for (const employee of employees) {
+				liveIds.add(employee.id);
+			}
 			const projected = await deps.upsert(
-				listed.data.employees.map((employee) => ({
+				employees.map((employee) => ({
 					organizationId: input.organizationId,
 					entity: HUMAN_RESOURCES_EMPLOYEE_SEARCH_ENTITY,
 					documentId: employee.id,
@@ -188,8 +195,8 @@ export async function rebuildHumanResourcesEmployeeSearch(
 			}
 			documents.push(...projected.data);
 		}
-		visited += listed.data.employees.length;
-		if (listed.data.employees.length === 0 && visited < totalCount) {
+		visited += employees.length;
+		if (employees.length === 0 && visited < totalCount) {
 			return fail(
 				"INTERNAL_ERROR",
 				"Human Resources search projection pagination ended early",
@@ -203,17 +210,29 @@ export async function rebuildHumanResourcesEmployeeSearch(
 		organizationId: input.organizationId,
 		entity: HUMAN_RESOURCES_EMPLOYEE_SEARCH_ENTITY,
 	});
-	if (!indexed.ok) return indexed;
+	if (!indexed.ok) {
+		return indexed;
+	}
 	let pruned = 0;
-	for (const documentId of indexed.data) {
-		if (liveIds.has(documentId)) continue;
-		const deleted = await deps.deleteDocument({
-			organizationId: input.organizationId,
-			entity: HUMAN_RESOURCES_EMPLOYEE_SEARCH_ENTITY,
-			documentId,
-		});
-		if (!deleted.ok) return deleted;
-		if (deleted.data.deleted) pruned += 1;
+	const staleDocumentIds = indexed.data.filter(
+		(documentId) => !liveIds.has(documentId),
+	);
+	const deleteResults = await Promise.all(
+		staleDocumentIds.map((documentId) =>
+			deps.deleteDocument({
+				organizationId: input.organizationId,
+				entity: HUMAN_RESOURCES_EMPLOYEE_SEARCH_ENTITY,
+				documentId,
+			}),
+		),
+	);
+	for (const deleted of deleteResults) {
+		if (!deleted.ok) {
+			return deleted;
+		}
+		if (deleted.data.deleted) {
+			pruned += 1;
+		}
 	}
 
 	return ok({

@@ -48,7 +48,7 @@ const supersedeCompanyJurisdictionProfileActionSchema = z.object({
 export async function supersedeCompanyJurisdictionProfileAction(
 	formData: FormData,
 ): Promise<ActionResult<{ jurisdictionProfileId: string }>> {
-	return runMemberPermissionAction({
+	return await runMemberPermissionAction({
 		path: "supersedeCompanyJurisdictionProfileAction",
 		permission: "corporate_administration.company.manage",
 		safeMessage: "Could not supersede jurisdiction profile.",
@@ -96,7 +96,9 @@ export async function supersedeCompanyJurisdictionProfileAction(
 				createCorporateAdministrationLegalCompanyDependencies(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 
 			revalidatePath("/client/corporate-administration");
 			revalidatePath("/admin/corporate-administration");
@@ -114,13 +116,15 @@ export async function supersedeCompanyJurisdictionProfileFormAction(
 	_previousState: ActionResult<{ jurisdictionProfileId: string }> | null,
 	formData: FormData,
 ): Promise<ActionResult<{ jurisdictionProfileId: string }> | null> {
-	return supersedeCompanyJurisdictionProfileAction(formData);
+	return await supersedeCompanyJurisdictionProfileAction(formData);
 }
 
 function emptyToUndefined(
 	value: FormDataEntryValue | null,
 ): string | undefined {
-	if (typeof value !== "string") return undefined;
+	if (typeof value !== "string") {
+		return;
+	}
 	const trimmed = value.trim();
 	return trimmed.length === 0 ? undefined : trimmed;
 }

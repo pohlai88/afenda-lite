@@ -1,3 +1,5 @@
+// biome-ignore-all lint/suspicious/useAwait: Drizzle establishment wrappers expose uniform asynchronous store contracts.
+// biome-ignore-all lint/style/useDestructuring: Guarded result indexing keeps affected-row handling explicit.
 import {
 	and,
 	asc,
@@ -230,8 +232,12 @@ class DrizzleCorporateAdministrationEstablishmentStore
 		input: Parameters<EstablishmentStore["updateLegalEstablishment"]>[0],
 	) {
 		const current = await this.getLegalEstablishment(input);
-		if (!current.ok) return current;
-		if (current.data === null) return notFound();
+		if (!current.ok) {
+			return current;
+		}
+		if (current.data === null) {
+			return notFound();
+		}
 		if (current.data.version !== input.expectedVersion) {
 			return stale(input.expectedVersion, current.data.version);
 		}
@@ -273,10 +279,15 @@ class DrizzleCorporateAdministrationEstablishmentStore
 		input: Parameters<EstablishmentStore["transitionLegalEstablishment"]>[0],
 	) {
 		const current = await this.getLegalEstablishment(input);
-		if (!current.ok) return current;
-		if (current.data === null) return notFound();
-		if (current.data.version !== input.expectedVersion)
+		if (!current.ok) {
+			return current;
+		}
+		if (current.data === null) {
+			return notFound();
+		}
+		if (current.data.version !== input.expectedVersion) {
 			return stale(input.expectedVersion, current.data.version);
+		}
 		const statusId = establishmentStatusHistoryIdSchema.parse(this.#createId());
 		const now = new Date(input.recordedAt);
 		const legalCompanyId = current.data.legalCompanyId;
@@ -316,7 +327,9 @@ class DrizzleCorporateAdministrationEstablishmentStore
 		input: Parameters<EstablishmentStore["findRegisteredAddressAsOf"]>[0],
 	) {
 		const listed = await this.listRegisteredAddresses(input);
-		if (!listed.ok) return listed;
+		if (!listed.ok) {
+			return listed;
+		}
 		const row = listed.data
 			.filter(
 				(item) =>
@@ -515,10 +528,15 @@ class DrizzleCorporateAdministrationEstablishmentStore
 
 	async endPremise(input: Parameters<EstablishmentStore["endPremise"]>[0]) {
 		const current = await this.getPremise(input);
-		if (!current.ok) return current;
-		if (current.data === null) return notFound();
-		if (current.data.version !== input.expectedVersion)
+		if (!current.ok) {
+			return current;
+		}
+		if (current.data === null) {
+			return notFound();
+		}
+		if (current.data.version !== input.expectedVersion) {
 			return stale(input.expectedVersion, current.data.version);
+		}
 		const updated: Premise = {
 			...current.data,
 			effectiveTo: input.endedOn,
@@ -559,7 +577,9 @@ class DrizzleCorporateAdministrationEstablishmentStore
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
-			if (translated !== undefined) return translated;
+			if (translated !== undefined) {
+				return translated;
+			}
 			throw error;
 		}
 	}

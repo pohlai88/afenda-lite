@@ -19,8 +19,10 @@ function blockBetween(
 	fromIndex = 0,
 ): string {
 	const startIndex = source.indexOf(start, fromIndex);
+	// biome-ignore lint/suspicious/noMisplacedAssertion: This parser helper executes only inside test cases.
 	expect(startIndex, `missing block start ${start}`).toBeGreaterThanOrEqual(0);
 	const endIndex = source.indexOf(end, startIndex + start.length);
+	// biome-ignore lint/suspicious/noMisplacedAssertion: This parser helper executes only inside test cases.
 	expect(endIndex, `missing block end ${end}`).toBeGreaterThan(startIndex);
 	return source.slice(startIndex, endIndex);
 }
@@ -53,6 +55,7 @@ function declaration(
 
 function oklch(value: string | null): { l: number; c: number; h: number } {
 	const match = value?.match(/oklch\(\s*([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)/);
+	// biome-ignore lint/suspicious/noMisplacedAssertion: This token parser helper executes only inside test cases.
 	expect(match, `parse OKLCH from ${value}`).toBeTruthy();
 	return {
 		l: Number(match?.[1]),
@@ -356,7 +359,9 @@ describe("@afenda/ui-system token contract", () => {
 					values[index - 1]?.l ?? 0,
 				);
 			}
-			for (const value of values) expect(value.c).toBeLessThanOrEqual(0.016);
+			for (const value of values) {
+				expect(value.c).toBeLessThanOrEqual(0.016);
+			}
 		}
 	});
 

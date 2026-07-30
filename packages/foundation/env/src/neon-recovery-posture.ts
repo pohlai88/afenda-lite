@@ -245,7 +245,7 @@ export function scheduledSnapshotNameTimestamp(
 	if (match === null) {
 		return null;
 	}
-	const timestamp = match[1];
+	const [, timestamp] = match;
 	if (timestamp === undefined) {
 		return null;
 	}
@@ -266,7 +266,7 @@ export function scheduledSnapshotRetainDays(
 	if (created === null || expires === null || expires <= created) {
 		return null;
 	}
-	return (expires - created) / (24 * 60 * 60 * 1_000);
+	return (expires - created) / (24 * 60 * 60 * 1000);
 }
 
 export function scheduledSnapshotMinuteOfDayUtc(
@@ -296,25 +296,23 @@ function circularMinuteDifference(
 	return Math.min(direct, minutesPerDay - direct);
 }
 
-export function evaluateScheduledSnapshotInventory(
-	snapshots: readonly NeonSnapshotRecoveryInput[],
-	options: Readonly<{
-		nowMs?: number;
-		expectedBranchId?: string;
-		maxAgeHours?: number;
-		scheduleDriftMinutes?: number;
-		maxFutureSkewMinutes?: number;
-	}> = {},
-): NeonRecoveryCheckResult {
-	const nowMs = options.nowMs ?? Date.now();
-	const expectedBranchId = options.expectedBranchId ?? RECOVERY_PROD_BRANCH_ID;
-	const maxAgeHours = options.maxAgeHours ?? MAX_SCHEDULED_SNAPSHOT_AGE_HOURS;
-	const scheduleDriftMinutes =
-		options.scheduleDriftMinutes ?? MAX_SNAPSHOT_SCHEDULE_DRIFT_MINUTES;
-	const maxFutureSkewMinutes =
-		options.maxFutureSkewMinutes ?? MAX_FUTURE_TIMESTAMP_SKEW_MINUTES;
+type ScheduledSnapshotOptions = Readonly<{
+	nowMs: number;
+	expectedBranchId: string;
+	maxAgeHours: number;
+	scheduleDriftMinutes: number;
+	maxFutureSkewMinutes: number;
+}>;
 
-	if (!Number.isFinite(nowMs) || nowMs < 0) {
+type ScheduledSnapshotEntry = Readonly<{
+	snapshot: NeonSnapshotRecoveryInput;
+	createdMs: number;
+}>;
+
+function invalidScheduledSnapshotOptionsResult(
+	options: ScheduledSnapshotOptions,
+): NeonRecoveryCheckResult | null {
+	if (!Number.isFinite(options.nowMs) || options.nowMs < 0) {
 		return {
 			ok: false,
 			issues: [
@@ -326,7 +324,7 @@ export function evaluateScheduledSnapshotInventory(
 			detail: "snapshot evaluation clock invalid",
 		};
 	}
-	if (expectedBranchId.trim().length === 0) {
+	if (options.expectedBranchId.trim().length === 0) {
 		return {
 			ok: false,
 			issues: [
@@ -338,7 +336,7 @@ export function evaluateScheduledSnapshotInventory(
 			detail: "snapshot branch target invalid",
 		};
 	}
-	if (!isFinitePositiveNumber(maxAgeHours)) {
+	if (!isFinitePositiveNumber(options.maxAgeHours)) {
 		return {
 			ok: false,
 			issues: [
@@ -352,9 +350,9 @@ export function evaluateScheduledSnapshotInventory(
 		};
 	}
 	if (
-		!Number.isFinite(scheduleDriftMinutes) ||
-		scheduleDriftMinutes < 0 ||
-		scheduleDriftMinutes >= 24 * 60
+		!Number.isFinite(options.scheduleDriftMinutes) ||
+		options.scheduleDriftMinutes < 0 ||
+		options.scheduleDriftMinutes >= 24 * 60
 	) {
 		return {
 			ok: false,
@@ -367,7 +365,10 @@ export function evaluateScheduledSnapshotInventory(
 			detail: "snapshot schedule tolerance invalid",
 		};
 	}
-	if (!Number.isFinite(maxFutureSkewMinutes) || maxFutureSkewMinutes < 0) {
+	if (
+		!Number.isFinite(options.maxFutureSkewMinutes) ||
+		options.maxFutureSkewMinutes < 0
+	) {
 		return {
 			ok: false,
 			issues: [
@@ -379,8 +380,14 @@ export function evaluateScheduledSnapshotInventory(
 			detail: "snapshot future-skew tolerance invalid",
 		};
 	}
+	return null;
+}
 
-	const scheduled = snapshots
+function selectScheduledSnapshotEntries(
+	snapshots: readonly NeonSnapshotRecoveryInput[],
+	expectedBranchId: string,
+): readonly ScheduledSnapshotEntry[] {
+	return snapshots
 		.filter((snapshot) => isScheduledSnapshotName(snapshot.name))
 		.filter((snapshot) => snapshotSourceBranchId(snapshot) === expectedBranchId)
 		.map((snapshot) => ({
@@ -388,14 +395,140 @@ export function evaluateScheduledSnapshotInventory(
 			createdMs: parseTimestamp(snapshot.created_at),
 		}))
 		.filter(
-			(
-				entry,
-			): entry is Readonly<{
-				snapshot: NeonSnapshotRecoveryInput;
-				createdMs: number;
-			}> => entry.createdMs !== null,
+			(entry): entry is ScheduledSnapshotEntry => entry.createdMs !== null,
 		)
 		.sort((left, right) => right.createdMs - left.createdMs);
+}
+
+function snapshotScheduleIssues(
+	snapshot: NeonSnapshotRecoveryInput,
+	scheduleDriftMinutes: number,
+): readonly NeonRecoveryIssue[] {
+	const actualMinuteOfDay = scheduledSnapshotMinuteOfDayUtc(snapshot);
+	if (actualMinuteOfDay === null) {
+		return [
+			{
+				check: "snapshots.created_at",
+				message:
+					"latest scheduled snapshot has an invalid created_at timestamp",
+			},
+		];
+	}
+	const minuteDifference = circularMinuteDifference(
+		actualMinuteOfDay,
+		TARGET_SNAPSHOT_HOUR_UTC * 60,
+	);
+	if (minuteDifference <= scheduleDriftMinutes) {
+		return [];
+	}
+	return [
+		{
+			check: "snapshots.schedule_time_utc",
+			message:
+				`latest scheduled snapshot differs from ${TARGET_SNAPSHOT_HOUR_UTC}:00 UTC by ` +
+				`${minuteDifference} minutes, exceeding the ${scheduleDriftMinutes}-minute tolerance`,
+		},
+	];
+}
+
+function snapshotNameConsistencyIssues(
+	snapshot: NeonSnapshotRecoveryInput,
+	createdMs: number,
+): readonly NeonRecoveryIssue[] {
+	const nameTimestampMs = scheduledSnapshotNameTimestamp(snapshot.name);
+	if (nameTimestampMs === null) {
+		return [
+			{
+				check: "snapshots.name_timestamp",
+				message:
+					"latest scheduled snapshot name does not contain a valid UTC timestamp",
+			},
+		];
+	}
+	const differenceSeconds = Math.abs(nameTimestampMs - createdMs) / 1000;
+	if (differenceSeconds <= MAX_SNAPSHOT_NAME_CREATED_AT_DRIFT_SECONDS) {
+		return [];
+	}
+	return [
+		{
+			check: "snapshots.name_created_at_consistency",
+			message:
+				"latest scheduled snapshot name timestamp does not correspond to created_at",
+		},
+	];
+}
+
+function snapshotRetentionIssues(
+	retainDays: number | null,
+): readonly NeonRecoveryIssue[] {
+	if (
+		retainDays !== null &&
+		Math.abs(retainDays - TARGET_SNAPSHOT_RETAIN_DAYS) <= 1 / 24
+	) {
+		return [];
+	}
+	return [
+		{
+			check: "snapshots.retain_days",
+			message:
+				`latest scheduled snapshot retention must be ${TARGET_SNAPSHOT_RETAIN_DAYS} days ` +
+				"within a one-hour tolerance",
+		},
+	];
+}
+
+function snapshotAgeIssues(
+	ageHours: number,
+	maxAgeHours: number,
+	maxFutureSkewMinutes: number,
+): readonly NeonRecoveryIssue[] {
+	if (ageHours < -(maxFutureSkewMinutes / 60)) {
+		return [
+			{
+				check: "snapshots.future_timestamp",
+				message: `latest scheduled snapshot is ${Math.abs(ageHours).toFixed(1)} hours in the future`,
+			},
+		];
+	}
+	if (ageHours <= maxAgeHours) {
+		return [];
+	}
+	return [
+		{
+			check: "snapshots.freshness",
+			message: `latest scheduled snapshot age ${ageHours.toFixed(1)}h exceeds ${maxAgeHours}h`,
+		},
+	];
+}
+
+export function evaluateScheduledSnapshotInventory(
+	snapshots: readonly NeonSnapshotRecoveryInput[],
+	options: Readonly<{
+		nowMs?: number;
+		expectedBranchId?: string;
+		maxAgeHours?: number;
+		scheduleDriftMinutes?: number;
+		maxFutureSkewMinutes?: number;
+	}> = {},
+): NeonRecoveryCheckResult {
+	const resolvedOptions: ScheduledSnapshotOptions = {
+		nowMs: options.nowMs ?? Date.now(),
+		expectedBranchId: options.expectedBranchId ?? RECOVERY_PROD_BRANCH_ID,
+		maxAgeHours: options.maxAgeHours ?? MAX_SCHEDULED_SNAPSHOT_AGE_HOURS,
+		scheduleDriftMinutes:
+			options.scheduleDriftMinutes ?? MAX_SNAPSHOT_SCHEDULE_DRIFT_MINUTES,
+		maxFutureSkewMinutes:
+			options.maxFutureSkewMinutes ?? MAX_FUTURE_TIMESTAMP_SKEW_MINUTES,
+	};
+	const invalidOptions = invalidScheduledSnapshotOptionsResult(resolvedOptions);
+	if (invalidOptions !== null) {
+		return invalidOptions;
+	}
+
+	const scheduled = selectScheduledSnapshotEntries(
+		snapshots,
+		resolvedOptions.expectedBranchId,
+	);
 
 	if (scheduled.length === 0) {
 		return {
@@ -411,7 +544,7 @@ export function evaluateScheduledSnapshotInventory(
 		};
 	}
 
-	const latestEntry = scheduled[0];
+	const [latestEntry] = scheduled;
 	if (latestEntry === undefined) {
 		return {
 			ok: false,
@@ -426,80 +559,21 @@ export function evaluateScheduledSnapshotInventory(
 	}
 
 	const { snapshot: latest, createdMs } = latestEntry;
-	const issues: NeonRecoveryIssue[] = [];
-	const expectedMinuteOfDay = TARGET_SNAPSHOT_HOUR_UTC * 60;
-	const actualMinuteOfDay = scheduledSnapshotMinuteOfDayUtc(latest);
-	const nameTimestampMs = scheduledSnapshotNameTimestamp(latest.name);
-
-	if (actualMinuteOfDay === null) {
-		issues.push({
-			check: "snapshots.created_at",
-			message: "latest scheduled snapshot has an invalid created_at timestamp",
-		});
-	} else {
-		const minuteDifference = circularMinuteDifference(
-			actualMinuteOfDay,
-			expectedMinuteOfDay,
-		);
-		if (minuteDifference > scheduleDriftMinutes) {
-			issues.push({
-				check: "snapshots.schedule_time_utc",
-				message:
-					`latest scheduled snapshot differs from ${TARGET_SNAPSHOT_HOUR_UTC}:00 UTC by ` +
-					`${minuteDifference} minutes, exceeding the ${scheduleDriftMinutes}-minute tolerance`,
-			});
-		}
-	}
-	if (nameTimestampMs === null) {
-		issues.push({
-			check: "snapshots.name_timestamp",
-			message:
-				"latest scheduled snapshot name does not contain a valid UTC timestamp",
-		});
-	} else {
-		const nameCreatedAtDifferenceSeconds =
-			Math.abs(nameTimestampMs - createdMs) / 1_000;
-		if (
-			nameCreatedAtDifferenceSeconds >
-			MAX_SNAPSHOT_NAME_CREATED_AT_DRIFT_SECONDS
-		) {
-			issues.push({
-				check: "snapshots.name_created_at_consistency",
-				message:
-					"latest scheduled snapshot name timestamp does not correspond to created_at",
-			});
-		}
-	}
-
 	const retainDays = scheduledSnapshotRetainDays(latest);
-	if (
-		retainDays === null ||
-		Math.abs(retainDays - TARGET_SNAPSHOT_RETAIN_DAYS) > 1 / 24
-	) {
-		issues.push({
-			check: "snapshots.retain_days",
-			message:
-				`latest scheduled snapshot retention must be ${TARGET_SNAPSHOT_RETAIN_DAYS} days ` +
-				"within a one-hour tolerance",
-		});
-	}
-
-	const ageHours = (nowMs - createdMs) / (60 * 60 * 1_000);
-	const maxFutureSkewHours = maxFutureSkewMinutes / 60;
-	if (ageHours < -maxFutureSkewHours) {
-		issues.push({
-			check: "snapshots.future_timestamp",
-			message: `latest scheduled snapshot is ${Math.abs(ageHours).toFixed(1)} hours in the future`,
-		});
-	} else if (ageHours > maxAgeHours) {
-		issues.push({
-			check: "snapshots.freshness",
-			message: `latest scheduled snapshot age ${ageHours.toFixed(1)}h exceeds ${maxAgeHours}h`,
-		});
-	}
+	const ageHours = (resolvedOptions.nowMs - createdMs) / (60 * 60 * 1000);
+	const issues = [
+		...snapshotScheduleIssues(latest, resolvedOptions.scheduleDriftMinutes),
+		...snapshotNameConsistencyIssues(latest, createdMs),
+		...snapshotRetentionIssues(retainDays),
+		...snapshotAgeIssues(
+			ageHours,
+			resolvedOptions.maxAgeHours,
+			resolvedOptions.maxFutureSkewMinutes,
+		),
+	];
 
 	const detail =
-		`inventory_inference=true ` +
+		"inventory_inference=true " +
 		`scheduled_count=${scheduled.length} ` +
 		`age_hours=${ageHours.toFixed(1)} ` +
 		`retention_days=${retainDays === null ? "unknown" : retainDays.toFixed(2)}`;

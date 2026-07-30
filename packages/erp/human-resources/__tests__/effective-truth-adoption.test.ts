@@ -53,7 +53,9 @@ describe("HR effective-truth adoption matrix", () => {
 	it("reports a missing canonical adoption row", () => {
 		const [removed, ...remaining] = HUMAN_RESOURCES_EFFECTIVE_TRUTH_ADOPTION;
 		expect(removed).toBeDefined();
-		if (removed === undefined) return;
+		if (removed === undefined) {
+			return;
+		}
 
 		expect(validateEffectiveTruthAdoptionMatrix(remaining)).toContainEqual({
 			kind: "missing-adoption",

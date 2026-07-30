@@ -11,12 +11,13 @@ import {
 	type UiAttachment,
 } from "@afenda/ui-system";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import * as React from "react";
+import { useCallback, useState } from "react";
 import { contractDocsParameters } from "./contract-docs";
 import { contractEvidence, StorySection } from "./evidence";
 import { interactionFor } from "./interactions";
 
 const evidence = contractEvidence("ui.file-upload");
+const ignoreFileUploadAction = () => undefined;
 
 const persistedInvoiceAttachment: UiAttachment = {
 	id: "invoice-1048",
@@ -33,40 +34,42 @@ const persistedRemittanceAttachment: UiAttachment = {
 };
 
 function InvoiceSupportingDocumentsUpload() {
-	const [attachments, setAttachments] = React.useState<UiAttachment[]>([
+	const [attachments, setAttachments] = useState<UiAttachment[]>([
 		persistedInvoiceAttachment,
 	]);
+	const handleFilesSelected = useCallback((files: readonly File[]) => {
+		setAttachments((current) => [
+			...current,
+			...files.map((file, index) => ({
+				id: `${file.name}-${index}`,
+				name: file.name,
+				size: file.size,
+			})),
+		]);
+	}, []);
+	const handleRemove = useCallback((id: string) => {
+		setAttachments((current) =>
+			current.filter((attachment) => attachment.id !== id),
+		);
+	}, []);
 
 	return (
 		<div className="grid gap-4">
 			<FileUpload
-				label="Supporting documents"
-				description="PDF, PNG, or XLSX up to 10 MB · feature policy enforces limits"
 				accept=".pdf,.png,.xlsx"
+				description="PDF, PNG, or XLSX up to 10 MB · feature policy enforces limits"
+				label="Supporting documents"
 				multiple
-				onFilesSelected={(files) =>
-					setAttachments((current) => [
-						...current,
-						...files.map((file, index) => ({
-							id: `${file.name}-${index}`,
-							name: file.name,
-							size: file.size,
-						})),
-					])
-				}
+				onFilesSelected={handleFilesSelected}
 			/>
 			{attachments.length > 0 ? (
 				<AttachmentList
-					attachments={attachments}
-					onRemove={(id) =>
-						setAttachments((current) =>
-							current.filter((attachment) => attachment.id !== id),
-						)
-					}
 					aria-label="Supporting documents"
+					attachments={attachments}
+					onRemove={handleRemove}
 				/>
 			) : (
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					No attachments yet. Selected files appear here after choose — not as
 					persisted storage proof.
 				</p>
@@ -105,13 +108,13 @@ export const Overview: Story = {
 		<div className="min-h-screen bg-canvas text-foreground">
 			<div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-2 border-b pb-6">
-					<p className="text-sm font-medium text-foreground-secondary">
+					<p className="font-medium text-foreground-secondary text-sm">
 						Accounts receivable
 					</p>
-					<h1 className="text-2xl font-semibold tracking-tight">
+					<h1 className="font-semibold text-2xl tracking-tight">
 						INV-1048 supporting documents
 					</h1>
-					<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+					<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 						FileUpload owns the labelled chooser. Feature Actions own malware
 						scanning, transport, retention, and whether remove is authorized.
 					</p>
@@ -128,7 +131,7 @@ export const Overview: Story = {
 							</div>
 							<div className="flex flex-wrap items-center gap-2">
 								<Badge variant="outline">Invoice</Badge>
-								<StatusBadge status="pending" label="Awaiting approval" />
+								<StatusBadge label="Awaiting approval" status="pending" />
 							</div>
 						</div>
 					</CardHeader>
@@ -156,29 +159,29 @@ export const SemanticUsage: Story = {
 		<div className="grid w-full max-w-5xl gap-6">
 			<StorySection title="Multi-file supporting evidence">
 				<FileUpload
-					label="Supporting documents"
-					description="PDF, PNG, or XLSX up to 10 MB"
 					accept=".pdf,.png,.xlsx"
+					description="PDF, PNG, or XLSX up to 10 MB"
+					label="Supporting documents"
 					multiple
-					onFilesSelected={() => undefined}
+					onFilesSelected={ignoreFileUploadAction}
 				/>
 			</StorySection>
 			<StorySection title="Single policy attachment">
 				<FileUpload
-					label="Signed policy PDF"
-					description="One PDF · 5 MB maximum"
 					accept=".pdf"
-					onFilesSelected={() => undefined}
+					description="One PDF · 5 MB maximum"
+					label="Signed policy PDF"
+					onFilesSelected={ignoreFileUploadAction}
 				/>
 			</StorySection>
 			<StorySection title="Persisted attachments with remove">
 				<AttachmentList
+					aria-label="Persisted invoice attachments"
 					attachments={[
 						persistedInvoiceAttachment,
 						persistedRemittanceAttachment,
 					]}
-					onRemove={() => undefined}
-					aria-label="Persisted invoice attachments"
+					onRemove={ignoreFileUploadAction}
 				/>
 			</StorySection>
 		</div>
@@ -198,13 +201,13 @@ export const Usage: Story = {
 	render: () => (
 		<div className="grid w-full max-w-md gap-3">
 			<FileUpload
-				label="Supporting documents"
-				description="PDF or PNG up to 10 MB"
 				accept=".pdf,.png"
+				description="PDF or PNG up to 10 MB"
+				label="Supporting documents"
 				multiple
-				onFilesSelected={() => undefined}
+				onFilesSelected={ignoreFileUploadAction}
 			/>
-			<p className="text-sm text-foreground-secondary">
+			<p className="text-foreground-secondary text-sm">
 				accept guides the OS chooser only. Server validation still rejects
 				disallowed types and sizes.
 			</p>
@@ -225,25 +228,25 @@ export const StatesAndAccessibility: Story = {
 	render: () => (
 		<div className="grid w-full max-w-md gap-6">
 			<FileUpload
-				label="Supporting documents"
-				description="Ready for selection"
 				accept=".pdf,.png,.xlsx"
+				description="Ready for selection"
+				label="Supporting documents"
 				multiple
-				onFilesSelected={() => undefined}
+				onFilesSelected={ignoreFileUploadAction}
 			/>
 			<FileUpload
-				label="Locked attachments"
-				description="Upload closed for this period"
 				accept=".pdf"
+				description="Upload closed for this period"
 				disabled
-				onFilesSelected={() => undefined}
+				label="Locked attachments"
+				onFilesSelected={ignoreFileUploadAction}
 			/>
 			<div className="grid gap-2">
-				<p className="text-sm font-medium text-foreground">Attachment list</p>
+				<p className="font-medium text-foreground text-sm">Attachment list</p>
 				<AttachmentList
-					attachments={[persistedInvoiceAttachment]}
-					onRemove={() => undefined}
 					aria-label="Invoice attachments"
+					attachments={[persistedInvoiceAttachment]}
+					onRemove={ignoreFileUploadAction}
 				/>
 			</div>
 		</div>
@@ -264,31 +267,31 @@ export const LifecycleStates: Story = {
 		<div className="grid w-full max-w-5xl gap-6">
 			<StorySection title="Ready for local selection">
 				<FileUpload
-					label="Supporting documents"
-					description="PDF or PNG up to 10 MB"
 					accept=".pdf,.png"
+					description="PDF or PNG up to 10 MB"
+					label="Supporting documents"
 					multiple
-					onFilesSelected={() => undefined}
+					onFilesSelected={ignoreFileUploadAction}
 				/>
 			</StorySection>
 			<StorySection title="Persisted attachments">
 				<div className="grid gap-2">
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						These records have durable identifiers and download references.
 					</p>
 					<AttachmentList
+						aria-label="Persisted supporting documents"
 						attachments={[
 							persistedInvoiceAttachment,
 							persistedRemittanceAttachment,
 						]}
-						onRemove={() => undefined}
-						aria-label="Persisted supporting documents"
+						onRemove={ignoreFileUploadAction}
 					/>
 				</div>
 			</StorySection>
 			<StorySection title="Rejected selection">
 				<div
-					className="rounded-md border border-destructive-border bg-destructive-subtle p-4 text-sm text-destructive-subtle-foreground"
+					className="rounded-md border border-destructive-border bg-destructive-subtle p-4 text-destructive-subtle-foreground text-sm"
 					role="alert"
 				>
 					<strong>bank-details.exe</strong> was rejected. Choose PDF, PNG, or
@@ -297,8 +300,8 @@ export const LifecycleStates: Story = {
 			</StorySection>
 			<StorySection title="Upload processing">
 				<p
-					className="rounded-md border p-4 text-sm text-foreground-secondary"
 					aria-live="polite"
+					className="rounded-md border p-4 text-foreground-secondary text-sm"
 				>
 					invoice-1048.pdf is uploading and awaiting security scanning. Do not
 					present it as persisted evidence until the feature Action confirms
@@ -322,33 +325,33 @@ export const VariantsAndSizes: Story = {
 	render: () => (
 		<div className="grid w-full max-w-5xl gap-6 sm:grid-cols-2">
 			<div className="grid gap-2">
-				<p className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+				<p className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 					single
 				</p>
 				<FileUpload
-					label="Signed policy"
 					accept=".pdf"
-					onFilesSelected={() => undefined}
+					label="Signed policy"
+					onFilesSelected={ignoreFileUploadAction}
 				/>
 			</div>
 			<div className="grid gap-2">
-				<p className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+				<p className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 					multiple
 				</p>
 				<FileUpload
-					label="Supporting documents"
 					accept=".pdf,.png,.xlsx"
+					label="Supporting documents"
 					multiple
-					onFilesSelected={() => undefined}
+					onFilesSelected={ignoreFileUploadAction}
 				/>
 			</div>
 			<div className="grid gap-2 sm:col-span-2">
-				<p className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+				<p className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 					AttachmentList read-only
 				</p>
 				<AttachmentList
-					attachments={[persistedInvoiceAttachment]}
 					aria-label="Read-only attachments"
+					attachments={[persistedInvoiceAttachment]}
 				/>
 			</div>
 		</div>
@@ -377,25 +380,25 @@ export const Composition: Story = {
 					</div>
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="secondary">Finance</Badge>
-						<StatusBadge status="pending" label="Awaiting approval" />
+						<StatusBadge label="Awaiting approval" status="pending" />
 					</div>
 				</div>
 			</CardHeader>
 			<CardContent className="grid gap-4">
 				<FileUpload
-					label="Add evidence"
-					description="PDF or PNG up to 10 MB"
 					accept=".pdf,.png"
+					description="PDF or PNG up to 10 MB"
+					label="Add evidence"
 					multiple
-					onFilesSelected={() => undefined}
+					onFilesSelected={ignoreFileUploadAction}
 				/>
 				<AttachmentList
+					aria-label="Invoice evidence"
 					attachments={[
 						persistedInvoiceAttachment,
 						persistedRemittanceAttachment,
 					]}
-					onRemove={() => undefined}
-					aria-label="Invoice evidence"
+					onRemove={ignoreFileUploadAction}
 				/>
 			</CardContent>
 		</Card>
@@ -416,16 +419,16 @@ export const DoAndDoNot: Story = {
 		<div className="grid max-w-5xl gap-6 sm:grid-cols-2">
 			<StorySection title="Do: declare type and size guidance">
 				<FileUpload
-					label="Supporting documents"
-					description="PDF, PNG, or XLSX up to 10 MB"
 					accept=".pdf,.png,.xlsx"
+					description="PDF, PNG, or XLSX up to 10 MB"
+					label="Supporting documents"
 					multiple
-					onFilesSelected={() => undefined}
+					onFilesSelected={ignoreFileUploadAction}
 				/>
 			</StorySection>
 
 			<StorySection title="Do not: rely on accept as security">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					accept only shapes the OS dialog. Feature policy and server checks
 					remain authoritative for type, size, and malware scanning.
 				</p>
@@ -433,14 +436,14 @@ export const DoAndDoNot: Story = {
 
 			<StorySection title="Do: name remove actions per file">
 				<AttachmentList
-					attachments={[persistedInvoiceAttachment]}
-					onRemove={() => undefined}
 					aria-label="Named remove actions"
+					attachments={[persistedInvoiceAttachment]}
+					onRemove={ignoreFileUploadAction}
 				/>
 			</StorySection>
 
 			<StorySection title="Do not: present local selection as persisted">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					A newly chosen File in memory is not a durable attachment until the
 					upload Action succeeds. Keep queued and persisted states distinct in
 					feature UI.
@@ -448,14 +451,14 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do: authorize remove in feature code">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					AttachmentList onRemove is presentation only. Delete outcomes and
 					permission checks stay in the owning Action.
 				</p>
 			</StorySection>
 
 			<StorySection title="Do not: omit a label on the chooser">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					FileUpload ships a Label. Product forms must keep a meaningful label
 					so operators know which evidence bucket they are filling.
 				</p>

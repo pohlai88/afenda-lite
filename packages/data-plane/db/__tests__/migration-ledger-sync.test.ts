@@ -64,20 +64,20 @@ describe("findPendingMigrationJournalRows", () => {
 describe("generated baseline migration journal row", () => {
 	it("uses the generated baseline slot", async () => {
 		const row = await findJournalEntry("0000_damp_blue_shield");
-		expect(row).toMatchObject({ idx: 0, when: 1785123236021 });
+		expect(row).toMatchObject({ idx: 0, when: 1_785_123_236_021 });
 	});
 });
 
 describe("custom relational-invariant migration journal row", () => {
 	it("follows the generated baseline", async () => {
 		const row = await findJournalEntry("0001_ca_relational_invariants");
-		expect(row).toMatchObject({ idx: 1, when: 1785123522429 });
+		expect(row).toMatchObject({ idx: 1, when: 1_785_123_522_429 });
 	});
 });
 
 describe("HR tenant foreign-key migration journal row", () => {
 	it("follows the relational-invariant migration", async () => {
 		const row = await findJournalEntry("0002_hr_tenant_foreign_keys");
-		expect(row).toMatchObject({ idx: 2, when: 1785124084741 });
+		expect(row).toMatchObject({ idx: 2, when: 1_785_124_084_741 });
 	});
 });

@@ -25,10 +25,10 @@ export const ONBOARDING_COMPLETION_MISSING_CODES = [
 export type OnboardingCompletionMissingCode =
 	(typeof ONBOARDING_COMPLETION_MISSING_CODES)[number];
 
-export type OnboardingCompletionReadiness = {
-	ready: boolean;
+export interface OnboardingCompletionReadiness {
 	missing: OnboardingCompletionMissingCode[];
-};
+	ready: boolean;
+}
 
 export function evaluateOnboardingCompletionReadiness(input: {
 	tasks: readonly {

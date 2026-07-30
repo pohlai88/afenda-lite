@@ -14,6 +14,7 @@ import {
 	queuePayrollDelivery,
 	recordPayrollDeliveryFeedback,
 } from "../src/integrations/payroll-delivery";
+import { runSequential } from "../src/shared/run-sequential";
 
 const ORGANIZATION_ID = "org-payroll-delivery";
 const CORRELATION_ID = "corr-payroll-delivery";
@@ -75,7 +76,7 @@ function createHarness(
 		producer: {
 			async publish(input) {
 				published.push(structuredClone(input));
-				return outcomes.shift() ?? ok({ receiptId: "receipt-replay" });
+				return (await outcomes.shift()) ?? ok({ receiptId: "receipt-replay" });
 			},
 		},
 	};
@@ -92,7 +93,7 @@ async function queue(
 	ports: PayrollDeliveryPorts,
 	input: Partial<Parameters<typeof queuePayrollDelivery>[0]> = {},
 ) {
-	return queuePayrollDelivery(
+	return await queuePayrollDelivery(
 		{
 			organizationId: ORGANIZATION_ID,
 			correlationId: CORRELATION_ID,
@@ -110,7 +111,9 @@ describe("recoverable payroll handoff delivery", () => {
 		const { ports } = createHarness();
 		const created = await queue(ports);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 		expect(created.data.status).toBe("pending");
 		expect(created.data.version).toBe(1);
 		expect(created.data.payloadHash).toMatch(/^[a-f0-9]{64}$/);
@@ -127,7 +130,9 @@ describe("recoverable payroll handoff delivery", () => {
 
 		const conflict = await queue(ports, { payload: handoff("86000.00") });
 		expect(conflict.ok).toBe(false);
-		if (!conflict.ok) expect(conflict.code).toBe("CONFLICT");
+		if (!conflict.ok) {
+			expect(conflict.code).toBe("CONFLICT");
+		}
 
 		const wrongOrganization = await queue(ports, {
 			idempotencyKey: "idem-wrong-org",
@@ -148,7 +153,9 @@ describe("recoverable payroll handoff delivery", () => {
 		]);
 		const created = await queue(harness.ports, { maxAttempts: 2 });
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const first = await deliverPayrollHandoff(
 			{
@@ -160,7 +167,9 @@ describe("recoverable payroll handoff delivery", () => {
 			harness.ports,
 		);
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 		expect(first.data).toMatchObject({ status: "pending", attemptCount: 1 });
 
 		harness.advance();
@@ -174,7 +183,9 @@ describe("recoverable payroll handoff delivery", () => {
 			harness.ports,
 		);
 		expect(failed.ok).toBe(true);
-		if (!failed.ok) return;
+		if (!failed.ok) {
+			return;
+		}
 		expect(failed.data).toMatchObject({ status: "failed", attemptCount: 2 });
 		expect(payrollDeliveryStatusIsTerminal(failed.data.status)).toBe(true);
 
@@ -194,7 +205,9 @@ describe("recoverable payroll handoff delivery", () => {
 	it("delivers once and records idempotent acknowledgement feedback", async () => {
 		const harness = createHarness();
 		const created = await queue(harness.ports);
-		if (!created.ok) throw new Error(created.message);
+		if (!created.ok) {
+			throw new Error(created.message);
+		}
 		const delivered = await deliverPayrollHandoff(
 			{
 				organizationId: ORGANIZATION_ID,
@@ -205,7 +218,9 @@ describe("recoverable payroll handoff delivery", () => {
 			harness.ports,
 		);
 		expect(delivered.ok).toBe(true);
-		if (!delivered.ok) return;
+		if (!delivered.ok) {
+			return;
+		}
 		expect(delivered.data).toMatchObject({
 			status: "delivered",
 			attemptCount: 1,
@@ -228,7 +243,9 @@ describe("recoverable payroll handoff delivery", () => {
 			harness.ports,
 		);
 		expect(acknowledged.ok).toBe(true);
-		if (!acknowledged.ok) return;
+		if (!acknowledged.ok) {
+			return;
+		}
 		expect(acknowledged.data.status).toBe("acknowledged");
 		expect(
 			await recordPayrollDeliveryFeedback(
@@ -247,7 +264,9 @@ describe("recoverable payroll handoff delivery", () => {
 	it("creates one atomic correction supersession after correction-required feedback", async () => {
 		const harness = createHarness();
 		const created = await queue(harness.ports);
-		if (!created.ok) throw new Error(created.message);
+		if (!created.ok) {
+			throw new Error(created.message);
+		}
 		const delivered = await deliverPayrollHandoff(
 			{
 				organizationId: ORGANIZATION_ID,
@@ -257,7 +276,9 @@ describe("recoverable payroll handoff delivery", () => {
 			},
 			harness.ports,
 		);
-		if (!delivered.ok) throw new Error(delivered.message);
+		if (!delivered.ok) {
+			throw new Error(delivered.message);
+		}
 		const feedback = await recordPayrollDeliveryFeedback(
 			{
 				organizationId: ORGANIZATION_ID,
@@ -270,7 +291,9 @@ describe("recoverable payroll handoff delivery", () => {
 			harness.ports,
 		);
 		expect(feedback.ok).toBe(true);
-		if (!feedback.ok) return;
+		if (!feedback.ok) {
+			return;
+		}
 
 		const correction = await queue(harness.ports, {
 			idempotencyKey: "idem-delivery-correction",
@@ -278,7 +301,9 @@ describe("recoverable payroll handoff delivery", () => {
 			supersedesDeliveryId: created.data.id,
 		});
 		expect(correction.ok).toBe(true);
-		if (!correction.ok) return;
+		if (!correction.ok) {
+			return;
+		}
 		expect(correction.data).toMatchObject({
 			status: "pending",
 			supersedesDeliveryId: created.data.id,
@@ -302,7 +327,9 @@ describe("recoverable payroll handoff delivery", () => {
 	it("records reasoned rejection as terminal feedback", async () => {
 		const harness = createHarness();
 		const created = await queue(harness.ports);
-		if (!created.ok) throw new Error(created.message);
+		if (!created.ok) {
+			throw new Error(created.message);
+		}
 		const delivered = await deliverPayrollHandoff(
 			{
 				organizationId: ORGANIZATION_ID,
@@ -312,7 +339,9 @@ describe("recoverable payroll handoff delivery", () => {
 			},
 			harness.ports,
 		);
-		if (!delivered.ok) throw new Error(delivered.message);
+		if (!delivered.ok) {
+			throw new Error(delivered.message);
+		}
 		const rejected = await recordPayrollDeliveryFeedback(
 			{
 				organizationId: ORGANIZATION_ID,
@@ -325,7 +354,9 @@ describe("recoverable payroll handoff delivery", () => {
 			harness.ports,
 		);
 		expect(rejected.ok).toBe(true);
-		if (!rejected.ok) return;
+		if (!rejected.ok) {
+			return;
+		}
 		expect(rejected.data).toMatchObject({
 			status: "rejected",
 			feedbackBy: "payroll-operator",
@@ -337,22 +368,29 @@ describe("recoverable payroll handoff delivery", () => {
 	it("does not disclose a delivery across organization or correlation boundaries", async () => {
 		const harness = createHarness();
 		const created = await queue(harness.ports);
-		if (!created.ok) throw new Error(created.message);
-		for (const boundary of [
-			{ organizationId: "org-other", correlationId: CORRELATION_ID },
-			{ organizationId: ORGANIZATION_ID, correlationId: "corr-other" },
-		]) {
-			const result = await deliverPayrollHandoff(
-				{
-					...boundary,
-					deliveryId: created.data.id,
-					actorUserId: ACTOR_ID,
-				},
-				harness.ports,
-			);
-			expect(result.ok).toBe(false);
-			if (!result.ok) expect(result.code).toBe("NOT_FOUND");
+		if (!created.ok) {
+			throw new Error(created.message);
 		}
+		await runSequential(
+			[
+				{ organizationId: "org-other", correlationId: CORRELATION_ID },
+				{ organizationId: ORGANIZATION_ID, correlationId: "corr-other" },
+			],
+			async (boundary) => {
+				const result = await deliverPayrollHandoff(
+					{
+						...boundary,
+						deliveryId: created.data.id,
+						actorUserId: ACTOR_ID,
+					},
+					harness.ports,
+				);
+				expect(result.ok).toBe(false);
+				if (!result.ok) {
+					expect(result.code).toBe("NOT_FOUND");
+				}
+			},
+		);
 		expect(harness.published).toHaveLength(0);
 	});
 });

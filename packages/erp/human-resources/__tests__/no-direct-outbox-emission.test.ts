@@ -79,7 +79,7 @@ function findOutboxBoundaryViolations(): string[] {
 		}
 	}
 
-	return violations.toSorted();
+	return violations.toSorted((left, right) => left.localeCompare(right));
 }
 
 describe("Slice 3.8 — no direct domain outbox emission", () => {

@@ -20,9 +20,9 @@ import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 
 const initialState: CancelPurchaseOrderActionState = null;
 
-type CancelPurchaseOrderFormProps = {
+interface CancelPurchaseOrderFormProps {
 	canCancel: boolean;
-};
+}
 
 /**
  * Cancel draft purchase order — CAPABLE when `purchasing.order.cancel` is granted.
@@ -74,35 +74,35 @@ export function CancelPurchaseOrderForm({
 				<FormError>{state.message}</FormError>
 			) : null}
 			<FormField
+				error={orderError}
+				fieldId="purchase-cancel-order"
 				label="Order id"
 				required
-				fieldId="purchase-cancel-order"
-				error={orderError}
 			>
 				<Input
+					autoComplete="off"
+					disabled={pending}
 					id="purchase-cancel-order"
 					name="orderId"
 					required
-					autoComplete="off"
-					disabled={pending}
 				/>
 			</FormField>
 			<FormField
+				error={versionError}
+				fieldId="purchase-cancel-version"
 				label="Expected version"
 				required
-				fieldId="purchase-cancel-version"
-				error={versionError}
 			>
 				<Input
-					id="purchase-cancel-version"
-					name="expectedVersion"
-					type="number"
-					min="1"
-					required
 					disabled={pending}
+					id="purchase-cancel-version"
+					min="1"
+					name="expectedVersion"
+					required
+					type="number"
 				/>
 			</FormField>
-			<Button type="submit" disabled={pending}>
+			<Button disabled={pending} type="submit">
 				{pending ? <Spinner /> : null}
 				Cancel draft order
 			</Button>

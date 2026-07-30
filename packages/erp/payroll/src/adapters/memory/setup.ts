@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/useAwait: The deterministic memory adapter implements asynchronous payroll setup ports.
 import { randomUUID } from "node:crypto";
 import { fail, ok, type Result } from "@afenda/errors/result";
 
@@ -363,9 +364,9 @@ export function createMemorySetupMethods(
 				name: input.name ?? calendar.name,
 				timezone: input.timezone ?? calendar.timezone,
 				effectiveTo:
-					input.effectiveTo !== undefined
-						? input.effectiveTo
-						: calendar.effectiveTo,
+					input.effectiveTo === undefined
+						? calendar.effectiveTo
+						: input.effectiveTo,
 				version: calendar.version + 1,
 				updatedBy: input.actorUserId,
 				updatedAt: now,

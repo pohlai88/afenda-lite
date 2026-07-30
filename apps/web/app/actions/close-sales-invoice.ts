@@ -27,7 +27,7 @@ export async function closeSalesInvoiceAction(
 	_prev: CloseSalesInvoiceActionState,
 	formData: FormData,
 ): Promise<CloseSalesInvoiceActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "closeSalesInvoiceAction",
 		permission: "receivables.invoice.close",
 		safeMessage:
@@ -56,7 +56,9 @@ export async function closeSalesInvoiceAction(
 					createReceivablesCommandOptions(),
 				),
 			);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePath("/admin/receivables");
 			revalidatePath("/client/receivables");
 			return { ok: true, data: { invoice: mapped.data } };

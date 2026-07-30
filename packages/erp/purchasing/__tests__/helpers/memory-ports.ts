@@ -9,6 +9,7 @@ import type {
 	OutboxFactInput,
 	OutboxPort,
 } from "../../src/ports";
+import { resolveAsync } from "../../src/resolve-async";
 
 export function createMemoryAuditPort(): AuditFactPort & {
 	calls: AuditFactInput[];
@@ -16,9 +17,11 @@ export function createMemoryAuditPort(): AuditFactPort & {
 	const calls: AuditFactInput[] = [];
 	return {
 		calls,
-		async record(input: AuditFactInput): Promise<Result<{ id: string }>> {
-			calls.push(input);
-			return ok({ id: randomUUID() });
+		record(input: AuditFactInput): Promise<Result<{ id: string }>> {
+			return resolveAsync(() => {
+				calls.push(input);
+				return ok({ id: randomUUID() });
+			});
 		},
 	};
 }
@@ -29,9 +32,11 @@ export function createMemoryOutboxPort(): OutboxPort & {
 	const calls: OutboxFactInput[] = [];
 	return {
 		calls,
-		async append(input: OutboxFactInput): Promise<Result<{ id: string }>> {
-			calls.push(input);
-			return ok({ id: randomUUID() });
+		append(input: OutboxFactInput): Promise<Result<{ id: string }>> {
+			return resolveAsync(() => {
+				calls.push(input);
+				return ok({ id: randomUUID() });
+			});
 		},
 	};
 }

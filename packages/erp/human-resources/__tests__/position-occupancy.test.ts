@@ -12,6 +12,7 @@ import {
 	createMemoryOrganizationDimensionDirectory,
 } from "../src/testing";
 import { TEST_ORGANIZATION_DIMENSION_KEYS } from "./helpers/command-options";
+import { helperAssert as assert } from "./helpers/helper-assert";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 import { seedDepartmentAndJob } from "./helpers/seed-department-and-job";
@@ -35,8 +36,9 @@ async function seedPositionAssignment(ready: ReturnType<typeof harness>) {
 		organizationId: ORGANIZATION_ID,
 		actorUserId: ACTOR_USER_ID,
 	});
-	expect(references).not.toBeNull();
-	if (!references) return null;
+	if (!references) {
+		return null;
+	}
 
 	const employee = await createEmployee(
 		{
@@ -49,8 +51,10 @@ async function seedPositionAssignment(ready: ReturnType<typeof harness>) {
 		},
 		ready,
 	);
-	expect(employee.ok).toBe(true);
-	if (!employee.ok) return null;
+	assert.strictEqual(employee.ok, true);
+	if (!employee.ok) {
+		return null;
+	}
 
 	const employment = await createEmployment(
 		{
@@ -63,8 +67,10 @@ async function seedPositionAssignment(ready: ReturnType<typeof harness>) {
 		},
 		ready,
 	);
-	expect(employment.ok).toBe(true);
-	if (!employment.ok) return null;
+	assert.strictEqual(employment.ok, true);
+	if (!employment.ok) {
+		return null;
+	}
 
 	const position = await createPosition(
 		{
@@ -78,8 +84,10 @@ async function seedPositionAssignment(ready: ReturnType<typeof harness>) {
 		},
 		ready,
 	);
-	expect(position.ok).toBe(true);
-	if (!position.ok) return null;
+	assert.strictEqual(position.ok, true);
+	if (!position.ok) {
+		return null;
+	}
 
 	const assignment = await createAssignment(
 		{
@@ -107,7 +115,9 @@ describe("position occupancy as of", () => {
 	it("replays vacant, occupied, and vacated states by date", async () => {
 		const ready = harness();
 		const seeded = await seedPositionAssignment(ready);
-		if (!seeded) return;
+		if (!seeded) {
+			return;
+		}
 
 		const before = await getPositionOccupancyAsOf(
 			{
@@ -174,7 +184,9 @@ describe("position occupancy as of", () => {
 	it("does not disclose a position across tenants", async () => {
 		const ready = harness();
 		const seeded = await seedPositionAssignment(ready);
-		if (!seeded) return;
+		if (!seeded) {
+			return;
+		}
 
 		const result = await getPositionOccupancyAsOf(
 			{

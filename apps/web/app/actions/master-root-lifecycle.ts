@@ -62,7 +62,7 @@ async function runRootLifecycle<
 			parsed.details,
 		);
 	}
-	return runMemberPermissionAction({
+	return await runMemberPermissionAction({
 		path: input.path,
 		permission: "master_data.manage",
 		safeMessage: `Could not ${input.kind} ${input.entityLabel}. Try again or contact an admin.`,
@@ -100,7 +100,7 @@ export async function activateItemAction(
 	_prev: ItemLifecycleActionState,
 	formData: FormData,
 ): Promise<ItemLifecycleActionState> {
-	return runRootLifecycle({
+	return await runRootLifecycle({
 		kind: "activate",
 		entityLabel: "item",
 		path: "activateItemAction",
@@ -114,7 +114,7 @@ export async function inactiveItemAction(
 	_prev: ItemLifecycleActionState,
 	formData: FormData,
 ): Promise<ItemLifecycleActionState> {
-	return runRootLifecycle({
+	return await runRootLifecycle({
 		kind: "inactive",
 		entityLabel: "item",
 		path: "inactiveItemAction",
@@ -128,7 +128,7 @@ export async function retireItemAction(
 	_prev: ItemLifecycleActionState,
 	formData: FormData,
 ): Promise<ItemLifecycleActionState> {
-	return runRootLifecycle({
+	return await runRootLifecycle({
 		kind: "retire",
 		entityLabel: "item",
 		path: "retireItemAction",
@@ -142,7 +142,7 @@ export async function activateItemGroupAction(
 	_prev: ItemGroupLifecycleActionState,
 	formData: FormData,
 ): Promise<ItemGroupLifecycleActionState> {
-	return runRootLifecycle({
+	return await runRootLifecycle({
 		kind: "activate",
 		entityLabel: "item group",
 		path: "activateItemGroupAction",
@@ -156,7 +156,7 @@ export async function inactiveItemGroupAction(
 	_prev: ItemGroupLifecycleActionState,
 	formData: FormData,
 ): Promise<ItemGroupLifecycleActionState> {
-	return runRootLifecycle({
+	return await runRootLifecycle({
 		kind: "inactive",
 		entityLabel: "item group",
 		path: "inactiveItemGroupAction",
@@ -170,7 +170,7 @@ export async function retireItemGroupAction(
 	_prev: ItemGroupLifecycleActionState,
 	formData: FormData,
 ): Promise<ItemGroupLifecycleActionState> {
-	return runRootLifecycle({
+	return await runRootLifecycle({
 		kind: "retire",
 		entityLabel: "item group",
 		path: "retireItemGroupAction",
@@ -184,7 +184,7 @@ export async function activateWarehouseAction(
 	_prev: WarehouseLifecycleActionState,
 	formData: FormData,
 ): Promise<WarehouseLifecycleActionState> {
-	return runRootLifecycle({
+	return await runRootLifecycle({
 		kind: "activate",
 		entityLabel: "warehouse",
 		path: "activateWarehouseAction",
@@ -198,7 +198,7 @@ export async function inactiveWarehouseAction(
 	_prev: WarehouseLifecycleActionState,
 	formData: FormData,
 ): Promise<WarehouseLifecycleActionState> {
-	return runRootLifecycle({
+	return await runRootLifecycle({
 		kind: "inactive",
 		entityLabel: "warehouse",
 		path: "inactiveWarehouseAction",
@@ -212,7 +212,7 @@ export async function retireWarehouseAction(
 	_prev: WarehouseLifecycleActionState,
 	formData: FormData,
 ): Promise<WarehouseLifecycleActionState> {
-	return runRootLifecycle({
+	return await runRootLifecycle({
 		kind: "retire",
 		entityLabel: "warehouse",
 		path: "retireWarehouseAction",

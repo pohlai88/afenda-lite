@@ -1,15 +1,12 @@
 import type { Result } from "@afenda/errors/result";
 
-import type {
-	MasterMutationTransactionContext,
-	MasterMutationTransactionExecutor,
-} from "./integration/mutation-transaction";
+import type { MasterMutationTransactionExecutor } from "./integration/mutation-transaction";
 import type { MasterDataOutboxRecord } from "./integration/outbox-record";
 
 export type {
 	MasterMutationTransactionContext,
 	MasterMutationTransactionExecutor,
-};
+} from "./integration/mutation-transaction";
 
 export type IntegrationMutationTransactionExecutor =
 	MasterMutationTransactionExecutor;
@@ -44,10 +41,6 @@ export type RecoverExpiredPublishingRecordsInput = Readonly<{
 }>;
 
 export interface OutboxPublicationStore {
-	getOutboxRecord(
-		input: GetOutboxRecordInput,
-	): Promise<Result<MasterDataOutboxRecord | null>>;
-
 	/**
 	 * Atomically claims eligible records for publication.
 	 *
@@ -57,9 +50,12 @@ export interface OutboxPublicationStore {
 	 * publishing, increment attemptCount, set lastAttemptAt to claimedAt, clear
 	 * lastErrorCode, and prevent concurrent workers from claiming the same row.
 	 */
-	claimAvailableOutboxRecords(
+	claimAvailableOutboxRecords: (
 		input: ClaimAvailableOutboxRecordsInput,
-	): Promise<Result<readonly MasterDataOutboxRecord[]>>;
+	) => Promise<Result<readonly MasterDataOutboxRecord[]>>;
+	getOutboxRecord: (
+		input: GetOutboxRecordInput,
+	) => Promise<Result<MasterDataOutboxRecord | null>>;
 
 	/**
 	 * Recovers abandoned publication claims.
@@ -69,9 +65,9 @@ export interface OutboxPublicationStore {
 	 * set lastErrorCode to errorCode, set availableAt for the next retry, and
 	 * return records ordered by lastAttemptAt then eventId ascending.
 	 */
-	recoverExpiredPublishingRecords(
+	recoverExpiredPublishingRecords: (
 		input: RecoverExpiredPublishingRecordsInput,
-	): Promise<Result<readonly MasterDataOutboxRecord[]>>;
+	) => Promise<Result<readonly MasterDataOutboxRecord[]>>;
 }
 
 export type RequeueRetryableFailedOutboxRecordInput = Readonly<{
@@ -84,9 +80,9 @@ export type RequeueRetryableFailedOutboxRecordInput = Readonly<{
 }>;
 
 export interface OutboxReplayStore {
-	getOutboxRecord(
+	getOutboxRecord: (
 		input: GetOutboxRecordInput,
-	): Promise<Result<MasterDataOutboxRecord | null>>;
+	) => Promise<Result<MasterDataOutboxRecord | null>>;
 
 	/**
 	 * Administrative replay for retryable failures only.
@@ -95,7 +91,7 @@ export interface OutboxReplayStore {
 	 * update availableAt, preserve the original eventId, and reject published,
 	 * publishing, pending, or dead_lettered records.
 	 */
-	requeueRetryableFailedOutboxRecord(
+	requeueRetryableFailedOutboxRecord: (
 		input: RequeueRetryableFailedOutboxRecordInput,
-	): Promise<Result<MasterDataOutboxRecord>>;
+	) => Promise<Result<MasterDataOutboxRecord>>;
 }

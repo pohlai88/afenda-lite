@@ -16,7 +16,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type CreateWarehouseActionData = { warehouse: Warehouse };
+export interface CreateWarehouseActionData {
+	warehouse: Warehouse;
+}
 export type CreateWarehouseActionState =
 	ActionResult<CreateWarehouseActionData> | null;
 
@@ -42,7 +44,7 @@ export async function createWarehouseAction(
 			parsed.details,
 		);
 	}
-	return runMemberPermissionAction({
+	return await runMemberPermissionAction({
 		path: "createWarehouseAction",
 		permission: "master_data.manage",
 		safeMessage: "Could not create warehouse. Try again or contact an admin.",

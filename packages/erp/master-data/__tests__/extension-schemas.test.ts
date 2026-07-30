@@ -240,7 +240,7 @@ describe("extension input schemas", () => {
 				...actor,
 				id: roleId,
 				expectedVersion: 1,
-				reason: "x".repeat(1_001),
+				reason: "x".repeat(1001),
 			}).success,
 		).toBe(false);
 	});

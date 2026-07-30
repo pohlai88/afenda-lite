@@ -10,7 +10,9 @@ export function canTransitionCompensationProposalStatus(
 	current: CompensationProposalStatus,
 	next: CompensationProposalStatus,
 ): boolean {
-	if (current === next) return false;
+	if (current === next) {
+		return false;
+	}
 	if (current === "draft" && next === "approved") {
 		return true;
 	}

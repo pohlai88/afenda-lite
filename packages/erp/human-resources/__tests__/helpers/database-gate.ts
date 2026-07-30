@@ -13,7 +13,7 @@ import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for
 const resolved = resolveDatabaseUrlForTests();
 
 /** True when DATABASE_URL is available after resolution. */
-export const hasDatabase = resolved.hasDatabase;
+export const { hasDatabase } = resolved;
 
 function requireDatabaseMode(): boolean {
 	const ci = process.env.CI;

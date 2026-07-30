@@ -68,10 +68,12 @@ function assertQuantitySplit(
 	const rejected = Number(value.quantityRejected);
 	const damaged = Number(value.quantityDamaged);
 	if (
-		!Number.isFinite(received) ||
-		!Number.isFinite(accepted) ||
-		!Number.isFinite(rejected) ||
-		!Number.isFinite(damaged)
+		!(
+			Number.isFinite(received) &&
+			Number.isFinite(accepted) &&
+			Number.isFinite(rejected) &&
+			Number.isFinite(damaged)
+		)
 	) {
 		ctx.addIssue({ code: "custom", message: "Invalid quantity split" });
 		return;

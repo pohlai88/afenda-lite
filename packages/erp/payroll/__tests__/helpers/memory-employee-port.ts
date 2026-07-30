@@ -1,13 +1,13 @@
 import type { PayrollEmployeeQueryPort } from "../../src/ports";
 
-export type MemoryEmployeeFixture = {
+export interface MemoryEmployeeFixture {
+	baseCompensation: string;
+	currencyCode: string;
 	employeeId: string;
+	employmentStatus: "active" | "notice" | "terminated";
 	organizationId: string;
 	payGroupId: string;
-	currencyCode: string;
-	employmentStatus: "active" | "notice" | "terminated";
-	baseCompensation: string;
-};
+}
 
 export function createMemoryPayrollEmployeeQueryPort(
 	fixtures: MemoryEmployeeFixture[],
@@ -20,6 +20,7 @@ export function createMemoryPayrollEmployeeQueryPort(
 	);
 
 	return {
+		// biome-ignore lint/suspicious/useAwait: This deterministic test double implements the asynchronous employee port contract.
 		async getPayrollEmployee(input) {
 			const fixture = byKey.get(`${input.organizationId}:${input.employeeId}`);
 			if (fixture === undefined) {

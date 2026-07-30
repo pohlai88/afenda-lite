@@ -40,7 +40,7 @@ function emitProduct(
 			return;
 		default: {
 			const _exhaustive: never = level;
-			void _exhaustive;
+			throw new Error(`Unsupported product log level: ${String(_exhaustive)}`);
 		}
 	}
 }

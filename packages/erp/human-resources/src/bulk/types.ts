@@ -13,25 +13,28 @@ export type HumanResourcesBulkEntityType =
 export type BulkImportMode = "dry_run" | "commit";
 export type BulkFailureDisposition = "retryable" | "terminal";
 
-export type BulkImportRow<Row> = { sourceReference: string; payload: Row };
-export type BulkImportRequest<Row> = {
-	organizationId: string;
+export interface BulkImportRow<Row> {
+	payload: Row;
+	sourceReference: string;
+}
+export interface BulkImportRequest<Row> {
 	actorUserId: string;
-	correlationId: string;
 	batchId: string;
+	correlationId: string;
 	entityType: HumanResourcesBulkEntityType;
-	mode: BulkImportMode;
-	idempotencyKey: string;
-	rows: readonly BulkImportRow<Row>[];
-	maxRowsPerRun?: number;
 	expectedCheckpointVersion?: number;
-};
-export type BulkRowIssue = {
+	idempotencyKey: string;
+	maxRowsPerRun?: number;
+	mode: BulkImportMode;
+	organizationId: string;
+	rows: readonly BulkImportRow<Row>[];
+}
+export interface BulkRowIssue {
 	code: string;
-	message: string;
-	field?: string;
 	disposition: BulkFailureDisposition;
-};
+	field?: string;
+	message: string;
+}
 export type BulkRowOutcome<Output = unknown> =
 	| {
 			rowIndex: number;
@@ -50,8 +53,7 @@ export type BulkBatchStatus =
 	| "completed"
 	| "completed_with_rejections"
 	| "retryable_failed";
-export type BulkAuditEvent = {
-	sequence: number;
+export interface BulkAuditEvent {
 	event:
 		| "BATCH_STARTED"
 		| "ROW_ACCEPTED"
@@ -60,47 +62,48 @@ export type BulkAuditEvent = {
 		| "BATCH_COMPLETED"
 		| "BATCH_RETRYABLE_FAILED";
 	rowIndex: number | null;
-};
-export type BulkErrorArtifact = {
-	organizationId: string;
+	sequence: number;
+}
+export interface BulkErrorArtifact {
 	batchId: string;
 	checkpointVersion: number;
-	contentType: "text/csv";
 	content: string;
-};
-export type BulkCheckpoint<Output = unknown> = {
+	contentType: "text/csv";
 	organizationId: string;
+}
+export interface BulkCheckpoint<Output = unknown> {
+	auditTrail: readonly BulkAuditEvent[];
 	batchId: string;
 	entityType: HumanResourcesBulkEntityType;
 	idempotencyKey: string;
-	requestFingerprint: string;
-	status: BulkBatchStatus;
 	nextRowIndex: number;
-	version: number;
-	rows: readonly BulkRowOutcome<Output>[];
+	organizationId: string;
+	requestFingerprint: string;
 	retryableFailure:
 		| (BulkRowIssue & { rowIndex: number; sourceReference: string })
 		| null;
-	auditTrail: readonly BulkAuditEvent[];
-};
-export type BulkCheckpointPort<Output = unknown> = {
-	load(input: {
+	rows: readonly BulkRowOutcome<Output>[];
+	status: BulkBatchStatus;
+	version: number;
+}
+export interface BulkCheckpointPort<Output = unknown> {
+	listAuditEvents: (input: {
 		organizationId: string;
 		idempotencyKey: string;
-	}): Promise<Result<BulkCheckpoint<Output> | null>>;
-	save(input: {
+	}) => Promise<Result<readonly BulkAuditEvent[]>>;
+	load: (input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}) => Promise<Result<BulkCheckpoint<Output> | null>>;
+	loadLatestErrorArtifact: (input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}) => Promise<Result<BulkErrorArtifact | null>>;
+	save: (input: {
 		checkpoint: BulkCheckpoint<Output>;
 		expectedVersion: number | null;
-	}): Promise<Result<BulkCheckpoint<Output>>>;
-	listAuditEvents(input: {
-		organizationId: string;
-		idempotencyKey: string;
-	}): Promise<Result<readonly BulkAuditEvent[]>>;
-	loadLatestErrorArtifact(input: {
-		organizationId: string;
-		idempotencyKey: string;
-	}): Promise<Result<BulkErrorArtifact | null>>;
-};
+	}) => Promise<Result<BulkCheckpoint<Output>>>;
+}
 export type BulkRowValidationResult<Validated> =
 	| { valid: true; value: Validated }
 	| { valid: false; issues: readonly Omit<BulkRowIssue, "disposition">[] };
@@ -111,17 +114,9 @@ export type BulkRowExecutionResult<Output> =
 			issues: readonly Omit<BulkRowIssue, "disposition">[];
 	  }
 	| { status: "retryable_failure"; issue: Omit<BulkRowIssue, "disposition"> };
-export type BulkImportPorts<Row, Validated, Output> = {
+export interface BulkImportPorts<Row, Validated, Output> {
 	checkpoints: BulkCheckpointPort<Output>;
-	validate(input: {
-		organizationId: string;
-		actorUserId: string;
-		correlationId: string;
-		entityType: HumanResourcesBulkEntityType;
-		rowIndex: number;
-		row: BulkImportRow<Row>;
-	}): Promise<BulkRowValidationResult<Validated>>;
-	execute(input: {
+	execute: (input: {
 		organizationId: string;
 		actorUserId: string;
 		correlationId: string;
@@ -131,19 +126,27 @@ export type BulkImportPorts<Row, Validated, Output> = {
 		sourceReference: string;
 		rowIdempotencyKey: string;
 		value: Validated;
-	}): Promise<BulkRowExecutionResult<Output>>;
-};
-export type BulkImportResult<Output = unknown> = {
-	mode: BulkImportMode;
-	organizationId: string;
+	}) => Promise<BulkRowExecutionResult<Output>>;
+	validate: (input: {
+		organizationId: string;
+		actorUserId: string;
+		correlationId: string;
+		entityType: HumanResourcesBulkEntityType;
+		rowIndex: number;
+		row: BulkImportRow<Row>;
+	}) => Promise<BulkRowValidationResult<Validated>>;
+}
+export interface BulkImportResult<Output = unknown> {
 	batchId: string;
-	entityType: HumanResourcesBulkEntityType;
-	requestFingerprint: string;
-	status: "dry_run_completed" | BulkBatchStatus;
-	nextRowIndex: number;
 	checkpointVersion: number | null;
-	rows: readonly BulkRowOutcome<Output>[];
-	totals: { accepted: number; rejected: number; pending: number };
-	retryableFailure: BulkCheckpoint<Output>["retryableFailure"];
+	entityType: HumanResourcesBulkEntityType;
 	errorFile: string | null;
-};
+	mode: BulkImportMode;
+	nextRowIndex: number;
+	organizationId: string;
+	requestFingerprint: string;
+	retryableFailure: BulkCheckpoint<Output>["retryableFailure"];
+	rows: readonly BulkRowOutcome<Output>[];
+	status: "dry_run_completed" | BulkBatchStatus;
+	totals: { accepted: number; rejected: number; pending: number };
+}

@@ -78,17 +78,17 @@ export function CompensationWorkspace({
 					<Badge variant="outline">Compensation</Badge>
 					<Badge variant="secondary">Sensitive · permission-scoped</Badge>
 				</div>
-				<h1 className="text-2xl font-semibold tracking-normal">
+				<h1 className="font-semibold text-2xl tracking-normal">
 					Compensation and benefits workspace
 				</h1>
-				<p className="max-w-3xl text-sm text-muted-foreground">
+				<p className="max-w-3xl text-muted-foreground text-sm">
 					Manage compensation structures, controlled review cycles, benefits,
 					employee history, and approved payroll delivery status.
 				</p>
 			</header>
 			<Tabs defaultValue={canCompensation ? "grades" : "benefits"}>
 				<div className="overflow-x-auto pb-1">
-					<TabsList variant="line" aria-label="Compensation workspace areas">
+					<TabsList aria-label="Compensation workspace areas" variant="line">
 						{canCompensation ? (
 							<>
 								<TabsTrigger value="grades">Grades</TabsTrigger>
@@ -104,12 +104,12 @@ export function CompensationWorkspace({
 					</TabsList>
 				</div>
 				{canCompensation ? (
-					<TabsContent value="grades" className="space-y-4 pt-4">
+					<TabsContent className="space-y-4 pt-4" value="grades">
 						<LoadError message={data.errors.grades} />
 						{capabilities.canManage ? (
 							<JourneyCard
-								title="Create compensation grade"
 								description="Add a grade through the canonical compensation command."
+								title="Create compensation grade"
 							>
 								<GradeCreateForm />
 							</JourneyCard>
@@ -151,30 +151,30 @@ export function CompensationWorkspace({
 					</TabsContent>
 				) : null}
 				{canCompensation ? (
-					<TabsContent value="bands" className="pt-4">
+					<TabsContent className="pt-4" value="bands">
 						{capabilities.canManage ? (
 							<JourneyCard
-								title="Create salary band"
 								description="Define an effective-dated range with exact decimal amounts."
+								title="Create salary band"
 							>
 								<SalaryBandCreateForm />
 							</JourneyCard>
 						) : (
 							<Empty
+								description="Management permission is required to create a salary band."
 								size="sm"
 								title="Salary bands are read-only"
-								description="Management permission is required to create a salary band."
 							/>
 						)}
 					</TabsContent>
 				) : null}
 				{canCompensation ? (
-					<TabsContent value="reviews" className="space-y-4 pt-4">
+					<TabsContent className="space-y-4 pt-4" value="reviews">
 						<LoadError message={data.errors.reviews} />
 						{capabilities.canManage ? (
 							<JourneyCard
-								title="Create review cycle"
 								description="Prepare a controlled compensation review budget and period."
+								title="Create review cycle"
 							>
 								<ReviewCycleCreateForm />
 							</JourneyCard>
@@ -222,30 +222,30 @@ export function CompensationWorkspace({
 					</TabsContent>
 				) : null}
 				{capabilities.canManageBenefits ? (
-					<TabsContent value="benefits" className="pt-4">
+					<TabsContent className="pt-4" value="benefits">
 						<JourneyCard
-							title="Create benefit plan"
 							description="Create a benefit plan through the existing benefits action."
+							title="Create benefit plan"
 						>
 							<BenefitPlanCreateForm />
 						</JourneyCard>
 					</TabsContent>
 				) : null}
 				{canCompensation ? (
-					<TabsContent value="history" className="pt-4">
+					<TabsContent className="pt-4" value="history">
 						<JourneyCard
-							title="Employee compensation history"
 							description="Load effective-dated compensation records within the current organization."
+							title="Employee compensation history"
 						>
 							<EmployeeCompensationLookup />
 						</JourneyCard>
 					</TabsContent>
 				) : null}
 				{canCompensation ? (
-					<TabsContent value="payroll" className="pt-4">
+					<TabsContent className="pt-4" value="payroll">
 						<JourneyCard
-							title="Payroll handoff delivery status"
 							description="Verify the approved compensation and active benefits payload available to payroll."
+							title="Payroll handoff delivery status"
 						>
 							<PayrollHandoffLookup />
 						</JourneyCard>

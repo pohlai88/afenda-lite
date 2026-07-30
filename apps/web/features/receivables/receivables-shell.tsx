@@ -24,7 +24,9 @@ import {
 import { createReceivablesCommandOptions } from "@/lib/erp/receivables-command-options";
 import { sessionHasPermission } from "@/modules/identity/domain/session-permission";
 
-type ReceivablesShellProps = { surface: "admin" | "client" };
+interface ReceivablesShellProps {
+	surface: "admin" | "client";
+}
 
 const formSections = [
 	[
@@ -70,24 +72,24 @@ export async function ReceivablesShell({ surface }: ReceivablesShellProps) {
 	return (
 		<section className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-10">
 			<div className="space-y-2">
-				<p className="text-sm text-muted-foreground">
+				<p className="text-muted-foreground text-sm">
 					{surface === "admin" ? "Operator" : "Client"} · Receivables
 				</p>
-				<h1 className="text-2xl font-semibold tracking-tight">
+				<h1 className="font-semibold text-2xl tracking-tight">
 					Customer receivables
 				</h1>
-				<p className="max-w-2xl text-sm text-muted-foreground">
+				<p className="max-w-2xl text-muted-foreground text-sm">
 					Create and post sales invoices, issue credit notes, apply customer
 					receipts, and track open balances.
 				</p>
 			</div>
 
-			{!invoicesResult.ok ? (
+			{invoicesResult.ok ? null : (
 				<Alert>
 					<AlertTitle>Could not load sales invoices</AlertTitle>
 					<AlertDescription>{invoicesResult.message}</AlertDescription>
 				</Alert>
-			) : null}
+			)}
 
 			<Card>
 				<CardHeader>
@@ -104,7 +106,7 @@ export async function ReceivablesShell({ surface }: ReceivablesShellProps) {
 					) : (
 						<ul className="space-y-2">
 							{invoices.map((invoice) => (
-								<li key={invoice.id} className="rounded-md border px-3 py-2">
+								<li className="rounded-md border px-3 py-2" key={invoice.id}>
 									<div className="font-medium">
 										{invoice.code} · {invoice.invoiceSource} · {invoice.status}{" "}
 										· v{invoice.version}

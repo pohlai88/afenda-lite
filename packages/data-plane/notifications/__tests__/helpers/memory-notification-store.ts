@@ -21,6 +21,10 @@ function assertOk<T>(result: Result<T>): T {
 	return result.data;
 }
 
+function okAsync<T>(data: T): Promise<Result<T>> {
+	return Promise.resolve(ok(data));
+}
+
 export { assertOk };
 
 /** In-memory NotificationStore for Vitest only — not a production export. */
@@ -31,7 +35,7 @@ export class MemoryNotificationStore implements NotificationStore {
 		return [...this.entries];
 	}
 
-	async write(entry: NotificationWriteInput): Promise<Result<Notification>> {
+	write(entry: NotificationWriteInput): Promise<Result<Notification>> {
 		if (
 			entry.deduplicationKey !== undefined &&
 			entry.deduplicationKey !== null
@@ -44,7 +48,7 @@ export class MemoryNotificationStore implements NotificationStore {
 					row.deduplicationKey === entry.deduplicationKey,
 			);
 			if (existing !== undefined) {
-				return ok({ ...existing });
+				return okAsync({ ...existing });
 			}
 		}
 		const created: Notification = {
@@ -65,10 +69,10 @@ export class MemoryNotificationStore implements NotificationStore {
 			createdAt: entry.createdAt ?? new Date(),
 		};
 		this.entries.push(created);
-		return ok(created);
+		return okAsync(created);
 	}
 
-	async listByUser(
+	listByUser(
 		options: NotificationListOptions,
 	): Promise<Result<Notification[]>> {
 		const filtered = this.entries
@@ -81,10 +85,10 @@ export class MemoryNotificationStore implements NotificationStore {
 			.toSorted((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
 		const offset = (options.page - 1) * options.pageSize;
-		return ok(filtered.slice(offset, offset + options.pageSize));
+		return okAsync(filtered.slice(offset, offset + options.pageSize));
 	}
 
-	async countUnread(
+	countUnread(
 		options: NotificationUnreadCountOptions,
 	): Promise<Result<number>> {
 		const count = this.entries.filter(
@@ -93,10 +97,10 @@ export class MemoryNotificationStore implements NotificationStore {
 				entry.userId === options.userId &&
 				!entry.read,
 		).length;
-		return ok(count);
+		return okAsync(count);
 	}
 
-	async markRead(
+	markRead(
 		options: NotificationMarkReadOptions,
 	): Promise<Result<Notification | null>> {
 		const entry = this.entries.find(
@@ -106,13 +110,13 @@ export class MemoryNotificationStore implements NotificationStore {
 				row.userId === options.userId,
 		);
 		if (!entry) {
-			return ok(null);
+			return okAsync<Notification | null>(null);
 		}
 		entry.read = true;
-		return ok({ ...entry });
+		return okAsync({ ...entry });
 	}
 
-	async markAllRead(
+	markAllRead(
 		options: NotificationMarkAllReadOptions,
 	): Promise<Result<number>> {
 		let marked = 0;
@@ -126,10 +130,10 @@ export class MemoryNotificationStore implements NotificationStore {
 				marked += 1;
 			}
 		}
-		return ok(marked);
+		return okAsync(marked);
 	}
 
-	async delete(
+	delete(
 		options: NotificationDeleteOptions,
 	): Promise<Result<{ deleted: boolean }>> {
 		const index = this.entries.findIndex(
@@ -139,15 +143,13 @@ export class MemoryNotificationStore implements NotificationStore {
 				row.userId === options.userId,
 		);
 		if (index < 0) {
-			return ok({ deleted: false });
+			return okAsync({ deleted: false });
 		}
 		this.entries.splice(index, 1);
-		return ok({ deleted: true });
+		return okAsync({ deleted: true });
 	}
 
-	async purgeExpired(
-		options: NotificationPurgeOptions,
-	): Promise<Result<number>> {
+	purgeExpired(options: NotificationPurgeOptions): Promise<Result<number>> {
 		const now = new Date();
 		const before = this.entries.length;
 		const kept = this.entries.filter((entry) => {
@@ -168,6 +170,6 @@ export class MemoryNotificationStore implements NotificationStore {
 		});
 		this.entries.length = 0;
 		this.entries.push(...kept);
-		return ok(before - kept.length);
+		return okAsync(before - kept.length);
 	}
 }

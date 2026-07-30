@@ -48,8 +48,8 @@
 	font-family: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
 	font-size: 1.125rem;
 	font-weight: 500;
-	letter-spacing: 0;
 	line-height: 1.75rem;
+	letter-spacing: 0;
 }
 
 /* The labelled outer region owns horizontal scrolling and keyboard focus.

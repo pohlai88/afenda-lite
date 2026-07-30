@@ -31,11 +31,13 @@ function isCacheEntry(value: unknown): value is CacheEntry {
 		return false;
 	}
 	if (
-		!("data" in value) ||
-		!("createdAt" in value) ||
-		!("expiresAt" in value) ||
-		!("tags" in value) ||
-		!("hitCount" in value)
+		!(
+			"data" in value &&
+			"createdAt" in value &&
+			"expiresAt" in value &&
+			"tags" in value &&
+			"hitCount" in value
+		)
 	) {
 		return false;
 	}
@@ -60,22 +62,29 @@ function parseEntry(raw: unknown): CacheEntry | null {
 	};
 }
 
-async function scanKeys(redis: Redis, match: string): Promise<string[]> {
-	const found: string[] = [];
-	let cursor = "0";
-	do {
-		const [next, keys] = await redis.scan(cursor, {
-			match,
-			count: 100,
-		});
-		cursor = String(next);
-		for (const key of keys) {
-			if (typeof key === "string") {
-				found.push(key);
-			}
+async function scanKeysFromCursor(
+	redis: Redis,
+	match: string,
+	cursor: string,
+	found: string[],
+): Promise<string[]> {
+	const [next, keys] = await redis.scan(cursor, {
+		match,
+		count: 100,
+	});
+	for (const key of keys) {
+		if (typeof key === "string") {
+			found.push(key);
 		}
-	} while (cursor !== "0");
-	return found;
+	}
+	const nextCursor = String(next);
+	return nextCursor === "0"
+		? found
+		: scanKeysFromCursor(redis, match, nextCursor, found);
+}
+
+function scanKeys(redis: Redis, match: string): Promise<string[]> {
+	return scanKeysFromCursor(redis, match, "0", []);
 }
 
 export function createUpstashL2Store(redis: Redis): CacheL2Store {

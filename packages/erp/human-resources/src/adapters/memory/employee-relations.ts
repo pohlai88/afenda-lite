@@ -63,25 +63,25 @@ import type {
 } from "../../store";
 import { idempotencyMapKey } from "./shared";
 
-export type EmployeeRelationsMemoryState = {
-	cases: Map<HumanResourcesEmployeeCaseId, EmployeeCase>;
-	events: Map<HumanResourcesEmployeeCaseEventId, EmployeeCaseEvent>;
+export interface EmployeeRelationsMemoryState {
+	actionIdempotency: Map<
+		string,
+		IdempotentEmployeeCaseActionOpenRecord & { action: EmployeeCaseAction }
+	>;
 	actions: Map<HumanResourcesEmployeeCaseActionId, EmployeeCaseAction>;
+	appealIdempotency: Map<
+		string,
+		IdempotentEmployeeCaseAppealOpenRecord & { appeal: EmployeeCaseAppeal }
+	>;
 	appeals: Map<HumanResourcesEmployeeCaseAppealId, EmployeeCaseAppeal>;
 	caseIdempotency: Map<
 		string,
 		IdempotentEmployeeCaseOpenRecord & { case: EmployeeCase }
 	>;
-	actionIdempotency: Map<
-		string,
-		IdempotentEmployeeCaseActionOpenRecord & { action: EmployeeCaseAction }
-	>;
-	appealIdempotency: Map<
-		string,
-		IdempotentEmployeeCaseAppealOpenRecord & { appeal: EmployeeCaseAppeal }
-	>;
+	cases: Map<HumanResourcesEmployeeCaseId, EmployeeCase>;
+	events: Map<HumanResourcesEmployeeCaseEventId, EmployeeCaseEvent>;
 	nextSequenceByCase: Map<string, number>;
-};
+}
 
 export type EmployeeRelationsMemoryHost = Pick<
 	HumanResourcesStore,
@@ -176,7 +176,7 @@ async function recordAudit(
 		action: "CREATE" | "UPDATE";
 	},
 ): Promise<Result<{ id: string }>> {
-	return ports.audit.record({
+	return await ports.audit.record({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: meta.correlationId,
@@ -198,7 +198,7 @@ async function recordOutbox(
 		entityId: string;
 	},
 ): Promise<Result<{ id: string }>> {
-	return ports.outbox.append({
+	return await ports.outbox.append({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: meta.correlationId,
@@ -223,6 +223,46 @@ function getCaseInOrg(
 		return notFound("Case not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
 	}
 	return ok(caseRecord);
+}
+
+function getActionInCase(
+	state: EmployeeRelationsMemoryState,
+	input: {
+		actionId: HumanResourcesEmployeeCaseActionId;
+		caseId: HumanResourcesEmployeeCaseId;
+		organizationId: string;
+	},
+): Result<EmployeeCaseAction> {
+	const action = state.actions.get(input.actionId);
+	if (
+		!action ||
+		action.organizationId !== input.organizationId ||
+		action.caseId !== input.caseId
+	) {
+		return notFound("Case action not found");
+	}
+	return ok(action);
+}
+
+function resolveActionReplay(
+	existing:
+		| (IdempotentEmployeeCaseActionOpenRecord & {
+				action: EmployeeCaseAction;
+		  })
+		| null,
+	expectedFingerprint: string,
+): Result<EmployeeCaseAction | null> {
+	if (existing === null) {
+		return ok(null);
+	}
+	if (existing.createRequestFingerprint !== expectedFingerprint) {
+		return fail(
+			"CONFLICT",
+			"Idempotency key reused with different payload",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+		);
+	}
+	return ok(cloneAction(existing.action));
 }
 
 function getCaseWithAccess(
@@ -317,9 +357,9 @@ export function createMemoryEmployeeRelationsMethods(
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = state.caseIdempotency.get(key);
 			if (!record) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({
+			return await ok({
 				caseId: record.caseId,
 				createRequestFingerprint: record.createRequestFingerprint,
 				case: cloneCase(record.case),
@@ -484,18 +524,18 @@ export function createMemoryEmployeeRelationsMethods(
 			const state = erState;
 			const result = getCaseWithAccess(state, input);
 			if (!result.ok) {
-				return result;
+				return await result;
 			}
-			return ok(cloneCase(result.data));
+			return await ok(cloneCase(result.data));
 		},
 
 		async findEmployeeCaseInOrganization(input) {
 			const state = erState;
 			const loaded = getCaseInOrg(state, input.organizationId, input.caseId);
 			if (!loaded.ok) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok(cloneCase(loaded.data));
+			return await ok(cloneCase(loaded.data));
 		},
 
 		async listEmployeeCases(input) {
@@ -509,7 +549,7 @@ export function createMemoryEmployeeRelationsMethods(
 				}
 				return true;
 			});
-			return ok(filtered.map(cloneCase));
+			return await ok(filtered.map(cloneCase));
 		},
 
 		async listCasesAssignedToActor(input) {
@@ -519,7 +559,7 @@ export function createMemoryEmployeeRelationsMethods(
 					caseRecord.organizationId === input.organizationId &&
 					caseRecord.ownerActorUserId === input.ownerActorUserId,
 			);
-			return ok(filtered.map(cloneCase));
+			return await ok(filtered.map(cloneCase));
 		},
 
 		async listOpenEmployeeRelationsCases(input) {
@@ -529,7 +569,7 @@ export function createMemoryEmployeeRelationsMethods(
 					caseRecord.organizationId === input.organizationId &&
 					caseRecord.status !== "closed",
 			);
-			return ok(filtered.map(cloneCase));
+			return await ok(filtered.map(cloneCase));
 		},
 
 		async getEmployeeRelationsHistoryByEmployee(input) {
@@ -539,7 +579,7 @@ export function createMemoryEmployeeRelationsMethods(
 					caseRecord.organizationId === input.organizationId &&
 					caseRecord.employeeId === input.employeeId,
 			);
-			return ok(filtered.map(cloneCase));
+			return await ok(filtered.map(cloneCase));
 		},
 
 		async updateEmployeeCaseClassification(input, ports, meta) {
@@ -1073,9 +1113,9 @@ export function createMemoryEmployeeRelationsMethods(
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = state.actionIdempotency.get(key);
 			if (!record) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({
+			return await ok({
 				actionId: record.actionId,
 				createRequestFingerprint: record.createRequestFingerprint,
 				action: cloneAction(record.action),
@@ -1091,18 +1131,15 @@ export function createMemoryEmployeeRelationsMethods(
 			if (!existing.ok) {
 				return existing;
 			}
-			if (existing.data !== null) {
-				if (
-					existing.data.createRequestFingerprint !==
-					record.createRequestFingerprint
-				) {
-					return fail(
-						"CONFLICT",
-						"Idempotency key reused with different payload",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
-				}
-				return ok(cloneAction(existing.data.action));
+			const replay = resolveActionReplay(
+				existing.data,
+				record.createRequestFingerprint,
+			);
+			if (!replay.ok) {
+				return replay;
+			}
+			if (replay.data !== null) {
+				return ok(replay.data);
 			}
 
 			const loaded = getCaseInOrg(state, record.organizationId, record.caseId);
@@ -1225,14 +1262,11 @@ export function createMemoryEmployeeRelationsMethods(
 				return versionCheck;
 			}
 
-			const action = state.actions.get(input.actionId);
-			if (
-				!action ||
-				action.organizationId !== input.organizationId ||
-				action.caseId !== input.caseId
-			) {
-				return notFound("Case action not found");
+			const loadedAction = getActionInCase(state, input);
+			if (!loadedAction.ok) {
+				return loadedAction;
 			}
+			const action = loadedAction.data;
 			if (action.status !== "recommended") {
 				return invalidState("Case action is not awaiting approval");
 			}
@@ -1315,9 +1349,9 @@ export function createMemoryEmployeeRelationsMethods(
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = state.appealIdempotency.get(key);
 			if (!record) {
-				return ok(null);
+				return await ok(null);
 			}
-			return ok({
+			return await ok({
 				appealId: record.appealId,
 				createRequestFingerprint: record.createRequestFingerprint,
 				appeal: cloneAppeal(record.appeal),
@@ -1719,7 +1753,7 @@ export function createMemoryEmployeeRelationsMethods(
 			const state = erState;
 			const loaded = getCaseInOrg(state, input.organizationId, input.caseId);
 			if (!loaded.ok) {
-				return loaded;
+				return await loaded;
 			}
 			const events = Array.from(state.events.values())
 				.filter(
@@ -1733,14 +1767,14 @@ export function createMemoryEmployeeRelationsMethods(
 				caseId: input.caseId,
 				events,
 			};
-			return ok(timeline);
+			return await ok(timeline);
 		},
 
 		async getEmployeeCaseOutcome(input) {
 			const state = erState;
 			const loaded = getCaseInOrg(state, input.organizationId, input.caseId);
 			if (!loaded.ok) {
-				return loaded;
+				return await loaded;
 			}
 			const approvedActions = Array.from(state.actions.values())
 				.filter(
@@ -1779,7 +1813,7 @@ export function createMemoryEmployeeRelationsMethods(
 								employmentId: loaded.data.employmentId,
 							},
 			};
-			return ok(outcome);
+			return await ok(outcome);
 		},
 	};
 }

@@ -7,12 +7,6 @@ import type {
 import type { EmploymentContract } from "../types";
 import {
 	correctEmploymentContract,
-	createEmploymentContract,
-	endEmploymentContract,
-	getCurrentEmploymentContract,
-	getEmploymentContract,
-	getEmploymentContractAsOf,
-	listEmploymentContracts,
 	supersedeEmploymentContract,
 } from "./employment-contract";
 
@@ -20,7 +14,7 @@ export type AmendEmploymentContractInput = CorrectEmploymentContractInput;
 export type RenewEmploymentContractInput = SupersedeEmploymentContractInput;
 
 /** Amend — alias for `correctEmploymentContract` (in-place correction with reason + source). */
-export async function amendEmploymentContract(
+export function amendEmploymentContract(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentContract>> {
@@ -28,7 +22,7 @@ export async function amendEmploymentContract(
 }
 
 /** Renew — alias for `supersedeEmploymentContract` (successor term with lineage). */
-export async function renewEmploymentContract(
+export function renewEmploymentContract(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<
@@ -45,4 +39,4 @@ export {
 	getEmploymentContractAsOf,
 	listEmploymentContracts,
 	supersedeEmploymentContract,
-};
+} from "./employment-contract";

@@ -13,7 +13,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type PostGoodsReceiptActionData = { receipt: GoodsReceipt };
+export interface PostGoodsReceiptActionData {
+	receipt: GoodsReceipt;
+}
 export type PostGoodsReceiptActionState =
 	ActionResult<PostGoodsReceiptActionData> | null;
 
@@ -26,7 +28,7 @@ export async function postGoodsReceiptAction(
 	_prev: PostGoodsReceiptActionState,
 	formData: FormData,
 ): Promise<PostGoodsReceiptActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "postGoodsReceiptAction",
 		permission: "receiving.receipt.post",
 		safeMessage: "Could not post goods receipt. Try again or contact an admin.",
@@ -53,7 +55,9 @@ export async function postGoodsReceiptAction(
 				createReceivingCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidateReceivingPaths();
 			return { ok: true, data: { receipt: mapped.data } };
 		},

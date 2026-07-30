@@ -43,15 +43,15 @@ type SectionProps = Readonly<{
 
 function WorkbenchSection({ id, title, description, children }: SectionProps) {
 	return (
-		<section className="grid gap-4" aria-labelledby={id}>
+		<section aria-labelledby={id} className="grid gap-4">
 			<div className="grid gap-1">
 				<h2
-					className="text-base font-semibold tracking-tight text-foreground"
+					className="font-semibold text-base text-foreground tracking-tight"
 					id={id}
 				>
 					{title}
 				</h2>
-				<p className="max-w-5xl text-sm leading-5 text-foreground-secondary">
+				<p className="max-w-5xl text-foreground-secondary text-sm leading-5">
 					{description}
 				</p>
 			</div>
@@ -64,12 +64,26 @@ const saveContact = fn();
 const postInvoice = fn();
 const savePolicy = fn();
 
-function EditFinanceContactDialog() {
-	function handleSubmit(event: FormEvent<HTMLFormElement>) {
-		event.preventDefault();
-		saveContact();
-	}
+function preventSubmit(event: FormEvent<HTMLFormElement>): void {
+	event.preventDefault();
+}
 
+function saveContactOnSubmit(event: FormEvent<HTMLFormElement>): void {
+	event.preventDefault();
+	saveContact();
+}
+
+function postInvoiceOnSubmit(event: FormEvent<HTMLFormElement>): void {
+	event.preventDefault();
+	postInvoice();
+}
+
+function savePolicyOnSubmit(event: FormEvent<HTMLFormElement>): void {
+	event.preventDefault();
+	savePolicy();
+}
+
+function EditFinanceContactDialog() {
 	return (
 		<Dialog>
 			<DialogTrigger asChild>
@@ -83,21 +97,21 @@ function EditFinanceContactDialog() {
 						notices.
 					</DialogDescription>
 				</DialogHeader>
-				<form className="grid gap-5" onSubmit={handleSubmit}>
+				<form className="grid gap-5" onSubmit={saveContactOnSubmit}>
 					<div className="grid gap-4">
 						<FormField label="Contact name" required>
 							<FormInput
-								name="contactName"
 								defaultValue="Aisha Rahman"
+								name="contactName"
 								required
 							/>
 						</FormField>
 						<FormField label="Email address" required>
 							<FormInput
-								name="email"
-								type="email"
 								defaultValue="finance@northwind.example"
+								name="email"
 								required
+								type="email"
 							/>
 						</FormField>
 					</div>
@@ -116,11 +130,6 @@ function EditFinanceContactDialog() {
 }
 
 function ReviewInvoicePostingDialog() {
-	function handleSubmit(event: FormEvent<HTMLFormElement>) {
-		event.preventDefault();
-		postInvoice();
-	}
-
 	return (
 		<Dialog>
 			<DialogTrigger asChild>
@@ -134,12 +143,12 @@ function ReviewInvoicePostingDialog() {
 						entry may be corrected through the governed reversal workflow.
 					</DialogDescription>
 				</DialogHeader>
-				<form className="grid gap-5" onSubmit={handleSubmit}>
+				<form className="grid gap-5" onSubmit={postInvoiceOnSubmit}>
 					<div className="grid gap-2">
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							Supplier Northwind Trading · Due 15 Aug 2026 · Owner Aisha Rahman
 						</p>
-						<p className="text-xs text-foreground-tertiary">
+						<p className="text-foreground-tertiary text-xs">
 							INV-1048 · Draft ready for posting
 						</p>
 					</div>
@@ -158,11 +167,6 @@ function ReviewInvoicePostingDialog() {
 }
 
 function ConfigureApprovalPolicyDialog() {
-	function handleSubmit(event: FormEvent<HTMLFormElement>) {
-		event.preventDefault();
-		savePolicy();
-	}
-
 	return (
 		<Dialog>
 			<DialogTrigger asChild>
@@ -176,48 +180,48 @@ function ConfigureApprovalPolicyDialog() {
 						actions stay fixed while the policy body scrolls.
 					</DialogDescription>
 				</DialogHeader>
-				<form className="grid gap-5" onSubmit={handleSubmit}>
+				<form className="grid gap-5" onSubmit={savePolicyOnSubmit}>
 					<div className="grid max-h-[min(24rem,60vh)] gap-4 overflow-y-auto pr-2">
 						<FormField
-							label="Policy name"
 							description="Visible in audit history."
+							label="Policy name"
 							required
 						>
 							<FormInput
-								name="policyName"
 								defaultValue="High-value supplier invoices"
+								name="policyName"
 								required
 							/>
 						</FormField>
 						<FormField
-							label="Escalation mailbox"
 							description="Receives unresolved approval alerts."
+							label="Escalation mailbox"
 							required
 						>
 							<FormInput
-								name="mailbox"
-								type="email"
 								defaultValue="finance-control@example.com"
+								name="mailbox"
 								required
+								type="email"
 							/>
 						</FormField>
 						<FormField
-							label="Threshold (MYR)"
 							description="Invoices at or above this amount require escalation."
+							label="Threshold (MYR)"
 						>
 							<FormInput
-								name="threshold"
 								defaultValue="10000.00"
 								inputMode="decimal"
+								name="threshold"
 							/>
 						</FormField>
 						<FormField
-							label="Reviewer guidance"
 							description="Shown to approvers before they act."
+							label="Reviewer guidance"
 						>
 							<FormInput
-								name="guidance"
 								defaultValue="Verify bank evidence before approving."
+								name="guidance"
 							/>
 						</FormField>
 					</div>
@@ -240,18 +244,18 @@ function DialogOperationalOverview() {
 		<div className="min-h-screen bg-canvas text-foreground">
 			<div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-2 border-b pb-6">
-					<p className="text-sm font-medium text-foreground-secondary">
+					<p className="font-medium text-foreground-secondary text-sm">
 						Supplier master data
 					</p>
-					<h1 className="text-2xl font-semibold tracking-tight">
+					<h1 className="font-semibold text-2xl tracking-tight">
 						Supplier administration
 					</h1>
-					<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+					<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 						Dialog interrupts this surface only for bounded edit, review, and
 						policy work. Irreversible harm belongs in AlertDialog, while feature
 						code owns validation, authorization, submission, and pending state.
 					</p>
-					<p className="max-w-5xl text-xs leading-5 text-foreground-tertiary">
+					<p className="max-w-5xl text-foreground-tertiary text-xs leading-5">
 						Operational standard: title, description, focus containment,
 						keyboard dismissal, error recovery, and action hierarchy must remain
 						coherent across narrow and high-contrast layouts.
@@ -268,31 +272,31 @@ function DialogOperationalOverview() {
 					</CardHeader>
 					<CardContent className="grid gap-4 sm:grid-cols-3">
 						<div className="grid gap-1">
-							<p className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<p className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Finance contact
 							</p>
-							<p className="text-sm text-foreground">Aisha Rahman</p>
-							<p className="text-sm text-foreground-secondary">
+							<p className="text-foreground text-sm">Aisha Rahman</p>
+							<p className="text-foreground-secondary text-sm">
 								finance@northwind.example
 							</p>
 						</div>
 						<div className="grid gap-1">
-							<p className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<p className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Open draft
 							</p>
-							<p className="text-sm text-foreground">INV-1048</p>
-							<p className="text-sm text-foreground-secondary">
+							<p className="text-foreground text-sm">INV-1048</p>
+							<p className="text-foreground-secondary text-sm">
 								MYR 18,420.00 · Due 15 Aug 2026
 							</p>
 						</div>
 						<div className="grid gap-1">
-							<p className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<p className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Approval policy
 							</p>
-							<p className="text-sm text-foreground">
+							<p className="text-foreground text-sm">
 								High-value supplier invoices
 							</p>
-							<p className="text-sm text-foreground-secondary">
+							<p className="text-foreground-secondary text-sm">
 								Escalates at MYR 10,000.00
 							</p>
 						</div>
@@ -300,18 +304,18 @@ function DialogOperationalOverview() {
 				</Card>
 
 				<WorkbenchSection
+					description="Each task opens one focused Dialog with a single primary action."
 					id="supplier-administration-tasks"
 					title="Administration tasks"
-					description="Each task opens one focused Dialog with a single primary action."
 				>
 					<div className="grid gap-3">
 						<Card className="shadow-none">
 							<CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
 								<div className="grid gap-1">
-									<p className="text-sm font-medium text-foreground">
+									<p className="font-medium text-foreground text-sm">
 										Edit finance contact
 									</p>
-									<p className="text-sm text-foreground-secondary">
+									<p className="text-foreground-secondary text-sm">
 										Correct remittance contact details for this supplier.
 									</p>
 								</div>
@@ -322,10 +326,10 @@ function DialogOperationalOverview() {
 						<Card className="shadow-none">
 							<CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
 								<div className="grid gap-1">
-									<p className="text-sm font-medium text-foreground">
+									<p className="font-medium text-foreground text-sm">
 										Review invoice posting
 									</p>
-									<p className="text-sm text-foreground-secondary">
+									<p className="text-foreground-secondary text-sm">
 										Confirm a reversible ledger write before posting INV-1048.
 									</p>
 								</div>
@@ -336,10 +340,10 @@ function DialogOperationalOverview() {
 						<Card className="shadow-none">
 							<CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
 								<div className="grid gap-1">
-									<p className="text-sm font-medium text-foreground">
+									<p className="font-medium text-foreground text-sm">
 										Configure approval policy
 									</p>
-									<p className="text-sm text-foreground-secondary">
+									<p className="text-foreground-secondary text-sm">
 										Adjust escalation mailbox and threshold for high-value
 										invoices.
 									</p>
@@ -404,7 +408,7 @@ export const SemanticUsage: Story = {
 	render: () => (
 		<div className="grid w-full max-w-5xl gap-6">
 			<StorySection title="Edit one bounded record">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Use Dialog when the operator must change a small, self-contained set
 					of fields without leaving the parent surface. Keep Cancel and one Save
 					primary.
@@ -412,7 +416,7 @@ export const SemanticUsage: Story = {
 			</StorySection>
 
 			<StorySection title="Review a material but reversible operation">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Use Dialog to confirm ledger writes or status changes that remain
 					correctable through a governed reversal or undo path. Do not frame
 					these as irreversible destruction prompts.
@@ -420,7 +424,7 @@ export const SemanticUsage: Story = {
 			</StorySection>
 
 			<StorySection title="Configure a focused policy">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Use Dialog for short administrative settings with a fixed header,
 					scrollable body when needed, and one Save primary. Multi-step or
 					long-running workflows belong on a page or sheet.
@@ -428,7 +432,7 @@ export const SemanticUsage: Story = {
 			</StorySection>
 
 			<StorySection title="Acknowledge required operational guidance">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Use Dialog for time-bound notices that need an explicit Acknowledge
 					action. Prefer a page Alert when the message should remain visible
 					beside ongoing work.
@@ -481,9 +485,9 @@ export const StatesAndAccessibility: Story = {
 					</DialogHeader>
 					<Input
 						aria-label="Supplier reference"
-						defaultValue="SUP-1042"
 						autoComplete="off"
 						autoFocus
+						defaultValue="SUP-1042"
 					/>
 					<DialogFooter>
 						<DialogClose asChild>
@@ -507,28 +511,25 @@ export const StatesAndAccessibility: Story = {
 							can correct the value.
 						</DialogDescription>
 					</DialogHeader>
-					<form
-						className="grid gap-5"
-						onSubmit={(event) => event.preventDefault()}
-					>
+					<form className="grid gap-5" onSubmit={preventSubmit}>
 						<div className="grid gap-4">
 							<FormField label="Contact name" required>
 								<FormInput
-									name="contactName"
 									defaultValue="Aisha Rahman"
+									name="contactName"
 									required
 								/>
 							</FormField>
 							<FormField
-								label="Email address"
 								error="Enter a valid finance email address."
+								label="Email address"
 								required
 							>
 								<FormInput
-									name="email"
-									type="email"
 									defaultValue="invalid-address"
+									name="email"
 									required
+									type="email"
 								/>
 							</FormField>
 						</div>
@@ -556,42 +557,39 @@ export const StatesAndAccessibility: Story = {
 							while the control reports busy progress.
 						</DialogDescription>
 					</DialogHeader>
-					<form
-						className="grid gap-5"
-						onSubmit={(event) => event.preventDefault()}
-					>
+					<form className="grid gap-5" onSubmit={preventSubmit}>
 						<div className="grid gap-4">
 							<FormField label="Contact name" required>
 								<FormInput
-									name="contactName"
 									defaultValue="Aisha Rahman"
+									name="contactName"
 									required
 								/>
 							</FormField>
 							<FormField label="Email address" required>
 								<FormInput
-									name="email"
-									type="email"
 									defaultValue="finance@northwind.example"
+									name="email"
 									required
+									type="email"
 								/>
 							</FormField>
 						</div>
 						<p
+							className="text-foreground-secondary text-sm"
 							id="save-contact-progress"
-							className="text-sm text-foreground-secondary"
 						>
 							Supplier contact changes are being saved.
 						</p>
 						<DialogFooter>
-							<Button type="button" variant="outline" disabled>
+							<Button disabled type="button" variant="outline">
 								Cancel
 							</Button>
 							<Button
-								type="submit"
-								disabled
 								aria-busy="true"
 								aria-describedby="save-contact-progress"
+								disabled
+								type="submit"
 							>
 								<Spinner aria-hidden="true" size="sm" />
 								Save contact
@@ -667,27 +665,21 @@ export const Composition: Story = {
 							Changes apply to future payables and remittance notices.
 						</DialogDescription>
 					</DialogHeader>
-					<form
-						className="grid gap-5"
-						onSubmit={(event) => {
-							event.preventDefault();
-							saveContact();
-						}}
-					>
+					<form className="grid gap-5" onSubmit={saveContactOnSubmit}>
 						<div className="grid gap-4">
 							<FormField label="Contact name" required>
 								<FormInput
-									name="contactName"
 									defaultValue="Aisha Rahman"
+									name="contactName"
 									required
 								/>
 							</FormField>
 							<FormField label="Email address" required>
 								<FormInput
-									name="email"
-									type="email"
 									defaultValue="finance@northwind.example"
+									name="email"
 									required
+									type="email"
 								/>
 							</FormField>
 						</div>
@@ -714,42 +706,36 @@ export const Composition: Story = {
 							Administrators define escalation for high-value supplier invoices.
 						</DialogDescription>
 					</DialogHeader>
-					<form
-						className="grid gap-5"
-						onSubmit={(event) => {
-							event.preventDefault();
-							savePolicy();
-						}}
-					>
+					<form className="grid gap-5" onSubmit={savePolicyOnSubmit}>
 						<div className="grid max-h-[min(24rem,60vh)] gap-4 overflow-y-auto pr-2">
 							<FormField
-								label="Policy name"
 								description="Visible in audit history."
+								label="Policy name"
 								required
 							>
 								<FormInput
-									name="policyName"
 									defaultValue="High-value supplier invoices"
+									name="policyName"
 									required
 								/>
 							</FormField>
 							<FormField
-								label="Escalation mailbox"
 								description="Receives unresolved approval alerts."
+								label="Escalation mailbox"
 								required
 							>
 								<FormInput
-									name="mailbox"
-									type="email"
 									defaultValue="finance-control@example.com"
+									name="mailbox"
 									required
+									type="email"
 								/>
 							</FormField>
 							<FormField label="Threshold (MYR)">
 								<FormInput
-									name="threshold"
 									defaultValue="10000.00"
 									inputMode="decimal"
+									name="threshold"
 								/>
 							</FormField>
 						</div>
@@ -793,10 +779,7 @@ export const DoAndDoNot: Story = {
 								secondary path.
 							</DialogDescription>
 						</DialogHeader>
-						<form
-							className="grid gap-5"
-							onSubmit={(event) => event.preventDefault()}
-						>
+						<form className="grid gap-5" onSubmit={preventSubmit}>
 							<DialogFooter>
 								<DialogClose asChild>
 									<Button type="button" variant="outline">
@@ -816,7 +799,7 @@ export const DoAndDoNot: Story = {
 						<Button>Save draft</Button>
 						<Button>Submit for approval</Button>
 					</div>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						Two equal primaries compete for the next step.
 					</p>
 				</div>
@@ -848,7 +831,7 @@ export const DoAndDoNot: Story = {
 			<StorySection title="Do not: style Approve as destructive">
 				<div className="grid gap-2">
 					<Button variant="destructive">Approve invoice</Button>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						Destructive styling is reserved for difficult-to-recover harm, not
 						approval.
 					</p>
@@ -856,7 +839,7 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do: keep Dialog bounded">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Edit a contact, review one posting, or adjust a short policy. One
 					title, one primary outcome, predictable dismiss.
 				</p>
@@ -864,10 +847,10 @@ export const DoAndDoNot: Story = {
 
 			<StorySection title="Do not: overload Dialog with multi-step workflows">
 				<div className="grid gap-2 rounded-lg border border-border p-4">
-					<p className="text-sm font-medium text-foreground">
+					<p className="font-medium text-foreground text-sm">
 						Supplier onboarding wizard
 					</p>
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						Step 1 of 6 · Legal identity, bank evidence, tax profile, remittance
 						rules, approval routing, and activation — too large for a modal
 						interruption.
@@ -876,14 +859,14 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do: keep the consequence in the description">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Explain what Save, Post, or Submit changes and whether a governed
 					correction or reversal path exists.
 				</p>
 			</StorySection>
 
 			<StorySection title="Do not: rely on the title alone">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					“Review invoice posting” names the task but does not by itself explain
 					which ledger, amount, or recovery path is affected.
 				</p>

@@ -6,7 +6,9 @@ let productionStore: ReceivablesStore | undefined;
 export function resolveReceivablesStore(
 	store?: ReceivablesStore,
 ): ReceivablesStore {
-	if (store !== undefined) return store;
+	if (store !== undefined) {
+		return store;
+	}
 	productionStore ??= createDrizzleReceivablesStore();
 	return productionStore;
 }

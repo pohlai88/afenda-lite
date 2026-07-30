@@ -19,6 +19,8 @@ import { contractDocsParameters } from "./contract-docs";
 import { contractEvidence } from "./evidence";
 
 const evidence = contractEvidence("ui.form-error");
+const CLOSED_LEDGER_WINDOW_PATTERN =
+	/Invoice date is outside the open ledger window/i;
 
 function WorkbenchSection({
 	title,
@@ -30,7 +32,7 @@ function WorkbenchSection({
 	return (
 		<section className="rounded-2xl border border-border/60 bg-surface p-5 shadow-sm">
 			<div className="grid gap-4">
-				<p className="text-xs font-semibold uppercase tracking-[0.2em] text-foreground-tertiary">
+				<p className="font-semibold text-foreground-tertiary text-xs uppercase tracking-[0.2em]">
 					{title}
 				</p>
 				{children}
@@ -90,15 +92,15 @@ export const Overview: Story = {
 	render: () => (
 		<div className="min-h-screen bg-canvas text-foreground">
 			<div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
-				<header className="grid gap-6 border-b border-border/60 pb-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+				<header className="grid gap-6 border-border/60 border-b pb-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
 					<div className="grid gap-2">
-						<p className="text-sm font-medium text-foreground-secondary">
+						<p className="font-medium text-foreground-secondary text-sm">
 							Master data
 						</p>
-						<h1 className="text-2xl font-semibold tracking-tight">
+						<h1 className="font-semibold text-2xl tracking-tight">
 							Supplier registration
 						</h1>
-						<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+						<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 							FormError owns one form-level summary. Feature Actions own
 							validation, severity, and whether save is blocked. Field
 							corrections stay on FormField.
@@ -133,22 +135,22 @@ export const Overview: Story = {
 							</div>
 							<div className="flex flex-wrap items-center gap-2">
 								<Badge variant="outline">Suppliers</Badge>
-								<StatusBadge status="error" label="Save blocked" />
+								<StatusBadge label="Save blocked" status="error" />
 							</div>
 						</div>
 					</CardHeader>
 					<CardContent className="grid gap-6">
 						<FormError message="Save failed. Complete the required tax registration number, then try again." />
 						<FormField
-							label="Legal name"
 							description="Use the registered entity name."
+							label="Legal name"
 							required
 						>
 							<FormInput defaultValue="Northwind Trading Sdn Bhd" />
 						</FormField>
 						<FormField
-							label="Tax registration number"
 							error="Tax registration number is required."
+							label="Tax registration number"
 							required
 						>
 							<FormInput aria-invalid placeholder="Enter tax registration" />
@@ -180,20 +182,20 @@ export const SemanticUsage: Story = {
 		<div className="grid w-full max-w-5xl gap-4">
 			<WorkbenchSection title="default · confirmed save failure">
 				<FormError
-					variant="default"
 					message="Save failed. Complete the required tax registration number, then try again."
+					variant="default"
 				/>
 			</WorkbenchSection>
 			<WorkbenchSection title="warning · review before submit">
 				<FormError
-					variant="warning"
 					message="Credit limit is near capacity. Review open invoices before posting this remittance."
+					variant="warning"
 				/>
 			</WorkbenchSection>
 			<WorkbenchSection title="info · submission context">
 				<FormError
-					variant="info"
 					message="Changes apply to the next payroll run after approval. They do not alter posted July journals."
+					variant="info"
 				/>
 			</WorkbenchSection>
 		</div>
@@ -213,7 +215,7 @@ export const Usage: Story = {
 	render: (args) => (
 		<div className="grid w-full max-w-md gap-3">
 			<FormError {...args} />
-			<p className="text-sm text-foreground-secondary">
+			<p className="text-foreground-secondary text-sm">
 				Severity and blocking policy stay with the feature. FormError only
 				presents the confirmed summary.
 			</p>
@@ -236,7 +238,7 @@ export const StatesAndAccessibility: Story = {
 			<WorkbenchSection title="No message · null render">
 				<div data-testid="form-error-empty">
 					<FormError />
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						No form-level summary until the feature supplies a message.
 					</p>
 				</div>
@@ -246,19 +248,19 @@ export const StatesAndAccessibility: Story = {
 			</WorkbenchSection>
 			<WorkbenchSection title="Without icon">
 				<FormError
-					showIcon={false}
 					message="Duplicate supplier code. Choose a unique code before save."
+					showIcon={false}
 				/>
 			</WorkbenchSection>
 			<WorkbenchSection title="Paired field error">
 				<div className="grid gap-3">
 					<FormError message="Resolve the highlighted fields before save." />
 					<FormField
-						label="Supplier code"
 						error="Supplier code already exists."
+						label="Supplier code"
 						required
 					>
-						<FormInput defaultValue="NW-001" aria-invalid />
+						<FormInput aria-invalid defaultValue="NW-001" />
 					</FormField>
 				</div>
 			</WorkbenchSection>
@@ -266,9 +268,7 @@ export const StatesAndAccessibility: Story = {
 	),
 	play: async ({ canvasElement }) => {
 		const canvas = within(canvasElement);
-		await expect(
-			canvas.getByText(/Invoice date is outside the open ledger window/i),
-		).toBeVisible();
+		await expect(canvas.getByText(CLOSED_LEDGER_WINDOW_PATTERN)).toBeVisible();
 		const empty = canvas.getByTestId("form-error-empty");
 		await expect(within(empty).queryByRole("alert")).toBeNull();
 	},
@@ -287,17 +287,17 @@ export const VariantsAndSizes: Story = {
 	render: () => (
 		<div className="grid w-full max-w-5xl gap-6">
 			{(["default", "warning", "info"] as const).map((variant) => (
-				<div key={variant} className="grid gap-2">
-					<p className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+				<div className="grid gap-2" key={variant}>
+					<p className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 						{variant}
 					</p>
 					<div className="grid gap-3">
 						{(["sm", "md", "lg"] as const).map((size) => (
 							<FormError
 								key={`${variant}-${size}`}
-								variant={variant}
-								size={size}
 								message={`${variant} summary (${size})`}
+								size={size}
+								variant={variant}
 							/>
 						))}
 					</div>
@@ -327,14 +327,14 @@ export const Composition: Story = {
 					</div>
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="secondary">Finance</Badge>
-						<StatusBadge status="warning" label="Review required" />
+						<StatusBadge label="Review required" status="warning" />
 					</div>
 				</div>
 			</CardHeader>
 			<CardContent className="grid gap-4">
 				<FormError
-					variant="warning"
 					message="Credit limit is near capacity. Review open invoices before posting."
+					variant="warning"
 				/>
 				<FormField label="Payment reference" required>
 					<FormInput defaultValue="REM-2026-07-28" />
@@ -366,7 +366,7 @@ export const DoAndDoNot: Story = {
 				<FormError message="Save failed. Enter the tax registration number, then try again." />
 			</WorkbenchSection>
 			<WorkbenchSection title="Do not: decorative or success-as-error">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Do not render FormError for quiet success, marketing copy, or
 					conflicting client/server summaries. Do not replace field-level
 					corrections with only a form-level banner.

@@ -21,15 +21,15 @@ export type ShellNavKind = "module";
  * Module-tagged shell navigation (ARCH-015 · ARCH-018).
  * Only on-disk routes — no `/dashboard/*` or `/playground` (N17 / absent).
  */
-export type ShellNavItem = {
-	id: string;
-	label: string;
+export interface ShellNavItem {
 	href: string;
-	moduleId: ShellNavModuleId;
+	id: string;
 	kind: ShellNavKind;
+	label: string;
+	moduleId: ShellNavModuleId;
 	/** Any listed permission grants nav visibility (OR). */
 	permissionCodes: readonly ProductPermissionCode[];
-};
+}
 
 /** Operator `/admin/*` modules — permission-gated. */
 export const OPERATOR_SHELL_NAV: readonly ShellNavItem[] = [

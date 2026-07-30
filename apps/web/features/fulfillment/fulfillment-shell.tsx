@@ -29,7 +29,9 @@ import { createFulfillmentCommandOptions } from "@/lib/erp/fulfillment-command-o
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
 import { sessionHasPermission } from "@/modules/identity/domain/session-permission";
 
-type FulfillmentShellProps = { surface: "admin" | "client" };
+interface FulfillmentShellProps {
+	surface: "admin" | "client";
+}
 
 /** Fulfillment console — RSC reads via `@afenda/fulfillment`; mutations via Actions. */
 export async function FulfillmentShell({ surface }: FulfillmentShellProps) {
@@ -83,22 +85,22 @@ export async function FulfillmentShell({ surface }: FulfillmentShellProps) {
 	return (
 		<section className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-10">
 			<div className="space-y-2">
-				<p className="text-sm text-muted-foreground">
+				<p className="text-muted-foreground text-sm">
 					{surface === "admin" ? "Operator" : "Client"} · Fulfillment
 				</p>
-				<h1 className="text-2xl font-semibold tracking-tight">Deliveries</h1>
-				<p className="max-w-2xl text-sm text-muted-foreground">
+				<h1 className="font-semibold text-2xl tracking-tight">Deliveries</h1>
+				<p className="max-w-2xl text-muted-foreground text-sm">
 					Create outbound deliveries, add lines, pick, pack, post, record proof
 					of delivery, close delivered deliveries, and cancel eligible drafts.
 				</p>
 			</div>
 
-			{!deliveriesResult.ok ? (
+			{deliveriesResult.ok ? null : (
 				<Alert>
 					<AlertTitle>Could not load deliveries</AlertTitle>
 					<AlertDescription>{deliveriesResult.message}</AlertDescription>
 				</Alert>
-			) : null}
+			)}
 
 			<Card>
 				<CardHeader>
@@ -113,7 +115,7 @@ export async function FulfillmentShell({ surface }: FulfillmentShellProps) {
 					) : (
 						<ul className="space-y-2">
 							{deliveries.map((delivery) => (
-								<li key={delivery.id} className="rounded-md border px-3 py-2">
+								<li className="rounded-md border px-3 py-2" key={delivery.id}>
 									<div className="font-medium">
 										{delivery.code} · {delivery.status} · v{delivery.version}
 									</div>

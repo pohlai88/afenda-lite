@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noJsxPropsBind: The enabled React Compiler stabilizes JSX callback props.
 "use client";
 
 import type { PaymentTerm } from "@afenda/master-data";
@@ -27,10 +28,10 @@ import {
 	retirePaymentTermAction,
 } from "@/app/actions/retire-payment-term";
 
-type PaymentTermLifecycleFormProps = {
+interface PaymentTermLifecycleFormProps {
 	canManage: boolean;
 	terms: PaymentTerm[];
-};
+}
 
 const activateInitial: ActivatePaymentTermActionState = null;
 const inactiveInitial: InactivePaymentTermActionState = null;
@@ -40,6 +41,7 @@ const retireInitial: RetirePaymentTermActionState = null;
  * Payment-term lifecycle controls — activate / inactive / retire with CAS.
  * Party activate stays MDG-gated; payment terms use direct manage transitions.
  */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Lifecycle branches share one CAS-governed form surface.
 export function PaymentTermLifecycleForm({
 	canManage,
 	terms,
@@ -66,7 +68,7 @@ export function PaymentTermLifecycleForm({
 
 	if (liveTerms.length === 0) {
 		return (
-			<p className="text-sm text-muted-foreground">
+			<p className="text-muted-foreground text-sm">
 				No live payment terms to transition.
 			</p>
 		);
@@ -76,7 +78,7 @@ export function PaymentTermLifecycleForm({
 		liveTerms.find((term) => term.id === selectedId) ?? liveTerms[0];
 	if (selected === undefined) {
 		return (
-			<p className="text-sm text-muted-foreground">
+			<p className="text-muted-foreground text-sm">
 				No live payment terms to transition.
 			</p>
 		);
@@ -115,12 +117,12 @@ export function PaymentTermLifecycleForm({
 				</Alert>
 			) : null}
 			{failure?.ok === false ? <FormError>{failure.message}</FormError> : null}
-			<FormField label="Payment term" fieldId="payment-term-lifecycle-select">
+			<FormField fieldId="payment-term-lifecycle-select" label="Payment term">
 				<NativeSelect
-					id="payment-term-lifecycle-select"
-					value={selected.id}
-					onChange={(event) => setSelectedId(event.target.value)}
 					disabled={pending}
+					id="payment-term-lifecycle-select"
+					onChange={(event) => setSelectedId(event.target.value)}
+					value={selected.id}
 				>
 					{liveTerms.map((term) => (
 						<NativeSelectOption key={term.id} value={term.id}>
@@ -132,13 +134,13 @@ export function PaymentTermLifecycleForm({
 			<div className="flex flex-wrap gap-2">
 				{canActivate ? (
 					<form action={activateAction}>
-						<input type="hidden" name="paymentTermId" value={selected.id} />
+						<input name="paymentTermId" type="hidden" value={selected.id} />
 						<input
-							type="hidden"
 							name="expectedVersion"
+							type="hidden"
 							value={selected.version}
 						/>
-						<Button type="submit" variant="outline" disabled={pending}>
+						<Button disabled={pending} type="submit" variant="outline">
 							{activatePending ? <Spinner /> : null}
 							Activate
 						</Button>
@@ -146,13 +148,13 @@ export function PaymentTermLifecycleForm({
 				) : null}
 				{canInactive ? (
 					<form action={inactiveAction}>
-						<input type="hidden" name="paymentTermId" value={selected.id} />
+						<input name="paymentTermId" type="hidden" value={selected.id} />
 						<input
-							type="hidden"
 							name="expectedVersion"
+							type="hidden"
 							value={selected.version}
 						/>
-						<Button type="submit" variant="outline" disabled={pending}>
+						<Button disabled={pending} type="submit" variant="outline">
 							{inactivePending ? <Spinner /> : null}
 							Set inactive
 						</Button>
@@ -160,13 +162,13 @@ export function PaymentTermLifecycleForm({
 				) : null}
 				{canRetire ? (
 					<form action={retireAction}>
-						<input type="hidden" name="paymentTermId" value={selected.id} />
+						<input name="paymentTermId" type="hidden" value={selected.id} />
 						<input
-							type="hidden"
 							name="expectedVersion"
+							type="hidden"
 							value={selected.version}
 						/>
-						<Button type="submit" variant="outline" disabled={pending}>
+						<Button disabled={pending} type="submit" variant="outline">
 							{retirePending ? <Spinner /> : null}
 							Retire
 						</Button>

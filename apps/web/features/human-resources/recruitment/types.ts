@@ -6,22 +6,22 @@ import type {
 	JobRequisition,
 } from "@afenda/human-resources";
 
-export type RecruitmentCapabilities = {
-	canManageRequisitions: boolean;
+export interface RecruitmentCapabilities {
+	canHire: boolean;
 	canManageCandidates: boolean;
+	canManageOffers: boolean;
+	canManageRequisitions: boolean;
 	canReadInterviews: boolean;
 	canRecordInterviews: boolean;
-	canManageOffers: boolean;
-	canHire: boolean;
-};
+}
 
-export type RecruitmentWorkspaceData = {
-	requisitions: JobRequisition[];
-	candidates: Candidate[];
+export interface RecruitmentWorkspaceData {
 	applications: CandidateApplication[];
-	interviews: Interview[];
-	offers: EmploymentOffer[];
+	candidates: Candidate[];
 	errors: Partial<
 		Record<"requisitions" | "candidates" | "interviews" | "offers", string>
 	>;
-};
+	interviews: Interview[];
+	offers: EmploymentOffer[];
+	requisitions: JobRequisition[];
+}

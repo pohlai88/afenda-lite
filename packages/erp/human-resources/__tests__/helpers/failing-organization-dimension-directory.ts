@@ -10,7 +10,7 @@ import type { OrganizationDimensionDirectoryPort } from "../../src/ports";
 export function createFailingOrganizationDimensionDirectory(): OrganizationDimensionDirectoryPort {
 	return {
 		async resolveRequiredAsOf() {
-			return fail(
+			return await fail(
 				"NOT_FOUND",
 				"Organization dimension not found for as-of date",
 				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),

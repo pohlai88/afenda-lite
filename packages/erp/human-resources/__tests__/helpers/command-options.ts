@@ -22,14 +22,14 @@ export function createTestHumanResourcesCommandOptions(
 	const workCalendar = base.workCalendar ?? createMemoryWorkCalendar();
 	const approvedLeave =
 		base.approvedLeave ??
-		(base.store !== undefined
-			? createStoreApprovedLeaveQuery({ store: base.store })
-			: undefined);
+		(base.store === undefined
+			? undefined
+			: createStoreApprovedLeaveQuery({ store: base.store }));
 	const assignmentContext =
 		base.assignmentContext ??
-		(base.store !== undefined
-			? createStoreAssignmentContextQuery({ store: base.store })
-			: undefined);
+		(base.store === undefined
+			? undefined
+			: createStoreAssignmentContextQuery({ store: base.store }));
 
 	return {
 		workCalendar,

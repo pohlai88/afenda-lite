@@ -51,14 +51,14 @@ export const Overview: Story = {
 			<main className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-5 border-b pb-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
 					<div className="grid gap-2">
-						<p className="text-sm font-medium text-foreground-secondary">
+						<p className="font-medium text-foreground-secondary text-sm">
 							Account preferences
 						</p>
 						<div className="grid gap-1">
-							<h1 className="text-2xl font-semibold tracking-tight">
+							<h1 className="font-semibold text-2xl tracking-tight">
 								Notification settings
 							</h1>
-							<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+							<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 								Use Switch for a binary preference that changes immediately in
 								the current scope. Save, submit, or approval actions stay
 								outside the control.
@@ -67,25 +67,25 @@ export const Overview: Story = {
 					</div>
 					<dl className="grid grid-cols-2 gap-x-8 gap-y-3 rounded-lg border bg-card p-4">
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Subject
 							</dt>
 							<dd className="text-sm">User preferences</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Scope
 							</dt>
 							<dd className="text-sm">Transient setting</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Ownership
 							</dt>
 							<dd className="text-sm">Feature state</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Lifecycle
 							</dt>
 							<dd className="text-sm">On or off</dd>
@@ -101,7 +101,7 @@ export const Overview: Story = {
 						</CardDescription>
 					</CardHeader>
 					<CardContent className="flex flex-wrap gap-4">
-						<Switch defaultChecked aria-label="Email notifications">
+						<Switch aria-label="Email notifications" defaultChecked>
 							Email notifications
 						</Switch>
 						<Switch aria-label="SMS notifications">SMS notifications</Switch>
@@ -125,7 +125,7 @@ export const Usage: Story = {
 	render: () => (
 		<div className="grid w-full max-w-5xl gap-6 sm:grid-cols-2">
 			<StorySection title="Do: binary preference">
-				<Switch defaultChecked aria-label="Email notifications">
+				<Switch aria-label="Email notifications" defaultChecked>
 					Email notifications
 				</Switch>
 			</StorySection>
@@ -136,7 +136,7 @@ export const Usage: Story = {
 						<CardDescription>Use Button for commits and saves.</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<p className="text-sm leading-6 text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm leading-6">
 							Switch should not be used as a commit action or a workflow step.
 						</p>
 					</CardContent>

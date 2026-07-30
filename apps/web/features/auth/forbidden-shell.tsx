@@ -8,8 +8,8 @@ import { SignInButton } from "@/features/auth/sign-in-button";
 export function ForbiddenShell() {
 	return (
 		<PublicMessageShell
-			title="403"
-			footer={<SignInButton variant="outline" className="mt-2" />}
+			footer={<SignInButton className="mt-2" variant="outline" />}
+			title="Access denied"
 		>
 			<p>You do not have access to this surface.</p>
 		</PublicMessageShell>

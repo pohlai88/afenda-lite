@@ -222,7 +222,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(mapped.ok).toBe(true);
-			if (!mapped.ok) return;
+			if (!mapped.ok) {
+				return;
+			}
 			expect(mapped.data.status).toBe("active");
 
 			const removed = await removeCompetencyFromJob(
@@ -236,7 +238,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(removed.ok).toBe(true);
-			if (!removed.ok) return;
+			if (!removed.ok) {
+				return;
+			}
 			expect(removed.data.status).toBe("removed");
 		});
 
@@ -263,7 +267,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(retired.ok).toBe(true);
-			if (!retired.ok) return;
+			if (!retired.ok) {
+				return;
+			}
 
 			const denied = await mapCompetencyToJob(
 				{
@@ -277,7 +283,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(denied.ok).toBe(false);
-			if (denied.ok) return;
+			if (denied.ok) {
+				return;
+			}
 			expect(humanResourcesCodeFromResult(denied)).toBe(
 				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 			);
@@ -302,7 +310,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(first.ok).toBe(true);
-			if (!first.ok) return;
+			if (!first.ok) {
+				return;
+			}
 
 			const second = await retireCompetency(
 				{
@@ -315,7 +325,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(second.ok).toBe(false);
-			if (second.ok) return;
+			if (second.ok) {
+				return;
+			}
 			expect(humanResourcesCodeFromResult(second)).toBe(
 				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 			);
@@ -345,7 +357,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(first.ok).toBe(true);
-			if (!first.ok) return;
+			if (!first.ok) {
+				return;
+			}
 
 			const second = await mapCompetencyToJob(
 				{
@@ -359,7 +373,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(second.ok).toBe(false);
-			if (second.ok) return;
+			if (second.ok) {
+				return;
+			}
 			expect(humanResourcesCodeFromResult(second)).toBe(
 				HUMAN_RESOURCES_ERROR_CONFLICT,
 			);
@@ -383,7 +399,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(crossOrg.ok).toBe(true);
-			if (!crossOrg.ok) return;
+			if (!crossOrg.ok) {
+				return;
+			}
 			expect(crossOrg.data).toBeNull();
 		});
 
@@ -402,14 +420,18 @@ describe("human-resources talent (memory)", () => {
 
 			const first = await createCompetency(payload, ready);
 			expect(first.ok).toBe(true);
-			if (!first.ok) return;
+			if (!first.ok) {
+				return;
+			}
 
 			const replay = await createCompetency(
 				{ ...payload, correlationId: `corr-idem-replay-${tag}` },
 				ready,
 			);
 			expect(replay.ok).toBe(true);
-			if (!replay.ok) return;
+			if (!replay.ok) {
+				return;
+			}
 			expect(replay.data.id).toBe(first.data.id);
 
 			const conflict = await createCompetency(
@@ -421,7 +443,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(conflict.ok).toBe(false);
-			if (conflict.ok) return;
+			if (conflict.ok) {
+				return;
+			}
 			expect(humanResourcesCodeFromResult(conflict)).toBe(
 				HUMAN_RESOURCES_ERROR_CONFLICT,
 			);
@@ -458,7 +482,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(assessed.ok).toBe(true);
-			if (!assessed.ok) return;
+			if (!assessed.ok) {
+				return;
+			}
 			expect(assessed.data.status).toBe("current");
 
 			const superseded = await supersedeCompetencyAssessment(
@@ -477,7 +503,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(superseded.ok).toBe(true);
-			if (!superseded.ok) return;
+			if (!superseded.ok) {
+				return;
+			}
 			expect(superseded.data.status).toBe("current");
 			expect(superseded.data.level).toBe(5);
 
@@ -491,7 +519,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(profile.ok).toBe(true);
-			if (!profile.ok) return;
+			if (!profile.ok) {
+				return;
+			}
 			expect(
 				profile.data.assessments.some((a) => a.id === superseded.data.id),
 			).toBe(true);
@@ -526,7 +556,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(denied.ok).toBe(false);
-			if (denied.ok) return;
+			if (denied.ok) {
+				return;
+			}
 			expect(humanResourcesCodeFromResult(denied)).toBe(
 				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 			);
@@ -564,7 +596,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(denied.ok).toBe(false);
-			if (denied.ok) return;
+			if (denied.ok) {
+				return;
+			}
 			expect(humanResourcesCodeFromResult(denied)).toBe(
 				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 			);
@@ -599,7 +633,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(first.ok).toBe(true);
-			if (!first.ok) return;
+			if (!first.ok) {
+				return;
+			}
 
 			const second = await assessEmployeeCompetency(
 				{
@@ -618,7 +654,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(second.ok).toBe(false);
-			if (second.ok) return;
+			if (second.ok) {
+				return;
+			}
 			expect(humanResourcesCodeFromResult(second)).toBe(
 				HUMAN_RESOURCES_ERROR_CONFLICT,
 			);
@@ -646,7 +684,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(retired.ok).toBe(true);
-			if (!retired.ok) return;
+			if (!retired.ok) {
+				return;
+			}
 
 			const denied = await assessEmployeeCompetency(
 				{
@@ -665,7 +705,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(denied.ok).toBe(false);
-			if (denied.ok) return;
+			if (denied.ok) {
+				return;
+			}
 			expect(humanResourcesCodeFromResult(denied)).toBe(
 				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 			);
@@ -698,14 +740,18 @@ describe("human-resources talent (memory)", () => {
 
 			const first = await assessEmployeeCompetency(payload, ready);
 			expect(first.ok).toBe(true);
-			if (!first.ok) return;
+			if (!first.ok) {
+				return;
+			}
 
 			const replay = await assessEmployeeCompetency(
 				{ ...payload, correlationId: `corr-idem-assess-replay-${tag}` },
 				ready,
 			);
 			expect(replay.ok).toBe(true);
-			if (!replay.ok) return;
+			if (!replay.ok) {
+				return;
+			}
 			expect(replay.data.id).toBe(first.data.id);
 		});
 	});
@@ -730,7 +776,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(profile.ok).toBe(true);
-			if (!profile.ok) return;
+			if (!profile.ok) {
+				return;
+			}
 
 			const draft = await recordTalentProfileAssessment(
 				{
@@ -746,7 +794,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(draft.ok).toBe(true);
-			if (!draft.ok) return;
+			if (!draft.ok) {
+				return;
+			}
 			expect(draft.data.status).toBe("draft");
 
 			const confirmed = await confirmTalentProfileAssessment(
@@ -760,7 +810,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(confirmed.ok).toBe(true);
-			if (!confirmed.ok) return;
+			if (!confirmed.ok) {
+				return;
+			}
 			expect(confirmed.data.status).toBe("confirmed");
 		});
 
@@ -783,7 +835,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(profile.ok).toBe(true);
-			if (!profile.ok) return;
+			if (!profile.ok) {
+				return;
+			}
 
 			const draft = await recordTalentProfileAssessment(
 				{
@@ -799,7 +853,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(draft.ok).toBe(true);
-			if (!draft.ok) return;
+			if (!draft.ok) {
+				return;
+			}
 
 			const confirmed = await confirmTalentProfileAssessment(
 				{
@@ -812,7 +868,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(confirmed.ok).toBe(true);
-			if (!confirmed.ok) return;
+			if (!confirmed.ok) {
+				return;
+			}
 
 			const denied = await confirmTalentProfileAssessment(
 				{
@@ -825,7 +883,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(denied.ok).toBe(false);
-			if (denied.ok) return;
+			if (denied.ok) {
+				return;
+			}
 			expect(humanResourcesCodeFromResult(denied)).toBe(
 				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 			);
@@ -850,7 +910,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(profile.ok).toBe(true);
-			if (!profile.ok) return;
+			if (!profile.ok) {
+				return;
+			}
 
 			const denied = await recordTalentProfileAssessment(
 				{
@@ -866,7 +928,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(denied.ok).toBe(false);
-			if (denied.ok) return;
+			if (denied.ok) {
+				return;
+			}
 			expect(humanResourcesCodeFromResult(denied)).toBe(
 				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 			);
@@ -891,7 +955,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(profile.ok).toBe(true);
-			if (!profile.ok) return;
+			if (!profile.ok) {
+				return;
+			}
 
 			const archived = await archiveTalentProfile(
 				{
@@ -904,7 +970,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(archived.ok).toBe(true);
-			if (!archived.ok) return;
+			if (!archived.ok) {
+				return;
+			}
 
 			const denied = await updateTalentProfile(
 				{
@@ -918,7 +986,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(denied.ok).toBe(false);
-			if (denied.ok) return;
+			if (denied.ok) {
+				return;
+			}
 			expect(humanResourcesCodeFromResult(denied)).toBe(
 				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 			);
@@ -954,7 +1024,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(crossOrg.ok).toBe(true);
-			if (!crossOrg.ok) return;
+			if (!crossOrg.ok) {
+				return;
+			}
 			expect(crossOrg.data).toBeNull();
 		});
 	});
@@ -979,7 +1051,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(pool.ok).toBe(true);
-			if (!pool.ok) return;
+			if (!pool.ok) {
+				return;
+			}
 
 			const nominated = await nominateTalentPoolMember(
 				{
@@ -994,7 +1068,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(nominated.ok).toBe(true);
-			if (!nominated.ok) return;
+			if (!nominated.ok) {
+				return;
+			}
 			expect(nominated.data.status).toBe("nominated");
 
 			const approved = await approveTalentPoolMember(
@@ -1009,7 +1085,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(approved.ok).toBe(true);
-			if (!approved.ok) return;
+			if (!approved.ok) {
+				return;
+			}
 			expect(approved.data.status).toBe("approved");
 
 			const removed = await removeTalentPoolMember(
@@ -1023,7 +1101,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(removed.ok).toBe(true);
-			if (!removed.ok) return;
+			if (!removed.ok) {
+				return;
+			}
 			expect(removed.data.status).toBe("removed");
 		});
 
@@ -1046,7 +1126,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(pool.ok).toBe(true);
-			if (!pool.ok) return;
+			if (!pool.ok) {
+				return;
+			}
 
 			const denied = await nominateTalentPoolMember(
 				{
@@ -1061,7 +1143,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(denied.ok).toBe(false);
-			if (denied.ok) return;
+			if (denied.ok) {
+				return;
+			}
 			expect(humanResourcesCodeFromResult(denied)).toBe(
 				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 			);
@@ -1086,7 +1170,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(pool.ok).toBe(true);
-			if (!pool.ok) return;
+			if (!pool.ok) {
+				return;
+			}
 
 			const first = await nominateTalentPoolMember(
 				{
@@ -1101,7 +1187,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(first.ok).toBe(true);
-			if (!first.ok) return;
+			if (!first.ok) {
+				return;
+			}
 
 			const second = await nominateTalentPoolMember(
 				{
@@ -1116,7 +1204,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(second.ok).toBe(false);
-			if (second.ok) return;
+			if (second.ok) {
+				return;
+			}
 			expect(humanResourcesCodeFromResult(second)).toBe(
 				HUMAN_RESOURCES_ERROR_CONFLICT,
 			);
@@ -1141,7 +1231,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(pool.ok).toBe(true);
-			if (!pool.ok) return;
+			if (!pool.ok) {
+				return;
+			}
 
 			const closed = await closeTalentPool(
 				{
@@ -1154,7 +1246,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(closed.ok).toBe(true);
-			if (!closed.ok) return;
+			if (!closed.ok) {
+				return;
+			}
 
 			const denied = await nominateTalentPoolMember(
 				{
@@ -1169,7 +1263,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(denied.ok).toBe(false);
-			if (denied.ok) return;
+			if (denied.ok) {
+				return;
+			}
 			expect(humanResourcesCodeFromResult(denied)).toBe(
 				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 			);
@@ -1194,7 +1290,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(pool.ok).toBe(true);
-			if (!pool.ok) return;
+			if (!pool.ok) {
+				return;
+			}
 
 			const nominated = await nominateTalentPoolMember(
 				{
@@ -1209,7 +1307,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(nominated.ok).toBe(true);
-			if (!nominated.ok) return;
+			if (!nominated.ok) {
+				return;
+			}
 
 			const approved = await approveTalentPoolMember(
 				{
@@ -1223,7 +1323,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(approved.ok).toBe(true);
-			if (!approved.ok) return;
+			if (!approved.ok) {
+				return;
+			}
 
 			const denied = await approveTalentPoolMember(
 				{
@@ -1237,7 +1339,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(denied.ok).toBe(false);
-			if (denied.ok) return;
+			if (denied.ok) {
+				return;
+			}
 			expect(humanResourcesCodeFromResult(denied)).toBe(
 				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 			);
@@ -1257,14 +1361,18 @@ describe("human-resources talent (memory)", () => {
 
 			const first = await createTalentPool(payload, ready);
 			expect(first.ok).toBe(true);
-			if (!first.ok) return;
+			if (!first.ok) {
+				return;
+			}
 
 			const replay = await createTalentPool(
 				{ ...payload, correlationId: `corr-pool-idem-replay-${tag}` },
 				ready,
 			);
 			expect(replay.ok).toBe(true);
-			if (!replay.ok) return;
+			if (!replay.ok) {
+				return;
+			}
 			expect(replay.data.id).toBe(first.data.id);
 
 			const listed = await listTalentPoolMembers(
@@ -1277,7 +1385,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(listed.ok).toBe(true);
-			if (!listed.ok) return;
+			if (!listed.ok) {
+				return;
+			}
 			expect(listed.data.members).toHaveLength(0);
 		});
 	});
@@ -1305,7 +1415,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(created.ok).toBe(true);
-			if (!created.ok) return;
+			if (!created.ok) {
+				return;
+			}
 			expect(created.data.status).toBe("draft");
 
 			const acknowledged = await acknowledgeCareerPlan(
@@ -1319,7 +1431,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(acknowledged.ok).toBe(true);
-			if (!acknowledged.ok) return;
+			if (!acknowledged.ok) {
+				return;
+			}
 			expect(acknowledged.data.status).toBe("acknowledged");
 
 			const action = await addCareerPlanAction(
@@ -1334,7 +1448,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(action.ok).toBe(true);
-			if (!action.ok) return;
+			if (!action.ok) {
+				return;
+			}
 
 			const completed = await completeCareerPlanAction(
 				{
@@ -1347,7 +1463,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(completed.ok).toBe(true);
-			if (!completed.ok) return;
+			if (!completed.ok) {
+				return;
+			}
 			expect(completed.data.status).toBe("done");
 
 			const closed = await closeCareerPlan(
@@ -1361,7 +1479,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(closed.ok).toBe(true);
-			if (!closed.ok) return;
+			if (!closed.ok) {
+				return;
+			}
 			expect(closed.data.status).toBe("closed");
 		});
 
@@ -1386,7 +1506,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(plan.ok).toBe(true);
-			if (!plan.ok) return;
+			if (!plan.ok) {
+				return;
+			}
 
 			const acknowledged = await acknowledgeCareerPlan(
 				{
@@ -1399,7 +1521,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(acknowledged.ok).toBe(true);
-			if (!acknowledged.ok) return;
+			if (!acknowledged.ok) {
+				return;
+			}
 
 			const denied = await acknowledgeCareerPlan(
 				{
@@ -1412,7 +1536,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(denied.ok).toBe(false);
-			if (denied.ok) return;
+			if (denied.ok) {
+				return;
+			}
 			expect(humanResourcesCodeFromResult(denied)).toBe(
 				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 			);
@@ -1439,7 +1565,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(plan.ok).toBe(true);
-			if (!plan.ok) return;
+			if (!plan.ok) {
+				return;
+			}
 
 			const closed = await closeCareerPlan(
 				{
@@ -1452,7 +1580,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(closed.ok).toBe(true);
-			if (!closed.ok) return;
+			if (!closed.ok) {
+				return;
+			}
 
 			const denied = await addCareerPlanAction(
 				{
@@ -1465,7 +1595,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(denied.ok).toBe(false);
-			if (denied.ok) return;
+			if (denied.ok) {
+				return;
+			}
 			expect(humanResourcesCodeFromResult(denied)).toBe(
 				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 			);
@@ -1491,14 +1623,18 @@ describe("human-resources talent (memory)", () => {
 
 			const first = await createCareerPlan(payload, ready);
 			expect(first.ok).toBe(true);
-			if (!first.ok) return;
+			if (!first.ok) {
+				return;
+			}
 
 			const replay = await createCareerPlan(
 				{ ...payload, correlationId: `corr-cp-idem-replay-${tag}` },
 				ready,
 			);
 			expect(replay.ok).toBe(true);
-			if (!replay.ok) return;
+			if (!replay.ok) {
+				return;
+			}
 			expect(replay.data.id).toBe(first.data.id);
 		});
 
@@ -1523,7 +1659,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(plan.ok).toBe(true);
-			if (!plan.ok) return;
+			if (!plan.ok) {
+				return;
+			}
 
 			const crossOrg = await getCareerPlanById(
 				{
@@ -1535,7 +1673,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(crossOrg.ok).toBe(true);
-			if (!crossOrg.ok) return;
+			if (!crossOrg.ok) {
+				return;
+			}
 			expect(crossOrg.data).toBeNull();
 		});
 	});
@@ -1557,7 +1697,9 @@ describe("human-resources talent (memory)", () => {
 				asOfDate: asOf,
 			});
 			expect(stale.ok).toBe(false);
-			if (stale.ok) return;
+			if (stale.ok) {
+				return;
+			}
 			expect(humanResourcesCodeFromResult(stale)).toBe(
 				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 			);
@@ -1617,7 +1759,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(nominated.ok).toBe(true);
-			if (!nominated.ok) return;
+			if (!nominated.ok) {
+				return;
+			}
 			expect(nominated.data.status).toBe("nominated");
 		});
 
@@ -1644,7 +1788,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(denied.ok).toBe(false);
-			if (denied.ok) return;
+			if (denied.ok) {
+				return;
+			}
 			expect(humanResourcesCodeFromResult(denied)).toBe(
 				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 			);
@@ -1670,7 +1816,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(closed.ok).toBe(true);
-			if (!closed.ok) return;
+			if (!closed.ok) {
+				return;
+			}
 
 			const denied = await nominateSuccessionCandidate(
 				{
@@ -1688,7 +1836,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(denied.ok).toBe(false);
-			if (denied.ok) return;
+			if (denied.ok) {
+				return;
+			}
 			expect(humanResourcesCodeFromResult(denied)).toBe(
 				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 			);
@@ -1720,7 +1870,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(denied.ok).toBe(false);
-			if (denied.ok) return;
+			if (denied.ok) {
+				return;
+			}
 			expect(humanResourcesCodeFromResult(denied)).toBe(
 				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 			);
@@ -1750,7 +1902,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(nominated.ok).toBe(true);
-			if (!nominated.ok) return;
+			if (!nominated.ok) {
+				return;
+			}
 
 			const future = new Date();
 			future.setUTCDate(future.getUTCDate() + 5);
@@ -1769,7 +1923,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(denied.ok).toBe(false);
-			if (denied.ok) return;
+			if (denied.ok) {
+				return;
+			}
 			expect(humanResourcesCodeFromResult(denied)).toBe(
 				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 			);
@@ -1799,7 +1955,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(nominated.ok).toBe(true);
-			if (!nominated.ok) return;
+			if (!nominated.ok) {
+				return;
+			}
 
 			const approved = await approveSuccessionCandidate(
 				{
@@ -1812,7 +1970,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(approved.ok).toBe(true);
-			if (!approved.ok) return;
+			if (!approved.ok) {
+				return;
+			}
 			expect(approved.data.status).toBe("approved");
 		});
 
@@ -1845,7 +2005,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(nominated.ok).toBe(true);
-			if (!nominated.ok) return;
+			if (!nominated.ok) {
+				return;
+			}
 
 			const approved = await approveSuccessionCandidate(
 				{
@@ -1858,7 +2020,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(approved.ok).toBe(true);
-			if (!approved.ok) return;
+			if (!approved.ok) {
+				return;
+			}
 
 			const coverage = await getPositionSuccessionCoverage(
 				{
@@ -1870,7 +2034,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(coverage.ok).toBe(true);
-			if (!coverage.ok) return;
+			if (!coverage.ok) {
+				return;
+			}
 			expect(coverage.data.totalActiveCandidateCount).toBeGreaterThanOrEqual(1);
 			expect(coverage.data.readyNowCandidateCount).toBe(0);
 		});
@@ -1902,7 +2068,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(nominated.ok).toBe(true);
-			if (!nominated.ok) return;
+			if (!nominated.ok) {
+				return;
+			}
 
 			const approved = await approveSuccessionCandidate(
 				{
@@ -1915,7 +2083,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(approved.ok).toBe(true);
-			if (!approved.ok) return;
+			if (!approved.ok) {
+				return;
+			}
 
 			const coverage = await getPositionSuccessionCoverage(
 				{
@@ -1927,7 +2097,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(coverage.ok).toBe(true);
-			if (!coverage.ok) return;
+			if (!coverage.ok) {
+				return;
+			}
 			expect(coverage.data.readyNowCandidateCount).toBe(1);
 		});
 	});
@@ -1950,7 +2122,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(denied.ok).toBe(false);
-			if (denied.ok) return;
+			if (denied.ok) {
+				return;
+			}
 			expect(humanResourcesCodeFromResult(denied)).toBe(
 				HUMAN_RESOURCES_ERROR_FORBIDDEN,
 			);
@@ -1982,7 +2156,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(denied.ok).toBe(false);
-			if (denied.ok) return;
+			if (denied.ok) {
+				return;
+			}
 			expect(humanResourcesCodeFromResult(denied)).toBe(
 				HUMAN_RESOURCES_ERROR_FORBIDDEN,
 			);
@@ -2004,7 +2180,9 @@ describe("human-resources talent (memory)", () => {
 				ready,
 			);
 			expect(denied.ok).toBe(false);
-			if (denied.ok) return;
+			if (denied.ok) {
+				return;
+			}
 			expect(humanResourcesCodeFromResult(denied)).toBe(
 				HUMAN_RESOURCES_ERROR_FORBIDDEN,
 			);

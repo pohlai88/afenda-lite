@@ -43,7 +43,9 @@ export async function endCompanyActivity(
 		endCompanyActivityInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 
 	const authorized = await requireCorporateAdministrationPermission(
 		options.authorization,
@@ -54,7 +56,9 @@ export async function endCompanyActivity(
 				CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS.endCompanyActivity,
 		},
 	);
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 
 	const identity = createCorporateAdministrationCommandFingerprint({
 		schema: endCompanyActivityInputSchema,
@@ -62,7 +66,9 @@ export async function endCompanyActivity(
 		commandId: "corporate-administration.legal-company.end-activity",
 		input: parsed.data,
 	});
-	if (!identity.ok) return identity;
+	if (!identity.ok) {
+		return identity;
+	}
 	const approved = await requireCorporateAdministrationApprovalIfConfigured(
 		dependencies,
 		{
@@ -73,14 +79,18 @@ export async function endCompanyActivity(
 			commandFingerprint: identity.data.fingerprint,
 		},
 	);
-	if (!approved.ok) return approved;
+	if (!approved.ok) {
+		return approved;
+	}
 
 	const existing = await dependencies.activityStore.getCompanyActivity({
 		organizationId: options.organizationId,
 		legalCompanyId: parsed.data.legalCompanyId,
 		companyActivityId: parsed.data.companyActivityId,
 	});
-	if (!existing.ok) return existing;
+	if (!existing.ok) {
+		return existing;
+	}
 	if (existing.data === null) {
 		return fail(
 			"NOT_FOUND",
@@ -140,7 +150,9 @@ export async function endCompanyActivity(
 				causationId: options.causationId,
 				transaction,
 			});
-			if (!ended.ok) return rollbackCorporateAdministrationTransaction(ended);
+			if (!ended.ok) {
+				return rollbackCorporateAdministrationTransaction(ended);
+			}
 			const audit = await dependencies.runtime.audit.record(
 				{
 					organizationId: options.organizationId,

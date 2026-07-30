@@ -4,7 +4,6 @@
 import { randomUUID } from "node:crypto";
 
 import { afterAll, describe, expect, it } from "vitest";
-
 import { createEmployee } from "../src/core/employee";
 import { createEmployment } from "../src/core/employment";
 import {
@@ -18,6 +17,7 @@ import {
 	createTimePolicy,
 } from "../src/time/policy";
 import { runDrizzleParity } from "./helpers/database-gate";
+import { helperAssert as assert } from "./helpers/helper-assert";
 import { createHrParityHarness } from "./helpers/hr-parity-harness";
 import { createNeonOrgTracker } from "./helpers/neon-cleanup";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
@@ -47,7 +47,7 @@ describe.skipIf(!runDrizzleParity)("Time policy concurrency (Drizzle)", () => {
 			},
 			ready,
 		);
-		expect(employee.ok).toBe(true);
+		assert.strictEqual(employee.ok, true);
 		if (!employee.ok) {
 			throw new Error("seed employee failed");
 		}
@@ -61,7 +61,7 @@ describe.skipIf(!runDrizzleParity)("Time policy concurrency (Drizzle)", () => {
 			},
 			ready,
 		);
-		expect(employment.ok).toBe(true);
+		assert.strictEqual(employment.ok, true);
 		if (!employment.ok) {
 			throw new Error("seed employment failed");
 		}
@@ -88,7 +88,7 @@ describe.skipIf(!runDrizzleParity)("Time policy concurrency (Drizzle)", () => {
 			},
 			ready,
 		);
-		expect(created.ok).toBe(true);
+		assert.strictEqual(created.ok, true);
 		if (!created.ok) {
 			throw new Error("create policy failed");
 		}
@@ -102,7 +102,7 @@ describe.skipIf(!runDrizzleParity)("Time policy concurrency (Drizzle)", () => {
 			},
 			ready,
 		);
-		expect(activated.ok).toBe(true);
+		assert.strictEqual(activated.ok, true);
 		if (!activated.ok) {
 			throw new Error("activate policy failed");
 		}
@@ -144,7 +144,7 @@ describe.skipIf(!runDrizzleParity)("Time policy concurrency (Drizzle)", () => {
 
 		expect(successes).toHaveLength(1);
 		expect(failures).toHaveLength(1);
-		const failure = failures[0];
+		const [failure] = failures;
 		expect(failure).toBeDefined();
 		expect(humanResourcesCodeFromResult(failure)).toBe(
 			HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -185,7 +185,7 @@ describe.skipIf(!runDrizzleParity)("Time policy concurrency (Drizzle)", () => {
 
 		expect(successes).toHaveLength(1);
 		expect(failures).toHaveLength(1);
-		const failure = failures[0];
+		const [failure] = failures;
 		expect(failure).toBeDefined();
 		const failureCode = humanResourcesCodeFromResult(failure);
 		expect(

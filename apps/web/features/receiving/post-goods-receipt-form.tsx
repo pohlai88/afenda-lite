@@ -62,34 +62,34 @@ export function PostGoodsReceiptForm({ canManage }: { canManage: boolean }) {
 				<FormError>{state.message}</FormError>
 			) : null}
 			<FormField
+				error={receiptError}
+				fieldId="receipt-post-id"
 				label="Receipt id"
 				required
-				fieldId="receipt-post-id"
-				error={receiptError}
 			>
 				<Input
+					disabled={pending}
 					id="receipt-post-id"
 					name="receiptId"
 					required
-					disabled={pending}
 				/>
 			</FormField>
 			<FormField
+				error={versionError}
+				fieldId="receipt-post-version"
 				label="Expected version"
 				required
-				fieldId="receipt-post-version"
-				error={versionError}
 			>
 				<Input
-					id="receipt-post-version"
-					name="expectedVersion"
-					type="number"
-					min="1"
-					required
 					disabled={pending}
+					id="receipt-post-version"
+					min="1"
+					name="expectedVersion"
+					required
+					type="number"
 				/>
 			</FormField>
-			<Button type="submit" disabled={pending}>
+			<Button disabled={pending} type="submit">
 				{pending ? <Spinner /> : null}
 				Post receipt
 			</Button>

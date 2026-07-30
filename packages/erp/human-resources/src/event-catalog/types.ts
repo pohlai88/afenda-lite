@@ -21,10 +21,10 @@ export type EventCatalogProjection =
 	  };
 
 export interface EventCatalogEntry {
-	eventType: string;
-	version: number;
-	ownerPackage: HumanResourcesEventCatalogOwnerPackage;
-	schema: ZodType;
 	consumers: readonly string[];
+	eventType: string;
+	ownerPackage: HumanResourcesEventCatalogOwnerPackage;
 	projection: EventCatalogProjection;
+	schema: ZodType;
+	version: number;
 }

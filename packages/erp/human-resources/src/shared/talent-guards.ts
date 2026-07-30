@@ -65,7 +65,9 @@ export function canTransitionCompetencyStatus(
 	current: CompetencyStatus,
 	next: CompetencyStatus,
 ): boolean {
-	if (current === next) return false;
+	if (current === next) {
+		return false;
+	}
 	return current === "active" && next === "retired";
 }
 
@@ -312,9 +314,15 @@ export function canTransitionCareerPlanStatus(
 	current: CareerPlanStatus,
 	next: CareerPlanStatus,
 ): boolean {
-	if (current === next) return false;
-	if (current === "draft" && next === "acknowledged") return true;
-	if (current === "acknowledged" && next === "active") return true;
+	if (current === next) {
+		return false;
+	}
+	if (current === "draft" && next === "acknowledged") {
+		return true;
+	}
+	if (current === "acknowledged" && next === "active") {
+		return true;
+	}
 	if (
 		(current === "draft" ||
 			current === "acknowledged" ||
@@ -382,8 +390,12 @@ export function canTransitionSuccessionPlanStatus(
 	current: SuccessionPlanStatus,
 	next: SuccessionPlanStatus,
 ): boolean {
-	if (current === next) return false;
-	if (current === "draft" && next === "active") return true;
+	if (current === next) {
+		return false;
+	}
+	if (current === "draft" && next === "active") {
+		return true;
+	}
 	if ((current === "draft" || current === "active") && next === "closed") {
 		return true;
 	}

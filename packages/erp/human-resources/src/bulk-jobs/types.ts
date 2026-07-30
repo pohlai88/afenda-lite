@@ -11,136 +11,136 @@ export type HumanResourcesBulkJobStatus =
 	| "completed_with_rejections"
 	| "failed";
 
-export type HumanResourcesBulkImportJob = {
-	id: string;
-	organizationId: string;
-	batchId: string;
-	entityType: HumanResourcesBulkEntityType;
+export interface HumanResourcesBulkImportJob {
 	actorUserId: string;
-	correlationId: string;
-	requiredPermission: HumanResourcesPermission;
-	idempotencyKey: string;
-	requestFingerprint: string;
-	status: HumanResourcesBulkJobStatus;
-	version: number;
-	rowCount: number;
-	maxRowsPerRun: number;
+	batchId: string;
 	checkpointVersion: number | null;
+	completedAt: Date | null;
+	correlationId: string;
+	createdAt: Date;
+	entityType: HumanResourcesBulkEntityType;
+	id: string;
+	idempotencyKey: string;
 	lastErrorCode: string | null;
 	lastErrorMessage: string | null;
+	maxRowsPerRun: number;
+	organizationId: string;
 	payloadPurgeAt: Date | null;
 	payloadPurgedAt: Date | null;
-	completedAt: Date | null;
-	createdAt: Date;
+	requestFingerprint: string;
+	requiredPermission: HumanResourcesPermission;
+	rowCount: number;
+	status: HumanResourcesBulkJobStatus;
 	updatedAt: Date;
-};
+	version: number;
+}
 
-export type HumanResourcesBulkImportJobRow = {
-	organizationId: string;
+export interface HumanResourcesBulkImportJobRow {
+	createdAt: Date;
 	jobId: string;
-	rowIndex: number;
-	sourceReference: string;
+	organizationId: string;
 	payload: unknown | null;
 	payloadHash: string;
-	createdAt: Date;
-};
+	rowIndex: number;
+	sourceReference: string;
+}
 
-export type HumanResourcesBulkExportJob = {
-	id: string;
-	organizationId: string;
+export interface HumanResourcesBulkExportJob {
 	actorUserId: string;
-	correlationId: string;
-	requiredPermission: HumanResourcesPermission;
-	exportType: HumanResourcesBulkEntityType;
-	requestedFields: readonly string[];
-	dateFrom: string | null;
-	dateTo: string | null;
-	effectiveOn: string | null;
-	idempotencyKey: string;
-	requestFingerprint: string;
-	status: HumanResourcesBulkJobStatus;
-	version: number;
-	nextPage: number;
-	rowCount: number;
-	privacyEvidenceId: string | null;
-	artifactSha256: string | null;
 	artifactByteCount: number | null;
 	artifactExpiresAt: Date | null;
 	artifactPurgedAt: Date | null;
+	artifactSha256: string | null;
+	completedAt: Date | null;
+	correlationId: string;
+	createdAt: Date;
+	dateFrom: string | null;
+	dateTo: string | null;
+	effectiveOn: string | null;
+	exportType: HumanResourcesBulkEntityType;
+	id: string;
+	idempotencyKey: string;
 	lastErrorCode: string | null;
 	lastErrorMessage: string | null;
-	completedAt: Date | null;
-	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type HumanResourcesBulkExportArtifactChunk = {
+	nextPage: number;
 	organizationId: string;
-	jobId: string;
+	privacyEvidenceId: string | null;
+	requestedFields: readonly string[];
+	requestFingerprint: string;
+	requiredPermission: HumanResourcesPermission;
+	rowCount: number;
+	status: HumanResourcesBulkJobStatus;
+	updatedAt: Date;
+	version: number;
+}
+
+export interface HumanResourcesBulkExportArtifactChunk {
+	byteCount: number;
 	chunkIndex: number;
 	content: string;
 	contentSha256: string;
-	byteCount: number;
-	rowCount: number;
 	createdAt: Date;
-};
+	jobId: string;
+	organizationId: string;
+	rowCount: number;
+}
 
-export type HumanResourcesBulkJobStore = {
-	findImportJob(input: {
-		organizationId: string;
-		idempotencyKey: string;
-	}): Promise<Result<HumanResourcesBulkImportJob | null>>;
-	getImportJob(input: {
-		organizationId: string;
-		jobId: string;
-	}): Promise<Result<HumanResourcesBulkImportJob | null>>;
-	createImportJob(input: {
-		job: HumanResourcesBulkImportJob;
-		rows: readonly HumanResourcesBulkImportJobRow[];
-		workItem: ReliabilityWorkItem;
-	}): Promise<Result<HumanResourcesBulkImportJob>>;
-	listImportRows(input: {
-		organizationId: string;
-		jobId: string;
-	}): Promise<Result<readonly HumanResourcesBulkImportJobRow[]>>;
-	commitImportJob(input: {
+export interface HumanResourcesBulkJobStore {
+	commitImportJob: (input: {
 		job: HumanResourcesBulkImportJob;
 		expectedVersion: number;
 		successorWorkItem: ReliabilityWorkItem | null;
 		cleanupWorkItem: ReliabilityWorkItem | null;
-	}): Promise<Result<HumanResourcesBulkImportJob>>;
-	purgeImportPayload(input: {
-		organizationId: string;
-		jobId: string;
-		now: Date;
-	}): Promise<Result<HumanResourcesBulkImportJob>>;
-	findExportJob(input: {
-		organizationId: string;
-		idempotencyKey: string;
-	}): Promise<Result<HumanResourcesBulkExportJob | null>>;
-	getExportJob(input: {
-		organizationId: string;
-		jobId: string;
-	}): Promise<Result<HumanResourcesBulkExportJob | null>>;
-	createExportJob(input: {
-		job: HumanResourcesBulkExportJob;
-		workItem: ReliabilityWorkItem;
-	}): Promise<Result<HumanResourcesBulkExportJob>>;
-	completeExportJob(input: {
+	}) => Promise<Result<HumanResourcesBulkImportJob>>;
+	completeExportJob: (input: {
 		job: HumanResourcesBulkExportJob;
 		expectedVersion: number;
 		chunks: readonly HumanResourcesBulkExportArtifactChunk[];
 		cleanupWorkItem: ReliabilityWorkItem;
-	}): Promise<Result<HumanResourcesBulkExportJob>>;
-	loadExportArtifact(input: {
+	}) => Promise<Result<HumanResourcesBulkExportJob>>;
+	createExportJob: (input: {
+		job: HumanResourcesBulkExportJob;
+		workItem: ReliabilityWorkItem;
+	}) => Promise<Result<HumanResourcesBulkExportJob>>;
+	createImportJob: (input: {
+		job: HumanResourcesBulkImportJob;
+		rows: readonly HumanResourcesBulkImportJobRow[];
+		workItem: ReliabilityWorkItem;
+	}) => Promise<Result<HumanResourcesBulkImportJob>>;
+	findExportJob: (input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}) => Promise<Result<HumanResourcesBulkExportJob | null>>;
+	findImportJob: (input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}) => Promise<Result<HumanResourcesBulkImportJob | null>>;
+	getExportJob: (input: {
 		organizationId: string;
 		jobId: string;
-	}): Promise<
+	}) => Promise<Result<HumanResourcesBulkExportJob | null>>;
+	getImportJob: (input: {
+		organizationId: string;
+		jobId: string;
+	}) => Promise<Result<HumanResourcesBulkImportJob | null>>;
+	listImportRows: (input: {
+		organizationId: string;
+		jobId: string;
+	}) => Promise<Result<readonly HumanResourcesBulkImportJobRow[]>>;
+	loadExportArtifact: (input: {
+		organizationId: string;
+		jobId: string;
+	}) => Promise<
 		Result<{ job: HumanResourcesBulkExportJob; content: string } | null>
 	>;
-	purgeExportArtifact(input: {
+	purgeExportArtifact: (input: {
 		organizationId: string;
 		jobId: string;
 		now: Date;
-	}): Promise<Result<HumanResourcesBulkExportJob>>;
-};
+	}) => Promise<Result<HumanResourcesBulkExportJob>>;
+	purgeImportPayload: (input: {
+		organizationId: string;
+		jobId: string;
+		now: Date;
+	}) => Promise<Result<HumanResourcesBulkImportJob>>;
+}

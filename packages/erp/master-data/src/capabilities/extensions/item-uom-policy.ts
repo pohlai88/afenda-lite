@@ -18,6 +18,9 @@ const ITEM_UOM_COMPATIBILITY_MODE_SET: ReadonlySet<string> = new Set(
 	ITEM_UOM_COMPATIBILITY_MODES,
 );
 const POSITIVE_DECIMAL_RE = /^(\d+)(?:\.(\d+))?$/u;
+const LEADING_DECIMAL_ZERO_RE = /^0+(?=\d)/u;
+const TRAILING_DECIMAL_ZERO_RE = /0+$/u;
+const NONZERO_DIGIT_RE = /[1-9]/u;
 
 export function normalizeItemUomConversionFactor(raw: string): Result<string> {
 	if (typeof raw !== "string") {
@@ -26,14 +29,16 @@ export function normalizeItemUomConversionFactor(raw: string): Result<string> {
 
 	const value = raw.trim();
 	const match = POSITIVE_DECIMAL_RE.exec(value);
-	if (match === null) return invalidFactor();
+	if (match === null) {
+		return invalidFactor();
+	}
 
-	const integerPart = (match[1] ?? "").replace(/^0+(?=\d)/u, "");
-	const fractionPart = (match[2] ?? "").replace(/0+$/u, "");
+	const integerPart = (match[1] ?? "").replace(LEADING_DECIMAL_ZERO_RE, "");
+	const fractionPart = (match[2] ?? "").replace(TRAILING_DECIMAL_ZERO_RE, "");
 	if (
 		integerPart.length > ITEM_UOM_MAX_INTEGER_DIGITS ||
 		fractionPart.length > ITEM_UOM_FACTOR_SCALE ||
-		!/[1-9]/u.test(`${integerPart}${fractionPart}`)
+		!NONZERO_DIGIT_RE.test(`${integerPart}${fractionPart}`)
 	) {
 		return invalidFactor();
 	}

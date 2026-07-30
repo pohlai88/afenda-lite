@@ -8,13 +8,13 @@ import { createProductionMutationPorts } from "./production-ports";
 import { resolvePayrollStore } from "./resolve-store";
 import type { PayrollStore } from "./store";
 
-export type PayrollCommandOptions = {
-	store?: PayrollStore;
-	ports?: MutationPorts;
+export interface PayrollCommandOptions {
 	authorization?: PayrollAuthorizationPort;
-	employees?: PayrollEmployeeQueryPort;
 	calculator?: PayrollRunCalculatorPort;
-};
+	employees?: PayrollEmployeeQueryPort;
+	ports?: MutationPorts;
+	store?: PayrollStore;
+}
 
 export function resolvePorts(ports?: MutationPorts): MutationPorts {
 	return ports ?? createProductionMutationPorts();

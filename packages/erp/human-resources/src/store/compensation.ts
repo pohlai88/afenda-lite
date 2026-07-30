@@ -49,23 +49,23 @@ import type {
 	SalaryBandListPage,
 } from "../types";
 
-export type CompensationReviewCycleCreateRecord = {
-	organizationId: string;
-	code: string;
-	name: string;
-	periodStart: string;
-	periodEnd: string;
-	budgetTotalAmount: string;
+export interface CompensationReviewCycleCreateRecord {
 	budgetCurrencyCode: string;
+	budgetTotalAmount: string;
+	code: string;
+	createdBy: string;
 	createIdempotencyKey: string;
 	createRequestFingerprint: string;
-	createdBy: string;
-};
+	name: string;
+	organizationId: string;
+	periodEnd: string;
+	periodStart: string;
+}
 
-export type IdempotentCompensationReviewCycleRecord = {
-	cycle: CompensationReviewCycle;
+export interface IdempotentCompensationReviewCycleRecord {
 	createRequestFingerprint: string;
-};
+	cycle: CompensationReviewCycle;
+}
 
 /**
  * Persistence contract for Compensation and benefits.
@@ -73,42 +73,113 @@ export type IdempotentCompensationReviewCycleRecord = {
  * This is a domain slice of `HumanResourcesStore`. Keep persistence behavior
  * here; cross-domain orchestration belongs in application commands/services.
  */
-export type HumanResourcesCompensationStore = {
-	// Compensation Grade
-	getCompensationGrade(input: {
-		organizationId: string;
-		gradeId: HumanResourcesCompensationGradeId;
-	}): Promise<Result<CompensationGrade | null>>;
-
-	findCompensationGradeByCode(input: {
-		organizationId: string;
-		code: string;
-	}): Promise<Result<CompensationGrade | null>>;
-
-	createCompensationGrade(
-		record: {
-			organizationId: string;
-			code: string;
-			name: string;
-			createdBy: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<CompensationGrade>>;
-
-	updateCompensationGrade(
+export interface HumanResourcesCompensationStore {
+	activateEmployeeCompensation: (
 		input: {
 			organizationId: string;
-			gradeId: HumanResourcesCompensationGradeId;
-			name?: string | undefined;
+			compensationId: HumanResourcesEmployeeCompensationId;
 			expectedVersion: number;
 			actorUserId: string;
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<CompensationGrade>>;
+	) => Promise<Result<EmployeeCompensation>>;
 
-	archiveCompensationGrade(
+	addBenefitEnrollmentDependent: (
+		input: {
+			organizationId: string;
+			enrollmentId: HumanResourcesBenefitEnrollmentId;
+			dependentName: string;
+			relationship: BenefitDependentRelationship;
+			effectiveFrom: string;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<BenefitEnrollmentDependent>>;
+
+	amendCompensationProposal: (
+		input: {
+			organizationId: string;
+			proposalId: HumanResourcesCompensationProposalId;
+			proposedBaseAmount?: string | null | undefined;
+			proposedCurrencyCode?: string | null | undefined;
+			proposedGradeId?: HumanResourcesCompensationGradeId | null | undefined;
+			proposedSalaryBandId?: HumanResourcesSalaryBandId | null | undefined;
+			confidentialNote?: string | null | undefined;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<CompensationProposal>>;
+
+	amendEmployeeCompensation: (
+		input: {
+			organizationId: string;
+			compensationId: HumanResourcesEmployeeCompensationId;
+			baseAmount?: string | undefined;
+			currencyCode?: string | undefined;
+			payFrequency?: PayFrequency | undefined;
+			effectiveFrom?: string | undefined;
+			effectiveTo?: string | null | undefined;
+			reason?: string | undefined;
+			gradeId?: HumanResourcesCompensationGradeId | null | undefined;
+			salaryBandId?: HumanResourcesSalaryBandId | null | undefined;
+			confidentialNote?: string | null | undefined;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<EmployeeCompensation>>;
+
+	applyApprovedCompensationResult: (
+		input: {
+			organizationId: string;
+			reviewId: HumanResourcesCompensationReviewId;
+			reason: string;
+			createIdempotencyKey: string;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<EmployeeCompensation>>;
+
+	approveCompensationProposal: (
+		input: {
+			organizationId: string;
+			proposalId: HumanResourcesCompensationProposalId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<CompensationProposal>>;
+
+	approveEmployeeCompensation: (
+		input: {
+			organizationId: string;
+			compensationId: HumanResourcesEmployeeCompensationId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<EmployeeCompensation>>;
+
+	archiveBenefitPlan: (
+		input: {
+			organizationId: string;
+			planId: HumanResourcesBenefitPlanId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<BenefitPlan>>;
+
+	archiveCompensationGrade: (
 		input: {
 			organizationId: string;
 			gradeId: HumanResourcesCompensationGradeId;
@@ -117,54 +188,20 @@ export type HumanResourcesCompensationStore = {
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<CompensationGrade>>;
+	) => Promise<Result<CompensationGrade>>;
 
-	listCompensationGrades(input: {
-		organizationId: string;
-		page: number;
-		pageSize: number;
-		status?: CompensationGradeStatus | undefined;
-	}): Promise<Result<CompensationGradeListPage>>;
-	// Salary Band
-	getSalaryBand(input: {
-		organizationId: string;
-		salaryBandId: HumanResourcesSalaryBandId;
-	}): Promise<Result<SalaryBand | null>>;
-
-	createSalaryBand(
-		record: {
-			organizationId: string;
-			gradeId: HumanResourcesCompensationGradeId;
-			currencyCode: string;
-			minAmount: string;
-			midAmount: string;
-			maxAmount: string;
-			effectiveFrom: string;
-			effectiveTo: string | null;
-			createdBy: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<SalaryBand>>;
-
-	supersedeSalaryBand(
+	archiveCompensationGradeProgressionRule: (
 		input: {
 			organizationId: string;
-			gradeId: HumanResourcesCompensationGradeId;
-			currencyCode: string;
-			minAmount: string;
-			midAmount: string;
-			maxAmount: string;
-			effectiveFrom: string;
-			effectiveTo: string | null;
-			supersededSalaryBandId?: HumanResourcesSalaryBandId | undefined;
+			progressionRuleId: HumanResourcesCompensationGradeProgressionRuleId;
+			expectedVersion: number;
 			actorUserId: string;
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<{ superseded: SalaryBand; successor: SalaryBand }>>;
+	) => Promise<Result<CompensationGradeProgressionRule>>;
 
-	archiveSalaryBand(
+	archiveSalaryBand: (
 		input: {
 			organizationId: string;
 			salaryBandId: HumanResourcesSalaryBandId;
@@ -173,30 +210,87 @@ export type HumanResourcesCompensationStore = {
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<SalaryBand>>;
+	) => Promise<Result<SalaryBand>>;
 
-	listSalaryBandsByGrade(input: {
-		organizationId: string;
-		gradeId: HumanResourcesCompensationGradeId;
-		page: number;
-		pageSize: number;
-		status?: SalaryBandStatus | undefined;
-	}): Promise<Result<SalaryBandListPage>>;
+	cancelBenefitEnrollment: (
+		input: {
+			organizationId: string;
+			enrollmentId: HumanResourcesBenefitEnrollmentId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<BenefitEnrollment>>;
 
-	findSalaryBandByGradeAndCurrencyAsOf(input: {
-		organizationId: string;
-		gradeId: HumanResourcesCompensationGradeId;
-		currencyCode: string;
-		asOf: string;
-	}): Promise<Result<SalaryBand | null>>;
+	cancelCompensationReviewCycle: (
+		input: {
+			organizationId: string;
+			cycleId: HumanResourcesCompensationReviewCycleId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<CompensationReviewCycle>>;
 
-	// Compensation grade progression rule
-	getCompensationGradeProgressionRule(input: {
-		organizationId: string;
-		progressionRuleId: HumanResourcesCompensationGradeProgressionRuleId;
-	}): Promise<Result<CompensationGradeProgressionRule | null>>;
+	closeCompensationReviewCycle: (
+		input: {
+			organizationId: string;
+			cycleId: HumanResourcesCompensationReviewCycleId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<CompensationReviewCycle>>;
 
-	createCompensationGradeProgressionRule(
+	correctEmployeeCompensation: (
+		input: {
+			organizationId: string;
+			compensationId: HumanResourcesEmployeeCompensationId;
+			baseAmount: string;
+			currencyCode: string;
+			payFrequency: PayFrequency;
+			effectiveFrom: string;
+			effectiveTo: string | null;
+			reason: string;
+			evidenceReference: string | null;
+			gradeId: HumanResourcesCompensationGradeId | null;
+			salaryBandId: HumanResourcesSalaryBandId | null;
+			confidentialNote: string | null;
+			createIdempotencyKey: string;
+			createRequestFingerprint: string;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<EmployeeCompensation>>;
+
+	createBenefitPlan: (
+		record: {
+			organizationId: string;
+			code: string;
+			name: string;
+			eligibilityNote: string | null;
+			createdBy: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<BenefitPlan>>;
+
+	createCompensationGrade: (
+		record: {
+			organizationId: string;
+			code: string;
+			name: string;
+			createdBy: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<CompensationGrade>>;
+
+	createCompensationGradeProgressionRule: (
 		record: {
 			organizationId: string;
 			fromGradeId: HumanResourcesCompensationGradeId;
@@ -208,44 +302,44 @@ export type HumanResourcesCompensationStore = {
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<CompensationGradeProgressionRule>>;
+	) => Promise<Result<CompensationGradeProgressionRule>>;
 
-	archiveCompensationGradeProgressionRule(
-		input: {
+	createCompensationProposal: (
+		record: {
 			organizationId: string;
-			progressionRuleId: HumanResourcesCompensationGradeProgressionRuleId;
-			expectedVersion: number;
-			actorUserId: string;
+			applicationId: HumanResourcesApplicationId;
+			proposedBaseAmount: string | null;
+			proposedCurrencyCode: string | null;
+			proposedGradeId: HumanResourcesCompensationGradeId | null;
+			proposedSalaryBandId: HumanResourcesSalaryBandId | null;
+			confidentialNote: string | null;
+			createdBy: string;
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<CompensationGradeProgressionRule>>;
+	) => Promise<Result<CompensationProposal>>;
 
-	listCompensationGradeProgressionRulesFromGrade(input: {
-		organizationId: string;
-		fromGradeId: HumanResourcesCompensationGradeId;
-		page: number;
-		pageSize: number;
-		asOf?: string | undefined;
-	}): Promise<Result<CompensationGradeProgressionRuleListPage>>;
+	createCompensationReviewCycle: (
+		record: CompensationReviewCycleCreateRecord,
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<CompensationReviewCycle>>;
 
-	listEligibleProgressionTargets(input: {
-		organizationId: string;
-		fromGradeId: HumanResourcesCompensationGradeId;
-		asOf: string;
-	}): Promise<Result<CompensationGradeProgressionRule[]>>;
-	// Employee Compensation
-	getEmployeeCompensation(input: {
-		organizationId: string;
-		compensationId: HumanResourcesEmployeeCompensationId;
-	}): Promise<Result<EmployeeCompensation | null>>;
+	createCompensationReviewDraft: (
+		record: {
+			organizationId: string;
+			cycleId: HumanResourcesCompensationReviewCycleId;
+			employeeId: HumanResourcesEmployeeId;
+			employmentId: HumanResourcesEmploymentId;
+			createIdempotencyKey: string;
+			createRequestFingerprint: string;
+			createdBy: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<CompensationReview>>;
 
-	findEmployeeCompensationByIdempotencyKey(input: {
-		organizationId: string;
-		idempotencyKey: string;
-	}): Promise<Result<EmployeeCompensation | null>>;
-
-	createEmployeeCompensation(
+	createEmployeeCompensation: (
 		record: {
 			organizationId: string;
 			employeeId: HumanResourcesEmployeeId;
@@ -267,93 +361,49 @@ export type HumanResourcesCompensationStore = {
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<EmployeeCompensation>>;
+	) => Promise<Result<EmployeeCompensation>>;
 
-	amendEmployeeCompensation(
-		input: {
+	createSalaryBand: (
+		record: {
 			organizationId: string;
-			compensationId: HumanResourcesEmployeeCompensationId;
-			baseAmount?: string | undefined;
-			currencyCode?: string | undefined;
-			payFrequency?: PayFrequency | undefined;
-			effectiveFrom?: string | undefined;
-			effectiveTo?: string | null | undefined;
-			reason?: string | undefined;
-			gradeId?: HumanResourcesCompensationGradeId | null | undefined;
-			salaryBandId?: HumanResourcesSalaryBandId | null | undefined;
-			confidentialNote?: string | null | undefined;
-			expectedVersion: number;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<EmployeeCompensation>>;
-
-	approveEmployeeCompensation(
-		input: {
-			organizationId: string;
-			compensationId: HumanResourcesEmployeeCompensationId;
-			expectedVersion: number;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<EmployeeCompensation>>;
-
-	scheduleEmployeeCompensationChange(
-		input: {
-			organizationId: string;
-			compensationId: HumanResourcesEmployeeCompensationId;
-			baseAmount: string;
+			gradeId: HumanResourcesCompensationGradeId;
 			currencyCode: string;
-			payFrequency: PayFrequency;
-			effectiveFrom: string;
-			reason: string;
-			gradeId: HumanResourcesCompensationGradeId | null;
-			salaryBandId: HumanResourcesSalaryBandId | null;
-			confidentialNote: string | null;
-			createIdempotencyKey: string;
-			createRequestFingerprint: string;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<EmployeeCompensation>>;
-
-	activateEmployeeCompensation(
-		input: {
-			organizationId: string;
-			compensationId: HumanResourcesEmployeeCompensationId;
-			expectedVersion: number;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<EmployeeCompensation>>;
-
-	correctEmployeeCompensation(
-		input: {
-			organizationId: string;
-			compensationId: HumanResourcesEmployeeCompensationId;
-			baseAmount: string;
-			currencyCode: string;
-			payFrequency: PayFrequency;
+			minAmount: string;
+			midAmount: string;
+			maxAmount: string;
 			effectiveFrom: string;
 			effectiveTo: string | null;
-			reason: string;
-			evidenceReference: string | null;
-			gradeId: HumanResourcesCompensationGradeId | null;
-			salaryBandId: HumanResourcesSalaryBandId | null;
-			confidentialNote: string | null;
-			createIdempotencyKey: string;
-			createRequestFingerprint: string;
+			createdBy: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<SalaryBand>>;
+
+	endBenefitEnrollment: (
+		input: {
+			organizationId: string;
+			enrollmentId: HumanResourcesBenefitEnrollmentId;
+			endsOn: string;
+			expectedVersion: number;
 			actorUserId: string;
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<EmployeeCompensation>>;
+	) => Promise<Result<BenefitEnrollment>>;
 
-	endEmployeeCompensation(
+	endBenefitEnrollmentDependent: (
+		input: {
+			organizationId: string;
+			dependentId: HumanResourcesBenefitEnrollmentDependentId;
+			endsOn: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<BenefitEnrollmentDependent>>;
+
+	endEmployeeCompensation: (
 		input: {
 			organizationId: string;
 			compensationId: HumanResourcesEmployeeCompensationId;
@@ -363,293 +413,9 @@ export type HumanResourcesCompensationStore = {
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<EmployeeCompensation>>;
+	) => Promise<Result<EmployeeCompensation>>;
 
-	listEmployeeCompensationsByEmployee(input: {
-		organizationId: string;
-		employeeId: HumanResourcesEmployeeId;
-		page: number;
-		pageSize: number;
-	}): Promise<Result<EmployeeCompensationListPage>>;
-
-	findActiveEmployeeCompensationByEmployment(input: {
-		organizationId: string;
-		employmentId: HumanResourcesEmploymentId;
-	}): Promise<Result<EmployeeCompensation | null>>;
-
-	findEmployeeCompensationByEmploymentAsOf(input: {
-		organizationId: string;
-		employmentId: HumanResourcesEmploymentId;
-		asOf: string;
-	}): Promise<Result<EmployeeCompensation | null>>;
-	// Compensation Review Cycle
-	getCompensationReviewCycle(input: {
-		organizationId: string;
-		cycleId: HumanResourcesCompensationReviewCycleId;
-	}): Promise<Result<CompensationReviewCycle | null>>;
-
-	findCompensationReviewCycleByIdempotencyKey(input: {
-		organizationId: string;
-		idempotencyKey: string;
-	}): Promise<Result<IdempotentCompensationReviewCycleRecord | null>>;
-
-	createCompensationReviewCycle(
-		record: CompensationReviewCycleCreateRecord,
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<CompensationReviewCycle>>;
-
-	openCompensationReviewCycle(
-		input: {
-			organizationId: string;
-			cycleId: HumanResourcesCompensationReviewCycleId;
-			expectedVersion: number;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<CompensationReviewCycle>>;
-
-	closeCompensationReviewCycle(
-		input: {
-			organizationId: string;
-			cycleId: HumanResourcesCompensationReviewCycleId;
-			expectedVersion: number;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<CompensationReviewCycle>>;
-
-	cancelCompensationReviewCycle(
-		input: {
-			organizationId: string;
-			cycleId: HumanResourcesCompensationReviewCycleId;
-			expectedVersion: number;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<CompensationReviewCycle>>;
-
-	listCompensationReviewCycles(input: {
-		organizationId: string;
-		page: number;
-		pageSize: number;
-		status?: CompensationReviewCycleStatus | undefined;
-	}): Promise<Result<CompensationReviewCycleListPage>>;
-
-	listCompensationReviewsByCycle(input: {
-		organizationId: string;
-		cycleId: HumanResourcesCompensationReviewCycleId;
-	}): Promise<Result<CompensationReview[]>>;
-	// Compensation Review
-	getCompensationReview(input: {
-		organizationId: string;
-		reviewId: HumanResourcesCompensationReviewId;
-	}): Promise<Result<CompensationReview | null>>;
-
-	findCompensationReviewByIdempotencyKey(input: {
-		organizationId: string;
-		idempotencyKey: string;
-	}): Promise<Result<CompensationReview | null>>;
-
-	createCompensationReviewDraft(
-		record: {
-			organizationId: string;
-			cycleId: HumanResourcesCompensationReviewCycleId;
-			employeeId: HumanResourcesEmployeeId;
-			employmentId: HumanResourcesEmploymentId;
-			createIdempotencyKey: string;
-			createRequestFingerprint: string;
-			createdBy: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<CompensationReview>>;
-
-	recordCompensationRecommendation(
-		input: {
-			organizationId: string;
-			reviewId: HumanResourcesCompensationReviewId;
-			proposedBaseAmount: string;
-			proposedCurrencyCode: string;
-			proposedGradeId: HumanResourcesCompensationGradeId | null;
-			proposedSalaryBandId: HumanResourcesSalaryBandId | null;
-			recommendationNote: string | null;
-			effectiveFrom: string;
-			expectedVersion: number;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<CompensationReview>>;
-
-	finalizeCompensationReview(
-		input: {
-			organizationId: string;
-			reviewId: HumanResourcesCompensationReviewId;
-			expectedVersion: number;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<CompensationReview>>;
-
-	applyApprovedCompensationResult(
-		input: {
-			organizationId: string;
-			reviewId: HumanResourcesCompensationReviewId;
-			reason: string;
-			createIdempotencyKey: string;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<EmployeeCompensation>>;
-
-	listCompensationReviewsByEmployee(input: {
-		organizationId: string;
-		employeeId: HumanResourcesEmployeeId;
-		page: number;
-		pageSize: number;
-	}): Promise<Result<CompensationReviewListPage>>;
-	// Compensation Proposal (pre-hire)
-	getCompensationProposal(input: {
-		organizationId: string;
-		proposalId: HumanResourcesCompensationProposalId;
-	}): Promise<Result<CompensationProposal | null>>;
-
-	createCompensationProposal(
-		record: {
-			organizationId: string;
-			applicationId: HumanResourcesApplicationId;
-			proposedBaseAmount: string | null;
-			proposedCurrencyCode: string | null;
-			proposedGradeId: HumanResourcesCompensationGradeId | null;
-			proposedSalaryBandId: HumanResourcesSalaryBandId | null;
-			confidentialNote: string | null;
-			createdBy: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<CompensationProposal>>;
-
-	amendCompensationProposal(
-		input: {
-			organizationId: string;
-			proposalId: HumanResourcesCompensationProposalId;
-			proposedBaseAmount?: string | null | undefined;
-			proposedCurrencyCode?: string | null | undefined;
-			proposedGradeId?: HumanResourcesCompensationGradeId | null | undefined;
-			proposedSalaryBandId?: HumanResourcesSalaryBandId | null | undefined;
-			confidentialNote?: string | null | undefined;
-			expectedVersion: number;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<CompensationProposal>>;
-
-	approveCompensationProposal(
-		input: {
-			organizationId: string;
-			proposalId: HumanResourcesCompensationProposalId;
-			expectedVersion: number;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<CompensationProposal>>;
-
-	listCompensationProposals(input: {
-		organizationId: string;
-		applicationId?: HumanResourcesApplicationId | undefined;
-		page: number;
-		pageSize: number;
-	}): Promise<Result<CompensationProposalListPage>>;
-	// Benefit Plan
-	getBenefitPlan(input: {
-		organizationId: string;
-		planId: HumanResourcesBenefitPlanId;
-	}): Promise<Result<BenefitPlan | null>>;
-
-	findBenefitPlanByCode(input: {
-		organizationId: string;
-		code: string;
-	}): Promise<Result<BenefitPlan | null>>;
-
-	createBenefitPlan(
-		record: {
-			organizationId: string;
-			code: string;
-			name: string;
-			eligibilityNote: string | null;
-			createdBy: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<BenefitPlan>>;
-
-	updateBenefitPlan(
-		input: {
-			organizationId: string;
-			planId: HumanResourcesBenefitPlanId;
-			name?: string | undefined;
-			eligibilityNote?: string | null | undefined;
-			expectedVersion: number;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<BenefitPlan>>;
-
-	archiveBenefitPlan(
-		input: {
-			organizationId: string;
-			planId: HumanResourcesBenefitPlanId;
-			expectedVersion: number;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<BenefitPlan>>;
-
-	listBenefitPlans(input: {
-		organizationId: string;
-		page: number;
-		pageSize: number;
-		status?: BenefitPlanStatus | undefined;
-	}): Promise<Result<BenefitPlanListPage>>;
-
-	getBenefitPlanEligibility(input: {
-		organizationId: string;
-		planId: HumanResourcesBenefitPlanId;
-	}): Promise<Result<BenefitPlanEligibility | null>>;
-
-	setBenefitPlanEligibility(
-		input: {
-			organizationId: string;
-			planId: HumanResourcesBenefitPlanId;
-			minTenureDays: number | null;
-			allowedEmploymentStatuses: EmploymentStatus[];
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<BenefitPlanEligibility>>;
-	// Benefit Enrollment
-	getBenefitEnrollment(input: {
-		organizationId: string;
-		enrollmentId: HumanResourcesBenefitEnrollmentId;
-	}): Promise<Result<BenefitEnrollment | null>>;
-
-	findBenefitEnrollmentByIdempotencyKey(input: {
-		organizationId: string;
-		idempotencyKey: string;
-	}): Promise<Result<BenefitEnrollment | null>>;
-
-	enrolBenefit(
+	enrolBenefit: (
 		record: {
 			organizationId: string;
 			employeeId: HumanResourcesEmployeeId;
@@ -667,9 +433,312 @@ export type HumanResourcesCompensationStore = {
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<BenefitEnrollment>>;
+	) => Promise<Result<BenefitEnrollment>>;
 
-	waiveBenefit(
+	finalizeCompensationReview: (
+		input: {
+			organizationId: string;
+			reviewId: HumanResourcesCompensationReviewId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<CompensationReview>>;
+
+	findActiveEmployeeCompensationByEmployment: (input: {
+		organizationId: string;
+		employmentId: HumanResourcesEmploymentId;
+	}) => Promise<Result<EmployeeCompensation | null>>;
+
+	findBenefitEnrollmentByIdempotencyKey: (input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}) => Promise<Result<BenefitEnrollment | null>>;
+
+	findBenefitPlanByCode: (input: {
+		organizationId: string;
+		code: string;
+	}) => Promise<Result<BenefitPlan | null>>;
+
+	findCompensationGradeByCode: (input: {
+		organizationId: string;
+		code: string;
+	}) => Promise<Result<CompensationGrade | null>>;
+
+	findCompensationReviewByIdempotencyKey: (input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}) => Promise<Result<CompensationReview | null>>;
+
+	findCompensationReviewCycleByIdempotencyKey: (input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}) => Promise<Result<IdempotentCompensationReviewCycleRecord | null>>;
+
+	findEmployeeCompensationByEmploymentAsOf: (input: {
+		organizationId: string;
+		employmentId: HumanResourcesEmploymentId;
+		asOf: string;
+	}) => Promise<Result<EmployeeCompensation | null>>;
+
+	findEmployeeCompensationByIdempotencyKey: (input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}) => Promise<Result<EmployeeCompensation | null>>;
+
+	findSalaryBandByGradeAndCurrencyAsOf: (input: {
+		organizationId: string;
+		gradeId: HumanResourcesCompensationGradeId;
+		currencyCode: string;
+		asOf: string;
+	}) => Promise<Result<SalaryBand | null>>;
+	// Approved Compensation Handoff
+	getApprovedCompensationHandoff: (input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+	}) => Promise<Result<ApprovedCompensationHandoff | null>>;
+	// Benefit Enrollment
+	getBenefitEnrollment: (input: {
+		organizationId: string;
+		enrollmentId: HumanResourcesBenefitEnrollmentId;
+	}) => Promise<Result<BenefitEnrollment | null>>;
+
+	getBenefitEnrollmentDependent: (input: {
+		organizationId: string;
+		dependentId: HumanResourcesBenefitEnrollmentDependentId;
+	}) => Promise<Result<BenefitEnrollmentDependent | null>>;
+	// Benefit Plan
+	getBenefitPlan: (input: {
+		organizationId: string;
+		planId: HumanResourcesBenefitPlanId;
+	}) => Promise<Result<BenefitPlan | null>>;
+
+	getBenefitPlanEligibility: (input: {
+		organizationId: string;
+		planId: HumanResourcesBenefitPlanId;
+	}) => Promise<Result<BenefitPlanEligibility | null>>;
+	// Compensation Grade
+	getCompensationGrade: (input: {
+		organizationId: string;
+		gradeId: HumanResourcesCompensationGradeId;
+	}) => Promise<Result<CompensationGrade | null>>;
+
+	// Compensation grade progression rule
+	getCompensationGradeProgressionRule: (input: {
+		organizationId: string;
+		progressionRuleId: HumanResourcesCompensationGradeProgressionRuleId;
+	}) => Promise<Result<CompensationGradeProgressionRule | null>>;
+	// Compensation Proposal (pre-hire)
+	getCompensationProposal: (input: {
+		organizationId: string;
+		proposalId: HumanResourcesCompensationProposalId;
+	}) => Promise<Result<CompensationProposal | null>>;
+	// Compensation Review
+	getCompensationReview: (input: {
+		organizationId: string;
+		reviewId: HumanResourcesCompensationReviewId;
+	}) => Promise<Result<CompensationReview | null>>;
+	// Compensation Review Cycle
+	getCompensationReviewCycle: (input: {
+		organizationId: string;
+		cycleId: HumanResourcesCompensationReviewCycleId;
+	}) => Promise<Result<CompensationReviewCycle | null>>;
+	// Employee Compensation
+	getEmployeeCompensation: (input: {
+		organizationId: string;
+		compensationId: HumanResourcesEmployeeCompensationId;
+	}) => Promise<Result<EmployeeCompensation | null>>;
+	// Salary Band
+	getSalaryBand: (input: {
+		organizationId: string;
+		salaryBandId: HumanResourcesSalaryBandId;
+	}) => Promise<Result<SalaryBand | null>>;
+
+	listBenefitEnrollmentDependentsByEnrollment: (input: {
+		organizationId: string;
+		enrollmentId: HumanResourcesBenefitEnrollmentId;
+	}) => Promise<Result<BenefitEnrollmentDependent[]>>;
+
+	listBenefitEnrollmentsByEmployee: (input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+		page: number;
+		pageSize: number;
+	}) => Promise<Result<BenefitEnrollmentListPage>>;
+
+	listBenefitPlans: (input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		status?: BenefitPlanStatus | undefined;
+	}) => Promise<Result<BenefitPlanListPage>>;
+
+	listCompensationGradeProgressionRulesFromGrade: (input: {
+		organizationId: string;
+		fromGradeId: HumanResourcesCompensationGradeId;
+		page: number;
+		pageSize: number;
+		asOf?: string | undefined;
+	}) => Promise<Result<CompensationGradeProgressionRuleListPage>>;
+
+	listCompensationGrades: (input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		status?: CompensationGradeStatus | undefined;
+	}) => Promise<Result<CompensationGradeListPage>>;
+
+	listCompensationProposals: (input: {
+		organizationId: string;
+		applicationId?: HumanResourcesApplicationId | undefined;
+		page: number;
+		pageSize: number;
+	}) => Promise<Result<CompensationProposalListPage>>;
+
+	listCompensationReviewCycles: (input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		status?: CompensationReviewCycleStatus | undefined;
+	}) => Promise<Result<CompensationReviewCycleListPage>>;
+
+	listCompensationReviewsByCycle: (input: {
+		organizationId: string;
+		cycleId: HumanResourcesCompensationReviewCycleId;
+	}) => Promise<Result<CompensationReview[]>>;
+
+	listCompensationReviewsByEmployee: (input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+		page: number;
+		pageSize: number;
+	}) => Promise<Result<CompensationReviewListPage>>;
+
+	listEligibleProgressionTargets: (input: {
+		organizationId: string;
+		fromGradeId: HumanResourcesCompensationGradeId;
+		asOf: string;
+	}) => Promise<Result<CompensationGradeProgressionRule[]>>;
+
+	listEmployeeCompensationsByEmployee: (input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+		page: number;
+		pageSize: number;
+	}) => Promise<Result<EmployeeCompensationListPage>>;
+
+	listSalaryBandsByGrade: (input: {
+		organizationId: string;
+		gradeId: HumanResourcesCompensationGradeId;
+		page: number;
+		pageSize: number;
+		status?: SalaryBandStatus | undefined;
+	}) => Promise<Result<SalaryBandListPage>>;
+
+	openCompensationReviewCycle: (
+		input: {
+			organizationId: string;
+			cycleId: HumanResourcesCompensationReviewCycleId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<CompensationReviewCycle>>;
+
+	recordCompensationRecommendation: (
+		input: {
+			organizationId: string;
+			reviewId: HumanResourcesCompensationReviewId;
+			proposedBaseAmount: string;
+			proposedCurrencyCode: string;
+			proposedGradeId: HumanResourcesCompensationGradeId | null;
+			proposedSalaryBandId: HumanResourcesSalaryBandId | null;
+			recommendationNote: string | null;
+			effectiveFrom: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<CompensationReview>>;
+
+	scheduleEmployeeCompensationChange: (
+		input: {
+			organizationId: string;
+			compensationId: HumanResourcesEmployeeCompensationId;
+			baseAmount: string;
+			currencyCode: string;
+			payFrequency: PayFrequency;
+			effectiveFrom: string;
+			reason: string;
+			gradeId: HumanResourcesCompensationGradeId | null;
+			salaryBandId: HumanResourcesSalaryBandId | null;
+			confidentialNote: string | null;
+			createIdempotencyKey: string;
+			createRequestFingerprint: string;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<EmployeeCompensation>>;
+
+	setBenefitPlanEligibility: (
+		input: {
+			organizationId: string;
+			planId: HumanResourcesBenefitPlanId;
+			minTenureDays: number | null;
+			allowedEmploymentStatuses: EmploymentStatus[];
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<BenefitPlanEligibility>>;
+
+	supersedeSalaryBand: (
+		input: {
+			organizationId: string;
+			gradeId: HumanResourcesCompensationGradeId;
+			currencyCode: string;
+			minAmount: string;
+			midAmount: string;
+			maxAmount: string;
+			effectiveFrom: string;
+			effectiveTo: string | null;
+			supersededSalaryBandId?: HumanResourcesSalaryBandId | undefined;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<{ superseded: SalaryBand; successor: SalaryBand }>>;
+
+	updateBenefitPlan: (
+		input: {
+			organizationId: string;
+			planId: HumanResourcesBenefitPlanId;
+			name?: string | undefined;
+			eligibilityNote?: string | null | undefined;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<BenefitPlan>>;
+
+	updateCompensationGrade: (
+		input: {
+			organizationId: string;
+			gradeId: HumanResourcesCompensationGradeId;
+			name?: string | undefined;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<CompensationGrade>>;
+
+	waiveBenefit: (
 		input: {
 			organizationId: string;
 			enrollmentId: HumanResourcesBenefitEnrollmentId;
@@ -680,75 +749,5 @@ export type HumanResourcesCompensationStore = {
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<BenefitEnrollment>>;
-
-	endBenefitEnrollment(
-		input: {
-			organizationId: string;
-			enrollmentId: HumanResourcesBenefitEnrollmentId;
-			endsOn: string;
-			expectedVersion: number;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<BenefitEnrollment>>;
-
-	cancelBenefitEnrollment(
-		input: {
-			organizationId: string;
-			enrollmentId: HumanResourcesBenefitEnrollmentId;
-			expectedVersion: number;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<BenefitEnrollment>>;
-
-	listBenefitEnrollmentsByEmployee(input: {
-		organizationId: string;
-		employeeId: HumanResourcesEmployeeId;
-		page: number;
-		pageSize: number;
-	}): Promise<Result<BenefitEnrollmentListPage>>;
-
-	getBenefitEnrollmentDependent(input: {
-		organizationId: string;
-		dependentId: HumanResourcesBenefitEnrollmentDependentId;
-	}): Promise<Result<BenefitEnrollmentDependent | null>>;
-
-	listBenefitEnrollmentDependentsByEnrollment(input: {
-		organizationId: string;
-		enrollmentId: HumanResourcesBenefitEnrollmentId;
-	}): Promise<Result<BenefitEnrollmentDependent[]>>;
-
-	addBenefitEnrollmentDependent(
-		input: {
-			organizationId: string;
-			enrollmentId: HumanResourcesBenefitEnrollmentId;
-			dependentName: string;
-			relationship: BenefitDependentRelationship;
-			effectiveFrom: string;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<BenefitEnrollmentDependent>>;
-
-	endBenefitEnrollmentDependent(
-		input: {
-			organizationId: string;
-			dependentId: HumanResourcesBenefitEnrollmentDependentId;
-			endsOn: string;
-			expectedVersion: number;
-			actorUserId: string;
-		},
-		ports: MutationPorts,
-		meta: HumanResourcesMutationMeta,
-	): Promise<Result<BenefitEnrollmentDependent>>;
-	// Approved Compensation Handoff
-	getApprovedCompensationHandoff(input: {
-		organizationId: string;
-		employeeId: HumanResourcesEmployeeId;
-	}): Promise<Result<ApprovedCompensationHandoff | null>>;
-};
+	) => Promise<Result<BenefitEnrollment>>;
+}

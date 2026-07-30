@@ -1,5 +1,6 @@
 import { AppError } from "@afenda/errors";
 import { fail, ok, type Result } from "@afenda/errors/result";
+// biome-ignore-all lint/performance/noAwaitInLoops: Event side effects are persisted and published in source order with fail-fast semantics.
 import {
 	createEventPublisher,
 	type DomainEvent,
@@ -32,29 +33,29 @@ import {
 } from "@/modules/platform/observability/human-resources-observability";
 import { createDrizzlePlatformWorkItemStore } from "./platform-work-items";
 
-export type HumanResourcesPlatformEventResult = {
+export interface HumanResourcesPlatformEventResult {
 	facts: HumanResourcesPlatformFacts;
 	notification: Notification | null;
 	platformEvents: DomainEvent[];
 	workItems: HumanResourcesPersistedWorkItem[];
-};
+}
 
-export type HumanResourcesPersistedWorkItem = {
+export interface HumanResourcesPersistedWorkItem {
+	deduplicationKey: string;
 	id: string;
 	organizationId: string;
-	deduplicationKey: string;
-};
+}
 
-export type HumanResourcesNotificationRecorderPort = {
-	record(input: unknown): Promise<Result<Notification>>;
-};
+export interface HumanResourcesNotificationRecorderPort {
+	record: (input: unknown) => Promise<Result<Notification>>;
+}
 export type HumanResourcesFactPublisherPort = Pick<EventPublisher, "publish">;
-export type HumanResourcesWorkItemSinkPort = {
-	record(input: {
+export interface HumanResourcesWorkItemSinkPort {
+	record: (input: {
 		workItem: HumanResourcesWorkItemFact;
 		actorUserId: string;
-	}): Promise<Result<HumanResourcesPersistedWorkItem>>;
-};
+	}) => Promise<Result<HumanResourcesPersistedWorkItem>>;
+}
 
 export function createProductionHumanResourcesWorkItemSink(): HumanResourcesWorkItemSinkPort {
 	const store = createDrizzlePlatformWorkItemStore();
@@ -75,7 +76,9 @@ export function createProductionHumanResourcesWorkItemSink(): HumanResourcesWork
 				correlationId: workItem.correlationId,
 				actorUserId,
 			});
-			if (!result.ok) return result;
+			if (!result.ok) {
+				return result;
+			}
 			return ok({
 				id: result.data.id,
 				organizationId: result.data.organizationId,
@@ -90,7 +93,9 @@ async function persistWorkItems(
 	facts: HumanResourcesPlatformFacts,
 	sink: HumanResourcesWorkItemSinkPort | null,
 ): Promise<Result<HumanResourcesPersistedWorkItem[]>> {
-	if (facts.workItems.length === 0) return ok([]);
+	if (facts.workItems.length === 0) {
+		return ok([]);
+	}
 	if (sink === null) {
 		return fail(
 			"SERVICE_UNAVAILABLE",
@@ -103,7 +108,9 @@ async function persistWorkItems(
 			workItem,
 			actorUserId: event.actorUserId,
 		});
-		if (!result.ok) return result;
+		if (!result.ok) {
+			return result;
+		}
 		if (
 			result.data.organizationId !== workItem.organizationId ||
 			result.data.deduplicationKey !== workItem.deduplicationKey
@@ -174,7 +181,7 @@ async function publishPlatformFacts(
 			actorUserId: event.actorUserId,
 			correlationId: event.correlationId,
 			causationId: event.id,
-			payload: integrationFact,
+			payload: { ...integrationFact },
 			metadata: { sourceEventType: event.type, factKind: integrationFact.kind },
 		});
 	}
@@ -182,7 +189,9 @@ async function publishPlatformFacts(
 	const published: DomainEvent[] = [];
 	for (const command of commands) {
 		const result = await publisher.publish(command);
-		if (!result.ok) return result;
+		if (!result.ok) {
+			return result;
+		}
 		if (result.data.organizationId !== event.organizationId) {
 			return fail(
 				"INTERNAL_ERROR",
@@ -206,9 +215,13 @@ async function handleHumanResourcesPlatformEventCore(
 	}
 	const integrationFacts =
 		projectHumanResourcesAccountingProvisioningFacts(event);
-	if (!integrationFacts.ok) return integrationFacts;
+	if (!integrationFacts.ok) {
+		return integrationFacts;
+	}
 	const workItems = await persistWorkItems(event, projected.data, workItemSink);
-	if (!workItems.ok) return workItems;
+	if (!workItems.ok) {
+		return workItems;
+	}
 
 	const platformEvents = await publishPlatformFacts(
 		event,
@@ -216,7 +229,9 @@ async function handleHumanResourcesPlatformEventCore(
 		integrationFacts.data,
 		publisher,
 	);
-	if (!platformEvents.ok) return platformEvents;
+	if (!platformEvents.ok) {
+		return platformEvents;
+	}
 
 	const intent = projected.data.notification;
 	if (intent === null) {

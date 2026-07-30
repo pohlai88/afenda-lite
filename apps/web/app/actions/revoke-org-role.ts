@@ -16,12 +16,12 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type RevokeOrgRoleActionData = {
+export interface RevokeOrgRoleActionData {
 	assignmentId: string;
-	userId: string;
-	roleId: string;
 	auditId: string;
-};
+	roleId: string;
+	userId: string;
+}
 
 /** `null` = form idle (`useActionState`); otherwise API-002 `ActionResult`. */
 export type RevokeOrgRoleActionState =

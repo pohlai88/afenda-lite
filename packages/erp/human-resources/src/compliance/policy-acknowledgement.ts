@@ -38,7 +38,7 @@ export type HumanResourcesPolicyAcknowledgementAggregate =
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 25;
 
-export async function issuePolicyAcknowledgementRequirement(
+export function issuePolicyAcknowledgementRequirement(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PolicyAcknowledgement>> {
@@ -96,7 +96,7 @@ export async function issuePolicyAcknowledgementRequirement(
 	});
 }
 
-export async function acknowledgePolicy(
+export function acknowledgePolicy(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PolicyAcknowledgement>> {
@@ -122,7 +122,7 @@ export async function acknowledgePolicy(
 	});
 }
 
-export async function revokePolicyAcknowledgement(
+export function revokePolicyAcknowledgement(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PolicyAcknowledgement>> {
@@ -147,7 +147,7 @@ export async function revokePolicyAcknowledgement(
 	});
 }
 
-export async function supersedePolicyAcknowledgementRequirement(
+export function supersedePolicyAcknowledgementRequirement(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PolicyAcknowledgement>> {
@@ -174,57 +174,54 @@ export async function supersedePolicyAcknowledgementRequirement(
 	});
 }
 
-export async function getPolicyAcknowledgementStatus(
+export function getPolicyAcknowledgementStatus(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PolicyAcknowledgement | null>> {
 	return runComplianceEmployeeScopedQuery(input, options, {
 		schema: getPolicyAcknowledgementStatusInputSchema,
 		invalidMessage: "Invalid policy acknowledgement status get input",
-		execute: async (data, { store }) => {
-			return store.getPolicyAcknowledgementStatus({
+		execute: async (data, { store }) =>
+			store.getPolicyAcknowledgementStatus({
 				organizationId: data.organizationId,
 				employeeId: data.employeeId,
 				policyCode: data.policyCode,
 				policyVersion: data.policyVersion,
-			});
-		},
+			}),
 	});
 }
 
-export async function listOutstandingPolicyAcknowledgements(
+export function listOutstandingPolicyAcknowledgements(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PolicyAcknowledgementListPage>> {
 	return runComplianceEmployeeScopedQuery(input, options, {
 		schema: listOutstandingPolicyAcknowledgementsInputSchema,
 		invalidMessage: "Invalid outstanding policy acknowledgements list input",
-		execute: async (data, { store }) => {
-			return store.listOutstandingPolicyAcknowledgements({
+		execute: async (data, { store }) =>
+			store.listOutstandingPolicyAcknowledgements({
 				organizationId: data.organizationId,
 				page: data.page ?? DEFAULT_PAGE,
 				pageSize: data.pageSize ?? DEFAULT_PAGE_SIZE,
 				employeeId: data.employeeId,
-			});
-		},
+			}),
 	});
 }
 
-export async function listOverduePolicyAcknowledgements(
+export function listOverduePolicyAcknowledgements(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PolicyAcknowledgementListPage>> {
 	return runComplianceEmployeeScopedQuery(input, options, {
 		schema: listOverduePolicyAcknowledgementsInputSchema,
 		invalidMessage: "Invalid overdue policy acknowledgements list input",
-		execute: async (data, { store }) => {
-			return store.listOverduePolicyAcknowledgements({
+		execute: async (data, { store }) =>
+			store.listOverduePolicyAcknowledgements({
 				organizationId: data.organizationId,
 				asOf: data.asOf,
 				page: data.page ?? DEFAULT_PAGE,
 				pageSize: data.pageSize ?? DEFAULT_PAGE_SIZE,
 				employeeId: data.employeeId,
-			});
-		},
+			}),
 	});
 }

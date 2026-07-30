@@ -11,18 +11,30 @@ import {
 	humanResourcesErrorDetails,
 } from "../error-codes";
 
+const HR_REGEX_1 =
+	/hr_employee_org_normalized_number_uidx|normalized_employee_number/i;
+const HR_REGEX_2 = /relation .* does not exist/i;
+const HR_REGEX_3 = /_org_create_idempotency_uidx|create_idempotency_key/i;
+const HR_REGEX_4 = /hr_worker_org_person_uidx/i;
+const HR_REGEX_5 = /hr_worker_org_employee_uidx/i;
+const HR_REGEX_6 =
+	/hr_employment_org_employee_open_uidx|hr_work_assignment_org_employment_open_uidx/i;
+const HR_REGEX_7 =
+	/hr_position_org_code_uidx|hr_employment_contract_org_employment_ref(?:_active)?_uidx/i;
+const HR_REGEX_8 = /date_range_check/i;
+
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null;
 }
 
 function readProperty(value: unknown, key: PropertyKey): unknown {
 	if (!isRecord(value)) {
-		return undefined;
+		return;
 	}
 	try {
 		return Reflect.get(value, key);
 	} catch {
-		return undefined;
+		// A throwing accessor is treated as an unreadable property.
 	}
 }
 
@@ -40,7 +52,7 @@ export function isPostgresForeignKeyViolation(error: unknown): boolean {
 
 function postgresErrorCode(error: unknown): string | null {
 	let current: unknown = error;
-	for (let depth = 0; depth < 6 && current != null; depth += 1) {
+	for (let depth = 0; depth < 6 && current !== null; depth += 1) {
 		const code = readProperty(current, "code");
 		if (typeof code === "string") {
 			return code.toUpperCase();
@@ -55,7 +67,7 @@ function postgresErrorCode(error: unknown): string | null {
 
 function postgresConstraintName(error: unknown): string {
 	let current: unknown = error;
-	for (let depth = 0; depth < 6 && current != null; depth += 1) {
+	for (let depth = 0; depth < 6 && current !== null; depth += 1) {
 		const constraint =
 			readProperty(current, "constraint") ??
 			readProperty(current, "constraint_name");
@@ -73,7 +85,7 @@ function postgresConstraintName(error: unknown): string {
 export function postgresErrorMessage(error: unknown): string {
 	let current: unknown = error;
 	const parts: string[] = [];
-	for (let depth = 0; depth < 6 && current != null; depth += 1) {
+	for (let depth = 0; depth < 6 && current !== null; depth += 1) {
 		if (current instanceof Error && current.message.length > 0) {
 			parts.push(current.message);
 		} else {
@@ -103,8 +115,7 @@ export function isPostgresUndefinedTable(
 		readProperty(error, "relation") ??
 		readProperty(error, "schema");
 	const message = postgresErrorMessage(error);
-	const undefinedTable =
-		code === "42P01" || /relation .* does not exist/i.test(message);
+	const undefinedTable = code === "42P01" || HR_REGEX_2.test(message);
 	if (!undefinedTable) {
 		return false;
 	}
@@ -118,18 +129,14 @@ export function isCreateIdempotencyUniqueViolation(error: unknown): boolean {
 	if (!isPostgresUniqueViolation(error)) {
 		return false;
 	}
-	return /_org_create_idempotency_uidx|create_idempotency_key/i.test(
-		postgresConstraintName(error),
-	);
+	return HR_REGEX_3.test(postgresConstraintName(error));
 }
 
 export function isEmployeeNumberUniqueViolation(error: unknown): boolean {
 	if (!isPostgresUniqueViolation(error)) {
 		return false;
 	}
-	return /hr_employee_org_normalized_number_uidx|normalized_employee_number/i.test(
-		postgresConstraintName(error),
-	);
+	return HR_REGEX_1.test(postgresConstraintName(error));
 }
 
 export function isPostgresUniqueConstraint(
@@ -160,38 +167,28 @@ export function mapPersistenceFailure(
 	if (isEmployeeNumberUniqueViolation(error)) {
 		return mapEmployeeNumberDuplicate();
 	}
-	if (isPostgresUniqueConstraint(error, /hr_worker_org_person_uidx/i)) {
+	if (isPostgresUniqueConstraint(error, HR_REGEX_4)) {
 		return fail(
 			"CONFLICT",
 			"Person is already linked to a worker",
 			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
 		);
 	}
-	if (isPostgresUniqueConstraint(error, /hr_worker_org_employee_uidx/i)) {
+	if (isPostgresUniqueConstraint(error, HR_REGEX_5)) {
 		return fail(
 			"CONFLICT",
 			"Employee is already linked to a worker",
 			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
 		);
 	}
-	if (
-		isPostgresUniqueConstraint(
-			error,
-			/hr_employment_org_employee_open_uidx|hr_work_assignment_org_employment_open_uidx/i,
-		)
-	) {
+	if (isPostgresUniqueConstraint(error, HR_REGEX_6)) {
 		return fail(
 			"CONFLICT",
 			"Open record already exists",
 			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
 		);
 	}
-	if (
-		isPostgresUniqueConstraint(
-			error,
-			/hr_position_org_code_uidx|hr_employment_contract_org_employment_ref(?:_active)?_uidx/i,
-		)
-	) {
+	if (isPostgresUniqueConstraint(error, HR_REGEX_7)) {
 		return fail(
 			"CONFLICT",
 			"Duplicate reference",
@@ -200,7 +197,7 @@ export function mapPersistenceFailure(
 	}
 	if (
 		isPostgresCheckViolation(error) &&
-		/date_range_check/i.test(postgresConstraintName(error))
+		HR_REGEX_8.test(postgresConstraintName(error))
 	) {
 		return fail(
 			"BAD_REQUEST",

@@ -11,7 +11,7 @@ import type {
 export function createMemoryOrganizationDimensionDirectory(): OrganizationDimensionDirectoryPort {
 	const ids = new Map<string, string>();
 	return {
-		async resolveRequiredAsOf(input) {
+		resolveRequiredAsOf(input) {
 			const dimension = (
 				kind: keyof HumanResourcesOrganizationDimensions,
 			): HumanResourcesOrganizationDimensions[typeof kind] => {
@@ -28,13 +28,15 @@ export function createMemoryOrganizationDimensionDirectory(): OrganizationDimens
 					name: `${kind}:${input.keys[kind]}`,
 				};
 			};
-			return ok({
-				legal_entity: dimension("legal_entity"),
-				business_unit: dimension("business_unit"),
-				location: dimension("location"),
-				cost_centre: dimension("cost_centre"),
-				project: dimension("project"),
-			});
+			return Promise.resolve(
+				ok({
+					legal_entity: dimension("legal_entity"),
+					business_unit: dimension("business_unit"),
+					location: dimension("location"),
+					cost_centre: dimension("cost_centre"),
+					project: dimension("project"),
+				}),
+			);
 		},
 	};
 }

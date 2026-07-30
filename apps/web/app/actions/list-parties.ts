@@ -12,9 +12,9 @@ import {
 	actionFailInternal,
 } from "@/modules/platform/schemas/action-result";
 
-export type ListPartiesActionData = {
+export interface ListPartiesActionData {
 	parties: Party[];
-};
+}
 
 /**
  * Master-data party list — session org stamp + `master_data.read`.

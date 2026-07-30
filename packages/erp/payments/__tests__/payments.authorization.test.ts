@@ -13,9 +13,9 @@ describe("payments authorization", () => {
 		const options = {
 			store: createMemoryPaymentsStore(),
 			authorization: {
-				async can(input: { permission: string }) {
+				can(input: { permission: string }) {
 					seen.push(input.permission);
-					return false;
+					return Promise.resolve(false);
 				},
 			},
 		};
@@ -67,9 +67,9 @@ describe("payments authorization", () => {
 			{
 				store: createMemoryPaymentsStore(),
 				authorization: {
-					async can(input: { permission: string }) {
+					can(input: { permission: string }) {
 						seen.push(input.permission);
-						return false;
+						return Promise.resolve(false);
 					},
 				},
 			},

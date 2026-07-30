@@ -14,9 +14,9 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type CancelReservationActionData = {
+export interface CancelReservationActionData {
 	reservation: StockReservation;
-};
+}
 
 export type CancelReservationActionState =
 	ActionResult<CancelReservationActionData> | null;
@@ -40,7 +40,7 @@ export async function cancelReservationAction(
 	_prev: CancelReservationActionState,
 	formData: FormData,
 ): Promise<CancelReservationActionState> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "cancelReservationAction",
 		permission: "inventory.reservation.release",
 		safeMessage: "Could not cancel reservation. Try again or contact an admin.",

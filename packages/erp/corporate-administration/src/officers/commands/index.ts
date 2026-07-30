@@ -64,16 +64,24 @@ export async function defineStatutoryOffice(
 		defineStatutoryOfficeInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "defineStatutoryOffice");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const company = await dependencies.companyStore.lockLegalCompany({
 		organizationId: options.organizationId,
 		legalCompanyId: parsed.data.legalCompanyId,
 		expectedVersion: parsed.data.expectedCompanyVersion,
 	});
-	if (!company.ok) return company;
-	if (company.data === null) return notFound("legalCompany");
+	if (!company.ok) {
+		return company;
+	}
+	if (company.data === null) {
+		return notFound("legalCompany");
+	}
 	if (company.data.version !== parsed.data.expectedCompanyVersion) {
 		return stale(parsed.data.expectedCompanyVersion, company.data.version);
 	}
@@ -82,7 +90,9 @@ export async function defineStatutoryOffice(
 		options.organizationId,
 		parsed.data.sourceDocumentId,
 	);
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 
 	return runDurableCompanyCommand({
 		commandId: "corporate-administration.statutory-office.define",
@@ -144,19 +154,29 @@ export async function appointOfficer(
 		appointOfficerInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "appointOfficer");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const office = await dependencies.officerStore.getStatutoryOffice({
 		organizationId: options.organizationId,
 		statutoryOfficeId: parsed.data.statutoryOfficeId,
 	});
-	if (!office.ok) return office;
-	if (office.data === null) return notFound("statutoryOffice");
+	if (!office.ok) {
+		return office;
+	}
+	if (office.data === null) {
+		return notFound("statutoryOffice");
+	}
 	if (office.data.version !== parsed.data.expectedOfficeVersion) {
 		return stale(parsed.data.expectedOfficeVersion, office.data.version);
 	}
-	if (office.data.status !== "active") return conflict("statutoryOfficeId");
+	if (office.data.status !== "active") {
+		return conflict("statutoryOfficeId");
+	}
 	const withinOffice = assertAppointmentWithinOffice({
 		office: office.data,
 		appointment: {
@@ -164,7 +184,9 @@ export async function appointOfficer(
 			effectiveTo: parsed.data.effectiveTo ?? null,
 		},
 	});
-	if (!withinOffice.ok) return withinOffice;
+	if (!withinOffice.ok) {
+		return withinOffice;
+	}
 	if (office.data.protectedRole) {
 		const identity = createCorporateAdministrationCommandFingerprint({
 			schema: appointOfficerInputSchema,
@@ -172,7 +194,9 @@ export async function appointOfficer(
 			commandId: "corporate-administration.officer.appoint",
 			input: parsed.data,
 		});
-		if (!identity.ok) return identity;
+		if (!identity.ok) {
+			return identity;
+		}
 		const approved = await requireCorporateAdministrationApprovalIfConfigured(
 			dependencies,
 			{
@@ -183,7 +207,9 @@ export async function appointOfficer(
 				commandFingerprint: identity.data.fingerprint,
 			},
 		);
-		if (!approved.ok) return approved;
+		if (!approved.ok) {
+			return approved;
+		}
 	}
 	const references = await validateAppointmentReferences(
 		dependencies,
@@ -194,12 +220,16 @@ export async function appointOfficer(
 			sourceDocumentId: parsed.data.sourceDocumentId,
 		},
 	);
-	if (!references.ok) return references;
+	if (!references.ok) {
+		return references;
+	}
 	const existing = await dependencies.officerStore.listOfficerAppointments({
 		organizationId: options.organizationId,
 		statutoryOfficeId: office.data.id,
 	});
-	if (!existing.ok) return existing;
+	if (!existing.ok) {
+		return existing;
+	}
 	const conflictCheck = assertNoOfficerAppointmentConflict({
 		candidate: {
 			id: "" as OfficerAppointmentId,
@@ -211,7 +241,9 @@ export async function appointOfficer(
 		office: office.data,
 		existing: existing.data,
 	});
-	if (!conflictCheck.ok) return conflictCheck;
+	if (!conflictCheck.ok) {
+		return conflictCheck;
+	}
 	const statutoryOffice = office.data;
 	return runOfficerAppointmentUpdate({
 		commandId: "corporate-administration.officer.appoint",
@@ -251,15 +283,21 @@ export async function amendOfficerAppointment(
 		amendOfficerAppointmentInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "amendOfficerAppointment");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const current = await loadAppointment(
 		options,
 		dependencies,
 		parsed.data.officerAppointmentId,
 	);
-	if (!current.ok) return current;
+	if (!current.ok) {
+		return current;
+	}
 	if (current.data.version !== parsed.data.expectedVersion) {
 		return stale(parsed.data.expectedVersion, current.data.version);
 	}
@@ -268,7 +306,9 @@ export async function amendOfficerAppointment(
 		dependencies,
 		current.data.statutoryOfficeId,
 	);
-	if (!office.ok) return office;
+	if (!office.ok) {
+		return office;
+	}
 	const withinOffice = assertAppointmentWithinOffice({
 		office: office.data,
 		appointment: {
@@ -276,19 +316,25 @@ export async function amendOfficerAppointment(
 			effectiveTo: parsed.data.effectiveTo ?? null,
 		},
 	});
-	if (!withinOffice.ok) return withinOffice;
+	if (!withinOffice.ok) {
+		return withinOffice;
+	}
 	const source = await validateSource(
 		dependencies,
 		options.organizationId,
 		parsed.data.sourceDocumentId,
 	);
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	const consent = await validateSource(
 		dependencies,
 		options.organizationId,
 		parsed.data.consentDocumentId,
 	);
-	if (!consent.ok) return consent;
+	if (!consent.ok) {
+		return consent;
+	}
 	return runOfficerAppointmentUpdate({
 		commandId: "corporate-administration.officer.amend-appointment",
 		eventType: "corporate_administration.officer.appointment_amended.v1",
@@ -325,15 +371,21 @@ export async function recordOfficerQualification(
 		recordOfficerQualificationInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "recordOfficerQualification");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const appointment = await loadAppointment(
 		options,
 		dependencies,
 		parsed.data.officerAppointmentId,
 	);
-	if (!appointment.ok) return appointment;
+	if (!appointment.ok) {
+		return appointment;
+	}
 	if (appointment.data.version !== parsed.data.expectedAppointmentVersion) {
 		return stale(
 			parsed.data.expectedAppointmentVersion,
@@ -345,7 +397,9 @@ export async function recordOfficerQualification(
 		options.organizationId,
 		parsed.data.sourceDocumentId,
 	);
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	return runDurableCompanyCommand({
 		commandId: "corporate-administration.officer.record-qualification",
 		fingerprintSchema: recordOfficerQualificationInputSchema,
@@ -439,18 +493,24 @@ async function endOfficer(
 	}>,
 ): Promise<Result<OfficerAppointment>> {
 	const parsed = parseCorporateAdministrationInput(config.inputSchema, input);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(
 		options,
 		config.status === "resigned" ? "resignOfficer" : "removeOfficer",
 	);
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const current = await loadAppointment(
 		options,
 		dependencies,
 		parsed.data.officerAppointmentId,
 	);
-	if (!current.ok) return current;
+	if (!current.ok) {
+		return current;
+	}
 	if (current.data.version !== parsed.data.expectedVersion) {
 		return stale(parsed.data.expectedVersion, current.data.version);
 	}
@@ -466,7 +526,9 @@ async function endOfficer(
 		options.organizationId,
 		parsed.data.sourceDocumentId,
 	);
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	return runOfficerAppointmentUpdate({
 		commandId: config.commandId,
 		eventType: config.eventType,
@@ -561,7 +623,9 @@ async function loadOffice(
 		organizationId: options.organizationId,
 		statutoryOfficeId,
 	});
-	if (!office.ok) return office;
+	if (!office.ok) {
+		return office;
+	}
 	return office.data === null
 		? notFound("statutoryOffice")
 		: { ok: true, data: office.data };
@@ -576,7 +640,9 @@ async function loadAppointment(
 		organizationId: options.organizationId,
 		officerAppointmentId,
 	});
-	if (!appointment.ok) return appointment;
+	if (!appointment.ok) {
+		return appointment;
+	}
 	return appointment.data === null
 		? notFound("officerAppointment")
 		: { ok: true, data: appointment.data };
@@ -595,7 +661,9 @@ async function validateAppointmentReferences(
 		organizationId,
 		partyId: input.officerPartyId,
 	});
-	if (!party.ok) return party;
+	if (!party.ok) {
+		return party;
+	}
 	if (
 		party.data === null ||
 		!party.data.active ||
@@ -608,7 +676,9 @@ async function validateAppointmentReferences(
 		organizationId,
 		input.consentDocumentId,
 	);
-	if (!consent.ok) return consent;
+	if (!consent.ok) {
+		return consent;
+	}
 	return validateSource(dependencies, organizationId, input.sourceDocumentId);
 }
 
@@ -621,7 +691,9 @@ async function validateSource(
 		organizationId,
 		sourceDocumentId,
 	});
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	return source.data === null || !source.data.active
 		? invalidReference("sourceDocumentId", source.data !== null)
 		: { ok: true, data: undefined };

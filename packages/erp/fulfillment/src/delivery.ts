@@ -8,6 +8,7 @@ import {
 } from "@afenda/inventory";
 import type { z } from "zod";
 
+import { runSequentiallyUntil } from "./async-sequence";
 import {
 	requireFulfillmentCommandPermission,
 	requireFulfillmentQueryPermission,
@@ -299,25 +300,30 @@ async function postDeliveryInventoryMovement(
 	}
 
 	let expectedVersion = created.data.version;
-	for (const line of delivery.lines) {
-		// biome-ignore lint/performance/noAwaitInLoops: Each line advances the optimistic version required by the next write.
-		const added = await addStockMovementLine(
-			{
-				organizationId: delivery.organizationId,
-				actorUserId,
-				correlationId,
-				idempotencyKey: `ful-post:${delivery.id}:line:${line.id}`,
-				movementId: created.data.id,
-				itemId: line.itemId,
-				quantity: line.quantityToDeliver,
-				expectedVersion,
-			},
-			inventory,
-		);
-		if (!added.ok) {
-			return added;
-		}
-		expectedVersion += 1;
+	const lineFailure = await runSequentiallyUntil<DeliveryLine, Result<void>>(
+		delivery.lines,
+		async (line) => {
+			const added = await addStockMovementLine(
+				{
+					organizationId: delivery.organizationId,
+					actorUserId,
+					correlationId,
+					idempotencyKey: `ful-post:${delivery.id}:line:${line.id}`,
+					movementId: created.data.id,
+					itemId: line.itemId,
+					quantity: line.quantityToDeliver,
+					expectedVersion,
+				},
+				inventory,
+			);
+			if (!added.ok) {
+				return added;
+			}
+			expectedVersion += 1;
+		},
+	);
+	if (lineFailure !== undefined) {
+		return lineFailure;
 	}
 
 	const posted = await postStockMovement(

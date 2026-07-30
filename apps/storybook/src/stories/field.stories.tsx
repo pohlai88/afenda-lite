@@ -22,10 +22,15 @@ import {
 	Textarea,
 } from "@afenda/ui-system";
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import type { FormEvent } from "react";
 import { contractDocsParameters } from "./contract-docs";
 import { contractEvidence, StorySection } from "./evidence";
 
 const evidence = contractEvidence("ui.field");
+
+function preventSubmit(event: FormEvent<HTMLFormElement>): void {
+	event.preventDefault();
+}
 
 const meta = {
 	title: "UI System/Field",
@@ -54,13 +59,13 @@ export const Overview: Story = {
 		<div className="min-h-screen bg-canvas text-foreground">
 			<div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-2 border-b pb-6">
-					<p className="text-sm font-medium text-foreground-secondary">
+					<p className="font-medium text-foreground-secondary text-sm">
 						Corporate administration · legal company
 					</p>
-					<h1 className="text-2xl font-semibold tracking-tight">
+					<h1 className="font-semibold text-2xl tracking-tight">
 						Register legal company
 					</h1>
-					<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+					<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 						Field composes labels, descriptions, and errors around controls.
 						Domain validation and save authorization stay in feature code.
 					</p>
@@ -70,7 +75,7 @@ export const Overview: Story = {
 					<CardHeader>
 						<div className="flex flex-wrap items-center gap-2">
 							<Badge variant="outline">Corporate Administration</Badge>
-							<StatusBadge size="sm" status="pending" label="Draft" />
+							<StatusBadge label="Draft" size="sm" status="pending" />
 						</div>
 						<CardTitle>Legal identity</CardTitle>
 						<CardDescription>
@@ -78,10 +83,7 @@ export const Overview: Story = {
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<form
-							className="grid gap-6"
-							onSubmit={(event) => event.preventDefault()}
-						>
+						<form className="grid gap-6" onSubmit={preventSubmit}>
 							<FieldSet>
 								<FieldLegend>Organization details</FieldLegend>
 								<FieldDescription>
@@ -96,10 +98,10 @@ export const Overview: Story = {
 										</FieldLabel>
 										<FieldContent>
 											<Input
+												autoComplete="organization"
+												defaultValue="Nexus Canon Sdn. Bhd."
 												id="overview-legal-name"
 												name="legalName"
-												defaultValue="Nexus Canon Sdn. Bhd."
-												autoComplete="organization"
 											/>
 											<FieldDescription>
 												Must match SSM / Companies Commission registration.
@@ -113,10 +115,10 @@ export const Overview: Story = {
 										</FieldLabel>
 										<FieldContent>
 											<Input
+												autoComplete="organization"
+												defaultValue="Afenda"
 												id="overview-trading-name"
 												name="tradingName"
-												defaultValue="Afenda"
-												autoComplete="organization"
 											/>
 											<FieldDescription>
 												Optional display name used on operator workspaces.
@@ -132,11 +134,11 @@ export const Overview: Story = {
 										</FieldLabel>
 										<FieldContent>
 											<Input
-												id="overview-tax-id"
-												name="taxRegistration"
-												defaultValue="C1234567890"
-												inputMode="text"
 												autoComplete="off"
+												defaultValue="C1234567890"
+												id="overview-tax-id"
+												inputMode="text"
+												name="taxRegistration"
 											/>
 											<FieldDescription>
 												Malaysia SST / TIN as issued by LHDN.
@@ -181,10 +183,10 @@ export const Usage: Story = {
 							</FieldLabel>
 							<FieldContent>
 								<Input
+									autoComplete="email"
+									defaultValue="ap@northwind.example"
 									id="usage-vertical-email"
 									type="email"
-									defaultValue="ap@northwind.example"
-									autoComplete="email"
 								/>
 								<FieldDescription>
 									Used for remittance advice and invoice disputes.
@@ -203,10 +205,10 @@ export const Usage: Story = {
 						</FieldLabel>
 						<FieldContent>
 							<Input
-								id="usage-horizontal-code"
-								defaultValue="SUP-0142"
-								className="max-w-xs"
 								autoComplete="off"
+								className="max-w-xs"
+								defaultValue="SUP-0142"
+								id="usage-horizontal-code"
 							/>
 							<FieldDescription>
 								Stable master-data identifier — not the legal name.
@@ -224,10 +226,10 @@ export const Usage: Story = {
 						</FieldLabel>
 						<FieldContent>
 							<Input
-								id="usage-responsive-currency"
-								defaultValue="MYR"
-								className="max-w-[8rem]"
 								autoComplete="off"
+								className="max-w-[8rem]"
+								defaultValue="MYR"
+								id="usage-responsive-currency"
 							/>
 							<FieldDescription>
 								ISO currency for payables settlement in this organization.
@@ -258,11 +260,11 @@ export const StatesAndAccessibility: Story = {
 						<FieldLabel htmlFor="state-invalid-legal">Legal name</FieldLabel>
 						<FieldContent>
 							<Input
+								aria-invalid
+								autoComplete="organization"
+								defaultValue=""
 								id="state-invalid-legal"
 								name="legalName"
-								aria-invalid
-								defaultValue=""
-								autoComplete="organization"
 							/>
 							<FieldError errors={[{ message: "Legal name is required." }]} />
 						</FieldContent>
@@ -278,11 +280,11 @@ export const StatesAndAccessibility: Story = {
 						</FieldLabel>
 						<FieldContent>
 							<Input
+								aria-invalid
+								autoComplete="off"
+								defaultValue="ABC"
 								id="state-multi-tax"
 								name="taxRegistration"
-								aria-invalid
-								defaultValue="ABC"
-								autoComplete="off"
 							/>
 							<FieldError
 								errors={[
@@ -303,10 +305,10 @@ export const StatesAndAccessibility: Story = {
 						</FieldLabel>
 						<FieldContent>
 							<Input
-								id="state-disabled-org"
-								disabled
-								defaultValue="org-fragrant-lake-90358173"
 								autoComplete="off"
+								defaultValue="org-fragrant-lake-90358173"
+								disabled
+								id="state-disabled-org"
 							/>
 							<FieldDescription>
 								Assigned by the platform — operators cannot edit it here.
@@ -329,9 +331,9 @@ export const StatesAndAccessibility: Story = {
 									Account name
 								</FieldLabel>
 								<Input
-									id="state-legend-bank"
-									defaultValue="Nexus Canon Operating"
 									autoComplete="off"
+									defaultValue="Nexus Canon Operating"
+									id="state-legend-bank"
 								/>
 							</Field>
 						</FieldGroup>
@@ -345,9 +347,9 @@ export const StatesAndAccessibility: Story = {
 							<Field orientation="vertical">
 								<FieldLabel htmlFor="state-label-bank">Account name</FieldLabel>
 								<Input
-									id="state-label-bank"
-									defaultValue="Nexus Canon Operating"
 									autoComplete="off"
+									defaultValue="Nexus Canon Operating"
+									id="state-label-bank"
 								/>
 							</Field>
 						</FieldGroup>
@@ -378,11 +380,11 @@ export const RequiredReadOnlyAndOptional: Story = {
 						</FieldLabel>
 						<FieldContent>
 							<Input
+								aria-required="true"
+								autoComplete="organization"
 								id="required-legal-name"
 								name="legalName"
 								required
-								aria-required="true"
-								autoComplete="organization"
 							/>
 							<FieldDescription>
 								Required. Enter the name shown on the registration document.
@@ -399,9 +401,9 @@ export const RequiredReadOnlyAndOptional: Story = {
 						</FieldLabel>
 						<FieldContent>
 							<Input
+								autoComplete="organization"
 								id="optional-trading-name"
 								name="tradingName"
-								autoComplete="organization"
 							/>
 							<FieldDescription>
 								Optional. Used only for operator-facing display.
@@ -418,11 +420,11 @@ export const RequiredReadOnlyAndOptional: Story = {
 						</FieldLabel>
 						<FieldContent>
 							<Input
+								aria-readonly="true"
 								id="readonly-organization-id"
 								name="organizationId"
-								value="org-fragrant-lake-90358173"
 								readOnly
-								aria-readonly="true"
+								value="org-fragrant-lake-90358173"
 							/>
 							<FieldDescription>
 								Platform-assigned value. It remains available for copying.
@@ -451,7 +453,7 @@ export const Composition: Story = {
 				<CardHeader>
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="outline">Payables</Badge>
-						<StatusBadge size="sm" status="pending" label="Awaiting review" />
+						<StatusBadge label="Awaiting review" size="sm" status="pending" />
 					</div>
 					<CardTitle>Supplier remittance</CardTitle>
 					<CardDescription>
@@ -469,9 +471,9 @@ export const Composition: Story = {
 								<FieldLabel htmlFor="comp-bank-name">Bank name</FieldLabel>
 								<FieldContent>
 									<Input
-										id="comp-bank-name"
-										defaultValue="Maybank Berhad"
 										autoComplete="off"
+										defaultValue="Maybank Berhad"
+										id="comp-bank-name"
 									/>
 								</FieldContent>
 							</Field>
@@ -479,10 +481,10 @@ export const Composition: Story = {
 								<FieldLabel htmlFor="comp-account">Account number</FieldLabel>
 								<FieldContent>
 									<Input
-										id="comp-account"
-										defaultValue="512345678901"
-										inputMode="numeric"
 										autoComplete="off"
+										defaultValue="512345678901"
+										id="comp-account"
+										inputMode="numeric"
 									/>
 									<FieldDescription>
 										Do not store PAN or card numbers in remittance fields.
@@ -494,9 +496,9 @@ export const Composition: Story = {
 								<FieldLabel htmlFor="comp-notes">Operator notes</FieldLabel>
 								<FieldContent>
 									<Textarea
+										defaultValue="Prefer MYR settlement on Tuesdays."
 										id="comp-notes"
 										rows={3}
-										defaultValue="Prefer MYR settlement on Tuesdays."
 									/>
 								</FieldContent>
 							</Field>
@@ -515,7 +517,7 @@ export const Composition: Story = {
 				<CardHeader>
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="secondary">Receivables</Badge>
-						<StatusBadge size="sm" status="active" label="Operational" />
+						<StatusBadge label="Operational" size="sm" status="active" />
 					</div>
 					<CardTitle>Invoice header edit</CardTitle>
 					<CardDescription>
@@ -528,10 +530,10 @@ export const Composition: Story = {
 							<FieldLabel htmlFor="comp-invoice">Invoice number</FieldLabel>
 							<FieldContent>
 								<Input
-									id="comp-invoice"
-									defaultValue="INV-1048"
-									className="max-w-xs"
 									autoComplete="off"
+									className="max-w-xs"
+									defaultValue="INV-1048"
+									id="comp-invoice"
 								/>
 							</FieldContent>
 						</Field>
@@ -539,10 +541,10 @@ export const Composition: Story = {
 							<FieldLabel htmlFor="comp-po">Customer PO</FieldLabel>
 							<FieldContent>
 								<Input
-									id="comp-po"
-									defaultValue="PO-77821"
-									className="max-w-xs"
 									autoComplete="off"
+									className="max-w-xs"
+									defaultValue="PO-77821"
+									id="comp-po"
 								/>
 								<FieldDescription>
 									Customer purchase order reference for dispute matching.
@@ -574,9 +576,9 @@ export const DoAndDoNot: Story = {
 						<FieldLabel htmlFor="do-legal">Legal name</FieldLabel>
 						<FieldContent>
 							<Input
-								id="do-legal"
-								defaultValue="Nexus Canon Sdn. Bhd."
 								autoComplete="organization"
+								defaultValue="Nexus Canon Sdn. Bhd."
+								id="do-legal"
 							/>
 							<FieldDescription>
 								Visible label and description before any error.
@@ -587,7 +589,7 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do not: FieldTitle as the only control label">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					FieldTitle is presentation chrome inside a Field. Associate every
 					editable control with FieldLabel (or a FieldSet FieldLegend for a
 					group) — never FieldTitle alone.
@@ -614,9 +616,9 @@ export const DoAndDoNot: Story = {
 						<Field orientation="vertical">
 							<FieldLabel htmlFor="do-tax">Tax registration number</FieldLabel>
 							<Input
-								id="do-tax"
-								defaultValue="C1234567890"
 								autoComplete="off"
+								defaultValue="C1234567890"
+								id="do-tax"
 							/>
 						</Field>
 					</FieldGroup>
@@ -624,7 +626,7 @@ export const DoAndDoNot: Story = {
 			</StorySection>
 
 			<StorySection title="Do not: use Field as page layout">
-				<p className="text-sm text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm">
 					Do not wrap toolbars, tables, or Card chrome in Field / FieldGroup for
 					spacing. Field exists to associate labels, help, and errors with form
 					controls.

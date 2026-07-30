@@ -77,8 +77,10 @@ async function findEmployeeCompensationByEmploymentAndStatus(
 				),
 			)
 			.limit(1);
-		const row = rows[0];
-		if (!row) return ok(null);
+		const [row] = rows;
+		if (!row) {
+			return ok(null);
+		}
 		return mapEmployeeCompensationSql({
 			id: row.id,
 			organization_id: row.organizationId,
@@ -138,7 +140,9 @@ export async function drizzleAmendEmployeeCompensation(
 		organizationId: input.organizationId,
 		compensationId: input.compensationId,
 	});
-	if (!existing.ok) return existing;
+	if (!existing.ok) {
+		return existing;
+	}
 	if (existing.data === null) {
 		return notFound(
 			"Employee compensation not found",
@@ -150,7 +154,9 @@ export async function drizzleAmendEmployeeCompensation(
 		comp.version,
 		input.expectedVersion,
 	);
-	if (!versionCheck.ok) return versionCheck;
+	if (!versionCheck.ok) {
+		return versionCheck;
+	}
 	if (!isEmployeeCompensationDraft(comp.status)) {
 		return invalidState("Only draft compensation agreements can be amended");
 	}
@@ -160,16 +166,16 @@ export async function drizzleAmendEmployeeCompensation(
 	const nextPayFrequency = input.payFrequency ?? comp.payFrequency;
 	const nextEffectiveFrom = input.effectiveFrom ?? comp.effectiveFrom;
 	const nextEffectiveTo =
-		input.effectiveTo !== undefined ? input.effectiveTo : comp.effectiveTo;
+		input.effectiveTo === undefined ? comp.effectiveTo : input.effectiveTo;
 	const nextReason = input.reason ?? comp.reason;
 	const nextGradeId =
-		input.gradeId !== undefined ? input.gradeId : comp.gradeId;
+		input.gradeId === undefined ? comp.gradeId : input.gradeId;
 	const nextSalaryBandId =
-		input.salaryBandId !== undefined ? input.salaryBandId : comp.salaryBandId;
+		input.salaryBandId === undefined ? comp.salaryBandId : input.salaryBandId;
 	const nextConfidentialNote =
-		input.confidentialNote !== undefined
-			? input.confidentialNote
-			: comp.confidentialNote;
+		input.confidentialNote === undefined
+			? comp.confidentialNote
+			: input.confidentialNote;
 
 	const nextVersion = input.expectedVersion + 1;
 	const auditId = randomUUID();
@@ -233,7 +239,7 @@ export async function drizzleAmendEmployeeCompensation(
 				`,
 			],
 		);
-		const row = rows[0];
+		const [row] = rows;
 		if (!row) {
 			return missAfterOptimisticUpdate({
 				found: true,
@@ -264,7 +270,9 @@ export async function drizzleApproveEmployeeCompensation(
 		organizationId: input.organizationId,
 		compensationId: input.compensationId,
 	});
-	if (!existing.ok) return existing;
+	if (!existing.ok) {
+		return existing;
+	}
 	if (existing.data === null) {
 		return notFound(
 			"Employee compensation not found",
@@ -276,7 +284,9 @@ export async function drizzleApproveEmployeeCompensation(
 		comp.version,
 		input.expectedVersion,
 	);
-	if (!versionCheck.ok) return versionCheck;
+	if (!versionCheck.ok) {
+		return versionCheck;
+	}
 	if (!isEmployeeCompensationDraft(comp.status)) {
 		return invalidState("Only draft compensation agreements can be approved");
 	}
@@ -290,7 +300,9 @@ export async function drizzleApproveEmployeeCompensation(
 			comp.employmentId,
 			"scheduled",
 		);
-		if (!scheduled.ok) return scheduled;
+		if (!scheduled.ok) {
+			return scheduled;
+		}
 		if (scheduled.data !== null) {
 			return conflict("A scheduled compensation agreement already exists");
 		}
@@ -447,7 +459,7 @@ export async function drizzleApproveEmployeeCompensation(
 					`,
 			],
 		);
-		const row = rows[0];
+		const [row] = rows;
 		if (!row) {
 			return missAfterOptimisticUpdate({
 				found: true,
@@ -487,7 +499,9 @@ export async function drizzleScheduleEmployeeCompensationChange(
 		organizationId: input.organizationId,
 		compensationId: input.compensationId,
 	});
-	if (!active.ok) return active;
+	if (!active.ok) {
+		return active;
+	}
 	if (active.data === null) {
 		return notFound(
 			"Employee compensation not found",
@@ -526,7 +540,9 @@ export async function drizzleScheduleEmployeeCompensationChange(
 		ports,
 		meta,
 	);
-	if (!created.ok) return created;
+	if (!created.ok) {
+		return created;
+	}
 
 	return host.approveEmployeeCompensation(
 		{
@@ -555,7 +571,9 @@ export async function drizzleActivateEmployeeCompensation(
 		organizationId: input.organizationId,
 		compensationId: input.compensationId,
 	});
-	if (!existing.ok) return existing;
+	if (!existing.ok) {
+		return existing;
+	}
 	if (existing.data === null) {
 		return notFound(
 			"Employee compensation not found",
@@ -567,7 +585,9 @@ export async function drizzleActivateEmployeeCompensation(
 		comp.version,
 		input.expectedVersion,
 	);
-	if (!versionCheck.ok) return versionCheck;
+	if (!versionCheck.ok) {
+		return versionCheck;
+	}
 	if (!isEmployeeCompensationScheduled(comp.status)) {
 		return invalidState(
 			"Only scheduled compensation agreements can be activated",
@@ -692,7 +712,7 @@ export async function drizzleActivateEmployeeCompensation(
 					SELECT mutated.* FROM mutated, audited, outboxed
 				`,
 		]);
-		const row = rows[0];
+		const [row] = rows;
 		if (!row) {
 			return missAfterOptimisticUpdate({
 				found: true,
@@ -734,7 +754,9 @@ export async function drizzleCorrectEmployeeCompensation(
 		organizationId: input.organizationId,
 		idempotencyKey: input.createIdempotencyKey,
 	});
-	if (!existingReplay.ok) return existingReplay;
+	if (!existingReplay.ok) {
+		return existingReplay;
+	}
 	if (existingReplay.data !== null) {
 		return ok(existingReplay.data);
 	}
@@ -743,7 +765,9 @@ export async function drizzleCorrectEmployeeCompensation(
 		organizationId: input.organizationId,
 		compensationId: input.compensationId,
 	});
-	if (!predecessorResult.ok) return predecessorResult;
+	if (!predecessorResult.ok) {
+		return predecessorResult;
+	}
 	if (predecessorResult.data === null) {
 		return notFound(
 			"Employee compensation not found",
@@ -773,7 +797,9 @@ export async function drizzleCorrectEmployeeCompensation(
 
 	const id = randomUUID();
 	const brandedId = parseHumanResourcesEmployeeCompensationId(id);
-	if (!brandedId.ok) return brandedId;
+	if (!brandedId.ok) {
+		return brandedId;
+	}
 
 	const auditSupersededId = randomUUID();
 	const eventSupersededId = randomUUID();
@@ -983,7 +1009,7 @@ export async function drizzleCorrectEmployeeCompensation(
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
 		]);
-		const row = rows[0];
+		const [row] = rows;
 		if (!row) {
 			return notFound(
 				"Employee compensation not found",
@@ -997,7 +1023,9 @@ export async function drizzleCorrectEmployeeCompensation(
 				organizationId: input.organizationId,
 				idempotencyKey: input.createIdempotencyKey,
 			});
-			if (!replay.ok) return replay;
+			if (!replay.ok) {
+				return replay;
+			}
 			if (replay.data !== null) {
 				return ok(replay.data);
 			}

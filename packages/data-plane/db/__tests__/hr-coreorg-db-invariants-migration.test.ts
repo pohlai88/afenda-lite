@@ -188,7 +188,9 @@ describe.skipIf(!hasDatabase)(
 		});
 
 		afterAll(async () => {
-			if (!migrationReady) return;
+			if (!migrationReady) {
+				return;
+			}
 			const { getNeonSql } = await import("../src/http-transaction");
 			const sql = getNeonSql();
 			await sql`
@@ -292,7 +294,9 @@ describe.skipIf(!hasDatabase)(
 		}
 
 		it("rejects an assignment whose end precedes its start", async () => {
-			if (!migrationReady) return;
+			if (!migrationReady) {
+				return;
+			}
 			await seedFoundation();
 			const { getNeonSql } = await import("../src/http-transaction");
 			const sql = getNeonSql();
@@ -311,7 +315,9 @@ describe.skipIf(!hasDatabase)(
 		});
 
 		it("accepts an open-ended assignment", async () => {
-			if (!migrationReady) return;
+			if (!migrationReady) {
+				return;
+			}
 			const { getNeonSql } = await import("../src/http-transaction");
 			const sql = getNeonSql();
 			const assignmentId = crypto.randomUUID();
@@ -330,7 +336,9 @@ describe.skipIf(!hasDatabase)(
 		});
 
 		it("rejects a contract whose end precedes its start", async () => {
-			if (!migrationReady) return;
+			if (!migrationReady) {
+				return;
+			}
 			const { getNeonSql } = await import("../src/http-transaction");
 			const sql = getNeonSql();
 			await expect(
@@ -348,7 +356,9 @@ describe.skipIf(!hasDatabase)(
 		});
 
 		it("accepts an open-ended contract", async () => {
-			if (!migrationReady) return;
+			if (!migrationReady) {
+				return;
+			}
 			const { getNeonSql } = await import("../src/http-transaction");
 			const sql = getNeonSql();
 			const contractId = crypto.randomUUID();
@@ -367,7 +377,9 @@ describe.skipIf(!hasDatabase)(
 		});
 
 		it("rejects a reporting line whose end precedes its start", async () => {
-			if (!migrationReady) return;
+			if (!migrationReady) {
+				return;
+			}
 			const { getNeonSql } = await import("../src/http-transaction");
 			const sql = getNeonSql();
 			await expect(
@@ -385,7 +397,9 @@ describe.skipIf(!hasDatabase)(
 		});
 
 		it("preserves tenant-scoped foreign-key behavior", async () => {
-			if (!migrationReady) return;
+			if (!migrationReady) {
+				return;
+			}
 			const { getNeonSql } = await import("../src/http-transaction");
 			const sql = getNeonSql();
 			await expect(
@@ -436,7 +450,9 @@ describe.skipIf(!hasDatabase)(
 		});
 
 		afterAll(async () => {
-			if (!migrationReady) return;
+			if (!migrationReady) {
+				return;
+			}
 			const { getNeonSql } = await import("../src/http-transaction");
 			const sql = getNeonSql();
 			await sql`DELETE FROM hr_shift WHERE organization_id = ${orgId}`;
@@ -495,7 +511,9 @@ describe.skipIf(!hasDatabase)(
 		}
 
 		it("rejects a probation review whose end precedes its start", async () => {
-			if (!migrationReady) return;
+			if (!migrationReady) {
+				return;
+			}
 			await seedFoundation();
 			const { getNeonSql } = await import("../src/http-transaction");
 			const sql = getNeonSql();
@@ -516,7 +534,9 @@ describe.skipIf(!hasDatabase)(
 		});
 
 		it("rejects a salary band whose effective_to precedes effective_from", async () => {
-			if (!migrationReady) return;
+			if (!migrationReady) {
+				return;
+			}
 			const { getNeonSql } = await import("../src/http-transaction");
 			const sql = getNeonSql();
 			await expect(
@@ -535,7 +555,9 @@ describe.skipIf(!hasDatabase)(
 		});
 
 		it("accepts an open-ended salary band", async () => {
-			if (!migrationReady) return;
+			if (!migrationReady) {
+				return;
+			}
 			const { getNeonSql } = await import("../src/http-transaction");
 			const sql = getNeonSql();
 			await expect(
@@ -554,7 +576,9 @@ describe.skipIf(!hasDatabase)(
 		});
 
 		it("rejects employee compensation with inverted effective range", async () => {
-			if (!migrationReady) return;
+			if (!migrationReady) {
+				return;
+			}
 			const { getNeonSql } = await import("../src/http-transaction");
 			const sql = getNeonSql();
 			await expect(
@@ -576,7 +600,9 @@ describe.skipIf(!hasDatabase)(
 		});
 
 		it("rejects benefit enrollment with inverted effective range", async () => {
-			if (!migrationReady) return;
+			if (!migrationReady) {
+				return;
+			}
 			const { getNeonSql } = await import("../src/http-transaction");
 			const sql = getNeonSql();
 			await expect(
@@ -598,7 +624,9 @@ describe.skipIf(!hasDatabase)(
 		});
 
 		it("rejects shift with inverted effective range", async () => {
-			if (!migrationReady) return;
+			if (!migrationReady) {
+				return;
+			}
 			const { getNeonSql } = await import("../src/http-transaction");
 			const sql = getNeonSql();
 			await expect(
@@ -620,7 +648,9 @@ describe.skipIf(!hasDatabase)(
 		});
 
 		it("accepts shift with open-ended effective range", async () => {
-			if (!migrationReady) return;
+			if (!migrationReady) {
+				return;
+			}
 			const { getNeonSql } = await import("../src/http-transaction");
 			const sql = getNeonSql();
 			await expect(

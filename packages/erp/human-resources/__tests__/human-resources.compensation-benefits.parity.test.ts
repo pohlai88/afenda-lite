@@ -89,7 +89,9 @@ function defineCompensationBenefitsParitySuite(
 			ready,
 		);
 		expect(employee.ok, resultFailureMessage(employee)).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const employment = await createEmployment(
 			{
@@ -102,7 +104,9 @@ function defineCompensationBenefitsParitySuite(
 			ready,
 		);
 		expect(employment.ok, resultFailureMessage(employment)).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const grade = await createCompensationGrade(
 			{
@@ -115,7 +119,9 @@ function defineCompensationBenefitsParitySuite(
 			ready,
 		);
 		expect(grade.ok, resultFailureMessage(grade)).toBe(true);
-		if (!grade.ok) return;
+		if (!grade.ok) {
+			return;
+		}
 
 		const band = await createSalaryBand(
 			{
@@ -132,7 +138,9 @@ function defineCompensationBenefitsParitySuite(
 			ready,
 		);
 		expect(band.ok, resultFailureMessage(band)).toBe(true);
-		if (!band.ok) return;
+		if (!band.ok) {
+			return;
+		}
 
 		const gradeB = await createCompensationGrade(
 			{
@@ -145,7 +153,9 @@ function defineCompensationBenefitsParitySuite(
 			ready,
 		);
 		expect(gradeB.ok, resultFailureMessage(gradeB)).toBe(true);
-		if (!gradeB.ok) return;
+		if (!gradeB.ok) {
+			return;
+		}
 
 		const progression = await createCompensationGradeProgressionRule(
 			{
@@ -159,7 +169,9 @@ function defineCompensationBenefitsParitySuite(
 			ready,
 		);
 		expect(progression.ok, resultFailureMessage(progression)).toBe(true);
-		if (!progression.ok) return;
+		if (!progression.ok) {
+			return;
+		}
 
 		const superseded = await supersedeSalaryBand(
 			{
@@ -176,7 +188,9 @@ function defineCompensationBenefitsParitySuite(
 			ready,
 		);
 		expect(superseded.ok, resultFailureMessage(superseded)).toBe(true);
-		if (!superseded.ok) return;
+		if (!superseded.ok) {
+			return;
+		}
 		expect(superseded.data.supersedesSalaryBandId).toBe(band.data.id);
 
 		const asOf = await findSalaryBandByGradeAndCurrencyAsOf(
@@ -191,7 +205,9 @@ function defineCompensationBenefitsParitySuite(
 			ready,
 		);
 		expect(asOf.ok, resultFailureMessage(asOf)).toBe(true);
-		if (!asOf.ok) return;
+		if (!asOf.ok) {
+			return;
+		}
 		expect(asOf.data.id).toBe(band.data.id);
 
 		const compensation = await createEmployeeCompensation(
@@ -213,7 +229,9 @@ function defineCompensationBenefitsParitySuite(
 			ready,
 		);
 		expect(compensation.ok, resultFailureMessage(compensation)).toBe(true);
-		if (!compensation.ok) return;
+		if (!compensation.ok) {
+			return;
+		}
 
 		const approved = await approveEmployeeCompensation(
 			{
@@ -226,7 +244,9 @@ function defineCompensationBenefitsParitySuite(
 			ready,
 		);
 		expect(approved.ok, resultFailureMessage(approved)).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 		expect(approved.data.status).toBe("active");
 
 		const plan = await createBenefitPlan(
@@ -240,7 +260,9 @@ function defineCompensationBenefitsParitySuite(
 			ready,
 		);
 		expect(plan.ok, resultFailureMessage(plan)).toBe(true);
-		if (!plan.ok) return;
+		if (!plan.ok) {
+			return;
+		}
 		expect(plan.data.code).toBe(`BP-${suffix}`);
 	});
 
@@ -262,7 +284,9 @@ function defineCompensationBenefitsParitySuite(
 			ready,
 		);
 		expect(employee.ok, resultFailureMessage(employee)).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const employment = await createEmployment(
 			{
@@ -275,7 +299,9 @@ function defineCompensationBenefitsParitySuite(
 			ready,
 		);
 		expect(employment.ok, resultFailureMessage(employment)).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const plan = await createBenefitPlan(
 			{
@@ -288,7 +314,9 @@ function defineCompensationBenefitsParitySuite(
 			ready,
 		);
 		expect(plan.ok, resultFailureMessage(plan)).toBe(true);
-		if (!plan.ok) return;
+		if (!plan.ok) {
+			return;
+		}
 
 		const eligibility = await setBenefitPlanEligibility(
 			{
@@ -302,7 +330,9 @@ function defineCompensationBenefitsParitySuite(
 			ready,
 		);
 		expect(eligibility.ok, resultFailureMessage(eligibility)).toBe(true);
-		if (!eligibility.ok) return;
+		if (!eligibility.ok) {
+			return;
+		}
 
 		const loaded = await getBenefitPlanEligibility(
 			{
@@ -314,7 +344,9 @@ function defineCompensationBenefitsParitySuite(
 			ready,
 		);
 		expect(loaded.ok, resultFailureMessage(loaded)).toBe(true);
-		if (!loaded.ok) return;
+		if (!loaded.ok) {
+			return;
+		}
 		expect(loaded.data?.planId).toBe(plan.data.id);
 
 		const enrollment = await enrolBenefit(
@@ -336,7 +368,9 @@ function defineCompensationBenefitsParitySuite(
 			ready,
 		);
 		expect(enrollment.ok, resultFailureMessage(enrollment)).toBe(true);
-		if (!enrollment.ok) return;
+		if (!enrollment.ok) {
+			return;
+		}
 
 		const dependent = await addBenefitEnrollmentDependent(
 			{
@@ -351,7 +385,9 @@ function defineCompensationBenefitsParitySuite(
 			ready,
 		);
 		expect(dependent.ok, resultFailureMessage(dependent)).toBe(true);
-		if (!dependent.ok) return;
+		if (!dependent.ok) {
+			return;
+		}
 
 		const endedDependent = await endBenefitEnrollmentDependent(
 			{
@@ -365,7 +401,9 @@ function defineCompensationBenefitsParitySuite(
 			ready,
 		);
 		expect(endedDependent.ok, resultFailureMessage(endedDependent)).toBe(true);
-		if (!endedDependent.ok) return;
+		if (!endedDependent.ok) {
+			return;
+		}
 
 		const waived = await waiveBenefit(
 			{
@@ -380,7 +418,9 @@ function defineCompensationBenefitsParitySuite(
 			ready,
 		);
 		expect(waived.ok, resultFailureMessage(waived)).toBe(true);
-		if (!waived.ok) return;
+		if (!waived.ok) {
+			return;
+		}
 		expect(waived.data.status).toBe("waived");
 	});
 
@@ -403,7 +443,9 @@ function defineCompensationBenefitsParitySuite(
 			ready,
 		);
 		expect(employee.ok, resultFailureMessage(employee)).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const employment = await createEmployment(
 			{
@@ -416,7 +458,9 @@ function defineCompensationBenefitsParitySuite(
 			ready,
 		);
 		expect(employment.ok, resultFailureMessage(employment)).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const initial = await createEmployeeCompensation(
 			{
@@ -435,7 +479,9 @@ function defineCompensationBenefitsParitySuite(
 			ready,
 		);
 		expect(initial.ok, resultFailureMessage(initial)).toBe(true);
-		if (!initial.ok) return;
+		if (!initial.ok) {
+			return;
+		}
 		const active = await approveEmployeeCompensation(
 			{
 				organizationId: ORG,
@@ -447,7 +493,9 @@ function defineCompensationBenefitsParitySuite(
 			ready,
 		);
 		expect(active.ok, resultFailureMessage(active)).toBe(true);
-		if (!active.ok) return;
+		if (!active.ok) {
+			return;
+		}
 
 		const scheduled = await scheduleEmployeeCompensationChange(
 			{
@@ -465,7 +513,9 @@ function defineCompensationBenefitsParitySuite(
 			ready,
 		);
 		expect(scheduled.ok, resultFailureMessage(scheduled)).toBe(true);
-		if (!scheduled.ok) return;
+		if (!scheduled.ok) {
+			return;
+		}
 		expect(scheduled.data.status).toBe("scheduled");
 		expect(scheduled.data.supersedesCompensationId).toBe(active.data.id);
 		vi.setSystemTime(new Date("2026-02-02T12:00:00.000Z"));
@@ -481,7 +531,9 @@ function defineCompensationBenefitsParitySuite(
 			ready,
 		);
 		expect(activated.ok, resultFailureMessage(activated)).toBe(true);
-		if (!activated.ok) return;
+		if (!activated.ok) {
+			return;
+		}
 		expect(activated.data.status).toBe("active");
 
 		const corrected = await correctEmployeeCompensation(
@@ -501,7 +553,9 @@ function defineCompensationBenefitsParitySuite(
 			ready,
 		);
 		expect(corrected.ok, resultFailureMessage(corrected)).toBe(true);
-		if (!corrected.ok) return;
+		if (!corrected.ok) {
+			return;
+		}
 		expect(corrected.data.status).toBe("active");
 		expect(corrected.data.baseAmount).toBe("76000.0000");
 		expect(corrected.data.supersedesCompensationId).toBe(activated.data.id);
@@ -525,7 +579,9 @@ function defineCompensationBenefitsParitySuite(
 			ready,
 		);
 		expect(employee.ok, resultFailureMessage(employee)).toBe(true);
-		if (!employee.ok) return;
+		if (!employee.ok) {
+			return;
+		}
 
 		const employment = await createEmployment(
 			{
@@ -538,7 +594,9 @@ function defineCompensationBenefitsParitySuite(
 			ready,
 		);
 		expect(employment.ok, resultFailureMessage(employment)).toBe(true);
-		if (!employment.ok) return;
+		if (!employment.ok) {
+			return;
+		}
 
 		const cycle = await seedOpenCompensationReviewCycle({
 			organizationId: ORG,
@@ -560,7 +618,9 @@ function defineCompensationBenefitsParitySuite(
 			ready,
 		);
 		expect(draft.ok, resultFailureMessage(draft)).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 		expect(draft.data.status).toBe("draft");
 		expect(draft.data.cycleId).toBe(cycle.id);
 
@@ -578,7 +638,9 @@ function defineCompensationBenefitsParitySuite(
 			ready,
 		);
 		expect(recommended.ok, resultFailureMessage(recommended)).toBe(true);
-		if (!recommended.ok) return;
+		if (!recommended.ok) {
+			return;
+		}
 		expect(recommended.data.status).toBe("recorded");
 
 		const finalized = await finalizeCompensationReview(
@@ -592,7 +654,9 @@ function defineCompensationBenefitsParitySuite(
 			ready,
 		);
 		expect(finalized.ok, resultFailureMessage(finalized)).toBe(true);
-		if (!finalized.ok) return;
+		if (!finalized.ok) {
+			return;
+		}
 		expect(finalized.data.status).toBe("finalized");
 
 		const applied = await applyApprovedCompensationResult(
@@ -607,7 +671,9 @@ function defineCompensationBenefitsParitySuite(
 			ready,
 		);
 		expect(applied.ok, resultFailureMessage(applied)).toBe(true);
-		if (!applied.ok) return;
+		if (!applied.ok) {
+			return;
+		}
 		expect(applied.data.baseAmount).toBe("88000");
 
 		const review = await getCompensationReview(
@@ -620,7 +686,9 @@ function defineCompensationBenefitsParitySuite(
 			ready,
 		);
 		expect(review.ok, resultFailureMessage(review)).toBe(true);
-		if (!review.ok) return;
+		if (!review.ok) {
+			return;
+		}
 		expect(review.data?.appliedCompensationId).toBe(applied.data.id);
 	});
 }

@@ -22,24 +22,24 @@ const retentionClassifications = new Set<string>(
 	HUMAN_RESOURCES_RETENTION_CLASSIFICATIONS,
 );
 
-export type HumanResourcesPrivacyDeletionRequest = {
-	organizationId: string;
+export interface HumanResourcesPrivacyDeletionRequest {
 	actorUserId: string;
-	correlationId: string;
-	subjectEmployeeId: HumanResourcesEmployeeId;
-	requestedAt: string;
-	legalBasis: string;
 	classifications: HumanResourcesDeletionDecisionInput["classifications"];
-};
+	correlationId: string;
+	legalBasis: string;
+	organizationId: string;
+	requestedAt: string;
+	subjectEmployeeId: HumanResourcesEmployeeId;
+}
 
-export type HumanResourcesPrivacyDeletionCompositionDeps = {
-	privacy?: HumanResourcesPrivacyPort;
+export interface HumanResourcesPrivacyDeletionCompositionDeps {
 	audit?: Pick<AuditRecorder, "record">;
+	privacy?: HumanResourcesPrivacyPort;
 	resolveProcessorBoundary?: (input: {
 		organizationId: string;
 		correlationId: string;
 	}) => Promise<Result<HumanResourcesPrivacyProcessorBoundary>>;
-};
+}
 
 function isRetentionClassification(
 	value: string,
@@ -136,7 +136,9 @@ function createDeletionPort(
 					evidenceHash: evidence.evidenceHash,
 				},
 			});
-			if (!recorded.ok) return recorded;
+			if (!recorded.ok) {
+				return recorded;
+			}
 			if (recorded.data.organizationId !== evidence.organizationId) {
 				return fail(
 					"INTERNAL_ERROR",
@@ -166,7 +168,9 @@ function createDeletionPort(
 				legalBasis: request.legalBasis,
 				classifications,
 			});
-			if (!executed.ok) return executed;
+			if (!executed.ok) {
+				return executed;
+			}
 			return ok({
 				affectedRecordCount: executed.data.anonymizedRecordCount,
 				executionReference: `privacy://organizations/${request.organizationId}/deletion-executions/${encodeURIComponent(input.decisionId)}`,
@@ -200,14 +204,18 @@ async function evaluateWithComposition(
 		requestedAt: request.requestedAt,
 		legalBasis: request.legalBasis,
 	});
-	if (!privacyCase.ok) return privacyCase;
+	if (!privacyCase.ok) {
+		return privacyCase;
+	}
 	if (privacyCase.data.organizationId !== request.organizationId) {
 		return fail("FORBIDDEN", "Privacy case crossed the tenant boundary");
 	}
 	const activeLegalHolds = activeLegalHoldsFromCase(
 		privacyCase.data.activeLegalHolds,
 	);
-	if (!activeLegalHolds.ok) return activeLegalHolds;
+	if (!activeLegalHolds.ok) {
+		return activeLegalHolds;
+	}
 	const port = createDeletionPort(request, privacy, audit, boundaryResolver);
 	const decision = await decideHumanResourcesSubjectDeletion(
 		{
@@ -216,7 +224,9 @@ async function evaluateWithComposition(
 		},
 		port,
 	);
-	if (!decision.ok) return decision;
+	if (!decision.ok) {
+		return decision;
+	}
 	return ok({ decision: decision.data, port });
 }
 
@@ -239,11 +249,15 @@ export async function executeApprovedHumanResourcesPrivacyDeletion(
 	}>
 > {
 	const evaluated = await evaluateWithComposition(request, deps);
-	if (!evaluated.ok) return evaluated;
+	if (!evaluated.ok) {
+		return evaluated;
+	}
 	const executed = await executeHumanResourcesDeletionDecision(
 		evaluated.data.decision,
 		evaluated.data.port,
 	);
-	if (!executed.ok) return executed;
+	if (!executed.ok) {
+		return executed;
+	}
 	return ok({ decision: evaluated.data.decision, ...executed.data });
 }

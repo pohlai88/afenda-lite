@@ -366,7 +366,9 @@ describe("HR Learning Server Actions", () => {
 		});
 
 		expect(result.ok).toBe(false);
-		if (result.ok) return;
+		if (result.ok) {
+			return;
+		}
 		expect(result.code).toBe("VALIDATION_ERROR");
 		expect(hrLearningMocks.issueCertification).not.toHaveBeenCalled();
 	});
@@ -467,3 +469,4 @@ describe("HR Learning Server Actions", () => {
 		);
 	});
 });
+// biome-ignore-all lint/performance/noAwaitInLoops: Cases run serially to isolate mutable test state and ordered transitions.

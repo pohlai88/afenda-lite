@@ -10,18 +10,18 @@ export const APPLICATION_STATUS_CHANGE_KINDS = ["create", "lifecycle"] as const;
 export type ApplicationStatusChangeKind =
 	(typeof APPLICATION_STATUS_CHANGE_KINDS)[number];
 
-export type ApplicationStatusHistory = {
-	id: string;
-	organizationId: string;
+export interface ApplicationStatusHistory {
+	actorUserId: string;
 	applicationId: HumanResourcesApplicationId;
 	candidateId: HumanResourcesCandidateId;
-	requisitionId: HumanResourcesRequisitionId;
-	fromStatus: ApplicationStatus | null;
-	toStatus: ApplicationStatus;
 	changeKind: ApplicationStatusChangeKind;
+	correlationId: string;
+	createdAt: Date;
+	fromStatus: ApplicationStatus | null;
+	id: string;
+	organizationId: string;
 	reason: string | null;
 	reasonCode: string | null;
-	correlationId: string;
-	actorUserId: string;
-	createdAt: Date;
-};
+	requisitionId: HumanResourcesRequisitionId;
+	toStatus: ApplicationStatus;
+}

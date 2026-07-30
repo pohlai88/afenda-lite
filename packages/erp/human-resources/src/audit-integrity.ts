@@ -9,29 +9,29 @@ const AUDIT_INTEGRITY_DOMAIN =
 const SHA256_HEX_PATTERN = /^[a-f0-9]{64}$/;
 const GENESIS_DIGEST = "0".repeat(64);
 
-export type HumanResourcesAuditIntegrityRecord = {
+export interface HumanResourcesAuditIntegrityRecord {
 	auditId: string;
 	fact: Readonly<AuditFactInput>;
-};
+}
 
-export type HumanResourcesAuditIntegritySealEntry = {
+export interface HumanResourcesAuditIntegritySealEntry {
 	auditId: string;
-	previousDigest: string;
 	digest: string;
-};
+	previousDigest: string;
+}
 
 /**
  * The seal must be retained outside the mutable audit-record store. Verification
  * can only detect changes when its trusted anchor is independently preserved.
  */
-export type HumanResourcesAuditIntegritySeal = {
-	version: typeof AUDIT_INTEGRITY_VERSION;
+export interface HumanResourcesAuditIntegritySeal {
 	algorithm: typeof AUDIT_INTEGRITY_ALGORITHM;
-	organizationId: string;
-	entryCount: number;
 	entries: readonly HumanResourcesAuditIntegritySealEntry[];
+	entryCount: number;
+	organizationId: string;
 	rootDigest: string;
-};
+	version: typeof AUDIT_INTEGRITY_VERSION;
+}
 
 export type HumanResourcesAuditIntegrityFailureReason =
 	| "entry_count_mismatch"
@@ -63,9 +63,15 @@ function serializeJsonPrimitive(value: string | number): string {
 }
 
 function canonicalJson(value: unknown, ancestors = new Set<object>()): string {
-	if (value === null) return "null";
-	if (typeof value === "string") return serializeJsonPrimitive(value);
-	if (typeof value === "boolean") return value ? "true" : "false";
+	if (value === null) {
+		return "null";
+	}
+	if (typeof value === "string") {
+		return serializeJsonPrimitive(value);
+	}
+	if (typeof value === "boolean") {
+		return value ? "true" : "false";
+	}
 	if (typeof value === "number") {
 		if (!Number.isFinite(value)) {
 			throw new TypeError("Audit integrity numbers must be finite");
@@ -162,7 +168,7 @@ function assertSealableRecords(
 }
 
 function digestMatches(left: string, right: string): boolean {
-	if (!SHA256_HEX_PATTERN.test(left) || !SHA256_HEX_PATTERN.test(right)) {
+	if (!(SHA256_HEX_PATTERN.test(left) && SHA256_HEX_PATTERN.test(right))) {
 		return false;
 	}
 	return timingSafeEqual(Buffer.from(left, "hex"), Buffer.from(right, "hex"));

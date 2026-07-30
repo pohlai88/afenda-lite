@@ -32,7 +32,7 @@ function grantingAuthorization(
 ): HumanResourcesAuthorizationPort {
 	return {
 		async can(input) {
-			return permissions.has(input.permission);
+			return await permissions.has(input.permission);
 		},
 	};
 }

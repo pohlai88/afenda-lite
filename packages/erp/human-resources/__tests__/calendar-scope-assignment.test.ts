@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-
 import { createEmployee } from "../src/core/employee";
 import { createEmployment } from "../src/core/employment";
 import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/permissions";
@@ -14,6 +13,7 @@ import {
 	resolveEmployeeWorkCalendar,
 } from "../src/time/calendar";
 import { createTestHumanResourcesCommandOptions } from "./helpers/command-options";
+import { helperAssert as assert } from "./helpers/helper-assert";
 import { createStoreBackedIdentityResolver } from "./helpers/identity-resolver";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
@@ -60,8 +60,10 @@ async function seedEmployeeEmployment(
 		},
 		ready,
 	);
-	expect(employee.ok).toBe(true);
-	if (!employee.ok) throw new Error("employee seed failed");
+	assert.strictEqual(employee.ok, true);
+	if (!employee.ok) {
+		throw new Error("employee seed failed");
+	}
 	const employment = await createEmployment(
 		{
 			organizationId: ORG,
@@ -72,8 +74,10 @@ async function seedEmployeeEmployment(
 		},
 		ready,
 	);
-	expect(employment.ok).toBe(true);
-	if (!employment.ok) throw new Error("employment seed failed");
+	assert.strictEqual(employment.ok, true);
+	if (!employment.ok) {
+		throw new Error("employment seed failed");
+	}
 	return { employee: employee.data, employment: employment.data };
 }
 
@@ -94,8 +98,10 @@ async function seedCalendar(ready: ReturnType<typeof harness>, suffix: string) {
 		},
 		ready,
 	);
-	expect(calendar.ok).toBe(true);
-	if (!calendar.ok) throw new Error("calendar seed failed");
+	assert.strictEqual(calendar.ok, true);
+	if (!calendar.ok) {
+		throw new Error("calendar seed failed");
+	}
 	return calendar.data;
 }
 
@@ -149,7 +155,9 @@ describe("calendar-scope-assignment (memory)", () => {
 			ready,
 		);
 		expect(resolved.ok).toBe(true);
-		if (!resolved.ok) return;
+		if (!resolved.ok) {
+			return;
+		}
 		expect(resolved.data.calendarId).toBe(employeeCalendar.id);
 	});
 
@@ -201,7 +209,9 @@ describe("calendar-scope-assignment (memory)", () => {
 			ready,
 		);
 		expect(resolved.ok).toBe(true);
-		if (!resolved.ok) return;
+		if (!resolved.ok) {
+			return;
+		}
 		expect(resolved.data.calendarId).toBe(employmentCalendar.id);
 	});
 

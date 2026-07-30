@@ -21,12 +21,12 @@ import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 
 const initialState: CreateItemActionState = null;
 
-type CreateItemFormProps = {
-	canManage: boolean;
-	itemTypes: readonly string[];
+interface CreateItemFormProps {
 	baseUomId: string;
+	canManage: boolean;
 	itemGroups: Array<{ id: string; label: string }>;
-};
+	itemTypes: readonly string[];
+}
 
 export function CreateItemForm({
 	canManage,
@@ -72,15 +72,15 @@ export function CreateItemForm({
 			{showFormError && state?.ok === false ? (
 				<FormError>{state.message}</FormError>
 			) : null}
-			<input type="hidden" name="baseUomId" value={baseUomId} />
-			<FormField label="Code" required fieldId="item-code" error={codeError}>
-				<Input name="code" required autoComplete="off" disabled={pending} />
+			<input name="baseUomId" type="hidden" value={baseUomId} />
+			<FormField error={codeError} fieldId="item-code" label="Code" required>
+				<Input autoComplete="off" disabled={pending} name="code" required />
 			</FormField>
-			<FormField label="Name" required fieldId="item-name" error={nameError}>
-				<Input name="name" required autoComplete="off" disabled={pending} />
+			<FormField error={nameError} fieldId="item-name" label="Name" required>
+				<Input autoComplete="off" disabled={pending} name="name" required />
 			</FormField>
-			<FormField label="Type" required fieldId="item-type">
-				<NativeSelect name="itemType" required disabled={pending}>
+			<FormField fieldId="item-type" label="Type" required>
+				<NativeSelect disabled={pending} name="itemType" required>
 					{itemTypes.map((type) => (
 						<option key={type} value={type}>
 							{type}
@@ -88,8 +88,8 @@ export function CreateItemForm({
 					))}
 				</NativeSelect>
 			</FormField>
-			<FormField label="Item group" required fieldId="item-group">
-				<NativeSelect name="itemGroupId" required disabled={pending}>
+			<FormField fieldId="item-group" label="Item group" required>
+				<NativeSelect disabled={pending} name="itemGroupId" required>
 					<option value="">Select group</option>
 					{itemGroups.map((group) => (
 						<option key={group.id} value={group.id}>
@@ -98,7 +98,7 @@ export function CreateItemForm({
 					))}
 				</NativeSelect>
 			</FormField>
-			<Button type="submit" disabled={pending || itemGroups.length === 0}>
+			<Button disabled={pending || itemGroups.length === 0} type="submit">
 				{pending ? <Spinner /> : null}
 				Create item
 			</Button>

@@ -12,15 +12,15 @@ import type {
 } from "../../types";
 
 export interface PartyContactProjection {
-	id: PartyContactId;
-	organizationId: OrganizationId;
-	partyId: PartyId;
 	contactKind: PartyContactType;
+	id: PartyContactId;
+	isPrimary: boolean;
 	label: string | null;
 	maskedValue: string;
-	isPrimary: boolean;
-	verificationStatus: PartyContactVerificationStatus;
+	organizationId: OrganizationId;
+	partyId: PartyId;
 	status: StandardChildLifecycleStatus;
+	verificationStatus: PartyContactVerificationStatus;
 	version: number;
 }
 

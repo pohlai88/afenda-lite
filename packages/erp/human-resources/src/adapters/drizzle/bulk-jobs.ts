@@ -55,8 +55,9 @@ function mapExport(
 		return fail("INTERNAL_ERROR", "Bulk export job status is invalid");
 	}
 	const fields = fieldsSchema.safeParse(row.requestedFields);
-	if (!fields.success)
+	if (!fields.success) {
 		return fail("INTERNAL_ERROR", "Bulk export fields are invalid");
+	}
 	return ok({
 		...row,
 		exportType: row.exportType as HumanResourcesBulkExportJob["exportType"],
@@ -381,7 +382,9 @@ export function createDrizzleHumanResourcesBulkJobStore(): HumanResourcesBulkJob
 		},
 		async loadExportArtifact(input) {
 			const job = await this.getExportJob(input);
-			if (!job.ok || !job.data) return job.ok ? ok(null) : job;
+			if (!(job.ok && job.data)) {
+				return job.ok ? ok(null) : job;
+			}
 			try {
 				const chunks = await db
 					.select()

@@ -25,58 +25,61 @@ import { resolveTalentProfileResourceForEmployee } from "./talent-resource";
 
 type ActorScoped = HumanResourcesAuthorizedActorInput;
 
-type CommandDeps = {
-	store: HumanResourcesStore;
+interface CommandDeps {
 	ports: MutationPorts;
-};
-
-type QueryDeps = {
 	store: HumanResourcesStore;
+}
+
+interface QueryDeps {
 	authorization: HumanResourcesAuthorizationPort | undefined;
 	identityResolver:
 		| import("../identity-resolver").HumanResourcesIdentityResolverPort
 		| undefined;
-};
+	store: HumanResourcesStore;
+}
 
-type TalentCommandRunnerConfig<TSchema extends z.ZodType<ActorScoped>, TOut> = {
-	schema: TSchema;
+interface TalentCommandRunnerConfig<
+	TSchema extends z.ZodType<ActorScoped>,
+	TOut,
+> {
+	execute: (data: z.infer<TSchema>, deps: CommandDeps) => Promise<Result<TOut>>;
 	invalidMessage: string;
+	resolveRequestedFields?:
+		| ((input: z.infer<TSchema>) => readonly string[] | undefined)
+		| undefined;
 	resolveResource?:
 		| ((
 				input: z.infer<TSchema>,
 				options: HumanResourcesCommandOptions,
 		  ) => Promise<HumanResourcesResourceContext | undefined>)
 		| undefined;
-	resolveRequestedFields?:
-		| ((input: z.infer<TSchema>) => readonly string[] | undefined)
-		| undefined;
-	execute: (data: z.infer<TSchema>, deps: CommandDeps) => Promise<Result<TOut>>;
-};
+	schema: TSchema;
+}
 
-type TalentQueryRunnerConfig<
+interface TalentQueryRunnerConfig<
 	TSchema extends z.ZodType<ActorScoped>,
 	TOut,
 	TProjected = TOut,
-> = {
-	schema: TSchema;
+> {
+	execute: (data: z.infer<TSchema>, deps: QueryDeps) => Promise<Result<TOut>>;
 	invalidMessage: string;
-	resolveResource?:
-		| ((
-				input: z.infer<TSchema>,
-				options: HumanResourcesCommandOptions,
-		  ) => Promise<HumanResourcesResourceContext | undefined>)
-		| undefined;
-	resolveRequestedFields?:
-		| ((input: z.infer<TSchema>) => readonly string[] | undefined)
-		| undefined;
 	project?:
 		| ((
 				value: TOut,
 				projection: HumanResourcesFieldProjection | undefined,
 		  ) => TProjected)
 		| undefined;
-	execute: (data: z.infer<TSchema>, deps: QueryDeps) => Promise<Result<TOut>>;
-};
+	resolveRequestedFields?:
+		| ((input: z.infer<TSchema>) => readonly string[] | undefined)
+		| undefined;
+	resolveResource?:
+		| ((
+				input: z.infer<TSchema>,
+				options: HumanResourcesCommandOptions,
+		  ) => Promise<HumanResourcesResourceContext | undefined>)
+		| undefined;
+	schema: TSchema;
+}
 
 /**
  * Shared authorize → parse → execute path for talent mutations.
@@ -91,7 +94,7 @@ export async function runTalentCommand<
 		command: HumanResourcesCommandId;
 	},
 ): Promise<Result<TOut>> {
-	return runParsedAuthorizedCommand(input, options, {
+	return await runParsedAuthorizedCommand(input, options, {
 		schema: config.schema,
 		invalidMessage: config.invalidMessage,
 		command: config.command,
@@ -116,7 +119,7 @@ export async function runTalentQuery<
 		query: HumanResourcesQueryId;
 	},
 ): Promise<Result<TProjected>> {
-	return runParsedAuthorizedQuery<TSchema, QueryDeps, TOut, TProjected>(
+	return await runParsedAuthorizedQuery<TSchema, QueryDeps, TOut, TProjected>(
 		input,
 		options,
 		{
@@ -148,7 +151,7 @@ export async function runTalentEmployeeScopedQuery<
 		query: HumanResourcesQueryId;
 	},
 ): Promise<Result<TProjected>> {
-	return runTalentQuery(input, options, {
+	return await runTalentQuery(input, options, {
 		...config,
 		resolveResource: async (data, opts) =>
 			resolveTalentProfileResourceForEmployee(

@@ -125,7 +125,9 @@ async function seedEmployeeEmployment(ready: ReturnType<typeof harness>) {
 		},
 		seedReady,
 	);
-	if (!employee.ok) return employee;
+	if (!employee.ok) {
+		return employee;
+	}
 
 	const mapped = await mapActorToEmployee(ready.store, {
 		organizationId: ORG,
@@ -134,7 +136,9 @@ async function seedEmployeeEmployment(ready: ReturnType<typeof harness>) {
 		actorUserId: ACTOR,
 		effectiveFrom: "2025-01-01",
 	});
-	if (!mapped.ok) return mapped;
+	if (!mapped.ok) {
+		return mapped;
+	}
 
 	const employment = await createEmployment(
 		{
@@ -146,7 +150,9 @@ async function seedEmployeeEmployment(ready: ReturnType<typeof harness>) {
 		},
 		seedReady,
 	);
-	if (!employment.ok) return employment;
+	if (!employment.ok) {
+		return employment;
+	}
 
 	return {
 		ok: true as const,
@@ -197,7 +203,9 @@ async function seedPublishedPolicy(
 		},
 		policyReady,
 	);
-	if (!created.ok) return created;
+	if (!created.ok) {
+		return created;
+	}
 
 	const published = await publishLeavePolicy(
 		{
@@ -238,7 +246,9 @@ async function seedManagerEmployee(
 		},
 		seedReady,
 	);
-	if (!manager.ok) return manager;
+	if (!manager.ok) {
+		return manager;
+	}
 
 	const mapped = await mapActorToEmployee(ready.store, {
 		organizationId: ORG,
@@ -247,7 +257,9 @@ async function seedManagerEmployee(
 		actorUserId: ACTOR,
 		effectiveFrom: "2025-01-01",
 	});
-	if (!mapped.ok) return mapped;
+	if (!mapped.ok) {
+		return mapped;
+	}
 
 	return manager;
 }
@@ -262,7 +274,9 @@ async function seedManagerWithReportingLine(
 	},
 ) {
 	const manager = await seedManagerEmployee(ready, options);
-	if (!manager.ok) return manager;
+	if (!manager.ok) {
+		return manager;
+	}
 
 	const assigned = await assignPrimaryReportingLine(
 		{
@@ -282,7 +296,9 @@ async function seedManagerWithReportingLine(
 			]),
 		},
 	);
-	if (!assigned.ok) return assigned;
+	if (!assigned.ok) {
+		return assigned;
+	}
 
 	return manager;
 }
@@ -296,7 +312,9 @@ async function seedLeaveRequestWorkflowFixture(
 	},
 ) {
 	const seeded = await seedEmployeeEmployment(ready);
-	if (!seeded.ok) return seeded;
+	if (!seeded.ok) {
+		return seeded;
+	}
 
 	if (options?.withManagerLine !== false) {
 		const manager = await seedManagerWithReportingLine(
@@ -308,7 +326,9 @@ async function seedLeaveRequestWorkflowFixture(
 				employeeNumber: "E-MGR-S73",
 			},
 		);
-		if (!manager.ok) return manager;
+		if (!manager.ok) {
+			return manager;
+		}
 	}
 
 	const policyReady = {
@@ -334,7 +354,9 @@ async function seedLeaveRequestWorkflowFixture(
 		},
 		policyReady,
 	);
-	if (!created.ok) return created;
+	if (!created.ok) {
+		return created;
+	}
 
 	const published = await publishLeavePolicy(
 		{
@@ -346,7 +368,9 @@ async function seedLeaveRequestWorkflowFixture(
 		},
 		policyReady,
 	);
-	if (!published.ok) return published;
+	if (!published.ok) {
+		return published;
+	}
 
 	const granted = await grantLeaveEntitlement(
 		{
@@ -363,7 +387,9 @@ async function seedLeaveRequestWorkflowFixture(
 		},
 		ready,
 	);
-	if (!granted.ok) return granted;
+	if (!granted.ok) {
+		return granted;
+	}
 
 	return {
 		ok: true as const,
@@ -379,7 +405,9 @@ async function seedApprovedLeaveHandoffFixture(
 	key: string,
 ) {
 	const seeded = await seedEmployeeEmployment(ready);
-	if (!seeded.ok) return seeded;
+	if (!seeded.ok) {
+		return seeded;
+	}
 
 	const manager = await seedManagerWithReportingLine(
 		ready,
@@ -390,10 +418,14 @@ async function seedApprovedLeaveHandoffFixture(
 			employeeNumber: `E-MGR-${key}`,
 		},
 	);
-	if (!manager.ok) return manager;
+	if (!manager.ok) {
+		return manager;
+	}
 
 	const policy = await seedPublishedPolicy(ready);
-	if (!policy.ok) return policy;
+	if (!policy.ok) {
+		return policy;
+	}
 
 	const granted = await grantLeaveEntitlement(
 		{
@@ -410,7 +442,9 @@ async function seedApprovedLeaveHandoffFixture(
 		},
 		ready,
 	);
-	if (!granted.ok) return granted;
+	if (!granted.ok) {
+		return granted;
+	}
 
 	const draft = await createDraftLeaveRequest(
 		{
@@ -426,7 +460,9 @@ async function seedApprovedLeaveHandoffFixture(
 		},
 		ready,
 	);
-	if (!draft.ok) return draft;
+	if (!draft.ok) {
+		return draft;
+	}
 
 	const submitted = await submitLeaveRequest(
 		{
@@ -438,7 +474,9 @@ async function seedApprovedLeaveHandoffFixture(
 		},
 		ready,
 	);
-	if (!submitted.ok) return submitted;
+	if (!submitted.ok) {
+		return submitted;
+	}
 
 	const approved = await approveLeaveRequest(
 		{
@@ -450,7 +488,9 @@ async function seedApprovedLeaveHandoffFixture(
 		},
 		ready,
 	);
-	if (!approved.ok) return approved;
+	if (!approved.ok) {
+		return approved;
+	}
 
 	return {
 		ok: true as const,
@@ -483,7 +523,9 @@ describe("Leave policy lifecycle", () => {
 			ready,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 		expect(created.data.status).toBe("draft");
 
 		const updated = await updateLeavePolicy(
@@ -498,7 +540,9 @@ describe("Leave policy lifecycle", () => {
 			ready,
 		);
 		expect(updated.ok).toBe(true);
-		if (!updated.ok) return;
+		if (!updated.ok) {
+			return;
+		}
 
 		const published = await publishLeavePolicy(
 			{
@@ -511,7 +555,9 @@ describe("Leave policy lifecycle", () => {
 			ready,
 		);
 		expect(published.ok).toBe(true);
-		if (!published.ok) return;
+		if (!published.ok) {
+			return;
+		}
 		expect(published.data.status).toBe("published");
 
 		const archived = await archiveLeavePolicy(
@@ -525,7 +571,9 @@ describe("Leave policy lifecycle", () => {
 			ready,
 		);
 		expect(archived.ok).toBe(true);
-		if (!archived.ok) return;
+		if (!archived.ok) {
+			return;
+		}
 		expect(archived.data.status).toBe("archived");
 	});
 });
@@ -540,11 +588,15 @@ describe("Leave entitlement", () => {
 		]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const policy = await seedPublishedPolicy(ready);
 		expect(policy.ok).toBe(true);
-		if (!policy.ok) return;
+		if (!policy.ok) {
+			return;
+		}
 
 		const granted = await grantLeaveEntitlement(
 			{
@@ -562,7 +614,9 @@ describe("Leave entitlement", () => {
 			ready,
 		);
 		expect(granted.ok).toBe(true);
-		if (!granted.ok) return;
+		if (!granted.ok) {
+			return;
+		}
 
 		const adjusted = await adjustLeaveEntitlement(
 			{
@@ -577,7 +631,9 @@ describe("Leave entitlement", () => {
 			ready,
 		);
 		expect(adjusted.ok).toBe(true);
-		if (!adjusted.ok) return;
+		if (!adjusted.ok) {
+			return;
+		}
 
 		const balance = await getLeaveBalance(
 			{
@@ -589,7 +645,9 @@ describe("Leave entitlement", () => {
 			ready,
 		);
 		expect(balance.ok).toBe(true);
-		if (!balance.ok) return;
+		if (!balance.ok) {
+			return;
+		}
 		expect(balance.data?.balance).toBe("12");
 	});
 
@@ -602,14 +660,18 @@ describe("Leave entitlement", () => {
 		]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 		const policy = await seedPublishedPolicy(ready, {
 			accrualBasis: "periodic",
 			accrualFrequency: "monthly",
 			accrualQuantityPerPeriod: "1.5",
 		});
 		expect(policy.ok).toBe(true);
-		if (!policy.ok) return;
+		if (!policy.ok) {
+			return;
+		}
 		const granted = await grantLeaveEntitlement(
 			{
 				organizationId: ORG,
@@ -626,7 +688,9 @@ describe("Leave entitlement", () => {
 			ready,
 		);
 		expect(granted.ok).toBe(true);
-		if (!granted.ok) return;
+		if (!granted.ok) {
+			return;
+		}
 		const accrualInput = {
 			organizationId: ORG,
 			actorUserId: ACTOR,
@@ -642,7 +706,9 @@ describe("Leave entitlement", () => {
 		const repeated = await accrueLeaveEntitlement(accrualInput, ready);
 		expect(accrued.ok).toBe(true);
 		expect(repeated.ok).toBe(true);
-		if (!accrued.ok || !repeated.ok) return;
+		if (!(accrued.ok && repeated.ok)) {
+			return;
+		}
 		expect(repeated.data.id).toBe(accrued.data.id);
 		expect(accrued.data.kind).toBe("accrual");
 		expect(accrued.data.source).toBe("accrual:2025-01-01:2025-01-31");
@@ -656,7 +722,9 @@ describe("Leave entitlement", () => {
 			ready,
 		);
 		expect(balance.ok).toBe(true);
-		if (!balance.ok) return;
+		if (!balance.ok) {
+			return;
+		}
 		expect(balance.data?.balance).toBe("11.5");
 		const reconciliation = await reconcileLeaveBalance(
 			{
@@ -668,7 +736,9 @@ describe("Leave entitlement", () => {
 			ready,
 		);
 		expect(reconciliation.ok).toBe(true);
-		if (!reconciliation.ok) return;
+		if (!reconciliation.ok) {
+			return;
+		}
 		expect(reconciliation.data).toMatchObject({
 			openingQuantity: "10",
 			adjustmentCount: 1,
@@ -697,7 +767,9 @@ describe("Leave request workflow", () => {
 		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const manager = await seedManagerWithReportingLine(
 			ready,
@@ -709,11 +781,15 @@ describe("Leave request workflow", () => {
 			},
 		);
 		expect(manager.ok).toBe(true);
-		if (!manager.ok) return;
+		if (!manager.ok) {
+			return;
+		}
 
 		const policy = await seedPublishedPolicy(ready);
 		expect(policy.ok).toBe(true);
-		if (!policy.ok) return;
+		if (!policy.ok) {
+			return;
+		}
 
 		const granted = await grantLeaveEntitlement(
 			{
@@ -731,7 +807,9 @@ describe("Leave request workflow", () => {
 			ready,
 		);
 		expect(granted.ok).toBe(true);
-		if (!granted.ok) return;
+		if (!granted.ok) {
+			return;
+		}
 
 		const draft = await createDraftLeaveRequest(
 			{
@@ -748,7 +826,9 @@ describe("Leave request workflow", () => {
 			ready,
 		);
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 
 		const submitted = await submitLeaveRequest(
 			{
@@ -761,7 +841,9 @@ describe("Leave request workflow", () => {
 			ready,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 		expect(
 			ready.ports.outbox.calls.some(
 				(e) => e.type === HUMAN_RESOURCES_LEAVE_REQUESTED_EVENT,
@@ -779,7 +861,9 @@ describe("Leave request workflow", () => {
 			ready,
 		);
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 		expect(
 			ready.ports.outbox.calls.some(
 				(e) => e.type === HUMAN_RESOURCES_LEAVE_APPROVED_EVENT,
@@ -796,7 +880,9 @@ describe("Leave request workflow", () => {
 			ready,
 		);
 		expect(balance.ok).toBe(true);
-		if (!balance.ok) return;
+		if (!balance.ok) {
+			return;
+		}
 		expect(balance.data?.balance).toBe("2");
 	});
 
@@ -808,11 +894,15 @@ describe("Leave request workflow", () => {
 		]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const policy = await seedPublishedPolicy(ready);
 		expect(policy.ok).toBe(true);
-		if (!policy.ok) return;
+		if (!policy.ok) {
+			return;
+		}
 
 		const granted = await grantLeaveEntitlement(
 			{
@@ -830,7 +920,9 @@ describe("Leave request workflow", () => {
 			ready,
 		);
 		expect(granted.ok).toBe(true);
-		if (!granted.ok) return;
+		if (!granted.ok) {
+			return;
+		}
 
 		const first = await createDraftLeaveRequest(
 			{
@@ -847,7 +939,9 @@ describe("Leave request workflow", () => {
 			ready,
 		);
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 
 		const firstSubmitted = await submitLeaveRequest(
 			{
@@ -860,7 +954,9 @@ describe("Leave request workflow", () => {
 			ready,
 		);
 		expect(firstSubmitted.ok).toBe(true);
-		if (!firstSubmitted.ok) return;
+		if (!firstSubmitted.ok) {
+			return;
+		}
 
 		const second = await createDraftLeaveRequest(
 			{
@@ -877,7 +973,9 @@ describe("Leave request workflow", () => {
 			ready,
 		);
 		expect(second.ok).toBe(true);
-		if (!second.ok) return;
+		if (!second.ok) {
+			return;
+		}
 
 		const secondSubmitted = await submitLeaveRequest(
 			{
@@ -907,7 +1005,9 @@ describe("Leave request workflow", () => {
 		]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const manager = await seedManagerWithReportingLine(
 			ready,
@@ -918,11 +1018,15 @@ describe("Leave request workflow", () => {
 			},
 		);
 		expect(manager.ok).toBe(true);
-		if (!manager.ok) return;
+		if (!manager.ok) {
+			return;
+		}
 
 		const policy = await seedPublishedPolicy(ready);
 		expect(policy.ok).toBe(true);
-		if (!policy.ok) return;
+		if (!policy.ok) {
+			return;
+		}
 
 		const granted = await grantLeaveEntitlement(
 			{
@@ -940,7 +1044,9 @@ describe("Leave request workflow", () => {
 			ready,
 		);
 		expect(granted.ok).toBe(true);
-		if (!granted.ok) return;
+		if (!granted.ok) {
+			return;
+		}
 
 		const submitted = await createDraftLeaveRequest(
 			{
@@ -957,7 +1063,9 @@ describe("Leave request workflow", () => {
 			ready,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 
 		const submittedRequest = await submitLeaveRequest(
 			{
@@ -970,7 +1078,9 @@ describe("Leave request workflow", () => {
 			ready,
 		);
 		expect(submittedRequest.ok).toBe(true);
-		if (!submittedRequest.ok) return;
+		if (!submittedRequest.ok) {
+			return;
+		}
 
 		const overlappingDraft = await createDraftLeaveRequest(
 			{
@@ -987,7 +1097,9 @@ describe("Leave request workflow", () => {
 			ready,
 		);
 		expect(overlappingDraft.ok).toBe(true);
-		if (!overlappingDraft.ok) return;
+		if (!overlappingDraft.ok) {
+			return;
+		}
 
 		const approved = await approveLeaveRequest(
 			{
@@ -1013,11 +1125,15 @@ describe("Leave request workflow", () => {
 		]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const policy = await seedPublishedPolicy(ready);
 		expect(policy.ok).toBe(true);
-		if (!policy.ok) return;
+		if (!policy.ok) {
+			return;
+		}
 
 		const granted = await grantLeaveEntitlement(
 			{
@@ -1035,7 +1151,9 @@ describe("Leave request workflow", () => {
 			ready,
 		);
 		expect(granted.ok).toBe(true);
-		if (!granted.ok) return;
+		if (!granted.ok) {
+			return;
+		}
 
 		const first = await createDraftLeaveRequest(
 			{
@@ -1052,7 +1170,9 @@ describe("Leave request workflow", () => {
 			ready,
 		);
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 
 		const firstSubmitted = await submitLeaveRequest(
 			{
@@ -1065,7 +1185,9 @@ describe("Leave request workflow", () => {
 			ready,
 		);
 		expect(firstSubmitted.ok).toBe(true);
-		if (!firstSubmitted.ok) return;
+		if (!firstSubmitted.ok) {
+			return;
+		}
 
 		const second = await createDraftLeaveRequest(
 			{
@@ -1082,7 +1204,9 @@ describe("Leave request workflow", () => {
 			ready,
 		);
 		expect(second.ok).toBe(true);
-		if (!second.ok) return;
+		if (!second.ok) {
+			return;
+		}
 
 		const secondSubmitted = await submitLeaveRequest(
 			{
@@ -1101,7 +1225,9 @@ describe("Leave request workflow", () => {
 		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const manager = await seedManagerWithReportingLine(
 			ready,
@@ -1112,11 +1238,15 @@ describe("Leave request workflow", () => {
 			},
 		);
 		expect(manager.ok).toBe(true);
-		if (!manager.ok) return;
+		if (!manager.ok) {
+			return;
+		}
 
 		const policy = await seedPublishedPolicy(ready);
 		expect(policy.ok).toBe(true);
-		if (!policy.ok) return;
+		if (!policy.ok) {
+			return;
+		}
 
 		const granted = await grantLeaveEntitlement(
 			{
@@ -1134,7 +1264,9 @@ describe("Leave request workflow", () => {
 			ready,
 		);
 		expect(granted.ok).toBe(true);
-		if (!granted.ok) return;
+		if (!granted.ok) {
+			return;
+		}
 
 		const first = await createDraftLeaveRequest(
 			{
@@ -1151,7 +1283,9 @@ describe("Leave request workflow", () => {
 			ready,
 		);
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 
 		const firstSubmitted = await submitLeaveRequest(
 			{
@@ -1164,7 +1298,9 @@ describe("Leave request workflow", () => {
 			ready,
 		);
 		expect(firstSubmitted.ok).toBe(true);
-		if (!firstSubmitted.ok) return;
+		if (!firstSubmitted.ok) {
+			return;
+		}
 
 		const approved = await approveLeaveRequest(
 			{
@@ -1177,7 +1313,9 @@ describe("Leave request workflow", () => {
 			ready,
 		);
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 
 		const second = await createDraftLeaveRequest(
 			{
@@ -1194,7 +1332,9 @@ describe("Leave request workflow", () => {
 			ready,
 		);
 		expect(second.ok).toBe(true);
-		if (!second.ok) return;
+		if (!second.ok) {
+			return;
+		}
 
 		const secondSubmitted = await submitLeaveRequest(
 			{
@@ -1222,11 +1362,15 @@ describe("Leave request workflow", () => {
 		]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const policy = await seedPublishedPolicy(ready);
 		expect(policy.ok).toBe(true);
-		if (!policy.ok) return;
+		if (!policy.ok) {
+			return;
+		}
 
 		const granted = await grantLeaveEntitlement(
 			{
@@ -1244,7 +1388,9 @@ describe("Leave request workflow", () => {
 			ready,
 		);
 		expect(granted.ok).toBe(true);
-		if (!granted.ok) return;
+		if (!granted.ok) {
+			return;
+		}
 
 		const draft = await createDraftLeaveRequest(
 			{
@@ -1261,7 +1407,9 @@ describe("Leave request workflow", () => {
 			ready,
 		);
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 
 		const submitted = await submitLeaveRequest(
 			{
@@ -1274,7 +1422,9 @@ describe("Leave request workflow", () => {
 			ready,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 
 		const selfApproved = await approveLeaveRequest(
 			{
@@ -1296,7 +1446,9 @@ describe("Leave request workflow", () => {
 		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const manager = await seedManagerWithReportingLine(
 			ready,
@@ -1308,7 +1460,9 @@ describe("Leave request workflow", () => {
 			},
 		);
 		expect(manager.ok).toBe(true);
-		if (!manager.ok) return;
+		if (!manager.ok) {
+			return;
+		}
 
 		const policyReady = {
 			...ready,
@@ -1333,7 +1487,9 @@ describe("Leave request workflow", () => {
 			policyReady,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 		const published = await publishLeavePolicy(
 			{
 				organizationId: ORG,
@@ -1345,7 +1501,9 @@ describe("Leave request workflow", () => {
 			policyReady,
 		);
 		expect(published.ok).toBe(true);
-		if (!published.ok) return;
+		if (!published.ok) {
+			return;
+		}
 
 		const granted = await grantLeaveEntitlement(
 			{
@@ -1363,7 +1521,9 @@ describe("Leave request workflow", () => {
 			ready,
 		);
 		expect(granted.ok).toBe(true);
-		if (!granted.ok) return;
+		if (!granted.ok) {
+			return;
+		}
 
 		const draft = await createDraftLeaveRequest(
 			{
@@ -1380,7 +1540,9 @@ describe("Leave request workflow", () => {
 			ready,
 		);
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 
 		const submitted = await submitLeaveRequest(
 			{
@@ -1393,7 +1555,9 @@ describe("Leave request workflow", () => {
 			ready,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 
 		const approved = await approveLeaveRequest(
 			{
@@ -1406,7 +1570,9 @@ describe("Leave request workflow", () => {
 			ready,
 		);
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 
 		const cancelled = await cancelApprovedLeaveRequest(
 			{
@@ -1419,7 +1585,9 @@ describe("Leave request workflow", () => {
 			ready,
 		);
 		expect(cancelled.ok).toBe(true);
-		if (!cancelled.ok) return;
+		if (!cancelled.ok) {
+			return;
+		}
 		expect(cancelled.data.status).toBe("cancelled");
 		expect(
 			ready.ports.outbox.calls.some(
@@ -1437,7 +1605,9 @@ describe("Leave request workflow", () => {
 			ready,
 		);
 		expect(balance.ok).toBe(true);
-		if (!balance.ok) return;
+		if (!balance.ok) {
+			return;
+		}
 		expect(balance.data?.balance).toBe("5");
 	});
 
@@ -1449,11 +1619,15 @@ describe("Leave request workflow", () => {
 		]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const policy = await seedPublishedPolicy(ready);
 		expect(policy.ok).toBe(true);
-		if (!policy.ok) return;
+		if (!policy.ok) {
+			return;
+		}
 
 		const granted = await grantLeaveEntitlement(
 			{
@@ -1471,7 +1645,9 @@ describe("Leave request workflow", () => {
 			ready,
 		);
 		expect(granted.ok).toBe(true);
-		if (!granted.ok) return;
+		if (!granted.ok) {
+			return;
+		}
 
 		const draft = await createDraftLeaveRequest(
 			{
@@ -1488,7 +1664,9 @@ describe("Leave request workflow", () => {
 			ready,
 		);
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 
 		const submitted = await submitLeaveRequest(
 			{
@@ -1514,11 +1692,15 @@ describe("Leave request workflow", () => {
 		]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const policy = await seedPublishedPolicy(ready);
 		expect(policy.ok).toBe(true);
-		if (!policy.ok) return;
+		if (!policy.ok) {
+			return;
+		}
 
 		const granted = await grantLeaveEntitlement(
 			{
@@ -1536,7 +1718,9 @@ describe("Leave request workflow", () => {
 			ready,
 		);
 		expect(granted.ok).toBe(true);
-		if (!granted.ok) return;
+		if (!granted.ok) {
+			return;
+		}
 
 		const draft = await createDraftLeaveRequest(
 			{
@@ -1553,14 +1737,18 @@ describe("Leave request workflow", () => {
 			ready,
 		);
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 
 		const segments = await ready.store.listLeaveRequestSegments({
 			organizationId: ORG,
 			requestId: draft.data.id,
 		});
 		expect(segments.ok).toBe(true);
-		if (!segments.ok) return;
+		if (!segments.ok) {
+			return;
+		}
 		expect(segments.data).toHaveLength(2);
 		expect(segments.data.map((segment) => segment.segmentDate)).toEqual([
 			"2025-06-06",
@@ -1574,7 +1762,9 @@ describe("Slice 7.3 leave request workflow", () => {
 		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
 		const fixture = await seedLeaveRequestWorkflowFixture(ready);
 		expect(fixture.ok).toBe(true);
-		if (!fixture.ok) return;
+		if (!fixture.ok) {
+			return;
+		}
 
 		const draft = await createDraftLeaveRequest(
 			{
@@ -1591,7 +1781,9 @@ describe("Slice 7.3 leave request workflow", () => {
 			ready,
 		);
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 		expect(draft.data.status).toBe("draft");
 
 		const submitted = await submitLeaveRequest(
@@ -1605,7 +1797,9 @@ describe("Slice 7.3 leave request workflow", () => {
 			ready,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 		expect(submitted.data.status).toBe("submitted");
 	});
 
@@ -1613,7 +1807,9 @@ describe("Slice 7.3 leave request workflow", () => {
 		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
 		const fixture = await seedLeaveRequestWorkflowFixture(ready);
 		expect(fixture.ok).toBe(true);
-		if (!fixture.ok) return;
+		if (!fixture.ok) {
+			return;
+		}
 
 		const draft = await createDraftLeaveRequest(
 			{
@@ -1630,7 +1826,9 @@ describe("Slice 7.3 leave request workflow", () => {
 			ready,
 		);
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 
 		const amended = await amendLeaveRequest(
 			{
@@ -1646,7 +1844,9 @@ describe("Slice 7.3 leave request workflow", () => {
 			ready,
 		);
 		expect(amended.ok).toBe(true);
-		if (!amended.ok) return;
+		if (!amended.ok) {
+			return;
+		}
 		expect(amended.data.status).toBe("draft");
 		expect(amended.data.startDate).toBe("2025-11-17");
 		expect(amended.data.requestedQuantity).toBe("2");
@@ -1656,7 +1856,9 @@ describe("Slice 7.3 leave request workflow", () => {
 		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
 		const fixture = await seedLeaveRequestWorkflowFixture(ready);
 		expect(fixture.ok).toBe(true);
-		if (!fixture.ok) return;
+		if (!fixture.ok) {
+			return;
+		}
 
 		const draft = await createDraftLeaveRequest(
 			{
@@ -1673,7 +1875,9 @@ describe("Slice 7.3 leave request workflow", () => {
 			ready,
 		);
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 
 		const submitted = await submitLeaveRequest(
 			{
@@ -1686,7 +1890,9 @@ describe("Slice 7.3 leave request workflow", () => {
 			ready,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 
 		const denied = await amendLeaveRequest(
 			{
@@ -1711,7 +1917,9 @@ describe("Slice 7.3 leave request workflow", () => {
 		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
 		const fixture = await seedLeaveRequestWorkflowFixture(ready);
 		expect(fixture.ok).toBe(true);
-		if (!fixture.ok) return;
+		if (!fixture.ok) {
+			return;
+		}
 
 		const draft = await createDraftLeaveRequest(
 			{
@@ -1728,7 +1936,9 @@ describe("Slice 7.3 leave request workflow", () => {
 			ready,
 		);
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 
 		const submitted = await submitLeaveRequest(
 			{
@@ -1741,7 +1951,9 @@ describe("Slice 7.3 leave request workflow", () => {
 			ready,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 
 		const rejected = await rejectLeaveRequest(
 			{
@@ -1755,7 +1967,9 @@ describe("Slice 7.3 leave request workflow", () => {
 			ready,
 		);
 		expect(rejected.ok).toBe(true);
-		if (!rejected.ok) return;
+		if (!rejected.ok) {
+			return;
+		}
 		expect(rejected.data.status).toBe("rejected");
 	});
 
@@ -1763,7 +1977,9 @@ describe("Slice 7.3 leave request workflow", () => {
 		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
 		const fixture = await seedLeaveRequestWorkflowFixture(ready);
 		expect(fixture.ok).toBe(true);
-		if (!fixture.ok) return;
+		if (!fixture.ok) {
+			return;
+		}
 
 		const otherManager = await seedManagerEmployee(ready, {
 			correlationId: "corr-s73-other-mgr",
@@ -1771,7 +1987,9 @@ describe("Slice 7.3 leave request workflow", () => {
 			employeeNumber: "E-MGR-OTHER",
 		});
 		expect(otherManager.ok).toBe(true);
-		if (!otherManager.ok) return;
+		if (!otherManager.ok) {
+			return;
+		}
 
 		const otherMapped = await mapActorToEmployee(ready.store, {
 			organizationId: ORG,
@@ -1781,7 +1999,9 @@ describe("Slice 7.3 leave request workflow", () => {
 			effectiveFrom: "2025-01-01",
 		});
 		expect(otherMapped.ok).toBe(true);
-		if (!otherMapped.ok) return;
+		if (!otherMapped.ok) {
+			return;
+		}
 
 		const draft = await createDraftLeaveRequest(
 			{
@@ -1798,7 +2018,9 @@ describe("Slice 7.3 leave request workflow", () => {
 			ready,
 		);
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 
 		const submitted = await submitLeaveRequest(
 			{
@@ -1811,7 +2033,9 @@ describe("Slice 7.3 leave request workflow", () => {
 			ready,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 
 		const denied = await rejectLeaveRequest(
 			{
@@ -1836,7 +2060,9 @@ describe("Slice 7.3 leave request workflow", () => {
 			withManagerLine: false,
 		});
 		expect(fixture.ok).toBe(true);
-		if (!fixture.ok) return;
+		if (!fixture.ok) {
+			return;
+		}
 
 		const draft = await createDraftLeaveRequest(
 			{
@@ -1853,7 +2079,9 @@ describe("Slice 7.3 leave request workflow", () => {
 			ready,
 		);
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 
 		const submitted = await submitLeaveRequest(
 			{
@@ -1866,7 +2094,9 @@ describe("Slice 7.3 leave request workflow", () => {
 			ready,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 
 		const approved = await approveLeaveRequest(
 			{
@@ -1879,7 +2109,9 @@ describe("Slice 7.3 leave request workflow", () => {
 			ready,
 		);
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 		expect(approved.data.status).toBe("approved");
 	});
 
@@ -1887,7 +2119,9 @@ describe("Slice 7.3 leave request workflow", () => {
 		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
 		const fixture = await seedLeaveRequestWorkflowFixture(ready);
 		expect(fixture.ok).toBe(true);
-		if (!fixture.ok) return;
+		if (!fixture.ok) {
+			return;
+		}
 
 		const draft = await createDraftLeaveRequest(
 			{
@@ -1904,7 +2138,9 @@ describe("Slice 7.3 leave request workflow", () => {
 			ready,
 		);
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 
 		const denied = await amendLeaveRequest(
 			{
@@ -1946,7 +2182,9 @@ describe("Slice 7.3 leave request workflow", () => {
 		};
 		const fixture = await seedLeaveRequestWorkflowFixture(backdateOnlyReady);
 		expect(fixture.ok).toBe(true);
-		if (!fixture.ok) return;
+		if (!fixture.ok) {
+			return;
+		}
 
 		const draft = await createDraftLeaveRequest(
 			{
@@ -1963,7 +2201,9 @@ describe("Slice 7.3 leave request workflow", () => {
 			backdateOnlyReady,
 		);
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 
 		const submitted = await submitLeaveRequest(
 			{
@@ -1976,7 +2216,9 @@ describe("Slice 7.3 leave request workflow", () => {
 			backdateOnlyReady,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 
 		const approveReady = {
 			...backdateOnlyReady,
@@ -1996,7 +2238,9 @@ describe("Slice 7.3 leave request workflow", () => {
 			approveReady,
 		);
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 
 		const cancelled = await cancelApprovedLeaveRequest(
 			{
@@ -2009,7 +2253,9 @@ describe("Slice 7.3 leave request workflow", () => {
 			backdateOnlyReady,
 		);
 		expect(cancelled.ok).toBe(true);
-		if (!cancelled.ok) return;
+		if (!cancelled.ok) {
+			return;
+		}
 		expect(cancelled.data.status).toBe("cancelled");
 	});
 });
@@ -2019,11 +2265,15 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const policy = await seedPublishedPolicy(ready);
 		expect(policy.ok).toBe(true);
-		if (!policy.ok) return;
+		if (!policy.ok) {
+			return;
+		}
 
 		const resolved = await resolveApplicableLeavePolicy(
 			{
@@ -2038,7 +2288,9 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 			ready,
 		);
 		expect(resolved.ok).toBe(true);
-		if (!resolved.ok) return;
+		if (!resolved.ok) {
+			return;
+		}
 		expect(resolved.data?.policy.id).toBe(policy.data.id);
 		expect(resolved.data?.policy.status).toBe("published");
 	});
@@ -2047,11 +2299,15 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const manager = await seedManagerEmployee(ready);
 		expect(manager.ok).toBe(true);
-		if (!manager.ok) return;
+		if (!manager.ok) {
+			return;
+		}
 
 		const assigned = await assignPrimaryReportingLine(
 			{
@@ -2065,11 +2321,15 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 			ready,
 		);
 		expect(assigned.ok).toBe(true);
-		if (!assigned.ok) return;
+		if (!assigned.ok) {
+			return;
+		}
 
 		const policy = await seedPublishedPolicy(ready);
 		expect(policy.ok).toBe(true);
-		if (!policy.ok) return;
+		if (!policy.ok) {
+			return;
+		}
 
 		const granted = await grantLeaveEntitlement(
 			{
@@ -2087,7 +2347,9 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 			ready,
 		);
 		expect(granted.ok).toBe(true);
-		if (!granted.ok) return;
+		if (!granted.ok) {
+			return;
+		}
 
 		const draft = await createDraftLeaveRequest(
 			{
@@ -2104,7 +2366,9 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 			ready,
 		);
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 
 		const submitted = await submitLeaveRequest(
 			{
@@ -2117,7 +2381,9 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 			ready,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 
 		const returned = await returnLeaveRequest(
 			{
@@ -2131,7 +2397,9 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 			ready,
 		);
 		expect(returned.ok).toBe(true);
-		if (!returned.ok) return;
+		if (!returned.ok) {
+			return;
+		}
 		expect(returned.data.status).toBe("returned");
 
 		const amended = await amendLeaveRequest(
@@ -2148,7 +2416,9 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 			ready,
 		);
 		expect(amended.ok).toBe(true);
-		if (!amended.ok) return;
+		if (!amended.ok) {
+			return;
+		}
 		expect(amended.data.startDate).toBe("2025-09-08");
 		expect(amended.data.requestedQuantity).toBe("2");
 
@@ -2157,7 +2427,9 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 			requestId: amended.data.id,
 		});
 		expect(segments.ok).toBe(true);
-		if (!segments.ok) return;
+		if (!segments.ok) {
+			return;
+		}
 		expect(segments.data).toHaveLength(2);
 	});
 
@@ -2165,11 +2437,15 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const manager = await seedManagerEmployee(ready);
 		expect(manager.ok).toBe(true);
-		if (!manager.ok) return;
+		if (!manager.ok) {
+			return;
+		}
 
 		const assigned = await assignPrimaryReportingLine(
 			{
@@ -2183,11 +2459,15 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 			ready,
 		);
 		expect(assigned.ok).toBe(true);
-		if (!assigned.ok) return;
+		if (!assigned.ok) {
+			return;
+		}
 
 		const policy = await seedPublishedPolicy(ready);
 		expect(policy.ok).toBe(true);
-		if (!policy.ok) return;
+		if (!policy.ok) {
+			return;
+		}
 
 		const granted = await grantLeaveEntitlement(
 			{
@@ -2205,7 +2485,9 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 			ready,
 		);
 		expect(granted.ok).toBe(true);
-		if (!granted.ok) return;
+		if (!granted.ok) {
+			return;
+		}
 
 		const draft = await createDraftLeaveRequest(
 			{
@@ -2222,7 +2504,9 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 			ready,
 		);
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 
 		const submitted = await submitLeaveRequest(
 			{
@@ -2235,7 +2519,9 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 			ready,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 
 		// Non-manager actor cannot approve even with approve-team permission.
 		const outsider = await approveLeaveRequest(
@@ -2278,7 +2564,9 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 			ready,
 		);
 		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		if (!approved.ok) {
+			return;
+		}
 		expect(approved.data.status).toBe("approved");
 	});
 
@@ -2289,7 +2577,9 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 			"handoff-perm",
 		);
 		expect(fixture.ok).toBe(true);
-		if (!fixture.ok) return;
+		if (!fixture.ok) {
+			return;
+		}
 
 		const approveTeamOnlyReady = {
 			...ready,
@@ -2307,7 +2597,9 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 			approveTeamOnlyReady,
 		);
 		expect(denied.ok).toBe(false);
-		if (denied.ok) return;
+		if (denied.ok) {
+			return;
+		}
 		expect(humanResourcesCodeFromResult(denied)).toBe(
 			HUMAN_RESOURCES_ERROR_FORBIDDEN,
 		);
@@ -2328,7 +2620,9 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 			handoffReadOnlyReady,
 		);
 		expect(allowed.ok).toBe(true);
-		if (!allowed.ok) return;
+		if (!allowed.ok) {
+			return;
+		}
 		expect(allowed.data).not.toBeNull();
 	});
 
@@ -2339,7 +2633,9 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 			"handoff-shape",
 		);
 		expect(fixture.ok).toBe(true);
-		if (!fixture.ok) return;
+		if (!fixture.ok) {
+			return;
+		}
 
 		const handoff = await getApprovedLeaveHandoff(
 			{
@@ -2351,9 +2647,13 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 			ready,
 		);
 		expect(handoff.ok).toBe(true);
-		if (!handoff.ok) return;
+		if (!handoff.ok) {
+			return;
+		}
 		expect(handoff.data).not.toBeNull();
-		if (!handoff.data) return;
+		if (!handoff.data) {
+			return;
+		}
 		expect(handoff.data.employmentId).toBe(fixture.seeded.employment.id);
 		expect(handoff.data.policyVersion).toBe(fixture.policy.version);
 		expect(handoff.data.paid).toBe(true);
@@ -2366,7 +2666,9 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const policyReady = {
 			...ready,
@@ -2391,7 +2693,9 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 			policyReady,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 		const published = await publishLeavePolicy(
 			{
 				organizationId: ORG,
@@ -2403,7 +2707,9 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 			policyReady,
 		);
 		expect(published.ok).toBe(true);
-		if (!published.ok) return;
+		if (!published.ok) {
+			return;
+		}
 
 		const granted = await grantLeaveEntitlement(
 			{
@@ -2421,7 +2727,9 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 			ready,
 		);
 		expect(granted.ok).toBe(true);
-		if (!granted.ok) return;
+		if (!granted.ok) {
+			return;
+		}
 
 		const draft = await createDraftLeaveRequest(
 			{
@@ -2438,7 +2746,9 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 			ready,
 		);
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 
 		const denied = await getLeaveRequest(
 			{
@@ -2481,11 +2791,15 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const policy = await seedPublishedPolicy(ready);
 		expect(policy.ok).toBe(true);
-		if (!policy.ok) return;
+		if (!policy.ok) {
+			return;
+		}
 
 		const granted = await grantLeaveEntitlement(
 			{
@@ -2503,7 +2817,9 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 			ready,
 		);
 		expect(granted.ok).toBe(true);
-		if (!granted.ok) return;
+		if (!granted.ok) {
+			return;
+		}
 
 		const denied = await createDraftLeaveRequest(
 			{
@@ -2547,7 +2863,9 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 			},
 		);
 		expect(allowed.ok).toBe(true);
-		if (!allowed.ok) return;
+		if (!allowed.ok) {
+			return;
+		}
 		expect(allowed.data.isBackdated).toBe(true);
 	});
 
@@ -2555,7 +2873,9 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const manager = await seedManagerWithReportingLine(
 			ready,
@@ -2567,11 +2887,15 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 			},
 		);
 		expect(manager.ok).toBe(true);
-		if (!manager.ok) return;
+		if (!manager.ok) {
+			return;
+		}
 
 		const policy = await seedPublishedPolicy(ready);
 		expect(policy.ok).toBe(true);
-		if (!policy.ok) return;
+		if (!policy.ok) {
+			return;
+		}
 
 		const granted = await grantLeaveEntitlement(
 			{
@@ -2589,7 +2913,9 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 			ready,
 		);
 		expect(granted.ok).toBe(true);
-		if (!granted.ok) return;
+		if (!granted.ok) {
+			return;
+		}
 
 		const draft = await createDraftLeaveRequest(
 			{
@@ -2606,7 +2932,9 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 			ready,
 		);
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 
 		const submitted = await submitLeaveRequest(
 			{
@@ -2619,7 +2947,9 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 			ready,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 
 		const stale = await approveLeaveRequest(
 			{
@@ -2641,11 +2971,15 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const policy = await seedPublishedPolicy(ready);
 		expect(policy.ok).toBe(true);
-		if (!policy.ok) return;
+		if (!policy.ok) {
+			return;
+		}
 
 		const granted = await grantLeaveEntitlement(
 			{
@@ -2663,7 +2997,9 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 			ready,
 		);
 		expect(granted.ok).toBe(true);
-		if (!granted.ok) return;
+		if (!granted.ok) {
+			return;
+		}
 
 		const payload = {
 			organizationId: ORG,
@@ -2683,7 +3019,9 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 		);
 		expect(first.ok).toBe(true);
 		expect(second.ok).toBe(true);
-		if (!first.ok || !second.ok) return;
+		if (!(first.ok && second.ok)) {
+			return;
+		}
 		expect(second.data.id).toBe(first.data.id);
 	});
 
@@ -2691,11 +3029,15 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const policy = await seedPublishedPolicy(ready);
 		expect(policy.ok).toBe(true);
-		if (!policy.ok) return;
+		if (!policy.ok) {
+			return;
+		}
 
 		const granted = await grantLeaveEntitlement(
 			{
@@ -2713,7 +3055,9 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 			ready,
 		);
 		expect(granted.ok).toBe(true);
-		if (!granted.ok) return;
+		if (!granted.ok) {
+			return;
+		}
 
 		const draft = await createDraftLeaveRequest(
 			{
@@ -2731,14 +3075,18 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 			ready,
 		);
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 
 		const segments = await ready.store.listLeaveRequestSegments({
 			organizationId: ORG,
 			requestId: draft.data.id,
 		});
 		expect(segments.ok).toBe(true);
-		if (!segments.ok) return;
+		if (!segments.ok) {
+			return;
+		}
 		expect(segments.data).toHaveLength(1);
 		expect(segments.data[0]?.dayPortion).toBe("morning");
 		expect(segments.data[0]?.quantity).toBe("0.5");
@@ -2748,11 +3096,15 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		if (!seeded.ok) {
+			return;
+		}
 
 		const policy = await seedPublishedPolicy(ready);
 		expect(policy.ok).toBe(true);
-		if (!policy.ok) return;
+		if (!policy.ok) {
+			return;
+		}
 
 		const granted = await grantLeaveEntitlement(
 			{
@@ -2770,7 +3122,9 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 			ready,
 		);
 		expect(granted.ok).toBe(true);
-		if (!granted.ok) return;
+		if (!granted.ok) {
+			return;
+		}
 
 		const draft = await createDraftLeaveRequest(
 			{
@@ -2787,7 +3141,9 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 			ready,
 		);
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 
 		const submitted = await submitLeaveRequest(
 			{
@@ -2800,7 +3156,9 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 			ready,
 		);
 		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
+		if (!submitted.ok) {
+			return;
+		}
 
 		const withdrawn = await withdrawLeaveRequest(
 			{
@@ -2813,7 +3171,9 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 			ready,
 		);
 		expect(withdrawn.ok).toBe(true);
-		if (!withdrawn.ok) return;
+		if (!withdrawn.ok) {
+			return;
+		}
 		expect(withdrawn.data.status).toBe("withdrawn");
 	});
 });

@@ -1,4 +1,5 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { fail, ok, type Result } from "@afenda/errors/result";
+import type { z } from "zod";
 
 import {
 	requireReceivablesCommandPermission,
@@ -23,6 +24,8 @@ import {
 	RECEIVABLES_QUERY_INVOICE_LIST,
 } from "./module-ids";
 import { parseReceivablesInput } from "./parse-input";
+import type { InvoiceableDelivery, InvoiceableSalesOrder } from "./ports";
+import { collectSequentially } from "./resolve-async";
 import {
 	addSalesInvoiceLineInputSchema,
 	applyCustomerReceiptInputSchema,
@@ -40,6 +43,7 @@ import {
 } from "./schemas";
 import { normalizeReceivablesCode } from "./shared/code";
 import { decimal, format, subtract } from "./shared/money";
+import type { ReceivablesStore } from "./store";
 import type {
 	CustomerAging,
 	CustomerAllocation,
@@ -48,6 +52,173 @@ import type {
 	SalesInvoice,
 	SalesInvoiceLine,
 } from "./types";
+
+type CommandDeps = ReturnType<typeof resolveCommandDeps>;
+type CreateDraftInput = z.infer<typeof createDraftSalesInvoiceInputSchema>;
+type PostInvoiceInput = z.infer<typeof postSalesInvoiceInputSchema>;
+type SourceLineCheck = NonNullable<
+	Parameters<ReceivablesStore["postInvoice"]>[0]["sourceLineChecks"]
+>[number];
+
+async function validateDraftInvoiceSource(
+	input: CreateDraftInput,
+	deps: CommandDeps,
+): Promise<Result<void>> {
+	if (input.invoiceSource === "sales_order") {
+		if (deps.salesSource === undefined || input.salesOrderId === undefined) {
+			return fail("BAD_REQUEST", "Sales invoice source port is required");
+		}
+		const source = await deps.salesSource.getInvoiceableSalesOrder({
+			organizationId: input.organizationId,
+			salesOrderId: input.salesOrderId,
+			actorUserId: input.actorUserId,
+		});
+		if (!source.ok) {
+			return source;
+		}
+		return source.data === null
+			? fail("NOT_FOUND", "Invoiceable sales order not found")
+			: ok(undefined);
+	}
+	if (input.invoiceSource === "delivery") {
+		if (deps.deliverySource === undefined || input.deliveryId === undefined) {
+			return fail("BAD_REQUEST", "Delivery invoice source port is required");
+		}
+		const source = await deps.deliverySource.getInvoiceableDelivery({
+			organizationId: input.organizationId,
+			deliveryId: input.deliveryId,
+			actorUserId: input.actorUserId,
+		});
+		if (!source.ok) {
+			return source;
+		}
+		return source.data === null
+			? fail("NOT_FOUND", "Invoiceable delivery not found")
+			: ok(undefined);
+	}
+	return ok(undefined);
+}
+
+function collectSalesOrderLineChecks(
+	invoice: SalesInvoice,
+	input: PostInvoiceInput,
+	deps: CommandDeps,
+	source: InvoiceableSalesOrder,
+): Promise<Result<SourceLineCheck[]>> {
+	return collectSequentially(invoice.lines, async (line) => {
+		if (line.salesOrderLineId === null) {
+			return fail(
+				"CONFLICT",
+				"Sales-order invoice lines require salesOrderLineId",
+			);
+		}
+		const sourceLine = source.lines.find(
+			(row) => row.salesOrderLineId === line.salesOrderLineId,
+		);
+		if (sourceLine === undefined) {
+			return fail("CONFLICT", "Invoice line source is not invoiceable");
+		}
+		const posted = await deps.store.sumPostedQuantityForSourceLine({
+			organizationId: input.organizationId,
+			salesOrderLineId: line.salesOrderLineId,
+			excludeInvoiceId: invoice.id,
+		});
+		if (!posted.ok) {
+			return posted;
+		}
+		return ok({
+			salesOrderLineId: line.salesOrderLineId,
+			deliveryLineId: null,
+			quantity: line.quantity,
+			remainingInvoiceableQuantity: format(
+				decimal(sourceLine.authorizedQuantity) - decimal(posted.data),
+			),
+		});
+	});
+}
+
+function collectDeliveryLineChecks(
+	invoice: SalesInvoice,
+	input: PostInvoiceInput,
+	deps: CommandDeps,
+	source: InvoiceableDelivery,
+): Promise<Result<SourceLineCheck[]>> {
+	return collectSequentially(invoice.lines, async (line) => {
+		if (line.deliveryLineId === null) {
+			return fail("CONFLICT", "Delivery invoice lines require deliveryLineId");
+		}
+		const sourceLine = source.lines.find(
+			(row) => row.deliveryLineId === line.deliveryLineId,
+		);
+		if (sourceLine === undefined) {
+			return fail("CONFLICT", "Invoice line source is not invoiceable");
+		}
+		const posted = await deps.store.sumPostedQuantityForSourceLine({
+			organizationId: input.organizationId,
+			deliveryLineId: line.deliveryLineId,
+			excludeInvoiceId: invoice.id,
+		});
+		if (!posted.ok) {
+			return posted;
+		}
+		return ok({
+			salesOrderLineId: null,
+			deliveryLineId: line.deliveryLineId,
+			quantity: line.quantity,
+			remainingInvoiceableQuantity: format(
+				decimal(sourceLine.authorizedQuantity) - decimal(posted.data),
+			),
+		});
+	});
+}
+
+async function buildSourceLineChecks(
+	invoice: SalesInvoice,
+	input: PostInvoiceInput,
+	deps: CommandDeps,
+): Promise<Result<SourceLineCheck[]>> {
+	if (invoice.invoiceSource === "sales_order") {
+		if (deps.salesSource === undefined || invoice.salesOrderId === null) {
+			return fail(
+				"BAD_REQUEST",
+				"Sales invoice source port is required at post",
+			);
+		}
+		const source = await deps.salesSource.getInvoiceableSalesOrder({
+			organizationId: input.organizationId,
+			salesOrderId: invoice.salesOrderId,
+			actorUserId: input.actorUserId,
+		});
+		if (!source.ok) {
+			return source;
+		}
+		if (source.data === null) {
+			return fail("NOT_FOUND", "Invoiceable sales order not found");
+		}
+		return collectSalesOrderLineChecks(invoice, input, deps, source.data);
+	}
+	if (invoice.invoiceSource === "delivery") {
+		if (deps.deliverySource === undefined || invoice.deliveryId === null) {
+			return fail(
+				"BAD_REQUEST",
+				"Delivery invoice source port is required at post",
+			);
+		}
+		const source = await deps.deliverySource.getInvoiceableDelivery({
+			organizationId: input.organizationId,
+			deliveryId: invoice.deliveryId,
+			actorUserId: input.actorUserId,
+		});
+		if (!source.ok) {
+			return source;
+		}
+		if (source.data === null) {
+			return fail("NOT_FOUND", "Invoiceable delivery not found");
+		}
+		return collectDeliveryLineChecks(invoice, input, deps, source.data);
+	}
+	return ok([]);
+}
 
 export async function createDraftSalesInvoice(
 	input: unknown,
@@ -58,7 +229,9 @@ export async function createDraftSalesInvoice(
 		input,
 		"Invalid sales invoice create input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const deps = resolveCommandDeps(options);
 	const allowed = await requireReceivablesCommandPermission(
 		deps.authorization,
@@ -68,46 +241,13 @@ export async function createDraftSalesInvoice(
 			command: RECEIVABLES_COMMAND_INVOICE_CREATE,
 		},
 	);
-	if (!allowed.ok) return allowed;
-
-	if (parsed.data.invoiceSource === "sales_order") {
-		if (deps.salesSource === undefined) {
-			return fail("BAD_REQUEST", "Sales invoice source port is required");
-		}
-		const salesOrderId = parsed.data.salesOrderId;
-		if (salesOrderId === undefined) {
-			return fail(
-				"BAD_REQUEST",
-				"salesOrderId is required for sales_order source",
-			);
-		}
-		const source = await deps.salesSource.getInvoiceableSalesOrder({
-			organizationId: parsed.data.organizationId,
-			salesOrderId,
-			actorUserId: parsed.data.actorUserId,
-		});
-		if (!source.ok) return source;
-		if (source.data === null) {
-			return fail("NOT_FOUND", "Invoiceable sales order not found");
-		}
+	if (!allowed.ok) {
+		return allowed;
 	}
-	if (parsed.data.invoiceSource === "delivery") {
-		if (deps.deliverySource === undefined) {
-			return fail("BAD_REQUEST", "Delivery invoice source port is required");
-		}
-		const deliveryId = parsed.data.deliveryId;
-		if (deliveryId === undefined) {
-			return fail("BAD_REQUEST", "deliveryId is required for delivery source");
-		}
-		const source = await deps.deliverySource.getInvoiceableDelivery({
-			organizationId: parsed.data.organizationId,
-			deliveryId,
-			actorUserId: parsed.data.actorUserId,
-		});
-		if (!source.ok) return source;
-		if (source.data === null) {
-			return fail("NOT_FOUND", "Invoiceable delivery not found");
-		}
+
+	const sourceValidation = await validateDraftInvoiceSource(parsed.data, deps);
+	if (!sourceValidation.ok) {
+		return sourceValidation;
 	}
 
 	const created = await deps.store.createInvoice({
@@ -130,7 +270,9 @@ export async function createDraftSalesInvoice(
 		idempotencyKey: parsed.data.idempotencyKey,
 		actorUserId: parsed.data.actorUserId,
 	});
-	if (!created.ok) return created;
+	if (!created.ok) {
+		return created;
+	}
 	const emitted = await deps.effects.emit({
 		type: "receivables.invoice.created.v1",
 		organizationId: created.data.organizationId,
@@ -146,7 +288,9 @@ export async function createDraftSalesInvoice(
 			correlationId: parsed.data.correlationId,
 		},
 	});
-	if (!emitted.ok) return emitted;
+	if (!emitted.ok) {
+		return emitted;
+	}
 	return created;
 }
 
@@ -159,7 +303,9 @@ export async function addSalesInvoiceLine(
 		input,
 		"Invalid sales invoice line input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const deps = resolveCommandDeps(options);
 	const allowed = await requireReceivablesCommandPermission(
 		deps.authorization,
@@ -169,7 +315,9 @@ export async function addSalesInvoiceLine(
 			command: RECEIVABLES_COMMAND_INVOICE_LINE_ADD,
 		},
 	);
-	if (!allowed.ok) return allowed;
+	if (!allowed.ok) {
+		return allowed;
+	}
 	return deps.store.addLine({
 		organizationId: parsed.data.organizationId,
 		invoiceId: parsed.data.invoiceId,
@@ -195,7 +343,9 @@ export async function postSalesInvoice(
 		input,
 		"Invalid sales invoice post input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const deps = resolveCommandDeps(options);
 	const allowed = await requireReceivablesCommandPermission(
 		deps.authorization,
@@ -205,115 +355,28 @@ export async function postSalesInvoice(
 			command: RECEIVABLES_COMMAND_INVOICE_POST,
 		},
 	);
-	if (!allowed.ok) return allowed;
+	if (!allowed.ok) {
+		return allowed;
+	}
 
 	const invoice = await deps.store.getById(
 		parsed.data.organizationId,
 		parsed.data.invoiceId,
 	);
-	if (!invoice.ok) return invoice;
-	if (invoice.data === null)
+	if (!invoice.ok) {
+		return invoice;
+	}
+	if (invoice.data === null) {
 		return fail("NOT_FOUND", "Sales invoice not found");
-
-	const sourceLineChecks: Array<{
-		salesOrderLineId: string | null;
-		deliveryLineId: string | null;
-		quantity: string;
-		remainingInvoiceableQuantity: string;
-	}> = [];
-
-	if (invoice.data.invoiceSource === "sales_order") {
-		if (deps.salesSource === undefined || invoice.data.salesOrderId === null) {
-			return fail(
-				"BAD_REQUEST",
-				"Sales invoice source port is required at post",
-			);
-		}
-		const source = await deps.salesSource.getInvoiceableSalesOrder({
-			organizationId: parsed.data.organizationId,
-			salesOrderId: invoice.data.salesOrderId,
-			actorUserId: parsed.data.actorUserId,
-		});
-		if (!source.ok) return source;
-		if (source.data === null) {
-			return fail("NOT_FOUND", "Invoiceable sales order not found");
-		}
-		for (const line of invoice.data.lines) {
-			if (line.salesOrderLineId === null) {
-				return fail(
-					"CONFLICT",
-					"Sales-order invoice lines require salesOrderLineId",
-				);
-			}
-			const sourceLine = source.data.lines.find(
-				(row) => row.salesOrderLineId === line.salesOrderLineId,
-			);
-			if (sourceLine === undefined) {
-				return fail("CONFLICT", "Invoice line source is not invoiceable");
-			}
-			const posted = await deps.store.sumPostedQuantityForSourceLine({
-				organizationId: parsed.data.organizationId,
-				salesOrderLineId: line.salesOrderLineId,
-				excludeInvoiceId: invoice.data.id,
-			});
-			if (!posted.ok) return posted;
-			const remaining = format(
-				decimal(sourceLine.authorizedQuantity) - decimal(posted.data),
-			);
-			sourceLineChecks.push({
-				salesOrderLineId: line.salesOrderLineId,
-				deliveryLineId: null,
-				quantity: line.quantity,
-				remainingInvoiceableQuantity: remaining,
-			});
-		}
 	}
 
-	if (invoice.data.invoiceSource === "delivery") {
-		if (deps.deliverySource === undefined || invoice.data.deliveryId === null) {
-			return fail(
-				"BAD_REQUEST",
-				"Delivery invoice source port is required at post",
-			);
-		}
-		const source = await deps.deliverySource.getInvoiceableDelivery({
-			organizationId: parsed.data.organizationId,
-			deliveryId: invoice.data.deliveryId,
-			actorUserId: parsed.data.actorUserId,
-		});
-		if (!source.ok) return source;
-		if (source.data === null) {
-			return fail("NOT_FOUND", "Invoiceable delivery not found");
-		}
-		for (const line of invoice.data.lines) {
-			if (line.deliveryLineId === null) {
-				return fail(
-					"CONFLICT",
-					"Delivery invoice lines require deliveryLineId",
-				);
-			}
-			const sourceLine = source.data.lines.find(
-				(row) => row.deliveryLineId === line.deliveryLineId,
-			);
-			if (sourceLine === undefined) {
-				return fail("CONFLICT", "Invoice line source is not invoiceable");
-			}
-			const posted = await deps.store.sumPostedQuantityForSourceLine({
-				organizationId: parsed.data.organizationId,
-				deliveryLineId: line.deliveryLineId,
-				excludeInvoiceId: invoice.data.id,
-			});
-			if (!posted.ok) return posted;
-			const remaining = format(
-				decimal(sourceLine.authorizedQuantity) - decimal(posted.data),
-			);
-			sourceLineChecks.push({
-				salesOrderLineId: null,
-				deliveryLineId: line.deliveryLineId,
-				quantity: line.quantity,
-				remainingInvoiceableQuantity: remaining,
-			});
-		}
+	const sourceLineChecks = await buildSourceLineChecks(
+		invoice.data,
+		parsed.data,
+		deps,
+	);
+	if (!sourceLineChecks.ok) {
+		return sourceLineChecks;
 	}
 
 	return deps.store.postInvoice({
@@ -324,7 +387,7 @@ export async function postSalesInvoice(
 		actorUserId: parsed.data.actorUserId,
 		correlationId: parsed.data.correlationId,
 		effects: deps.effects,
-		sourceLineChecks,
+		sourceLineChecks: sourceLineChecks.data,
 	});
 }
 
@@ -337,7 +400,9 @@ export async function issueCreditNote(
 		input,
 		"Invalid credit note input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const deps = resolveCommandDeps(options);
 	const allowed = await requireReceivablesCommandPermission(
 		deps.authorization,
@@ -347,7 +412,9 @@ export async function issueCreditNote(
 			command: RECEIVABLES_COMMAND_CREDIT_NOTE_ISSUE,
 		},
 	);
-	if (!allowed.ok) return allowed;
+	if (!allowed.ok) {
+		return allowed;
+	}
 	return deps.store.issueCredit({
 		organizationId: parsed.data.organizationId,
 		code: parsed.data.code,
@@ -374,7 +441,9 @@ export async function applyCustomerReceipt(
 		input,
 		"Invalid customer receipt application input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const deps = resolveCommandDeps(options);
 	const allowed = await requireReceivablesCommandPermission(
 		deps.authorization,
@@ -384,7 +453,9 @@ export async function applyCustomerReceipt(
 			command: RECEIVABLES_COMMAND_RECEIPT_APPLY,
 		},
 	);
-	if (!allowed.ok) return allowed;
+	if (!allowed.ok) {
+		return allowed;
+	}
 
 	if (deps.paymentApplication !== undefined) {
 		const availability =
@@ -395,7 +466,9 @@ export async function applyCustomerReceipt(
 					parsed.data.paymentApplicationInstructionId,
 				actorUserId: parsed.data.actorUserId,
 			});
-		if (!availability.ok) return availability;
+		if (!availability.ok) {
+			return availability;
+		}
 		if (availability.data === null) {
 			return fail("NOT_FOUND", "Payment application instruction not found");
 		}
@@ -436,7 +509,9 @@ export async function reverseCustomerReceiptApplication(
 		input,
 		"Invalid customer receipt application reverse input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const deps = resolveCommandDeps(options);
 	const allowed = await requireReceivablesCommandPermission(
 		deps.authorization,
@@ -446,7 +521,9 @@ export async function reverseCustomerReceiptApplication(
 			command: RECEIVABLES_COMMAND_RECEIPT_APPLICATION_REVERSE,
 		},
 	);
-	if (!allowed.ok) return allowed;
+	if (!allowed.ok) {
+		return allowed;
+	}
 	return deps.store.reverseReceiptApplication({
 		organizationId: parsed.data.organizationId,
 		allocationId: parsed.data.allocationId,
@@ -466,7 +543,9 @@ export async function reverseCustomerAllocationsByPayment(
 		input,
 		"Invalid customer allocation reversal input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const deps = resolveCommandDeps(options);
 	const allowed = await requireReceivablesCommandPermission(
 		deps.authorization,
@@ -476,7 +555,9 @@ export async function reverseCustomerAllocationsByPayment(
 			command: RECEIVABLES_COMMAND_RECEIPT_APPLICATION_REVERSE,
 		},
 	);
-	if (!allowed.ok) return allowed;
+	if (!allowed.ok) {
+		return allowed;
+	}
 	return deps.store.reverseAllocationsByPayment({
 		organizationId: parsed.data.organizationId,
 		paymentId: parsed.data.paymentId,
@@ -496,7 +577,9 @@ export async function cancelDraftSalesInvoice(
 		input,
 		"Invalid sales invoice cancel input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const deps = resolveCommandDeps(options);
 	const allowed = await requireReceivablesCommandPermission(
 		deps.authorization,
@@ -506,7 +589,9 @@ export async function cancelDraftSalesInvoice(
 			command: RECEIVABLES_COMMAND_INVOICE_CANCEL,
 		},
 	);
-	if (!allowed.ok) return allowed;
+	if (!allowed.ok) {
+		return allowed;
+	}
 	return deps.store.cancelDraft({
 		organizationId: parsed.data.organizationId,
 		invoiceId: parsed.data.invoiceId,
@@ -527,7 +612,9 @@ export async function closeSalesInvoice(
 		input,
 		"Invalid sales invoice close input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const deps = resolveCommandDeps(options);
 	const allowed = await requireReceivablesCommandPermission(
 		deps.authorization,
@@ -537,7 +624,9 @@ export async function closeSalesInvoice(
 			command: RECEIVABLES_COMMAND_INVOICE_CLOSE,
 		},
 	);
-	if (!allowed.ok) return allowed;
+	if (!allowed.ok) {
+		return allowed;
+	}
 	return deps.store.closeInvoice({
 		organizationId: parsed.data.organizationId,
 		invoiceId: parsed.data.invoiceId,
@@ -558,14 +647,18 @@ export async function getSalesInvoiceById(
 		input,
 		"Invalid sales invoice get input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const deps = resolveCommandDeps(options);
 	const allowed = await requireReceivablesQueryPermission(deps.authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		query: RECEIVABLES_QUERY_INVOICE_GET,
 	});
-	if (!allowed.ok) return allowed;
+	if (!allowed.ok) {
+		return allowed;
+	}
 	return deps.store.getById(parsed.data.organizationId, parsed.data.id);
 }
 
@@ -578,14 +671,18 @@ export async function listSalesInvoices(
 		input,
 		"Invalid sales invoice list input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const deps = resolveCommandDeps(options);
 	const allowed = await requireReceivablesQueryPermission(deps.authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		query: RECEIVABLES_QUERY_INVOICE_LIST,
 	});
-	if (!allowed.ok) return allowed;
+	if (!allowed.ok) {
+		return allowed;
+	}
 	return deps.store.list(parsed.data);
 }
 
@@ -598,14 +695,18 @@ export async function getCustomerBalance(
 		input,
 		"Invalid customer balance input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const deps = resolveCommandDeps(options);
 	const allowed = await requireReceivablesQueryPermission(deps.authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		query: RECEIVABLES_QUERY_BALANCE_GET,
 	});
-	if (!allowed.ok) return allowed;
+	if (!allowed.ok) {
+		return allowed;
+	}
 	return deps.store.getBalance(
 		parsed.data.organizationId,
 		parsed.data.customerId,
@@ -622,14 +723,18 @@ export async function getCustomerAging(
 		input,
 		"Invalid customer aging input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const deps = resolveCommandDeps(options);
 	const allowed = await requireReceivablesQueryPermission(deps.authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		query: RECEIVABLES_QUERY_AGING_GET,
 	});
-	if (!allowed.ok) return allowed;
+	if (!allowed.ok) {
+		return allowed;
+	}
 	return deps.store.getAging(parsed.data);
 }
 

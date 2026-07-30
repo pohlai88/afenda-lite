@@ -16,6 +16,7 @@ import {
 	replayDeadLetter,
 	retryDelayMs,
 } from "../src/reliability";
+import { runSequential } from "../src/shared/run-sequential";
 
 const ORGANIZATION_ID = "org-reliability";
 
@@ -33,10 +34,8 @@ function createHarness(
 		executor: {
 			async execute() {
 				executions += 1;
-				return (
-					outcomes.shift() ??
-					ok({ kind: "acknowledged", receiptId: "receipt-replay" })
-				);
+				return await (outcomes.shift() ??
+					ok({ kind: "acknowledged", receiptId: "receipt-replay" }));
 			},
 		},
 		failureClassifier: {
@@ -58,7 +57,7 @@ async function register(
 	ports: ReliabilityKernelPorts,
 	idempotencyKey = "idem-1",
 ) {
-	return registerReliabilityWork(
+	return await registerReliabilityWork(
 		{
 			organizationId: ORGANIZATION_ID,
 			connector: "payroll",
@@ -88,10 +87,13 @@ async function claimAndExecute(
 		},
 		ports.store,
 	);
-	if (!claimed.ok) return claimed;
+	if (!claimed.ok) {
+		return claimed;
+	}
 	const item = claimed.data.find((candidate) => candidate.id === workItemId);
-	if (item === undefined)
+	if (item === undefined) {
 		return fail("CONFLICT", "Reliability work was not due");
+	}
 	return executeReliabilityWork(
 		{
 			organizationId: item.organizationId,
@@ -122,11 +124,13 @@ describe("HR integration reliability kernel", () => {
 			ok({ kind: "acknowledged", receiptId: "receipt-recovered" }),
 		]);
 		const created = await register(harness.ports);
-		if (!created.ok) throw new Error(created.message);
+		if (!created.ok) {
+			throw new Error(created.message);
+		}
 		const policy = {
 			maxAttempts: 3,
-			baseDelayMs: 1_000,
-			maxDelayMs: 5_000,
+			baseDelayMs: 1000,
+			maxDelayMs: 5000,
 			multiplier: 2,
 		};
 		const retrying = await claimAndExecute(
@@ -135,7 +139,9 @@ describe("HR integration reliability kernel", () => {
 			policy,
 		);
 		expect(retrying.ok).toBe(true);
-		if (!retrying.ok) return;
+		if (!retrying.ok) {
+			return;
+		}
 		expect(retrying.data).toMatchObject({
 			status: "pending",
 			attemptCount: 1,
@@ -145,14 +151,16 @@ describe("HR integration reliability kernel", () => {
 			await claimAndExecute(harness.ports, created.data.id, policy),
 		).toMatchObject({ ok: false, code: "CONFLICT" });
 
-		harness.advance(1_000);
+		harness.advance(1000);
 		const succeeded = await claimAndExecute(
 			harness.ports,
 			created.data.id,
 			policy,
 		);
 		expect(succeeded.ok).toBe(true);
-		if (!succeeded.ok) return;
+		if (!succeeded.ok) {
+			return;
+		}
 		expect(succeeded.data).toMatchObject({
 			status: "succeeded",
 			attemptCount: 2,
@@ -177,10 +185,14 @@ describe("HR integration reliability kernel", () => {
 			fail("VALIDATION_ERROR", "remote contract rejected payload"),
 		]);
 		const created = await register(harness.ports);
-		if (!created.ok) throw new Error(created.message);
+		if (!created.ok) {
+			throw new Error(created.message);
+		}
 		const terminal = await claimAndExecute(harness.ports, created.data.id);
 		expect(terminal.ok).toBe(true);
-		if (!terminal.ok) return;
+		if (!terminal.ok) {
+			return;
+		}
 		expect(terminal.data).toMatchObject({
 			status: "dead_lettered",
 			attemptCount: 1,
@@ -193,7 +205,9 @@ describe("HR integration reliability kernel", () => {
 			errorCode: "VALIDATION_ERROR",
 			requestFingerprint: "fingerprint-idem-1",
 		});
-		if (!deadLetter.ok || !deadLetter.data) return;
+		if (!(deadLetter.ok && deadLetter.data)) {
+			return;
+		}
 
 		const replayed = await replayDeadLetter(
 			{
@@ -206,7 +220,9 @@ describe("HR integration reliability kernel", () => {
 			harness.ports,
 		);
 		expect(replayed.ok).toBe(true);
-		if (!replayed.ok) return;
+		if (!replayed.ok) {
+			return;
+		}
 		expect(replayed.data.status).toBe("pending");
 		expect(
 			await replayDeadLetter(
@@ -249,14 +265,16 @@ describe("HR integration reliability kernel", () => {
 					const key = `${item.id}:${item.requestFingerprint}`;
 					const receiptId = externalReceipts.get(key) ?? "receipt-deduplicated";
 					externalReceipts.set(key, receiptId);
-					return ok({ kind: "acknowledged", receiptId });
+					return await ok({ kind: "acknowledged", receiptId });
 				},
 			},
 			failureClassifier: { isRetryable: () => true },
 		};
 		const created = await register(ports, "idem-commit-recovery");
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 
 		const interrupted = await claimAndExecute(ports, created.data.id);
 		expect(interrupted).toMatchObject({ ok: false, code: "INTERNAL_ERROR" });
@@ -294,7 +312,9 @@ describe("HR integration reliability kernel", () => {
 			}),
 		]);
 		const created = await register(harness.ports, "idem-async");
-		if (!created.ok) throw new Error(created.message);
+		if (!created.ok) {
+			throw new Error(created.message);
+		}
 		const accepted = await claimAndExecute(harness.ports, created.data.id);
 		expect(accepted).toMatchObject({
 			ok: true,
@@ -303,7 +323,9 @@ describe("HR integration reliability kernel", () => {
 				receiptId: "receipt-async",
 			},
 		});
-		if (!accepted.ok) return;
+		if (!accepted.ok) {
+			return;
+		}
 		expect(
 			await acknowledgeReliabilityWork(
 				{
@@ -366,7 +388,9 @@ describe("HR integration reliability kernel", () => {
 			ok({ kind: "acknowledged", receiptId: "receipt-reissued" }),
 		]);
 		const created = await register(harness.ports, "idem-expiring");
-		if (!created.ok) throw new Error(created.message);
+		if (!created.ok) {
+			throw new Error(created.message);
+		}
 		expect(await claimAndExecute(harness.ports, created.data.id)).toMatchObject(
 			{
 				ok: true,
@@ -391,7 +415,9 @@ describe("HR integration reliability kernel", () => {
 			}),
 		]);
 		const created = await register(harness.ports, "idem-invalid-ack");
-		if (!created.ok) throw new Error(created.message);
+		if (!created.ok) {
+			throw new Error(created.message);
+		}
 		expect(await claimAndExecute(harness.ports, created.data.id)).toMatchObject(
 			{
 				ok: true,
@@ -421,7 +447,7 @@ describe("HR integration reliability kernel", () => {
 				harness.ports,
 			),
 		).toMatchObject({ ok: false, code: "VALIDATION_ERROR" });
-		for (const organizationId of ["org-a", "org-a", "org-b"]) {
+		await runSequential(["org-a", "org-a", "org-b"], async (organizationId) => {
 			await registerReliabilityWork(
 				{
 					organizationId,
@@ -435,7 +461,7 @@ describe("HR integration reliability kernel", () => {
 				},
 				harness.ports,
 			);
-		}
+		});
 		const claimed = await claimDueReliabilityWork(
 			{
 				workerId: "fair-worker",

@@ -88,7 +88,7 @@ async function assertEmploymentAssignmentScope(
 	return { ok: true, data: undefined };
 }
 
-export async function createEmployeeCompensation(
+export function createEmployeeCompensation(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCompensation>> {
@@ -155,7 +155,7 @@ export async function createEmployeeCompensation(
 	});
 }
 
-export async function amendEmployeeCompensation(
+export function amendEmployeeCompensation(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCompensation>> {
@@ -199,7 +199,7 @@ export async function amendEmployeeCompensation(
 	});
 }
 
-export async function approveEmployeeCompensation(
+export function approveEmployeeCompensation(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCompensation>> {
@@ -224,7 +224,7 @@ export async function approveEmployeeCompensation(
 	});
 }
 
-export async function scheduleEmployeeCompensationChange(
+export function scheduleEmployeeCompensationChange(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCompensation>> {
@@ -284,7 +284,7 @@ export async function scheduleEmployeeCompensationChange(
 	});
 }
 
-export async function activateEmployeeCompensation(
+export function activateEmployeeCompensation(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCompensation>> {
@@ -309,7 +309,7 @@ export async function activateEmployeeCompensation(
 	});
 }
 
-export async function correctEmployeeCompensation(
+export function correctEmployeeCompensation(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCompensation>> {
@@ -361,7 +361,7 @@ export async function correctEmployeeCompensation(
 	});
 }
 
-export async function endEmployeeCompensation(
+export function endEmployeeCompensation(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCompensation>> {
@@ -387,7 +387,7 @@ export async function endEmployeeCompensation(
 	});
 }
 
-export async function getEmployeeCompensation(
+export function getEmployeeCompensation(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Partial<EmployeeCompensation>>> {
@@ -418,7 +418,7 @@ export async function getEmployeeCompensation(
 	});
 }
 
-export async function listEmployeeCompensationsByEmployee(
+export function listEmployeeCompensationsByEmployee(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<

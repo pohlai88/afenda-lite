@@ -154,7 +154,9 @@ describe("HR payroll delivery production composition", () => {
 			ports,
 		);
 		expect(queued.ok).toBe(true);
-		if (!queued.ok) return;
+		if (!queued.ok) {
+			return;
+		}
 
 		const recovered = await recoverPendingPayrollDeliveries(
 			{

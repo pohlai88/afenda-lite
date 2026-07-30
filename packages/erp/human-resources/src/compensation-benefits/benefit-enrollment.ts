@@ -27,7 +27,7 @@ export const HUMAN_RESOURCES_AGGREGATE_BENEFIT_ENROLLMENT =
 export type HumanResourcesBenefitEnrollmentAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_BENEFIT_ENROLLMENT;
 
-export async function enrolBenefit(
+export function enrolBenefit(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<BenefitEnrollment>> {
@@ -73,7 +73,7 @@ export async function enrolBenefit(
 	});
 }
 
-export async function endBenefitEnrollment(
+export function endBenefitEnrollment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<BenefitEnrollment>> {
@@ -99,7 +99,7 @@ export async function endBenefitEnrollment(
 	});
 }
 
-export async function cancelBenefitEnrollment(
+export function cancelBenefitEnrollment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<BenefitEnrollment>> {
@@ -124,7 +124,7 @@ export async function cancelBenefitEnrollment(
 	});
 }
 
-export async function waiveBenefit(
+export function waiveBenefit(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<BenefitEnrollment>> {
@@ -151,7 +151,7 @@ export async function waiveBenefit(
 	});
 }
 
-export async function getApprovedCompensationHandoff(
+export function getApprovedCompensationHandoff(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ApprovedCompensationHandoff | null>> {

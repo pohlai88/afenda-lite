@@ -132,7 +132,7 @@ type VersionedResult = Readonly<{ id: string; version: number }>;
 export async function registerLegalEstablishmentAction(
 	formData: FormData,
 ): Promise<ActionResult<VersionedResult>> {
-	return runEstablishmentAction({
+	return await runEstablishmentAction({
 		path: "registerLegalEstablishmentAction",
 		safeMessage: "Could not register the legal establishment.",
 		schema: registerSchema,
@@ -144,7 +144,7 @@ export async function registerLegalEstablishmentAction(
 export async function updateLegalEstablishmentAction(
 	formData: FormData,
 ): Promise<ActionResult<VersionedResult>> {
-	return runEstablishmentAction({
+	return await runEstablishmentAction({
 		path: "updateLegalEstablishmentAction",
 		safeMessage: "Could not update the legal establishment.",
 		schema: updateSchema,
@@ -156,7 +156,7 @@ export async function updateLegalEstablishmentAction(
 export async function activateLegalEstablishmentAction(
 	formData: FormData,
 ): Promise<ActionResult<VersionedResult>> {
-	return runEstablishmentAction({
+	return await runEstablishmentAction({
 		path: "activateLegalEstablishmentAction",
 		safeMessage: "Could not activate the legal establishment.",
 		schema: transitionSchema,
@@ -168,7 +168,7 @@ export async function activateLegalEstablishmentAction(
 export async function suspendLegalEstablishmentAction(
 	formData: FormData,
 ): Promise<ActionResult<VersionedResult>> {
-	return runEstablishmentAction({
+	return await runEstablishmentAction({
 		path: "suspendLegalEstablishmentAction",
 		safeMessage: "Could not suspend the legal establishment.",
 		schema: transitionSchema,
@@ -180,7 +180,7 @@ export async function suspendLegalEstablishmentAction(
 export async function closeLegalEstablishmentAction(
 	formData: FormData,
 ): Promise<ActionResult<VersionedResult>> {
-	return runEstablishmentAction({
+	return await runEstablishmentAction({
 		path: "closeLegalEstablishmentAction",
 		safeMessage: "Could not close the legal establishment.",
 		schema: transitionSchema,
@@ -192,7 +192,7 @@ export async function closeLegalEstablishmentAction(
 export async function setRegisteredAddressAction(
 	formData: FormData,
 ): Promise<ActionResult<VersionedResult>> {
-	return runEstablishmentAction({
+	return await runEstablishmentAction({
 		path: "setRegisteredAddressAction",
 		safeMessage: "Could not set the statutory address.",
 		schema: addressSchema,
@@ -204,7 +204,7 @@ export async function setRegisteredAddressAction(
 export async function registerPremiseAction(
 	formData: FormData,
 ): Promise<ActionResult<VersionedResult>> {
-	return runEstablishmentAction({
+	return await runEstablishmentAction({
 		path: "registerPremiseAction",
 		safeMessage: "Could not register the premise.",
 		schema: premiseSchema,
@@ -216,7 +216,7 @@ export async function registerPremiseAction(
 export async function endPremiseAction(
 	formData: FormData,
 ): Promise<ActionResult<VersionedResult>> {
-	return runEstablishmentAction({
+	return await runEstablishmentAction({
 		path: "endPremiseAction",
 		safeMessage: "Could not end the premise.",
 		schema: endPremiseSchema,
@@ -229,56 +229,56 @@ export async function registerLegalEstablishmentFormAction(
 	_previous: ActionResult<VersionedResult> | null,
 	formData: FormData,
 ) {
-	return registerLegalEstablishmentAction(formData);
+	return await registerLegalEstablishmentAction(formData);
 }
 
 export async function updateLegalEstablishmentFormAction(
 	_previous: ActionResult<VersionedResult> | null,
 	formData: FormData,
 ) {
-	return updateLegalEstablishmentAction(formData);
+	return await updateLegalEstablishmentAction(formData);
 }
 
 export async function activateLegalEstablishmentFormAction(
 	_previous: ActionResult<VersionedResult> | null,
 	formData: FormData,
 ) {
-	return activateLegalEstablishmentAction(formData);
+	return await activateLegalEstablishmentAction(formData);
 }
 
 export async function suspendLegalEstablishmentFormAction(
 	_previous: ActionResult<VersionedResult> | null,
 	formData: FormData,
 ) {
-	return suspendLegalEstablishmentAction(formData);
+	return await suspendLegalEstablishmentAction(formData);
 }
 
 export async function closeLegalEstablishmentFormAction(
 	_previous: ActionResult<VersionedResult> | null,
 	formData: FormData,
 ) {
-	return closeLegalEstablishmentAction(formData);
+	return await closeLegalEstablishmentAction(formData);
 }
 
 export async function setRegisteredAddressFormAction(
 	_previous: ActionResult<VersionedResult> | null,
 	formData: FormData,
 ) {
-	return setRegisteredAddressAction(formData);
+	return await setRegisteredAddressAction(formData);
 }
 
 export async function registerPremiseFormAction(
 	_previous: ActionResult<VersionedResult> | null,
 	formData: FormData,
 ) {
-	return registerPremiseAction(formData);
+	return await registerPremiseAction(formData);
 }
 
 export async function endPremiseFormAction(
 	_previous: ActionResult<VersionedResult> | null,
 	formData: FormData,
 ) {
-	return endPremiseAction(formData);
+	return await endPremiseAction(formData);
 }
 
 async function runEstablishmentAction<TSchema extends z.ZodTypeAny>(input: {
@@ -294,7 +294,7 @@ async function runEstablishmentAction<TSchema extends z.ZodTypeAny>(input: {
 		>,
 	) => Promise<Result<Readonly<{ id: string; version: number }>>>;
 }): Promise<ActionResult<VersionedResult>> {
-	return runMemberPermissionAction({
+	return await runMemberPermissionAction({
 		path: input.path,
 		permission: "corporate_administration.establishment.manage",
 		safeMessage: input.safeMessage,
@@ -320,7 +320,9 @@ async function runEstablishmentAction<TSchema extends z.ZodTypeAny>(input: {
 				createCorporateAdministrationCompanyDependencies(),
 			);
 			const mapped = mapPackageResult(result);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			revalidatePath("/client/corporate-administration");
 			return {
 				ok: true,

@@ -54,13 +54,13 @@ export const Overview: Story = {
 					<div className="grid gap-2">
 						<div className="flex flex-wrap items-center gap-2">
 							<Badge variant="outline">Master data</Badge>
-							<StatusBadge size="sm" status="active" label="Supplier draft" />
+							<StatusBadge label="Supplier draft" size="sm" status="active" />
 						</div>
 						<div className="grid gap-1">
-							<h1 className="text-2xl font-semibold tracking-tight">
+							<h1 className="font-semibold text-2xl tracking-tight">
 								Supplier identity
 							</h1>
-							<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+							<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 								Each Input is one labelled single-line value. FormField owns
 								labels and errors; feature code owns validation, permissions,
 								and persistence.
@@ -69,25 +69,25 @@ export const Overview: Story = {
 					</div>
 					<dl className="grid grid-cols-2 gap-x-8 gap-y-3 rounded-lg border bg-card p-4">
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Subject
 							</dt>
 							<dd className="text-sm">Supplier identity</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Area
 							</dt>
 							<dd className="text-sm">Master data</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Scope
 							</dt>
 							<dd className="text-sm">Single-line entry fields</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								State
 							</dt>
 							<dd className="text-sm">Supplier draft</dd>
@@ -95,15 +95,15 @@ export const Overview: Story = {
 					</dl>
 				</header>
 
-				<section className="grid gap-3" aria-labelledby="input-identity-title">
+				<section aria-labelledby="input-identity-title" className="grid gap-3">
 					<div className="grid gap-1">
 						<h2
-							className="text-base font-semibold tracking-tight text-foreground"
+							className="font-semibold text-base text-foreground tracking-tight"
 							id="input-identity-title"
 						>
 							Identity fields
 						</h2>
-						<p className="text-sm text-foreground-secondary">
+						<p className="text-foreground-secondary text-sm">
 							Reference and email use native types; placeholders stay examples,
 							not labels.
 						</p>
@@ -117,24 +117,24 @@ export const Overview: Story = {
 						</CardHeader>
 						<CardContent className="grid gap-4">
 							<FormField
-								label="Supplier reference"
 								description="Use the reference shown on the supplier record."
+								label="Supplier reference"
 							>
-								<Input defaultValue="SUP-004821" autoComplete="off" />
+								<Input autoComplete="off" defaultValue="SUP-004821" />
 							</FormField>
 							<FormField
-								label="Contact email"
 								description="Finance remittance and statement delivery."
+								label="Contact email"
 							>
 								<Input
-									type="email"
-									defaultValue="finance@northwind.example"
 									autoComplete="email"
+									defaultValue="finance@northwind.example"
+									type="email"
 								/>
 							</FormField>
 						</CardContent>
 						<CardFooter className="justify-end border-t">
-							<Button type="button" size="sm">
+							<Button size="sm" type="button">
 								Save supplier
 							</Button>
 						</CardFooter>
@@ -157,16 +157,16 @@ export const Usage: Story = {
 	render: () => (
 		<div className="grid w-full max-w-md gap-4">
 			<FormField
-				label="Supplier reference"
 				description="Use the reference shown on the supplier record."
+				label="Supplier reference"
 			>
-				<Input defaultValue="SUP-1042" autoComplete="off" />
+				<Input autoComplete="off" defaultValue="SUP-1042" />
 			</FormField>
 			<FormField label="Contact email">
 				<Input
-					type="email"
-					defaultValue="finance@example.com"
 					autoComplete="email"
+					defaultValue="finance@example.com"
+					type="email"
 				/>
 			</FormField>
 		</div>
@@ -186,34 +186,34 @@ export const AdaptiveLayout: Story = {
 	render: () => (
 		<div className="grid w-full max-w-4xl gap-8">
 			<StorySection
-				title="Narrow approval drawer"
 				description="Long business labels wrap outside the control while the entered value remains usable."
+				title="Narrow approval drawer"
 			>
-				<div className="w-full max-w-xs rounded-xl border border-dashed border-border p-4">
+				<div className="w-full max-w-xs rounded-xl border border-border border-dashed p-4">
 					<FormField
-						label="Supplier tax registration reference"
 						description="Use the exact reference printed on the supporting document."
+						label="Supplier tax registration reference"
 					>
-						<Input defaultValue="MY-SST-W10-1808-32000123" autoComplete="off" />
+						<Input autoComplete="off" defaultValue="MY-SST-W10-1808-32000123" />
 					</FormField>
 				</div>
 			</StorySection>
 			<StorySection
-				title="Wide master-data form"
 				description="Related fields may share layout columns, but each Input remains independently labelled."
+				title="Wide master-data form"
 			>
 				<div className="grid gap-4 md:grid-cols-2">
 					<FormField label="Legal name">
 						<Input
-							defaultValue="Northwind Trading Sdn. Bhd."
 							autoComplete="organization"
+							defaultValue="Northwind Trading Sdn. Bhd."
 						/>
 					</FormField>
 					<FormField label="Finance contact email">
 						<Input
-							type="email"
-							defaultValue="finance@northwind.example"
 							autoComplete="email"
+							defaultValue="finance@northwind.example"
+							type="email"
 						/>
 					</FormField>
 				</div>
@@ -235,29 +235,29 @@ export const AuthorizationAndValidation: Story = {
 	render: () => (
 		<div className="grid w-full max-w-5xl gap-6">
 			<StorySection
-				title="Authorized editable field"
 				description="Feature code has already determined that this operator may view and edit the value."
+				title="Authorized editable field"
 			>
 				<FormField
-					label="Supplier reference"
 					description="Uniqueness is revalidated when Save supplier runs."
+					label="Supplier reference"
 				>
-					<Input defaultValue="SUP-004821" autoComplete="off" />
+					<Input autoComplete="off" defaultValue="SUP-004821" />
 				</FormField>
 			</StorySection>
 			<StorySection
-				title="Readable but not editable"
 				description="Use readOnly when the value must remain selectable and available to an authorized operator."
+				title="Readable but not editable"
 			>
 				<FormField label="Approved legal registration number">
 					<Input defaultValue="202601004821" readOnly />
 				</FormField>
 			</StorySection>
 			<StorySection
-				title="Unauthorized sensitive field"
 				description="Do not render a disabled raw value as a substitute for field-level authorization."
+				title="Unauthorized sensitive field"
 			>
-				<p className="text-sm leading-6 text-foreground-secondary">
+				<p className="text-foreground-secondary text-sm leading-6">
 					Feature projections must omit or mask unauthorized data before it
 					reaches Input. Disabled styling is interaction state, not privacy
 					enforcement.
@@ -287,7 +287,7 @@ export const StatesAndAccessibility: Story = {
 			<FormField label="Unavailable integration reference">
 				<Input defaultValue="Not available" disabled />
 			</FormField>
-			<FormField label="Tax identifier" error="Enter a valid tax identifier.">
+			<FormField error="Enter a valid tax identifier." label="Tax identifier">
 				<Input defaultValue="?" />
 			</FormField>
 		</div>
@@ -314,14 +314,14 @@ export const Composition: Story = {
 			</CardHeader>
 			<CardContent>
 				<FormField
-					label="Supplier name or reference"
 					description="Example: Northwind or SUP-1042."
+					label="Supplier name or reference"
 				>
-					<Input placeholder="Northwind or SUP-1042" autoComplete="off" />
+					<Input autoComplete="off" placeholder="Northwind or SUP-1042" />
 				</FormField>
 			</CardContent>
 			<CardFooter className="justify-end border-t">
-				<Button type="button" size="sm">
+				<Button size="sm" type="button">
 					Search suppliers
 				</Button>
 			</CardFooter>
@@ -341,23 +341,23 @@ export const DoAndDoNot: Story = {
 	render: () => (
 		<div className="grid w-full max-w-5xl gap-6 md:grid-cols-2">
 			<StorySection
-				title="Do"
 				description="Visible FormField label with an optional format hint in the placeholder."
+				title="Do"
 			>
 				<FormField label="Invoice reference">
-					<Input placeholder="INV-1042" autoComplete="off" />
+					<Input autoComplete="off" placeholder="INV-1042" />
 				</FormField>
 			</StorySection>
 			<StorySection
-				title="Do not"
 				description="Placeholder-only instruction is not a field label."
+				title="Do not"
 			>
 				<div className="grid gap-2 rounded-md border border-destructive/40 p-3">
 					<Input
-						placeholder="Enter invoice reference"
 						aria-label="Invoice reference"
+						placeholder="Enter invoice reference"
 					/>
-					<p className="text-xs text-destructive">
+					<p className="text-destructive text-xs">
 						Accessible name alone does not replace a visible field label for
 						operators.
 					</p>

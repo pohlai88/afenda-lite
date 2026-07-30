@@ -1,9 +1,8 @@
-import { expect } from "vitest";
-
 import type { HumanResourcesCommandOptions } from "../../src/command-options";
 import { createEmployee } from "../../src/core/employee";
 import { createEmployment } from "../../src/core/employment";
 import type { Employee, Employment } from "../../src/types";
+import { helperAssert as assert } from "./helper-assert";
 
 export const TIME_CORR_STANDARD_WEEK = [0, 1, 2, 3, 4, 5, 6].map(
 	(dayOfWeek) => ({
@@ -15,16 +14,16 @@ export const TIME_CORR_STANDARD_WEEK = [0, 1, 2, 3, 4, 5, 6].map(
 	}),
 );
 
-export type TimeCorrelationSeedInput = {
-	organizationId: string;
+export interface TimeCorrelationSeedInput {
 	actorUserId: string;
+	organizationId: string;
 	suffix: string;
-};
+}
 
-export type TimeCorrelationSeedResult = {
+export interface TimeCorrelationSeedResult {
 	employee: Employee;
 	employment: Employment;
-};
+}
 
 export async function seedTimeCorrelationEmployeeEmployment(
 	ready: HumanResourcesCommandOptions,
@@ -41,8 +40,10 @@ export async function seedTimeCorrelationEmployeeEmployment(
 		},
 		ready,
 	);
-	expect(employee.ok).toBe(true);
-	if (!employee.ok) throw new Error("employee seed failed");
+	assert.strictEqual(employee.ok, true);
+	if (!employee.ok) {
+		throw new Error("employee seed failed");
+	}
 
 	const employment = await createEmployment(
 		{
@@ -54,8 +55,10 @@ export async function seedTimeCorrelationEmployeeEmployment(
 		},
 		ready,
 	);
-	expect(employment.ok).toBe(true);
-	if (!employment.ok) throw new Error("employment seed failed");
+	assert.strictEqual(employment.ok, true);
+	if (!employment.ok) {
+		throw new Error("employment seed failed");
+	}
 
 	return { employee: employee.data, employment: employment.data };
 }

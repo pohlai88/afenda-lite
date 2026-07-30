@@ -17,18 +17,19 @@ const schema = z.object({ periodId: z.string().uuid().optional() }).optional();
 export async function getTrialBalanceAction(input?: {
 	periodId?: string;
 }): Promise<ActionResult<{ rows: TrialBalanceRow[] }>> {
-	return runOperatorPermissionAction({
+	return await runOperatorPermissionAction({
 		path: "getTrialBalanceAction",
 		permission: "accounting.trial_balance.read",
 		safeMessage: "Could not load trial balance. Try again or contact an admin.",
 		execute: async (session) => {
 			const parsed = parseSchema(schema, input);
-			if (!parsed.success)
+			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
 					"Enter a valid accounting period.",
 					parsed.details,
 				);
+			}
 			const mapped = mapPackageResult(
 				await getTrialBalance(
 					{
@@ -39,7 +40,9 @@ export async function getTrialBalanceAction(input?: {
 					createAccountingCommandOptions(),
 				),
 			);
-			if (!mapped.ok) return mapped;
+			if (!mapped.ok) {
+				return mapped;
+			}
 			return { ok: true, data: { rows: mapped.data } };
 		},
 	});

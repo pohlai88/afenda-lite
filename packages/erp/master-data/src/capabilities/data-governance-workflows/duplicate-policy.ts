@@ -87,11 +87,13 @@ export function assertApprovedMergeAuthorization(
 	}
 
 	if (
-		!isNonEmptyIdentifier(organizationId) ||
-		!isNonEmptyIdentifier(warning.sourceEntityId) ||
-		!isNonEmptyIdentifier(warning.candidateEntityId) ||
-		!isNonEmptyIdentifier(authorization.sourceEntityId) ||
-		!isNonEmptyIdentifier(authorization.targetEntityId)
+		!(
+			isNonEmptyIdentifier(organizationId) &&
+			isNonEmptyIdentifier(warning.sourceEntityId) &&
+			isNonEmptyIdentifier(warning.candidateEntityId) &&
+			isNonEmptyIdentifier(authorization.sourceEntityId) &&
+			isNonEmptyIdentifier(authorization.targetEntityId)
+		)
 	) {
 		return mergeNotAuthorized(warning);
 	}
@@ -164,19 +166,38 @@ export function assertApprovedMergeAuthorization(
 export function validateDuplicateWarningRecord(
 	warning: DuplicateWarningRecord,
 ): Result<true> {
+	const recordReason =
+		validateDuplicateWarningIdentity(warning) ??
+		validateDuplicateWarningMetrics(warning);
+	if (recordReason !== null) {
+		return duplicateWarningInvalid(recordReason);
+	}
+
+	const signalValidation = validateDuplicateWarningSignals(warning);
+	if (!signalValidation.ok) {
+		return signalValidation;
+	}
+
+	const reviewReason = validateDuplicateWarningReview(warning);
+	return reviewReason === null
+		? ok(true)
+		: duplicateWarningInvalid(reviewReason);
+}
+
+function validateDuplicateWarningIdentity(
+	warning: DuplicateWarningRecord,
+): string | null {
 	if (
 		warning.id.trim().length === 0 ||
 		warning.organizationId.trim().length === 0 ||
 		warning.sourceEntityId.trim().length === 0 ||
 		warning.candidateEntityId.trim().length === 0
 	) {
-		return duplicateWarningInvalid("identifier_required");
+		return "identifier_required";
 	}
 
 	if (warning.sourceEntityId === warning.candidateEntityId) {
-		return duplicateWarningInvalid(
-			"duplicate_pair_must_contain_distinct_entities",
-		);
+		return "duplicate_pair_must_contain_distinct_entities";
 	}
 
 	const normalizedPair = normalizeDuplicateWarningPair(
@@ -187,15 +208,20 @@ export function validateDuplicateWarningRecord(
 		warning.sourceEntityId !== normalizedPair.sourceEntityId ||
 		warning.candidateEntityId !== normalizedPair.candidateEntityId
 	) {
-		return duplicateWarningInvalid("duplicate_pair_not_canonical");
+		return "duplicate_pair_not_canonical";
 	}
+	return null;
+}
 
+function validateDuplicateWarningMetrics(
+	warning: DuplicateWarningRecord,
+): string | null {
 	if (
 		!Number.isFinite(warning.confidence) ||
 		warning.confidence < 0 ||
 		warning.confidence > 1
 	) {
-		return duplicateWarningInvalid("confidence_out_of_range");
+		return "confidence_out_of_range";
 	}
 
 	if (
@@ -203,25 +229,32 @@ export function validateDuplicateWarningRecord(
 		warning.score < 0 ||
 		warning.score > 1
 	) {
-		return duplicateWarningInvalid("score_out_of_range");
+		return "score_out_of_range";
 	}
 
 	if (!Number.isSafeInteger(warning.version) || warning.version < 1) {
-		return duplicateWarningInvalid("invalid_version");
+		return "invalid_version";
 	}
 
 	if (
-		!isValidDate(warning.detectedAt) ||
-		!isValidDate(warning.createdAt) ||
-		!isValidDate(warning.updatedAt)
+		!(
+			isValidDate(warning.detectedAt) &&
+			isValidDate(warning.createdAt) &&
+			isValidDate(warning.updatedAt)
+		)
 	) {
-		return duplicateWarningInvalid("invalid_timestamp");
+		return "invalid_timestamp";
 	}
 
 	if (warning.updatedAt.getTime() < warning.createdAt.getTime()) {
-		return duplicateWarningInvalid("updated_at_before_created_at");
+		return "updated_at_before_created_at";
 	}
+	return null;
+}
 
+function validateDuplicateWarningSignals(
+	warning: DuplicateWarningRecord,
+): Result<true> {
 	if (warning.matchingSignals.length === 0) {
 		return duplicateWarningInvalid("matching_signal_required");
 	}
@@ -240,22 +273,27 @@ export function validateDuplicateWarningRecord(
 			fields: forbiddenSignals,
 		});
 	}
+	return ok(true);
+}
 
+function validateDuplicateWarningReview(
+	warning: DuplicateWarningRecord,
+): string | null {
 	const hasReviewer = warning.reviewedBy !== null;
 	const hasReviewedAt = warning.reviewedAt !== null;
 	if (hasReviewer !== hasReviewedAt) {
-		return duplicateWarningInvalid("review_actor_timestamp_mismatch");
+		return "review_actor_timestamp_mismatch";
 	}
 
 	if (warning.reviewedAt !== null && !isValidDate(warning.reviewedAt)) {
-		return duplicateWarningInvalid("invalid_reviewed_at");
+		return "invalid_reviewed_at";
 	}
 
 	if (
 		warning.status !== "open" &&
 		(warning.reviewedBy === null || warning.reviewedAt === null)
 	) {
-		return duplicateWarningInvalid("review_evidence_required");
+		return "review_evidence_required";
 	}
 
 	if (
@@ -264,24 +302,24 @@ export function validateDuplicateWarningRecord(
 			warning.status === "dismissed") &&
 		warning.resolution === null
 	) {
-		return duplicateWarningInvalid("resolution_required");
+		return "resolution_required";
 	}
 
 	if (
 		warning.status === "merge_requested" &&
 		warning.relatedChangeRequestId === null
 	) {
-		return duplicateWarningInvalid("related_change_request_required");
+		return "related_change_request_required";
 	}
 
 	if (
 		warning.relatedChangeRequestId !== null &&
 		warning.relatedChangeRequestId.trim().length === 0
 	) {
-		return duplicateWarningInvalid("invalid_related_change_request_id");
+		return "invalid_related_change_request_id";
 	}
 
-	return ok(true);
+	return null;
 }
 
 function isAuthorizedStatus(

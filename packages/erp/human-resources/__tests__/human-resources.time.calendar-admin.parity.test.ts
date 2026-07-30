@@ -25,6 +25,7 @@ import {
 } from "../src/time/calendar";
 import type { WorkCalendar } from "../src/types";
 import { runDrizzleParity } from "./helpers/database-gate";
+import { helperAssert as assert } from "./helpers/helper-assert";
 import {
 	createHrParityHarness,
 	type WorkforceStoreAdapter,
@@ -43,7 +44,7 @@ async function seedEmployeeEmployment(
 	actor: string,
 	suffix: string,
 ) {
-	return seedParityEmployeeEmployment(ready, {
+	return await seedParityEmployeeEmployment(ready, {
 		organizationId: org,
 		actorUserId: actor,
 		suffix,
@@ -74,7 +75,7 @@ async function seedCalendar(
 		},
 		ready,
 	);
-	expect(created.ok).toBe(true);
+	assert.strictEqual(created.ok, true);
 	if (!created.ok) {
 		throw new Error(`createWorkCalendar failed: ${created.message}`);
 	}
@@ -113,7 +114,9 @@ function defineCalendarAdminParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(calendar.ok).toBe(true);
-		if (!calendar.ok) return;
+		if (!calendar.ok) {
+			return;
+		}
 
 		const updated = await updateWorkCalendar(
 			{
@@ -127,7 +130,9 @@ function defineCalendarAdminParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(updated.ok).toBe(true);
-		if (!updated.ok) return;
+		if (!updated.ok) {
+			return;
+		}
 		expect(updated.data.name).toBe("Admin Calendar v1 updated");
 
 		const supersession = await supersedeWorkCalendar(
@@ -145,7 +150,9 @@ function defineCalendarAdminParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(supersession.ok).toBe(true);
-		if (!supersession.ok) return;
+		if (!supersession.ok) {
+			return;
+		}
 		expect(supersession.data.superseded).toMatchObject({
 			id: updated.data.id,
 			status: "superseded",
@@ -168,7 +175,9 @@ function defineCalendarAdminParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(archived.ok).toBe(true);
-		if (!archived.ok) return;
+		if (!archived.ok) {
+			return;
+		}
 		expect(archived.data.status).toBe("archived");
 	});
 
@@ -188,7 +197,9 @@ function defineCalendarAdminParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(holiday.ok).toBe(true);
-		if (!holiday.ok) return;
+		if (!holiday.ok) {
+			return;
+		}
 
 		const override = await addCalendarDateOverride(
 			{
@@ -205,7 +216,9 @@ function defineCalendarAdminParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(override.ok).toBe(true);
-		if (!override.ok) return;
+		if (!override.ok) {
+			return;
+		}
 
 		const listed = await listWorkCalendarHolidays(
 			{
@@ -217,7 +230,9 @@ function defineCalendarAdminParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(listed.ok).toBe(true);
-		if (!listed.ok) return;
+		if (!listed.ok) {
+			return;
+		}
 		expect(listed.data.some((row) => row.id === holiday.data.id)).toBe(true);
 		expect(listed.data.some((row) => row.id === override.data.id)).toBe(true);
 
@@ -253,7 +268,9 @@ function defineCalendarAdminParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(afterRemove.ok).toBe(true);
-		if (!afterRemove.ok) return;
+		if (!afterRemove.ok) {
+			return;
+		}
 		expect(afterRemove.data.some((row) => row.id === holiday.data.id)).toBe(
 			false,
 		);
@@ -291,7 +308,9 @@ function defineCalendarAdminParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(assigned.ok).toBe(true);
-		if (!assigned.ok) return;
+		if (!assigned.ok) {
+			return;
+		}
 
 		const resolved = await resolveEmploymentCalendar(
 			{
@@ -305,7 +324,9 @@ function defineCalendarAdminParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(resolved.ok).toBe(true);
-		if (!resolved.ok) return;
+		if (!resolved.ok) {
+			return;
+		}
 		expect(resolved.data?.calendarId).toBe(calendar.id);
 
 		const ended = await endWorkCalendarAssignment(
@@ -320,7 +341,9 @@ function defineCalendarAdminParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(ended.ok).toBe(true);
-		if (!ended.ok) return;
+		if (!ended.ok) {
+			return;
+		}
 
 		const afterEnd = await resolveEmploymentCalendar(
 			{
@@ -334,7 +357,9 @@ function defineCalendarAdminParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(afterEnd.ok).toBe(true);
-		if (!afterEnd.ok) return;
+		if (!afterEnd.ok) {
+			return;
+		}
 		expect(afterEnd.data).toBeNull();
 	});
 
@@ -362,7 +387,9 @@ function defineCalendarAdminParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(first.ok).toBe(true);
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 
 		const ended = await endWorkCalendarScopeAssignment(
 			{
@@ -376,7 +403,9 @@ function defineCalendarAdminParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(ended.ok).toBe(true);
-		if (!ended.ok) return;
+		if (!ended.ok) {
+			return;
+		}
 
 		await assignWorkCalendarScope(
 			{
@@ -403,7 +432,9 @@ function defineCalendarAdminParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(before.ok).toBe(true);
-		if (!before.ok) return;
+		if (!before.ok) {
+			return;
+		}
 		expect(before.data.calendarId).toBe(calFirst.id);
 
 		const after = await resolveEmployeeWorkCalendar(
@@ -418,7 +449,9 @@ function defineCalendarAdminParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(after.ok).toBe(true);
-		if (!after.ok) return;
+		if (!after.ok) {
+			return;
+		}
 		expect(after.data.calendarId).toBe(calSecond.id);
 	});
 
@@ -501,7 +534,9 @@ function defineCalendarAdminParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(resolved.ok).toBe(true);
-		if (!resolved.ok) return;
+		if (!resolved.ok) {
+			return;
+		}
 		expect(resolved.data.calendarId).toBe(employmentCalendar.id);
 
 		const tieCalendarA = await seedCalendar(ready, ORG, ACTOR, suffix, "tie-a");
@@ -546,7 +581,9 @@ function defineCalendarAdminParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(tie.ok).toBe(false);
-		if (tie.ok) return;
+		if (tie.ok) {
+			return;
+		}
 		expect(humanResourcesCodeFromResult(tie)).toBe(
 			HUMAN_RESOURCES_ERROR_CONFLICT,
 		);
@@ -578,7 +615,9 @@ function defineCalendarAdminParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(calendar.ok).toBe(true);
-		if (!calendar.ok) return;
+		if (!calendar.ok) {
+			return;
+		}
 
 		await assignEmploymentCalendar(
 			{
@@ -608,7 +647,9 @@ function defineCalendarAdminParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(supersession.ok).toBe(true);
-		if (!supersession.ok) return;
+		if (!supersession.ok) {
+			return;
+		}
 
 		const employmentHistorical = await resolveEmploymentCalendar(
 			{
@@ -622,7 +663,9 @@ function defineCalendarAdminParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employmentHistorical.ok).toBe(true);
-		if (!employmentHistorical.ok) return;
+		if (!employmentHistorical.ok) {
+			return;
+		}
 		expect(employmentHistorical.data?.calendarId).toBe(calendar.data.id);
 
 		const employmentFuture = await resolveEmploymentCalendar(
@@ -637,7 +680,9 @@ function defineCalendarAdminParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employmentFuture.ok).toBe(true);
-		if (!employmentFuture.ok) return;
+		if (!employmentFuture.ok) {
+			return;
+		}
 		expect(employmentFuture.data?.calendarId).toBe(
 			supersession.data.successor.id,
 		);
@@ -654,7 +699,9 @@ function defineCalendarAdminParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employeeHistorical.ok).toBe(true);
-		if (!employeeHistorical.ok) return;
+		if (!employeeHistorical.ok) {
+			return;
+		}
 		expect(employeeHistorical.data.calendarId).toBe(calendar.data.id);
 
 		const employeeFuture = await resolveEmployeeWorkCalendar(
@@ -669,7 +716,9 @@ function defineCalendarAdminParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(employeeFuture.ok).toBe(true);
-		if (!employeeFuture.ok) return;
+		if (!employeeFuture.ok) {
+			return;
+		}
 		expect(employeeFuture.data.calendarId).toBe(supersession.data.successor.id);
 
 		const persistedRoot = await getWorkCalendar(
@@ -682,7 +731,9 @@ function defineCalendarAdminParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(persistedRoot.ok).toBe(true);
-		if (!persistedRoot.ok) return;
+		if (!persistedRoot.ok) {
+			return;
+		}
 		expect(persistedRoot.data?.status).toBe("superseded");
 	});
 }

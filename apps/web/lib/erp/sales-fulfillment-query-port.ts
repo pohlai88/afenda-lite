@@ -17,8 +17,12 @@ export function createSalesFulfillmentQueryPort(): SalesFulfillmentQueryPort {
 				},
 				createSalesCommandOptions(),
 			);
-			if (!result.ok) return result;
-			if (!result.data) return ok(null);
+			if (!result.ok) {
+				return result;
+			}
+			if (!result.data) {
+				return ok(null);
+			}
 			const { order, lines } = result.data;
 			return ok({
 				status: order.status,

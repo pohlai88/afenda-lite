@@ -30,15 +30,15 @@ function WorkbenchSection({
 	children,
 }: WorkbenchSectionProps) {
 	return (
-		<section className="grid gap-4" aria-labelledby={id}>
+		<section aria-labelledby={id} className="grid gap-4">
 			<div className="grid gap-1">
 				<h2
-					className="text-base font-semibold tracking-tight text-foreground"
+					className="font-semibold text-base text-foreground tracking-tight"
 					id={id}
 				>
 					{title}
 				</h2>
-				<p className="max-w-5xl text-sm leading-5 text-foreground-secondary">
+				<p className="max-w-5xl text-foreground-secondary text-sm leading-5">
 					{description}
 				</p>
 			</div>
@@ -99,14 +99,14 @@ export const Overview: Story = {
 			<div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
 				<header className="grid gap-5 border-b pb-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
 					<div className="grid gap-2">
-						<p className="text-sm font-medium text-foreground-secondary">
+						<p className="font-medium text-foreground-secondary text-sm">
 							Accounts receivable
 						</p>
 						<div className="grid gap-1">
-							<h1 className="text-2xl font-semibold tracking-tight">
+							<h1 className="font-semibold text-2xl tracking-tight">
 								Invoice list density
 							</h1>
-							<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+							<p className="max-w-5xl text-foreground-secondary text-sm leading-6">
 								ToggleGroup owns single/multiple peer selection. Feature code
 								owns whether density is stored for the operator.
 							</p>
@@ -114,25 +114,25 @@ export const Overview: Story = {
 					</div>
 					<dl className="grid grid-cols-2 gap-x-8 gap-y-3 rounded-lg border bg-card p-4">
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Subject
 							</dt>
 							<dd className="text-sm">Invoice queue</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Scope
 							</dt>
 							<dd className="text-sm">Peer selection</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Ownership
 							</dt>
 							<dd className="text-sm">Feature state</dd>
 						</div>
 						<div className="grid gap-1">
-							<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							<dt className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 								Lifecycle
 							</dt>
 							<dd className="text-sm">Selected peers</dd>
@@ -151,19 +151,19 @@ export const Overview: Story = {
 							</div>
 							<div className="flex flex-wrap items-center gap-2">
 								<Badge variant="outline">Receivables</Badge>
-								<StatusBadge status="pending" label="Draft view" />
+								<StatusBadge label="Draft view" status="pending" />
 							</div>
 						</div>
 					</CardHeader>
 					<CardContent className="grid gap-6">
 						<div className="grid gap-2">
-							<p className="text-sm font-medium">Density</p>
+							<p className="font-medium text-sm">Density</p>
 							<ToggleGroup
+								aria-label="List density"
+								defaultValue="comfortable"
+								size="sm"
 								type="single"
 								variant="outline"
-								size="sm"
-								defaultValue="comfortable"
-								aria-label="List density"
 							>
 								<ToggleGroupItem value="compact">Compact</ToggleGroupItem>
 								<ToggleGroupItem value="comfortable">
@@ -173,11 +173,11 @@ export const Overview: Story = {
 							</ToggleGroup>
 						</div>
 						<div className="grid gap-2">
-							<p className="text-sm font-medium">Column emphasis</p>
+							<p className="font-medium text-sm">Column emphasis</p>
 							<ToggleGroup
-								type="multiple"
-								defaultValue={["amount"]}
 								aria-label="Column emphasis"
+								defaultValue={["amount"]}
+								type="multiple"
 							>
 								<ToggleGroupItem value="amount">Amount</ToggleGroupItem>
 								<ToggleGroupItem value="due">Due date</ToggleGroupItem>
@@ -204,16 +204,16 @@ export const SemanticUsage: Story = {
 	render: () => (
 		<div className="grid w-full max-w-5xl gap-6 sm:grid-cols-2">
 			<WorkbenchSection
+				description="Use the single selection model when the operator must choose one view density at a time."
 				id="single-density"
 				title="single · density"
-				description="Use the single selection model when the operator must choose one view density at a time."
 			>
 				<ToggleGroup
+					aria-label="List density"
+					defaultValue="comfortable"
+					size="sm"
 					type="single"
 					variant="outline"
-					size="sm"
-					defaultValue="comfortable"
-					aria-label="List density"
 				>
 					<ToggleGroupItem value="compact">Compact</ToggleGroupItem>
 					<ToggleGroupItem value="comfortable">Comfortable</ToggleGroupItem>
@@ -221,14 +221,14 @@ export const SemanticUsage: Story = {
 				</ToggleGroup>
 			</WorkbenchSection>
 			<WorkbenchSection
+				description="Use multiple selection when several column emphases can coexist without becoming commands."
 				id="multiple-emphasis"
 				title="multiple · emphasis"
-				description="Use multiple selection when several column emphases can coexist without becoming commands."
 			>
 				<ToggleGroup
-					type="multiple"
-					defaultValue={["amount", "due"]}
 					aria-label="Column emphasis"
+					defaultValue={["amount", "due"]}
+					type="multiple"
 				>
 					<ToggleGroupItem value="amount">Amount</ToggleGroupItem>
 					<ToggleGroupItem value="due">Due date</ToggleGroupItem>
@@ -252,14 +252,14 @@ export const Usage: Story = {
 	render: (args) => (
 		<div className="grid w-full max-w-5xl gap-4">
 			<div className="grid gap-2 rounded-lg border bg-card p-4">
-				<p className="text-sm font-medium">List density</p>
+				<p className="font-medium text-sm">List density</p>
 				<ToggleGroup {...args} aria-label="List density">
 					<ToggleGroupItem value="compact">Compact</ToggleGroupItem>
 					<ToggleGroupItem value="comfortable">Comfortable</ToggleGroupItem>
 					<ToggleGroupItem value="spacious">Spacious</ToggleGroupItem>
 				</ToggleGroup>
 			</div>
-			<p className="text-sm text-foreground-secondary">
+			<p className="text-foreground-secondary text-sm">
 				Selection meaning and persistence stay with the feature.
 			</p>
 		</div>
@@ -279,15 +279,15 @@ export const StatesAndAccessibility: Story = {
 	render: () => (
 		<div className="grid w-full max-w-5xl gap-6 sm:grid-cols-2">
 			<WorkbenchSection
+				description="Enabled peer choices remain navigable and preserve pressed state semantics."
 				id="ready"
 				title="Ready"
-				description="Enabled peer choices remain navigable and preserve pressed state semantics."
 			>
 				<ToggleGroup
+					aria-label="Amount alignment"
+					defaultValue="left"
 					type="single"
 					variant="outline"
-					defaultValue="left"
-					aria-label="Amount alignment"
 				>
 					<ToggleGroupItem value="left">Left</ToggleGroupItem>
 					<ToggleGroupItem value="center">Center</ToggleGroupItem>
@@ -295,16 +295,16 @@ export const StatesAndAccessibility: Story = {
 				</ToggleGroup>
 			</WorkbenchSection>
 			<WorkbenchSection
+				description="A disabled group remains visibly unavailable instead of masquerading as a different selection mode."
 				id="disabled"
 				title="Disabled"
-				description="A disabled group remains visibly unavailable instead of masquerading as a different selection mode."
 			>
 				<ToggleGroup
-					type="single"
-					variant="outline"
+					aria-label="Locked alignment"
 					defaultValue="left"
 					disabled
-					aria-label="Locked alignment"
+					type="single"
+					variant="outline"
 				>
 					<ToggleGroupItem value="left">Left</ToggleGroupItem>
 					<ToggleGroupItem value="center">Center</ToggleGroupItem>
@@ -329,26 +329,26 @@ export const VariantsAndSizes: Story = {
 		<div className="grid w-full max-w-5xl gap-6">
 			{(["default", "outline"] as const).map((variant) => (
 				<WorkbenchSection
-					key={variant}
-					id={`variant-${variant}`}
-					title={variant}
 					description="Density peers should remain readable as the outline and size scale changes."
+					id={`variant-${variant}`}
+					key={variant}
+					title={variant}
 				>
 					<div className="grid gap-4 sm:grid-cols-3">
 						{(["sm", "default", "lg"] as const).map((size) => (
 							<div
-								key={`${variant}-${size}`}
 								className="grid gap-2 rounded-lg border bg-card p-4"
+								key={`${variant}-${size}`}
 							>
-								<p className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+								<p className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
 									{size}
 								</p>
 								<ToggleGroup
+									aria-label={`${variant} ${size}`}
+									defaultValue="a"
+									size={size}
 									type="single"
 									variant={variant}
-									size={size}
-									defaultValue="a"
-									aria-label={`${variant} ${size}`}
 								>
 									<ToggleGroupItem value="a">{size}</ToggleGroupItem>
 									<ToggleGroupItem value="b">Alt</ToggleGroupItem>
@@ -383,17 +383,17 @@ export const Composition: Story = {
 						</div>
 						<div className="flex flex-wrap items-center gap-2">
 							<Badge variant="secondary">Finance</Badge>
-							<StatusBadge status="pending" label="Unsaved view" />
+							<StatusBadge label="Unsaved view" status="pending" />
 						</div>
 					</div>
 				</CardHeader>
 				<CardContent>
 					<ToggleGroup
+						aria-label="List density"
+						defaultValue="comfortable"
+						size="sm"
 						type="single"
 						variant="outline"
-						size="sm"
-						defaultValue="comfortable"
-						aria-label="List density"
 					>
 						<ToggleGroupItem value="compact">Compact</ToggleGroupItem>
 						<ToggleGroupItem value="comfortable">Comfortable</ToggleGroupItem>
@@ -401,7 +401,7 @@ export const Composition: Story = {
 					</ToggleGroup>
 				</CardContent>
 			</Card>
-			<p className="text-sm text-foreground-secondary">
+			<p className="text-foreground-secondary text-sm">
 				Group chrome stays bounded inside Card; persistence stays outside the
 				component.
 			</p>
@@ -422,28 +422,28 @@ export const DoAndDoNot: Story = {
 	render: () => (
 		<div className="grid max-w-5xl gap-6 sm:grid-cols-2">
 			<WorkbenchSection
+				description="Keep the group for peer selection only when each option is a valid view choice."
 				id="peer-view-choices"
 				title="Do: peer view choices"
-				description="Keep the group for peer selection only when each option is a valid view choice."
 			>
 				<ToggleGroup
+					aria-label="List density"
+					defaultValue="comfortable"
+					size="sm"
 					type="single"
 					variant="outline"
-					size="sm"
-					defaultValue="comfortable"
-					aria-label="List density"
 				>
 					<ToggleGroupItem value="compact">Compact</ToggleGroupItem>
 					<ToggleGroupItem value="comfortable">Comfortable</ToggleGroupItem>
 				</ToggleGroup>
 			</WorkbenchSection>
 			<WorkbenchSection
+				description="Commands like Approve, Export, and Void belong on Toolbar Buttons, not as pressed peers."
 				id="no-consequential-commands"
 				title="Do not: consequential commands in the group"
-				description="Commands like Approve, Export, and Void belong on Toolbar Buttons, not as pressed peers."
 			>
 				<div className="grid gap-2 rounded-lg border bg-card p-4">
-					<p className="text-sm text-foreground-secondary">
+					<p className="text-foreground-secondary text-sm">
 						Approve, Export, and Void belong on Toolbar Buttons — not as pressed
 						ToggleGroupItem peers.
 					</p>

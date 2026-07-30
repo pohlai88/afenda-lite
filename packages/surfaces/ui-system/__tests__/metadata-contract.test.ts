@@ -80,25 +80,31 @@ function contractSourceFact(
 	const definitions: ContractSourceFact[] = [];
 	for (const statement of sourceFile.statements) {
 		if (
-			!ts.isVariableStatement(statement) ||
-			!statement.modifiers?.some(
-				(modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword,
+			!(
+				ts.isVariableStatement(statement) &&
+				statement.modifiers?.some(
+					(modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword,
+				)
 			)
 		) {
 			continue;
 		}
 		for (const declaration of statement.declarationList.declarations) {
 			if (
-				!ts.isIdentifier(declaration.name) ||
-				!declaration.initializer ||
-				!ts.isCallExpression(declaration.initializer) ||
-				!ts.isIdentifier(declaration.initializer.expression) ||
+				!(
+					ts.isIdentifier(declaration.name) &&
+					declaration.initializer &&
+					ts.isCallExpression(declaration.initializer) &&
+					ts.isIdentifier(declaration.initializer.expression)
+				) ||
 				declaration.initializer.expression.text !== "defineManifestContract"
 			) {
 				continue;
 			}
-			const argument = declaration.initializer.arguments[0];
-			if (!argument || !ts.isObjectLiteralExpression(argument)) continue;
+			const [argument] = declaration.initializer.arguments;
+			if (!(argument && ts.isObjectLiteralExpression(argument))) {
+				continue;
+			}
 			const values = new Map<string, string>();
 			for (const property of argument.properties) {
 				if (
@@ -122,8 +128,8 @@ function contractSourceFact(
 			`${fileName} must export exactly one defineManifestContract definition.`,
 		);
 	}
-	const definition = definitions[0];
-	if (!definition?.id || !definition.component) {
+	const [definition] = definitions;
+	if (!(definition?.id && definition.component)) {
 		throw new Error(
 			`${fileName} must declare literal id and component values.`,
 		);
@@ -135,9 +141,11 @@ function internalContractExports(source: string): string[] {
 	const sourceFile = parseTypeScript(source, "contracts/index.ts");
 	return sourceFile.statements.flatMap((statement) => {
 		if (
-			!ts.isExportDeclaration(statement) ||
-			!statement.moduleSpecifier ||
-			!ts.isStringLiteral(statement.moduleSpecifier)
+			!(
+				ts.isExportDeclaration(statement) &&
+				statement.moduleSpecifier &&
+				ts.isStringLiteral(statement.moduleSpecifier)
+			)
 		) {
 			return [];
 		}
@@ -160,28 +168,34 @@ function exportedNames(source: string, fileName: string): string[] {
 			statement.exportClause &&
 			ts.isNamedExports(statement.exportClause)
 		) {
-			for (const element of statement.exportClause.elements)
+			for (const element of statement.exportClause.elements) {
 				names.add(element.name.text);
+			}
 			continue;
 		}
 		const exported = statement.modifiers?.some(
 			(modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword,
 		);
-		if (!exported) continue;
+		if (!exported) {
+			continue;
+		}
 		if (ts.isVariableStatement(statement)) {
 			for (const declaration of statement.declarationList.declarations) {
-				if (ts.isIdentifier(declaration.name)) names.add(declaration.name.text);
+				if (ts.isIdentifier(declaration.name)) {
+					names.add(declaration.name.text);
+				}
 			}
 			continue;
 		}
 		if (
-			ts.isFunctionDeclaration(statement) ||
-			ts.isClassDeclaration(statement) ||
-			ts.isInterfaceDeclaration(statement) ||
-			ts.isTypeAliasDeclaration(statement) ||
-			ts.isEnumDeclaration(statement)
+			(ts.isFunctionDeclaration(statement) ||
+				ts.isClassDeclaration(statement) ||
+				ts.isInterfaceDeclaration(statement) ||
+				ts.isTypeAliasDeclaration(statement) ||
+				ts.isEnumDeclaration(statement)) &&
+			statement.name
 		) {
-			if (statement.name) names.add(statement.name.text);
+			names.add(statement.name.text);
 		}
 	}
 	return [...names].sort();
@@ -322,7 +336,7 @@ describe("UI system metadata contract", () => {
 		);
 		const internalModules = internalContractExports(
 			readFileSync(path.join(contractDirectory, "index.ts"), "utf8"),
-		).sort();
+		).sort((left, right) => left.localeCompare(right));
 		const catalogContracts = UI_SYSTEM_CATALOG.components.flatMap(
 			(component) =>
 				component.governance?.contract ? [component.governance.contract] : [],
@@ -369,8 +383,9 @@ describe("UI system metadata contract", () => {
 		const accordion = UI_SYSTEM_CATALOG.components.find(
 			(entry) => entry.id === "ui.accordion",
 		);
-		if (!button || !accordion)
+		if (!(button && accordion)) {
 			throw new Error("Component metadata is missing.");
+		}
 
 		expect(button.lifecycle).toBe("candidate");
 		expect(button.governance).toMatchObject({
@@ -406,7 +421,9 @@ describe("UI system metadata contract", () => {
 			const component = UI_SYSTEM_CATALOG.components.find(
 				(entry) => entry.id === componentId,
 			);
-			if (!component) throw new Error(`${componentId} metadata is missing.`);
+			if (!component) {
+				throw new Error(`${componentId} metadata is missing.`);
+			}
 
 			expect(component.lifecycle).toBe("approved");
 			expect(component.governance).toMatchObject({
@@ -423,7 +440,9 @@ describe("UI system metadata contract", () => {
 		const component = UI_SYSTEM_CATALOG.components.find(
 			(entry) => entry.id === "ui.button",
 		);
-		if (!component) throw new Error("ui.button metadata is missing.");
+		if (!component) {
+			throw new Error("ui.button metadata is missing.");
+		}
 
 		const drifted = {
 			...component,
@@ -447,8 +466,9 @@ describe("UI system metadata contract", () => {
 		const component = UI_SYSTEM_CATALOG.components.find(
 			(entry) => entry.id === "ui.button",
 		);
-		if (!component?.governance)
+		if (!component?.governance) {
 			throw new Error("ui.button governance is missing.");
+		}
 
 		const result = validateGovernance([
 			{
@@ -485,12 +505,15 @@ describe("UI system metadata contract", () => {
 		const component = UI_SYSTEM_CATALOG.components.find(
 			(entry) => entry.id === "ui.button",
 		);
-		if (!component?.governance?.contract)
+		if (!component?.governance?.contract) {
 			throw new Error("ui.button governance is missing.");
+		}
 
 		const drifted = structuredClone(component);
 		const contract = drifted.governance?.contract;
-		if (!contract) throw new Error("Cloned ui.button contract is missing.");
+		if (!contract) {
+			throw new Error("Cloned ui.button contract is missing.");
+		}
 		Reflect.set(contract, "rules", ["Shared contextual clause."]);
 		Reflect.set(contract, "accessibility", ["Shared contextual clause."]);
 
@@ -506,12 +529,15 @@ describe("UI system metadata contract", () => {
 		const component = UI_SYSTEM_CATALOG.components.find(
 			(entry) => entry.id === "ui.button",
 		);
-		if (!component?.governance?.contract)
+		if (!component?.governance?.contract) {
 			throw new Error("ui.button governance contract is missing.");
+		}
 
 		const drifted = structuredClone(component);
 		const contract = drifted.governance?.contract;
-		if (!contract) throw new Error("Cloned ui.button contract is missing.");
+		if (!contract) {
+			throw new Error("Cloned ui.button contract is missing.");
+		}
 		Reflect.set(contract, "standard", "afenda.ui-component-contract/v0");
 		Reflect.set(contract, "ownership", {
 			componentOwns: [],
@@ -541,12 +567,15 @@ describe("UI system metadata contract", () => {
 		const component = UI_SYSTEM_CATALOG.components.find(
 			(entry) => entry.id === "ui.button",
 		);
-		if (!component?.governance?.contract)
+		if (!component?.governance?.contract) {
 			throw new Error("ui.button governance contract is missing.");
+		}
 
 		const drifted = structuredClone(component);
 		const contract = drifted.governance?.contract;
-		if (!contract) throw new Error("Cloned ui.button contract is missing.");
+		if (!contract) {
+			throw new Error("Cloned ui.button contract is missing.");
+		}
 		Reflect.set(contract, "approvedVariants", {
 			default: {
 				meaning: "Default action.",
@@ -568,8 +597,9 @@ describe("UI system metadata contract", () => {
 		const component = UI_SYSTEM_CATALOG.components.find(
 			(entry) => entry.id === "ui.button",
 		);
-		if (!component?.governance)
+		if (!component?.governance) {
 			throw new Error("ui.button governance is missing.");
+		}
 
 		const result = validateGovernance([
 			{
@@ -599,7 +629,9 @@ describe("UI system metadata contract", () => {
 		const component = UI_SYSTEM_CATALOG.components.find(
 			(entry) => entry.id === "ui.badge",
 		);
-		if (!component) throw new Error("Governance fixture metadata is missing.");
+		if (!component) {
+			throw new Error("Governance fixture metadata is missing.");
+		}
 
 		const result = validateGovernance([
 			{

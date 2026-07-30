@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noJsxPropsBind: The enabled React Compiler stabilizes JSX callback props.
 "use client";
 
 import {
@@ -42,16 +43,17 @@ function parseMovementTypeOption(
 	return null;
 }
 
-type CreateStockMovementFormProps = {
-	canCreate: boolean;
+interface CreateStockMovementFormProps {
 	canAdjust: boolean;
+	canCreate: boolean;
 	warehouses: InventoryMasterOption[];
-};
+}
 
 /**
  * Draft stock movement create — UI path for opening-balance receipt, transfer, and adjustment.
  * Peer-sourced receipt/issue (receiving/fulfillment) must use peer packages with event linkage.
  */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Movement-type fields share one atomic form and action contract.
 export function CreateStockMovementForm({
 	canCreate,
 	canAdjust,
@@ -65,7 +67,7 @@ export function CreateStockMovementForm({
 	const [movementType, setMovementType] =
 		useState<MovementTypeOption>(defaultType);
 
-	if (!canCreate && !canAdjust) {
+	if (!(canCreate || canAdjust)) {
 		return (
 			<Alert role="status">
 				<AlertTitle>Create unavailable</AlertTitle>
@@ -121,29 +123,29 @@ export function CreateStockMovementForm({
 				<FormError>{state.message}</FormError>
 			) : null}
 			<FormField
+				error={codeError}
+				fieldId="stock-movement-code"
 				label="Code"
 				required
-				fieldId="stock-movement-code"
-				error={codeError}
 			>
 				<Input
+					autoComplete="off"
+					disabled={pending}
 					id="stock-movement-code"
 					name="code"
 					required
-					autoComplete="off"
-					disabled={pending}
 				/>
 			</FormField>
 			<FormField
+				error={typeError}
+				fieldId="stock-movement-type"
 				label="Movement type"
 				required
-				fieldId="stock-movement-type"
-				error={typeError}
 			>
 				<NativeSelect
+					disabled={pending}
 					id="stock-movement-type"
 					name="movementType"
-					value={movementType}
 					onChange={(event) => {
 						const next = parseMovementTypeOption(event.target.value, {
 							canCreate,
@@ -153,7 +155,7 @@ export function CreateStockMovementForm({
 							setMovementType(next);
 						}
 					}}
-					disabled={pending}
+					value={movementType}
 				>
 					{canCreate ? (
 						<>
@@ -168,23 +170,23 @@ export function CreateStockMovementForm({
 					) : null}
 				</NativeSelect>
 			</FormField>
-			<input type="hidden" name="source" value={source} />
+			<input name="source" type="hidden" value={source} />
 			{movementType === "transfer" ? (
 				<>
 					<FormField
+						error={fromWarehouseError}
+						fieldId="stock-movement-from"
 						label="From warehouse"
 						required
-						fieldId="stock-movement-from"
-						error={fromWarehouseError}
 					>
 						<NativeSelect
+							defaultValue=""
+							disabled={pending || warehouses.length === 0}
 							id="stock-movement-from"
 							name="fromWarehouseId"
 							required
-							disabled={pending || warehouses.length === 0}
-							defaultValue=""
 						>
-							<NativeSelectOption value="" disabled>
+							<NativeSelectOption disabled value="">
 								Select warehouse
 							</NativeSelectOption>
 							{warehouses.map((warehouse) => (
@@ -195,19 +197,19 @@ export function CreateStockMovementForm({
 						</NativeSelect>
 					</FormField>
 					<FormField
+						error={toWarehouseError}
+						fieldId="stock-movement-to"
 						label="To warehouse"
 						required
-						fieldId="stock-movement-to"
-						error={toWarehouseError}
 					>
 						<NativeSelect
+							defaultValue=""
+							disabled={pending || warehouses.length === 0}
 							id="stock-movement-to"
 							name="toWarehouseId"
 							required
-							disabled={pending || warehouses.length === 0}
-							defaultValue=""
 						>
-							<NativeSelectOption value="" disabled>
+							<NativeSelectOption disabled value="">
 								Select warehouse
 							</NativeSelectOption>
 							{warehouses.map((warehouse) => (
@@ -220,19 +222,19 @@ export function CreateStockMovementForm({
 				</>
 			) : (
 				<FormField
+					error={warehouseError}
+					fieldId="stock-movement-warehouse"
 					label="Warehouse"
 					required
-					fieldId="stock-movement-warehouse"
-					error={warehouseError}
 				>
 					<NativeSelect
+						defaultValue=""
+						disabled={pending || warehouses.length === 0}
 						id="stock-movement-warehouse"
 						name="warehouseId"
 						required
-						disabled={pending || warehouses.length === 0}
-						defaultValue=""
 					>
-						<NativeSelectOption value="" disabled>
+						<NativeSelectOption disabled value="">
 							Select warehouse
 						</NativeSelectOption>
 						{warehouses.map((warehouse) => (
@@ -246,39 +248,40 @@ export function CreateStockMovementForm({
 			{movementType === "adjustment" ? (
 				<>
 					<FormField
+						error={reasonError}
+						fieldId="stock-adjustment-reason"
 						label="Adjustment reason code"
 						required
-						fieldId="stock-adjustment-reason"
-						error={reasonError}
 					>
 						<Input
+							autoComplete="off"
+							disabled={pending}
 							id="stock-adjustment-reason"
 							name="adjustmentReasonCode"
 							required
-							autoComplete="off"
-							disabled={pending}
 						/>
 					</FormField>
-					<FormField label="Adjustment note" fieldId="stock-adjustment-note">
+					<FormField fieldId="stock-adjustment-note" label="Adjustment note">
 						<Input
-							id="stock-adjustment-note"
-							name="adjustmentNote"
 							autoComplete="off"
 							disabled={pending}
+							id="stock-adjustment-note"
+							name="adjustmentNote"
 						/>
 					</FormField>
 				</>
 			) : null}
 			{canCreate && !canAdjust ? (
-				<p className="text-sm text-muted-foreground">
+				<p className="text-muted-foreground text-sm">
 					Adjustment create remains hidden until{" "}
 					<Code>inventory.adjustment.post</Code> is granted.
 				</p>
 			) : null}
-			<Button type="submit" disabled={pending || warehouses.length === 0}>
+			<Button disabled={pending || warehouses.length === 0} type="submit">
 				{pending ? <Spinner /> : null}
 				Create draft movement
 			</Button>
 		</form>
 	);
 }
+// biome-ignore-all lint/style/noNestedTernary: Exhaustive status and tri-state view mappings remain explicit at their use sites.

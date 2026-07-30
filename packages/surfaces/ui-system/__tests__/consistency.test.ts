@@ -141,15 +141,15 @@ describe("@afenda/ui-system — dependency + styling consistency", () => {
 });
 
 describe("@afenda/ui-system — compose type lock (afenda-elite-ui-compose)", () => {
-	it("Empty title uses section type lock text-lg font-medium", () => {
+	it("Empty title uses section type lock font-medium text-lg", () => {
 		const src = read("src/components/ui/empty.tsx");
-		expect(src).toMatch(/text-lg font-medium/);
+		expect(src).toMatch(/font-medium text-foreground text-lg/);
 		expect(src).not.toMatch(/text-lg font-semibold/);
 	});
 
-	it("CardTitle uses section type lock text-lg font-medium", () => {
+	it("CardTitle uses section type lock font-medium text-lg", () => {
 		const src = read("src/components/ui/card.tsx");
-		expect(src).toMatch(/CardTitle[\s\S]*?text-lg font-medium/);
+		expect(src).toMatch(/CardTitle[\s\S]*?font-medium text-lg/);
 	});
 
 	it("Card root documents Card-only rounded-xl exception", () => {

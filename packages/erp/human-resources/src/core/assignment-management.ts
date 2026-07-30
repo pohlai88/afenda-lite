@@ -12,7 +12,7 @@ export {
 } from "./assignment";
 
 /** Primary assignment at as-of — alias for unique effective work assignment resolution. */
-export async function resolvePrimaryAssignmentAsOf(
+export function resolvePrimaryAssignmentAsOf(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<WorkAssignment | null>> {

@@ -209,7 +209,7 @@ import {
 	SettingsIcon,
 	UserIcon,
 } from "lucide-react";
-import * as React from "react";
+import { type ReactNode, useState } from "react";
 import { CVA_COVERAGE } from "./coverage";
 
 export const COMPONENT_KEYS = [
@@ -271,6 +271,15 @@ export const COMPONENT_KEYS = [
 export type ComponentKey = (typeof COMPONENT_KEYS)[number];
 
 const fixedDate = new Date("2026-07-28T00:00:00.000Z");
+const auditEvents = Array.from({ length: 20 }, (_, index) => {
+	const sequence = String(index + 1).padStart(2, "0");
+	return { id: `audit-event-${sequence}`, sequence };
+});
+const ignoreCatalogAction = () => undefined;
+
+function recordRowId(row: Record<string, unknown>): string {
+	return String(row.id);
+}
 const options = [
 	{ value: "accounting", label: "Accounting" },
 	{ value: "inventory", label: "Inventory" },
@@ -281,7 +290,7 @@ function Frame({
 	children,
 	wide = false,
 }: {
-	children: React.ReactNode;
+	children: ReactNode;
 	wide?: boolean;
 }) {
 	return (
@@ -297,24 +306,24 @@ function Frame({
 	);
 }
 
-function Matrix({ children }: { children: React.ReactNode }) {
+function Matrix({ children }: { children: ReactNode }) {
 	return <div className="flex flex-wrap items-center gap-3">{children}</div>;
 }
 
 function ComboboxDemo() {
-	const [value, setValue] = React.useState("accounting");
+	const [value, setValue] = useState("accounting");
 	return (
 		<Combobox
 			aria-label="Module"
+			onValueChange={setValue}
 			options={options}
 			value={value}
-			onValueChange={setValue}
 		/>
 	);
 }
 
 function DatePickerDemo() {
-	const [date, setDate] = React.useState<Date | undefined>(fixedDate);
+	const [date, setDate] = useState<Date | undefined>(fixedDate);
 	return (
 		<DatePicker
 			{...(date === undefined ? {} : { value: date })}
@@ -324,7 +333,7 @@ function DatePickerDemo() {
 }
 
 function DataTableDemo() {
-	const rows: Array<Record<string, unknown>> = [
+	const rows: Record<string, unknown>[] = [
 		{
 			id: "INV-1042",
 			supplier: "Northwind Trading",
@@ -349,22 +358,22 @@ function DataTableDemo() {
 					title: "Status",
 					render: (value) => (
 						<StatusBadge
-							status={value === "Approved" ? "success" : "pending"}
 							label={String(value)}
+							status={value === "Approved" ? "success" : "pending"}
 						/>
 					),
 				},
 			]}
 			data={rows}
-			getRowId={(row) => String(row.id)}
+			getRowId={recordRowId}
+			onFilterChange={ignoreCatalogAction}
+			onPageChange={ignoreCatalogAction}
+			onSelectionChange={ignoreCatalogAction}
+			onSort={ignoreCatalogAction}
 			selectable
 			selectedRowIds={new Set(["INV-1042"])}
-			onSelectionChange={() => undefined}
-			onSort={() => undefined}
-			onFilterChange={() => undefined}
 			showPagination
 			totalPages={4}
-			onPageChange={() => undefined}
 		/>
 	);
 }
@@ -374,7 +383,7 @@ export function ComponentShowcase({ component }: { component: ComponentKey }) {
 		case "accordion":
 			return (
 				<Frame>
-					<Accordion type="single" defaultValue="item-1" collapsible>
+					<Accordion collapsible defaultValue="item-1" type="single">
 						<AccordionItem value="item-1">
 							<AccordionTrigger>What is Afenda?</AccordionTrigger>
 							<AccordionContent>
@@ -487,6 +496,18 @@ export function ComponentShowcase({ component }: { component: ComponentKey }) {
 					</Breadcrumb>
 				</Frame>
 			);
+		case "button":
+			return (
+				<Frame>
+					<Matrix>
+						{CVA_COVERAGE.button.variant.map((variant) => (
+							<Button key={variant} variant={variant}>
+								{variant}
+							</Button>
+						))}
+					</Matrix>
+				</Frame>
+			);
 		case "button-group":
 			return (
 				<Frame>
@@ -509,8 +530,8 @@ export function ComponentShowcase({ component }: { component: ComponentKey }) {
 			return (
 				<Frame>
 					<Calendar
-						mode="single"
 						defaultMonth={fixedDate}
+						mode="single"
 						selected={fixedDate}
 					/>
 				</Frame>
@@ -525,14 +546,14 @@ export function ComponentShowcase({ component }: { component: ComponentKey }) {
 								Complete all controls before posting.
 							</CardDescription>
 							<CardAction>
-								<Button variant="outline" size="sm">
+								<Button size="sm" variant="outline">
 									Review
 								</Button>
 							</CardAction>
 						</CardHeader>
 						<CardContent>18 of 24 controls completed.</CardContent>
 						<CardFooter>
-							<Progress value={75} aria-label="Period close completion" />
+							<Progress aria-label="Period close completion" value={75} />
 						</CardFooter>
 					</Card>
 				</Frame>
@@ -583,9 +604,9 @@ export function ComponentShowcase({ component }: { component: ComponentKey }) {
 						<Combobox
 							aria-label="Multiple modules"
 							multiple
+							onValueChange={ignoreCatalogAction}
 							options={options}
 							value={["accounting", "payroll"]}
-							onValueChange={() => undefined}
 						/>
 						<Combobox aria-label="Disabled module" disabled options={options} />
 					</div>
@@ -660,11 +681,11 @@ export function ComponentShowcase({ component }: { component: ComponentKey }) {
 					<div className="grid gap-3 sm:grid-cols-2">
 						<DatePickerDemo />
 						<DateRangePicker
+							onChange={ignoreCatalogAction}
 							value={{
 								from: fixedDate,
 								to: new Date("2026-08-04T00:00:00.000Z"),
 							}}
-							onChange={() => undefined}
 						/>
 						<DatePicker disabled />
 						<DatePicker aria-invalid />
@@ -691,8 +712,8 @@ export function ComponentShowcase({ component }: { component: ComponentKey }) {
 								</FormField>
 								<FormField label="Email address" required>
 									<Input
-										type="email"
 										defaultValue="finance@northwind.example"
+										type="email"
 									/>
 								</FormField>
 							</div>
@@ -746,12 +767,12 @@ export function ComponentShowcase({ component }: { component: ComponentKey }) {
 					<div className="grid gap-3">
 						{CVA_COVERAGE.empty.size.map((size) => (
 							<Empty
+								action={<Button size="sm">Create record</Button>}
+								description="Adjust filters or create a new record."
+								icon={<InboxIcon />}
 								key={size}
 								size={size}
-								icon={<InboxIcon />}
 								title={`No ${size} results`}
-								description="Adjust filters or create a new record."
-								action={<Button size="sm">Create record</Button>}
 							/>
 						))}
 					</div>
@@ -772,7 +793,7 @@ export function ComponentShowcase({ component }: { component: ComponentKey }) {
 										{orientation}
 									</FieldLabel>
 									<FieldContent>
-										<Input id={`field-${orientation}`} defaultValue="Afenda" />
+										<Input defaultValue="Afenda" id={`field-${orientation}`} />
 										<FieldDescription>Supporting guidance</FieldDescription>
 									</FieldContent>
 								</Field>
@@ -795,9 +816,9 @@ export function ComponentShowcase({ component }: { component: ComponentKey }) {
 								{CVA_COVERAGE["form-error"].size.map((size) => (
 									<FormError
 										key={`${variant}-${size}`}
-										variant={variant}
-										size={size}
 										message={`${variant} message (${size})`}
+										size={size}
+										variant={variant}
 									/>
 								))}
 							</Matrix>
@@ -810,15 +831,15 @@ export function ComponentShowcase({ component }: { component: ComponentKey }) {
 				<Frame>
 					<div className="grid gap-4">
 						<FormField
-							label="Legal name"
 							description="Use the registered entity name."
+							label="Legal name"
 							required
 						>
 							<FormInput defaultValue="Afenda Holdings" />
 						</FormField>
 						<FormField
-							label="Notes"
 							error="Notes must be under 500 characters."
+							label="Notes"
 						>
 							<FormTextarea defaultValue="A deliberately invalid example." />
 						</FormField>
@@ -828,7 +849,7 @@ export function ComponentShowcase({ component }: { component: ComponentKey }) {
 		case "hover-card":
 			return (
 				<Frame>
-					<HoverCard openDelay={0} closeDelay={0}>
+					<HoverCard closeDelay={0} openDelay={0}>
 						<HoverCardTrigger asChild>
 							<Button variant="link">@afenda</Button>
 						</HoverCardTrigger>
@@ -839,7 +860,7 @@ export function ComponentShowcase({ component }: { component: ComponentKey }) {
 								</Avatar>
 								<div>
 									<strong>Afenda</strong>
-									<p className="text-sm text-muted-foreground">
+									<p className="text-muted-foreground text-sm">
 										Enterprise operations workspace.
 									</p>
 								</div>
@@ -870,8 +891,12 @@ export function ComponentShowcase({ component }: { component: ComponentKey }) {
 						</InputGroup>
 						<Matrix>
 							{CVA_COVERAGE["input-group"].size.map((size) => (
-								<InputGroupButton key={size} size={size} aria-label={size}>
-									{size.startsWith("icon") ? <SearchIcon /> : size}
+								<InputGroupButton aria-label={size} key={size} size={size}>
+									{size.startsWith("icon") ? (
+										<SearchIcon />
+									) : (
+										<span>{size}</span>
+									)}
 								</InputGroupButton>
 							))}
 						</Matrix>
@@ -889,8 +914,8 @@ export function ComponentShowcase({ component }: { component: ComponentKey }) {
 							readOnly
 						/>
 						<Input
-							aria-label="Invalid input"
 							aria-invalid
+							aria-label="Invalid input"
 							defaultValue="Invalid value"
 						/>
 						<Input disabled placeholder="Disabled input" />
@@ -920,17 +945,17 @@ export function ComponentShowcase({ component }: { component: ComponentKey }) {
 					<div className="grid gap-3">
 						{CVA_COVERAGE["key-value"].orientation.map((orientation) => (
 							<div
-								key={orientation}
 								className="grid gap-2 rounded-md border p-3"
+								key={orientation}
 							>
 								{CVA_COVERAGE["key-value"].size.map((size) => (
 									<KeyValue
+										copyable
 										key={size}
+										label={`${orientation} ${size}`}
 										orientation={orientation}
 										size={size}
-										label={`${orientation} ${size}`}
 										value="INV-1042"
-										copyable
 									/>
 								))}
 							</div>
@@ -944,7 +969,7 @@ export function ComponentShowcase({ component }: { component: ComponentKey }) {
 				<Frame>
 					<div className="grid gap-2">
 						<Label htmlFor="label-demo">Organization name</Label>
-						<Input id="label-demo" defaultValue="Afenda" />
+						<Input defaultValue="Afenda" id="label-demo" />
 						<Label className="text-destructive">Required field</Label>
 					</div>
 				</Frame>
@@ -1042,7 +1067,7 @@ export function ComponentShowcase({ component }: { component: ComponentKey }) {
 						{[0, 25, 50, 75, 100].map((value) => (
 							<div key={value}>
 								<Label>{value}%</Label>
-								<Progress value={value} aria-label={`Completion ${value}%`} />
+								<Progress aria-label={`Completion ${value}%`} value={value} />
 							</div>
 						))}
 					</div>
@@ -1061,7 +1086,7 @@ export function ComponentShowcase({ component }: { component: ComponentKey }) {
 							Quarterly
 						</Label>
 						<Label className="flex items-center gap-2">
-							<RadioGroupItem value="annual" disabled />
+							<RadioGroupItem disabled value="annual" />
 							Annual (disabled)
 						</Label>
 					</RadioGroup>
@@ -1072,10 +1097,9 @@ export function ComponentShowcase({ component }: { component: ComponentKey }) {
 				<Frame>
 					<ScrollArea className="h-56 rounded-md border">
 						<div className="w-[900px] space-y-2 p-4">
-							{Array.from({ length: 20 }, (_, index) => (
-								<div key={index}>
-									Audit event {String(index + 1).padStart(2, "0")} —
-									deterministic content
+							{auditEvents.map((event) => (
+								<div key={event.id}>
+									Audit event {event.sequence} — deterministic content
 								</div>
 							))}
 						</div>
@@ -1144,23 +1168,23 @@ export function ComponentShowcase({ component }: { component: ComponentKey }) {
 											<>
 												<KeyValue
 													label="Amount"
-													value="MYR 18,420.00"
 													orientation="horizontal"
 													size="sm"
+													value="MYR 18,420.00"
 												/>
 												<KeyValue
 													label="Due date"
-													value="15 Aug 2026"
 													orientation="horizontal"
 													size="sm"
+													value="15 Aug 2026"
 												/>
 												<StatusBadge
-													status="pending"
 													label="Awaiting approval"
+													status="pending"
 												/>
 											</>
 										) : (
-											<p className="text-sm text-muted-foreground">
+											<p className="text-muted-foreground text-sm">
 												Use the right-side inspector for record detail. Other
 												sides remain available for rare layout needs.
 											</p>
@@ -1196,9 +1220,9 @@ export function ComponentShowcase({ component }: { component: ComponentKey }) {
 												CVA_COVERAGE.sidebar.size.map((size) => (
 													<SidebarMenuItem key={`${variant}-${size}`}>
 														<SidebarMenuButton
-															variant={variant}
-															size={size}
 															isActive={variant === "default"}
+															size={size}
+															variant={variant}
 														>
 															<SettingsIcon />
 															<span>
@@ -1255,18 +1279,18 @@ export function ComponentShowcase({ component }: { component: ComponentKey }) {
 				<Frame>
 					<div className="grid gap-6">
 						<Slider
+							aria-label="Completion"
 							defaultValue={[35]}
 							max={100}
 							step={1}
-							aria-label="Completion"
 						/>
 						<Slider
+							aria-label="Range"
 							defaultValue={[25, 75]}
 							max={100}
 							step={5}
-							aria-label="Range"
 						/>
-						<Slider defaultValue={[50]} disabled aria-label="Disabled" />
+						<Slider aria-label="Disabled" defaultValue={[50]} disabled />
 					</div>
 				</Frame>
 			);
@@ -1275,7 +1299,7 @@ export function ComponentShowcase({ component }: { component: ComponentKey }) {
 				<Frame>
 					<div className="rounded-md border p-6">
 						<strong>Toast viewport</strong>
-						<p className="text-sm text-muted-foreground">
+						<p className="text-muted-foreground text-sm">
 							The product Toaster uses Afenda semantic tokens and theme state.
 						</p>
 						<Toaster position="top-right" />
@@ -1291,9 +1315,9 @@ export function ComponentShowcase({ component }: { component: ComponentKey }) {
 								{CVA_COVERAGE.spinner.size.map((size) => (
 									<Spinner
 										key={`${variant}-${size}`}
-										variant={variant}
-										size={size}
 										label={`${variant} ${size}`}
+										size={size}
+										variant={variant}
 									/>
 								))}
 							</Matrix>
@@ -1305,12 +1329,12 @@ export function ComponentShowcase({ component }: { component: ComponentKey }) {
 			return (
 				<Frame>
 					<div className="flex flex-wrap gap-3">
-						<StatusBadge status="success" label="Posted" />
-						<StatusBadge status="pending" label="Awaiting approval" />
-						<StatusBadge status="error" label="Posting failed" />
-						<StatusBadge status="warning" label="Evidence incomplete" />
-						<StatusBadge status="inactive" label="Archived" />
-						<StatusBadge status="active" label="Active" />
+						<StatusBadge label="Posted" status="success" />
+						<StatusBadge label="Awaiting approval" status="pending" />
+						<StatusBadge label="Posting failed" status="error" />
+						<StatusBadge label="Evidence incomplete" status="warning" />
+						<StatusBadge label="Archived" status="inactive" />
+						<StatusBadge label="Active" status="active" />
 					</div>
 				</Frame>
 			);
@@ -1371,15 +1395,15 @@ export function ComponentShowcase({ component }: { component: ComponentKey }) {
 				<Frame>
 					<div className="grid gap-6">
 						{CVA_COVERAGE.tabs.variant.map((variant) => (
-							<Tabs key={variant} defaultValue="overview">
+							<Tabs defaultValue="overview" key={variant}>
 								<TabsList variant={variant}>
 									<TabsTrigger value="overview">Overview</TabsTrigger>
 									<TabsTrigger value="activity">Activity</TabsTrigger>
-									<TabsTrigger value="disabled" disabled>
+									<TabsTrigger disabled value="disabled">
 										Disabled
 									</TabsTrigger>
 								</TabsList>
-								<TabsContent value="overview" className="rounded-md border p-4">
+								<TabsContent className="rounded-md border p-4" value="overview">
 									{variant} tab content
 								</TabsContent>
 								<TabsContent value="activity">Recent activity</TabsContent>
@@ -1398,8 +1422,8 @@ export function ComponentShowcase({ component }: { component: ComponentKey }) {
 							defaultValue="A longer deterministic note demonstrates wrapping and vertical rhythm across multiple lines."
 						/>
 						<Textarea
-							aria-label="Invalid note"
 							aria-invalid
+							aria-label="Invalid note"
 							defaultValue="Invalid note"
 						/>
 						<Textarea disabled placeholder="Disabled" />
@@ -1410,16 +1434,16 @@ export function ComponentShowcase({ component }: { component: ComponentKey }) {
 			return (
 				<Frame>
 					<div className="grid gap-3">
-						<ToggleGroup type="multiple" defaultValue={["bold"]}>
+						<ToggleGroup defaultValue={["bold"]} type="multiple">
 							<ToggleGroupItem value="bold">Bold</ToggleGroupItem>
 							<ToggleGroupItem value="italic">Italic</ToggleGroupItem>
 							<ToggleGroupItem value="underline">Underline</ToggleGroupItem>
 						</ToggleGroup>
 						<ToggleGroup
+							defaultValue="left"
+							size="sm"
 							type="single"
 							variant="outline"
-							size="sm"
-							defaultValue="left"
 						>
 							<ToggleGroupItem value="left">Left</ToggleGroupItem>
 							<ToggleGroupItem value="center">Center</ToggleGroupItem>
@@ -1436,10 +1460,10 @@ export function ComponentShowcase({ component }: { component: ComponentKey }) {
 							<Matrix key={variant}>
 								{CVA_COVERAGE.toggle.size.map((size) => (
 									<Toggle
-										key={`${variant}-${size}`}
-										variant={variant}
-										size={size}
 										defaultPressed={size === "default"}
+										key={`${variant}-${size}`}
+										size={size}
+										variant={variant}
 									>
 										{variant} {size}
 									</Toggle>
@@ -1456,7 +1480,7 @@ export function ComponentShowcase({ component }: { component: ComponentKey }) {
 						<Matrix>
 							<Tooltip>
 								<TooltipTrigger asChild>
-									<Button variant="outline" size="icon">
+									<Button size="icon" variant="outline">
 										<BellIcon />
 										<span className="sr-only">Notifications</span>
 									</Button>
@@ -1475,6 +1499,10 @@ export function ComponentShowcase({ component }: { component: ComponentKey }) {
 					</TooltipProvider>
 				</Frame>
 			);
+		default: {
+			const exhaustiveComponent: never = component;
+			throw new Error(`Unsupported component showcase: ${exhaustiveComponent}`);
+		}
 	}
 }
 

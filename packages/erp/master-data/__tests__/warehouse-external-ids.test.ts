@@ -6,6 +6,7 @@ import {
 	createWarehouseExternalId,
 	findWarehouseByExternalId,
 } from "../src/capabilities/extensions/warehouse-external-ids";
+import { resolveAsync } from "../src/resolve-async";
 import type { WarehouseExternalId } from "../src/types";
 import { createMasterDataTestHarness } from "./helpers/harness";
 
@@ -29,9 +30,11 @@ describe("warehouse external IDs", () => {
 				store,
 				ports,
 				authorization: {
-					async can() {
-						authorizationCalls += 1;
-						return true;
+					can() {
+						return resolveAsync(() => {
+							authorizationCalls += 1;
+							return true;
+						});
 					},
 				},
 			},
@@ -63,9 +66,11 @@ describe("warehouse external IDs", () => {
 			{
 				store,
 				authorization: {
-					async can() {
-						authorizationCalls += 1;
-						return true;
+					can() {
+						return resolveAsync(() => {
+							authorizationCalls += 1;
+							return true;
+						});
 					},
 				},
 			},
@@ -95,7 +100,9 @@ describe("warehouse external IDs", () => {
 			options,
 		);
 		expect(warehouse.ok).toBe(true);
-		if (!warehouse.ok) return;
+		if (!warehouse.ok) {
+			return;
+		}
 
 		const externalId = await createWarehouseExternalId(
 			{
@@ -111,11 +118,15 @@ describe("warehouse external IDs", () => {
 			options,
 		);
 		expect(externalId.ok).toBe(true);
-		if (!externalId.ok) return;
+		if (!externalId.ok) {
+			return;
+		}
 
 		const warehouseExternalIds = Reflect.get(store, "warehouseExternalIds");
 		expect(warehouseExternalIds).toBeInstanceOf(Map);
-		if (!(warehouseExternalIds instanceof Map)) return;
+		if (!(warehouseExternalIds instanceof Map)) {
+			return;
+		}
 		warehouseExternalIds.set(randomUUID(), {
 			...(externalId.data satisfies WarehouseExternalId),
 			id: randomUUID(),

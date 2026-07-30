@@ -1,3 +1,4 @@
+// biome-ignore-all lint/complexity/noExcessiveCognitiveComplexity: Governance commands coordinate policy, CAS, idempotency, audit, and outbox atomically.
 import { fail, type Result } from "@afenda/errors/result";
 
 import {
@@ -51,16 +52,24 @@ export async function createGovernanceBody(
 		createGovernanceBodyInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "createGovernanceBody");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const company = await dependencies.companyStore.lockLegalCompany({
 		organizationId: options.organizationId,
 		legalCompanyId: parsed.data.legalCompanyId,
 		expectedVersion: parsed.data.expectedCompanyVersion,
 	});
-	if (!company.ok) return company;
-	if (company.data === null) return notFound("legalCompany");
+	if (!company.ok) {
+		return company;
+	}
+	if (company.data === null) {
+		return notFound("legalCompany");
+	}
 	if (company.data.version !== parsed.data.expectedCompanyVersion) {
 		return stale(parsed.data.expectedCompanyVersion, company.data.version);
 	}
@@ -69,7 +78,9 @@ export async function createGovernanceBody(
 		options.organizationId,
 		parsed.data.sourceDocumentId,
 	);
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 
 	return runDurableCompanyCommand({
 		commandId: "corporate-administration.governance-body.create",
@@ -126,15 +137,23 @@ export async function amendGovernanceBody(
 		amendGovernanceBodyInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "amendGovernanceBody");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const current = await dependencies.governanceStore.getGovernanceBody({
 		organizationId: options.organizationId,
 		governanceBodyId: parsed.data.governanceBodyId,
 	});
-	if (!current.ok) return current;
-	if (current.data === null) return notFound("governanceBody");
+	if (!current.ok) {
+		return current;
+	}
+	if (current.data === null) {
+		return notFound("governanceBody");
+	}
 	if (current.data.version !== parsed.data.expectedVersion) {
 		return stale(parsed.data.expectedVersion, current.data.version);
 	}
@@ -143,7 +162,9 @@ export async function amendGovernanceBody(
 		options.organizationId,
 		parsed.data.sourceDocumentId,
 	);
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	return runGovernanceBodyUpdate({
 		commandId: "corporate-administration.governance-body.amend",
 		eventType: "corporate_administration.governance_body.amended.v1",
@@ -175,15 +196,23 @@ export async function retireGovernanceBody(
 		retireGovernanceBodyInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "retireGovernanceBody");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const current = await dependencies.governanceStore.getGovernanceBody({
 		organizationId: options.organizationId,
 		governanceBodyId: parsed.data.governanceBodyId,
 	});
-	if (!current.ok) return current;
-	if (current.data === null) return notFound("governanceBody");
+	if (!current.ok) {
+		return current;
+	}
+	if (current.data === null) {
+		return notFound("governanceBody");
+	}
 	if (current.data.version !== parsed.data.expectedVersion) {
 		return stale(parsed.data.expectedVersion, current.data.version);
 	}
@@ -196,14 +225,20 @@ export async function retireGovernanceBody(
 			governanceBodyId: current.data.id,
 			asOf: parsed.data.retiredOn,
 		});
-	if (!memberships.ok) return memberships;
-	if (memberships.data.length > 0) return conflict("activeMemberships");
+	if (!memberships.ok) {
+		return memberships;
+	}
+	if (memberships.data.length > 0) {
+		return conflict("activeMemberships");
+	}
 	const source = await validateSource(
 		dependencies,
 		options.organizationId,
 		parsed.data.sourceDocumentId,
 	);
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	return runGovernanceBodyUpdate({
 		commandId: "corporate-administration.governance-body.retire",
 		eventType: "corporate_administration.governance_body.retired.v1",
@@ -235,40 +270,57 @@ export async function appointGovernanceMember(
 		appointGovernanceMemberInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "appointGovernanceMember");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const body = await dependencies.governanceStore.getGovernanceBody({
 		organizationId: options.organizationId,
 		governanceBodyId: parsed.data.governanceBodyId,
 	});
-	if (!body.ok) return body;
-	if (body.data === null) return notFound("governanceBody");
+	if (!body.ok) {
+		return body;
+	}
+	if (body.data === null) {
+		return notFound("governanceBody");
+	}
 	const governanceBody = body.data;
 	if (governanceBody.version !== parsed.data.expectedBodyVersion) {
 		return stale(parsed.data.expectedBodyVersion, governanceBody.version);
 	}
-	if (governanceBody.status !== "active") return conflict("governanceBodyId");
+	if (governanceBody.status !== "active") {
+		return conflict("governanceBodyId");
+	}
 	const term = { from: parsed.data.termFrom, to: parsed.data.termTo ?? null };
 	const withinBody = validateMembershipWithinBody({
 		body: governanceBody,
 		term,
 	});
-	if (!withinBody.ok) return withinBody;
+	if (!withinBody.ok) {
+		return withinBody;
+	}
 	const source = await validateSource(
 		dependencies,
 		options.organizationId,
 		parsed.data.sourceDocumentId,
 	);
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	if (parsed.data.memberKind === "party") {
 		const party = await dependencies.partyReferences.getOrganizationParty({
 			organizationId: options.organizationId,
 			partyId: parsed.data.memberPartyId,
 		});
-		if (!party.ok) return party;
-		if (party.data === null || !party.data.active)
+		if (!party.ok) {
+			return party;
+		}
+		if (party.data === null || !party.data.active) {
 			return invalidReference("memberPartyId", party.data !== null);
+		}
 	}
 	const existing = await dependencies.governanceStore.listGovernanceMemberships(
 		{
@@ -276,7 +328,9 @@ export async function appointGovernanceMember(
 			governanceBodyId: governanceBody.id,
 		},
 	);
-	if (!existing.ok) return existing;
+	if (!existing.ok) {
+		return existing;
+	}
 	const conflictCheck = assertNoGovernanceMembershipConflict({
 		candidate: {
 			id: "" as GovernanceMembershipId,
@@ -293,7 +347,9 @@ export async function appointGovernanceMember(
 		},
 		existing: existing.data,
 	});
-	if (!conflictCheck.ok) return conflictCheck;
+	if (!conflictCheck.ok) {
+		return conflictCheck;
+	}
 	return runGovernanceMembershipUpdate({
 		commandId: "corporate-administration.governance-membership.appoint",
 		eventType: "corporate_administration.governance_membership.appointed.v1",
@@ -337,35 +393,52 @@ export async function changeGovernanceMembership(
 		changeGovernanceMembershipInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "changeGovernanceMembership");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const current = await dependencies.governanceStore.getGovernanceMembership({
 		organizationId: options.organizationId,
 		governanceMembershipId: parsed.data.governanceMembershipId,
 	});
-	if (!current.ok) return current;
-	if (current.data === null) return notFound("governanceMembership");
-	if (current.data.version !== parsed.data.expectedVersion)
+	if (!current.ok) {
+		return current;
+	}
+	if (current.data === null) {
+		return notFound("governanceMembership");
+	}
+	if (current.data.version !== parsed.data.expectedVersion) {
 		return stale(parsed.data.expectedVersion, current.data.version);
+	}
 	const body = await dependencies.governanceStore.getGovernanceBody({
 		organizationId: options.organizationId,
 		governanceBodyId: current.data.governanceBodyId,
 	});
-	if (!body.ok) return body;
-	if (body.data === null) return notFound("governanceBody");
+	if (!body.ok) {
+		return body;
+	}
+	if (body.data === null) {
+		return notFound("governanceBody");
+	}
 	const withinBody = validateMembershipWithinBody({
 		body: body.data,
 		term: { from: parsed.data.termFrom, to: parsed.data.termTo ?? null },
 	});
-	if (!withinBody.ok) return withinBody;
+	if (!withinBody.ok) {
+		return withinBody;
+	}
 	const existing = await dependencies.governanceStore.listGovernanceMemberships(
 		{
 			organizationId: options.organizationId,
 			governanceBodyId: current.data.governanceBodyId,
 		},
 	);
-	if (!existing.ok) return existing;
+	if (!existing.ok) {
+		return existing;
+	}
 	const conflictCheck = assertNoGovernanceMembershipConflict({
 		candidate: {
 			...current.data,
@@ -375,13 +448,17 @@ export async function changeGovernanceMembership(
 		},
 		existing: existing.data,
 	});
-	if (!conflictCheck.ok) return conflictCheck;
+	if (!conflictCheck.ok) {
+		return conflictCheck;
+	}
 	const source = await validateSource(
 		dependencies,
 		options.organizationId,
 		parsed.data.sourceDocumentId,
 	);
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	return runGovernanceMembershipUpdate({
 		commandId: "corporate-administration.governance-membership.change",
 		eventType: "corporate_administration.governance_membership.changed.v1",
@@ -417,25 +494,37 @@ export async function endGovernanceMembership(
 		endGovernanceMembershipInputSchema,
 		input,
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const authorized = await authorize(options, "endGovernanceMembership");
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const current = await dependencies.governanceStore.getGovernanceMembership({
 		organizationId: options.organizationId,
 		governanceMembershipId: parsed.data.governanceMembershipId,
 	});
-	if (!current.ok) return current;
-	if (current.data === null) return notFound("governanceMembership");
-	if (current.data.version !== parsed.data.expectedVersion)
+	if (!current.ok) {
+		return current;
+	}
+	if (current.data === null) {
+		return notFound("governanceMembership");
+	}
+	if (current.data.version !== parsed.data.expectedVersion) {
 		return stale(parsed.data.expectedVersion, current.data.version);
-	if (parsed.data.endedOn <= current.data.termFrom)
+	}
+	if (parsed.data.endedOn <= current.data.termFrom) {
 		return invalidChronology("endedOn");
+	}
 	const source = await validateSource(
 		dependencies,
 		options.organizationId,
 		parsed.data.sourceDocumentId,
 	);
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	return runGovernanceMembershipUpdate({
 		commandId: "corporate-administration.governance-membership.end",
 		eventType: "corporate_administration.governance_membership.ended.v1",
@@ -569,7 +658,9 @@ async function validateSource(
 		organizationId,
 		sourceDocumentId,
 	});
-	if (!source.ok) return source;
+	if (!source.ok) {
+		return source;
+	}
 	return source.data === null || !source.data.active
 		? invalidReference("sourceDocumentId", source.data !== null)
 		: { ok: true as const, data: undefined };

@@ -68,13 +68,13 @@ export type MemoryWorkCalendarLookupHolidayInput = Omit<
 	expectedMinutes?: number | null;
 };
 
-export type MemoryWorkCalendarLookupOptions = {
-	timezone?: string;
+export interface MemoryWorkCalendarLookupOptions {
 	calendarVersion?: string;
-	workWeek?: readonly WorkWeekDayPattern[];
-	standardHoursPerDay?: number;
 	holidays?: readonly MemoryWorkCalendarLookupHolidayInput[];
-};
+	standardHoursPerDay?: number;
+	timezone?: string;
+	workWeek?: readonly WorkWeekDayPattern[];
+}
 
 /** In-memory calendar context for production-work-calendar unit tests. */
 export function createMemoryWorkCalendarLookup(
@@ -103,10 +103,8 @@ export function createMemoryWorkCalendarLookup(
 	};
 
 	return {
-		async resolveCalendarContext(): Promise<
-			Result<ResolvedWorkCalendarContext>
-		> {
-			return ok(context);
+		resolveCalendarContext(): Promise<Result<ResolvedWorkCalendarContext>> {
+			return Promise.resolve(ok(context));
 		},
 	};
 }

@@ -20,9 +20,9 @@ import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 
 const initialState: CreateSalesOrderActionState = null;
 
-type CreateSalesOrderFormProps = {
+interface CreateSalesOrderFormProps {
 	canCreate: boolean;
-};
+}
 
 /**
  * Draft sales order create — CAPABLE when `sales.order.create` is granted.
@@ -74,84 +74,84 @@ export function CreateSalesOrderForm({ canCreate }: CreateSalesOrderFormProps) {
 				<FormError>{state.message}</FormError>
 			) : null}
 			<FormField
+				error={codeError}
+				fieldId="sales-order-code"
 				label="Code"
 				required
-				fieldId="sales-order-code"
-				error={codeError}
 			>
 				<Input
+					autoComplete="off"
+					disabled={pending}
 					id="sales-order-code"
 					name="code"
 					required
-					autoComplete="off"
-					disabled={pending}
 				/>
 			</FormField>
 			<FormField
+				error={partyError}
+				fieldId="sales-order-party"
 				label="Party id"
 				required
-				fieldId="sales-order-party"
-				error={partyError}
 			>
 				<Input
+					autoComplete="off"
+					disabled={pending}
 					id="sales-order-party"
 					name="partyId"
 					required
-					autoComplete="off"
-					disabled={pending}
 				/>
 			</FormField>
 			<FormField
+				error={currencyError}
+				fieldId="sales-order-currency"
 				label="Currency code"
 				required
-				fieldId="sales-order-currency"
-				error={currencyError}
 			>
 				<Input
-					id="sales-order-currency"
-					name="currencyCode"
-					required
-					maxLength={3}
 					autoComplete="off"
 					disabled={pending}
+					id="sales-order-currency"
+					maxLength={3}
+					name="currencyCode"
 					placeholder="USD"
+					required
 				/>
 			</FormField>
-			<FormField label="Exchange rate (optional)" fieldId="sales-order-fx">
+			<FormField fieldId="sales-order-fx" label="Exchange rate (optional)">
 				<Input
-					id="sales-order-fx"
-					name="exchangeRate"
-					type="number"
-					step="any"
-					min="0"
 					disabled={pending}
+					id="sales-order-fx"
+					min="0"
+					name="exchangeRate"
+					step="any"
+					type="number"
 				/>
 			</FormField>
-			<FormField label="Bill-to address (optional)" fieldId="sales-order-bill">
+			<FormField fieldId="sales-order-bill" label="Bill-to address (optional)">
 				<Input
+					autoComplete="off"
+					disabled={pending}
 					id="sales-order-bill"
 					name="billToAddressSnapshot"
-					autoComplete="off"
-					disabled={pending}
 				/>
 			</FormField>
-			<FormField label="Ship-to address (optional)" fieldId="sales-order-ship">
+			<FormField fieldId="sales-order-ship" label="Ship-to address (optional)">
 				<Input
+					autoComplete="off"
+					disabled={pending}
 					id="sales-order-ship"
 					name="shipToAddressSnapshot"
-					autoComplete="off"
-					disabled={pending}
 				/>
 			</FormField>
-			<FormField label="Payment term id (optional)" fieldId="sales-order-term">
+			<FormField fieldId="sales-order-term" label="Payment term id (optional)">
 				<Input
+					autoComplete="off"
+					disabled={pending}
 					id="sales-order-term"
 					name="paymentTermId"
-					autoComplete="off"
-					disabled={pending}
 				/>
 			</FormField>
-			<Button type="submit" disabled={pending}>
+			<Button disabled={pending} type="submit">
 				{pending ? <Spinner /> : null}
 				Create draft order
 			</Button>

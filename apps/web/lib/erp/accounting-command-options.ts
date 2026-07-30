@@ -12,7 +12,7 @@ export function createAccountingCommandOptions(): AccountingCommandOptions {
 		authorization: createAccountingAuthorizationPort(),
 		effects: {
 			async emit() {
-				return ok(undefined);
+				return await ok(undefined);
 			},
 		},
 	};

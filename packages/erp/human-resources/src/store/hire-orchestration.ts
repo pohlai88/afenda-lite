@@ -8,35 +8,35 @@ import type {
 import type { MutationPorts } from "../ports";
 import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
 
-export type IdempotentHireAttemptRecord = {
+export interface IdempotentHireAttemptRecord {
 	attempt: HireAttempt;
 	requestFingerprint: string;
-};
+}
 
-export type HireAttemptCreateRecord = {
-	organizationId: string;
-	offerId: HumanResourcesOfferId;
+export interface HireAttemptCreateRecord {
 	correlationId: string;
-	idempotencyKey: string;
-	requestFingerprint: string;
 	createdBy: string;
-};
-
-export type HireAttemptProgressUpdate = {
+	idempotencyKey: string;
+	offerId: HumanResourcesOfferId;
 	organizationId: string;
+	requestFingerprint: string;
+}
+
+export interface HireAttemptProgressUpdate {
+	actorUserId: string;
+	assignmentId?: HireAttempt["assignmentId"] | undefined;
 	attemptId: HireAttempt["id"];
-	expectedVersion: number;
+	compensationLog?: readonly HireCompensationLogEntry[] | undefined;
 	currentStep: HireSagaStep | null;
-	personId?: HireAttempt["personId"] | undefined;
 	employeeId?: HireAttempt["employeeId"] | undefined;
 	employmentId?: HireAttempt["employmentId"] | undefined;
-	workerId?: HireAttempt["workerId"] | undefined;
-	assignmentId?: HireAttempt["assignmentId"] | undefined;
+	expectedVersion: number;
 	onboardingCaseId?: HireAttempt["onboardingCaseId"] | undefined;
-	compensationLog?: readonly HireCompensationLogEntry[] | undefined;
+	organizationId: string;
+	personId?: HireAttempt["personId"] | undefined;
 	status?: HireAttempt["status"] | undefined;
-	actorUserId: string;
-};
+	workerId?: HireAttempt["workerId"] | undefined;
+}
 
 /**
  * Persistence contract for hire saga progress.
@@ -44,26 +44,25 @@ export type HireAttemptProgressUpdate = {
  * Cross-domain orchestration stays in application commands — this slice only
  * records hire attempt state for replay and compensation bookkeeping.
  */
-export type HumanResourcesHireOrchestrationStore = {
-	findHireAttemptByIdempotencyKey(input: {
-		organizationId: string;
-		idempotencyKey: string;
-	}): Promise<Result<IdempotentHireAttemptRecord | null>>;
-
-	findOpenHireAttemptByOfferId(input: {
-		organizationId: string;
-		offerId: HumanResourcesOfferId;
-	}): Promise<Result<HireAttempt | null>>;
-
-	createHireAttempt(
+export interface HumanResourcesHireOrchestrationStore {
+	createHireAttempt: (
 		record: HireAttemptCreateRecord,
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<HireAttempt>>;
+	) => Promise<Result<HireAttempt>>;
+	findHireAttemptByIdempotencyKey: (input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}) => Promise<Result<IdempotentHireAttemptRecord | null>>;
 
-	updateHireAttemptProgress(
+	findOpenHireAttemptByOfferId: (input: {
+		organizationId: string;
+		offerId: HumanResourcesOfferId;
+	}) => Promise<Result<HireAttempt | null>>;
+
+	updateHireAttemptProgress: (
 		input: HireAttemptProgressUpdate,
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<HireAttempt>>;
-};
+	) => Promise<Result<HireAttempt>>;
+}

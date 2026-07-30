@@ -29,6 +29,7 @@ import { fail, ok, type Result } from "@afenda/errors/result";
 
 import type {
 	HumanResourcesReadModelFact,
+	HumanResourcesReportingFactKind,
 	HumanResourcesReportingFactPage,
 	HumanResourcesReportingSourcePort,
 	OvertimeReportingFact,
@@ -70,9 +71,12 @@ function overtimeStatus(
 	return fail("INTERNAL_ERROR", "Invalid overtime status");
 }
 
-async function loadFacts(
-	input: Parameters<HumanResourcesReportingSourcePort["listFacts"]>[0],
-): Promise<Result<{ facts: HumanResourcesReadModelFact[]; total: number }>> {
+async function loadFacts(input: {
+	organizationId: string;
+	kind: HumanResourcesReportingFactKind;
+	page: number;
+	pageSize: number;
+}): Promise<Result<{ facts: HumanResourcesReadModelFact[]; total: number }>> {
 	const { limit, offset } = pagination(input);
 	switch (input.kind) {
 		case "employment": {
@@ -156,14 +160,18 @@ async function loadFacts(
 					kind: "leave" as const,
 					organizationId: row.organizationId,
 					requestId: row.id,
-					status:
-						row.status === "approved"
-							? ("approved" as const)
-							: row.status === "rejected"
-								? ("rejected" as const)
-								: row.status === "cancelled" || row.status === "withdrawn"
-									? ("cancelled" as const)
-									: ("requested" as const),
+					status: (() => {
+						if (row.status === "approved") {
+							return "approved" as const;
+						}
+						if (row.status === "rejected") {
+							return "rejected" as const;
+						}
+						if (row.status === "cancelled" || row.status === "withdrawn") {
+							return "cancelled" as const;
+						}
+						return "requested" as const;
+					})(),
 					quantityMinutes: Math.trunc(
 						Number(row.requestedQuantity) * (row.unit === "hours" ? 60 : 480),
 					),
@@ -217,7 +225,9 @@ async function loadFacts(
 			const facts: OvertimeReportingFact[] = [];
 			for (const row of rows) {
 				const status = overtimeStatus(row.status);
-				if (!status.ok) return status;
+				if (!status.ok) {
+					return status;
+				}
 				facts.push({
 					id: row.id,
 					kind: "overtime",
@@ -254,7 +264,9 @@ async function loadFacts(
 			const facts: HumanResourcesReadModelFact[] = [];
 			for (const row of rows) {
 				const amount = annualizeCompensation(row.baseAmount, row.payFrequency);
-				if (!amount.ok) return amount;
+				if (!amount.ok) {
+					return amount;
+				}
 				facts.push({
 					id: row.id,
 					kind: "compensation",
@@ -458,7 +470,7 @@ async function loadFacts(
 				facts: rows.map((row) => {
 					const candidate = selectLatestSuccessionReadiness(
 						candidates.filter(
-							(candidate) => candidate.successionPlanId === row.id,
+							(candidateValue) => candidateValue.successionPlanId === row.id,
 						),
 					);
 					return {
@@ -470,14 +482,19 @@ async function loadFacts(
 							candidate?.readinessEffectiveOn ?? dateOnly(row.updatedAt),
 						isCriticalRole: true,
 						hasActivePlan: row.status === "active",
-						readiness:
-							candidate?.readiness === "emerging"
-								? ("developing" as const)
-								: candidate?.readiness === "ready_now" ||
-										candidate?.readiness === "ready_soon" ||
-										candidate?.readiness === "not_ready"
-									? candidate.readiness
-									: null,
+						readiness: (() => {
+							if (candidate?.readiness === "emerging") {
+								return "developing" as const;
+							}
+							if (
+								candidate?.readiness === "ready_now" ||
+								candidate?.readiness === "ready_soon" ||
+								candidate?.readiness === "not_ready"
+							) {
+								return candidate.readiness;
+							}
+							return null;
+						})(),
 					};
 				}),
 				total: totalOf(totals),
@@ -546,6 +563,8 @@ async function loadFacts(
 				total: totalOf(totals),
 			});
 		}
+		default:
+			return fail("INTERNAL_ERROR", "Unsupported reporting fact kind");
 	}
 }
 
@@ -554,16 +573,19 @@ export function createDrizzleHumanResourcesReportingSource(): HumanResourcesRepo
 		async listFacts(input): Promise<Result<HumanResourcesReportingFactPage>> {
 			try {
 				const loaded = await loadFacts(input);
-				if (!loaded.ok) return loaded;
+				if (!loaded.ok) {
+					return loaded;
+				}
 				if (
 					loaded.data.facts.some(
 						(fact) => fact.organizationId !== input.organizationId,
 					)
-				)
+				) {
 					return fail(
 						"INTERNAL_ERROR",
 						"Drizzle reporting source crossed the tenant boundary",
 					);
+				}
 				return ok({
 					entries: loaded.data.facts,
 					total: loaded.data.total,

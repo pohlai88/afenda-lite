@@ -32,6 +32,7 @@ import {
 	PURCHASING_QUERY_LIST,
 } from "./module-ids";
 import { parsePurchasingInput } from "./parse-input";
+import { runSequentiallyUntil } from "./resolve-async";
 import {
 	addPurchaseOrderLineInputSchema,
 	cancelPurchaseOrderInputSchema,
@@ -182,7 +183,7 @@ export async function createDraftPurchaseOrder(
 		paymentTermId = termResult.data.id;
 		paymentTermCode = termResult.data.code;
 		paymentTermName = termResult.data.name;
-		netDays = termResult.data.netDays;
+		({ netDays } = termResult.data);
 	}
 
 	const warehouseSnapshots = await resolveWarehouseSnapshots(
@@ -302,7 +303,7 @@ export async function addPurchaseOrderLine(
 		return uomResult;
 	}
 
-	const unitPrice = parsed.data.unitPrice;
+	const { unitPrice } = parsed.data;
 	const discountAmount = parsed.data.discountAmount ?? "0";
 	const lineAmount = computeLineAmount(
 		parsed.data.quantity,
@@ -336,6 +337,210 @@ export async function addPurchaseOrderLine(
 		ports,
 		{ correlationId: parsed.data.correlationId },
 	);
+}
+
+interface PostLineSnapshot {
+	baseUomCode: string;
+	baseUomId: string;
+	discountAmount: string;
+	itemCode: string;
+	itemName: string;
+	lineAmount: string;
+	lineId: string;
+	taxClassification: string | null;
+	unitPrice: string;
+}
+
+interface NullableTermSnapshot {
+	netDays: number | null;
+	paymentTermCode: string | null;
+	paymentTermId: string | null;
+	paymentTermName: string | null;
+}
+
+interface NullableWarehouseSnapshot {
+	warehouseCode: string | null;
+	warehouseId: string | null;
+	warehouseName: string | null;
+}
+
+function requirePostableOrder(
+	order: PurchaseOrder,
+	idempotencyKey: string,
+): Result<PurchaseOrder> {
+	if (order.status === "posted") {
+		return order.postIdempotencyKey === idempotencyKey
+			? ok(order)
+			: fail(
+					"CONFLICT",
+					"Purchase order is already posted",
+					purchasingErrorDetails(PURCHASING_ERROR_ORDER_ALREADY_POSTED),
+				);
+	}
+	if (order.status !== "draft") {
+		return fail(
+			"CONFLICT",
+			"Purchase order cannot be posted",
+			purchasingErrorDetails(PURCHASING_ERROR_ORDER_NOT_DRAFT),
+		);
+	}
+	if (order.lines.length === 0) {
+		return fail(
+			"CONFLICT",
+			"Cannot post purchase order without lines",
+			purchasingErrorDetails(PURCHASING_ERROR_ORDER_EMPTY_LINES),
+		);
+	}
+	return ok(order);
+}
+
+async function requirePostableSupplier(
+	masters: ReturnType<typeof resolveCommandDeps>["masters"],
+	organizationId: string,
+	partyId: string,
+	actorUserId: string,
+): Promise<Result<{ code: string; name: string }>> {
+	const partyResult = requireMaster(
+		await masters.getPartyById(organizationId, partyId, actorUserId),
+		"Party not found in organization",
+	);
+	if (!partyResult.ok) {
+		return partyResult;
+	}
+	if (partyResult.data.status !== "active") {
+		return fail(
+			"CONFLICT",
+			"Cannot post order unless party is active",
+			purchasingErrorDetails(PURCHASING_ERROR_SUPPLIER_NOT_ELIGIBLE),
+		);
+	}
+	const supplierCheck = await requireActiveSupplierRole(
+		masters,
+		organizationId,
+		partyId,
+		actorUserId,
+	);
+	if (!supplierCheck.ok) {
+		return supplierCheck;
+	}
+	return ok({ code: partyResult.data.code, name: partyResult.data.name });
+}
+
+async function resolvePostPaymentTerm(
+	masters: ReturnType<typeof resolveCommandDeps>["masters"],
+	organizationId: string,
+	paymentTermId: string | null,
+	actorUserId: string,
+): Promise<Result<NullableTermSnapshot>> {
+	if (paymentTermId === null) {
+		return ok({
+			paymentTermId: null,
+			paymentTermCode: null,
+			paymentTermName: null,
+			netDays: null,
+		});
+	}
+	const termResult = requireMaster(
+		await masters.getPaymentTermById(
+			organizationId,
+			paymentTermId,
+			actorUserId,
+		),
+		"Payment term not found in organization",
+	);
+	if (!termResult.ok) {
+		return termResult;
+	}
+	if (termResult.data.status !== "active") {
+		return fail("CONFLICT", "Cannot post order unless payment term is active");
+	}
+	return ok({
+		paymentTermId: termResult.data.id,
+		paymentTermCode: termResult.data.code,
+		paymentTermName: termResult.data.name,
+		netDays: termResult.data.netDays,
+	});
+}
+
+async function resolvePostWarehouse(
+	masters: ReturnType<typeof resolveCommandDeps>["masters"],
+	organizationId: string,
+	warehouseId: string | null,
+	actorUserId: string,
+): Promise<Result<NullableWarehouseSnapshot>> {
+	if (warehouseId === null) {
+		return ok({
+			warehouseId: null,
+			warehouseCode: null,
+			warehouseName: null,
+		});
+	}
+	const warehouseResult = requireMaster(
+		await masters.getWarehouseById(organizationId, warehouseId, actorUserId),
+		"Warehouse not found in organization",
+	);
+	if (!warehouseResult.ok) {
+		return warehouseResult;
+	}
+	if (warehouseResult.data.status !== "active") {
+		return fail("CONFLICT", "Cannot post order unless warehouse is active");
+	}
+	return ok({
+		warehouseId: warehouseResult.data.id,
+		warehouseCode: warehouseResult.data.code,
+		warehouseName: warehouseResult.data.name,
+	});
+}
+
+async function resolvePostLineSnapshots(
+	masters: ReturnType<typeof resolveCommandDeps>["masters"],
+	organizationId: string,
+	lines: readonly PurchaseOrderLine[],
+	actorUserId: string,
+): Promise<Result<PostLineSnapshot[]>> {
+	const snapshots: PostLineSnapshot[] = [];
+	const terminal = await runSequentiallyUntil<
+		PurchaseOrderLine,
+		Result<PostLineSnapshot[]>
+	>(lines, async (line) => {
+		const itemResult = requireMaster(
+			await masters.getItemById(organizationId, line.itemId, actorUserId),
+			"Item not found in organization",
+		);
+		if (!itemResult.ok) {
+			return itemResult;
+		}
+		if (itemResult.data.status !== "active") {
+			return fail(
+				"CONFLICT",
+				"Cannot post order unless every line item is active",
+				purchasingErrorDetails(PURCHASING_ERROR_ITEM_NOT_PURCHASABLE),
+			);
+		}
+		const uomResult = requireMaster(
+			await masters.getRefUomById(
+				organizationId,
+				itemResult.data.baseUomId,
+				actorUserId,
+			),
+			"Base UoM not found for item",
+		);
+		if (!uomResult.ok) {
+			return uomResult;
+		}
+		snapshots.push({
+			lineId: line.id,
+			itemCode: itemResult.data.code,
+			itemName: itemResult.data.name,
+			baseUomId: itemResult.data.baseUomId,
+			baseUomCode: uomResult.data.code,
+			unitPrice: line.unitPrice,
+			discountAmount: line.discountAmount,
+			taxClassification: line.taxClassification,
+			lineAmount: line.lineAmount,
+		});
+	});
+	return terminal ?? ok(snapshots);
 }
 
 export async function postPurchaseOrder(
@@ -375,166 +580,52 @@ export async function postPurchaseOrder(
 		);
 	}
 	const order = orderResult.data;
-	if (order.status === "posted") {
-		if (order.postIdempotencyKey === parsed.data.idempotencyKey) {
-			return ok(order);
-		}
-		return fail(
-			"CONFLICT",
-			"Purchase order is already posted",
-			purchasingErrorDetails(PURCHASING_ERROR_ORDER_ALREADY_POSTED),
-		);
-	}
-	if (order.status !== "draft") {
-		return fail(
-			"CONFLICT",
-			"Purchase order cannot be posted",
-			purchasingErrorDetails(PURCHASING_ERROR_ORDER_NOT_DRAFT),
-		);
-	}
-	if (order.lines.length === 0) {
-		return fail(
-			"CONFLICT",
-			"Cannot post purchase order without lines",
-			purchasingErrorDetails(PURCHASING_ERROR_ORDER_EMPTY_LINES),
-		);
+	const postable = requirePostableOrder(order, parsed.data.idempotencyKey);
+	if (!postable.ok || order.status === "posted") {
+		return postable;
 	}
 
-	const partyResult = requireMaster(
-		await masters.getPartyById(
-			parsed.data.organizationId,
-			order.partyId,
-			parsed.data.actorUserId,
-		),
-		"Party not found in organization",
-	);
-	if (!partyResult.ok) {
-		return partyResult;
-	}
-	if (partyResult.data.status !== "active") {
-		return fail(
-			"CONFLICT",
-			"Cannot post order unless party is active",
-			purchasingErrorDetails(PURCHASING_ERROR_SUPPLIER_NOT_ELIGIBLE),
-		);
-	}
-
-	const supplierCheck = await requireActiveSupplierRole(
+	const supplier = await requirePostableSupplier(
 		masters,
 		parsed.data.organizationId,
 		order.partyId,
 		parsed.data.actorUserId,
 	);
-	if (!supplierCheck.ok) {
-		return supplierCheck;
+	if (!supplier.ok) {
+		return supplier;
 	}
 
-	let paymentTermId: string | null = order.paymentTermId;
-	let paymentTermCode: string | null = null;
-	let paymentTermName: string | null = null;
-	let netDays: number | null = null;
-	if (order.paymentTermId !== null) {
-		const termResult = requireMaster(
-			await masters.getPaymentTermById(
-				parsed.data.organizationId,
-				order.paymentTermId,
-				parsed.data.actorUserId,
-			),
-			"Payment term not found in organization",
-		);
-		if (!termResult.ok) {
-			return termResult;
-		}
-		if (termResult.data.status !== "active") {
-			return fail(
-				"CONFLICT",
-				"Cannot post order unless payment term is active",
-			);
-		}
-		paymentTermId = termResult.data.id;
-		paymentTermCode = termResult.data.code;
-		paymentTermName = termResult.data.name;
-		netDays = termResult.data.netDays;
+	const paymentTerm = await resolvePostPaymentTerm(
+		masters,
+		parsed.data.organizationId,
+		order.paymentTermId,
+		parsed.data.actorUserId,
+	);
+	if (!paymentTerm.ok) {
+		return paymentTerm;
 	}
 
-	let warehouseId: string | null = order.warehouseId;
-	let warehouseCode: string | null = order.warehouseCode;
-	let warehouseName: string | null = order.warehouseName;
-	if (order.warehouseId !== null) {
-		const warehouseResult = requireMaster(
-			await masters.getWarehouseById(
-				parsed.data.organizationId,
-				order.warehouseId,
-				parsed.data.actorUserId,
-			),
-			"Warehouse not found in organization",
-		);
-		if (!warehouseResult.ok) {
-			return warehouseResult;
-		}
-		if (warehouseResult.data.status !== "active") {
-			return fail("CONFLICT", "Cannot post order unless warehouse is active");
-		}
-		warehouseId = warehouseResult.data.id;
-		warehouseCode = warehouseResult.data.code;
-		warehouseName = warehouseResult.data.name;
+	const warehouse = await resolvePostWarehouse(
+		masters,
+		parsed.data.organizationId,
+		order.warehouseId,
+		parsed.data.actorUserId,
+	);
+	if (!warehouse.ok) {
+		return warehouse;
 	}
 
-	const lineSnapshots: Array<{
-		lineId: string;
-		itemCode: string;
-		itemName: string;
-		baseUomId: string;
-		baseUomCode: string;
-		unitPrice: string;
-		discountAmount: string;
-		taxClassification: string | null;
-		lineAmount: string;
-	}> = [];
-	for (const line of order.lines) {
-		const itemResult = requireMaster(
-			await masters.getItemById(
-				parsed.data.organizationId,
-				line.itemId,
-				parsed.data.actorUserId,
-			),
-			"Item not found in organization",
-		);
-		if (!itemResult.ok) {
-			return itemResult;
-		}
-		if (itemResult.data.status !== "active") {
-			return fail(
-				"CONFLICT",
-				"Cannot post order unless every line item is active",
-				purchasingErrorDetails(PURCHASING_ERROR_ITEM_NOT_PURCHASABLE),
-			);
-		}
-		const uomResult = requireMaster(
-			await masters.getRefUomById(
-				parsed.data.organizationId,
-				itemResult.data.baseUomId,
-				parsed.data.actorUserId,
-			),
-			"Base UoM not found for item",
-		);
-		if (!uomResult.ok) {
-			return uomResult;
-		}
-		lineSnapshots.push({
-			lineId: line.id,
-			itemCode: itemResult.data.code,
-			itemName: itemResult.data.name,
-			baseUomId: itemResult.data.baseUomId,
-			baseUomCode: uomResult.data.code,
-			unitPrice: line.unitPrice,
-			discountAmount: line.discountAmount,
-			taxClassification: line.taxClassification,
-			lineAmount: line.lineAmount,
-		});
+	const lineSnapshots = await resolvePostLineSnapshots(
+		masters,
+		parsed.data.organizationId,
+		order.lines,
+		parsed.data.actorUserId,
+	);
+	if (!lineSnapshots.ok) {
+		return lineSnapshots;
 	}
 
-	const totals = sumLineAmounts(lineSnapshots);
+	const totals = sumLineAmounts(lineSnapshots.data);
 	const taxTotal = parsed.data.taxTotal ?? "0";
 	const documentTotal = String(
 		Number(totals.subtotalAmount) + Number(taxTotal),
@@ -547,20 +638,15 @@ export async function postPurchaseOrder(
 			expectedVersion: parsed.data.expectedVersion,
 			actorUserId: parsed.data.actorUserId,
 			postIdempotencyKey: parsed.data.idempotencyKey,
-			partyCode: partyResult.data.code,
-			partyName: partyResult.data.name,
-			paymentTermId,
-			paymentTermCode,
-			paymentTermName,
-			netDays,
-			warehouseId,
-			warehouseCode,
-			warehouseName,
+			partyCode: supplier.data.code,
+			partyName: supplier.data.name,
+			...paymentTerm.data,
+			...warehouse.data,
 			subtotalAmount: totals.subtotalAmount,
 			discountTotal: totals.discountTotal,
 			taxTotal,
 			documentTotal,
-			lineSnapshots,
+			lineSnapshots: lineSnapshots.data,
 		},
 		ports,
 		{ correlationId: parsed.data.correlationId },
