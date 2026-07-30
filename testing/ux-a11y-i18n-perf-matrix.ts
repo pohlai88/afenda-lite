@@ -15,16 +15,16 @@ export type UxCriteriaEvidenceState =
 	| "NOT_EVIDENCED"
 	| "NOT_APPLICABLE";
 
-export type UxCriteriaRow = {
-	id: string;
-	pillar: UxCriteriaPillar;
+export interface UxCriteriaRow {
 	criterion: string;
-	owner: string;
-	evidenceState: UxCriteriaEvidenceState;
 	/** Repo-relative paths that must exist when evidenceState is PASS. */
 	evidencePaths: readonly string[];
+	evidenceState: UxCriteriaEvidenceState;
+	id: string;
 	notes: string;
-};
+	owner: string;
+	pillar: UxCriteriaPillar;
+}
 
 /** Standing I5.4 criteria inventory — Platform owns aggregation unless noted. */
 export const UX_A11Y_I18N_PERF_MATRIX = [

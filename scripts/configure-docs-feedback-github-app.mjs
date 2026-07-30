@@ -16,6 +16,8 @@ const envLocalPath = join(root, ".env.local");
 const PORT = 9876;
 const STATE = randomBytes(16).toString("hex");
 const REDIRECT = `http://127.0.0.1:${PORT}/callback`;
+const LINE_BREAK_PATTERN = /\r?\n/;
+const TRAILING_LINE_BREAK_PATTERN = /\n+$/;
 
 const manifest = {
 	name: "afenda-lite-docs-feedback",
@@ -48,16 +50,20 @@ function upsertEnvLocal(appId, pem) {
 	const idLine = `GITHUB_APP_ID=${appId}`;
 	const keyLine = `GITHUB_APP_PRIVATE_KEY="${escapePemForEnv(pem)}"`;
 	let body = existsSync(envLocalPath) ? readFileSync(envLocalPath, "utf8") : "";
-	if (!body.endsWith("\n") && body.length > 0) body += "\n";
+	if (!body.endsWith("\n") && body.length > 0) {
+		body += "\n";
+	}
 	const without = body
-		.split(/\r?\n/)
+		.split(LINE_BREAK_PATTERN)
 		.filter(
 			(line) =>
-				!line.startsWith("GITHUB_APP_ID=") &&
-				!line.startsWith("GITHUB_APP_PRIVATE_KEY="),
+				!(
+					line.startsWith("GITHUB_APP_ID=") ||
+					line.startsWith("GITHUB_APP_PRIVATE_KEY=")
+				),
 		)
 		.join("\n");
-	const next = `${without.replace(/\n+$/, "")}\n\n# @afenda/docs feedback (GitHub App)\n${idLine}\n${keyLine}\n`;
+	const next = `${without.replace(TRAILING_LINE_BREAK_PATTERN, "")}\n\n# @afenda/docs feedback (GitHub App)\n${idLine}\n${keyLine}\n`;
 	writeFileSync(
 		envLocalPath,
 		next.startsWith("\n") ? next.slice(1) : next,
@@ -67,9 +73,11 @@ function upsertEnvLocal(appId, pem) {
 
 function runGhApi(args) {
 	return new Promise((resolve, reject) => {
-		const env = { ...process.env };
-		delete env.GITHUB_TOKEN;
-		delete env.GH_TOKEN;
+		const {
+			GITHUB_TOKEN: _githubToken,
+			GH_TOKEN: _ghToken,
+			...env
+		} = process.env;
 		const child = spawn(
 			process.execPath,
 			[join(root, "scripts", "gh.mjs"), "api", ...args],
@@ -88,9 +96,11 @@ function runGhApi(args) {
 			stderr += String(c);
 		});
 		child.on("close", (code) => {
-			if (code !== 0)
-				reject(new Error(stderr || stdout || `gh api exit ${code}`));
-			else resolve(stdout);
+			if (code === 0) {
+				resolve(stdout);
+				return;
+			}
+			reject(new Error(stderr || stdout || `gh api exit ${code}`));
 		});
 	});
 }
@@ -129,10 +139,10 @@ const server = createServer(async (req, res) => {
 			]);
 			const converted = JSON.parse(raw);
 			const appId = String(converted.id);
-			const pem = converted.pem;
-			const slug = converted.slug;
-			if (!appId || !pem || !slug)
+			const { pem, slug } = converted;
+			if (!(appId && pem && slug)) {
 				throw new Error("Conversion response missing id, pem, or slug");
+			}
 			upsertEnvLocal(appId, pem);
 			const installUrl = `https://github.com/apps/${slug}/installations/new/permissions?target_id=216658843`;
 			res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });

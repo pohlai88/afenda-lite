@@ -13,9 +13,9 @@ import { neon } from "@neondatabase/serverless";
 import { assertMigrationJournal } from "./lib/assert-migration-journal.mjs";
 import { requireMigrationDatabaseUrl } from "./lib/database-url.mjs";
 import {
-	findPendingMigrationJournalRows,
 	loadEnvLocal,
 	loadMigrationJournalRows,
+	reconcileMigrationJournalRows,
 } from "./lib/migration-journal-rows.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -53,11 +53,11 @@ try {
 
 const sql = neon(databaseUrl);
 
-/** @type {Array<{ hash: string, created_at: string | number }>} */
+/** @type {Array<{ id: number | string, hash: string, created_at: string | number }>} */
 let dbRows;
 try {
 	dbRows = await sql`
-		SELECT hash, created_at
+		SELECT id, hash, created_at
 		FROM drizzle.__drizzle_migrations
 		ORDER BY created_at ASC, id ASC
 	`;
@@ -69,21 +69,15 @@ try {
 	process.exit(1);
 }
 
-let appliedThroughTag = null;
-for (const row of journalRows) {
-	const dbHash = dbRows.find(
-		(dbRow) => Number(dbRow.created_at) === row.when,
-	)?.hash;
-	if (String(dbHash) === row.hash) {
-		appliedThroughTag = row.tag;
-	}
-}
-
-const { pending, driftIssues: issues } = findPendingMigrationJournalRows(
-	journalRows,
-	dbRows,
+const reconciliation = reconcileMigrationJournalRows(journalRows, dbRows);
+const pending = reconciliation.rows.filter((row) => row.status === "pending");
+const divergent = reconciliation.rows.filter(
+	(row) => row.status === "hash mismatch" || row.status === "identity mismatch",
 );
+const applied = reconciliation.rows.filter((row) => row.status === "applied");
 const pendingCount = pending.length;
+const appliedThroughTag = applied.at(-1)?.journalTag ?? null;
+const details = process.argv.includes("--details");
 
 console.log("@afenda/db db:migration-status:");
 console.log(`  journal entries: ${journalRows.length}`);
@@ -92,22 +86,58 @@ console.log(
 	`  applied through:   ${appliedThroughTag ?? "(none detected by hash+when)"}`,
 );
 console.log(`  pending forward: ${pendingCount}`);
+console.log(
+	`  unknown database rows: ${reconciliation.unknownDatabaseRows.length}`,
+);
+console.log(`  divergent identities: ${divergent.length}`);
 
-if (issues.length > 0) {
+if (details) {
+	console.log("  identity comparison:");
+	for (const row of [
+		...reconciliation.rows,
+		...reconciliation.unknownDatabaseRows,
+	]) {
+		console.log(
+			JSON.stringify({
+				journalId: row.journalId,
+				journalFilename: row.journalFilename,
+				expectedHash: row.expectedHash,
+				ledgerId: row.ledgerId,
+				appliedTimestamp: row.appliedTimestamp,
+				appliedHash: row.appliedHash,
+				status: row.status,
+			}),
+		);
+	}
+}
+
+if (divergent.length > 0) {
 	console.error("  drift:");
-	for (const issue of issues) {
-		console.error(`    - ${issue}`);
+	for (const row of divergent) {
+		console.error(`    - ${row.journalTag}: ${row.status}`);
 	}
 	process.exit(1);
 }
 
-if (pendingCount > 0) {
-	console.log(
-		"  note: pending forward may need AFENDA_ALLOW_DB_MIGRATE=1 pnpm db:migrate",
+if (reconciliation.unknownDatabaseRows.length > 0) {
+	console.error(
+		"  release status: FAIL — database ledger contains identities absent from the governed journal",
 	);
-	console.log(
-		"        if DDL is already on Neon, backfill ledger with AFENDA_ALLOW_DB_MIGRATE=1 pnpm db:sync-migration-ledger",
-	);
+	process.exit(1);
 }
 
+if (pendingCount > 0) {
+	console.error(
+		"  release status: FAIL — pending forward migrations must be applied",
+	);
+	console.error(
+		"  action: AFENDA_ALLOW_DB_MIGRATE=1 pnpm --filter @afenda/db db:migrate",
+	);
+	console.error(
+		"        if DDL is already on Neon, backfill ledger with AFENDA_ALLOW_DB_MIGRATE=1 pnpm db:sync-migration-ledger",
+	);
+	process.exit(1);
+}
+
+console.log("  release status: PASS — no pending or divergent migration");
 process.exit(0);

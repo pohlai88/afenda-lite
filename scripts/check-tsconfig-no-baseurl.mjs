@@ -8,6 +8,9 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 
+const TSCONFIG_FILENAME_PATTERN = /^tsconfig.*\.json$/i;
+const BASE_URL_KEY_PATTERN = /"baseUrl"\s*:/;
+
 const root = process.cwd();
 const SKIP_DIR = new Set([
 	"node_modules",
@@ -50,12 +53,12 @@ function walk(dir) {
 			walk(full);
 			continue;
 		}
-		if (!/^tsconfig.*\.json$/i.test(name)) {
+		if (!TSCONFIG_FILENAME_PATTERN.test(name)) {
 			continue;
 		}
 		const text = readFileSync(full, "utf8");
 		// Match "baseUrl" as a JSON key (not comments — tsconfig is JSON / JSONC-ish).
-		if (/"baseUrl"\s*:/.test(text)) {
+		if (BASE_URL_KEY_PATTERN.test(text)) {
 			offenders.push(relative(root, full).replace(/\\/g, "/"));
 		}
 	}

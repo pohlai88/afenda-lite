@@ -472,7 +472,7 @@ const meta = {
 			},
 		},
 	},
-} satisfies Meta<typeof DataTable>;
+} satisfies Meta<typeof DataTable<Invoice>>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

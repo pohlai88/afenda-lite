@@ -530,6 +530,7 @@ export function createMemoryCoreMethods(
 			return await ok(appendEmploymentHistoryToState(state, record));
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async createEmployment(
 			record: EmploymentCreateRecord,
 			ports: MutationPorts,
@@ -651,6 +652,7 @@ export function createMemoryCoreMethods(
 			return ok({ ...employment });
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async amendEmployment(
 			input: {
 				organizationId: string;
@@ -1536,6 +1538,7 @@ export function createMemoryCoreMethods(
 			return await ok(actuals);
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async createAssignment(
 			record: AssignmentCreateRecord,
 			ports: MutationPorts,

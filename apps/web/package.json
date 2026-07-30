@@ -6,7 +6,7 @@
 		"dev": "next dev --port 3000",
 		"build": "next build",
 		"start": "next start --port 3000",
-		"lint": "biome check .",
+		"lint": "node ../../scripts/generate-hr-compensation-actions.mjs --check && biome check .",
 		"typecheck": "tsc --noEmit -p tsconfig.json",
 		"test": "vitest run --config ../../testing/vitest.unit.config.ts --project web",
 		"clean": "node -e \"const fs=require('fs'); for (const d of ['.next','.turbo','coverage','dist']) fs.rmSync(d,{recursive:true,force:true})\""

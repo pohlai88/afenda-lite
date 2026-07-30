@@ -11,29 +11,42 @@ import {
 } from "@afenda/testing/e2e-database";
 import { createNeonSql, type NeonSql } from "./neon-sql";
 
-export type FactoryCredential = {
+export interface FactoryCredential {
 	email: string;
 	password: string;
 	userId: string;
-};
+}
 
-export type FactoryOrg = {
+export interface FactoryOrg {
 	id: string;
-	slug: string;
 	name: string;
-};
+	slug: string;
+}
 
-export type WorkerTenantHandle = {
-	workerIndex: number;
-	runId: string;
-	orgA: FactoryOrg;
-	orgB: FactoryOrg;
-	operator: FactoryCredential;
+export interface WorkerTenantHandle {
 	client: FactoryCredential;
 	foreignOwner: FactoryCredential;
 	/** Verified non-member of orgA — invite/join target. */
 	invitee: FactoryCredential;
-};
+	operator: FactoryCredential;
+	orgA: FactoryOrg;
+	orgB: FactoryOrg;
+	runId: string;
+	workerIndex: number;
+}
+
+async function forEachStringSequentially(
+	values: readonly string[],
+	operation: (value: string) => Promise<void>,
+	index = 0,
+): Promise<void> {
+	const value = values.at(index);
+	if (value === undefined) {
+		return;
+	}
+	await operation(value);
+	return forEachStringSequentially(values, operation, index + 1);
+}
 
 function requireDatabaseUrl(): string {
 	return requireE2eDatabaseUrl();
@@ -403,14 +416,14 @@ export async function cleanupWorkerTenant(
 		handle.invitee.email,
 	];
 
-	for (const userId of userIds) {
+	await forEachStringSequentially(userIds, async (userId) => {
 		await sql`
 			DELETE FROM platform_role_assignment
 			WHERE user_id = ${userId}
 		`;
-	}
+	});
 
-	for (const orgId of orgIds) {
+	await forEachStringSequentially(orgIds, async (orgId) => {
 		// Living hard tenant roots only — never reference wiped Declarations/FFT tables.
 		await sql`
 			DELETE FROM platform_role_assignment
@@ -432,23 +445,23 @@ export async function cleanupWorkerTenant(
 			DELETE FROM platform_notification
 			WHERE organization_id = ${orgId}
 		`;
-	}
+	});
 
-	for (const userId of userIds) {
+	await forEachStringSequentially(userIds, async (userId) => {
 		await sql`
 			DELETE FROM neon_auth.session
 			WHERE "userId" = ${userId}::uuid
 		`;
-	}
+	});
 
-	for (const email of emails) {
+	await forEachStringSequentially(emails, async (email) => {
 		await sql`
 			DELETE FROM neon_auth.invitation
 			WHERE email = ${email}
 		`;
-	}
+	});
 
-	for (const orgId of orgIds) {
+	await forEachStringSequentially(orgIds, async (orgId) => {
 		await sql`
 			DELETE FROM neon_auth.invitation
 			WHERE "organizationId" = ${orgId}::uuid
@@ -457,9 +470,9 @@ export async function cleanupWorkerTenant(
 			DELETE FROM neon_auth.member
 			WHERE "organizationId" = ${orgId}::uuid
 		`;
-	}
+	});
 
-	for (const userId of userIds) {
+	await forEachStringSequentially(userIds, async (userId) => {
 		await sql`
 			DELETE FROM neon_auth.member
 			WHERE "userId" = ${userId}::uuid
@@ -472,14 +485,14 @@ export async function cleanupWorkerTenant(
 			DELETE FROM neon_auth."user"
 			WHERE id = ${userId}::uuid
 		`;
-	}
+	});
 
-	for (const orgId of orgIds) {
+	await forEachStringSequentially(orgIds, async (orgId) => {
 		await sql`
 			DELETE FROM neon_auth.organization
 			WHERE id = ${orgId}::uuid
 		`;
-	}
+	});
 }
 
 /**
@@ -560,10 +573,11 @@ export async function assertInviteAccepted(input: {
 		LIMIT 1
 	`) as Array<{ status: string }>;
 
-	const status = invitations[0]?.status;
+	const invitation = invitations.at(0);
+	const status = invitation ? invitation.status : "missing";
 	if (status !== "accepted") {
 		throw new Error(
-			`Expected invitation ${input.invitationId} status=accepted, got ${status ?? "missing"}`,
+			`Expected invitation ${input.invitationId} status=accepted, got ${status}`,
 		);
 	}
 

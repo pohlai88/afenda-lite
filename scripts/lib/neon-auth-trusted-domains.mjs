@@ -3,11 +3,13 @@
  * No secrets — origins only.
  */
 
+const TRAILING_SLASH_PATTERN = /\/+$/;
+
 /** @param {string} value */
 export function normalizeOrigin(value) {
 	const trimmed = String(value ?? "")
 		.trim()
-		.replace(/\/+$/, "");
+		.replace(TRAILING_SLASH_PATTERN, "");
 	if (!trimmed) {
 		return "";
 	}
@@ -25,8 +27,21 @@ export function normalizeOrigin(value) {
 				: "";
 		return `${url.protocol}//${url.hostname.toLowerCase()}${port}`;
 	} catch {
-		return trimmed.toLowerCase().replace(/\/+$/, "");
+		return trimmed.toLowerCase().replace(TRAILING_SLASH_PATTERN, "");
 	}
+}
+
+function trustedDomainRows(listJson) {
+	if (Array.isArray(listJson)) {
+		return listJson;
+	}
+	if (Array.isArray(listJson?.domains)) {
+		return listJson.domains;
+	}
+	if (Array.isArray(listJson?.data)) {
+		return listJson.data;
+	}
+	return [];
 }
 
 /**
@@ -34,13 +49,7 @@ export function normalizeOrigin(value) {
  * @returns {string[]}
  */
 export function extractTrustedOrigins(listJson) {
-	const rows = Array.isArray(listJson)
-		? listJson
-		: Array.isArray(listJson?.domains)
-			? listJson.domains
-			: Array.isArray(listJson?.data)
-				? listJson.data
-				: [];
+	const rows = trustedDomainRows(listJson);
 	const origins = [];
 	for (const row of rows) {
 		const raw =

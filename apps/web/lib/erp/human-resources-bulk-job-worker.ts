@@ -73,63 +73,69 @@ async function runImport(
 	switch (job.entityType) {
 		case "employee": {
 			const parsed = parseRows(rows, employeeBulkRowSchema);
-			return (await parsed.ok)
-				? runEmployeeBulkImportWorker({
-						...common,
-						entityType: "employee",
-						rows: parsed.data,
-					})
-				: parsed;
+			if (!parsed.ok) {
+				return parsed;
+			}
+			return await runEmployeeBulkImportWorker({
+				...common,
+				entityType: "employee",
+				rows: parsed.data,
+			});
 		}
 		case "assignment": {
 			const parsed = parseRows(rows, assignmentBulkRowSchema);
-			return (await parsed.ok)
-				? runAssignmentBulkImportWorker({
-						...common,
-						entityType: "assignment",
-						rows: parsed.data,
-					})
-				: parsed;
+			if (!parsed.ok) {
+				return parsed;
+			}
+			return await runAssignmentBulkImportWorker({
+				...common,
+				entityType: "assignment",
+				rows: parsed.data,
+			});
 		}
 		case "leave_entitlement": {
 			const parsed = parseRows(rows, leaveEntitlementBulkRowSchema);
-			return (await parsed.ok)
-				? runLeaveEntitlementBulkImportWorker({
-						...common,
-						entityType: "leave_entitlement",
-						rows: parsed.data,
-					})
-				: parsed;
+			if (!parsed.ok) {
+				return parsed;
+			}
+			return await runLeaveEntitlementBulkImportWorker({
+				...common,
+				entityType: "leave_entitlement",
+				rows: parsed.data,
+			});
 		}
 		case "attendance": {
 			const parsed = parseRows(rows, attendanceBulkRowSchema);
-			return (await parsed.ok)
-				? runAttendanceBulkImportWorker({
-						...common,
-						entityType: "attendance",
-						rows: parsed.data,
-					})
-				: parsed;
+			if (!parsed.ok) {
+				return parsed;
+			}
+			return await runAttendanceBulkImportWorker({
+				...common,
+				entityType: "attendance",
+				rows: parsed.data,
+			});
 		}
 		case "compensation": {
 			const parsed = parseRows(rows, compensationBulkRowSchema);
-			return (await parsed.ok)
-				? runCompensationBulkImportWorker({
-						...common,
-						entityType: "compensation",
-						rows: parsed.data,
-					})
-				: parsed;
+			if (!parsed.ok) {
+				return parsed;
+			}
+			return await runCompensationBulkImportWorker({
+				...common,
+				entityType: "compensation",
+				rows: parsed.data,
+			});
 		}
 		case "learning_assignment": {
 			const parsed = parseRows(rows, learningAssignmentBulkRowSchema);
-			return (await parsed.ok)
-				? runLearningAssignmentBulkImportWorker({
-						...common,
-						entityType: "learning_assignment",
-						rows: parsed.data,
-					})
-				: parsed;
+			if (!parsed.ok) {
+				return parsed;
+			}
+			return await runLearningAssignmentBulkImportWorker({
+				...common,
+				entityType: "learning_assignment",
+				rows: parsed.data,
+			});
 		}
 	}
 }

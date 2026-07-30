@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noAwaitInLoops: Cases run serially to isolate mutable test state and ordered transitions.
 /**
  * HR Compensation Server Actions — permission deny, validation, org stamp, delegate.
  */
@@ -446,4 +447,3 @@ describe("HR Compensation Server Actions", () => {
 		);
 	});
 });
-// biome-ignore-all lint/performance/noAwaitInLoops: Cases run serially to isolate mutable test state and ordered transitions.

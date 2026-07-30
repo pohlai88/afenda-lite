@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noAwaitInLoops: Cases run serially to isolate mutable test state and ordered transitions.
 /**
  * HR Benefits Server Actions — permission deny, validation, org stamp, delegate.
  */
@@ -225,4 +226,3 @@ describe("HR Benefits Server Actions", () => {
 		);
 	});
 });
-// biome-ignore-all lint/performance/noAwaitInLoops: Cases run serially to isolate mutable test state and ordered transitions.

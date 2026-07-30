@@ -9,19 +9,19 @@
 
 export type FeCwvMetricId = "lcpMs" | "inpMs" | "cls";
 
-export type FeCwvBudgets = {
+export interface FeCwvBudgets {
 	/** External published authority adopted into this checkout. */
 	authority: string;
-	owner: string;
-	workload: string;
 	environment: string;
-	percentile: string;
-	regressionTrigger: string;
 	/** Lab budgets — fail the smoke spec if any sample exceeds. */
 	metrics: Readonly<Record<FeCwvMetricId, number>>;
+	owner: string;
+	percentile: string;
 	/** Paths measured without factory credentials. */
 	publicPaths: readonly string[];
-};
+	regressionTrigger: string;
+	workload: string;
+}
 
 /** Standing PERF01 adoption record — Platform owns aggregation. */
 export const FE_CWV_BUDGETS = {

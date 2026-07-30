@@ -56,23 +56,29 @@ function fail(message, code = 1) {
 }
 
 async function loadLivingManifests() {
-	/** @type {import("../packages/data-plane/db/src/module-manifest-contract.ts").AfendaModuleManifest[]} */
-	const manifests = [];
-	for (const meta of LIVING_ERP_MANIFEST_PACKAGES) {
-		const manifestPath = join(root, meta.dir, "src", "module.manifest.ts");
-		if (!existsSync(manifestPath)) {
-			fail(`missing manifest: ${meta.dir}/src/module.manifest.ts`);
+	const entries = LIVING_ERP_MANIFEST_PACKAGES.map((meta) => ({
+		meta,
+		manifestPath: join(root, meta.dir, "src", "module.manifest.ts"),
+	}));
+	for (const entry of entries) {
+		if (!existsSync(entry.manifestPath)) {
+			fail(`missing manifest: ${entry.meta.dir}/src/module.manifest.ts`);
 		}
-		const mod = await import(pathToFileURL(manifestPath).href);
+	}
+	const modules = await Promise.all(
+		entries.map((entry) => import(pathToFileURL(entry.manifestPath).href)),
+	);
+
+	return modules.map((mod, index) => {
+		const { meta } = entries[index];
 		const manifest = mod[meta.manifestExport];
 		if (!manifest || typeof manifest !== "object") {
 			fail(
 				`manifest export ${meta.manifestExport} missing from ${meta.dir}/src/module.manifest.ts`,
 			);
 		}
-		manifests.push(manifest);
-	}
-	return manifests;
+		return manifest;
+	});
 }
 
 async function loadPlatformPermissionCodes() {

@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noAwaitInLoops: Cases run serially to isolate mutable test state and ordered transitions.
 /**
  * N6 — Request-level composition: `apps/web/proxy.ts` forwards protected
  * navigations through `createSessionProxy` and surfaces `AUTH_LOGIN_PATH`.
@@ -89,4 +90,3 @@ describe("N6 apps/web proxy request gate", () => {
 		}
 	});
 });
-// biome-ignore-all lint/performance/noAwaitInLoops: Cases run serially to isolate mutable test state and ordered transitions.

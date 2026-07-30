@@ -8,6 +8,14 @@ import { afterEach, describe, it } from "node:test";
 
 const SCRIPT_PATH = path.resolve("scripts/clean-workspace-noise.mjs");
 const TEMP_ROOTS = [];
+const DRY_RUN_PATTERN = /dry-run/;
+const NODE_MODULES_REMOVAL_PATTERN = /Would remove node_modules/;
+const TSBUILDINFO_REMOVAL_PATTERN =
+	/Would remove packages\/example\/tsconfig\.tsbuildinfo/;
+const LOG_REMOVAL_PATTERN = /Would remove debug\.log/;
+const APPLY_PATTERN = /apply/;
+const USAGE_PATTERN =
+	/Usage: node scripts\/clean-workspace-noise\.mjs \[--apply\]/;
 
 function createTempRepo() {
 	const root = mkdtempSync(path.join(tmpdir(), "afenda-clean-noise-"));
@@ -68,13 +76,10 @@ describe("clean-workspace-noise", () => {
 
 		const output = runScript(root);
 
-		assert.match(output, /dry-run/);
-		assert.match(output, /Would remove node_modules/);
-		assert.match(
-			output,
-			/Would remove packages\/example\/tsconfig\.tsbuildinfo/,
-		);
-		assert.match(output, /Would remove debug\.log/);
+		assert.match(output, DRY_RUN_PATTERN);
+		assert.match(output, NODE_MODULES_REMOVAL_PATTERN);
+		assert.match(output, TSBUILDINFO_REMOVAL_PATTERN);
+		assert.match(output, LOG_REMOVAL_PATTERN);
 		assert.equal(existsSync(path.join(root, "node_modules")), true);
 		assert.equal(
 			existsSync(path.join(root, "packages/example/tsconfig.tsbuildinfo")),
@@ -98,7 +103,7 @@ describe("clean-workspace-noise", () => {
 
 		const output = runScript(root, ["--apply"]);
 
-		assert.match(output, /apply/);
+		assert.match(output, APPLY_PATTERN);
 		assert.equal(existsSync(path.join(root, "node_modules")), false);
 		assert.equal(existsSync(path.join(root, "apps/web/.next")), false);
 		assert.equal(
@@ -129,9 +134,6 @@ describe("clean-workspace-noise", () => {
 		});
 
 		assert.equal(result.status, 1);
-		assert.match(
-			result.stderr,
-			/Usage: node scripts\/clean-workspace-noise\.mjs \[--apply\]/,
-		);
+		assert.match(result.stderr, USAGE_PATTERN);
 	});
 });

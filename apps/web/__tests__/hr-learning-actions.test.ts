@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noAwaitInLoops: Cases run serially to isolate mutable test state and ordered transitions.
 /**
  * HR Learning Server Actions — permission deny, validation, org stamp, delegate.
  */
@@ -469,4 +470,3 @@ describe("HR Learning Server Actions", () => {
 		);
 	});
 });
-// biome-ignore-all lint/performance/noAwaitInLoops: Cases run serially to isolate mutable test state and ordered transitions.

@@ -3,7 +3,7 @@
  *
  * Run: pnpm check:editor-biome
  */
-import { execSync, spawnSync } from "node:child_process";
+import { execSync, spawn, spawnSync } from "node:child_process";
 import { appendFileSync, existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
@@ -28,6 +28,8 @@ import { resolveBiomeNativeBin } from "./lib/resolve-biome-native-bin.mjs";
 const root = process.cwd();
 const settingsPath = path.join(root, ".vscode", "settings.json");
 const requireFromRoot = createRequire(path.join(root, "package.json"));
+const LSP_SMOKE_TIMEOUT_MS = 2500;
+const LSP_TERMINATION_TIMEOUT_MS = 1000;
 
 /** @type {string[]} */
 const errors = [];
@@ -147,7 +149,7 @@ function checkBiomeSettings(settings) {
 	});
 
 	const resolved = resolveLspBinPath(lspBin);
-	if (!resolved || !existsSync(resolved)) {
+	if (!(resolved && existsSync(resolved))) {
 		errors.push(
 			`biome.lsp.bin hoisted path missing for ${process.platform}-${process.arch} — run pnpm install`,
 		);
@@ -288,37 +290,94 @@ function checkCliFormatsTs() {
 	}
 }
 
-function checkLspProxyStaysAlive() {
+function runLspProxySmoke(nativeBin) {
+	return new Promise((resolveSmoke) => {
+		const child = spawn(nativeBin, ["lsp-proxy", "--stdio"], {
+			cwd: root,
+			stdio: ["ignore", "pipe", "pipe"],
+			windowsHide: true,
+			env: {
+				...process.env,
+				BIOME_CONFIG_PATH: "./biome.jsonc",
+			},
+		});
+		let stdout = "";
+		let stderr = "";
+		let livenessProven = false;
+		let settled = false;
+		let livenessTimer;
+		let terminationTimer;
+
+		child.stdout?.setEncoding("utf8");
+		child.stderr?.setEncoding("utf8");
+		child.stdout?.on("data", (chunk) => {
+			stdout += chunk;
+		});
+		child.stderr?.on("data", (chunk) => {
+			stderr += chunk;
+		});
+
+		const finish = (result) => {
+			if (settled) {
+				return;
+			}
+			settled = true;
+			clearTimeout(livenessTimer);
+			clearTimeout(terminationTimer);
+			resolveSmoke({ ...result, stdout, stderr });
+		};
+
+		child.once("error", (error) => {
+			finish({ kind: "error", error });
+		});
+		child.once("close", (code, signal) => {
+			finish({ kind: livenessProven ? "alive" : "exit", code, signal });
+		});
+
+		livenessTimer = setTimeout(() => {
+			livenessProven = true;
+			try {
+				if (!child.kill("SIGKILL")) {
+					finish({
+						kind: "error",
+						error: new Error(
+							"lsp-proxy could not be terminated after smoke window",
+						),
+					});
+					return;
+				}
+			} catch (error) {
+				finish({ kind: "error", error });
+				return;
+			}
+
+			terminationTimer = setTimeout(() => {
+				finish({
+					kind: "error",
+					error: new Error("lsp-proxy did not exit after forced termination"),
+				});
+			}, LSP_TERMINATION_TIMEOUT_MS);
+		}, LSP_SMOKE_TIMEOUT_MS);
+	});
+}
+
+async function checkLspProxyStaysAlive() {
 	const nativeBin = resolveBiomeNativeBin(root);
 	if (!nativeBin) {
 		return;
 	}
 
-	const child = spawnSync(nativeBin, ["lsp-proxy", "--stdio"], {
-		cwd: root,
-		encoding: "utf8",
-		stdio: ["ignore", "pipe", "pipe"],
-		env: {
-			...process.env,
-			BIOME_CONFIG_PATH: "./biome.jsonc",
-		},
-		timeout: 2500,
-	});
-
-	if (
-		child.error?.name === "Error" &&
-		child.error.message.includes("ETIMEDOUT")
-	) {
+	const result = await runLspProxySmoke(nativeBin);
+	if (result.kind === "alive") {
 		debugLog("lsp-proxy smoke ok", { nativeBin });
 		return;
 	}
-
-	if (child.status === null && child.signal === "SIGTERM") {
-		debugLog("lsp-proxy smoke ok", { nativeBin });
+	if (result.kind === "error") {
+		errors.push(`biome lsp-proxy smoke failed: ${String(result.error)}`);
 		return;
 	}
 
-	const stderr = (child.stderr || "").trim();
+	const stderr = result.stderr.trim();
 	if (stderr.includes("FATAL") || stderr.includes("INTERNAL")) {
 		errors.push(
 			`biome lsp-proxy emitted fatal/internal diagnostics: ${stderr.slice(0, 500)}`,
@@ -326,25 +385,25 @@ function checkLspProxyStaysAlive() {
 		return;
 	}
 
-	if (child.status !== null && child.status !== 0) {
+	if (result.code !== null && result.code !== 0) {
 		errors.push(
-			`biome lsp-proxy exited early (code ${child.status}): ${stderr || child.stdout || "no output"}`,
+			`biome lsp-proxy exited early (code ${result.code}): ${stderr || result.stdout || "no output"}`,
 		);
 	}
 }
 
-const settings = readSettings();
-if (settings) {
-	checkScalarPosture(settings);
-	checkBiomeSettings(settings);
-	checkTypeScriptPosture(settings);
-	checkExtensionPosture(settings);
-	checkFormatters(settings);
-	checkExplorerLatencyGuards(settings);
+const workspaceSettings = readSettings();
+if (workspaceSettings) {
+	checkScalarPosture(workspaceSettings);
+	checkBiomeSettings(workspaceSettings);
+	checkTypeScriptPosture(workspaceSettings);
+	checkExtensionPosture(workspaceSettings);
+	checkFormatters(workspaceSettings);
+	checkExplorerLatencyGuards(workspaceSettings);
 }
 checkWorkspaceBinary();
 checkCliFormatsTs();
-checkLspProxyStaysAlive();
+await checkLspProxyStaysAlive();
 
 if (errors.length > 0) {
 	console.error("check-editor-biome: FAIL");

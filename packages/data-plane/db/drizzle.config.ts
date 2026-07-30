@@ -5,10 +5,12 @@ import { requireMigrationDatabaseUrl } from "./src/env";
 /**
  * Drizzle Kit config (ARCH-025 · ARCH-028 S2.2 · N2).
  * Migrations write under packages/data-plane/db/drizzle/.
- * When DATABASE_URL is set, validate as migration-class (postgres URL; -pooler optional).
- * Generate works without URL; migrate/guard require URL separately.
+ * When DATABASE_URL is set, validate as inspection/operations class (PostgreSQL
+ * URL; pooled or direct). Generate works without a URL. Guarded migration
+ * execution separately requires a direct endpoint and is owned by the
+ * identity-aware runner, not raw `drizzle-kit migrate`.
  */
-function migrationCredentials(): { url: string } | undefined {
+function migrationCredentials(): { readonly url: string } | undefined {
 	if (!process.env.DATABASE_URL) {
 		return;
 	}

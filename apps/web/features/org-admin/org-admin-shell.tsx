@@ -49,7 +49,7 @@ function resolveAssignmentUserLabel(
 }
 
 function formatAuditJsonValue(value: unknown): string | null {
-	if (value === null) {
+	if (value === null || value === undefined) {
 		return null;
 	}
 	try {
@@ -63,7 +63,7 @@ function formatAuditJsonValue(value: unknown): string | null {
 function toIsoInstantOrNull(
 	value: Date | string | null | undefined,
 ): string | null {
-	if (value === null) {
+	if (value === null || value === undefined) {
 		return null;
 	}
 	if (value instanceof Date) {

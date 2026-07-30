@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noAwaitInLoops: Cases run serially to isolate mutable test state and ordered transitions.
 /**
  * GUIDE-018 I3.1 — Tier-2 hasPermission + admin bootstrap (N12 Path-to-100% WithAudit).
  */
@@ -190,4 +191,3 @@ describe.skipIf(!hasDatabase)("hasPermission product wiring (I3.1)", () => {
 		}
 	});
 });
-// biome-ignore-all lint/performance/noAwaitInLoops: Cases run serially to isolate mutable test state and ordered transitions.

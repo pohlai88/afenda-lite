@@ -10,6 +10,8 @@ import {
 	parseOutputFormat,
 } from "./check-errors-normalization.mjs";
 
+const CHECK_OK_PATTERN = /check-errors-normalization: ok/u;
+
 function createFixture() {
 	const root = mkdtempSync(join(tmpdir(), "afenda-errors-normalization-"));
 	mkdirSync(join(root, "apps"), { recursive: true });
@@ -567,5 +569,5 @@ test("formats CLI modes", () => {
 		review: [],
 	});
 
-	assert.match(output, /check-errors-normalization: ok/u);
+	assert.match(output, CHECK_OK_PATTERN);
 });

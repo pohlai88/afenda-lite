@@ -15,6 +15,7 @@ const preferred = [
 	"check:editor-biome",
 	"check:biome-governance",
 	"check:env-consumers",
+	"check:tenant-sql-safety",
 	"check:testing-governance",
 	"check:module-quality",
 	"check:doc-integrity",

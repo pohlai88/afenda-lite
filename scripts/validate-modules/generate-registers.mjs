@@ -4,8 +4,10 @@
  */
 
 import { mkdirSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { stringify as stringifyYaml } from "yaml";
+
+export { dirname } from "node:path";
 
 const TABLE_AGGREGATE_BY_TABLE = new Map([
 	["ca_legal_company", "legal_company"],
@@ -136,8 +138,8 @@ export function buildGeneratedRegisters(manifests, modulesDir, options) {
 	const rendered = {};
 	for (const [name, doc] of Object.entries(files)) {
 		rendered[name] =
-			`# GENERATED — do not edit by hand. Source: ERP module.manifest.ts\n` +
-			`# Regenerate: pnpm validate:modules --write\n` +
+			"# GENERATED — do not edit by hand. Source: ERP module.manifest.ts\n" +
+			"# Regenerate: pnpm validate:modules --write\n" +
 			stringifyYaml(doc, { lineWidth: 100, sortMapEntries: true });
 	}
 
@@ -177,5 +179,3 @@ export function diffGeneratedRegisters(modulesDir, rendered, readText) {
 function normalizeYamlText(text) {
 	return `${text.replace(/\r\n/g, "\n").trimEnd()}\n`;
 }
-
-export { dirname };

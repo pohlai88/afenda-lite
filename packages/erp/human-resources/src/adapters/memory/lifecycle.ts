@@ -523,6 +523,7 @@ export function createMemoryLifecycleMethods(
 			});
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async startOnboarding(
 			record: OnboardingCaseCreateRecord,
 			ports: MutationPorts,
@@ -1327,6 +1328,7 @@ export function createMemoryLifecycleMethods(
 			});
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async openProbation(
 			record: ProbationReviewCreateRecord,
 			ports: MutationPorts,
@@ -1761,6 +1763,7 @@ export function createMemoryLifecycleMethods(
 			});
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async confirmEmployment(
 			record: EmploymentConfirmationCreateRecord,
 			ports: MutationPorts,
@@ -1921,6 +1924,7 @@ export function createMemoryLifecycleMethods(
 			});
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async transferAssignment(
 			input: {
 				organizationId: string;
@@ -2171,6 +2175,7 @@ export function createMemoryLifecycleMethods(
 			});
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async proposeTermination(
 			record: TerminationCreateRecord,
 			ports: MutationPorts,
@@ -2331,6 +2336,7 @@ export function createMemoryLifecycleMethods(
 			return ok(cloneTermination(updated));
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async finalizeTermination(
 			record: TerminationFinalizeRecord,
 			ports: MutationPorts,
@@ -2498,6 +2504,7 @@ export function createMemoryLifecycleMethods(
 			});
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async startOffboarding(
 			record: OffboardingCaseCreateRecord,
 			ports: MutationPorts,

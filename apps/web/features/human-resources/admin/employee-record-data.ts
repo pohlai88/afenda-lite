@@ -123,11 +123,13 @@ function eventEffectiveOn(payload: unknown, fallback: Date): string {
 }
 
 function readProperty(value: object, key: PropertyKey): unknown {
+	let property: unknown;
 	try {
-		return Reflect.get(value, key);
+		property = Reflect.get(value, key);
 	} catch {
-		return;
+		property = undefined;
 	}
+	return property;
 }
 
 async function lifecycleEvents(organizationId: string) {

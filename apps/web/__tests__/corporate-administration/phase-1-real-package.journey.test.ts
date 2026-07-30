@@ -254,12 +254,12 @@ describe("Corporate Administration Phase 1 real package journey", () => {
 async function seedCompletePhaseOneCompany(
 	dependencies: RealPackageDependencies,
 ): Promise<{ legalCompanyId: SeededLegalCompanyId; version: number }> {
-	const commandOptions = (idempotencyKey: string) =>
+	const commandOptions = (key: string) =>
 		createOptions({
 			organizationId: session.orgId,
 			actorUserId: session.userId,
 			correlationId: "corr-ca-real-seed",
-			idempotencyKey,
+			idempotencyKey: key,
 		});
 
 	const company = await registerLegalCompanyDraft(

@@ -46,7 +46,7 @@ export function TheMachineChat() {
 
 			<ul className="flex max-h-72 flex-col gap-3 overflow-y-auto rounded-md border border-border bg-surface-sunken p-3">
 				{messages.length === 0 ? (
-					<li className="text-muted-foreground text-sm">
+					<li className="text-foreground-secondary text-sm">
 						No messages yet. Ask about organizations, roles, or sessions.
 					</li>
 				) : (

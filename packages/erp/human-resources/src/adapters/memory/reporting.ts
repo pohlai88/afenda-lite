@@ -69,6 +69,7 @@ function leaveStatus(
 	return "requested";
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 function factsForKind(
 	store: MemoryHumanResourcesStore,
 	organizationId: string,

@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noAwaitInLoops: Cases run serially to isolate mutable test state and ordered transitions.
 import { randomUUID } from "node:crypto";
 
 import {
@@ -236,4 +237,3 @@ describe.runIf(hasDatabase)("platform work-item Drizzle parity", () => {
 		);
 	});
 });
-// biome-ignore-all lint/performance/noAwaitInLoops: Cases run serially to isolate mutable test state and ordered transitions.

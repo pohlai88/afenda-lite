@@ -71,6 +71,7 @@ function overtimeStatus(
 	return fail("INTERNAL_ERROR", "Invalid overtime status");
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 async function loadFacts(input: {
 	organizationId: string;
 	kind: HumanResourcesReportingFactKind;
@@ -385,7 +386,10 @@ async function loadFacts(input: {
 					.from(hrPerformanceReview)
 					.innerJoin(
 						hrPerformanceCycle,
-						eq(hrPerformanceCycle.id, hrPerformanceReview.cycleId),
+						and(
+							eq(hrPerformanceCycle.id, hrPerformanceReview.cycleId),
+							eq(hrPerformanceCycle.organizationId, input.organizationId),
+						),
 					)
 					.where(eq(hrPerformanceReview.organizationId, input.organizationId))
 					.orderBy(hrPerformanceReview.id)
@@ -507,7 +511,10 @@ async function loadFacts(input: {
 					.from(hrHeadcountPlanLine)
 					.innerJoin(
 						hrHeadcountPlan,
-						eq(hrHeadcountPlan.id, hrHeadcountPlanLine.planId),
+						and(
+							eq(hrHeadcountPlan.id, hrHeadcountPlanLine.planId),
+							eq(hrHeadcountPlan.organizationId, input.organizationId),
+						),
 					)
 					.where(eq(hrHeadcountPlanLine.organizationId, input.organizationId))
 					.orderBy(hrHeadcountPlanLine.id)
@@ -527,9 +534,18 @@ async function loadFacts(input: {
 				.from(hrWorkAssignment)
 				.innerJoin(
 					hrEmployment,
-					eq(hrEmployment.id, hrWorkAssignment.employmentId),
+					and(
+						eq(hrEmployment.id, hrWorkAssignment.employmentId),
+						eq(hrEmployment.organizationId, input.organizationId),
+					),
 				)
-				.innerJoin(hrPosition, eq(hrPosition.id, hrWorkAssignment.positionId))
+				.innerJoin(
+					hrPosition,
+					and(
+						eq(hrPosition.id, hrWorkAssignment.positionId),
+						eq(hrPosition.organizationId, input.organizationId),
+					),
+				)
 				.where(eq(hrWorkAssignment.organizationId, input.organizationId));
 			return ok({
 				facts: rows.map(({ line, plan }) => {

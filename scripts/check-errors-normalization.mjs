@@ -41,6 +41,7 @@ const EXCLUDED_PATH_PARTS = [
 	"/__fixtures__/",
 	"/testing/",
 ];
+const TEST_FILE_PATTERN = /\.(?:test|spec)\.[cm]?[jt]sx?$/u;
 
 const ERROR_IMPORT_PATTERN = /from\s+["']@afenda\/errors(?:\/[^"']*)?["']/u;
 const POSTGRES_IMPORT_PATTERN =
@@ -123,6 +124,25 @@ const CATEGORY_LABELS = {
 	review: "REVIEW",
 };
 
+const FINDING_GROUP_BY_CATEGORY = {
+	manualResultConstruction: "manualResultConstruction",
+	manualSerialization: "manualSerialization",
+	canonicalSerializationDrift: "canonicalSerializationDrift",
+	rawErrorLeak: "rawErrorLeaks",
+	duplicateHelper: "duplicateHelpers",
+	postgresMappingDrift: "postgresMappingDrift",
+	httpProjectionDrift: "httpProjectionDrift",
+	infrastructureGuessing: "infrastructureGuessing",
+	swallowedUnknownCatch: "swallowedUnknownCatch",
+	unsafeDetailsPassthrough: "unsafeDetailsPassthrough",
+	directAppErrorUiExposure: "directAppErrorUiExposure",
+	inconsistentErrorMapping: "inconsistentErrorMapping",
+	retryableMetadataDrift: "retryableMetadataDrift",
+	operationalClassificationDrift: "operationalClassificationDrift",
+	infrastructureClassificationDrift: "infrastructureClassificationDrift",
+	review: "review",
+};
+
 function normalizedRelative(root, pathname) {
 	return relative(root, pathname).replace(/\\/g, "/");
 }
@@ -136,7 +156,7 @@ function shouldSkipSource(relativePath) {
 	if (relativePath === "packages/foundation/errors/src/core/normalize.ts") {
 		return false;
 	}
-	if (/\.(?:test|spec)\.[cm]?[jt]sx?$/u.test(relativePath)) {
+	if (TEST_FILE_PATTERN.test(relativePath)) {
 		return true;
 	}
 	const normalized = `/${relativePath}`;
@@ -160,7 +180,9 @@ function walkSource(directory, root, files = []) {
 	}
 
 	for (const name of entries) {
-		if (SKIP_DIR.has(name)) continue;
+		if (SKIP_DIR.has(name)) {
+			continue;
+		}
 
 		const fullPath = join(directory, name);
 		let stats;
@@ -197,6 +219,7 @@ function addFinding(findings, category, file, message) {
 	});
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: This audit intentionally applies its independent normalization rules in one linear catalog.
 function analyzeSource({ relativePath, content }) {
 	const findings = [];
 	const isRuntimeBoundary = isRuntimeBoundaryPath(relativePath);
@@ -238,14 +261,16 @@ function analyzeSource({ relativePath, content }) {
 	}
 
 	if (
-		!importsErrors &&
-		!importsPostgres &&
-		!importsResult &&
-		!importsHttp &&
-		!hasRawErrorLeak &&
-		!hasManualSerialization &&
-		!hasHttpProjectionDrift &&
-		!hasSwallowedUnknownCatch &&
+		!(
+			importsErrors ||
+			importsPostgres ||
+			importsResult ||
+			importsHttp ||
+			hasRawErrorLeak ||
+			hasManualSerialization ||
+			hasHttpProjectionDrift ||
+			hasSwallowedUnknownCatch
+		) &&
 		findings.length === 0
 	) {
 		return {
@@ -476,56 +501,8 @@ function groupFindings(reports) {
 
 	for (const report of reports) {
 		for (const finding of report.findings) {
-			switch (finding.category) {
-				case "manualResultConstruction":
-					grouped.manualResultConstruction.push(finding);
-					break;
-				case "manualSerialization":
-					grouped.manualSerialization.push(finding);
-					break;
-				case "canonicalSerializationDrift":
-					grouped.canonicalSerializationDrift.push(finding);
-					break;
-				case "rawErrorLeak":
-					grouped.rawErrorLeaks.push(finding);
-					break;
-				case "duplicateHelper":
-					grouped.duplicateHelpers.push(finding);
-					break;
-				case "postgresMappingDrift":
-					grouped.postgresMappingDrift.push(finding);
-					break;
-				case "httpProjectionDrift":
-					grouped.httpProjectionDrift.push(finding);
-					break;
-				case "infrastructureGuessing":
-					grouped.infrastructureGuessing.push(finding);
-					break;
-				case "swallowedUnknownCatch":
-					grouped.swallowedUnknownCatch.push(finding);
-					break;
-				case "unsafeDetailsPassthrough":
-					grouped.unsafeDetailsPassthrough.push(finding);
-					break;
-				case "directAppErrorUiExposure":
-					grouped.directAppErrorUiExposure.push(finding);
-					break;
-				case "inconsistentErrorMapping":
-					grouped.inconsistentErrorMapping.push(finding);
-					break;
-				case "retryableMetadataDrift":
-					grouped.retryableMetadataDrift.push(finding);
-					break;
-				case "operationalClassificationDrift":
-					grouped.operationalClassificationDrift.push(finding);
-					break;
-				case "infrastructureClassificationDrift":
-					grouped.infrastructureClassificationDrift.push(finding);
-					break;
-				case "review":
-					grouped.review.push(finding);
-					break;
-			}
+			const groupKey = FINDING_GROUP_BY_CATEGORY[finding.category];
+			grouped[groupKey].push(finding);
 		}
 	}
 

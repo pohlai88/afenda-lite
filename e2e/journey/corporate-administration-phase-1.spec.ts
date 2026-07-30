@@ -25,11 +25,14 @@ test.describe("Corporate Administration Phase 1 production journey @journey", ()
 		page,
 		workerTenant,
 	}) => {
+		// biome-ignore lint/suspicious/noSkippedTests: Local external evidence may be absent; CI fails closed.
 		test.skip(
 			!workerTenant,
 			"E2E_FACTORY_PASSWORD + DATABASE_URL required for CA Phase 1 journey",
 		);
-		if (!workerTenant) return;
+		if (!workerTenant) {
+			return;
+		}
 
 		const runKey = `ca-p1-${workerTenant.runId}`;
 		const companyCode = `CA-P1-${workerTenant.runId}`.slice(0, 64);
@@ -405,7 +408,7 @@ async function readLegalCompanyProof(
 			AND company_code = ${input.companyCode}
 		LIMIT 1
 	`) as Array<{ id: string; state: string; version: number }>;
-	const company = rows[0];
+	const [company] = rows;
 	if (!company) {
 		throw new Error(`Expected legal company ${input.companyCode} to exist.`);
 	}
@@ -416,11 +419,12 @@ async function readLegalCompanyProof(
 			AND legal_company_id = ${company.id}::uuid
 			AND status = 'active'
 	`) as Array<{ count: number }>;
+	const [statusRow] = statusRows;
 	return {
 		id: company.id,
 		state: company.state,
 		version: company.version,
-		activeStatusCount: statusRows[0]?.count ?? 0,
+		activeStatusCount: statusRow ? statusRow.count : 0,
 	};
 }
 

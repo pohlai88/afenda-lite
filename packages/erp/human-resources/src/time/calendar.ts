@@ -134,6 +134,7 @@ export async function supersedeWorkCalendar(
 		schema: supersedeWorkCalendarInputSchema,
 		invalidMessage: "Invalid work calendar supersede input",
 		command: HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_SUPERSEDE,
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The domain workflow keeps ordered invariant validation and Result mapping explicit.
 		execute: async (data, { store, ports }) => {
 			const predecessor = await store.getWorkCalendar({
 				organizationId: data.organizationId,

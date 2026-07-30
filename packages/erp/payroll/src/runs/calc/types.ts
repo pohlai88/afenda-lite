@@ -1,3 +1,4 @@
+import type { PayrollJsonObject } from "../../schemas/common";
 import type {
 	PAYROLL_CALCULATION_VERSION,
 	PayrollRoundingPolicy,
@@ -56,7 +57,7 @@ export interface PayrollCalcDeductionRuleSnapshot {
 
 export interface PayrollCalcStatutoryRuleSnapshot {
 	code: string;
-	configJson: Record<string, unknown>;
+	configJson: PayrollJsonObject;
 	id: string;
 	jurisdictionCode: string;
 	name: string;
@@ -152,7 +153,7 @@ export interface PayrollCalcResultLine {
 export interface PayrollCalcStatutoryResult {
 	baseAmount: string;
 	calculatorId: string;
-	configSnapshotJson: Record<string, unknown>;
+	configSnapshotJson: PayrollJsonObject;
 	currencyCode: string;
 	employeeAmount: string;
 	employerAmount: string;

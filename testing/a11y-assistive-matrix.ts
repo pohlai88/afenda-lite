@@ -6,14 +6,14 @@
 
 export type A11yAssistiveAuth = "none" | "operator" | "client";
 
-export type A11yAssistiveRow = {
-	id: string;
-	path: string;
+export interface A11yAssistiveRow {
 	auth: A11yAssistiveAuth;
 	/** Checks asserted by `e2e/smoke/a11y-assistive-matrix.spec.ts`. */
 	checks: readonly ("axe" | "skip-link")[];
+	id: string;
 	notes: string;
-};
+	path: string;
+}
 
 export const A11Y_ASSISTIVE_MATRIX = [
 	{

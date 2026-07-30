@@ -83,6 +83,7 @@ function parseIdField<TSchema extends z.ZodType>(
 	return parsed.success ? parsed.data : undefined;
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The domain workflow keeps ordered invariant validation and Result mapping explicit.
 async function resolveCompensationSubject(
 	input: ActorScoped,
 	store: HumanResourcesStore,

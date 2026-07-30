@@ -108,6 +108,7 @@ function minutesToMs(minutes: number): number {
 /**
  * Pure rule evaluation for P0-06 auto-detection on a resolved session.
  */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The domain workflow keeps ordered invariant validation and Result mapping explicit.
 export function detectAttendanceExceptionsForSession(input: {
 	session: AttendanceSession;
 	events: readonly AttendanceEvent[];

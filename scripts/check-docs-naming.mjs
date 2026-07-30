@@ -28,10 +28,11 @@ const report = await auditDocs({
 	profile: "naming",
 });
 
-if (report.exitCode !== 0) process.stderr.write(reportToMarkdown(report));
-else {
+if (report.exitCode === 0) {
 	console.log(
 		`check-docs-naming: ok (${report.coverage.primaryInspected}/${report.coverage.primaryExpected} files)`,
 	);
+} else {
+	process.stderr.write(reportToMarkdown(report));
 }
 process.exit(report.exitCode);

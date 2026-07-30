@@ -6,6 +6,7 @@ import {
 	detectDestructiveStatement,
 	stripSqlNoise,
 } from "../scripts/lib/assert-additive-migration.mjs";
+import { APPROVED_HISTORICAL_DESTRUCTIVE_MIGRATIONS } from "../scripts/lib/historical-destructive-migrations.mjs";
 
 describe("assert-additive-migration", () => {
 	it("allows additive CREATE / ALTER ADD COLUMN", () => {
@@ -61,6 +62,42 @@ SELECT 'DROP TABLE secrets';
 			allowDestructive: true,
 		});
 		expect(result.ok).toBe(true);
+	});
+
+	it("recognizes only the exact approved historical migration bytes", async () => {
+		const { readFileSync } = await import("node:fs");
+		const { dirname, join } = await import("node:path");
+		const { fileURLToPath } = await import("node:url");
+		const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+		const filename = "0041_sales_rebuild_20260728.sql";
+		const sql = readFileSync(join(root, "drizzle", filename), "utf8");
+		const exact = assertAdditiveMigrations([{ filename, sql }]);
+		expect(exact.ok).toBe(true);
+		expect(exact.approvedHistoricalExceptions).toEqual([
+			expect.objectContaining({
+				filename,
+				appliedHash:
+					APPROVED_HISTORICAL_DESTRUCTIVE_MIGRATIONS[filename].appliedHash,
+				status: "historical-applied-exception",
+			}),
+		]);
+
+		const mutated = assertAdditiveMigrations([
+			{ filename, sql: `${sql}\n-- mutation` },
+		]);
+		expect(mutated.ok).toBe(false);
+		expect(mutated.approvedHistoricalExceptions).toEqual([]);
+	});
+
+	it("does not transfer the historical exception to another filename", () => {
+		const result = assertAdditiveMigrations([
+			{ filename: "0042_copy.sql", sql: "DROP TABLE widgets;" },
+		]);
+		expect(result.ok).toBe(false);
+		expect(result.findings[0]).toMatchObject({
+			filename: "0042_copy.sql",
+			reason: "DROP TABLE",
+		});
 	});
 
 	it("stripSqlNoise removes line comments", () => {

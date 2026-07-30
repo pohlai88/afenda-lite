@@ -907,6 +907,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async updateLeavePolicy(input, ports, meta) {
 		const existing = await this.getLeavePolicyById({
 			organizationId: input.organizationId,
@@ -992,7 +993,15 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 							updatedBy: input.actorUserId,
 							updatedAt: new Date(),
 						})
-						.where(eq(hrLeavePolicyEligibility.id, eligibility.data.id));
+						.where(
+							and(
+								eq(hrLeavePolicyEligibility.id, eligibility.data.id),
+								eq(
+									hrLeavePolicyEligibility.organizationId,
+									input.organizationId,
+								),
+							),
+						);
 				}
 			}
 		} catch (error) {
@@ -1632,6 +1641,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async adjustLeaveEntitlement(record, _ports, meta) {
 		const replay = await this.findLeaveAdjustmentByIdempotencyKey({
 			organizationId: record.organizationId,

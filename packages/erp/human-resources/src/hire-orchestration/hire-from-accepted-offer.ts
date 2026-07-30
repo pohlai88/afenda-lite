@@ -598,6 +598,7 @@ export async function hireFromAcceptedOffer(
 		schema: hireFromAcceptedOfferInputSchema,
 		invalidMessage: "Invalid hire from accepted offer input",
 		command: HUMAN_RESOURCES_COMMAND_HIRE_FROM_ACCEPTED_OFFER,
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The domain workflow keeps ordered invariant validation and Result mapping explicit.
 		execute: async (data, deps) => {
 			const requestFingerprint = fingerprintHireFromAcceptedOffer({
 				offerId: data.offerId,

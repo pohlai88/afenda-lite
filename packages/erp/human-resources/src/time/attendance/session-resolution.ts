@@ -69,6 +69,7 @@ export function applyAutomaticBreakPolicy(
  * Pair clock/break events into session minutes for a local work date.
  * Events must already be filtered to one employee + localWorkDate and sorted ascending.
  */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The domain workflow keeps ordered invariant validation and Result mapping explicit.
 export function resolveSessionFromEvents(
 	events: readonly AttendanceEvent[],
 ): ResolvedSessionMinutes {

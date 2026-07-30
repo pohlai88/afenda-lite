@@ -1,6 +1,23 @@
 import nodeAssert from "node:assert/strict";
 
+function getAsymmetricMatcher(
+	value: unknown,
+): ((actual: unknown) => boolean) | undefined {
+	if (typeof value !== "object" || value === null) {
+		return;
+	}
+	const asymmetricMatch = Reflect.get(value, "asymmetricMatch");
+	return typeof asymmetricMatch === "function"
+		? asymmetricMatch.bind(value)
+		: undefined;
+}
+
 function projectExpectedShape(actual: unknown, expected: unknown): unknown {
+	const asymmetricMatch = getAsymmetricMatcher(expected);
+	if (asymmetricMatch !== undefined) {
+		nodeAssert.ok(asymmetricMatch(actual));
+		return expected;
+	}
 	if (Array.isArray(expected)) {
 		nodeAssert.ok(Array.isArray(actual));
 		return expected.map((value, index) =>

@@ -15,6 +15,24 @@ const repoRoot = path.resolve(
 	path.dirname(fileURLToPath(import.meta.url)),
 	"..",
 );
+const WINDOWS_DRIVE_PREFIX_PATTERN = /^[A-Z]:/i;
+const VITEST_CONFIG_FILENAME_PATTERN = /^vitest\..*config\.(ts|mts|js|mjs)$/;
+const PLAYWRIGHT_CONFIG_FILENAME_PATTERN =
+	/^playwright\..*config\.(ts|mts|js|mjs)$/;
+const SCRIPT_SOURCE_FILENAME_PATTERN = /\.(mjs|mts|ts|tsx)$/;
+const STATIC_TESTING_SOURCE_IMPORT_PATTERN =
+	/from\s+["'][^"']*packages\/foundation\/testing\/src\/[^"']*["']/;
+const DYNAMIC_TESTING_SOURCE_IMPORT_PATTERN =
+	/import\(["'][^"']*packages\/foundation\/testing\/src\/[^"']*["']\)/;
+const DIRECT_DATABASE_URL_PATTERN = /process\.env\.DATABASE_URL/;
+const WORD_DATABASE_URL_PATTERN = /\bprocess\.env\.DATABASE_URL\b/;
+const VITEST_RUN_PATTERN = /\bvitest\s+run\b/;
+const PLAYWRIGHT_TEST_PATTERN = /\bplaywright\s+test\b/;
+const CONFIG_REFERENCE_PATTERN = /--config(?:=|\s+)([^\s]+)/g;
+const PACKAGE_SOURCE_TEST_PATTERN = /\/src\/.+\.(test|spec)\.(ts|tsx)$/;
+const TEST_FILENAME_PATTERN = /\.(test|spec)\.(ts|tsx)$/;
+const DATABASE_GATE_IMPORT_PATTERN =
+	/@afenda\/testing\/require-database-for-ci/;
 
 type PackageJson = Readonly<{
 	name?: string;
@@ -34,7 +52,7 @@ const LANE_OVERLAP_ALLOWED = new Set([
 ]);
 
 function normalizePath(target: string): string {
-	return target.replaceAll("\\", "/").replace(/^[A-Z]:/i, "");
+	return target.replaceAll("\\", "/").replace(WINDOWS_DRIVE_PREFIX_PATTERN, "");
 }
 
 function repoPath(target: string): string {
@@ -82,7 +100,7 @@ function walkFiles(
 		}
 	}
 
-	return found.sort();
+	return found.sort((first, second) => first.localeCompare(second));
 }
 
 function normalizeConfigReference(
@@ -152,8 +170,8 @@ function assertNoRogueRunnerConfigs(errors: string[]): void {
 	const runnerConfigs = walkFiles(repoRoot, (filePath) => {
 		const name = path.basename(filePath);
 		return (
-			/^vitest\..*config\.(ts|mts|js|mjs)$/.test(name) ||
-			/^playwright\..*config\.(ts|mts|js|mjs)$/.test(name) ||
+			VITEST_CONFIG_FILENAME_PATTERN.test(name) ||
+			PLAYWRIGHT_CONFIG_FILENAME_PATTERN.test(name) ||
 			name === "playwright.config.ts" ||
 			name === "vitest.config.ts"
 		);
@@ -203,7 +221,7 @@ function assertNoTestingPackageSourceImports(errors: string[]): void {
 		const relativePath = repoPath(filePath);
 
 		return (
-			/\.(mjs|mts|ts|tsx)$/.test(relativePath) &&
+			SCRIPT_SOURCE_FILENAME_PATTERN.test(relativePath) &&
 			!relativePath.startsWith("packages/foundation/testing/")
 		);
 	});
@@ -211,12 +229,8 @@ function assertNoTestingPackageSourceImports(errors: string[]): void {
 	for (const sourceFile of sourceFiles) {
 		const source = fs.readFileSync(path.join(repoRoot, sourceFile), "utf8");
 		const importsTestingPackageSource =
-			/from\s+["'][^"']*packages\/foundation\/testing\/src\/[^"']*["']/.test(
-				source,
-			) ||
-			/import\(["'][^"']*packages\/foundation\/testing\/src\/[^"']*["']\)/.test(
-				source,
-			);
+			STATIC_TESTING_SOURCE_IMPORT_PATTERN.test(source) ||
+			DYNAMIC_TESTING_SOURCE_IMPORT_PATTERN.test(source);
 
 		if (importsTestingPackageSource) {
 			errors.push(
@@ -327,7 +341,7 @@ function assertLaneFileCoverage(errors: string[]): void {
 function assertTestingInfrastructureDatabaseGate(errors: string[]): void {
 	const infrastructureFiles = walkFiles(
 		path.join(repoRoot, "testing"),
-		(filePath) => /\.(ts|tsx|mts|mjs)$/.test(repoPath(filePath)),
+		(filePath) => SCRIPT_SOURCE_FILENAME_PATTERN.test(repoPath(filePath)),
 	);
 
 	for (const infrastructureFile of infrastructureFiles) {
@@ -336,7 +350,7 @@ function assertTestingInfrastructureDatabaseGate(errors: string[]): void {
 			"utf8",
 		);
 
-		if (/\bprocess\.env\.DATABASE_URL\b/.test(source)) {
+		if (WORD_DATABASE_URL_PATTERN.test(source)) {
 			errors.push(
 				`Testing infrastructure must use @afenda/testing database helpers instead of process.env.DATABASE_URL: ${infrastructureFile}`,
 			);
@@ -349,47 +363,53 @@ function assertPackageScriptsUseApprovedRunnerPolicy(errors: string[]): void {
 
 	for (const { filePath, pkg } of collectPackageJsons()) {
 		for (const [scriptName, command] of Object.entries(pkg.scripts ?? {})) {
-			const usesVitest = /\bvitest\s+run\b/.test(command);
-			const usesPlaywright = /\bplaywright\s+test\b/.test(command);
-
-			if (!usesVitest && !usesPlaywright) {
-				continue;
-			}
-
-			const relativePackageJson = repoPath(filePath);
-			const configMatches = [
-				...command.matchAll(/--config(?:=|\s+)([^\s]+)/g),
-			].map((match) => normalizeConfigReference(filePath, match[1] ?? ""));
-
-			if (usesVitest && configMatches.length === 0) {
-				errors.push(
-					`${relativePackageJson} script "${scriptName}" runs Vitest without an explicit approved config.`,
-				);
-				continue;
-			}
-
-			for (const configPath of configMatches) {
-				if (
-					!approvedConfigFiles.has(
-						configPath as (typeof APPROVED_TESTING_CONFIG_FILES)[number],
-					)
-				) {
-					errors.push(
-						`${relativePackageJson} script "${scriptName}" uses unapproved test config: ${configPath}`,
-					);
-				}
-			}
-
-			if (
-				usesPlaywright &&
-				configMatches.length === 0 &&
-				!relativePackageJson.startsWith("package.json")
-			) {
-				errors.push(
-					`${relativePackageJson} script "${scriptName}" runs Playwright without an explicit approved config.`,
-				);
-			}
+			validateRunnerScript(
+				{ command, filePath, scriptName },
+				approvedConfigFiles,
+				errors,
+			);
 		}
+	}
+}
+
+function validateRunnerScript(
+	input: { command: string; filePath: string; scriptName: string },
+	approvedConfigFiles: Set<string>,
+	errors: string[],
+): void {
+	const usesVitest = VITEST_RUN_PATTERN.test(input.command);
+	const usesPlaywright = PLAYWRIGHT_TEST_PATTERN.test(input.command);
+	if (!(usesVitest || usesPlaywright)) {
+		return;
+	}
+
+	const relativePackageJson = repoPath(input.filePath);
+	const configMatches = [
+		...input.command.matchAll(CONFIG_REFERENCE_PATTERN),
+	].map((match) => normalizeConfigReference(input.filePath, match[1] ?? ""));
+	if (usesVitest && configMatches.length === 0) {
+		errors.push(
+			`${relativePackageJson} script "${input.scriptName}" runs Vitest without an explicit approved config.`,
+		);
+		return;
+	}
+
+	for (const configPath of configMatches) {
+		if (!approvedConfigFiles.has(configPath)) {
+			errors.push(
+				`${relativePackageJson} script "${input.scriptName}" uses unapproved test config: ${configPath}`,
+			);
+		}
+	}
+
+	if (
+		usesPlaywright &&
+		configMatches.length === 0 &&
+		!relativePackageJson.startsWith("package.json")
+	) {
+		errors.push(
+			`${relativePackageJson} script "${input.scriptName}" runs Playwright without an explicit approved config.`,
+		);
 	}
 }
 
@@ -410,7 +430,7 @@ function assertTestPlacement(errors: string[]): void {
 		(filePath) => {
 			const relativePath = repoPath(filePath);
 			return (
-				/\/src\/.+\.(test|spec)\.(ts|tsx)$/.test(relativePath) &&
+				PACKAGE_SOURCE_TEST_PATTERN.test(relativePath) &&
 				!relativePath.includes("/src/testing/")
 			);
 		},
@@ -428,7 +448,7 @@ function assertDatabaseGate(errors: string[]): void {
 	const dbTestFiles = walkFiles(repoRoot, (filePath) => {
 		const relativePath = repoPath(filePath);
 		return (
-			/\.(test|spec)\.(ts|tsx)$/.test(relativePath) &&
+			TEST_FILENAME_PATTERN.test(relativePath) &&
 			!relativePath.startsWith("packages/foundation/testing/")
 		);
 	});
@@ -436,8 +456,8 @@ function assertDatabaseGate(errors: string[]): void {
 	for (const testFile of dbTestFiles) {
 		const absolutePath = path.join(repoRoot, testFile);
 		const source = fs.readFileSync(absolutePath, "utf8");
-		const readsDatabaseUrl = /process\.env\.DATABASE_URL/.test(source);
-		const usesGate = /@afenda\/testing\/require-database-for-ci/.test(source);
+		const readsDatabaseUrl = DIRECT_DATABASE_URL_PATTERN.test(source);
+		const usesGate = DATABASE_GATE_IMPORT_PATTERN.test(source);
 
 		if (
 			readsDatabaseUrl &&
@@ -451,22 +471,22 @@ function assertDatabaseGate(errors: string[]): void {
 	}
 }
 
-const errors: string[] = [];
+const governanceErrors: string[] = [];
 
-assertLaneControlFilesExist(errors);
-assertNoRogueRunnerConfigs(errors);
-assertPolicyBoundConfigsExtendRegistry(errors);
-assertNoTestingPackageSourceImports(errors);
-assertTestingInfrastructureDatabaseGate(errors);
-assertLaneFileCoverage(errors);
-assertPackageScriptsUseApprovedRunnerPolicy(errors);
-assertForbiddenRunnerDependencies(errors);
-assertTestPlacement(errors);
-assertDatabaseGate(errors);
+assertLaneControlFilesExist(governanceErrors);
+assertNoRogueRunnerConfigs(governanceErrors);
+assertPolicyBoundConfigsExtendRegistry(governanceErrors);
+assertNoTestingPackageSourceImports(governanceErrors);
+assertTestingInfrastructureDatabaseGate(governanceErrors);
+assertLaneFileCoverage(governanceErrors);
+assertPackageScriptsUseApprovedRunnerPolicy(governanceErrors);
+assertForbiddenRunnerDependencies(governanceErrors);
+assertTestPlacement(governanceErrors);
+assertDatabaseGate(governanceErrors);
 
-if (errors.length > 0) {
+if (governanceErrors.length > 0) {
 	console.error("testing governance failed:");
-	for (const error of errors) {
+	for (const error of governanceErrors) {
 		console.error(`- ${error}`);
 	}
 	process.exit(1);

@@ -59,6 +59,84 @@ export function findPendingMigrationJournalRows(journalRows, dbRows) {
 }
 
 /**
+ * Identity-level comparison of the governed journal and the Drizzle ledger.
+ * Drizzle stores no migration tag; journal `when` maps to ledger `created_at`,
+ * and the SQL file SHA-256 must match the ledger hash.
+ *
+ * @param {Array<{ idx: number, tag: string, when: number, hash: string }>} journalRows
+ * @param {Array<{ id?: number | string, hash: string, created_at: string | number }>} dbRows
+ */
+export function reconcileMigrationJournalRows(journalRows, dbRows) {
+	const consumedLedgerRows = new Set();
+	const rows = journalRows.map((journal) => {
+		const timestampIndex = dbRows.findIndex(
+			(dbRow) => Number(dbRow.created_at) === journal.when,
+		);
+		if (timestampIndex >= 0) {
+			consumedLedgerRows.add(timestampIndex);
+			const ledger = dbRows[timestampIndex];
+			return {
+				journalId: journal.idx,
+				journalTag: journal.tag,
+				journalFilename: `${journal.tag}.sql`,
+				expectedHash: journal.hash,
+				ledgerId: ledger?.id ?? null,
+				appliedTimestamp: Number(ledger?.created_at),
+				appliedHash: String(ledger?.hash),
+				status:
+					String(ledger?.hash) === journal.hash ? "applied" : "hash mismatch",
+			};
+		}
+
+		const hashIndex = dbRows.findIndex(
+			(dbRow, index) =>
+				!consumedLedgerRows.has(index) && String(dbRow.hash) === journal.hash,
+		);
+		if (hashIndex >= 0) {
+			consumedLedgerRows.add(hashIndex);
+			const ledger = dbRows[hashIndex];
+			return {
+				journalId: journal.idx,
+				journalTag: journal.tag,
+				journalFilename: `${journal.tag}.sql`,
+				expectedHash: journal.hash,
+				ledgerId: ledger?.id ?? null,
+				appliedTimestamp: Number(ledger?.created_at),
+				appliedHash: String(ledger?.hash),
+				status: "identity mismatch",
+			};
+		}
+
+		return {
+			journalId: journal.idx,
+			journalTag: journal.tag,
+			journalFilename: `${journal.tag}.sql`,
+			expectedHash: journal.hash,
+			ledgerId: null,
+			appliedTimestamp: null,
+			appliedHash: null,
+			status: "pending",
+		};
+	});
+
+	const unknownDatabaseRows = dbRows
+		.map((ledger, index) => ({ ledger, index }))
+		.filter(({ index }) => !consumedLedgerRows.has(index))
+		.map(({ ledger }) => ({
+			journalId: null,
+			journalTag: null,
+			journalFilename: null,
+			expectedHash: null,
+			ledgerId: ledger.id ?? null,
+			appliedTimestamp: Number(ledger.created_at),
+			appliedHash: String(ledger.hash),
+			status: "unknown in database",
+		}));
+
+	return { rows, unknownDatabaseRows };
+}
+
+/**
  * @param {string} repoRoot
  */
 export function loadEnvLocal(repoRoot) {

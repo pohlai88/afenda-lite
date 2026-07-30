@@ -7,10 +7,10 @@
  * with a named reason when neither factory nor explicit credentials exist.
  */
 
-export type E2ECredentialPair = {
+export interface E2ECredentialPair {
 	email: string;
 	password: string;
-};
+}
 
 function readPair(
 	emailKey: string,
@@ -18,7 +18,7 @@ function readPair(
 ): E2ECredentialPair | null {
 	const email = process.env[emailKey]?.trim();
 	const password = process.env[passwordKey]?.trim();
-	if (!email || !password) {
+	if (!(email && password)) {
 		return null;
 	}
 	return { email, password };

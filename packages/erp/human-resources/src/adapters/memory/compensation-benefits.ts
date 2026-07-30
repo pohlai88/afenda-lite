@@ -617,6 +617,7 @@ export function createMemoryCompensationBenefitsMethods(
 			return ok({ ...band });
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async supersedeSalaryBand(
 			input: {
 				organizationId: string;
@@ -1443,6 +1444,7 @@ export function createMemoryCompensationBenefitsMethods(
 			);
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async applyApprovedCompensationResult(
 			input: {
 				organizationId: string;
@@ -2277,6 +2279,7 @@ export function createMemoryCompensationBenefitsMethods(
 			return await ok(enrollment === null ? null : { ...enrollment });
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async enrolBenefit(
 			record: {
 				organizationId: string;

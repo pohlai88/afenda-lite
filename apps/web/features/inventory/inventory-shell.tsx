@@ -1,3 +1,4 @@
+// biome-ignore-all lint/style/noNestedTernary: Exhaustive status and tri-state view mappings remain explicit at their use sites.
 import { getSession, requireRole } from "@afenda/auth";
 import {
 	getStockAvailability,
@@ -533,4 +534,3 @@ export async function InventoryShell({
 		</section>
 	);
 }
-// biome-ignore-all lint/style/noNestedTernary: Exhaustive status and tri-state view mappings remain explicit at their use sites.

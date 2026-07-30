@@ -38,7 +38,7 @@ describe("Mineral Calm product adoption", () => {
 		expect(fulfillment).not.toContain("<select");
 		expect(importPanel).toContain("<NativeSelect");
 		expect(importPanel).not.toContain("<select");
-		expect(changeRequest).toMatch(/<Input\s+name="reviewNote"/);
+		expect(changeRequest).toMatch(/<Input\b[^>]*\bname="reviewNote"/);
 		expect(changeRequest).not.toMatch(
 			/<input\s+name="reviewNote"[^>]*className=/,
 		);

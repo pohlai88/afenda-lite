@@ -569,19 +569,6 @@ async function transitionHeadcountReservationStatus(
 				return again;
 			}
 			if (again.data === null) {
-				const foreign = await db
-					.select({
-						organizationId: hrHeadcountReservation.organizationId,
-					})
-					.from(hrHeadcountReservation)
-					.where(eq(hrHeadcountReservation.id, input.reservationId))
-					.limit(1);
-				if (foreign[0] !== undefined) {
-					return notFound(
-						"Headcount reservation not found",
-						HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
-					);
-				}
 				return notFound("Headcount reservation not found");
 			}
 			if (again.data.status !== "active") {
@@ -1013,6 +1000,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async supersedeHeadcountPlan(record, _ports, meta) {
 		const source = await this.getHeadcountPlanById({
 			organizationId: record.organizationId,
@@ -1605,6 +1593,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async reserveHeadcount(record, _ports, meta) {
 		const existingIdempotent =
 			await this.findHeadcountReservationByIdempotencyKey({

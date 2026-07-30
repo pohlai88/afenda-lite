@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noAwaitInLoops: Cases run serially to isolate mutable test state and ordered transitions.
 /**
  * N9 / ARCH-023 — two-org isolation for living platform / identity adapters.
  *
@@ -17,7 +18,7 @@ import { hasDatabase } from "./helpers/identity-database";
 describe("tenancy isolation guards (N9)", () => {
 	it("withOrg rejects empty orgId", async () => {
 		await expect(withOrg(platformRbacAudit, "  ")).rejects.toThrow(
-			/non-empty orgId/,
+			/non-empty organizationId/,
 		);
 	});
 });
@@ -59,4 +60,3 @@ describe.skipIf(!hasDatabase)("tenancy isolation two-org (N9)", () => {
 		expect(forB.some((item) => item.id === row.id)).toBe(false);
 	});
 });
-// biome-ignore-all lint/performance/noAwaitInLoops: Cases run serially to isolate mutable test state and ordered transitions.

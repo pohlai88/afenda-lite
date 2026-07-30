@@ -2436,6 +2436,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async listWorkforcePlanActualAssignments(input: {
 		organizationId: string;
 		asOf: string;

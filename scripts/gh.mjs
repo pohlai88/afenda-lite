@@ -7,9 +7,11 @@
 
 import { spawnSync } from "node:child_process";
 
-const env = { ...process.env };
-delete env.GITHUB_TOKEN;
-delete env.GH_TOKEN;
+const env = Object.fromEntries(
+	Object.entries(process.env).filter(
+		([name]) => name !== "GITHUB_TOKEN" && name !== "GH_TOKEN",
+	),
+);
 
 const args = process.argv.slice(2);
 const result = spawnSync("gh", args, {

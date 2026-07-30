@@ -1272,6 +1272,7 @@ export function createMemoryWorkforceFoundationMethods(input: {
 			);
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async detectPersonDuplicates(inputValue3) {
 			const person = state.persons.get(inputValue3.personId);
 			if (
@@ -1489,6 +1490,7 @@ export function createMemoryWorkforceFoundationMethods(input: {
 			});
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async createWorker(record, ports, meta) {
 			const existing = await this.findWorkerByIdempotencyKey({
 				organizationId: record.organizationId,
@@ -1656,6 +1658,7 @@ export function createMemoryWorkforceFoundationMethods(input: {
 			return ok(cloneWorker(worker));
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async changeWorkerType(inputValue2, ports, meta) {
 			const worker = state.workers.get(inputValue2.workerId);
 			if (

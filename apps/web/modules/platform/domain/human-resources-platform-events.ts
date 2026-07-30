@@ -1,6 +1,6 @@
+// biome-ignore-all lint/performance/noAwaitInLoops: Event side effects are persisted and published in source order with fail-fast semantics.
 import { AppError } from "@afenda/errors";
 import { fail, ok, type Result } from "@afenda/errors/result";
-// biome-ignore-all lint/performance/noAwaitInLoops: Event side effects are persisted and published in source order with fail-fast semantics.
 import {
 	createEventPublisher,
 	type DomainEvent,

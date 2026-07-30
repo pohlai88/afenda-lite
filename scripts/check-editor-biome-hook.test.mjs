@@ -1,7 +1,6 @@
 /**
  * @file Negative fixtures for no-editor-biome-drift hook policy.
  */
-import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -57,9 +56,13 @@ const allowPayload = {
 };
 
 const denied = runHook(denyPayload);
-assert.equal(denied.permission, "deny", "must deny posture regressions");
+if (denied.permission !== "deny") {
+	throw new Error("must deny posture regressions");
+}
 
 const allowed = runHook(allowPayload);
-assert.equal(allowed.permission, "allow", "must allow committed settings");
+if (allowed.permission !== "allow") {
+	throw new Error("must allow committed settings");
+}
 
 console.log("no-editor-biome-drift hook policy: OK");

@@ -396,7 +396,7 @@ describe("@afenda/ui-system — readable status token usage", () => {
 					"human-resources",
 					"retry-event-form.tsx",
 				),
-				contract: "text-sm font-bold text-success-subtle-foreground",
+				contract: "font-bold text-sm text-success-subtle-foreground",
 			},
 		] as const;
 

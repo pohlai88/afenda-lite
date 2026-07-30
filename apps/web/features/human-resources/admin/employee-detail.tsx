@@ -1,3 +1,4 @@
+// biome-ignore-all lint/style/noNestedTernary: Exhaustive status and tri-state view mappings remain explicit at their use sites.
 import { requireRole } from "@afenda/auth";
 import type { HumanResourcesEmployeeId } from "@afenda/human-resources";
 import {
@@ -704,4 +705,3 @@ export async function EmployeeAdminDetail({
 		</main>
 	);
 }
-// biome-ignore-all lint/style/noNestedTernary: Exhaustive status and tri-state view mappings remain explicit at their use sites.

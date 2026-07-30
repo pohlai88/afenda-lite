@@ -23,10 +23,11 @@ const BRANCH = "main";
  * @returns {NodeJS.ProcessEnv}
  */
 function ghEnv() {
-	const env = { ...process.env };
-	delete env.GITHUB_TOKEN;
-	delete env.GH_TOKEN;
-	return env;
+	return Object.fromEntries(
+		Object.entries(process.env).filter(
+			([name]) => name !== "GITHUB_TOKEN" && name !== "GH_TOKEN",
+		),
+	);
 }
 
 /**

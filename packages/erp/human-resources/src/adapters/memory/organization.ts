@@ -384,6 +384,7 @@ export function createMemoryOrganizationMethods(
 			return ok({ ...department });
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async updateDepartment(
 			input: {
 				organizationId: string;
@@ -547,6 +548,7 @@ export function createMemoryOrganizationMethods(
 			return ok({ ...updated });
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async setDepartmentStatus(
 			input: {
 				organizationId: string;
@@ -1183,6 +1185,7 @@ export function createMemoryOrganizationMethods(
 			return ok({ ...position });
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async updatePosition(
 			input: {
 				organizationId: string;
@@ -1356,6 +1359,7 @@ export function createMemoryOrganizationMethods(
 			return ok({ ...updated });
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async setPositionStatus(
 			input: {
 				organizationId: string;
@@ -1651,6 +1655,7 @@ export function createMemoryOrganizationMethods(
 			return await ok({ reportingLines, totalCount });
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async assignPrimaryReportingLine(
 			record: ReportingLineCreateRecord,
 			ports: MutationPorts,
@@ -1857,6 +1862,7 @@ export function createMemoryOrganizationMethods(
 			return ok({ ...updated });
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async replacePrimaryReportingLine(
 			input: {
 				organizationId: string;

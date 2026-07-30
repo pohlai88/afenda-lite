@@ -971,6 +971,7 @@ export function createMemoryComplianceMethods(
 			return await ok({ ...record, document: { ...record.document } });
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async registerEmployeeDocument(
 			record: {
 				organizationId: string;

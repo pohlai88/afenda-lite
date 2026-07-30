@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noAwaitInLoops: Cases run serially to isolate mutable test state and ordered transitions.
 /**
  * HR Time Server Actions — permission deny, org stamp, Result→ActionResult.
  */
@@ -1095,4 +1096,3 @@ describe("hr-time Server Actions", () => {
 		}
 	});
 });
-// biome-ignore-all lint/performance/noAwaitInLoops: Cases run serially to isolate mutable test state and ordered transitions.

@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+export const payrollJsonObjectSchema = z.record(z.string(), z.json());
+export type PayrollJsonObject = z.infer<typeof payrollJsonObjectSchema>;
+
 export const payrollOrganizationIdSchema = z.string().trim().min(1);
 export const payrollActorUserIdSchema = z.string().trim().min(1);
 export const payrollCorrelationIdSchema = z.string().trim().min(1).max(128);

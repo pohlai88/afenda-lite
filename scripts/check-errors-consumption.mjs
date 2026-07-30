@@ -33,6 +33,9 @@ const AUDIT_EXTENSIONS = new Set([
 ]);
 const SOURCE_EXTENSIONS = new Set([".ts", ".tsx", ".mts", ".cts"]);
 const DOCUMENTATION_EXTENSIONS = new Set([".md", ".mdx"]);
+const TEST_LIKE_PATH_PATTERN = /\.(?:test|spec)\.[cm]?tsx?$/u;
+const DIRECT_ERRORS_IMPORT_PATTERN =
+	/from\s+["']@afenda\/errors(?:\/[^"']*)?["']/u;
 const PUBLISHED_ERRORS_SUBPATHS = new Set([
 	"result",
 	"http",
@@ -123,7 +126,7 @@ function isTestLikePath(rel) {
 	return (
 		rel.includes("/__tests__/") ||
 		rel.includes("/testing/") ||
-		/\.(?:test|spec)\.[cm]?tsx?$/u.test(rel)
+		TEST_LIKE_PATH_PATTERN.test(rel)
 	);
 }
 
@@ -165,6 +168,77 @@ function errorsSubpathImports(content) {
 	);
 }
 
+function checkProtectedDefinitions(rel, content, isSource, isErrorsPackage) {
+	if (!(isSource && !isErrorsPackage && !isTestLikePath(rel))) {
+		return;
+	}
+	for (const [pattern, symbol] of protectedDefinitions) {
+		if (pattern.test(content)) {
+			violations.push({
+				file: rel,
+				auditCategory: "DUPLICATE",
+				message: `competing shared error-kernel definition: ${symbol}`,
+			});
+		}
+	}
+}
+
+function checkErrorsSubpaths(rel, content, isDocumentation, isErrorsPackage) {
+	if (isErrorsPackage) {
+		return;
+	}
+	for (const subpath of errorsSubpathImports(content)) {
+		if (!PUBLISHED_ERRORS_SUBPATHS.has(subpath)) {
+			violations.push({
+				file: rel,
+				auditCategory: isDocumentation ? "STALE_DOCUMENTATION" : "UNSAFE",
+				message: `unpublished @afenda/errors subpath import: @afenda/errors/${subpath}`,
+			});
+		}
+	}
+}
+
+function checkDocumentationDrift(
+	rel,
+	content,
+	isDocumentation,
+	isErrorsPackage,
+) {
+	if (!(isDocumentation && !isErrorsPackage)) {
+		return;
+	}
+	for (const [pattern, message] of DOCUMENTATION_DRIFT_DEFINITIONS) {
+		if (pattern.test(content)) {
+			violations.push({
+				file: rel,
+				auditCategory: "STALE_DOCUMENTATION",
+				message,
+			});
+		}
+	}
+}
+
+function checkForbiddenDirectImport(rel, content, isSource) {
+	const isForbiddenSurface = forbiddenDirectImportPrefixes.some((prefix) =>
+		rel.startsWith(prefix),
+	);
+	if (
+		!(
+			isSource &&
+			isForbiddenSurface &&
+			DIRECT_ERRORS_IMPORT_PATTERN.test(content)
+		)
+	) {
+		return;
+	}
+	violations.push({
+		file: rel,
+		auditCategory: "UNSAFE",
+		message:
+			"forbidden direct @afenda/errors import in schema, migration, or reusable UI primitive surface",
+	});
+}
+
 function checkFile(fullPath) {
 	const rel = normalizedRelative(fullPath);
 	const content = readFileSync(fullPath, "utf8");
@@ -172,54 +246,10 @@ function checkFile(fullPath) {
 	const isSource = isSourceFile(rel);
 	const isDocumentation = isDocumentationFile(rel);
 
-	if (isSource && !isErrorsPackage && !isTestLikePath(rel)) {
-		for (const [pattern, symbol] of protectedDefinitions) {
-			if (pattern.test(content)) {
-				violations.push({
-					file: rel,
-					auditCategory: "DUPLICATE",
-					message: `competing shared error-kernel definition: ${symbol}`,
-				});
-			}
-		}
-	}
-
-	if (!isErrorsPackage) {
-		for (const subpath of errorsSubpathImports(content)) {
-			if (!PUBLISHED_ERRORS_SUBPATHS.has(subpath)) {
-				violations.push({
-					file: rel,
-					auditCategory: isDocumentation ? "STALE_DOCUMENTATION" : "UNSAFE",
-					message: `unpublished @afenda/errors subpath import: @afenda/errors/${subpath}`,
-				});
-			}
-		}
-	}
-
-	if (isDocumentation && !isErrorsPackage) {
-		for (const [pattern, message] of DOCUMENTATION_DRIFT_DEFINITIONS) {
-			if (pattern.test(content)) {
-				violations.push({
-					file: rel,
-					auditCategory: "STALE_DOCUMENTATION",
-					message,
-				});
-			}
-		}
-	}
-
-	if (
-		isSource &&
-		forbiddenDirectImportPrefixes.some((prefix) => rel.startsWith(prefix)) &&
-		/from\s+["']@afenda\/errors(?:\/[^"']*)?["']/u.test(content)
-	) {
-		violations.push({
-			file: rel,
-			auditCategory: "UNSAFE",
-			message:
-				"forbidden direct @afenda/errors import in schema, migration, or reusable UI primitive surface",
-		});
-	}
+	checkProtectedDefinitions(rel, content, isSource, isErrorsPackage);
+	checkErrorsSubpaths(rel, content, isDocumentation, isErrorsPackage);
+	checkDocumentationDrift(rel, content, isDocumentation, isErrorsPackage);
+	checkForbiddenDirectImport(rel, content, isSource);
 }
 
 for (const auditRoot of AUDIT_ROOTS) {

@@ -1503,7 +1503,10 @@ export class DrizzleReceivingStore implements ReceivingStore {
 				.from(goodsReceiptLine)
 				.innerJoin(
 					goodsReceipt,
-					eq(goodsReceiptLine.goodsReceiptId, goodsReceipt.id),
+					and(
+						eq(goodsReceiptLine.goodsReceiptId, goodsReceipt.id),
+						eq(goodsReceiptLine.organizationId, organizationId),
+					),
 				)
 				.where(and(...conditions))
 				.groupBy(goodsReceiptLine.purchaseOrderLineId);

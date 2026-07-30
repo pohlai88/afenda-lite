@@ -137,7 +137,12 @@ export const drizzleHireOrchestrationMethods: Pick<
 		const rows = await db
 			.select()
 			.from(hrHireAttempt)
-			.where(eq(hrHireAttempt.id, id))
+			.where(
+				and(
+					eq(hrHireAttempt.id, id),
+					eq(hrHireAttempt.organizationId, record.organizationId),
+				),
+			)
 			.limit(1);
 		const [row] = rows;
 		if (row === undefined) {

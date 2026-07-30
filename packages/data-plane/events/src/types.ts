@@ -75,7 +75,7 @@ export type DomainEventQueryOptions = DomainEventQueryFilter & {
 
 export interface DomainEventClaimOptions {
 	limit: number;
-	organizationId?: string | undefined;
+	organizationId: string;
 }
 
 export interface DomainEventMarkProcessedInput {

@@ -30,8 +30,11 @@ let passed = 0;
 let failed = 0;
 
 function record(ok) {
-	if (ok) passed += 1;
-	else failed += 1;
+	if (ok) {
+		passed += 1;
+	} else {
+		failed += 1;
+	}
 }
 
 console.log("=== Neon Auth production audit (N15) ===\n");

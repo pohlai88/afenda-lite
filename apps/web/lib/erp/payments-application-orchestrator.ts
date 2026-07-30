@@ -1,5 +1,6 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
 // biome-ignore-all lint/performance/noAwaitInLoops: Payment instructions mutate a shared balance and ledger in declared order.
+// biome-ignore-all lint/style/noNestedTernary: Exhaustive status and tri-state view mappings remain explicit at their use sites.
+import { fail, ok, type Result } from "@afenda/errors/result";
 import {
 	applySupplierPayment,
 	reverseSupplierPaymentApplication,
@@ -172,4 +173,3 @@ export async function reversePaymentApplications(
 	}
 	return ok(undefined);
 }
-// biome-ignore-all lint/style/noNestedTernary: Exhaustive status and tri-state view mappings remain explicit at their use sites.

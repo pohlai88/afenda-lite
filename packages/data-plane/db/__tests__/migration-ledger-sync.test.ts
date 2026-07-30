@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
-
-import { findPendingMigrationJournalRows } from "../scripts/lib/migration-journal-rows.mjs";
+import { getHistoricalReconciliationDisposition } from "../scripts/lib/historical-migration-execution.mjs";
+import { planIdentityMigrations } from "../scripts/lib/identity-migrator.mjs";
+import {
+	findPendingMigrationJournalRows,
+	reconcileMigrationJournalRows,
+} from "../scripts/lib/migration-journal-rows.mjs";
 
 async function findJournalEntry(tag: string) {
 	const { readFileSync } = await import("node:fs");
@@ -58,6 +62,116 @@ describe("findPendingMigrationJournalRows", () => {
 		expect(result.pending).toHaveLength(1);
 		expect(result.pending[0]?.kind).toBe("created_at_mismatch");
 		expect(result.driftIssues[0]).toContain("0001_b");
+	});
+});
+
+describe("reconcileMigrationJournalRows", () => {
+	const journalRows = [
+		{ idx: 0, tag: "0000_a", when: 100, hash: "hash-a" },
+		{ idx: 1, tag: "0001_b", when: 200, hash: "hash-b" },
+	];
+
+	it("names pending journal rows and unknown database rows independently", () => {
+		const result = reconcileMigrationJournalRows(journalRows, [
+			{ id: 10, hash: "hash-a", created_at: 100 },
+			{ id: 11, hash: "unknown", created_at: 150 },
+		]);
+		expect(result.rows.map((row) => row.status)).toEqual([
+			"applied",
+			"pending",
+		]);
+		expect(result.rows[1]?.journalFilename).toBe("0001_b.sql");
+		expect(result.unknownDatabaseRows).toEqual([
+			expect.objectContaining({
+				ledgerId: 11,
+				status: "unknown in database",
+			}),
+		]);
+	});
+
+	it("detects hash divergence at the governed timestamp", () => {
+		const result = reconcileMigrationJournalRows(journalRows, [
+			{ id: 10, hash: "changed", created_at: 100 },
+		]);
+		expect(result.rows[0]?.status).toBe("hash mismatch");
+		expect(result.unknownDatabaseRows).toEqual([]);
+	});
+
+	it("detects a matching hash recorded under the wrong timestamp", () => {
+		const result = reconcileMigrationJournalRows(journalRows, [
+			{ id: 10, hash: "hash-a", created_at: 999 },
+		]);
+		expect(result.rows[0]?.status).toBe("identity mismatch");
+		expect(result.unknownDatabaseRows).toEqual([]);
+	});
+});
+
+describe("planIdentityMigrations", () => {
+	it("selects missing earlier identities even when a later migration is applied", () => {
+		const journalRows = [
+			{ idx: 33, tag: "0033_applied", when: 330, hash: "hash-33" },
+			{ idx: 34, tag: "0034_pending", when: 340, hash: "hash-34" },
+			{ idx: 35, tag: "0035_pending", when: 350, hash: "hash-35" },
+			{ idx: 41, tag: "0041_applied", when: 410, hash: "hash-41" },
+		];
+		const pending = planIdentityMigrations(journalRows, [
+			{ id: 34, hash: "hash-33", created_at: 330 },
+			{ id: 35, hash: "hash-41", created_at: 410 },
+		]);
+		expect(pending.map((row) => row.tag)).toEqual([
+			"0034_pending",
+			"0035_pending",
+		]);
+	});
+
+	it("fails closed on a divergent applied identity", () => {
+		expect(() =>
+			planIdentityMigrations(
+				[{ idx: 41, tag: "0041_applied", when: 410, hash: "expected" }],
+				[{ id: 35, hash: "different", created_at: 410 }],
+			),
+		).toThrow(/divergence/);
+	});
+});
+
+describe("historical reconciliation execution", () => {
+	it("records 0033 without replaying repair SQL only when all sources are applied", () => {
+		const allSources = new Set([
+			"0005_uneven_rage",
+			"0006_cynical_roxanne_simpson",
+			"0007_rich_proudstar",
+			"0008_cloudy_strong_guy",
+			"0009_lively_paibok",
+			"0010_party_address_structured",
+			"0011_party_contact_structured",
+			"0012_party_external_id_structured",
+			"0013_party_relationship_governed",
+			"0014_item_uom_governed",
+			"0015_item_barcode_governed",
+			"0016_item_external_id_governed",
+			"0017_item_alias_governed",
+			"0018_warehouse_external_id_governed",
+			"0019_template_attribute_governed",
+			"0020_variant_attribute_value_typed",
+			"0021_primary_record_scope",
+			"0022_extension_database_constraints",
+			"0024_item_core_operational_profile",
+			"0025_warehouse_payment_tax_masters",
+			"0027_master_data_database_constraints",
+			"0028_ca_company_status_lifecycle",
+			"0029_master_data_import_recovery",
+		]);
+		const migration = {
+			tag: "0033_schema_reconciliation",
+			hash: "4bb8065d004b267c30bca010c8042c9815a2213cd8a0638d861b018bebab2dbf",
+		};
+		expect(
+			getHistoricalReconciliationDisposition(migration, allSources),
+		).toMatchObject({ status: "historical-reconciliation-satisfied" });
+		allSources.delete("0029_master_data_import_recovery");
+		expect(() =>
+			getHistoricalReconciliationDisposition(migration, allSources),
+		).toThrow(/missing source identities/);
 	});
 });
 

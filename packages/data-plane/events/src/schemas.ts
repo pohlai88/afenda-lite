@@ -126,7 +126,7 @@ export type EventPage = z.infer<typeof eventPageSchema>;
 
 export const eventDispatchOptionsSchema = z
 	.object({
-		organizationId: z.string().trim().min(1).optional(),
+		organizationId: z.string().trim().min(1),
 		limit: z.number().int().min(1).max(MAX_DISPATCH_LIMIT).optional(),
 	})
 	.transform((value) => ({

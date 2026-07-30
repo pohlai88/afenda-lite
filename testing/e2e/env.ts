@@ -1,6 +1,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
+const LINE_BREAK_PATTERN = /\r?\n/;
+
 /**
  * Playwright env bootstrap.
  * Loads repo-root `.env.local` into `process.env` when keys are unset, then
@@ -9,7 +11,9 @@ import { resolve } from "node:path";
 export function loadPlaywrightEnv(): void {
 	const envPath = resolve(process.cwd(), ".env.local");
 	if (existsSync(envPath)) {
-		for (const line of readFileSync(envPath, "utf8").split(/\r?\n/)) {
+		for (const line of readFileSync(envPath, "utf8").split(
+			LINE_BREAK_PATTERN,
+		)) {
 			const trimmed = line.trim();
 			if (!trimmed || trimmed.startsWith("#")) {
 				continue;

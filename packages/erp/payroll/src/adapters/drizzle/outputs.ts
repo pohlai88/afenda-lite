@@ -16,6 +16,7 @@ import {
 	parsePayrollRunId,
 } from "../../brands";
 import type { MutationPorts } from "../../ports";
+import { payrollJsonObjectSchema } from "../../schemas/common";
 import {
 	mapInvalidState,
 	mapNotFound,
@@ -65,10 +66,13 @@ function mapRunEmployeeRow(
 	if (!assignmentId.ok) {
 		return assignmentId;
 	}
-	const snapshotJson =
-		typeof row.snapshotJson === "object" && row.snapshotJson !== null
-			? (row.snapshotJson as Record<string, unknown>)
-			: {};
+	const snapshotJson = payrollJsonObjectSchema.safeParse(row.snapshotJson);
+	if (!snapshotJson.success) {
+		return mapPersistenceFailure(
+			snapshotJson.error,
+			"Persisted payroll snapshot is invalid",
+		);
+	}
 	return ok({
 		id: id.data,
 		organizationId: row.organizationId,
@@ -81,7 +85,7 @@ function mapRunEmployeeRow(
 		employeeStatutory: String(row.employeeStatutory),
 		employerCost: String(row.employerCost),
 		net: String(row.net),
-		snapshotJson,
+		snapshotJson: snapshotJson.data,
 		snapshotHash: row.snapshotHash,
 		calculationVersion: row.calculationVersion,
 		status: row.status as PayrollRunEmployee["status"],

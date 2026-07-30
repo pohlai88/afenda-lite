@@ -48,7 +48,7 @@ export function runNegativeFixtures() {
 		if (!hit) {
 			return `negative fixture missed for ${gate}: expected "${expectedSubstring}", got [${actual.join("; ")}]`;
 		}
-		return null;
+		return "";
 	}
 
 	misses.push(
@@ -59,7 +59,7 @@ export function runNegativeFixtures() {
 				baseManifest({ id: "sales", packageName: "@afenda/sales" }),
 				baseManifest({ id: "sales", packageName: "@afenda/sales-dup" }),
 			]),
-		) ?? "",
+		),
 	);
 
 	misses.push(
@@ -78,7 +78,7 @@ export function runNegativeFixtures() {
 					mutationTables: ["sales_order"],
 				}),
 			]),
-		) ?? "",
+		),
 	);
 
 	misses.push(
@@ -95,7 +95,7 @@ export function runNegativeFixtures() {
 				],
 				new Set(["sales_order"]),
 			),
-		) ?? "",
+		),
 	);
 
 	misses.push(
@@ -118,7 +118,7 @@ export function runNegativeFixtures() {
 					permissions: ["master_data.manage"],
 				}),
 			]),
-		) ?? "",
+		),
 	);
 
 	misses.push(

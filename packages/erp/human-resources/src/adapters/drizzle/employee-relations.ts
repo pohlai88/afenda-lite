@@ -743,6 +743,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async openEmployeeCase(record, _ports, meta) {
 		const existing = await this.findEmployeeCaseByIdempotencyKey({
 			organizationId: record.organizationId,
@@ -1798,6 +1799,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async recommendEmployeeCaseAction(record, _ports, meta) {
 		const existing = await this.findEmployeeCaseActionByIdempotencyKey({
 			organizationId: record.organizationId,
@@ -2131,6 +2133,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async recordEmployeeCaseAppeal(record, _ports, meta) {
 		const existing = await this.findEmployeeCaseAppealByIdempotencyKey({
 			organizationId: record.organizationId,

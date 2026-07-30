@@ -42,6 +42,7 @@ const SKIP_DIRECTORIES = new Set([
 ]);
 
 const PRESET_DIRECTORY = "packages/foundation/config/tsconfig";
+const TSCONFIG_FILE_PATTERN = /^tsconfig.*\.json$/i;
 
 function toPosixPath(value) {
 	return value.replaceAll("\\", "/");
@@ -54,7 +55,6 @@ function readJson(file, errors) {
 		errors.push(
 			`${toPosixPath(file)}: invalid JSON (${error instanceof Error ? error.message : String(error)})`,
 		);
-		return undefined;
 	}
 }
 
@@ -62,7 +62,9 @@ function listTsconfigs(root) {
 	const files = [];
 	function walk(directory) {
 		for (const name of readdirSync(directory)) {
-			if (SKIP_DIRECTORIES.has(name)) continue;
+			if (SKIP_DIRECTORIES.has(name)) {
+				continue;
+			}
 			const file = join(directory, name);
 			let stats;
 			try {
@@ -72,7 +74,7 @@ function listTsconfigs(root) {
 			}
 			if (stats.isDirectory()) {
 				walk(file);
-			} else if (/^tsconfig.*\.json$/i.test(name)) {
+			} else if (TSCONFIG_FILE_PATTERN.test(name)) {
 				files.push(file);
 			}
 		}
@@ -83,7 +85,9 @@ function listTsconfigs(root) {
 
 function resolveRelativeExtends(configFile, extendsValue) {
 	const candidate = resolve(dirname(configFile), extendsValue);
-	if (existsSync(candidate)) return candidate;
+	if (existsSync(candidate)) {
+		return candidate;
+	}
 	const jsonCandidate = `${candidate}.json`;
 	return existsSync(jsonCandidate) ? jsonCandidate : undefined;
 }
@@ -94,17 +98,25 @@ function findApprovedPreset(
 	errors,
 	seen = new Set(),
 ) {
-	if (APPROVED_PRESETS.has(extendsValue)) return extendsValue;
-	if (!extendsValue.startsWith(".")) return undefined;
+	if (APPROVED_PRESETS.has(extendsValue)) {
+		return extendsValue;
+	}
+	if (!extendsValue.startsWith(".")) {
+		return;
+	}
 	const parentFile = resolveRelativeExtends(configFile, extendsValue);
-	if (!parentFile) return undefined;
+	if (!parentFile) {
+		return;
+	}
 	if (seen.has(parentFile)) {
 		errors.push(`${toPosixPath(configFile)}: circular tsconfig extends chain`);
-		return undefined;
+		return;
 	}
 	seen.add(parentFile);
 	const parent = readJson(parentFile, errors);
-	if (!parent || typeof parent.extends !== "string") return undefined;
+	if (!parent || typeof parent.extends !== "string") {
+		return;
+	}
 	return findApprovedPreset(parentFile, parent.extends, errors, seen);
 }
 
@@ -115,7 +127,9 @@ function sameJsonValue(actual, expected) {
 function checkPreset(root, relativeFile, expected, errors) {
 	const file = join(root, relativeFile);
 	const config = readJson(file, errors);
-	if (!config) return;
+	if (!config) {
+		return;
+	}
 	if (expected.extends && config.extends !== expected.extends) {
 		errors.push(`${relativeFile}: extends must be ${expected.extends}`);
 	}
@@ -188,9 +202,13 @@ export function checkTsconfigGovernance(root) {
 
 	for (const file of listTsconfigs(root)) {
 		const relativeFile = toPosixPath(relative(root, file));
-		if (relativeFile.startsWith(`${PRESET_DIRECTORY}/`)) continue;
+		if (relativeFile.startsWith(`${PRESET_DIRECTORY}/`)) {
+			continue;
+		}
 		const config = readJson(file, errors);
-		if (!config) continue;
+		if (!config) {
+			continue;
+		}
 		if (typeof config.extends !== "string") {
 			errors.push(
 				`${relativeFile}: must extend an @afenda/config TypeScript preset`,
@@ -230,7 +248,9 @@ function main() {
 	const errors = checkTsconfigGovernance(root);
 	if (errors.length > 0) {
 		console.error("check-tsconfig-governance: FAIL");
-		for (const error of errors) console.error(`  - ${error}`);
+		for (const error of errors) {
+			console.error(`  - ${error}`);
+		}
 		process.exitCode = 1;
 		return;
 	}

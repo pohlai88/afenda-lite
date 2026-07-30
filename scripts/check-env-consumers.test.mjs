@@ -6,6 +6,15 @@ import { join, resolve } from "node:path";
 import test from "node:test";
 
 const scriptPath = resolve("scripts/check-env-consumers.mjs");
+const CHECK_OK_PATTERN = /check-env-consumers: ok/u;
+const RAW_PROCESS_ENV_PATTERN = /RAW_PROCESS_ENV/u;
+const UPSTASH_URL_PATTERN = /UPSTASH_REDIS_REST_URL/u;
+const COMPETING_CREATE_ENV_PATTERN = /COMPETING_CREATE_ENV/u;
+const RUNTIME_ENV_LOADER_PATTERN = /RUNTIME_ENV_LOADER/u;
+const LEGACY_ENV_ALIAS_PATTERN = /LEGACY_ENV_ALIAS/u;
+const COMMITTED_ENV_FILE_PATTERN = /COMMITTED_ENV_FILE/u;
+const LOCAL_ENV_FILE_PATTERN = /\.env\.local/u;
+const DOCS_PRODUCT_ENV_IMPORT_PATTERN = /DOCS_PRODUCT_ENV_IMPORT/u;
 
 function createFixture() {
 	const root = mkdtempSync(join(tmpdir(), "afenda-env-consumers-"));
@@ -62,7 +71,7 @@ test("allows process.env reads inside @afenda/env authority", () => {
 		const result = runCheck(root);
 
 		assert.equal(result.status, 0);
-		assert.match(result.output, /check-env-consumers: ok/u);
+		assert.match(result.output, CHECK_OK_PATTERN);
 	} finally {
 		rmSync(root, { recursive: true, force: true });
 	}
@@ -80,8 +89,8 @@ test("fails raw product runtime process.env reads", () => {
 		const result = runCheck(root);
 
 		assert.equal(result.status, 1);
-		assert.match(result.output, /RAW_PROCESS_ENV/u);
-		assert.match(result.output, /UPSTASH_REDIS_REST_URL/u);
+		assert.match(result.output, RAW_PROCESS_ENV_PATTERN);
+		assert.match(result.output, UPSTASH_URL_PATTERN);
 	} finally {
 		rmSync(root, { recursive: true, force: true });
 	}
@@ -99,7 +108,7 @@ test("allows documented DB bootstrap exception", () => {
 		const result = runCheck(root);
 
 		assert.equal(result.status, 0);
-		assert.match(result.output, /check-env-consumers: ok/u);
+		assert.match(result.output, CHECK_OK_PATTERN);
 	} finally {
 		rmSync(root, { recursive: true, force: true });
 	}
@@ -122,7 +131,7 @@ test("allows scripts and framework config env reads", () => {
 		const result = runCheck(root);
 
 		assert.equal(result.status, 0);
-		assert.match(result.output, /check-env-consumers: ok/u);
+		assert.match(result.output, CHECK_OK_PATTERN);
 	} finally {
 		rmSync(root, { recursive: true, force: true });
 	}
@@ -140,7 +149,7 @@ test("fails competing createEnv outside @afenda/env", () => {
 		const result = runCheck(root);
 
 		assert.equal(result.status, 1);
-		assert.match(result.output, /COMPETING_CREATE_ENV/u);
+		assert.match(result.output, COMPETING_CREATE_ENV_PATTERN);
 	} finally {
 		rmSync(root, { recursive: true, force: true });
 	}
@@ -158,7 +167,7 @@ test("fails runtime dotenv imports", () => {
 		const result = runCheck(root);
 
 		assert.equal(result.status, 1);
-		assert.match(result.output, /RUNTIME_ENV_LOADER/u);
+		assert.match(result.output, RUNTIME_ENV_LOADER_PATTERN);
 	} finally {
 		rmSync(root, { recursive: true, force: true });
 	}
@@ -176,7 +185,7 @@ test("fails legacy environment aliases in runtime code", () => {
 		const result = runCheck(root);
 
 		assert.equal(result.status, 1);
-		assert.match(result.output, /LEGACY_ENV_ALIAS/u);
+		assert.match(result.output, LEGACY_ENV_ALIAS_PATTERN);
 	} finally {
 		rmSync(root, { recursive: true, force: true });
 	}
@@ -196,8 +205,8 @@ test("fails committed local env files", () => {
 		const result = runCheck(root);
 
 		assert.equal(result.status, 1);
-		assert.match(result.output, /COMMITTED_ENV_FILE/u);
-		assert.match(result.output, /\.env\.local/u);
+		assert.match(result.output, COMMITTED_ENV_FILE_PATTERN);
+		assert.match(result.output, LOCAL_ENV_FILE_PATTERN);
 	} finally {
 		rmSync(root, { recursive: true, force: true });
 	}
@@ -215,7 +224,7 @@ test("allows only docs env imports in docs app runtime", () => {
 		const result = runCheck(root);
 
 		assert.equal(result.status, 0);
-		assert.match(result.output, /check-env-consumers: ok/u);
+		assert.match(result.output, CHECK_OK_PATTERN);
 	} finally {
 		rmSync(root, { recursive: true, force: true });
 	}
@@ -233,7 +242,7 @@ test("fails product env imports in docs app runtime", () => {
 		const result = runCheck(root);
 
 		assert.equal(result.status, 1);
-		assert.match(result.output, /DOCS_PRODUCT_ENV_IMPORT/u);
+		assert.match(result.output, DOCS_PRODUCT_ENV_IMPORT_PATTERN);
 	} finally {
 		rmSync(root, { recursive: true, force: true });
 	}

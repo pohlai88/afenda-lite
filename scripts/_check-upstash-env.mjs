@@ -15,9 +15,15 @@ for (const key of keys) {
 	const commented = line.trimStart().startsWith("#");
 	const raw = line.replace(/^\s*#?/, "").slice(key.length + 1);
 	const value = raw.trim().replace(/^["']|["']$/g, "");
+	let status = "empty";
+	if (commented) {
+		status = "commented";
+	} else if (value.length > 0) {
+		status = "present";
+	}
 	const row = {
 		key,
-		status: commented ? "commented" : value.length > 0 ? "present" : "empty",
+		status,
 		length: value.length,
 	};
 	if (key.includes("URL")) {

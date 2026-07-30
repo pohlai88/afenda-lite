@@ -1,9 +1,17 @@
-import type { Page } from "@playwright/test";
+import type { BrowserContext, Page } from "@playwright/test";
 
-export type LoginPair = {
+const EMAIL_LABEL_PATTERN = /email/i;
+const SIGN_IN_LABEL_PATTERN = /sign in|log in|login|continue/i;
+const ADMIN_PATH_PATTERN = /\/admin(\/|$)/;
+const CLIENT_PATH_PATTERN = /\/client(\/|$)/;
+type CachedAuthState = Awaited<ReturnType<BrowserContext["storageState"]>>;
+
+const cachedAuthStates = new Map<string, CachedAuthState>();
+
+export interface LoginPair {
 	email: string;
 	password: string;
-};
+}
 
 /**
  * Fill Neon Auth login form and submit.
@@ -14,10 +22,10 @@ export async function signIn(
 	email: string,
 	password: string,
 ): Promise<void> {
-	await page.getByRole("textbox", { name: /email/i }).fill(email);
+	await page.getByRole("textbox", { name: EMAIL_LABEL_PATTERN }).fill(email);
 	await page.locator('input[type="password"]').first().fill(password);
 	await page
-		.getByRole("button", { name: /sign in|log in|login|continue/i })
+		.getByRole("button", { name: SIGN_IN_LABEL_PATTERN })
 		.first()
 		.click();
 }
@@ -34,11 +42,21 @@ export async function loginAs(
 		timeoutMs?: number;
 	},
 ): Promise<void> {
+	const waitFor = options?.waitFor ?? ADMIN_PATH_PATTERN;
+	const timeout = options?.timeoutMs ?? 45_000;
+	const cacheKey = pair.email.trim().toLowerCase();
+	const cachedState = cachedAuthStates.get(cacheKey);
+	if (cachedState !== undefined) {
+		await page.context().addCookies(cachedState.cookies);
+		await page.goto("/");
+		await page.waitForURL(waitFor, { timeout });
+		return;
+	}
+
 	await page.goto("/auth/login");
 	await signIn(page, pair.email, pair.password);
-	await page.waitForURL(options?.waitFor ?? /\/admin(\/|$)/, {
-		timeout: options?.timeoutMs ?? 45_000,
-	});
+	await page.waitForURL(waitFor, { timeout });
+	cachedAuthStates.set(cacheKey, await page.context().storageState());
 }
 
 /** Operator / admin shell login → `/admin`. */
@@ -46,7 +64,7 @@ export async function loginAsOperator(
 	page: Page,
 	pair: LoginPair,
 ): Promise<void> {
-	await loginAs(page, pair, { waitFor: /\/admin(\/|$)/ });
+	await loginAs(page, pair, { waitFor: ADMIN_PATH_PATTERN });
 }
 
 /** Client shell login → `/client`. */
@@ -54,5 +72,5 @@ export async function loginAsClient(
 	page: Page,
 	pair: LoginPair,
 ): Promise<void> {
-	await loginAs(page, pair, { waitFor: /\/client(\/|$)/ });
+	await loginAs(page, pair, { waitFor: CLIENT_PATH_PATTERN });
 }

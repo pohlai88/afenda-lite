@@ -165,7 +165,6 @@ export async function runEmploymentJourneyAction(
 		permission: "human-resources.employment.manage",
 		safeMessage:
 			"Could not update employment. Try again or contact HR support.",
-		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Assignment intents share one permission and validation transaction boundary.
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(employmentJourneySchema, {
 				intent: formData.get("intent"),
@@ -258,6 +257,7 @@ export async function runAssignmentJourneyAction(
 		permission: "human-resources.employment.manage",
 		safeMessage:
 			"Could not update the assignment. Try again or contact HR support.",
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Assignment intents share one permission and validation transaction boundary.
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(assignmentJourneySchema, {
 				intent: formData.get("intent"),

@@ -10,6 +10,8 @@
 import { execFileSync } from "node:child_process";
 import { getEnvValue, loadLocalEnv } from "./lib/env-files.mjs";
 
+const TRAILING_SLASH_PATTERN = /\/+$/;
+
 const env = loadLocalEnv();
 const appUrlRaw = env.APP_URL || getEnvValue("APP_URL", env);
 
@@ -23,14 +25,17 @@ let passed = 0;
 let failed = 0;
 
 function record(ok) {
-	if (ok) passed += 1;
-	else failed += 1;
+	if (ok) {
+		passed += 1;
+	} else {
+		failed += 1;
+	}
 }
 
 function normalizeBase(url) {
 	return String(url ?? "")
 		.trim()
-		.replace(/\/+$/, "");
+		.replace(TRAILING_SLASH_PATTERN, "");
 }
 
 /**

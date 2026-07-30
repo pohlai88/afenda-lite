@@ -1376,6 +1376,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async supersedeSalaryBand(input, _ports, meta) {
 		const grade = await this.getCompensationGrade({
 			organizationId: input.organizationId,
@@ -2451,6 +2452,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async createCompensationReviewDraft(record, _ports, meta) {
 		const existing = await this.findCompensationReviewByIdempotencyKey({
 			organizationId: record.organizationId,
@@ -3712,6 +3714,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async enrolBenefit(record, _ports, meta) {
 		const existing = await this.findBenefitEnrollmentByIdempotencyKey({
 			organizationId: record.organizationId,

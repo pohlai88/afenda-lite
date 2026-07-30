@@ -1840,6 +1840,7 @@ export function createMemoryTalentMethods(
 			});
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async recordCriticalRoleReadiness(record, ports, meta) {
 			const stateValue35 = getState();
 			const idempotencyKey = idempotencyMapKey(

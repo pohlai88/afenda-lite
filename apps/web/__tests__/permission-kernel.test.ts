@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noAwaitInLoops: Cases run serially to isolate mutable test state and ordered transitions.
 /**
  * N10 — Permission kernel: catalog gate, list ports, two-org authz isolation.
  * Assign/revoke via WithAudit (N12 Path-to-100%).
@@ -132,4 +133,3 @@ describe.skipIf(!hasDatabase)("permission kernel product wiring (N10)", () => {
 		}
 	});
 });
-// biome-ignore-all lint/performance/noAwaitInLoops: Cases run serially to isolate mutable test state and ordered transitions.

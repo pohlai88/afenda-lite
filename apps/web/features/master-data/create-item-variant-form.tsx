@@ -58,6 +58,7 @@ export function CreateItemVariantForm({
 		createItemVariantAction,
 		initialState,
 	);
+	// biome-ignore lint/suspicious/noUnnecessaryConditions: The templates array can be empty at runtime despite unchecked index typing.
 	const [templateId, setTemplateId] = useState(templates[0]?.id ?? "");
 	const selected = templates.find((row) => row.id === templateId);
 	const attributes = selected?.attributes ?? [];

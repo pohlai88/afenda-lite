@@ -5,7 +5,7 @@ import { db, sql } from "../packages/data-plane/db/src/index.ts";
 
 const REQUIRED_CORE_SCHEMA_MARKERS = 4;
 
-export async function verifyMasterDataCoreParitySchema(): Promise<void> {
+export default async function verifyMasterDataCoreParitySchema(): Promise<void> {
 	process.env.REQUIRE_DATABASE_TESTS = "1";
 	setupDatabaseTestLane();
 	const currentSchema = await db.execute(sql`
@@ -26,5 +26,3 @@ export async function verifyMasterDataCoreParitySchema(): Promise<void> {
 		);
 	}
 }
-
-export default verifyMasterDataCoreParitySchema;

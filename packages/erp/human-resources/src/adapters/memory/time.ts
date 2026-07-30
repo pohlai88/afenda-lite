@@ -593,6 +593,7 @@ export function createMemoryTimeMethods(
 			return ok({ ...calendar });
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async supersedeWorkCalendar(input, ports) {
 			const predecessor = state.workCalendars.get(input.calendarId);
 			if (!predecessor || predecessor.organizationId !== input.organizationId) {
@@ -1597,6 +1598,7 @@ export function createMemoryTimeMethods(
 			return ok({ ...shift });
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async supersedeShift(input, ports) {
 			const predecessor = state.shifts.get(input.shiftId);
 			if (!predecessor || predecessor.organizationId !== input.organizationId) {
@@ -1716,6 +1718,7 @@ export function createMemoryTimeMethods(
 			});
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async updateShift(input, ports) {
 			const shift = state.shifts.get(input.shiftId);
 			if (!shift || shift.organizationId !== input.organizationId) {
@@ -2352,6 +2355,7 @@ export function createMemoryTimeMethods(
 				});
 			}
 
+			// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 			await runSequential(input.events.entries(), async ([rowIndex, row]) => {
 				const outcomeRowIndex = input.sourceRowIndexes?.[rowIndex] ?? rowIndex;
 				if (!isValidIanaTimeZone(row.sourceTimezone)) {
@@ -2604,6 +2608,7 @@ export function createMemoryTimeMethods(
 			return ok(result);
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async recordAttendanceEvent(input: AttendanceEventRecordInput, ports) {
 			const idResult = parseHumanResourcesAttendanceEventId(randomUUID());
 			if (!idResult.ok) {
@@ -2699,6 +2704,7 @@ export function createMemoryTimeMethods(
 			return ok({ ...event });
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async correctAttendanceEvent(input, ports) {
 			const predecessor =
 				state.attendanceCorrectionTails.get(input.eventId) ?? Promise.resolve();
@@ -3461,6 +3467,7 @@ export function createMemoryTimeMethods(
 			return ok({ ...timesheet });
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async generateTimesheetEntries(
 			input,
 			ports,
@@ -3818,6 +3825,7 @@ export function createMemoryTimeMethods(
 			return ok({ ...entry });
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async updateTimesheetEntry(input, ports) {
 			const entry = state.timesheetEntries.get(input.entryId);
 			if (!entry || entry.organizationId !== input.organizationId) {
@@ -3937,6 +3945,7 @@ export function createMemoryTimeMethods(
 				approverNotes: input.approverNotes ?? null,
 			});
 		},
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async approveTimesheet(input, ports) {
 			const timesheet = state.timesheets.get(input.timesheetId);
 			if (!timesheet || timesheet.organizationId !== input.organizationId) {

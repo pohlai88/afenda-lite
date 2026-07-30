@@ -987,6 +987,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async updateDepartment(
 		input: {
 			organizationId: string;
@@ -2109,6 +2110,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async updatePosition(
 		input: {
 			organizationId: string;

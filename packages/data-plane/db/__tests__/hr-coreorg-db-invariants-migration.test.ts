@@ -7,8 +7,11 @@ import { readFileSync } from "node:fs";
 import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { assertAdditiveMigrationSql } from "../scripts/lib/assert-additive-migration.mjs";
-import { readCurrentMigrationSql } from "./helpers/current-migration-sql";
+import { assertAdditiveMigrations } from "../scripts/lib/assert-additive-migration.mjs";
+import {
+	readCurrentMigrationSql,
+	readCurrentMigrations,
+} from "./helpers/current-migration-sql";
 import {
 	listHrPgTableNames,
 	loadCoreorgExclusionRegister,
@@ -40,8 +43,8 @@ function requireDatabaseTests(): boolean {
 }
 
 describe("HR coreorg DB invariants generated migration", () => {
-	it("is additive and names all effective-range constraints", () => {
-		const result = assertAdditiveMigrationSql(migrationSql);
+	it("passes additive governance and names all effective-range constraints", () => {
+		const result = assertAdditiveMigrations(readCurrentMigrations());
 		expect(result.ok).toBe(true);
 		expect(migrationSql).toContain('"hr_work_assignment_effective_range_ck"');
 		expect(migrationSql).toContain(

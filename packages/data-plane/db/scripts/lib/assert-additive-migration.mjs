@@ -7,6 +7,8 @@
  * Does not ban DROP INDEX / DROP CONSTRAINT / CREATE INDEX by substring alone.
  */
 
+import { findApprovedHistoricalDestructiveMigration } from "./historical-destructive-migrations.mjs";
+
 const DOLLAR_QUOTE_TAG_PATTERN = /^\$([A-Za-z_][A-Za-z0-9_]*)?\$/;
 const WHITESPACE_PATTERN = /\s+/g;
 const DROP_TABLE_PATTERN = /^DROP\s+TABLE\b/;
@@ -158,18 +160,43 @@ export function assertAdditiveMigrationSql(sql) {
 }
 
 /**
- * @param {string[]} sqlContents
+ * @param {Array<string | { filename: string, sql: string }>} migrations
  * @param {{ allowDestructive?: boolean }} [options]
- * @returns {{ ok: boolean, findings: { statement: string, reason: string }[] }}
+ * @returns {{ ok: boolean, findings: { filename: string | null, statement: string, reason: string }[], approvedHistoricalExceptions: Array<{ filename: string, appliedHash: string, status: string }> }}
  */
-export function assertAdditiveMigrations(sqlContents, options = {}) {
+export function assertAdditiveMigrations(migrations, options = {}) {
 	if (options.allowDestructive) {
-		return { ok: true, findings: [] };
+		return { ok: true, findings: [], approvedHistoricalExceptions: [] };
 	}
 	const findings = [];
-	for (const sql of sqlContents) {
+	const approvedHistoricalExceptions = [];
+	for (const migration of migrations) {
+		const filename = typeof migration === "string" ? null : migration.filename;
+		const sql = typeof migration === "string" ? migration : migration.sql;
 		const result = assertAdditiveMigrationSql(sql);
-		findings.push(...result.findings);
+		if (
+			filename &&
+			result.findings.length > 0 &&
+			findApprovedHistoricalDestructiveMigration(filename, sql)
+		) {
+			const approval = findApprovedHistoricalDestructiveMigration(
+				filename,
+				sql,
+			);
+			approvedHistoricalExceptions.push({
+				filename,
+				appliedHash: approval.appliedHash,
+				status: approval.status,
+			});
+			continue;
+		}
+		findings.push(
+			...result.findings.map((finding) => ({ ...finding, filename })),
+		);
 	}
-	return { ok: findings.length === 0, findings };
+	return {
+		ok: findings.length === 0,
+		findings,
+		approvedHistoricalExceptions,
+	};
 }

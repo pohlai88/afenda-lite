@@ -12,9 +12,19 @@ function migrationFiles(): string[] {
 }
 
 export function readCurrentMigrationSql(): string {
-	return migrationFiles()
-		.map((file) => readFileSync(`${drizzleDirectory}/${file}`, "utf8"))
+	return readCurrentMigrations()
+		.map(({ sql }) => sql)
 		.join("\n--> migration-file-breakpoint\n");
+}
+
+export function readCurrentMigrations(): Array<{
+	filename: string;
+	sql: string;
+}> {
+	return migrationFiles().map((filename) => ({
+		filename,
+		sql: readFileSync(`${drizzleDirectory}/${filename}`, "utf8"),
+	}));
 }
 
 export function readMigrationSqlForTables(

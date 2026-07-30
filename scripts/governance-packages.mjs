@@ -13,17 +13,21 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+const pnpmExecPath = process.env.npm_execpath;
 
 /**
  * @param {string} command
  * @param {string[]} args
  */
-function run(command, args) {
+function runPnpm(args) {
+	if (!pnpmExecPath) {
+		throw new Error("npm_execpath is required; run this gate through pnpm");
+	}
 	return new Promise((resolve, reject) => {
-		const child = spawn(command, args, {
+		const child = spawn(process.execPath, [pnpmExecPath, ...args], {
 			cwd: root,
 			stdio: "inherit",
-			shell: true,
+			shell: false,
 		});
 		child.on("error", reject);
 		child.on("close", (code) => {
@@ -33,7 +37,7 @@ function run(command, args) {
 			}
 			reject(
 				new Error(
-					`${command} ${args.join(" ")} failed with exit code ${code ?? "unknown"}`,
+					`pnpm ${args.join(" ")} failed with exit code ${code ?? "unknown"}`,
 				),
 			);
 		});
@@ -44,11 +48,11 @@ async function main() {
 	console.log(
 		"governance:packages — validate:modules (catalog · edges · DAG · sole-mutator)",
 	);
-	await run("pnpm", ["validate:modules"]);
+	await runPnpm(["validate:modules"]);
 	console.log(
 		"governance:packages — check:env-consumers (runtime env authority)",
 	);
-	await run("pnpm", ["check:env-consumers"]);
+	await runPnpm(["check:env-consumers"]);
 	console.log("governance:packages OK");
 	console.log(
 		"Evidence: validate:modules (catalog-to-disk, workspace-edge register, dependency DAG, schema write-owner, deep-import, ERP manifests) + check:env-consumers (runtime env authority).",

@@ -2565,6 +2565,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async detectCandidateDuplicates(input: {
 		organizationId: string;
 		email?: string | undefined;
@@ -2701,6 +2702,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async createApplication(
 		record: ApplicationCreateRecord,
 		_ports: MutationPorts,
@@ -4140,6 +4142,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async transitionOfferStatus(
 		input: {
 			organizationId: string;
@@ -4401,6 +4404,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async acceptOffer(
 		input: {
 			organizationId: string;

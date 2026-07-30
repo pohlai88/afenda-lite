@@ -36,12 +36,14 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 	// home. Passing `next=/` created ensure↔`/` bounce risk when session_data
 	// cookies lagged behind Neon Auth server state.
 	const bootstrap = await getAuthBootstrap(callbackUrl);
-
 	switch (bootstrap.state) {
+		// biome-ignore lint/suspicious/noUnnecessaryConditions: AuthBootstrap is an external discriminated union; this case is runtime-reachable.
 		case "sync_cookies":
 			return redirect(bootstrap.url);
+		// biome-ignore lint/suspicious/noUnnecessaryConditions: AuthBootstrap is an external discriminated union; this case is runtime-reachable.
 		case "ensure_active_org":
 			return redirect(bootstrap.url);
+		// biome-ignore lint/suspicious/noUnnecessaryConditions: AuthBootstrap is an external discriminated union; this case is runtime-reachable.
 		case "ready":
 			return redirect(
 				resolvePostLoginPath({
@@ -49,8 +51,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 					callbackUrl,
 				}),
 			);
+		// biome-ignore lint/suspicious/noUnnecessaryConditions: AuthBootstrap is an external discriminated union; this case is runtime-reachable.
 		case "unresolved_organization":
 			return <UnresolvedOrganizationShell />;
+		// biome-ignore lint/suspicious/noUnnecessaryConditions: AuthBootstrap is an external discriminated union; this case is runtime-reachable.
 		case "anonymous":
 			return <TheMachineLanding />;
 		default: {

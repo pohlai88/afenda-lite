@@ -1,4 +1,4 @@
-import { and, db, eq, isNull, platformRole, withOrg } from "@afenda/db";
+import { and, db, eq, isNull, platformRole } from "@afenda/db";
 import { AppError } from "@afenda/errors";
 
 export type AssignableRole = typeof platformRole.$inferSelect;
@@ -7,8 +7,8 @@ export type AssignableRole = typeof platformRole.$inferSelect;
  * Identity — roles that may be assigned in an organization (GUIDE-018 I3.1).
  *
  * Catalog = active system templates (`organization_id` NULL by design) ∪
- * org-scoped custom roles via hard `withOrg`. Not R1 soft tenancy: templates
- * are intentionally NULL-org (ARCH-023 · platform schema).
+ * active custom roles with an explicit organization predicate. Not R1 soft
+ * tenancy: templates are intentionally NULL-org (ARCH-023 · platform schema).
  */
 export async function listAssignableRoles(
 	orgId: string,
@@ -32,15 +32,22 @@ export async function listAssignableRoles(
 					isNull(platformRole.organizationId),
 				),
 			),
-		withOrg(platformRole, trimmed),
+		db
+			.select()
+			.from(platformRole)
+			.where(
+				and(
+					eq(platformRole.organizationId, trimmed),
+					eq(platformRole.active, true),
+				),
+			),
 	]);
 
-	const orgActive = orgRoles.filter((role) => role.active);
 	const byId = new Map<string, AssignableRole>();
 	for (const role of templates) {
 		byId.set(role.id, role);
 	}
-	for (const role of orgActive) {
+	for (const role of orgRoles) {
 		byId.set(role.id, role);
 	}
 

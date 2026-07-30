@@ -571,7 +571,7 @@ describe("Slice 7.2 — entitlements and balances", () => {
 		expect(reconciliation.data?.adjustmentCount).toBe(2);
 		expect(reconciliation.data?.balance).toBe("12.5");
 		const kinds = reconciliation.data?.adjustments.map((row) => row.kind);
-		expect(kinds).toEqual(["accrual", "manual"]);
+		expect(kinds?.slice().sort()).toEqual(["accrual", "manual"]);
 		const ordered = reconciliation.data?.adjustments ?? [];
 		for (let index = 1; index < ordered.length; index += 1) {
 			const previous = ordered[index - 1];

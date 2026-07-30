@@ -23,7 +23,11 @@ function main() {
 
 	const result = evaluateGithubActionsSecretsPresenceFromEnv(process.env);
 
-	if (!result.ok) {
+	const failed =
+		result.missingSecrets.length > 0 ||
+		result.missingSecretAlternates.length > 0 ||
+		result.missingVars.length > 0;
+	if (failed) {
 		if (result.missingSecrets.length > 0) {
 			console.error(
 				`[fail] missing secrets (empty injection): ${result.missingSecrets.join(", ")}`,

@@ -994,6 +994,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async registerEmployeeDocument(record, _ports, meta) {
 		const replay = await this.findEmployeeDocumentByIdempotencyKey({
 			organizationId: record.organizationId,
@@ -1965,6 +1966,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async recordWorkEligibility(record, _ports, meta) {
 		const replay = await this.findWorkEligibilityByIdempotencyKey({
 			organizationId: record.organizationId,
@@ -2620,6 +2622,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async issuePolicyAcknowledgementRequirement(record, _ports, meta) {
 		const replay = await this.findPolicyAcknowledgementByIdempotencyKey({
 			organizationId: record.organizationId,

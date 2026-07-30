@@ -1323,6 +1323,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async createCompetency(record, _ports, meta) {
 		const existing = await this.findCompetencyByIdempotencyKey({
 			organizationId: record.organizationId,
@@ -1920,6 +1921,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async createCompetencyAssessment(record, _ports, meta) {
 		const existing = await this.findCompetencyAssessmentByIdempotencyKey({
 			organizationId: record.organizationId,
@@ -2089,6 +2091,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async supersedeCompetencyAssessment(record, _ports, meta) {
 		const existing = await this.findCompetencyAssessmentByIdempotencyKey({
 			organizationId: record.organizationId,
@@ -2483,6 +2486,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async createTalentProfile(record, _ports, meta) {
 		const existing = await this.findTalentProfileByIdempotencyKey({
 			organizationId: record.organizationId,
@@ -3066,6 +3070,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async recordTalentProfileMobility(record, _ports, meta) {
 		const existing = await this.findTalentProfileMobilityByIdempotencyKey({
 			organizationId: record.organizationId,
@@ -3283,6 +3288,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async recordCriticalRoleReadiness(record, _ports, meta) {
 		const existing = await this.findCriticalRoleReadinessByIdempotencyKey({
 			organizationId: record.organizationId,
@@ -3540,6 +3546,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async createTalentPool(record, _ports, meta) {
 		const existing = await this.findTalentPoolByIdempotencyKey({
 			organizationId: record.organizationId,
@@ -3820,6 +3827,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async nominateTalentPoolMember(record, _ports, meta) {
 		const existing = await this.findTalentPoolMemberByIdempotencyKey({
 			organizationId: record.organizationId,
@@ -4265,6 +4273,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async createCareerPlan(record, _ports, meta) {
 		const existing = await this.findCareerPlanByIdempotencyKey({
 			organizationId: record.organizationId,
@@ -4927,6 +4936,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async createSuccessionPlan(record, _ports, meta) {
 		const existing = await this.findSuccessionPlanByIdempotencyKey({
 			organizationId: record.organizationId,
@@ -5277,6 +5287,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async nominateSuccessionCandidate(record, _ports, meta) {
 		const existing = await this.findSuccessionCandidateByIdempotencyKey({
 			organizationId: record.organizationId,

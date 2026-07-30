@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noAwaitInLoops: Cases run serially to isolate mutable test state and ordered transitions.
 /**
  * GUIDE-018 I2.3 — first authenticated write under hard `organization_id`.
  *
@@ -99,4 +100,3 @@ describe.skipIf(!hasDatabase)("recordRbacAudit tenancy write (I2.3)", () => {
 		);
 	});
 });
-// biome-ignore-all lint/performance/noAwaitInLoops: Cases run serially to isolate mutable test state and ordered transitions.

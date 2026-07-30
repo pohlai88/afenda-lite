@@ -1,0 +1,81 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+
+import {
+	analyzeTenantSqlSafety,
+	loadHardTenantTableIdentifiers,
+} from "./check-tenant-sql-safety.mjs";
+
+const hardTenantTables = new Set(["platformRoleAssignment", "joinedTenant"]);
+
+function analyze(source) {
+	return analyzeTenantSqlSafety({
+		file: "fixture.ts",
+		hardTenantTables,
+		source,
+	});
+}
+
+test("loads hard-tenant identifiers from the package SSOT", () => {
+	const identifiers = loadHardTenantTableIdentifiers(`
+		export const HARD_TENANT_ROOT_TABLES = {
+			platformRoleAssignment,
+			joinedTenant,
+		} as const;
+	`);
+	assert.deepEqual(
+		[...identifiers],
+		["platformRoleAssignment", "joinedTenant"],
+	);
+});
+
+test("accepts an entity mutation with identity and organization predicates", () => {
+	const findings = analyze(`
+		await db.update(platformRoleAssignment).set(input).where(and(
+			eq(platformRoleAssignment.id, assignmentId),
+			orgWhere(platformRoleAssignment.organizationId, organizationId),
+		));
+	`);
+	assert.deepEqual(findings, []);
+});
+
+test("rejects ID-only mutation predicates", () => {
+	const findings = analyze(`
+		await db.delete(platformRoleAssignment).where(
+			eq(platformRoleAssignment.id, assignmentId),
+		);
+	`);
+	assert.equal(findings[0]?.rule, "tenant-mutation-missing-organization");
+});
+
+test("rejects organization-only mutation predicates", () => {
+	const findings = analyze(`
+		await db.delete(platformRoleAssignment).where(
+			orgWhere(platformRoleAssignment.organizationId, organizationId),
+		);
+	`);
+	assert.equal(findings[0]?.rule, "tenant-mutation-missing-record-selection");
+});
+
+test("requires every tenant table in a join to be scoped", () => {
+	const findings = analyze(`
+		await db.select().from(platformRoleAssignment)
+			.innerJoin(joinedTenant, eq(joinedTenant.assignmentId, platformRoleAssignment.id))
+			.where(orgWhere(platformRoleAssignment.organizationId, organizationId));
+	`);
+	assert.equal(findings.length, 1);
+	assert.equal(findings[0]?.table, "joinedTenant");
+	assert.equal(findings[0]?.rule, "tenant-read-missing-organization");
+});
+
+test("accepts organization predicates for every tenant table in a join", () => {
+	const findings = analyze(`
+		await db.select().from(platformRoleAssignment)
+			.innerJoin(joinedTenant, and(
+				eq(joinedTenant.assignmentId, platformRoleAssignment.id),
+				orgWhere(joinedTenant.organizationId, organizationId),
+			))
+			.where(orgWhere(platformRoleAssignment.organizationId, organizationId));
+	`);
+	assert.deepEqual(findings, []);
+});

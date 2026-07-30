@@ -1,8 +1,12 @@
 {
 	"extends": "@afenda/config/tsconfig/node-library.json",
 	"compilerOptions": {
-		"rootDir": "src"
+		"rootDir": "."
 	},
-	"include": ["src/**/*.ts"],
+	"include": [
+		"src/**/*.ts",
+		"drizzle.config.ts",
+		"__tests__/client-types.typecheck.ts"
+	],
 	"exclude": ["node_modules", "dist"]
 }

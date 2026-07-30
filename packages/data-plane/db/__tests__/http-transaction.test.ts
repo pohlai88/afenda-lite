@@ -14,6 +14,13 @@ describe("runNeonHttpTransaction contract", () => {
 			/at least one query/,
 		);
 	});
+
+	it("rejects an empty builder result before contacting Neon", async () => {
+		const { runNeonHttpTransaction } = await import("../src/http-transaction");
+		await expect(runNeonHttpTransaction(() => [])).rejects.toThrow(
+			/at least one query/,
+		);
+	});
 });
 
 describe.skipIf(!hasDatabase)("runNeonHttpTransaction atomicity (N12)", () => {

@@ -12,6 +12,7 @@ test.describe("authenticated session @smoke", () => {
 		page,
 		workerTenant,
 	}) => {
+		// biome-ignore lint/suspicious/noSkippedTests: Local external evidence may be absent; CI fails closed.
 		test.skip(
 			!workerTenant,
 			"E2E_FACTORY_PASSWORD + DATABASE_URL required for N13 factory",

@@ -13,6 +13,8 @@ import { validateOpenApiFile } from "../.cursor/skills/afenda-elite-doc-integrit
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const yamlPath = join(root, "docs-V2", "api", "OPEN-001-openapi.yaml");
 const webApiRoot = join(root, "apps", "web", "app", "api");
+const tsxCliPath = fileURLToPath(import.meta.resolve("tsx/cli"));
+const API_PATH_PREFIX_PATTERN = /^\/api\/?/;
 
 function fail(message, code = 1) {
 	console.error(`check:openapi: ${message}`);
@@ -23,20 +25,26 @@ function fail(message, code = 1) {
 // Dynamic `{id}` / `{...path}` segments become Next `[id]` / `[...path]`.
 function openApiPathToRouteFile(openApiPath) {
 	const segments = openApiPath
-		.replace(/^\/api\/?/, "")
+		.replace(API_PATH_PREFIX_PATTERN, "")
 		.split("/")
 		.filter(Boolean)
 		.map((segment) => {
 			if (segment.startsWith("{") && segment.endsWith("}")) {
 				const inner = segment.slice(1, -1);
-				if (inner.startsWith("...")) {
-					return `[${inner}]`;
-				}
 				return `[${inner}]`;
 			}
 			return segment;
 		});
 	return join(webApiRoot, ...segments, "route.ts");
+}
+
+function isApiNowOperation(method, operation) {
+	return (
+		!method.startsWith("x-") &&
+		typeof operation === "object" &&
+		operation !== null &&
+		operation["x-afenda-status"] === "api-now"
+	);
 }
 
 function assertApiNowHandlersOnDisk(document) {
@@ -47,16 +55,13 @@ function assertApiNowHandlersOnDisk(document) {
 
 	const missing = [];
 	for (const [routePath, methods] of Object.entries(paths)) {
-		if (!methods || typeof methods !== "object") continue;
+		if (!methods || typeof methods !== "object") {
+			continue;
+		}
 		for (const [method, operation] of Object.entries(methods)) {
-			if (
-				method.startsWith("x-") ||
-				!operation ||
-				typeof operation !== "object"
-			) {
+			if (!isApiNowOperation(method, operation)) {
 				continue;
 			}
-			if (operation["x-afenda-status"] !== "api-now") continue;
 			const routeFile = openApiPathToRouteFile(routePath);
 			if (!existsSync(routeFile)) {
 				missing.push(
@@ -67,7 +72,9 @@ function assertApiNowHandlersOnDisk(document) {
 	}
 
 	if (missing.length > 0) {
-		for (const row of missing) console.error(`  - ${row}`);
+		for (const row of missing) {
+			console.error(`  - ${row}`);
+		}
 		fail(
 			"api-now OpenAPI operations lack Route Handlers on disk — implement handlers or remove api-now mark",
 		);
@@ -86,9 +93,9 @@ const generatedPath = join(dir, "OPEN-001-openapi.yaml");
 
 try {
 	const generate = spawnSync(
-		"npx",
+		process.execPath,
 		[
-			"tsx",
+			tsxCliPath,
 			"--tsconfig",
 			"apps/web/tsconfig.json",
 			"scripts/generate-openapi.mts",
@@ -96,12 +103,16 @@ try {
 		{
 			cwd: root,
 			encoding: "utf8",
-			shell: true,
 			env: { ...process.env, OPENAPI_OUT: generatedPath },
 		},
 	);
 	if (generate.status !== 0) {
-		fail(`generate failed:\n${generate.stderr || generate.stdout}`, 2);
+		const reason =
+			generate.error?.message ??
+			generate.stderr ??
+			generate.stdout ??
+			"unknown generator failure";
+		fail(`generate failed:\n${reason}`, 2);
 	}
 
 	const committed = readFileSync(yamlPath, "utf8");
@@ -115,13 +126,13 @@ try {
 	rmSync(dir, { recursive: true, force: true });
 }
 
-let document;
+let openApiDocument;
 try {
-	document = parseYaml(readFileSync(yamlPath, "utf8"));
+	openApiDocument = parseYaml(readFileSync(yamlPath, "utf8"));
 } catch (error) {
 	fail(`YAML parse failed: ${error.message}`, 2);
 }
-assertApiNowHandlersOnDisk(document);
+assertApiNowHandlersOnDisk(openApiDocument);
 
 let validation;
 try {
@@ -136,7 +147,9 @@ if (!validation.complete) {
 	fail("structured OpenAPI parsing or validation coverage was incomplete", 2);
 }
 if (validation.issues.length > 0) {
-	for (const issue of validation.issues) console.error(`  - ${issue}`);
+	for (const issue of validation.issues) {
+		console.error(`  - ${issue}`);
+	}
 	fail("structured OpenAPI and Afenda contract validation failed");
 }
 

@@ -28,6 +28,7 @@ test.describe("post-login routing @journey", () => {
 		workerTenant,
 	}) => {
 		const operator = workerTenant?.operator ?? resolveOperatorCredentials();
+		// biome-ignore lint/suspicious/noSkippedTests: Local external evidence may be absent; CI fails closed.
 		test.skip(
 			!operator,
 			"workerTenant or explicit E2E_OPERATOR_* credentials required",
@@ -43,6 +44,7 @@ test.describe("post-login routing @journey", () => {
 
 	test("client lands on /client", async ({ page, workerTenant }) => {
 		const client = workerTenant?.client ?? resolveClientCredentials();
+		// biome-ignore lint/suspicious/noSkippedTests: Local external evidence may be absent; CI fails closed.
 		test.skip(
 			!client,
 			"workerTenant or explicit E2E_CLIENT_* credentials required",
@@ -57,6 +59,7 @@ test.describe("post-login routing @journey", () => {
 		workerTenant,
 	}) => {
 		const operator = workerTenant?.operator ?? resolveOperatorCredentials();
+		// biome-ignore lint/suspicious/noSkippedTests: Local external evidence may be absent; CI fails closed.
 		test.skip(
 			!operator,
 			"workerTenant or explicit E2E_OPERATOR_* credentials required",
@@ -74,6 +77,7 @@ test.describe("post-login routing @journey", () => {
 		workerTenant,
 	}) => {
 		const operator = workerTenant?.operator ?? resolveOperatorCredentials();
+		// biome-ignore lint/suspicious/noSkippedTests: Local external evidence may be absent; CI fails closed.
 		test.skip(
 			!operator,
 			"workerTenant or explicit E2E_OPERATOR_* credentials required",
@@ -88,6 +92,7 @@ test.describe("post-login routing @journey", () => {
 
 	test("wrong-role shell access stays /403", async ({ page, workerTenant }) => {
 		const operator = workerTenant?.operator ?? resolveOperatorCredentials();
+		// biome-ignore lint/suspicious/noSkippedTests: Local external evidence may be absent; CI fails closed.
 		test.skip(
 			!operator,
 			"workerTenant or explicit E2E_OPERATOR_* credentials required",

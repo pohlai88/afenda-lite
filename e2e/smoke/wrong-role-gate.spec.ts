@@ -8,6 +8,7 @@ import { test } from "@/testing/e2e/playwright-base";
  */
 test.describe("wrong-role gate @smoke", () => {
 	test("operator on /client stays /403", async ({ page, workerTenant }) => {
+		// biome-ignore lint/suspicious/noSkippedTests: Local external evidence may be absent; CI fails closed.
 		test.skip(
 			!workerTenant,
 			"E2E_FACTORY_PASSWORD + DATABASE_URL required for N13 factory",
@@ -21,6 +22,7 @@ test.describe("wrong-role gate @smoke", () => {
 	});
 
 	test("client on /admin stays /403", async ({ page, workerTenant }) => {
+		// biome-ignore lint/suspicious/noSkippedTests: Local external evidence may be absent; CI fails closed.
 		test.skip(
 			!workerTenant,
 			"E2E_FACTORY_PASSWORD + DATABASE_URL required for N13 factory",

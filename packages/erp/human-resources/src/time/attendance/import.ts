@@ -87,6 +87,7 @@ export async function importAttendanceEvents(
 		schema: importAttendanceEventsInputSchema,
 		invalidMessage: "Invalid attendance import input",
 		command: HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENTS_IMPORT,
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The domain workflow keeps ordered invariant validation and Result mapping explicit.
 		execute: async (data, { store, ports }) => {
 			let nextCursor: string | undefined;
 			let rawEvents = data.events;

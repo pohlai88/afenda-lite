@@ -5,7 +5,11 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
-import { requireMigrationDatabaseUrl } from "../scripts/lib/database-url.mjs";
+import {
+	requireDirectMigrationDatabaseUrl,
+	requireMigrationDatabaseUrl,
+} from "../scripts/lib/database-url.mjs";
+import { applyIdentityMigrations } from "../scripts/lib/identity-migrator.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const guard = join(root, "scripts/db-migrate-guard.mjs");
@@ -58,5 +62,49 @@ describe("db-migrate-guard", () => {
 				DATABASE_URL: "",
 			}),
 		).toThrow(/DATABASE_URL/);
+	});
+
+	it("allows pooled endpoints for read-only migration operations", () => {
+		expect(requireMigrationDatabaseUrl({ DATABASE_URL: poolerUrl })).toBe(
+			poolerUrl,
+		);
+	});
+
+	it("requires a direct endpoint for guarded migration execution", () => {
+		expect(() =>
+			requireDirectMigrationDatabaseUrl({ DATABASE_URL: poolerUrl }),
+		).toThrow(/direct DATABASE_URL/);
+	});
+
+	it("accepts and trims a direct endpoint for guarded migration execution", () => {
+		const directUrl =
+			"postgresql://u:p@ep-example.c-2.ap-southeast-1.aws.neon.tech/neondb";
+		expect(
+			requireDirectMigrationDatabaseUrl({
+				DATABASE_URL: `  ${directUrl}  `,
+			}),
+		).toBe(directUrl);
+	});
+
+	it("identity migrator independently rejects a pooled endpoint", async () => {
+		await expect(
+			applyIdentityMigrations({
+				databaseUrl: poolerUrl,
+				drizzleDir,
+				log: () => undefined,
+			}),
+		).rejects.toThrow(/direct DATABASE_URL/);
+	});
+
+	it("guard rejects a pooled endpoint before opening a database connection", () => {
+		const result = runGuard({
+			AFENDA_ALLOW_DB_MIGRATE: "1",
+			DATABASE_URL: poolerUrl,
+		});
+		const output = `${result.stderr}${result.stdout}`;
+
+		expect(result.status).toBe(1);
+		expect(output).toMatch(/direct DATABASE_URL/);
+		expect(output).not.toContain("u:p@");
 	});
 });

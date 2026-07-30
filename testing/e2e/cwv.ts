@@ -1,11 +1,11 @@
 import type { Page } from "@playwright/test";
 
-export type LabCwvSample = {
-	lcpMs: number;
+export interface LabCwvSample {
 	cls: number;
-	/** Event Timing interaction latency when available; otherwise click→rAF proxy. */
+	/** Trusted click dispatch → next animation-frame proxy. */
 	inpMs: number;
-};
+	lcpMs: number;
+}
 
 /**
  * Collect lab LCP / CLS / interaction latency after navigation has settled.
@@ -19,9 +19,7 @@ export async function collectLabCwvs(page: Page): Promise<LabCwvSample> {
 			"largest-contentful-paint",
 		) as PerformanceEntry[];
 		const lcpMs =
-			lcpEntries.length > 0
-				? (lcpEntries[lcpEntries.length - 1]?.startTime ?? 0)
-				: 0;
+			lcpEntries.length > 0 ? (lcpEntries.at(-1)?.startTime ?? 0) : 0;
 
 		let cls = 0;
 		const shifts = performance.getEntriesByType("layout-shift") as Array<
@@ -38,23 +36,29 @@ export async function collectLabCwvs(page: Page): Promise<LabCwvSample> {
 	const skip = page.getByRole("link", { name: "Skip to main content" });
 	await page.keyboard.press("Tab");
 	await skip.focus();
-	const inpMs = await page.evaluate(async () => {
+	const interactionSample = page.evaluate(async () => {
 		const link = document.querySelector<HTMLAnchorElement>(
 			'a[href="#main-content"]',
 		);
 		if (!link) {
 			return Number.POSITIVE_INFINITY;
 		}
+
 		return await new Promise<number>((resolve) => {
-			const start = performance.now();
-			requestAnimationFrame(() => {
-				link.click();
-				requestAnimationFrame(() => {
-					resolve(performance.now() - start);
-				});
-			});
+			link.addEventListener(
+				"click",
+				() => {
+					const start = performance.now();
+					requestAnimationFrame(() => {
+						resolve(Math.round(performance.now() - start));
+					});
+				},
+				{ once: true },
+			);
 		});
 	});
+	await skip.click();
+	const inpMs = await interactionSample;
 
 	return { lcpMs: paint.lcpMs, cls: paint.cls, inpMs };
 }

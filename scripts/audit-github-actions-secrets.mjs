@@ -22,10 +22,11 @@ import {
  * @returns {NodeJS.ProcessEnv}
  */
 function ghEnv() {
-	const env = { ...process.env };
-	delete env.GITHUB_TOKEN;
-	delete env.GH_TOKEN;
-	return env;
+	return Object.fromEntries(
+		Object.entries(process.env).filter(
+			([name]) => name !== "GITHUB_TOKEN" && name !== "GH_TOKEN",
+		),
+	);
 }
 
 /**
@@ -110,7 +111,11 @@ function main() {
 	console.log(`Secrets present (names only): ${secretNames.length}`);
 	console.log(`Vars present (names only): ${varNames.length}`);
 
-	if (!result.ok) {
+	const failed =
+		result.missingSecrets.length > 0 ||
+		result.missingSecretAlternates.length > 0 ||
+		result.missingVars.length > 0;
+	if (failed) {
 		if (result.missingSecrets.length > 0) {
 			console.error(
 				`[fail] missing secrets: ${result.missingSecrets.join(", ")}`,

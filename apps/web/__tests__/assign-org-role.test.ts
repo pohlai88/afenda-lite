@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noAwaitInLoops: Cases run serially to isolate mutable test state and ordered transitions.
 /**
  * GUIDE-018 I3.1 — assign org role Zod + hard-tenancy audited write (N12 Path-to-100%).
  */
@@ -139,4 +140,3 @@ describe.skipIf(!hasDatabase)(
 		});
 	},
 );
-// biome-ignore-all lint/performance/noAwaitInLoops: Cases run serially to isolate mutable test state and ordered transitions.

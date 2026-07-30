@@ -17,6 +17,8 @@ import {
 	sanitizeAuditOutput,
 } from "./lib/github-actions-secrets-audit.mjs";
 
+const REDACTED_POSTGRES_URL_PATTERN = /postgres:\/\/\[redacted\]/;
+
 describe("github-actions-secrets-audit", () => {
 	it("parses gh --json name lists", () => {
 		assert.deepEqual(
@@ -97,7 +99,7 @@ describe("github-actions-secrets-audit", () => {
 		);
 		assert.equal(cleaned.includes("SECRET_PASSWORD"), false);
 		assert.equal(cleaned.includes("abc123"), false);
-		assert.match(cleaned, /postgres:\/\/\[redacted\]/);
+		assert.match(cleaned, REDACTED_POSTGRES_URL_PATTERN);
 	});
 
 	it("in-CI env presence passes when all required injections are non-empty", () => {

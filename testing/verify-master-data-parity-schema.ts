@@ -2,7 +2,7 @@
 
 import { setupDatabaseTestLane } from "@afenda/testing/setups/database";
 import { db, sql } from "../packages/data-plane/db/src/index.ts";
-import { verifyMasterDataCoreParitySchema } from "./verify-master-data-core-parity-schema.ts";
+import verifyMasterDataCoreParitySchema from "./verify-master-data-core-parity-schema.ts";
 
 const REQUIRED_IMPORT_RECOVERY_COLUMNS = 6;
 

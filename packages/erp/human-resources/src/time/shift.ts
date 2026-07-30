@@ -126,6 +126,7 @@ export async function supersedeShift(
 		schema: supersedeShiftInputSchema,
 		invalidMessage: "Invalid shift supersede input",
 		command: HUMAN_RESOURCES_COMMAND_SHIFT_SUPERSEDE,
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The domain workflow keeps ordered invariant validation and Result mapping explicit.
 		execute: async (data, { store, ports }) => {
 			const predecessor = await store.getShift({
 				organizationId: data.organizationId,

@@ -8,6 +8,7 @@ import {
 	parsePayrollStatutoryResultId,
 } from "../../brands";
 import type { MutationPorts } from "../../ports";
+import { payrollJsonObjectSchema } from "../../schemas/common";
 import {
 	mapInvalidState,
 	mapNotFound,
@@ -53,11 +54,15 @@ function mapStatutoryResultRow(
 	if (!runEmployeeId.ok) {
 		return runEmployeeId;
 	}
-	const configSnapshotJson =
-		typeof row.configSnapshotJson === "object" &&
-		row.configSnapshotJson !== null
-			? (row.configSnapshotJson as Record<string, unknown>)
-			: {};
+	const configSnapshotJson = payrollJsonObjectSchema.safeParse(
+		row.configSnapshotJson,
+	);
+	if (!configSnapshotJson.success) {
+		return mapPersistenceFailure(
+			configSnapshotJson.error,
+			"Persisted payroll statutory snapshot is invalid",
+		);
+	}
 	return ok({
 		id: id.data,
 		organizationId: row.organizationId,
@@ -72,7 +77,7 @@ function mapStatutoryResultRow(
 		employeeAmount: String(row.employeeAmount),
 		employerAmount: String(row.employerAmount),
 		currencyCode: row.currencyCode,
-		configSnapshotJson,
+		configSnapshotJson: configSnapshotJson.data,
 		createdAt: row.createdAt,
 		updatedAt: row.updatedAt,
 	});

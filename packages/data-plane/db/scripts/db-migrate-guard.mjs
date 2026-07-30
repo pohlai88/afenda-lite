@@ -7,18 +7,18 @@
  * Requires:
  * - AFENDA_ALLOW_DB_MIGRATE=1
  * - non-sole-0000 SQL set, OR AFENDA_ALLOW_BASELINE_MIGRATE=1 (Mode C / empty-DB apply)
- * - valid migration-class DATABASE_URL (same key; -pooler not required)
+ * - direct migration DATABASE_URL (same key; Neon -pooler prohibited)
  * - additive-first SQL unless AFENDA_ALLOW_DESTRUCTIVE_MIGRATE=1
  *
  * Authority: ARCH-025 · ARCH-028 S2.2 · N2 · Mode C PL-S9 exception
  */
-import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { assertAdditiveMigrations } from "./lib/assert-additive-migration.mjs";
-import { requireMigrationDatabaseUrl } from "./lib/database-url.mjs";
+import { requireDirectMigrationDatabaseUrl } from "./lib/database-url.mjs";
+import { applyIdentityMigrations } from "./lib/identity-migrator.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 // packages/data-plane/db → repo root (three levels up)
@@ -103,8 +103,9 @@ or after an intentional empty-DB wipe set AFENDA_ALLOW_BASELINE_MIGRATE=1.
 	process.exit(1);
 }
 
+let databaseUrl;
 try {
-	requireMigrationDatabaseUrl(process.env);
+	databaseUrl = requireDirectMigrationDatabaseUrl(process.env);
 } catch (error) {
 	const message = error instanceof Error ? error.message : String(error);
 	console.error(`@afenda/db db:migrate DENIED: ${message}`);
@@ -112,10 +113,11 @@ try {
 }
 
 const allowDestructive = process.env.AFENDA_ALLOW_DESTRUCTIVE_MIGRATE === "1";
-const sqlContents = sqlFiles.map((file) =>
-	readFileSync(join(drizzleDir, file), "utf8"),
-);
-const additive = assertAdditiveMigrations(sqlContents, { allowDestructive });
+const migrations = sqlFiles.map((file) => ({
+	filename: file,
+	sql: readFileSync(join(drizzleDir, file), "utf8"),
+}));
+const additive = assertAdditiveMigrations(migrations, { allowDestructive });
 if (!additive.ok) {
 	console.error(`
 @afenda/db db:migrate DENIED — destructive SQL detected (additive-first policy)
@@ -128,12 +130,16 @@ Override only with explicit operator approval:
 `);
 	process.exit(1);
 }
+for (const exception of additive.approvedHistoricalExceptions) {
+	console.log(
+		`@afenda/db db:migrate: recognized immutable ${exception.status} ${exception.filename} (${exception.appliedHash}); this is not a general destructive-migration override`,
+	);
+}
 
-const result = spawnSync("pnpm", ["exec", "drizzle-kit", "migrate"], {
-	cwd: root,
-	stdio: "inherit",
-	shell: true,
-	env: process.env,
-});
-
-process.exit(result.status ?? 1);
+try {
+	await applyIdentityMigrations({ databaseUrl, drizzleDir });
+} catch (error) {
+	const message = error instanceof Error ? error.message : String(error);
+	console.error(`@afenda/db db:migrate FAILED: ${message}`);
+	process.exit(1);
+}

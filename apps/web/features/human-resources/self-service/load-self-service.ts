@@ -1,3 +1,4 @@
+// biome-ignore-all lint/style/noNestedTernary: Exhaustive status and tri-state view mappings remain explicit at their use sites.
 import { createCorrelationId } from "@afenda/http";
 import {
 	getEmployeeComplianceSummary,
@@ -425,4 +426,3 @@ export async function loadSelfServiceSnapshot(input: {
 		errors,
 	};
 }
-// biome-ignore-all lint/style/noNestedTernary: Exhaustive status and tri-state view mappings remain explicit at their use sites.

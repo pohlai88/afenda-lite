@@ -273,6 +273,7 @@ function AppShellInner({
 					)}
 					data-slot="app-shell-content"
 					id={mainContentId}
+					tabIndex={mainContentId === undefined ? undefined : -1}
 				>
 					{children}
 				</main>

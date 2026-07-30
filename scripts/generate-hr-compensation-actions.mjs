@@ -1,4 +1,19 @@
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const OUTPUT_RELATIVE_PATH = "apps/web/app/actions/hr-compensation.ts";
+const OUTPUT_PATH = path.join(root, OUTPUT_RELATIVE_PATH);
+const BIOME_BIN_PATH = path.join(
+	root,
+	"node_modules",
+	"@biomejs",
+	"biome",
+	"bin",
+	"biome",
+);
 
 const actions = [
 	[
@@ -293,12 +308,12 @@ const schemaConsts = [...new Set(actions.map((a) => a[1]))]
 	)
 	.join("\n");
 
-const listPagePartialType = `type EmployeeCompensationListPagePartial = {
+const listPagePartialType = `interface EmployeeCompensationListPagePartial {
 	compensations: Partial<EmployeeCompensation>[];
-	totalCount: number;
 	page: number;
 	pageSize: number;
-};`;
+	totalCount: number;
+}`;
 
 const fns = actions
 	.map(([pkgFn, schema, perm, safe, validation, key, type]) => {
@@ -311,20 +326,11 @@ const fns = actions
 			key === "page" && type === "EmployeeCompensationListPagePartial"
 				? "page"
 				: key;
-		const tData =
-			type === "EmployeeCompensationListPagePartial"
-				? "EmployeeCompensationListPagePartial"
-				: type.includes("|")
-					? type
-					: type.endsWith("[]")
-						? type
-						: type.replace("ListPage", "ListPage").includes("ListPage")
-							? type
-							: type;
+		const tData = type;
 		return `export async function ${actionName}(
 	input: unknown,
 ): Promise<ActionResult<${resultType}>> {
-	return runHrHumanResourcesAction<${tData}, ${resultType}>({
+	return await runHrHumanResourcesAction<${tData}, ${resultType}>({
 		path: "${actionName}",
 		permission: ${perm},
 		safeMessage: "${safe}",
@@ -332,17 +338,14 @@ const fns = actions
 		actionSchema: ${schema},
 		input,
 		invoke: invokeHrPackage(${pkgFn}),
-		mapData: (${mapParam}) => ({ ${key}: ${mapParam} }),
+		mapData: (${mapParam}) => ({ ${key} }),
 	});
 }`;
 	})
 	.join("\n\n");
 
-const out = `"use server";
+const rawOutput = `"use server";
 
-import {
-	${pkgFns.join(",\n\t")},
-} from "@afenda/human-resources";
 import type {
 	ApprovedCompensationHandoff,
 	CompensationGrade,
@@ -356,12 +359,15 @@ import type {
 	SalaryBandListPage,
 } from "@afenda/human-resources";
 import {
+	${pkgFns.join(",\n\t")},
+} from "@afenda/human-resources";
+import {
 	${schemaImports.join(",\n\t")},
 } from "@afenda/human-resources/schemas";
 
 import {
 	invokeHrPackage,
-	runHrHumanResourcesAction,
+	runHrCompensationHumanResourcesAction as runHrHumanResourcesAction,
 } from "@/app/actions/hr-action-runner";
 import { hrActionSchema } from "@/app/actions/hr-mutation-context";
 import type { ActionResult } from "@/modules/platform/schemas/action-result";
@@ -384,5 +390,47 @@ ${listPagePartialType}
 ${fns}
 `;
 
-fs.writeFileSync("apps/web/app/actions/hr-compensation.ts", out);
-console.log(`wrote ${actions.length} actions`);
+export function renderHrCompensationActions() {
+	const result = spawnSync(
+		process.execPath,
+		[BIOME_BIN_PATH, "format", `--stdin-file-path=${OUTPUT_RELATIVE_PATH}`],
+		{
+			cwd: root,
+			encoding: "utf8",
+			input: rawOutput,
+			shell: false,
+		},
+	);
+	if (result.error) {
+		throw new Error(`Biome formatter failed to start: ${result.error.message}`);
+	}
+	if (result.status !== 0) {
+		throw new Error(
+			`Biome formatter failed: ${(result.stderr || "unknown error").trim()}`,
+		);
+	}
+	return result.stdout;
+}
+
+function main() {
+	const rendered = renderHrCompensationActions();
+	if (process.argv.includes("--check")) {
+		const current = fs.readFileSync(OUTPUT_PATH, "utf8");
+		if (current !== rendered) {
+			console.error(
+				`${OUTPUT_RELATIVE_PATH} is stale; run node scripts/generate-hr-compensation-actions.mjs`,
+			);
+			process.exitCode = 1;
+			return;
+		}
+		console.log(`hr-compensation actions: current (${actions.length} actions)`);
+		return;
+	}
+
+	fs.writeFileSync(OUTPUT_PATH, rendered);
+	console.log(`wrote ${actions.length} actions`);
+}
+
+if (path.resolve(process.argv[1] ?? "") === fileURLToPath(import.meta.url)) {
+	main();
+}

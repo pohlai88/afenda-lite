@@ -851,6 +851,7 @@ export function createMemoryLeaveMethods(
 			return ok({ ...policy });
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async updateLeavePolicy(
 			input: {
 				organizationId: string;
@@ -1668,6 +1669,7 @@ export function createMemoryLeaveMethods(
 			return ok({ ...request });
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async amendLeaveRequest(
 			record: LeaveRequestAmendRecord,
 			ports: MutationPorts,

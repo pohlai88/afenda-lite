@@ -6,11 +6,11 @@ import {
 } from "@afenda/errors/result";
 
 export {
-	type ResultFailure as ActionFailure,
-	type Result as ActionResult,
 	fail as actionFail,
 	failFromAppError as actionFailFromAppError,
 	ok as actionOk,
+	type Result as ActionResult,
+	type ResultFailure as ActionFailure,
 } from "@afenda/errors/result";
 
 /**
@@ -64,11 +64,13 @@ function firstFieldError(details: unknown, field: string): string | undefined {
 }
 
 function readProperty(value: object, key: PropertyKey): unknown {
+	let property: unknown;
 	try {
-		return Reflect.get(value, key);
+		property = Reflect.get(value, key);
 	} catch {
-		return;
+		property = undefined;
 	}
+	return property;
 }
 
 /**

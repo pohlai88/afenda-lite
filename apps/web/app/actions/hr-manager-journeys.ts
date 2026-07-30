@@ -234,7 +234,6 @@ export async function managerLeaveDecisionAction(
 		path: "managerLeaveDecisionAction",
 		permission: "human-resources.leave-request.approve-team",
 		safeMessage: "Could not complete the leave decision.",
-		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Performance decisions share one permission and audit transaction boundary.
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(leaveDecisionSchema, {
 				...targetFormValues(formData),
@@ -546,6 +545,7 @@ export async function managerPerformanceDecisionAction(
 		path: "managerPerformanceDecisionAction",
 		permission: "human-resources.performance.manager.manage",
 		safeMessage: "Could not complete the performance decision.",
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Performance decisions share one permission and audit transaction boundary.
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(performanceDecisionSchema, {
 				...targetFormValues(formData),

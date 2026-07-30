@@ -1,3 +1,4 @@
+// biome-ignore-all lint/style/noNestedTernary: Exhaustive status and tri-state view mappings remain explicit at their use sites.
 "use client";
 
 import {
@@ -610,4 +611,3 @@ export function ManagerWorkspace({
 		</main>
 	);
 }
-// biome-ignore-all lint/style/noNestedTernary: Exhaustive status and tri-state view mappings remain explicit at their use sites.

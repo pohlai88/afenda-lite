@@ -33,13 +33,49 @@ const TRANSIENT_MESSAGE_PATTERNS = [
  * @returns {boolean}
  */
 export function isTransientNeonFailure(input) {
-	const status = input.status;
+	const { status, message = "" } = input;
 	if (typeof status === "number" && TRANSIENT_NEON_HTTP_STATUSES.has(status)) {
 		return true;
 	}
-	const message = input.message ?? "";
-	if (!message) return false;
+	if (!message) {
+		return false;
+	}
 	return TRANSIENT_MESSAGE_PATTERNS.some((re) => re.test(message));
+}
+
+function errorMessage(error) {
+	if (error instanceof Error) {
+		return error.message;
+	}
+	if ("message" in error && typeof error.message === "string") {
+		return error.message;
+	}
+	return String(error);
+}
+
+function errorStderr(error) {
+	if (
+		!("stderr" in error) ||
+		error.stderr === null ||
+		error.stderr === undefined
+	) {
+		return "";
+	}
+	return String(error.stderr);
+}
+
+function isDefaultTransient(error) {
+	if (error && typeof error === "object") {
+		const status =
+			"status" in error && typeof error.status === "number"
+				? error.status
+				: undefined;
+		return isTransientNeonFailure({
+			status,
+			message: `${errorMessage(error)}\n${errorStderr(error)}`.trim(),
+		});
+	}
+	return isTransientNeonFailure({ message: String(error) });
 }
 
 /**
@@ -66,42 +102,25 @@ export function sleep(ms) {
 export async function withNeonRetries(operation, options = {}) {
 	const attempts = options.attempts ?? 4;
 	const baseDelayMs = options.baseDelayMs ?? 400;
-	const isTransient =
-		options.isTransient ??
-		((error) => {
-			if (error && typeof error === "object") {
-				const status =
-					"status" in error && typeof error.status === "number"
-						? error.status
-						: undefined;
-				const message =
-					error instanceof Error
-						? error.message
-						: "message" in error && typeof error.message === "string"
-							? error.message
-							: String(error);
-				const stderr =
-					"stderr" in error && error.stderr != null ? String(error.stderr) : "";
-				return isTransientNeonFailure({
-					status,
-					message: `${message}\n${stderr}`.trim(),
-				});
-			}
-			return isTransientNeonFailure({ message: String(error) });
-		});
+	const isTransient = options.isTransient ?? isDefaultTransient;
 
-	let lastError;
-	for (let attempt = 1; attempt <= attempts; attempt += 1) {
+	async function runAttempt(attempt, previousError) {
+		if (attempt > attempts) {
+			throw previousError;
+		}
 		try {
 			return await operation();
 		} catch (error) {
-			lastError = error;
 			const retryable = isTransient(error) && attempt < attempts;
-			if (!retryable) throw error;
+			if (!retryable) {
+				throw error;
+			}
 			const delayMs = baseDelayMs * 2 ** (attempt - 1);
 			options.onRetry?.({ attempt, attempts, error, delayMs });
 			await sleep(delayMs);
+			return runAttempt(attempt + 1, error);
 		}
 	}
-	throw lastError;
+
+	return await runAttempt(1);
 }

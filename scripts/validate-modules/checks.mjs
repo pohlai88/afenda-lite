@@ -8,6 +8,18 @@ import { parse as parseYaml } from "yaml";
 
 /** @typedef {import("../../packages/data-plane/db/src/module-manifest-contract.ts").AfendaModuleManifest} AfendaModuleManifest */
 
+const DEEP_AFENDA_SRC_IMPORT_PATTERN = /from\s+["']@afenda\/[^"']+\/src\//;
+const BARE_METRICS_IMPORT_PATTERN = /from\s+["']@afenda\/metrics["']/;
+const DEEP_METRICS_IMPORT_PATTERN = /from\s+["']@afenda\/metrics\/src\//;
+const DEEP_OPENAPI_IMPORT_PATTERN = /from\s+["']@afenda\/openapi\/src\//;
+const LEGACY_OPENAPI_DOCUMENT_IMPORT_PATTERN =
+	/from\s+["']@afenda\/openapi\/document["']/;
+const DB_NAMED_IMPORT_PATTERN =
+	/import\s*\{([^}]+)\}\s*from\s*["']@afenda\/db["']/g;
+const IMPORT_ALIAS_SPLIT_PATTERN = /\s+as\s+/;
+const PACKAGE_PATH_SEPARATOR_PATTERN = /[/\\]/;
+const TS_SOURCE_FILENAME_PATTERN = /\.(ts|tsx|mts|cts)$/;
+
 export const LIVING_ERP_MANIFEST_PACKAGES = [
 	{
 		id: "master-data",
@@ -464,57 +476,87 @@ export function validateCommandsQueries(manifests) {
 	const commands = new Map();
 	const queries = new Map();
 	for (const m of manifests) {
-		for (const id of m.owns.commands) {
-			if (commands.has(id)) {
-				errors.push(
-					`duplicate command id: ${id} (${commands.get(id)} and ${m.id})`,
-				);
-			} else {
-				commands.set(id, m.id);
-			}
-			if (!(id in m.authorization.commands)) {
-				errors.push(
-					`public ERP operation without authorization mapping: command ${id}`,
-				);
-			}
+		errors.push(
+			...validateOwnedOperations({
+				ids: m.owns.commands,
+				owners: commands,
+				moduleId: m.id,
+				authorization: m.authorization.commands,
+				kind: "command",
+			}),
+			...validateOwnedOperations({
+				ids: m.owns.queries,
+				owners: queries,
+				moduleId: m.id,
+				authorization: m.authorization.queries,
+				kind: "query",
+			}),
+			...validateAuthorizationMappings({
+				authorization: m.authorization.commands,
+				ownedIds: m.owns.commands,
+				permissionCodes: m.permissions.codes,
+				kind: "command",
+			}),
+			...validateAuthorizationMappings({
+				authorization: m.authorization.queries,
+				ownedIds: m.owns.queries,
+				permissionCodes: m.permissions.codes,
+				kind: "query",
+			}),
+		);
+	}
+	return errors;
+}
+
+/**
+ * @param {{
+ *   ids: readonly string[],
+ *   owners: Map<string, string>,
+ *   moduleId: string,
+ *   authorization: Record<string, string>,
+ *   kind: "command" | "query",
+ * }} input
+ */
+function validateOwnedOperations(input) {
+	const errors = [];
+	for (const id of input.ids) {
+		const existingOwner = input.owners.get(id);
+		if (existingOwner) {
+			errors.push(
+				`duplicate ${input.kind} id: ${id} (${existingOwner} and ${input.moduleId})`,
+			);
+		} else {
+			input.owners.set(id, input.moduleId);
 		}
-		for (const id of m.owns.queries) {
-			if (queries.has(id)) {
-				errors.push(
-					`duplicate query id: ${id} (${queries.get(id)} and ${m.id})`,
-				);
-			} else {
-				queries.set(id, m.id);
-			}
-			if (!(id in m.authorization.queries)) {
-				errors.push(
-					`public ERP operation without authorization mapping: query ${id}`,
-				);
-			}
+		if (!(id in input.authorization)) {
+			errors.push(
+				`public ERP operation without authorization mapping: ${input.kind} ${id}`,
+			);
 		}
-		for (const [op, permission] of Object.entries(m.authorization.commands)) {
-			if (!m.owns.commands.includes(/** @type {never} */ (op))) {
-				errors.push(
-					`authorization command map references undeclared command: ${op}`,
-				);
-			}
-			if (!m.permissions.codes.includes(/** @type {never} */ (permission))) {
-				errors.push(
-					`authorization maps to undeclared permission: ${permission} (${op})`,
-				);
-			}
+	}
+	return errors;
+}
+
+/**
+ * @param {{
+ *   authorization: Record<string, string>,
+ *   ownedIds: readonly string[],
+ *   permissionCodes: readonly string[],
+ *   kind: "command" | "query",
+ * }} input
+ */
+function validateAuthorizationMappings(input) {
+	const errors = [];
+	for (const [operation, permission] of Object.entries(input.authorization)) {
+		if (!input.ownedIds.includes(operation)) {
+			errors.push(
+				`authorization ${input.kind} map references undeclared ${input.kind}: ${operation}`,
+			);
 		}
-		for (const [op, permission] of Object.entries(m.authorization.queries)) {
-			if (!m.owns.queries.includes(/** @type {never} */ (op))) {
-				errors.push(
-					`authorization query map references undeclared query: ${op}`,
-				);
-			}
-			if (!m.permissions.codes.includes(/** @type {never} */ (permission))) {
-				errors.push(
-					`authorization maps to undeclared permission: ${permission} (${op})`,
-				);
-			}
+		if (!input.permissionCodes.includes(permission)) {
+			errors.push(
+				`authorization maps to undeclared permission: ${permission} (${operation})`,
+			);
 		}
 	}
 	return errors;
@@ -662,7 +704,7 @@ export function validateWorkspaceEdges(root, edgeRegisterPath) {
 	for (const dir of packageDirs) {
 		const pkgPath = join(root, "packages", dir, "package.json");
 		const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
-		const name = pkg.name;
+		const { name } = pkg;
 		if (typeof name !== "string" || !name.startsWith("@afenda/")) {
 			continue;
 		}
@@ -792,7 +834,6 @@ export function validateSchemaPrefixReservations(manifests, ownershipPath) {
 export function validateDeepImports(root) {
 	/** @type {string[]} */
 	const errors = [];
-	const deep = /from\s+["']@afenda\/[^"']+\/src\//;
 	const scanRoots = [join(root, "packages"), join(root, "apps", "web")];
 	for (const scanRoot of scanRoots) {
 		if (!existsSync(scanRoot)) {
@@ -800,7 +841,7 @@ export function validateDeepImports(root) {
 		}
 		for (const file of walkTsFiles(scanRoot)) {
 			const text = readFileSync(file, "utf8");
-			if (deep.test(text)) {
+			if (DEEP_AFENDA_SRC_IMPORT_PATTERN.test(text)) {
 				errors.push(
 					`deep @afenda/*/src/* import: ${relative(root, file).replaceAll("\\", "/")}`,
 				);
@@ -817,8 +858,6 @@ export function validateDeepImports(root) {
 export function validateMetricsImports(root) {
 	/** @type {string[]} */
 	const errors = [];
-	const bareMetrics = /from\s+["']@afenda\/metrics["']/;
-	const deepMetrics = /from\s+["']@afenda\/metrics\/src\//;
 	const scanRoots = [join(root, "packages"), join(root, "apps", "web")];
 	for (const scanRoot of scanRoots) {
 		if (!existsSync(scanRoot)) {
@@ -826,12 +865,12 @@ export function validateMetricsImports(root) {
 		}
 		for (const file of walkTsFiles(scanRoot)) {
 			const text = readFileSync(file, "utf8");
-			if (bareMetrics.test(text)) {
+			if (BARE_METRICS_IMPORT_PATTERN.test(text)) {
 				errors.push(
 					`bare @afenda/metrics import (use /core, /node, or /testing): ${relative(root, file).replaceAll("\\", "/")}`,
 				);
 			}
-			if (deepMetrics.test(text)) {
+			if (DEEP_METRICS_IMPORT_PATTERN.test(text)) {
 				errors.push(
 					`deep @afenda/metrics/src/* import: ${relative(root, file).replaceAll("\\", "/")}`,
 				);
@@ -844,8 +883,6 @@ export function validateMetricsImports(root) {
 export function validateOpenApiImports(root) {
 	/** @type {string[]} */
 	const errors = [];
-	const deepOpenapi = /from\s+["']@afenda\/openapi\/src\//;
-	const legacyDocument = /from\s+["']@afenda\/openapi\/document["']/;
 	const scanRoots = [
 		join(root, "packages"),
 		join(root, "apps", "web"),
@@ -857,12 +894,12 @@ export function validateOpenApiImports(root) {
 		}
 		for (const file of walkTsFiles(scanRoot)) {
 			const text = readFileSync(file, "utf8");
-			if (deepOpenapi.test(text)) {
+			if (DEEP_OPENAPI_IMPORT_PATTERN.test(text)) {
 				errors.push(
 					`deep @afenda/openapi/src/* import: ${relative(root, file).replaceAll("\\", "/")}`,
 				);
 			}
-			if (legacyDocument.test(text)) {
+			if (LEGACY_OPENAPI_DOCUMENT_IMPORT_PATTERN.test(text)) {
 				errors.push(
 					`legacy @afenda/openapi/document import (use /node): ${relative(root, file).replaceAll("\\", "/")}`,
 				);
@@ -877,72 +914,79 @@ export function validateOpenApiImports(root) {
  * @param {AfendaModuleManifest[]} manifests
  */
 export function validateForeignSchemaImports(root, manifests) {
-	/** @type {string[]} */
+	const tableOwner = buildTableOwnerMap(manifests);
 	const errors = [];
-	const tableOwner = new Map();
-	for (const m of manifests) {
-		for (const table of m.persistence.mutationTables) {
-			tableOwner.set(table, m.id);
-		}
-	}
-	const pkgByDir = new Map(LIVING_ERP_MANIFEST_PACKAGES.map((p) => [p.dir, p]));
-
 	for (const meta of LIVING_ERP_MANIFEST_PACKAGES) {
-		const srcDir = join(root, meta.dir, "src");
 		const manifest = manifests.find((m) => m.id === meta.id);
 		if (!manifest) {
 			continue;
 		}
-		const owned = new Set(manifest.persistence.mutationTables);
-		for (const file of walkTsFiles(srcDir)) {
-			if (file.endsWith("module.manifest.ts")) {
-				continue;
-			}
-			const text = readFileSync(file, "utf8");
-			const importMatch = text.matchAll(
-				/import\s*\{([^}]+)\}\s*from\s*["']@afenda\/db["']/g,
-			);
-			for (const match of importMatch) {
-				const names = match[1]
-					.split(",")
-					.map((s) =>
-						s
-							.trim()
-							.split(/\s+as\s+/)[0]
-							?.trim(),
-					)
-					.filter(Boolean);
-				for (const name of names) {
-					if (!Object.hasOwn(SCHEMA_SYMBOL_TO_TABLE, name)) {
-						continue;
-					}
-					if (PLATFORM_SCHEMA_SYMBOLS.has(name)) {
-						continue;
-					}
-					if (REF_SCHEMA_SYMBOLS.has(name) && meta.id === "master-data") {
-						continue;
-					}
-					const table = SCHEMA_SYMBOL_TO_TABLE[name];
-					if (owned.has(table)) {
-						continue;
-					}
-					const owner = tableOwner.get(table);
-					if (owner && owner !== meta.id) {
-						errors.push(
-							`foreign DB schema write-surface import: ${relative(root, file).replaceAll("\\", "/")} imports ${name} (owned by ${owner})`,
-						);
-					} else if (!owned.has(table) && !REF_SCHEMA_SYMBOLS.has(name)) {
-						errors.push(
-							`foreign DB schema write-surface import: ${relative(root, file).replaceAll("\\", "/")} imports ${name} (not in ${meta.id} mutationTables)`,
-						);
-					}
-				}
+		errors.push(
+			...validateForeignSchemaPackage(root, meta, manifest, tableOwner),
+		);
+	}
+	return errors;
+}
+
+function buildTableOwnerMap(manifests) {
+	const tableOwner = new Map();
+	for (const manifest of manifests) {
+		for (const table of manifest.persistence.mutationTables) {
+			tableOwner.set(table, manifest.id);
+		}
+	}
+	return tableOwner;
+}
+
+function validateForeignSchemaPackage(root, meta, manifest, tableOwner) {
+	const errors = [];
+	const owned = new Set(manifest.persistence.mutationTables);
+	const srcDir = join(root, meta.dir, "src");
+	for (const file of walkTsFiles(srcDir)) {
+		if (file.endsWith("module.manifest.ts")) {
+			continue;
+		}
+		const source = readFileSync(file, "utf8");
+		for (const name of extractNamedDbImports(source)) {
+			const error = classifyForeignSchemaImport({
+				root,
+				file,
+				name,
+				moduleId: meta.id,
+				owned,
+				tableOwner,
+			});
+			if (error) {
+				errors.push(error);
 			}
 		}
 	}
-
-	void pkgByDir;
 	return errors;
+}
+
+function classifyForeignSchemaImport(input) {
+	if (!Object.hasOwn(SCHEMA_SYMBOL_TO_TABLE, input.name)) {
+		return null;
+	}
+	if (PLATFORM_SCHEMA_SYMBOLS.has(input.name)) {
+		return null;
+	}
+	if (REF_SCHEMA_SYMBOLS.has(input.name) && input.moduleId === "master-data") {
+		return null;
+	}
+	const table = SCHEMA_SYMBOL_TO_TABLE[input.name];
+	if (input.owned.has(table)) {
+		return null;
+	}
+	const owner = input.tableOwner.get(table);
+	const sourcePath = relative(input.root, input.file).replaceAll("\\", "/");
+	if (owner && owner !== input.moduleId) {
+		return `foreign DB schema write-surface import: ${sourcePath} imports ${input.name} (owned by ${owner})`;
+	}
+	if (!REF_SCHEMA_SYMBOLS.has(input.name)) {
+		return `foreign DB schema write-surface import: ${sourcePath} imports ${input.name} (not in ${input.moduleId} mutationTables)`;
+	}
+	return null;
 }
 
 /**
@@ -1000,8 +1044,6 @@ export function validateEventContracts(manifests, knownEvents) {
  * }} input
  */
 export function reconcileWorkspaceEdges(input) {
-	/** @type {string[]} */
-	const errors = [];
 	const approved = new Set(input.approved);
 	const erpPackages = new Set(input.erpPackages);
 	const governedFrom =
@@ -1009,7 +1051,16 @@ export function reconcileWorkspaceEdges(input) {
 			? new Set([...input.realized.keys()])
 			: new Set([...approved].map((key) => key.split("→")[0]).filter(Boolean));
 
-	for (const [from, targets] of input.realized) {
+	return [
+		...findUndeclaredWorkspaceEdges(input.realized, governedFrom, approved),
+		...findMissingApprovedEdges(input.realized, approved),
+		...findUnapprovedPeerErpEdges(input.realized, erpPackages, approved),
+	];
+}
+
+function findUndeclaredWorkspaceEdges(realized, governedFrom, approved) {
+	const errors = [];
+	for (const [from, targets] of realized) {
 		if (!governedFrom.has(from)) {
 			continue;
 		}
@@ -1020,16 +1071,23 @@ export function reconcileWorkspaceEdges(input) {
 			}
 		}
 	}
+	return errors;
+}
 
+function findMissingApprovedEdges(realized, approved) {
+	const errors = [];
 	for (const key of approved) {
 		const [from, to] = key.split("→");
-		const targets = input.realized.get(from);
-		if (!targets?.has(to)) {
+		if (!realized.get(from)?.has(to)) {
 			errors.push(`approved edge missing from package.json: ${key}`);
 		}
 	}
+	return errors;
+}
 
-	for (const [from, targets] of input.realized) {
+function findUnapprovedPeerErpEdges(realized, erpPackages, approved) {
+	const errors = [];
+	for (const [from, targets] of realized) {
 		if (!erpPackages.has(from)) {
 			continue;
 		}
@@ -1043,7 +1101,6 @@ export function reconcileWorkspaceEdges(input) {
 			}
 		}
 	}
-
 	return errors;
 }
 
@@ -1138,21 +1195,62 @@ export function validateCatalogDiskParity(root) {
  * @param {string} ownershipPath
  */
 export function validateSoleMutatorBoundary(root, manifests, ownershipPath) {
-	/** @type {string[]} */
-	const errors = [];
 	if (!existsSync(ownershipPath)) {
 		return [`missing schema ownership manifest: ${ownershipPath}`];
 	}
 
 	const doc = parseYaml(readFileSync(ownershipPath, "utf8"));
 	const rows = Array.isArray(doc?.tables) ? doc.tables : [];
+	const ownership = parseSchemaOwnershipRows(rows);
+	const manifestOwnership = validateManifestSchemaOwnership(
+		manifests,
+		ownership.writeOwnerByTable,
+	);
+	const errors = [
+		...ownership.errors,
+		...manifestOwnership.errors,
+		...validateRegisteredErpOwnership(
+			ownership.writeOwnerByTable,
+			ownership.kindByTable,
+			manifestOwnership.erpOwned,
+		),
+	];
+	const tableToSymbol = new Map(
+		Object.entries(SCHEMA_SYMBOL_TO_TABLE).map(([symbol, table]) => [
+			table,
+			symbol,
+		]),
+	);
+	const inventory = loadPackageInventory(root);
+	const webSources = loadWebSourceInventory(root);
+
+	for (const [table, owner] of ownership.writeOwnerByTable) {
+		const symbol = tableToSymbol.get(table);
+		if (!symbol) {
+			continue;
+		}
+		errors.push(
+			...scanPackageWriteSurfaces(inventory, owner, symbol),
+			...scanWebWriteSurfaces(webSources, owner, symbol),
+		);
+	}
+
+	return errors;
+}
+
+/**
+ * @param {unknown[]} rows
+ */
+function parseSchemaOwnershipRows(rows) {
+	/** @type {string[]} */
+	const errors = [];
 	/** @type {Map<string, string>} */
 	const writeOwnerByTable = new Map();
 	/** @type {Map<string, string>} */
 	const kindByTable = new Map();
 
 	for (const row of rows) {
-		if (!row?.table || !row?.writeOwner) {
+		if (!(row?.table && row.writeOwner)) {
 			errors.push("schema ownership row missing table or writeOwner");
 			continue;
 		}
@@ -1164,49 +1262,75 @@ export function validateSoleMutatorBoundary(root, manifests, ownershipPath) {
 		kindByTable.set(row.table, row.kind ?? "unknown");
 	}
 
+	return { errors, kindByTable, writeOwnerByTable };
+}
+
+/**
+ * @param {AfendaModuleManifest[]} manifests
+ * @param {Map<string, string>} writeOwnerByTable
+ */
+function validateManifestSchemaOwnership(manifests, writeOwnerByTable) {
+	/** @type {string[]} */
+	const errors = [];
 	/** @type {Map<string, Set<string>>} */
 	const erpOwned = new Map();
-	for (const m of manifests) {
-		const set = new Set(m.persistence.mutationTables);
-		erpOwned.set(m.packageName, set);
-		for (const table of m.persistence.mutationTables) {
+
+	for (const manifest of manifests) {
+		const mutationTables = new Set(manifest.persistence.mutationTables);
+		erpOwned.set(manifest.packageName, mutationTables);
+		for (const table of mutationTables) {
 			const owner = writeOwnerByTable.get(table);
 			if (!owner) {
 				errors.push(
-					`ERP mutation table missing from SCHEMA-OWNERSHIP-MANIFEST: ${table} (${m.packageName})`,
+					`ERP mutation table missing from SCHEMA-OWNERSHIP-MANIFEST: ${table} (${manifest.packageName})`,
 				);
 				continue;
 			}
-			if (owner !== m.packageName) {
+			if (owner !== manifest.packageName) {
 				errors.push(
-					`schema writeOwner mismatch for ${table}: manifest ${m.packageName} vs register ${owner}`,
+					`schema writeOwner mismatch for ${table}: manifest ${manifest.packageName} vs register ${owner}`,
 				);
 			}
 		}
 	}
 
+	return { erpOwned, errors };
+}
+
+/**
+ * @param {Map<string, string>} writeOwnerByTable
+ * @param {Map<string, string>} kindByTable
+ * @param {Map<string, Set<string>>} erpOwned
+ */
+function validateRegisteredErpOwnership(
+	writeOwnerByTable,
+	kindByTable,
+	erpOwned,
+) {
+	/** @type {string[]} */
+	const errors = [];
 	for (const [table, owner] of writeOwnerByTable) {
 		if (kindByTable.get(table) !== "erp") {
 			continue;
 		}
-		const owned = erpOwned.get(owner);
-		if (!owned?.has(table)) {
+		if (!erpOwned.get(owner)?.has(table)) {
 			errors.push(
 				`SCHEMA-OWNERSHIP-MANIFEST erp table not in owner mutationTables: ${table} (${owner})`,
 			);
 		}
 	}
+	return errors;
+}
 
-	/** @type {Map<string, string>} */
-	const symbolToTable = new Map(Object.entries(SCHEMA_SYMBOL_TO_TABLE));
-	/** @type {Map<string, string>} */
-	const tableToSymbol = new Map(
-		[...symbolToTable.entries()].map(([symbol, table]) => [table, symbol]),
-	);
-
+/**
+ * @param {string} root
+ */
+function loadPackageInventory(root) {
 	const packageDirs = listPackageDirs(root);
 	/** @type {Map<string, string>} */
 	const nameToDir = new Map();
+	/** @type {{ dir: string, path: string, source: string, namedDbImports: string[] }[]} */
+	const sources = [];
 	for (const dir of packageDirs) {
 		const pkg = JSON.parse(
 			readFileSync(join(root, "packages", dir, "package.json"), "utf8"),
@@ -1214,91 +1338,116 @@ export function validateSoleMutatorBoundary(root, manifests, ownershipPath) {
 		if (typeof pkg.name === "string") {
 			nameToDir.set(pkg.name, dir);
 		}
+		for (const file of walkTsFiles(join(root, "packages", dir, "src"))) {
+			if (isTestFile(file)) {
+				continue;
+			}
+			const source = readFileSync(file, "utf8");
+			sources.push({
+				dir,
+				path: relative(root, file).replaceAll("\\", "/"),
+				source,
+				namedDbImports: extractNamedDbImports(source),
+			});
+		}
 	}
+	return { nameToDir, sources };
+}
 
-	for (const [table, owner] of writeOwnerByTable) {
-		const symbol = tableToSymbol.get(table);
-		if (!symbol) {
+/**
+ * @param {string} root
+ */
+function loadWebSourceInventory(root) {
+	/** @type {{ path: string, source: string }[]} */
+	const sources = [];
+	const scanRoots = [
+		join(root, "apps", "web", "features"),
+		join(root, "apps", "web", "app", "actions"),
+		join(root, "apps", "web", "lib"),
+		join(root, "apps", "web", "modules"),
+	];
+
+	for (const scanRoot of scanRoots) {
+		if (!existsSync(scanRoot)) {
 			continue;
 		}
-		const ownerDir = nameToDir.get(owner);
-		for (const dir of packageDirs) {
-			if (dir === "data-plane/db") {
+		for (const file of walkTsFiles(scanRoot)) {
+			if (isTestFile(file)) {
 				continue;
 			}
-			if (ownerDir && dir === ownerDir) {
-				continue;
-			}
-			const srcDir = join(root, "packages", dir, "src");
-			for (const file of walkTsFiles(srcDir)) {
-				if (
-					file.includes(`${sep}__tests__${sep}`) ||
-					file.includes("/__tests__/")
-				) {
-					continue;
-				}
-				const text = readFileSync(file, "utf8");
-				const importMatch = text.matchAll(
-					/import\s*\{([^}]+)\}\s*from\s*["']@afenda\/db["']/g,
-				);
-				for (const match of importMatch) {
-					const names = match[1]
-						.split(",")
-						.map((s) =>
-							s
-								.trim()
-								.split(/\s+as\s+/)[0]
-								?.trim(),
-						)
-						.filter(Boolean);
-					if (names.includes(symbol)) {
-						errors.push(
-							`sole-mutator write-surface import: ${relative(root, file).replaceAll("\\", "/")} imports ${symbol} (writeOwner ${owner})`,
-						);
-					}
-				}
-				const mutation = new RegExp(
-					`\\.(?:insert|update|delete)\\(\\s*${symbol}\\b`,
-				);
-				if (mutation.test(text)) {
-					errors.push(
-						`sole-mutator foreign write: ${relative(root, file).replaceAll("\\", "/")} mutates ${symbol} (writeOwner ${owner})`,
-					);
-				}
-			}
+			sources.push({
+				path: relative(root, file).replaceAll("\\", "/"),
+				source: readFileSync(file, "utf8"),
+			});
 		}
+	}
 
-		const webScanRoots = [
-			join(root, "apps", "web", "features"),
-			join(root, "apps", "web", "app", "actions"),
-			join(root, "apps", "web", "lib"),
-			join(root, "apps", "web", "modules"),
-		];
-		for (const scanRoot of webScanRoots) {
-			if (!existsSync(scanRoot)) {
-				continue;
-			}
-			for (const file of walkTsFiles(scanRoot)) {
-				if (
-					file.includes(`${sep}__tests__${sep}`) ||
-					file.includes("/__tests__/")
-				) {
-					continue;
-				}
-				const text = readFileSync(file, "utf8");
-				const mutation = new RegExp(
-					`\\.(?:insert|update|delete)\\(\\s*${symbol}\\b`,
-				);
-				if (mutation.test(text)) {
-					errors.push(
-						`sole-mutator foreign write: ${relative(root, file).replaceAll("\\", "/")} mutates ${symbol} (writeOwner ${owner})`,
-					);
-				}
-			}
+	return sources;
+}
+
+/**
+ * @param {{ nameToDir: Map<string, string>, sources: { dir: string, path: string, source: string, namedDbImports: string[] }[] }} inventory
+ * @param {string} owner
+ * @param {string} symbol
+ */
+function scanPackageWriteSurfaces(inventory, owner, symbol) {
+	/** @type {string[]} */
+	const errors = [];
+	const ownerDir = inventory.nameToDir.get(owner);
+	const mutation = createMutationPattern(symbol);
+
+	for (const entry of inventory.sources) {
+		if (entry.dir === "data-plane/db" || (ownerDir && entry.dir === ownerDir)) {
+			continue;
+		}
+		if (entry.namedDbImports.includes(symbol)) {
+			errors.push(
+				`sole-mutator write-surface import: ${entry.path} imports ${symbol} (writeOwner ${owner})`,
+			);
+		}
+		if (mutation.test(entry.source)) {
+			errors.push(
+				`sole-mutator foreign write: ${entry.path} mutates ${symbol} (writeOwner ${owner})`,
+			);
 		}
 	}
 
 	return errors;
+}
+
+/**
+ * @param {{ path: string, source: string }[]} sources
+ * @param {string} owner
+ * @param {string} symbol
+ */
+function scanWebWriteSurfaces(sources, owner, symbol) {
+	/** @type {string[]} */
+	const errors = [];
+	const mutation = createMutationPattern(symbol);
+
+	for (const entry of sources) {
+		if (mutation.test(entry.source)) {
+			errors.push(
+				`sole-mutator foreign write: ${entry.path} mutates ${symbol} (writeOwner ${owner})`,
+			);
+		}
+	}
+
+	return errors;
+}
+
+/**
+ * @param {string} symbol
+ */
+function createMutationPattern(symbol) {
+	return new RegExp(`\\.(?:insert|update|delete)\\(\\s*${symbol}\\b`);
+}
+
+/**
+ * @param {string} file
+ */
+function isTestFile(file) {
+	return file.includes(`${sep}__tests__${sep}`) || file.includes("/__tests__/");
 }
 
 /**
@@ -1311,7 +1460,9 @@ export function validateCandidatePackagesAbsent(root, roadmapModules) {
 	const livingIds = new Set(LIVING_ERP_MANIFEST_PACKAGES.map((p) => p.id));
 	const packageDirs = listPackageDirs(root);
 	const packageLeafNames = new Set(
-		packageDirs.map((rel) => rel.split(/[/\\]/).at(-1) ?? rel),
+		packageDirs.map(
+			(rel) => rel.split(PACKAGE_PATH_SEPARATOR_PATTERN).at(-1) ?? rel,
+		),
 	);
 
 	/**
@@ -1399,11 +1550,28 @@ function walkTsFiles(dir) {
 			out.push(...walkTsFiles(full));
 			continue;
 		}
-		if (entry.isFile() && /\.(ts|tsx|mts|cts)$/.test(entry.name)) {
+		if (entry.isFile() && TS_SOURCE_FILENAME_PATTERN.test(entry.name)) {
 			out.push(full);
 		}
 	}
 	return out;
+}
+
+/**
+ * @param {string} source
+ * @returns {string[]}
+ */
+function extractNamedDbImports(source) {
+	const names = [];
+	for (const match of source.matchAll(DB_NAMED_IMPORT_PATTERN)) {
+		for (const specifier of (match[1] ?? "").split(",")) {
+			const [name] = specifier.trim().split(IMPORT_ALIAS_SPLIT_PATTERN);
+			if (name) {
+				names.push(name.trim());
+			}
+		}
+	}
+	return names;
 }
 
 /**

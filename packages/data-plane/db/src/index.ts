@@ -14,7 +14,7 @@ export {
 	or,
 	sql,
 } from "drizzle-orm";
-export { db, tenantEntityPredicate, withOrg } from "./client";
+export { db, orgWhere, tenantEntityPredicate, withOrg } from "./client";
 export {
 	HARD_TENANT_ROOT_TABLE_NAMES,
 	HARD_TENANT_ROOT_TABLES,

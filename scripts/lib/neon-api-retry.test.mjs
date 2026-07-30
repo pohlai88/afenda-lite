@@ -7,6 +7,8 @@ import { describe, it } from "node:test";
 
 import { isTransientNeonFailure, withNeonRetries } from "./neon-api-retry.mjs";
 
+const BRANCH_NOT_FOUND_PATTERN = /branch not found/;
+
 describe("isTransientNeonFailure", () => {
 	it("flags Neon CLI reachability blip", () => {
 		assert.equal(
@@ -67,8 +69,68 @@ describe("withNeonRetries", () => {
 					},
 					{ attempts: 4, baseDelayMs: 1 },
 				),
-			/branch not found/,
+			BRANCH_NOT_FOUND_PATTERN,
 		);
 		assert.equal(calls, 1);
+	});
+
+	it("reports retry attempts and exponential delays in order", async () => {
+		const retries = [];
+		let calls = 0;
+		const value = await withNeonRetries(
+			() => {
+				calls += 1;
+				if (calls < 3) {
+					throw new Error("fetch failed");
+				}
+				return "ok";
+			},
+			{
+				attempts: 3,
+				baseDelayMs: 1,
+				onRetry: ({ attempt, delayMs }) => {
+					retries.push({ attempt, delayMs });
+				},
+			},
+		);
+
+		assert.equal(value, "ok");
+		assert.deepEqual(retries, [
+			{ attempt: 1, delayMs: 1 },
+			{ attempt: 2, delayMs: 2 },
+		]);
+	});
+
+	it("rethrows the original transient error after the final attempt", async () => {
+		const terminalError = new Error("service unavailable");
+		let calls = 0;
+
+		await assert.rejects(
+			() =>
+				withNeonRetries(
+					() => {
+						calls += 1;
+						throw terminalError;
+					},
+					{ attempts: 2, baseDelayMs: 1 },
+				),
+			(error) => error === terminalError,
+		);
+		assert.equal(calls, 2);
+	});
+
+	it("preserves zero-attempt behavior", async () => {
+		let called = false;
+		await assert.rejects(
+			() =>
+				withNeonRetries(
+					() => {
+						called = true;
+					},
+					{ attempts: 0 },
+				),
+			(error) => error === undefined,
+		);
+		assert.equal(called, false);
 	});
 });

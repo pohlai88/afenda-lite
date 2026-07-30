@@ -207,12 +207,10 @@ export class DrizzleEventStore implements EventStore {
 		options: DomainEventClaimOptions,
 	): Promise<Result<DomainEvent[]>> {
 		try {
-			const predicates = [eq(platformDomainEvent.status, "pending")];
-			if (options.organizationId !== undefined) {
-				predicates.push(
-					eq(platformDomainEvent.organizationId, options.organizationId),
-				);
-			}
+			const predicates = [
+				eq(platformDomainEvent.organizationId, options.organizationId),
+				eq(platformDomainEvent.status, "pending"),
+			];
 			const where = and(...predicates);
 			if (where === undefined) {
 				return fail(

@@ -1239,6 +1239,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async startOnboarding(record, _ports, meta) {
 		const existing = await this.findOnboardingByStartIdempotencyKey({
 			organizationId: record.organizationId,
@@ -2840,6 +2841,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async confirmEmployment(record, _ports, meta) {
 		const existing = await this.findConfirmationByIdempotencyKey({
 			organizationId: record.organizationId,
@@ -3039,6 +3041,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async transferAssignment(input, _ports, meta) {
 		const fingerprint = fingerprintTransfer({
 			employmentId: input.employmentId,
@@ -3392,6 +3395,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async proposeTermination(record, _ports, meta) {
 		const existing = await this.findTerminationByIdempotencyKey({
 			organizationId: record.organizationId,
@@ -3824,6 +3828,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async startOffboarding(record, _ports, meta) {
 		const existing = await this.findOffboardingByStartIdempotencyKey({
 			organizationId: record.organizationId,

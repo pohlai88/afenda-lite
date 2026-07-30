@@ -29,12 +29,14 @@
 	},
 	"dependencies": {
 		"@neondatabase/serverless": "^1.0.0",
-		"drizzle-orm": "^0.44.2"
+		"drizzle-orm": "^0.44.2",
+		"pg": "^8.17.2"
 	},
 	"devDependencies": {
 		"@afenda/config": "workspace:*",
 		"@afenda/testing": "workspace:*",
 		"@types/node": "catalog:",
+		"@types/pg": "^8.16.0",
 		"drizzle-kit": "^0.31.4",
 		"typescript": "catalog:",
 		"vitest": "catalog:"

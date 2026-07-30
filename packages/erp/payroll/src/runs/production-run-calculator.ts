@@ -16,6 +16,7 @@ import type {
 	PayrollEmployeeQueryPort,
 	PayrollRunCalculatorPort,
 } from "../ports";
+import { payrollJsonObjectSchema } from "../schemas/common";
 import {
 	DEFAULT_PAYROLL_ROUNDING_POLICY,
 	PAYROLL_CALCULATION_VERSION,
@@ -328,7 +329,16 @@ export function createProductionPayrollRunCalculator(input: {
 					statutoryRules: statutoryRuleSnapshots,
 				};
 
-				const snapshotHash = hashSnapshot(snapshot);
+				const parsedSnapshot = payrollJsonObjectSchema.safeParse(snapshot);
+				if (!parsedSnapshot.success) {
+					return fail(
+						"INTERNAL_ERROR",
+						"Payroll calculation snapshot is not JSON serializable",
+						payrollErrorDetails(PAYROLL_ERROR_VALIDATION),
+					);
+				}
+
+				const snapshotHash = hashSnapshot(parsedSnapshot.data);
 				snapshotHashes.push(snapshotHash);
 
 				const rawOutput = calculateEmployeePayroll(snapshot);
@@ -373,7 +383,7 @@ export function createProductionPayrollRunCalculator(input: {
 					employeeStatutory: normalized.totals.employeeStatutory,
 					employerCost: normalized.totals.employerCost,
 					net: normalized.totals.net,
-					snapshotJson: snapshot as unknown as Record<string, unknown>,
+					snapshotJson: parsedSnapshot.data,
 					snapshotHash,
 					calculationVersion: PAYROLL_CALCULATION_VERSION,
 					status: hasBlocking ? "failed" : "calculated",

@@ -135,7 +135,7 @@ function AssignmentUserCell({
 }
 
 function auditDetailValue(value: string | null | undefined): string {
-	if (value === null || value.trim().length === 0) {
+	if (value === null || value === undefined || value.trim().length === 0) {
 		return "—";
 	}
 	return value;

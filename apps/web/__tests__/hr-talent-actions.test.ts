@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noAwaitInLoops: Cases run serially to isolate mutable test state and ordered transitions.
 /**
  * HR Talent Server Actions — permission deny, validation, org stamp, delegate.
  */
@@ -450,4 +451,3 @@ describe("HR Talent Server Actions", () => {
 		);
 	});
 });
-// biome-ignore-all lint/performance/noAwaitInLoops: Cases run serially to isolate mutable test state and ordered transitions.

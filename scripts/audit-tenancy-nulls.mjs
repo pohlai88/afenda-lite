@@ -848,9 +848,15 @@ console.log(
 	`audit:tenancy-nulls — ${HARD_TENANT_ROOT_TABLE_NAMES.length} hard tenant roots (ARCH-023)`,
 );
 
+const MISSING_RELATION_PATTERN = /relation .* does not exist/i;
+
 function isUndefinedTable(error) {
 	let current = error;
-	for (let depth = 0; depth < 4 && current != null; depth += 1) {
+	for (
+		let depth = 0;
+		depth < 4 && current !== null && current !== undefined;
+		depth += 1
+	) {
 		if (
 			typeof current === "object" &&
 			"code" in current &&
@@ -860,7 +866,7 @@ function isUndefinedTable(error) {
 		}
 		if (
 			current instanceof Error &&
-			/relation .* does not exist/i.test(current.message)
+			MISSING_RELATION_PATTERN.test(current.message)
 		) {
 			return true;
 		}
@@ -875,12 +881,16 @@ function isUndefinedTable(error) {
 let failed = 0;
 let skipped = 0;
 
-for (const table of HARD_TENANT_ROOT_TABLE_NAMES) {
+async function auditTableAt(index) {
+	if (index >= HARD_TENANT_ROOT_TABLE_NAMES.length) {
+		return;
+	}
+	const table = HARD_TENANT_ROOT_TABLE_NAMES[index];
 	const query = NULL_COUNT_BY_TABLE[table];
 	if (typeof query !== "function") {
 		console.error(`  FAIL  ${table}: no query registered`);
 		failed += 1;
-		continue;
+		return auditTableAt(index + 1);
 	}
 	let result;
 	try {
@@ -889,7 +899,7 @@ for (const table of HARD_TENANT_ROOT_TABLE_NAMES) {
 		if (isUndefinedTable(error)) {
 			console.log(`  SKIP  ${table}: relation not present (pending migration)`);
 			skipped += 1;
-			continue;
+			return auditTableAt(index + 1);
 		}
 		throw error;
 	}
@@ -901,7 +911,10 @@ for (const table of HARD_TENANT_ROOT_TABLE_NAMES) {
 		console.error(`  FAIL  ${table}: null_count=${nullCount}`);
 		failed += 1;
 	}
+	return auditTableAt(index + 1);
 }
+
+await auditTableAt(0);
 
 if (failed > 0) {
 	console.error(`audit:tenancy-nulls FAIL — ${failed} table(s)`);

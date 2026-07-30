@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noAwaitInLoops: Export pages and dependent aggregates are read serially to preserve bounds and fail-fast ordering.
 import { fail, ok, type Result } from "@afenda/errors/result";
 import type {
 	HumanResourcesBulkExportDefinition,
@@ -8,7 +9,6 @@ import type {
 	HumanResourcesReportingSourcePort,
 	HumanResourcesStore,
 } from "@afenda/human-resources";
-// biome-ignore-all lint/performance/noAwaitInLoops: Export pages and dependent aggregates are read serially to preserve bounds and fail-fast ordering.
 import {
 	createDrizzleHumanResourcesReportingSource,
 	createDrizzleHumanResourcesStore,
@@ -123,7 +123,6 @@ function employeeSource(
 	store: HumanResourcesStore,
 ): HumanResourcesBulkExportSource {
 	return {
-		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Export pagination enforces bounded, typed projection for all HR sources.
 		async list(input) {
 			const records: HumanResourcesExportSourceRecord[] = [];
 			let page = 1;
@@ -165,6 +164,7 @@ function assignmentSource(
 	store: HumanResourcesStore,
 ): HumanResourcesBulkExportSource {
 	return {
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Assignment export preserves bounded nested aggregate projection.
 		async list(input) {
 			const records: HumanResourcesExportSourceRecord[] = [];
 			let page = 1;

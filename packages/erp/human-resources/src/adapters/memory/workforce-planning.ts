@@ -462,6 +462,7 @@ export function createMemoryWorkforcePlanningMethods(
 			return ok({ ...updated });
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async transitionHeadcountPlanStatus(
 			input: {
 				organizationId: string;
@@ -818,6 +819,7 @@ export function createMemoryWorkforcePlanningMethods(
 			return ok({ ...line });
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async updateHeadcountPlanLine(
 			input: {
 				organizationId: string;

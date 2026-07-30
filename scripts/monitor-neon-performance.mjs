@@ -88,7 +88,7 @@ try {
 			)::int AS idle_connections
 		FROM pg_stat_activity
 	`;
-	const snapshot = rows[0];
+	const [snapshot] = rows;
 	record(
 		"connection pressure",
 		evaluateConnectionPressure({

@@ -1,3 +1,4 @@
+// biome-ignore-all lint/performance/noAwaitInLoops: Cases run serially to isolate mutable test state and ordered transitions.
 /**
  * N12 — assign/revoke + audit atomic domain entry points (Neon HTTP tx).
  */
@@ -142,4 +143,3 @@ describe.skipIf(!hasDatabase)("assign/revoke WithAudit atomicity (N12)", () => {
 		expect(audits[0]?.targetId).toBe(assigned.assignment.id);
 	});
 });
-// biome-ignore-all lint/performance/noAwaitInLoops: Cases run serially to isolate mutable test state and ordered transitions.

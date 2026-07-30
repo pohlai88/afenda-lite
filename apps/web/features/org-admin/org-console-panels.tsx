@@ -1,3 +1,4 @@
+// biome-ignore-all lint/style/noNestedTernary: Exhaustive status and tri-state view mappings remain explicit at their use sites.
 // biome-ignore-all lint/performance/noJsxPropsBind: The enabled React Compiler stabilizes JSX callback props.
 "use client";
 
@@ -175,11 +176,13 @@ function readProvisionPartialFailure(details: unknown): {
 }
 
 function readProperty(value: object, key: PropertyKey): unknown {
+	let property: unknown;
 	try {
-		return Reflect.get(value, key);
+		property = Reflect.get(value, key);
 	} catch {
-		return;
+		property = undefined;
 	}
+	return property;
 }
 
 function ProvisionOrganizationSheet() {
@@ -633,4 +636,3 @@ export function OrgConsolePanels({
 		</div>
 	);
 }
-// biome-ignore-all lint/style/noNestedTernary: Exhaustive status and tri-state view mappings remain explicit at their use sites.

@@ -91,8 +91,7 @@ export class MemoryEventStore implements EventStore {
 			.filter(
 				(entry) =>
 					entry.status === "pending" &&
-					(options.organizationId === undefined ||
-						entry.organizationId === options.organizationId),
+					entry.organizationId === options.organizationId,
 			)
 			.toSorted((a, b) => a.occurredAt.getTime() - b.occurredAt.getTime());
 		return okAsync(

@@ -139,7 +139,7 @@ export async function createItemVariantAction(
 	}
 
 	const attributeValues = parseAttributeValues(formData);
-	if (!attributeValues.ok) {
+	if ("code" in attributeValues) {
 		return attributeValues;
 	}
 

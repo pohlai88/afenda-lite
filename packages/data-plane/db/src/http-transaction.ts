@@ -20,9 +20,9 @@ export type NeonHttpIsolationLevel = NonNullable<
 >;
 
 export interface NeonHttpTransactionOptions {
-	deferrable?: boolean;
-	isolationLevel?: NeonHttpIsolationLevel;
-	readOnly?: boolean;
+	readonly deferrable?: boolean;
+	readonly isolationLevel?: NeonHttpIsolationLevel;
+	readonly readOnly?: boolean;
 }
 
 export type NeonHttpSql = NeonQueryFunction<false, false>;
@@ -39,19 +39,52 @@ export function getNeonSql(): NeonHttpSql {
 }
 
 type NeonHttpTxQuery = NeonQueryPromise<false, false>;
+type NeonHttpTxQueries = readonly NeonHttpTxQuery[];
+
+function normalizeTransactionOptions(
+	options: NeonHttpTransactionOptions | undefined,
+): HTTPTransactionOptions<false, false> {
+	const isolationLevel = options?.isolationLevel ?? "ReadCommitted";
+
+	if (
+		options?.deferrable === true &&
+		(options.readOnly !== true || isolationLevel !== "Serializable")
+	) {
+		throw new Error(
+			"runNeonHttpTransaction: deferrable requires readOnly=true and isolationLevel=Serializable",
+		);
+	}
+
+	return {
+		isolationLevel,
+		...(options?.readOnly === undefined ? {} : { readOnly: options.readOnly }),
+		...(options?.deferrable === undefined
+			? {}
+			: { deferrable: options.deferrable }),
+	};
+}
 
 /**
- * Run queries in one Neon HTTP non-interactive transaction.
+ * Run a predeclared query batch in one Neon HTTP non-interactive Postgres
+ * transaction. The builder callback is synchronous and only constructs the
+ * batch; it cannot await a result or branch between statements.
+ *
+ * Statements execute in array order and commit together or roll back together.
+ * Later SQL statements observe earlier writes according to the selected
+ * isolation level, but application code cannot inspect intermediate results.
+ * This helper performs no automatic retries.
+ *
  * Default isolation: `ReadCommitted` (Postgres write default; explicit for ops).
  */
 export async function runNeonHttpTransaction<T extends unknown[]>(
-	queriesOrFn: NeonHttpTxQuery[] | ((sql: NeonHttpSql) => NeonHttpTxQuery[]),
+	queriesOrFn: NeonHttpTxQueries | ((sql: NeonHttpSql) => NeonHttpTxQueries),
 	options?: NeonHttpTransactionOptions,
 ): Promise<T> {
 	if (Array.isArray(queriesOrFn) && queriesOrFn.length === 0) {
 		throw new Error("runNeonHttpTransaction requires at least one query");
 	}
 
+	const transactionOptions = normalizeTransactionOptions(options);
 	const sql = getNeonSql();
 	const queries =
 		typeof queriesOrFn === "function" ? queriesOrFn(sql) : queriesOrFn;
@@ -59,13 +92,6 @@ export async function runNeonHttpTransaction<T extends unknown[]>(
 		throw new Error("runNeonHttpTransaction requires at least one query");
 	}
 
-	const result = await sql.transaction(queries, {
-		isolationLevel: options?.isolationLevel ?? "ReadCommitted",
-		...(options?.readOnly === undefined ? {} : { readOnly: options.readOnly }),
-		...(options?.deferrable === undefined
-			? {}
-			: { deferrable: options.deferrable }),
-	});
-
+	const result = await sql.transaction([...queries], transactionOptions);
 	return result as T;
 }

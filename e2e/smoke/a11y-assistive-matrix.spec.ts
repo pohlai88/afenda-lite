@@ -15,6 +15,7 @@ test.describe("a11y assistive matrix @smoke", () => {
 	for (const row of A11Y_ASSISTIVE_MATRIX) {
 		test(`${row.id} ${row.path}`, async ({ page, workerTenant }) => {
 			if (row.auth !== "none") {
+				// biome-ignore lint/suspicious/noSkippedTests: Local external evidence may be absent; CI fails closed.
 				test.skip(
 					!workerTenant,
 					"E2E factory incomplete — authenticated a11y row skipped (named; not PASS)",

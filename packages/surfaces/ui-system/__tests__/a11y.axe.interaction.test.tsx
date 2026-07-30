@@ -84,6 +84,7 @@ describe("@afenda/ui-system — axe a11y suite", () => {
 		const { container } = render(
 			<AppShell
 				header={{ title: "Dashboard" }}
+				mainContentId="main-content"
 				navConfig={{
 					currentPath: "/dashboard",
 					linkComponent: TestLink,
@@ -109,7 +110,10 @@ describe("@afenda/ui-system — axe a11y suite", () => {
 			</AppShell>,
 		);
 
-		expect(screen.getByRole("main")).toContainElement(
+		const main = screen.getByRole("main");
+		expect(main).toHaveAttribute("id", "main-content");
+		expect(main).toHaveAttribute("tabindex", "-1");
+		expect(main).toContainElement(
 			screen.getByRole("heading", { level: 1, name: "Dashboard workspace" }),
 		);
 		await expectNoA11yViolations(container);

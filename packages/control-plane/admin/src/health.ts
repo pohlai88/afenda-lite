@@ -1,5 +1,7 @@
 import { db, sql } from "@afenda/db";
 import { env, MAX_SELECT1_LATENCY_MS } from "@afenda/env";
+import { normalizeUnknown } from "@afenda/errors";
+import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
 
 import {
 	type HealthAggregate,
@@ -136,7 +138,14 @@ interface TimedProbe {
  */
 async function probeDatabase(): Promise<TimedProbe> {
 	const result = await runBoundedProbe(MAX_SELECT1_LATENCY_MS, async () => {
-		await db.execute(sql`select 1`);
+		try {
+			await db.execute(sql`select 1`);
+		} catch (error) {
+			throw (
+				fromPostgresUnknown(error) ??
+				normalizeUnknown(error, "Database readiness probe failed")
+			);
+		}
 	});
 	return {
 		status: result.ok ? "reachable" : "unreachable",

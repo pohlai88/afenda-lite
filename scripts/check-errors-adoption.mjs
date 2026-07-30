@@ -118,14 +118,30 @@ function hasErrorsDependency(pkg) {
 }
 
 function packageKind(packageRoot, packageName) {
-	if (packageName === "@afenda/errors") return "errors-kernel";
-	if (packageRoot.startsWith("packages/data-plane/")) return "data-plane";
-	if (packageRoot.startsWith("packages/erp/")) return "erp";
-	if (packageRoot.startsWith("packages/control-plane/")) return "control-plane";
-	if (packageRoot.startsWith("packages/runtime/")) return "runtime";
-	if (packageRoot.startsWith("apps/web")) return "web";
-	if (packageRoot.startsWith("packages/surfaces/")) return "surface";
-	if (packageRoot.startsWith("apps/")) return "app";
+	if (packageName === "@afenda/errors") {
+		return "errors-kernel";
+	}
+	if (packageRoot.startsWith("packages/data-plane/")) {
+		return "data-plane";
+	}
+	if (packageRoot.startsWith("packages/erp/")) {
+		return "erp";
+	}
+	if (packageRoot.startsWith("packages/control-plane/")) {
+		return "control-plane";
+	}
+	if (packageRoot.startsWith("packages/runtime/")) {
+		return "runtime";
+	}
+	if (packageRoot.startsWith("apps/web")) {
+		return "web";
+	}
+	if (packageRoot.startsWith("packages/surfaces/")) {
+		return "surface";
+	}
+	if (packageRoot.startsWith("apps/")) {
+		return "app";
+	}
 	return "other";
 }
 
@@ -138,7 +154,9 @@ function walkSource(directory, files = []) {
 	}
 
 	for (const name of entries) {
-		if (SKIP_DIR.has(name)) continue;
+		if (SKIP_DIR.has(name)) {
+			continue;
+		}
 
 		const fullPath = join(directory, name);
 		let stats;
@@ -177,7 +195,9 @@ function collectPackageJson(directory, files = []) {
 	}
 
 	for (const name of entries) {
-		if (SKIP_DIR.has(name)) continue;
+		if (SKIP_DIR.has(name)) {
+			continue;
+		}
 
 		const fullPath = join(directory, name);
 		let stats;
@@ -211,8 +231,10 @@ function readSourceFiles(sourceFiles, root) {
 function hasHardenedSharedPostgresMapper(sources) {
 	return sources.some(({ relativePath, content }) => {
 		if (
-			!relativePath.endsWith("/shared/persistence-errors.ts") &&
-			!relativePath.endsWith("/adapters/drizzle/errors.ts")
+			!(
+				relativePath.endsWith("/shared/persistence-errors.ts") ||
+				relativePath.endsWith("/adapters/drizzle/errors.ts")
+			)
 		) {
 			return false;
 		}
@@ -229,8 +251,12 @@ function catchBlocks(content) {
 		let index = CATCH_START_PATTERN.lastIndex;
 		while (index < content.length && depth > 0) {
 			const char = content[index];
-			if (char === "{") depth += 1;
-			if (char === "}") depth -= 1;
+			if (char === "{") {
+				depth += 1;
+			}
+			if (char === "}") {
+				depth -= 1;
+			}
 			index += 1;
 		}
 		blocks.push(content.slice(CATCH_START_PATTERN.lastIndex, index - 1));
@@ -331,16 +357,27 @@ function classifyPackage({ packageRoot, packageName, kind, sources }) {
 function summarizeMethods(metrics) {
 	const methods = [];
 
-	if (metrics.packageName === "@afenda/errors")
+	if (metrics.packageName === "@afenda/errors") {
 		methods.push("protected-kernel");
-	if (metrics.resultEvidenceFiles > 0) methods.push("result-boundary");
-	if (metrics.normalizedCatchFiles > 0) methods.push("normalized-catch");
-	if (metrics.postgresMappedDbCatchFiles > 0) methods.push("postgres-adapter");
+	}
+	if (metrics.resultEvidenceFiles > 0) {
+		methods.push("result-boundary");
+	}
+	if (metrics.normalizedCatchFiles > 0) {
+		methods.push("normalized-catch");
+	}
+	if (metrics.postgresMappedDbCatchFiles > 0) {
+		methods.push("postgres-adapter");
+	}
 	if (metrics.sharedPersistenceMapperFiles > 0) {
 		methods.push("shared-persistence-mapper");
 	}
-	if (metrics.httpProjectionFiles > 0) methods.push("http-projection");
-	if (metrics.appErrorFactoryFiles > 0) methods.push("app-error-factory");
+	if (metrics.httpProjectionFiles > 0) {
+		methods.push("http-projection");
+	}
+	if (metrics.appErrorFactoryFiles > 0) {
+		methods.push("app-error-factory");
+	}
 
 	return methods;
 }
@@ -380,6 +417,7 @@ function hasAdoptionEvidence({
 	);
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: This audit intentionally evaluates one ordered package-evidence contract in a single pass.
 function analyzePackage(packageJsonPath, root) {
 	const packageRootPath = dirname(packageJsonPath);
 	const packageRoot = normalizedRelative(root, packageRootPath);
@@ -433,15 +471,25 @@ function analyzePackage(packageJsonPath, root) {
 		const hasAppErrorFactory =
 			importsErrors && APP_ERROR_FACTORY_PATTERN.test(content);
 
-		if (importsErrors) sourceImports += 1;
+		if (importsErrors) {
+			sourceImports += 1;
+		}
 		if (hasUnsupportedErrorImport) {
 			unsupportedSourceImports += 1;
 			unsupportedImportFileList.push(relativePath);
 		}
-		if (hasResultSurface) resultEvidenceFiles += 1;
-		if (hasCatch) catchFiles += 1;
-		if (hasCatch && hasNormalizer) normalizedCatchFiles += 1;
-		if (hasCatch && isDbBoundary) dbCatchFiles += 1;
+		if (hasResultSurface) {
+			resultEvidenceFiles += 1;
+		}
+		if (hasCatch) {
+			catchFiles += 1;
+		}
+		if (hasCatch && hasNormalizer) {
+			normalizedCatchFiles += 1;
+		}
+		if (hasCatch && isDbBoundary) {
+			dbCatchFiles += 1;
+		}
 		if (
 			hasCatch &&
 			isDbBoundary &&
@@ -449,9 +497,15 @@ function analyzePackage(packageJsonPath, root) {
 		) {
 			postgresMappedDbCatchFiles += 1;
 		}
-		if (usesSharedPostgresMapper) sharedPersistenceMapperFiles += 1;
-		if (hasHttpProjection) httpProjectionFiles += 1;
-		if (hasAppErrorFactory) appErrorFactoryFiles += 1;
+		if (usesSharedPostgresMapper) {
+			sharedPersistenceMapperFiles += 1;
+		}
+		if (hasHttpProjection) {
+			httpProjectionFiles += 1;
+		}
+		if (hasAppErrorFactory) {
+			appErrorFactoryFiles += 1;
+		}
 		if (hasCatch && constructsFailure && !hasNormalizer) {
 			const hasUnnormalizedFailureCatch = catches.some(
 				(block) =>
@@ -677,7 +731,9 @@ function appendGroup(lines, title, reports, { includeIssues = false } = {}) {
 
 	for (const report of reports) {
 		lines.push(formatPackageLine(report));
-		if (includeIssues) lines.push(...formatIssueLines(report));
+		if (includeIssues) {
+			lines.push(...formatIssueLines(report));
+		}
 	}
 }
 

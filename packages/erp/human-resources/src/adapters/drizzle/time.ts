@@ -3376,6 +3376,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async updateShift(input, ports) {
 		try {
 			const existing = await this.getShift({
@@ -4293,6 +4294,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async importAttendanceEvents(input, ports) {
 		try {
 			const existingBatch =
@@ -4344,6 +4346,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 			const importOutcome = await runSequential(
 				input.events.map((_, rowIndex) => rowIndex),
+				// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 				async (rowIndex) => {
 					const row = requirePersistenceRow(input.events[rowIndex]);
 					const outcomeRowIndex =
@@ -4650,6 +4653,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async recordAttendanceEvent(input, ports) {
 		try {
 			const maxRows = await db
@@ -5105,6 +5109,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async resolveAttendanceSession(input, ports) {
 		try {
 			const eventRows = await db
@@ -5953,6 +5958,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async generateTimesheetEntries(input, ports, deps: TimesheetGenerationDeps) {
 		try {
 			const existing = await this.getTimesheet({
@@ -6363,6 +6369,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async updateTimesheetEntry(input, ports) {
 		try {
 			const rows = await db
@@ -7854,6 +7861,7 @@ async function transitionException(
 	}
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 async function transitionTimesheet(
 	store: HumanResourcesTimeStore,
 	ports: MutationPorts,

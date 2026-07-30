@@ -25,6 +25,7 @@ test.describe("invite → join accept @journey", () => {
 	}) => {
 		test.setTimeout(180_000);
 
+		// biome-ignore lint/suspicious/noSkippedTests: Local external evidence may be absent; CI fails closed.
 		test.skip(
 			!workerTenant,
 			"workerTenant factory required (E2E_FACTORY_PASSWORD + DATABASE_URL)",

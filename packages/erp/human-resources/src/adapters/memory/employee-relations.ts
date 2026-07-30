@@ -366,6 +366,7 @@ export function createMemoryEmployeeRelationsMethods(
 			});
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async openEmployeeCase(record, ports, meta) {
 			const state = erState;
 			const existing = await this.findEmployeeCaseByIdempotencyKey({
@@ -1358,6 +1359,7 @@ export function createMemoryEmployeeRelationsMethods(
 			});
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async recordEmployeeCaseAppeal(record, ports, meta) {
 			const state = erState;
 			const existing = await this.findEmployeeCaseAppealByIdempotencyKey({

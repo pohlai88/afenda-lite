@@ -1001,6 +1001,7 @@ export function createMemoryLearningMethods(
 			return await ok({ ...record, assignment: { ...record.assignment } });
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async createLearningAssignment(
 			record: LearningAssignmentCreateRecord,
 			ports: MutationPorts,
@@ -1130,6 +1131,7 @@ export function createMemoryLearningMethods(
 			return ok({ ...assignment });
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async enrollLearningAssignment(
 			input: {
 				organizationId: string;
@@ -1361,6 +1363,7 @@ export function createMemoryLearningMethods(
 			return await ok({ ...completion });
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async recordCompletion(
 			record: CompletionCreateRecord,
 			ports: MutationPorts,
@@ -2020,6 +2023,7 @@ export function createMemoryLearningMethods(
 			return ok({ ...updated });
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
 		async renewCertification(
 			record: {
 				organizationId: string;

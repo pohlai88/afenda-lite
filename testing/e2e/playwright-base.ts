@@ -4,7 +4,7 @@
  * `@playwright/test` directly in specs.
  */
 
-import { test as base, expect } from "@playwright/test";
+import { test as base } from "@playwright/test";
 import {
 	cleanupWorkerTenant,
 	isFactoryEnvReady,
@@ -12,10 +12,10 @@ import {
 	type WorkerTenantHandle,
 } from "./tenancy";
 
-type WorkerFixtures = {
+interface WorkerFixtures {
 	/** Worker-scoped unique orgs/users when `E2E_FACTORY_*` + DATABASE_URL are set. */
 	workerTenant: WorkerTenantHandle | null;
-};
+}
 
 /** CI standing E2E gate sets this so missing factory env fails closed (not skip-as-PASS). */
 function requireFactoryInCi(): boolean {
@@ -50,4 +50,4 @@ export const test = base.extend<object, WorkerFixtures>({
 	],
 });
 
-export { expect };
+export { expect } from "@playwright/test";

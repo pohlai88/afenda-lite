@@ -2,6 +2,7 @@
 	"name": "afenda-lite",
 	"version": "0.1.0",
 	"private": true,
+	"type": "module",
 	"engines": {
 		"node": "24.x",
 		"pnpm": ">=10.33.4"
@@ -29,6 +30,8 @@
 		"db:migrate": "pnpm --filter @afenda/db db:migrate",
 		"audit:tenancy-nulls": "node scripts/audit-tenancy-nulls.mjs",
 		"check:tenancy-residue": "node scripts/check-tenancy-residue.mjs",
+		"check:tenant-sql-safety": "node scripts/check-tenant-sql-safety.mjs",
+		"test:tenant-sql-safety": "node --test scripts/check-tenant-sql-safety.test.mjs",
 		"audit:github-actions-secrets": "node scripts/audit-github-actions-secrets.mjs",
 		"protect:main": "node scripts/protect-main.mjs",
 		"gh": "node scripts/gh.mjs",
@@ -52,6 +55,8 @@
 		"test:tsconfig-governance": "vitest run --config testing/vitest.unit.config.ts --project repo-tooling",
 		"check:editor-biome": "node scripts/check-editor-biome.mjs",
 		"check:ui-system": "pnpm --filter @afenda/ui-system lint && pnpm --filter @afenda/ui-system typecheck && pnpm --filter @afenda/ui-system metadata:check && pnpm --filter @afenda/ui-system test && pnpm --filter @afenda/web exec vitest run --config ../../testing/vitest.unit.config.ts --project web tailwind-emit && pnpm --filter @afenda/web typecheck",
+		"generate:hr-compensation-actions": "node scripts/generate-hr-compensation-actions.mjs",
+		"check:hr-compensation-actions": "node scripts/generate-hr-compensation-actions.mjs --check",
 		"storybook": "pnpm --filter @afenda/storybook dev",
 		"storybook:build": "pnpm --filter @afenda/storybook build",
 		"storybook:preview": "pnpm --filter @afenda/storybook preview",
@@ -100,7 +105,7 @@
 		"typecheck": "pnpm typecheck:root && turbo run typecheck",
 		"check": "pnpm typecheck:root && turbo run lint typecheck test build",
 		"lint:root": "biome check .",
-		"lint:ci": "biome ci ."
+		"lint:ci": "pnpm check:hr-compensation-actions && biome ci ."
 	},
 	"devDependencies": {
 		"@afenda/config": "workspace:*",

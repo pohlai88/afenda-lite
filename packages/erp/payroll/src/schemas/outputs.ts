@@ -11,6 +11,7 @@ import {
 	payrollCorrelationIdSchema,
 	payrollDecimalStringSchema,
 	payrollEmployeeIdSchema,
+	payrollJsonObjectSchema,
 	payrollOrganizationIdSchema,
 } from "./common";
 
@@ -48,7 +49,7 @@ export const payrollRunEmployeeRecordSchema = z.object({
 	employeeStatutory: payrollDecimalStringSchema,
 	employerCost: payrollDecimalStringSchema,
 	net: payrollDecimalStringSchema,
-	snapshotJson: z.record(z.string(), z.unknown()),
+	snapshotJson: payrollJsonObjectSchema,
 	snapshotHash: z.string().trim().min(1).max(256),
 	calculationVersion: z.string().trim().min(1).max(64),
 	status: payrollRunEmployeeStatusSchema,
@@ -88,7 +89,7 @@ export const payrollRunEmployeeCreateRecordSchema = z
 		employeeStatutory: payrollDecimalStringSchema,
 		employerCost: payrollDecimalStringSchema,
 		net: payrollDecimalStringSchema,
-		snapshotJson: z.record(z.string(), z.unknown()),
+		snapshotJson: payrollJsonObjectSchema,
 		snapshotHash: z.string().trim().min(1).max(256),
 		calculationVersion: z.string().trim().min(1).max(64),
 		status: payrollRunEmployeeStatusSchema,

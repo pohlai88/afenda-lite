@@ -109,6 +109,7 @@ vi.mock("@/features/org-admin/org-admin-panels", () => ({
 			"data-testid": "org-admin-panels",
 			"data-directory-status": props.memberDirectory.status,
 			"data-directory-count": String(props.memberDirectory.options.length),
+			// biome-ignore lint/suspicious/noUnnecessaryConditions: The mock accepts an empty assignment list at runtime.
 			"data-assignment-label": props.assignments[0]?.userLabel ?? "",
 		}),
 }));

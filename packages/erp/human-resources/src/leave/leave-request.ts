@@ -146,6 +146,7 @@ export async function createDraftLeaveRequest(
 		schema: createDraftLeaveRequestInputSchema,
 		invalidMessage: "Invalid leave request create input",
 		command: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_CREATE_DRAFT,
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The domain workflow keeps ordered invariant validation and Result mapping explicit.
 		execute: async (data, { store, ports, workCalendar }) => {
 			const backdate = await requireBackdatePermissionWhenNeeded(options, {
 				isBackdated: data.isBackdated === true,
@@ -476,6 +477,7 @@ export async function approveLeaveRequest(
 		schema: approveLeaveRequestInputSchema,
 		invalidMessage: "Invalid leave request approve input",
 		command: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_APPROVE,
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The domain workflow keeps ordered invariant validation and Result mapping explicit.
 		execute: async (data, { store, ports, identityResolver }) => {
 			if (!identityResolver) {
 				return fail(
@@ -831,6 +833,7 @@ export async function getLeaveRequest(
 		schema: getLeaveRequestInputSchema,
 		invalidMessage: "Invalid leave request get input",
 		query: HUMAN_RESOURCES_QUERY_LEAVE_REQUEST_GET,
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The domain workflow keeps ordered invariant validation and Result mapping explicit.
 		execute: async (data, { store, identityResolver }) => {
 			const request = await store.getLeaveRequestById({
 				organizationId: data.organizationId,

@@ -6,13 +6,13 @@
 
 export type AdverseMatrixLayer = "unit" | "smoke" | "journey";
 
-export type AdverseMatrixRow = {
-	id: string;
+export interface AdverseMatrixRow {
 	case: string;
-	layers: readonly AdverseMatrixLayer[];
 	evidence: readonly string[];
+	id: string;
+	layers: readonly AdverseMatrixLayer[];
 	requiresFactory: boolean;
-};
+}
 
 /** Standing adverse / recovery cases for GUIDE-018 I4 exit. */
 export const ADVERSE_MATRIX = [

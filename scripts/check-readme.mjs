@@ -67,7 +67,9 @@ function parseArgs(argv) {
 }
 
 function walkMarkdown(dir, out = []) {
-	if (!existsSync(dir)) return out;
+	if (!existsSync(dir)) {
+		return out;
+	}
 	for (const name of readdirSync(dir)) {
 		if (name === "node_modules" || name === "dist" || name === ".turbo") {
 			continue;
@@ -86,7 +88,9 @@ function walkMarkdown(dir, out = []) {
 function listPackageJsonDirs(scopeAbs) {
 	const packages = [];
 	function walk(dir) {
-		if (!existsSync(dir)) return;
+		if (!existsSync(dir)) {
+			return;
+		}
 		const pkgPath = join(dir, "package.json");
 		if (existsSync(pkgPath) && dir !== root) {
 			packages.push(dir);
@@ -144,6 +148,117 @@ function resolveMarkdownTarget(fromFile, href) {
 	return { abs: resolve(dirname(fromFile), cleaned) };
 }
 
+function collectMissingReadmeIssues(packageDirs, issues) {
+	for (const dir of packageDirs) {
+		if (!existsSync(join(dir, "README.md"))) {
+			issues.push({
+				kind: "missing-readme",
+				path: relative(root, dir).split(sep).join("/"),
+				message: "package.json present but README.md missing",
+			});
+		}
+	}
+}
+
+function collectAntiClaimIssues(body, readmePath, issues) {
+	for (const claim of ANTI_CLAIMS) {
+		if (claim.re.test(body)) {
+			issues.push({
+				kind: "anti-claim",
+				path: readmePath,
+				message: `${claim.id}: ${claim.hint}`,
+			});
+		}
+	}
+}
+
+function collectLinkIssues(file, body, readmePath, issues) {
+	MD_LINK_RE.lastIndex = 0;
+	let linkMatch = MD_LINK_RE.exec(body);
+	while (linkMatch) {
+		const [, , rawHref] = linkMatch;
+		const href = rawHref.trim();
+		const target = resolveMarkdownTarget(file, href);
+		if ("abs" in target && !existsSync(target.abs)) {
+			issues.push({
+				kind: "broken-link",
+				path: readmePath,
+				message: `broken link → ${href}`,
+			});
+		}
+		linkMatch = MD_LINK_RE.exec(body);
+	}
+}
+
+function collectFilterScriptIssues(
+	body,
+	readmePath,
+	pkg,
+	workspacePkgs,
+	issues,
+) {
+	FILTER_SCRIPT_RE.lastIndex = 0;
+	let scriptMatch = FILTER_SCRIPT_RE.exec(body);
+	while (scriptMatch) {
+		const [, filterName, scriptName] = scriptMatch;
+		const targetPkg =
+			(pkg?.name === filterName ? pkg : null) ??
+			workspacePkgs.get(filterName) ??
+			null;
+		if (!targetPkg) {
+			issues.push({
+				kind: "unknown-filter",
+				path: readmePath,
+				message: `pnpm --filter ${filterName} — package not found in workspace`,
+			});
+		} else if (!targetPkg.scripts?.[scriptName]) {
+			issues.push({
+				kind: "dead-script",
+				path: readmePath,
+				message: `pnpm --filter ${filterName} ${scriptName} — script missing in package.json`,
+			});
+		}
+		scriptMatch = FILTER_SCRIPT_RE.exec(body);
+	}
+}
+
+function collectDependencyClaimIssues(body, readmePath, pkg, issues) {
+	if (!pkg) {
+		return;
+	}
+	const deps = {
+		...(pkg.dependencies ?? {}),
+		...(pkg.devDependencies ?? {}),
+		...(pkg.peerDependencies ?? {}),
+	};
+	for (const rule of NEVER_IMPORT_PATTERNS) {
+		if (!(rule.dep in deps)) {
+			continue;
+		}
+		for (const pattern of rule.res) {
+			if (pattern.test(body)) {
+				issues.push({
+					kind: "dep-contradiction",
+					path: readmePath,
+					message: `README denies importing ${rule.dep} but package.json lists it as a dependency`,
+				});
+				break;
+			}
+		}
+	}
+}
+
+function collectReadmeIssues(file, workspacePkgs, issues) {
+	const readmePath = relative(root, file).split(sep).join("/");
+	const body = readFileSync(file, "utf8");
+	const pkg = loadPackageJson(dirname(file));
+
+	collectAntiClaimIssues(body, readmePath, issues);
+	collectLinkIssues(file, body, readmePath, issues);
+	collectFilterScriptIssues(body, readmePath, pkg, workspacePkgs, issues);
+	collectDependencyClaimIssues(body, readmePath, pkg, issues);
+}
+
 function collectIssues(scopeRel) {
 	const scopeAbs = resolve(root, scopeRel);
 	const issues = [];
@@ -159,109 +274,30 @@ function collectIssues(scopeRel) {
 	}
 
 	const pkgDirs = listPackageJsonDirs(scopeAbs);
-	for (const dir of pkgDirs) {
-		const readme = join(dir, "README.md");
-		if (!existsSync(readme)) {
-			issues.push({
-				kind: "missing-readme",
-				path: relative(root, dir).split(sep).join("/"),
-				message: "package.json present but README.md missing",
-			});
-		}
-	}
+	collectMissingReadmeIssues(pkgDirs, issues);
 
 	const readmes = walkMarkdown(scopeAbs);
 	for (const file of readmes) {
-		const rel = relative(root, file).split(sep).join("/");
-		const body = readFileSync(file, "utf8");
-		const pkgDir = dirname(file);
-		const pkg = loadPackageJson(pkgDir);
-
-		for (const claim of ANTI_CLAIMS) {
-			if (claim.re.test(body)) {
-				issues.push({
-					kind: "anti-claim",
-					path: rel,
-					message: `${claim.id}: ${claim.hint}`,
-				});
-			}
-		}
-
-		MD_LINK_RE.lastIndex = 0;
-		let linkMatch = MD_LINK_RE.exec(body);
-		while (linkMatch) {
-			const href = linkMatch[2].trim();
-			const target = resolveMarkdownTarget(file, href);
-			if (!target.skip && target.abs && !existsSync(target.abs)) {
-				issues.push({
-					kind: "broken-link",
-					path: rel,
-					message: `broken link → ${href}`,
-				});
-			}
-			linkMatch = MD_LINK_RE.exec(body);
-		}
-
-		FILTER_SCRIPT_RE.lastIndex = 0;
-		let scriptMatch = FILTER_SCRIPT_RE.exec(body);
-		while (scriptMatch) {
-			const filterName = scriptMatch[1];
-			const scriptName = scriptMatch[2];
-			const targetPkg =
-				(pkg?.name === filterName ? pkg : null) ??
-				workspacePkgs.get(filterName) ??
-				null;
-			if (!targetPkg) {
-				issues.push({
-					kind: "unknown-filter",
-					path: rel,
-					message: `pnpm --filter ${filterName} — package not found in workspace`,
-				});
-			} else if (!targetPkg.scripts?.[scriptName]) {
-				issues.push({
-					kind: "dead-script",
-					path: rel,
-					message: `pnpm --filter ${filterName} ${scriptName} — script missing in package.json`,
-				});
-			}
-			scriptMatch = FILTER_SCRIPT_RE.exec(body);
-		}
-
-		if (pkg) {
-			const deps = {
-				...(pkg.dependencies ?? {}),
-				...(pkg.devDependencies ?? {}),
-				...(pkg.peerDependencies ?? {}),
-			};
-			for (const rule of NEVER_IMPORT_PATTERNS) {
-				if (!(rule.dep in deps)) continue;
-				for (const re of rule.res) {
-					if (re.test(body)) {
-						issues.push({
-							kind: "dep-contradiction",
-							path: rel,
-							message: `README denies importing ${rule.dep} but package.json lists it as a dependency`,
-						});
-						break;
-					}
-				}
-			}
-		}
+		collectReadmeIssues(file, workspacePkgs, issues);
 	}
 
 	return { issues, readmeCount: readmes.length, packageCount: pkgDirs.length };
 }
 
 const { scope } = parseArgs(process.argv.slice(2));
-const { issues, readmeCount, packageCount } = collectIssues(scope);
+const {
+	issues: validationIssues,
+	readmeCount,
+	packageCount,
+} = collectIssues(scope);
 
 console.log(
 	`check-readme: scope=${scope} packages=${packageCount} readmes=${readmeCount}`,
 );
 
-if (issues.length > 0) {
-	console.error(`check-readme: FAIL — ${issues.length} issue(s)`);
-	for (const issue of issues) {
+if (validationIssues.length > 0) {
+	console.error(`check-readme: FAIL — ${validationIssues.length} issue(s)`);
+	for (const issue of validationIssues) {
 		console.error(`  [${issue.kind}] ${issue.path}: ${issue.message}`);
 	}
 	process.exit(1);

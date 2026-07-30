@@ -132,6 +132,7 @@ export async function supersedeTimePolicy(
 		schema: supersedeTimePolicyInputSchema,
 		invalidMessage: "Invalid time policy supersede input",
 		command: HUMAN_RESOURCES_COMMAND_TIME_POLICY_SUPERSEDE,
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The domain workflow keeps ordered invariant validation and Result mapping explicit.
 		execute: async (data, { store, ports }) => {
 			const predecessor = await store.getTimePolicy({
 				organizationId: data.organizationId,

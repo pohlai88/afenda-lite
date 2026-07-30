@@ -70,13 +70,13 @@ const {
 function errorDetail(error) {
 	if (error && typeof error === "object") {
 		const stderr =
-			"stderr" in error && error.stderr != null ? String(error.stderr) : "";
-		const message =
-			error instanceof Error
-				? error.message
-				: "message" in error && typeof error.message === "string"
-					? error.message
-					: String(error);
+			"stderr" in error && error.stderr !== null && error.stderr !== undefined
+				? String(error.stderr)
+				: "";
+		let message = String(error);
+		if ("message" in error && typeof error.message === "string") {
+			({ message } = error);
+		}
 		return `${message}\n${stderr}`.trim();
 	}
 	return String(error);
@@ -89,7 +89,7 @@ function logNeonRetry({ attempt, attempts, error, delayMs }) {
 	);
 }
 
-async function neonApiGet(path) {
+function neonApiGet(path) {
 	return withNeonRetries(
 		async () => {
 			let res;
@@ -125,7 +125,7 @@ async function neonApiGet(path) {
 
 const neonFile = JSON.parse(readFileSync(".neon", "utf8"));
 
-async function run(args) {
+function run(args) {
 	return withNeonRetries(
 		() =>
 			execFileSync("npx", ["neon@latest", ...args, "-o", "json"], {
@@ -148,8 +148,11 @@ let passed = 0;
 let failed = 0;
 
 function record(ok) {
-	if (ok) passed += 1;
-	else failed += 1;
+	if (ok) {
+		passed += 1;
+	} else {
+		failed += 1;
+	}
 }
 
 console.log("=== Neon env validation ===\n");
@@ -229,7 +232,7 @@ record(
 		neonFile.orgId === orgId &&
 			neonFile.projectId === projectId &&
 			neonFile.branchId === branchId,
-		`.neon matches .env.local`,
+		".neon matches .env.local",
 	),
 );
 
@@ -242,15 +245,7 @@ record(
 );
 
 // Prefer REST for branch probe — avoids npx/neonctl Windows flakes on pre-push.
-if (!apiKey?.startsWith("napi_")) {
-	record(
-		check(
-			"branch API access",
-			false,
-			"NEON_API_KEY missing — cannot probe branch API",
-		),
-	);
-} else {
+if (apiKey?.startsWith("napi_")) {
 	try {
 		const branchRes = await neonApiGet(
 			`/projects/${projectId}/branches/${branchId}`,
@@ -270,6 +265,14 @@ if (!apiKey?.startsWith("napi_")) {
 	} catch (error) {
 		record(check("branch API access", false, errorDetail(error)));
 	}
+} else {
+	record(
+		check(
+			"branch API access",
+			false,
+			"NEON_API_KEY missing — cannot probe branch API",
+		),
+	);
 }
 
 try {
@@ -318,26 +321,10 @@ try {
 }
 
 // N3 recovery posture — read-only Neon API (no restore / reset / snapshot delete).
-if (!apiKey?.startsWith("napi_")) {
-	record(
-		check(
-			"N3 recovery posture API",
-			false,
-			"NEON_API_KEY missing — cannot read retention/snapshots; Console verify required (no fake PASS)",
-		),
-	);
-} else {
+if (apiKey?.startsWith("napi_")) {
 	try {
 		const projectRes = await neonApiGet(`/projects/${projectId}`);
-		if (projectRes.status !== 200) {
-			record(
-				check(
-					"N3 PITR history retention",
-					false,
-					`GET /projects failed HTTP ${projectRes.status}`,
-				),
-			);
-		} else {
+		if (projectRes.status === 200) {
 			const project = projectRes.body.project ?? projectRes.body;
 			const retention = evaluateHistoryRetention(project);
 			record(
@@ -349,20 +336,20 @@ if (!apiKey?.startsWith("napi_")) {
 						: formatNeonRecoveryIssues(retention.issues),
 				),
 			);
+		} else {
+			record(
+				check(
+					"N3 PITR history retention",
+					false,
+					`GET /projects failed HTTP ${projectRes.status}`,
+				),
+			);
 		}
 
 		const branchRes = await neonApiGet(
 			`/projects/${projectId}/branches/${branchId}`,
 		);
-		if (branchRes.status !== 200) {
-			record(
-				check(
-					"N3 protected production branch",
-					false,
-					`GET /branches failed HTTP ${branchRes.status}`,
-				),
-			);
-		} else {
+		if (branchRes.status === 200) {
 			const branch = branchRes.body.branch ?? branchRes.body;
 			const protectedBranch = evaluateProtectedProductionBranch(branch);
 			record(
@@ -374,18 +361,18 @@ if (!apiKey?.startsWith("napi_")) {
 						: formatNeonRecoveryIssues(protectedBranch.issues),
 				),
 			);
+		} else {
+			record(
+				check(
+					"N3 protected production branch",
+					false,
+					`GET /branches failed HTTP ${branchRes.status}`,
+				),
+			);
 		}
 
 		const snapsRes = await neonApiGet(`/projects/${projectId}/snapshots`);
-		if (snapsRes.status !== 200) {
-			record(
-				check(
-					"N3 scheduled snapshot inventory",
-					false,
-					`GET /snapshots failed HTTP ${snapsRes.status} — Console verify required (no fake PASS)`,
-				),
-			);
-		} else {
+		if (snapsRes.status === 200) {
 			const snapshots = (snapsRes.body.snapshots ?? []).map((snap) => ({
 				id: snap.id,
 				name: snap.name,
@@ -407,33 +394,33 @@ if (!apiKey?.startsWith("napi_")) {
 			console.log(
 				"[note] N3 snapshot schedule API (/snapshot_schedules) is not relied on — inventory inference only; Console UI confirm remains operator duty for schedule toggle.",
 			);
+		} else {
+			record(
+				check(
+					"N3 scheduled snapshot inventory",
+					false,
+					`GET /snapshots failed HTTP ${snapsRes.status} — Console verify required (no fake PASS)`,
+				),
+			);
 		}
 	} catch (error) {
 		record(check("N3 recovery posture API", false, errorDetail(error)));
 	}
+} else {
+	record(
+		check(
+			"N3 recovery posture API",
+			false,
+			"NEON_API_KEY missing — cannot read retention/snapshots; Console verify required (no fake PASS)",
+		),
+	);
 }
 
 // N4 performance posture — read-only Neon API + timed SELECT 1 (no CU/schema change).
-if (!apiKey?.startsWith("napi_")) {
-	record(
-		check(
-			"N4 compute autoscaling / suspend",
-			false,
-			"NEON_API_KEY missing — cannot read endpoint CU/suspend; Console verify required (no fake PASS)",
-		),
-	);
-} else {
+if (apiKey?.startsWith("napi_")) {
 	try {
 		const endpointsRes = await neonApiGet(`/projects/${projectId}/endpoints`);
-		if (endpointsRes.status !== 200) {
-			record(
-				check(
-					"N4 compute autoscaling / suspend",
-					false,
-					`GET /endpoints failed HTTP ${endpointsRes.status}`,
-				),
-			);
-		} else {
+		if (endpointsRes.status === 200) {
 			const endpoints = (endpointsRes.body.endpoints ?? []).map((ep) => ({
 				id: ep.id,
 				branch_id: ep.branch_id,
@@ -449,15 +436,7 @@ if (!apiKey?.startsWith("napi_")) {
 					: null,
 			}));
 			const selection = selectBranchReadWriteEndpoint(endpoints, branchId);
-			if (!selection.ok) {
-				record(
-					check(
-						"N4 compute autoscaling / suspend",
-						false,
-						formatNeonPerformanceIssues(selection.issues),
-					),
-				);
-			} else {
+			if (selection.ok) {
 				const compute = evaluateComputeAutoscaling(selection.endpoint, {
 					expectedBranchId: branchId,
 				});
@@ -480,25 +459,41 @@ if (!apiKey?.startsWith("napi_")) {
 							: formatNeonPerformanceIssues(pooledHost.issues),
 					),
 				);
+			} else {
+				record(
+					check(
+						"N4 compute autoscaling / suspend",
+						false,
+						formatNeonPerformanceIssues(selection.issues),
+					),
+				);
 			}
+		} else {
+			record(
+				check(
+					"N4 compute autoscaling / suspend",
+					false,
+					`GET /endpoints failed HTTP ${endpointsRes.status}`,
+				),
+			);
 		}
 	} catch (error) {
 		record(
 			check("N4 compute autoscaling / suspend", false, errorDetail(error)),
 		);
 	}
+} else {
+	record(
+		check(
+			"N4 compute autoscaling / suspend",
+			false,
+			"NEON_API_KEY missing — cannot read endpoint CU/suspend; Console verify required (no fake PASS)",
+		),
+	);
 }
 
 const databaseUrl = env.DATABASE_URL || getEnvValue("DATABASE_URL", env);
-if (!databaseUrl) {
-	record(
-		check(
-			"N4 SELECT 1 latency baseline",
-			false,
-			"DATABASE_URL missing — cannot probe latency",
-		),
-	);
-} else {
+if (databaseUrl) {
 	try {
 		const serverlessUrl = pathToFileURL(
 			resolve(
@@ -530,6 +525,14 @@ if (!databaseUrl) {
 			),
 		);
 	}
+} else {
+	record(
+		check(
+			"N4 SELECT 1 latency baseline",
+			false,
+			"DATABASE_URL missing — cannot probe latency",
+		),
+	);
 }
 
 console.log(

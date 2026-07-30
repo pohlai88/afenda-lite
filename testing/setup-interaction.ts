@@ -23,13 +23,13 @@ if (!window.matchMedia) {
 if (!globalThis.ResizeObserver) {
 	globalThis.ResizeObserver = class {
 		observe() {
-			return undefined;
+			// jsdom layout observer test double.
 		}
 		unobserve() {
-			return undefined;
+			// jsdom layout observer test double.
 		}
 		disconnect() {
-			return undefined;
+			// jsdom layout observer test double.
 		}
 	};
 }

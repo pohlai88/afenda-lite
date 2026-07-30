@@ -5,7 +5,7 @@ import { getTableColumns } from "drizzle-orm";
 import { PgDialect } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
 
-import { tenantEntityPredicate, withOrg } from "../src/client";
+import { orgWhere, tenantEntityPredicate, withOrg } from "../src/client";
 import {
 	HARD_TENANT_ROOT_TABLE_NAMES,
 	HARD_TENANT_ROOT_TABLES,
@@ -24,6 +24,19 @@ import {
 } from "../src/schema/platform";
 
 describe("@afenda/db hard tenant roots (N9 / ARCH-023)", () => {
+	it("builds reusable organization predicates and rejects empty scope", () => {
+		const predicate = orgWhere(mdParty.organizationId, " org-a ");
+		const query = new PgDialect().sqlToQuery(predicate);
+		expect(query.sql).toBe('"md_party"."organization_id" = $1');
+		expect(query.params).toEqual(["org-a"]);
+		expect(() => orgWhere(mdParty.organizationId, "")).toThrow(
+			/non-empty organizationId/,
+		);
+		expect(() => orgWhere(mdParty.organizationId, "   ")).toThrow(
+			/non-empty organizationId/,
+		);
+	});
+
 	it("builds entity identity predicates with both ID and organization", () => {
 		const predicate = tenantEntityPredicate(
 			{ id: mdParty.id, organizationId: mdParty.organizationId },
@@ -236,8 +249,11 @@ describe("@afenda/db hard tenant roots (N9 / ARCH-023)", () => {
 
 describe("withOrg fail-closed (N9)", () => {
 	it("rejects empty orgId before querying", async () => {
+		await expect(withOrg(platformRoleAssignment, "")).rejects.toThrow(
+			/non-empty organizationId/,
+		);
 		await expect(withOrg(platformRoleAssignment, "   ")).rejects.toThrow(
-			/non-empty orgId/,
+			/non-empty organizationId/,
 		);
 	});
 });

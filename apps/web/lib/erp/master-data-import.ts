@@ -1,3 +1,4 @@
+// biome-ignore-all lint/style/noNestedTernary: Exhaustive status and tri-state view mappings remain explicit at their use sites.
 import type { Session } from "@afenda/auth";
 import { createCorrelationId } from "@afenda/http";
 import {
@@ -129,4 +130,3 @@ export async function runApplyMasterDataImport(input: {
 
 	return mapPackageResult(result);
 }
-// biome-ignore-all lint/style/noNestedTernary: Exhaustive status and tri-state view mappings remain explicit at their use sites.

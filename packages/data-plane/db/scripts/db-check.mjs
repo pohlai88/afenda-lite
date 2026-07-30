@@ -4,10 +4,10 @@
  * Does not apply migrations.
  */
 import { spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-
+import { assertAdditiveMigrations } from "./lib/assert-additive-migration.mjs";
 import { assertMigrationJournal } from "./lib/assert-migration-journal.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -30,6 +30,29 @@ if (!journal.ok) {
 }
 console.log("@afenda/db db:check: journal assert OK");
 
+const sqlFiles = readdirSync(drizzleDir).filter((file) =>
+	file.endsWith(".sql"),
+);
+const additive = assertAdditiveMigrations(
+	sqlFiles.map((file) => ({
+		filename: file,
+		sql: readFileSync(join(drizzleDir, file), "utf8"),
+	})),
+);
+if (!additive.ok) {
+	console.error("@afenda/db db:check: forbidden destructive SQL found:");
+	for (const finding of additive.findings) {
+		console.error(`  - ${finding.reason}: ${finding.statement}`);
+	}
+	process.exit(1);
+}
+for (const exception of additive.approvedHistoricalExceptions) {
+	console.log(
+		`@afenda/db db:check: recognized immutable ${exception.status} ${exception.filename} (${exception.appliedHash})`,
+	);
+}
+console.log("@afenda/db db:check: additive migration policy OK");
+
 const check = spawnSync("pnpm", ["exec", "drizzle-kit", "check"], {
 	cwd: root,
 	stdio: "inherit",
@@ -42,7 +65,7 @@ if (check.status !== 0) {
 
 if (!process.env.DATABASE_URL) {
 	console.log(
-		"@afenda/db db:check: journal OK (DATABASE_URL unset — skipped live credential note; S2.1 Neon introspect remains authority for live columns)",
+		"@afenda/db db:check: journal + additive policy OK (DATABASE_URL unset — skipped live credential note; S2.1 Neon introspect remains authority for live columns)",
 	);
 	process.exit(0);
 }
@@ -55,6 +78,6 @@ if (!process.env.DATABASE_URL.includes("-pooler")) {
 }
 
 console.log(
-	"@afenda/db db:check: OK — journal assert + drizzle-kit check; live schema remain validated via S2.1 introspect + generated migrations under drizzle/",
+	"@afenda/db db:check: OK — journal assert + additive policy + drizzle-kit check; live schema remains validated via release-candidate migration evidence",
 );
 process.exit(0);

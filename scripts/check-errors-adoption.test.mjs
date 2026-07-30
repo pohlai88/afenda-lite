@@ -10,6 +10,9 @@ import {
 	parseOutputFormat,
 } from "./check-errors-adoption.mjs";
 
+const ADVISORY_ZERO_PATTERN =
+	/should consume but not consuming \(advisory\) \(0\)/u;
+
 function createFixture() {
 	const root = mkdtempSync(join(tmpdir(), "afenda-errors-adoption-"));
 	mkdirSync(join(root, "apps"), { recursive: true });
@@ -31,7 +34,9 @@ function writePackage(root, packageRoot, pkg, files) {
 
 function findPackage(report, name) {
 	const found = report.packages.find((entry) => entry.name === name);
-	assert.ok(found, `expected package ${name} in report`);
+	if (!found) {
+		throw new Error(`expected package ${name} in report`);
+	}
 	return found;
 }
 
@@ -541,8 +546,5 @@ test("formats human and json modes", () => {
 		violations: [],
 	};
 
-	assert.match(
-		formatHumanReport(report),
-		/should consume but not consuming \(advisory\) \(0\)/u,
-	);
+	assert.match(formatHumanReport(report), ADVISORY_ZERO_PATTERN);
 });

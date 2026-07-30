@@ -1,13 +1,18 @@
 import type { Page } from "@playwright/test";
 import { expect } from "@playwright/test";
 
+const AUTH_LOGIN_PATH_PATTERN = /\/auth\/login/;
+const FORBIDDEN_PATH_PATTERN = /\/403(\/|$)/;
+const ADMIN_PATH_PATTERN = /^\/admin/;
+const OPERATOR_ADMIN_LABEL_PATTERN = /Operator admin/i;
+
 /** Anonymous visit to a protected path must land on `/auth/login`. */
 export async function expectAnonymousRedirectToLogin(
 	page: Page,
 	protectedPath: string,
 ): Promise<void> {
 	await page.goto(protectedPath);
-	await page.waitForURL(/\/auth\/login/, { timeout: 15_000 });
+	await page.waitForURL(AUTH_LOGIN_PATH_PATTERN, { timeout: 15_000 });
 	expect(new URL(page.url()).pathname).toBe("/auth/login");
 }
 
@@ -17,21 +22,21 @@ export async function expectWrongRoleForbidden(
 	forbiddenPath: string,
 ): Promise<void> {
 	await page.goto(forbiddenPath);
-	await page.waitForURL(/\/403(\/|$)/, { timeout: 15_000 });
+	await page.waitForURL(FORBIDDEN_PATH_PATTERN, { timeout: 15_000 });
 	expect(new URL(page.url()).pathname).toBe("/403");
 }
 
 export function expectOperatorHome(pathname: string): void {
-	expect(pathname).toMatch(/^\/admin/);
+	expect(pathname).toMatch(ADMIN_PATH_PATTERN);
 }
 
 export function expectClientHome(pathname: string): void {
 	expect(pathname).toBe("/client");
 }
 
-export type OperatorShellNavExpectation = {
+export interface OperatorShellNavExpectation {
 	admin: boolean;
-};
+}
 
 /**
  * N16 — assert permission-filtered operator platform shell sidebar links.
@@ -41,7 +46,7 @@ export async function expectOperatorShellNav(
 	expectation: OperatorShellNavExpectation,
 ): Promise<void> {
 	const adminLink = page.locator('a[href="/admin"]').filter({
-		hasText: /Operator admin/i,
+		hasText: OPERATOR_ADMIN_LABEL_PATTERN,
 	});
 
 	if (expectation.admin) {

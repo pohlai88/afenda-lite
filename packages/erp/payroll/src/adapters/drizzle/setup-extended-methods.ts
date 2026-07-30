@@ -22,6 +22,7 @@ import {
 	parsePayrollStatutoryRuleId,
 } from "../../brands";
 import type { MutationPorts } from "../../ports";
+import { payrollJsonObjectSchema } from "../../schemas/common";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import {
 	isPostgresUniqueViolation,
@@ -228,10 +229,13 @@ function mapStatutoryRuleRow(
 	if (!payGroupId.ok) {
 		return payGroupId;
 	}
-	const configJson =
-		typeof row.configJson === "object" && row.configJson !== null
-			? (row.configJson as Record<string, unknown>)
-			: {};
+	const configJson = payrollJsonObjectSchema.safeParse(row.configJson);
+	if (!configJson.success) {
+		return mapPersistenceFailure(
+			configJson.error,
+			"Persisted payroll statutory rule configuration is invalid",
+		);
+	}
 	return ok({
 		id: id.data,
 		organizationId: row.organizationId,
@@ -239,7 +243,7 @@ function mapStatutoryRuleRow(
 		code: row.code,
 		name: row.name,
 		jurisdictionCode: row.jurisdictionCode,
-		configJson,
+		configJson: configJson.data,
 		ruleVersion: row.ruleVersion,
 		status: row.status as PayrollStatutoryRule["status"],
 		effectiveFrom: row.effectiveFrom,
