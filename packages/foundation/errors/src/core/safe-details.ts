@@ -18,10 +18,14 @@ const MAX_ARRAY_LENGTH = 50;
 const MAX_STRING_LENGTH = 2000;
 
 const BLOCKED_KEY_PATTERN =
-	/^(?:password|passwd|secret|client[_-]?secret|token|access[_-]?token|refresh[_-]?token|authorization|proxy[_-]?authorization|cookie|set[_-]?cookie|api[_-]?key|database[_-]?url|connection[_-]?string|private[_-]?key|cause|stack|sql|query|statement|parameters?)$/i;
+	/(?:password|passwd|secret|token|authorization|cookie|api[_-]?key|database[_-]?url|connection[_-]?string|private[_-]?key|cause|stack|sql|query|statement|parameters?)/i;
 
 const SQL_LEAK_PATTERN =
-	/(?:\b(?:select|insert|update|delete)\b[\s\S]*\b(?:from|into|set|where)\b)|(?:duplicate key value violates)|(?:relation "[^"]+" does not exist)|(?:column "[^"]+" does not exist)/i;
+	/(?:\b(?:select|insert|update|delete|merge|truncate|create|alter|drop|grant|revoke|copy|call|execute)\b)|(?:duplicate key value violates)|(?:relation "[^"]+" does not exist)|(?:column "[^"]+" does not exist)/i;
+const CONNECTION_URL_PATTERN =
+	/\b(?:postgres(?:ql)?|mysql|mariadb|mongodb(?:\+srv)?|redis|rediss):\/\/[^\s]+/i;
+const SECRET_VALUE_PATTERN =
+	/(?:\b(?:password|passwd|secret|token|api[_-]?key)\b\s*[:=])|(?:-----BEGIN [A-Z ]*PRIVATE KEY-----)/i;
 
 function isPlainRecord(value: unknown): value is Record<string, unknown> {
 	if (typeof value !== "object" || value === null || Array.isArray(value)) {
@@ -59,7 +63,11 @@ function sanitizeScalar(value: unknown): SafeDetailScalar | undefined {
 		return Number.isFinite(value) ? value : undefined;
 	}
 	if (typeof value === "string") {
-		if (SQL_LEAK_PATTERN.test(value)) {
+		if (
+			SQL_LEAK_PATTERN.test(value) ||
+			CONNECTION_URL_PATTERN.test(value) ||
+			SECRET_VALUE_PATTERN.test(value)
+		) {
 			return;
 		}
 		return value.length <= MAX_STRING_LENGTH

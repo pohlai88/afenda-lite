@@ -49,6 +49,37 @@ describe("@afenda/audit differ", () => {
 		});
 	});
 
+	it("matches sensitive keys independently of case and separators", () => {
+		const masked = maskSensitiveData({
+			password_hash: "hash",
+			ClientSecret: { nested: "credential" },
+			headers: { AUTHORIZATION: "Bearer credential" },
+			items: [{ session_token: 42 }],
+		});
+
+		expect(masked).toEqual({
+			password_hash: "***",
+			ClientSecret: "***",
+			headers: { AUTHORIZATION: "***" },
+			items: [{ session_token: "***" }],
+		});
+	});
+
+	it("masks sensitive values nested inside changed fields", () => {
+		const changes = computeDiff(
+			{ profile: { authorization: "Bearer old", label: "before" } },
+			{ profile: { authorization: "Bearer new", label: "after" } },
+		);
+
+		expect(changes).toEqual([
+			{
+				field: "profile",
+				oldValue: { authorization: "***", label: "before" },
+				newValue: { authorization: "***", label: "after" },
+			},
+		]);
+	});
+
 	it("uses wildcard field when either side is nullish", () => {
 		expect(computeDiff(null, { a: 1 })).toEqual([
 			{ field: "*", oldValue: null, newValue: { a: 1 } },

@@ -128,9 +128,8 @@ export async function revokeOrgRoleWithAudit(
 	});
 	const newValueJson = JSON.stringify({ active: false });
 
-	const [rows] = await runNeonHttpTransaction<[RevokeAuditedSqlRow[]]>(
-		(sql) => [
-			sql`
+	const [rows] = await runNeonHttpTransaction((sql) => [
+		sql`
 				WITH mutated AS (
 					UPDATE platform_role_assignment
 					SET
@@ -176,8 +175,7 @@ export async function revokeOrgRoleWithAudit(
 				FROM mutated
 				INNER JOIN audited ON audited.organization_id = mutated.organization_id
 			`,
-		],
-	);
+	]);
 
 	const [row] = rows;
 	if (!row) {

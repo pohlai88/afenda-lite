@@ -295,6 +295,13 @@
       "when": 1785294000000,
       "tag": "0041_sales_rebuild_20260728",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1785408608715,
+      "tag": "0042_platform_tenant_access_indexes",
+      "breakpoints": true
     }
   ]
 }

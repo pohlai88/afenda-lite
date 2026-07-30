@@ -18,10 +18,10 @@ function analyze(source) {
 
 test("loads hard-tenant identifiers from the package SSOT", () => {
 	const identifiers = loadHardTenantTableIdentifiers(`
-		export const HARD_TENANT_ROOT_TABLES = {
-			platformRoleAssignment,
-			joinedTenant,
-		} as const;
+		export const HARD_TENANT_ROOT_ENTRIES = [
+			["platform_role_assignment", platformRoleAssignment],
+			["joined_tenant", joinedTenant],
+		] as const;
 	`);
 	assert.deepEqual(
 		[...identifiers],
@@ -37,6 +37,23 @@ test("accepts an entity mutation with identity and organization predicates", () 
 		));
 	`);
 	assert.deepEqual(findings, []);
+});
+
+test("accepts a tenant insert that stamps organization ownership", () => {
+	const findings = analyze(`
+		await db.insert(platformRoleAssignment).values({
+			id: assignmentId,
+			organizationId,
+		});
+	`);
+	assert.deepEqual(findings, []);
+});
+
+test("rejects a tenant insert without organization ownership", () => {
+	const findings = analyze(`
+		await db.insert(platformRoleAssignment).values({ id: assignmentId });
+	`);
+	assert.equal(findings[0]?.rule, "tenant-insert-missing-organization");
 });
 
 test("rejects ID-only mutation predicates", () => {

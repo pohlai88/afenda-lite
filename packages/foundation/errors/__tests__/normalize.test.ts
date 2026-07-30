@@ -29,14 +29,15 @@ describe("normalizeUnknown", () => {
 		});
 	});
 
-	it("uses a trimmed fallback message", () => {
+	it("does not expose a caller fallback for unknown failures", () => {
 		const normalized = normalizeUnknown(
 			new Error("password=super-secret connection failed"),
 			"  Request failed  ",
 		);
 		expect(normalized.code).toBe("INTERNAL_ERROR");
-		expect(normalized.message).toBe("Request failed");
+		expect(normalized.message).toBe("An unexpected error occurred");
 		expect(normalized.isOperational).toBe(false);
+		expect(normalized.operation).toBe("Request failed");
 		expect(normalized.cause).toBeInstanceOf(Error);
 	});
 
@@ -70,7 +71,26 @@ describe("normalizeUnknown", () => {
 			"fallback",
 		);
 		expect(normalized.code).toBe("INTERNAL_ERROR");
-		expect(normalized.message).toBe("fallback");
+		expect(normalized.message).toBe("An unexpected error occurred");
 		expect(normalized.message).not.toMatch(/duplicate key/i);
+	});
+
+	it("does not trust a forged AppError marker", () => {
+		const source = {
+			[Symbol.for("@afenda/errors/AppError")]: true,
+			name: "AppError",
+			code: "INTERNAL_ERROR",
+			message: "DATABASE_URL=postgres://admin:secret@host/db",
+			isOperational: false,
+		};
+
+		const normalized = normalizeUnknown(source);
+
+		expect(normalized).toMatchObject({
+			code: "INTERNAL_ERROR",
+			message: "An unexpected error occurred",
+			isOperational: false,
+			cause: source,
+		});
 	});
 });

@@ -86,8 +86,3 @@ export function requireDirectMigrationDatabaseUrl(): string {
 	}
 	return raw;
 }
-
-/** Product-compatible alias — prefer `requireProductDatabaseUrl` in new code. */
-export function requireDatabaseUrl(): string {
-	return requireProductDatabaseUrl();
-}

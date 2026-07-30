@@ -1,6 +1,12 @@
 import { randomUUID } from "node:crypto";
 
 import {
+	type PreparedDerivedEntityAuditInsertValues,
+	type PreparedTransactionalAuditInsertValues,
+	prepareDerivedEntityAuditInsertValues,
+	prepareTransactionalAuditInsertValues,
+} from "@afenda/audit";
+import {
 	and,
 	db,
 	desc,
@@ -52,7 +58,6 @@ import {
 	parseHumanResourcesTalentProfileId,
 	parseHumanResourcesTalentProfileMobilityId,
 } from "../../brands";
-import { fieldChangeJson } from "../../shared/audit-facts";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import {
 	conflict,
@@ -61,6 +66,7 @@ import {
 	notFound,
 } from "../../shared/domain-guards";
 import type { EmploymentStatus } from "../../shared/employment-status";
+import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 import {
 	isCreateIdempotencyUniqueViolation,
 	isPostgresUniqueViolation,
@@ -139,6 +145,86 @@ import type {
 	TalentProfileMobility,
 	TalentProfileMobilityListPage,
 } from "../../types";
+
+const TALENT_AUDIT_SOURCE = "human-resources.talent-drizzle";
+
+type TalentAuditEntity =
+	| "hr_career_plan"
+	| "hr_career_plan_action"
+	| "hr_competency"
+	| "hr_competency_assessment"
+	| "hr_job_competency"
+	| "hr_succession_candidate"
+	| "hr_succession_plan"
+	| "hr_talent_critical_role_readiness"
+	| "hr_talent_pool"
+	| "hr_talent_pool_member"
+	| "hr_talent_profile"
+	| "hr_talent_profile_assessment"
+	| "hr_talent_profile_mobility";
+
+interface TalentAuditInput {
+	action: "CREATE" | "UPDATE";
+	actorUserId: string;
+	correlationId: string;
+	entity: TalentAuditEntity;
+	entityId: string;
+	meta: HumanResourcesMutationMeta;
+	newValue?: Record<string, unknown> | null;
+	oldValue?: Record<string, unknown> | null;
+	organizationId: string;
+	reasonCode: string;
+}
+
+function talentAuditEventContext(input: {
+	correlationId: string;
+	meta: HumanResourcesMutationMeta;
+	reasonCode: string;
+}) {
+	return {
+		version: 1 as const,
+		outcome: "SUCCEEDED" as const,
+		source: TALENT_AUDIT_SOURCE,
+		causationId:
+			input.meta.causationId ??
+			input.meta.idempotencyKey ??
+			input.correlationId,
+		reasonCode: input.reasonCode,
+	};
+}
+
+function prepareTalentAudit(
+	input: TalentAuditInput,
+): Result<PreparedTransactionalAuditInsertValues> {
+	return prepareTransactionalAuditInsertValues({
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		correlationId: input.correlationId,
+		module: "human-resources",
+		entity: input.entity,
+		entityId: input.entityId,
+		action: input.action,
+		oldValue: input.oldValue ?? null,
+		newValue: input.newValue ?? null,
+		eventContext: talentAuditEventContext(input),
+	});
+}
+
+function prepareDerivedTalentAudit(
+	input: Omit<TalentAuditInput, "entityId">,
+): Result<PreparedDerivedEntityAuditInsertValues> {
+	return prepareDerivedEntityAuditInsertValues({
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		correlationId: input.correlationId,
+		module: "human-resources",
+		entity: input.entity,
+		action: input.action,
+		oldValue: input.oldValue ?? null,
+		newValue: input.newValue ?? null,
+		eventContext: talentAuditEventContext(input),
+	});
+}
 
 interface TalentHost {
 	findOpenEmploymentByEmployee: HumanResourcesStore["findOpenEmploymentByEmployee"];
@@ -1347,12 +1433,26 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		if (!brandedId.ok) {
 			return brandedId;
 		}
+		const preparedAudit = prepareTalentAudit({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_competency",
+			entityId: brandedId.data,
+			action: "CREATE",
+			newValue: { status: "active", version: 1 },
+			meta,
+			reasonCode: "COMPETENCY_CREATED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[CompetencySqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							INSERT INTO hr_competency (
 								id, organization_id, code, name, description, category,
@@ -1375,18 +1475,16 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
-							SELECT
-								${auditId}, organization_id, created_by, ${meta.correlationId},
-								'human-resources', 'hr_competency', id, 'CREATE', '[]'::jsonb
+							SELECT 								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 								${audit.correlationId}, ${audit.module}, ${audit.entity}, 								${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb, 								${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 								${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return conflict("Competency with this code already exists");
@@ -1445,12 +1543,30 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		const nextCategory =
 			input.category === undefined ? existing.data.category : input.category;
 		const nextVersion = input.expectedVersion + 1;
+		const preparedAudit = prepareTalentAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_competency",
+			entityId: input.competencyId,
+			action: "UPDATE",
+			oldValue: {
+				status: existing.data.status,
+				version: input.expectedVersion,
+			},
+			newValue: { status: existing.data.status, version: nextVersion },
+			meta,
+			reasonCode: "COMPETENCY_UPDATED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[CompetencySqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_competency
 							SET name = ${nextName},
@@ -1467,18 +1583,16 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
-							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_competency', id, 'UPDATE', '[]'::jsonb
+							SELECT 								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 								${audit.correlationId}, ${audit.module}, ${audit.entity}, 								${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb, 								${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 								${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -1519,12 +1633,30 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		}
 
 		const nextVersion = input.expectedVersion + 1;
+		const preparedAudit = prepareTalentAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_competency",
+			entityId: input.competencyId,
+			action: "UPDATE",
+			oldValue: {
+				status: existing.data.status,
+				version: input.expectedVersion,
+			},
+			newValue: { status: "retired", version: nextVersion },
+			meta,
+			reasonCode: "COMPETENCY_RETIRED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[CompetencySqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_competency
 							SET status = 'retired',
@@ -1540,18 +1672,16 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
-							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_competency', id, 'UPDATE', '[]'::jsonb
+							SELECT 								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 								${audit.correlationId}, ${audit.module}, ${audit.entity}, 								${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb, 								${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 								${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -1658,12 +1788,26 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		if (!brandedId.ok) {
 			return brandedId;
 		}
+		const preparedAudit = prepareTalentAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_job_competency",
+			entityId: brandedId.data,
+			action: "CREATE",
+			newValue: { status: "active", version: 1 },
+			meta,
+			reasonCode: "JOB_COMPETENCY_MAPPED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[JobCompetencySqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							INSERT INTO hr_job_competency (
 								id, organization_id, job_id, competency_id, required_level,
@@ -1691,18 +1835,16 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
-							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_job_competency', id, 'CREATE', '[]'::jsonb
+							SELECT 								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 								${audit.correlationId}, ${audit.module}, ${audit.entity}, 								${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb, 								${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 								${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return conflict("Competency is already mapped to this job");
@@ -1749,10 +1891,28 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			}
 
 			const nextVersion = input.expectedVersion + 1;
+			const preparedAudit = prepareTalentAudit({
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_job_competency",
+				entityId: input.jobCompetencyId,
+				action: "UPDATE",
+				oldValue: {
+					status: mapped.data.status,
+					version: input.expectedVersion,
+				},
+				newValue: { status: "removed", version: nextVersion },
+				meta,
+				reasonCode: "JOB_COMPETENCY_REMOVED",
+			});
+			if (!preparedAudit.ok) {
+				return preparedAudit;
+			}
+			const audit = preparedAudit.data;
 			const auditId = randomUUID();
-			const [rows] = await runNeonHttpTransaction<[JobCompetencySqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_job_competency
 							SET status = 'removed',
@@ -1768,18 +1928,16 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
-							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_job_competency', id, 'UPDATE', '[]'::jsonb
+							SELECT 								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 								${audit.correlationId}, ${audit.module}, ${audit.entity}, 								${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb, 								${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 								${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const [updated] = rows;
 			if (!updated) {
 				return missAfterOptimisticUpdate({
@@ -1984,6 +2142,21 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		if (!brandedId.ok) {
 			return brandedId;
 		}
+		const preparedAudit = prepareTalentAudit({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_competency_assessment",
+			entityId: brandedId.data,
+			action: "CREATE",
+			newValue: { status: "current", version: 1 },
+			meta,
+			reasonCode: "COMPETENCY_ASSESSMENT_CREATED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const payloadJson = eventPayloadJson({
@@ -1995,9 +2168,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[CompetencyAssessmentSqlRow[]]
-			>((sqlTag) => [
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
 				sqlTag`
 					WITH competency AS (
 						SELECT id, scale_code
@@ -2034,11 +2205,10 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
-						SELECT
-							${auditId}, organization_id, created_by, ${meta.correlationId},
-							'human-resources', 'hr_competency_assessment', id, 'CREATE', '[]'::jsonb
+						SELECT 							${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 							${audit.correlationId}, ${audit.module}, ${audit.entity}, 							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb, 							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -2163,6 +2333,41 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		if (!brandedId.ok) {
 			return brandedId;
 		}
+		const preparedSupersededAudit = prepareTalentAudit({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_competency_assessment",
+			entityId: record.sourceAssessmentId,
+			action: "UPDATE",
+			oldValue: { status: source.status, version: record.expectedVersion },
+			newValue: {
+				status: "superseded",
+				version: record.expectedVersion + 1,
+			},
+			meta,
+			reasonCode: "COMPETENCY_ASSESSMENT_SUPERSEDED",
+		});
+		if (!preparedSupersededAudit.ok) {
+			return preparedSupersededAudit;
+		}
+		const supersededAudit = preparedSupersededAudit.data;
+		const preparedAudit = prepareTalentAudit({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_competency_assessment",
+			entityId: brandedId.data,
+			action: "CREATE",
+			newValue: { status: "current", version: 1 },
+			meta,
+			reasonCode: "COMPETENCY_ASSESSMENT_SUCCESSOR_CREATED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
+		const supersededAuditId = randomUUID();
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const payloadJson = eventPayloadJson({
@@ -2175,9 +2380,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		const nextSourceVersion = record.expectedVersion + 1;
 
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[CompetencyAssessmentSqlRow[]]
-			>((sqlTag) => [
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
 				sqlTag`
 					WITH source AS (
 						SELECT *
@@ -2197,6 +2400,25 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						FROM source s
 						WHERE ca.id = s.id
 						RETURNING s.*
+					),
+					superseded_audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module, entity,
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
+						)
+						SELECT
+							${supersededAuditId}, ${supersededAudit.organizationId},
+							${supersededAudit.actorUserId}, ${supersededAudit.correlationId},
+							${supersededAudit.module}, ${supersededAudit.entity},
+							${supersededAudit.entityId}, ${supersededAudit.action},
+							${supersededAudit.changesJson}::jsonb,
+							${supersededAudit.oldValueJson}::jsonb,
+							${supersededAudit.newValueJson}::jsonb,
+							${supersededAudit.metadataJson}::jsonb,
+							${supersededAudit.ipAddress}, ${supersededAudit.userAgent}
+						FROM superseded
+						RETURNING id
 					),
 					mutated AS (
 						INSERT INTO hr_competency_assessment (
@@ -2219,11 +2441,10 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
-						SELECT
-							${auditId}, organization_id, created_by, ${meta.correlationId},
-							'human-resources', 'hr_competency_assessment', id, 'CREATE', '[]'::jsonb
+						SELECT 							${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 							${audit.correlationId}, ${audit.module}, ${audit.entity}, 							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb, 							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -2240,7 +2461,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						FROM mutated
 						RETURNING id
 					)
-					SELECT mutated.* FROM mutated, audited, outboxed
+					SELECT mutated.* FROM mutated, superseded_audited, audited, outboxed
 				`,
 			]);
 			const [row] = rows;
@@ -2301,11 +2522,25 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		}
 
 		const nextVersion = input.expectedVersion + 1;
-		const changesJson = fieldChangeJson(
-			"status",
-			existing.data.status,
-			"expired",
-		);
+		const preparedAudit = prepareTalentAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_competency_assessment",
+			entityId: input.assessmentId,
+			action: "UPDATE",
+			oldValue: {
+				status: existing.data.status,
+				version: input.expectedVersion,
+			},
+			newValue: { status: "expired", version: nextVersion },
+			meta,
+			reasonCode: "COMPETENCY_ASSESSMENT_EXPIRED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const payloadJson = eventPayloadJson({
@@ -2316,9 +2551,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[CompetencyAssessmentSqlRow[]]
-			>((sqlTag) => [
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
 				sqlTag`
 					WITH mutated AS (
 						UPDATE hr_competency_assessment
@@ -2335,12 +2568,10 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
-						SELECT
-							${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-							'human-resources', 'hr_competency_assessment', id, 'UPDATE',
-							${changesJson}::jsonb
+						SELECT 							${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 							${audit.correlationId}, ${audit.module}, ${audit.entity}, 							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb, 							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -2521,6 +2752,21 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		if (!brandedId.ok) {
 			return brandedId;
 		}
+		const preparedAudit = prepareTalentAudit({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_talent_profile",
+			entityId: brandedId.data,
+			action: "CREATE",
+			newValue: { status: "active", version: 1 },
+			meta,
+			reasonCode: "TALENT_PROFILE_CREATED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const payloadJson = eventPayloadJson({
@@ -2532,9 +2778,8 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[TalentProfileSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							INSERT INTO hr_talent_profile (
 								id, organization_id, employee_id, summary, current_classification,
@@ -2556,11 +2801,10 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
-							SELECT
-								${auditId}, organization_id, created_by, ${meta.correlationId},
-								'human-resources', 'hr_talent_profile', id, 'CREATE', '[]'::jsonb
+							SELECT 								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 								${audit.correlationId}, ${audit.module}, ${audit.entity}, 								${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb, 								${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 								${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -2579,8 +2823,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return conflict("Talent profile already exists for this employee");
@@ -2638,6 +2881,25 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		const nextSummary =
 			input.summary === undefined ? existing.data.summary : input.summary;
 		const nextVersion = input.expectedVersion + 1;
+		const preparedAudit = prepareTalentAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_talent_profile",
+			entityId: input.talentProfileId,
+			action: "UPDATE",
+			oldValue: {
+				status: existing.data.status,
+				version: input.expectedVersion,
+			},
+			newValue: { status: existing.data.status, version: nextVersion },
+			meta,
+			reasonCode: "TALENT_PROFILE_UPDATED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const payloadJson = eventPayloadJson({
@@ -2649,9 +2911,8 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[TalentProfileSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_talent_profile
 							SET summary = ${nextSummary},
@@ -2667,11 +2928,10 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
-							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_talent_profile', id, 'UPDATE', '[]'::jsonb
+							SELECT 								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 								${audit.correlationId}, ${audit.module}, ${audit.entity}, 								${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb, 								${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 								${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -2690,8 +2950,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -2729,12 +2988,30 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		}
 
 		const nextVersion = input.expectedVersion + 1;
+		const preparedAudit = prepareTalentAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_talent_profile",
+			entityId: input.talentProfileId,
+			action: "UPDATE",
+			oldValue: {
+				status: existing.data.status,
+				version: input.expectedVersion,
+			},
+			newValue: { status: "archived", version: nextVersion },
+			meta,
+			reasonCode: "TALENT_PROFILE_ARCHIVED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[TalentProfileSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_talent_profile
 							SET status = 'archived',
@@ -2750,18 +3027,16 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
-							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_talent_profile', id, 'UPDATE', '[]'::jsonb
+							SELECT 								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 								${audit.correlationId}, ${audit.module}, ${audit.entity}, 								${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb, 								${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 								${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -2828,12 +3103,25 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		if (!brandedId.ok) {
 			return brandedId;
 		}
+		const preparedAudit = prepareTalentAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_talent_profile_assessment",
+			entityId: brandedId.data,
+			action: "CREATE",
+			newValue: { status: "draft", version: 1 },
+			meta,
+			reasonCode: "TALENT_PROFILE_ASSESSMENT_RECORDED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[TalentProfileAssessmentSqlRow[]]
-			>((sqlTag) => [
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
 				sqlTag`
 					WITH mutated AS (
 						INSERT INTO hr_talent_profile_assessment (
@@ -2857,11 +3145,10 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
-						SELECT
-							${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-							'human-resources', 'hr_talent_profile_assessment', id, 'CREATE', '[]'::jsonb
+						SELECT 							${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 							${audit.correlationId}, ${audit.module}, ${audit.entity}, 							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb, 							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					)
@@ -2916,11 +3203,59 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			}
 
 			const nextVersion = input.expectedVersion + 1;
+			const preparedPreviousAssessmentsAudit = prepareDerivedTalentAudit({
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_talent_profile_assessment",
+				action: "UPDATE",
+				oldValue: { status: "confirmed" },
+				newValue: { status: "superseded" },
+				meta,
+				reasonCode: "PREVIOUS_PROFILE_ASSESSMENTS_SUPERSEDED",
+			});
+			if (!preparedPreviousAssessmentsAudit.ok) {
+				return preparedPreviousAssessmentsAudit;
+			}
+			const previousAssessmentsAudit = preparedPreviousAssessmentsAudit.data;
+			const preparedAudit = prepareTalentAudit({
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_talent_profile_assessment",
+				entityId: input.assessmentId,
+				action: "UPDATE",
+				oldValue: {
+					status: loaded.data.status,
+					version: input.expectedVersion,
+				},
+				newValue: { status: "confirmed", version: nextVersion },
+				meta,
+				reasonCode: "TALENT_PROFILE_ASSESSMENT_CONFIRMED",
+			});
+			if (!preparedAudit.ok) {
+				return preparedAudit;
+			}
+			const audit = preparedAudit.data;
+			const preparedProfileAudit = prepareTalentAudit({
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_talent_profile",
+				entityId: loaded.data.talentProfileId,
+				action: "UPDATE",
+				newValue: { classificationUpdated: true },
+				meta,
+				reasonCode: "TALENT_PROFILE_CLASSIFICATION_UPDATED",
+			});
+			if (!preparedProfileAudit.ok) {
+				return preparedProfileAudit;
+			}
+			const profileAudit = preparedProfileAudit.data;
 			const auditId = randomUUID();
+			const profileAuditId = randomUUID();
 
-			const [rows] = await runNeonHttpTransaction<
-				[TalentProfileAssessmentSqlRow[]]
-			>((sqlTag) => [
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
 				sqlTag`
 					WITH target AS (
 						SELECT *
@@ -2941,6 +3276,26 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 							AND tpa.talent_profile_id = t.talent_profile_id
 							AND tpa.status = 'confirmed'
 						RETURNING tpa.id
+					),
+					previous_assessments_audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module, entity,
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
+						)
+						SELECT
+							gen_random_uuid(), ${previousAssessmentsAudit.organizationId},
+							${previousAssessmentsAudit.actorUserId},
+							${previousAssessmentsAudit.correlationId},
+							${previousAssessmentsAudit.module}, ${previousAssessmentsAudit.entity},
+							id, ${previousAssessmentsAudit.action},
+							${previousAssessmentsAudit.changesJson}::jsonb,
+							${previousAssessmentsAudit.oldValueJson}::jsonb,
+							${previousAssessmentsAudit.newValueJson}::jsonb,
+							${previousAssessmentsAudit.metadataJson}::jsonb,
+							${previousAssessmentsAudit.ipAddress}, ${previousAssessmentsAudit.userAgent}
+						FROM supersede_prev
+						RETURNING id
 					),
 					confirmed AS (
 						UPDATE hr_talent_profile_assessment tpa
@@ -2964,18 +3319,36 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 							AND tp.organization_id = c.organization_id
 						RETURNING tp.id
 					),
+					profile_audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module, entity,
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
+						)
+						SELECT
+							${profileAuditId}, ${profileAudit.organizationId},
+							${profileAudit.actorUserId}, ${profileAudit.correlationId},
+							${profileAudit.module}, ${profileAudit.entity}, id,
+							${profileAudit.action}, ${profileAudit.changesJson}::jsonb,
+							${profileAudit.oldValueJson}::jsonb,
+							${profileAudit.newValueJson}::jsonb,
+							${profileAudit.metadataJson}::jsonb,
+							${profileAudit.ipAddress}, ${profileAudit.userAgent}
+						FROM profile_updated
+						RETURNING id
+					),
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
-						SELECT
-							${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-							'human-resources', 'hr_talent_profile_assessment', id, 'UPDATE', '[]'::jsonb
+						SELECT 							${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 							${audit.correlationId}, ${audit.module}, ${audit.entity}, 							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb, 							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM confirmed
 						RETURNING id
 					)
-					SELECT confirmed.* FROM confirmed, profile_updated, audited
+					SELECT confirmed.* FROM confirmed, profile_updated, profile_audited, audited
+					LEFT JOIN previous_assessments_audited ON true
 				`,
 			]);
 			const [row] = rows;
@@ -3117,12 +3490,40 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		if (!brandedId.ok) {
 			return brandedId;
 		}
+		const preparedPreviousMobilityAudit = prepareDerivedTalentAudit({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_talent_profile_mobility",
+			action: "UPDATE",
+			oldValue: { status: "current" },
+			newValue: { status: "superseded" },
+			meta,
+			reasonCode: "PREVIOUS_TALENT_MOBILITY_SUPERSEDED",
+		});
+		if (!preparedPreviousMobilityAudit.ok) {
+			return preparedPreviousMobilityAudit;
+		}
+		const previousMobilityAudit = preparedPreviousMobilityAudit.data;
+		const preparedAudit = prepareTalentAudit({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_talent_profile_mobility",
+			entityId: brandedId.data,
+			action: "CREATE",
+			newValue: { status: "current", version: 1 },
+			meta,
+			reasonCode: "TALENT_PROFILE_MOBILITY_RECORDED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[TalentProfileMobilitySqlRow[]]
-			>((sqlTag) => [
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
 				sqlTag`
 					WITH profile AS (
 						SELECT id
@@ -3143,6 +3544,26 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 							AND m.dimension = ${record.dimension}
 							AND m.status = 'current'
 						RETURNING m.id
+					),
+					previous_mobility_audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module, entity,
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
+						)
+						SELECT
+							gen_random_uuid(), ${previousMobilityAudit.organizationId},
+							${previousMobilityAudit.actorUserId},
+							${previousMobilityAudit.correlationId},
+							${previousMobilityAudit.module}, ${previousMobilityAudit.entity}, id,
+							${previousMobilityAudit.action},
+							${previousMobilityAudit.changesJson}::jsonb,
+							${previousMobilityAudit.oldValueJson}::jsonb,
+							${previousMobilityAudit.newValueJson}::jsonb,
+							${previousMobilityAudit.metadataJson}::jsonb,
+							${previousMobilityAudit.ipAddress}, ${previousMobilityAudit.userAgent}
+						FROM supersede_prev
+						RETURNING id
 					),
 					supersession AS (
 						SELECT count(*) AS superseded_count FROM supersede_prev
@@ -3166,15 +3587,15 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
-						SELECT
-							${auditId}, organization_id, ${record.createdBy}, ${meta.correlationId},
-							'human-resources', 'hr_talent_profile_mobility', id, 'CREATE', '[]'::jsonb
+						SELECT 							${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 							${audit.correlationId}, ${audit.module}, ${audit.entity}, 							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb, 							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					)
 					SELECT mutated.* FROM mutated, audited
+					LEFT JOIN previous_mobility_audited ON true
 				`,
 			]);
 			const [row] = rows;
@@ -3345,12 +3766,40 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		if (!brandedId.ok) {
 			return brandedId;
 		}
+		const preparedPreviousReadinessAudit = prepareDerivedTalentAudit({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_talent_critical_role_readiness",
+			action: "UPDATE",
+			oldValue: { status: "current" },
+			newValue: { status: "superseded" },
+			meta,
+			reasonCode: "PREVIOUS_CRITICAL_ROLE_READINESS_SUPERSEDED",
+		});
+		if (!preparedPreviousReadinessAudit.ok) {
+			return preparedPreviousReadinessAudit;
+		}
+		const previousReadinessAudit = preparedPreviousReadinessAudit.data;
+		const preparedAudit = prepareTalentAudit({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_talent_critical_role_readiness",
+			entityId: brandedId.data,
+			action: "CREATE",
+			newValue: { status: "current", version: 1 },
+			meta,
+			reasonCode: "CRITICAL_ROLE_READINESS_RECORDED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[TalentCriticalRoleReadinessSqlRow[]]
-			>((sqlTag) => [
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
 				sqlTag`
 					WITH profile AS (
 						SELECT id
@@ -3378,6 +3827,26 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 							AND r.status = 'current'
 						RETURNING r.id
 					),
+					previous_readiness_audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module, entity,
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
+						)
+						SELECT
+							gen_random_uuid(), ${previousReadinessAudit.organizationId},
+							${previousReadinessAudit.actorUserId},
+							${previousReadinessAudit.correlationId},
+							${previousReadinessAudit.module}, ${previousReadinessAudit.entity},
+							id, ${previousReadinessAudit.action},
+							${previousReadinessAudit.changesJson}::jsonb,
+							${previousReadinessAudit.oldValueJson}::jsonb,
+							${previousReadinessAudit.newValueJson}::jsonb,
+							${previousReadinessAudit.metadataJson}::jsonb,
+							${previousReadinessAudit.ipAddress}, ${previousReadinessAudit.userAgent}
+						FROM supersede_prev
+						RETURNING id
+					),
 					supersession AS (
 						SELECT count(*) AS superseded_count FROM supersede_prev
 					),
@@ -3400,15 +3869,15 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
-						SELECT
-							${auditId}, organization_id, ${record.createdBy}, ${meta.correlationId},
-							'human-resources', 'hr_talent_critical_role_readiness', id, 'CREATE', '[]'::jsonb
+						SELECT 							${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 							${audit.correlationId}, ${audit.module}, ${audit.entity}, 							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb, 							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					)
 					SELECT mutated.* FROM mutated, audited
+					LEFT JOIN previous_readiness_audited ON true
 				`,
 			]);
 			const [row] = rows;
@@ -3570,12 +4039,26 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		if (!brandedId.ok) {
 			return brandedId;
 		}
+		const preparedAudit = prepareTalentAudit({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_talent_pool",
+			entityId: brandedId.data,
+			action: "CREATE",
+			newValue: { status: "open", version: 1 },
+			meta,
+			reasonCode: "TALENT_POOL_CREATED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[TalentPoolSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							INSERT INTO hr_talent_pool (
 								id, organization_id, code, name, description, status,
@@ -3597,18 +4080,16 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
-							SELECT
-								${auditId}, organization_id, created_by, ${meta.correlationId},
-								'human-resources', 'hr_talent_pool', id, 'CREATE', '[]'::jsonb
+							SELECT 								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 								${audit.correlationId}, ${audit.module}, ${audit.entity}, 								${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb, 								${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 								${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return conflict("Talent pool with this code already exists");
@@ -3669,12 +4150,30 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				? existing.data.description
 				: input.description;
 		const nextVersion = input.expectedVersion + 1;
+		const preparedAudit = prepareTalentAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_talent_pool",
+			entityId: input.poolId,
+			action: "UPDATE",
+			oldValue: {
+				status: existing.data.status,
+				version: input.expectedVersion,
+			},
+			newValue: { status: existing.data.status, version: nextVersion },
+			meta,
+			reasonCode: "TALENT_POOL_UPDATED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[TalentPoolSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_talent_pool
 							SET name = ${nextName},
@@ -3691,18 +4190,16 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
-							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_talent_pool', id, 'UPDATE', '[]'::jsonb
+							SELECT 								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 								${audit.correlationId}, ${audit.module}, ${audit.entity}, 								${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb, 								${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 								${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -3740,12 +4237,30 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		}
 
 		const nextVersion = input.expectedVersion + 1;
+		const preparedAudit = prepareTalentAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_talent_pool",
+			entityId: input.poolId,
+			action: "UPDATE",
+			oldValue: {
+				status: existing.data.status,
+				version: input.expectedVersion,
+			},
+			newValue: { status: "closed", version: nextVersion },
+			meta,
+			reasonCode: "TALENT_POOL_CLOSED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[TalentPoolSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_talent_pool
 							SET status = 'closed',
@@ -3761,18 +4276,16 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
-							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_talent_pool', id, 'UPDATE', '[]'::jsonb
+							SELECT 								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 								${audit.correlationId}, ${audit.module}, ${audit.entity}, 								${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb, 								${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 								${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -3906,12 +4419,26 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		if (!brandedId.ok) {
 			return brandedId;
 		}
+		const preparedAudit = prepareTalentAudit({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_talent_pool_member",
+			entityId: brandedId.data,
+			action: "CREATE",
+			newValue: { status: "nominated", version: 1 },
+			meta,
+			reasonCode: "TALENT_POOL_MEMBER_NOMINATED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[TalentPoolMemberSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH pool_ok AS (
 							SELECT id, status
 							FROM hr_talent_pool
@@ -3945,18 +4472,16 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
-							SELECT
-								${auditId}, organization_id, created_by, ${meta.correlationId},
-								'human-resources', 'hr_talent_pool_member', id, 'CREATE', '[]'::jsonb
+							SELECT 								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 								${audit.correlationId}, ${audit.module}, ${audit.entity}, 								${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb, 								${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 								${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return conflict("Employee is already an active member of this pool");
@@ -4027,6 +4552,25 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			}
 
 			const nextVersion = input.expectedVersion + 1;
+			const preparedAudit = prepareTalentAudit({
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_talent_pool_member",
+				entityId: input.memberId,
+				action: "UPDATE",
+				oldValue: {
+					status: loaded.data.status,
+					version: input.expectedVersion,
+				},
+				newValue: { status: "approved", version: nextVersion },
+				meta,
+				reasonCode: "TALENT_POOL_MEMBER_APPROVED",
+			});
+			if (!preparedAudit.ok) {
+				return preparedAudit;
+			}
+			const audit = preparedAudit.data;
 			const auditId = randomUUID();
 			const eventId = randomUUID();
 			const payloadJson = eventPayloadJson({
@@ -4037,9 +4581,8 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				correlationId: meta.correlationId,
 			});
 
-			const [rows] = await runNeonHttpTransaction<[TalentPoolMemberSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_talent_pool_member
 							SET status = 'approved',
@@ -4057,11 +4600,10 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
-							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_talent_pool_member', id, 'UPDATE', '[]'::jsonb
+							SELECT 								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 								${audit.correlationId}, ${audit.module}, ${audit.entity}, 								${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb, 								${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 								${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -4080,8 +4622,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -4131,6 +4672,25 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			}
 
 			const nextVersion = input.expectedVersion + 1;
+			const preparedAudit = prepareTalentAudit({
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_talent_pool_member",
+				entityId: input.memberId,
+				action: "UPDATE",
+				oldValue: {
+					status: loaded.data.status,
+					version: input.expectedVersion,
+				},
+				newValue: { status: "removed", version: nextVersion },
+				meta,
+				reasonCode: "TALENT_POOL_MEMBER_REMOVED",
+			});
+			if (!preparedAudit.ok) {
+				return preparedAudit;
+			}
+			const audit = preparedAudit.data;
 			const auditId = randomUUID();
 			const eventId = randomUUID();
 			const payloadJson = eventPayloadJson({
@@ -4141,9 +4701,8 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				correlationId: meta.correlationId,
 			});
 
-			const [rows] = await runNeonHttpTransaction<[TalentPoolMemberSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_talent_pool_member
 							SET status = 'removed',
@@ -4160,11 +4719,10 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
-							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_talent_pool_member', id, 'UPDATE', '[]'::jsonb
+							SELECT 								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 								${audit.correlationId}, ${audit.module}, ${audit.entity}, 								${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb, 								${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 								${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -4183,8 +4741,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -4308,12 +4865,26 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		if (!brandedId.ok) {
 			return brandedId;
 		}
+		const preparedAudit = prepareTalentAudit({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_career_plan",
+			entityId: brandedId.data,
+			action: "CREATE",
+			newValue: { status: "draft", version: 1 },
+			meta,
+			reasonCode: "CAREER_PLAN_CREATED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[CareerPlanSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							INSERT INTO hr_career_plan (
 								id, organization_id, employee_id, owner_user_id, code, title,
@@ -4335,18 +4906,16 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
-							SELECT
-								${auditId}, organization_id, created_by, ${meta.correlationId},
-								'human-resources', 'hr_career_plan', id, 'CREATE', '[]'::jsonb
+							SELECT 								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 								${audit.correlationId}, ${audit.module}, ${audit.entity}, 								${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb, 								${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 								${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return conflict("Career plan with this code already exists");
@@ -4403,12 +4972,30 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 		const nextTitle = input.title ?? existing.data.title;
 		const nextVersion = input.expectedVersion + 1;
+		const preparedAudit = prepareTalentAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_career_plan",
+			entityId: input.careerPlanId,
+			action: "UPDATE",
+			oldValue: {
+				status: existing.data.status,
+				version: input.expectedVersion,
+			},
+			newValue: { status: existing.data.status, version: nextVersion },
+			meta,
+			reasonCode: "CAREER_PLAN_UPDATED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[CareerPlanSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_career_plan
 							SET title = ${nextTitle},
@@ -4424,18 +5011,16 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
-							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_career_plan', id, 'UPDATE', '[]'::jsonb
+							SELECT 								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 								${audit.correlationId}, ${audit.module}, ${audit.entity}, 								${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb, 								${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 								${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -4475,6 +5060,25 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		}
 
 		const nextVersion = input.expectedVersion + 1;
+		const preparedAudit = prepareTalentAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_career_plan",
+			entityId: input.careerPlanId,
+			action: "UPDATE",
+			oldValue: {
+				status: existing.data.status,
+				version: input.expectedVersion,
+			},
+			newValue: { status: "acknowledged", version: nextVersion },
+			meta,
+			reasonCode: "CAREER_PLAN_ACKNOWLEDGED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const payloadJson = eventPayloadJson({
@@ -4486,9 +5090,8 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[CareerPlanSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_career_plan
 							SET status = 'acknowledged',
@@ -4505,11 +5108,10 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
-							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_career_plan', id, 'UPDATE', '[]'::jsonb
+							SELECT 								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 								${audit.correlationId}, ${audit.module}, ${audit.entity}, 								${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb, 								${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 								${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -4528,8 +5130,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -4570,12 +5171,30 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		}
 
 		const nextVersion = input.expectedVersion + 1;
+		const preparedAudit = prepareTalentAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_career_plan",
+			entityId: input.careerPlanId,
+			action: "UPDATE",
+			oldValue: {
+				status: existing.data.status,
+				version: input.expectedVersion,
+			},
+			newValue: { status: "closed", version: nextVersion },
+			meta,
+			reasonCode: "CAREER_PLAN_CLOSED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[CareerPlanSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_career_plan
 							SET status = 'closed',
@@ -4591,18 +5210,16 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
-							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_career_plan', id, 'UPDATE', '[]'::jsonb
+							SELECT 								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 								${audit.correlationId}, ${audit.module}, ${audit.entity}, 								${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb, 								${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 								${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -4733,12 +5350,26 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		if (!brandedId.ok) {
 			return brandedId;
 		}
+		const preparedAudit = prepareTalentAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_career_plan_action",
+			entityId: brandedId.data,
+			action: "CREATE",
+			newValue: { status: "open", version: 1 },
+			meta,
+			reasonCode: "CAREER_PLAN_ACTION_ADDED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[CareerPlanActionSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH plan_ok AS (
 							SELECT id
 							FROM hr_career_plan
@@ -4770,18 +5401,16 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
-							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_career_plan_action', id, 'CREATE', '[]'::jsonb
+							SELECT 								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 								${audit.correlationId}, ${audit.module}, ${audit.entity}, 								${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb, 								${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 								${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return notFound("Career plan not found");
@@ -4825,11 +5454,29 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			}
 
 			const nextVersion = input.expectedVersion + 1;
+			const preparedAudit = prepareTalentAudit({
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_career_plan_action",
+				entityId: input.actionId,
+				action: "UPDATE",
+				oldValue: {
+					status: loaded.data.status,
+					version: input.expectedVersion,
+				},
+				newValue: { status: "done", version: nextVersion },
+				meta,
+				reasonCode: "CAREER_PLAN_ACTION_COMPLETED",
+			});
+			if (!preparedAudit.ok) {
+				return preparedAudit;
+			}
+			const audit = preparedAudit.data;
 			const auditId = randomUUID();
 
-			const [rows] = await runNeonHttpTransaction<[CareerPlanActionSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_career_plan_action
 							SET status = 'done',
@@ -4845,18 +5492,16 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
-							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_career_plan_action', id, 'UPDATE', '[]'::jsonb
+							SELECT 								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 								${audit.correlationId}, ${audit.module}, ${audit.entity}, 								${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb, 								${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 								${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -4971,12 +5616,26 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		if (!brandedId.ok) {
 			return brandedId;
 		}
+		const preparedAudit = prepareTalentAudit({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_succession_plan",
+			entityId: brandedId.data,
+			action: "CREATE",
+			newValue: { status: "draft", version: 1 },
+			meta,
+			reasonCode: "SUCCESSION_PLAN_CREATED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[SuccessionPlanSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							INSERT INTO hr_succession_plan (
 								id, organization_id, code, title, position_id, status,
@@ -4999,18 +5658,16 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
-							SELECT
-								${auditId}, organization_id, created_by, ${meta.correlationId},
-								'human-resources', 'hr_succession_plan', id, 'CREATE', '[]'::jsonb
+							SELECT 								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 								${audit.correlationId}, ${audit.module}, ${audit.entity}, 								${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb, 								${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 								${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return conflict("Succession plan with this code already exists");
@@ -5068,12 +5725,30 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		const nextAllowsExternal =
 			input.allowsExternalCandidates ?? existing.data.allowsExternalCandidates;
 		const nextVersion = input.expectedVersion + 1;
+		const preparedAudit = prepareTalentAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_succession_plan",
+			entityId: input.successionPlanId,
+			action: "UPDATE",
+			oldValue: {
+				status: existing.data.status,
+				version: input.expectedVersion,
+			},
+			newValue: { status: existing.data.status, version: nextVersion },
+			meta,
+			reasonCode: "SUCCESSION_PLAN_UPDATED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[SuccessionPlanSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_succession_plan
 							SET title = ${nextTitle},
@@ -5090,18 +5765,16 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
-							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_succession_plan', id, 'UPDATE', '[]'::jsonb
+							SELECT 								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 								${audit.correlationId}, ${audit.module}, ${audit.entity}, 								${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb, 								${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 								${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -5142,12 +5815,30 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		}
 
 		const nextVersion = input.expectedVersion + 1;
+		const preparedAudit = prepareTalentAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_succession_plan",
+			entityId: input.successionPlanId,
+			action: "UPDATE",
+			oldValue: {
+				status: existing.data.status,
+				version: input.expectedVersion,
+			},
+			newValue: { status: "closed", version: nextVersion },
+			meta,
+			reasonCode: "SUCCESSION_PLAN_CLOSED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[SuccessionPlanSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_succession_plan
 							SET status = 'closed',
@@ -5163,18 +5854,16 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
-							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_succession_plan', id, 'UPDATE', '[]'::jsonb
+							SELECT 								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 								${audit.correlationId}, ${audit.module}, ${audit.entity}, 								${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb, 								${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 								${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -5356,6 +6045,21 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		if (!brandedId.ok) {
 			return brandedId;
 		}
+		const preparedAudit = prepareTalentAudit({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_succession_candidate",
+			entityId: brandedId.data,
+			action: "CREATE",
+			newValue: { status: "nominated", version: 1 },
+			meta,
+			reasonCode: "SUCCESSION_CANDIDATE_NOMINATED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const payloadJson = eventPayloadJson({
@@ -5367,9 +6071,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[SuccessionCandidateSqlRow[]]
-			>((sqlTag) => [
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
 				sqlTag`
 						WITH plan_ok AS (
 							SELECT id, status, allows_external_candidates
@@ -5400,11 +6102,10 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
-							SELECT
-								${auditId}, organization_id, created_by, ${meta.correlationId},
-								'human-resources', 'hr_succession_candidate', id, 'CREATE', '[]'::jsonb
+							SELECT 								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 								${audit.correlationId}, ${audit.module}, ${audit.entity}, 								${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb, 								${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 								${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -5498,6 +6199,25 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			}
 
 			const nextVersion = input.expectedVersion + 1;
+			const preparedAudit = prepareTalentAudit({
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_succession_candidate",
+				entityId: input.candidateId,
+				action: "UPDATE",
+				oldValue: {
+					status: loaded.data.status,
+					version: input.expectedVersion,
+				},
+				newValue: { status: loaded.data.status, version: nextVersion },
+				meta,
+				reasonCode: "SUCCESSION_READINESS_ASSESSED",
+			});
+			if (!preparedAudit.ok) {
+				return preparedAudit;
+			}
+			const audit = preparedAudit.data;
 			const auditId = randomUUID();
 			const eventId = randomUUID();
 			const payloadJson = eventPayloadJson({
@@ -5508,9 +6228,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				correlationId: meta.correlationId,
 			});
 
-			const [rows] = await runNeonHttpTransaction<
-				[SuccessionCandidateSqlRow[]]
-			>((sqlTag) => [
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_succession_candidate
@@ -5529,11 +6247,10 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
-							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_succession_candidate', id, 'UPDATE', '[]'::jsonb
+							SELECT 								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 								${audit.correlationId}, ${audit.module}, ${audit.entity}, 								${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb, 								${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 								${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -5604,6 +6321,25 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			}
 
 			const nextVersion = input.expectedVersion + 1;
+			const preparedAudit = prepareTalentAudit({
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_succession_candidate",
+				entityId: input.candidateId,
+				action: "UPDATE",
+				oldValue: {
+					status: loaded.data.status,
+					version: input.expectedVersion,
+				},
+				newValue: { status: "approved", version: nextVersion },
+				meta,
+				reasonCode: "SUCCESSION_CANDIDATE_APPROVED",
+			});
+			if (!preparedAudit.ok) {
+				return preparedAudit;
+			}
+			const audit = preparedAudit.data;
 			const auditId = randomUUID();
 			const eventId = randomUUID();
 			const payloadJson = eventPayloadJson({
@@ -5614,9 +6350,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				correlationId: meta.correlationId,
 			});
 
-			const [rows] = await runNeonHttpTransaction<
-				[SuccessionCandidateSqlRow[]]
-			>((sqlTag) => [
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_succession_candidate
@@ -5633,11 +6367,10 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
-							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_succession_candidate', id, 'UPDATE', '[]'::jsonb
+							SELECT 								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 								${audit.correlationId}, ${audit.module}, ${audit.entity}, 								${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb, 								${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 								${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -5706,11 +6439,28 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			}
 
 			const nextVersion = input.expectedVersion + 1;
+			const preparedAudit = prepareTalentAudit({
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_succession_candidate",
+				entityId: input.candidateId,
+				action: "UPDATE",
+				oldValue: {
+					status: loaded.data.status,
+					version: input.expectedVersion,
+				},
+				newValue: { status: "removed", version: nextVersion },
+				meta,
+				reasonCode: "SUCCESSION_CANDIDATE_REMOVED",
+			});
+			if (!preparedAudit.ok) {
+				return preparedAudit;
+			}
+			const audit = preparedAudit.data;
 			const auditId = randomUUID();
 
-			const [rows] = await runNeonHttpTransaction<
-				[SuccessionCandidateSqlRow[]]
-			>((sqlTag) => [
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_succession_candidate
@@ -5727,11 +6477,10 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
-							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_succession_candidate', id, 'UPDATE', '[]'::jsonb
+							SELECT 								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 								${audit.correlationId}, ${audit.module}, ${audit.entity}, 								${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb, 								${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 								${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)

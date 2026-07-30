@@ -11,14 +11,8 @@ import {
 	platformDomainEvent,
 	sql,
 } from "@afenda/db";
-import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
-import {
-	fail,
-	failFromAppError,
-	failFromUnknown,
-	ok,
-	type Result,
-} from "@afenda/errors/result";
+import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
+import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
 
 import { mapDomainEventRow } from "./map-row";
 import type { EventStore } from "./store";
@@ -51,10 +45,7 @@ function mapRows(
 }
 
 function failFromPersistence(error: unknown, fallbackMessage: string) {
-	const mapped = fromPostgresUnknown(error);
-	return mapped === undefined
-		? failFromUnknown(error, fallbackMessage)
-		: failFromAppError(mapped);
+	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
 }
 
 function buildFilterWhere(options: DomainEventQueryOptions) {

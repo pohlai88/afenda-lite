@@ -53,9 +53,18 @@ Chain: root [`biome.jsonc`](../../../biome.jsonc) → `@afenda/config/biome.json
 
 ```bash
 pnpm --filter @afenda/config lint
+pnpm --filter @afenda/config protect:check
 ```
 
 Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
+
+Intentional edits to this package require the local-only
+`AFENDA_PROTECTED_EDIT_TOKEN` unlock before refreshing `.protected.sha256`:
+
+```bash
+pnpm --filter @afenda/config protect:update
+pnpm --filter @afenda/config protect:check
+```
 
 ## Exports
 

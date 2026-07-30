@@ -239,9 +239,8 @@ export async function ensurePerformanceSchemaForTests(): Promise<void> {
 		return;
 	}
 
-	const [exists] = await runNeonHttpTransaction<[{ exists: boolean }[]]>(
-		(sql) => [
-			sql`
+	const [exists] = await runNeonHttpTransaction((sql) => [
+		sql`
 			SELECT EXISTS (
 				SELECT 1
 				FROM information_schema.tables
@@ -249,8 +248,7 @@ export async function ensurePerformanceSchemaForTests(): Promise<void> {
 					AND table_name = 'hr_performance_cycle'
 			) AS exists
 		`,
-		],
-	);
+	]);
 	if (exists[0]?.exists) {
 		await ensurePerformanceCycleConfigurationTables();
 		ensured = true;

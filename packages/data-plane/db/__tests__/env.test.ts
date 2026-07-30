@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
-	requireDatabaseUrl,
 	requireDirectMigrationDatabaseUrl,
 	requireMigrationDatabaseUrl,
 	requireProductDatabaseUrl,
@@ -120,13 +119,5 @@ describe("@afenda/db requireDirectMigrationDatabaseUrl", () => {
 		expect(message).toMatch(/direct DATABASE_URL/);
 		expect(message).not.toContain("sensitive-user");
 		expect(message).not.toContain("sensitive-password");
-	});
-});
-
-describe("@afenda/db requireDatabaseUrl alias", () => {
-	it("matches product resolver (rejects non-pooler)", () => {
-		process.env.DATABASE_URL =
-			"postgresql://u:p@ep-example.c-2.ap-southeast-1.aws.neon.tech/neondb";
-		expect(() => requireDatabaseUrl()).toThrow(/-pooler/);
 	});
 });

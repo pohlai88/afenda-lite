@@ -7,7 +7,14 @@
  */
 
 import { randomUUID } from "node:crypto";
-import { runNeonHttpTransaction } from "@afenda/db";
+import {
+	type PreparedDerivedEntityAuditInsertValues,
+	prepareDerivedEntityAuditInsertValues,
+} from "@afenda/audit";
+import {
+	type NeonHttpTransactionResults,
+	runNeonHttpTransaction,
+} from "@afenda/db";
 import { fail, ok, type Result } from "@afenda/errors/result";
 import type { OutboxFactInput } from "../../ports";
 
@@ -115,6 +122,62 @@ export {
 	valueSnapshotJson,
 } from "../../shared/audit-facts";
 
+const LEAVE_AUDIT_SOURCE = "human-resources.leave";
+const SQL_IDENTIFIER_PATTERN = /^[a-z_][a-z0-9_]*$/;
+const SQL_COLUMN_REFERENCE_PATTERN =
+	/^(?:[a-z_][a-z0-9_]*\.)?[a-z_][a-z0-9_]*$/;
+
+function assertGeneratedSqlIdentifier(value: string, label: string): void {
+	if (!SQL_IDENTIFIER_PATTERN.test(value)) {
+		throw new TypeError(`Invalid generated SQL ${label}`);
+	}
+}
+
+function assertGeneratedSqlColumnReference(value: string, label: string): void {
+	if (!SQL_COLUMN_REFERENCE_PATTERN.test(value)) {
+		throw new TypeError(`Invalid generated SQL ${label}`);
+	}
+}
+
+function parseGeneratedAuditJson(
+	value: string | undefined,
+	label: string,
+): unknown {
+	if (value === undefined) {
+		return;
+	}
+	try {
+		return JSON.parse(value);
+	} catch (error) {
+		throw new TypeError(`Invalid generated audit ${label}`, { cause: error });
+	}
+}
+
+function sqlStringLiteral(value: string | null): string {
+	return value === null ? "NULL" : `'${value.replaceAll("'", "''")}'`;
+}
+
+function preparedAuditValueSql(
+	audit: PreparedDerivedEntityAuditInsertValues,
+	entityIdReference: string,
+): string {
+	return [
+		sqlStringLiteral(audit.organizationId),
+		sqlStringLiteral(audit.actorUserId),
+		sqlStringLiteral(audit.correlationId),
+		sqlStringLiteral(audit.module),
+		sqlStringLiteral(audit.entity),
+		entityIdReference,
+		sqlStringLiteral(audit.action),
+		`${sqlStringLiteral(audit.changesJson)}::jsonb`,
+		`${sqlStringLiteral(audit.oldValueJson)}::jsonb`,
+		`${sqlStringLiteral(audit.newValueJson)}::jsonb`,
+		`${sqlStringLiteral(audit.metadataJson)}::jsonb`,
+		sqlStringLiteral(audit.ipAddress),
+		sqlStringLiteral(audit.userAgent),
+	].join(", ");
+}
+
 /**
  * CTE builders for common patterns
  */
@@ -124,36 +187,59 @@ export {
  */
 export function buildAuditCte(params: {
 	auditId: string;
+	organizationId: string;
+	actorUserId: string;
 	module: string;
 	entity: string;
 	action: "CREATE" | "UPDATE" | "DELETE";
 	correlationId: string;
-	changes?: string;
-	newValue?: string;
+	changesJson?: string;
+	newValueJson?: string;
+	causationId?: string | null;
+	reasonCode: string;
 	fromCte: string;
-	selectFields: {
-		organizationId: string;
-		entityId: string;
-		actorUserId: string;
-	};
+	entityIdReference: string;
 }): string {
-	const changesClause = params.changes
-		? `, ${params.changes}::jsonb`
-		: ", '[]'::jsonb";
-	const newValueClause = params.newValue
-		? `, ${params.newValue}::jsonb`
-		: ", NULL";
+	assertGeneratedSqlIdentifier(params.fromCte, "source CTE");
+	assertGeneratedSqlColumnReference(
+		params.entityIdReference,
+		"entity ID reference",
+	);
+	const preparedAudit = prepareDerivedEntityAuditInsertValues({
+		organizationId: params.organizationId,
+		actorUserId: params.actorUserId,
+		correlationId: params.correlationId,
+		module: params.module,
+		entity: params.entity,
+		action: params.action,
+		changes: parseGeneratedAuditJson(params.changesJson, "changes"),
+		newValue: parseGeneratedAuditJson(params.newValueJson, "new value"),
+		eventContext: {
+			version: 1,
+			outcome: "SUCCEEDED",
+			source: LEAVE_AUDIT_SOURCE,
+			occurredAt: null,
+			causationId: params.causationId ?? null,
+			reasonCode: params.reasonCode,
+		},
+	});
+	if (!preparedAudit.ok) {
+		throw new TypeError("Invalid generated leave audit command");
+	}
+	const valuesSql = preparedAuditValueSql(
+		preparedAudit.data,
+		params.entityIdReference,
+	);
 
 	return `
 		audited AS (
 			INSERT INTO platform_audit_log (
 				id, organization_id, actor_user_id, correlation_id, module, entity,
-				entity_id, action, changes, new_value
+				entity_id, action, changes, old_value, new_value, metadata,
+				ip_address, user_agent
 			)
 			SELECT
-				'${params.auditId}', ${params.selectFields.organizationId}, ${params.selectFields.actorUserId}, 
-				'${params.correlationId}', '${params.module}', '${params.entity}', 
-				${params.selectFields.entityId}, '${params.action}'${changesClause}${newValueClause}
+				${sqlStringLiteral(params.auditId)}, ${valuesSql}
 			FROM ${params.fromCte}
 			RETURNING id
 		)
@@ -270,11 +356,11 @@ export function buildBalanceCheckCte(params: {
 /**
  * Generic transaction wrapper for leave operations
  */
-export async function runLeaveTransaction<T extends unknown[]>(
-	queriesOrFn: Parameters<typeof runNeonHttpTransaction<T>>[0],
-	options?: Parameters<typeof runNeonHttpTransaction<T>>[1],
-): Promise<T> {
-	return await runNeonHttpTransaction<T>(queriesOrFn, {
+export async function runLeaveTransaction(
+	queriesOrFn: Parameters<typeof runNeonHttpTransaction>[0],
+	options?: Parameters<typeof runNeonHttpTransaction>[1],
+): Promise<NeonHttpTransactionResults> {
+	return await runNeonHttpTransaction(queriesOrFn, {
 		isolationLevel: "ReadCommitted",
 		...options,
 	});

@@ -1,11 +1,13 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-import { getTableColumns } from "drizzle-orm";
-import { PgDialect } from "drizzle-orm/pg-core";
+import { getTableColumns, getTableName, is } from "drizzle-orm";
+import { getTableConfig, PgDialect, PgTable } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
+import { parseHardTenantRootEntries } from "../../../../scripts/lib/hard-tenant-root-registry.mjs";
 
 import { orgWhere, tenantEntityPredicate, withOrg } from "../src/client";
+import { databaseSchema } from "../src/database-schema";
 import {
 	HARD_TENANT_ROOT_TABLE_NAMES,
 	HARD_TENANT_ROOT_TABLES,
@@ -24,6 +26,29 @@ import {
 } from "../src/schema/platform";
 
 describe("@afenda/db hard tenant roots (N9 / ARCH-023)", () => {
+	it("keeps tenant access-path indexes organization-leading", () => {
+		const expectedIndexes = [
+			{
+				table: platformRoleAssignment,
+				name: "platform_role_assignment_org_active_user_idx",
+			},
+			{
+				table: platformRbacAudit,
+				name: "platform_rbac_audit_org_created_id_idx",
+			},
+		];
+
+		for (const expected of expectedIndexes) {
+			const matchingIndex = getTableConfig(expected.table).indexes.find(
+				(indexConfig) => indexConfig.config.name === expected.name,
+			);
+			expect(matchingIndex, `${expected.name} must exist`).toBeDefined();
+			expect(matchingIndex?.config.columns[0]).toMatchObject({
+				name: "organization_id",
+			});
+		}
+	});
+
 	it("builds reusable organization predicates and rejects empty scope", () => {
 		const predicate = orgWhere(mdParty.organizationId, " org-a ");
 		const query = new PgDialect().sqlToQuery(predicate);
@@ -60,40 +85,24 @@ describe("@afenda/db hard tenant roots (N9 / ARCH-023)", () => {
 		]);
 	});
 
-	it("keeps the executable null-audit mirror aligned with the TypeScript SSOT", () => {
-		const auditSource = readFileSync(
-			fileURLToPath(
-				new URL("../../../../scripts/audit-tenancy-nulls.mjs", import.meta.url),
-			),
+	it("keeps the Node operations parser aligned with the typed registry", () => {
+		const registrySource = readFileSync(
+			fileURLToPath(new URL("../src/hard-tenant-roots.ts", import.meta.url)),
 			"utf8",
 		);
-		const mirrorBody = auditSource.match(
-			/const HARD_TENANT_ROOT_TABLE_NAMES = \[([\s\S]*?)\];/,
-		)?.[1];
-		const queryMapBody = auditSource.match(
-			/const NULL_COUNT_BY_TABLE = \{([\s\S]*?)\n\};/,
-		)?.[1];
-		expect(mirrorBody).toBeDefined();
-		expect(queryMapBody).toBeDefined();
-
-		const mirroredNames = [
-			...(mirrorBody ?? "").matchAll(/"([a-z0-9_]+)"/g),
-		].map((match) => match[1]);
-		const queryNames = [
-			...(queryMapBody ?? "").matchAll(/^\t([a-z0-9_]+):/gm),
-		].map((match) => match[1]);
-
-		expect(mirroredNames).toEqual([...HARD_TENANT_ROOT_TABLE_NAMES]);
-		expect(queryNames).toEqual([...HARD_TENANT_ROOT_TABLE_NAMES]);
+		const parsedNames = parseHardTenantRootEntries(registrySource).map(
+			(entry) => entry.sqlName,
+		);
+		expect(parsedNames).toEqual([...HARD_TENANT_ROOT_TABLE_NAMES]);
 	});
 
 	it("lists hard tenant root table names including all HR roots", () => {
-		expect(HARD_TENANT_ROOT_TABLE_NAMES).toHaveLength(268);
-		expect(Object.keys(HARD_TENANT_ROOT_TABLES)).toHaveLength(268);
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toHaveLength(274);
+		expect(Object.keys(HARD_TENANT_ROOT_TABLES)).toHaveLength(274);
 		const hrRoots = HARD_TENANT_ROOT_TABLE_NAMES.filter((name) =>
 			name.startsWith("hr_"),
 		);
-		expect(hrRoots).toHaveLength(136);
+		expect(hrRoots).toHaveLength(141);
 		expect(hrRoots[0]).toBe("hr_person");
 		expect(hrRoots.at(-1)).toBe("hr_overtime_approval");
 		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("supplier_credit_note_line");
@@ -147,6 +156,27 @@ describe("@afenda/db hard tenant roots (N9 / ARCH-023)", () => {
 			"hr_reliability_dead_letter",
 		);
 		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("hr_connector_cursor");
+	});
+
+	it("exactly covers every schema table with required organization ownership", () => {
+		const schemaTenantRoots = Object.values(databaseSchema)
+			.filter((value) => is(value, PgTable))
+			.filter((table) => {
+				const { organizationId } = getTableColumns(table);
+				return organizationId?.notNull === true;
+			})
+			.map((table) => getTableName(table))
+			.sort();
+
+		expect([...HARD_TENANT_ROOT_TABLE_NAMES].sort()).toEqual(schemaTenantRoots);
+	});
+
+	it("keeps each hard-tenant SQL name paired with its table reference", () => {
+		expect(
+			Object.values(HARD_TENANT_ROOT_TABLES).map((table) =>
+				getTableName(table),
+			),
+		).toEqual([...HARD_TENANT_ROOT_TABLE_NAMES]);
 	});
 
 	it("exposes organization_id NOT NULL on every hard tenant root", () => {

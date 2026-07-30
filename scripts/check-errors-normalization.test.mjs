@@ -32,13 +32,10 @@ test("accepts canonical Postgres normalization", () => {
 			root,
 			"packages/erp/orders/src/store.ts",
 			`
-				import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
-				import { failFromAppError, failFromUnknown } from "@afenda/errors/result";
+				import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
+				import { failFromAppError } from "@afenda/errors/result";
 				export function map(error) {
-					const mapped = fromPostgresUnknown(error);
-					return mapped === undefined
-						? failFromUnknown(error, "Save failed")
-						: failFromAppError(mapped);
+					return failFromAppError(normalizePostgresUnknown(error, "Save record"));
 				}
 			`,
 		);
@@ -60,9 +57,9 @@ test("fails infrastructure guessing inside core normalizeUnknown", () => {
 			root,
 			"packages/foundation/errors/src/core/normalize.ts",
 			`
-				import { fromPostgresUnknown } from "../adapters/postgres";
+				import { normalizePostgresUnknown } from "../adapters/postgres";
 				export function normalizeUnknown(error) {
-					return fromPostgresUnknown(error);
+					return normalizePostgresUnknown(error);
 				}
 			`,
 		);
@@ -87,13 +84,11 @@ test("fails manual AppError-to-Result copying", () => {
 			root,
 			"packages/erp/orders/src/store.ts",
 			`
-				import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
-				import { fail, failFromUnknown } from "@afenda/errors/result";
+				import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
+				import { fail } from "@afenda/errors/result";
 				export function map(error) {
-					const mapped = fromPostgresUnknown(error);
-					return mapped === undefined
-						? failFromUnknown(error, "Save failed")
-						: fail(mapped.code, mapped.message, mapped.details);
+					const mapped = normalizePostgresUnknown(error, "Save record");
+					return fail(mapped.code, mapped.message, mapped.details);
 				}
 			`,
 		);
@@ -323,11 +318,11 @@ test("accepts AppError serialization helpers that delegate to serializeAppError"
 			root,
 			"apps/web/modules/platform/api/json-response.ts",
 			`
-				import { type AppError, serializeAppError } from "@afenda/errors";
-				import { httpErrorBody } from "@afenda/errors/http";
+				import type { AppError } from "@afenda/errors";
+				import { projectHttpError } from "@afenda/errors/http";
 				export function jsonAppError(error: AppError) {
-					const serialized = serializeAppError(error);
-					return Response.json(httpErrorBody(serialized.code, serialized.message, serialized.details));
+					const projection = projectHttpError(error);
+					return Response.json(projection.body, { status: projection.status });
 				}
 			`,
 		);

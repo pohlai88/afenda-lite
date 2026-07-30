@@ -1,15 +1,21 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-
+import { auditEntriesToCsv } from "./csv";
+import { decodeAuditCursor, encodeAuditCursor } from "./cursor";
 import { createDrizzleAuditStore } from "./drizzle-store";
 import {
+	type AuditCursorPage,
 	type AuditPage,
-	auditExportOptionsSchema,
+	auditCursorPageSchema,
+	auditCursorQueryInputSchema,
+	auditDetailedExportOptionsSchema,
 	auditPageSchema,
 	auditPurgeOptionsSchema,
 	auditQueryOptionsSchema,
+	MAX_AUDIT_EXPORT_ROWS,
 } from "./schemas";
 import type { AuditStore } from "./store";
-import type { AuditAction } from "./types";
+import { observeAuditOperation } from "./telemetry";
+import type { AuditAction, AuditExportResult } from "./types";
 
 function resolveStore(store?: AuditStore): AuditStore {
 	return store ?? createDrizzleAuditStore();
@@ -22,40 +28,103 @@ function onPromiseBoundary<T>(operation: () => T | PromiseLike<T>): Promise<T> {
 /**
  * Paginated org-scoped audit query with total.
  */
-export async function queryAuditLog(
+export function queryAuditLog(
 	input: unknown,
 	store?: AuditStore,
 ): Promise<Result<AuditPage>> {
-	const parsed = auditQueryOptionsSchema.safeParse(input);
-	if (!parsed.success) {
-		return fail("BAD_REQUEST", "Invalid audit query input", {
-			fieldErrors: parsed.error.flatten().fieldErrors,
-		});
-	}
+	return observeAuditOperation(
+		"query",
+		async () => {
+			const parsed = auditQueryOptionsSchema.safeParse(input);
+			if (!parsed.success) {
+				return fail("BAD_REQUEST", "Invalid audit query input", {
+					fieldErrors: parsed.error.flatten().fieldErrors,
+				});
+			}
 
-	const options = parsed.data;
-	const resolved = resolveStore(store);
+			const options = parsed.data;
+			const resolved = resolveStore(store);
 
-	const [entriesResult, totalResult] = await Promise.all([
-		resolved.query(options),
-		resolved.count(options),
-	]);
+			const [entriesResult, totalResult] = await Promise.all([
+				resolved.query(options),
+				resolved.count(options),
+			]);
 
-	if (!entriesResult.ok) {
-		return entriesResult;
-	}
-	if (!totalResult.ok) {
-		return totalResult;
-	}
+			if (!entriesResult.ok) {
+				return entriesResult;
+			}
+			if (!totalResult.ok) {
+				return totalResult;
+			}
 
-	const page = auditPageSchema.parse({
-		entries: entriesResult.data,
-		total: totalResult.data,
-		page: options.page,
-		pageSize: options.pageSize,
-	});
+			const page = auditPageSchema.parse({
+				entries: entriesResult.data,
+				total: totalResult.data,
+				page: options.page,
+				pageSize: options.pageSize,
+			});
 
-	return ok(page);
+			return ok(page);
+		},
+		(page) => ({ rowCount: page.entries.length }),
+	);
+}
+
+/**
+ * Stable keyset pagination ordered by recorded time and audit id.
+ * No total count is returned because a separate count cannot share a snapshot.
+ */
+export function queryAuditLogCursor(
+	input: unknown,
+	store?: AuditStore,
+): Promise<Result<AuditCursorPage>> {
+	return observeAuditOperation(
+		"cursor_query",
+		async () => {
+			const parsed = auditCursorQueryInputSchema.safeParse(input);
+			if (!parsed.success) {
+				return fail("BAD_REQUEST", "Invalid audit cursor query input", {
+					fieldErrors: parsed.error.flatten().fieldErrors,
+				});
+			}
+
+			const { cursor: encodedCursor, ...options } = parsed.data;
+			const decodedCursor =
+				encodedCursor === undefined
+					? undefined
+					: decodeAuditCursor(encodedCursor);
+			if (decodedCursor !== undefined && !decodedCursor.ok) {
+				return decodedCursor;
+			}
+
+			const rows = await resolveStore(store).queryCursor({
+				...options,
+				...(decodedCursor === undefined ? {} : { cursor: decodedCursor.data }),
+			});
+			if (!rows.ok) {
+				return rows;
+			}
+
+			const hasMore = rows.data.length > options.pageSize;
+			const entries = rows.data.slice(0, options.pageSize);
+			const finalEntry = entries.at(-1);
+			if (hasMore && finalEntry === undefined) {
+				return fail("INTERNAL_ERROR", "Audit cursor page is inconsistent");
+			}
+
+			return ok(
+				auditCursorPageSchema.parse({
+					entries,
+					nextCursor:
+						hasMore && finalEntry !== undefined
+							? encodeAuditCursor(finalEntry)
+							: null,
+					pageSize: options.pageSize,
+				}),
+			);
+		},
+		(page) => ({ rowCount: page.entries.length }),
+	);
 }
 
 /**
@@ -123,57 +192,123 @@ export function countByAction(
 	},
 	store?: AuditStore,
 ): Promise<Result<number>> {
-	return onPromiseBoundary(() => {
-		const parsed = auditQueryOptionsSchema.safeParse({
-			organizationId: input.organizationId,
-			action: input.action,
-			module: input.module,
-			from: input.from,
-			to: input.to,
-			page: 1,
-			pageSize: 1,
-		});
-		if (!parsed.success) {
-			return fail("BAD_REQUEST", "Invalid audit count input", {
-				fieldErrors: parsed.error.flatten().fieldErrors,
+	return observeAuditOperation(
+		"count",
+		() => {
+			const parsed = auditQueryOptionsSchema.safeParse({
+				organizationId: input.organizationId,
+				action: input.action,
+				module: input.module,
+				from: input.from,
+				to: input.to,
+				page: 1,
+				pageSize: 1,
 			});
-		}
+			if (!parsed.success) {
+				return fail("BAD_REQUEST", "Invalid audit count input", {
+					fieldErrors: parsed.error.flatten().fieldErrors,
+				});
+			}
 
-		return resolveStore(store).count(parsed.data);
-	});
+			return resolveStore(store).count(parsed.data);
+		},
+		(rowCount) => ({ rowCount }),
+	);
 }
 
 export function exportAuditLog(
 	input: unknown,
 	store?: AuditStore,
 ): Promise<Result<string>> {
-	return onPromiseBoundary(() => {
-		const parsed = auditExportOptionsSchema.safeParse(input);
-		if (!parsed.success) {
-			return fail("BAD_REQUEST", "Invalid audit export input", {
-				fieldErrors: parsed.error.flatten().fieldErrors,
-			});
-		}
-
-		return resolveStore(store).export(parsed.data);
+	return onPromiseBoundary(async () => {
+		const result = await exportAuditLogDetailed(input, store);
+		return result.ok ? ok(result.data.content) : result;
 	});
+}
+
+/**
+ * Bounded export with explicit truncation and an opaque continuation cursor.
+ * Retains `exportAuditLog` for consumers that require the legacy string result.
+ */
+export function exportAuditLogDetailed(
+	input: unknown,
+	store?: AuditStore,
+): Promise<Result<AuditExportResult>> {
+	return observeAuditOperation(
+		"export",
+		async () => {
+			const parsed = auditDetailedExportOptionsSchema.safeParse(input);
+			if (!parsed.success) {
+				return fail("BAD_REQUEST", "Invalid audit export input", {
+					fieldErrors: parsed.error.flatten().fieldErrors,
+				});
+			}
+
+			const { cursor: encodedCursor, format, ...filter } = parsed.data;
+			const decodedCursor =
+				encodedCursor === undefined
+					? undefined
+					: decodeAuditCursor(encodedCursor);
+			if (decodedCursor !== undefined && !decodedCursor.ok) {
+				return decodedCursor;
+			}
+
+			const rows = await resolveStore(store).queryCursor({
+				...filter,
+				...(decodedCursor === undefined ? {} : { cursor: decodedCursor.data }),
+				pageSize: MAX_AUDIT_EXPORT_ROWS,
+			});
+			if (!rows.ok) {
+				return rows;
+			}
+
+			const truncated = rows.data.length > MAX_AUDIT_EXPORT_ROWS;
+			const entries = rows.data.slice(0, MAX_AUDIT_EXPORT_ROWS);
+			const finalEntry = entries.at(-1);
+			if (truncated && finalEntry === undefined) {
+				return fail("INTERNAL_ERROR", "Audit export page is inconsistent");
+			}
+
+			return ok({
+				content:
+					format === "json"
+						? JSON.stringify(entries, null, 2)
+						: auditEntriesToCsv(entries),
+				format,
+				nextCursor:
+					truncated && finalEntry !== undefined
+						? encodeAuditCursor(finalEntry)
+						: null,
+				rowCount: entries.length,
+				truncated,
+			});
+		},
+		(result) => ({
+			rowCount: result.rowCount,
+			truncated: result.truncated,
+		}),
+	);
 }
 
 export function purgeOldEntries(
 	input: unknown,
 	store?: AuditStore,
 ): Promise<Result<number>> {
-	return onPromiseBoundary(() => {
-		const parsed = auditPurgeOptionsSchema.safeParse(input);
-		if (!parsed.success) {
-			return fail("BAD_REQUEST", "Invalid audit purge input", {
-				fieldErrors: parsed.error.flatten().fieldErrors,
-			});
-		}
+	return observeAuditOperation(
+		"purge",
+		() => {
+			const parsed = auditPurgeOptionsSchema.safeParse(input);
+			if (!parsed.success) {
+				return fail("BAD_REQUEST", "Invalid audit purge input", {
+					fieldErrors: parsed.error.flatten().fieldErrors,
+				});
+			}
 
-		return resolveStore(store).purge(parsed.data);
-	});
+			return resolveStore(store).purge(parsed.data);
+		},
+		(rowCount) => ({ rowCount }),
+	);
 }
 
-export type { AuditPage } from "./schemas";
+export type { AuditCursorPage, AuditPage } from "./schemas";
 export type { AuditEntry } from "./types";

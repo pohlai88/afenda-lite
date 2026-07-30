@@ -11,14 +11,8 @@ import {
 	paymentReversal,
 	runNeonHttpTransaction,
 } from "@afenda/db";
-import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
-import {
-	fail,
-	failFromAppError,
-	failFromUnknown,
-	ok,
-	type Result,
-} from "@afenda/errors/result";
+import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
+import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
 
 import {
 	PAYMENTS_ERROR_INSTRUCTION_NOT_FOUND,
@@ -52,10 +46,7 @@ import {
 } from "./model";
 
 function failFromPersistence(error: unknown, fallbackMessage: string) {
-	const mapped = fromPostgresUnknown(error);
-	return mapped === undefined
-		? failFromUnknown(error, fallbackMessage)
-		: failFromAppError(mapped);
+	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
 }
 
 function parseEnum<T extends string>(
@@ -313,7 +304,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 			correlationId: record.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH account AS (
 						SELECT id FROM payment_account
@@ -365,26 +356,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 		const id = randomUUID();
 		const eventId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[
-					Array<{
-						id: string;
-						organization_id: string;
-						payment_id: string;
-						target_module: string;
-						target_document_type: string;
-						target_document_id: string;
-						intended_amount: string;
-						applied_amount: string;
-						currency_code: string;
-						status: string;
-						rejection_code: string | null;
-						created_by: string;
-						created_at: Date;
-						updated_at: Date;
-					}>,
-				]
-			>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH eligible AS (
 						SELECT p.id, p.currency_code
@@ -495,7 +467,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 	): Promise<Result<Payment>> {
 		const eventId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH mutated AS (
 						UPDATE payment
@@ -561,7 +533,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 		const reversalId = randomUUID();
 		const eventId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH mutated AS (
 						UPDATE payment
@@ -648,7 +620,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 		const outgoingCode = `${record.code}-OUT`;
 		const incomingCode = `${record.code}-IN`;
 		try {
-			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH from_account AS (
 						SELECT id, currency_code FROM payment_account
@@ -754,7 +726,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 		const id = randomUUID();
 		const eventId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH original AS (
 						SELECT p.*
@@ -846,26 +818,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 	): Promise<Result<PaymentApplicationInstruction>> {
 		const eventId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[
-					Array<{
-						id: string;
-						organization_id: string;
-						payment_id: string;
-						target_module: string;
-						target_document_type: string;
-						target_document_id: string;
-						intended_amount: string;
-						applied_amount: string;
-						currency_code: string;
-						status: string;
-						rejection_code: string | null;
-						created_by: string;
-						created_at: Date;
-						updated_at: Date;
-					}>,
-				]
-			>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH mutated AS (
 						UPDATE payment_allocation
@@ -949,26 +902,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 	): Promise<Result<PaymentApplicationInstruction>> {
 		const eventId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[
-					Array<{
-						id: string;
-						organization_id: string;
-						payment_id: string;
-						target_module: string;
-						target_document_type: string;
-						target_document_id: string;
-						intended_amount: string;
-						applied_amount: string;
-						currency_code: string;
-						status: string;
-						rejection_code: string | null;
-						created_by: string;
-						created_at: Date;
-						updated_at: Date;
-					}>,
-				]
-			>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH mutated AS (
 						UPDATE payment_allocation

@@ -138,6 +138,7 @@ import {
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runHrTalentOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
 import { createHumanResourcesCommandOptions } from "@/lib/erp/human-resources-command-options";
+import type { ProductPermissionCode } from "@/modules/identity/domain/session-permission";
 import {
 	type ActionResult,
 	actionFail,
@@ -159,7 +160,7 @@ async function runTalentAction<Key extends string, Value>(config: {
 	input: unknown;
 	schema: Parameters<typeof parseSchema>[0];
 	path: string;
-	permission: string;
+	permission: ProductPermissionCode;
 	safeMessage: string;
 	validationMessage: string;
 	dataKey: Key;

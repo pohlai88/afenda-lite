@@ -5,14 +5,18 @@ const TEST_DATABASE_URL =
 
 const neonMocks = vi.hoisted(() => {
 	const transaction = vi.fn();
+	const query = vi.fn();
+	const unsafe = vi.fn();
 	const sql = Object.assign(
 		vi.fn((strings: TemplateStringsArray) => ({ text: strings.join("") })),
-		{ transaction },
+		{ query, transaction, unsafe },
 	);
 	return {
 		neon: vi.fn(() => sql),
+		query,
 		sql,
 		transaction,
+		unsafe,
 	};
 });
 
@@ -24,8 +28,10 @@ vi.mock("../src/env", () => ({
 beforeEach(() => {
 	vi.resetModules();
 	neonMocks.neon.mockClear();
+	neonMocks.query.mockReset();
 	neonMocks.sql.mockClear();
 	neonMocks.transaction.mockReset();
+	neonMocks.unsafe.mockReset();
 });
 
 describe("runNeonHttpTransaction options", () => {
@@ -93,5 +99,62 @@ describe("runNeonHttpTransaction options", () => {
 			failure,
 		);
 		expect(neonMocks.transaction).toHaveBeenCalledTimes(1);
+	});
+
+	it("rejects unowned hard-tenant SQL before transaction submission", async () => {
+		const { runNeonHttpTransaction } = await import("../src/http-transaction");
+
+		await expect(
+			runNeonHttpTransaction((sql) => [
+				sql`SELECT * FROM platform_role_assignment`,
+			]),
+		).rejects.toThrow(/Tenant SQL policy rejected/);
+		expect(neonMocks.sql).not.toHaveBeenCalled();
+		expect(neonMocks.transaction).not.toHaveBeenCalled();
+	});
+
+	it("governs the query method used by Drizzle", async () => {
+		const { getNeonSql } = await import("../src/http-transaction");
+
+		expect(() =>
+			getNeonSql().query("DELETE FROM platform_role_assignment WHERE id = $1", [
+				"assignment-id",
+			]),
+		).toThrow(/Tenant SQL policy rejected/);
+		expect(neonMocks.query).not.toHaveBeenCalled();
+	});
+
+	it("rejects sql.unsafe before the driver can construct a query", async () => {
+		const { getNeonSql } = await import("../src/http-transaction");
+		const sqlWithUnsafe = getNeonSql() as unknown as {
+			unsafe: (statement: string) => unknown;
+		};
+
+		expect(() => sqlWithUnsafe.unsafe("SELECT 1")).toThrow(
+			/sql\.unsafe is not permitted/,
+		);
+		expect(neonMocks.unsafe).not.toHaveBeenCalled();
+	});
+
+	it("rejects an asynchronous builder before transaction submission", async () => {
+		const { runNeonHttpTransaction } = await import("../src/http-transaction");
+		const asynchronousBuilder = async () => [];
+
+		await expect(
+			Reflect.apply(runNeonHttpTransaction, undefined, [asynchronousBuilder]),
+		).rejects.toThrow(/must synchronously return a query array/);
+		expect(neonMocks.transaction).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		{ label: "missing statement result", value: [] },
+		{ label: "non-row statement result", value: [{ rows: [] }] },
+	])("rejects an invalid driver batch: $label", async ({ value }) => {
+		neonMocks.transaction.mockResolvedValueOnce(value);
+		const { runNeonHttpTransaction } = await import("../src/http-transaction");
+
+		await expect(
+			runNeonHttpTransaction((sql) => [sql`SELECT 1`]),
+		).rejects.toThrow(/invalid result batch/);
 	});
 });

@@ -184,10 +184,9 @@ export async function assignOrgRoleWithAudit(
 		reactivated,
 	});
 
-	const [rows] = await runNeonHttpTransaction<[AssignAuditedSqlRow[]]>(
-		(sql) => {
-			const statement = current
-				? sql`
+	const [rows] = await runNeonHttpTransaction((sql) => {
+		const statement = current
+			? sql`
 						WITH mutated AS (
 							UPDATE platform_role_assignment
 							SET
@@ -231,7 +230,7 @@ export async function assignOrgRoleWithAudit(
 						FROM mutated
 						INNER JOIN audited ON audited.organization_id = mutated.organization_id
 					`
-				: sql`
+			: sql`
 						WITH mutated AS (
 							INSERT INTO platform_role_assignment (
 								id,
@@ -289,9 +288,8 @@ export async function assignOrgRoleWithAudit(
 						INNER JOIN audited ON audited.organization_id = mutated.organization_id
 					`;
 
-			return [statement];
-		},
-	);
+		return [statement];
+	});
 
 	const [row] = rows;
 	if (!row) {

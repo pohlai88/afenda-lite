@@ -4,16 +4,7 @@
  * Protected: changes require local pre-edit token and compatibility checks.
  */
 import { AppError, isAppError } from "./app-error";
-
-const DEFAULT_INTERNAL_MESSAGE = "An unexpected error occurred";
-
-function normalizeFallbackMessage(message: unknown): string {
-	if (typeof message !== "string") {
-		return DEFAULT_INTERNAL_MESSAGE;
-	}
-	const normalized = message.trim();
-	return normalized.length > 0 ? normalized : DEFAULT_INTERNAL_MESSAGE;
-}
+import { DEFAULT_INTERNAL_MESSAGE } from "./public-error-policy";
 
 /**
  * Normalizes an unknown failure into an AppError.
@@ -26,7 +17,7 @@ function normalizeFallbackMessage(message: unknown): string {
  */
 export function normalizeUnknown(
 	error: unknown,
-	fallbackMessage: unknown = DEFAULT_INTERNAL_MESSAGE,
+	fallbackMessage?: unknown,
 ): AppError {
 	if (isAppError(error)) {
 		return error;
@@ -34,8 +25,9 @@ export function normalizeUnknown(
 
 	return new AppError({
 		code: "INTERNAL_ERROR",
-		message: normalizeFallbackMessage(fallbackMessage),
+		message: DEFAULT_INTERNAL_MESSAGE,
 		isOperational: false,
+		operation: fallbackMessage,
 		cause: error,
 	});
 }

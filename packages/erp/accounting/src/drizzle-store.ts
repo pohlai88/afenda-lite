@@ -11,14 +11,8 @@ import {
 	ledgerPosting,
 	runNeonHttpTransaction,
 } from "@afenda/db";
-import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
-import {
-	fail,
-	failFromAppError,
-	failFromUnknown,
-	ok,
-	type Result,
-} from "@afenda/errors/result";
+import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
+import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
 import { z } from "zod";
 
 import type {
@@ -45,10 +39,7 @@ import type {
 } from "./model";
 
 function failFromPersistence(error: unknown, fallbackMessage: string) {
-	const mapped = fromPostgresUnknown(error);
-	return mapped === undefined
-		? failFromUnknown(error, fallbackMessage)
-		: failFromAppError(mapped);
+	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
 }
 
 const postingProfileLineSqlSchema = z.object({
@@ -83,6 +74,45 @@ interface SourcePostingLinkSqlRow {
 	source_event_id: string;
 	source_event_version: number;
 	source_module: string;
+}
+
+interface TrialBalanceSqlRow {
+	account_code: string;
+	balance: string;
+	total_credit: string;
+	total_debit: string;
+}
+
+interface PostingExceptionSqlRow {
+	created_at: Date;
+	created_by: string;
+	id: string;
+	message: string;
+	organization_id: string;
+	payload: unknown;
+	posting_rule_code: string;
+	reason_code: string;
+	resolution_note: string | null;
+	resolved_at: Date | null;
+	resolved_by: string | null;
+	source_aggregate_id: string;
+	source_event_id: string;
+	source_event_version: number;
+	source_module: string;
+	status: string;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+}
+
+interface LedgerAccountActivitySqlRow {
+	account_code: string;
+	credit_amount: string;
+	debit_amount: string;
+	journal_code: string;
+	journal_id: string;
+	period_id: string;
+	posted_at: Date;
 }
 
 function mapAccountRoleSql(row: AccountRoleMappingSqlRow): AccountRoleMapping {
@@ -359,7 +389,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 	): Promise<Result<AccountingPeriod>> {
 		const id = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>(
+			const [rows] = await runNeonHttpTransaction(
 				(sql) => [
 					sql`
 						INSERT INTO accounting_period (
@@ -398,7 +428,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 		record: Parameters<AccountingStore["softClosePeriod"]>[0],
 	): Promise<Result<AccountingPeriod>> {
 		try {
-			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					UPDATE accounting_period
 					SET status = 'soft_closed', soft_closed = true,
@@ -430,7 +460,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 		record: Parameters<AccountingStore["closePeriod"]>[0],
 	): Promise<Result<AccountingPeriod>> {
 		try {
-			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					UPDATE accounting_period
 					SET status = 'closed', version = version + 1,
@@ -459,7 +489,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 		record: Parameters<AccountingStore["reopenPeriod"]>[0],
 	): Promise<Result<AccountingPeriod>> {
 		try {
-			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					UPDATE accounting_period
 					SET status = 'open', soft_closed = false,
@@ -491,7 +521,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 	): Promise<Result<Journal>> {
 		const id = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					INSERT INTO journal (
 						id, organization_id, period_id, code, normalized_code, description,
@@ -525,23 +555,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 	): Promise<Result<JournalLine>> {
 		const id = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[
-					Array<{
-						id: string;
-						organization_id: string;
-						journal_id: string;
-						line_no: number;
-						account_code: string;
-						account_name: string | null;
-						ledger_account_id: string | null;
-						debit_amount: string;
-						credit_amount: string;
-						created_by: string;
-						created_at: Date;
-					}>,
-				]
-			>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH eligible AS (
 						SELECT j.id, COALESCE(MAX(l.line_no), 0) + 1 AS next_line
@@ -595,7 +609,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 	): Promise<Result<Journal>> {
 		const eventId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH eligible AS (
 						SELECT j.*
@@ -675,7 +689,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 		const reversalId = randomUUID();
 		const eventId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH eligible AS (
 						SELECT j.*
@@ -862,16 +876,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 		filter: Parameters<AccountingStore["trialBalance"]>[0],
 	): Promise<Result<TrialBalanceRow[]>> {
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[
-					Array<{
-						account_code: string;
-						total_debit: string;
-						total_credit: string;
-						balance: string;
-					}>,
-				]
-			>(
+			const [rows] = await runNeonHttpTransaction(
 				(sql) => [
 					sql`
 						SELECT account_code,
@@ -889,7 +894,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 				{ readOnly: true },
 			);
 			return ok(
-				rows.map((row) => ({
+				rows.map((row: TrialBalanceSqlRow) => ({
 					accountCode: row.account_code,
 					totalDebit: row.total_debit,
 					totalCredit: row.total_credit,
@@ -906,7 +911,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 	): Promise<Result<ChartOfAccounts>> {
 		const id = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					INSERT INTO chart_of_account (id, organization_id, code, name, status, version, created_by, updated_by)
 					VALUES (${id}, ${record.organizationId}, ${record.code}, ${record.name}, 'active', 1, ${record.actorUserId}, ${record.actorUserId})
@@ -939,7 +944,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 	): Promise<Result<LedgerAccount>> {
 		const id = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					INSERT INTO ledger_account (
 						id, organization_id, chart_of_account_id, code, normalized_code,
@@ -983,9 +988,8 @@ export class DrizzleAccountingStore implements AccountingStore {
 		record: Parameters<AccountingStore["updateLedgerAccount"]>[0],
 	): Promise<Result<LedgerAccount>> {
 		try {
-			const [rows] = await runNeonHttpTransaction<[LedgerAccountSqlRow[]]>(
-				(sql) => [
-					sql`
+			const [rows] = await runNeonHttpTransaction((sql) => [
+				sql`
 					UPDATE ledger_account
 					SET name = ${record.name}, account_type = ${record.accountType},
 						normal_balance = ${record.normalBalance}, is_control = ${record.isControl},
@@ -994,8 +998,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 						AND version = ${record.expectedVersion}
 					RETURNING *
 				`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (row === undefined) {
 				return fail("CONFLICT", "Version mismatch");
@@ -1010,9 +1013,8 @@ export class DrizzleAccountingStore implements AccountingStore {
 		record: Parameters<AccountingStore["deactivateLedgerAccount"]>[0],
 	): Promise<Result<LedgerAccount>> {
 		try {
-			const [rows] = await runNeonHttpTransaction<[LedgerAccountSqlRow[]]>(
-				(sql) => [
-					sql`
+			const [rows] = await runNeonHttpTransaction((sql) => [
+				sql`
 					UPDATE ledger_account
 					SET status = 'inactive', version = version + 1,
 						updated_by = ${record.actorUserId}, updated_at = now()
@@ -1020,8 +1022,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 						AND status = 'active' AND version = ${record.expectedVersion}
 					RETURNING *
 				`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (row === undefined) {
 				return fail("CONFLICT", "Deactivation conflict");
@@ -1036,7 +1037,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 		filter: Parameters<AccountingStore["listLedgerAccounts"]>[0],
 	): Promise<Result<LedgerAccount[]>> {
 		try {
-			const [rows] = await runNeonHttpTransaction<[LedgerAccountSqlRow[]]>(
+			const [rows] = await runNeonHttpTransaction(
 				(sql) => [
 					sql`
 					SELECT * FROM ledger_account
@@ -1061,7 +1062,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 		normalizedCode: string,
 	): Promise<Result<LedgerAccount | null>> {
 		try {
-			const [rows] = await runNeonHttpTransaction<[LedgerAccountSqlRow[]]>(
+			const [rows] = await runNeonHttpTransaction(
 				(sql) => [
 					sql`
 					SELECT * FROM ledger_account
@@ -1084,9 +1085,8 @@ export class DrizzleAccountingStore implements AccountingStore {
 	): Promise<Result<AccountRoleMapping>> {
 		const id = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<[AccountRoleMappingSqlRow[]]>(
-				(sql) => [
-					sql`
+			const [rows] = await runNeonHttpTransaction((sql) => [
+				sql`
 					INSERT INTO account_role_mapping (id, organization_id, account_role, ledger_account_id, version, created_by, updated_by)
 					VALUES (${id}, ${record.organizationId}, ${record.accountRole}, ${record.ledgerAccountId}, 1, ${record.actorUserId}, ${record.actorUserId})
 					ON CONFLICT (organization_id, account_role) DO UPDATE
@@ -1094,8 +1094,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 						updated_by = EXCLUDED.updated_by, updated_at = now()
 					RETURNING *
 				`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (row === undefined) {
 				return fail("INTERNAL_ERROR", "Upsert returned nothing");
@@ -1111,7 +1110,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 		accountRole: string,
 	): Promise<Result<AccountRoleMapping | null>> {
 		try {
-			const [rows] = await runNeonHttpTransaction<[AccountRoleMappingSqlRow[]]>(
+			const [rows] = await runNeonHttpTransaction(
 				(sql) => [
 					sql`
 					SELECT * FROM account_role_mapping
@@ -1139,9 +1138,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 			accountRole: line.accountRole,
 		}));
 		try {
-			const [profileRows] = await runNeonHttpTransaction<
-				[{ id: string; version: number }[]]
-			>((sql) => {
+			const [profileRows] = await runNeonHttpTransaction((sql) => {
 				const statements = [
 					sql`
 						INSERT INTO posting_profile (
@@ -1219,24 +1216,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 		code: string,
 	): Promise<Result<PostingProfile | null>> {
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[
-					Array<{
-						id: string;
-						organization_id: string;
-						code: string;
-						event_type: string;
-						version_number: number;
-						status: string;
-						version: number;
-						lines: unknown;
-						created_by: string;
-						updated_by: string;
-						created_at: Date;
-						updated_at: Date;
-					}>,
-				]
-			>(
+			const [rows] = await runNeonHttpTransaction(
 				(sql) => [
 					sql`
 					SELECT pp.*, json_agg(json_build_object(
@@ -1287,7 +1267,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 		record: Parameters<AccountingStore["findSourcePostingLink"]>[0],
 	): Promise<Result<SourcePostingLink | null>> {
 		try {
-			const [rows] = await runNeonHttpTransaction<[SourcePostingLinkSqlRow[]]>(
+			const [rows] = await runNeonHttpTransaction(
 				(sql) => [
 					sql`
 					SELECT * FROM source_posting_link
@@ -1314,7 +1294,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 	): Promise<Result<SourcePostingLink>> {
 		const id = randomUUID();
 		try {
-			await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
+			await runNeonHttpTransaction((sql) => [
 				sql`
 					INSERT INTO source_posting_link (
 						id, organization_id, source_module, source_aggregate_id,
@@ -1353,7 +1333,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 	): Promise<Result<PostingException>> {
 		const id = randomUUID();
 		try {
-			await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
+			await runNeonHttpTransaction((sql) => [
 				sql`
 					INSERT INTO financial_posting_exception (
 						id, organization_id, source_module, source_aggregate_id,
@@ -1400,31 +1380,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 		filter: Parameters<AccountingStore["listPostingExceptions"]>[0],
 	): Promise<Result<PostingException[]>> {
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[
-					Array<{
-						id: string;
-						organization_id: string;
-						source_module: string;
-						source_aggregate_id: string;
-						source_event_id: string;
-						source_event_version: number;
-						posting_rule_code: string | null;
-						reason_code: string;
-						message: string;
-						status: string;
-						resolution_note: string | null;
-						resolved_by: string | null;
-						resolved_at: Date | null;
-						payload: unknown;
-						version: number;
-						created_by: string;
-						updated_by: string;
-						created_at: Date;
-						updated_at: Date;
-					}>,
-				]
-			>(
+			const [rows] = await runNeonHttpTransaction(
 				(sql) => [
 					sql`
 					SELECT * FROM financial_posting_exception
@@ -1437,7 +1393,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 				{ readOnly: true },
 			);
 			return ok(
-				rows.map((r) => ({
+				rows.map((r: PostingExceptionSqlRow) => ({
 					id: r.id,
 					organizationId: r.organization_id,
 					sourceModule: r.source_module,
@@ -1468,31 +1424,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 		record: Parameters<AccountingStore["resolvePostingException"]>[0],
 	): Promise<Result<PostingException>> {
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[
-					Array<{
-						id: string;
-						organization_id: string;
-						source_module: string;
-						source_aggregate_id: string;
-						source_event_id: string;
-						source_event_version: number;
-						posting_rule_code: string | null;
-						reason_code: string;
-						message: string;
-						status: string;
-						resolution_note: string | null;
-						resolved_by: string | null;
-						resolved_at: Date | null;
-						payload: unknown;
-						version: number;
-						created_by: string;
-						updated_by: string;
-						created_at: Date;
-						updated_at: Date;
-					}>,
-				]
-			>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					UPDATE financial_posting_exception
 					SET status = 'resolved', resolution_note = ${record.resolutionNote},
@@ -1537,24 +1469,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 		filter: Parameters<AccountingStore["getSourcePostingTrace"]>[0],
 	): Promise<Result<SourcePostingTrace[]>> {
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[
-					Array<{
-						id: string;
-						organization_id: string;
-						source_module: string;
-						source_aggregate_id: string;
-						source_event_id: string;
-						source_event_version: number;
-						posting_rule_id: string;
-						posting_rule_version: number;
-						journal_id: string;
-						causation_id: string | null;
-						created_by: string;
-						created_at: Date;
-					}>,
-				]
-			>(
+			const [rows] = await runNeonHttpTransaction(
 				(sql) => [
 					sql`
 					SELECT * FROM source_posting_link
@@ -1572,30 +1487,34 @@ export class DrizzleAccountingStore implements AccountingStore {
 				{ readOnly: true },
 			);
 			const loadedTraces = await Promise.all(
-				rows.map(async (r): Promise<SourcePostingTrace | null> => {
-					const link: SourcePostingLink = {
-						id: r.id,
-						organizationId: r.organization_id,
-						sourceModule: r.source_module,
-						sourceAggregateId: r.source_aggregate_id,
-						sourceEventId: r.source_event_id,
-						sourceEventVersion: r.source_event_version,
-						postingRuleId: r.posting_rule_id,
-						postingRuleVersion: r.posting_rule_version,
-						journalId: r.journal_id,
-						causationId: r.causation_id,
-						createdBy: r.created_by,
-						createdAt: r.created_at,
-					};
-					const journalResult = await this.getById(
-						filter.organizationId,
-						link.journalId,
-					);
-					if (journalResult.ok && journalResult.data) {
-						return { link, journal: journalResult.data };
-					}
-					return null;
-				}),
+				rows.map(
+					async (
+						r: SourcePostingLinkSqlRow,
+					): Promise<SourcePostingTrace | null> => {
+						const link: SourcePostingLink = {
+							id: r.id,
+							organizationId: r.organization_id,
+							sourceModule: r.source_module,
+							sourceAggregateId: r.source_aggregate_id,
+							sourceEventId: r.source_event_id,
+							sourceEventVersion: r.source_event_version,
+							postingRuleId: r.posting_rule_id,
+							postingRuleVersion: r.posting_rule_version,
+							journalId: r.journal_id,
+							causationId: r.causation_id,
+							createdBy: r.created_by,
+							createdAt: r.created_at,
+						};
+						const journalResult = await this.getById(
+							filter.organizationId,
+							link.journalId,
+						);
+						if (journalResult.ok && journalResult.data) {
+							return { link, journal: journalResult.data };
+						}
+						return null;
+					},
+				),
 			);
 			const traces = loadedTraces.filter(
 				(trace): trace is SourcePostingTrace => trace !== null,
@@ -1610,19 +1529,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 		filter: Parameters<AccountingStore["getLedgerAccountActivity"]>[0],
 	): Promise<Result<LedgerAccountActivityRow[]>> {
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[
-					Array<{
-						journal_id: string;
-						journal_code: string;
-						period_id: string;
-						account_code: string;
-						debit_amount: string;
-						credit_amount: string;
-						posted_at: Date;
-					}>,
-				]
-			>(
+			const [rows] = await runNeonHttpTransaction(
 				(sql) => [
 					sql`
 					SELECT lp.journal_id, j.code AS journal_code, lp.period_id,
@@ -1641,7 +1548,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 				{ readOnly: true },
 			);
 			return ok(
-				rows.map((r) => ({
+				rows.map((r: LedgerAccountActivitySqlRow) => ({
 					journalId: r.journal_id,
 					journalCode: r.journal_code,
 					periodId: r.period_id,

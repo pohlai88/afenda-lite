@@ -113,17 +113,16 @@ export function buildSubmitLeaveRequestSql(params: {
 
 	const auditCte = buildAuditCte({
 		auditId,
+		organizationId: params.organizationId,
+		actorUserId: params.actorUserId,
 		module: "human-resources",
 		entity: "hr_leave_request",
 		action: "UPDATE",
 		correlationId: params.correlationId,
-		changes: `'${changesJson}'`,
+		changesJson,
+		reasonCode: "LEAVE_REQUEST_SUBMIT",
 		fromCte: "updated_request",
-		selectFields: {
-			organizationId: "organization_id",
-			entityId: "id",
-			actorUserId: `'${params.actorUserId}'`,
-		},
+		entityIdReference: "id",
 	});
 
 	const outboxCte = params.eventType
@@ -228,17 +227,17 @@ export function buildCreateLeaveRequestSql(params: {
 
 	const auditCte = buildAuditCte({
 		auditId,
+		organizationId: params.organizationId,
+		actorUserId: params.createdBy,
 		module: "human-resources",
 		entity: "hr_leave_request",
 		action: "CREATE",
 		correlationId: params.correlationId,
-		newValue: `'${newValueJson}'`,
+		newValueJson,
+		causationId: params.createIdempotencyKey,
+		reasonCode: "LEAVE_REQUEST_CREATE",
 		fromCte: "inserted_request",
-		selectFields: {
-			organizationId: "organization_id",
-			entityId: "id",
-			actorUserId: "created_by",
-		},
+		entityIdReference: "id",
 	});
 
 	return `
@@ -350,17 +349,16 @@ export function buildApproveLeaveRequestSql(params: {
 		),
 		${buildAuditCte({
 			auditId,
+			organizationId: params.organizationId,
+			actorUserId: params.actorUserId,
 			module: "human-resources",
 			entity: "hr_leave_request",
 			action: "UPDATE",
 			correlationId: params.correlationId,
-			changes: `'${changesJson}'`,
+			changesJson,
+			reasonCode: "LEAVE_REQUEST_APPROVE",
 			fromCte: "updated_request",
-			selectFields: {
-				organizationId: "organization_id",
-				entityId: "id",
-				actorUserId: `'${params.actorUserId}'`,
-			},
+			entityIdReference: "id",
 		}).replace(HR_REGEX_2, "audited AS")},
 		${buildOutboxCte({
 			eventId,
@@ -466,17 +464,16 @@ export function buildCancelApprovedLeaveRequestSql(params: {
 		),
 		${buildAuditCte({
 			auditId,
+			organizationId: params.organizationId,
+			actorUserId: params.actorUserId,
 			module: "human-resources",
 			entity: "hr_leave_request",
 			action: "UPDATE",
 			correlationId: params.correlationId,
-			changes: `'${changesJson}'`,
+			changesJson,
+			reasonCode: "LEAVE_REQUEST_CANCEL",
 			fromCte: "updated_request",
-			selectFields: {
-				organizationId: "organization_id",
-				entityId: "id",
-				actorUserId: `'${params.actorUserId}'`,
-			},
+			entityIdReference: "id",
 		}).replace(HR_REGEX_2, "audited AS")},
 		${buildOutboxCte({
 			eventId,
@@ -564,17 +561,16 @@ export function buildAmendLeaveRequestSql(params: {
 		),
 		${buildAuditCte({
 			auditId,
+			organizationId: params.organizationId,
+			actorUserId: params.actorUserId,
 			module: "human-resources",
 			entity: "hr_leave_request",
 			action: "UPDATE",
 			correlationId: params.correlationId,
-			changes: `'${changesJson}'`,
+			changesJson,
+			reasonCode: "LEAVE_REQUEST_AMEND",
 			fromCte: "updated_request",
-			selectFields: {
-				organizationId: "organization_id",
-				entityId: "id",
-				actorUserId: `'${params.actorUserId}'`,
-			},
+			entityIdReference: "id",
 		}).replace(HR_REGEX_2, "audited AS")}
 		SELECT updated_request.*
 		FROM updated_request, inserted_segments, audited
@@ -628,17 +624,17 @@ export function buildCreateLeaveEntitlementSql(params: {
 		),
 		${buildAuditCte({
 			auditId,
+			organizationId: params.organizationId,
+			actorUserId: params.createdBy,
 			module: "human-resources",
 			entity: "hr_leave_entitlement",
 			action: "CREATE",
 			correlationId: params.correlationId,
-			newValue: `'${newValueJson}'`,
+			newValueJson,
+			causationId: params.createIdempotencyKey,
+			reasonCode: "LEAVE_ENTITLEMENT_CREATE",
 			fromCte: "inserted_entitlement",
-			selectFields: {
-				organizationId: "organization_id",
-				entityId: "id",
-				actorUserId: "created_by",
-			},
+			entityIdReference: "id",
 		}).replace(HR_REGEX_2, "audited AS")}
 		SELECT inserted_entitlement.*
 		FROM inserted_entitlement, audited
@@ -669,23 +665,22 @@ export function buildCreateLeaveAdjustmentSql(params: {
 		entitlementId: params.entitlementId,
 		kind: params.kind,
 		delta: params.delta,
-		reason: params.reason,
 		source: params.source,
 	});
 
 	const auditCte = buildAuditCte({
 		auditId,
+		organizationId: params.organizationId,
+		actorUserId: params.createdBy,
 		module: "human-resources",
 		entity: "hr_leave_adjustment",
 		action: "CREATE",
 		correlationId: params.correlationId,
-		newValue: `'${newValueJson}'`,
+		newValueJson,
+		causationId: params.createIdempotencyKey,
+		reasonCode: "LEAVE_ADJUSTMENT_CREATE",
 		fromCte: "inserted_adjustment",
-		selectFields: {
-			organizationId: "organization_id",
-			entityId: "id",
-			actorUserId: "created_by",
-		},
+		entityIdReference: "id",
 	});
 
 	const outboxCte = params.eventType
@@ -780,17 +775,16 @@ export function buildStatusTransitionSql(params: {
 
 	const auditCte = buildAuditCte({
 		auditId,
+		organizationId: params.organizationId,
+		actorUserId: params.actorUserId,
 		module: "human-resources",
 		entity: "hr_leave_request",
 		action: "UPDATE",
 		correlationId: params.correlationId,
-		changes: `'${changesJson}'`,
+		changesJson,
+		reasonCode: "LEAVE_REQUEST_STATUS_TRANSITION",
 		fromCte: "updated_request",
-		selectFields: {
-			organizationId: "organization_id",
-			entityId: "id",
-			actorUserId: `'${params.actorUserId}'`,
-		},
+		entityIdReference: "id",
 	});
 
 	const outboxCte = params.eventType
@@ -935,45 +929,45 @@ export function buildCarryForwardEntitlementSql(params: {
 		),
 		${buildAuditCte({
 			auditId: sourceAuditId,
+			organizationId: params.organizationId,
+			actorUserId: params.actorUserId,
 			module: "human-resources",
 			entity: "hr_leave_entitlement",
 			action: "UPDATE",
 			correlationId: params.correlationId,
-			changes: `'${sourceChangesJson}'`,
+			changesJson: sourceChangesJson,
+			causationId: params.createIdempotencyKey,
+			reasonCode: "LEAVE_ENTITLEMENT_CARRY_FORWARD_SOURCE",
 			fromCte: "updated_source",
-			selectFields: {
-				organizationId: "organization_id",
-				entityId: "id",
-				actorUserId: `'${params.actorUserId}'`,
-			},
+			entityIdReference: "id",
 		}).replace(HR_REGEX_2, "source_audited AS")},
 		${buildAuditCte({
 			auditId: newAuditId,
+			organizationId: params.organizationId,
+			actorUserId: params.actorUserId,
 			module: "human-resources",
 			entity: "hr_leave_entitlement",
 			action: "CREATE",
 			correlationId: params.correlationId,
-			newValue: `'${newValueJson}'`,
+			newValueJson,
+			causationId: params.createIdempotencyKey,
+			reasonCode: "LEAVE_ENTITLEMENT_CARRY_FORWARD_CREATE",
 			fromCte: "new_entitlement",
-			selectFields: {
-				organizationId: "organization_id",
-				entityId: "id",
-				actorUserId: "created_by",
-			},
+			entityIdReference: "id",
 		}).replace(HR_REGEX_2, "new_audited AS")},
 		${buildAuditCte({
 			auditId: carryOutAuditId,
+			organizationId: params.organizationId,
+			actorUserId: params.actorUserId,
 			module: "human-resources",
 			entity: "hr_leave_adjustment",
 			action: "CREATE",
 			correlationId: params.correlationId,
-			newValue: `'${carryOutValueJson}'`,
+			newValueJson: carryOutValueJson,
+			causationId: params.createIdempotencyKey,
+			reasonCode: "LEAVE_ADJUSTMENT_CARRY_FORWARD",
 			fromCte: "source_carry_out",
-			selectFields: {
-				organizationId: "organization_id",
-				entityId: "id",
-				actorUserId: "created_by",
-			},
+			entityIdReference: "id",
 		}).replace(HR_REGEX_2, "carry_out_audited AS")},
 		${buildOutboxCte({
 			eventId,
@@ -1104,31 +1098,29 @@ export function buildExpireEntitlementSql(params: {
 		),
 		${buildAuditCte({
 			auditId: entitlementAuditId,
+			organizationId: params.organizationId,
+			actorUserId: params.actorUserId,
 			module: "human-resources",
 			entity: "hr_leave_entitlement",
 			action: "UPDATE",
 			correlationId: params.correlationId,
-			changes: `'${changesJson}'`,
+			changesJson,
+			reasonCode: "LEAVE_ENTITLEMENT_EXPIRE",
 			fromCte: "updated_entitlement",
-			selectFields: {
-				organizationId: "organization_id",
-				entityId: "id",
-				actorUserId: `'${params.actorUserId}'`,
-			},
+			entityIdReference: "id",
 		}).replace(HR_REGEX_2, "entitlement_audited AS")},
 		${buildAuditCte({
 			auditId: expiryAuditId,
+			organizationId: params.organizationId,
+			actorUserId: params.actorUserId,
 			module: "human-resources",
 			entity: "hr_leave_adjustment",
 			action: "CREATE",
 			correlationId: params.correlationId,
-			newValue: `'${expiryValueJson}'`,
+			newValueJson: expiryValueJson,
+			reasonCode: "LEAVE_ADJUSTMENT_EXPIRY",
 			fromCte: "expiry_adjustment",
-			selectFields: {
-				organizationId: "organization_id",
-				entityId: "id",
-				actorUserId: "created_by",
-			},
+			entityIdReference: "id",
 		}).replace(HR_REGEX_2, "expiry_audited AS")}${
 			params.eventType
 				? `,
@@ -1220,17 +1212,16 @@ export function buildCreateLeavePolicySql(params: {
 		),
 		${buildAuditCte({
 			auditId,
+			organizationId: params.organizationId,
+			actorUserId: params.createdBy,
 			module: "human-resources",
 			entity: "hr_leave_policy",
 			action: "CREATE",
 			correlationId: params.correlationId,
-			newValue: `'${newValueJson}'`,
+			newValueJson,
+			reasonCode: "LEAVE_POLICY_CREATE",
 			fromCte: "inserted_policy",
-			selectFields: {
-				organizationId: "organization_id",
-				entityId: "id",
-				actorUserId: "created_by",
-			},
+			entityIdReference: "id",
 		}).replace(HR_REGEX_2, "audited AS")}
 		SELECT inserted_policy.*
 		FROM inserted_policy, inserted_eligibility, audited
@@ -1267,17 +1258,16 @@ export function buildPolicyStatusTransitionSql(params: {
 		),
 		${buildAuditCte({
 			auditId,
+			organizationId: params.organizationId,
+			actorUserId: params.actorUserId,
 			module: "human-resources",
 			entity: "hr_leave_policy",
 			action: "UPDATE",
 			correlationId: params.correlationId,
-			changes: `'${changesJson}'`,
+			changesJson,
+			reasonCode: "LEAVE_POLICY_STATUS_TRANSITION",
 			fromCte: "updated_policy",
-			selectFields: {
-				organizationId: "organization_id",
-				entityId: "id",
-				actorUserId: `'${params.actorUserId}'`,
-			},
+			entityIdReference: "id",
 		}).replace(HR_REGEX_2, "audited AS")}
 		SELECT updated_policy.*
 		FROM updated_policy, audited

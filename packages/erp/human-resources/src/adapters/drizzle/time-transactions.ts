@@ -16,6 +16,7 @@ import {
 	type hrTimesheet,
 	type hrTimesheetApprovalDecision,
 	type hrWorkCalendar,
+	type NeonHttpTransactionResults,
 	runNeonHttpTransaction,
 } from "@afenda/db";
 
@@ -253,11 +254,11 @@ export interface TimesheetApprovalDecisionSqlRow {
 	version_approved: number;
 }
 
-export async function runTimeTransaction<T extends unknown[]>(
-	queriesOrFn: Parameters<typeof runNeonHttpTransaction<T>>[0],
-	options?: Parameters<typeof runNeonHttpTransaction<T>>[1],
-): Promise<T> {
-	return await runNeonHttpTransaction<T>(queriesOrFn, {
+export async function runTimeTransaction(
+	queriesOrFn: Parameters<typeof runNeonHttpTransaction>[0],
+	options?: Parameters<typeof runNeonHttpTransaction>[1],
+): Promise<NeonHttpTransactionResults> {
+	return await runNeonHttpTransaction(queriesOrFn, {
 		isolationLevel: "ReadCommitted",
 		...options,
 	});

@@ -7,14 +7,8 @@ import {
 	platformWorkItem,
 	platformWorkItemActivity,
 } from "@afenda/db";
-import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
-import {
-	fail,
-	failFromAppError,
-	failFromUnknown,
-	ok,
-	type Result,
-} from "@afenda/errors/result";
+import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
+import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
 
 export type PlatformWorkItemKind =
 	| "approval"
@@ -263,10 +257,7 @@ function mapPlatformWorkItemPersistenceFailure(
 	error: unknown,
 	fallbackMessage: string,
 ): Result<never> {
-	const mapped = fromPostgresUnknown(error);
-	return mapped === undefined
-		? failFromUnknown(error, fallbackMessage)
-		: failFromAppError(mapped);
+	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
 }
 
 export function createMemoryPlatformWorkItemStore(): PlatformWorkItemStore {

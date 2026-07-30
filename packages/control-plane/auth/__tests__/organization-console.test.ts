@@ -1,3 +1,4 @@
+import { DEFAULT_INTERNAL_MESSAGE } from "@afenda/errors";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
@@ -160,7 +161,7 @@ describe("organization console (Neon Auth)", () => {
 				createOrganization({ name: "No Id", slug: "no-id" }),
 			).resolves.toEqual({
 				code: "INTERNAL_ERROR",
-				message: "Organization create returned no usable organization id",
+				message: DEFAULT_INTERNAL_MESSAGE,
 				ok: false,
 			});
 		});
@@ -203,7 +204,7 @@ describe("organization console (Neon Auth)", () => {
 			);
 			await expect(persistActiveOrganization("org-1")).resolves.toEqual({
 				code: "INTERNAL_ERROR",
-				message: "Failed to persist active organization on session",
+				message: DEFAULT_INTERNAL_MESSAGE,
 				ok: false,
 			});
 		});

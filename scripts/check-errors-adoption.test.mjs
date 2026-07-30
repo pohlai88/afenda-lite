@@ -361,13 +361,13 @@ test("counts extended database imports as database boundaries", () => {
 			{
 				"src/index.ts": `
 					import { eq } from "drizzle-orm";
-					import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
+					import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
 					import type { Result } from "@afenda/errors/result";
 					export function run(): Result<{ id: string }> {
 						try {
 							return { ok: true, data: { id: String(eq) } };
 						} catch (error) {
-							return { ok: false, error: fromPostgresUnknown(error) };
+							return { ok: false, error: normalizePostgresUnknown(error) };
 						}
 					}
 				`,
@@ -437,9 +437,9 @@ test("summarizes shared persistence mapper adoption", () => {
 			},
 			{
 				"src/shared/persistence-errors.ts": `
-					import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
+					import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
 					export function mapPersistenceFailure(error: unknown) {
-						return fromPostgresUnknown(error);
+						return normalizePostgresUnknown(error);
 					}
 				`,
 				"src/repository.ts": `
@@ -484,9 +484,9 @@ test("summarizes shared corporate administration translator adoption", () => {
 			},
 			{
 				"src/adapters/drizzle/errors.ts": `
-					import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
+					import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
 					export function translateCorporateAdministrationInfrastructureError(error: unknown) {
-						return fromPostgresUnknown(error);
+						return normalizePostgresUnknown(error);
 					}
 				`,
 				"src/repository.ts": `

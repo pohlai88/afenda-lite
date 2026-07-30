@@ -1,6 +1,6 @@
 # `@afenda/errors`
 
-Transport-neutral error kernel for Platform packages and BFF adapters: closed codes, `AppError`, safe serialize, `Result`, HTTP status/body helpers, and a duck-typed Postgres SQLSTATE map — **without** Next.js or database drivers.
+Transport-neutral error kernel for Platform packages and BFF adapters: closed codes, runtime-owned `AppError` identity, safe public and diagnostic projections, `Result`, atomic HTTP projection, and total duck-typed PostgreSQL normalization — **without** Next.js or database drivers.
 
 Use this package when you need a shared ok/fail wire shape or HTTP-safe error vocabulary across `@afenda/*` and `apps/web`. Domain `ok` / `reason` unions stay in domain modules; map them at adapters. Maintainers run lint / typecheck / Vitest via the filter scripts below (Node `24.x`, pnpm `≥10.33.4` from the repo root `engines`).
 
@@ -13,6 +13,8 @@ import {
   AppError,
   ERROR_CODES,
   type SafeDetails,
+	DEFAULT_INTERNAL_MESSAGE,
+	errorDiagnosticFields,
   normalizeUnknown,
   sanitizeErrorDetails,
   serializeAppError,
@@ -20,13 +22,8 @@ import {
   serviceUnavailable,
 } from "@afenda/errors";
 import { ok, fail, failFromAppError, failFromUnknown, type Result } from "@afenda/errors/result";
-import {
-  ERROR_HTTP_STATUS,
-  MAX_RETRY_AFTER_SECONDS,
-  httpErrorBody,
-  retryAfterSeconds,
-} from "@afenda/errors/http";
-import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
+import { projectHttpError } from "@afenda/errors/http";
+import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
 ```
 
 Factories also re-export from `@afenda/errors/common` (same symbols as the root barrel).
@@ -116,7 +113,7 @@ Do not create competing shared implementations of:
 - `Result<T>`
 - `ERROR_CODES`
 - `ERROR_HTTP_STATUS`
-- `httpErrorBody`
+- `projectHttpError`
 - `retryAfterSeconds`
 - PostgreSQL SQLSTATE mapping
 - shared unknown-error normalization
@@ -168,7 +165,7 @@ Failure crosses an infrastructure boundary
 -> use explicit adapter mapping
 
 Failure crosses an HTTP boundary
--> use @afenda/errors/http
+-> use projectHttpError exactly once
 
 Failure reaches a public client
 -> serialize only; never expose Error, cause, stack, SQL, or driver data
@@ -212,9 +209,15 @@ Local/domain failure
 
 Repository consumers MUST normalize unknown failures with `normalizeUnknown` or
 `failFromUnknown`, convert existing `AppError` values with `failFromAppError`,
-map PostgreSQL failures explicitly with `fromPostgresUnknown`, serialize public
-`AppError` values with `serializeAppError` or HTTP helpers, and project HTTP
-failures through `ERROR_HTTP_STATUS`, `httpErrorBody`, and `retryAfterSeconds`.
+map PostgreSQL failures explicitly and totally with `normalizePostgresUnknown`,
+serialize public `AppError` values with `serializeAppError`, and project HTTP
+failures atomically with `projectHttpError`.
+
+Unknown native or third-party failures always become `INTERNAL_ERROR` with
+`DEFAULT_INTERNAL_MESSAGE` and no public details. The optional normalization
+context is a bounded internal operation label, not client copy. Use
+`errorDiagnosticFields` for structured logging; it deliberately excludes
+message, cause, stack, SQL, credentials, and driver payloads.
 
 The normalization gate is separate from the adoption gate:
 
@@ -249,22 +252,23 @@ documented `EXEMPT` classifications may remain at closure. `DUPLICATE`,
 
 | Path | Role |
 |------|------|
-| `@afenda/errors` | `AppError`, `ERROR_CODES` / `ErrorCode` (+ `ApiErrorCode` aliases), `SafeDetails`, sanitize, normalize, serialize, common factories |
+| `@afenda/errors` | `AppError`, `ERROR_CODES` / `ErrorCode` (+ `ApiErrorCode` aliases), `SafeDetails`, sanitize, normalize, safe diagnostics, serialize, common factories |
 | `@afenda/errors/result` | `Result` / `ok` / `fail` / `failFromAppError` / `failFromUnknown` (same wire as ActionResult; safe details only) |
-| `@afenda/errors/http` | `ERROR_HTTP_STATUS`, `httpErrorBody`, bounded Retry-After helpers — no `NextResponse` |
+| `@afenda/errors/http` | `projectHttpError`, compatibility status/body helpers, bounded Retry-After helpers — no `NextResponse` |
 | `@afenda/errors/common` | Factories only (`badRequest` … `rateLimited` · `serviceUnavailable`) |
-| `@afenda/errors/adapters/postgres` | SQLSTATE → `AppError` duck-map — no `pg` / Drizzle / Prisma |
+| `@afenda/errors/adapters/postgres` | Total unknown/SQLSTATE → `AppError` normalization with typed retryability — no `pg` / Drizzle / Prisma |
 
 Closed codes include `RATE_LIMITED` (429) and `SERVICE_UNAVAILABLE` (503). Retry-After values are bounded from 1 second to `MAX_RETRY_AFTER_SECONDS` (24 hours). Rate-limit / outage **policy** lives in consumers; this package owns vocabulary, factories, and safe `details` only.
 
-Postgres SQLSTATE mapping is explicit adapter-boundary behavior:
+PostgreSQL normalization is explicit, total adapter-boundary behavior:
 
 ```ts
-const mapped = fromPostgresUnknown(error);
-return mapped ? failFromAppError(mapped) : failFromUnknown(error, "Save failed");
+return failFromAppError(normalizePostgresUnknown(error, "Save record"));
 ```
 
-`normalizeUnknown` stays infrastructure-agnostic; it does not guess SQLSTATE, Redis, HTTP, or filesystem error sources.
+`normalizeUnknown` stays infrastructure-agnostic; it does not guess SQLSTATE,
+Redis, HTTP, or filesystem error sources. `isAppError` trusts only actual
+`AppError` instances created by this runtime, never structural lookalikes.
 
 ## Ownership
 

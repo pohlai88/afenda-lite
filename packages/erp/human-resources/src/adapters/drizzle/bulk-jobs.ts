@@ -139,9 +139,8 @@ export function createDrizzleHumanResourcesBulkJobStore(): HumanResourcesBulkJob
 			);
 			const work = workJson(input.workItem);
 			try {
-				const [saved] = await runNeonHttpTransaction<[Array<{ id: string }>]>(
-					(sql) => [
-						sql`
+				const [saved] = await runNeonHttpTransaction((sql) => [
+					sql`
 					WITH inserted_job AS (
 						INSERT INTO hr_bulk_import_job (
 							id, organization_id, batch_id, entity_type, actor_user_id, correlation_id,
@@ -179,8 +178,7 @@ export function createDrizzleHumanResourcesBulkJobStore(): HumanResourcesBulkJob
 						)
 					) SELECT id FROM inserted_job
 				`,
-					],
-				);
+				]);
 				return saved[0]
 					? ok(input.job)
 					: fail("CONFLICT", "Bulk import job was not created");
@@ -215,9 +213,8 @@ export function createDrizzleHumanResourcesBulkJobStore(): HumanResourcesBulkJob
 				? workJson(input.cleanupWorkItem)
 				: null;
 			try {
-				const [saved] = await runNeonHttpTransaction<[Array<{ id: string }>]>(
-					(sql) => [
-						sql`
+				const [saved] = await runNeonHttpTransaction((sql) => [
+					sql`
 					WITH updated AS (
 						UPDATE hr_bulk_import_job SET status=${input.job.status}, version=${input.job.version},
 							checkpoint_version=${input.job.checkpointVersion}, last_error_code=${input.job.lastErrorCode},
@@ -238,8 +235,7 @@ export function createDrizzleHumanResourcesBulkJobStore(): HumanResourcesBulkJob
 						SELECT work_source.* FROM updated CROSS JOIN work_source ON CONFLICT DO NOTHING
 					) SELECT id FROM updated
 				`,
-					],
-				);
+				]);
 				return saved[0]
 					? ok(input.job)
 					: fail("CONFLICT", "Bulk import job version changed");
@@ -302,9 +298,8 @@ export function createDrizzleHumanResourcesBulkJobStore(): HumanResourcesBulkJob
 		async createExportJob(input) {
 			const work = workJson(input.workItem);
 			try {
-				const [saved] = await runNeonHttpTransaction<[Array<{ id: string }>]>(
-					(sql) => [
-						sql`
+				const [saved] = await runNeonHttpTransaction((sql) => [
+					sql`
 					WITH inserted_job AS (
 						INSERT INTO hr_bulk_export_job (id, organization_id, actor_user_id, correlation_id,
 							required_permission, export_type, requested_fields, date_from, date_to, effective_on,
@@ -323,8 +318,7 @@ export function createDrizzleHumanResourcesBulkJobStore(): HumanResourcesBulkJob
 							attempt_count integer, next_attempt_at timestamptz, created_at timestamptz, updated_at timestamptz)
 					) SELECT id FROM inserted_job
 				`,
-					],
-				);
+				]);
 				return saved[0]
 					? ok(input.job)
 					: fail("CONFLICT", "Bulk export job was not created");
@@ -349,9 +343,8 @@ export function createDrizzleHumanResourcesBulkJobStore(): HumanResourcesBulkJob
 			);
 			const cleanup = workJson(input.cleanupWorkItem);
 			try {
-				const [saved] = await runNeonHttpTransaction<[Array<{ id: string }>]>(
-					(sql) => [
-						sql`
+				const [saved] = await runNeonHttpTransaction((sql) => [
+					sql`
 					WITH updated AS (
 						UPDATE hr_bulk_export_job SET status=${input.job.status}, version=${input.job.version}, next_page=${input.job.nextPage},
 							row_count=${input.job.rowCount}, privacy_evidence_id=${input.job.privacyEvidenceId}, artifact_sha256=${input.job.artifactSha256},
@@ -368,8 +361,7 @@ export function createDrizzleHumanResourcesBulkJobStore(): HumanResourcesBulkJob
 						SELECT work.* FROM updated CROSS JOIN jsonb_to_record(${cleanup}::jsonb) AS work(id uuid, organization_id text, connector text, operation text, target_type text, target_id text, correlation_id text, idempotency_key text, request_fingerprint text, status text, version integer, attempt_count integer, next_attempt_at timestamptz, created_at timestamptz, updated_at timestamptz)
 					) SELECT id FROM updated
 				`,
-					],
-				);
+				]);
 				return saved[0]
 					? ok(input.job)
 					: fail("CONFLICT", "Bulk export job version changed");

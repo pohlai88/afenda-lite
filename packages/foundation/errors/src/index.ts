@@ -33,7 +33,15 @@ export {
 	isApiErrorCode,
 	isErrorCode,
 } from "./core/codes";
+export {
+	type ErrorDiagnosticFields,
+	errorDiagnosticFields,
+} from "./core/diagnostic";
 export { normalizeUnknown } from "./core/normalize";
+export {
+	DEFAULT_INTERNAL_MESSAGE,
+	MAX_PUBLIC_ERROR_MESSAGE_LENGTH,
+} from "./core/public-error-policy";
 export {
 	type SafeDetailScalar,
 	type SafeDetails,

@@ -1,15 +1,6 @@
 import { env, isProductionDeploymentNow } from "@afenda/env";
-import {
-	type AppError,
-	forbidden,
-	internalError,
-	serializeAppError,
-} from "@afenda/errors";
-import {
-	ERROR_HTTP_STATUS,
-	httpErrorBody,
-	retryAfterSeconds,
-} from "@afenda/errors/http";
+import { type AppError, forbidden, internalError } from "@afenda/errors";
+import { projectHttpError } from "@afenda/errors/http";
 import {
 	applyRateLimitHeaders,
 	applyRetryAfterHeader,
@@ -207,14 +198,13 @@ function appErrorResponse(input: {
 	error: AppError;
 	quota?: RateLimitQuota;
 }): Response {
-	const serialized = serializeAppError(input.error);
-	const retryAfter = retryAfterSeconds(serialized.details);
+	const projection = projectHttpError(input.error);
 	const headers = new Headers({
 		"content-type": "application/json",
 		[AUTH_BFF_CORRELATION_HEADER]: input.correlationId,
 	});
-	if (retryAfter !== undefined) {
-		applyRetryAfterHeader(headers, retryAfter);
+	if (projection.retryAfter !== undefined) {
+		applyRetryAfterHeader(headers, projection.retryAfter);
 	}
 	if (input.quota !== undefined) {
 		applyRateLimitHeaders(headers, toHeaderQuota(input.quota));
@@ -222,15 +212,10 @@ function appErrorResponse(input: {
 	applyServerTimingHeader(headers, input.startTimeMs, {
 		metric: SERVER_TIMING_METRIC,
 	});
-	return new Response(
-		JSON.stringify(
-			httpErrorBody(serialized.code, serialized.message, serialized.details),
-		),
-		{
-			headers,
-			status: ERROR_HTTP_STATUS[serialized.code],
-		},
-	);
+	return new Response(JSON.stringify(projection.body), {
+		headers,
+		status: projection.status,
+	});
 }
 
 function logAuthBffUnexpectedError(input: {

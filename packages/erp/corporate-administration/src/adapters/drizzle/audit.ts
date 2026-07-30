@@ -1,3 +1,8 @@
+import {
+	buildTransactionalAuditInsert,
+	prepareAuditWrite,
+	type RecordAuditCommand,
+} from "@afenda/audit";
 import type { NeonHttpSql } from "@afenda/db";
 import { fail, ok, type Result } from "@afenda/errors/result";
 
@@ -13,6 +18,11 @@ import { translateCorporateAdministrationInfrastructureError } from "./errors";
 
 const CORPORATE_ADMINISTRATION_AUDIT_MODULE =
 	"corporate-administration" as const;
+const AUTHORITATIVE_AUDIT_METADATA_KEYS: ReadonlySet<string> = new Set([
+	"causation_id",
+	"occurred_at",
+	"outcome",
+]);
 
 export type CorporateAdministrationDrizzleAuditDependencies = Readonly<{
 	store: CorporateAdministrationAuditWriter;
@@ -31,68 +41,60 @@ export function createDrizzleCorporateAdministrationAuditFactPort(
 		): Promise<Result<{ id: string }>> {
 			const parsed = corporateAdministrationAuditFactInputSchema.parse(input);
 			const auditId = dependencies.createAuditId();
-			const metadata = {
-				...(parsed.safeMetadata ?? {}),
-				outcome: parsed.outcome,
-				...(parsed.causationId === undefined
-					? {}
-					: { causation_id: parsed.causationId }),
-			};
+			const safeMetadata = Object.fromEntries(
+				Object.entries(parsed.safeMetadata ?? {}).filter(
+					([key]) => !AUTHORITATIVE_AUDIT_METADATA_KEYS.has(key),
+				),
+			);
+			const auditInput = {
+				organizationId: parsed.organizationId,
+				actorUserId: parsed.actorUserId,
+				correlationId: parsed.correlationId,
+				module: CORPORATE_ADMINISTRATION_AUDIT_MODULE,
+				entity: parsed.targetType,
+				entityId: parsed.targetId,
+				action: parsed.operationType,
+				eventContext: {
+					version: 1,
+					outcome: parsed.outcome === "SUCCESS" ? "SUCCEEDED" : "FAILED",
+					source: CORPORATE_ADMINISTRATION_AUDIT_MODULE,
+					occurredAt: new Date(parsed.occurredAt),
+					causationId: parsed.causationId ?? null,
+					reasonCode: null,
+				},
+				changes: [],
+				oldValue: null,
+				newValue: null,
+				metadata: Object.keys(safeMetadata).length === 0 ? null : safeMetadata,
+			} satisfies RecordAuditCommand;
 
 			if (options?.transaction !== undefined) {
 				options.transaction.enqueue((database) => {
 					const sql = database as NeonHttpSql;
-					return sql`
-						INSERT INTO platform_audit_log (
-							id,
-							organization_id,
-							actor_user_id,
-							correlation_id,
-							module,
-							entity,
-							entity_id,
-							action,
-							changes,
-							old_value,
-							new_value,
-							metadata,
-							created_at
-						)
-						VALUES (
-							${auditId},
-							${parsed.organizationId},
-							${parsed.actorUserId},
-							${parsed.correlationId},
-							${CORPORATE_ADMINISTRATION_AUDIT_MODULE},
-							${parsed.targetType},
-							${parsed.targetId},
-							${parsed.operationType},
-							${JSON.stringify([])}::jsonb,
-							NULL,
-							NULL,
-							${JSON.stringify(metadata)}::jsonb,
-							${parsed.occurredAt}
-						)
-					`;
+					const insert = buildTransactionalAuditInsert({
+						id: auditId,
+						input: auditInput,
+						sql,
+					});
+					if (!insert.ok) {
+						throw new TypeError(
+							"Corporate Administration produced an invalid transactional audit fact",
+						);
+					}
+					return insert.data;
 				});
 				return ok({ id: auditId });
 			}
 
 			try {
-				const result = await dependencies.store.write({
-					organizationId: parsed.organizationId,
-					actorUserId: parsed.actorUserId,
-					correlationId: parsed.correlationId,
-					module: CORPORATE_ADMINISTRATION_AUDIT_MODULE,
-					entity: parsed.targetType,
-					entityId: parsed.targetId,
-					action: parsed.operationType,
-					changes: [],
-					oldValue: null,
-					newValue: null,
-					metadata,
-					createdAt: new Date(parsed.occurredAt),
-				});
+				const prepared = prepareAuditWrite(auditInput);
+				if (!prepared.ok) {
+					return fail(
+						"INTERNAL_ERROR",
+						"Corporate Administration produced an invalid audit fact.",
+					);
+				}
+				const result = await dependencies.store.write(prepared.data);
 				if (!result.ok) {
 					if (result.code !== "SERVICE_UNAVAILABLE") {
 						return fail(

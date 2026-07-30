@@ -39,11 +39,11 @@ describe("result helpers", () => {
 		});
 	});
 
-	it("fail omits non-record details", () => {
+	it("fail closes INTERNAL_ERROR messages and details", () => {
 		expect(fail("INTERNAL_ERROR", "Failed", "unsafe")).toEqual({
 			ok: false,
 			code: "INTERNAL_ERROR",
-			message: "Failed",
+			message: "An unexpected error occurred",
 		});
 	});
 
@@ -71,7 +71,7 @@ describe("result helpers", () => {
 		);
 		expect(result.ok).toBe(false);
 		expect(result.code).toBe("INTERNAL_ERROR");
-		expect(result.message).toBe("Operation failed");
+		expect(result.message).toBe("An unexpected error occurred");
 		expect(result.message).not.toMatch(/SELECT/i);
 	});
 

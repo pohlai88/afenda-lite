@@ -11,6 +11,7 @@ import {
 	rateLimited,
 	serviceUnavailable,
 } from "../src/common/index";
+import { MAX_PUBLIC_ERROR_MESSAGE_LENGTH } from "../src/core/public-error-policy";
 import {
 	clampRetryAfterSeconds,
 	MAX_RETRY_AFTER_SECONDS,
@@ -19,6 +20,17 @@ import {
 } from "../src/core/retry-after";
 
 describe("rateLimited / serviceUnavailable", () => {
+	it("bounds public messages and removes control characters", () => {
+		const error = badRequest(`  invalid\u0000\n${"x".repeat(1000)}  `);
+
+		expect(
+			Array.from(error.message).some((character) => {
+				const codePoint = character.codePointAt(0);
+				return codePoint !== undefined && (codePoint < 32 || codePoint === 127);
+			}),
+		).toBe(false);
+		expect(error.message.length).toBe(MAX_PUBLIC_ERROR_MESSAGE_LENGTH);
+	});
 	it("rateLimited clamps to integer >= 1 and keeps English message", () => {
 		const error = rateLimited(30.9);
 		expect(error.code).toBe("RATE_LIMITED");

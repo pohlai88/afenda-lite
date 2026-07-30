@@ -1,10 +1,16 @@
 import { orgWhere, tenantEntityPredicate, withOrg } from "../src/client";
+import {
+	type NeonHttpSql,
+	runNeonHttpTransaction,
+} from "../src/http-transaction";
 import { mdParty } from "../src/schema/master-data";
 import {
 	platformDomainEvent,
 	platformRole,
 	platformRoleAssignment,
 } from "../src/schema/platform";
+
+const consumeTypecheckValue = (_value: unknown): undefined => undefined;
 
 /** Compile-time contracts for tenant predicate column and row inference. */
 export async function typecheckTenantPredicateContracts(): Promise<
@@ -41,4 +47,22 @@ export async function typecheckTenantPredicateContracts(): Promise<
 	);
 
 	return row;
+}
+
+export async function typecheckTransactionResultInference(
+	sql: NeonHttpSql,
+): Promise<void> {
+	const results = await runNeonHttpTransaction(
+		(governedSql) => [governedSql`select 1`] as const,
+	);
+	consumeTypecheckValue(results[0]);
+
+	// @ts-expect-error -- a one-query transaction has no second result.
+	consumeTypecheckValue(results[1]);
+
+	// @ts-expect-error -- prebuilt query arrays bypass tenant governance.
+	await runNeonHttpTransaction([sql`select 1`]);
+
+	// @ts-expect-error -- unrestricted SQL is absent from the governed client.
+	sql.unsafe("select 1");
 }

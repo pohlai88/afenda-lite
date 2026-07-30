@@ -49,10 +49,10 @@ const POSTGRES_IMPORT_PATTERN =
 const RESULT_IMPORT_PATTERN = /from\s+["']@afenda\/errors\/result["']/u;
 const HTTP_IMPORT_PATTERN = /from\s+["']@afenda\/errors\/http["']/u;
 const NORMALIZER_PATTERN = /\b(?:normalizeUnknown|failFromUnknown)\b/u;
-const POSTGRES_MAPPING_PATTERN = /\bfromPostgresUnknown\b/u;
+const POSTGRES_MAPPING_PATTERN = /\bnormalizePostgresUnknown\b/u;
 const SERIALIZER_PATTERN = /\bserializeAppError\b/u;
 const HTTP_PROJECTION_PATTERN =
-	/\b(?:httpErrorBody|apiErrorBody|ERROR_HTTP_STATUS|API_ERROR_HTTP_STATUS|API_ERROR_CODES|ERROR_CODES|ApiErrorCode|ErrorCode|retryAfterSeconds)\b/u;
+	/\b(?:projectHttpError|httpErrorBody|apiErrorBody|ERROR_HTTP_STATUS|API_ERROR_HTTP_STATUS|API_ERROR_CODES|ERROR_CODES|ApiErrorCode|ErrorCode|retryAfterSeconds)\b/u;
 const RESULT_HELPER_PATTERN =
 	/\b(?:ok|fail|failFromAppError|failFromUnknown)\s*\(/u;
 const TYPE_CONTRACT_PATTERN =
@@ -73,7 +73,7 @@ const CANONICAL_SERIALIZATION_DRIFT_PATTERN =
 const MANUAL_HTTP_ERROR_STATUS_PATTERN =
 	/(?:Response|NextResponse)\.json\s*\([\s\S]{0,500}(?:httpErrorBody|apiErrorBody|\{\s*error\b)[\s\S]{0,500}\bstatus:\s*(?:400|401|403|404|409|422|429|500|503)\b|new\s+Response\s*\([\s\S]{0,500}(?:httpErrorBody|apiErrorBody|JSON\.stringify\s*\(\s*\{\s*error\b)[\s\S]{0,500}\bstatus:\s*(?:400|401|403|404|409|422|429|500|503)\b/u;
 const HTTP_ERROR_BODY_PROJECTION_PATTERN =
-	/\b(?:httpErrorBody|apiErrorBody)\s*\(|\{\s*error\s*:\s*\{/u;
+	/\b(?:projectHttpError|httpErrorBody|apiErrorBody)\s*\(|\{\s*error\s*:\s*\{/u;
 const HARDCODED_ERROR_STATUS_PATTERN =
 	/\bstatus:\s*(?:400|401|403|404|409|422|429|500|503)\b/u;
 const RAW_ERROR_LEAK_PATTERN =
@@ -87,7 +87,7 @@ const LOCAL_HTTP_STATUS_MAP_PATTERN =
 const LOCAL_RETRY_AFTER_READER_PATTERN =
 	/\bfunction\s+retryAfterSeconds\b|\bReflect\.get\s*\([^,]+,\s*["']retryAfter["']\s*\)/u;
 const INFRASTRUCTURE_GUESSING_PATTERN =
-	/\b(?:fromPostgresUnknown|postgresSqlState|hasPostgresSqlState)\b|["'][^"']*adapters\/postgres["']/u;
+	/\b(?:normalizePostgresUnknown|postgresSqlState|hasPostgresSqlState)\b|["'][^"']*adapters\/postgres["']/u;
 const UNKNOWN_CATCH_SWALLOW_PATTERN =
 	/\bcatch\s*\(\s*(?:error|err|cause|caught|unknown)\s*\)\s*\{[\s\S]{0,240}\breturn\s+(?:null|false|\[\]|["'][^"']{0,120}["'])\s*;?/u;
 const UNSAFE_DETAILS_PASSTHROUGH_PATTERN =
@@ -304,7 +304,7 @@ function analyzeSource({ relativePath, content }) {
 			findings,
 			"manualSerialization",
 			relativePath,
-			"manual error serialization; use serializeAppError or httpErrorBody",
+			"manual error serialization; use serializeAppError or projectHttpError",
 		);
 	}
 
@@ -356,7 +356,7 @@ function analyzeSource({ relativePath, content }) {
 			findings,
 			"postgresMappingDrift",
 			relativePath,
-			"PostgreSQL mapper must return mapped ? failFromAppError(mapped) : failFromUnknown(...)",
+			"PostgreSQL catches must pass total normalizePostgresUnknown(...) to failFromAppError",
 		);
 	}
 
@@ -378,7 +378,7 @@ function analyzeSource({ relativePath, content }) {
 			findings,
 			"httpProjectionDrift",
 			relativePath,
-			"HTTP error responses must derive status from ERROR_HTTP_STATUS",
+			"HTTP error responses must use projectHttpError for an atomic status/body projection",
 		);
 	}
 

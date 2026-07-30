@@ -1,35 +1,53 @@
+import { assertValidAuditJsonValue } from "./json-policy";
 import type { Change } from "./types";
 
 const IGNORED_FIELDS = new Set(["updatedAt", "createdAt", "version", "_count"]);
 
 const SENSITIVE_FIELDS = new Set([
+	"authorization",
+	"clientsecret",
+	"cookie",
+	"credential",
 	"password",
+	"passwordhash",
 	"token",
 	"secret",
-	"apiKey",
-	"refreshToken",
-	"accessToken",
-	"privateKey",
-	"sessionToken",
+	"apikey",
+	"refreshtoken",
+	"accesstoken",
+	"privatekey",
+	"sessiontoken",
+	"setcookie",
 ]);
 
 const MASKED_STRING = "***" as const;
+const SENSITIVE_KEY_SEPARATOR_PATTERN = /[^a-zA-Z0-9]/g;
 
 function isSensitiveField(field: string): boolean {
-	return SENSITIVE_FIELDS.has(field);
+	return SENSITIVE_FIELDS.has(
+		field.replaceAll(SENSITIVE_KEY_SEPARATOR_PATTERN, "").toLowerCase(),
+	);
 }
 
 function maskSensitiveValue(value: unknown, isSensitive: boolean): unknown {
 	if (!isSensitive) {
-		return value;
+		return maskUnknown(value);
 	}
 	if (value === null || value === undefined) {
 		return value;
 	}
-	if (typeof value === "string" && value.length > 0) {
-		return MASKED_STRING;
-	}
-	return value;
+	return MASKED_STRING;
+}
+
+export function maskAuditChanges(changes: readonly Change[]): Change[] {
+	return changes.map((change) => {
+		const sensitive = isSensitiveField(change.field);
+		return {
+			field: change.field,
+			oldValue: maskSensitiveValue(change.oldValue, sensitive),
+			newValue: maskSensitiveValue(change.newValue, sensitive),
+		};
+	});
 }
 
 export function isPlainObject(
@@ -40,14 +58,22 @@ export function isPlainObject(
 
 function maskUnknown(value: unknown): unknown {
 	if (isPlainObject(value)) {
-		return maskSensitiveData(value);
+		return maskObject(value);
 	}
 	if (Array.isArray(value)) {
-		return value.map((item) =>
-			isPlainObject(item) ? maskSensitiveData(item) : item,
-		);
+		return value.map(maskUnknown);
 	}
 	return value;
+}
+
+function maskObject(data: Record<string, unknown>): Record<string, unknown> {
+	const masked: Record<string, unknown> = {};
+
+	for (const [key, value] of Object.entries(data)) {
+		masked[key] = maskSensitiveValue(value, isSensitiveField(key));
+	}
+
+	return masked;
 }
 
 function wildcardChange(oldValue: unknown, newValue: unknown): Change[] {
@@ -102,11 +128,25 @@ function deepEqual(a: unknown, b: unknown): boolean {
 	return aKeys.every((key) => deepEqual(a[key], b[key]));
 }
 
+function fieldValueOrNull(
+	value: Record<string, unknown>,
+	field: string,
+): unknown {
+	return Object.hasOwn(value, field) ? value[field] : null;
+}
+
 /**
  * Field-level diff of two values. Sensitive keys are masked in the Change payload
  * (including wildcard `*` snapshots for CREATE/DELETE / non-object values).
  */
 export function computeDiff(oldValue: unknown, newValue: unknown): Change[] {
+	if (oldValue !== undefined) {
+		assertValidAuditJsonValue(oldValue);
+	}
+	if (newValue !== undefined) {
+		assertValidAuditJsonValue(newValue);
+	}
+
 	if (oldValue === null || oldValue === undefined) {
 		if (newValue !== null && newValue !== undefined) {
 			return wildcardChange(oldValue, newValue);
@@ -130,8 +170,8 @@ export function computeDiff(oldValue: unknown, newValue: unknown): Change[] {
 				continue;
 			}
 
-			const oldFieldValue = oldValue[field];
-			const newFieldValue = newValue[field];
+			const oldFieldValue = fieldValueOrNull(oldValue, field);
+			const newFieldValue = fieldValueOrNull(newValue, field);
 			if (deepEqual(oldFieldValue, newFieldValue)) {
 				continue;
 			}
@@ -160,28 +200,6 @@ export function computeDiff(oldValue: unknown, newValue: unknown): Change[] {
 export function maskSensitiveData(
 	data: Record<string, unknown>,
 ): Record<string, unknown> {
-	const masked: Record<string, unknown> = {};
-
-	for (const [key, value] of Object.entries(data)) {
-		if (isSensitiveField(key)) {
-			masked[key] = maskSensitiveValue(value, true);
-			continue;
-		}
-
-		if (isPlainObject(value)) {
-			masked[key] = maskSensitiveData(value);
-			continue;
-		}
-
-		if (Array.isArray(value)) {
-			masked[key] = value.map((item) =>
-				isPlainObject(item) ? maskSensitiveData(item) : item,
-			);
-			continue;
-		}
-
-		masked[key] = value;
-	}
-
-	return masked;
+	assertValidAuditJsonValue(data);
+	return maskObject(data);
 }

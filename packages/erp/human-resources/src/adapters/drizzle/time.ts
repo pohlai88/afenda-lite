@@ -183,18 +183,12 @@ import type {
 	WorkWeekDayPatternJson,
 } from "../../types";
 import {
-	type AttendanceEventSqlRow,
 	attendanceEventFromSql,
 	runTimeTransaction,
-	type ShiftAssignmentSqlRow,
 	type ShiftSqlRow,
 	shiftAssignmentFromSql,
 	shiftFromSql,
-	type TimeApprovalAuthorityAssignmentSqlRow,
-	type TimePolicyAssignmentSqlRow,
 	type TimePolicySqlRow,
-	type TimesheetApprovalDecisionSqlRow,
-	type TimesheetSqlRow,
 	timeApprovalAuthorityAssignmentFromSql,
 	timePolicyAssignmentFromSql,
 	timePolicyFromSql,
@@ -1483,15 +1477,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			const now = new Date();
 			const successorId = randomUUID();
 			const workWeekJson = JSON.stringify([...input.workWeek]);
-			const [supersedeRows] = await runTimeTransaction<
-				[
-					Array<
-						WorkCalendarSqlRow & {
-							row_kind: "superseded" | "successor";
-						}
-					>,
-				]
-			>((sqlTag) => [
+			const [supersedeRows] = await runTimeTransaction((sqlTag) => [
 				sqlTag`
 					WITH locked AS (
 						SELECT pg_advisory_xact_lock(
@@ -1566,10 +1552,12 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				`,
 			]);
 			const supersededSql = supersedeRows.find(
-				(row) => row.row_kind === "superseded",
+				(row: WorkCalendarSqlRow & { row_kind: string }) =>
+					row.row_kind === "superseded",
 			);
 			const successorSql = supersedeRows.find(
-				(row) => row.row_kind === "successor",
+				(row: WorkCalendarSqlRow & { row_kind: string }) =>
+					row.row_kind === "successor",
 			);
 			if (supersededSql === undefined || successorSql === undefined) {
 				throw new Error("Concurrent work calendar supersession");
@@ -2480,15 +2468,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			const now = new Date();
 			const successorId = randomUUID();
 			const approvalStepsJson = JSON.stringify([...input.approvalSteps]);
-			const [supersedeRows] = await runTimeTransaction<
-				[
-					Array<
-						TimePolicySqlRow & {
-							row_kind: "superseded" | "successor";
-						}
-					>,
-				]
-			>((sqlTag) => [
+			const [supersedeRows] = await runTimeTransaction((sqlTag) => [
 				sqlTag`
 					WITH superseded AS (
 						UPDATE hr_time_policy
@@ -2529,10 +2509,12 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				`,
 			]);
 			const supersededSql = supersedeRows.find(
-				(row) => row.row_kind === "superseded",
+				(row: TimePolicySqlRow & { row_kind: string }) =>
+					row.row_kind === "superseded",
 			);
 			const successorSql = supersedeRows.find(
-				(row) => row.row_kind === "successor",
+				(row: TimePolicySqlRow & { row_kind: string }) =>
+					row.row_kind === "successor",
 			);
 			if (supersededSql === undefined || successorSql === undefined) {
 				throw new Error("Concurrent time policy supersession");
@@ -2695,9 +2677,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			}
 			const now = new Date();
 			const assignmentId = randomUUID();
-			const [[insertionRow]] = await runTimeTransaction<
-				[[{ overlap: boolean; row: TimePolicyAssignmentSqlRow | null }]]
-			>((sqlTag) => [
+			const [[insertionRow]] = await runTimeTransaction((sqlTag) => [
 				sqlTag`
 					WITH locked AS (
 						SELECT pg_advisory_xact_lock(
@@ -2858,16 +2838,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			const now = new Date();
 			const assignmentId = randomUUID();
 			const lockKey = `${input.targetActorUserId}:${input.authority}`;
-			const [[insertionRow]] = await runTimeTransaction<
-				[
-					[
-						{
-							overlap: boolean;
-							row: TimeApprovalAuthorityAssignmentSqlRow | null;
-						},
-					],
-				]
-			>((sqlTag) => [
+			const [[insertionRow]] = await runTimeTransaction((sqlTag) => [
 				sqlTag`
 					WITH locked AS (
 						SELECT pg_advisory_xact_lock(
@@ -3226,15 +3197,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			}
 			const now = new Date();
 			const successorId = randomUUID();
-			const [supersedeRows] = await runTimeTransaction<
-				[
-					Array<
-						ShiftSqlRow & {
-							row_kind: "superseded" | "successor";
-						}
-					>,
-				]
-			>((sqlTag) => [
+			const [supersedeRows] = await runTimeTransaction((sqlTag) => [
 				sqlTag`
 					WITH locked AS (
 						SELECT pg_advisory_xact_lock(
@@ -3310,10 +3273,12 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				`,
 			]);
 			const supersededSql = supersedeRows.find(
-				(row) => row.row_kind === "superseded",
+				(row: ShiftSqlRow & { row_kind: string }) =>
+					row.row_kind === "superseded",
 			);
 			const successorSql = supersedeRows.find(
-				(row) => row.row_kind === "successor",
+				(row: ShiftSqlRow & { row_kind: string }) =>
+					row.row_kind === "successor",
 			);
 			if (supersededSql === undefined || successorSql === undefined) {
 				throw new Error("Concurrent shift supersession");
@@ -3703,9 +3668,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			);
 			const segmentStarts = input.segments.map((segment) => segment.startsAt);
 			const segmentEnds = input.segments.map((segment) => segment.endsAt);
-			const [assignmentRows] = await runTimeTransaction<
-				[ShiftAssignmentSqlRow[]]
-			>((sqlTag) => [
+			const [assignmentRows] = await runTimeTransaction((sqlTag) => [
 				sqlTag`
 						WITH created AS (
 							INSERT INTO hr_shift_assignment (
@@ -4856,15 +4819,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				}
 				return event;
 			}
-			const [correctionRows] = await runTimeTransaction<
-				[
-					Array<
-						AttendanceEventSqlRow & {
-							adjustment_id: string;
-						}
-					>,
-				]
-			>((sqlTag) => [
+			const [correctionRows] = await runTimeTransaction((sqlTag) => [
 				sqlTag`
 					WITH corrected AS (
 						UPDATE hr_attendance_event
@@ -6627,16 +6582,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		const isFinal =
 			completedApprovalSteps === current.requiredApprovalSteps.length;
 		try {
-			const [[approvalRow]] = await runTimeTransaction<
-				[
-					[
-						{
-							timesheet: TimesheetSqlRow | null;
-							decision: TimesheetApprovalDecisionSqlRow | null;
-						},
-					],
-				]
-			>((sqlTag) => [
+			const [[approvalRow]] = await runTimeTransaction((sqlTag) => [
 				sqlTag`
 					WITH updated_timesheet AS (
 						UPDATE hr_timesheet

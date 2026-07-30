@@ -15,7 +15,7 @@
 | Baseline snapshot | 2026-07-24 |
 | Lifecycle | **Open** — Wave 0 complete; Wave 2 shared-platform boundary mission complete; module remains `scaffolded` |
 
-> **Historical snapshot notice (2026-07-26):** Numeric evidence below records the dated 2026-07-24 slice close and must not be read as current inventory. Current disk authority is **222** hard-tenant roots, including **129 `hr_*`** roots; see `packages/data-plane/db/src/hard-tenant-roots.ts`, the HR package README, and the enterprise-audit authority map.
+> **Historical snapshot notice (2026-07-26):** Numeric evidence below records the dated 2026-07-24 slice close and must not be read as current inventory. Current disk authority is **274** hard-tenant roots, including **141 `hr_*`** roots; see `packages/data-plane/db/src/hard-tenant-roots.ts`, the HR package README, and the enterprise-audit authority map.
 
 **Action this doc enables:** Paste the **Wave 0 compile block** (or wave-routing table row) into a **new** Agent chat. Implementing agent emits project PREFLIGHT; compile blocks do **not** include PREFLIGHT or skill dumps.
 

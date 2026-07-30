@@ -242,9 +242,9 @@ export function createDrizzleBulkCheckpointPort<
 							)
 							SELECT id FROM saved
 						`;
-				const [saved] = await runNeonHttpTransaction<[Array<{ id: string }>]>(
-					(sqlTag) => [statement(sqlTag)],
-				);
+				const [saved] = await runNeonHttpTransaction((sqlTag) => [
+					statement(sqlTag),
+				]);
 				if (!saved[0]) {
 					return fail("CONFLICT", "Bulk checkpoint version changed");
 				}

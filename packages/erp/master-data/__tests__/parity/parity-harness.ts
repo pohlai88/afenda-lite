@@ -127,7 +127,7 @@ async function cleanupOrganization(organizationId: string): Promise<void> {
 			"variant_option_relation" in row &&
 			row.variant_option_relation !== null,
 	);
-	await runNeonHttpTransaction<unknown[]>((sql) => [
+	await runNeonHttpTransaction((sql) => [
 		...(hasImportRowTable
 			? [
 					sql`DELETE FROM md_import_batch_row WHERE organization_id = ${organizationId}`,
@@ -173,7 +173,7 @@ export async function createDrizzleHarness(): Promise<ParityHarness> {
 	const uomDimensionId = randomUUID();
 	const uomId = randomUUID();
 	const countryId = randomUUID();
-	await runNeonHttpTransaction<unknown[]>((sql) => [
+	await runNeonHttpTransaction((sql) => [
 		sql`INSERT INTO ref_country (id, code, alpha3, name, active)
 			VALUES (${countryId}, 'XZ', 'XZZ', ${`Parity Country ${refSuffix}`}, true)`,
 		sql`INSERT INTO ref_uom_dimension (id, code, name)
@@ -191,7 +191,7 @@ export async function createDrizzleHarness(): Promise<ParityHarness> {
 		createDrizzleMasterDataStore(),
 		async () => {
 			await cleanupOrganization(organizationId);
-			await runNeonHttpTransaction<unknown[]>((sql) => [
+			await runNeonHttpTransaction((sql) => [
 				sql`DELETE FROM ref_uom WHERE id = ${uomId}`,
 				sql`DELETE FROM ref_uom_dimension WHERE id = ${uomDimensionId}`,
 				sql`DELETE FROM ref_country WHERE id = ${countryId}`,

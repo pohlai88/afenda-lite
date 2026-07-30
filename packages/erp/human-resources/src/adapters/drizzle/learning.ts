@@ -1,6 +1,10 @@
 import { randomUUID } from "node:crypto";
 
 import {
+	type PreparedTransactionalAuditInsertValues,
+	prepareTransactionalAuditInsertValues,
+} from "@afenda/audit";
+import {
 	and,
 	asc,
 	db,
@@ -34,7 +38,6 @@ import {
 	parseHumanResourcesSessionId,
 } from "../../brands";
 import { HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE } from "../../error-codes";
-import { fieldChangeJson, valueSnapshotJson } from "../../shared/audit-facts";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import {
 	conflict,
@@ -82,6 +85,52 @@ import type {
 	LearningCourse,
 	LearningSession,
 } from "../../types";
+
+const LEARNING_AUDIT_SOURCE = "human-resources.learning-drizzle";
+
+type LearningAuditEntity =
+	| "hr_employee_certification"
+	| "hr_learning_assignment"
+	| "hr_learning_attendance"
+	| "hr_learning_completion"
+	| "hr_learning_course"
+	| "hr_learning_session";
+
+interface LearningAuditInput {
+	action: "CREATE" | "UPDATE";
+	actorUserId: string;
+	correlationId: string;
+	entity: LearningAuditEntity;
+	entityId: string;
+	newValue?: Record<string, unknown> | null;
+	oldValue?: Record<string, unknown> | null;
+	organizationId: string;
+	reasonCode: string;
+}
+
+function prepareLearningAudit(
+	input: LearningAuditInput,
+): Result<PreparedTransactionalAuditInsertValues> {
+	return prepareTransactionalAuditInsertValues({
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		correlationId: input.correlationId,
+		module: "human-resources",
+		entity: input.entity,
+		entityId: input.entityId,
+		action: input.action,
+		oldValue: input.oldValue ?? null,
+		newValue: input.newValue ?? null,
+		eventContext: {
+			version: 1,
+			outcome: "SUCCEEDED",
+			source: LEARNING_AUDIT_SOURCE,
+			occurredAt: null,
+			causationId: null,
+			reasonCode: input.reasonCode,
+		},
+	});
+}
 
 interface LearningHost {
 	countActiveAssignmentsForCourse: HumanResourcesStore["countActiveAssignmentsForCourse"];
@@ -758,11 +807,28 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			return brandedId;
 		}
 		const auditId = randomUUID();
-
+		const preparedAudit = prepareLearningAudit({
+			action: "CREATE",
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_learning_course",
+			entityId: brandedId.data,
+			organizationId: record.organizationId,
+			reasonCode: "LEARNING_COURSE_CREATED",
+			newValue: {
+				code: record.code,
+				title: record.title,
+				durationHours: record.durationHours,
+				status: "active",
+			},
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction<[CourseSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							INSERT INTO hr_learning_course (
 								id, organization_id, code, title, description, duration_hours,
@@ -785,18 +851,21 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, created_by, ${meta.correlationId},
-								'human-resources', 'hr_learning_course', id, 'CREATE', '[]'::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+								${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+								${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return conflict("Course code already exists in organization");
@@ -848,10 +917,30 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
+		const preparedAudit = prepareLearningAudit({
+			action: "UPDATE",
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_learning_course",
+			entityId: input.courseId,
+			organizationId: input.organizationId,
+			reasonCode: "LEARNING_COURSE_UPDATED",
+			oldValue: {
+				title: existing.data.title,
+				durationHours: existing.data.durationHours,
+			},
+			newValue: {
+				title: input.title,
+				durationHours: input.durationHours,
+			},
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction<[CourseSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_learning_course
 							SET title = ${input.title},
@@ -869,18 +958,21 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_learning_course', id, 'UPDATE', '[]'::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+								${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+								${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -922,10 +1014,24 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
+		const preparedAudit = prepareLearningAudit({
+			action: "UPDATE",
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_learning_course",
+			entityId: input.courseId,
+			organizationId: input.organizationId,
+			reasonCode: "LEARNING_COURSE_ACTIVATED",
+			oldValue: { status: existing.data.status },
+			newValue: { status: "active" },
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction<[CourseSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_learning_course
 							SET status = 'active',
@@ -941,18 +1047,21 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_learning_course', id, 'UPDATE', '[]'::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+								${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+								${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -1003,10 +1112,24 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
+		const preparedAudit = prepareLearningAudit({
+			action: "UPDATE",
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_learning_course",
+			entityId: input.courseId,
+			organizationId: input.organizationId,
+			reasonCode: "LEARNING_COURSE_ARCHIVED",
+			oldValue: { status: existing.data.status },
+			newValue: { status: "archived" },
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction<[CourseSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH check_assignments AS (
 							SELECT COUNT(*) AS active_count
 							FROM hr_learning_assignment
@@ -1031,18 +1154,21 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_learning_course', id, 'UPDATE', '[]'::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+								${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+								${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				const recheck = await this.countActiveAssignmentsForCourse({
@@ -1236,11 +1362,32 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			return brandedId;
 		}
 		const auditId = randomUUID();
-
+		const preparedAudit = prepareLearningAudit({
+			action: "CREATE",
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_learning_session",
+			entityId: brandedId.data,
+			organizationId: record.organizationId,
+			reasonCode: "LEARNING_SESSION_CREATED",
+			newValue: {
+				courseId: record.courseId,
+				code: record.code,
+				title: record.title,
+				scheduledStartsAt: record.scheduledStartsAt.toISOString(),
+				scheduledEndsAt: record.scheduledEndsAt.toISOString(),
+				capacity: record.capacity,
+				primaryInstructorUserId: record.primaryInstructorUserId,
+				status: "scheduled",
+			},
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction<[SessionSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH course AS (
 							SELECT id
 							FROM hr_learning_course
@@ -1270,18 +1417,21 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, created_by, ${meta.correlationId},
-								'human-resources', 'hr_learning_session', id, 'CREATE', '[]'::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+								${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+								${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return conflict("Unable to create session for inactive course");
@@ -1341,10 +1491,30 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
+		const preparedAudit = prepareLearningAudit({
+			action: "UPDATE",
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_learning_session",
+			entityId: input.sessionId,
+			organizationId: input.organizationId,
+			reasonCode: "LEARNING_SESSION_STARTED",
+			oldValue: {
+				status: existing.data.status,
+				actualStartsAt: existing.data.actualStartsAt?.toISOString() ?? null,
+			},
+			newValue: {
+				status: "in_progress",
+				actualStartsAt: input.actualStartsAt.toISOString(),
+			},
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction<[SessionSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_learning_session
 							SET status = 'in_progress',
@@ -1361,18 +1531,21 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_learning_session', id, 'UPDATE', '[]'::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+								${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+								${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -1414,10 +1587,30 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
+		const preparedAudit = prepareLearningAudit({
+			action: "UPDATE",
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_learning_session",
+			entityId: input.sessionId,
+			organizationId: input.organizationId,
+			reasonCode: "LEARNING_SESSION_COMPLETED",
+			oldValue: {
+				status: existing.data.status,
+				actualEndsAt: existing.data.actualEndsAt?.toISOString() ?? null,
+			},
+			newValue: {
+				status: "completed",
+				actualEndsAt: input.actualEndsAt.toISOString(),
+			},
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction<[SessionSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_learning_session
 							SET status = 'completed',
@@ -1434,18 +1627,21 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_learning_session', id, 'UPDATE', '[]'::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+								${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+								${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -1487,10 +1683,24 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
+		const preparedAudit = prepareLearningAudit({
+			action: "UPDATE",
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_learning_session",
+			entityId: input.sessionId,
+			organizationId: input.organizationId,
+			reasonCode: "LEARNING_SESSION_CANCELLED",
+			oldValue: { status: existing.data.status },
+			newValue: { status: "cancelled" },
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction<[SessionSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_learning_session
 							SET status = 'cancelled',
@@ -1506,18 +1716,21 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_learning_session', id, 'UPDATE', '[]'::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+								${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+								${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -1558,10 +1771,26 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
+		const preparedAudit = prepareLearningAudit({
+			action: "UPDATE",
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_learning_session",
+			entityId: input.sessionId,
+			organizationId: input.organizationId,
+			reasonCode: "LEARNING_SESSION_INSTRUCTOR_ASSIGNED",
+			oldValue: {
+				primaryInstructorUserId: existing.data.primaryInstructorUserId,
+			},
+			newValue: { primaryInstructorUserId: input.primaryInstructorUserId },
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction<[SessionSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_learning_session
 							SET primary_instructor_user_id = ${input.primaryInstructorUserId},
@@ -1577,18 +1806,21 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_learning_session', id, 'UPDATE', '[]'::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+								${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+								${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -1817,11 +2049,31 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			actorId: record.createdBy,
 			correlationId: meta.correlationId,
 		});
+		const preparedAudit = prepareLearningAudit({
+			action: "CREATE",
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_learning_assignment",
+			entityId: brandedId.data,
+			organizationId: record.organizationId,
+			reasonCode: "LEARNING_ASSIGNMENT_CREATED",
+			newValue: {
+				employeeId: record.employeeId,
+				courseId: record.courseId,
+				sessionId: record.sessionId,
+				status: "pending",
+				assignedAt: record.assignedAt.toISOString(),
+				dueOn: record.dueOn,
+			},
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[LearningAssignmentSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 					WITH employee AS (
 						SELECT id
 						FROM hr_employee
@@ -1865,11 +2117,15 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, created_by, ${meta.correlationId},
-							'human-resources', 'hr_learning_assignment', id, 'CREATE', '[]'::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+							${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+							${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+							${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+							${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -1888,8 +2144,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					)
 					SELECT mutated.* FROM mutated, audited, outboxed
 				`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return conflict("Unable to create assignment");
@@ -1999,10 +2254,27 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
+		const preparedAudit = prepareLearningAudit({
+			action: "UPDATE",
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_learning_assignment",
+			entityId: input.assignmentId,
+			organizationId: input.organizationId,
+			reasonCode: "LEARNING_ASSIGNMENT_ENROLLED",
+			oldValue: {
+				status: existing.data.status,
+				sessionId: existing.data.sessionId,
+			},
+			newValue: { status: "in_progress", sessionId },
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction<[LearningAssignmentSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 					WITH check_session AS (
 						SELECT
 							COALESCE(
@@ -2043,18 +2315,21 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-							'human-resources', 'hr_learning_assignment', id, 'UPDATE', '[]'::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+							${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+							${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+							${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+							${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					)
 					SELECT mutated.* FROM mutated, audited
 				`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				if (existing.data.sessionId !== null) {
@@ -2109,10 +2384,24 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
+		const preparedAudit = prepareLearningAudit({
+			action: "UPDATE",
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_learning_assignment",
+			entityId: input.assignmentId,
+			organizationId: input.organizationId,
+			reasonCode: "LEARNING_ASSIGNMENT_WAIVED",
+			oldValue: { status: existing.data.status },
+			newValue: { status: "withdrawn" },
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction<[LearningAssignmentSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 					WITH mutated AS (
 						UPDATE hr_learning_assignment
 						SET status = 'withdrawn',
@@ -2128,18 +2417,21 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-							'human-resources', 'hr_learning_assignment', id, 'UPDATE', '[]'::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+							${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+							${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+							${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+							${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					)
 					SELECT mutated.* FROM mutated, audited
 				`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -2399,11 +2691,31 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			actorId: record.createdBy,
 			correlationId: meta.correlationId,
 		});
+		const preparedAudit = prepareLearningAudit({
+			action: "CREATE",
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_learning_completion",
+			entityId: brandedId.data,
+			organizationId: record.organizationId,
+			reasonCode: "LEARNING_COMPLETION_RECORDED",
+			newValue: {
+				assignmentId: record.assignmentId,
+				employeeId: assignment.data.employeeId,
+				courseId: assignment.data.courseId,
+				sessionId: assignment.data.sessionId,
+				outcome: record.outcome,
+				completedAt: record.completedAt.toISOString(),
+			},
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[CompletionSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH assignment AS (
 							SELECT id, organization_id, employee_id, course_id, session_id, version
 							FROM hr_learning_assignment
@@ -2458,12 +2770,15 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, created_by, ${meta.correlationId},
-								'human-resources', 'hr_learning_completion', id, 'CREATE',
-								'[]'::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+								${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+								${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -2482,8 +2797,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 						)
 						SELECT mutated.* FROM mutated, assignment_updated, audited, outboxed
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				const recheckCompletion = await this.findCompletionByAssignmentId({
@@ -2732,11 +3046,29 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			return brandedId;
 		}
 		const auditId = randomUUID();
-
+		const preparedAudit = prepareLearningAudit({
+			action: "CREATE",
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_learning_attendance",
+			entityId: brandedId.data,
+			organizationId: record.organizationId,
+			reasonCode: "LEARNING_ATTENDANCE_RECORDED",
+			newValue: {
+				assignmentId: record.assignmentId,
+				employeeId: assignment.data.employeeId,
+				sessionId: record.sessionId,
+				status: record.status,
+				recordedAt: record.recordedAt.toISOString(),
+			},
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction<[LearningAttendanceSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH assignment AS (
 							SELECT id, organization_id, employee_id, session_id, status
 							FROM hr_learning_assignment
@@ -2779,19 +3111,21 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, created_by, ${meta.correlationId},
-								'human-resources', 'hr_learning_attendance', id, 'CREATE',
-								'[]'::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+								${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+								${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				const recheck = await this.findLearningAttendanceByAssignmentAndSession(
@@ -3029,19 +3363,32 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 		if (!brandedId.ok) {
 			return brandedId;
 		}
-		const changesJson = fieldChangeJson("status", null, "active");
-		const newValueJson = valueSnapshotJson({
-			employeeId: record.employeeId,
-			courseId: record.courseId,
-			certificationCode: record.certificationCode,
-			status: "active",
-		});
 		const auditId = randomUUID();
-
+		const preparedAudit = prepareLearningAudit({
+			action: "CREATE",
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_employee_certification",
+			entityId: brandedId.data,
+			organizationId: record.organizationId,
+			reasonCode: "EMPLOYEE_CERTIFICATION_ISSUED",
+			newValue: {
+				employeeId: record.employeeId,
+				courseId: record.courseId,
+				completionId: record.completionId,
+				certificationCode: record.certificationCode,
+				issuedOn: record.issuedOn,
+				expiresOn: record.expiresOn,
+				status: "active",
+			},
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction<[CertificationSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH employee AS (
 							SELECT id
 							FROM hr_employee
@@ -3080,19 +3427,21 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes, new_value
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, created_by, ${meta.correlationId},
-								'human-resources', 'hr_employee_certification', id, 'CREATE',
-								${changesJson}::jsonb, ${newValueJson}::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+								${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+								${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return conflict("Unable to issue certification");
@@ -3148,16 +3497,25 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 		}
 
 		const nextVersion = input.expectedVersion + 1;
-		const changesJson = fieldChangeJson(
-			"status",
-			existing.data.status,
-			"revoked",
-		);
 		const auditId = randomUUID();
+		const preparedAudit = prepareLearningAudit({
+			action: "UPDATE",
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_employee_certification",
+			entityId: input.certificationId,
+			organizationId: input.organizationId,
+			reasonCode: "EMPLOYEE_CERTIFICATION_REVOKED",
+			oldValue: { status: existing.data.status },
+			newValue: { status: "revoked" },
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction<[CertificationSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_employee_certification
 							SET status = 'revoked',
@@ -3175,19 +3533,21 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_employee_certification', id, 'UPDATE',
-								${changesJson}::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+								${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+								${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -3225,11 +3585,6 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 		}
 
 		const nextVersion = input.expectedVersion + 1;
-		const changesJson = fieldChangeJson(
-			"status",
-			existing.data.status,
-			"expired",
-		);
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const payloadJson = eventPayloadJson({
@@ -3239,10 +3594,24 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			actorId: input.actorUserId,
 			correlationId: meta.correlationId,
 		});
+		const preparedAudit = prepareLearningAudit({
+			action: "UPDATE",
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_employee_certification",
+			entityId: input.certificationId,
+			organizationId: input.organizationId,
+			reasonCode: "EMPLOYEE_CERTIFICATION_EXPIRED",
+			oldValue: { status: existing.data.status },
+			newValue: { status: "expired" },
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction<[CertificationSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_employee_certification
 							SET status = 'expired',
@@ -3258,12 +3627,15 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_employee_certification', id, 'UPDATE',
-								${changesJson}::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+								${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+								${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -3282,8 +3654,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -3379,14 +3750,6 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 		if (!brandedId.ok) {
 			return brandedId;
 		}
-		const changesJson = fieldChangeJson("status", null, "active");
-		const newValueJson = valueSnapshotJson({
-			employeeId: record.employeeId,
-			courseId: record.courseId,
-			certificationCode: record.certificationCode,
-			status: "active",
-			renewedFromCertificationId: record.certificationId,
-		});
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const payloadJson = eventPayloadJson({
@@ -3397,11 +3760,33 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			correlationId: meta.correlationId,
 			renewedFromCertificationId: record.certificationId,
 		});
+		const preparedAudit = prepareLearningAudit({
+			action: "CREATE",
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_employee_certification",
+			entityId: brandedId.data,
+			organizationId: record.organizationId,
+			reasonCode: "EMPLOYEE_CERTIFICATION_RENEWED",
+			newValue: {
+				employeeId: record.employeeId,
+				courseId: record.courseId,
+				completionId: record.completionId,
+				certificationCode: record.certificationCode,
+				issuedOn: record.issuedOn,
+				expiresOn: record.expiresOn,
+				status: "active",
+				renewedFromCertificationId: record.certificationId,
+			},
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[CertificationSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH prior_cert AS (
 							SELECT id, organization_id, employee_id, course_id, status, version
 							FROM hr_employee_certification
@@ -3440,12 +3825,15 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes, new_value
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, created_by, ${meta.correlationId},
-								'human-resources', 'hr_employee_certification', id, 'CREATE',
-								${changesJson}::jsonb, ${newValueJson}::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+								${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+								${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -3464,8 +3852,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return conflict("Unable to renew certification");

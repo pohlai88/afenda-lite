@@ -1,4 +1,6 @@
 import { randomUUID } from "node:crypto";
+
+import { prepareTransactionalAuditInsertValues } from "@afenda/audit";
 import {
 	and,
 	db,
@@ -43,11 +45,7 @@ import {
 	type HumanResourcesRetentionClassification,
 } from "../../privacy";
 import { workerStatusSchema } from "../../schemas/workforce-foundation";
-import {
-	eventPayloadJson,
-	fieldChangeJson,
-	valueSnapshotJson,
-} from "../../shared/audit-facts";
+import { eventPayloadJson } from "../../shared/audit-facts";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import { previousIsoDate } from "../../shared/effective-dates";
 import {
@@ -84,6 +82,9 @@ import type {
 	WorkerClassificationVersion,
 } from "../../workforce-foundation/types";
 import { resolveWorkerClassificationAsOf } from "../../workforce-foundation/worker-classification-lineage";
+
+const WORKFORCE_FOUNDATION_AUDIT_SOURCE =
+	"human-resources.workforce-foundation-drizzle";
 
 interface PersonSqlRow {
 	create_idempotency_key: string;
@@ -479,7 +480,11 @@ async function updatePersonScalarFieldDrizzle(input: {
 	field: "preferred_name" | "privacy_classification";
 	value: string | null;
 	changeField: "preferredName" | "privacyClassification";
-	meta: { correlationId: string };
+	meta: {
+		causationId?: string | undefined;
+		correlationId: string;
+		idempotencyKey?: string | undefined;
+	};
 	getPersonById: HumanResourcesWorkforceFoundationStore["getPersonById"];
 }): Promise<Result<Person>> {
 	try {
@@ -514,11 +519,38 @@ async function updatePersonScalarFieldDrizzle(input: {
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const nextVersion = input.expectedVersion + 1;
-		const changesJson = fieldChangeJson(
-			input.changeField,
-			currentValue,
-			input.value,
-		);
+		const preparedAudit = prepareTransactionalAuditInsertValues({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: input.meta.correlationId,
+			module: "human-resources",
+			entity: "hr_person",
+			entityId: input.personId,
+			action: "UPDATE",
+			changes: [
+				{
+					field: input.changeField,
+					oldValue: currentValue,
+					newValue: input.value,
+				},
+			],
+			oldValue: {
+				[input.changeField]: currentValue,
+				version: input.expectedVersion,
+			},
+			newValue: { [input.changeField]: input.value, version: nextVersion },
+			eventContext: {
+				version: 1,
+				outcome: "SUCCEEDED",
+				source: WORKFORCE_FOUNDATION_AUDIT_SOURCE,
+				causationId:
+					input.meta.causationId ?? input.meta.idempotencyKey ?? null,
+			},
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const payloadJson = eventPayloadJson({
 			organizationId: input.organizationId,
 			entityType: "hr_person",
@@ -526,7 +558,7 @@ async function updatePersonScalarFieldDrizzle(input: {
 			actorId: input.actorUserId,
 			correlationId: input.meta.correlationId,
 		});
-		const [rows] = await runNeonHttpTransaction<[PersonSqlRow[]]>((sqlTx) => [
+		const [rows] = await runNeonHttpTransaction((sqlTx) => [
 			input.field === "preferred_name"
 				? sqlTx`
 						WITH mutated AS (
@@ -543,11 +575,15 @@ async function updatePersonScalarFieldDrizzle(input: {
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${input.meta.correlationId},
-								'human-resources', 'hr_person', id, 'UPDATE', ${changesJson}::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+								${audit.correlationId}, ${audit.module}, ${audit.entity}, ${audit.entityId},
+								${audit.action}, ${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -579,11 +615,15 @@ async function updatePersonScalarFieldDrizzle(input: {
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${input.meta.correlationId},
-								'human-resources', 'hr_person', id, 'UPDATE', ${changesJson}::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+								${audit.correlationId}, ${audit.module}, ${audit.entity}, ${audit.entityId},
+								${audit.action}, ${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -660,6 +700,58 @@ async function validateEmployeeLinkForWorkerDrizzle(
 	}
 
 	return ok(undefined);
+}
+
+async function validateCreateWorkerPreconditions(input: {
+	record: Parameters<HumanResourcesWorkforceFoundationStore["createWorker"]>[0];
+	getPersonById: HumanResourcesWorkforceFoundationStore["getPersonById"];
+	findWorkerByPersonId: HumanResourcesWorkforceFoundationStore["findWorkerByPersonId"];
+	findWorkerByEmployeeId: HumanResourcesWorkforceFoundationStore["findWorkerByEmployeeId"];
+}): Promise<Result<void>> {
+	const person = await input.getPersonById({
+		organizationId: input.record.organizationId,
+		personId: input.record.personId,
+	});
+	if (!person.ok) {
+		return person;
+	}
+	if (person.data === null) {
+		return fail(
+			"NOT_FOUND",
+			"Person not found",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+		);
+	}
+
+	const personWorker = await input.findWorkerByPersonId({
+		organizationId: input.record.organizationId,
+		personId: input.record.personId,
+	});
+	if (!personWorker.ok) {
+		return personWorker;
+	}
+	if (personWorker.data !== null) {
+		return fail(
+			"CONFLICT",
+			"Person is already linked to a worker",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+		);
+	}
+
+	if (
+		input.record.workerType !== "employee" ||
+		input.record.employeeId === null
+	) {
+		return ok(undefined);
+	}
+
+	return validateEmployeeLinkForWorkerDrizzle(
+		{
+			organizationId: input.record.organizationId,
+			employeeId: input.record.employeeId,
+		},
+		input.findWorkerByEmployeeId,
+	);
 }
 
 export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundationStore =
@@ -825,8 +917,36 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			const auditId = randomUUID();
 			const eventId = randomUUID();
 			const effectiveFrom = new Date().toISOString().slice(0, 10);
-			const changesJson = fieldChangeJson("legalName", null, record.legalName);
-			const newValueJson = valueSnapshotJson({ legalName: record.legalName });
+			const preparedAudit = prepareTransactionalAuditInsertValues({
+				organizationId: record.organizationId,
+				actorUserId: record.createdBy,
+				correlationId: meta.correlationId,
+				module: "human-resources",
+				entity: "hr_person",
+				entityId: brandedId.data,
+				action: "CREATE",
+				changes: [
+					{ field: "legalName", oldValue: null, newValue: record.legalName },
+				],
+				newValue: {
+					legalName: record.legalName,
+					privacyClassification: record.privacyClassification,
+					version: 1,
+				},
+				eventContext: {
+					version: 1,
+					outcome: "SUCCEEDED",
+					source: WORKFORCE_FOUNDATION_AUDIT_SOURCE,
+					causationId:
+						meta.causationId ??
+						meta.idempotencyKey ??
+						record.createIdempotencyKey,
+				},
+			});
+			if (!preparedAudit.ok) {
+				return preparedAudit;
+			}
+			const audit = preparedAudit.data;
 			const payloadJson = eventPayloadJson({
 				organizationId: record.organizationId,
 				entityType: "hr_person",
@@ -836,9 +956,8 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			});
 
 			try {
-				const [rows] = await runNeonHttpTransaction<[PersonSqlRow[]]>(
-					(sqlValue5) => [
-						sqlValue5`
+				const [rows] = await runNeonHttpTransaction((sqlValue5) => [
+					sqlValue5`
 						WITH mutated AS (
 							INSERT INTO hr_person (
 								id, organization_id, legal_name, preferred_name,
@@ -867,11 +986,15 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes, new_value
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, created_by, ${meta.correlationId},
-								'human-resources', 'hr_person', id, 'CREATE', ${changesJson}::jsonb, ${newValueJson}::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+								${audit.correlationId}, ${audit.module}, ${audit.entity}, ${audit.entityId},
+								${audit.action}, ${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -888,8 +1011,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						)
 						SELECT mutated.* FROM mutated, lineage, audited, outboxed
 					`,
-					],
-				);
+				]);
 				const [row] = rows;
 				if (row === undefined) {
 					return fail("INTERNAL_ERROR", "Person create returned no row");
@@ -981,11 +1103,37 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				const successorId = randomUUID();
 				const nextVersion = input.expectedVersion + 1;
 				const predecessorEnd = previousIsoDate(input.effectiveOn);
-				const changesJson = fieldChangeJson(
-					"legalName",
-					existing.data.legalName,
-					input.legalName,
-				);
+				const preparedAudit = prepareTransactionalAuditInsertValues({
+					organizationId: input.organizationId,
+					actorUserId: input.actorUserId,
+					correlationId: meta.correlationId,
+					module: "human-resources",
+					entity: "hr_person",
+					entityId: input.personId,
+					action: "UPDATE",
+					changes: [
+						{
+							field: "legalName",
+							oldValue: existing.data.legalName,
+							newValue: input.legalName,
+						},
+					],
+					oldValue: {
+						legalName: existing.data.legalName,
+						version: input.expectedVersion,
+					},
+					newValue: { legalName: input.legalName, version: nextVersion },
+					eventContext: {
+						version: 1,
+						outcome: "SUCCEEDED",
+						source: WORKFORCE_FOUNDATION_AUDIT_SOURCE,
+						causationId: meta.causationId ?? meta.idempotencyKey ?? null,
+					},
+				});
+				if (!preparedAudit.ok) {
+					return preparedAudit;
+				}
+				const audit = preparedAudit.data;
 				const payloadJson = eventPayloadJson({
 					organizationId: input.organizationId,
 					entityType: "hr_person",
@@ -994,9 +1142,8 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					correlationId: meta.correlationId,
 				});
 
-				const [rows] = await runNeonHttpTransaction<[PersonSqlRow[]]>(
-					(sqlValue4) => [
-						sqlValue4`
+				const [rows] = await runNeonHttpTransaction((sqlValue4) => [
+					sqlValue4`
 						WITH mutated AS (
 							UPDATE hr_person
 							SET legal_name = ${input.legalName},
@@ -1038,11 +1185,15 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_person', id, 'UPDATE', ${changesJson}::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+								${audit.correlationId}, ${audit.module}, ${audit.entity}, ${audit.entityId},
+								${audit.action}, ${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -1059,8 +1210,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						)
 						SELECT mutated.* FROM mutated, closed, successor, audited, outboxed
 					`,
-					],
-				);
+				]);
 				const [row] = rows;
 				if (row === undefined) {
 					return fail("CONFLICT", "Person update conflict");
@@ -1150,6 +1300,41 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			const entityId = randomUUID();
 			const auditId = randomUUID();
 			const eventId = randomUUID();
+			const preparedAudit = prepareTransactionalAuditInsertValues({
+				organizationId: record.organizationId,
+				actorUserId: record.createdBy,
+				correlationId: meta.correlationId,
+				module: "human-resources",
+				entity: "hr_person_contact",
+				entityId,
+				action: "CREATE",
+				changes: [
+					{
+						field: "contactType",
+						oldValue: null,
+						newValue: record.contactType,
+					},
+				],
+				newValue: {
+					contactType: record.contactType,
+					isPrimary: record.isPrimary,
+					status: "active",
+					version: 1,
+				},
+				eventContext: {
+					version: 1,
+					outcome: "SUCCEEDED",
+					source: WORKFORCE_FOUNDATION_AUDIT_SOURCE,
+					causationId:
+						meta.causationId ??
+						meta.idempotencyKey ??
+						record.createIdempotencyKey,
+				},
+			});
+			if (!preparedAudit.ok) {
+				return preparedAudit;
+			}
+			const audit = preparedAudit.data;
 			const payloadJson = eventPayloadJson({
 				organizationId: record.organizationId,
 				entityType: "hr_person_contact",
@@ -1158,9 +1343,8 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				correlationId: meta.correlationId,
 			});
 			try {
-				const [rows] = await runNeonHttpTransaction<[PersonContactSqlRow[]]>(
-					(sqlTx) => [
-						sqlTx`
+				const [rows] = await runNeonHttpTransaction((sqlTx) => [
+					sqlTx`
 							WITH mutated AS (
 								INSERT INTO hr_person_contact (
 									id, organization_id, person_id, contact_type, value_text,
@@ -1177,11 +1361,15 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 							audited AS (
 								INSERT INTO platform_audit_log (
 									id, organization_id, actor_user_id, correlation_id, module, entity,
-									entity_id, action, changes
+									entity_id, action, changes, old_value, new_value, metadata,
+									ip_address, user_agent
 								)
 								SELECT
-									${auditId}, organization_id, created_by, ${meta.correlationId},
-									'human-resources', 'hr_person_contact', id, 'CREATE', '[]'::jsonb
+									${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+									${audit.correlationId}, ${audit.module}, ${audit.entity}, ${audit.entityId},
+									${audit.action}, ${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+									${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+									${audit.ipAddress}, ${audit.userAgent}
 								FROM mutated
 								RETURNING id
 							),
@@ -1199,8 +1387,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 							)
 							SELECT mutated.* FROM mutated, audited, outboxed
 						`,
-					],
-				);
+				]);
 				const [row] = rows;
 				if (row === undefined) {
 					return fail(
@@ -1237,6 +1424,41 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			const auditId = randomUUID();
 			const eventId = randomUUID();
 			const nextVersion = input.expectedVersion + 1;
+			const preparedAudit = prepareTransactionalAuditInsertValues({
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				module: "human-resources",
+				entity: "hr_person_contact",
+				entityId: input.contactId,
+				action: "UPDATE",
+				changes: [
+					{
+						field: "contactValue",
+						oldValue: "[REDACTED]",
+						newValue: "[REDACTED]",
+					},
+				],
+				oldValue: {
+					contactValue: "[REDACTED]",
+					version: input.expectedVersion,
+				},
+				newValue: {
+					contactValue: "[REDACTED]",
+					isPrimary: input.isPrimary ?? null,
+					version: nextVersion,
+				},
+				eventContext: {
+					version: 1,
+					outcome: "SUCCEEDED",
+					source: WORKFORCE_FOUNDATION_AUDIT_SOURCE,
+					causationId: meta.causationId ?? meta.idempotencyKey ?? null,
+				},
+			});
+			if (!preparedAudit.ok) {
+				return preparedAudit;
+			}
+			const audit = preparedAudit.data;
 			const payloadJson = eventPayloadJson({
 				organizationId: input.organizationId,
 				entityType: "hr_person_contact",
@@ -1245,9 +1467,8 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				correlationId: meta.correlationId,
 			});
 			try {
-				const [rows] = await runNeonHttpTransaction<[PersonContactSqlRow[]]>(
-					(sqlTx) => [
-						sqlTx`
+				const [rows] = await runNeonHttpTransaction((sqlTx) => [
+					sqlTx`
 							WITH mutated AS (
 								UPDATE hr_person_contact
 								SET value_text = ${input.valueText},
@@ -1266,11 +1487,15 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 							audited AS (
 								INSERT INTO platform_audit_log (
 									id, organization_id, actor_user_id, correlation_id, module, entity,
-									entity_id, action, changes
+									entity_id, action, changes, old_value, new_value, metadata,
+									ip_address, user_agent
 								)
 								SELECT
-									${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-									'human-resources', 'hr_person_contact', id, 'UPDATE', '[]'::jsonb
+									${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+									${audit.correlationId}, ${audit.module}, ${audit.entity}, ${audit.entityId},
+									${audit.action}, ${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+									${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+									${audit.ipAddress}, ${audit.userAgent}
 								FROM mutated
 								RETURNING id
 							),
@@ -1288,8 +1513,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 							)
 							SELECT mutated.* FROM mutated, audited, outboxed
 						`,
-					],
-				);
+				]);
 				const [row] = rows;
 				if (row === undefined) {
 					return fail("NOT_FOUND", "Person contact not found");
@@ -1311,6 +1535,28 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			const auditId = randomUUID();
 			const eventId = randomUUID();
 			const nextVersion = input.expectedVersion + 1;
+			const preparedAudit = prepareTransactionalAuditInsertValues({
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				module: "human-resources",
+				entity: "hr_person_contact",
+				entityId: input.contactId,
+				action: "UPDATE",
+				changes: [{ field: "status", oldValue: "active", newValue: "retired" }],
+				oldValue: { status: "active", version: input.expectedVersion },
+				newValue: { isPrimary: false, status: "retired", version: nextVersion },
+				eventContext: {
+					version: 1,
+					outcome: "SUCCEEDED",
+					source: WORKFORCE_FOUNDATION_AUDIT_SOURCE,
+					causationId: meta.causationId ?? meta.idempotencyKey ?? null,
+				},
+			});
+			if (!preparedAudit.ok) {
+				return preparedAudit;
+			}
+			const audit = preparedAudit.data;
 			const payloadJson = eventPayloadJson({
 				organizationId: input.organizationId,
 				entityType: "hr_person_contact",
@@ -1319,9 +1565,8 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				correlationId: meta.correlationId,
 			});
 			try {
-				const [rows] = await runNeonHttpTransaction<[PersonContactSqlRow[]]>(
-					(sqlTx) => [
-						sqlTx`
+				const [rows] = await runNeonHttpTransaction((sqlTx) => [
+					sqlTx`
 							WITH mutated AS (
 								UPDATE hr_person_contact
 								SET status = 'retired',
@@ -1339,11 +1584,15 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 							audited AS (
 								INSERT INTO platform_audit_log (
 									id, organization_id, actor_user_id, correlation_id, module, entity,
-									entity_id, action, changes
+									entity_id, action, changes, old_value, new_value, metadata,
+									ip_address, user_agent
 								)
 								SELECT
-									${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-									'human-resources', 'hr_person_contact', id, 'UPDATE', '[]'::jsonb
+									${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+									${audit.correlationId}, ${audit.module}, ${audit.entity}, ${audit.entityId},
+									${audit.action}, ${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+									${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+									${audit.ipAddress}, ${audit.userAgent}
 								FROM mutated
 								RETURNING id
 							),
@@ -1361,8 +1610,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 							)
 							SELECT mutated.* FROM mutated, audited, outboxed
 						`,
-					],
-				);
+				]);
 				const [row] = rows;
 				if (row === undefined) {
 					return fail("NOT_FOUND", "Person contact not found");
@@ -1455,6 +1703,42 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			const entityId = randomUUID();
 			const auditId = randomUUID();
 			const eventId = randomUUID();
+			const preparedAudit = prepareTransactionalAuditInsertValues({
+				organizationId: record.organizationId,
+				actorUserId: record.createdBy,
+				correlationId: meta.correlationId,
+				module: "human-resources",
+				entity: "hr_person_identifier",
+				entityId,
+				action: "CREATE",
+				changes: [
+					{
+						field: "identifierType",
+						oldValue: null,
+						newValue: record.identifierType,
+					},
+				],
+				newValue: {
+					effectiveFrom: record.effectiveFrom,
+					identifierLast4: record.identifierLast4,
+					identifierType: record.identifierType,
+					status: "active",
+					version: 1,
+				},
+				eventContext: {
+					version: 1,
+					outcome: "SUCCEEDED",
+					source: WORKFORCE_FOUNDATION_AUDIT_SOURCE,
+					causationId:
+						meta.causationId ??
+						meta.idempotencyKey ??
+						record.createIdempotencyKey,
+				},
+			});
+			if (!preparedAudit.ok) {
+				return preparedAudit;
+			}
+			const audit = preparedAudit.data;
 			const payloadJson = eventPayloadJson({
 				organizationId: record.organizationId,
 				entityType: "hr_person_identifier",
@@ -1463,9 +1747,8 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				correlationId: meta.correlationId,
 			});
 			try {
-				const [rows] = await runNeonHttpTransaction<[PersonIdentifierSqlRow[]]>(
-					(sqlTx) => [
-						sqlTx`
+				const [rows] = await runNeonHttpTransaction((sqlTx) => [
+					sqlTx`
 							WITH mutated AS (
 								INSERT INTO hr_person_identifier (
 									id, organization_id, person_id, identifier_type,
@@ -1484,11 +1767,15 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 							audited AS (
 								INSERT INTO platform_audit_log (
 									id, organization_id, actor_user_id, correlation_id, module, entity,
-									entity_id, action, changes
+									entity_id, action, changes, old_value, new_value, metadata,
+									ip_address, user_agent
 								)
 								SELECT
-									${auditId}, organization_id, created_by, ${meta.correlationId},
-									'human-resources', 'hr_person_identifier', id, 'CREATE', '[]'::jsonb
+									${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+									${audit.correlationId}, ${audit.module}, ${audit.entity}, ${audit.entityId},
+									${audit.action}, ${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+									${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+									${audit.ipAddress}, ${audit.userAgent}
 								FROM mutated
 								RETURNING id
 							),
@@ -1506,8 +1793,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 							)
 							SELECT mutated.* FROM mutated, audited, outboxed
 						`,
-					],
-				);
+				]);
 				const [row] = rows;
 				if (row === undefined) {
 					return fail(
@@ -1544,6 +1830,39 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			const auditId = randomUUID();
 			const eventId = randomUUID();
 			const nextVersion = input.expectedVersion + 1;
+			const preparedAudit = prepareTransactionalAuditInsertValues({
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				module: "human-resources",
+				entity: "hr_person_identifier",
+				entityId: input.identifierId,
+				action: "UPDATE",
+				changes: [
+					{ field: "status", oldValue: "active", newValue: "retired" },
+					{ field: "effectiveTo", oldValue: null, newValue: input.effectiveTo },
+				],
+				oldValue: {
+					effectiveTo: null,
+					status: "active",
+					version: input.expectedVersion,
+				},
+				newValue: {
+					effectiveTo: input.effectiveTo,
+					status: "retired",
+					version: nextVersion,
+				},
+				eventContext: {
+					version: 1,
+					outcome: "SUCCEEDED",
+					source: WORKFORCE_FOUNDATION_AUDIT_SOURCE,
+					causationId: meta.causationId ?? meta.idempotencyKey ?? null,
+				},
+			});
+			if (!preparedAudit.ok) {
+				return preparedAudit;
+			}
+			const audit = preparedAudit.data;
 			const payloadJson = eventPayloadJson({
 				organizationId: input.organizationId,
 				entityType: "hr_person_identifier",
@@ -1552,9 +1871,8 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				correlationId: meta.correlationId,
 			});
 			try {
-				const [rows] = await runNeonHttpTransaction<[PersonIdentifierSqlRow[]]>(
-					(sqlTx) => [
-						sqlTx`
+				const [rows] = await runNeonHttpTransaction((sqlTx) => [
+					sqlTx`
 							WITH mutated AS (
 								UPDATE hr_person_identifier
 								SET effective_to = ${input.effectiveTo},
@@ -1572,11 +1890,15 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 							audited AS (
 								INSERT INTO platform_audit_log (
 									id, organization_id, actor_user_id, correlation_id, module, entity,
-									entity_id, action, changes
+									entity_id, action, changes, old_value, new_value, metadata,
+									ip_address, user_agent
 								)
 								SELECT
-									${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-									'human-resources', 'hr_person_identifier', id, 'UPDATE', '[]'::jsonb
+									${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+									${audit.correlationId}, ${audit.module}, ${audit.entity}, ${audit.entityId},
+									${audit.action}, ${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+									${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+									${audit.ipAddress}, ${audit.userAgent}
 								FROM mutated
 								RETURNING id
 							),
@@ -1594,8 +1916,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 							)
 							SELECT mutated.* FROM mutated, audited, outboxed
 						`,
-					],
-				);
+				]);
 				const [row] = rows;
 				if (row === undefined) {
 					return fail("NOT_FOUND", "Person identifier not found");
@@ -2007,47 +2328,14 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 		},
 
 		async createWorker(record, _ports, meta): Promise<Result<Worker>> {
-			const person = await this.getPersonById({
-				organizationId: record.organizationId,
-				personId: record.personId,
+			const preconditions = await validateCreateWorkerPreconditions({
+				record,
+				getPersonById: this.getPersonById.bind(this),
+				findWorkerByPersonId: this.findWorkerByPersonId.bind(this),
+				findWorkerByEmployeeId: this.findWorkerByEmployeeId.bind(this),
 			});
-			if (!person.ok) {
-				return person;
-			}
-			if (person.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Person not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
-			}
-
-			const personWorker = await this.findWorkerByPersonId({
-				organizationId: record.organizationId,
-				personId: record.personId,
-			});
-			if (!personWorker.ok) {
-				return personWorker;
-			}
-			if (personWorker.data !== null) {
-				return fail(
-					"CONFLICT",
-					"Person is already linked to a worker",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
-			}
-
-			if (record.workerType === "employee" && record.employeeId !== null) {
-				const employeeLink = await validateEmployeeLinkForWorkerDrizzle(
-					{
-						organizationId: record.organizationId,
-						employeeId: record.employeeId,
-					},
-					this.findWorkerByEmployeeId.bind(this),
-				);
-				if (!employeeLink.ok) {
-					return employeeLink;
-				}
+			if (!preconditions.ok) {
+				return preconditions;
 			}
 
 			const entityId = randomUUID();
@@ -2058,6 +2346,37 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			const classificationVersionId = randomUUID();
 			const auditId = randomUUID();
 			const eventId = randomUUID();
+			const preparedAudit = prepareTransactionalAuditInsertValues({
+				organizationId: record.organizationId,
+				actorUserId: record.createdBy,
+				correlationId: meta.correlationId,
+				module: "human-resources",
+				entity: "hr_worker",
+				entityId: brandedId.data,
+				action: "CREATE",
+				changes: [
+					{ field: "workerType", oldValue: null, newValue: record.workerType },
+				],
+				newValue: {
+					effectiveFrom: record.effectiveFrom,
+					status: record.status,
+					workerType: record.workerType,
+					version: 1,
+				},
+				eventContext: {
+					version: 1,
+					outcome: "SUCCEEDED",
+					source: WORKFORCE_FOUNDATION_AUDIT_SOURCE,
+					causationId:
+						meta.causationId ??
+						meta.idempotencyKey ??
+						record.createIdempotencyKey,
+				},
+			});
+			if (!preparedAudit.ok) {
+				return preparedAudit;
+			}
+			const audit = preparedAudit.data;
 			const payloadJson = eventPayloadJson({
 				organizationId: record.organizationId,
 				entityType: "hr_worker",
@@ -2069,9 +2388,8 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				record.workerType === "employee" ? record.employeeId : null;
 
 			try {
-				const [rows] = await runNeonHttpTransaction<[WorkerSqlRow[]]>(
-					(sqlValue3) => [
-						sqlValue3`
+				const [rows] = await runNeonHttpTransaction((sqlValue3) => [
+					sqlValue3`
 						WITH mutated AS (
 							INSERT INTO hr_worker (
 								id, organization_id, person_id, worker_type, employee_id, status,
@@ -2100,11 +2418,15 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes, new_value
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, created_by, ${meta.correlationId},
-								'human-resources', 'hr_worker', id, 'CREATE', '[]'::jsonb, '{}'::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+								${audit.correlationId}, ${audit.module}, ${audit.entity}, ${audit.entityId},
+								${audit.action}, ${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -2121,8 +2443,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						)
 						SELECT mutated.* FROM mutated, lineage, audited, outboxed
 					`,
-					],
-				);
+				]);
 				const [row] = rows;
 				if (row === undefined) {
 					return fail("INTERNAL_ERROR", "Worker create returned no row");
@@ -2236,6 +2557,42 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			const successorId = randomUUID();
 			const nextVersion = input.expectedVersion + 1;
 			const predecessorEnd = previousIsoDate(input.effectiveOn);
+			const preparedAudit = prepareTransactionalAuditInsertValues({
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				module: "human-resources",
+				entity: "hr_worker",
+				entityId: input.workerId,
+				action: "UPDATE",
+				changes: [
+					{
+						field: "workerType",
+						oldValue: openSegment.workerType,
+						newValue: input.workerType,
+					},
+				],
+				oldValue: {
+					effectiveFrom: openSegment.effectiveFrom,
+					workerType: openSegment.workerType,
+					version: input.expectedVersion,
+				},
+				newValue: {
+					effectiveFrom: input.effectiveOn,
+					workerType: input.workerType,
+					version: nextVersion,
+				},
+				eventContext: {
+					version: 1,
+					outcome: "SUCCEEDED",
+					source: WORKFORCE_FOUNDATION_AUDIT_SOURCE,
+					causationId: meta.causationId ?? meta.idempotencyKey ?? null,
+				},
+			});
+			if (!preparedAudit.ok) {
+				return preparedAudit;
+			}
+			const audit = preparedAudit.data;
 			const payloadJson = eventPayloadJson({
 				organizationId: input.organizationId,
 				entityType: "hr_worker",
@@ -2244,9 +2601,8 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				correlationId: meta.correlationId,
 			});
 			try {
-				const [rows] = await runNeonHttpTransaction<[WorkerSqlRow[]]>(
-					(sqlValue2) => [
-						sqlValue2`
+				const [rows] = await runNeonHttpTransaction((sqlValue2) => [
+					sqlValue2`
 						WITH mutated AS (
 							UPDATE hr_worker
 							SET worker_type = ${input.workerType},
@@ -2291,11 +2647,15 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_worker', id, 'UPDATE', '[]'::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+								${audit.correlationId}, ${audit.module}, ${audit.entity}, ${audit.entityId},
+								${audit.action}, ${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -2312,8 +2672,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						)
 						SELECT mutated.* FROM mutated, closed, successor, audited, outboxed
 					`,
-					],
-				);
+				]);
 				const [row] = rows;
 				if (row === undefined) {
 					return fail("CONFLICT", "Worker type change conflict");
@@ -2397,6 +2756,42 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			const successorId = randomUUID();
 			const nextVersion = input.expectedVersion + 1;
 			const predecessorEnd = previousIsoDate(input.effectiveOn);
+			const preparedAudit = prepareTransactionalAuditInsertValues({
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				module: "human-resources",
+				entity: "hr_worker",
+				entityId: input.workerId,
+				action: "UPDATE",
+				changes: [
+					{
+						field: "status",
+						oldValue: openSegment.workerStatus,
+						newValue: input.status,
+					},
+				],
+				oldValue: {
+					effectiveFrom: openSegment.effectiveFrom,
+					status: openSegment.workerStatus,
+					version: input.expectedVersion,
+				},
+				newValue: {
+					effectiveFrom: input.effectiveOn,
+					status: input.status,
+					version: nextVersion,
+				},
+				eventContext: {
+					version: 1,
+					outcome: "SUCCEEDED",
+					source: WORKFORCE_FOUNDATION_AUDIT_SOURCE,
+					causationId: meta.causationId ?? meta.idempotencyKey ?? null,
+				},
+			});
+			if (!preparedAudit.ok) {
+				return preparedAudit;
+			}
+			const audit = preparedAudit.data;
 			const payloadJson = eventPayloadJson({
 				organizationId: input.organizationId,
 				entityType: "hr_worker",
@@ -2406,9 +2801,8 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			});
 
 			try {
-				const [rows] = await runNeonHttpTransaction<[WorkerSqlRow[]]>(
-					(sqlValue) => [
-						sqlValue`
+				const [rows] = await runNeonHttpTransaction((sqlValue) => [
+					sqlValue`
 						WITH mutated AS (
 							UPDATE hr_worker
 							SET status = ${input.status},
@@ -2452,11 +2846,15 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_worker', id, 'UPDATE', '[]'::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+								${audit.correlationId}, ${audit.module}, ${audit.entity}, ${audit.entityId},
+								${audit.action}, ${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -2473,8 +2871,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						)
 						SELECT mutated.* FROM mutated, closed, successor, audited, outboxed
 					`,
-					],
-				);
+				]);
 				const [row] = rows;
 				if (row === undefined) {
 					return fail("CONFLICT", "Worker status change conflict");

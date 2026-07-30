@@ -29,7 +29,7 @@ Source: [`enterprise.md`](../../slice/enterprise.md) gap matrix (2026-07-24).
 
 | ID | Requirement | enterprise.md severity | HR-AUD-00 cross-cut note |
 |---|---|---|---|
-| HR-ENT-01 | Tenancy inventory accurate | Pass | 129 `hr_*` mutation tables align with the 222-table hard-tenant registry and executable audit mirror |
+| HR-ENT-01 | Tenancy inventory accurate | Pass | 141 `hr_*` roots align with the 274-table hard-tenant registry and executable audit derivation |
 | HR-ENT-02 | Lifecycle remains honest | Pass | `module.manifest.ts` → `lifecycle: scaffolded` |
 | HR-ENT-03 | Person/worker foundation | Pass | Workforce foundation on disk; domain-cluster detail deferred |
 | HR-ENT-04 | Deterministic historical org context | Major | Org-context query exists; dimension directory wiring is composition concern |
@@ -114,7 +114,7 @@ Source: [`enterprise.md`](../../slice/enterprise.md) gap matrix (2026-07-24).
 | Path | Role |
 |---|---|
 | [`packages/data-plane/db/src/schema/human-resources.ts`](../../../packages/data-plane/db/src/schema/human-resources.ts) | Drizzle HR schema |
-| [`packages/data-plane/db/src/hard-tenant-roots.ts`](../../../packages/data-plane/db/src/hard-tenant-roots.ts) | **129** `hr_*` hard-tenant roots (**222** total repo roots); executable mirror parity enforced by DB tests |
+| [`packages/data-plane/db/src/hard-tenant-roots.ts`](../../../packages/data-plane/db/src/hard-tenant-roots.ts) | **141** `hr_*` hard-tenant roots (**274** total repo roots); executable audit derivation enforced by DB tests |
 | [`packages/data-plane/db/drizzle/0001_hr_work_calendar.sql`](../../../packages/data-plane/db/drizzle/0001_hr_work_calendar.sql) … `0008_hr_workforce_foundation.sql` | Baseline HR migration chain (later journals may exist on branch) |
 | [`packages/data-plane/db/__tests__/hr-*`](../../../packages/data-plane/db/__tests__) | HR migration contract tests |
 

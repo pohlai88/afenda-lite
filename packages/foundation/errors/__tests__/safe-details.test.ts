@@ -48,6 +48,17 @@ describe("sanitizeErrorDetails", () => {
 		});
 	});
 
+	it("drops credential-shaped keys, connection URLs, and DDL", () => {
+		expect(
+			sanitizeErrorDetails({
+				userPassword: "secret",
+				rawSql: "DROP TABLE payroll",
+				diagnostic: "postgres://admin:secret@host/db",
+				reason: "required",
+			}),
+		).toEqual({ reason: "required" });
+	});
+
 	it("drops non-finite numbers and unsupported values", () => {
 		expect(
 			sanitizeErrorDetails({

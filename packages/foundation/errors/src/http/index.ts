@@ -4,8 +4,15 @@
  * Protected: changes require local pre-edit token and compatibility checks.
  */
 
+import type { AppError } from "../core/app-error";
 import type { ErrorCode } from "../core/codes";
-import { type SafeDetails, sanitizeErrorDetails } from "../core/safe-details";
+import {
+	publicErrorDetails,
+	publicErrorMessage,
+} from "../core/public-error-policy";
+import { retryAfterSeconds as readRetryAfterSeconds } from "../core/retry-after";
+import type { SafeDetails } from "../core/safe-details";
+import { serializeAppError } from "../core/serialize";
 
 export {
 	clampRetryAfterSeconds,
@@ -40,16 +47,36 @@ export type HttpErrorBody = Readonly<{
 /** Historical alias — same wire shape as OpenAPI `APIErrorBody`. */
 export type APIErrorBody = HttpErrorBody;
 
+export type HttpErrorProjection = Readonly<{
+	status: number;
+	body: HttpErrorBody;
+	retryAfter?: number;
+}>;
+
 export function httpErrorBody(
 	code: ErrorCode,
 	message: string,
 	details?: unknown,
 ): HttpErrorBody {
-	const safeDetails = sanitizeErrorDetails(details);
+	const safeDetails = publicErrorDetails(code, details);
+	const safeMessage = publicErrorMessage(code, message);
 	return safeDetails === undefined
-		? { error: { code, message } }
-		: { error: { code, message, details: safeDetails } };
+		? { error: { code, message: safeMessage } }
+		: { error: { code, message: safeMessage, details: safeDetails } };
 }
 
 /** Historical alias. */
 export const apiErrorBody = httpErrorBody;
+
+/** Derives the complete HTTP projection from one trusted AppError. */
+export function projectHttpError(error: AppError): HttpErrorProjection {
+	const serialized = serializeAppError(error);
+	const body: HttpErrorBody = { error: serialized };
+	const retryAfter =
+		serialized.code === "RATE_LIMITED"
+			? readRetryAfterSeconds(serialized.details)
+			: undefined;
+	return retryAfter === undefined
+		? { status: ERROR_HTTP_STATUS[serialized.code], body }
+		: { status: ERROR_HTTP_STATUS[serialized.code], body, retryAfter };
+}

@@ -25,6 +25,7 @@ function createError(
 		message,
 		...(safeDetails === undefined ? {} : { details: safeDetails }),
 		isOperational,
+		...(code === "INTERNAL_ERROR" ? { operation: message } : {}),
 	});
 }
 

@@ -125,8 +125,6 @@ import {
 	buildSubmitLeaveRequestSql,
 } from "./leave-sql-builders";
 import {
-	type LeaveAdjustmentSqlRow,
-	type LeaveEntitlementSqlRow,
 	type LeavePolicySqlRow,
 	type LeaveRequestSqlRow,
 	resolveIdempotentCreateReplay,
@@ -889,9 +887,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				allowedEmploymentStatuses: record.allowedEmploymentStatuses,
 			});
 
-			const [rows] = await runLeaveTransaction<[LeavePolicySqlRow[]]>(
-				(sqlClient) => [sqlClient.query(sqlValue15)],
-			);
+			const [rows] = await runLeaveTransaction((sqlClient) => [
+				sqlClient.query(sqlValue15),
+			]);
 
 			const [row] = rows;
 			if (row === undefined) {
@@ -1065,9 +1063,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				nextStatus: "published",
 			});
 
-			const [rows] = await runLeaveTransaction<[LeavePolicySqlRow[]]>(
-				(sqlClient) => [sqlClient.query(sqlValue14)],
-			);
+			const [rows] = await runLeaveTransaction((sqlClient) => [
+				sqlClient.query(sqlValue14),
+			]);
 
 			const [row] = rows;
 			if (row === undefined) {
@@ -1101,9 +1099,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				nextStatus: "archived",
 			});
 
-			const [rows] = await runLeaveTransaction<[LeavePolicySqlRow[]]>(
-				(sqlClient) => [sqlClient.query(sqlValue13)],
-			);
+			const [rows] = await runLeaveTransaction((sqlClient) => [
+				sqlClient.query(sqlValue13),
+			]);
 
 			const [row] = rows;
 			if (row === undefined) {
@@ -1335,9 +1333,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				correlationId: meta.correlationId,
 			});
 
-			const [rows] = await runLeaveTransaction<[LeaveEntitlementSqlRow[]]>(
-				(sqlClient) => [sqlClient.query(sqlValue12)],
-			);
+			const [rows] = await runLeaveTransaction((sqlClient) => [
+				sqlClient.query(sqlValue12),
+			]);
 
 			const [row] = rows;
 			if (row === undefined) {
@@ -1479,9 +1477,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				eventType: carryEventType,
 			});
 
-			const [rows] = await runLeaveTransaction<[LeaveEntitlementSqlRow[]]>(
-				(sqlClient) => [sqlClient.query(sqlValue11)],
-			);
+			const [rows] = await runLeaveTransaction((sqlClient) => [
+				sqlClient.query(sqlValue11),
+			]);
 
 			const [row] = rows;
 			if (row === undefined) {
@@ -1575,9 +1573,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 					: { eventType: expiryEventType }),
 			});
 
-			const [rows] = await runLeaveTransaction<[LeaveEntitlementSqlRow[]]>(
-				(sqlClient) => [sqlClient.query(sqlValue10)],
-			);
+			const [rows] = await runLeaveTransaction((sqlClient) => [
+				sqlClient.query(sqlValue10),
+			]);
 
 			const [row] = rows;
 			if (row === undefined) {
@@ -1739,9 +1737,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 					: { eventType: plannedEventType }),
 			});
 
-			const [rows] = await runLeaveTransaction<[LeaveAdjustmentSqlRow[]]>(
-				(sqlClient) => [sqlClient.query(sqlValue9)],
-			);
+			const [rows] = await runLeaveTransaction((sqlClient) => [
+				sqlClient.query(sqlValue9),
+			]);
 
 			const [row] = rows;
 			if (row === undefined) {
@@ -2081,9 +2079,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				segments,
 			});
 
-			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>(
-				(sqlClient) => [sqlClient.query(sqlValue8)],
-			);
+			const [rows] = await runLeaveTransaction((sqlClient) => [
+				sqlClient.query(sqlValue8),
+			]);
 
 			const [row] = rows;
 			if (row === undefined) {
@@ -2210,9 +2208,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				segments,
 			});
 
-			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>(
-				(sqlClient) => [sqlClient.query(sqlValue7)],
-			);
+			const [rows] = await runLeaveTransaction((sqlClient) => [
+				sqlClient.query(sqlValue7),
+			]);
 
 			const [row] = rows;
 			if (row === undefined) {
@@ -2290,9 +2288,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				eventType: submitEventType,
 			});
 
-			const [, rows] = await runLeaveTransaction<
-				[Record<string, unknown>[], LeaveRequestOverlapSqlRow[]]
-			>((sqlClient) => [
+			const [, rows] = await runLeaveTransaction((sqlClient) => [
 				sqlClient.query(bookingLockSql),
 				sqlClient.query(sqlValue6),
 			]);
@@ -2381,9 +2377,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				eventType: approveEventType,
 			});
 
-			const [, rows] = await runLeaveTransaction<
-				[Record<string, unknown>[], LeaveRequestOverlapSqlRow[]]
-			>((sqlClient) => [
+			const [, rows] = await runLeaveTransaction((sqlClient) => [
 				sqlClient.query(bookingLockSql),
 				sqlClient.query(sqlValue5),
 			]);
@@ -2446,9 +2440,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				eventType: rejectEventType,
 			});
 
-			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>(
-				(sqlClient) => [sqlClient.query(sqlValue4)],
-			);
+			const [rows] = await runLeaveTransaction((sqlClient) => [
+				sqlClient.query(sqlValue4),
+			]);
 
 			const [row] = rows;
 			if (row === undefined) {
@@ -2514,9 +2508,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				// Note: return does not emit outbox event per original code
 			});
 
-			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>(
-				(sqlClient) => [sqlClient.query(sqlValue3)],
-			);
+			const [rows] = await runLeaveTransaction((sqlClient) => [
+				sqlClient.query(sqlValue3),
+			]);
 
 			const [row] = rows;
 			if (row === undefined) {
@@ -2573,9 +2567,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				// Note: withdraw does not emit outbox event per original code
 			});
 
-			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>(
-				(sqlClient) => [sqlClient.query(sqlValue2)],
-			);
+			const [rows] = await runLeaveTransaction((sqlClient) => [
+				sqlClient.query(sqlValue2),
+			]);
 
 			const [row] = rows;
 			if (row === undefined) {
@@ -2681,9 +2675,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				eventType: cancelEventType,
 			});
 
-			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>(
-				(sqlClient) => [sqlClient.query(sqlValue)],
-			);
+			const [rows] = await runLeaveTransaction((sqlClient) => [
+				sqlClient.query(sqlValue),
+			]);
 
 			const [row] = rows;
 			if (row === undefined) {

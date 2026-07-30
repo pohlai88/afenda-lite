@@ -250,9 +250,8 @@ export function createDrizzlePayrollDeliveryStore(): PayrollDeliveryStorePort {
 		async createCorrection(input) {
 			const { correction } = input;
 			try {
-				const [rows] = await runNeonHttpTransaction<[Array<{ id: string }>]>(
-					(sqlTag) => [
-						sqlTag`
+				const [rows] = await runNeonHttpTransaction((sqlTag) => [
+					sqlTag`
 							WITH linked_source AS (
 								UPDATE hr_payroll_handoff_delivery
 								SET superseded_by_delivery_id = ${correction.id},
@@ -289,8 +288,7 @@ export function createDrizzlePayrollDeliveryStore(): PayrollDeliveryStorePort {
 							)
 							SELECT * FROM inserted
 						`,
-					],
-				);
+				]);
 				if (!rows[0]) {
 					return fail("CONFLICT", "Payroll delivery correction conflict");
 				}

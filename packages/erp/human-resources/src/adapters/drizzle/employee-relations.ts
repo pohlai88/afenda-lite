@@ -1,6 +1,10 @@
 import { randomUUID } from "node:crypto";
 
 import {
+	type PreparedTransactionalAuditInsertValues,
+	prepareTransactionalAuditInsertValues,
+} from "@afenda/audit";
+import {
 	and,
 	asc,
 	db,
@@ -82,6 +86,45 @@ import {
 	mapPersistenceFailure,
 } from "../../shared/persistence-errors";
 import type { HumanResourcesStore } from "../../store";
+
+const EMPLOYEE_RELATIONS_AUDIT_SOURCE =
+	"human-resources.employee-relations-drizzle";
+
+interface EmployeeRelationsAuditInput {
+	action: "CREATE" | "UPDATE";
+	actorUserId: string;
+	correlationId: string;
+	entity: string;
+	entityId: string;
+	newValue?: Record<string, unknown> | null;
+	oldValue?: Record<string, unknown> | null;
+	organizationId: string;
+	reasonCode: string;
+}
+
+function prepareEmployeeRelationsAudit(
+	input: EmployeeRelationsAuditInput,
+): Result<PreparedTransactionalAuditInsertValues> {
+	return prepareTransactionalAuditInsertValues({
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		correlationId: input.correlationId,
+		module: "human-resources",
+		entity: input.entity,
+		entityId: input.entityId,
+		action: input.action,
+		oldValue: input.oldValue ?? null,
+		newValue: input.newValue ?? null,
+		eventContext: {
+			version: 1,
+			outcome: "SUCCEEDED",
+			source: EMPLOYEE_RELATIONS_AUDIT_SOURCE,
+			occurredAt: null,
+			causationId: null,
+			reasonCode: input.reasonCode,
+		},
+	});
+}
 
 export type DrizzleEmployeeRelationsMethods = Pick<
 	HumanResourcesStore,
@@ -805,6 +848,26 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		}
 		const auditId = randomUUID();
 		const outboxId = randomUUID();
+		const preparedAudit = prepareEmployeeRelationsAudit({
+			action: "CREATE",
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_employee_case",
+			entityId: caseId.data,
+			newValue: {
+				caseType: record.caseType,
+				classificationCode: record.classificationCode,
+				severity: record.severity,
+				status: "open",
+				version: 1,
+			},
+			organizationId: record.organizationId,
+			reasonCode: "EMPLOYEE_CASE_OPENED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const conflictedJson = JSON.stringify(record.conflictedActorUserIds);
 		const outboxPayload = entityPayloadJson({
 			organizationId: record.organizationId,
@@ -814,7 +877,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction<[CaseSqlRow[]]>((sqlTag) => [
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
 				sqlTag`
 					WITH employee AS (
 						SELECT id FROM hr_employee
@@ -857,11 +920,15 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, created_by, ${meta.correlationId},
-							'human-resources', 'hr_employee_case', id, 'CREATE', '[]'::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -998,8 +1065,29 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			return eventId;
 		}
 		const auditId = randomUUID();
+		const preparedAudit = prepareEmployeeRelationsAudit({
+			action: "UPDATE",
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_employee_case",
+			entityId: input.caseId,
+			oldValue: {
+				classificationCode: loaded.data.classificationCode,
+				version: loaded.data.version,
+			},
+			newValue: {
+				classificationCode: input.classificationCode,
+				version: nextVersion,
+			},
+			organizationId: input.organizationId,
+			reasonCode: "EMPLOYEE_CASE_CLASSIFICATION_UPDATED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction<[CaseSqlRow[]]>((sqlTag) => [
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
 						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
@@ -1032,11 +1120,15 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-							'human-resources', 'hr_employee_case', id, 'UPDATE', '[]'::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					)
@@ -1093,6 +1185,24 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		}
 		const auditId = randomUUID();
 		const outboxId = randomUUID();
+		const preparedAudit = prepareEmployeeRelationsAudit({
+			action: "UPDATE",
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_employee_case",
+			entityId: input.caseId,
+			oldValue: {
+				ownerAssigned: loaded.data.ownerActorUserId.length > 0,
+				version: loaded.data.version,
+			},
+			newValue: { ownerAssigned: true, version: nextVersion },
+			organizationId: input.organizationId,
+			reasonCode: "EMPLOYEE_CASE_OWNER_ASSIGNED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const outboxPayload = entityPayloadJson({
 			organizationId: input.organizationId,
 			entityType: "hr_employee_case",
@@ -1101,7 +1211,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction<[CaseSqlRow[]]>((sqlTag) => [
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
 						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
@@ -1134,11 +1244,15 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-							'human-resources', 'hr_employee_case', id, 'UPDATE', '[]'::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -1214,8 +1328,33 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			return eventId;
 		}
 		const auditId = randomUUID();
+		const preparedAudit = prepareEmployeeRelationsAudit({
+			action: "UPDATE",
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_employee_case",
+			entityId: input.caseId,
+			oldValue: {
+				participantCount: loaded.data.participants.length,
+				status: loaded.data.status,
+				version: loaded.data.version,
+			},
+			newValue: {
+				participantCount: loaded.data.participants.length + 1,
+				participantRole: input.role,
+				status:
+					loaded.data.status === "open" ? "investigating" : loaded.data.status,
+				version: nextVersion,
+			},
+			organizationId: input.organizationId,
+			reasonCode: "EMPLOYEE_CASE_PARTICIPANT_ADDED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction<[CaseSqlRow[]]>((sqlTag) => [
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
 						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
@@ -1248,11 +1387,15 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-							'human-resources', 'hr_employee_case', id, 'UPDATE', '[]'::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					)
@@ -1300,8 +1443,25 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		const nextVersion = bumpCase
 			? loaded.data.version + 1
 			: loaded.data.version;
+		const preparedAudit = prepareEmployeeRelationsAudit({
+			action: "CREATE",
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_employee_case_event",
+			entityId: eventId.data,
+			newValue: {
+				caseId: input.caseId,
+				eventKind: input.eventKind,
+			},
+			organizationId: input.organizationId,
+			reasonCode: "EMPLOYEE_CASE_EVENT_RECORDED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction<[EventSqlRow[]]>((sqlTag) => [
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
 						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
@@ -1342,11 +1502,15 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-							'human-resources', 'hr_employee_case_event', id, 'CREATE', '[]'::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM inserted_event
 						RETURNING id
 					)
@@ -1387,8 +1551,25 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		}
 		const auditId = randomUUID();
 		const nextVersion = loaded.data.version + 1;
+		const preparedAudit = prepareEmployeeRelationsAudit({
+			action: "CREATE",
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_employee_case_event",
+			entityId: eventId.data,
+			newValue: {
+				caseId: input.caseId,
+				eventKind: "evidence_reference_added",
+			},
+			organizationId: input.organizationId,
+			reasonCode: "EMPLOYEE_CASE_EVIDENCE_REFERENCE_ADDED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction<[EventSqlRow[]]>((sqlTag) => [
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
 						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
@@ -1421,11 +1602,15 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-							'human-resources', 'hr_employee_case_event', id, 'CREATE', '[]'::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM inserted_event
 						RETURNING id
 					)
@@ -1477,8 +1662,26 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		}
 		const auditId = randomUUID();
 		const payloadJson = JSON.stringify({ reasonCode: input.reasonCode });
+		const preparedAudit = prepareEmployeeRelationsAudit({
+			action: "CREATE",
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_employee_case_event",
+			entityId: eventId.data,
+			newValue: {
+				caseId: input.caseId,
+				eventKind: "evidence_reference_redacted",
+				redactsEventId: input.eventId,
+			},
+			organizationId: input.organizationId,
+			reasonCode: "EMPLOYEE_CASE_EVIDENCE_REFERENCE_REDACTED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction<[EventSqlRow[]]>((sqlTag) => [
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
 						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
@@ -1507,11 +1710,15 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-							'human-resources', 'hr_employee_case_event', id, 'CREATE', '[]'::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM inserted_event
 						RETURNING id
 					)
@@ -1567,6 +1774,31 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		}
 		const auditId = randomUUID();
 		const outboxId = randomUUID();
+		const preparedAudit = prepareEmployeeRelationsAudit({
+			action: "UPDATE",
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_employee_case",
+			entityId: input.caseId,
+			oldValue: {
+				interimStatus: loaded.data.interimStatus,
+				status: loaded.data.status,
+				version: loaded.data.version,
+			},
+			newValue: {
+				hasReviewDate: input.interimReviewOn.length > 0,
+				interimStatus: "active",
+				status:
+					loaded.data.status === "open" ? "investigating" : loaded.data.status,
+				version: nextVersion,
+			},
+			organizationId: input.organizationId,
+			reasonCode: "EMPLOYEE_CASE_INTERIM_MEASURE_ISSUED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const outboxPayload = entityPayloadJson({
 			organizationId: input.organizationId,
 			entityType: "hr_employee_case",
@@ -1575,7 +1807,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction<[CaseSqlRow[]]>((sqlTag) => [
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
 						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
@@ -1612,11 +1844,15 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-							'human-resources', 'hr_employee_case', id, 'UPDATE', '[]'::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -1683,6 +1919,30 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		}
 		const auditId = randomUUID();
 		const outboxId = randomUUID();
+		const preparedAudit = prepareEmployeeRelationsAudit({
+			action: "UPDATE",
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_employee_case",
+			entityId: input.caseId,
+			oldValue: {
+				findingRecorded: loaded.data.findingCode !== null,
+				status: loaded.data.status,
+				version: loaded.data.version,
+			},
+			newValue: {
+				findingCode: input.findingCode,
+				findingRecorded: true,
+				status: "finding_recorded",
+				version: nextVersion,
+			},
+			organizationId: input.organizationId,
+			reasonCode: "EMPLOYEE_CASE_FINDING_RECORDED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const outboxPayload = entityPayloadJson({
 			organizationId: input.organizationId,
 			entityType: "hr_employee_case",
@@ -1691,7 +1951,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction<[CaseSqlRow[]]>((sqlTag) => [
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
 						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
@@ -1727,11 +1987,15 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-							'human-resources', 'hr_employee_case', id, 'UPDATE', '[]'::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -1851,10 +2115,28 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		}
 		const auditId = randomUUID();
 		const nextCaseVersion = record.expectedVersion + 1;
+		const preparedAudit = prepareEmployeeRelationsAudit({
+			action: "CREATE",
+			actorUserId: record.recommendedBy,
+			correlationId: meta.correlationId,
+			entity: "hr_employee_case_action",
+			entityId: actionId.data,
+			newValue: {
+				actionType: record.actionType,
+				caseId: record.caseId,
+				status: "recommended",
+				version: 1,
+			},
+			organizationId: record.organizationId,
+			reasonCode: "EMPLOYEE_CASE_ACTION_RECOMMENDED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction<[ActionSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 					WITH next_seq AS (
 						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
 						FROM hr_employee_case_event
@@ -1909,18 +2191,21 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, ${record.recommendedBy}, ${meta.correlationId},
-							'human-resources', 'hr_employee_case_action', id, 'CREATE', '[]'::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM inserted_action
 						RETURNING id
 					)
 					SELECT inserted_action.* FROM inserted_action, audited, case_update, inserted_event
 				`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -2005,6 +2290,28 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		}
 		const auditId = randomUUID();
 		const outboxId = randomUUID();
+		const preparedAudit = prepareEmployeeRelationsAudit({
+			action: "UPDATE",
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_employee_case_action",
+			entityId: input.actionId,
+			oldValue: {
+				status: actionLoaded.data.status,
+				version: actionLoaded.data.version,
+			},
+			newValue: {
+				policyValidationRecorded: input.policyValidationRecorded,
+				status: "approved",
+				version: nextActionVersion,
+			},
+			organizationId: input.organizationId,
+			reasonCode: "EMPLOYEE_CASE_ACTION_APPROVED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const outboxPayload = entityPayloadJson({
 			organizationId: input.organizationId,
 			entityType: "hr_employee_case_action",
@@ -2013,9 +2320,8 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction<[ActionSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 					WITH next_seq AS (
 						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
 						FROM hr_employee_case_event
@@ -2060,11 +2366,15 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-							'human-resources', 'hr_employee_case_action', id, 'UPDATE', '[]'::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated_action
 						RETURNING id
 					),
@@ -2082,8 +2392,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					)
 					SELECT mutated_action.* FROM mutated_action, audited, case_update, outboxed, inserted_event
 				`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -2191,6 +2500,24 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		}
 		const auditId = randomUUID();
 		const outboxId = randomUUID();
+		const preparedAudit = prepareEmployeeRelationsAudit({
+			action: "CREATE",
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_employee_case_appeal",
+			entityId: appealId.data,
+			newValue: {
+				caseId: record.caseId,
+				status: "open",
+				version: 1,
+			},
+			organizationId: record.organizationId,
+			reasonCode: "EMPLOYEE_CASE_APPEAL_RECORDED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const outboxPayload = entityPayloadJson({
 			organizationId: record.organizationId,
 			entityType: "hr_employee_case",
@@ -2200,9 +2527,8 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		});
 		const nextCaseVersion = record.expectedVersion + 1;
 		try {
-			const [rows] = await runNeonHttpTransaction<[AppealSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 					WITH next_seq AS (
 						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
 						FROM hr_employee_case_event
@@ -2258,11 +2584,15 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, ${record.createdBy}, ${meta.correlationId},
-							'human-resources', 'hr_employee_case_appeal', id, 'CREATE', '[]'::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM inserted_appeal
 						RETURNING id
 					),
@@ -2281,8 +2611,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					)
 					SELECT inserted_appeal.* FROM inserted_appeal, audited, case_update, inserted_event, outboxed
 				`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -2358,6 +2687,28 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		}
 		const auditId = randomUUID();
 		const outboxId = randomUUID();
+		const preparedAudit = prepareEmployeeRelationsAudit({
+			action: "UPDATE",
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_employee_case_appeal",
+			entityId: input.appealId,
+			oldValue: {
+				status: appealLoaded.data.status,
+				version: appealLoaded.data.version,
+			},
+			newValue: {
+				appealOutcomeCode: input.appealOutcomeCode,
+				status: "resolved",
+				version: nextAppealVersion,
+			},
+			organizationId: input.organizationId,
+			reasonCode: "EMPLOYEE_CASE_APPEAL_RESOLVED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const outboxPayload = entityPayloadJson({
 			organizationId: input.organizationId,
 			entityType: "hr_employee_case_appeal",
@@ -2366,9 +2717,8 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction<[AppealSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 					WITH next_seq AS (
 						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
 						FROM hr_employee_case_event
@@ -2414,11 +2764,15 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-							'human-resources', 'hr_employee_case_appeal', id, 'UPDATE', '[]'::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated_appeal
 						RETURNING id
 					),
@@ -2436,8 +2790,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					)
 					SELECT mutated_appeal.* FROM mutated_appeal, audited, case_update, outboxed, inserted_event
 				`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -2486,6 +2839,28 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		}
 		const auditId = randomUUID();
 		const outboxId = randomUUID();
+		const preparedAudit = prepareEmployeeRelationsAudit({
+			action: "UPDATE",
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_employee_case",
+			entityId: input.caseId,
+			oldValue: {
+				status: loaded.data.status,
+				version: loaded.data.version,
+			},
+			newValue: {
+				outcomeCode: input.outcomeCode,
+				status: "closed",
+				version: nextVersion,
+			},
+			organizationId: input.organizationId,
+			reasonCode: "EMPLOYEE_CASE_CLOSED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const outboxPayload = entityPayloadJson({
 			organizationId: input.organizationId,
 			entityType: "hr_employee_case",
@@ -2494,7 +2869,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction<[CaseSqlRow[]]>((sqlTag) => [
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
 						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
@@ -2529,11 +2904,15 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-							'human-resources', 'hr_employee_case', id, 'UPDATE', '[]'::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -2590,6 +2969,29 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		}
 		const auditId = randomUUID();
 		const outboxId = randomUUID();
+		const preparedAudit = prepareEmployeeRelationsAudit({
+			action: "UPDATE",
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_employee_case",
+			entityId: input.caseId,
+			oldValue: {
+				outcomeCode: loaded.data.outcomeCode,
+				status: loaded.data.status,
+				version: loaded.data.version,
+			},
+			newValue: {
+				outcomeCode: null,
+				status: "open",
+				version: nextVersion,
+			},
+			organizationId: input.organizationId,
+			reasonCode: "EMPLOYEE_CASE_REOPENED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const timelinePayloadJson = JSON.stringify({
 			reasonCode: input.reasonCode,
 		});
@@ -2601,7 +3003,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction<[CaseSqlRow[]]>((sqlTag) => [
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
 						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
@@ -2638,11 +3040,15 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-							'human-resources', 'hr_employee_case', id, 'UPDATE', '[]'::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					),

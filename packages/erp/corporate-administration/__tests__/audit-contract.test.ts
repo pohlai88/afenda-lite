@@ -184,19 +184,26 @@ describe("Corporate Administration audit fact contract", () => {
 		expect(write).toHaveBeenCalledWith(
 			expect.objectContaining({
 				metadata: {
-					outcome: "SUCCESS",
 					source: "ca-0.4",
-					causation_id: "cause_1",
+				},
+				eventContext: {
+					version: 1,
+					outcome: "SUCCEEDED",
+					source: "corporate-administration",
+					occurredAt: new Date("2026-07-26T10:00:00.000Z"),
+					causationId: "cause_1",
+					reasonCode: null,
 				},
 			}),
 		);
 	});
 
 	it("uses the active CA transaction context for audit persistence", async () => {
+		const auditId = "11111111-1111-4111-8111-111111111111";
 		const write = vi.fn(async () => ok({ id: "audit_immediate" }));
 		const statements: unknown[] = [];
 		const audit = createDrizzleCorporateAdministrationAuditFactPort({
-			createAuditId: () => "audit_tx_1",
+			createAuditId: () => auditId,
 			store: { write },
 		});
 
@@ -219,8 +226,36 @@ describe("Corporate Administration audit fact contract", () => {
 			},
 		);
 
-		expect(result).toEqual(ok({ id: "audit_tx_1" }));
+		expect(result).toEqual(ok({ id: auditId }));
 		expect(write).not.toHaveBeenCalled();
 		expect(statements).toHaveLength(1);
+
+		const [enqueuedStatement] = statements;
+		if (typeof enqueuedStatement !== "function") {
+			throw new Error("expected an audit transaction statement");
+		}
+		const query = enqueuedStatement(
+			(strings: TemplateStringsArray, ...values: unknown[]) => ({
+				text: strings.join("?"),
+				values,
+			}),
+		);
+		expect(query).toMatchObject({
+			text: expect.stringContaining("INSERT INTO platform_audit_log"),
+			values: expect.arrayContaining([auditId]),
+		});
+		expect(query.values).toContain(
+			JSON.stringify({
+				_afenda_event_context: {
+					version: 1,
+					outcome: "SUCCEEDED",
+					source: "corporate-administration",
+					occurredAt: "2026-07-26T10:00:00.000Z",
+					causationId: null,
+					reasonCode: null,
+				},
+			}),
+		);
+		expect(query.text).not.toContain("created_at");
 	});
 });

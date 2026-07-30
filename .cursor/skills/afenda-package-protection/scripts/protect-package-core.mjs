@@ -9,6 +9,7 @@ export const PROTECTION_FILE_NAME = ".protected.sha256";
 export const EDIT_TOKEN_ENV = "AFENDA_PROTECTED_EDIT_TOKEN";
 
 const INCLUDED_ROOT_FILES = new Set(["package.json", "README.md", "tsconfig.json"]);
+const CONFIG_PACKAGE_ROOT_FILES = new Set(["biome.json"]);
 const INCLUDED_EXTENSIONS = new Set([
 	".ts",
 	".tsx",
@@ -22,6 +23,7 @@ const INCLUDED_EXTENSIONS = new Set([
 	".css",
 ]);
 const INCLUDED_DIRECTORIES = new Set(["src", "__tests__", "test"]);
+const CONFIG_PACKAGE_DIRECTORIES = new Set(["tsconfig"]);
 const HEADER_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"]);
 const HEADER_SCAN_LINES = 8;
 
@@ -92,6 +94,8 @@ export async function assertEditToken() {
 async function collectFiles(packageRoot, directory) {
 	const entries = await readdir(directory, { withFileTypes: true });
 	const files = [];
+	const isConfigPackage = path.relative(repoRoot, packageRoot).replaceAll(path.sep, "/") ===
+		"packages/foundation/config";
 
 	for (const entry of entries) {
 		const fullPath = path.join(directory, entry.name);
@@ -99,7 +103,10 @@ async function collectFiles(packageRoot, directory) {
 		const topLevel = relativePath.split("/")[0];
 
 		if (entry.isDirectory()) {
-			if (INCLUDED_DIRECTORIES.has(topLevel)) {
+			if (
+				INCLUDED_DIRECTORIES.has(topLevel) ||
+				(isConfigPackage && CONFIG_PACKAGE_DIRECTORIES.has(topLevel))
+			) {
 				files.push(...(await collectFiles(packageRoot, fullPath)));
 			}
 			continue;
@@ -110,12 +117,18 @@ async function collectFiles(packageRoot, directory) {
 		}
 
 		const isRootFile =
-			!relativePath.includes("/") && INCLUDED_ROOT_FILES.has(entry.name);
+			!relativePath.includes("/") &&
+			(INCLUDED_ROOT_FILES.has(entry.name) ||
+				(isConfigPackage && CONFIG_PACKAGE_ROOT_FILES.has(entry.name)));
 		const isIncludedFile =
 			INCLUDED_DIRECTORIES.has(topLevel) &&
 			INCLUDED_EXTENSIONS.has(path.extname(entry.name));
+		const isConfigPackageFile =
+			isConfigPackage &&
+			CONFIG_PACKAGE_DIRECTORIES.has(topLevel) &&
+			INCLUDED_EXTENSIONS.has(path.extname(entry.name));
 
-		if (isRootFile || isIncludedFile) {
+		if (isRootFile || isIncludedFile || isConfigPackageFile) {
 			files.push(fullPath);
 		}
 	}

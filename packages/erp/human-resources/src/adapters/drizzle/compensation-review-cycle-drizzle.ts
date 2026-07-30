@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 
+import { prepareTransactionalAuditInsertValues } from "@afenda/audit";
 import {
 	and,
 	db,
@@ -17,6 +18,10 @@ import {
 } from "../../brands";
 import { HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE } from "../../error-codes";
 import type { MutationPorts } from "../../ports";
+import {
+	compensationReviewCycleAuditSnapshot,
+	statusChange,
+} from "../../shared/compensation-review-audit";
 import {
 	assertReviewCycleStatusTransition,
 	assertValidReviewCyclePeriod,
@@ -43,6 +48,9 @@ import type {
 	CompensationReviewCycleListPage,
 } from "../../types";
 import { mapCompensationReviewFromDbRow } from "./compensation-benefits";
+
+const COMPENSATION_REVIEW_CYCLE_AUDIT_SOURCE =
+	"human-resources.compensation-review-cycle-drizzle";
 
 interface CompensationReviewCycleSqlRow {
 	budget_currency_code: string;
@@ -157,11 +165,35 @@ async function transitionReviewCycleStatus(
 
 	const nextVersion = input.expectedVersion + 1;
 	const auditId = randomUUID();
+	const preparedAudit = prepareTransactionalAuditInsertValues({
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		correlationId: meta.correlationId,
+		module: "human-resources",
+		entity: "hr_compensation_review_cycle",
+		entityId: input.cycleId,
+		action: "UPDATE",
+		changes: [statusChange("status", cycle.status, nextStatus)],
+		oldValue: compensationReviewCycleAuditSnapshot(cycle),
+		newValue: compensationReviewCycleAuditSnapshot({
+			...cycle,
+			status: nextStatus,
+			version: nextVersion,
+		}),
+		eventContext: {
+			version: 1,
+			outcome: "SUCCEEDED",
+			source: COMPENSATION_REVIEW_CYCLE_AUDIT_SOURCE,
+			causationId: meta.causationId ?? meta.idempotencyKey ?? null,
+		},
+	});
+	if (!preparedAudit.ok) {
+		return preparedAudit;
+	}
+	const audit = preparedAudit.data;
 
 	try {
-		const [rows] = await runNeonHttpTransaction<
-			[CompensationReviewCycleSqlRow[]]
-		>((sqlTag) => [
+		const [rows] = await runNeonHttpTransaction((sqlTag) => [
 			sqlTag`
 				WITH mutated AS (
 					UPDATE hr_compensation_review_cycle
@@ -177,11 +209,15 @@ async function transitionReviewCycleStatus(
 				audited AS (
 					INSERT INTO platform_audit_log (
 						id, organization_id, actor_user_id, correlation_id, module, entity,
-						entity_id, action, changes
+						entity_id, action, changes, old_value, new_value, metadata,
+						ip_address, user_agent
 					)
 					SELECT
-						${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-						'human-resources', 'hr_compensation_review_cycle', id, 'UPDATE', '[]'::jsonb
+						${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+						${audit.correlationId}, ${audit.module}, ${audit.entity},
+						${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+						${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+						${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 					FROM mutated
 					RETURNING id
 				)
@@ -310,11 +346,43 @@ export const drizzleCompensationReviewCycleMethods = {
 			return brandedId;
 		}
 		const auditId = randomUUID();
+		const preparedAudit = prepareTransactionalAuditInsertValues({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			module: "human-resources",
+			entity: "hr_compensation_review_cycle",
+			entityId: brandedId.data,
+			action: "CREATE",
+			changes: [{ field: "code", oldValue: null, newValue: record.code }],
+			newValue: compensationReviewCycleAuditSnapshot({
+				id: brandedId.data,
+				code: record.code,
+				name: record.name,
+				periodStart: record.periodStart,
+				periodEnd: record.periodEnd,
+				status: "draft",
+				budgetTotalAmount: record.budgetTotalAmount,
+				budgetCurrencyCode: record.budgetCurrencyCode,
+				version: 1,
+			}),
+			eventContext: {
+				version: 1,
+				outcome: "SUCCEEDED",
+				source: COMPENSATION_REVIEW_CYCLE_AUDIT_SOURCE,
+				causationId:
+					meta.causationId ??
+					meta.idempotencyKey ??
+					record.createIdempotencyKey,
+			},
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[CompensationReviewCycleSqlRow[]]
-			>((sqlTag) => [
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
 				sqlTag`
 					WITH mutated AS (
 						INSERT INTO hr_compensation_review_cycle (
@@ -335,11 +403,15 @@ export const drizzleCompensationReviewCycleMethods = {
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, created_by, ${meta.correlationId},
-							'human-resources', 'hr_compensation_review_cycle', id, 'CREATE', '[]'::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					)

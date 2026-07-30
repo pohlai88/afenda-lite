@@ -4,16 +4,20 @@
  * Protected: changes require local pre-edit token and compatibility checks.
  */
 import type { ErrorCode } from "./codes";
-import { isErrorCode } from "./codes";
+import {
+	publicErrorDetails,
+	publicErrorMessage,
+	safeDiagnosticOperation,
+} from "./public-error-policy";
 import type { SafeDetails } from "./safe-details";
-
-const APP_ERROR_MARKER = Symbol.for("@afenda/errors/AppError");
 
 export type AppErrorOptions = Readonly<{
 	code: ErrorCode;
 	message: string;
-	details?: SafeDetails;
+	details?: unknown;
 	isOperational?: boolean;
+	operation?: unknown;
+	retryable?: boolean;
 	cause?: unknown;
 }>;
 
@@ -27,65 +31,33 @@ export class AppError extends Error {
 	readonly code: ErrorCode;
 	readonly details: SafeDetails | undefined;
 	readonly isOperational: boolean;
-
-	readonly [APP_ERROR_MARKER] = true;
+	readonly operation: string | undefined;
+	readonly retryable: boolean;
 
 	constructor(options: AppErrorOptions) {
 		super(
-			options.message,
+			publicErrorMessage(options.code, options.message),
 			options.cause === undefined ? undefined : { cause: options.cause },
 		);
 		this.name = "AppError";
 		this.code = options.code;
-		this.details = options.details;
-		this.isOperational = options.isOperational ?? true;
-	}
-}
-
-function isRecord(value: unknown): value is Record<PropertyKey, unknown> {
-	return typeof value === "object" && value !== null;
-}
-
-function readProperty(
-	value: Record<PropertyKey, unknown>,
-	key: PropertyKey,
-): unknown {
-	try {
-		return value[key];
-	} catch {
-		// Throwing getters are intentionally treated as absent error metadata.
+		this.details = publicErrorDetails(options.code, options.details);
+		this.isOperational =
+			options.code === "INTERNAL_ERROR"
+				? false
+				: (options.isOperational ?? true);
+		this.operation = safeDiagnosticOperation(options.operation);
+		this.retryable = this.isOperational && options.retryable === true;
 	}
 }
 
 export function isAppError(value: unknown): value is AppError {
-	if (value instanceof AppError) {
-		return true;
-	}
-	if (!isRecord(value)) {
-		return false;
-	}
-
-	const marker = readProperty(value, APP_ERROR_MARKER);
-	const name = readProperty(value, "name");
-	const message = readProperty(value, "message");
-	const code = readProperty(value, "code");
-	const isOperational = readProperty(value, "isOperational");
-
-	return (
-		marker === true &&
-		name === "AppError" &&
-		typeof message === "string" &&
-		isErrorCode(code) &&
-		typeof isOperational === "boolean"
-	);
+	return value instanceof AppError;
 }
 
 export function isOperationalError(value: unknown): boolean {
 	if (!isAppError(value)) {
 		return false;
 	}
-	if (value instanceof AppError) {
-		return value.isOperational;
-	}
-	return isRecord(value) && readProperty(value, "isOperational") === true;
+	return value.isOperational;
 }

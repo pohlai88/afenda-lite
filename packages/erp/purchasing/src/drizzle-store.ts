@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 
+import { prepareTransactionalAuditInsertValues } from "@afenda/audit";
 import {
 	and,
 	asc,
@@ -12,16 +13,10 @@ import {
 	runNeonHttpTransaction,
 } from "@afenda/db";
 import {
-	fromPostgresUnknown,
+	normalizePostgresUnknown,
 	postgresSqlState,
 } from "@afenda/errors/adapters/postgres";
-import {
-	fail,
-	failFromAppError,
-	failFromUnknown,
-	ok,
-	type Result,
-} from "@afenda/errors/result";
+import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
 
 import {
 	PURCHASING_ERROR_CODE_CONFLICT,
@@ -52,11 +47,10 @@ import {
 	type PurchaseOrderStatus,
 } from "./types";
 
+const PURCHASING_AUDIT_SOURCE = "purchasing.drizzle-store";
+
 function failFromPersistence(error: unknown, fallbackMessage: string) {
-	const mapped = fromPostgresUnknown(error);
-	return mapped === undefined
-		? failFromUnknown(error, fallbackMessage)
-		: failFromAppError(mapped);
+	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
 }
 
 interface OrderSqlRow {
@@ -281,18 +275,6 @@ function eventPayloadJson(input: Record<string, unknown>): string {
 	return JSON.stringify(input);
 }
 
-function fieldChangeJson(
-	field: string,
-	oldValue: unknown,
-	newValue: unknown,
-): string {
-	return JSON.stringify([{ field, oldValue, newValue }]);
-}
-
-function valueSnapshotJson(value: Record<string, unknown>): string {
-	return JSON.stringify(value);
-}
-
 const SQLSTATE_UNIQUE_VIOLATION = "23505";
 const CREATE_IDEMPOTENCY_CONSTRAINT_PATTERN =
 	/purchase_order_org_create_idempotency_uidx|create_idempotency_key/i;
@@ -354,11 +336,27 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 		const entityId = randomUUID();
 		const auditId = randomUUID();
 		const eventId = randomUUID();
-		const changesJson = fieldChangeJson("code", null, record.code);
-		const newValueJson = valueSnapshotJson({
-			code: record.code,
-			status: "draft",
+		const preparedAudit = prepareTransactionalAuditInsertValues({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			module: "purchasing",
+			entity: "purchase_order",
+			entityId,
+			action: "CREATE",
+			changes: [{ field: "code", oldValue: null, newValue: record.code }],
+			newValue: { code: record.code, status: "draft" },
+			eventContext: {
+				version: 1,
+				outcome: "SUCCEEDED",
+				source: PURCHASING_AUDIT_SOURCE,
+				causationId: record.createIdempotencyKey,
+			},
 		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const payloadJson = eventPayloadJson({
 			organizationId: record.organizationId,
 			entityType: "purchase_order",
@@ -369,7 +367,7 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction<[OrderSqlRow[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH mutated AS (
 						INSERT INTO purchase_order (
@@ -394,11 +392,15 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, created_by, ${meta.correlationId},
-							'purchasing', 'purchase_order', id, 'CREATE', ${changesJson}::jsonb, ${newValueJson}::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -485,13 +487,34 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 		const lineId = randomUUID();
 		const auditId = randomUUID();
 		const eventId = randomUUID();
-		const changesJson = fieldChangeJson("item_code", null, record.itemCode);
-		const newValueJson = valueSnapshotJson({
-			orderId: record.orderId,
-			lineNo,
-			itemCode: record.itemCode,
-			quantity: record.quantity,
+		const preparedAudit = prepareTransactionalAuditInsertValues({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			module: "purchasing",
+			entity: "purchase_order_line",
+			entityId: lineId,
+			action: "CREATE",
+			changes: [
+				{ field: "item_code", oldValue: null, newValue: record.itemCode },
+			],
+			newValue: {
+				orderId: record.orderId,
+				lineNo,
+				itemCode: record.itemCode,
+				quantity: record.quantity,
+			},
+			eventContext: {
+				version: 1,
+				outcome: "SUCCEEDED",
+				source: PURCHASING_AUDIT_SOURCE,
+				causationId: record.lineIdempotencyKey,
+			},
 		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const payloadJson = eventPayloadJson({
 			organizationId: record.organizationId,
 			entityType: "purchase_order_line",
@@ -504,7 +527,7 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 			lineNo,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction<[LineSqlRow[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH mutated AS (
 						INSERT INTO purchase_order_line (
@@ -540,11 +563,15 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, created_by, ${meta.correlationId},
-							'purchasing', 'purchase_order_line', id, 'CREATE', ${changesJson}::jsonb, ${newValueJson}::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -649,15 +676,28 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const nextVersion = currentOrder.version + 1;
-		const changesJson = fieldChangeJson("status", "draft", "posted");
-		const oldValueJson = valueSnapshotJson({
-			status: "draft",
-			version: currentOrder.version,
+		const preparedAudit = prepareTransactionalAuditInsertValues({
+			organizationId: record.organizationId,
+			actorUserId: record.actorUserId,
+			correlationId: meta.correlationId,
+			module: "purchasing",
+			entity: "purchase_order",
+			entityId: record.orderId,
+			action: "UPDATE",
+			changes: [{ field: "status", oldValue: "draft", newValue: "posted" }],
+			oldValue: { status: "draft", version: currentOrder.version },
+			newValue: { status: "posted", version: nextVersion },
+			eventContext: {
+				version: 1,
+				outcome: "SUCCEEDED",
+				source: PURCHASING_AUDIT_SOURCE,
+				causationId: record.postIdempotencyKey,
+			},
 		});
-		const newValueJson = valueSnapshotJson({
-			status: "posted",
-			version: nextVersion,
-		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const payloadJson = eventPayloadJson({
 			organizationId: record.organizationId,
 			entityType: "purchase_order",
@@ -669,7 +709,7 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[OrderSqlRow[]]>((sql) => {
+			const [rows] = await runNeonHttpTransaction((sql) => {
 				const statements = [
 					sql`
 						WITH mutated AS (
@@ -703,12 +743,15 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes, old_value, new_value
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, ${record.actorUserId}, ${meta.correlationId},
-								'purchasing', 'purchase_order', id, 'UPDATE', ${changesJson}::jsonb,
-								${oldValueJson}::jsonb, ${newValueJson}::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+								${audit.correlationId}, ${audit.module}, ${audit.entity},
+								${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+								${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+								${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -839,19 +882,37 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const nextVersion = currentOrder.version + 1;
-		const changesJson = fieldChangeJson(
-			"status",
-			currentOrder.status,
-			"cancelled",
-		);
-		const oldValueJson = valueSnapshotJson({
-			status: currentOrder.status,
-			version: currentOrder.version,
+		const preparedAudit = prepareTransactionalAuditInsertValues({
+			organizationId: record.organizationId,
+			actorUserId: record.actorUserId,
+			correlationId: meta.correlationId,
+			module: "purchasing",
+			entity: "purchase_order",
+			entityId: record.orderId,
+			action: "UPDATE",
+			changes: [
+				{
+					field: "status",
+					oldValue: currentOrder.status,
+					newValue: "cancelled",
+				},
+			],
+			oldValue: {
+				status: currentOrder.status,
+				version: currentOrder.version,
+			},
+			newValue: { status: "cancelled", version: nextVersion },
+			eventContext: {
+				version: 1,
+				outcome: "SUCCEEDED",
+				source: PURCHASING_AUDIT_SOURCE,
+				causationId: record.cancelIdempotencyKey,
+			},
 		});
-		const newValueJson = valueSnapshotJson({
-			status: "cancelled",
-			version: nextVersion,
-		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const payloadJson = eventPayloadJson({
 			organizationId: record.organizationId,
 			entityType: "purchase_order",
@@ -863,7 +924,7 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[OrderSqlRow[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH mutated AS (
 						UPDATE purchase_order
@@ -883,12 +944,15 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, old_value, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, ${record.actorUserId}, ${meta.correlationId},
-							'purchasing', 'purchase_order', id, 'UPDATE', ${changesJson}::jsonb,
-							${oldValueJson}::jsonb, ${newValueJson}::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -985,15 +1049,28 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const nextVersion = currentOrder.version + 1;
-		const changesJson = fieldChangeJson("status", "posted", "closed");
-		const oldValueJson = valueSnapshotJson({
-			status: "posted",
-			version: currentOrder.version,
+		const preparedAudit = prepareTransactionalAuditInsertValues({
+			organizationId: record.organizationId,
+			actorUserId: record.actorUserId,
+			correlationId: meta.correlationId,
+			module: "purchasing",
+			entity: "purchase_order",
+			entityId: record.orderId,
+			action: "UPDATE",
+			changes: [{ field: "status", oldValue: "posted", newValue: "closed" }],
+			oldValue: { status: "posted", version: currentOrder.version },
+			newValue: { status: "closed", version: nextVersion },
+			eventContext: {
+				version: 1,
+				outcome: "SUCCEEDED",
+				source: PURCHASING_AUDIT_SOURCE,
+				causationId: record.closeIdempotencyKey,
+			},
 		});
-		const newValueJson = valueSnapshotJson({
-			status: "closed",
-			version: nextVersion,
-		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const payloadJson = eventPayloadJson({
 			organizationId: record.organizationId,
 			entityType: "purchase_order",
@@ -1005,7 +1082,7 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[OrderSqlRow[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH mutated AS (
 						UPDATE purchase_order
@@ -1025,12 +1102,15 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, old_value, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, ${record.actorUserId}, ${meta.correlationId},
-							'purchasing', 'purchase_order', id, 'UPDATE', ${changesJson}::jsonb,
-							${oldValueJson}::jsonb, ${newValueJson}::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					),

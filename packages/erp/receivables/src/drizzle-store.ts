@@ -14,14 +14,8 @@ import {
 	salesInvoice,
 	salesInvoiceLine,
 } from "@afenda/db";
-import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
-import {
-	fail,
-	failFromAppError,
-	failFromUnknown,
-	ok,
-	type Result,
-} from "@afenda/errors/result";
+import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
+import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
 
 import type { InvoiceCreateRecord, ReceivablesStore } from "./store";
 import type {
@@ -35,10 +29,7 @@ import type {
 } from "./types";
 
 function failFromPersistence(error: unknown, fallbackMessage: string) {
-	const mapped = fromPostgresUnknown(error);
-	return mapped === undefined
-		? failFromUnknown(error, fallbackMessage)
-		: failFromAppError(mapped);
+	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
 }
 
 function asStatus(value: string): SalesInvoiceStatus {
@@ -212,7 +203,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 			}
 
 			const id = randomUUID();
-			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					INSERT INTO sales_invoice (
 						id, organization_id, code, normalized_code, status, invoice_source,
@@ -261,7 +252,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 			}
 
 			const id = randomUUID();
-			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH inserted AS (
 						INSERT INTO sales_invoice_line (
@@ -348,7 +339,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 
 			const eventId = randomUUID();
 			const balanceId = randomUUID();
-			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH mutated AS (
 						UPDATE sales_invoice
@@ -429,7 +420,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 			const id = randomUUID();
 			const eventId = randomUUID();
 			const balanceId = randomUUID();
-			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH eligible AS (
 						SELECT invoice.*, (SELECT COALESCE(SUM(line_amount::numeric), 0) FROM sales_invoice_line
@@ -529,7 +520,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 
 			const id = randomUUID();
 			const eventId = randomUUID();
-			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH eligible AS (
 						SELECT invoice.*, (SELECT COALESCE(SUM(line_amount::numeric), 0) FROM sales_invoice_line
@@ -610,7 +601,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 	): Promise<Result<CustomerAllocation>> {
 		try {
 			const eventId = randomUUID();
-			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH reversed AS (
 						UPDATE customer_allocation SET status = 'reversed', reversed_at = now(),
@@ -752,7 +743,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				);
 			}
 			const eventId = randomUUID();
-			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH mutated AS (
 						UPDATE sales_invoice SET status = 'cancelled', cancelled_at = now(), cancelled_by = ${record.actorUserId},
@@ -809,7 +800,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				);
 			}
 			const eventId = randomUUID();
-			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH eligible AS (
 						SELECT invoice.id FROM sales_invoice invoice

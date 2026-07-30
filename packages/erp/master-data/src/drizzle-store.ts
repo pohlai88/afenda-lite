@@ -1,6 +1,12 @@
 import { randomUUID } from "node:crypto";
 
 import {
+	type PreparedDerivedEntityAuditInsertValues,
+	type PreparedTransactionalAuditInsertValues,
+	prepareDerivedEntityAuditInsertValues,
+	prepareTransactionalAuditInsertValues,
+} from "@afenda/audit";
+import {
 	and,
 	asc,
 	db,
@@ -26,16 +32,10 @@ import {
 	tenantEntityPredicate,
 } from "@afenda/db";
 import {
-	fromPostgresUnknown,
 	hasPostgresSqlState,
+	normalizePostgresUnknown,
 } from "@afenda/errors/adapters/postgres";
-import {
-	fail,
-	failFromAppError,
-	failFromUnknown,
-	ok,
-	type Result,
-} from "@afenda/errors/result";
+import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
 import type {
 	ItemGroupLifecycleEventSuffix,
 	PartyLifecycleEventSuffix,
@@ -243,10 +243,68 @@ function importRowAppliedQuery(
 }
 
 function failFromPersistence(error: unknown, fallbackMessage: string) {
-	const mapped = fromPostgresUnknown(error);
-	return mapped === undefined
-		? failFromUnknown(error, fallbackMessage)
-		: failFromAppError(mapped);
+	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
+}
+
+const CORE_MASTER_AUDIT_SOURCE = "master-data.drizzle-store";
+
+interface CoreMasterAuditInput {
+	action: "CREATE" | "UPDATE" | "DELETE";
+	actorUserId: string;
+	causationId?: string | null;
+	correlationId: string;
+	entity: string;
+	newValue?: Record<string, unknown> | null;
+	oldValue?: Record<string, unknown> | null;
+	organizationId: string;
+	reasonCode: string;
+}
+
+function prepareCoreMasterAudit(
+	input: CoreMasterAuditInput & { entityId: string },
+): Result<PreparedTransactionalAuditInsertValues> {
+	return prepareTransactionalAuditInsertValues({
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		correlationId: input.correlationId,
+		module: "master_data",
+		entity: input.entity,
+		entityId: input.entityId,
+		action: input.action,
+		oldValue: input.oldValue,
+		newValue: input.newValue,
+		eventContext: {
+			version: 1,
+			outcome: "SUCCEEDED",
+			source: CORE_MASTER_AUDIT_SOURCE,
+			occurredAt: null,
+			causationId: input.causationId ?? null,
+			reasonCode: input.reasonCode,
+		},
+	});
+}
+
+function prepareDerivedCoreMasterAudit(
+	input: CoreMasterAuditInput,
+): Result<PreparedDerivedEntityAuditInsertValues> {
+	return prepareDerivedEntityAuditInsertValues({
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		correlationId: input.correlationId,
+		module: "master_data",
+		entity: input.entity,
+		action: input.action,
+		oldValue: input.oldValue,
+		newValue: input.newValue,
+		eventContext: {
+			version: 1,
+			outcome: "SUCCEEDED",
+			source: CORE_MASTER_AUDIT_SOURCE,
+			occurredAt: null,
+			causationId: input.causationId ?? null,
+			reasonCode: input.reasonCode,
+		},
+	});
 }
 
 function taxRegistrationOverlapConflict(): Result<never> {
@@ -367,87 +425,6 @@ function resolveItemUpdateState(record: ItemUpdateRecord, existing: Item) {
 				(itemTypeChanged ? undefined : existing.serviceIndicator),
 		}),
 	};
-}
-
-function buildItemUpdateChangesJson(
-	existing: Item,
-	state: ReturnType<typeof resolveItemUpdateState>,
-): string {
-	return JSON.stringify([
-		{ field: "name", oldValue: existing.name, newValue: state.name },
-		...(state.description === existing.description
-			? []
-			: [
-					{
-						field: "description",
-						oldValue: existing.description,
-						newValue: state.description,
-					},
-				]),
-		...(state.itemType === existing.itemType
-			? []
-			: [
-					{
-						field: "itemType",
-						oldValue: existing.itemType,
-						newValue: state.itemType,
-					},
-				]),
-		...(state.itemGroupId === existing.itemGroupId
-			? []
-			: [
-					{
-						field: "itemGroupId",
-						oldValue: existing.itemGroupId,
-						newValue: state.itemGroupId,
-					},
-				]),
-		...(state.profile.trackingPolicy === existing.trackingPolicy
-			? []
-			: [
-					{
-						field: "trackingPolicy",
-						oldValue: existing.trackingPolicy,
-						newValue: state.profile.trackingPolicy,
-					},
-				]),
-		...(state.profile.sellable === existing.sellable
-			? []
-			: [
-					{
-						field: "sellable",
-						oldValue: existing.sellable,
-						newValue: state.profile.sellable,
-					},
-				]),
-		...(state.profile.purchasable === existing.purchasable
-			? []
-			: [
-					{
-						field: "purchasable",
-						oldValue: existing.purchasable,
-						newValue: state.profile.purchasable,
-					},
-				]),
-		...(state.profile.stocked === existing.stocked
-			? []
-			: [
-					{
-						field: "stocked",
-						oldValue: existing.stocked,
-						newValue: state.profile.stocked,
-					},
-				]),
-		...(state.profile.serviceIndicator === existing.serviceIndicator
-			? []
-			: [
-					{
-						field: "serviceIndicator",
-						oldValue: existing.serviceIndicator,
-						newValue: state.profile.serviceIndicator,
-					},
-				]),
-	]);
 }
 
 function notFound(message: string): Result<never> {
@@ -628,18 +605,6 @@ function toDate(value: string | Date | null | undefined): Date | null {
 		return null;
 	}
 	return value instanceof Date ? value : new Date(value);
-}
-
-function fieldChangeJson(
-	field: string,
-	oldValue: unknown,
-	newValue: unknown,
-): string {
-	return JSON.stringify([{ field, oldValue, newValue }]);
-}
-
-function valueSnapshotJson(value: Record<string, unknown>): string {
-	return JSON.stringify(value);
 }
 
 function eventPayloadJson(
@@ -1441,11 +1406,44 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const externalId = meta.importMutation?.partyExternalIds?.[0];
 		const externalAuditId = this.generateId();
 		const externalEventId = this.generateId();
-		const changesJson = fieldChangeJson("code", null, record.code);
-		const newValueJson = valueSnapshotJson({
-			code: record.code,
-			status: "draft",
+		const preparedPartyAudit = prepareCoreMasterAudit({
+			action: "CREATE",
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "party",
+			entityId: partyId,
+			newValue: {
+				code: record.code,
+				partyKind: record.partyKind,
+				status: "draft",
+			},
+			organizationId: record.organizationId,
+			reasonCode: "PARTY_CREATED",
 		});
+		if (!preparedPartyAudit.ok) {
+			return preparedPartyAudit;
+		}
+		const partyAudit = preparedPartyAudit.data;
+		const preparedExternalIdAudit = prepareDerivedCoreMasterAudit({
+			action: "CREATE",
+			actorUserId: externalId?.createdBy ?? record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "party_external_id",
+			newValue: externalId
+				? {
+						sourceSystem: externalId.sourceSystem,
+						externalIdType: externalId.externalIdType,
+						caseSensitivity: externalId.caseSensitivity,
+						isPrimary: externalId.isPrimary,
+					}
+				: null,
+			organizationId: record.organizationId,
+			reasonCode: "PARTY_EXTERNAL_ID_ASSIGNED",
+		});
+		if (!preparedExternalIdAudit.ok) {
+			return preparedExternalIdAudit;
+		}
+		const externalIdAudit = preparedExternalIdAudit.data;
 		const payloadJson = eventPayloadJson({
 			organizationId: record.organizationId,
 			entityType: "party",
@@ -1457,9 +1455,8 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[PartySqlRow[], unknown[]]>(
-				(transactionSql) => [
-					transactionSql`
+			const [rows] = await runNeonHttpTransaction((transactionSql) => [
+				transactionSql`
 					WITH mutated AS (
 						INSERT INTO md_party (
 							id, organization_id, code, normalized_code, name, party_kind,
@@ -1479,11 +1476,15 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}::uuid, organization_id, created_by, ${meta.correlationId},
-							'master_data', 'party', id, 'CREATE', ${changesJson}::jsonb, ${newValueJson}::jsonb
+							${auditId}::uuid, ${partyAudit.organizationId}, ${partyAudit.actorUserId},
+							${partyAudit.correlationId}, ${partyAudit.module}, ${partyAudit.entity},
+							${partyAudit.entityId}, ${partyAudit.action}, ${partyAudit.changesJson}::jsonb,
+							${partyAudit.oldValueJson}::jsonb, ${partyAudit.newValueJson}::jsonb,
+							${partyAudit.metadataJson}::jsonb, ${partyAudit.ipAddress}, ${partyAudit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -1517,18 +1518,17 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					external_id_audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${externalAuditId}::uuid, organization_id, created_by, ${meta.correlationId},
-							'master_data', 'party_external_id', id, 'CREATE',
-							${fieldChangeJson("externalIdentity", null, "[protected]")}::jsonb,
-							jsonb_build_object(
-								'sourceSystem', source_system,
-								'externalIdType', external_id_type,
-								'caseSensitivity', case_sensitivity,
-								'isPrimary', is_primary
-							)
+							${externalAuditId}::uuid, ${externalIdAudit.organizationId},
+							${externalIdAudit.actorUserId}, ${externalIdAudit.correlationId},
+							${externalIdAudit.module}, ${externalIdAudit.entity}, id,
+							${externalIdAudit.action}, ${externalIdAudit.changesJson}::jsonb,
+							${externalIdAudit.oldValueJson}::jsonb, ${externalIdAudit.newValueJson}::jsonb,
+							${externalIdAudit.metadataJson}::jsonb, ${externalIdAudit.ipAddress},
+							${externalIdAudit.userAgent}
 						FROM external_id_mutated
 						RETURNING id
 					),
@@ -1561,14 +1561,13 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 							AND EXISTS (SELECT 1 FROM external_id_outboxed)
 						)
 				`,
-					importRowAppliedQuery(transactionSql, meta, {
-						auditId,
-						eventId,
-						resultEntityId: partyId,
-						resultVersion: 1,
-					}),
-				],
-			);
+				importRowAppliedQuery(transactionSql, meta, {
+					auditId,
+					eventId,
+					resultEntityId: partyId,
+					resultVersion: 1,
+				}),
+			]);
 			const [row] = rows;
 			if (row === undefined) {
 				return fail("INTERNAL_ERROR", "Party create returned no row");
@@ -1621,15 +1620,21 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				? existing.defaultCurrencyId
 				: record.defaultCurrencyId;
 		const nextVersion = existing.version + 1;
-		const changesJson = fieldChangeJson("name", existing.name, nextName);
-		const oldValueJson = valueSnapshotJson({
-			name: existing.name,
-			version: existing.version,
+		const preparedPartyAudit = prepareCoreMasterAudit({
+			action: "UPDATE",
+			actorUserId: record.updatedBy,
+			correlationId: meta.correlationId,
+			entity: "party",
+			entityId: existing.id,
+			oldValue: { version: existing.version },
+			newValue: { version: nextVersion },
+			organizationId: existing.organizationId,
+			reasonCode: "PARTY_PROFILE_UPDATED",
 		});
-		const newValueJson = valueSnapshotJson({
-			name: nextName,
-			version: nextVersion,
-		});
+		if (!preparedPartyAudit.ok) {
+			return preparedPartyAudit;
+		}
+		const partyAudit = preparedPartyAudit.data;
 		const payloadJson = eventPayloadJson({
 			organizationId: existing.organizationId,
 			entityType: "party",
@@ -1643,9 +1648,8 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const eventId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[PartySqlRow[], unknown[]]>(
-				(transactionSql) => [
-					transactionSql`
+			const [rows] = await runNeonHttpTransaction((transactionSql) => [
+				transactionSql`
 					WITH mutated AS (
 						UPDATE md_party
 						SET
@@ -1667,12 +1671,15 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, old_value, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, ${record.updatedBy}, ${meta.correlationId},
-							'master_data', 'party', id, 'UPDATE', ${changesJson}::jsonb,
-							${oldValueJson}::jsonb, ${newValueJson}::jsonb
+							${auditId}, ${partyAudit.organizationId}, ${partyAudit.actorUserId},
+							${partyAudit.correlationId}, ${partyAudit.module}, ${partyAudit.entity},
+							${partyAudit.entityId}, ${partyAudit.action}, ${partyAudit.changesJson}::jsonb,
+							${partyAudit.oldValueJson}::jsonb, ${partyAudit.newValueJson}::jsonb,
+							${partyAudit.metadataJson}::jsonb, ${partyAudit.ipAddress}, ${partyAudit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -1689,14 +1696,13 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					)
 					SELECT mutated.* FROM mutated, audited, outboxed
 				`,
-					importRowAppliedQuery(transactionSql, meta, {
-						auditId,
-						eventId,
-						resultEntityId: record.id,
-						resultVersion: nextVersion,
-					}),
-				],
-			);
+				importRowAppliedQuery(transactionSql, meta, {
+					auditId,
+					eventId,
+					resultEntityId: record.id,
+					resultVersion: nextVersion,
+				}),
+			]);
 			const [row] = rows;
 			if (row === undefined) {
 				return versionConflict("Party version conflict");
@@ -1739,19 +1745,33 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			record.toStatus === "active" && record.requireActiveRole;
 		const eventType = `master_data.party.${meta.eventSuffix}.v1`;
 		const nextVersion = existing.version + 1;
-		const changesJson = fieldChangeJson(
-			"status",
-			existing.status,
-			record.toStatus,
-		);
-		const oldValueJson = valueSnapshotJson({
-			status: existing.status,
-			version: existing.version,
+		const partyLifecycleAuditInput = {
+			action: "UPDATE" as const,
+			actorUserId: record.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "party",
+			entityId: existing.id,
+			oldValue: { status: existing.status, version: existing.version },
+			newValue: { status: record.toStatus, version: nextVersion },
+			organizationId: existing.organizationId,
+		};
+		const preparedPartyLifecycleAudit = prepareCoreMasterAudit({
+			...partyLifecycleAuditInput,
+			reasonCode: "PARTY_LIFECYCLE_TRANSITIONED",
 		});
-		const newValueJson = valueSnapshotJson({
-			status: record.toStatus,
-			version: nextVersion,
+		if (!preparedPartyLifecycleAudit.ok) {
+			return preparedPartyLifecycleAudit;
+		}
+		const partyLifecycleAudit = preparedPartyLifecycleAudit.data;
+		const preparedApprovedPartyLifecycleAudit = prepareCoreMasterAudit({
+			...partyLifecycleAuditInput,
+			reasonCode: "APPROVED_PARTY_LIFECYCLE_TRANSITIONED",
 		});
+		if (!preparedApprovedPartyLifecycleAudit.ok) {
+			return preparedApprovedPartyLifecycleAudit;
+		}
+		const approvedPartyLifecycleAudit =
+			preparedApprovedPartyLifecycleAudit.data;
 		const payloadJson = eventPayloadJson({
 			organizationId: existing.organizationId,
 			entityType: "party",
@@ -1776,15 +1796,26 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const crId = record.changeRequestId ?? null;
 		const crAuditId = randomUUID();
 		const crEventId = randomUUID();
-		const crChangesJson = fieldChangeJson("status", "approved", "applied");
+		const preparedChangeRequestAudit = prepareDerivedCoreMasterAudit({
+			action: "UPDATE",
+			actorUserId: record.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "change_request",
+			oldValue: { status: "approved" },
+			newValue: { status: "applied" },
+			organizationId: record.organizationId,
+			reasonCode: "PARTY_CHANGE_REQUEST_APPLIED",
+		});
+		if (!preparedChangeRequestAudit.ok) {
+			return preparedChangeRequestAudit;
+		}
+		const changeRequestAudit = preparedChangeRequestAudit.data;
 
 		try {
 			// Serialize party lifecycle with role transitions. The active-role check
 			// runs in the following statement, after this lock has been acquired, so
 			// it cannot observe the pre-commit snapshot of a final-role transition.
-			const [, rows] = await runNeonHttpTransaction<
-				[Record<string, unknown>[], PartySqlRow[]]
-			>((transactionSql) => [
+			const [, rows] = await runNeonHttpTransaction((transactionSql) => [
 				transactionSql`
 					SELECT id
 					FROM md_party
@@ -1849,12 +1880,19 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, old_value, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, ${record.actorUserId}, ${meta.correlationId},
-							'master_data', 'party', id, 'UPDATE', ${changesJson}::jsonb,
-							${oldValueJson}::jsonb, ${newValueJson}::jsonb
+							${auditId}, ${partyLifecycleAudit.organizationId},
+							${partyLifecycleAudit.actorUserId}, ${partyLifecycleAudit.correlationId},
+							${partyLifecycleAudit.module}, ${partyLifecycleAudit.entity},
+							${partyLifecycleAudit.entityId}, ${partyLifecycleAudit.action},
+							${partyLifecycleAudit.changesJson}::jsonb,
+							${partyLifecycleAudit.oldValueJson}::jsonb,
+							${partyLifecycleAudit.newValueJson}::jsonb,
+							${partyLifecycleAudit.metadataJson}::jsonb,
+							${partyLifecycleAudit.ipAddress}, ${partyLifecycleAudit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -1938,12 +1976,21 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, old_value, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, ${record.actorUserId}, ${meta.correlationId},
-							'master_data', 'party', id, 'UPDATE', ${changesJson}::jsonb,
-							${oldValueJson}::jsonb, ${newValueJson}::jsonb
+							${auditId}, ${approvedPartyLifecycleAudit.organizationId},
+							${approvedPartyLifecycleAudit.actorUserId},
+							${approvedPartyLifecycleAudit.correlationId},
+							${approvedPartyLifecycleAudit.module}, ${approvedPartyLifecycleAudit.entity},
+							${approvedPartyLifecycleAudit.entityId}, ${approvedPartyLifecycleAudit.action},
+							${approvedPartyLifecycleAudit.changesJson}::jsonb,
+							${approvedPartyLifecycleAudit.oldValueJson}::jsonb,
+							${approvedPartyLifecycleAudit.newValueJson}::jsonb,
+							${approvedPartyLifecycleAudit.metadataJson}::jsonb,
+							${approvedPartyLifecycleAudit.ipAddress},
+							${approvedPartyLifecycleAudit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -1961,12 +2008,18 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					cr_audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${crAuditId}, organization_id, ${record.actorUserId}, ${meta.correlationId},
-							'master_data', 'change_request', id, 'UPDATE', ${crChangesJson}::jsonb,
-							${valueSnapshotJson({ status: "applied" })}::jsonb
+							${crAuditId}, ${changeRequestAudit.organizationId},
+							${changeRequestAudit.actorUserId}, ${changeRequestAudit.correlationId},
+							${changeRequestAudit.module}, ${changeRequestAudit.entity}, id,
+							${changeRequestAudit.action}, ${changeRequestAudit.changesJson}::jsonb,
+							${changeRequestAudit.oldValueJson}::jsonb,
+							${changeRequestAudit.newValueJson}::jsonb,
+							${changeRequestAudit.metadataJson}::jsonb,
+							${changeRequestAudit.ipAddress}, ${changeRequestAudit.userAgent}
 						FROM claimed
 						RETURNING id
 					),
@@ -2084,23 +2137,34 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const formerExtId = randomUUID();
-		const changesJson = fieldChangeJson("merged_from", null, source.id);
-		const oldValueJson = valueSnapshotJson({
-			sourceId: source.id,
-			sourceVersion: source.version,
-			targetVersion: target.version,
-		});
-		const newValueJson = valueSnapshotJson({
-			survivorId: target.id,
-			mergedId: source.id,
-			survivorVersion: nextSurvivorVersion,
-			fieldDecisions: record.fieldDecisions,
-			consolidation: {
-				roles: "reassign_non_colliding_active_retire_colliding",
-				addresses: "repoint_to_survivor",
-				contacts: "repoint_to_survivor",
+		const preparedPartyMergeAudit = prepareCoreMasterAudit({
+			action: "UPDATE",
+			actorUserId: record.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "party",
+			entityId: target.id,
+			oldValue: {
+				sourceId: source.id,
+				sourceVersion: source.version,
+				targetVersion: target.version,
 			},
+			newValue: {
+				survivorId: target.id,
+				mergedId: source.id,
+				survivorVersion: nextSurvivorVersion,
+				consolidation: {
+					roles: "reassign_non_colliding_active_retire_colliding",
+					addresses: "repoint_to_survivor",
+					contacts: "repoint_to_survivor",
+				},
+			},
+			organizationId: record.organizationId,
+			reasonCode: "PARTIES_MERGED",
 		});
+		if (!preparedPartyMergeAudit.ok) {
+			return preparedPartyMergeAudit;
+		}
+		const partyMergeAudit = preparedPartyMergeAudit.data;
 		const payloadJson = eventPayloadJson({
 			organizationId: record.organizationId,
 			entityType: "party",
@@ -2118,12 +2182,24 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 
 		const crAuditId = randomUUID();
 		const crEventId = randomUUID();
-		const crChangesJson = fieldChangeJson("status", "approved", "applied");
+		const preparedMergeChangeRequestAudit = prepareDerivedCoreMasterAudit({
+			action: "UPDATE",
+			actorUserId: record.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "change_request",
+			oldValue: { status: "approved" },
+			newValue: { status: "applied" },
+			organizationId: record.organizationId,
+			reasonCode: "PARTY_MERGE_CHANGE_REQUEST_APPLIED",
+		});
+		if (!preparedMergeChangeRequestAudit.ok) {
+			return preparedMergeChangeRequestAudit;
+		}
+		const mergeChangeRequestAudit = preparedMergeChangeRequestAudit.data;
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[PartySqlRow[]]>(
-				(transactionSql) => [
-					transactionSql`
+			const [rows] = await runNeonHttpTransaction((transactionSql) => [
+				transactionSql`
 					WITH claimed AS (
 						UPDATE md_change_request
 						SET
@@ -2285,12 +2361,17 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, old_value, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, ${record.actorUserId}, ${meta.correlationId},
-							'master_data', 'party', id, 'UPDATE', ${changesJson}::jsonb,
-							${oldValueJson}::jsonb, ${newValueJson}::jsonb
+							${auditId}, ${partyMergeAudit.organizationId}, ${partyMergeAudit.actorUserId},
+							${partyMergeAudit.correlationId}, ${partyMergeAudit.module},
+							${partyMergeAudit.entity}, ${partyMergeAudit.entityId},
+							${partyMergeAudit.action}, ${partyMergeAudit.changesJson}::jsonb,
+							${partyMergeAudit.oldValueJson}::jsonb, ${partyMergeAudit.newValueJson}::jsonb,
+							${partyMergeAudit.metadataJson}::jsonb, ${partyMergeAudit.ipAddress},
+							${partyMergeAudit.userAgent}
 						FROM survivor
 						RETURNING id
 					),
@@ -2308,12 +2389,20 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					cr_audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${crAuditId}, organization_id, ${record.actorUserId}, ${meta.correlationId},
-							'master_data', 'change_request', id, 'UPDATE', ${crChangesJson}::jsonb,
-							${valueSnapshotJson({ status: "applied" })}::jsonb
+							${crAuditId}, ${mergeChangeRequestAudit.organizationId},
+							${mergeChangeRequestAudit.actorUserId},
+							${mergeChangeRequestAudit.correlationId},
+							${mergeChangeRequestAudit.module}, ${mergeChangeRequestAudit.entity}, id,
+							${mergeChangeRequestAudit.action},
+							${mergeChangeRequestAudit.changesJson}::jsonb,
+							${mergeChangeRequestAudit.oldValueJson}::jsonb,
+							${mergeChangeRequestAudit.newValueJson}::jsonb,
+							${mergeChangeRequestAudit.metadataJson}::jsonb,
+							${mergeChangeRequestAudit.ipAddress}, ${mergeChangeRequestAudit.userAgent}
 						FROM claimed
 						RETURNING id
 					),
@@ -2340,8 +2429,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					)
 					SELECT survivor.* FROM survivor, merged, audited, outboxed, claimed, cr_audited, cr_outboxed
 				`,
-				],
-			);
+			]);
 			const [survivorRow] = rows;
 			if (survivorRow === undefined) {
 				return versionConflict("Party version conflict on merge");
@@ -2448,11 +2536,24 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const entityId = randomUUID();
 		const auditId = randomUUID();
 		const eventId = randomUUID();
-		const changesJson = fieldChangeJson("code", null, record.code);
-		const newValueJson = valueSnapshotJson({
-			code: record.code,
-			status: "draft",
+		const preparedItemGroupAudit = prepareCoreMasterAudit({
+			action: "CREATE",
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "item_group",
+			entityId,
+			newValue: {
+				code: record.code,
+				parentId: record.parentId ?? null,
+				status: "draft",
+			},
+			organizationId: record.organizationId,
+			reasonCode: "ITEM_GROUP_CREATED",
 		});
+		if (!preparedItemGroupAudit.ok) {
+			return preparedItemGroupAudit;
+		}
+		const itemGroupAudit = preparedItemGroupAudit.data;
 		const payloadJson = eventPayloadJson({
 			organizationId: record.organizationId,
 			entityType: "item_group",
@@ -2463,9 +2564,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[ItemGroupSqlRow[], unknown[]]
-			>((transactionSql) => [
+			const [rows] = await runNeonHttpTransaction((transactionSql) => [
 				transactionSql`
 						WITH eligible_parent AS (
 							SELECT 1
@@ -2494,11 +2593,16 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes, new_value
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, created_by, ${meta.correlationId},
-								'master_data', 'item_group', id, 'CREATE', ${changesJson}::jsonb, ${newValueJson}::jsonb
+								${auditId}, ${itemGroupAudit.organizationId}, ${itemGroupAudit.actorUserId},
+								${itemGroupAudit.correlationId}, ${itemGroupAudit.module}, ${itemGroupAudit.entity},
+								${itemGroupAudit.entityId}, ${itemGroupAudit.action},
+								${itemGroupAudit.changesJson}::jsonb, ${itemGroupAudit.oldValueJson}::jsonb,
+								${itemGroupAudit.newValueJson}::jsonb, ${itemGroupAudit.metadataJson}::jsonb,
+								${itemGroupAudit.ipAddress}, ${itemGroupAudit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -2563,28 +2667,21 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		}
 		const nextVersion = existing.version + 1;
 		const parentChanged = nextParentId !== existing.parentId;
-		const changesJson = JSON.stringify([
-			{ field: "name", oldValue: existing.name, newValue: nextName },
-			...(parentChanged
-				? [
-						{
-							field: "parentId",
-							oldValue: existing.parentId,
-							newValue: nextParentId,
-						},
-					]
-				: []),
-		]);
-		const oldValueJson = valueSnapshotJson({
-			name: existing.name,
-			parentId: existing.parentId,
-			version: existing.version,
+		const preparedItemGroupAudit = prepareCoreMasterAudit({
+			action: "UPDATE",
+			actorUserId: record.updatedBy,
+			correlationId: meta.correlationId,
+			entity: "item_group",
+			entityId: existing.id,
+			oldValue: { parentId: existing.parentId, version: existing.version },
+			newValue: { parentId: nextParentId, version: nextVersion },
+			organizationId: existing.organizationId,
+			reasonCode: "ITEM_GROUP_UPDATED",
 		});
-		const newValueJson = valueSnapshotJson({
-			name: nextName,
-			parentId: nextParentId,
-			version: nextVersion,
-		});
+		if (!preparedItemGroupAudit.ok) {
+			return preparedItemGroupAudit;
+		}
+		const itemGroupAudit = preparedItemGroupAudit.data;
 		const payloadJson = eventPayloadJson({
 			organizationId: existing.organizationId,
 			entityType: "item_group",
@@ -2601,9 +2698,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[ItemGroupSqlRow[], unknown[]]
-			>((transactionSql) => [
+			const [rows] = await runNeonHttpTransaction((transactionSql) => [
 				transactionSql`
 						WITH RECURSIVE ancestor AS (
 							SELECT id, parent_id, ARRAY[id] AS path
@@ -2651,12 +2746,16 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes, old_value, new_value
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, ${record.updatedBy}, ${meta.correlationId},
-								'master_data', 'item_group', id, 'UPDATE', ${changesJson}::jsonb,
-								${oldValueJson}::jsonb, ${newValueJson}::jsonb
+								${auditId}, ${itemGroupAudit.organizationId}, ${itemGroupAudit.actorUserId},
+								${itemGroupAudit.correlationId}, ${itemGroupAudit.module}, ${itemGroupAudit.entity},
+								${itemGroupAudit.entityId}, ${itemGroupAudit.action},
+								${itemGroupAudit.changesJson}::jsonb, ${itemGroupAudit.oldValueJson}::jsonb,
+								${itemGroupAudit.newValueJson}::jsonb, ${itemGroupAudit.metadataJson}::jsonb,
+								${itemGroupAudit.ipAddress}, ${itemGroupAudit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -2716,19 +2815,21 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		}
 		const eventType = `master_data.item_group.${meta.eventSuffix}.v1`;
 		const nextVersion = existing.version + 1;
-		const changesJson = fieldChangeJson(
-			"status",
-			existing.status,
-			record.toStatus,
-		);
-		const oldValueJson = valueSnapshotJson({
-			status: existing.status,
-			version: existing.version,
+		const preparedItemGroupLifecycleAudit = prepareCoreMasterAudit({
+			action: "UPDATE",
+			actorUserId: record.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "item_group",
+			entityId: existing.id,
+			oldValue: { status: existing.status, version: existing.version },
+			newValue: { status: record.toStatus, version: nextVersion },
+			organizationId: existing.organizationId,
+			reasonCode: "ITEM_GROUP_LIFECYCLE_TRANSITIONED",
 		});
-		const newValueJson = valueSnapshotJson({
-			status: record.toStatus,
-			version: nextVersion,
-		});
+		if (!preparedItemGroupLifecycleAudit.ok) {
+			return preparedItemGroupLifecycleAudit;
+		}
+		const itemGroupLifecycleAudit = preparedItemGroupLifecycleAudit.data;
 		const payloadJson = eventPayloadJson({
 			organizationId: existing.organizationId,
 			entityType: "item_group",
@@ -2746,9 +2847,8 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				: existing.activatedBy;
 		const retiredBy = record.toStatus === "retired" ? record.actorUserId : null;
 		try {
-			const [rows] = await runNeonHttpTransaction<[ItemGroupSqlRow[]]>(
-				(transactionSql) => [
-					transactionSql`
+			const [rows] = await runNeonHttpTransaction((transactionSql) => [
+				transactionSql`
 						WITH mutated AS (
 							UPDATE md_item_group
 							SET
@@ -2812,12 +2912,19 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes, old_value, new_value
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, ${record.actorUserId}, ${meta.correlationId},
-								'master_data', 'item_group', id, 'UPDATE', ${changesJson}::jsonb,
-								${oldValueJson}::jsonb, ${newValueJson}::jsonb
+								${auditId}, ${itemGroupLifecycleAudit.organizationId},
+								${itemGroupLifecycleAudit.actorUserId}, ${itemGroupLifecycleAudit.correlationId},
+								${itemGroupLifecycleAudit.module}, ${itemGroupLifecycleAudit.entity},
+								${itemGroupLifecycleAudit.entityId}, ${itemGroupLifecycleAudit.action},
+								${itemGroupLifecycleAudit.changesJson}::jsonb,
+								${itemGroupLifecycleAudit.oldValueJson}::jsonb,
+								${itemGroupLifecycleAudit.newValueJson}::jsonb,
+								${itemGroupLifecycleAudit.metadataJson}::jsonb,
+								${itemGroupLifecycleAudit.ipAddress}, ${itemGroupLifecycleAudit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -2834,8 +2941,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (row === undefined) {
 				return versionConflict("Item group version conflict");
@@ -2953,18 +3059,30 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const baseUomRowId = randomUUID();
 		const auditId = randomUUID();
 		const eventId = randomUUID();
-		const changesJson = fieldChangeJson("code", null, record.code);
-		const newValueJson = valueSnapshotJson({
-			code: record.code,
-			description: record.description ?? null,
-			trackingPolicy: profile.trackingPolicy,
-			sellable: profile.sellable,
-			purchasable: profile.purchasable,
-			stocked: profile.stocked,
-			serviceIndicator: profile.serviceIndicator,
-			baseUomId: record.baseUomId,
-			itemGroupId: record.itemGroupId,
+		const preparedItemAudit = prepareCoreMasterAudit({
+			action: "CREATE",
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "item",
+			entityId,
+			newValue: {
+				code: record.code,
+				itemType: record.itemType,
+				trackingPolicy: profile.trackingPolicy,
+				sellable: profile.sellable,
+				purchasable: profile.purchasable,
+				stocked: profile.stocked,
+				serviceIndicator: profile.serviceIndicator,
+				baseUomId: record.baseUomId,
+				itemGroupId: record.itemGroupId,
+			},
+			organizationId: record.organizationId,
+			reasonCode: "ITEM_CREATED",
 		});
+		if (!preparedItemAudit.ok) {
+			return preparedItemAudit;
+		}
+		const itemAudit = preparedItemAudit.data;
 		const payloadJson = eventPayloadJson({
 			organizationId: record.organizationId,
 			entityType: "item",
@@ -2975,9 +3093,8 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction<[ItemSqlRow[], unknown[]]>(
-				(transactionSql) => [
-					transactionSql`
+			const [rows] = await runNeonHttpTransaction((transactionSql) => [
+				transactionSql`
 					WITH eligible_references AS (
 						SELECT 1
 						WHERE EXISTS (
@@ -3026,11 +3143,15 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, created_by, ${meta.correlationId},
-							'master_data', 'item', id, 'CREATE', ${changesJson}::jsonb, ${newValueJson}::jsonb
+							${auditId}, ${itemAudit.organizationId}, ${itemAudit.actorUserId},
+							${itemAudit.correlationId}, ${itemAudit.module}, ${itemAudit.entity},
+							${itemAudit.entityId}, ${itemAudit.action}, ${itemAudit.changesJson}::jsonb,
+							${itemAudit.oldValueJson}::jsonb, ${itemAudit.newValueJson}::jsonb,
+							${itemAudit.metadataJson}::jsonb, ${itemAudit.ipAddress}, ${itemAudit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -3047,14 +3168,13 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					)
 					SELECT mutated.* FROM mutated, base_uom, audited, outboxed
 				`,
-					importRowAppliedQuery(transactionSql, meta, {
-						auditId,
-						eventId,
-						resultEntityId: entityId,
-						resultVersion: 1,
-					}),
-				],
-			);
+				importRowAppliedQuery(transactionSql, meta, {
+					auditId,
+					eventId,
+					resultEntityId: entityId,
+					resultVersion: 1,
+				}),
+			]);
 			const [row] = rows;
 			if (row === undefined) {
 				return invalidState(
@@ -3126,33 +3246,41 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			return invalidState("itemGroupId must reference an active item group");
 		}
 		const nextVersion = existing.version + 1;
-		const changesJson = buildItemUpdateChangesJson(existing, state);
-		const oldValueJson = valueSnapshotJson({
-			name: existing.name,
-			description: existing.description,
-			itemType: existing.itemType,
-			baseUomId: existing.baseUomId,
-			itemGroupId: existing.itemGroupId,
-			trackingPolicy: existing.trackingPolicy,
-			sellable: existing.sellable,
-			purchasable: existing.purchasable,
-			stocked: existing.stocked,
-			serviceIndicator: existing.serviceIndicator,
-			version: existing.version,
+		const preparedItemAudit = prepareCoreMasterAudit({
+			action: "UPDATE",
+			actorUserId: record.updatedBy,
+			correlationId: meta.correlationId,
+			entity: "item",
+			entityId: existing.id,
+			oldValue: {
+				itemType: existing.itemType,
+				baseUomId: existing.baseUomId,
+				itemGroupId: existing.itemGroupId,
+				trackingPolicy: existing.trackingPolicy,
+				sellable: existing.sellable,
+				purchasable: existing.purchasable,
+				stocked: existing.stocked,
+				serviceIndicator: existing.serviceIndicator,
+				version: existing.version,
+			},
+			newValue: {
+				itemType: nextItemType,
+				baseUomId: nextBaseUomId,
+				itemGroupId: nextGroupId,
+				trackingPolicy: nextProfile.trackingPolicy,
+				sellable: nextProfile.sellable,
+				purchasable: nextProfile.purchasable,
+				stocked: nextProfile.stocked,
+				serviceIndicator: nextProfile.serviceIndicator,
+				version: nextVersion,
+			},
+			organizationId: existing.organizationId,
+			reasonCode: "ITEM_UPDATED",
 		});
-		const newValueJson = valueSnapshotJson({
-			name: nextName,
-			description: nextDescription,
-			itemType: nextItemType,
-			baseUomId: nextBaseUomId,
-			itemGroupId: nextGroupId,
-			trackingPolicy: nextProfile.trackingPolicy,
-			sellable: nextProfile.sellable,
-			purchasable: nextProfile.purchasable,
-			stocked: nextProfile.stocked,
-			serviceIndicator: nextProfile.serviceIndicator,
-			version: nextVersion,
-		});
+		if (!preparedItemAudit.ok) {
+			return preparedItemAudit;
+		}
+		const itemAudit = preparedItemAudit.data;
 		const payloadJson = eventPayloadJson({
 			organizationId: existing.organizationId,
 			entityType: "item",
@@ -3165,9 +3293,8 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<[ItemSqlRow[], unknown[]]>(
-				(transactionSql) => [
-					transactionSql`
+			const [rows] = await runNeonHttpTransaction((transactionSql) => [
+				transactionSql`
 					WITH mutated AS (
 						UPDATE md_item
 						SET
@@ -3241,12 +3368,15 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, old_value, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, ${record.updatedBy}, ${meta.correlationId},
-							'master_data', 'item', id, 'UPDATE', ${changesJson}::jsonb,
-							${oldValueJson}::jsonb, ${newValueJson}::jsonb
+							${auditId}, ${itemAudit.organizationId}, ${itemAudit.actorUserId},
+							${itemAudit.correlationId}, ${itemAudit.module}, ${itemAudit.entity},
+							${itemAudit.entityId}, ${itemAudit.action}, ${itemAudit.changesJson}::jsonb,
+							${itemAudit.oldValueJson}::jsonb, ${itemAudit.newValueJson}::jsonb,
+							${itemAudit.metadataJson}::jsonb, ${itemAudit.ipAddress}, ${itemAudit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -3263,14 +3393,13 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					)
 					SELECT mutated.* FROM mutated, audited, outboxed
 				`,
-					importRowAppliedQuery(transactionSql, meta, {
-						auditId,
-						eventId,
-						resultEntityId: record.id,
-						resultVersion: nextVersion,
-					}),
-				],
-			);
+				importRowAppliedQuery(transactionSql, meta, {
+					auditId,
+					eventId,
+					resultEntityId: record.id,
+					resultVersion: nextVersion,
+				}),
+			]);
 			const [row] = rows;
 			if (row === undefined) {
 				return versionConflict("Item version conflict");
@@ -3379,12 +3508,25 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const entityId = randomUUID();
 		const auditId = randomUUID();
 		const eventId = randomUUID();
-		const changesJson = fieldChangeJson("code", null, record.code);
-		const newValueJson = valueSnapshotJson({
-			code: record.code,
-			addressCountryId: record.addressCountryId ?? null,
-			status: "draft",
+		const preparedWarehouseAudit = prepareCoreMasterAudit({
+			action: "CREATE",
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "warehouse",
+			entityId,
+			newValue: {
+				code: record.code,
+				locationType: record.locationType,
+				parentId: record.parentId ?? null,
+				status: "draft",
+			},
+			organizationId: record.organizationId,
+			reasonCode: "WAREHOUSE_CREATED",
 		});
+		if (!preparedWarehouseAudit.ok) {
+			return preparedWarehouseAudit;
+		}
+		const warehouseAudit = preparedWarehouseAudit.data;
 		const payloadJson = eventPayloadJson({
 			organizationId: record.organizationId,
 			entityType: "warehouse",
@@ -3395,9 +3537,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[WarehouseSqlRow[], unknown[]]
-			>((transactionSql) => [
+			const [rows] = await runNeonHttpTransaction((transactionSql) => [
 				transactionSql`
 						WITH eligible_parent AS (
 							SELECT 1
@@ -3439,11 +3579,14 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes, new_value
+								entity_id, action, changes, old_value, new_value, metadata, ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, created_by, ${meta.correlationId},
-								'master_data', 'warehouse', id, 'CREATE', ${changesJson}::jsonb, ${newValueJson}::jsonb
+								${auditId}, ${warehouseAudit.organizationId}, ${warehouseAudit.actorUserId},
+								${warehouseAudit.correlationId}, ${warehouseAudit.module}, ${warehouseAudit.entity},
+								${warehouseAudit.entityId}, ${warehouseAudit.action}, ${warehouseAudit.changesJson}::jsonb,
+								${warehouseAudit.oldValueJson}::jsonb, ${warehouseAudit.newValueJson}::jsonb,
+								${warehouseAudit.metadataJson}::jsonb, ${warehouseAudit.ipAddress}, ${warehouseAudit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -3532,30 +3675,24 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			}
 		}
 		const nextVersion = existing.version + 1;
-		const changesJson = JSON.stringify([
-			{ field: "name", oldValue: existing.name, newValue: nextName },
-			...(locationTypeChanged
-				? [
-						{
-							field: "locationType",
-							oldValue: existing.locationType,
-							newValue: nextLocationType,
-						},
-					]
-				: []),
-		]);
-		const oldValueJson = valueSnapshotJson({
-			name: existing.name,
-			locationType: existing.locationType,
-			addressCountryId: existing.addressCountryId,
-			version: existing.version,
+		const preparedWarehouseAudit = prepareCoreMasterAudit({
+			action: "UPDATE",
+			actorUserId: record.updatedBy,
+			correlationId: meta.correlationId,
+			entity: "warehouse",
+			entityId: existing.id,
+			oldValue: {
+				locationType: existing.locationType,
+				version: existing.version,
+			},
+			newValue: { locationType: nextLocationType, version: nextVersion },
+			organizationId: existing.organizationId,
+			reasonCode: "WAREHOUSE_UPDATED",
 		});
-		const newValueJson = valueSnapshotJson({
-			name: nextName,
-			locationType: nextLocationType,
-			addressCountryId: nextAddressCountryId,
-			version: nextVersion,
-		});
+		if (!preparedWarehouseAudit.ok) {
+			return preparedWarehouseAudit;
+		}
+		const warehouseAudit = preparedWarehouseAudit.data;
 		const payloadJson = eventPayloadJson({
 			organizationId: existing.organizationId,
 			entityType: "warehouse",
@@ -3568,9 +3705,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[WarehouseSqlRow[], unknown[]]
-			>((transactionSql) => [
+			const [rows] = await runNeonHttpTransaction((transactionSql) => [
 				transactionSql`
 						WITH mutated AS (
 							UPDATE md_warehouse
@@ -3637,12 +3772,14 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes, old_value, new_value
+								entity_id, action, changes, old_value, new_value, metadata, ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, ${record.updatedBy}, ${meta.correlationId},
-								'master_data', 'warehouse', id, 'UPDATE', ${changesJson}::jsonb,
-								${oldValueJson}::jsonb, ${newValueJson}::jsonb
+								${auditId}, ${warehouseAudit.organizationId}, ${warehouseAudit.actorUserId},
+								${warehouseAudit.correlationId}, ${warehouseAudit.module}, ${warehouseAudit.entity},
+								${warehouseAudit.entityId}, ${warehouseAudit.action}, ${warehouseAudit.changesJson}::jsonb,
+								${warehouseAudit.oldValueJson}::jsonb, ${warehouseAudit.newValueJson}::jsonb,
+								${warehouseAudit.metadataJson}::jsonb, ${warehouseAudit.ipAddress}, ${warehouseAudit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -3705,19 +3842,21 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			return parentCheck;
 		}
 		const nextVersion = existing.version + 1;
-		const changesJson = fieldChangeJson(
-			"parentId",
-			existing.parentId,
-			record.parentId,
-		);
-		const oldValueJson = valueSnapshotJson({
-			parentId: existing.parentId,
-			version: existing.version,
+		const preparedWarehouseMoveAudit = prepareCoreMasterAudit({
+			action: "UPDATE",
+			actorUserId: record.updatedBy,
+			correlationId: meta.correlationId,
+			entity: "warehouse",
+			entityId: existing.id,
+			oldValue: { parentId: existing.parentId, version: existing.version },
+			newValue: { parentId: record.parentId, version: nextVersion },
+			organizationId: existing.organizationId,
+			reasonCode: "WAREHOUSE_MOVED",
 		});
-		const newValueJson = valueSnapshotJson({
-			parentId: record.parentId,
-			version: nextVersion,
-		});
+		if (!preparedWarehouseMoveAudit.ok) {
+			return preparedWarehouseMoveAudit;
+		}
+		const warehouseMoveAudit = preparedWarehouseMoveAudit.data;
 		const payloadJson = eventPayloadJson({
 			organizationId: existing.organizationId,
 			entityType: "warehouse",
@@ -3730,9 +3869,8 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<[WarehouseSqlRow[]]>(
-				(transactionSql) => [
-					transactionSql`
+			const [rows] = await runNeonHttpTransaction((transactionSql) => [
+				transactionSql`
 						WITH RECURSIVE ancestor AS (
 							SELECT id, parent_id, ARRAY[id] AS path
 							FROM md_warehouse
@@ -3788,12 +3926,15 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes, old_value, new_value
+								entity_id, action, changes, old_value, new_value, metadata, ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, ${record.updatedBy}, ${meta.correlationId},
-								'master_data', 'warehouse', id, 'UPDATE', ${changesJson}::jsonb,
-								${oldValueJson}::jsonb, ${newValueJson}::jsonb
+								${auditId}, ${warehouseMoveAudit.organizationId}, ${warehouseMoveAudit.actorUserId},
+								${warehouseMoveAudit.correlationId}, ${warehouseMoveAudit.module}, ${warehouseMoveAudit.entity},
+								${warehouseMoveAudit.entityId}, ${warehouseMoveAudit.action},
+								${warehouseMoveAudit.changesJson}::jsonb, ${warehouseMoveAudit.oldValueJson}::jsonb,
+								${warehouseMoveAudit.newValueJson}::jsonb, ${warehouseMoveAudit.metadataJson}::jsonb,
+								${warehouseMoveAudit.ipAddress}, ${warehouseMoveAudit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -3810,8 +3951,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (row === undefined) {
 				return versionConflict("Warehouse version conflict");
@@ -3848,19 +3988,21 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		}
 		const eventType = `master_data.warehouse.${meta.eventSuffix}.v1`;
 		const nextVersion = existing.version + 1;
-		const changesJson = fieldChangeJson(
-			"status",
-			existing.status,
-			record.toStatus,
-		);
-		const oldValueJson = valueSnapshotJson({
-			status: existing.status,
-			version: existing.version,
+		const preparedWarehouseLifecycleAudit = prepareCoreMasterAudit({
+			action: "UPDATE",
+			actorUserId: record.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "warehouse",
+			entityId: existing.id,
+			oldValue: { status: existing.status, version: existing.version },
+			newValue: { status: record.toStatus, version: nextVersion },
+			organizationId: existing.organizationId,
+			reasonCode: "WAREHOUSE_LIFECYCLE_TRANSITIONED",
 		});
-		const newValueJson = valueSnapshotJson({
-			status: record.toStatus,
-			version: nextVersion,
-		});
+		if (!preparedWarehouseLifecycleAudit.ok) {
+			return preparedWarehouseLifecycleAudit;
+		}
+		const warehouseLifecycleAudit = preparedWarehouseLifecycleAudit.data;
 		const payloadJson = eventPayloadJson({
 			organizationId: existing.organizationId,
 			entityType: "warehouse",
@@ -3878,9 +4020,8 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				: existing.activatedBy;
 		const retiredBy = record.toStatus === "retired" ? record.actorUserId : null;
 		try {
-			const [rows] = await runNeonHttpTransaction<[WarehouseSqlRow[]]>(
-				(transactionSql) => [
-					transactionSql`
+			const [rows] = await runNeonHttpTransaction((transactionSql) => [
+				transactionSql`
 						WITH mutated AS (
 							UPDATE md_warehouse
 							SET
@@ -3940,12 +4081,18 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes, old_value, new_value
+								entity_id, action, changes, old_value, new_value, metadata, ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, ${record.actorUserId}, ${meta.correlationId},
-								'master_data', 'warehouse', id, 'UPDATE', ${changesJson}::jsonb,
-								${oldValueJson}::jsonb, ${newValueJson}::jsonb
+								${auditId}, ${warehouseLifecycleAudit.organizationId},
+								${warehouseLifecycleAudit.actorUserId}, ${warehouseLifecycleAudit.correlationId},
+								${warehouseLifecycleAudit.module}, ${warehouseLifecycleAudit.entity},
+								${warehouseLifecycleAudit.entityId}, ${warehouseLifecycleAudit.action},
+								${warehouseLifecycleAudit.changesJson}::jsonb,
+								${warehouseLifecycleAudit.oldValueJson}::jsonb,
+								${warehouseLifecycleAudit.newValueJson}::jsonb,
+								${warehouseLifecycleAudit.metadataJson}::jsonb,
+								${warehouseLifecycleAudit.ipAddress}, ${warehouseLifecycleAudit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -3962,8 +4109,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (row === undefined) {
 				return versionConflict("Warehouse version conflict");
@@ -4069,12 +4215,20 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const entityId = randomUUID();
 		const auditId = randomUUID();
 		const eventId = randomUUID();
-		const changesJson = fieldChangeJson("code", null, record.code);
-		const newValueJson = valueSnapshotJson({
-			code: record.code,
-			...rule,
-			status: "draft",
+		const preparedPaymentTermAudit = prepareCoreMasterAudit({
+			action: "CREATE",
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "payment_term",
+			entityId,
+			newValue: { code: record.code, ...rule, status: "draft" },
+			organizationId: record.organizationId,
+			reasonCode: "PAYMENT_TERM_CREATED",
 		});
+		if (!preparedPaymentTermAudit.ok) {
+			return preparedPaymentTermAudit;
+		}
+		const paymentTermAudit = preparedPaymentTermAudit.data;
 		const payloadJson = eventPayloadJson({
 			organizationId: record.organizationId,
 			entityType: "payment_term",
@@ -4085,9 +4239,8 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction<[PaymentTermSqlRow[]]>(
-				(transactionSql) => [
-					transactionSql`
+			const [rows] = await runNeonHttpTransaction((transactionSql) => [
+				transactionSql`
 						WITH mutated AS (
 							INSERT INTO md_payment_term (
 								id, organization_id, code, normalized_code, name, net_days,
@@ -4109,11 +4262,14 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes, new_value
+								entity_id, action, changes, old_value, new_value, metadata, ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, created_by, ${meta.correlationId},
-								'master_data', 'payment_term', id, 'CREATE', ${changesJson}::jsonb, ${newValueJson}::jsonb
+								${auditId}, ${paymentTermAudit.organizationId}, ${paymentTermAudit.actorUserId},
+								${paymentTermAudit.correlationId}, ${paymentTermAudit.module}, ${paymentTermAudit.entity},
+								${paymentTermAudit.entityId}, ${paymentTermAudit.action}, ${paymentTermAudit.changesJson}::jsonb,
+								${paymentTermAudit.oldValueJson}::jsonb, ${paymentTermAudit.newValueJson}::jsonb,
+								${paymentTermAudit.metadataJson}::jsonb, ${paymentTermAudit.ipAddress}, ${paymentTermAudit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -4130,8 +4286,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (row === undefined) {
 				return validationFailed(
@@ -4185,37 +4340,36 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			}
 		}
 		const nextVersion = existing.version + 1;
-		const changesJson = JSON.stringify([
-			{ field: "name", oldValue: existing.name, newValue: nextName },
-			...(rule.netDays === existing.netDays
-				? []
-				: [
-						{
-							field: "netDays",
-							oldValue: existing.netDays,
-							newValue: rule.netDays,
-						},
-					]),
-		]);
-		const oldValueJson = valueSnapshotJson({
-			name: existing.name,
-			netDays: existing.netDays,
-			discountDays: existing.discountDays,
-			discountPercent: existing.discountPercent,
-			dueDayRule: existing.dueDayRule,
-			endOfMonth: existing.endOfMonth,
-			installmentPolicy: existing.installmentPolicy,
-			installmentCount: existing.installmentCount,
-			validFrom: existing.validFrom,
-			validTo: existing.validTo,
-			currencyRestrictionId: existing.currencyRestrictionId,
-			version: existing.version,
+		const preparedPaymentTermAudit = prepareCoreMasterAudit({
+			action: "UPDATE",
+			actorUserId: record.updatedBy,
+			correlationId: meta.correlationId,
+			entity: "payment_term",
+			entityId: existing.id,
+			oldValue: {
+				netDays: existing.netDays,
+				discountDays: existing.discountDays,
+				discountPercent: existing.discountPercent,
+				dueDayRule: existing.dueDayRule,
+				endOfMonth: existing.endOfMonth,
+				installmentPolicy: existing.installmentPolicy,
+				installmentCount: existing.installmentCount,
+				validFrom: existing.validFrom,
+				validTo: existing.validTo,
+				currencyRestrictionId: existing.currencyRestrictionId,
+				version: existing.version,
+			},
+			newValue: {
+				...rule,
+				version: nextVersion,
+			},
+			organizationId: existing.organizationId,
+			reasonCode: "PAYMENT_TERM_UPDATED",
 		});
-		const newValueJson = valueSnapshotJson({
-			name: nextName,
-			...rule,
-			version: nextVersion,
-		});
+		if (!preparedPaymentTermAudit.ok) {
+			return preparedPaymentTermAudit;
+		}
+		const paymentTermAudit = preparedPaymentTermAudit.data;
 		const payloadJson = eventPayloadJson({
 			organizationId: existing.organizationId,
 			entityType: "payment_term",
@@ -4228,9 +4382,8 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<[PaymentTermSqlRow[]]>(
-				(transactionSql) => [
-					transactionSql`
+			const [rows] = await runNeonHttpTransaction((transactionSql) => [
+				transactionSql`
 						WITH mutated AS (
 							UPDATE md_payment_term
 							SET
@@ -4258,12 +4411,14 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes, old_value, new_value
+								entity_id, action, changes, old_value, new_value, metadata, ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, ${record.updatedBy}, ${meta.correlationId},
-								'master_data', 'payment_term', id, 'UPDATE', ${changesJson}::jsonb,
-								${oldValueJson}::jsonb, ${newValueJson}::jsonb
+								${auditId}, ${paymentTermAudit.organizationId}, ${paymentTermAudit.actorUserId},
+								${paymentTermAudit.correlationId}, ${paymentTermAudit.module}, ${paymentTermAudit.entity},
+								${paymentTermAudit.entityId}, ${paymentTermAudit.action}, ${paymentTermAudit.changesJson}::jsonb,
+								${paymentTermAudit.oldValueJson}::jsonb, ${paymentTermAudit.newValueJson}::jsonb,
+								${paymentTermAudit.metadataJson}::jsonb, ${paymentTermAudit.ipAddress}, ${paymentTermAudit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -4280,8 +4435,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (row === undefined) {
 				return versionConflict("Payment term version conflict");
@@ -4318,19 +4472,21 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		}
 		const eventType = `master_data.payment_term.${meta.eventSuffix}.v1`;
 		const nextVersion = existing.version + 1;
-		const changesJson = fieldChangeJson(
-			"status",
-			existing.status,
-			record.toStatus,
-		);
-		const oldValueJson = valueSnapshotJson({
-			status: existing.status,
-			version: existing.version,
+		const preparedPaymentTermLifecycleAudit = prepareCoreMasterAudit({
+			action: "UPDATE",
+			actorUserId: record.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "payment_term",
+			entityId: existing.id,
+			oldValue: { status: existing.status, version: existing.version },
+			newValue: { status: record.toStatus, version: nextVersion },
+			organizationId: existing.organizationId,
+			reasonCode: "PAYMENT_TERM_LIFECYCLE_TRANSITIONED",
 		});
-		const newValueJson = valueSnapshotJson({
-			status: record.toStatus,
-			version: nextVersion,
-		});
+		if (!preparedPaymentTermLifecycleAudit.ok) {
+			return preparedPaymentTermLifecycleAudit;
+		}
+		const paymentTermLifecycleAudit = preparedPaymentTermLifecycleAudit.data;
 		const payloadJson = eventPayloadJson({
 			organizationId: existing.organizationId,
 			entityType: "payment_term",
@@ -4348,9 +4504,8 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				: existing.activatedBy;
 		const retiredBy = record.toStatus === "retired" ? record.actorUserId : null;
 		try {
-			const [rows] = await runNeonHttpTransaction<[PaymentTermSqlRow[]]>(
-				(transactionSql) => [
-					transactionSql`
+			const [rows] = await runNeonHttpTransaction((transactionSql) => [
+				transactionSql`
 						WITH mutated AS (
 							UPDATE md_payment_term
 							SET
@@ -4383,12 +4538,18 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes, old_value, new_value
+								entity_id, action, changes, old_value, new_value, metadata, ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, ${record.actorUserId}, ${meta.correlationId},
-								'master_data', 'payment_term', id, 'UPDATE', ${changesJson}::jsonb,
-								${oldValueJson}::jsonb, ${newValueJson}::jsonb
+								${auditId}, ${paymentTermLifecycleAudit.organizationId},
+								${paymentTermLifecycleAudit.actorUserId}, ${paymentTermLifecycleAudit.correlationId},
+								${paymentTermLifecycleAudit.module}, ${paymentTermLifecycleAudit.entity},
+								${paymentTermLifecycleAudit.entityId}, ${paymentTermLifecycleAudit.action},
+								${paymentTermLifecycleAudit.changesJson}::jsonb,
+								${paymentTermLifecycleAudit.oldValueJson}::jsonb,
+								${paymentTermLifecycleAudit.newValueJson}::jsonb,
+								${paymentTermLifecycleAudit.metadataJson}::jsonb,
+								${paymentTermLifecycleAudit.ipAddress}, ${paymentTermLifecycleAudit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -4405,8 +4566,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (row === undefined) {
 				return versionConflict("Payment term version conflict");
@@ -4536,17 +4696,25 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const entityId = randomUUID();
 		const auditId = randomUUID();
 		const eventId = randomUUID();
-		const changesJson = fieldChangeJson("identity", null, {
-			partyId: record.partyId,
-			jurisdictionCountryId: record.jurisdictionCountryId,
-			registrationType: record.registrationType,
+		const preparedTaxRegistrationAudit = prepareCoreMasterAudit({
+			action: "CREATE",
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "tax_registration",
+			entityId,
+			newValue: {
+				partyId: record.partyId,
+				jurisdictionCountryId: record.jurisdictionCountryId,
+				registrationType: record.registrationType,
+				status: "draft",
+			},
+			organizationId: record.organizationId,
+			reasonCode: "TAX_REGISTRATION_CREATED",
 		});
-		const newValueJson = valueSnapshotJson({
-			partyId: record.partyId,
-			jurisdictionCountryId: record.jurisdictionCountryId,
-			registrationType: record.registrationType,
-			status: "draft",
-		});
+		if (!preparedTaxRegistrationAudit.ok) {
+			return preparedTaxRegistrationAudit;
+		}
+		const taxRegistrationAudit = preparedTaxRegistrationAudit.data;
 		const payloadJson = eventPayloadJson({
 			organizationId: record.organizationId,
 			entityType: "tax_registration",
@@ -4561,9 +4729,8 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction<[TaxRegistrationSqlRow[]]>(
-				(transactionSql) => [
-					transactionSql`
+			const [rows] = await runNeonHttpTransaction((transactionSql) => [
+				transactionSql`
 						WITH mutated AS (
 							INSERT INTO md_tax_registration (
 								id, organization_id, party_id, jurisdiction_country_id,
@@ -4588,11 +4755,18 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes, new_value
+								entity_id, action, changes, old_value, new_value, metadata, ip_address, user_agent
 							)
 							SELECT
-								${auditId}::uuid, organization_id, created_by, ${meta.correlationId},
-								'master_data', 'tax_registration', id, 'CREATE', ${changesJson}::jsonb, ${newValueJson}::jsonb
+								${auditId}::uuid, ${taxRegistrationAudit.organizationId},
+								${taxRegistrationAudit.actorUserId}, ${taxRegistrationAudit.correlationId},
+								${taxRegistrationAudit.module}, ${taxRegistrationAudit.entity},
+								${taxRegistrationAudit.entityId}, ${taxRegistrationAudit.action},
+								${taxRegistrationAudit.changesJson}::jsonb,
+								${taxRegistrationAudit.oldValueJson}::jsonb,
+								${taxRegistrationAudit.newValueJson}::jsonb,
+								${taxRegistrationAudit.metadataJson}::jsonb,
+								${taxRegistrationAudit.ipAddress}, ${taxRegistrationAudit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -4609,8 +4783,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (row === undefined) {
 				return taxRegistrationValidityFailure(
@@ -4678,31 +4851,29 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			}
 		}
 		const nextVersion = existing.version + 1;
-		const changesJson = JSON.stringify([
-			{ field: "name", oldValue: existing.name, newValue: nextName },
-			{
-				field: "validFrom",
-				oldValue: existing.validFrom,
-				newValue: nextValidFrom,
+		const preparedTaxRegistrationAudit = prepareCoreMasterAudit({
+			action: "UPDATE",
+			actorUserId: record.updatedBy,
+			correlationId: meta.correlationId,
+			entity: "tax_registration",
+			entityId: existing.id,
+			oldValue: {
+				validFrom: existing.validFrom,
+				validTo: existing.validTo,
+				version: existing.version,
 			},
-			{
-				field: "validTo",
-				oldValue: existing.validTo,
-				newValue: nextValidTo,
+			newValue: {
+				validFrom: nextValidFrom,
+				validTo: nextValidTo,
+				version: nextVersion,
 			},
-		]);
-		const oldValueJson = valueSnapshotJson({
-			name: existing.name,
-			validFrom: existing.validFrom,
-			validTo: existing.validTo,
-			version: existing.version,
+			organizationId: existing.organizationId,
+			reasonCode: "TAX_REGISTRATION_UPDATED",
 		});
-		const newValueJson = valueSnapshotJson({
-			name: nextName,
-			validFrom: nextValidFrom,
-			validTo: nextValidTo,
-			version: nextVersion,
-		});
+		if (!preparedTaxRegistrationAudit.ok) {
+			return preparedTaxRegistrationAudit;
+		}
+		const taxRegistrationAudit = preparedTaxRegistrationAudit.data;
 		const payloadJson = eventPayloadJson({
 			organizationId: existing.organizationId,
 			entityType: "tax_registration",
@@ -4719,7 +4890,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<[TaxRegistrationSqlRow[]]>(
+			const [rows] = await runNeonHttpTransaction(
 				(transactionSql) => [
 					transactionSql`
 						WITH mutated AS (
@@ -4772,12 +4943,18 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes, old_value, new_value
+								entity_id, action, changes, old_value, new_value, metadata, ip_address, user_agent
 							)
 							SELECT
-								${auditId}::uuid, organization_id, ${record.updatedBy}, ${meta.correlationId},
-								'master_data', 'tax_registration', id, 'UPDATE', ${changesJson}::jsonb,
-								${oldValueJson}::jsonb, ${newValueJson}::jsonb
+								${auditId}::uuid, ${taxRegistrationAudit.organizationId},
+								${taxRegistrationAudit.actorUserId}, ${taxRegistrationAudit.correlationId},
+								${taxRegistrationAudit.module}, ${taxRegistrationAudit.entity},
+								${taxRegistrationAudit.entityId}, ${taxRegistrationAudit.action},
+								${taxRegistrationAudit.changesJson}::jsonb,
+								${taxRegistrationAudit.oldValueJson}::jsonb,
+								${taxRegistrationAudit.newValueJson}::jsonb,
+								${taxRegistrationAudit.metadataJson}::jsonb,
+								${taxRegistrationAudit.ipAddress}, ${taxRegistrationAudit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -4874,19 +5051,22 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		}
 		const eventType = `master_data.tax_registration.${meta.eventSuffix}.v1`;
 		const nextVersion = existing.version + 1;
-		const changesJson = fieldChangeJson(
-			"status",
-			existing.status,
-			record.toStatus,
-		);
-		const oldValueJson = valueSnapshotJson({
-			status: existing.status,
-			version: existing.version,
+		const preparedTaxRegistrationLifecycleAudit = prepareCoreMasterAudit({
+			action: "UPDATE",
+			actorUserId: record.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "tax_registration",
+			entityId: existing.id,
+			oldValue: { status: existing.status, version: existing.version },
+			newValue: { status: record.toStatus, version: nextVersion },
+			organizationId: existing.organizationId,
+			reasonCode: "TAX_REGISTRATION_LIFECYCLE_TRANSITIONED",
 		});
-		const newValueJson = valueSnapshotJson({
-			status: record.toStatus,
-			version: nextVersion,
-		});
+		if (!preparedTaxRegistrationLifecycleAudit.ok) {
+			return preparedTaxRegistrationLifecycleAudit;
+		}
+		const taxRegistrationLifecycleAudit =
+			preparedTaxRegistrationLifecycleAudit.data;
 		const payloadJson = eventPayloadJson({
 			organizationId: existing.organizationId,
 			entityType: "tax_registration",
@@ -4910,7 +5090,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			record.toStatus === "blocked" ? record.actorUserId : existing.blockedBy;
 		const retiredBy = record.toStatus === "retired" ? record.actorUserId : null;
 		try {
-			const [rows] = await runNeonHttpTransaction<[TaxRegistrationSqlRow[]]>(
+			const [rows] = await runNeonHttpTransaction(
 				(transactionSql) => [
 					transactionSql`
 						WITH mutated AS (
@@ -4985,12 +5165,20 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes, old_value, new_value
+								entity_id, action, changes, old_value, new_value, metadata, ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, ${record.actorUserId}, ${meta.correlationId},
-								'master_data', 'tax_registration', id, 'UPDATE', ${changesJson}::jsonb,
-								${oldValueJson}::jsonb, ${newValueJson}::jsonb
+								${auditId}, ${taxRegistrationLifecycleAudit.organizationId},
+								${taxRegistrationLifecycleAudit.actorUserId},
+								${taxRegistrationLifecycleAudit.correlationId},
+								${taxRegistrationLifecycleAudit.module}, ${taxRegistrationLifecycleAudit.entity},
+								${taxRegistrationLifecycleAudit.entityId}, ${taxRegistrationLifecycleAudit.action},
+								${taxRegistrationLifecycleAudit.changesJson}::jsonb,
+								${taxRegistrationLifecycleAudit.oldValueJson}::jsonb,
+								${taxRegistrationLifecycleAudit.newValueJson}::jsonb,
+								${taxRegistrationLifecycleAudit.metadataJson}::jsonb,
+								${taxRegistrationLifecycleAudit.ipAddress},
+								${taxRegistrationLifecycleAudit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -5303,7 +5491,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		record: ImportBatchClaimRecord,
 	): Promise<Result<ImportBatchClaimResult>> {
 		try {
-			const transactionResults = await runNeonHttpTransaction<unknown[]>(
+			const transactionResults = await runNeonHttpTransaction(
 				(transactionSql) => [
 					transactionSql`
 						INSERT INTO md_import_batch (
@@ -5434,7 +5622,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		record: ImportBatchCompletionRecord,
 	): Promise<Result<ImportBatchRecord>> {
 		try {
-			const transactionResults = await runNeonHttpTransaction<unknown[]>(
+			const transactionResults = await runNeonHttpTransaction(
 				(transactionSql) => [
 					...record.rows.map(
 						(row) => transactionSql`

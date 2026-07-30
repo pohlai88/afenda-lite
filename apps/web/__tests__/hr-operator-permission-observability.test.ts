@@ -62,7 +62,7 @@ describe("operator permission denial observability", () => {
 
 		const denied = await runOperatorPermissionAction({
 			path: "deniedAction",
-			permission: "human-resources.privacy.manage",
+			permission: "human-resources.privacy.export",
 			safeMessage: "Could not run action.",
 			onPermissionDenied,
 			execute,
@@ -72,14 +72,14 @@ describe("operator permission denial observability", () => {
 		expect(onPermissionDenied).toHaveBeenCalledWith({
 			session,
 			correlationId: "correlation-1",
-			permission: "human-resources.privacy.manage",
+			permission: "human-resources.privacy.export",
 		});
 		expect(execute).not.toHaveBeenCalled();
 
 		mocks.forbidUnlessPermission.mockResolvedValueOnce(null);
 		await runOperatorPermissionAction({
 			path: "allowedAction",
-			permission: "human-resources.privacy.manage",
+			permission: "human-resources.privacy.export",
 			safeMessage: "Could not run action.",
 			onPermissionDenied,
 			execute,
@@ -94,7 +94,7 @@ describe("operator permission denial observability", () => {
 
 		const result = await runHrPrivacyOperatorPermissionAction({
 			path: "privacyAction",
-			permission: "human-resources.privacy.manage",
+			permission: "human-resources.privacy.export",
 			safeMessage: "Could not run privacy action.",
 			execute: vi.fn(),
 		});
@@ -110,7 +110,7 @@ describe("operator permission denial observability", () => {
 		mocks.forbidUnlessPermission.mockResolvedValue(denial);
 		const result = await runOperatorPermissionAction({
 			path: "deniedAction",
-			permission: "human-resources.privacy.manage",
+			permission: "human-resources.privacy.export",
 			safeMessage: "Could not run action.",
 			onPermissionDenied: () => {
 				throw new Error("telemetry unavailable");

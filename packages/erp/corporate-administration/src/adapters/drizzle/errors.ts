@@ -1,7 +1,7 @@
 // biome-ignore-all lint/style/useDefaultSwitchClause: PostgreSQL error code handling is intentionally selective and falls through to the original error.
 // biome-ignore-all lint/suspicious/noEmptyBlockStatements: Error metadata reflection failures intentionally fall through.
 import {
-	fromPostgresUnknown,
+	normalizePostgresUnknown,
 	postgresSqlState,
 } from "@afenda/errors/adapters/postgres";
 import { fail, failFromAppError, type Result } from "@afenda/errors/result";
@@ -68,8 +68,14 @@ export function translateCorporateAdministrationInfrastructureError(
 ): Result<never> | undefined {
 	const kind = classifyInfrastructureFailure(error);
 	if (kind === undefined) {
-		const mapped = fromPostgresUnknown(error);
-		return mapped === undefined ? undefined : failFromAppError(mapped);
+		return postgresSqlState(error) === undefined
+			? undefined
+			: failFromAppError(
+					normalizePostgresUnknown(
+						error,
+						"Corporate Administration database operation",
+					),
+				);
 	}
 
 	switch (kind) {

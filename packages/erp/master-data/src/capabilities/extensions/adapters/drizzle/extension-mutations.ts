@@ -5,6 +5,12 @@
 import { randomUUID } from "node:crypto";
 
 import {
+	type PreparedDerivedEntityAuditInsertValues,
+	type PreparedTransactionalAuditInsertValues,
+	prepareDerivedEntityAuditInsertValues,
+	prepareTransactionalAuditInsertValues,
+} from "@afenda/audit";
+import {
 	and,
 	asc,
 	db,
@@ -30,16 +36,10 @@ import {
 	runNeonHttpTransaction,
 } from "@afenda/db";
 import {
-	fromPostgresUnknown,
 	hasPostgresSqlState,
+	normalizePostgresUnknown,
 } from "@afenda/errors/adapters/postgres";
-import {
-	fail,
-	failFromAppError,
-	failFromUnknown,
-	ok,
-	type Result,
-} from "@afenda/errors/result";
+import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
 import type { MasterFailureDetails } from "../../../../contracts/reasons";
 import type { MutationPorts } from "../../../../ports";
 import type {
@@ -148,10 +148,7 @@ function parsePartyRelationshipType(
 }
 
 function failFromPersistence(error: unknown, fallbackMessage: string) {
-	const mapped = fromPostgresUnknown(error);
-	return mapped === undefined
-		? failFromUnknown(error, fallbackMessage)
-		: failFromAppError(mapped);
+	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
 }
 
 function mapWriteError(
@@ -168,16 +165,65 @@ function mapWriteError(
 	return failFromPersistence(error, fallbackMessage);
 }
 
-function fieldChangeJson(
-	field: string,
-	oldValue: unknown,
-	newValue: unknown,
-): string {
-	return JSON.stringify([{ field, oldValue, newValue }]);
+const EXTENSION_AUDIT_SOURCE = "master-data.extension-mutations";
+
+interface ExtensionAuditInput {
+	action: "CREATE" | "UPDATE" | "DELETE";
+	actorUserId: string;
+	causationId?: string | null;
+	correlationId: string;
+	entity: string;
+	newValue?: Record<string, unknown> | null;
+	oldValue?: Record<string, unknown> | null;
+	organizationId: string;
+	reasonCode: string;
 }
 
-function valueSnapshotJson(value: Record<string, unknown>): string {
-	return JSON.stringify(value);
+function prepareExtensionAudit(
+	input: ExtensionAuditInput & { entityId: string },
+): Result<PreparedTransactionalAuditInsertValues> {
+	return prepareTransactionalAuditInsertValues({
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		correlationId: input.correlationId,
+		module: "master_data",
+		entity: input.entity,
+		entityId: input.entityId,
+		action: input.action,
+		oldValue: input.oldValue,
+		newValue: input.newValue,
+		eventContext: {
+			version: 1,
+			outcome: "SUCCEEDED",
+			source: EXTENSION_AUDIT_SOURCE,
+			occurredAt: null,
+			causationId: input.causationId ?? null,
+			reasonCode: input.reasonCode,
+		},
+	});
+}
+
+function prepareDerivedExtensionAudit(
+	input: ExtensionAuditInput,
+): Result<PreparedDerivedEntityAuditInsertValues> {
+	return prepareDerivedEntityAuditInsertValues({
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		correlationId: input.correlationId,
+		module: "master_data",
+		entity: input.entity,
+		action: input.action,
+		oldValue: input.oldValue,
+		newValue: input.newValue,
+		eventContext: {
+			version: 1,
+			outcome: "SUCCEEDED",
+			source: EXTENSION_AUDIT_SOURCE,
+			occurredAt: null,
+			causationId: input.causationId ?? null,
+			reasonCode: input.reasonCode,
+		},
+	});
 }
 
 function eventPayloadJson(input: ExtensionEventPayload): string {
@@ -701,11 +747,20 @@ export async function drizzleCreatePartyRole(
 	const id = randomUUID();
 	const auditId = randomUUID();
 	const eventId = randomUUID();
-	const changesJson = fieldChangeJson("roleCode", null, record.roleCode);
-	const newValueJson = valueSnapshotJson({
-		roleCode: record.roleCode,
-		status: "draft",
+	const preparedAudit = prepareExtensionAudit({
+		organizationId: record.organizationId,
+		actorUserId: record.createdBy,
+		correlationId: meta.correlationId,
+		entity: "party_role",
+		entityId: id,
+		action: "CREATE",
+		newValue: { roleCode: record.roleCode, status: "draft" },
+		reasonCode: "PARTY_ROLE_CREATE",
 	});
+	if (!preparedAudit.ok) {
+		return preparedAudit;
+	}
+	const audit = preparedAudit.data;
 	const payloadJson = eventPayloadJson({
 		organizationId: record.organizationId,
 		entityType: "party_role",
@@ -717,9 +772,8 @@ export async function drizzleCreatePartyRole(
 		correlationId: meta.correlationId,
 	});
 	try {
-		const [rows] = await runNeonHttpTransaction<[Record<string, unknown>[]]>(
-			(sql) => [
-				sql`
+		const [rows] = await runNeonHttpTransaction((sql) => [
+			sql`
 				WITH mutated AS (
 					INSERT INTO md_party_role (
 						id, organization_id, party_id, role_code, status, version,
@@ -734,11 +788,15 @@ export async function drizzleCreatePartyRole(
 				audited AS (
 					INSERT INTO platform_audit_log (
 						id, organization_id, actor_user_id, correlation_id, module, entity,
-						entity_id, action, changes, new_value
+						entity_id, action, changes, old_value, new_value, metadata,
+						ip_address, user_agent
 					)
 					SELECT
-						${auditId}, organization_id, created_by, ${meta.correlationId},
-						'master_data', 'party_role', id, 'CREATE', ${changesJson}::jsonb, ${newValueJson}::jsonb
+						${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+						${audit.correlationId}, ${audit.module}, ${audit.entity},
+						${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+						${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+						${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 					FROM mutated
 					RETURNING id
 				),
@@ -755,8 +813,7 @@ export async function drizzleCreatePartyRole(
 				)
 				SELECT mutated.* FROM mutated, audited, outboxed
 			`,
-			],
-		);
+		]);
 		const [row] = rows;
 		if (row === undefined) {
 			return fail("INTERNAL_ERROR", "Party role create returned no row");
@@ -792,6 +849,19 @@ export async function drizzleCreatePartyRole(
 	}
 }
 
+function assertEditablePartyRoleStatus(status: string): Result<true> {
+	if (status !== "draft" && status !== "inactive") {
+		return fail(
+			"CONFLICT",
+			"Only draft or inactive party roles can be updated",
+			{
+				reason: "MASTER_INVALID_STATE",
+			} satisfies MasterFailureDetails,
+		);
+	}
+	return ok(true);
+}
+
 export async function drizzleUpdatePartyRole(
 	record: PartyRoleUpdateRecord,
 	_ports: MutationPorts,
@@ -821,14 +891,9 @@ export async function drizzleUpdatePartyRole(
 		if (!version.ok) {
 			return version;
 		}
-		if (existing.status !== "draft" && existing.status !== "inactive") {
-			return fail(
-				"CONFLICT",
-				"Only draft or inactive party roles can be updated",
-				{
-					reason: "MASTER_INVALID_STATE",
-				} satisfies MasterFailureDetails,
-			);
+		const editable = assertEditablePartyRoleStatus(existing.status);
+		if (!editable.ok) {
+			return editable;
 		}
 		const parent = await requireUsablePartyMutationParent(
 			record.organizationId,
@@ -853,11 +918,21 @@ export async function drizzleUpdatePartyRole(
 		}
 		const auditId = randomUUID();
 		const eventId = randomUUID();
-		const changesJson = fieldChangeJson(
-			"roleCode",
-			existing.roleCode,
-			nextRoleCode,
-		);
+		const preparedAudit = prepareExtensionAudit({
+			organizationId: record.organizationId,
+			actorUserId: record.updatedBy,
+			correlationId: meta.correlationId,
+			entity: "party_role",
+			entityId: record.id,
+			action: "UPDATE",
+			oldValue: { roleCode: existing.roleCode },
+			newValue: { roleCode: nextRoleCode },
+			reasonCode: "PARTY_ROLE_UPDATE",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const payloadJson = eventPayloadJson({
 			organizationId: record.organizationId,
 			entityType: "party_role",
@@ -868,9 +943,8 @@ export async function drizzleUpdatePartyRole(
 			actorId: record.updatedBy,
 			correlationId: meta.correlationId,
 		});
-		const [rows] = await runNeonHttpTransaction<[Record<string, unknown>[]]>(
-			(sql) => [
-				sql`
+		const [rows] = await runNeonHttpTransaction((sql) => [
+			sql`
 					WITH mutated AS (
 						UPDATE md_party_role
 						SET role_code = ${nextRoleCode},
@@ -888,11 +962,14 @@ export async function drizzleUpdatePartyRole(
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
-						SELECT ${auditId}, organization_id, ${record.updatedBy}, ${meta.correlationId},
-							'master_data', 'party_role', id, 'UPDATE', ${changesJson}::jsonb,
-							${valueSnapshotJson({ roleCode: nextRoleCode })}::jsonb
+						SELECT ${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated RETURNING id
 					),
 					outboxed AS (
@@ -907,8 +984,7 @@ export async function drizzleUpdatePartyRole(
 					)
 					SELECT mutated.* FROM mutated, audited, outboxed
 				`,
-			],
-		);
+		]);
 		const [row] = rows;
 		if (row === undefined) {
 			return fail("CONFLICT", "Party role update conflict", {
@@ -1136,11 +1212,21 @@ export async function drizzleTransitionPartyRole(
 		if (!finalRole.ok) {
 			return finalRole;
 		}
-		const changesJson = fieldChangeJson(
-			"status",
-			existing.status,
-			record.toStatus,
-		);
+		const preparedAudit = prepareExtensionAudit({
+			organizationId: record.organizationId,
+			actorUserId: record.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "party_role",
+			entityId: record.id,
+			action: "UPDATE",
+			oldValue: { status: existing.status },
+			newValue: { status: record.toStatus },
+			reasonCode: "PARTY_ROLE_STATUS_TRANSITION",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const payloadJson = eventPayloadJson({
 			organizationId: record.organizationId,
 			entityType: "party_role",
@@ -1162,9 +1248,7 @@ export async function drizzleTransitionPartyRole(
 			archivedAt,
 			archivedBy,
 		} = resolvePartyRoleLifecycleTimestamps(record, existing);
-		const [, rows] = await runNeonHttpTransaction<
-			[Record<string, unknown>[], Record<string, unknown>[]]
-		>((sql) => [
+		const [, rows] = await runNeonHttpTransaction((sql) => [
 			sql`
 					SELECT party.id
 					FROM md_party AS party
@@ -1216,12 +1300,15 @@ export async function drizzleTransitionPartyRole(
 				audited AS (
 					INSERT INTO platform_audit_log (
 						id, organization_id, actor_user_id, correlation_id, module, entity,
-						entity_id, action, changes, new_value
+						entity_id, action, changes, old_value, new_value, metadata,
+						ip_address, user_agent
 					)
 					SELECT
-						${auditId}, organization_id, ${record.actorUserId}, ${meta.correlationId},
-						'master_data', 'party_role', id, 'UPDATE', ${changesJson}::jsonb,
-						${valueSnapshotJson({ status: record.toStatus, reason: reason.data })}::jsonb
+						${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+						${audit.correlationId}, ${audit.module}, ${audit.entity},
+						${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+						${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+						${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 					FROM mutated
 					RETURNING id
 				),
@@ -1284,8 +1371,40 @@ export async function drizzleCreatePartyAddress(
 	const eventId = randomUUID();
 	const demotionAuditId = randomUUID();
 	const demotionEventId = randomUUID();
-	const changesJson = fieldChangeJson("line1", null, record.line1);
-	const newValueJson = valueSnapshotJson({ line1: record.line1 });
+	const preparedAudit = prepareExtensionAudit({
+		organizationId: record.organizationId,
+		actorUserId: record.createdBy,
+		correlationId: meta.correlationId,
+		entity: "party_address",
+		entityId: id,
+		action: "CREATE",
+		newValue: {
+			addressType: record.addressType,
+			purpose: record.purpose,
+			countryId: record.countryId,
+			isPrimary: record.isPrimary ?? false,
+			status: "active",
+		},
+		reasonCode: "PARTY_ADDRESS_CREATE",
+	});
+	if (!preparedAudit.ok) {
+		return preparedAudit;
+	}
+	const audit = preparedAudit.data;
+	const preparedDemotionAudit = prepareDerivedExtensionAudit({
+		organizationId: record.organizationId,
+		actorUserId: record.createdBy,
+		correlationId: meta.correlationId,
+		entity: "party_address",
+		action: "UPDATE",
+		oldValue: { isPrimary: true },
+		newValue: { isPrimary: false },
+		reasonCode: "PARTY_ADDRESS_PRIMARY_DEMOTION",
+	});
+	if (!preparedDemotionAudit.ok) {
+		return preparedDemotionAudit;
+	}
+	const demotionAudit = preparedDemotionAudit.data;
 	const payloadJson = eventPayloadJson({
 		organizationId: record.organizationId,
 		entityType: "party_address",
@@ -1304,9 +1423,8 @@ export async function drizzleCreatePartyAddress(
 		if (!country.ok) {
 			return country;
 		}
-		const [rows] = await runNeonHttpTransaction<[Record<string, unknown>[]]>(
-			(sql) => [
-				sql`
+		const [rows] = await runNeonHttpTransaction((sql) => [
+			sql`
 					WITH parent_locked AS MATERIALIZED (
 						SELECT party.id AS parent_id
 						FROM md_party AS party
@@ -1360,12 +1478,16 @@ export async function drizzleCreatePartyAddress(
 					demotion_audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
-						SELECT ${demotionAuditId}, organization_id, ${record.createdBy}, ${meta.correlationId},
-							'master_data', 'party_address', id, 'UPDATE',
-							${fieldChangeJson("isPrimary", true, false)}::jsonb,
-							${valueSnapshotJson({ isPrimary: false })}::jsonb
+						SELECT ${demotionAuditId}, ${demotionAudit.organizationId},
+							${demotionAudit.actorUserId}, ${demotionAudit.correlationId},
+							${demotionAudit.module}, ${demotionAudit.entity}, id,
+							${demotionAudit.action}, ${demotionAudit.changesJson}::jsonb,
+							${demotionAudit.oldValueJson}::jsonb, ${demotionAudit.newValueJson}::jsonb,
+							${demotionAudit.metadataJson}::jsonb, ${demotionAudit.ipAddress},
+							${demotionAudit.userAgent}
 						FROM demoted RETURNING id
 					),
 					demotion_outboxed AS (
@@ -1387,11 +1509,15 @@ export async function drizzleCreatePartyAddress(
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, created_by, ${meta.correlationId},
-							'master_data', 'party_address', id, 'CREATE', ${changesJson}::jsonb, ${newValueJson}::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -1410,8 +1536,7 @@ export async function drizzleCreatePartyAddress(
 					WHERE (SELECT count(*) FROM demotion_audited) >= 0
 						AND (SELECT count(*) FROM demotion_outboxed) >= 0
 				`,
-			],
-		);
+		]);
 		const [row] = rows;
 		if (row === undefined) {
 			const parent = await requireUsablePartyMutationParent(
@@ -1463,6 +1588,27 @@ export async function drizzleCreatePartyAddress(
 			"Failed to create party address",
 		);
 	}
+}
+
+async function resolvePartyAddressUpdateConflict(input: {
+	countryId: string;
+	organizationId: string;
+	partyId: string;
+}): Promise<Result<never>> {
+	const parent = await requireUsablePartyMutationParent(
+		input.organizationId,
+		input.partyId,
+	);
+	if (!parent.ok) {
+		return parent;
+	}
+	const activeCountry = await requireActiveAddressCountry(input.countryId);
+	if (!activeCountry.ok) {
+		return activeCountry;
+	}
+	return fail("CONFLICT", "Party address version conflict", {
+		reason: "MASTER_VERSION_CONFLICT",
+	} satisfies MasterFailureDetails);
 }
 
 function resolvePartyAddressUpdateState(
@@ -1560,7 +1706,45 @@ export async function drizzleUpdatePartyAddress(
 		const eventId = randomUUID();
 		const demotionAuditId = randomUUID();
 		const demotionEventId = randomUUID();
-		const changesJson = fieldChangeJson("line1", existing.line1, nextLine1);
+		const preparedAudit = prepareExtensionAudit({
+			organizationId: record.organizationId,
+			actorUserId: record.updatedBy,
+			correlationId: meta.correlationId,
+			entity: "party_address",
+			entityId: record.id,
+			action: "UPDATE",
+			oldValue: {
+				addressType: existing.addressType,
+				purpose: existing.purpose,
+				countryId: existing.countryId,
+				isPrimary: existing.isPrimary,
+			},
+			newValue: {
+				addressType: nextType,
+				purpose: nextPurpose,
+				countryId: nextCountryId,
+				isPrimary: state.isPrimary,
+			},
+			reasonCode: "PARTY_ADDRESS_UPDATE",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
+		const preparedDemotionAudit = prepareDerivedExtensionAudit({
+			organizationId: record.organizationId,
+			actorUserId: record.updatedBy,
+			correlationId: meta.correlationId,
+			entity: "party_address",
+			action: "UPDATE",
+			oldValue: { isPrimary: true },
+			newValue: { isPrimary: false },
+			reasonCode: "PARTY_ADDRESS_PRIMARY_DEMOTION",
+		});
+		if (!preparedDemotionAudit.ok) {
+			return preparedDemotionAudit;
+		}
+		const demotionAudit = preparedDemotionAudit.data;
 		const payloadJson = eventPayloadJson({
 			organizationId: record.organizationId,
 			entityType: "party_address",
@@ -1571,9 +1755,8 @@ export async function drizzleUpdatePartyAddress(
 			actorId: record.updatedBy,
 			correlationId: meta.correlationId,
 		});
-		const [rows] = await runNeonHttpTransaction<[Record<string, unknown>[]]>(
-			(sql) => [
-				sql`
+		const [rows] = await runNeonHttpTransaction((sql) => [
+			sql`
 					WITH parent_locked AS MATERIALIZED (
 						SELECT party.id AS parent_id
 						FROM md_party AS party
@@ -1645,12 +1828,16 @@ export async function drizzleUpdatePartyAddress(
 					demotion_audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
-						SELECT ${demotionAuditId}, organization_id, ${record.updatedBy}, ${meta.correlationId},
-							'master_data', 'party_address', id, 'UPDATE',
-							${fieldChangeJson("isPrimary", true, false)}::jsonb,
-							${valueSnapshotJson({ isPrimary: false })}::jsonb
+						SELECT ${demotionAuditId}, ${demotionAudit.organizationId},
+							${demotionAudit.actorUserId}, ${demotionAudit.correlationId},
+							${demotionAudit.module}, ${demotionAudit.entity}, id,
+							${demotionAudit.action}, ${demotionAudit.changesJson}::jsonb,
+							${demotionAudit.oldValueJson}::jsonb, ${demotionAudit.newValueJson}::jsonb,
+							${demotionAudit.metadataJson}::jsonb, ${demotionAudit.ipAddress},
+							${demotionAudit.userAgent}
 						FROM demoted RETURNING id
 					),
 					demotion_outboxed AS (
@@ -1672,12 +1859,15 @@ export async function drizzleUpdatePartyAddress(
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, ${record.updatedBy}, ${meta.correlationId},
-							'master_data', 'party_address', id, 'UPDATE', ${changesJson}::jsonb,
-							${valueSnapshotJson({ line1: nextLine1 })}::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -1696,24 +1886,14 @@ export async function drizzleUpdatePartyAddress(
 					WHERE (SELECT count(*) FROM demotion_audited) >= 0
 						AND (SELECT count(*) FROM demotion_outboxed) >= 0
 				`,
-			],
-		);
+		]);
 		const [row] = rows;
 		if (row === undefined) {
-			const parent = await requireUsablePartyMutationParent(
-				record.organizationId,
-				existing.partyId,
-			);
-			if (!parent.ok) {
-				return parent;
-			}
-			const activeCountry = await requireActiveAddressCountry(nextCountryId);
-			if (!activeCountry.ok) {
-				return activeCountry;
-			}
-			return fail("CONFLICT", "Party address version conflict", {
-				reason: "MASTER_VERSION_CONFLICT",
-			} satisfies MasterFailureDetails);
+			return resolvePartyAddressUpdateConflict({
+				organizationId: record.organizationId,
+				partyId: existing.partyId,
+				countryId: nextCountryId,
+			});
 		}
 		return ok(
 			mapPartyAddress({
@@ -1884,8 +2064,38 @@ export async function drizzleCreatePartyContact(
 	const eventId = randomUUID();
 	const demotionAuditId = randomUUID();
 	const demotionEventId = randomUUID();
-	const changesJson = fieldChangeJson("value", null, "[protected]");
-	const newValueJson = valueSnapshotJson({ contactType: record.contactType });
+	const preparedAudit = prepareExtensionAudit({
+		organizationId: record.organizationId,
+		actorUserId: record.createdBy,
+		correlationId: meta.correlationId,
+		entity: "party_contact",
+		entityId: id,
+		action: "CREATE",
+		newValue: {
+			contactType: record.contactType,
+			isPrimary: record.isPrimary ?? false,
+			verificationStatus: "unverified",
+		},
+		reasonCode: "PARTY_CONTACT_CREATE",
+	});
+	if (!preparedAudit.ok) {
+		return preparedAudit;
+	}
+	const audit = preparedAudit.data;
+	const preparedDemotionAudit = prepareDerivedExtensionAudit({
+		organizationId: record.organizationId,
+		actorUserId: record.createdBy,
+		correlationId: meta.correlationId,
+		entity: "party_contact",
+		action: "UPDATE",
+		oldValue: { isPrimary: true },
+		newValue: { isPrimary: false },
+		reasonCode: "PARTY_CONTACT_PRIMARY_DEMOTION",
+	});
+	if (!preparedDemotionAudit.ok) {
+		return preparedDemotionAudit;
+	}
+	const demotionAudit = preparedDemotionAudit.data;
 	const payloadJson = eventPayloadJson({
 		organizationId: record.organizationId,
 		entityType: "party_contact",
@@ -1900,9 +2110,8 @@ export async function drizzleCreatePartyContact(
 		correlationId: meta.correlationId,
 	});
 	try {
-		const [rows] = await runNeonHttpTransaction<[Record<string, unknown>[]]>(
-			(sql) => [
-				sql`
+		const [rows] = await runNeonHttpTransaction((sql) => [
+			sql`
 					WITH parent_locked AS MATERIALIZED (
 						SELECT party.id AS parent_id
 						FROM md_party AS party
@@ -1949,12 +2158,16 @@ export async function drizzleCreatePartyContact(
 					demotion_audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
-						SELECT ${demotionAuditId}, organization_id, ${record.createdBy}, ${meta.correlationId},
-							'master_data', 'party_contact', id, 'UPDATE',
-							${fieldChangeJson("isPrimary", true, false)}::jsonb,
-							${valueSnapshotJson({ isPrimary: false })}::jsonb
+						SELECT ${demotionAuditId}, ${demotionAudit.organizationId},
+							${demotionAudit.actorUserId}, ${demotionAudit.correlationId},
+							${demotionAudit.module}, ${demotionAudit.entity}, id,
+							${demotionAudit.action}, ${demotionAudit.changesJson}::jsonb,
+							${demotionAudit.oldValueJson}::jsonb, ${demotionAudit.newValueJson}::jsonb,
+							${demotionAudit.metadataJson}::jsonb, ${demotionAudit.ipAddress},
+							${demotionAudit.userAgent}
 						FROM demoted RETURNING id
 					),
 					demotion_outboxed AS (
@@ -1976,11 +2189,15 @@ export async function drizzleCreatePartyContact(
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, created_by, ${meta.correlationId},
-							'master_data', 'party_contact', id, 'CREATE', ${changesJson}::jsonb, ${newValueJson}::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -1999,8 +2216,7 @@ export async function drizzleCreatePartyContact(
 					WHERE (SELECT count(*) FROM demotion_audited) >= 0
 						AND (SELECT count(*) FROM demotion_outboxed) >= 0
 				`,
-			],
-		);
+		]);
 		const [row] = rows;
 		if (row === undefined) {
 			const parent = await requireUsablePartyMutationParent(
@@ -2115,16 +2331,6 @@ function resolvePartyContactUpdateState(
 	} else if (record.verificationStatus === undefined) {
 		({ verifiedAt } = existing);
 	}
-	let changesJson = fieldChangeJson(
-		"verificationStatus",
-		existing.verificationStatus,
-		verificationStatus,
-	);
-	if (contactIdentityChanged) {
-		changesJson = fieldChangeJson("value", "[protected]", "[protected]");
-	} else if (record.verificationStatus === undefined) {
-		changesJson = fieldChangeJson("contact", "unchanged", "updated");
-	}
 	return ok({
 		value: record.value ?? existing.value,
 		contactType: record.contactType ?? existing.contactType,
@@ -2136,7 +2342,6 @@ function resolvePartyContactUpdateState(
 		effectiveTo,
 		verificationStatus,
 		verifiedAt,
-		changesJson,
 	});
 }
 
@@ -2188,7 +2393,43 @@ export async function drizzleUpdatePartyContact(
 		const eventId = randomUUID();
 		const demotionAuditId = randomUUID();
 		const demotionEventId = randomUUID();
-		const { changesJson } = state;
+		const preparedAudit = prepareExtensionAudit({
+			organizationId: record.organizationId,
+			actorUserId: record.updatedBy,
+			correlationId: meta.correlationId,
+			entity: "party_contact",
+			entityId: record.id,
+			action: "UPDATE",
+			oldValue: {
+				contactType: existing.contactType,
+				isPrimary: existing.isPrimary,
+				verificationStatus: existing.verificationStatus,
+			},
+			newValue: {
+				contactType: nextType,
+				isPrimary: state.isPrimary,
+				verificationStatus: nextVerificationStatus,
+			},
+			reasonCode: "PARTY_CONTACT_UPDATE",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
+		const preparedDemotionAudit = prepareDerivedExtensionAudit({
+			organizationId: record.organizationId,
+			actorUserId: record.updatedBy,
+			correlationId: meta.correlationId,
+			entity: "party_contact",
+			action: "UPDATE",
+			oldValue: { isPrimary: true },
+			newValue: { isPrimary: false },
+			reasonCode: "PARTY_CONTACT_PRIMARY_DEMOTION",
+		});
+		if (!preparedDemotionAudit.ok) {
+			return preparedDemotionAudit;
+		}
+		const demotionAudit = preparedDemotionAudit.data;
 		const payloadJson = eventPayloadJson({
 			organizationId: record.organizationId,
 			entityType: "party_contact",
@@ -2199,9 +2440,8 @@ export async function drizzleUpdatePartyContact(
 			actorId: record.updatedBy,
 			correlationId: meta.correlationId,
 		});
-		const [rows] = await runNeonHttpTransaction<[Record<string, unknown>[]]>(
-			(sql) => [
-				sql`
+		const [rows] = await runNeonHttpTransaction((sql) => [
+			sql`
 					WITH parent_locked AS MATERIALIZED (
 						SELECT party.id AS parent_id
 						FROM md_party AS party
@@ -2264,12 +2504,16 @@ export async function drizzleUpdatePartyContact(
 					demotion_audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
-						SELECT ${demotionAuditId}, organization_id, ${record.updatedBy}, ${meta.correlationId},
-							'master_data', 'party_contact', id, 'UPDATE',
-							${fieldChangeJson("isPrimary", true, false)}::jsonb,
-							${valueSnapshotJson({ isPrimary: false })}::jsonb
+						SELECT ${demotionAuditId}, ${demotionAudit.organizationId},
+							${demotionAudit.actorUserId}, ${demotionAudit.correlationId},
+							${demotionAudit.module}, ${demotionAudit.entity}, id,
+							${demotionAudit.action}, ${demotionAudit.changesJson}::jsonb,
+							${demotionAudit.oldValueJson}::jsonb, ${demotionAudit.newValueJson}::jsonb,
+							${demotionAudit.metadataJson}::jsonb, ${demotionAudit.ipAddress},
+							${demotionAudit.userAgent}
 						FROM demoted RETURNING id
 					),
 					demotion_outboxed AS (
@@ -2291,12 +2535,15 @@ export async function drizzleUpdatePartyContact(
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, ${record.updatedBy}, ${meta.correlationId},
-							'master_data', 'party_contact', id, 'UPDATE', ${changesJson}::jsonb,
-							${valueSnapshotJson({ value: nextValue })}::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -2315,8 +2562,7 @@ export async function drizzleUpdatePartyContact(
 					WHERE (SELECT count(*) FROM demotion_audited) >= 0
 						AND (SELECT count(*) FROM demotion_outboxed) >= 0
 				`,
-			],
-		);
+		]);
 		const [row] = rows;
 		if (row === undefined) {
 			const parent = await requireUsablePartyMutationParent(
@@ -2374,13 +2620,39 @@ export async function drizzleCreatePartyExternalId(
 	const eventId = randomUUID();
 	const demotionAuditId = randomUUID();
 	const demotionEventId = randomUUID();
-	const changesJson = fieldChangeJson("externalIdentity", null, "[protected]");
-	const newValueJson = valueSnapshotJson({
-		sourceSystem: record.sourceSystem,
-		externalIdType: record.externalIdType,
-		caseSensitivity: record.caseSensitivity,
-		isPrimary: record.isPrimary,
+	const preparedAudit = prepareExtensionAudit({
+		organizationId: record.organizationId,
+		actorUserId: record.createdBy,
+		correlationId: meta.correlationId,
+		entity: "party_external_id",
+		entityId: id,
+		action: "CREATE",
+		newValue: {
+			sourceSystem: record.sourceSystem,
+			externalIdType: record.externalIdType,
+			caseSensitivity: record.caseSensitivity,
+			isPrimary: record.isPrimary,
+		},
+		reasonCode: "PARTY_EXTERNAL_ID_ASSIGN",
 	});
+	if (!preparedAudit.ok) {
+		return preparedAudit;
+	}
+	const audit = preparedAudit.data;
+	const preparedDemotionAudit = prepareDerivedExtensionAudit({
+		organizationId: record.organizationId,
+		actorUserId: record.createdBy,
+		correlationId: meta.correlationId,
+		entity: "party_external_id",
+		action: "UPDATE",
+		oldValue: { isPrimary: true },
+		newValue: { isPrimary: false },
+		reasonCode: "PARTY_EXTERNAL_ID_PRIMARY_DEMOTION",
+	});
+	if (!preparedDemotionAudit.ok) {
+		return preparedDemotionAudit;
+	}
+	const demotionAudit = preparedDemotionAudit.data;
 	const payloadJson = eventPayloadJson({
 		organizationId: record.organizationId,
 		entityType: "party_external_id",
@@ -2395,9 +2667,8 @@ export async function drizzleCreatePartyExternalId(
 		correlationId: meta.correlationId,
 	});
 	try {
-		const [rows] = await runNeonHttpTransaction<[Record<string, unknown>[]]>(
-			(sql) => [
-				sql`
+		const [rows] = await runNeonHttpTransaction((sql) => [
+			sql`
 					WITH parent_locked AS MATERIALIZED (
 						SELECT party.id AS parent_id
 						FROM md_party AS party
@@ -2436,12 +2707,16 @@ export async function drizzleCreatePartyExternalId(
 					demotion_audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
-						SELECT ${demotionAuditId}, organization_id, ${record.createdBy},
-							${meta.correlationId}, 'master_data', 'party_external_id', id, 'UPDATE',
-							${fieldChangeJson("isPrimary", true, false)}::jsonb,
-							${valueSnapshotJson({ isPrimary: false })}::jsonb
+						SELECT ${demotionAuditId}, ${demotionAudit.organizationId},
+							${demotionAudit.actorUserId}, ${demotionAudit.correlationId},
+							${demotionAudit.module}, ${demotionAudit.entity}, id,
+							${demotionAudit.action}, ${demotionAudit.changesJson}::jsonb,
+							${demotionAudit.oldValueJson}::jsonb, ${demotionAudit.newValueJson}::jsonb,
+							${demotionAudit.metadataJson}::jsonb, ${demotionAudit.ipAddress},
+							${demotionAudit.userAgent}
 						FROM demoted RETURNING id
 					),
 					demotion_outboxed AS (
@@ -2466,11 +2741,15 @@ export async function drizzleCreatePartyExternalId(
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, created_by, ${meta.correlationId},
-							'master_data', 'party_external_id', id, 'CREATE', ${changesJson}::jsonb, ${newValueJson}::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -2489,8 +2768,7 @@ export async function drizzleCreatePartyExternalId(
 					WHERE (SELECT count(*) FROM demotion_audited) >= 0
 						AND (SELECT count(*) FROM demotion_outboxed) >= 0
 				`,
-			],
-		);
+		]);
 		const [row] = rows;
 		if (row === undefined) {
 			return fail("INTERNAL_ERROR", "Party external id create returned no row");
@@ -2592,19 +2870,26 @@ export async function drizzleCreatePartyRelationship(
 	const id = randomUUID();
 	const auditId = randomUUID();
 	const eventId = randomUUID();
-	const changesJson = fieldChangeJson(
-		"relationshipType",
-		null,
-		record.relationshipType,
-	);
-	const newValueJson = valueSnapshotJson({
-		sourcePartyId: record.sourcePartyId,
-		targetPartyId: record.targetPartyId,
-		relationshipType: record.relationshipType,
-		direction: record.direction,
-		effectiveFrom: record.effectiveFrom,
-		effectiveTo: record.effectiveTo,
+	const preparedAudit = prepareExtensionAudit({
+		organizationId: record.organizationId,
+		actorUserId: record.createdBy,
+		correlationId: meta.correlationId,
+		entity: "party_relationship",
+		entityId: id,
+		action: "CREATE",
+		newValue: {
+			sourcePartyId: record.sourcePartyId,
+			targetPartyId: record.targetPartyId,
+			relationshipType: record.relationshipType,
+			direction: record.direction,
+			status: "active",
+		},
+		reasonCode: "PARTY_RELATIONSHIP_CREATE",
 	});
+	if (!preparedAudit.ok) {
+		return preparedAudit;
+	}
+	const audit = preparedAudit.data;
 	const payloadJson = eventPayloadJson({
 		organizationId: record.organizationId,
 		entityType: "party_relationship",
@@ -2619,9 +2904,8 @@ export async function drizzleCreatePartyRelationship(
 		correlationId: meta.correlationId,
 	});
 	try {
-		const [rows] = await runNeonHttpTransaction<[Record<string, unknown>[]]>(
-			(sql) => [
-				sql`
+		const [rows] = await runNeonHttpTransaction((sql) => [
+			sql`
 					WITH RECURSIVE hierarchy_guard AS MATERIALIZED (
 						SELECT pg_advisory_xact_lock(
 							hashtextextended(${`${record.organizationId}:party_relationship_hierarchy`}, 0)
@@ -2673,11 +2957,15 @@ export async function drizzleCreatePartyRelationship(
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, created_by, ${meta.correlationId},
-							'master_data', 'party_relationship', id, 'CREATE', ${changesJson}::jsonb, ${newValueJson}::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -2694,8 +2982,7 @@ export async function drizzleCreatePartyRelationship(
 					)
 					SELECT mutated.* FROM mutated, audited, outboxed
 				`,
-			],
-		);
+		]);
 		const [row] = rows;
 		if (row === undefined) {
 			if (record.direction === "hierarchical") {
@@ -2937,19 +3224,9 @@ function assertConsistentDefaultItemUomUsage(
 	return ok(true);
 }
 
-export async function drizzleCreateItemUom(
+async function validateItemUomCreateReferences(
 	record: ItemUomCreateRecord,
-	_ports: MutationPorts,
-	meta: { correlationId: string },
-): Promise<Result<ItemUom>> {
-	const factor = normalizeItemUomConversionFactor(record.conversionFactor);
-	if (!factor.ok) {
-		return factor;
-	}
-	const consistentUsage = assertConsistentDefaultItemUomUsage(record);
-	if (!consistentUsage.ok) {
-		return consistentUsage;
-	}
+): Promise<Result<true>> {
 	try {
 		const [item] = await db
 			.select()
@@ -3007,37 +3284,75 @@ export async function drizzleCreateItemUom(
 				reason: "MASTER_VALIDATION_FAILED",
 			} satisfies MasterFailureDetails);
 		}
-		const compatible = assertItemUomCompatibility({
+		return assertItemUomCompatibility({
 			baseDimensionCode: baseDimension.code,
 			alternateDimensionCode: alternateDimension.code,
 			compatibilityMode: record.compatibilityMode,
 			packagingApprovalReference: record.packagingApprovalReference,
 		});
-		if (!compatible.ok) {
-			return compatible;
-		}
 	} catch (error) {
 		return failFromPersistence(error, "Failed to validate item UoM");
+	}
+}
+
+export async function drizzleCreateItemUom(
+	record: ItemUomCreateRecord,
+	_ports: MutationPorts,
+	meta: { correlationId: string },
+): Promise<Result<ItemUom>> {
+	const factor = normalizeItemUomConversionFactor(record.conversionFactor);
+	if (!factor.ok) {
+		return factor;
+	}
+	const consistentUsage = assertConsistentDefaultItemUomUsage(record);
+	if (!consistentUsage.ok) {
+		return consistentUsage;
+	}
+	const references = await validateItemUomCreateReferences(record);
+	if (!references.ok) {
+		return references;
 	}
 
 	const id = randomUUID();
 	const auditId = randomUUID();
 	const eventId = randomUUID();
-	const changesJson = fieldChangeJson(
-		"alternateUomId",
-		null,
-		record.alternateUomId,
-	);
-	const newValueJson = valueSnapshotJson({
-		conversionFactor: factor.data,
-		isPurchaseUom: record.isPurchaseUom,
-		isSalesUom: record.isSalesUom,
-		isInventoryUom: record.isInventoryUom,
-		isDefaultPurchaseUom: record.isDefaultPurchaseUom,
-		isDefaultSalesUom: record.isDefaultSalesUom,
-		compatibilityMode: record.compatibilityMode,
-		packagingApprovalReference: record.packagingApprovalReference,
+	const preparedAudit = prepareExtensionAudit({
+		organizationId: record.organizationId,
+		actorUserId: record.createdBy,
+		correlationId: meta.correlationId,
+		entity: "item_uom",
+		entityId: id,
+		action: "CREATE",
+		newValue: {
+			alternateUomId: record.alternateUomId,
+			conversionFactor: factor.data,
+			isPurchaseUom: record.isPurchaseUom,
+			isSalesUom: record.isSalesUom,
+			isInventoryUom: record.isInventoryUom,
+			isDefaultPurchaseUom: record.isDefaultPurchaseUom,
+			isDefaultSalesUom: record.isDefaultSalesUom,
+			compatibilityMode: record.compatibilityMode,
+		},
+		reasonCode: "ITEM_UOM_CREATE",
 	});
+	if (!preparedAudit.ok) {
+		return preparedAudit;
+	}
+	const audit = preparedAudit.data;
+	const preparedDemotionAudit = prepareDerivedExtensionAudit({
+		organizationId: record.organizationId,
+		actorUserId: record.createdBy,
+		correlationId: meta.correlationId,
+		entity: "item_uom",
+		action: "UPDATE",
+		oldValue: { defaultUom: true },
+		newValue: { defaultUom: false },
+		reasonCode: "ITEM_UOM_DEFAULT_DEMOTION",
+	});
+	if (!preparedDemotionAudit.ok) {
+		return preparedDemotionAudit;
+	}
+	const demotionAudit = preparedDemotionAudit.data;
 	const payloadJson = eventPayloadJson({
 		organizationId: record.organizationId,
 		entityType: "item_uom",
@@ -3052,9 +3367,8 @@ export async function drizzleCreateItemUom(
 		correlationId: meta.correlationId,
 	});
 	try {
-		const [rows] = await runNeonHttpTransaction<[Record<string, unknown>[]]>(
-			(sql) => [
-				sql`
+		const [rows] = await runNeonHttpTransaction((sql) => [
+			sql`
 					WITH item_locked AS MATERIALIZED (
 						SELECT item.id, item.base_uom_id
 						FROM md_item AS item
@@ -3124,15 +3438,16 @@ export async function drizzleCreateItemUom(
 					defaults_demotion_audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
-						SELECT gen_random_uuid(), organization_id, ${record.createdBy},
-							${meta.correlationId}, 'master_data', 'item_uom', id, 'UPDATE',
-							${fieldChangeJson("defaultUom", true, false)}::jsonb,
-							jsonb_build_object(
-								'isDefaultPurchaseUom', is_default_purchase_uom,
-								'isDefaultSalesUom', is_default_sales_uom
-							)
+						SELECT gen_random_uuid(), ${demotionAudit.organizationId},
+							${demotionAudit.actorUserId}, ${demotionAudit.correlationId},
+							${demotionAudit.module}, ${demotionAudit.entity}, id,
+							${demotionAudit.action}, ${demotionAudit.changesJson}::jsonb,
+							${demotionAudit.oldValueJson}::jsonb, ${demotionAudit.newValueJson}::jsonb,
+							${demotionAudit.metadataJson}::jsonb, ${demotionAudit.ipAddress},
+							${demotionAudit.userAgent}
 						FROM defaults_demoted RETURNING id
 					), defaults_demotion_outboxed AS (
 						INSERT INTO platform_domain_event (
@@ -3153,11 +3468,15 @@ export async function drizzleCreateItemUom(
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, created_by, ${meta.correlationId},
-							'master_data', 'item_uom', id, 'CREATE', ${changesJson}::jsonb, ${newValueJson}::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -3176,8 +3495,7 @@ export async function drizzleCreateItemUom(
 					WHERE (SELECT count(*) FROM defaults_demotion_audited) >= 0
 						AND (SELECT count(*) FROM defaults_demotion_outboxed) >= 0
 				`,
-			],
-		);
+		]);
 		const [row] = rows;
 		if (row === undefined) {
 			return fail("BAD_REQUEST", "Item UoM conversion is not eligible", {
@@ -3252,18 +3570,39 @@ export async function drizzleCreateItemBarcode(
 	const id = randomUUID();
 	const auditId = randomUUID();
 	const eventId = randomUUID();
-	const changesJson = fieldChangeJson(
-		"barcodeValue",
-		null,
-		normalized.data.barcodeValue,
-	);
-	const newValueJson = valueSnapshotJson({
-		normalizedValue: normalized.data.normalizedValue,
-		symbology: record.symbology,
-		uomId: record.uomId,
-		packQuantity: packQuantity?.data ?? null,
-		isPrimary: record.isPrimary,
+	const preparedAudit = prepareExtensionAudit({
+		organizationId: record.organizationId,
+		actorUserId: record.createdBy,
+		correlationId: meta.correlationId,
+		entity: "item_barcode",
+		entityId: id,
+		action: "CREATE",
+		newValue: {
+			symbology: record.symbology,
+			uomId: record.uomId,
+			packQuantity: packQuantity?.data ?? null,
+			isPrimary: record.isPrimary,
+		},
+		reasonCode: "ITEM_BARCODE_ASSIGN",
 	});
+	if (!preparedAudit.ok) {
+		return preparedAudit;
+	}
+	const audit = preparedAudit.data;
+	const preparedDemotionAudit = prepareDerivedExtensionAudit({
+		organizationId: record.organizationId,
+		actorUserId: record.createdBy,
+		correlationId: meta.correlationId,
+		entity: "item_barcode",
+		action: "UPDATE",
+		oldValue: { isPrimary: true },
+		newValue: { isPrimary: false },
+		reasonCode: "ITEM_BARCODE_PRIMARY_DEMOTION",
+	});
+	if (!preparedDemotionAudit.ok) {
+		return preparedDemotionAudit;
+	}
+	const demotionAudit = preparedDemotionAudit.data;
 	const payloadJson = eventPayloadJson({
 		organizationId: record.organizationId,
 		entityType: "item_barcode",
@@ -3278,9 +3617,8 @@ export async function drizzleCreateItemBarcode(
 		correlationId: meta.correlationId,
 	});
 	try {
-		const [rows] = await runNeonHttpTransaction<[Record<string, unknown>[]]>(
-			(sql) => [
-				sql`
+		const [rows] = await runNeonHttpTransaction((sql) => [
+			sql`
 					WITH parent_locked AS MATERIALIZED (
 						SELECT item.id AS parent_id, item.base_uom_id
 						FROM md_item AS item
@@ -3345,12 +3683,16 @@ export async function drizzleCreateItemBarcode(
 					primary_demotion_audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
-						SELECT gen_random_uuid(), organization_id, ${record.createdBy},
-							${meta.correlationId}, 'master_data', 'item_barcode', id, 'UPDATE',
-							${fieldChangeJson("isPrimary", true, false)}::jsonb,
-							${valueSnapshotJson({ isPrimary: false })}::jsonb
+						SELECT gen_random_uuid(), ${demotionAudit.organizationId},
+							${demotionAudit.actorUserId}, ${demotionAudit.correlationId},
+							${demotionAudit.module}, ${demotionAudit.entity}, id,
+							${demotionAudit.action}, ${demotionAudit.changesJson}::jsonb,
+							${demotionAudit.oldValueJson}::jsonb, ${demotionAudit.newValueJson}::jsonb,
+							${demotionAudit.metadataJson}::jsonb, ${demotionAudit.ipAddress},
+							${demotionAudit.userAgent}
 						FROM primary_demoted RETURNING id
 					), primary_demotion_outboxed AS (
 						INSERT INTO platform_domain_event (
@@ -3371,11 +3713,15 @@ export async function drizzleCreateItemBarcode(
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, created_by, ${meta.correlationId},
-							'master_data', 'item_barcode', id, 'CREATE', ${changesJson}::jsonb, ${newValueJson}::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -3394,8 +3740,7 @@ export async function drizzleCreateItemBarcode(
 					WHERE (SELECT count(*) FROM primary_demotion_audited) >= 0
 						AND (SELECT count(*) FROM primary_demotion_outboxed) >= 0
 				`,
-			],
-		);
+		]);
 		const [row] = rows;
 		if (row === undefined) {
 			const parent = await requireUsableItemMutationParent(
@@ -3493,13 +3838,39 @@ export async function drizzleCreateItemExternalId(
 	const id = randomUUID();
 	const auditId = randomUUID();
 	const eventId = randomUUID();
-	const changesJson = fieldChangeJson("externalIdentity", null, "[protected]");
-	const newValueJson = valueSnapshotJson({
-		sourceSystem: record.sourceSystem,
-		externalIdType: record.externalIdType,
-		caseSensitivity: record.caseSensitivity,
-		isPrimary: record.isPrimary,
+	const preparedAudit = prepareExtensionAudit({
+		organizationId: record.organizationId,
+		actorUserId: record.createdBy,
+		correlationId: meta.correlationId,
+		entity: "item_external_id",
+		entityId: id,
+		action: "CREATE",
+		newValue: {
+			sourceSystem: record.sourceSystem,
+			externalIdType: record.externalIdType,
+			caseSensitivity: record.caseSensitivity,
+			isPrimary: record.isPrimary,
+		},
+		reasonCode: "ITEM_EXTERNAL_ID_ASSIGN",
 	});
+	if (!preparedAudit.ok) {
+		return preparedAudit;
+	}
+	const audit = preparedAudit.data;
+	const preparedDemotionAudit = prepareDerivedExtensionAudit({
+		organizationId: record.organizationId,
+		actorUserId: record.createdBy,
+		correlationId: meta.correlationId,
+		entity: "item_external_id",
+		action: "UPDATE",
+		oldValue: { isPrimary: true },
+		newValue: { isPrimary: false },
+		reasonCode: "ITEM_EXTERNAL_ID_PRIMARY_DEMOTION",
+	});
+	if (!preparedDemotionAudit.ok) {
+		return preparedDemotionAudit;
+	}
+	const demotionAudit = preparedDemotionAudit.data;
 	const payloadJson = eventPayloadJson({
 		organizationId: record.organizationId,
 		entityType: "item_external_id",
@@ -3514,9 +3885,8 @@ export async function drizzleCreateItemExternalId(
 		correlationId: meta.correlationId,
 	});
 	try {
-		const [rows] = await runNeonHttpTransaction<[Record<string, unknown>[]]>(
-			(sql) => [
-				sql`
+		const [rows] = await runNeonHttpTransaction((sql) => [
+			sql`
 					WITH parent_locked AS MATERIALIZED (
 						SELECT item.id AS parent_id
 						FROM md_item AS item
@@ -3554,12 +3924,16 @@ export async function drizzleCreateItemExternalId(
 					demotion_audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
-						SELECT gen_random_uuid(), organization_id, ${record.createdBy},
-							${meta.correlationId}, 'master_data', 'item_external_id', id, 'UPDATE',
-							${fieldChangeJson("isPrimary", true, false)}::jsonb,
-							${valueSnapshotJson({ isPrimary: false })}::jsonb
+						SELECT gen_random_uuid(), ${demotionAudit.organizationId},
+							${demotionAudit.actorUserId}, ${demotionAudit.correlationId},
+							${demotionAudit.module}, ${demotionAudit.entity}, id,
+							${demotionAudit.action}, ${demotionAudit.changesJson}::jsonb,
+							${demotionAudit.oldValueJson}::jsonb, ${demotionAudit.newValueJson}::jsonb,
+							${demotionAudit.metadataJson}::jsonb, ${demotionAudit.ipAddress},
+							${demotionAudit.userAgent}
 						FROM demoted RETURNING id
 					), demotion_outboxed AS (
 						INSERT INTO platform_domain_event (
@@ -3583,11 +3957,15 @@ export async function drizzleCreateItemExternalId(
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, created_by, ${meta.correlationId},
-							'master_data', 'item_external_id', id, 'CREATE', ${changesJson}::jsonb, ${newValueJson}::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -3606,8 +3984,7 @@ export async function drizzleCreateItemExternalId(
 					WHERE (SELECT count(*) FROM demotion_audited) >= 0
 						AND (SELECT count(*) FROM demotion_outboxed) >= 0
 				`,
-			],
-		);
+		]);
 		const [row] = rows;
 		if (row === undefined) {
 			return fail("NOT_FOUND", "Item not found", {
@@ -3698,14 +4075,26 @@ export async function drizzleCreateItemAlias(
 	const id = randomUUID();
 	const auditId = randomUUID();
 	const eventId = randomUUID();
-	const changesJson = fieldChangeJson("aliasValue", null, record.aliasValue);
-	const newValueJson = valueSnapshotJson({
-		aliasType: record.aliasType,
-		normalizedValue: record.normalizedValue,
-		languageId: record.languageId,
-		source: record.source,
-		isSearchable: record.isSearchable,
+	const preparedAudit = prepareExtensionAudit({
+		organizationId: record.organizationId,
+		actorUserId: record.createdBy,
+		correlationId: meta.correlationId,
+		entity: "item_alias",
+		entityId: id,
+		action: "CREATE",
+		newValue: {
+			aliasType: record.aliasType,
+			languageId: record.languageId,
+			source: record.source,
+			isSearchable: record.isSearchable,
+			status: "active",
+		},
+		reasonCode: "ITEM_ALIAS_CREATE",
 	});
+	if (!preparedAudit.ok) {
+		return preparedAudit;
+	}
+	const audit = preparedAudit.data;
 	const payloadJson = eventPayloadJson({
 		organizationId: record.organizationId,
 		entityType: "item_alias",
@@ -3720,9 +4109,8 @@ export async function drizzleCreateItemAlias(
 		correlationId: meta.correlationId,
 	});
 	try {
-		const [rows] = await runNeonHttpTransaction<[Record<string, unknown>[]]>(
-			(sql) => [
-				sql`
+		const [rows] = await runNeonHttpTransaction((sql) => [
+			sql`
 					WITH parent_locked AS MATERIALIZED (
 						SELECT item.id AS parent_id
 						FROM md_item AS item
@@ -3755,11 +4143,15 @@ export async function drizzleCreateItemAlias(
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, created_by, ${meta.correlationId},
-							'master_data', 'item_alias', id, 'CREATE', ${changesJson}::jsonb, ${newValueJson}::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -3776,8 +4168,7 @@ export async function drizzleCreateItemAlias(
 					)
 					SELECT mutated.* FROM mutated, audited, outboxed
 				`,
-			],
-		);
+		]);
 		const [row] = rows;
 		if (row === undefined) {
 			const parent = await requireUsableItemMutationParent(
@@ -3926,12 +4317,25 @@ export async function drizzleCreateWarehouseExternalId(
 	const id = randomUUID();
 	const auditId = randomUUID();
 	const eventId = randomUUID();
-	const changesJson = fieldChangeJson("externalIdentity", null, "[protected]");
-	const newValueJson = valueSnapshotJson({
-		sourceSystem: record.sourceSystem,
-		externalIdType: record.externalIdType,
-		caseSensitivity: record.caseSensitivity,
+	const preparedAudit = prepareExtensionAudit({
+		organizationId: record.organizationId,
+		actorUserId: record.createdBy,
+		correlationId: meta.correlationId,
+		entity: "warehouse_external_id",
+		entityId: id,
+		action: "CREATE",
+		newValue: {
+			sourceSystem: record.sourceSystem,
+			externalIdType: record.externalIdType,
+			caseSensitivity: record.caseSensitivity,
+			status: "active",
+		},
+		reasonCode: "WAREHOUSE_EXTERNAL_ID_ASSIGN",
 	});
+	if (!preparedAudit.ok) {
+		return preparedAudit;
+	}
+	const audit = preparedAudit.data;
 	const payloadJson = eventPayloadJson({
 		organizationId: record.organizationId,
 		entityType: "warehouse_external_id",
@@ -3946,9 +4350,8 @@ export async function drizzleCreateWarehouseExternalId(
 		correlationId: meta.correlationId,
 	});
 	try {
-		const [rows] = await runNeonHttpTransaction<[Record<string, unknown>[]]>(
-			(sql) => [
-				sql`
+		const [rows] = await runNeonHttpTransaction((sql) => [
+			sql`
 					WITH parent_locked AS MATERIALIZED (
 						SELECT warehouse.id AS parent_id
 						FROM md_warehouse AS warehouse
@@ -3972,11 +4375,15 @@ export async function drizzleCreateWarehouseExternalId(
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, created_by, ${meta.correlationId},
-							'master_data', 'warehouse_external_id', id, 'CREATE', ${changesJson}::jsonb, ${newValueJson}::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -3993,8 +4400,7 @@ export async function drizzleCreateWarehouseExternalId(
 					)
 					SELECT mutated.* FROM mutated, audited, outboxed
 				`,
-			],
-		);
+		]);
 		const [row] = rows;
 		if (row === undefined) {
 			return fail("NOT_FOUND", "Warehouse not found", {

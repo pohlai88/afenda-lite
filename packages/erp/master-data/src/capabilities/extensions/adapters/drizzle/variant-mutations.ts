@@ -14,6 +14,12 @@
 import { randomUUID } from "node:crypto";
 
 import {
+	type PreparedDerivedEntityAuditInsertValues,
+	type PreparedTransactionalAuditInsertValues,
+	prepareDerivedEntityAuditInsertValues,
+	prepareTransactionalAuditInsertValues,
+} from "@afenda/audit";
+import {
 	and,
 	asc,
 	db,
@@ -33,16 +39,10 @@ import {
 	tenantEntityPredicate,
 } from "@afenda/db";
 import {
-	fromPostgresUnknown,
 	hasPostgresSqlState,
+	normalizePostgresUnknown,
 } from "@afenda/errors/adapters/postgres";
-import {
-	fail,
-	failFromAppError,
-	failFromUnknown,
-	ok,
-	type Result,
-} from "@afenda/errors/result";
+import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
 import type { MasterFailureDetails } from "../../../../contracts/reasons";
 import type { MutationPorts } from "../../../../ports";
 import type {
@@ -90,10 +90,7 @@ import type {
 } from "../../template-store";
 
 function failFromPersistence(error: unknown, fallbackMessage: string) {
-	const mapped = fromPostgresUnknown(error);
-	return mapped === undefined
-		? failFromUnknown(error, fallbackMessage)
-		: failFromAppError(mapped);
+	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
 }
 
 function mapWriteError(
@@ -109,16 +106,143 @@ function mapWriteError(
 	return failFromPersistence(error, fallbackMessage);
 }
 
-function fieldChangeJson(
-	field: string,
-	oldValue: unknown,
-	newValue: unknown,
-): string {
-	return JSON.stringify([{ field, oldValue, newValue }]);
+const VARIANT_AUDIT_SOURCE = "master-data.variant-mutations";
+
+interface VariantAuditInput {
+	action: "CREATE" | "UPDATE" | "DELETE";
+	actorUserId: string;
+	causationId?: string | null;
+	correlationId: string;
+	entity: string;
+	newValue?: Record<string, unknown> | null;
+	oldValue?: Record<string, unknown> | null;
+	organizationId: string;
+	reasonCode: string;
 }
 
-function valueSnapshotJson(value: Record<string, unknown>): string {
-	return JSON.stringify(value);
+function prepareVariantAudit(
+	input: VariantAuditInput & { entityId: string },
+): Result<PreparedTransactionalAuditInsertValues> {
+	return prepareTransactionalAuditInsertValues({
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		correlationId: input.correlationId,
+		module: "master_data",
+		entity: input.entity,
+		entityId: input.entityId,
+		action: input.action,
+		oldValue: input.oldValue,
+		newValue: input.newValue,
+		eventContext: {
+			version: 1,
+			outcome: "SUCCEEDED",
+			source: VARIANT_AUDIT_SOURCE,
+			occurredAt: null,
+			causationId: input.causationId ?? null,
+			reasonCode: input.reasonCode,
+		},
+	});
+}
+
+function prepareDerivedVariantAudit(
+	input: VariantAuditInput,
+): Result<PreparedDerivedEntityAuditInsertValues> {
+	return prepareDerivedEntityAuditInsertValues({
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		correlationId: input.correlationId,
+		module: "master_data",
+		entity: input.entity,
+		action: input.action,
+		oldValue: input.oldValue,
+		newValue: input.newValue,
+		eventContext: {
+			version: 1,
+			outcome: "SUCCEEDED",
+			source: VARIANT_AUDIT_SOURCE,
+			occurredAt: null,
+			causationId: input.causationId ?? null,
+			reasonCode: input.reasonCode,
+		},
+	});
+}
+
+function prepareCreateItemVariantAudits(input: {
+	correlationId: string;
+	itemId: string;
+	record: ItemVariantCreateRecord;
+	valueIds: readonly string[];
+	variantId: string;
+}): Result<{
+	itemAudit: PreparedTransactionalAuditInsertValues;
+	valueAudits: PreparedTransactionalAuditInsertValues[];
+	variantAudit: PreparedTransactionalAuditInsertValues;
+}> {
+	const common = {
+		organizationId: input.record.organizationId,
+		actorUserId: input.record.createdBy,
+		correlationId: input.correlationId,
+		action: "CREATE" as const,
+	};
+	const preparedItemAudit = prepareVariantAudit({
+		...common,
+		entity: "item",
+		entityId: input.itemId,
+		newValue: {
+			code: input.record.code,
+			baseUomId: input.record.baseUomId,
+			itemGroupId: input.record.itemGroupId,
+			templateId: input.record.templateId,
+		},
+		reasonCode: "ITEM_VARIANT_ITEM_CREATE",
+	});
+	if (!preparedItemAudit.ok) {
+		return preparedItemAudit;
+	}
+	const preparedVariantAudit = prepareVariantAudit({
+		...common,
+		entity: "item_variant",
+		entityId: input.variantId,
+		newValue: {
+			combinationKey: input.record.combinationKey,
+			templateId: input.record.templateId,
+			itemId: input.itemId,
+		},
+		reasonCode: "ITEM_VARIANT_CREATE",
+	});
+	if (!preparedVariantAudit.ok) {
+		return preparedVariantAudit;
+	}
+
+	const valueAudits: PreparedTransactionalAuditInsertValues[] = [];
+	for (let index = 0; index < input.record.attributeValues.length; index += 1) {
+		const value = input.record.attributeValues[index];
+		const valueId = input.valueIds[index];
+		if (value === undefined || valueId === undefined) {
+			return fail("INTERNAL_ERROR", "Item variant audit identity mismatch");
+		}
+		const preparedValueAudit = prepareVariantAudit({
+			...common,
+			entity: "item_variant_attribute_value",
+			entityId: valueId,
+			newValue: {
+				attributeId: value.attributeId,
+				valueType: value.valueType,
+				version: 1,
+			},
+			reasonCode: "ITEM_VARIANT_ATTRIBUTE_VALUE_ASSIGN",
+		});
+		if (!preparedValueAudit.ok) {
+			return preparedValueAudit;
+		}
+		valueAudits.push(preparedValueAudit.data);
+	}
+
+	return ok({
+		itemAudit: preparedItemAudit.data,
+		valueAudits,
+		variantAudit: preparedVariantAudit.data,
+	});
 }
 
 function eventPayloadJson(input: {
@@ -544,11 +668,20 @@ export async function drizzleCreateItemTemplate(
 	const id = randomUUID();
 	const auditId = randomUUID();
 	const eventId = randomUUID();
-	const changesJson = fieldChangeJson("code", null, record.code);
-	const newValueJson = valueSnapshotJson({
-		code: record.code,
-		status: "draft",
+	const preparedAudit = prepareVariantAudit({
+		organizationId: record.organizationId,
+		actorUserId: record.createdBy,
+		correlationId: meta.correlationId,
+		entity: "item_template",
+		entityId: id,
+		action: "CREATE",
+		newValue: { code: record.code, status: "draft" },
+		reasonCode: "ITEM_TEMPLATE_CREATE",
 	});
+	if (!preparedAudit.ok) {
+		return preparedAudit;
+	}
+	const audit = preparedAudit.data;
 	const payloadJson = eventPayloadJson({
 		organizationId: record.organizationId,
 		entityType: "item_template",
@@ -559,9 +692,8 @@ export async function drizzleCreateItemTemplate(
 		correlationId: meta.correlationId,
 	});
 	try {
-		const [rows] = await runNeonHttpTransaction<[Record<string, unknown>[]]>(
-			(sql) => [
-				sql`
+		const [rows] = await runNeonHttpTransaction((sql) => [
+			sql`
 					WITH mutated AS (
 						INSERT INTO md_item_template (
 							id, organization_id, code, normalized_code, name,
@@ -575,11 +707,15 @@ export async function drizzleCreateItemTemplate(
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, created_by, ${meta.correlationId},
-							'master_data', 'item_template', id, 'CREATE', ${changesJson}::jsonb, ${newValueJson}::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -596,8 +732,7 @@ export async function drizzleCreateItemTemplate(
 					)
 					SELECT mutated.* FROM mutated, audited, outboxed
 				`,
-			],
-		);
+		]);
 		const [row] = rows;
 		if (row === undefined) {
 			return fail("INTERNAL_ERROR", "Item template create returned no row");
@@ -640,7 +775,21 @@ export async function drizzleUpdateItemTemplate(
 		const nextName = record.name ?? existing.name;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
-		const changesJson = fieldChangeJson("name", existing.name, nextName);
+		const preparedAudit = prepareVariantAudit({
+			organizationId: record.organizationId,
+			actorUserId: record.updatedBy,
+			correlationId: meta.correlationId,
+			entity: "item_template",
+			entityId: record.id,
+			action: "UPDATE",
+			oldValue: { name: existing.name, version: existing.version },
+			newValue: { name: nextName, version: existing.version + 1 },
+			reasonCode: "ITEM_TEMPLATE_UPDATE",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const payloadJson = eventPayloadJson({
 			organizationId: record.organizationId,
 			entityType: "item_template",
@@ -650,9 +799,8 @@ export async function drizzleUpdateItemTemplate(
 			actorId: record.updatedBy,
 			correlationId: meta.correlationId,
 		});
-		const [rows] = await runNeonHttpTransaction<[Record<string, unknown>[]]>(
-			(sql) => [
-				sql`
+		const [rows] = await runNeonHttpTransaction((sql) => [
+			sql`
 					WITH mutated AS (
 						UPDATE md_item_template
 						SET name = ${nextName},
@@ -660,19 +808,22 @@ export async function drizzleUpdateItemTemplate(
 							updated_by = ${record.updatedBy},
 							updated_at = now()
 						WHERE id = ${record.id}
-							AND organization_id = ${record.organizationId}
+							AND md_item_template.organization_id = ${record.organizationId}
 							AND version = ${record.expectedVersion}
 						RETURNING *
 					),
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, ${record.updatedBy}, ${meta.correlationId},
-							'master_data', 'item_template', id, 'UPDATE', ${changesJson}::jsonb,
-							${valueSnapshotJson({ name: nextName })}::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -689,8 +840,7 @@ export async function drizzleUpdateItemTemplate(
 					)
 					SELECT mutated.* FROM mutated, audited, outboxed
 				`,
-			],
-		);
+		]);
 		const [row] = rows;
 		if (row === undefined) {
 			return fail("CONFLICT", "Item template version conflict", {
@@ -745,11 +895,21 @@ export async function drizzleTransitionItemTemplate(
 		if (!lifecycle.ok) {
 			return lifecycle;
 		}
-		const changesJson = fieldChangeJson(
-			"status",
-			existing.status,
-			record.toStatus,
-		);
+		const preparedAudit = prepareVariantAudit({
+			organizationId: record.organizationId,
+			actorUserId: record.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "item_template",
+			entityId: record.id,
+			action: "UPDATE",
+			oldValue: { status: existing.status, version: existing.version },
+			newValue: { status: record.toStatus, version: existing.version + 1 },
+			reasonCode: "ITEM_TEMPLATE_STATUS_TRANSITION",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const payloadJson = eventPayloadJson({
 			organizationId: record.organizationId,
 			entityType: "item_template",
@@ -767,9 +927,8 @@ export async function drizzleTransitionItemTemplate(
 			record.toStatus === "retired" ? new Date() : existing.retiredAt;
 		const retiredBy =
 			record.toStatus === "retired" ? record.actorUserId : existing.retiredBy;
-		const [rows] = await runNeonHttpTransaction<[Record<string, unknown>[]]>(
-			(sql) => [
-				sql`
+		const [rows] = await runNeonHttpTransaction((sql) => [
+			sql`
 					WITH mutated AS (
 						UPDATE md_item_template
 						SET status = ${record.toStatus},
@@ -781,7 +940,7 @@ export async function drizzleTransitionItemTemplate(
 							retired_at = ${retiredAt},
 							retired_by = ${retiredBy}
 						WHERE id = ${record.id}
-							AND organization_id = ${record.organizationId}
+							AND md_item_template.organization_id = ${record.organizationId}
 							AND version = ${record.expectedVersion}
 							AND status = ${existing.status}
 							AND (${record.toStatus} <> 'active' OR (
@@ -827,12 +986,15 @@ export async function drizzleTransitionItemTemplate(
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, ${record.actorUserId}, ${meta.correlationId},
-							'master_data', 'item_template', id, 'UPDATE', ${changesJson}::jsonb,
-							${valueSnapshotJson({ status: record.toStatus })}::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -849,8 +1011,7 @@ export async function drizzleTransitionItemTemplate(
 					)
 					SELECT mutated.* FROM mutated, audited, outboxed
 				`,
-			],
-		);
+		]);
 		const [row] = rows;
 		if (row === undefined) {
 			const [current] = await db
@@ -1083,12 +1244,24 @@ export async function drizzleAddItemTemplateAttribute(
 	const id = randomUUID();
 	const auditId = randomUUID();
 	const eventId = randomUUID();
-	const changesJson = fieldChangeJson("code", null, record.code);
-	const newValueJson = valueSnapshotJson({
-		code: record.code,
-		dataType: record.dataType,
-		isVariantDefining: record.isVariantDefining,
+	const preparedAudit = prepareVariantAudit({
+		organizationId: record.organizationId,
+		actorUserId: record.createdBy,
+		correlationId: meta.correlationId,
+		entity: "item_template_attribute",
+		entityId: id,
+		action: "CREATE",
+		newValue: {
+			code: record.code,
+			dataType: record.dataType,
+			isVariantDefining: record.isVariantDefining,
+		},
+		reasonCode: "ITEM_TEMPLATE_ATTRIBUTE_CREATE",
 	});
+	if (!preparedAudit.ok) {
+		return preparedAudit;
+	}
+	const audit = preparedAudit.data;
 	const payloadJson = extensionEventPayloadJson({
 		organizationId: record.organizationId,
 		entityType: "item_template_attribute",
@@ -1103,9 +1276,8 @@ export async function drizzleAddItemTemplateAttribute(
 		correlationId: meta.correlationId,
 	});
 	try {
-		const [rows] = await runNeonHttpTransaction<[Record<string, unknown>[]]>(
-			(sql) => [
-				sql`
+		const [rows] = await runNeonHttpTransaction((sql) => [
+			sql`
 					WITH parent_locked AS MATERIALIZED (
 						SELECT template.id
 						FROM md_item_template template
@@ -1133,12 +1305,15 @@ export async function drizzleAddItemTemplateAttribute(
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, created_by, ${meta.correlationId},
-							'master_data', 'item_template_attribute', id, 'CREATE',
-							${changesJson}::jsonb, ${newValueJson}::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -1156,8 +1331,7 @@ export async function drizzleAddItemTemplateAttribute(
 					)
 					SELECT mutated.* FROM mutated, audited, outboxed
 				`,
-			],
-		);
+		]);
 		const [row] = rows;
 		if (row === undefined) {
 			return fail(
@@ -1252,11 +1426,20 @@ export async function drizzleAddItemTemplateAttributeOption(
 	const id = randomUUID();
 	const auditId = randomUUID();
 	const eventId = randomUUID();
-	const changesJson = fieldChangeJson("code", null, record.code);
-	const newValueJson = valueSnapshotJson({
-		code: record.code,
-		label: record.label,
+	const preparedAudit = prepareVariantAudit({
+		organizationId: record.organizationId,
+		actorUserId: record.createdBy,
+		correlationId: meta.correlationId,
+		entity: "item_template_attribute_option",
+		entityId: id,
+		action: "CREATE",
+		newValue: { code: record.code, label: record.label },
+		reasonCode: "ITEM_TEMPLATE_ATTRIBUTE_OPTION_CREATE",
 	});
+	if (!preparedAudit.ok) {
+		return preparedAudit;
+	}
+	const audit = preparedAudit.data;
 	const payloadJson = extensionEventPayloadJson({
 		organizationId: record.organizationId,
 		entityType: "item_template_attribute_option",
@@ -1271,9 +1454,8 @@ export async function drizzleAddItemTemplateAttributeOption(
 		correlationId: meta.correlationId,
 	});
 	try {
-		const [rows] = await runNeonHttpTransaction<[Record<string, unknown>[]]>(
-			(sql) => [
-				sql`
+		const [rows] = await runNeonHttpTransaction((sql) => [
+			sql`
 					WITH parent_locked AS MATERIALIZED (
 						SELECT attribute.id
 						FROM md_item_template_attribute attribute
@@ -1303,12 +1485,15 @@ export async function drizzleAddItemTemplateAttributeOption(
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, created_by, ${meta.correlationId},
-							'master_data', 'item_template_attribute_option', id, 'CREATE',
-							${changesJson}::jsonb, ${newValueJson}::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -1326,8 +1511,7 @@ export async function drizzleAddItemTemplateAttributeOption(
 					)
 					SELECT mutated.* FROM mutated, audited, outboxed
 				`,
-			],
-		);
+		]);
 		const [row] = rows;
 		if (row === undefined) {
 			return fail("CONFLICT", "Template attribute option precondition failed", {
@@ -1509,13 +1693,6 @@ export async function drizzleCreateItemVariant(
 	const itemEventId = randomUUID();
 	const variantAuditId = randomUUID();
 	const variantEventId = randomUUID();
-	const itemChangesJson = fieldChangeJson("code", null, record.code);
-	const itemNewValueJson = valueSnapshotJson({
-		code: record.code,
-		baseUomId: record.baseUomId,
-		itemGroupId: record.itemGroupId,
-		templateId: record.templateId,
-	});
 	const itemPayloadJson = eventPayloadJson({
 		organizationId: record.organizationId,
 		entityType: "item",
@@ -1524,16 +1701,6 @@ export async function drizzleCreateItemVariant(
 		version: 1,
 		actorId: record.createdBy,
 		correlationId: meta.correlationId,
-	});
-	const variantChangesJson = fieldChangeJson(
-		"combinationKey",
-		null,
-		record.combinationKey,
-	);
-	const variantNewValueJson = valueSnapshotJson({
-		combinationKey: record.combinationKey,
-		templateId: record.templateId,
-		itemId,
 	});
 	const variantPayloadJson = eventPayloadJson({
 		organizationId: record.organizationId,
@@ -1548,15 +1715,20 @@ export async function drizzleCreateItemVariant(
 	const valueAuditIds = record.attributeValues.map(() => randomUUID());
 	const valueEventIds = record.attributeValues.map(() => randomUUID());
 	const attributeValuesJson = JSON.stringify(record.attributeValues);
+	const preparedAudits = prepareCreateItemVariantAudits({
+		correlationId: meta.correlationId,
+		itemId,
+		record,
+		valueIds,
+		variantId,
+	});
+	if (!preparedAudits.ok) {
+		return preparedAudits;
+	}
+	const { itemAudit, valueAudits, variantAudit } = preparedAudits.data;
 
 	try {
-		const results = await runNeonHttpTransaction<
-			[
-				Record<string, unknown>[],
-				Record<string, unknown>[],
-				...Record<string, unknown>[][],
-			]
-		>(
+		const results = await runNeonHttpTransaction(
 			(sql) => {
 				const statements = [
 					sql`
@@ -1693,12 +1865,15 @@ export async function drizzleCreateItemVariant(
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${itemAuditId}, organization_id, created_by, ${meta.correlationId},
-							'master_data', 'item', id, 'CREATE', ${itemChangesJson}::jsonb,
-							${itemNewValueJson}::jsonb
+							${itemAuditId}, ${itemAudit.organizationId}, ${itemAudit.actorUserId},
+							${itemAudit.correlationId}, ${itemAudit.module}, ${itemAudit.entity},
+							${itemAudit.entityId}, ${itemAudit.action}, ${itemAudit.changesJson}::jsonb,
+							${itemAudit.oldValueJson}::jsonb, ${itemAudit.newValueJson}::jsonb,
+							${itemAudit.metadataJson}::jsonb, ${itemAudit.ipAddress}, ${itemAudit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -1731,12 +1906,15 @@ export async function drizzleCreateItemVariant(
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${variantAuditId}, organization_id, created_by, ${meta.correlationId},
-							'master_data', 'item_variant', id, 'CREATE', ${variantChangesJson}::jsonb,
-							${variantNewValueJson}::jsonb
+							${variantAuditId}, ${variantAudit.organizationId}, ${variantAudit.actorUserId},
+							${variantAudit.correlationId}, ${variantAudit.module}, ${variantAudit.entity},
+							${variantAudit.entityId}, ${variantAudit.action}, ${variantAudit.changesJson}::jsonb,
+							${variantAudit.oldValueJson}::jsonb, ${variantAudit.newValueJson}::jsonb,
+							${variantAudit.metadataJson}::jsonb, ${variantAudit.ipAddress}, ${variantAudit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -1760,11 +1938,13 @@ export async function drizzleCreateItemVariant(
 					const valueId = valueIds[index];
 					const valueAuditId = valueAuditIds[index];
 					const valueEventId = valueEventIds[index];
+					const valueAudit = valueAudits[index];
 					if (
 						value === undefined ||
 						valueId === undefined ||
 						valueAuditId === undefined ||
-						valueEventId === undefined
+						valueEventId === undefined ||
+						valueAudit === undefined
 					) {
 						continue;
 					}
@@ -1818,19 +1998,16 @@ export async function drizzleCreateItemVariant(
 						), audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module,
-								entity, entity_id, action, changes, new_value
+								entity, entity_id, action, changes, old_value, new_value,
+								metadata, ip_address, user_agent
 							)
 							SELECT
-								${valueAuditId}, organization_id, created_by, ${meta.correlationId},
-								'master_data', 'item_variant_attribute_value', id, 'CREATE',
-								jsonb_build_array(jsonb_build_object(
-									'field', 'attributeId', 'oldValue', NULL, 'newValue', attribute_id
-								)),
-								jsonb_build_object(
-									'attributeId', attribute_id,
-									'valueType', value_type,
-									'version', version
-								)
+								${valueAuditId}, ${valueAudit.organizationId}, ${valueAudit.actorUserId},
+								${valueAudit.correlationId}, ${valueAudit.module}, ${valueAudit.entity},
+								${valueAudit.entityId}, ${valueAudit.action}, ${valueAudit.changesJson}::jsonb,
+								${valueAudit.oldValueJson}::jsonb, ${valueAudit.newValueJson}::jsonb,
+								${valueAudit.metadataJson}::jsonb, ${valueAudit.ipAddress},
+								${valueAudit.userAgent}
 							FROM validated_value
 							RETURNING id
 						), outboxed AS (
@@ -1931,9 +2108,8 @@ export async function drizzleRetireItemVariantMembership(
 ): Promise<Result<{ retired: boolean }>> {
 	const eventId = randomUUID();
 	try {
-		const [rows] = await runNeonHttpTransaction<[Record<string, unknown>[]]>(
-			(sql) => [
-				sql`
+		const [rows] = await runNeonHttpTransaction((sql) => [
+			sql`
 					WITH variant_retired AS (
 						UPDATE md_item_variant
 						SET retired_at = now(),
@@ -1969,8 +2145,7 @@ export async function drizzleRetireItemVariantMembership(
 					)
 					SELECT variant_retired.* FROM variant_retired
 				`,
-			],
-		);
+		]);
 		return ok({ retired: rows[0] !== undefined });
 	} catch (error) {
 		return failFromPersistence(
@@ -2025,19 +2200,21 @@ export async function drizzleTransitionItemWithVariantSideEffect(
 
 		const eventType = `master_data.item.${meta.eventSuffix}.v1`;
 		const nextVersion = existing.version + 1;
-		const changesJson = fieldChangeJson(
-			"status",
-			existing.status,
-			record.toStatus,
-		);
-		const oldValueJson = valueSnapshotJson({
-			status: existing.status,
-			version: existing.version,
+		const preparedItemAudit = prepareVariantAudit({
+			organizationId: record.organizationId,
+			actorUserId: record.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "item",
+			entityId: record.id,
+			action: "UPDATE",
+			oldValue: { status: existing.status, version: existing.version },
+			newValue: { status: record.toStatus, version: nextVersion },
+			reasonCode: "ITEM_STATUS_TRANSITION",
 		});
-		const newValueJson = valueSnapshotJson({
-			status: record.toStatus,
-			version: nextVersion,
-		});
+		if (!preparedItemAudit.ok) {
+			return preparedItemAudit;
+		}
+		const itemAudit = preparedItemAudit.data;
 		const payloadJson = eventPayloadJson({
 			organizationId: existing.organizationId,
 			entityType: "item",
@@ -2066,8 +2243,27 @@ export async function drizzleTransitionItemWithVariantSideEffect(
 				: existing.activatedBy;
 		const retiredBy = record.toStatus === "retired" ? record.actorUserId : null;
 		const retireVariant = record.toStatus === "retired";
+		const preparedVariantAudit = retireVariant
+			? prepareDerivedVariantAudit({
+					organizationId: record.organizationId,
+					actorUserId: record.actorUserId,
+					correlationId: meta.correlationId,
+					entity: "item_variant",
+					action: "UPDATE",
+					oldValue: { retired: false },
+					newValue: { retired: true },
+					reasonCode: "ITEM_VARIANT_RETIRE_WITH_ITEM",
+				})
+			: null;
+		let variantAudit: PreparedDerivedEntityAuditInsertValues | null = null;
+		if (preparedVariantAudit !== null) {
+			if (!preparedVariantAudit.ok) {
+				return preparedVariantAudit;
+			}
+			variantAudit = preparedVariantAudit.data;
+		}
 
-		const [rows] = await runNeonHttpTransaction<[Record<string, unknown>[]]>(
+		const [rows] = await runNeonHttpTransaction(
 			(sql) => [
 				retireVariant
 					? sql`
@@ -2136,12 +2332,15 @@ export async function drizzleTransitionItemWithVariantSideEffect(
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes, old_value, new_value
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, ${record.actorUserId}, ${meta.correlationId},
-								'master_data', 'item', id, 'UPDATE', ${changesJson}::jsonb,
-								${oldValueJson}::jsonb, ${newValueJson}::jsonb
+								${auditId}, ${itemAudit.organizationId}, ${itemAudit.actorUserId},
+								${itemAudit.correlationId}, ${itemAudit.module}, ${itemAudit.entity},
+								${itemAudit.entityId}, ${itemAudit.action}, ${itemAudit.changesJson}::jsonb,
+								${itemAudit.oldValueJson}::jsonb, ${itemAudit.newValueJson}::jsonb,
+								${itemAudit.metadataJson}::jsonb, ${itemAudit.ipAddress}, ${itemAudit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -2175,16 +2374,18 @@ export async function drizzleTransitionItemWithVariantSideEffect(
 						variant_audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes, old_value, new_value
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${variantAuditId}, organization_id, ${record.actorUserId}, ${meta.correlationId},
-								'master_data', 'item_variant', id, 'UPDATE',
-								jsonb_build_array(jsonb_build_object(
-									'field', 'retiredAt', 'oldValue', NULL, 'newValue', retired_at
-								)),
-								jsonb_build_object('retiredAt', NULL, 'version', version - 1),
-								jsonb_build_object('retiredAt', retired_at, 'version', version)
+								${variantAuditId}, ${variantAudit?.organizationId ?? null},
+								${variantAudit?.actorUserId ?? null}, ${variantAudit?.correlationId ?? null},
+								${variantAudit?.module ?? null}, ${variantAudit?.entity ?? null}, id,
+								${variantAudit?.action ?? null}, ${variantAudit?.changesJson ?? null}::jsonb,
+								${variantAudit?.oldValueJson ?? null}::jsonb,
+								${variantAudit?.newValueJson ?? null}::jsonb,
+								${variantAudit?.metadataJson ?? null}::jsonb,
+								${variantAudit?.ipAddress ?? null}, ${variantAudit?.userAgent ?? null}
 							FROM variant_retired
 							RETURNING id
 						),
@@ -2261,12 +2462,15 @@ export async function drizzleTransitionItemWithVariantSideEffect(
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes, old_value, new_value
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, ${record.actorUserId}, ${meta.correlationId},
-								'master_data', 'item', id, 'UPDATE', ${changesJson}::jsonb,
-								${oldValueJson}::jsonb, ${newValueJson}::jsonb
+								${auditId}, ${itemAudit.organizationId}, ${itemAudit.actorUserId},
+								${itemAudit.correlationId}, ${itemAudit.module}, ${itemAudit.entity},
+								${itemAudit.entityId}, ${itemAudit.action}, ${itemAudit.changesJson}::jsonb,
+								${itemAudit.oldValueJson}::jsonb, ${itemAudit.newValueJson}::jsonb,
+								${itemAudit.metadataJson}::jsonb, ${itemAudit.ipAddress}, ${itemAudit.userAgent}
 							FROM mutated
 							RETURNING id
 						),

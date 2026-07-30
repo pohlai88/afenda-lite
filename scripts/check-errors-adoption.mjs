@@ -23,19 +23,19 @@ const UNSUPPORTED_ERROR_IMPORT_PATTERN =
 const RESULT_PATTERN = /\b(?:Promise<)?Result</u;
 const APP_ERROR_PATTERN = /\bAppError\b/u;
 const NORMALIZER_PATTERN =
-	/\b(?:failFromUnknown|normalizeUnknown|fromPostgresUnknown|failFromAppError|mapPersistenceFailure|translateCorporateAdministrationInfrastructureError|actionFailFromUnknown|actionFailInternal)\b/u;
-const POSTGRES_MAPPING_PATTERN = /\bfromPostgresUnknown\b/u;
+	/\b(?:failFromUnknown|normalizeUnknown|normalizePostgresUnknown|failFromAppError|mapPersistenceFailure|translateCorporateAdministrationInfrastructureError|actionFailFromUnknown|actionFailInternal)\b/u;
+const POSTGRES_MAPPING_PATTERN = /\bnormalizePostgresUnknown\b/u;
 const SHARED_POSTGRES_MAPPER_PATTERN =
 	/\b(?:mapPersistenceFailure|translateCorporateAdministrationInfrastructureError)\b/u;
 const HTTP_PROJECTION_PATTERN =
-	/\b(?:httpErrorBody|apiErrorBody|ERROR_HTTP_STATUS|API_ERROR_HTTP_STATUS|API_ERROR_CODES|ERROR_CODES|ApiErrorCode|ErrorCode|retryAfterSeconds)\b/u;
+	/\b(?:projectHttpError|httpErrorBody|apiErrorBody|ERROR_HTTP_STATUS|API_ERROR_HTTP_STATUS|API_ERROR_CODES|ERROR_CODES|ApiErrorCode|ErrorCode|retryAfterSeconds)\b/u;
 const APP_ERROR_FACTORY_PATTERN =
 	/\b(?:badRequest|unauthorized|forbidden|notFound|conflict|validationError|rateLimited|serviceUnavailable|internalError|new\s+AppError)\b/u;
 const CATCH_PATTERN = /\bcatch(?:\s*\([^)]*\))?\s*\{/u;
 const DB_IMPORT_PATTERN =
 	/from\s+["'](?:@afenda\/db|drizzle-orm(?:\/[^"']*)?|@neondatabase\/serverless|postgres|pg)["']/u;
 const FAILURE_CONSTRUCTION_PATTERN =
-	/\b(?:fail|actionFail)\s*\(|return\s+\{\s*ok:\s*false\b/u;
+	/\b(?:fail|failFromAppError|failFromUnknown|actionFail)\s*\(|return\s+\{\s*ok:\s*false\b/u;
 const UNEXPECTED_FAILURE_CONSTRUCTION_PATTERN =
 	/\b(?:fail|actionFail)\s*\(\s*["']INTERNAL_ERROR["']|return\s+\{\s*ok:\s*false\b/u;
 const CATCH_START_PATTERN = /\bcatch(?:\s*\([^)]*\))?\s*\{/gu;
@@ -465,6 +465,9 @@ function analyzePackage(packageJsonPath, root) {
 		const usesSharedPostgresMapper =
 			hasSharedPostgresMapper && SHARED_POSTGRES_MAPPER_PATTERN.test(content);
 		const constructsFailure = FAILURE_CONSTRUCTION_PATTERN.test(content);
+		const hasFailureCatch = catches.some((block) =>
+			FAILURE_CONSTRUCTION_PATTERN.test(block),
+		);
 		const hasHttpProjection =
 			ERROR_HTTP_IMPORT_PATTERN.test(content) ||
 			(importsErrors && HTTP_PROJECTION_PATTERN.test(content));
@@ -487,12 +490,13 @@ function analyzePackage(packageJsonPath, root) {
 		if (hasCatch && hasNormalizer) {
 			normalizedCatchFiles += 1;
 		}
-		if (hasCatch && isDbBoundary) {
+		if (hasCatch && isDbBoundary && hasFailureCatch) {
 			dbCatchFiles += 1;
 		}
 		if (
 			hasCatch &&
 			isDbBoundary &&
+			hasFailureCatch &&
 			(hasPostgresMapping || usesSharedPostgresMapper)
 		) {
 			postgresMappedDbCatchFiles += 1;
@@ -519,6 +523,7 @@ function analyzePackage(packageJsonPath, root) {
 		if (
 			hasCatch &&
 			isDbBoundary &&
+			hasFailureCatch &&
 			!hasPostgresMapping &&
 			!usesSharedPostgresMapper
 		) {
@@ -564,7 +569,9 @@ function analyzePackage(packageJsonPath, root) {
 	}
 
 	if (dbCatchFiles > 0 && postgresMappedDbCatchFiles < dbCatchFiles) {
-		issues.push("database catch files must explicitly use fromPostgresUnknown");
+		issues.push(
+			"database catch files must explicitly use normalizePostgresUnknown",
+		);
 	}
 
 	let status = "REVIEW";

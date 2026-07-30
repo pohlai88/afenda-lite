@@ -12,6 +12,7 @@ import { extname, join, relative } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import ts from "typescript";
+import { parseHardTenantRootEntries } from "./lib/hard-tenant-root-registry.mjs";
 
 const ROOTS = ["apps/web", "packages"];
 const EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"]);
@@ -25,9 +26,6 @@ const SKIP_DIR_NAMES = new Set([
 	"testing",
 ]);
 const HARD_ROOTS_PATH = "packages/data-plane/db/src/hard-tenant-roots.ts";
-const HARD_ROOTS_OBJECT_PATTERN =
-	/export const HARD_TENANT_ROOT_TABLES = \{([\s\S]*?)\n\s*\} as const;/;
-const IDENTIFIER_PATTERN = /^[A-Za-z_$][\w$]*$/;
 
 function normalizePath(path) {
 	return path.replaceAll("\\", "/");
@@ -62,15 +60,8 @@ function walk(dir, out) {
 }
 
 export function loadHardTenantTableIdentifiers(source) {
-	const body = source.match(HARD_ROOTS_OBJECT_PATTERN)?.[1];
-	if (!body) {
-		throw new Error("Could not read HARD_TENANT_ROOT_TABLES object");
-	}
 	return new Set(
-		body
-			.split(",")
-			.map((entry) => entry.trim())
-			.filter((entry) => IDENTIFIER_PATTERN.test(entry)),
+		parseHardTenantRootEntries(source).map((entry) => entry.tableIdentifier),
 	);
 }
 
@@ -271,6 +262,21 @@ export function analyzeTenantSqlSafety({
 		}
 	}
 
+	function analyzeInsert(node, table) {
+		const chain = highestQueryChainNode(node);
+		const valuesText = findCalls(chain, new Set(["values"]))
+			.map((call) => resolvedArgumentText(call, sourceFile, declarations))
+			.join("\n");
+		if (!/\borganizationId\b/.test(valuesText)) {
+			addFinding(
+				node,
+				"tenant-insert-missing-organization",
+				table,
+				"INSERT must stamp organizationId in the database values",
+			);
+		}
+	}
+
 	function visit(node) {
 		if (!ts.isCallExpression(node)) {
 			ts.forEachChild(node, visit);
@@ -291,6 +297,8 @@ export function analyzeTenantSqlSafety({
 
 		if (name === "update" || name === "delete") {
 			analyzeMutation(node, table);
+		} else if (name === "insert") {
+			analyzeInsert(node, table);
 		} else if (name === "from" || name.endsWith("Join")) {
 			analyzeRead(node, table);
 		}

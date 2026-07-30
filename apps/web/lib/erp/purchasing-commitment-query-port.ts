@@ -10,23 +10,15 @@ import {
 	supplierInvoice,
 	supplierInvoiceLine,
 } from "@afenda/db";
-import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
-import {
-	failFromAppError,
-	failFromUnknown,
-	ok,
-	type Result,
-} from "@afenda/errors/result";
+import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
+import { failFromAppError, ok, type Result } from "@afenda/errors/result";
 import type {
 	PurchaseOrderCommitmentQueryPort,
 	PurchaseOrderCommitmentStatus,
 } from "@afenda/purchasing";
 
 function failFromPersistence(error: unknown, fallbackMessage: string) {
-	const mapped = fromPostgresUnknown(error);
-	return mapped === undefined
-		? failFromUnknown(error, fallbackMessage)
-		: failFromAppError(mapped);
+	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
 }
 
 /**

@@ -2,12 +2,12 @@ import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/neon-http";
 import type { AnyPgColumn, AnyPgTable, PgColumn } from "drizzle-orm/pg-core";
 import { databaseSchema } from "./database-schema";
-import { getNeonSql } from "./http-transaction";
+import { getNeonDriverSql } from "./http-transaction";
 
 export type DbSchema = typeof databaseSchema;
 
 function createDb() {
-	return drizzle(getNeonSql(), { schema: databaseSchema });
+	return drizzle(getNeonDriverSql(), { schema: databaseSchema });
 }
 
 export type Database = ReturnType<typeof createDb>;

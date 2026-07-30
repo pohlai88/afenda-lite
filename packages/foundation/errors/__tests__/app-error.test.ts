@@ -46,7 +46,7 @@ describe("AppError", () => {
 		expect(isAppError(error)).toBe(true);
 	});
 
-	it("recognizes a compatible cross-package error", () => {
+	it("rejects a forged marker object", () => {
 		const marker = Symbol.for("@afenda/errors/AppError");
 		const error = {
 			[marker]: true,
@@ -57,7 +57,7 @@ describe("AppError", () => {
 			details: undefined,
 		};
 
-		expect(isAppError(error)).toBe(true);
+		expect(isAppError(error)).toBe(false);
 	});
 
 	it("rejects an incomplete marked object", () => {
@@ -96,7 +96,7 @@ describe("AppError", () => {
 		expect(isAppError(value)).toBe(false);
 	});
 
-	it("reads structural properties once while checking compatibility", () => {
+	it("does not read structural properties while checking identity", () => {
 		const marker = Symbol.for("@afenda/errors/AppError");
 		let codeReads = 0;
 		const value = {
@@ -110,8 +110,8 @@ describe("AppError", () => {
 			},
 		};
 
-		expect(isAppError(value)).toBe(true);
-		expect(codeReads).toBe(1);
+		expect(isAppError(value)).toBe(false);
+		expect(codeReads).toBe(0);
 	});
 
 	it("identifies operational errors", () => {
@@ -136,7 +136,25 @@ describe("AppError", () => {
 		).toBe(false);
 	});
 
-	it("identifies compatible cross-package operational errors", () => {
+	it("keeps retryability as typed control metadata", () => {
+		const error = new AppError({
+			code: "SERVICE_UNAVAILABLE",
+			message: "Database unavailable",
+			retryable: true,
+		});
+
+		expect(error.retryable).toBe(true);
+		expect(error.details).toBeUndefined();
+		expect(
+			new AppError({
+				code: "INTERNAL_ERROR",
+				message: "Database unavailable",
+				retryable: true,
+			}).retryable,
+		).toBe(false);
+	});
+
+	it("rejects forged cross-package operational errors", () => {
 		const marker = Symbol.for("@afenda/errors/AppError");
 
 		expect(
@@ -147,6 +165,6 @@ describe("AppError", () => {
 				code: "CONFLICT",
 				isOperational: true,
 			}),
-		).toBe(true);
+		).toBe(false);
 	});
 });

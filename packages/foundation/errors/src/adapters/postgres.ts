@@ -5,6 +5,7 @@
  */
 import { AppError } from "../core/app-error";
 import type { ErrorCode } from "../core/codes";
+import { normalizeUnknown } from "../core/normalize";
 
 const SQLSTATE_PATTERN = /^[0-9A-Z]{5}$/;
 const MAX_CAUSE_DEPTH = 4;
@@ -23,8 +24,8 @@ const SQLSTATE_MAP = {
 		isOperational: true,
 	},
 	"23503": {
-		code: "BAD_REQUEST",
-		message: "A referenced record does not exist or is still in use",
+		code: "CONFLICT",
+		message: "The operation conflicts with a referenced record",
 		isOperational: true,
 	},
 	"23502": {
@@ -66,6 +67,24 @@ const SQLSTATE_MAP = {
 		isOperational: true,
 		retryable: true,
 	},
+	"57P01": {
+		code: "SERVICE_UNAVAILABLE",
+		message: "The database is temporarily unavailable",
+		isOperational: true,
+		retryable: true,
+	},
+	"57P02": {
+		code: "SERVICE_UNAVAILABLE",
+		message: "The database is temporarily unavailable",
+		isOperational: true,
+		retryable: true,
+	},
+	"55P03": {
+		code: "CONFLICT",
+		message: "The operation conflicted with a database lock",
+		isOperational: true,
+		retryable: true,
+	},
 	"28000": {
 		code: "SERVICE_UNAVAILABLE",
 		message: "The database service could not be accessed",
@@ -81,6 +100,28 @@ const SQLSTATE_MAP = {
 const SQLSTATE_MAPPINGS: Readonly<Record<string, SqlStateMapping>> =
 	SQLSTATE_MAP;
 const SQLSTATE_KEYS = ["code", "sqlState", "sqlstate"] as const;
+
+function mappingForSqlState(sqlState: string): SqlStateMapping | undefined {
+	const exact = SQLSTATE_MAPPINGS[sqlState];
+	if (exact !== undefined) {
+		return exact;
+	}
+	if (sqlState.startsWith("08") || sqlState.startsWith("53")) {
+		return {
+			code: "SERVICE_UNAVAILABLE",
+			message: "The database is temporarily unavailable",
+			isOperational: true,
+			retryable: true,
+		};
+	}
+	if (sqlState.startsWith("58") || sqlState.startsWith("XX")) {
+		return {
+			code: "INTERNAL_ERROR",
+			message: "An unexpected error occurred",
+			isOperational: false,
+		};
+	}
+}
 
 function readProperty(record: Record<string, unknown>, key: string): unknown {
 	try {
@@ -127,12 +168,12 @@ export function hasPostgresSqlState(error: unknown, expected: string): boolean {
  * Driver messages, SQL text, stack traces, and raw causes are never included in
  * the public details projection.
  */
-export function fromPostgresUnknown(error: unknown): AppError | undefined {
+function mapPostgresUnknown(error: unknown): AppError | undefined {
 	const sqlState = postgresSqlState(error);
 	if (sqlState === undefined) {
 		return;
 	}
-	const mapping = SQLSTATE_MAPPINGS[sqlState];
+	const mapping = mappingForSqlState(sqlState);
 	if (mapping === undefined) {
 		return new AppError({
 			code: "INTERNAL_ERROR",
@@ -146,6 +187,33 @@ export function fromPostgresUnknown(error: unknown): AppError | undefined {
 		message: mapping.message,
 		isOperational: mapping.isOperational,
 		cause: error,
-		...(mapping.retryable === true ? { details: { retryable: true } } : {}),
+		retryable: mapping.retryable === true,
 	});
+}
+
+/**
+ * Total PostgreSQL boundary normalizer.
+ *
+ * Recognized SQLSTATE values use the explicit driver-free mapping. Every other
+ * value becomes the same safe INTERNAL_ERROR used by generic normalization.
+ */
+export function normalizePostgresUnknown(
+	error: unknown,
+	operation?: string,
+): AppError {
+	const mapped = mapPostgresUnknown(error);
+	if (mapped !== undefined) {
+		return operation === undefined
+			? mapped
+			: new AppError({
+					code: mapped.code,
+					message: mapped.message,
+					...(mapped.details === undefined ? {} : { details: mapped.details }),
+					isOperational: mapped.isOperational,
+					operation,
+					retryable: mapped.retryable,
+					cause: error,
+				});
+	}
+	return normalizeUnknown(error, operation);
 }

@@ -9,15 +9,8 @@ import {
 	platformRbacAudit,
 	platformRoleAssignment,
 } from "@afenda/db";
-import { isAppError } from "@afenda/errors";
-import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
-import {
-	fail,
-	failFromAppError,
-	failFromUnknown,
-	ok,
-	type Result,
-} from "@afenda/errors/result";
+import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
+import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
 
 import {
 	type GetOrganizationUsageInput,
@@ -50,25 +43,18 @@ export function usagePeriodUtcBounds(period: string): {
 }
 
 function mapUsageFailure(error: unknown): Result<never> {
-	const mapped = fromPostgresUnknown(error);
-	if (mapped !== undefined) {
-		return failFromAppError(mapped);
-	}
+	const mapped = normalizePostgresUnknown(error, "Load organization usage");
 
-	if (isAppError(error)) {
-		if (error.code === "FORBIDDEN") {
-			return fail(
-				"FORBIDDEN",
-				"Usage metrics require the active session organization",
-			);
-		}
-		if (error.code === "UNAUTHORIZED") {
-			return fail("UNAUTHORIZED", "Not authorized for organization usage");
-		}
-		return failFromAppError(error);
+	if (mapped.code === "FORBIDDEN") {
+		return fail(
+			"FORBIDDEN",
+			"Usage metrics require the active session organization",
+		);
 	}
-
-	return failFromUnknown(error, "Failed to load organization usage");
+	if (mapped.code === "UNAUTHORIZED") {
+		return fail("UNAUTHORIZED", "Not authorized for organization usage");
+	}
+	return failFromAppError(mapped);
 }
 
 /**

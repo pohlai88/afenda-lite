@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { buildTransactionalAuditInsert } from "@afenda/audit";
 import {
 	and,
 	asc,
@@ -18,14 +19,8 @@ import {
 	salesReturnAuthorization,
 	salesReturnAuthorizationLine,
 } from "@afenda/db";
-import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
-import {
-	fail,
-	failFromAppError,
-	failFromUnknown,
-	ok,
-	type Result,
-} from "@afenda/errors/result";
+import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
+import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
 
 const SQL_IDENTIFIER_PATTERN = /^[a-z_]+$/u;
 
@@ -63,10 +58,7 @@ import type {
 } from "../../types";
 
 function failFromPersistence(error: unknown, fallbackMessage: string) {
-	const mapped = fromPostgresUnknown(error);
-	return mapped === undefined
-		? failFromUnknown(error, fallbackMessage)
-		: failFromAppError(mapped);
+	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
 }
 
 type EvidenceSeed = Omit<MutationEvidence, "entityId" | "version">;
@@ -357,6 +349,23 @@ function mutationQueries(
 	entityId: string,
 	version: number,
 ) {
+	const auditInsert = buildTransactionalAuditInsert({
+		sql,
+		input: {
+			organizationId: evidence.organizationId,
+			actorUserId: evidence.actorUserId,
+			correlationId: evidence.correlationId,
+			module: "sales",
+			entity: evidence.entityType,
+			entityId,
+			action: evidence.action,
+			changes: [],
+		},
+	});
+	if (!auditInsert.ok) {
+		throw new TypeError(`Invalid Sales audit evidence: ${auditInsert.code}`);
+	}
+
 	const payload = JSON.stringify({
 		organizationId: evidence.organizationId,
 		entityType: evidence.entityType,
@@ -368,17 +377,7 @@ function mutationQueries(
 	});
 	return [
 		sql.query(statement, [...values]),
-		sql.query(
-			"INSERT INTO platform_audit_log (organization_id,actor_user_id,correlation_id,module,entity,entity_id,action,changes) VALUES ($1,$2,$3,'sales',$4,$5,$6,'[]'::jsonb)",
-			[
-				evidence.organizationId,
-				evidence.actorUserId,
-				evidence.correlationId,
-				evidence.entityType,
-				entityId,
-				evidence.action,
-			],
-		),
+		auditInsert.data,
 		sql.query(
 			"INSERT INTO platform_domain_event (organization_id,type,source_module,deduplication_key,correlation_id,actor_user_id,payload) VALUES ($1,$2,'sales',$3,$4,$5,$6::jsonb)",
 			[

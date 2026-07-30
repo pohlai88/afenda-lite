@@ -10,7 +10,9 @@ import {
 	apiErrorBody,
 	ERROR_HTTP_STATUS,
 	httpErrorBody,
+	projectHttpError,
 } from "../src/http/index";
+import { internalError, rateLimited } from "../src/index";
 
 describe("httpErrorBody", () => {
 	it("builds a bare error body when details are absent", () => {
@@ -39,7 +41,7 @@ describe("httpErrorBody", () => {
 		});
 	});
 
-	it("drops unsafe public details", () => {
+	it("fails closed for INTERNAL_ERROR messages and details", () => {
 		expect(
 			httpErrorBody("INTERNAL_ERROR", "Failure.", {
 				correlationId: "corr-1",
@@ -51,8 +53,7 @@ describe("httpErrorBody", () => {
 		).toEqual({
 			error: {
 				code: "INTERNAL_ERROR",
-				message: "Failure.",
-				details: { correlationId: "corr-1" },
+				message: "An unexpected error occurred",
 			},
 		});
 	});
@@ -61,6 +62,34 @@ describe("httpErrorBody", () => {
 		expect(API_ERROR_HTTP_STATUS).toBe(ERROR_HTTP_STATUS);
 		expect(apiErrorBody("NOT_FOUND", "Missing.")).toEqual(
 			httpErrorBody("NOT_FOUND", "Missing."),
+		);
+	});
+
+	it("atomically projects status, body, and Retry-After", () => {
+		expect(projectHttpError(rateLimited(45))).toEqual({
+			status: 429,
+			body: {
+				error: {
+					code: "RATE_LIMITED",
+					message: "Too many requests. Try again later.",
+					details: { retryAfter: 45 },
+				},
+			},
+			retryAfter: 45,
+		});
+	});
+
+	it("atomically fails closed for internal errors", () => {
+		expect(projectHttpError(internalError("database password leaked"))).toEqual(
+			{
+				status: 500,
+				body: {
+					error: {
+						code: "INTERNAL_ERROR",
+						message: "An unexpected error occurred",
+					},
+				},
+			},
 		);
 	});
 });

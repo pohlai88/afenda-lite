@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { prepareTransactionalAuditInsertValues } from "@afenda/audit";
 import {
 	and,
 	asc,
@@ -14,16 +15,10 @@ import {
 	runNeonHttpTransaction,
 } from "@afenda/db";
 import {
-	fromPostgresUnknown,
+	normalizePostgresUnknown,
 	postgresSqlState,
 } from "@afenda/errors/adapters/postgres";
-import {
-	fail,
-	failFromAppError,
-	failFromUnknown,
-	ok,
-	type Result,
-} from "@afenda/errors/result";
+import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
 import {
 	FULFILLMENT_DELIVERY_CANCELLED_EVENT,
 	FULFILLMENT_DELIVERY_CLOSED_EVENT,
@@ -59,14 +54,7 @@ import {
 } from "./types";
 
 function failFromPersistence(error: unknown, fallbackMessage: string) {
-	const mapped = fromPostgresUnknown(error);
-	return mapped === undefined
-		? failFromUnknown(error, fallbackMessage)
-		: failFromAppError(mapped);
-}
-
-interface TxIdRow {
-	id: string;
+	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
 }
 
 function parseStatus(value: string): DeliveryStatus {
@@ -209,6 +197,8 @@ function json(value: unknown): string {
 	return JSON.stringify(value);
 }
 
+const FULFILLMENT_AUDIT_SOURCE = "fulfillment.drizzle-store" as const;
+
 const SQLSTATE_UNIQUE_VIOLATION = "23505";
 const SQLSTATE_FOREIGN_KEY_VIOLATION = "23503";
 
@@ -280,6 +270,27 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 		const id = randomUUID();
 		const auditId = randomUUID();
 		const eventId = randomUUID();
+		const preparedAudit = prepareTransactionalAuditInsertValues({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			module: "fulfillment",
+			entity: "delivery",
+			entityId: id,
+			action: "CREATE",
+			changes: [{ field: "code", oldValue: null, newValue: record.code }],
+			newValue: { code: record.code, status: "draft" },
+			eventContext: {
+				version: 1,
+				outcome: "SUCCEEDED",
+				source: FULFILLMENT_AUDIT_SOURCE,
+				causationId: record.idempotencyKey,
+			},
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const eventPayload = json(
 			payload(
 				{
@@ -296,7 +307,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 			),
 		);
 		try {
-			const [rows] = await runNeonHttpTransaction<[TxIdRow[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH mutated AS (
 						INSERT INTO delivery (
@@ -315,12 +326,14 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 					), audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module,
-							entity, entity_id, action, changes, new_value
+							entity, entity_id, action, changes, old_value, new_value,
+							metadata, ip_address, user_agent
 						)
-						SELECT ${auditId}, organization_id, created_by, ${meta.correlationId},
-							'fulfillment', 'delivery', id, 'CREATE',
-							${json([{ field: "code", oldValue: null, newValue: record.code }])}::jsonb,
-							${json({ code: record.code, status: "draft" })}::jsonb
+						SELECT ${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated RETURNING id
 					), outboxed AS (
 						INSERT INTO platform_domain_event (
@@ -356,8 +369,31 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 	): Promise<Result<DeliveryLine>> {
 		const id = randomUUID();
 		const auditId = randomUUID();
+		const preparedAudit = prepareTransactionalAuditInsertValues({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			module: "fulfillment",
+			entity: "delivery_line",
+			entityId: id,
+			action: "CREATE",
+			changes: [
+				{ field: "item_code", oldValue: null, newValue: record.itemCode },
+			],
+			newValue: { deliveryId: record.deliveryId, lineNo: null },
+			eventContext: {
+				version: 1,
+				outcome: "SUCCEEDED",
+				source: FULFILLMENT_AUDIT_SOURCE,
+				causationId: record.idempotencyKey,
+			},
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction<[TxIdRow[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH parent AS (
 						UPDATE delivery
@@ -389,12 +425,15 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 					), audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module,
-							entity, entity_id, action, changes, new_value
+							entity, entity_id, action, changes, old_value, new_value,
+							metadata, ip_address, user_agent
 						)
-						SELECT ${auditId}, organization_id, created_by, ${meta.correlationId},
-							'fulfillment', 'delivery_line', id, 'CREATE',
-							${json([{ field: "item_code", oldValue: null, newValue: record.itemCode }])}::jsonb,
-							jsonb_build_object('deliveryId', delivery_id, 'lineNo', line_no)
+						SELECT ${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb,
+							(${audit.newValueJson}::jsonb || jsonb_build_object('lineNo', line_no)),
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated RETURNING id
 					)
 					SELECT mutated.id FROM mutated, audited
@@ -467,6 +506,36 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const nextVersion = record.expectedVersion + 1;
+		const preparedAudit = prepareTransactionalAuditInsertValues({
+			organizationId: record.organizationId,
+			actorUserId: record.actorUserId,
+			correlationId: meta.correlationId,
+			module: "fulfillment",
+			entity: "delivery_pick",
+			entityId: id,
+			action: "CREATE",
+			changes: [
+				{
+					field: "quantity_picked",
+					oldValue: null,
+					newValue: record.quantityPicked,
+				},
+			],
+			newValue: {
+				deliveryId: record.deliveryId,
+				deliveryLineId: record.deliveryLineId,
+			},
+			eventContext: {
+				version: 1,
+				outcome: "SUCCEEDED",
+				source: FULFILLMENT_AUDIT_SOURCE,
+				causationId: record.idempotencyKey,
+			},
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const eventPayload = json({
 			...payload(
 				{
@@ -488,7 +557,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 			quantity: record.quantityPicked,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction<[TxIdRow[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH parent AS (
 						UPDATE delivery
@@ -511,13 +580,14 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 					), audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module,
-							entity, entity_id, action, changes, new_value
+							entity, entity_id, action, changes, old_value, new_value,
+							metadata, ip_address, user_agent
 						)
-						SELECT ${auditId}, organization_id, ${record.actorUserId},
-							${meta.correlationId}, 'fulfillment', 'delivery_pick', id,
-							'CREATE',
-							${json([{ field: "quantity_picked", oldValue: null, newValue: record.quantityPicked }])}::jsonb,
-							jsonb_build_object('deliveryId', delivery_id, 'deliveryLineId', delivery_line_id)
+						SELECT ${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated RETURNING id
 					), outboxed AS (
 						INSERT INTO platform_domain_event (
@@ -603,6 +673,28 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const nextVersion = record.expectedVersion + 1;
+		const preparedAudit = prepareTransactionalAuditInsertValues({
+			organizationId: record.organizationId,
+			actorUserId: record.actorUserId,
+			correlationId: meta.correlationId,
+			module: "fulfillment",
+			entity: "delivery",
+			entityId: record.deliveryId,
+			action: "UPDATE",
+			changes: [{ field: "status", oldValue: "picking", newValue: "packed" }],
+			oldValue: { status: "picking", version: record.expectedVersion },
+			newValue: { status: "packed", version: nextVersion },
+			eventContext: {
+				version: 1,
+				outcome: "SUCCEEDED",
+				source: FULFILLMENT_AUDIT_SOURCE,
+				causationId: record.idempotencyKey,
+			},
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const eventPayload = json(
 			payload(
 				{ ...existing.data, version: nextVersion, status: "packed" },
@@ -611,7 +703,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 			),
 		);
 		try {
-			const [rows] = await runNeonHttpTransaction<[TxIdRow[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH parent AS (
 						UPDATE delivery
@@ -634,14 +726,14 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 					), audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module,
-							entity, entity_id, action, changes, old_value, new_value
+							entity, entity_id, action, changes, old_value, new_value,
+							metadata, ip_address, user_agent
 						)
-						SELECT ${auditId}, organization_id, ${record.actorUserId},
-							${meta.correlationId}, 'fulfillment', 'delivery', delivery_id,
-							'UPDATE',
-							${json([{ field: "status", oldValue: "picking", newValue: "packed" }])}::jsonb,
-							${json({ status: "picking", version: record.expectedVersion })}::jsonb,
-							${json({ status: "packed", version: nextVersion })}::jsonb
+						SELECT ${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated RETURNING id
 					), outboxed AS (
 						INSERT INTO platform_domain_event (
@@ -735,6 +827,29 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 		const podEventId = randomUUID();
 		const completedEventId = randomUUID();
 		const nextVersion = record.expectedVersion + 1;
+		const preparedAudit = prepareTransactionalAuditInsertValues({
+			organizationId: record.organizationId,
+			actorUserId: record.actorUserId,
+			correlationId: meta.correlationId,
+			module: "fulfillment",
+			entity: "delivery",
+			entityId: record.deliveryId,
+			action: "UPDATE",
+			changes: [{ field: "status", oldValue: "posted", newValue: nextStatus }],
+			oldValue: { status: "posted", version: record.expectedVersion },
+			newValue: { status: nextStatus, version: nextVersion },
+			eventContext: {
+				version: 1,
+				outcome: "SUCCEEDED",
+				source: FULFILLMENT_AUDIT_SOURCE,
+				occurredAt: record.recordedAt,
+				causationId: record.idempotencyKey,
+			},
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const eventPayload = json(
 			payload(
 				{ ...existing.data, version: nextVersion, status: nextStatus },
@@ -743,7 +858,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 			),
 		);
 		try {
-			const [rows] = await runNeonHttpTransaction<[TxIdRow[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH parent AS (
 						UPDATE delivery
@@ -771,14 +886,14 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 					), audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module,
-							entity, entity_id, action, changes, old_value, new_value
+							entity, entity_id, action, changes, old_value, new_value,
+							metadata, ip_address, user_agent
 						)
-						SELECT ${auditId}, organization_id, ${record.actorUserId},
-							${meta.correlationId}, 'fulfillment', 'delivery', delivery_id,
-							'UPDATE',
-							${json([{ field: "status", oldValue: "posted", newValue: nextStatus }])}::jsonb,
-							${json({ status: "posted", version: record.expectedVersion })}::jsonb,
-							${json({ status: nextStatus, version: nextVersion })}::jsonb
+						SELECT ${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated RETURNING id
 					), pod_outboxed AS (
 						INSERT INTO platform_domain_event (
@@ -1101,6 +1216,28 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 		const nextVersion = record.expectedVersion + 1;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
+		const preparedAudit = prepareTransactionalAuditInsertValues({
+			organizationId: record.organizationId,
+			actorUserId: record.actorUserId,
+			correlationId: meta.correlationId,
+			module: "fulfillment",
+			entity: "delivery",
+			entityId: record.deliveryId,
+			action: "UPDATE",
+			changes: [{ field: "status", oldValue: from, newValue: to }],
+			oldValue: { status: from, version: record.expectedVersion },
+			newValue: { status: to, version: nextVersion },
+			eventContext: {
+				version: 1,
+				outcome: "SUCCEEDED",
+				source: FULFILLMENT_AUDIT_SOURCE,
+				causationId: record.idempotencyKey,
+			},
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const eventPayload = json(
 			payload(
 				{ ...existing.data, version: nextVersion, status: to },
@@ -1109,7 +1246,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 			),
 		);
 		try {
-			const [rows] = await runNeonHttpTransaction<[TxIdRow[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH mutated AS (
 						UPDATE delivery
@@ -1139,13 +1276,14 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 					), audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module,
-							entity, entity_id, action, changes, old_value, new_value
+							entity, entity_id, action, changes, old_value, new_value,
+							metadata, ip_address, user_agent
 						)
-						SELECT ${auditId}, organization_id, ${record.actorUserId},
-							${meta.correlationId}, 'fulfillment', 'delivery', id, 'UPDATE',
-							${json([{ field: "status", oldValue: from, newValue: to }])}::jsonb,
-							${json({ status: from, version: record.expectedVersion })}::jsonb,
-							${json({ status: to, version: nextVersion })}::jsonb
+						SELECT ${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated RETURNING id
 					), outboxed AS (
 						INSERT INTO platform_domain_event (

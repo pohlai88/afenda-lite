@@ -1,6 +1,11 @@
 import { randomUUID } from "node:crypto";
 
 import {
+	type Change,
+	type PreparedTransactionalAuditInsertValues,
+	prepareTransactionalAuditInsertValues,
+} from "@afenda/audit";
+import {
 	and,
 	asc,
 	db,
@@ -12,14 +17,8 @@ import {
 	or,
 	runNeonHttpTransaction,
 } from "@afenda/db";
-import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
-import {
-	fail,
-	failFromAppError,
-	failFromUnknown,
-	ok,
-	type Result,
-} from "@afenda/errors/result";
+import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
+import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
 import { z } from "zod";
 
 import {
@@ -50,11 +49,11 @@ import type {
 	OrganizationDimensionStore,
 } from "./organization-dimension-store";
 
+const ORGANIZATION_DIMENSION_AUDIT_SOURCE =
+	"master-data.organization-dimension-drizzle";
+
 function failFromPersistence(error: unknown, fallbackMessage: string) {
-	const mapped = fromPostgresUnknown(error);
-	return mapped === undefined
-		? failFromUnknown(error, fallbackMessage)
-		: failFromAppError(mapped);
+	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
 }
 
 // 1. Constants and domain types
@@ -329,6 +328,266 @@ async function loadOrganizationDimensionVersion(
 	}
 }
 
+async function loadOrganizationDimensionForAudit(input: {
+	id: string;
+	organizationId: string;
+}): Promise<Result<OrganizationDimension | null>> {
+	try {
+		const [row] = await db
+			.select()
+			.from(mdOrganizationDimension)
+			.where(
+				and(
+					eq(mdOrganizationDimension.organizationId, input.organizationId),
+					eq(mdOrganizationDimension.id, input.id),
+				),
+			)
+			.limit(1);
+		return ok(row === undefined ? null : mapDimension(row));
+	} catch (error) {
+		return failFromPersistence(
+			error,
+			"Failed to inspect organization dimension audit state",
+		);
+	}
+}
+
+function previousIsoDate(value: string): string {
+	const date = new Date(`${value}T00:00:00.000Z`);
+	date.setUTCDate(date.getUTCDate() - 1);
+	return date.toISOString().slice(0, 10);
+}
+
+async function prepareCreateOrganizationDimensionAudits(input: {
+	id: string;
+	record: Parameters<OrganizationDimensionStore["create"]>[0];
+}): Promise<
+	Result<{
+		createAudit: PreparedTransactionalAuditInsertValues;
+		predecessorAudit: PreparedTransactionalAuditInsertValues | null;
+	}>
+> {
+	const preparedCreateAudit = prepareTransactionalAuditInsertValues({
+		organizationId: input.record.organizationId,
+		actorUserId: input.record.createdBy,
+		correlationId: input.record.correlationId,
+		module: "master_data",
+		entity: "organization_dimension",
+		entityId: input.id,
+		action: "CREATE",
+		changes: [
+			{ field: "kind", oldValue: null, newValue: input.record.kind },
+			{ field: "key", oldValue: null, newValue: input.record.key },
+			{ field: "name", oldValue: null, newValue: input.record.name },
+			{ field: "parentId", oldValue: null, newValue: input.record.parentId },
+			{ field: "status", oldValue: null, newValue: input.record.status },
+			{
+				field: "effectiveFrom",
+				oldValue: null,
+				newValue: input.record.effectiveFrom,
+			},
+			{
+				field: "effectiveTo",
+				oldValue: null,
+				newValue: input.record.effectiveTo,
+			},
+			{
+				field: "supersedesId",
+				oldValue: null,
+				newValue: input.record.supersedesId,
+			},
+		],
+		newValue: {
+			effectiveFrom: input.record.effectiveFrom,
+			effectiveTo: input.record.effectiveTo,
+			key: input.record.key,
+			kind: input.record.kind,
+			name: input.record.name,
+			parentId: input.record.parentId,
+			status: input.record.status,
+			supersedesId: input.record.supersedesId,
+			version: 1,
+		},
+		eventContext: {
+			version: 1,
+			outcome: "SUCCEEDED",
+			source: ORGANIZATION_DIMENSION_AUDIT_SOURCE,
+			causationId: input.record.correlationId,
+			reasonCode:
+				input.record.supersedesId === null ? null : "SUPERSEDE_CREATE",
+		},
+	});
+	if (!preparedCreateAudit.ok) {
+		return preparedCreateAudit;
+	}
+	if (input.record.supersedesId === null) {
+		return ok({
+			createAudit: preparedCreateAudit.data,
+			predecessorAudit: null,
+		});
+	}
+
+	const predecessor = await loadOrganizationDimensionForAudit({
+		organizationId: input.record.organizationId,
+		id: input.record.supersedesId,
+	});
+	if (!predecessor.ok) {
+		return predecessor;
+	}
+	if (
+		predecessor.data === null ||
+		predecessor.data.version !== input.record.supersedesExpectedVersion
+	) {
+		return fail(
+			"CONFLICT",
+			"Organization dimension could not supersede the selected revision",
+			{
+				reason: "MASTER_VERSION_CONFLICT",
+				supersedesId: input.record.supersedesId,
+				expectedVersion: input.record.supersedesExpectedVersion,
+				kind: input.record.kind,
+				key: input.record.key,
+				effectiveFrom: input.record.effectiveFrom,
+			},
+		);
+	}
+	const predecessorEffectiveTo = previousIsoDate(input.record.effectiveFrom);
+	const preparedPredecessorAudit = prepareTransactionalAuditInsertValues({
+		organizationId: input.record.organizationId,
+		actorUserId: input.record.createdBy,
+		correlationId: input.record.correlationId,
+		module: "master_data",
+		entity: "organization_dimension",
+		entityId: predecessor.data.id,
+		action: "UPDATE",
+		changes: [
+			{
+				field: "effectiveTo",
+				oldValue: predecessor.data.effectiveTo,
+				newValue: predecessorEffectiveTo,
+			},
+			{
+				field: "version",
+				oldValue: predecessor.data.version,
+				newValue: predecessor.data.version + 1,
+			},
+		],
+		oldValue: {
+			effectiveTo: predecessor.data.effectiveTo,
+			version: predecessor.data.version,
+		},
+		newValue: {
+			effectiveTo: predecessorEffectiveTo,
+			version: predecessor.data.version + 1,
+		},
+		eventContext: {
+			version: 1,
+			outcome: "SUCCEEDED",
+			source: ORGANIZATION_DIMENSION_AUDIT_SOURCE,
+			causationId: input.record.correlationId,
+			reasonCode: "SUPERSEDE_CLOSE",
+		},
+	});
+	if (!preparedPredecessorAudit.ok) {
+		return preparedPredecessorAudit;
+	}
+	return ok({
+		createAudit: preparedCreateAudit.data,
+		predecessorAudit: preparedPredecessorAudit.data,
+	});
+}
+
+async function prepareUpdateOrganizationDimensionAudit(
+	record: Parameters<OrganizationDimensionStore["update"]>[0],
+): Promise<Result<PreparedTransactionalAuditInsertValues>> {
+	const current = await loadOrganizationDimensionForAudit({
+		organizationId: record.organizationId,
+		id: record.id,
+	});
+	if (!current.ok) {
+		return current;
+	}
+	if (
+		current.data === null ||
+		current.data.version !== record.expectedVersion
+	) {
+		return resolveTenantScopedCasMiss({
+			entityType: "organization_dimension",
+			entityId: record.id,
+			expectedVersion: record.expectedVersion,
+			loadCurrent: () =>
+				loadOrganizationDimensionVersion(record.organizationId, record.id),
+			notFoundMessage: "Organization dimension not found",
+			unchangedMissMessage:
+				"Organization dimension update did not satisfy mutation guards",
+		});
+	}
+	const nextName = record.name ?? current.data.name;
+	const nextParentId = record.parentIdProvided
+		? (record.parentId ?? null)
+		: current.data.parentId;
+	const nextEffectiveTo =
+		record.effectiveTo === undefined || record.effectiveTo === null
+			? current.data.effectiveTo
+			: record.effectiveTo;
+	const nextVersion = current.data.version + 1;
+	const changes: Change[] = [];
+	if (nextName !== current.data.name) {
+		changes.push({
+			field: "name",
+			oldValue: current.data.name,
+			newValue: nextName,
+		});
+	}
+	if (nextParentId !== current.data.parentId) {
+		changes.push({
+			field: "parentId",
+			oldValue: current.data.parentId,
+			newValue: nextParentId,
+		});
+	}
+	if (nextEffectiveTo !== current.data.effectiveTo) {
+		changes.push({
+			field: "effectiveTo",
+			oldValue: current.data.effectiveTo,
+			newValue: nextEffectiveTo,
+		});
+	}
+	changes.push({
+		field: "version",
+		oldValue: current.data.version,
+		newValue: nextVersion,
+	});
+	return prepareTransactionalAuditInsertValues({
+		organizationId: record.organizationId,
+		actorUserId: record.updatedBy,
+		correlationId: record.correlationId,
+		module: "master_data",
+		entity: "organization_dimension",
+		entityId: record.id,
+		action: "UPDATE",
+		changes,
+		oldValue: {
+			effectiveTo: current.data.effectiveTo,
+			name: current.data.name,
+			parentId: current.data.parentId,
+			version: current.data.version,
+		},
+		newValue: {
+			effectiveTo: nextEffectiveTo,
+			name: nextName,
+			parentId: nextParentId,
+			version: nextVersion,
+		},
+		eventContext: {
+			version: 1,
+			outcome: "SUCCEEDED",
+			source: ORGANIZATION_DIMENSION_AUDIT_SOURCE,
+			causationId: record.correlationId,
+		},
+	});
+}
+
 // 5. Drizzle store
 
 export function createDrizzleOrganizationDimensionStore(): OrganizationDimensionStore {
@@ -338,10 +597,16 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 			const createAuditId = randomUUID();
 			const predecessorAuditId = randomUUID();
 			const eventId = randomUUID();
+			const preparedAudits = await prepareCreateOrganizationDimensionAudits({
+				record,
+				id,
+			});
+			if (!preparedAudits.ok) {
+				return preparedAudits;
+			}
+			const { createAudit, predecessorAudit } = preparedAudits.data;
 			try {
-				const [, rows] = await runNeonHttpTransaction<
-					[unknown[], OrganizationDimensionSqlRow[]]
-				>((sql) => [
+				const [, rows] = await runNeonHttpTransaction((sql) => [
 					sql`SELECT pg_advisory_xact_lock(hashtextextended(${`${record.organizationId}:${record.kind}:${record.normalizedKey}`}, 0))`,
 					sql`
 						WITH predecessor AS (
@@ -428,47 +693,32 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module,
-								entity, entity_id, action, changes
+								entity, entity_id, action, changes, old_value, new_value,
+								metadata, ip_address, user_agent
 							)
 							SELECT
-								${createAuditId}::uuid, organization_id, ${record.createdBy},
-								${record.correlationId}, 'master_data',
-								'organization_dimension', id,
-								CASE
-									WHEN supersedes_id IS NULL THEN 'CREATE'
-									ELSE 'SUPERSEDE_CREATE'
-								END,
-								jsonb_build_array(
-								jsonb_build_object('field', 'kind', 'before', NULL, 'after', kind),
-								jsonb_build_object('field', 'key', 'before', NULL, 'after', key),
-								jsonb_build_object('field', 'name', 'before', NULL, 'after', name),
-								jsonb_build_object('field', 'parentId', 'before', NULL, 'after', parent_id),
-								jsonb_build_object('field', 'status', 'before', NULL, 'after', status),
-								jsonb_build_object('field', 'effectiveFrom', 'before', NULL, 'after', effective_from),
-									jsonb_build_object('field', 'effectiveTo', 'before', NULL, 'after', effective_to),
-									jsonb_build_object('field', 'supersedesId', 'before', NULL, 'after', supersedes_id)
-								)
+								${createAuditId}::uuid, ${createAudit.organizationId},
+								${createAudit.actorUserId}, ${createAudit.correlationId},
+								${createAudit.module}, ${createAudit.entity}, ${createAudit.entityId},
+								${createAudit.action}, ${createAudit.changesJson}::jsonb,
+								${createAudit.oldValueJson}::jsonb, ${createAudit.newValueJson}::jsonb,
+								${createAudit.metadataJson}::jsonb, ${createAudit.ipAddress},
+								${createAudit.userAgent}
 							FROM mutated
 							UNION ALL
 							SELECT
-								${predecessorAuditId}::uuid, closed_predecessor.organization_id,
-								${record.createdBy}, ${record.correlationId}, 'master_data',
-								'organization_dimension', closed_predecessor.id,
-								'SUPERSEDE_CLOSE',
-								jsonb_build_array(
-									jsonb_build_object(
-										'field', 'effectiveTo',
-										'before', predecessor.effective_to,
-										'after', closed_predecessor.effective_to
-									),
-									jsonb_build_object(
-										'field', 'version',
-										'before', predecessor.version,
-										'after', closed_predecessor.version
-									)
-								)
+								${predecessorAuditId}::uuid, ${predecessorAudit?.organizationId ?? null},
+								${predecessorAudit?.actorUserId ?? null},
+								${predecessorAudit?.correlationId ?? null},
+								${predecessorAudit?.module ?? null}, ${predecessorAudit?.entity ?? null},
+								${predecessorAudit?.entityId ?? null}, ${predecessorAudit?.action ?? null},
+								${predecessorAudit?.changesJson ?? null}::jsonb,
+								${predecessorAudit?.oldValueJson ?? null}::jsonb,
+								${predecessorAudit?.newValueJson ?? null}::jsonb,
+								${predecessorAudit?.metadataJson ?? null}::jsonb,
+								${predecessorAudit?.ipAddress ?? null},
+								${predecessorAudit?.userAgent ?? null}
 							FROM closed_predecessor
-							INNER JOIN predecessor ON predecessor.id = closed_predecessor.id
 							RETURNING id
 						),
 						emitted AS (
@@ -537,12 +787,16 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 			}
 		},
 		async update(record) {
+			const preparedAudit =
+				await prepareUpdateOrganizationDimensionAudit(record);
+			if (!preparedAudit.ok) {
+				return preparedAudit;
+			}
+			const audit = preparedAudit.data;
 			try {
 				const auditId = randomUUID();
 				const eventId = randomUUID();
-				const [, rows] = await runNeonHttpTransaction<
-					[unknown[], OrganizationDimensionSqlRow[]]
-				>((sql) => [
+				const [, rows] = await runNeonHttpTransaction((sql) => [
 					sql`SELECT pg_advisory_xact_lock(hashtextextended(${`${record.organizationId}:${record.id}`}, 0))`,
 					sql`
 						WITH current_row AS (
@@ -612,13 +866,15 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module,
-								entity, entity_id, action, changes
+								entity, entity_id, action, changes, old_value, new_value,
+								metadata, ip_address, user_agent
 							)
 							SELECT
-								${auditId}::uuid, organization_id, ${record.updatedBy},
-								${record.correlationId}, 'master_data',
-								'organization_dimension', id, 'UPDATE',
-								jsonb_build_object('version', version)
+								${auditId}::uuid, ${audit.organizationId}, ${audit.actorUserId},
+								${audit.correlationId}, ${audit.module}, ${audit.entity}, ${audit.entityId},
+								${audit.action}, ${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -675,12 +931,70 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 			}
 		},
 		async transition(input) {
+			const current = await loadOrganizationDimensionForAudit({
+				organizationId: input.organizationId,
+				id: input.id,
+			});
+			if (!current.ok) {
+				return current;
+			}
+			if (
+				current.data === null ||
+				current.data.version !== input.expectedVersion
+			) {
+				return resolveTenantScopedCasMiss({
+					entityType: "organization_dimension",
+					entityId: input.id,
+					expectedVersion: input.expectedVersion,
+					loadCurrent: () =>
+						loadOrganizationDimensionVersion(input.organizationId, input.id),
+					notFoundMessage: "Organization dimension not found",
+					unchangedMissMessage:
+						"Organization dimension transition did not satisfy mutation guards",
+				});
+			}
+			const nextVersion = current.data.version + 1;
+			const preparedAudit = prepareTransactionalAuditInsertValues({
+				organizationId: input.organizationId,
+				actorUserId: input.updatedBy,
+				correlationId: input.correlationId,
+				module: "master_data",
+				entity: "organization_dimension",
+				entityId: input.id,
+				action: "UPDATE",
+				changes: [
+					{
+						field: "status",
+						oldValue: current.data.status,
+						newValue: input.status,
+					},
+					{
+						field: "version",
+						oldValue: current.data.version,
+						newValue: nextVersion,
+					},
+				],
+				oldValue: {
+					status: current.data.status,
+					version: current.data.version,
+				},
+				newValue: { status: input.status, version: nextVersion },
+				eventContext: {
+					version: 1,
+					outcome: "SUCCEEDED",
+					source: ORGANIZATION_DIMENSION_AUDIT_SOURCE,
+					causationId: input.correlationId,
+					reasonCode: input.status.toUpperCase(),
+				},
+			});
+			if (!preparedAudit.ok) {
+				return preparedAudit;
+			}
+			const audit = preparedAudit.data;
 			try {
 				const auditId = randomUUID();
 				const eventId = randomUUID();
-				const [, rows] = await runNeonHttpTransaction<
-					[unknown[], OrganizationDimensionSqlRow[]]
-				>((sql) => [
+				const [, rows] = await runNeonHttpTransaction((sql) => [
 					sql`SELECT pg_advisory_xact_lock(hashtextextended(${`${input.organizationId}:${input.id}`}, 0))`,
 					sql`
 						WITH current_row AS (
@@ -706,13 +1020,15 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module,
-								entity, entity_id, action, changes
+								entity, entity_id, action, changes, old_value, new_value,
+								metadata, ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, ${input.updatedBy},
-								${input.correlationId}, 'master_data',
-								'organization_dimension', id, upper(${input.status}),
-								jsonb_build_object('status', status, 'version', version)
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+								${audit.correlationId}, ${audit.module}, ${audit.entity}, ${audit.entityId},
+								${audit.action}, ${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						),

@@ -1,6 +1,10 @@
 import { randomUUID } from "node:crypto";
 
 import {
+	type PreparedTransactionalAuditInsertValues,
+	prepareTransactionalAuditInsertValues,
+} from "@afenda/audit";
+import {
 	and,
 	asc,
 	db,
@@ -15,16 +19,10 @@ import {
 	stockReservation,
 } from "@afenda/db";
 import {
-	fromPostgresUnknown,
+	normalizePostgresUnknown,
 	postgresSqlState,
 } from "@afenda/errors/adapters/postgres";
-import {
-	fail,
-	failFromAppError,
-	failFromUnknown,
-	ok,
-	type Result,
-} from "@afenda/errors/result";
+import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
 
 import {
 	INVENTORY_ERROR_CODE_CONFLICT,
@@ -78,15 +76,10 @@ import {
 	type StockReservationStatus,
 } from "./types";
 
-function failFromPersistence(error: unknown, fallbackMessage: string) {
-	const mapped = fromPostgresUnknown(error);
-	return mapped === undefined
-		? failFromUnknown(error, fallbackMessage)
-		: failFromAppError(mapped);
-}
+const INVENTORY_AUDIT_SOURCE = "inventory.drizzle-store";
 
-interface TxIdRow {
-	id: string;
+function failFromPersistence(error: unknown, fallbackMessage: string) {
+	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
 }
 
 interface MovementSqlRow {
@@ -427,18 +420,6 @@ function isDivisionByZero(error: unknown): boolean {
 	return postgresSqlState(error) === SQLSTATE_DIVISION_BY_ZERO;
 }
 
-function fieldChangeJson(
-	field: string,
-	oldValue: unknown,
-	newValue: unknown,
-): string {
-	return json([{ field, oldValue, newValue }]);
-}
-
-function valueSnapshotJson(value: Record<string, unknown>): string {
-	return json(value);
-}
-
 function movementNotFound(): Result<never> {
 	return fail(
 		"NOT_FOUND",
@@ -521,6 +502,62 @@ function reservationPostMutation(
 				? "consumed"
 				: "partially_consumed",
 	};
+}
+
+function prepareReservationPostAudit(
+	record: MovementPostRecord,
+	correlationId: string,
+	reservation: StockReservation | null,
+	mutation: ReservationPostMutation | null,
+): Result<{
+	audit: PreparedTransactionalAuditInsertValues;
+	mutation: ReservationPostMutation;
+	reservation: StockReservation;
+} | null> {
+	if (reservation === null || mutation === null) {
+		return ok(null);
+	}
+	const prepared = prepareTransactionalAuditInsertValues({
+		organizationId: record.organizationId,
+		actorUserId: record.actorUserId,
+		correlationId,
+		module: "inventory",
+		entity: "stock_reservation",
+		entityId: reservation.id,
+		action: "UPDATE",
+		changes: [
+			{
+				field: "consumed_quantity",
+				oldValue: reservation.consumedQuantity,
+				newValue: formatQuantity(mutation.consumedQuantity),
+			},
+			{
+				field: "status",
+				oldValue: reservation.status,
+				newValue: mutation.status,
+			},
+		],
+		oldValue: {
+			status: reservation.status,
+			version: reservation.version,
+			consumedQuantity: reservation.consumedQuantity,
+		},
+		newValue: {
+			status: mutation.status,
+			version: reservation.version + 1,
+			consumedQuantity: formatQuantity(mutation.consumedQuantity),
+		},
+		eventContext: {
+			version: 1,
+			outcome: "SUCCEEDED",
+			source: INVENTORY_AUDIT_SOURCE,
+			causationId: record.postIdempotencyKey,
+		},
+	});
+	if (!prepared.ok) {
+		return prepared;
+	}
+	return ok({ audit: prepared.data, mutation, reservation });
 }
 
 function decideDrizzleMovementPost(
@@ -914,13 +951,32 @@ export class DrizzleInventoryStore implements InventoryStore {
 		const entityId = randomUUID();
 		const auditId = randomUUID();
 		const eventId = randomUUID();
-		const changesJson = fieldChangeJson("code", null, record.code);
-		const snapshotJson = valueSnapshotJson({
-			code: record.code,
-			status: "draft",
-			movementType: record.movementType,
-			source: record.source,
+		const preparedAudit = prepareTransactionalAuditInsertValues({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			module: "inventory",
+			entity: "stock_movement",
+			entityId,
+			action: "CREATE",
+			changes: [{ field: "code", oldValue: null, newValue: record.code }],
+			newValue: {
+				code: record.code,
+				status: "draft",
+				movementType: record.movementType,
+				source: record.source,
+			},
+			eventContext: {
+				version: 1,
+				outcome: "SUCCEEDED",
+				source: INVENTORY_AUDIT_SOURCE,
+				causationId: record.createIdempotencyKey,
+			},
 		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const payloadJson = json({
 			organizationId: record.organizationId,
 			entityType: "stock_movement",
@@ -934,7 +990,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[MovementSqlRow[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH mutated AS (
 						INSERT INTO stock_movement (
@@ -963,12 +1019,15 @@ export class DrizzleInventoryStore implements InventoryStore {
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, created_by, ${meta.correlationId},
-							'inventory', 'stock_movement', id, 'CREATE',
-							${changesJson}::jsonb, ${snapshotJson}::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -1073,16 +1132,37 @@ export class DrizzleInventoryStore implements InventoryStore {
 			movement.lines.reduce((max, line) => Math.max(max, line.lineNo), 0) + 1;
 		const lineId = randomUUID();
 		const auditId = randomUUID();
-		const changesJson = fieldChangeJson("item_code", null, record.itemCode);
-		const snapshotJson = valueSnapshotJson({
-			movementId: record.movementId,
-			lineNo,
-			itemCode: record.itemCode,
-			quantity: record.quantity,
+		const preparedAudit = prepareTransactionalAuditInsertValues({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			module: "inventory",
+			entity: "stock_movement_line",
+			entityId: lineId,
+			action: "CREATE",
+			changes: [
+				{ field: "item_code", oldValue: null, newValue: record.itemCode },
+			],
+			newValue: {
+				movementId: record.movementId,
+				lineNo,
+				itemCode: record.itemCode,
+				quantity: record.quantity,
+			},
+			eventContext: {
+				version: 1,
+				outcome: "SUCCEEDED",
+				source: INVENTORY_AUDIT_SOURCE,
+				causationId: record.lineIdempotencyKey,
+			},
 		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[LineSqlRow[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH parent AS (
 						UPDATE stock_movement
@@ -1113,12 +1193,15 @@ export class DrizzleInventoryStore implements InventoryStore {
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, created_by, ${meta.correlationId},
-							'inventory', 'stock_movement_line', id, 'CREATE',
-							${changesJson}::jsonb, ${snapshotJson}::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					)
@@ -1202,15 +1285,28 @@ export class DrizzleInventoryStore implements InventoryStore {
 		const nextVersion = movement.version + 1;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
-		const changesJson = fieldChangeJson("status", "draft", "posted");
-		const oldValueJson = valueSnapshotJson({
-			status: "draft",
-			version: movement.version,
+		const preparedAudit = prepareTransactionalAuditInsertValues({
+			organizationId: record.organizationId,
+			actorUserId: record.actorUserId,
+			correlationId: meta.correlationId,
+			module: "inventory",
+			entity: "stock_movement",
+			entityId: record.movementId,
+			action: "UPDATE",
+			changes: [{ field: "status", oldValue: "draft", newValue: "posted" }],
+			oldValue: { status: "draft", version: movement.version },
+			newValue: { status: "posted", version: nextVersion },
+			eventContext: {
+				version: 1,
+				outcome: "SUCCEEDED",
+				source: INVENTORY_AUDIT_SOURCE,
+				causationId: record.postIdempotencyKey,
+			},
 		});
-		const newValueJson = valueSnapshotJson({
-			status: "posted",
-			version: nextVersion,
-		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const payloadJson = json({
 			organizationId: record.organizationId,
 			entityType: "stock_movement",
@@ -1226,9 +1322,19 @@ export class DrizzleInventoryStore implements InventoryStore {
 			reservation,
 			consumedQuantity,
 		);
+		const preparedReservationAudit = prepareReservationPostAudit(
+			record,
+			meta.correlationId,
+			reservation,
+			reservationMutation,
+		);
+		if (!preparedReservationAudit.ok) {
+			return preparedReservationAudit;
+		}
+		const reservationAuditContext = preparedReservationAudit.data;
 
 		try {
-			const resultSets = await runNeonHttpTransaction<unknown[][]>((sql) => {
+			const resultSets = await runNeonHttpTransaction((sql) => {
 				const statements = [
 					sql`
 						WITH mutated AS (
@@ -1246,15 +1352,18 @@ export class DrizzleInventoryStore implements InventoryStore {
 								AND version = ${record.expectedVersion}
 							RETURNING *
 						),
-						audited AS (
-							INSERT INTO platform_audit_log (
-								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes, old_value, new_value
-							)
-							SELECT
-								${auditId}, organization_id, ${record.actorUserId}, ${meta.correlationId},
-								'inventory', 'stock_movement', id, 'UPDATE',
-								${changesJson}::jsonb, ${oldValueJson}::jsonb, ${newValueJson}::jsonb
+							audited AS (
+								INSERT INTO platform_audit_log (
+									id, organization_id, actor_user_id, correlation_id, module, entity,
+									entity_id, action, changes, old_value, new_value, metadata,
+									ip_address, user_agent
+								)
+								SELECT
+									${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+									${audit.correlationId}, ${audit.module}, ${audit.entity},
+									${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+									${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+									${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -1345,55 +1454,41 @@ export class DrizzleInventoryStore implements InventoryStore {
 					`);
 				}
 
-				if (reservation !== null && reservationMutation !== null) {
-					const reservationChangesJson = json([
-						{
-							field: "consumed_quantity",
-							oldValue: reservation.consumedQuantity,
-							newValue: formatQuantity(reservationMutation.consumedQuantity),
-						},
-						{
-							field: "status",
-							oldValue: reservation.status,
-							newValue: reservationMutation.status,
-						},
-					]);
-					const reservationOldValueJson = valueSnapshotJson({
-						status: reservation.status,
-						version: reservation.version,
-						consumedQuantity: reservation.consumedQuantity,
-					});
-					const reservationNewValueJson = valueSnapshotJson({
-						status: reservationMutation.status,
-						version: reservation.version + 1,
-						consumedQuantity: formatQuantity(
-							reservationMutation.consumedQuantity,
-						),
-					});
+				if (reservationAuditContext !== null) {
+					const {
+						audit: reservationAudit,
+						mutation: preparedMutation,
+						reservation: preparedReservation,
+					} = reservationAuditContext;
 					statements.push(sql`
 						WITH mutated AS (
 							UPDATE stock_reservation
-							SET consumed_quantity = CAST(${formatQuantity(reservationMutation.consumedQuantity)} AS numeric(24, 12)),
-								status = ${reservationMutation.status},
+							SET consumed_quantity = CAST(${formatQuantity(preparedMutation.consumedQuantity)} AS numeric(24, 12)),
+								status = ${preparedMutation.status},
 								updated_by = ${record.actorUserId},
 								updated_at = now(),
 								version = version + 1
-							WHERE id = ${reservation.id}
+							WHERE id = ${preparedReservation.id}
 								AND organization_id = ${record.organizationId}
-								AND version = ${reservation.version}
+								AND version = ${preparedReservation.version}
 							RETURNING *
 						),
-						audited AS (
-							INSERT INTO platform_audit_log (
-								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes, old_value, new_value
-							)
-							SELECT
-								${reservationMutation.auditId}, organization_id, ${record.actorUserId}, ${meta.correlationId},
-								'inventory', 'stock_reservation', id, 'UPDATE',
-								${reservationChangesJson}::jsonb,
-								${reservationOldValueJson}::jsonb,
-								${reservationNewValueJson}::jsonb
+							audited AS (
+								INSERT INTO platform_audit_log (
+									id, organization_id, actor_user_id, correlation_id, module, entity,
+									entity_id, action, changes, old_value, new_value, metadata,
+									ip_address, user_agent
+								)
+								SELECT
+									${preparedMutation.auditId}, ${reservationAudit.organizationId},
+									${reservationAudit.actorUserId}, ${reservationAudit.correlationId},
+									${reservationAudit.module}, ${reservationAudit.entity},
+									${reservationAudit.entityId}, ${reservationAudit.action},
+									${reservationAudit.changesJson}::jsonb,
+									${reservationAudit.oldValueJson}::jsonb,
+									${reservationAudit.newValueJson}::jsonb,
+									${reservationAudit.metadataJson}::jsonb,
+									${reservationAudit.ipAddress}, ${reservationAudit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
@@ -1503,15 +1598,30 @@ export class DrizzleInventoryStore implements InventoryStore {
 		const nextVersion = movement.version + 1;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
-		const changesJson = fieldChangeJson("status", movement.status, "cancelled");
-		const oldValueJson = valueSnapshotJson({
-			status: movement.status,
-			version: movement.version,
+		const preparedAudit = prepareTransactionalAuditInsertValues({
+			organizationId: record.organizationId,
+			actorUserId: record.actorUserId,
+			correlationId: meta.correlationId,
+			module: "inventory",
+			entity: "stock_movement",
+			entityId: record.movementId,
+			action: "UPDATE",
+			changes: [
+				{ field: "status", oldValue: movement.status, newValue: "cancelled" },
+			],
+			oldValue: { status: movement.status, version: movement.version },
+			newValue: { status: "cancelled", version: nextVersion },
+			eventContext: {
+				version: 1,
+				outcome: "SUCCEEDED",
+				source: INVENTORY_AUDIT_SOURCE,
+				causationId: record.cancelIdempotencyKey,
+			},
 		});
-		const newValueJson = valueSnapshotJson({
-			status: "cancelled",
-			version: nextVersion,
-		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const payloadJson = json({
 			organizationId: record.organizationId,
 			entityType: "stock_movement",
@@ -1524,7 +1634,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[TxIdRow[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH mutated AS (
 						UPDATE stock_movement
@@ -1544,12 +1654,15 @@ export class DrizzleInventoryStore implements InventoryStore {
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, old_value, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, ${record.organizationId}, ${record.actorUserId}, ${meta.correlationId},
-							'inventory', 'stock_movement', ${record.movementId}, 'UPDATE',
-							${changesJson}::jsonb, ${oldValueJson}::jsonb, ${newValueJson}::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						WHERE EXISTS (SELECT 1 FROM mutated)
 						RETURNING id
 					),
@@ -1651,14 +1764,33 @@ export class DrizzleInventoryStore implements InventoryStore {
 		const eventId = randomUUID();
 		const reservedDelta = formatQuantity(quantity);
 		const availableDelta = formatQuantity(-quantity);
-		const snapshotJson = valueSnapshotJson({
-			code: record.code,
-			status: "active",
-			warehouseId: record.warehouseId,
-			itemId: record.itemId,
-			quantity: record.quantity,
+		const preparedAudit = prepareTransactionalAuditInsertValues({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			module: "inventory",
+			entity: "stock_reservation",
+			entityId: reservationId,
+			action: "CREATE",
+			changes: [{ field: "code", oldValue: null, newValue: record.code }],
+			newValue: {
+				code: record.code,
+				status: "active",
+				warehouseId: record.warehouseId,
+				itemId: record.itemId,
+				quantity: record.quantity,
+			},
+			eventContext: {
+				version: 1,
+				outcome: "SUCCEEDED",
+				source: INVENTORY_AUDIT_SOURCE,
+				causationId: record.createIdempotencyKey,
+			},
 		});
-		const changesJson = fieldChangeJson("code", null, record.code);
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const payloadJson = json({
 			organizationId: record.organizationId,
 			entityType: "stock_reservation",
@@ -1673,7 +1805,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 		});
 
 		try {
-			const resultSets = await runNeonHttpTransaction<unknown[][]>((sql) => [
+			const resultSets = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH upserted AS (
 						INSERT INTO stock_balance (
@@ -1733,12 +1865,15 @@ export class DrizzleInventoryStore implements InventoryStore {
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, ${record.organizationId}, ${record.createdBy}, ${meta.correlationId},
-							'inventory', 'stock_reservation', ${reservationId}, 'CREATE',
-							${changesJson}::jsonb, ${snapshotJson}::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						WHERE EXISTS (SELECT 1 FROM created)
 						RETURNING id
 					),
@@ -1840,19 +1975,34 @@ export class DrizzleInventoryStore implements InventoryStore {
 		const releasedDelta = formatQuantity(-remainingQuantity);
 		const availableDelta = formatQuantity(remainingQuantity);
 		const eventType = reservationTerminalEventType(record.terminalStatus);
-		const changesJson = fieldChangeJson(
-			"status",
-			reservation.status,
-			record.terminalStatus,
-		);
-		const oldValueJson = valueSnapshotJson({
-			status: reservation.status,
-			version: reservation.version,
+		const preparedAudit = prepareTransactionalAuditInsertValues({
+			organizationId: record.organizationId,
+			actorUserId: record.actorUserId,
+			correlationId: meta.correlationId,
+			module: "inventory",
+			entity: "stock_reservation",
+			entityId: record.reservationId,
+			action: "UPDATE",
+			changes: [
+				{
+					field: "status",
+					oldValue: reservation.status,
+					newValue: record.terminalStatus,
+				},
+			],
+			oldValue: { status: reservation.status, version: reservation.version },
+			newValue: { status: record.terminalStatus, version: nextVersion },
+			eventContext: {
+				version: 1,
+				outcome: "SUCCEEDED",
+				source: INVENTORY_AUDIT_SOURCE,
+				causationId: record.releaseIdempotencyKey,
+			},
 		});
-		const newValueJson = valueSnapshotJson({
-			status: record.terminalStatus,
-			version: nextVersion,
-		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const payloadJson = json({
 			organizationId: record.organizationId,
 			entityType: "stock_reservation",
@@ -1867,7 +2017,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 		});
 
 		try {
-			const resultSets = await runNeonHttpTransaction<unknown[][]>((sql) => {
+			const resultSets = await runNeonHttpTransaction((sql) => {
 				const statements =
 					remainingQuantity > 0
 						? [
@@ -1929,12 +2079,15 @@ export class DrizzleInventoryStore implements InventoryStore {
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, old_value, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, ${record.organizationId}, ${record.actorUserId}, ${meta.correlationId},
-							'inventory', 'stock_reservation', ${record.reservationId}, 'UPDATE',
-							${changesJson}::jsonb, ${oldValueJson}::jsonb, ${newValueJson}::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						WHERE EXISTS (SELECT 1 FROM mutated)
 						RETURNING id
 					),

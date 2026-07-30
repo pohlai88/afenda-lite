@@ -1,4 +1,6 @@
 import { randomUUID } from "node:crypto";
+
+import { prepareTransactionalAuditInsertValues } from "@afenda/audit";
 import {
 	and,
 	asc,
@@ -16,16 +18,10 @@ import {
 	sql,
 } from "@afenda/db";
 import {
-	fromPostgresUnknown,
+	normalizePostgresUnknown,
 	postgresSqlState,
 } from "@afenda/errors/adapters/postgres";
-import {
-	fail,
-	failFromAppError,
-	failFromUnknown,
-	ok,
-	type Result,
-} from "@afenda/errors/result";
+import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
 
 import {
 	RECEIVING_ERROR_IDEMPOTENCY_CONFLICT,
@@ -64,15 +60,10 @@ import {
 	type ReceivingDiscrepancyType,
 } from "./types";
 
-function failFromPersistence(error: unknown, fallbackMessage: string) {
-	const mapped = fromPostgresUnknown(error);
-	return mapped === undefined
-		? failFromUnknown(error, fallbackMessage)
-		: failFromAppError(mapped);
-}
+const RECEIVING_AUDIT_SOURCE = "receiving.drizzle-store";
 
-interface TxIdRow {
-	id: string;
+function failFromPersistence(error: unknown, fallbackMessage: string) {
+	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
 }
 
 interface PostGuardRow {
@@ -397,10 +388,27 @@ export class DrizzleReceivingStore implements ReceivingStore {
 		const id = randomUUID();
 		const auditId = randomUUID();
 		const eventId = randomUUID();
-		const changes = json([
-			{ field: "code", oldValue: null, newValue: record.code },
-		]);
-		const snapshot = json({ code: record.code, status: "draft" });
+		const preparedAudit = prepareTransactionalAuditInsertValues({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			module: "receiving",
+			entity: "goods_receipt",
+			entityId: id,
+			action: "CREATE",
+			changes: [{ field: "code", oldValue: null, newValue: record.code }],
+			newValue: { code: record.code, status: "draft" },
+			eventContext: {
+				version: 1,
+				outcome: "SUCCEEDED",
+				source: RECEIVING_AUDIT_SOURCE,
+				causationId: record.createIdempotencyKey,
+			},
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const payload = json({
 			organizationId: record.organizationId,
 			entityType: "goods_receipt",
@@ -414,7 +422,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 			warehouseId: record.warehouseId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction<[TxIdRow[]]>((txSql) => [
+			const [rows] = await runNeonHttpTransaction((txSql) => [
 				txSql`
 					WITH mutated AS (
 						INSERT INTO goods_receipt (
@@ -433,11 +441,14 @@ export class DrizzleReceivingStore implements ReceivingStore {
 					), audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module,
-							entity, entity_id, action, changes, new_value
+							entity, entity_id, action, changes, old_value, new_value,
+							metadata, ip_address, user_agent
 						)
-						SELECT ${auditId}, organization_id, created_by, ${meta.correlationId},
-							'receiving', 'goods_receipt', id, 'CREATE',
-							${changes}::jsonb, ${snapshot}::jsonb
+						SELECT ${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated RETURNING id
 					), outboxed AS (
 						INSERT INTO platform_domain_event (
@@ -512,10 +523,29 @@ export class DrizzleReceivingStore implements ReceivingStore {
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const currentReceiptVersion = existing.data.version;
-		const changes = json([
-			{ field: "item_code", oldValue: null, newValue: record.itemCode },
-		]);
-		const snapshot = json({ receiptId: record.receiptId, lineNo });
+		const preparedAudit = prepareTransactionalAuditInsertValues({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			module: "receiving",
+			entity: "goods_receipt_line",
+			entityId: id,
+			action: "CREATE",
+			changes: [
+				{ field: "item_code", oldValue: null, newValue: record.itemCode },
+			],
+			newValue: { receiptId: record.receiptId, lineNo },
+			eventContext: {
+				version: 1,
+				outcome: "SUCCEEDED",
+				source: RECEIVING_AUDIT_SOURCE,
+				causationId: record.lineIdempotencyKey,
+			},
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const payload = json({
 			organizationId: record.organizationId,
 			entityType: "goods_receipt_line",
@@ -532,7 +562,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 			quantity: record.quantityAccepted,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction<[TxIdRow[]]>((txSql) => [
+			const [rows] = await runNeonHttpTransaction((txSql) => [
 				txSql`
 					WITH parent AS (
 						UPDATE goods_receipt
@@ -564,11 +594,14 @@ export class DrizzleReceivingStore implements ReceivingStore {
 					), audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module,
-							entity, entity_id, action, changes, new_value
+							entity, entity_id, action, changes, old_value, new_value,
+							metadata, ip_address, user_agent
 						)
-						SELECT ${auditId}, organization_id, created_by, ${meta.correlationId},
-							'receiving', 'goods_receipt_line', id, 'CREATE',
-							${changes}::jsonb, ${snapshot}::jsonb
+						SELECT ${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated RETURNING id
 					), outboxed AS (
 						INSERT INTO platform_domain_event (
@@ -648,11 +681,28 @@ export class DrizzleReceivingStore implements ReceivingStore {
 		const nextVersion = record.expectedVersion + 1;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
-		const changes = json([
-			{ field: "status", oldValue: "draft", newValue: "posted" },
-		]);
-		const oldValue = json({ status: "draft", version: record.expectedVersion });
-		const newValue = json({ status: "posted", version: nextVersion });
+		const preparedAudit = prepareTransactionalAuditInsertValues({
+			organizationId: record.organizationId,
+			actorUserId: record.actorUserId,
+			correlationId: meta.correlationId,
+			module: "receiving",
+			entity: "goods_receipt",
+			entityId: record.receiptId,
+			action: "UPDATE",
+			changes: [{ field: "status", oldValue: "draft", newValue: "posted" }],
+			oldValue: { status: "draft", version: record.expectedVersion },
+			newValue: { status: "posted", version: nextVersion },
+			eventContext: {
+				version: 1,
+				outcome: "SUCCEEDED",
+				source: RECEIVING_AUDIT_SOURCE,
+				causationId: record.postIdempotencyKey,
+			},
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const payload = json({
 			organizationId: record.organizationId,
 			entityType: "goods_receipt",
@@ -668,9 +718,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 		const guard = record.poConsumptionGuard;
 		const guardParams = postGuardSqlParams(guard);
 		try {
-			const txResults = await runNeonHttpTransaction<
-				[unknown[], PostGuardRow[]] | [PostGuardRow[]]
-			>((txSql) => {
+			const txResults = await runNeonHttpTransaction((txSql) => {
 				const statements: ReturnType<NeonHttpSql>[] = [];
 				if (guard !== undefined) {
 					// Serialize concurrent PO posts (neon-http cannot interleave JS).
@@ -731,11 +779,14 @@ export class DrizzleReceivingStore implements ReceivingStore {
 					), audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module,
-							entity, entity_id, action, changes, old_value, new_value
+							entity, entity_id, action, changes, old_value, new_value,
+							metadata, ip_address, user_agent
 						)
-						SELECT ${auditId}, organization_id, ${record.actorUserId},
-							${meta.correlationId}, 'receiving', 'goods_receipt', id,
-							'UPDATE', ${changes}::jsonb, ${oldValue}::jsonb, ${newValue}::jsonb
+						SELECT ${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated RETURNING id
 					), outboxed AS (
 						INSERT INTO platform_domain_event (
@@ -855,14 +906,28 @@ export class DrizzleReceivingStore implements ReceivingStore {
 		const nextVersion = record.expectedVersion + 1;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
-		const changes = json([
-			{ field: "status", oldValue: "draft", newValue: "cancelled" },
-		]);
-		const oldValue = json({
-			status: "draft",
-			version: record.expectedVersion,
+		const preparedAudit = prepareTransactionalAuditInsertValues({
+			organizationId: record.organizationId,
+			actorUserId: record.actorUserId,
+			correlationId: meta.correlationId,
+			module: "receiving",
+			entity: "goods_receipt",
+			entityId: record.receiptId,
+			action: "UPDATE",
+			changes: [{ field: "status", oldValue: "draft", newValue: "cancelled" }],
+			oldValue: { status: "draft", version: record.expectedVersion },
+			newValue: { status: "cancelled", version: nextVersion },
+			eventContext: {
+				version: 1,
+				outcome: "SUCCEEDED",
+				source: RECEIVING_AUDIT_SOURCE,
+				causationId: record.cancelIdempotencyKey,
+			},
 		});
-		const newValue = json({ status: "cancelled", version: nextVersion });
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const payload = json({
 			organizationId: record.organizationId,
 			entityType: "goods_receipt",
@@ -876,7 +941,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 			warehouseId: existing.data.warehouseId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction<[TxIdRow[]]>((txSql) => [
+			const [rows] = await runNeonHttpTransaction((txSql) => [
 				txSql`
 					WITH mutated AS (
 						UPDATE goods_receipt
@@ -893,11 +958,14 @@ export class DrizzleReceivingStore implements ReceivingStore {
 					), audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module,
-							entity, entity_id, action, changes, old_value, new_value
+							entity, entity_id, action, changes, old_value, new_value,
+							metadata, ip_address, user_agent
 						)
-						SELECT ${auditId}, organization_id, ${record.actorUserId},
-							${meta.correlationId}, 'receiving', 'goods_receipt', id,
-							'UPDATE', ${changes}::jsonb, ${oldValue}::jsonb, ${newValue}::jsonb
+						SELECT ${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated RETURNING id
 					), outboxed AS (
 						INSERT INTO platform_domain_event (
@@ -998,17 +1066,36 @@ export class DrizzleReceivingStore implements ReceivingStore {
 		const nextOriginalVersion = record.expectedVersion + 1;
 		const inventoryApplicationStatus =
 			original.inventoryMovementId === null ? "not_applicable" : "pending";
-		const changes = json([
-			{
-				field: "reverses_receipt_id",
-				oldValue: null,
-				newValue: original.id,
+		const preparedAudit = prepareTransactionalAuditInsertValues({
+			organizationId: record.organizationId,
+			actorUserId: record.actorUserId,
+			correlationId: meta.correlationId,
+			module: "receiving",
+			entity: "goods_receipt",
+			entityId: reverseId,
+			action: "CREATE",
+			changes: [
+				{
+					field: "reverses_receipt_id",
+					oldValue: null,
+					newValue: original.id,
+				},
+			],
+			newValue: {
+				status: "posted",
+				reversesReceiptId: original.id,
 			},
-		]);
-		const snapshot = json({
-			status: "posted",
-			reversesReceiptId: original.id,
+			eventContext: {
+				version: 1,
+				outcome: "SUCCEEDED",
+				source: RECEIVING_AUDIT_SOURCE,
+				causationId: record.reverseIdempotencyKey,
+			},
 		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const payload = json({
 			organizationId: record.organizationId,
 			entityType: "goods_receipt",
@@ -1025,7 +1112,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[TxIdRow[]]>((txSql) => {
+			const [rows] = await runNeonHttpTransaction((txSql) => {
 				const statements = [
 					txSql`
 						WITH claimed AS (
@@ -1067,11 +1154,14 @@ export class DrizzleReceivingStore implements ReceivingStore {
 						), audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module,
-								entity, entity_id, action, changes, new_value
+								entity, entity_id, action, changes, old_value, new_value,
+								metadata, ip_address, user_agent
 							)
-							SELECT ${auditId}, organization_id, ${record.actorUserId},
-								${meta.correlationId}, 'receiving', 'goods_receipt', id,
-								'CREATE', ${changes}::jsonb, ${snapshot}::jsonb
+							SELECT ${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+								${audit.correlationId}, ${audit.module}, ${audit.entity},
+								${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+								${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+								${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 							FROM inserted RETURNING id
 						), outboxed AS (
 							INSERT INTO platform_domain_event (
@@ -1161,7 +1251,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 		record: ReceiptInventoryApplicationRecord,
 	): Promise<Result<GoodsReceipt>> {
 		try {
-			const [rows] = await runNeonHttpTransaction<[TxIdRow[]]>((txSql) => [
+			const [rows] = await runNeonHttpTransaction((txSql) => [
 				txSql`
 					UPDATE goods_receipt
 					SET inventory_application_status = ${record.status},
@@ -1218,17 +1308,36 @@ export class DrizzleReceivingStore implements ReceivingStore {
 		const id = randomUUID();
 		const auditId = randomUUID();
 		const eventId = randomUUID();
-		const changes = json([
-			{
-				field: "discrepancy_type",
-				oldValue: null,
-				newValue: record.discrepancyType,
+		const preparedAudit = prepareTransactionalAuditInsertValues({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			module: "receiving",
+			entity: "receiving_discrepancy",
+			entityId: id,
+			action: "CREATE",
+			changes: [
+				{
+					field: "discrepancy_type",
+					oldValue: null,
+					newValue: record.discrepancyType,
+				},
+			],
+			newValue: {
+				receiptId: record.receiptId,
+				quantity: record.quantity,
 			},
-		]);
-		const snapshot = json({
-			receiptId: record.receiptId,
-			quantity: record.quantity,
+			eventContext: {
+				version: 1,
+				outcome: "SUCCEEDED",
+				source: RECEIVING_AUDIT_SOURCE,
+				causationId: record.recordIdempotencyKey,
+			},
 		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const payload = json({
 			organizationId: record.organizationId,
 			entityType: "receiving_discrepancy",
@@ -1246,7 +1355,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 			discrepancyStatus: "open",
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction<[TxIdRow[]]>((txSql) => [
+			const [rows] = await runNeonHttpTransaction((txSql) => [
 				txSql`
 					WITH parent AS (
 						SELECT * FROM goods_receipt
@@ -1267,11 +1376,14 @@ export class DrizzleReceivingStore implements ReceivingStore {
 					), audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module,
-							entity, entity_id, action, changes, new_value
+							entity, entity_id, action, changes, old_value, new_value,
+							metadata, ip_address, user_agent
 						)
-						SELECT ${auditId}, organization_id, created_by, ${meta.correlationId},
-							'receiving', 'receiving_discrepancy', id, 'CREATE',
-							${changes}::jsonb, ${snapshot}::jsonb
+						SELECT ${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated RETURNING id
 					), outboxed AS (
 						INSERT INTO platform_domain_event (
@@ -1363,10 +1475,27 @@ export class DrizzleReceivingStore implements ReceivingStore {
 		const nextVersion = record.expectedVersion + 1;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
-		const changes = json([
-			{ field: "status", oldValue: "open", newValue: "resolved" },
-		]);
-		const newValue = json({ resolution: record.resolution });
+		const preparedAudit = prepareTransactionalAuditInsertValues({
+			organizationId: record.organizationId,
+			actorUserId: record.actorUserId,
+			correlationId: meta.correlationId,
+			module: "receiving",
+			entity: "receiving_discrepancy",
+			entityId: record.discrepancyId,
+			action: "UPDATE",
+			changes: [{ field: "status", oldValue: "open", newValue: "resolved" }],
+			newValue: { resolution: record.resolution },
+			eventContext: {
+				version: 1,
+				outcome: "SUCCEEDED",
+				source: RECEIVING_AUDIT_SOURCE,
+				causationId: record.resolveIdempotencyKey,
+			},
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const payload = json({
 			organizationId: record.organizationId,
 			entityType: "receiving_discrepancy",
@@ -1384,7 +1513,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 			discrepancyStatus: "resolved",
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction<[TxIdRow[]]>((txSql) => [
+			const [rows] = await runNeonHttpTransaction((txSql) => [
 				txSql`
 					WITH mutated AS (
 						UPDATE receiving_discrepancy
@@ -1405,11 +1534,14 @@ export class DrizzleReceivingStore implements ReceivingStore {
 					), audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module,
-							entity, entity_id, action, changes, new_value
+							entity, entity_id, action, changes, old_value, new_value,
+							metadata, ip_address, user_agent
 						)
-						SELECT ${auditId}, organization_id, ${record.actorUserId},
-							${meta.correlationId}, 'receiving', 'receiving_discrepancy', id,
-							'UPDATE', ${changes}::jsonb, ${newValue}::jsonb
+						SELECT ${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated RETURNING id
 					), outboxed AS (
 						INSERT INTO platform_domain_event (

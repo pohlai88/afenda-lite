@@ -10,9 +10,9 @@ const { hasDatabase } = resolveDatabaseUrlForTests();
 describe("runNeonHttpTransaction contract", () => {
 	it("rejects an empty query list before contacting Neon", async () => {
 		const { runNeonHttpTransaction } = await import("../src/http-transaction");
-		await expect(runNeonHttpTransaction([])).rejects.toThrow(
-			/at least one query/,
-		);
+		await expect(
+			Reflect.apply(runNeonHttpTransaction, undefined, [[]]),
+		).rejects.toThrow(/requires a synchronous query builder/);
 	});
 
 	it("rejects an empty builder result before contacting Neon", async () => {
@@ -71,12 +71,7 @@ describe.skipIf(!hasDatabase)("runNeonHttpTransaction atomicity (N12)", () => {
 	it("commits mutate + audit together under ReadCommitted", async () => {
 		const { runNeonHttpTransaction } = await import("../src/http-transaction");
 
-		const [assignmentRows, auditRows] = await runNeonHttpTransaction<
-			[
-				Array<{ id: string; organization_id: string }>,
-				Array<{ id: string; organization_id: string }>,
-			]
-		>((sql) => [
+		const [assignmentRows, auditRows] = await runNeonHttpTransaction((sql) => [
 			sql`
 				INSERT INTO platform_role_assignment (
 					id,
@@ -178,7 +173,8 @@ describe.skipIf(!hasDatabase)("runNeonHttpTransaction atomicity (N12)", () => {
 		const leftover = await sql`
 			SELECT id
 			FROM platform_role_assignment
-			WHERE id = ${orphanAssignmentId}
+			WHERE organization_id = ${orgId}
+				AND id = ${orphanAssignmentId}
 		`;
 		expect(leftover).toEqual([]);
 	});

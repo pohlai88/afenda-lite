@@ -1,3 +1,4 @@
+import { DEFAULT_INTERNAL_MESSAGE } from "@afenda/errors";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -22,7 +23,7 @@ describe("auth-failure taxonomy", () => {
 		});
 		expect(failFromNeonOrgProbe({ message: "boom" }, "safe fallback")).toEqual({
 			code: "INTERNAL_ERROR",
-			message: "safe fallback",
+			message: DEFAULT_INTERNAL_MESSAGE,
 			ok: false,
 		});
 	});
@@ -37,7 +38,7 @@ describe("auth-failure taxonomy", () => {
 		expect(() => failFromNeonOrgProbe(hostile, "safe fallback")).not.toThrow();
 		expect(failFromNeonOrgProbe(hostile, "safe fallback")).toEqual({
 			code: "INTERNAL_ERROR",
-			message: "safe fallback",
+			message: DEFAULT_INTERNAL_MESSAGE,
 			ok: false,
 		});
 	});

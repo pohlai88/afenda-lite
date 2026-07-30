@@ -42,8 +42,7 @@ describe("serializeAppError", () => {
 
 		expect(serialized).toEqual({
 			code: "INTERNAL_ERROR",
-			message: "Safe fallback",
-			details: { correlationId: "corr-1" },
+			message: "An unexpected error occurred",
 		});
 		expect(JSON.stringify(serialized)).not.toMatch(/SELECT/i);
 		expect(JSON.stringify(serialized)).not.toMatch(/password/i);
@@ -84,7 +83,7 @@ describe("serializeAppError", () => {
 		expect(() => serializeAppError(error)).not.toThrow();
 		expect(serializeAppError(error)).toEqual({
 			code: "INTERNAL_ERROR",
-			message: "Operation failed",
+			message: "An unexpected error occurred",
 		});
 	});
 
@@ -97,7 +96,7 @@ describe("serializeAppError", () => {
 
 		expect(serializeAppError(error)).toEqual({
 			code: "INTERNAL_ERROR",
-			message: "Failure",
+			message: "An unexpected error occurred",
 		});
 	});
 
@@ -123,7 +122,7 @@ describe("serializeAppError", () => {
 			"fallback",
 		);
 		expect(serialized.code).toBe("INTERNAL_ERROR");
-		expect(serialized.message).toBe("fallback");
+		expect(serialized.message).toBe("An unexpected error occurred");
 		expect(JSON.stringify(serialized)).not.toMatch(/duplicate key/i);
 	});
 
@@ -147,6 +146,22 @@ describe("serializeAppError", () => {
 		});
 		expect(serializeAppError(serviceUnavailable("db")).details).toEqual({
 			service: "db",
+		});
+	});
+
+	it("fails closed for INTERNAL_ERROR messages and details", () => {
+		const serialized = serializeAppError(
+			new AppError({
+				code: "INTERNAL_ERROR",
+				message: "DATABASE_URL=postgres://admin:secret@host/db",
+				details: { correlationId: "corr-1" },
+				isOperational: false,
+			}),
+		);
+
+		expect(serialized).toEqual({
+			code: "INTERNAL_ERROR",
+			message: "An unexpected error occurred",
 		});
 	});
 });

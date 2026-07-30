@@ -1,14 +1,12 @@
-import { type AppError, serializeAppError } from "@afenda/errors";
-import { retryAfterSeconds } from "@afenda/errors/http";
+import { AppError } from "@afenda/errors";
+import { projectHttpError } from "@afenda/errors/http";
 import { applyRetryAfterHeader } from "@afenda/http";
 import { NextResponse } from "next/server";
 
 import {
-	API_ERROR_HTTP_STATUS,
 	type APIErrorBody,
 	type ApiErrorCode,
 	apiData,
-	apiErrorBody,
 } from "@/modules/platform/schemas/api-error";
 
 /**
@@ -31,26 +29,20 @@ export function jsonError(
 	details?: unknown,
 	init?: { headers?: HeadersInit },
 ): NextResponse<APIErrorBody> {
-	const retryAfter = retryAfterSeconds(details);
-	const headers = new Headers(init?.headers);
-	if (retryAfter !== undefined) {
-		applyRetryAfterHeader(headers, retryAfter);
-	}
-	return NextResponse.json(apiErrorBody(code, message, details), {
-		status: API_ERROR_HTTP_STATUS[code],
-		headers,
-	});
+	return jsonAppError(new AppError({ code, message, details }), init);
 }
 
 export function jsonAppError(
 	error: AppError,
 	init?: { headers?: HeadersInit },
 ): NextResponse<APIErrorBody> {
-	const serialized = serializeAppError(error);
-	return jsonError(
-		serialized.code,
-		serialized.message,
-		serialized.details,
-		init,
-	);
+	const projection = projectHttpError(error);
+	const headers = new Headers(init?.headers);
+	if (projection.retryAfter !== undefined) {
+		applyRetryAfterHeader(headers, projection.retryAfter);
+	}
+	return NextResponse.json(projection.body, {
+		status: projection.status,
+		headers,
+	});
 }

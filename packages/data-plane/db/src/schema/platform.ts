@@ -78,6 +78,11 @@ export const platformRoleAssignment = pgTable(
 			.defaultNow(),
 	},
 	(t) => [
+		index("platform_role_assignment_org_active_user_idx").on(
+			t.organizationId,
+			t.active,
+			t.userId,
+		),
 		/** N12 Path-to-100%: one active assignment per natural key (soft-revoke OK). */
 		uniqueIndex("platform_role_assignment_active_natural_key_uidx")
 			.on(t.userId, t.organizationId, t.roleId, t.scopeType, t.scopeId)
@@ -98,29 +103,39 @@ export const platformRolePermission = pgTable(
 	(t) => [primaryKey({ columns: [t.roleId, t.permissionCode] })],
 );
 
-export const platformRbacAudit = pgTable("platform_rbac_audit", {
-	id: uuid("id").primaryKey().defaultRandom(),
-	action: text("action").notNull(),
-	/** Required — writer stamps session user (ARCH-023 · GUIDE-017 · N12). */
-	actorUserId: text("actor_user_id").notNull(),
-	/** Required — writer stamps session org; hard tenancy predicate (ARCH-023 · N12). */
-	organizationId: text("organization_id").notNull(),
-	targetType: text("target_type"),
-	targetId: text("target_id"),
-	roleId: uuid("role_id"),
-	permissionCode: text("permission_code"),
-	oldValue: jsonb("old_value"),
-	newValue: jsonb("new_value"),
-	reason: text("reason"),
-	/** API-007 / GUIDE-018 I5.3 — required on new privileged writes; null on history. */
-	correlationId: text("correlation_id"),
-	/** Optional request attribution (nullable on history / non-HTTP writers). */
-	ipAddress: text("ip_address"),
-	userAgent: text("user_agent"),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-});
+export const platformRbacAudit = pgTable(
+	"platform_rbac_audit",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		action: text("action").notNull(),
+		/** Required — writer stamps session user (ARCH-023 · GUIDE-017 · N12). */
+		actorUserId: text("actor_user_id").notNull(),
+		/** Required — writer stamps session org; hard tenancy predicate (ARCH-023 · N12). */
+		organizationId: text("organization_id").notNull(),
+		targetType: text("target_type"),
+		targetId: text("target_id"),
+		roleId: uuid("role_id"),
+		permissionCode: text("permission_code"),
+		oldValue: jsonb("old_value"),
+		newValue: jsonb("new_value"),
+		reason: text("reason"),
+		/** API-007 / GUIDE-018 I5.3 — required on new privileged writes; null on history. */
+		correlationId: text("correlation_id"),
+		/** Optional request attribution (nullable on history / non-HTTP writers). */
+		ipAddress: text("ip_address"),
+		userAgent: text("user_agent"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("platform_rbac_audit_org_created_id_idx").on(
+			t.organizationId,
+			t.createdAt,
+			t.id,
+		),
+	],
+);
 
 /**
  * General domain activity audit (distinct from RBAC `platform_rbac_audit`).

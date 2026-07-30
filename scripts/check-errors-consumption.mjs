@@ -60,7 +60,10 @@ const protectedDefinitions = [
 	[/\b(?:export\s+)?function\s+normalizeUnknown\b/u, "normalizeUnknown"],
 	[/\b(?:export\s+)?function\s+serializeAppError\b/u, "serializeAppError"],
 	[/\b(?:export\s+)?function\s+serializeUnknown\b/u, "serializeUnknown"],
-	[/\b(?:export\s+)?function\s+fromPostgresUnknown\b/u, "fromPostgresUnknown"],
+	[
+		/\b(?:export\s+)?function\s+normalizePostgresUnknown\b/u,
+		"normalizePostgresUnknown",
+	],
 	[/\b(?:export\s+)?function\s+postgresSqlState\b/u, "postgresSqlState"],
 	[/\b(?:export\s+)?function\s+hasPostgresSqlState\b/u, "hasPostgresSqlState"],
 	[/\bfunction\s+readSqlState\b/u, "Postgres SQLSTATE parser"],

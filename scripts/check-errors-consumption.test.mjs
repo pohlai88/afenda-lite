@@ -268,8 +268,8 @@ test("allows published @afenda/errors subpath imports", () => {
 				'import type { Result } from "@afenda/errors/result";',
 				'import { httpErrorBody } from "@afenda/errors/http";',
 				'import { badRequest } from "@afenda/errors/common";',
-				'import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";',
-				"export const value: Result<string> = { ok: true, data: String(httpErrorBody) + String(badRequest) + String(fromPostgresUnknown) };",
+				'import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";',
+				"export const value: Result<string> = { ok: true, data: String(httpErrorBody) + String(badRequest) + String(normalizePostgresUnknown) };",
 			].join("\n"),
 		);
 

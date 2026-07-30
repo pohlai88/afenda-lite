@@ -209,9 +209,7 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 		},
 		async claimDueWork(input) {
 			try {
-				const [claimed] = await runNeonHttpTransaction<
-					[Array<{ id: string; organizationId: string }>]
-				>((sqlTag) => [
+				const [claimed] = await runNeonHttpTransaction((sqlTag) => [
 					sqlTag`
 						WITH ranked AS (
 							SELECT id, organization_id,
@@ -245,21 +243,24 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 					`,
 				]);
 				const items: ReliabilityWorkItem[] = [];
-				const sequentialOutcome1 = await runSequential(claimed, async (row) => {
-					const item = await getWork({
-						organizationId: row.organizationId,
-						workItemId: row.id,
-					});
-					if (!item.ok) {
-						return sequentialReturn(item);
-					}
-					if (item.data === null) {
-						return sequentialReturn(
-							fail("NOT_FOUND", "Claimed reliability work was not found"),
-						);
-					}
-					items.push(item.data);
-				});
+				const sequentialOutcome1 = await runSequential(
+					claimed,
+					async (row: { id: string; organizationId: string }) => {
+						const item = await getWork({
+							organizationId: row.organizationId,
+							workItemId: row.id,
+						});
+						if (!item.ok) {
+							return sequentialReturn(item);
+						}
+						if (item.data === null) {
+							return sequentialReturn(
+								fail("NOT_FOUND", "Claimed reliability work was not found"),
+							);
+						}
+						items.push(item.data);
+					},
+				);
 				if (sequentialOutcome1.kind === "return") {
 					return sequentialOutcome1.value;
 				}
@@ -307,9 +308,8 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 						: fail("CONFLICT", "Reliability work item version conflict");
 				}
 				const dead = input.deadLetter;
-				const [saved] = await runNeonHttpTransaction<[Array<{ id: string }>]>(
-					(sqlTag) => [
-						sqlTag`
+				const [saved] = await runNeonHttpTransaction((sqlTag) => [
+					sqlTag`
 						WITH updated AS (
 							UPDATE hr_reliability_work_item
 							SET status = ${item.status}, version = ${item.version},
@@ -339,8 +339,7 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 						)
 						SELECT id FROM inserted
 					`,
-					],
-				);
+				]);
 				if (!saved[0]) {
 					return fail("CONFLICT", "Reliability work item version conflict");
 				}
@@ -404,9 +403,8 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 		async createDeadLetterReplay(input) {
 			const item = input.workItem;
 			try {
-				const [created] = await runNeonHttpTransaction<[Array<{ id: string }>]>(
-					(sqlTag) => [
-						sqlTag`
+				const [created] = await runNeonHttpTransaction((sqlTag) => [
+					sqlTag`
 						WITH eligible AS (
 							SELECT id FROM hr_reliability_dead_letter
 							WHERE id = ${input.deadLetterId}
@@ -437,8 +435,7 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 						)
 						SELECT id FROM linked
 					`,
-					],
-				);
+				]);
 				if (!created[0]) {
 					return fail("CONFLICT", "Reliability dead letter already replayed");
 				}
@@ -486,7 +483,10 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 					input.expectedVersion === null
 						? await db
 								.insert(hrConnectorCursor)
-								.values(input.cursor)
+								.values({
+									...input.cursor,
+									organizationId: input.cursor.organizationId,
+								})
 								.returning()
 						: await db
 								.update(hrConnectorCursor)

@@ -480,6 +480,177 @@ export const PERMISSION_DENIED_MESSAGE: Record<
 		"You do not have permission to read organization payslips.",
 	"payroll.reconciliation.manage":
 		"You do not have permission to manage payroll reconciliation.",
+	"master_data.reference_read":
+		"You do not have permission to read platform reference values used by ERP master data.",
+	"master_data.dimension_read":
+		"You do not have permission to read organization dimension masters.",
+	"master_data.dimension_create":
+		"You do not have permission to create organization dimension masters.",
+	"master_data.dimension_update":
+		"You do not have permission to update organization dimension masters.",
+	"master_data.dimension_activate":
+		"You do not have permission to activate organization dimension masters.",
+	"master_data.dimension_archive":
+		"You do not have permission to archive organization dimension masters.",
+	"master_data.party_read":
+		"You do not have permission to read party masters and party extensions.",
+	"master_data.party_create":
+		"You do not have permission to create party masters.",
+	"master_data.party_update":
+		"You do not have permission to update party masters.",
+	"master_data.party_suspend":
+		"You do not have permission to suspend party masters from operational use.",
+	"master_data.item_read":
+		"You do not have permission to read item, item-group, template, and variant masters.",
+	"master_data.item_create":
+		"You do not have permission to create item masters.",
+	"master_data.item_update":
+		"You do not have permission to update item masters.",
+	"master_data.item_suspend":
+		"You do not have permission to suspend item masters from operational use.",
+	"master_data.item_extension_manage":
+		"You do not have permission to manage item groups, UoM conversions, barcodes, aliases, and item external IDs.",
+	"master_data.warehouse_manage":
+		"You do not have permission to manage warehouse master identities.",
+	"master_data.payment_term_manage":
+		"You do not have permission to manage payment-term masters.",
+	"master_data.tax_registration_manage":
+		"You do not have permission to manage tax-registration masters.",
+	"master_data.template_manage":
+		"You do not have permission to manage item templates and template attributes.",
+	"master_data.variant_manage":
+		"You do not have permission to manage item variants and variant attribute values.",
+	"master_data.change_request_create":
+		"You do not have permission to create controlled master-data change requests.",
+	"master_data.change_request_submit":
+		"You do not have permission to submit controlled master-data change requests for review.",
+	"master_data.change_request_approve":
+		"You do not have permission to approve controlled master-data change requests.",
+	"master_data.change_request_apply":
+		"You do not have permission to apply approved master-data change requests.",
+	"master_data.search_rebuild":
+		"You do not have permission to rebuild master-data search projections.",
+	"master_data.duplicate_review":
+		"You do not have permission to review master-data duplicate candidates.",
+	"master_data.tax_registration_read":
+		"You do not have permission to read masked tax-registration projections.",
+	"master_data.tax_registration_sensitive_read":
+		"You do not have permission to read unmasked tax-registration projections.",
+	"master_data.party_contact_read":
+		"You do not have permission to read masked party-contact projections.",
+	"master_data.party_contact_sensitive_read":
+		"You do not have permission to read unmasked party-contact projections.",
+	"master_data.sensitive_external_id_read":
+		"You do not have permission to read sensitive external identifier values.",
+	"master_data.party_activate":
+		"You do not have permission to activate party master records.",
+	"master_data.party_inactivate":
+		"You do not have permission to inactivate party master records.",
+	"master_data.party_block":
+		"You do not have permission to block party master records.",
+	"master_data.party_unblock":
+		"You do not have permission to restore blocked party master records.",
+	"master_data.party_retire":
+		"You do not have permission to retire party master records.",
+	"master_data.party_archive":
+		"You do not have permission to archive party master records.",
+	"master_data.party_merge":
+		"You do not have permission to merge duplicate party master records.",
+	"master_data.item_activate":
+		"You do not have permission to activate item master records.",
+	"master_data.item_inactivate":
+		"You do not have permission to inactivate item master records.",
+	"master_data.item_block":
+		"You do not have permission to block item master records.",
+	"master_data.item_unblock":
+		"You do not have permission to restore blocked item master records.",
+	"master_data.item_retire":
+		"You do not have permission to retire item master records.",
+	"master_data.item_archive":
+		"You do not have permission to archive item master records.",
+	"master_data.item_group_activate":
+		"You do not have permission to activate item-group master records.",
+	"master_data.item_group_inactivate":
+		"You do not have permission to inactivate item-group master records.",
+	"master_data.item_group_archive":
+		"You do not have permission to archive item-group master records.",
+	"master_data.warehouse_activate":
+		"You do not have permission to activate warehouse master records.",
+	"master_data.warehouse_inactivate":
+		"You do not have permission to inactivate warehouse master records.",
+	"master_data.warehouse_block":
+		"You do not have permission to block warehouse master records.",
+	"master_data.warehouse_unblock":
+		"You do not have permission to restore blocked warehouse master records.",
+	"master_data.warehouse_retire":
+		"You do not have permission to retire warehouse master records.",
+	"master_data.warehouse_archive":
+		"You do not have permission to archive warehouse master records.",
+	"master_data.payment_term_activate":
+		"You do not have permission to activate payment-term master records.",
+	"master_data.payment_term_inactivate":
+		"You do not have permission to inactivate payment-term master records.",
+	"master_data.payment_term_archive":
+		"You do not have permission to archive payment-term master records.",
+	"master_data.tax_registration_activate":
+		"You do not have permission to activate tax-registration master records.",
+	"master_data.tax_registration_revoke":
+		"You do not have permission to revoke tax-registration master records.",
+	"master_data.tax_registration_archive":
+		"You do not have permission to archive tax-registration master records.",
+	"master_data.tax_registration_restore":
+		"You do not have permission to restore tax-registration master records.",
+	"master_data.item_template_activate":
+		"You do not have permission to activate item-template master records.",
+	"master_data.item_template_inactivate":
+		"You do not have permission to inactivate item-template master records.",
+	"master_data.item_template_retire":
+		"You do not have permission to retire item-template master records.",
+	"master_data.item_variant_activate":
+		"You do not have permission to activate item-variant master records.",
+	"master_data.item_variant_inactivate":
+		"You do not have permission to inactivate item-variant master records.",
+	"master_data.item_variant_block":
+		"You do not have permission to block item-variant master records.",
+	"master_data.item_variant_unblock":
+		"You do not have permission to restore blocked item-variant master records.",
+	"master_data.item_variant_retire":
+		"You do not have permission to retire item-variant master records.",
+	"master_data.item_variant_archive":
+		"You do not have permission to archive item-variant master records.",
+	"sales.pricing.read":
+		"You do not have permission to read Sales price books and calculation traces.",
+	"sales.pricing.manage":
+		"You do not have permission to manage Sales price books and commercial conditions.",
+	"sales.quotation.read":
+		"You do not have permission to read Sales quotations.",
+	"sales.quotation.create":
+		"You do not have permission to create Sales quotations.",
+	"sales.quotation.update":
+		"You do not have permission to revise and transition Sales quotations.",
+	"sales.quotation.approve":
+		"You do not have permission to approve or reject Sales quotations.",
+	"sales.order.approve": "You do not have permission to approve Sales orders.",
+	"sales.order.release":
+		"You do not have permission to release approved Sales orders to fulfillment.",
+	"sales.order.hold":
+		"You do not have permission to place and resolve Sales-order holds.",
+	"sales.order.close":
+		"You do not have permission to close fulfilled or cancelled Sales orders.",
+	"sales.return.read":
+		"You do not have permission to read Sales return authorizations.",
+	"sales.return.create":
+		"You do not have permission to create Sales return authorizations.",
+	"sales.return.approve":
+		"You do not have permission to approve, reject, or close Sales return authorizations.",
+	"sales.return.cancel":
+		"You do not have permission to cancel Sales return authorizations.",
+	"human-resources.performance.goal.own.manage":
+		"You do not have permission to create and manage own employee-proposed performance goals and progress.",
+	"human-resources.reliability.operate":
+		"You do not have permission to replay Human Resources reliability dead letters and acknowledge connector work.",
+	"human-resources.connector-cursor.manage":
+		"You do not have permission to repair Human Resources connector cursor checkpoints.",
 } as const satisfies Record<PlatformPermissionCodeV1, string>;
 
 /**

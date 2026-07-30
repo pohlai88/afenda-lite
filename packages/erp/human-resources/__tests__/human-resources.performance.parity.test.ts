@@ -151,11 +151,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			assert.isAbove(events.length, 0);
 			return;
 		}
-		assert.deepInclude(
-			input.ready.ports.outbox.calls,
-			expect.objectContaining({
-				type: input.type,
-			}),
+		assert.strictEqual(
+			input.ready.ports.outbox.calls.some((call) => call.type === input.type),
+			true,
 		);
 	}
 

@@ -1,5 +1,6 @@
 import { isPlainObject } from "./differ";
-import { changeSchema } from "./schemas";
+import { extractAuditMetadata } from "./event-context";
+import { auditEntrySchema, changeSchema } from "./schemas";
 import type { AuditAction, AuditEntry, Change } from "./types";
 import { AUDIT_ACTIONS } from "./types";
 
@@ -11,7 +12,12 @@ function isAuditAction(value: string): value is AuditAction {
 
 export interface MapAuditRowFailure {
 	ok: false;
-	reason: "invalid_action" | "invalid_changes" | "invalid_snapshot";
+	reason:
+		| "invalid_action"
+		| "invalid_changes"
+		| "invalid_entry"
+		| "invalid_event_context"
+		| "invalid_snapshot";
 }
 
 export interface MapAuditRowSuccess {
@@ -86,25 +92,35 @@ export function mapAuditLogRow(row: {
 	if (!metadata.ok) {
 		return { ok: false, reason: "invalid_snapshot" };
 	}
+	const extractedMetadata = extractAuditMetadata(metadata.data);
+	if (!extractedMetadata.ok) {
+		return { ok: false, reason: "invalid_event_context" };
+	}
+
+	const entry = auditEntrySchema.safeParse({
+		id: row.id,
+		organizationId: row.organizationId,
+		actorUserId: row.actorUserId,
+		correlationId: row.correlationId,
+		module: row.module,
+		entity: row.entity,
+		entityId: row.entityId,
+		eventContext: extractedMetadata.eventContext,
+		action: row.action,
+		changes,
+		oldValue: oldValue.data,
+		newValue: newValue.data,
+		metadata: extractedMetadata.metadata,
+		ipAddress: row.ipAddress,
+		userAgent: row.userAgent,
+		createdAt: row.createdAt,
+	});
+	if (!entry.success) {
+		return { ok: false, reason: "invalid_entry" };
+	}
 
 	return {
 		ok: true,
-		data: {
-			id: row.id,
-			organizationId: row.organizationId,
-			actorUserId: row.actorUserId,
-			correlationId: row.correlationId,
-			module: row.module,
-			entity: row.entity,
-			entityId: row.entityId,
-			action: row.action,
-			changes,
-			oldValue: oldValue.data,
-			newValue: newValue.data,
-			metadata: metadata.data,
-			ipAddress: row.ipAddress,
-			userAgent: row.userAgent,
-			createdAt: row.createdAt,
-		},
+		data: entry.data,
 	};
 }

@@ -19,9 +19,18 @@ export {
 	HARD_TENANT_ROOT_TABLE_NAMES,
 	HARD_TENANT_ROOT_TABLES,
 } from "./hard-tenant-roots";
-export type { NeonHttpSql } from "./http-transaction";
+export type {
+	NeonHttpIsolationLevel,
+	NeonHttpSql,
+	NeonHttpTransactionBuilder,
+	NeonHttpTransactionOptions,
+	NeonHttpTransactionQueries,
+	NeonHttpTransactionQuery,
+	NeonHttpTransactionResults,
+} from "./http-transaction";
 export { runNeonHttpTransaction } from "./http-transaction";
 export type {
+	EnsurePlatformPermissionCatalogResult,
 	PlatformPermissionCodeV1,
 	PlatformRoleTemplateV1,
 } from "./platform-permission-catalog";

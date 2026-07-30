@@ -1,6 +1,12 @@
 import { randomUUID } from "node:crypto";
 
 import {
+	type PreparedDerivedEntityAuditInsertValues,
+	type PreparedTransactionalAuditInsertValues,
+	prepareDerivedEntityAuditInsertValues,
+	prepareTransactionalAuditInsertValues,
+} from "@afenda/audit";
+import {
 	and,
 	db,
 	eq,
@@ -42,10 +48,75 @@ import {
 } from "../../shared/persistence-errors";
 import type { HumanResourcesStore } from "../../store";
 import type { EmployeeCompensation } from "../../types";
-import {
-	type EmployeeCompensationSqlRow,
-	mapEmployeeCompensationSql,
-} from "./compensation-benefits";
+import { mapEmployeeCompensationSql } from "./compensation-benefits";
+
+const EMPLOYEE_COMPENSATION_AUDIT_SOURCE =
+	"human-resources.employee-compensation-lifecycle-drizzle";
+
+function prepareEmployeeCompensationAudit(input: {
+	action: "CREATE" | "UPDATE";
+	actorUserId: string;
+	correlationId: string;
+	entityId: string;
+	meta: HumanResourcesMutationMeta;
+	newValue?: Record<string, unknown> | null | undefined;
+	oldValue?: Record<string, unknown> | null | undefined;
+	organizationId: string;
+	reasonCode: string;
+}): Result<PreparedTransactionalAuditInsertValues> {
+	return prepareTransactionalAuditInsertValues({
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		correlationId: input.correlationId,
+		module: "human-resources",
+		entity: "hr_employee_compensation",
+		entityId: input.entityId,
+		action: input.action,
+		oldValue: input.oldValue,
+		newValue: input.newValue,
+		eventContext: {
+			version: 1,
+			outcome: "SUCCEEDED",
+			source: EMPLOYEE_COMPENSATION_AUDIT_SOURCE,
+			causationId:
+				input.meta.causationId ??
+				input.meta.idempotencyKey ??
+				input.correlationId,
+			reasonCode: input.reasonCode,
+		},
+	});
+}
+
+function prepareDerivedEmployeeCompensationAudit(input: {
+	actorUserId: string;
+	correlationId: string;
+	meta: HumanResourcesMutationMeta;
+	newValue: Record<string, unknown>;
+	oldValue: Record<string, unknown>;
+	organizationId: string;
+	reasonCode: string;
+}): Result<PreparedDerivedEntityAuditInsertValues> {
+	return prepareDerivedEntityAuditInsertValues({
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		correlationId: input.correlationId,
+		module: "human-resources",
+		entity: "hr_employee_compensation",
+		action: "UPDATE",
+		oldValue: input.oldValue,
+		newValue: input.newValue,
+		eventContext: {
+			version: 1,
+			outcome: "SUCCEEDED",
+			source: EMPLOYEE_COMPENSATION_AUDIT_SOURCE,
+			causationId:
+				input.meta.causationId ??
+				input.meta.idempotencyKey ??
+				input.correlationId,
+			reasonCode: input.reasonCode,
+		},
+	});
+}
 
 function eventPayloadJson(value: Record<string, unknown>): string {
 	return JSON.stringify(value);
@@ -187,11 +258,43 @@ export async function drizzleAmendEmployeeCompensation(
 		actorId: input.actorUserId,
 		correlationId: meta.correlationId,
 	});
+	const preparedAudit = prepareEmployeeCompensationAudit({
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		correlationId: meta.correlationId,
+		entityId: input.compensationId,
+		action: "UPDATE",
+		oldValue: {
+			baseAmount: comp.baseAmount,
+			currencyCode: comp.currencyCode,
+			payFrequency: comp.payFrequency,
+			effectiveFrom: comp.effectiveFrom,
+			effectiveTo: comp.effectiveTo,
+			gradeId: comp.gradeId,
+			salaryBandId: comp.salaryBandId,
+			version: comp.version,
+		},
+		newValue: {
+			baseAmount: nextBaseAmount,
+			currencyCode: nextCurrencyCode,
+			payFrequency: nextPayFrequency,
+			effectiveFrom: nextEffectiveFrom,
+			effectiveTo: nextEffectiveTo,
+			gradeId: nextGradeId,
+			salaryBandId: nextSalaryBandId,
+			version: nextVersion,
+		},
+		meta,
+		reasonCode: "AMEND_DRAFT",
+	});
+	if (!preparedAudit.ok) {
+		return preparedAudit;
+	}
+	const audit = preparedAudit.data;
 
 	try {
-		const [rows] = await runNeonHttpTransaction<[EmployeeCompensationSqlRow[]]>(
-			(sqlTag) => [
-				sqlTag`
+		const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			sqlTag`
 					WITH mutated AS (
 						UPDATE hr_employee_compensation
 						SET base_amount = ${nextBaseAmount},
@@ -215,11 +318,15 @@ export async function drizzleAmendEmployeeCompensation(
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-							'human-resources', 'hr_employee_compensation', id, 'UPDATE', '[]'::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity}, ${audit.entityId},
+							${audit.action}, ${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+							${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+							${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -237,8 +344,7 @@ export async function drizzleAmendEmployeeCompensation(
 					)
 					SELECT mutated.* FROM mutated, audited, outboxed
 				`,
-			],
-		);
+		]);
 		const [row] = rows;
 		if (!row) {
 			return missAfterOptimisticUpdate({
@@ -328,12 +434,48 @@ export async function drizzleApproveEmployeeCompensation(
 		actorId: input.actorUserId,
 		correlationId: meta.correlationId,
 	});
+	const preparedApprovedAudit = prepareEmployeeCompensationAudit({
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		correlationId: meta.correlationId,
+		entityId: input.compensationId,
+		action: "UPDATE",
+		oldValue: { status: comp.status, version: comp.version },
+		newValue: { status: nextStatus, version: nextVersion },
+		meta,
+		reasonCode: "APPROVE",
+	});
+	if (!preparedApprovedAudit.ok) {
+		return preparedApprovedAudit;
+	}
+	const approvedAudit = preparedApprovedAudit.data;
+	const preparedEndedAudit =
+		nextStatus === "active"
+			? prepareDerivedEmployeeCompensationAudit({
+					organizationId: input.organizationId,
+					actorUserId: input.actorUserId,
+					correlationId: meta.correlationId,
+					oldValue: { status: "active" },
+					newValue: {
+						status: "ended",
+						effectiveTo: predecessorEffectiveTo,
+					},
+					meta,
+					reasonCode: "END_ACTIVE_PREDECESSOR",
+				})
+			: null;
+	let endedAudit: PreparedDerivedEntityAuditInsertValues | null = null;
+	if (preparedEndedAudit !== null) {
+		if (!preparedEndedAudit.ok) {
+			return preparedEndedAudit;
+		}
+		endedAudit = preparedEndedAudit.data;
+	}
 
 	try {
-		const [rows] = await runNeonHttpTransaction<[EmployeeCompensationSqlRow[]]>(
-			(sqlTag) => [
-				nextStatus === "active"
-					? sqlTag`
+		const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			nextStatus === "active"
+				? sqlTag`
 						WITH active_comp AS (
 							SELECT id, version
 							FROM hr_employee_compensation
@@ -357,11 +499,18 @@ export async function drizzleApproveEmployeeCompensation(
 						audit_ended AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditEndedId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_employee_compensation', id, 'UPDATE', '[]'::jsonb
+								${auditEndedId}, ${endedAudit?.organizationId ?? null},
+								${endedAudit?.actorUserId ?? null}, ${endedAudit?.correlationId ?? null},
+								${endedAudit?.module ?? null}, ${endedAudit?.entity ?? null}, id,
+								${endedAudit?.action ?? null}, ${endedAudit?.changesJson ?? null}::jsonb,
+								${endedAudit?.oldValueJson ?? null}::jsonb,
+								${endedAudit?.newValueJson ?? null}::jsonb,
+								${endedAudit?.metadataJson ?? null}::jsonb,
+								${endedAudit?.ipAddress ?? null}, ${endedAudit?.userAgent ?? null}
 							FROM ended_comp
 							RETURNING id
 						),
@@ -395,11 +544,17 @@ export async function drizzleApproveEmployeeCompensation(
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditApprovedId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_employee_compensation', id, 'UPDATE', '[]'::jsonb
+								${auditApprovedId}, ${approvedAudit.organizationId},
+								${approvedAudit.actorUserId}, ${approvedAudit.correlationId},
+								${approvedAudit.module}, ${approvedAudit.entity}, ${approvedAudit.entityId},
+								${approvedAudit.action}, ${approvedAudit.changesJson}::jsonb,
+								${approvedAudit.oldValueJson}::jsonb, ${approvedAudit.newValueJson}::jsonb,
+								${approvedAudit.metadataJson}::jsonb, ${approvedAudit.ipAddress},
+								${approvedAudit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -417,7 +572,7 @@ export async function drizzleApproveEmployeeCompensation(
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`
-					: sqlTag`
+				: sqlTag`
 						WITH mutated AS (
 							UPDATE hr_employee_compensation
 							SET status = ${nextStatus},
@@ -435,11 +590,17 @@ export async function drizzleApproveEmployeeCompensation(
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditApprovedId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_employee_compensation', id, 'UPDATE', '[]'::jsonb
+								${auditApprovedId}, ${approvedAudit.organizationId},
+								${approvedAudit.actorUserId}, ${approvedAudit.correlationId},
+								${approvedAudit.module}, ${approvedAudit.entity}, ${approvedAudit.entityId},
+								${approvedAudit.action}, ${approvedAudit.changesJson}::jsonb,
+								${approvedAudit.oldValueJson}::jsonb, ${approvedAudit.newValueJson}::jsonb,
+								${approvedAudit.metadataJson}::jsonb, ${approvedAudit.ipAddress},
+								${approvedAudit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -457,8 +618,7 @@ export async function drizzleApproveEmployeeCompensation(
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-			],
-		);
+		]);
 		const [row] = rows;
 		if (!row) {
 			return missAfterOptimisticUpdate({
@@ -619,11 +779,37 @@ export async function drizzleActivateEmployeeCompensation(
 		actorId: input.actorUserId,
 		correlationId: meta.correlationId,
 	});
+	const preparedEndedAudit = prepareDerivedEmployeeCompensationAudit({
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		correlationId: meta.correlationId,
+		oldValue: { status: "active" },
+		newValue: { status: "ended", effectiveTo: predecessorEffectiveTo },
+		meta,
+		reasonCode: "END_ACTIVE_PREDECESSOR",
+	});
+	if (!preparedEndedAudit.ok) {
+		return preparedEndedAudit;
+	}
+	const endedAudit = preparedEndedAudit.data;
+	const preparedActivatedAudit = prepareEmployeeCompensationAudit({
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		correlationId: meta.correlationId,
+		entityId: input.compensationId,
+		action: "UPDATE",
+		oldValue: { status: comp.status, version: comp.version },
+		newValue: { status: "active", version: nextVersion },
+		meta,
+		reasonCode: "ACTIVATE",
+	});
+	if (!preparedActivatedAudit.ok) {
+		return preparedActivatedAudit;
+	}
+	const activatedAudit = preparedActivatedAudit.data;
 
 	try {
-		const [, rows] = await runNeonHttpTransaction<
-			[{ id: string }[], EmployeeCompensationSqlRow[]]
-		>((sqlTag) => [
+		const [, rows] = await runNeonHttpTransaction((sqlTag) => [
 			sqlTag`
 					WITH active_comp AS (
 						SELECT id, version
@@ -648,11 +834,16 @@ export async function drizzleActivateEmployeeCompensation(
 					audit_ended AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditEndedId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-							'human-resources', 'hr_employee_compensation', id, 'UPDATE', '[]'::jsonb
+							${auditEndedId}, ${endedAudit.organizationId}, ${endedAudit.actorUserId},
+							${endedAudit.correlationId}, ${endedAudit.module}, ${endedAudit.entity}, id,
+							${endedAudit.action}, ${endedAudit.changesJson}::jsonb,
+							${endedAudit.oldValueJson}::jsonb, ${endedAudit.newValueJson}::jsonb,
+							${endedAudit.metadataJson}::jsonb, ${endedAudit.ipAddress},
+							${endedAudit.userAgent}
 						FROM ended_comp
 						RETURNING id
 					),
@@ -689,11 +880,18 @@ export async function drizzleActivateEmployeeCompensation(
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditActivatedId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-							'human-resources', 'hr_employee_compensation', id, 'UPDATE', '[]'::jsonb
+							${auditActivatedId}, ${activatedAudit.organizationId},
+							${activatedAudit.actorUserId}, ${activatedAudit.correlationId},
+							${activatedAudit.module}, ${activatedAudit.entity}, ${activatedAudit.entityId},
+							${activatedAudit.action}, ${activatedAudit.changesJson}::jsonb,
+							${activatedAudit.oldValueJson}::jsonb,
+							${activatedAudit.newValueJson}::jsonb,
+							${activatedAudit.metadataJson}::jsonb, ${activatedAudit.ipAddress},
+							${activatedAudit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -726,6 +924,97 @@ export async function drizzleActivateEmployeeCompensation(
 			"Failed to activate employee compensation",
 		);
 	}
+}
+
+function prepareEmployeeCompensationCorrectionAudits(input: {
+	actorUserId: string;
+	compensationId: HumanResourcesEmployeeCompensationId;
+	correlationId: string;
+	meta: HumanResourcesMutationMeta;
+	organizationId: string;
+	predecessor: EmployeeCompensation;
+	predecessorEffectiveTo: string;
+	predecessorEffectiveToForActiveEnd: string;
+	successorEffectiveFrom: string;
+	successorEffectiveTo: string | null;
+	successorId: HumanResourcesEmployeeCompensationId;
+	successorStatus: EmployeeCompensation["status"];
+}): Result<{
+	endedAudit: PreparedDerivedEntityAuditInsertValues | null;
+	successorAudit: PreparedTransactionalAuditInsertValues;
+	supersededAudit: PreparedTransactionalAuditInsertValues;
+}> {
+	const preparedSupersededAudit = prepareEmployeeCompensationAudit({
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		correlationId: input.correlationId,
+		entityId: input.compensationId,
+		action: "UPDATE",
+		oldValue: {
+			status: input.predecessor.status,
+			effectiveTo: input.predecessor.effectiveTo,
+			version: input.predecessor.version,
+		},
+		newValue: {
+			status: "superseded",
+			effectiveTo: input.predecessorEffectiveTo,
+			version: input.predecessor.version + 1,
+		},
+		meta: input.meta,
+		reasonCode: "CORRECTION_SUPERSEDE",
+	});
+	if (!preparedSupersededAudit.ok) {
+		return preparedSupersededAudit;
+	}
+
+	const preparedEndedAudit =
+		input.successorStatus === "active"
+			? prepareDerivedEmployeeCompensationAudit({
+					organizationId: input.organizationId,
+					actorUserId: input.actorUserId,
+					correlationId: input.correlationId,
+					oldValue: { status: "active" },
+					newValue: {
+						status: "ended",
+						effectiveTo: input.predecessorEffectiveToForActiveEnd,
+					},
+					meta: input.meta,
+					reasonCode: "END_ACTIVE_PREDECESSOR",
+				})
+			: null;
+	let endedAudit: PreparedDerivedEntityAuditInsertValues | null = null;
+	if (preparedEndedAudit !== null) {
+		if (!preparedEndedAudit.ok) {
+			return preparedEndedAudit;
+		}
+		endedAudit = preparedEndedAudit.data;
+	}
+
+	const preparedSuccessorAudit = prepareEmployeeCompensationAudit({
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		correlationId: input.correlationId,
+		entityId: input.successorId,
+		action: "CREATE",
+		newValue: {
+			status: input.successorStatus,
+			effectiveFrom: input.successorEffectiveFrom,
+			effectiveTo: input.successorEffectiveTo,
+			supersedesCompensationId: input.compensationId,
+			version: 1,
+		},
+		meta: input.meta,
+		reasonCode: "CORRECTION_SUCCESSOR",
+	});
+	if (!preparedSuccessorAudit.ok) {
+		return preparedSuccessorAudit;
+	}
+
+	return ok({
+		endedAudit,
+		successorAudit: preparedSuccessorAudit.data,
+		supersededAudit: preparedSupersededAudit.data,
+	});
 }
 
 export async function drizzleCorrectEmployeeCompensation(
@@ -831,11 +1120,27 @@ export async function drizzleCorrectEmployeeCompensation(
 	const predecessorEffectiveToForActiveEnd = dayBeforeIsoDate(
 		input.effectiveFrom,
 	);
+	const preparedAudits = prepareEmployeeCompensationCorrectionAudits({
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		correlationId: meta.correlationId,
+		compensationId: input.compensationId,
+		meta,
+		predecessor,
+		predecessorEffectiveTo,
+		predecessorEffectiveToForActiveEnd,
+		successorEffectiveFrom: input.effectiveFrom,
+		successorEffectiveTo: input.effectiveTo,
+		successorId: brandedId.data,
+		successorStatus,
+	});
+	if (!preparedAudits.ok) {
+		return preparedAudits;
+	}
+	const { endedAudit, successorAudit, supersededAudit } = preparedAudits.data;
 
 	try {
-		const [, rows] = await runNeonHttpTransaction<
-			[{ id: string }[], EmployeeCompensationSqlRow[]]
-		>((sqlTag) => [
+		const [, rows] = await runNeonHttpTransaction((sqlTag) => [
 			successorStatus === "active"
 				? sqlTag`
 						WITH superseded AS (
@@ -852,11 +1157,17 @@ export async function drizzleCorrectEmployeeCompensation(
 						audit_superseded AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditSupersededId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_employee_compensation', id, 'UPDATE', '[]'::jsonb
+								${auditSupersededId}, ${supersededAudit.organizationId},
+								${supersededAudit.actorUserId}, ${supersededAudit.correlationId},
+								${supersededAudit.module}, ${supersededAudit.entity},
+								${supersededAudit.entityId}, ${supersededAudit.action},
+								${supersededAudit.changesJson}::jsonb, ${supersededAudit.oldValueJson}::jsonb,
+								${supersededAudit.newValueJson}::jsonb, ${supersededAudit.metadataJson}::jsonb,
+								${supersededAudit.ipAddress}, ${supersededAudit.userAgent}
 							FROM superseded
 							RETURNING id
 						),
@@ -896,11 +1207,18 @@ export async function drizzleCorrectEmployeeCompensation(
 						audit_ended AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditEndedId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_employee_compensation', id, 'UPDATE', '[]'::jsonb
+								${auditEndedId}, ${endedAudit?.organizationId ?? null},
+								${endedAudit?.actorUserId ?? null}, ${endedAudit?.correlationId ?? null},
+								${endedAudit?.module ?? null}, ${endedAudit?.entity ?? null}, id,
+								${endedAudit?.action ?? null}, ${endedAudit?.changesJson ?? null}::jsonb,
+								${endedAudit?.oldValueJson ?? null}::jsonb,
+								${endedAudit?.newValueJson ?? null}::jsonb,
+								${endedAudit?.metadataJson ?? null}::jsonb,
+								${endedAudit?.ipAddress ?? null}, ${endedAudit?.userAgent ?? null}
 							FROM ended_comp
 							RETURNING id
 						),
@@ -935,11 +1253,17 @@ export async function drizzleCorrectEmployeeCompensation(
 						audit_superseded AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditSupersededId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_employee_compensation', id, 'UPDATE', '[]'::jsonb
+								${auditSupersededId}, ${supersededAudit.organizationId},
+								${supersededAudit.actorUserId}, ${supersededAudit.correlationId},
+								${supersededAudit.module}, ${supersededAudit.entity},
+								${supersededAudit.entityId}, ${supersededAudit.action},
+								${supersededAudit.changesJson}::jsonb, ${supersededAudit.oldValueJson}::jsonb,
+								${supersededAudit.newValueJson}::jsonb, ${supersededAudit.metadataJson}::jsonb,
+								${supersededAudit.ipAddress}, ${supersededAudit.userAgent}
 							FROM superseded
 							RETURNING id
 						),
@@ -986,11 +1310,17 @@ export async function drizzleCorrectEmployeeCompensation(
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditSuccessorId}, organization_id, created_by, ${meta.correlationId},
-								'human-resources', 'hr_employee_compensation', id, 'CREATE', '[]'::jsonb
+								${auditSuccessorId}, ${successorAudit.organizationId},
+								${successorAudit.actorUserId}, ${successorAudit.correlationId},
+								${successorAudit.module}, ${successorAudit.entity}, ${successorAudit.entityId},
+								${successorAudit.action}, ${successorAudit.changesJson}::jsonb,
+								${successorAudit.oldValueJson}::jsonb, ${successorAudit.newValueJson}::jsonb,
+								${successorAudit.metadataJson}::jsonb, ${successorAudit.ipAddress},
+								${successorAudit.userAgent}
 							FROM mutated
 							RETURNING id
 						),

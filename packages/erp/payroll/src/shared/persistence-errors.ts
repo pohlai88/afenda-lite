@@ -1,4 +1,4 @@
-import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
+import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
 import { fail, failFromAppError, type Result } from "@afenda/errors/result";
 
 import {
@@ -7,7 +7,6 @@ import {
 	PAYROLL_ERROR_DUPLICATE,
 	PAYROLL_ERROR_INVALID_STATE,
 	PAYROLL_ERROR_NOT_FOUND,
-	PAYROLL_ERROR_PERSISTENCE_FAILURE,
 	payrollErrorDetails,
 } from "../error-codes";
 
@@ -95,16 +94,7 @@ export function mapPersistenceFailure(
 		);
 	}
 
-	const mapped = fromPostgresUnknown(error);
-	if (mapped !== undefined) {
-		return failFromAppError(mapped);
-	}
-
-	return fail(
-		"INTERNAL_ERROR",
-		fallbackMessage,
-		payrollErrorDetails(PAYROLL_ERROR_PERSISTENCE_FAILURE),
-	);
+	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
 }
 
 export function mapNotFound(message: string): Result<never> {

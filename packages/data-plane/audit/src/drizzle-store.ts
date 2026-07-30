@@ -7,24 +7,19 @@ import {
 	gte,
 	lt,
 	lte,
+	or,
 	platformAuditLog,
 } from "@afenda/db";
-import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
-import {
-	fail,
-	failFromAppError,
-	failFromUnknown,
-	ok,
-	type Result,
-} from "@afenda/errors/result";
+import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
+import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
 
-import { auditEntriesToCsv } from "./csv";
+import { serializeAuditMetadata } from "./event-context";
 import { mapAuditLogRow } from "./map-row";
-import { MAX_AUDIT_EXPORT_ROWS } from "./schemas";
+import { prepareAuditWrite } from "./prepare-write";
 import type { AuditStore } from "./store";
 import type {
+	AuditCursorQueryOptions,
 	AuditEntry,
-	AuditExportOptions,
 	AuditPurgeOptions,
 	AuditQueryFilter,
 	AuditQueryOptions,
@@ -68,6 +63,29 @@ function buildWhere(filter: AuditQueryFilter) {
 	return where;
 }
 
+function buildCursorWhere(options: AuditCursorQueryOptions) {
+	const base = buildWhere(options);
+	if (options.cursor === undefined) {
+		return base;
+	}
+
+	const afterCursor = or(
+		lt(platformAuditLog.createdAt, options.cursor.createdAt),
+		and(
+			eq(platformAuditLog.createdAt, options.cursor.createdAt),
+			lt(platformAuditLog.id, options.cursor.id),
+		),
+	);
+	if (afterCursor === undefined) {
+		throw new Error("@afenda/audit: cursor predicate is required");
+	}
+	const where = and(base, afterCursor);
+	if (where === undefined) {
+		throw new Error("@afenda/audit: cursor where clause is required");
+	}
+	return where;
+}
+
 function mapRows(
 	rows: Parameters<typeof mapAuditLogRow>[0][],
 ): Result<AuditEntry[]> {
@@ -86,32 +104,37 @@ function mapRows(
 }
 
 function failFromPersistence(error: unknown, fallbackMessage: string) {
-	const mapped = fromPostgresUnknown(error);
-	return mapped === undefined
-		? failFromUnknown(error, fallbackMessage)
-		: failFromAppError(mapped);
+	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
 }
 
 export class DrizzleAuditStore implements AuditStore {
 	async write(entry: AuditWriteInput): Promise<Result<AuditEntry>> {
+		const prepared = prepareAuditWrite(entry);
+		if (!prepared.ok) {
+			return prepared;
+		}
+		const validated = prepared.data;
+
 		try {
 			const [row] = await db
 				.insert(platformAuditLog)
 				.values({
-					organizationId: entry.organizationId,
-					actorUserId: entry.actorUserId,
-					correlationId: entry.correlationId,
-					module: entry.module,
-					entity: entry.entity,
-					entityId: entry.entityId,
-					action: entry.action,
-					changes: entry.changes,
-					oldValue: entry.oldValue ?? null,
-					newValue: entry.newValue ?? null,
-					metadata: entry.metadata ?? null,
-					ipAddress: entry.ipAddress ?? null,
-					userAgent: entry.userAgent ?? null,
-					createdAt: entry.createdAt,
+					organizationId: validated.organizationId,
+					actorUserId: validated.actorUserId,
+					correlationId: validated.correlationId,
+					module: validated.module,
+					entity: validated.entity,
+					entityId: validated.entityId,
+					action: validated.action,
+					changes: validated.changes,
+					oldValue: validated.oldValue ?? null,
+					newValue: validated.newValue ?? null,
+					metadata: serializeAuditMetadata(
+						validated.metadata ?? null,
+						validated.eventContext,
+					),
+					ipAddress: validated.ipAddress ?? null,
+					userAgent: validated.userAgent ?? null,
 				})
 				.returning();
 
@@ -142,7 +165,7 @@ export class DrizzleAuditStore implements AuditStore {
 				.select()
 				.from(platformAuditLog)
 				.where(where)
-				.orderBy(desc(platformAuditLog.createdAt))
+				.orderBy(desc(platformAuditLog.createdAt), desc(platformAuditLog.id))
 				.limit(options.pageSize)
 				.offset(offset);
 
@@ -166,28 +189,20 @@ export class DrizzleAuditStore implements AuditStore {
 		}
 	}
 
-	async export(options: AuditExportOptions): Promise<Result<string>> {
+	async queryCursor(
+		options: AuditCursorQueryOptions,
+	): Promise<Result<AuditEntry[]>> {
 		try {
-			const where = buildWhere(options);
 			const rows = await db
 				.select()
 				.from(platformAuditLog)
-				.where(where)
-				.orderBy(desc(platformAuditLog.createdAt))
-				.limit(MAX_AUDIT_EXPORT_ROWS);
+				.where(buildCursorWhere(options))
+				.orderBy(desc(platformAuditLog.createdAt), desc(platformAuditLog.id))
+				.limit(options.pageSize + 1);
 
-			const mapped = mapRows(rows);
-			if (!mapped.ok) {
-				return mapped;
-			}
-
-			if (options.format === "json") {
-				return ok(JSON.stringify(mapped.data, null, 2));
-			}
-
-			return ok(auditEntriesToCsv(mapped.data));
+			return mapRows(rows);
 		} catch (error) {
-			return failFromPersistence(error, "Failed to export audit log");
+			return failFromPersistence(error, "Failed to query audit cursor page");
 		}
 	}
 

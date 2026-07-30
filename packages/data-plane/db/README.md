@@ -1,144 +1,111 @@
 # `@afenda/db`
 
-Rank-1 Platform database package for Afenda-Lite: Neon HTTP + Drizzle ORM client, shared schema, migration controls, tenant-predicate helpers, and the idempotent platform permission catalog. Shared single schema — hard `organization_id` predicates only; **not** project-per-tenant or multi-DB isolation.
+Rank-1 Platform database infrastructure for Afenda-Lite. It hosts the shared Drizzle schema and migration journal, exposes the lazy Neon HTTP client and tenant-predicate helpers, governs non-interactive transaction batches, and reconciles the platform permission catalog.
 
-Use this package from Rank-1 Platform packages (`@afenda/admin`) and server-side Platform / Identity adapters under `apps/web`. Product app config stays on `@afenda/env` + `.env.local` — this package must not import `@afenda/env` (DAG). Maintainers run lint / typecheck / Vitest and Drizzle scripts via the filter commands below (Node `24.x`, pnpm `≥10.33.4` from the repo root `engines`).
+Use this package from server-side Platform and ERP adapters that need typed schema access. Afenda uses one shared PostgreSQL schema with organization-scoped rows: `organization_id` predicates are mandatory, and this package does not provide project-per-tenant or multi-database isolation.
+
+`@afenda/db` is the schema and migration host, not a repository mega-package. Mutation ownership remains with the package named in the [schema ownership manifest](../../../docs-V2/modules/SCHEMA-OWNERSHIP-MANIFEST.yaml).
 
 ## Consume
 
-Workspace dependency — import from the root barrel:
+Import runtime and schema APIs from the root barrel:
 
 ```ts
 import {
-	and,
-	db,
-	eq,
-	orgWhere,
-	platformRoleAssignment,
-	tenantEntityPredicate,
+  and,
+  db,
+  eq,
+  orgWhere,
+  platformRoleAssignment,
+  withOrg,
 } from "@afenda/db";
 
+const assignments = await withOrg(platformRoleAssignment, organizationId);
+
 const assignment = await db
-	.select()
-	.from(platformRoleAssignment)
-	.where(
-		tenantEntityPredicate(
-			{
-				id: platformRoleAssignment.id,
-				organizationId: platformRoleAssignment.organizationId,
-			},
-			{ id: assignmentId, organizationId },
-		),
-	)
-	.limit(1);
+  .select()
+  .from(platformRoleAssignment)
+  .where(
+    and(
+      orgWhere(platformRoleAssignment.organizationId, organizationId),
+      eq(platformRoleAssignment.id, assignmentId),
+    ),
+  );
 ```
 
-`orgWhere(column, organizationId)` composes the organization predicate into reads and joins. `tenantEntityPredicate(...)` composes record identity plus organization ownership. `withOrg(table, organizationId)` remains a convenience full-table read only; it is not the package’s primary tenancy safeguard and does not make joins or mutations safe.
+`withOrg(table, organizationId)` is a convenience for full-table tenant reads. Use `orgWhere` or `tenantEntityPredicate` when composing joins, entity lookups, updates, and deletes. Every organization-owned table participating in a statement still needs an explicit ownership predicate.
 
-Connection class is enforced per consumer while retaining the single `DATABASE_URL` key:
+Empty organization IDs fail closed. The Neon SQL driver also rejects unowned raw statements that mention registered hard-tenant roots; this runtime policy complements rather than replaces explicit query predicates and repository checks.
 
-| Consumer | Required connection |
-|----------|---------------------|
-| Product runtime (`getNeonSql`) | Neon pooled endpoint; first hostname label ends in `-pooler` |
-| Drizzle Kit, status, and read-only operations | Valid PostgreSQL endpoint; pooled or direct |
-| Guarded `db:migrate` execution | Direct endpoint; `-pooler` prohibited |
+## Connections and transactions
 
-See [docs-V2/tenancy](../../../docs-V2/tenancy/README.md) · [neon-optimize](../../../docs-V2/tenancy/neon-optimize.md).
+| Operation | `DATABASE_URL` requirement |
+|-----------|----------------------------|
+| Product `db` client and Neon HTTP transactions | Neon `-pooler` endpoint |
+| Drizzle Kit generation, checks, and inspection | PostgreSQL endpoint; pooled or direct |
+| Guarded migration execution | Direct endpoint; pooler prohibited |
 
-**Living consumers:** `@afenda/admin` (audit · health · usage · org-console); `apps/web` Identity / Platform domain adapters (`has-permission`, assign/revoke, RBAC list paths).
+All connection classes use `DATABASE_URL`; do not invent a second direct-URL product variable. Product configuration remains owned by `@afenda/env` and `.env.local`. This lower-layer package reads the process environment internally and must not import `@afenda/env`.
 
-## Tenant SQL contract
+The product client is initialized lazily on first database access. For atomic multi-statement writes over Neon HTTP, `runNeonHttpTransaction` accepts a synchronous builder that returns a fixed query array. Statements execute in order and commit or roll back together; application code cannot branch on intermediate results. Use it inside the package that owns the mutation, keep every tenant predicate explicit, and prefer owning-package helpers—such as `@afenda/audit` transaction-write preparation—over hand-building shared infrastructure records.
 
-Every organization-owned table referenced by a read, join, update, or delete must have an explicit organization predicate in the final SQL statement. Inserts must stamp the organization from validated command/session context, but that does not protect later mutations.
+## Schema ownership
 
-Organization-owned `UPDATE` and `DELETE` statements must prove both record selection and organization ownership in `WHERE`:
+| Surface | Location or owner |
+|---------|-------------------|
+| Schema barrel | [`src/schema/index.ts`](./src/schema/index.ts) |
+| Platform schema | [`src/schema/platform.ts`](./src/schema/platform.ts) |
+| ERP schemas | `src/schema/{master-data,sales,purchasing,inventory,receiving,fulfillment,receivables,payables,payments,accounting,payroll,human-resources,corporate-administration}.ts` |
+| Drizzle configuration | [`drizzle.config.ts`](./drizzle.config.ts) |
+| Generated SQL and migration journal | `drizzle/` |
+| Hard-tenant root registry | [`src/hard-tenant-roots.ts`](./src/hard-tenant-roots.ts) |
+| Sole table mutators | [Schema ownership manifest](../../../docs-V2/modules/SCHEMA-OWNERSHIP-MANIFEST.yaml) |
 
-```ts
-await db
-	.update(platformRoleAssignment)
-	.set({ active: false })
-	.where(
-		and(
-			eq(platformRoleAssignment.id, assignmentId),
-			orgWhere(platformRoleAssignment.organizationId, organizationId),
-		),
-	);
-```
+Schema DDL and migrations live here. Business writes belong to their owning Platform or ERP packages; hosting a table does not grant `@afenda/db` mutation ownership.
 
-Rules:
+## Migrations
 
-- Scope every organization-owned `FROM` and `JOIN` table; scoping only the base table is insufficient.
-- Never query an organization-owned row by ID alone, including existence probes. A missing row and a row owned by another organization must remain indistinguishable.
-- Keep ownership proof in SQL. An application-side organization comparison after an unscoped query is not a boundary.
-- `withOrg` is suitable only for a simple full-table organization read. Use `orgWhere` or `tenantEntityPredicate` for composed statements.
-- `pnpm check:tenant-sql-safety` is the static CI control for hard-tenant Drizzle reads and mutations. `pnpm check:tenancy-residue` separately rejects soft `(NULL OR org)` tenancy.
-
-## Schema & migrations
-
-| Surface | On disk |
-|---------|---------|
-| Drizzle Kit config | `drizzle.config.ts` |
-| Schema entry | `src/schema/index.ts` → `src/schema/platform.ts` |
-| Generated SQL / journal | `drizzle/` |
-| Client | `src/client.ts` (`db` · `withOrg`) |
-
-Living tables include `platform_permission`, `platform_role`, `platform_role_assignment`, `platform_role_permission`, `platform_rbac_audit`, `platform_audit_log`, `platform_search_document`, `platform_notification`, `platform_domain_event`. Hard tenant roots for null-org audits: `platform_role_assignment` · `platform_rbac_audit` · `platform_audit_log` · `platform_search_document` · `platform_notification` · `platform_domain_event` (`HARD_TENANT_ROOT_*`). General activity audit writer: `@afenda/audit` (not `@afenda/admin/audit`). Product search writer: `@afenda/search`. In-app notification writer: `@afenda/notifications`. Domain-event outbox writer: `@afenda/events`.
+Use the guarded migration workflow:
 
 ```bash
 pnpm --filter @afenda/db db:generate
 pnpm --filter @afenda/db db:check
 pnpm --filter @afenda/db db:migration-status
 pnpm --filter @afenda/db db:migrate
-pnpm --filter @afenda/db db:verify-migrate-ban
-pnpm --filter @afenda/db db:introspect
 ```
 
-**Canonical funnel:** `db:generate` → `db:check` → `AFENDA_ALLOW_DB_MIGRATE=1 db:migrate`. No `db:push`, no ad-hoc `apply-*.mjs`, no Neon MCP DDL apply. Cursor hooks block shell bypasses and MCP `prepare_database_migration` / DDL `run_sql`.
+The canonical funnel is `db:generate` → `db:check` → operator-approved `db:migrate`. The migrate command requires `AFENDA_ALLOW_DB_MIGRATE=1` and a direct `DATABASE_URL`. A sole baseline or destructive migration requires its additional explicit guard flag. Do not use `db:push`, raw `drizzle-kit migrate`, ad hoc apply scripts, or Neon MCP DDL as alternate migration paths.
 
-`db:migrate` runs the guarded migrate path (`scripts/db-migrate-guard.mjs`), not raw `drizzle-kit migrate`. It requires `AFENDA_ALLOW_DB_MIGRATE=1` and a direct `DATABASE_URL`; a Neon `-pooler` endpoint is rejected before any database connection is opened. A sole `0000_*.sql` baseline also needs `AFENDA_ALLOW_BASELINE_MIGRATE=1` (empty-DB / Mode C apply only). Migrations that the guard classifies as destructive also require `AFENDA_ALLOW_DESTRUCTIVE_MIGRATE=1` (explicit ops approval — never set in CI by default).
+Additional operator commands:
 
-ERP domain DDL (including Accounting CoA / posting / source-link tables in `0032`–`0033`) lives in this package’s Drizzle migrations; table mutation ownership stays with the owning `@afenda/*` ERP packages.
-
-## Transaction contract
-
-`runNeonHttpTransaction` is the only approved multi-statement transaction helper exported by `@afenda/db`. It submits a predeclared query batch as one real, non-interactive Postgres transaction over Neon HTTP. Statements execute in array order and commit together or roll back together. Later SQL statements observe earlier writes according to the selected isolation level; application code cannot inspect an intermediate result and then choose the next statement.
-
-The helper accepts either a readonly array of Neon query promises or a synchronous builder callback that returns that array. The callback is a batch builder, not an interactive transaction callback: do not make it `async`, `await` inside it, or branch on query results. Default isolation is `ReadCommitted`. `deferrable: true` is accepted only with `readOnly: true` and `isolationLevel: "Serializable"`; invalid combinations fail before the SQL client is initialized. The helper does not retry.
-
-Use it whenever one logical operation writes more than one authoritative row. The business mutation, audit fact, domain/outbox event, idempotency record, and owned projection update must commit or roll back together when they participate in the same database transaction. Do not emulate atomicity with `Promise.all`, sequential standalone HTTP queries, or compensating deletes. A caller may retry only when the complete operation has an enforced idempotency key and replay-safe semantics.
-
-Neon’s driver contract describes `transaction()` as a single non-interactive transaction; interactive sessions require `Pool` or `Client`: [Neon serverless driver — transactions](https://github.com/neondatabase/serverless#transaction).
-
-## Release verification matrix
-
-A database release candidate is not ready until every required result below is captured. DB-backed tests must run with `REQUIRE_DATABASE_TESTS=1`; a skipped suite is not release evidence. Use direct, disposable Neon branches for migration operations, never a pooled product runtime URL.
-
-| Check | Command / evidence | Required result |
-|-------|--------------------|-----------------|
-| Journal, schema-to-migration consistency, destructive SQL ban | `pnpm --filter @afenda/db db:check` | Pass: journal aligned, Drizzle check clean, no forbidden destructive statement |
-| Migration ledger | `pnpm --filter @afenda/db db:migration-status` against candidate | Pass: no pending or divergent migration; pending now exits non-zero |
-| Empty database apply | Guarded `db:migrate` against a disposable empty branch with the explicit baseline approval | All migrations apply; expected tables and constraints present |
-| Candidate snapshot upgrade | Guarded `db:migrate` against a disposable branch cloned from the release candidate | Upgrade succeeds without manual DDL or ledger repair |
-| Repeated migration | Run guarded `db:migrate` a second time on each disposable branch | No-op; no schema or ledger change |
-| Package schema / constraint evidence | `REQUIRE_DATABASE_TESTS=1 pnpm --filter @afenda/db test` | Pass with DB-backed suites executed, not skipped |
-| Permission catalog reconciliation | Run `db:ensure-permission-catalog` twice, then the DB-backed permission-catalog test | Both ensures succeed; second run is idempotent; catalog test passes |
-| Schema ownership governance | `pnpm validate:modules` | Pass |
-| Tenant SQL governance | `pnpm check:tenant-sql-safety && pnpm check:tenancy-residue` | Pass |
-| Tenant-root constraints and live null audit | DB package tenancy tests + `pnpm audit:tenancy-nulls` | Every hard root is `NOT NULL`; live audit passes |
-
-The fresh-apply and candidate-upgrade rows are separate evidence runs. A clean `db:check` does not substitute for either live migration proof.
+| Command | Purpose |
+|---------|---------|
+| `db:sync-migration-ledger` | Reconcile the tracked migration ledger through the governed script |
+| `db:verify-migrate-ban` | Verify migration bypass controls |
+| `db:introspect` | Inspect a configured PostgreSQL database with Drizzle Kit |
 
 ## Permission catalog
 
-Seed / refresh is **not** part of baseline migrate:
+The typed platform permission catalog and system role templates live in `src/platform-permission-catalog*`. Reconciliation atomically upserts current permissions, migrates grants, removes retired codes, and aligns role templates through one Neon HTTP transaction batch.
+
+Catalog reconciliation is an explicit release operation, not part of baseline migration:
 
 ```bash
 pnpm --filter @afenda/db db:ensure-permission-catalog
 ```
 
-Catalog includes platform / org / account codes plus living ERP fine-grained permissions (Sales through Accounting — e.g. 17 `accounting.*` codes). Retired domain codes (`declarations.*` · `fft.access`) are removed on ensure — they are not living catalog rows. See [AGENTS.md](../../../AGENTS.md).
+## Export surface
+
+| Import path | Role |
+|-------------|------|
+| `@afenda/db` | Lazy `db` client; tenancy helpers; Drizzle operators; schema tables; Neon HTTP transactions; hard-tenant root registry; permission catalog contracts |
+| `@afenda/db/module-manifest` | Type-only ERP module manifest contract |
+
+See [`src/index.ts`](./src/index.ts) for the exact root barrel. Do not deep-import package internals.
 
 ## Maintain
+
+Requires the repository engines: Node `24.x` and pnpm `>=10.33.4`.
 
 ```bash
 pnpm --filter @afenda/db lint
@@ -146,36 +113,22 @@ pnpm --filter @afenda/db typecheck
 pnpm --filter @afenda/db test
 ```
 
-Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
+Repository-level tenancy verification is available through `pnpm audit:tenancy-nulls`; its table inventory derives from the hard-tenant root registry.
 
-## Exports
+## Boundaries
 
-| Path | Role |
-|------|------|
-| `@afenda/db` | `db` · `orgWhere` · `tenantEntityPredicate` · convenience `withOrg` · schema tables · Drizzle helpers (`eq` · `and` · …) · `runNeonHttpTransaction` · `HARD_TENANT_ROOT_*` · `ensurePlatformPermissionCatalog` · `PLATFORM_PERMISSION_*` / role templates |
+`@afenda/db` may depend on Neon and Drizzle infrastructure. It must not import `@afenda/auth`, `@afenda/env`, Surfaces, or `apps/*`, and it does not own Neon Auth sessions, HTTP or `ActionResult` adapters, UI, OpenAPI, or business repositories.
 
-No subpath exports — barrel only (`.` in `package.json`).
-
-## Ownership
-
-| Surface | Owner |
-|---------|-------|
-| Drizzle schema · Neon HTTP client · tenant predicate helpers · transaction helper · permission catalog seed | `@afenda/db` |
-| `DATABASE_URL` / product env Zod schema | `@afenda/env` (apps load `.env.local`) |
-| Org-console / RBAC audit writers / health probes | `@afenda/admin` |
-| Identity permission checks · assign/revoke Actions | `apps/web` |
-
-**Layer:** Rank-1 Platform (`@neondatabase/serverless` · `drizzle-orm`; `drizzle-kit` in devDeps). Must **not** import `@afenda/auth`, `@afenda/env`, Surfaces, or `apps/*`. See [docs-V2/monorepo](../../../docs-V2/monorepo/README.md) · [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md).
-
-## Out of scope
-
-Do not add to this package: `@afenda/env` imports, Neon Auth session clients, ActionResult / HTTP adapters, UI, OpenAPI document ownership, declaration/FFT product modules, or a second tenancy model (shared schema · hard `organization_id` only — never multi-DB / project-per-tenant isolation).
+Do not add a second tenancy model, ambient organization stamping, ORM auto-interception, or cross-domain mutation services here.
 
 ## Authority
 
 | Topic | Link |
 |-------|------|
-| Data layer Scratch · schema craft checklist (reference → Drizzle) | [docs-V2/data](../../../docs-V2/data/README.md) · [Schema craft checklist](../../../docs-V2/data/README.md#schema-craft-checklist-reference--drizzle) |
-| Tenancy · pooler · shared schema (Scratch; Living ARCH-023 dormant) | [docs-V2/tenancy](../../../docs-V2/tenancy/README.md) · [neon-optimize](../../../docs-V2/tenancy/neon-optimize.md) |
-| Package DAG / leaf rules | [docs-V2/monorepo](../../../docs-V2/monorepo/README.md) · [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
+| Data plane package index | [packages/data-plane](../README.md) |
+| Data layer and schema craft | [docs-V2/data](../../../docs-V2/data/README.md) |
+| Tenancy, shared schema, and Neon pooler | [docs-V2/tenancy](../../../docs-V2/tenancy/README.md) · [Neon optimization](../../../docs-V2/tenancy/neon-optimize.md) |
+| Package DAG and layer rules | [docs-V2/monorepo](../../../docs-V2/monorepo/README.md) · [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
+| Schema write ownership | [SCHEMA-OWNERSHIP-MANIFEST](../../../docs-V2/modules/SCHEMA-OWNERSHIP-MANIFEST.yaml) |
+| Test strategy | [testing](../../../testing/README.md) |
 | Agent checkout posture | [AGENTS.md](../../../AGENTS.md) |

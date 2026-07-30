@@ -1,4 +1,4 @@
-import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
+import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
 import { fail, failFromAppError, type Result } from "@afenda/errors/result";
 
 import {
@@ -215,16 +215,7 @@ export function mapPersistenceFailure(
 		);
 	}
 
-	const mapped = fromPostgresUnknown(error);
-	if (mapped !== undefined) {
-		return failFromAppError(mapped);
-	}
-
-	return fail(
-		"INTERNAL_ERROR",
-		fallbackMessage,
-		humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-	);
+	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
 }
 
 export function mapEmployeeNumberDuplicate(

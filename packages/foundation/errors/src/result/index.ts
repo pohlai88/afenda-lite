@@ -7,7 +7,11 @@
 import type { AppError } from "../core/app-error";
 import type { ErrorCode } from "../core/codes";
 import { normalizeUnknown } from "../core/normalize";
-import { type SafeDetails, sanitizeErrorDetails } from "../core/safe-details";
+import {
+	publicErrorDetails,
+	publicErrorMessage,
+} from "../core/public-error-policy";
+import type { SafeDetails } from "../core/safe-details";
 import { serializeAppError } from "../core/serialize";
 
 export interface ResultSuccess<T> {
@@ -33,10 +37,11 @@ export function fail(
 	message: string,
 	details?: unknown,
 ): ResultFailure {
-	const safeDetails = sanitizeErrorDetails(details);
+	const safeDetails = publicErrorDetails(code, details);
+	const safeMessage = publicErrorMessage(code, message);
 	return safeDetails === undefined
-		? { ok: false, code, message }
-		: { ok: false, code, message, details: safeDetails };
+		? { ok: false, code, message: safeMessage }
+		: { ok: false, code, message: safeMessage, details: safeDetails };
 }
 
 export function failFromAppError(error: AppError): ResultFailure {

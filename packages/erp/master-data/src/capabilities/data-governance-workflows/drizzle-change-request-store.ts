@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 
+import { prepareTransactionalAuditInsertValues } from "@afenda/audit";
 import {
 	and,
 	asc,
@@ -9,16 +10,10 @@ import {
 	runNeonHttpTransaction,
 } from "@afenda/db";
 import {
-	fromPostgresUnknown,
 	hasPostgresSqlState,
+	normalizePostgresUnknown,
 } from "@afenda/errors/adapters/postgres";
-import {
-	fail,
-	failFromAppError,
-	failFromUnknown,
-	ok,
-	type Result,
-} from "@afenda/errors/result";
+import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
 import type { MasterFailureDetails } from "../../contracts/reasons";
 import type { MutationPorts } from "../../ports";
 import type {
@@ -33,11 +28,11 @@ import type {
 	ChangeRequestReviewRecord,
 } from "../core-organization-masters/store";
 
+const MASTER_DATA_CHANGE_REQUEST_AUDIT_SOURCE =
+	"master-data.change-request-store";
+
 function failFromPersistence(error: unknown, fallbackMessage: string) {
-	const mapped = fromPostgresUnknown(error);
-	return mapped === undefined
-		? failFromUnknown(error, fallbackMessage)
-		: failFromAppError(mapped);
+	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
 }
 
 interface ChangeRequestSqlRow {
@@ -102,18 +97,6 @@ export function mapChangeRequestSqlRow(
 		createdAt: toDate(row.created_at) ?? new Date(),
 		updatedAt: toDate(row.updated_at) ?? new Date(),
 	};
-}
-
-function fieldChangeJson(
-	field: string,
-	oldValue: unknown,
-	newValue: unknown,
-): string {
-	return JSON.stringify([{ field, oldValue, newValue }]);
-}
-
-function valueSnapshotJson(value: Record<string, unknown>): string {
-	return JSON.stringify(value);
 }
 
 function eventPayloadJson(input: {
@@ -233,11 +216,30 @@ export async function drizzleCreateChangeRequest(
 	const auditId = randomUUID();
 	const eventId = randomUUID();
 	const payloadJson = JSON.stringify(record.payload);
-	const changesJson = fieldChangeJson("status", null, "submitted");
-	const newValueJson = valueSnapshotJson({
-		commandKind: record.commandKind,
-		status: "submitted",
+	const preparedAudit = prepareTransactionalAuditInsertValues({
+		organizationId: record.organizationId,
+		actorUserId: record.submittedBy,
+		correlationId: meta.correlationId,
+		module: "master_data",
+		entity: "change_request",
+		entityId: id,
+		action: "CREATE",
+		changes: [{ field: "status", oldValue: null, newValue: "submitted" }],
+		newValue: {
+			commandKind: record.commandKind,
+			status: "submitted",
+		},
+		eventContext: {
+			version: 1,
+			outcome: "SUCCEEDED",
+			source: MASTER_DATA_CHANGE_REQUEST_AUDIT_SOURCE,
+			causationId: null,
+		},
 	});
+	if (!preparedAudit.ok) {
+		return preparedAudit;
+	}
+	const audit = preparedAudit.data;
 	const eventPayload = eventPayloadJson({
 		organizationId: record.organizationId,
 		entityType: "change_request",
@@ -249,9 +251,8 @@ export async function drizzleCreateChangeRequest(
 	});
 
 	try {
-		const [rows] = await runNeonHttpTransaction<[ChangeRequestSqlRow[]]>(
-			(sql) => [
-				sql`
+		const [rows] = await runNeonHttpTransaction((sql) => [
+			sql`
 					WITH mutated AS (
 						INSERT INTO md_change_request (
 							id, organization_id, code, normalized_code, command_kind, status,
@@ -268,12 +269,15 @@ export async function drizzleCreateChangeRequest(
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, submitted_by, ${meta.correlationId},
-							'master_data', 'change_request', id, 'CREATE', ${changesJson}::jsonb,
-							${newValueJson}::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -291,8 +295,7 @@ export async function drizzleCreateChangeRequest(
 					)
 					SELECT mutated.* FROM mutated, audited, outboxed
 				`,
-			],
-		);
+		]);
 		const [row] = rows;
 		if (row === undefined) {
 			return fail("INTERNAL_ERROR", "Change request create returned no row");
@@ -335,19 +338,40 @@ export async function drizzleTransitionChangeRequest(
 	const eventType = `master_data.change_request.${meta.eventSuffix}.v1`;
 	const auditId = randomUUID();
 	const eventId = randomUUID();
-	const changesJson = fieldChangeJson(
-		"status",
-		existing.data.status,
-		record.toStatus,
-	);
-	const oldValueJson = valueSnapshotJson({
-		status: existing.data.status,
-		version: existing.data.version,
+	const preparedAudit = prepareTransactionalAuditInsertValues({
+		organizationId: record.organizationId,
+		actorUserId: record.actorUserId,
+		correlationId: meta.correlationId,
+		module: "master_data",
+		entity: "change_request",
+		entityId: record.id,
+		action: "UPDATE",
+		changes: [
+			{
+				field: "status",
+				oldValue: existing.data.status,
+				newValue: record.toStatus,
+			},
+		],
+		oldValue: {
+			status: existing.data.status,
+			version: existing.data.version,
+		},
+		newValue: {
+			status: record.toStatus,
+			version: nextVersion,
+		},
+		eventContext: {
+			version: 1,
+			outcome: "SUCCEEDED",
+			source: MASTER_DATA_CHANGE_REQUEST_AUDIT_SOURCE,
+			causationId: null,
+		},
 	});
-	const newValueJson = valueSnapshotJson({
-		status: record.toStatus,
-		version: nextVersion,
-	});
+	if (!preparedAudit.ok) {
+		return preparedAudit;
+	}
+	const audit = preparedAudit.data;
 	const eventPayload = eventPayloadJson({
 		organizationId: existing.data.organizationId,
 		entityType: "change_request",
@@ -359,9 +383,8 @@ export async function drizzleTransitionChangeRequest(
 	});
 
 	try {
-		const [rows] = await runNeonHttpTransaction<[ChangeRequestSqlRow[]]>(
-			(sql) => [
-				sql`
+		const [rows] = await runNeonHttpTransaction((sql) => [
+			sql`
 					WITH mutated AS (
 						UPDATE md_change_request
 						SET
@@ -380,12 +403,15 @@ export async function drizzleTransitionChangeRequest(
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes, old_value, new_value
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
 						)
 						SELECT
-							${auditId}, organization_id, ${record.actorUserId}, ${meta.correlationId},
-							'master_data', 'change_request', id, 'UPDATE', ${changesJson}::jsonb,
-							${oldValueJson}::jsonb, ${newValueJson}::jsonb
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
 						FROM mutated
 						RETURNING id
 					),
@@ -403,8 +429,7 @@ export async function drizzleTransitionChangeRequest(
 					)
 					SELECT mutated.* FROM mutated, audited, outboxed
 				`,
-			],
-		);
+		]);
 		const [row] = rows;
 		if (row === undefined) {
 			return fail("CONFLICT", "Change request version conflict", {

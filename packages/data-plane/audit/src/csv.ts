@@ -16,10 +16,19 @@ const CSV_HEADERS = [
 ] as const;
 
 function escapeCsvField(value: string): string {
-	if (value.includes(",") || value.includes('"') || value.includes("\n")) {
-		return `"${value.replaceAll('"', '""')}"`;
+	const firstCharacter = value.at(0);
+	const safeValue =
+		firstCharacter !== undefined && "=+-@\t\r".includes(firstCharacter)
+			? `'${value}`
+			: value;
+	if (
+		safeValue.includes(",") ||
+		safeValue.includes('"') ||
+		safeValue.includes("\n")
+	) {
+		return `"${safeValue.replaceAll('"', '""')}"`;
 	}
-	return value;
+	return safeValue;
 }
 
 /** Org-scoped audit CSV (summary columns — not full changes JSON). */

@@ -15,14 +15,8 @@ import {
 	supplierInvoiceLine,
 	threeWayMatchResult,
 } from "@afenda/db";
-import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
-import {
-	fail,
-	failFromAppError,
-	failFromUnknown,
-	ok,
-	type Result,
-} from "@afenda/errors/result";
+import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
+import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
 
 import type {
 	PayablesStore,
@@ -36,10 +30,29 @@ import type {
 } from "./model";
 
 function failFromPersistence(error: unknown, fallbackMessage: string) {
-	const mapped = fromPostgresUnknown(error);
-	return mapped === undefined
-		? failFromUnknown(error, fallbackMessage)
-		: failFromAppError(mapped);
+	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
+}
+
+interface ReversedAllocationSqlRow {
+	amount: string;
+	created_at: Date;
+	created_by: string;
+	id: string;
+	invoice_id: string;
+	organization_id: string;
+	payment_id: string;
+	supplier_id: string;
+}
+
+interface SupplierBalanceSqlRow {
+	credited_amount: string;
+	currency_code: string;
+	invoiced_amount: string;
+	open_balance: string;
+	organization_id: string;
+	paid_amount: string;
+	supplier_id: string;
+	updated_at: Date;
 }
 
 function invoiceStatus(value: string): SupplierInvoiceStatus {
@@ -263,7 +276,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 	): Promise<Result<SupplierInvoiceLine>> {
 		const id = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH numbered AS (
 						SELECT COALESCE(MAX(line_no), 0) + 1 AS line_no
@@ -331,7 +344,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 				entityId: record.invoiceId,
 				organizationId: record.organizationId,
 			});
-			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH mutated AS (
 						UPDATE supplier_invoice
@@ -410,7 +423,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 				entityId: record.invoiceId,
 				organizationId: record.organizationId,
 			});
-			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH mutated AS (
 						UPDATE supplier_invoice
@@ -545,9 +558,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 	): Promise<Result<SupplierInvoiceLine>> {
 		const id = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[{ line_no: number; created_at: Date }[]]
-			>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH eligible AS (
 						SELECT id FROM supplier_credit_note
@@ -602,7 +613,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 		record: Parameters<PayablesStore["postCredit"]>[0],
 	): Promise<Result<SupplierInvoice>> {
 		try {
-			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH totaled AS (
 						SELECT credit.*, (SELECT COALESCE(SUM(line_amount::numeric), 0) FROM supplier_credit_note_line
@@ -730,7 +741,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 				organizationId: record.organizationId,
 				supplierId: record.supplierId,
 			});
-			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH mutated AS (
 						INSERT INTO supplier_credit_note (
@@ -840,20 +851,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 			if (replay !== undefined) {
 				return ok(mapAllocation(replay));
 			}
-			const [rows] = await runNeonHttpTransaction<
-				[
-					Array<{
-						id: string;
-						organization_id: string;
-						invoice_id: string;
-						supplier_id: string;
-						payment_id: string;
-						amount: string;
-						created_by: string;
-						created_at: Date;
-					}>,
-				]
-			>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH eligible AS (
 						SELECT invoice.*, (
@@ -965,9 +963,8 @@ export class DrizzlePayablesStore implements PayablesStore {
 			if (replay !== undefined) {
 				return ok(mapAllocation(replay));
 			}
-			const [rows] = await runNeonHttpTransaction<[Array<{ id: string }>]>(
-				(sql) => [
-					sql`
+			const [rows] = await runNeonHttpTransaction((sql) => [
+				sql`
 					WITH invoice AS (
 						SELECT row.*, (SELECT COALESCE(SUM(amount::numeric), 0) FROM supplier_allocation
 							WHERE supplier_invoice_id = row.id AND organization_id = row.organization_id AND status = 'active') AS applied
@@ -1006,8 +1003,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 							AND currency_code = (SELECT currency_code FROM invoice)
 					) SELECT id FROM allocated
 				`,
-				],
-			);
+			]);
 			if (rows[0] === undefined) {
 				return fail("CONFLICT", "Supplier credit application conflict");
 			}
@@ -1033,20 +1029,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 		record: Parameters<PayablesStore["reversePaymentApplication"]>[0],
 	): Promise<Result<SupplierAllocation[]>> {
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[
-					Array<{
-						id: string;
-						organization_id: string;
-						invoice_id: string;
-						supplier_id: string;
-						payment_id: string;
-						amount: string;
-						created_by: string;
-						created_at: Date;
-					}>,
-				]
-			>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH deleted AS (
 						UPDATE supplier_allocation
@@ -1104,7 +1087,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 				`,
 			]);
 			return ok(
-				rows.map((row) => ({
+				rows.map((row: ReversedAllocationSqlRow) => ({
 					amount: row.amount,
 					applyIdempotencyKey: null,
 					createdAt: row.created_at,
@@ -1133,7 +1116,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 		record: Parameters<PayablesStore["cancel"]>[0],
 	): Promise<Result<SupplierInvoice>> {
 		try {
-			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					WITH mutated AS (
 						UPDATE supplier_invoice
@@ -1336,20 +1319,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 		currencyCode?: string,
 	): Promise<Result<SupplierBalance[]>> {
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[
-					Array<{
-						organization_id: string;
-						supplier_id: string;
-						currency_code: string;
-						open_balance: string;
-						invoiced_amount: string;
-						credited_amount: string;
-						paid_amount: string;
-						updated_at: Date;
-					}>,
-				]
-			>((sql) => [
+			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
 					SELECT balance.organization_id, balance.supplier_party_id AS supplier_id,
 						balance.currency_code, balance.open_balance, balance.updated_at,
@@ -1379,7 +1349,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 				`,
 			]);
 			return ok(
-				rows.map((row) => ({
+				rows.map((row: SupplierBalanceSqlRow) => ({
 					asOf: new Date(),
 					creditedAmount: row.credited_amount,
 					currencyCode: row.currency_code,

@@ -2,12 +2,10 @@ import { randomUUID } from "node:crypto";
 
 import { ok, type Result } from "@afenda/errors/result";
 
-import { auditEntriesToCsv } from "../../src/csv";
-import { MAX_AUDIT_EXPORT_ROWS } from "../../src/schemas";
 import type { AuditStore } from "../../src/store";
 import type {
+	AuditCursorQueryOptions,
 	AuditEntry,
-	AuditExportOptions,
 	AuditPurgeOptions,
 	AuditQueryFilter,
 	AuditQueryOptions,
@@ -51,6 +49,11 @@ function matchesFilter(entry: AuditEntry, filter: AuditQueryFilter): boolean {
 	return true;
 }
 
+function compareNewestFirst(a: AuditEntry, b: AuditEntry): number {
+	const timeDifference = b.createdAt.getTime() - a.createdAt.getTime();
+	return timeDifference === 0 ? b.id.localeCompare(a.id) : timeDifference;
+}
+
 function onPromiseBoundary<T>(operation: () => T): Promise<T> {
 	return Promise.resolve().then(operation);
 }
@@ -59,7 +62,9 @@ function onPromiseBoundary<T>(operation: () => T): Promise<T> {
 export class MemoryAuditStore implements AuditStore {
 	private readonly entries: AuditEntry[] = [];
 
-	write(entry: AuditWriteInput): Promise<Result<AuditEntry>> {
+	write(
+		entry: AuditWriteInput & { createdAt?: Date },
+	): Promise<Result<AuditEntry>> {
 		return onPromiseBoundary(() => {
 			const created: AuditEntry = {
 				id: randomUUID(),
@@ -69,6 +74,7 @@ export class MemoryAuditStore implements AuditStore {
 				module: entry.module,
 				entity: entry.entity,
 				entityId: entry.entityId,
+				eventContext: entry.eventContext ?? null,
 				action: entry.action,
 				changes: entry.changes,
 				oldValue: entry.oldValue ?? null,
@@ -87,9 +93,29 @@ export class MemoryAuditStore implements AuditStore {
 		return onPromiseBoundary(() => {
 			const filtered = this.entries
 				.filter((entry) => matchesFilter(entry, options))
-				.toSorted((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+				.toSorted(compareNewestFirst);
 			const offset = (options.page - 1) * options.pageSize;
 			return ok(filtered.slice(offset, offset + options.pageSize));
+		});
+	}
+
+	queryCursor(options: AuditCursorQueryOptions): Promise<Result<AuditEntry[]>> {
+		return onPromiseBoundary(() => {
+			const filtered = this.entries
+				.filter((entry) => matchesFilter(entry, options))
+				.filter((entry) => {
+					if (options.cursor === undefined) {
+						return true;
+					}
+					const timeDifference =
+						entry.createdAt.getTime() - options.cursor.createdAt.getTime();
+					return (
+						timeDifference < 0 ||
+						(timeDifference === 0 && entry.id < options.cursor.id)
+					);
+				})
+				.toSorted(compareNewestFirst);
+			return ok(filtered.slice(0, options.pageSize + 1));
 		});
 	}
 
@@ -97,20 +123,6 @@ export class MemoryAuditStore implements AuditStore {
 		return onPromiseBoundary(() =>
 			ok(this.entries.filter((entry) => matchesFilter(entry, options)).length),
 		);
-	}
-
-	export(options: AuditExportOptions): Promise<Result<string>> {
-		return onPromiseBoundary(() => {
-			const filtered = this.entries
-				.filter((entry) => matchesFilter(entry, options))
-				.toSorted((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-				.slice(0, MAX_AUDIT_EXPORT_ROWS);
-
-			if (options.format === "json") {
-				return ok(JSON.stringify(filtered, null, 2));
-			}
-			return ok(auditEntriesToCsv(filtered));
-		});
 	}
 
 	purge(options: AuditPurgeOptions): Promise<Result<number>> {

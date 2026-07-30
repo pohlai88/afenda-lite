@@ -52,8 +52,8 @@ Person → Worker → Employee (optional specialization)
 | Manifest band | `R1-F` |
 | Manifest lifecycle | `scaffolded` (honest posture) |
 | Payroll | Separate package `@afenda/payroll` — HR exposes handoff facts only |
-| Schema host | `@afenda/db` (`writeOwner: @afenda/human-resources` for 129 `hr_*` tables) |
-| Tenancy | Shared Neon schema; hard `organization_id` on 129 `hr_*` roots of 222 repo roots |
+| Schema host | `@afenda/db` (`writeOwner: @afenda/human-resources` for 141 `hr_*` tables) |
+| Tenancy | Shared Neon schema; hard `organization_id` on 141 `hr_*` roots of 274 repo roots |
 
 Authority: [`human-resource.md`](../human-resource.md) · [`packages/erp/human-resources/README.md`](../../../packages/erp/human-resources/README.md)
 

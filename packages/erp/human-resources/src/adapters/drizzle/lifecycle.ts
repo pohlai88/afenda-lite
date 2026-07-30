@@ -1,6 +1,10 @@
 import { randomUUID } from "node:crypto";
 
 import {
+	type PreparedTransactionalAuditInsertValues,
+	prepareTransactionalAuditInsertValues,
+} from "@afenda/audit";
+import {
 	and,
 	asc,
 	db,
@@ -138,6 +142,62 @@ import type {
 	ProbationReview,
 	Termination,
 } from "../../types";
+
+const LIFECYCLE_AUDIT_SOURCE = "human-resources.lifecycle-drizzle";
+
+type LifecycleAuditEntity =
+	| "hr_clearance"
+	| "hr_employment_confirmation"
+	| "hr_employment_movement"
+	| "hr_exit_interview"
+	| "hr_offboarding_access_revocation"
+	| "hr_offboarding_case"
+	| "hr_offboarding_payroll_handoff"
+	| "hr_offboarding_task"
+	| "hr_onboarding_access_handoff"
+	| "hr_onboarding_case"
+	| "hr_onboarding_equipment_handoff"
+	| "hr_onboarding_orientation"
+	| "hr_onboarding_task"
+	| "hr_probation_assessment"
+	| "hr_probation_review"
+	| "hr_termination";
+
+interface LifecycleAuditInput {
+	action: "CREATE" | "UPDATE";
+	actorUserId: string;
+	correlationId: string;
+	entity: LifecycleAuditEntity;
+	entityId: string;
+	newValue?: Record<string, unknown> | null;
+	oldValue?: Record<string, unknown> | null;
+	organizationId: string;
+	reasonCode: string;
+}
+
+function prepareLifecycleAudit(
+	input: LifecycleAuditInput,
+): Result<PreparedTransactionalAuditInsertValues> {
+	return prepareTransactionalAuditInsertValues({
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		correlationId: input.correlationId,
+		module: "human-resources",
+		entity: input.entity,
+		entityId: input.entityId,
+		action: input.action,
+		oldValue: input.oldValue ?? null,
+		newValue: input.newValue ?? null,
+		eventContext: {
+			version: 1,
+			outcome: "SUCCEEDED",
+			source: LIFECYCLE_AUDIT_SOURCE,
+			occurredAt: null,
+			causationId: null,
+			reasonCode: input.reasonCode,
+		},
+	});
+}
 
 /** Neon HTTP RETURNING rows may surface timestamptz as strings; Drizzle select returns Date. */
 function parseDate(value: Date | string): Date {
@@ -1300,6 +1360,24 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		if (!brandedAccessHandoffId.ok) {
 			return brandedAccessHandoffId;
 		}
+		const preparedLifecycleAudit = prepareLifecycleAudit({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_onboarding_case",
+			entityId: brandedCaseId.data,
+			action: "CREATE",
+			reasonCode: "ONBOARDING_STARTED",
+			newValue: {
+				employmentId: record.employmentId,
+				status: "in_progress",
+				taskCount: record.tasks.length,
+			},
+		});
+		if (!preparedLifecycleAudit.ok) {
+			return preparedLifecycleAudit;
+		}
+		const audit = preparedLifecycleAudit.data;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const taskRows = record.tasks.map((task) => ({
@@ -1317,9 +1395,8 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[OnboardingCaseSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH employment AS (
 							SELECT id, organization_id, employee_id, status
 							FROM hr_employment
@@ -1407,11 +1484,15 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, created_by, ${meta.correlationId},
-								'human-resources', 'hr_onboarding_case', id, 'CREATE', '[]'::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+								${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+								${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -1431,8 +1512,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 							access_handoff, audited, outboxed
 						WHERE EXISTS (SELECT 1 FROM tasks)
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return conflict("Unable to start onboarding for employment");
@@ -1463,16 +1543,24 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 
 	async completeOnboardingTask(input, _ports, meta) {
 		const nextVersion = input.expectedVersion + 1;
+		const preparedLifecycleAudit = prepareLifecycleAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_onboarding_task",
+			entityId: input.taskId,
+			action: "UPDATE",
+			reasonCode: "ONBOARDING_TASK_COMPLETED",
+			oldValue: { version: input.expectedVersion },
+			newValue: { status: input.newStatus, version: nextVersion },
+		});
+		if (!preparedLifecycleAudit.ok) {
+			return preparedLifecycleAudit;
+		}
+		const audit = preparedLifecycleAudit.data;
 		const auditId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[
-					{
-						case_id: string;
-						organization_id: string;
-					}[],
-				]
-			>((sqlTag) => [
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
 				sqlTag`
 						WITH task_row AS (
 							SELECT *
@@ -1506,12 +1594,15 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_onboarding_task', ${input.taskId}, 'UPDATE',
-								'[]'::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+								${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+								${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
@@ -1548,6 +1639,21 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 
 	async completeOnboarding(input, _ports, meta) {
 		const nextVersion = input.expectedVersion + 1;
+		const preparedLifecycleAudit = prepareLifecycleAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_onboarding_case",
+			entityId: input.onboardingCaseId,
+			action: "UPDATE",
+			reasonCode: "ONBOARDING_COMPLETED",
+			oldValue: { status: "in_progress", version: input.expectedVersion },
+			newValue: { status: "completed", version: nextVersion },
+		});
+		if (!preparedLifecycleAudit.ok) {
+			return preparedLifecycleAudit;
+		}
+		const audit = preparedLifecycleAudit.data;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const payloadJson = eventPayloadJson({
@@ -1558,9 +1664,8 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction<[OnboardingCaseSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH case_row AS (
 							SELECT *
 							FROM hr_onboarding_case
@@ -1618,11 +1723,15 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_onboarding_case', id, 'UPDATE', '[]'::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+								${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+								${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -1640,8 +1749,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return diagnoseOnboardingCompletionFailure(this, {
@@ -1831,11 +1939,28 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		}
 
 		const nextVersion = input.expectedVersion + 1;
+		const preparedLifecycleAudit = prepareLifecycleAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_onboarding_orientation",
+			entityId: input.orientationId,
+			action: "UPDATE",
+			reasonCode: "ONBOARDING_ORIENTATION_ACKNOWLEDGED",
+			oldValue: { status: orientation.status, version: input.expectedVersion },
+			newValue: {
+				status: "acknowledged",
+				acknowledgedOn: input.acknowledgedOn,
+				version: nextVersion,
+			},
+		});
+		if (!preparedLifecycleAudit.ok) {
+			return preparedLifecycleAudit;
+		}
+		const audit = preparedLifecycleAudit.data;
 		const auditId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[{ onboarding_case_id: string }[]]
-			>((sqlTag) => [
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_onboarding_orientation o
@@ -1872,12 +1997,15 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, ${input.organizationId}, ${input.actorUserId},
-								${meta.correlationId}, 'human-resources', 'hr_onboarding_orientation',
-								${input.orientationId}, 'UPDATE', '[]'::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+								${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+								${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
@@ -1978,11 +2106,31 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		}
 
 		const nextVersion = input.expectedVersion + 1;
+		const preparedLifecycleAudit = prepareLifecycleAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_onboarding_equipment_handoff",
+			entityId: input.equipmentHandoffId,
+			action: "UPDATE",
+			reasonCode: "ONBOARDING_EQUIPMENT_HANDED_OVER",
+			oldValue: {
+				status: equipmentHandoff.status,
+				version: input.expectedVersion,
+			},
+			newValue: {
+				status: "handed_over",
+				handedOverOn: input.handedOverOn,
+				version: nextVersion,
+			},
+		});
+		if (!preparedLifecycleAudit.ok) {
+			return preparedLifecycleAudit;
+		}
+		const audit = preparedLifecycleAudit.data;
 		const auditId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[{ onboarding_case_id: string }[]]
-			>((sqlTag) => [
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_onboarding_equipment_handoff e
@@ -2019,13 +2167,15 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, ${input.organizationId}, ${input.actorUserId},
-								${meta.correlationId}, 'human-resources',
-								'hr_onboarding_equipment_handoff', ${input.equipmentHandoffId},
-								'UPDATE', '[]'::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+								${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+								${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
@@ -2123,11 +2273,31 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		}
 
 		const nextVersion = input.expectedVersion + 1;
+		const preparedLifecycleAudit = prepareLifecycleAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_onboarding_access_handoff",
+			entityId: input.accessHandoffId,
+			action: "UPDATE",
+			reasonCode: "ONBOARDING_ACCESS_GRANTED",
+			oldValue: {
+				status: accessHandoff.status,
+				version: input.expectedVersion,
+			},
+			newValue: {
+				status: "granted",
+				grantedOn: input.grantedOn,
+				version: nextVersion,
+			},
+		});
+		if (!preparedLifecycleAudit.ok) {
+			return preparedLifecycleAudit;
+		}
+		const audit = preparedLifecycleAudit.data;
 		const auditId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[{ onboarding_case_id: string }[]]
-			>((sqlTag) => [
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_onboarding_access_handoff a
@@ -2164,12 +2334,15 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, ${input.organizationId}, ${input.actorUserId},
-								${meta.correlationId}, 'human-resources', 'hr_onboarding_access_handoff',
-								${input.accessHandoffId}, 'UPDATE', '[]'::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+								${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+								${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
@@ -2333,6 +2506,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		}
 	},
 
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, validation, kernel audit preparation, and guarded persistence in one atomic command path.
 	async openProbation(record, _ports, meta) {
 		const existing = await this.findProbationByOpenIdempotencyKey({
 			organizationId: record.organizationId,
@@ -2362,11 +2536,29 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		if (!brandedId.ok) {
 			return brandedId;
 		}
+		const preparedLifecycleAudit = prepareLifecycleAudit({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_probation_review",
+			entityId: brandedId.data,
+			action: "CREATE",
+			reasonCode: "PROBATION_OPENED",
+			newValue: {
+				employmentId: record.employmentId,
+				startsOn: record.startsOn,
+				endsOn: record.endsOn,
+				status: "open",
+			},
+		});
+		if (!preparedLifecycleAudit.ok) {
+			return preparedLifecycleAudit;
+		}
+		const audit = preparedLifecycleAudit.data;
 		const auditId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<[ProbationSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH employment AS (
 							SELECT id, organization_id, employee_id
 							FROM hr_employment
@@ -2397,18 +2589,21 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, created_by, ${meta.correlationId},
-								'human-resources', 'hr_probation_review', id, 'CREATE', '[]'::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+								${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+								${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return conflict("Unable to open probation for employment");
@@ -2467,6 +2662,29 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		}
 
 		const nextVersion = input.expectedVersion + 1;
+		const preparedLifecycleAudit = prepareLifecycleAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_probation_review",
+			entityId: input.probationReviewId,
+			action: "UPDATE",
+			reasonCode: "PROBATION_EXTENDED",
+			oldValue: {
+				endsOn: existing.data.endsOn,
+				status: existing.data.status,
+				version: input.expectedVersion,
+			},
+			newValue: {
+				endsOn: input.newEndsOn,
+				status: existing.data.status,
+				version: nextVersion,
+			},
+		});
+		if (!preparedLifecycleAudit.ok) {
+			return preparedLifecycleAudit;
+		}
+		const audit = preparedLifecycleAudit.data;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const extendPayloadJson = eventPayloadJson(
@@ -2484,9 +2702,8 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			),
 		);
 		try {
-			const [rows] = await runNeonHttpTransaction<[ProbationSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_probation_review
 							SET ends_on = ${input.newEndsOn},
@@ -2504,11 +2721,15 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_probation_review', id, 'UPDATE', '[]'::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+								${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+								${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -2527,8 +2748,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -2580,6 +2800,24 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			return brandedAssessmentId;
 		}
 		const nextVersion = input.expectedVersion + 1;
+		const preparedLifecycleAudit = prepareLifecycleAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_probation_assessment",
+			entityId: brandedAssessmentId.data,
+			action: "CREATE",
+			reasonCode: "PROBATION_ASSESSMENT_RECORDED",
+			newValue: {
+				probationReviewId: input.probationReviewId,
+				reviewedOn: input.reviewedOn,
+				version: 1,
+			},
+		});
+		if (!preparedLifecycleAudit.ok) {
+			return preparedLifecycleAudit;
+		}
+		const audit = preparedLifecycleAudit.data;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const assessmentPayloadJson = eventPayloadJson(
@@ -2598,9 +2836,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			),
 		);
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[ProbationAssessmentSqlRow[]]
-			>((sqlTag) => [
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
 				sqlTag`
 						WITH review AS (
 							UPDATE hr_probation_review
@@ -2630,11 +2866,15 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_probation_assessment', id, 'CREATE', '[]'::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+								${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+								${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -2702,6 +2942,29 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		}
 
 		const nextVersion = input.expectedVersion + 1;
+		const preparedLifecycleAudit = prepareLifecycleAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_probation_review",
+			entityId: input.probationReviewId,
+			action: "UPDATE",
+			reasonCode: "PROBATION_OUTCOME_RECORDED",
+			oldValue: {
+				status: existing.data.status,
+				version: input.expectedVersion,
+			},
+			newValue: {
+				status: "closed",
+				outcome: input.outcome,
+				outcomeRecordedOn: input.concludedOn,
+				version: nextVersion,
+			},
+		});
+		if (!preparedLifecycleAudit.ok) {
+			return preparedLifecycleAudit;
+		}
+		const audit = preparedLifecycleAudit.data;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const outcomePayloadJson = eventPayloadJson(
@@ -2720,9 +2983,8 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			),
 		);
 		try {
-			const [rows] = await runNeonHttpTransaction<[ProbationSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_probation_review
 							SET status = 'closed',
@@ -2743,11 +3005,15 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_probation_review', id, 'UPDATE', '[]'::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+								${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+								${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -2766,8 +3032,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -2912,6 +3177,24 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		if (!brandedId.ok) {
 			return brandedId;
 		}
+		const preparedLifecycleAudit = prepareLifecycleAudit({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_employment_confirmation",
+			entityId: brandedId.data,
+			action: "CREATE",
+			reasonCode: "EMPLOYMENT_CONFIRMED",
+			newValue: {
+				employmentId: record.employmentId,
+				confirmedOn: record.confirmedOn,
+				version: 1,
+			},
+		});
+		if (!preparedLifecycleAudit.ok) {
+			return preparedLifecycleAudit;
+		}
+		const audit = preparedLifecycleAudit.data;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const confirmPayloadJson = eventPayloadJson({
@@ -2924,9 +3207,8 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			evidenceNote: record.evidenceNote,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction<[ConfirmationSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH employment AS (
 							SELECT id, organization_id, employee_id
 							FROM hr_employment
@@ -2951,12 +3233,15 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, created_by, ${meta.correlationId},
-								'human-resources', 'hr_employment_confirmation', id, 'CREATE',
-								'[]'::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+								${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+								${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -2975,8 +3260,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return conflict("Unable to confirm employment");
@@ -3152,14 +3436,33 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		if (!brandedMovementId.ok) {
 			return brandedMovementId;
 		}
+		const preparedLifecycleAudit = prepareLifecycleAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_employment_movement",
+			entityId: brandedMovementId.data,
+			action: "CREATE",
+			reasonCode: "EMPLOYMENT_ASSIGNMENT_TRANSFERRED",
+			newValue: {
+				employmentId: input.employmentId,
+				fromPositionId: currentAssignment.positionId,
+				toPositionId: input.toPositionId,
+				effectiveOn: input.effectiveOn,
+				version: 1,
+			},
+		});
+		if (!preparedLifecycleAudit.ok) {
+			return preparedLifecycleAudit;
+		}
+		const audit = preparedLifecycleAudit.data;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const nextAssignmentVersion = currentAssignment.version + 1;
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[MovementSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH employment AS (
 							SELECT id, organization_id, employee_id
 							FROM hr_employment
@@ -3284,11 +3587,15 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_employment_movement', id, 'CREATE', '[]'::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+								${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+								${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -3314,8 +3621,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return conflict("Unable to transfer assignment");
@@ -3440,12 +3746,32 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		if (!brandedId.ok) {
 			return brandedId;
 		}
+		const preparedLifecycleAudit = prepareLifecycleAudit({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_termination",
+			entityId: brandedId.data,
+			action: "CREATE",
+			reasonCode: "TERMINATION_PROPOSED",
+			newValue: {
+				employmentId: record.employmentId,
+				status: "draft",
+				reasonCode: record.reasonCode,
+				effectiveOn: record.effectiveOn,
+				rehireEligible: record.rehireEligible,
+				version: 1,
+			},
+		});
+		if (!preparedLifecycleAudit.ok) {
+			return preparedLifecycleAudit;
+		}
+		const audit = preparedLifecycleAudit.data;
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[TerminationSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH employment AS (
 							SELECT id, organization_id, employee_id, starts_on
 							FROM hr_employment
@@ -3485,18 +3811,21 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, created_by, ${meta.correlationId},
-								'human-resources', 'hr_termination', id, 'CREATE', '[]'::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+								${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+								${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return conflict("Unable to propose termination");
@@ -3556,11 +3885,25 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		}
 
 		const nextVersion = record.expectedVersion + 1;
+		const preparedLifecycleAudit = prepareLifecycleAudit({
+			organizationId: record.organizationId,
+			actorUserId: record.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_termination",
+			entityId: record.terminationId,
+			action: "UPDATE",
+			reasonCode: "TERMINATION_APPROVED",
+			oldValue: { approved: false, version: record.expectedVersion },
+			newValue: { approved: true, version: nextVersion },
+		});
+		if (!preparedLifecycleAudit.ok) {
+			return preparedLifecycleAudit;
+		}
+		const audit = preparedLifecycleAudit.data;
 		const auditId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<[TerminationSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_termination
 							SET approved_at = now(),
@@ -3578,18 +3921,21 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, ${record.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_termination', id, 'UPDATE', '[]'::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+								${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+								${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -3653,18 +3999,39 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 
 		const currentEmployment = employment.data;
 		const terminationEmploymentId = existing.data.employmentId;
+		const nextTerminationVersion = record.expectedVersion + 1;
+		const preparedLifecycleAudit = prepareLifecycleAudit({
+			organizationId: record.organizationId,
+			actorUserId: record.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_termination",
+			entityId: record.terminationId,
+			action: "UPDATE",
+			reasonCode: "TERMINATION_FINALIZED",
+			oldValue: {
+				status: existing.data.status,
+				version: record.expectedVersion,
+			},
+			newValue: {
+				status: "finalized",
+				effectiveOn: existing.data.effectiveOn,
+				version: nextTerminationVersion,
+			},
+		});
+		if (!preparedLifecycleAudit.ok) {
+			return preparedLifecycleAudit;
+		}
+		const audit = preparedLifecycleAudit.data;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const historyId = randomUUID();
-		const nextTerminationVersion = record.expectedVersion + 1;
 		const nextEmploymentVersion = currentEmployment.version + 1;
 		const expectedEmploymentVersion = currentEmployment.version;
 		const fromEmploymentStatus = currentEmployment.status;
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[TerminationSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH employment AS (
 							SELECT id, organization_id, employee_id, starts_on, status, version
 							FROM hr_employment
@@ -3729,11 +4096,15 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, ${record.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_termination', id, 'UPDATE', '[]'::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+								${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+								${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -3759,8 +4130,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 						)
 						SELECT mutated.* FROM mutated, employment_updated, history_inserted, audited, outboxed
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return conflict("Unable to finalize termination");
@@ -3901,6 +4271,25 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		if (!brandedPayrollHandoffId.ok) {
 			return brandedPayrollHandoffId;
 		}
+		const preparedLifecycleAudit = prepareLifecycleAudit({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_offboarding_case",
+			entityId: brandedCaseId.data,
+			action: "CREATE",
+			reasonCode: "OFFBOARDING_STARTED",
+			newValue: {
+				employmentId: record.employmentId,
+				terminationId: record.terminationId,
+				status: "in_progress",
+				taskCount: record.tasks.length,
+			},
+		});
+		if (!preparedLifecycleAudit.ok) {
+			return preparedLifecycleAudit;
+		}
+		const audit = preparedLifecycleAudit.data;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const taskRows = record.tasks.map((task) => ({
@@ -3918,9 +4307,8 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[OffboardingCaseSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH employment AS (
 							SELECT id, organization_id, employee_id, status
 							FROM hr_employment
@@ -4018,11 +4406,15 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, created_by, ${meta.correlationId},
-								'human-resources', 'hr_offboarding_case', id, 'CREATE', '[]'::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+								${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+								${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -4040,8 +4432,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 						)
 						SELECT mutated.* FROM mutated, tasks, clearance, access_revocation, payroll_handoff, audited, outboxed
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return conflict("Unable to start offboarding for employment");
@@ -4072,11 +4463,25 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 
 	async completeOffboardingTask(input, _ports, meta) {
 		const nextVersion = input.expectedVersion + 1;
+		const preparedLifecycleAudit = prepareLifecycleAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_offboarding_task",
+			entityId: input.taskId,
+			action: "UPDATE",
+			reasonCode: "OFFBOARDING_TASK_COMPLETED",
+			oldValue: { status: "pending", version: input.expectedVersion },
+			newValue: { status: input.newStatus, version: nextVersion },
+		});
+		if (!preparedLifecycleAudit.ok) {
+			return preparedLifecycleAudit;
+		}
+		const audit = preparedLifecycleAudit.data;
 		const auditId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<[{ case_id: string }[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 							WITH mutated AS (
 								UPDATE hr_offboarding_task task
 								SET status = ${input.newStatus},
@@ -4098,19 +4503,21 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 							audited AS (
 								INSERT INTO platform_audit_log (
 									id, organization_id, actor_user_id, correlation_id, module, entity,
-									entity_id, action, changes
-								)
+									entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
+							)
 								SELECT
-									${auditId}, ${input.organizationId}, ${input.actorUserId},
-									${meta.correlationId}, 'human-resources', 'hr_offboarding_task',
-									${input.taskId}, 'UPDATE', '[]'::jsonb
-								FROM mutated
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+								${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+								${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
+							FROM mutated
 								RETURNING id
 							)
 							SELECT mutated.* FROM mutated, audited
 						`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -4164,11 +4571,28 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		}
 
 		const interviewId = randomUUID();
+		const preparedLifecycleAudit = prepareLifecycleAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_exit_interview",
+			entityId: interviewId,
+			action: "CREATE",
+			reasonCode: "EXIT_INTERVIEW_RECORDED",
+			newValue: {
+				offboardingCaseId: input.offboardingCaseId,
+				conductedOn: input.conductedOn,
+				version: 1,
+			},
+		});
+		if (!preparedLifecycleAudit.ok) {
+			return preparedLifecycleAudit;
+		}
+		const audit = preparedLifecycleAudit.data;
 		const auditId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<[{ case_id: string }[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 							WITH case_row AS (
 								SELECT *
 								FROM hr_offboarding_case
@@ -4191,19 +4615,21 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 							audited AS (
 								INSERT INTO platform_audit_log (
 									id, organization_id, actor_user_id, correlation_id, module, entity,
-									entity_id, action, changes
-								)
+									entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
+							)
 								SELECT
-									${auditId}, ${input.organizationId}, ${input.actorUserId},
-									${meta.correlationId}, 'human-resources', 'hr_exit_interview',
-									${interviewId}, 'CREATE', '[]'::jsonb
-								FROM mutated
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+								${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+								${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
+							FROM mutated
 								RETURNING id
 							)
 							SELECT mutated.* FROM mutated, audited
 						`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return conflict("Unable to record exit interview");
@@ -4219,12 +4645,29 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 
 	async recordClearance(input, _ports, meta) {
 		const nextVersion = input.expectedVersion + 1;
+		const preparedLifecycleAudit = prepareLifecycleAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_clearance",
+			entityId: input.clearanceId,
+			action: "UPDATE",
+			reasonCode: "OFFBOARDING_CLEARANCE_COMPLETED",
+			oldValue: { status: "pending", version: input.expectedVersion },
+			newValue: {
+				status: "cleared",
+				clearedOn: input.clearedOn,
+				version: nextVersion,
+			},
+		});
+		if (!preparedLifecycleAudit.ok) {
+			return preparedLifecycleAudit;
+		}
+		const audit = preparedLifecycleAudit.data;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[{ offboarding_case_id: string }[]]
-			>((sqlTag) => [
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_clearance c
@@ -4246,12 +4689,15 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, ${input.organizationId}, ${input.actorUserId},
-								${meta.correlationId}, 'human-resources', 'hr_clearance',
-								${input.clearanceId}, 'UPDATE', '[]'::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+								${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+								${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -4308,6 +4754,21 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 
 	async completeOffboarding(input, _ports, meta) {
 		const nextVersion = input.expectedVersion + 1;
+		const preparedLifecycleAudit = prepareLifecycleAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_offboarding_case",
+			entityId: input.offboardingCaseId,
+			action: "UPDATE",
+			reasonCode: "OFFBOARDING_COMPLETED",
+			oldValue: { status: "in_progress", version: input.expectedVersion },
+			newValue: { status: "completed", version: nextVersion },
+		});
+		if (!preparedLifecycleAudit.ok) {
+			return preparedLifecycleAudit;
+		}
+		const audit = preparedLifecycleAudit.data;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const payloadJson = eventPayloadJson({
@@ -4318,9 +4779,8 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction<[OffboardingCaseSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				sqlTag`
 						WITH case_row AS (
 							SELECT *
 							FROM hr_offboarding_case
@@ -4379,11 +4839,15 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_offboarding_case', id, 'UPDATE', '[]'::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+								${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+								${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -4401,8 +4865,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				const existing = await this.getOffboardingCase({
@@ -4635,11 +5098,28 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 
 	async recordOffboardingAccessRevocation(input, _ports, meta) {
 		const nextVersion = input.expectedVersion + 1;
+		const preparedLifecycleAudit = prepareLifecycleAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_offboarding_access_revocation",
+			entityId: input.accessRevocationId,
+			action: "UPDATE",
+			reasonCode: "OFFBOARDING_ACCESS_REVOKED",
+			oldValue: { status: "pending", version: input.expectedVersion },
+			newValue: {
+				status: "revoked",
+				revokedOn: input.revokedOn,
+				version: nextVersion,
+			},
+		});
+		if (!preparedLifecycleAudit.ok) {
+			return preparedLifecycleAudit;
+		}
+		const audit = preparedLifecycleAudit.data;
 		const auditId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[{ offboarding_case_id: string }[]]
-			>((sqlTag) => [
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_offboarding_access_revocation ar
@@ -4662,12 +5142,15 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, ${input.organizationId}, ${input.actorUserId},
-								${meta.correlationId}, 'human-resources', 'hr_offboarding_access_revocation',
-								${input.accessRevocationId}, 'UPDATE', '[]'::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+								${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+								${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
@@ -4708,11 +5191,24 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 
 	async recordOffboardingPayrollHandoff(input, _ports, meta) {
 		const nextVersion = input.expectedVersion + 1;
+		const preparedLifecycleAudit = prepareLifecycleAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_offboarding_payroll_handoff",
+			entityId: input.payrollHandoffId,
+			action: "UPDATE",
+			reasonCode: "OFFBOARDING_PAYROLL_HANDOFF_READY",
+			oldValue: { status: "pending", version: input.expectedVersion },
+			newValue: { status: "ready", version: nextVersion },
+		});
+		if (!preparedLifecycleAudit.ok) {
+			return preparedLifecycleAudit;
+		}
+		const audit = preparedLifecycleAudit.data;
 		const auditId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[{ offboarding_case_id: string }[]]
-			>((sqlTag) => [
+			const [rows] = await runNeonHttpTransaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_offboarding_payroll_handoff ph
@@ -4735,12 +5231,15 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
 							SELECT
-								${auditId}, ${input.organizationId}, ${input.actorUserId},
-								${meta.correlationId}, 'human-resources', 'hr_offboarding_payroll_handoff',
-								${input.payrollHandoffId}, 'UPDATE', '[]'::jsonb
+								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, ${audit.correlationId},
+								${audit.module}, ${audit.entity}, ${audit.entityId}, ${audit.action},
+								${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+								${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+								${audit.ipAddress}, ${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)

@@ -1,5 +1,11 @@
 import { randomUUID } from "node:crypto";
 import {
+	type PreparedDerivedEntityAuditInsertValues,
+	type PreparedTransactionalAuditInsertValues,
+	prepareDerivedEntityAuditInsertValues,
+	prepareTransactionalAuditInsertValues,
+} from "@afenda/audit";
+import {
 	and,
 	asc,
 	db,
@@ -144,6 +150,80 @@ const HR_REGEX_5 =
 const HR_REGEX_6 = /hr_interview_evaluation_org_interview_uidx/i;
 const HR_REGEX_7 = /hr_employment_offer_org_application_draft_issued_uidx/i;
 const HR_REGEX_8 = /hr_employment_offer_org_accept_idempotency_uidx/i;
+
+const RECRUITMENT_AUDIT_SOURCE = "human-resources.recruitment-drizzle";
+
+type RecruitmentAuditEntity =
+	| "hr_candidate"
+	| "hr_candidate_application"
+	| "hr_employment_offer"
+	| "hr_headcount_reservation"
+	| "hr_interview"
+	| "hr_interview_evaluation"
+	| "hr_job_requisition";
+
+interface RecruitmentAuditInput {
+	action: "CREATE" | "UPDATE";
+	actorUserId: string;
+	correlationId: string;
+	entity: RecruitmentAuditEntity;
+	entityId: string;
+	meta: HumanResourcesMutationMeta;
+	newValue?: Record<string, unknown> | null;
+	oldValue?: Record<string, unknown> | null;
+	organizationId: string;
+	reasonCode: string;
+}
+
+function recruitmentAuditEventContext(input: {
+	correlationId: string;
+	meta: HumanResourcesMutationMeta;
+	reasonCode: string;
+}) {
+	return {
+		version: 1 as const,
+		outcome: "SUCCEEDED" as const,
+		source: RECRUITMENT_AUDIT_SOURCE,
+		causationId:
+			input.meta.causationId ??
+			input.meta.idempotencyKey ??
+			input.correlationId,
+		reasonCode: input.reasonCode,
+	};
+}
+
+function prepareRecruitmentAudit(
+	input: RecruitmentAuditInput,
+): Result<PreparedTransactionalAuditInsertValues> {
+	return prepareTransactionalAuditInsertValues({
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		correlationId: input.correlationId,
+		module: "human-resources",
+		entity: input.entity,
+		entityId: input.entityId,
+		action: input.action,
+		oldValue: input.oldValue ?? null,
+		newValue: input.newValue ?? null,
+		eventContext: recruitmentAuditEventContext(input),
+	});
+}
+
+function prepareDerivedRecruitmentAudit(
+	input: Omit<RecruitmentAuditInput, "entityId">,
+): Result<PreparedDerivedEntityAuditInsertValues> {
+	return prepareDerivedEntityAuditInsertValues({
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		correlationId: input.correlationId,
+		module: "human-resources",
+		entity: input.entity,
+		action: input.action,
+		oldValue: input.oldValue ?? null,
+		newValue: input.newValue ?? null,
+		eventContext: recruitmentAuditEventContext(input),
+	});
+}
 
 function mapNullableDepartmentId(
 	value: string | null,
@@ -1267,11 +1347,25 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		if (!brandedId.ok) {
 			return brandedId;
 		}
+		const preparedAudit = prepareRecruitmentAudit({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_job_requisition",
+			entityId: brandedId.data,
+			action: "CREATE",
+			newValue: { status: "draft", version: 1 },
+			meta,
+			reasonCode: "REQUISITION_CREATED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const auditId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<[RequisitionSqlRow[]]>(
-				(sqlValue19) => [
-					sqlValue19`
+			const [rows] = await runNeonHttpTransaction((sqlValue19) => [
+				sqlValue19`
 							WITH mutated AS (
 								INSERT INTO hr_job_requisition (
 									id, organization_id, code, title, status,
@@ -1290,18 +1384,16 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 							audited AS (
 								INSERT INTO platform_audit_log (
 									id, organization_id, actor_user_id, correlation_id, module, entity,
-									entity_id, action, changes
+									entity_id, action, changes, old_value, new_value, metadata,
+									ip_address, user_agent
 								)
-								SELECT
-									${auditId}, organization_id, created_by, ${meta.correlationId},
-									'human-resources', 'hr_job_requisition', id, 'CREATE', '[]'::jsonb
+								SELECT 									${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 									${audit.correlationId}, ${audit.module}, ${audit.entity}, 									id, ${audit.action}, ${audit.changesJson}::jsonb, 									${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 									${audit.metadataJson}::jsonb, ${audit.ipAddress}, 									${audit.userAgent}
 								FROM mutated
 								RETURNING id
 							)
 							SELECT mutated.* FROM mutated, audited
 						`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return fail("INTERNAL_ERROR", "Requisition create returned no row");
@@ -1398,12 +1490,27 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			return refs;
 		}
 
+		const preparedAudit = prepareRecruitmentAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_job_requisition",
+			entityId: input.requisitionId,
+			action: "UPDATE",
+			oldValue: { version: input.expectedVersion },
+			newValue: { version: input.expectedVersion + 1 },
+			meta,
+			reasonCode: "REQUISITION_AMENDED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const auditId = randomUUID();
 		const nextVersion = input.expectedVersion + 1;
 		try {
-			const [rows] = await runNeonHttpTransaction<[RequisitionSqlRow[]]>(
-				(sqlValue18) => [
-					sqlValue18`
+			const [rows] = await runNeonHttpTransaction((sqlValue18) => [
+				sqlValue18`
 							WITH mutated AS (
 								UPDATE hr_job_requisition
 								SET title = ${nextTitle},
@@ -1423,18 +1530,16 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 							audited AS (
 								INSERT INTO platform_audit_log (
 									id, organization_id, actor_user_id, correlation_id, module, entity,
-									entity_id, action, changes
+									entity_id, action, changes, old_value, new_value, metadata,
+									ip_address, user_agent
 								)
-								SELECT
-									${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-									'human-resources', 'hr_job_requisition', id, 'UPDATE', '[]'::jsonb
+								SELECT 									${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 									${audit.correlationId}, ${audit.module}, ${audit.entity}, 									id, ${audit.action}, ${audit.changesJson}::jsonb, 									${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 									${audit.metadataJson}::jsonb, ${audit.ipAddress}, 									${audit.userAgent}
 								FROM mutated
 								RETURNING id
 							)
 							SELECT mutated.* FROM mutated, audited
 						`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				const again = await this.getRequisitionById({
@@ -1493,12 +1598,27 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			return assignable;
 		}
 
+		const preparedAudit = prepareRecruitmentAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_job_requisition",
+			entityId: input.requisitionId,
+			action: "UPDATE",
+			oldValue: { version: input.expectedVersion },
+			newValue: { version: input.expectedVersion + 1 },
+			meta,
+			reasonCode: "REQUISITION_HIRING_MANAGER_ASSIGNED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const auditId = randomUUID();
 		const nextVersion = input.expectedVersion + 1;
 		try {
-			const [rows] = await runNeonHttpTransaction<[RequisitionSqlRow[]]>(
-				(sqlValue17) => [
-					sqlValue17`
+			const [rows] = await runNeonHttpTransaction((sqlValue17) => [
+				sqlValue17`
 							WITH mutated AS (
 								UPDATE hr_job_requisition
 								SET hiring_manager_employee_id = ${input.hiringManagerEmployeeId},
@@ -1514,18 +1634,16 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 							audited AS (
 								INSERT INTO platform_audit_log (
 									id, organization_id, actor_user_id, correlation_id, module, entity,
-									entity_id, action, changes
+									entity_id, action, changes, old_value, new_value, metadata,
+									ip_address, user_agent
 								)
-								SELECT
-									${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-									'human-resources', 'hr_job_requisition', id, 'UPDATE', '[]'::jsonb
+								SELECT 									${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 									${audit.correlationId}, ${audit.module}, ${audit.entity}, 									id, ${audit.action}, ${audit.changesJson}::jsonb, 									${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 									${audit.metadataJson}::jsonb, ${audit.ipAddress}, 									${audit.userAgent}
 								FROM mutated
 								RETURNING id
 							)
 							SELECT mutated.* FROM mutated, audited
 						`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				const again = await this.getRequisitionById({
@@ -1589,6 +1707,40 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			return transition;
 		}
 
+		const preparedAudit = prepareRecruitmentAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_job_requisition",
+			entityId: input.requisitionId,
+			action: "UPDATE",
+			oldValue: {
+				status: requisition.status,
+				version: input.expectedVersion,
+			},
+			newValue: { status: input.status, version: input.expectedVersion + 1 },
+			meta,
+			reasonCode: "REQUISITION_STATUS_TRANSITIONED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
+		const preparedReleasedReservationsAudit = prepareDerivedRecruitmentAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_headcount_reservation",
+			action: "UPDATE",
+			oldValue: { status: "active" },
+			newValue: { status: "released" },
+			meta,
+			reasonCode: "HEADCOUNT_RESERVATIONS_RELEASED",
+		});
+		if (!preparedReleasedReservationsAudit.ok) {
+			return preparedReleasedReservationsAudit;
+		}
+		const releasedReservationsAudit = preparedReleasedReservationsAudit.data;
 		const auditId = randomUUID();
 		const nextVersion = input.expectedVersion + 1;
 		const plannedOutbox = planRecruitmentDrizzleOutbox({
@@ -1604,13 +1756,10 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 				!(input.status === "approved" && input.emitApprovedEvent === true),
 		});
 		const eventId = randomUUID();
-		const releaseReservationsAuditId = randomUUID();
-
 		try {
-			const [rows] = await runNeonHttpTransaction<[RequisitionSqlRow[]]>(
-				(sqlValue16) => [
-					plannedOutbox
-						? sqlValue16`
+			const [rows] = await runNeonHttpTransaction((sqlValue16) => [
+				plannedOutbox
+					? sqlValue16`
 								WITH mutated AS (
 									UPDATE hr_job_requisition
 									SET status = ${input.status},
@@ -1625,11 +1774,10 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 								audited AS (
 									INSERT INTO platform_audit_log (
 										id, organization_id, actor_user_id, correlation_id, module, entity,
-										entity_id, action, changes
+										entity_id, action, changes, old_value, new_value, metadata,
+										ip_address, user_agent
 									)
-									SELECT
-										${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-										'human-resources', 'hr_job_requisition', id, 'UPDATE', '[]'::jsonb
+									SELECT 										${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 										${audit.correlationId}, ${audit.module}, ${audit.entity}, 										id, ${audit.action}, ${audit.changesJson}::jsonb, 										${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 										${audit.metadataJson}::jsonb, ${audit.ipAddress}, 										${audit.userAgent}
 									FROM mutated
 									RETURNING id
 								),
@@ -1661,11 +1809,10 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 								reservations_audited AS (
 									INSERT INTO platform_audit_log (
 										id, organization_id, actor_user_id, correlation_id, module, entity,
-										entity_id, action, changes
+										entity_id, action, changes, old_value, new_value, metadata,
+										ip_address, user_agent
 									)
-									SELECT
-										${releaseReservationsAuditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-										'human-resources', 'hr_headcount_reservation', id, 'UPDATE', '[]'::jsonb
+									SELECT 										gen_random_uuid(), ${releasedReservationsAudit.organizationId}, ${releasedReservationsAudit.actorUserId}, 										${releasedReservationsAudit.correlationId}, ${releasedReservationsAudit.module}, ${releasedReservationsAudit.entity}, 										id, ${releasedReservationsAudit.action}, ${releasedReservationsAudit.changesJson}::jsonb, 										${releasedReservationsAudit.oldValueJson}::jsonb, ${releasedReservationsAudit.newValueJson}::jsonb, 										${releasedReservationsAudit.metadataJson}::jsonb, ${releasedReservationsAudit.ipAddress}, 										${releasedReservationsAudit.userAgent}
 									FROM released_reservations
 									RETURNING id
 								)
@@ -1673,7 +1820,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 								LEFT JOIN released_reservations ON true
 								LEFT JOIN reservations_audited ON true
 							`
-						: sqlValue16`
+					: sqlValue16`
 								WITH mutated AS (
 									UPDATE hr_job_requisition
 									SET status = ${input.status},
@@ -1688,11 +1835,10 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 								audited AS (
 									INSERT INTO platform_audit_log (
 										id, organization_id, actor_user_id, correlation_id, module, entity,
-										entity_id, action, changes
+										entity_id, action, changes, old_value, new_value, metadata,
+										ip_address, user_agent
 									)
-									SELECT
-										${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-										'human-resources', 'hr_job_requisition', id, 'UPDATE', '[]'::jsonb
+									SELECT 										${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 										${audit.correlationId}, ${audit.module}, ${audit.entity}, 										id, ${audit.action}, ${audit.changesJson}::jsonb, 										${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 										${audit.metadataJson}::jsonb, ${audit.ipAddress}, 										${audit.userAgent}
 									FROM mutated
 									RETURNING id
 								),
@@ -1712,11 +1858,10 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 								reservations_audited AS (
 									INSERT INTO platform_audit_log (
 										id, organization_id, actor_user_id, correlation_id, module, entity,
-										entity_id, action, changes
+										entity_id, action, changes, old_value, new_value, metadata,
+										ip_address, user_agent
 									)
-									SELECT
-										${releaseReservationsAuditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-										'human-resources', 'hr_headcount_reservation', id, 'UPDATE', '[]'::jsonb
+									SELECT 										gen_random_uuid(), ${releasedReservationsAudit.organizationId}, ${releasedReservationsAudit.actorUserId}, 										${releasedReservationsAudit.correlationId}, ${releasedReservationsAudit.module}, ${releasedReservationsAudit.entity}, 										id, ${releasedReservationsAudit.action}, ${releasedReservationsAudit.changesJson}::jsonb, 										${releasedReservationsAudit.oldValueJson}::jsonb, ${releasedReservationsAudit.newValueJson}::jsonb, 										${releasedReservationsAudit.metadataJson}::jsonb, ${releasedReservationsAudit.ipAddress}, 										${releasedReservationsAudit.userAgent}
 									FROM released_reservations
 									RETURNING id
 								)
@@ -1724,8 +1869,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 								LEFT JOIN released_reservations ON true
 								LEFT JOIN reservations_audited ON true
 							`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				const again = await this.getRequisitionById({
@@ -1932,10 +2076,28 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		if (plannedOutbox === undefined) {
 			return invalidState("Candidate create requires a domain event");
 		}
+		const preparedAudit = prepareRecruitmentAudit({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_candidate",
+			entityId: brandedId.data,
+			action: "CREATE",
+			newValue: {
+				status: "active",
+				consentCaptured: true,
+				version: 1,
+			},
+			meta,
+			reasonCode: "CANDIDATE_CREATED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction<[CandidateSqlRow[]]>(
-				(sqlValue15) => [
-					sqlValue15`
+			const [rows] = await runNeonHttpTransaction((sqlValue15) => [
+				sqlValue15`
 							WITH mutated AS (
 								INSERT INTO hr_candidate (
 									id, organization_id, display_name, email, normalized_email, phone,
@@ -1956,11 +2118,10 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 							audited AS (
 								INSERT INTO platform_audit_log (
 									id, organization_id, actor_user_id, correlation_id, module, entity,
-									entity_id, action, changes
+									entity_id, action, changes, old_value, new_value, metadata,
+									ip_address, user_agent
 								)
-								SELECT
-									${auditId}, organization_id, created_by, ${meta.correlationId},
-									'human-resources', 'hr_candidate', id, 'CREATE', '[]'::jsonb
+								SELECT 									${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 									${audit.correlationId}, ${audit.module}, ${audit.entity}, 									id, ${audit.action}, ${audit.changesJson}::jsonb, 									${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 									${audit.metadataJson}::jsonb, ${audit.ipAddress}, 									${audit.userAgent}
 								FROM mutated
 								RETURNING id
 							),
@@ -1978,8 +2139,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 							)
 							SELECT mutated.* FROM mutated, audited, outboxed
 						`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				return fail("INTERNAL_ERROR", "Candidate create returned no row");
@@ -2052,12 +2212,27 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 				: input.displayName;
 		const nextPhone = input.phone === undefined ? candidate.phone : input.phone;
 
+		const preparedAudit = prepareRecruitmentAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_candidate",
+			entityId: input.candidateId,
+			action: "UPDATE",
+			oldValue: { version: input.expectedVersion },
+			newValue: { version: input.expectedVersion + 1 },
+			meta,
+			reasonCode: "CANDIDATE_PROFILE_UPDATED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const auditId = randomUUID();
 		const nextVersion = input.expectedVersion + 1;
 		try {
-			const [rows] = await runNeonHttpTransaction<[CandidateSqlRow[]]>(
-				(sqlValue14) => [
-					sqlValue14`
+			const [rows] = await runNeonHttpTransaction((sqlValue14) => [
+				sqlValue14`
 							WITH mutated AS (
 								UPDATE hr_candidate
 								SET display_name = ${nextDisplayName},
@@ -2074,18 +2249,16 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 							audited AS (
 								INSERT INTO platform_audit_log (
 									id, organization_id, actor_user_id, correlation_id, module, entity,
-									entity_id, action, changes
+									entity_id, action, changes, old_value, new_value, metadata,
+									ip_address, user_agent
 								)
-								SELECT
-									${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-									'human-resources', 'hr_candidate', id, 'UPDATE', '[]'::jsonb
+								SELECT 									${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 									${audit.correlationId}, ${audit.module}, ${audit.entity}, 									id, ${audit.action}, ${audit.changesJson}::jsonb, 									${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 									${audit.metadataJson}::jsonb, ${audit.ipAddress}, 									${audit.userAgent}
 								FROM mutated
 								RETURNING id
 							)
 							SELECT mutated.* FROM mutated, audited
 						`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				const again = await this.getCandidateById({
@@ -2165,11 +2338,26 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 				"Candidate consent withdrawal requires a domain event",
 			);
 		}
+		const preparedAudit = prepareRecruitmentAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_candidate",
+			entityId: input.candidateId,
+			action: "UPDATE",
+			oldValue: { consentWithdrawn: false, version: input.expectedVersion },
+			newValue: { consentWithdrawn: true, version: input.expectedVersion + 1 },
+			meta,
+			reasonCode: "CANDIDATE_CONSENT_WITHDRAWN",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[CandidateSqlRow[]]>(
-				(sqlValue13) => [
-					sqlValue13`
+			const [rows] = await runNeonHttpTransaction((sqlValue13) => [
+				sqlValue13`
 							WITH mutated AS (
 								UPDATE hr_candidate
 								SET consent_withdrawn_at = now(),
@@ -2186,11 +2374,10 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 							audited AS (
 								INSERT INTO platform_audit_log (
 									id, organization_id, actor_user_id, correlation_id, module, entity,
-									entity_id, action, changes
+									entity_id, action, changes, old_value, new_value, metadata,
+									ip_address, user_agent
 								)
-								SELECT
-									${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-									'human-resources', 'hr_candidate', id, 'UPDATE', '[]'::jsonb
+								SELECT 									${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 									${audit.correlationId}, ${audit.module}, ${audit.entity}, 									id, ${audit.action}, ${audit.changesJson}::jsonb, 									${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 									${audit.metadataJson}::jsonb, ${audit.ipAddress}, 									${audit.userAgent}
 								FROM mutated
 								RETURNING id
 							),
@@ -2208,8 +2395,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 							)
 							SELECT mutated.* FROM mutated, audited, outboxed
 						`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				const again = await this.getCandidateById({
@@ -2296,11 +2482,26 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		if (plannedOutbox === undefined) {
 			return invalidState("Candidate retention change requires a domain event");
 		}
+		const preparedAudit = prepareRecruitmentAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_candidate",
+			entityId: input.candidateId,
+			action: "UPDATE",
+			oldValue: { version: input.expectedVersion },
+			newValue: { version: input.expectedVersion + 1 },
+			meta,
+			reasonCode: "CANDIDATE_RETENTION_CHANGED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[CandidateSqlRow[]]>(
-				(sqlValue12) => [
-					sqlValue12`
+			const [rows] = await runNeonHttpTransaction((sqlValue12) => [
+				sqlValue12`
 							WITH mutated AS (
 								UPDATE hr_candidate
 								SET retention_until = ${input.retentionUntil},
@@ -2317,11 +2518,10 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 							audited AS (
 								INSERT INTO platform_audit_log (
 									id, organization_id, actor_user_id, correlation_id, module, entity,
-									entity_id, action, changes
+									entity_id, action, changes, old_value, new_value, metadata,
+									ip_address, user_agent
 								)
-								SELECT
-									${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-									'human-resources', 'hr_candidate', id, 'UPDATE', '[]'::jsonb
+								SELECT 									${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 									${audit.correlationId}, ${audit.module}, ${audit.entity}, 									id, ${audit.action}, ${audit.changesJson}::jsonb, 									${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 									${audit.metadataJson}::jsonb, ${audit.ipAddress}, 									${audit.userAgent}
 								FROM mutated
 								RETURNING id
 							),
@@ -2339,8 +2539,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 							)
 							SELECT mutated.* FROM mutated, audited, outboxed
 						`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				const again = await this.getCandidateById({
@@ -2430,11 +2629,26 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		if (plannedOutbox === undefined) {
 			return invalidState("Candidate anonymization requires a domain event");
 		}
+		const preparedAudit = prepareRecruitmentAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_candidate",
+			entityId: input.candidateId,
+			action: "UPDATE",
+			oldValue: { status: candidate.status, version: input.expectedVersion },
+			newValue: { status: "anonymized", version: input.expectedVersion + 1 },
+			meta,
+			reasonCode: "CANDIDATE_ANONYMIZED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[CandidateSqlRow[]]>(
-				(txSql) => [
-					txSql`
+			const [rows] = await runNeonHttpTransaction((txSql) => [
+				txSql`
 							WITH mutated AS (
 								UPDATE hr_candidate
 								SET display_name = ${ANONYMIZED_CANDIDATE_DISPLAY_NAME},
@@ -2454,11 +2668,10 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 							audited AS (
 								INSERT INTO platform_audit_log (
 									id, organization_id, actor_user_id, correlation_id, module, entity,
-									entity_id, action, changes
+									entity_id, action, changes, old_value, new_value, metadata,
+									ip_address, user_agent
 								)
-								SELECT
-									${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-									'human-resources', 'hr_candidate', id, 'UPDATE', '[]'::jsonb
+								SELECT 									${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 									${audit.correlationId}, ${audit.module}, ${audit.entity}, 									id, ${audit.action}, ${audit.changesJson}::jsonb, 									${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 									${audit.metadataJson}::jsonb, ${audit.ipAddress}, 									${audit.userAgent}
 								FROM mutated
 								RETURNING id
 							),
@@ -2476,8 +2689,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 							)
 							SELECT mutated.* FROM mutated, audited, outboxed
 						`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				const again = await this.getCandidateById({
@@ -2775,10 +2987,24 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		if (plannedOutbox === undefined) {
 			return invalidState("Application create requires a domain event");
 		}
+		const preparedAudit = prepareRecruitmentAudit({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_candidate_application",
+			entityId: brandedId.data,
+			action: "CREATE",
+			newValue: { status: "submitted", version: 1 },
+			meta,
+			reasonCode: "APPLICATION_CREATED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction<[ApplicationSqlRow[]]>(
-				(sqlValue11) => [
-					sqlValue11`
+			const [rows] = await runNeonHttpTransaction((sqlValue11) => [
+				sqlValue11`
 							WITH candidate_ref AS (
 								SELECT id, organization_id
 								FROM hr_candidate
@@ -2821,11 +3047,10 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 							audited AS (
 								INSERT INTO platform_audit_log (
 									id, organization_id, actor_user_id, correlation_id, module, entity,
-									entity_id, action, changes
+									entity_id, action, changes, old_value, new_value, metadata,
+									ip_address, user_agent
 								)
-								SELECT
-									${auditId}, organization_id, created_by, ${meta.correlationId},
-									'human-resources', 'hr_candidate_application', id, 'CREATE', '[]'::jsonb
+								SELECT 									${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 									${audit.correlationId}, ${audit.module}, ${audit.entity}, 									id, ${audit.action}, ${audit.changesJson}::jsonb, 									${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 									${audit.metadataJson}::jsonb, ${audit.ipAddress}, 									${audit.userAgent}
 								FROM mutated
 								RETURNING id
 							),
@@ -2843,8 +3068,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 							)
 							SELECT mutated.* FROM mutated, history, audited, outboxed
 						`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				const candidateAgain = await this.getCandidateById({
@@ -2954,10 +3178,25 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 				"Application status transition requires a domain event",
 			);
 		}
+		const preparedAudit = prepareRecruitmentAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_candidate_application",
+			entityId: input.applicationId,
+			action: "UPDATE",
+			oldValue: { status: fromStatus, version: input.expectedVersion },
+			newValue: { status: input.status, version: nextVersion },
+			meta,
+			reasonCode: "APPLICATION_STATUS_TRANSITIONED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction<[ApplicationSqlRow[]]>(
-				(sqlValue10) => [
-					sqlValue10`
+			const [rows] = await runNeonHttpTransaction((sqlValue10) => [
+				sqlValue10`
 							WITH mutated AS (
 								UPDATE hr_candidate_application
 								SET status = ${input.status},
@@ -2985,11 +3224,10 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 							audited AS (
 								INSERT INTO platform_audit_log (
 									id, organization_id, actor_user_id, correlation_id, module, entity,
-									entity_id, action, changes
+									entity_id, action, changes, old_value, new_value, metadata,
+									ip_address, user_agent
 								)
-								SELECT
-									${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-									'human-resources', 'hr_candidate_application', id, 'UPDATE', '[]'::jsonb
+								SELECT 									${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 									${audit.correlationId}, ${audit.module}, ${audit.entity}, 									id, ${audit.action}, ${audit.changesJson}::jsonb, 									${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 									${audit.metadataJson}::jsonb, ${audit.ipAddress}, 									${audit.userAgent}
 								FROM mutated
 								RETURNING id
 							),
@@ -3007,8 +3245,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 							)
 							SELECT mutated.* FROM mutated, history, audited, outboxed
 						`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				const again = await this.getApplicationById({
@@ -3291,10 +3528,24 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		if (plannedOutbox === undefined) {
 			return invalidState("Interview schedule requires a domain event");
 		}
+		const preparedAudit = prepareRecruitmentAudit({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_interview",
+			entityId: brandedId.data,
+			action: "CREATE",
+			newValue: { status: "scheduled", version: 1 },
+			meta,
+			reasonCode: "INTERVIEW_SCHEDULED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction<[InterviewSqlRow[]]>(
-				(sqlValue9) => [
-					sqlValue9`
+			const [rows] = await runNeonHttpTransaction((sqlValue9) => [
+				sqlValue9`
 							WITH application_ref AS (
 								SELECT id, organization_id
 								FROM hr_candidate_application
@@ -3317,11 +3568,10 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 							audited AS (
 								INSERT INTO platform_audit_log (
 									id, organization_id, actor_user_id, correlation_id, module, entity,
-									entity_id, action, changes
+									entity_id, action, changes, old_value, new_value, metadata,
+									ip_address, user_agent
 								)
-								SELECT
-									${auditId}, organization_id, created_by, ${meta.correlationId},
-									'human-resources', 'hr_interview', id, 'CREATE', '[]'::jsonb
+								SELECT 									${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 									${audit.correlationId}, ${audit.module}, ${audit.entity}, 									id, ${audit.action}, ${audit.changesJson}::jsonb, 									${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 									${audit.metadataJson}::jsonb, ${audit.ipAddress}, 									${audit.userAgent}
 								FROM mutated
 								RETURNING id
 							),
@@ -3339,8 +3589,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 							)
 							SELECT mutated.* FROM mutated, audited, outboxed
 						`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				const applicationAgain = await this.getApplicationById({
@@ -3405,12 +3654,27 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			return transition;
 		}
 
+		const preparedAudit = prepareRecruitmentAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_interview",
+			entityId: input.interviewId,
+			action: "UPDATE",
+			oldValue: { status: interview.status, version: input.expectedVersion },
+			newValue: { status: "cancelled", version: input.expectedVersion + 1 },
+			meta,
+			reasonCode: "INTERVIEW_CANCELLED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const auditId = randomUUID();
 		const nextVersion = input.expectedVersion + 1;
 		try {
-			const [rows] = await runNeonHttpTransaction<[InterviewSqlRow[]]>(
-				(sqlValue8) => [
-					sqlValue8`
+			const [rows] = await runNeonHttpTransaction((sqlValue8) => [
+				sqlValue8`
 							WITH mutated AS (
 								UPDATE hr_interview
 								SET status = 'cancelled',
@@ -3426,18 +3690,16 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 							audited AS (
 								INSERT INTO platform_audit_log (
 									id, organization_id, actor_user_id, correlation_id, module, entity,
-									entity_id, action, changes
+									entity_id, action, changes, old_value, new_value, metadata,
+									ip_address, user_agent
 								)
-								SELECT
-									${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-									'human-resources', 'hr_interview', id, 'UPDATE', '[]'::jsonb
+								SELECT 									${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 									${audit.correlationId}, ${audit.module}, ${audit.entity}, 									id, ${audit.action}, ${audit.changesJson}::jsonb, 									${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 									${audit.metadataJson}::jsonb, ${audit.ipAddress}, 									${audit.userAgent}
 								FROM mutated
 								RETURNING id
 							)
 							SELECT mutated.* FROM mutated, audited
 						`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				const again = await this.getInterviewById({
@@ -3494,12 +3756,27 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			return assignable;
 		}
 
+		const preparedAudit = prepareRecruitmentAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_interview",
+			entityId: input.interviewId,
+			action: "UPDATE",
+			oldValue: { version: input.expectedVersion },
+			newValue: { version: input.expectedVersion + 1 },
+			meta,
+			reasonCode: "INTERVIEW_INTERVIEWER_ASSIGNED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const auditId = randomUUID();
 		const nextVersion = input.expectedVersion + 1;
 		try {
-			const [rows] = await runNeonHttpTransaction<[InterviewSqlRow[]]>(
-				(sqlValue7) => [
-					sqlValue7`
+			const [rows] = await runNeonHttpTransaction((sqlValue7) => [
+				sqlValue7`
 							WITH mutated AS (
 								UPDATE hr_interview
 								SET interviewer_actor_id = ${input.interviewerActorId},
@@ -3515,18 +3792,16 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 							audited AS (
 								INSERT INTO platform_audit_log (
 									id, organization_id, actor_user_id, correlation_id, module, entity,
-									entity_id, action, changes
+									entity_id, action, changes, old_value, new_value, metadata,
+									ip_address, user_agent
 								)
-								SELECT
-									${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-									'human-resources', 'hr_interview', id, 'UPDATE', '[]'::jsonb
+								SELECT 									${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 									${audit.correlationId}, ${audit.module}, ${audit.entity}, 									id, ${audit.action}, ${audit.changesJson}::jsonb, 									${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 									${audit.metadataJson}::jsonb, ${audit.ipAddress}, 									${audit.userAgent}
 								FROM mutated
 								RETURNING id
 							)
 							SELECT mutated.* FROM mutated, audited
 						`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				const again = await this.getInterviewById({
@@ -3702,10 +3977,42 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		if (plannedOutbox === undefined) {
 			return invalidState("Interview evaluation requires a domain event");
 		}
+		const preparedInterviewAudit = prepareRecruitmentAudit({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_interview",
+			entityId: record.interviewId,
+			action: "UPDATE",
+			oldValue: {
+				status: interview.data.status,
+				version: record.expectedVersion,
+			},
+			newValue: { status: "completed", version: nextInterviewVersion },
+			meta,
+			reasonCode: "INTERVIEW_COMPLETED",
+		});
+		if (!preparedInterviewAudit.ok) {
+			return preparedInterviewAudit;
+		}
+		const interviewAudit = preparedInterviewAudit.data;
+		const preparedEvaluationAudit = prepareRecruitmentAudit({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_interview_evaluation",
+			entityId: brandedId.data,
+			action: "CREATE",
+			newValue: { version: 1 },
+			meta,
+			reasonCode: "INTERVIEW_EVALUATION_RECORDED",
+		});
+		if (!preparedEvaluationAudit.ok) {
+			return preparedEvaluationAudit;
+		}
+		const evaluationAudit = preparedEvaluationAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[InterviewEvaluationSqlRow[]]
-			>((sqlValue6) => [
+			const [rows] = await runNeonHttpTransaction((sqlValue6) => [
 				sqlValue6`
 						WITH completed_interview AS (
 							UPDATE hr_interview
@@ -3722,11 +4029,10 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 						interview_audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
-							SELECT
-								${interviewAuditId}, organization_id, ${record.createdBy}, ${meta.correlationId},
-								'human-resources', 'hr_interview', id, 'UPDATE', '[]'::jsonb
+							SELECT 								${interviewAuditId}, ${interviewAudit.organizationId}, ${interviewAudit.actorUserId}, 								${interviewAudit.correlationId}, ${interviewAudit.module}, ${interviewAudit.entity}, 								id, ${interviewAudit.action}, ${interviewAudit.changesJson}::jsonb, 								${interviewAudit.oldValueJson}::jsonb, ${interviewAudit.newValueJson}::jsonb, 								${interviewAudit.metadataJson}::jsonb, ${interviewAudit.ipAddress}, 								${interviewAudit.userAgent}
 							FROM completed_interview
 							RETURNING id
 						),
@@ -3747,11 +4053,10 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
-							SELECT
-								${evaluationAuditId}, organization_id, created_by, ${meta.correlationId},
-								'human-resources', 'hr_interview_evaluation', id, 'CREATE', '[]'::jsonb
+							SELECT 								${evaluationAuditId}, ${evaluationAudit.organizationId}, ${evaluationAudit.actorUserId}, 								${evaluationAudit.correlationId}, ${evaluationAudit.module}, ${evaluationAudit.entity}, 								id, ${evaluationAudit.action}, ${evaluationAudit.changesJson}::jsonb, 								${evaluationAudit.oldValueJson}::jsonb, ${evaluationAudit.newValueJson}::jsonb, 								${evaluationAudit.metadataJson}::jsonb, ${evaluationAudit.ipAddress}, 								${evaluationAudit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -3948,11 +4253,25 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		if (!brandedId.ok) {
 			return brandedId;
 		}
+		const preparedAudit = prepareRecruitmentAudit({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_employment_offer",
+			entityId: brandedId.data,
+			action: "CREATE",
+			newValue: { status: "draft", version: 1 },
+			meta,
+			reasonCode: "OFFER_CREATED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const auditId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<[OfferSqlRow[]]>(
-				(sqlValue5) => [
-					sqlValue5`
+			const [rows] = await runNeonHttpTransaction((sqlValue5) => [
+				sqlValue5`
 						WITH application_ref AS (
 							SELECT id, organization_id
 							FROM hr_candidate_application
@@ -3977,18 +4296,16 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
-							SELECT
-								${auditId}, organization_id, created_by, ${meta.correlationId},
-								'human-resources', 'hr_employment_offer', id, 'CREATE', '[]'::jsonb
+							SELECT 								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 								${audit.correlationId}, ${audit.module}, ${audit.entity}, 								id, ${audit.action}, ${audit.changesJson}::jsonb, 								${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 								${audit.metadataJson}::jsonb, ${audit.ipAddress}, 								${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				const applicationAgain = await this.getApplicationById({
@@ -4087,12 +4404,27 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			return proposalCheck;
 		}
 
+		const preparedAudit = prepareRecruitmentAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_employment_offer",
+			entityId: input.offerId,
+			action: "UPDATE",
+			oldValue: { version: input.expectedVersion },
+			newValue: { version: input.expectedVersion + 1 },
+			meta,
+			reasonCode: "OFFER_DRAFT_AMENDED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
 		const auditId = randomUUID();
 		const nextVersion = input.expectedVersion + 1;
 		try {
-			const [rows] = await runNeonHttpTransaction<[OfferSqlRow[]]>(
-				(sqlValue4) => [
-					sqlValue4`
+			const [rows] = await runNeonHttpTransaction((sqlValue4) => [
+				sqlValue4`
 						WITH mutated AS (
 							UPDATE hr_employment_offer
 							SET terms_summary = ${nextTermsSummary},
@@ -4110,18 +4442,16 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
-							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_employment_offer', id, 'UPDATE', '[]'::jsonb
+							SELECT 								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 								${audit.correlationId}, ${audit.module}, ${audit.entity}, 								id, ${audit.action}, ${audit.changesJson}::jsonb, 								${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 								${audit.metadataJson}::jsonb, ${audit.ipAddress}, 								${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				const again = await this.getOfferById({
@@ -4253,12 +4583,42 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		if (plannedOutbox === undefined) {
 			return invalidState("Offer status transition requires a domain event");
 		}
+		const preparedAudit = prepareRecruitmentAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_employment_offer",
+			entityId: input.offerId,
+			action: "UPDATE",
+			oldValue: { status: offer.status, version: input.expectedVersion },
+			newValue: { status: input.status, version: nextVersion },
+			meta,
+			reasonCode: "OFFER_STATUS_TRANSITIONED",
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
+		const preparedApplicationAudit = prepareRecruitmentAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_candidate_application",
+			entityId: offer.applicationId,
+			action: "UPDATE",
+			newValue: { status: "offered" },
+			meta,
+			reasonCode: "APPLICATION_OFFERED",
+		});
+		if (!preparedApplicationAudit.ok) {
+			return preparedApplicationAudit;
+		}
+		const applicationAudit = preparedApplicationAudit.data;
 
 		try {
 			if (input.status === "issued") {
-				const [rows] = await runNeonHttpTransaction<[OfferSqlRow[]]>(
-					(sqlValue3) => [
-						sqlValue3`
+				const [rows] = await runNeonHttpTransaction((sqlValue3) => [
+					sqlValue3`
 								WITH updated_offer AS (
 									UPDATE hr_employment_offer
 									SET status = 'issued',
@@ -4275,11 +4635,10 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 								offer_audited AS (
 									INSERT INTO platform_audit_log (
 										id, organization_id, actor_user_id, correlation_id, module, entity,
-										entity_id, action, changes
+										entity_id, action, changes, old_value, new_value, metadata,
+										ip_address, user_agent
 									)
-									SELECT
-										${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-										'human-resources', 'hr_employment_offer', id, 'UPDATE', '[]'::jsonb
+									SELECT 										${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 										${audit.correlationId}, ${audit.module}, ${audit.entity}, 										id, ${audit.action}, ${audit.changesJson}::jsonb, 										${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 										${audit.metadataJson}::jsonb, ${audit.ipAddress}, 										${audit.userAgent}
 									FROM updated_offer
 									RETURNING id
 								),
@@ -4298,11 +4657,10 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 								application_audited AS (
 									INSERT INTO platform_audit_log (
 										id, organization_id, actor_user_id, correlation_id, module, entity,
-										entity_id, action, changes
+										entity_id, action, changes, old_value, new_value, metadata,
+										ip_address, user_agent
 									)
-									SELECT
-										${applicationAuditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-										'human-resources', 'hr_candidate_application', id, 'UPDATE', '[]'::jsonb
+									SELECT 										${applicationAuditId}, ${applicationAudit.organizationId}, ${applicationAudit.actorUserId}, 										${applicationAudit.correlationId}, ${applicationAudit.module}, ${applicationAudit.entity}, 										id, ${applicationAudit.action}, ${applicationAudit.changesJson}::jsonb, 										${applicationAudit.oldValueJson}::jsonb, ${applicationAudit.newValueJson}::jsonb, 										${applicationAudit.metadataJson}::jsonb, ${applicationAudit.ipAddress}, 										${applicationAudit.userAgent}
 									FROM updated_application
 									RETURNING id
 								),
@@ -4320,8 +4678,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 								)
 								SELECT updated_offer.* FROM updated_offer, offer_audited, updated_application, application_audited, outboxed
 							`,
-					],
-				);
+				]);
 				const [row] = rows;
 				if (!row) {
 					const again = await this.getOfferById({
@@ -4339,9 +4696,8 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 				return mapOfferSqlRow(row);
 			}
 
-			const [rows] = await runNeonHttpTransaction<[OfferSqlRow[]]>(
-				(sqlValue2) => [
-					sqlValue2`
+			const [rows] = await runNeonHttpTransaction((sqlValue2) => [
+				sqlValue2`
 						WITH mutated AS (
 							UPDATE hr_employment_offer
 							SET status = ${input.status},
@@ -4360,11 +4716,10 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
-							SELECT
-								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_employment_offer', id, 'UPDATE', '[]'::jsonb
+							SELECT 								${auditId}, ${audit.organizationId}, ${audit.actorUserId}, 								${audit.correlationId}, ${audit.module}, ${audit.entity}, 								id, ${audit.action}, ${audit.changesJson}::jsonb, 								${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb, 								${audit.metadataJson}::jsonb, ${audit.ipAddress}, 								${audit.userAgent}
 							FROM mutated
 							RETURNING id
 						),
@@ -4382,8 +4737,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-				],
-			);
+			]);
 			const [row] = rows;
 			if (!row) {
 				const again = await this.getOfferById({
@@ -4483,7 +4837,6 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		const offerAuditId = randomUUID();
 		const applicationAuditId = randomUUID();
 		const eventId = randomUUID();
-		const reservationAuditId = randomUUID();
 		const nextOfferVersion = input.expectedVersion + 1;
 		const nextApplicationVersion = applicationRecord.version + 1;
 		const plannedOutbox = planRecruitmentDrizzleOutbox({
@@ -4498,17 +4851,59 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		if (plannedOutbox === undefined) {
 			return invalidState("Offer accept requires a domain event");
 		}
+		const preparedOfferAudit = prepareRecruitmentAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_employment_offer",
+			entityId: input.offerId,
+			action: "UPDATE",
+			oldValue: { status: offer.status, version: input.expectedVersion },
+			newValue: { status: "accepted", version: nextOfferVersion },
+			meta,
+			reasonCode: "OFFER_ACCEPTED",
+		});
+		if (!preparedOfferAudit.ok) {
+			return preparedOfferAudit;
+		}
+		const offerAudit = preparedOfferAudit.data;
+		const preparedApplicationAudit = prepareRecruitmentAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_candidate_application",
+			entityId: applicationRecord.id,
+			action: "UPDATE",
+			oldValue: {
+				status: applicationRecord.status,
+				version: applicationRecord.version,
+			},
+			newValue: { status: "accepted", version: nextApplicationVersion },
+			meta,
+			reasonCode: "APPLICATION_ACCEPTED",
+		});
+		if (!preparedApplicationAudit.ok) {
+			return preparedApplicationAudit;
+		}
+		const applicationAudit = preparedApplicationAudit.data;
+		const preparedReservationAudit = prepareDerivedRecruitmentAudit({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_headcount_reservation",
+			action: "UPDATE",
+			oldValue: { status: "active" },
+			newValue: { status: "consumed" },
+			meta,
+			reasonCode: "HEADCOUNT_RESERVATION_CONSUMED",
+		});
+		if (!preparedReservationAudit.ok) {
+			return preparedReservationAudit;
+		}
+		const reservationAudit = preparedReservationAudit.data;
 
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[
-					(OfferSqlRow & {
-						application_id: string;
-						candidate_id: string;
-						requisition_id: string;
-					})[],
-				]
-			>((sqlValue) => [
+			const [rows] = await runNeonHttpTransaction((sqlValue) => [
 				sqlValue`
 						WITH updated_offer AS (
 							UPDATE hr_employment_offer
@@ -4529,11 +4924,10 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 						offer_audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
-							SELECT
-								${offerAuditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_employment_offer', id, 'UPDATE', '[]'::jsonb
+							SELECT 								${offerAuditId}, ${offerAudit.organizationId}, ${offerAudit.actorUserId}, 								${offerAudit.correlationId}, ${offerAudit.module}, ${offerAudit.entity}, 								id, ${offerAudit.action}, ${offerAudit.changesJson}::jsonb, 								${offerAudit.oldValueJson}::jsonb, ${offerAudit.newValueJson}::jsonb, 								${offerAudit.metadataJson}::jsonb, ${offerAudit.ipAddress}, 								${offerAudit.userAgent}
 							FROM updated_offer
 							RETURNING id
 						),
@@ -4553,11 +4947,10 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 						application_audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
-							SELECT
-								${applicationAuditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_candidate_application', id, 'UPDATE', '[]'::jsonb
+							SELECT 								${applicationAuditId}, ${applicationAudit.organizationId}, ${applicationAudit.actorUserId}, 								${applicationAudit.correlationId}, ${applicationAudit.module}, ${applicationAudit.entity}, 								id, ${applicationAudit.action}, ${applicationAudit.changesJson}::jsonb, 								${applicationAudit.oldValueJson}::jsonb, ${applicationAudit.newValueJson}::jsonb, 								${applicationAudit.metadataJson}::jsonb, ${applicationAudit.ipAddress}, 								${applicationAudit.userAgent}
 							FROM updated_application
 							RETURNING id
 						),
@@ -4588,11 +4981,10 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 						reservation_audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
 							)
-							SELECT
-								${reservationAuditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_headcount_reservation', id, 'UPDATE', '[]'::jsonb
+							SELECT 								gen_random_uuid(), ${reservationAudit.organizationId}, ${reservationAudit.actorUserId}, 								${reservationAudit.correlationId}, ${reservationAudit.module}, ${reservationAudit.entity}, 								id, ${reservationAudit.action}, ${reservationAudit.changesJson}::jsonb, 								${reservationAudit.oldValueJson}::jsonb, ${reservationAudit.newValueJson}::jsonb, 								${reservationAudit.metadataJson}::jsonb, ${reservationAudit.ipAddress}, 								${reservationAudit.userAgent}
 							FROM consumed_reservation
 							RETURNING id
 						)

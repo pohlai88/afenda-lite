@@ -1,12 +1,15 @@
-import { describe, expect, it } from "vitest";
+import { ok } from "@afenda/errors/result";
+import { describe, expect, it, vi } from "vitest";
 
 import {
 	countByAction,
 	exportAuditLog,
+	exportAuditLogDetailed,
 	getEntityHistory,
 	getUserActivity,
 	purgeOldEntries,
 	queryAuditLog,
+	queryAuditLogCursor,
 } from "../src/query";
 import { assertOk, MemoryAuditStore } from "./helpers/memory-audit-store";
 
@@ -101,6 +104,73 @@ describe("@afenda/audit query helpers", () => {
 		}
 	});
 
+	it("rejects unknown filters instead of broadening the query", async () => {
+		const store = new MemoryAuditStore();
+		const query = vi.spyOn(store, "query");
+		const count = vi.spyOn(store, "count");
+		const result = await queryAuditLog(
+			{ organizationId: "org-1", actorId: "misspelled-user-filter" },
+			store,
+		);
+
+		expect(result).toMatchObject({ ok: false, code: "BAD_REQUEST" });
+		expect(query).not.toHaveBeenCalled();
+		expect(count).not.toHaveBeenCalled();
+	});
+
+	it("rejects non-canonical retention timestamps before purging", async () => {
+		const store = new MemoryAuditStore();
+		const purge = vi.spyOn(store, "purge");
+		const result = await purgeOldEntries(
+			{ organizationId: "org-1", olderThan: "July 1, 2026" },
+			store,
+		);
+
+		expect(result).toMatchObject({ ok: false, code: "BAD_REQUEST" });
+		expect(purge).not.toHaveBeenCalled();
+	});
+
+	it("paginates with an opaque cursor without duplicates", async () => {
+		const store = new MemoryAuditStore();
+		await seed(store);
+
+		const first = assertOk(
+			await queryAuditLogCursor(
+				{ organizationId: "org-1", pageSize: 1 },
+				store,
+			),
+		);
+		expect(first.entries).toHaveLength(1);
+		expect(first.nextCursor).not.toBeNull();
+
+		const second = assertOk(
+			await queryAuditLogCursor(
+				{
+					organizationId: "org-1",
+					pageSize: 1,
+					cursor: first.nextCursor,
+				},
+				store,
+			),
+		);
+		expect(second.entries).toHaveLength(1);
+		expect(second.nextCursor).toBeNull();
+		expect(second.entries[0]?.id).not.toBe(first.entries[0]?.id);
+	});
+
+	it("rejects malformed cursors before querying the store", async () => {
+		const store = new MemoryAuditStore();
+		const result = await queryAuditLogCursor(
+			{ organizationId: "org-1", cursor: "not-a-valid-cursor" },
+			store,
+		);
+
+		expect(result.ok).toBe(false);
+		if (!result.ok) {
+			expect(result.code).toBe("BAD_REQUEST");
+		}
+	});
+
 	it("keeps synchronous store failures on the promise boundary", async () => {
 		const store = new MemoryAuditStore();
 		store.count = () => {
@@ -149,5 +219,52 @@ describe("@afenda/audit query helpers", () => {
 			await queryAuditLog({ organizationId: "org-2" }, store),
 		);
 		expect(remainingOrg2.total).toBe(1);
+	});
+
+	it("reports bounded export truncation and an opaque continuation", async () => {
+		const store = new MemoryAuditStore();
+		await seed(store);
+		const [template] = store.all();
+		if (template === undefined) {
+			throw new Error("expected seeded audit entry");
+		}
+		const rows = Array.from({ length: 10_001 }, (_, index) => ({
+			...template,
+			id: index.toString().padStart(36, "0"),
+		}));
+		const queryCursor = vi
+			.fn()
+			.mockResolvedValueOnce(ok(rows))
+			.mockResolvedValueOnce(ok([]));
+		store.queryCursor = queryCursor;
+
+		const exported = assertOk(
+			await exportAuditLogDetailed(
+				{ organizationId: "org-1", format: "json" },
+				store,
+			),
+		);
+
+		expect(exported.rowCount).toBe(10_000);
+		expect(exported.truncated).toBe(true);
+		expect(exported.nextCursor).not.toBeNull();
+		const content: unknown = JSON.parse(exported.content);
+		expect(Array.isArray(content) ? content.length : -1).toBe(10_000);
+
+		const continued = assertOk(
+			await exportAuditLogDetailed(
+				{
+					organizationId: "org-1",
+					format: "json",
+					cursor: exported.nextCursor,
+				},
+				store,
+			),
+		);
+		expect(continued.rowCount).toBe(0);
+		expect(queryCursor.mock.calls[1]?.[0].cursor).toEqual({
+			createdAt: template.createdAt,
+			id: rows[9999]?.id,
+		});
 	});
 });

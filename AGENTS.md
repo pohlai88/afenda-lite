@@ -47,6 +47,57 @@ Do not start skill loads or MCP calls before the PREFLIGHT block is in the visib
 5. **Commit/push only when the user asks.** Never force-push `main`; never amend remote commits without explicit request.
 6. **Do not print secrets.** Validate tokens via HTTP status / presence checks only.
 
+### Semantic programming (mandatory)
+
+Program the system's meaning once; do not synchronize the same decision across
+files. A compiler, codemod, or AI editing hundreds of consumers faster does not
+make distributed semantic ownership acceptable.
+
+| Principle | Required behavior |
+|-----------|-------------------|
+| One semantic owner | Errors, permissions, statuses, workflows, commands, API contracts, and UI dispositions each have one logically singular canonical registry or policy owner. The implementation may be physically modular; every module compiles into one authoritative contract. |
+| Derive projections | Types, validation, aliases, serialization, transport status, retry policy, diagnostics, OpenAPI, and documentation derive from the canonical owner; do not maintain parallel maps. |
+| Stable consumers | Consumers depend on capabilities and durable, code-narrowable result contracts (`Result<T, C>`), not constructors, vendor objects, storage shapes, or internal metadata. |
+| Carry, declare, expose; do not reinterpret | Consumers may carry, declare, test, or expose canonical codes through approved result/wire projections and may normalize domain outcomes at an ownership boundary. They must not manually serialize codes or independently derive shared HTTP status, retryability, public messages, operational classification, or post-normalization business behavior from them. |
+| Normalize historical input | Historical names and wire values live as internal data in the canonical ingress alias ledger and normalize immediately to one representation. New construction accepts canonical codes only; historical aliases are never root-exported as construction values. |
+| Canonical retry ownership | Retryability is exhaustive per-code policy owned by the canonical registry. Consumers cannot override it; only registry-approved bounded timing details may vary per occurrence. |
+| One root capability style | Shared packages expose one root entrypoint and exactly one bundle-proven capability style. Do not permanently expose both a singleton facade and named capability objects. |
+| One final cutover | When distributed ownership already exists, one explicit cutover may migrate it. The same PR deletes superseded surfaces and adds enforcement; no v1/v2 consumer stacks, deprecated facades, or scheduled cleanup. |
+| Internal change containment | Refactors, hardening, new vendor mappings, and representation changes within the established facade contract stay inside the canonical owner. Deliberate public-contract or endpoint-outcome changes may require explicit consumer work. |
+
+Before proposing a repository-wide migration or codemod:
+
+1. Identify the canonical semantic owner and count the affected consumers.
+2. Separate a business-semantic change from an internal representation change.
+3. Explain why each consumer must know the new fact; if it need not know, move
+   the decision behind the owner boundary.
+4. Prefer one registry edit that upgrades all existing consumers automatically.
+5. Treat a large mechanical blast radius as an architecture finding, not as the
+   implementation plan.
+
+Every PR that changes a shared concept must state:
+
+- canonical owner and permanent consumer surface;
+- normalization and historical-input policy;
+- projections derived from the owner;
+- consumer blast radius and why it is unavoidable;
+- contract tests and repository checks preventing semantic leakage;
+- exact facade signatures and the allowed/prohibited code-usage boundary;
+- superseded surfaces deleted in the same cutover.
+
+**Errors mission:** the proposed final-cutover contract lives in
+[`packages/foundation/errors/PR.md`](packages/foundation/errors/PR.md). Until it
+is implemented and verified, existing imports remain living code; do not claim
+the proposed root capabilities are already available. Consumer migration cannot
+begin until canonical-only construction, separate public/internal inputs,
+per-code retry, the single bundle-proven capability style, `Result<T, C>`,
+`messageKey`, per-code details, and AST interpretation rules are frozen. The
+close condition is not “all migrated files compile.” It is: one canonical error
+definition changes once, all consumers receive the intended behavior, and
+AST-based enforcement rejects supported, mechanically identifiable forms of
+redistributed interpretation; review policy prohibits equivalent disguised
+implementations.
+
 ### Skill router (short)
 
 Full inventory: [catalog.md](.cursor/skills/using-afenda-elite-skills/catalog.md). Prefer **extend** before inventing farms.
@@ -385,7 +436,7 @@ Authority: [`testing/README.md`](testing/README.md).
 | `pnpm test:e2e` / `:smoke` / `:journey` | Playwright when specs exist |
 | `pnpm check:docs-naming` | DOC-002 / naming gate |
 | `pnpm validate:neon-env` | Neon Cloud ids vs `.env.local` |
-| `pnpm audit:tenancy-nulls` | Hard tenant roots null-org audit (**222** tables via `HARD_TENANT_ROOT_TABLE_NAMES` SSOT in `packages/data-plane/db/src/hard-tenant-roots.ts`: platform_* six · master-data roots · ERP sales/purchasing/inventory/receiving/fulfillment/receivables/payables/payments/accounting/payroll · **129 `hr_*`**) — inventory and fixed SQL checks mirrored in `scripts/audit-tenancy-nulls.mjs`; parity enforced by `packages/data-plane/db/__tests__/tenancy.test.ts` |
+| `pnpm audit:tenancy-nulls` | Hard tenant roots null-org audit (**274** tables generated from `HARD_TENANT_ROOT_ENTRIES` in `packages/data-plane/db/src/hard-tenant-roots.ts`: platform_* eight · master-data roots · ERP sales/purchasing/inventory/receiving/fulfillment/receivables/payables/payments/accounting/payroll · **141 `hr_*`**) — names, table objects, and executable audit SQL derive from that one registry; parity enforced by `packages/data-plane/db/__tests__/tenancy.test.ts` |
 | `pnpm audit:github-actions-secrets` | Required Actions secret/var **names** only (Ops; keyring `gh`) |
 | `pnpm protect:main` | Verify (or `-- --apply`) Living `main` required check = `quality` |
 
