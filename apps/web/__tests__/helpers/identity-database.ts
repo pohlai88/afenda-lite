@@ -1,7 +1,6 @@
 import {
+	database as afendaDatabase,
 	and,
-	db,
-	ensurePlatformPermissionCatalog,
 	eq,
 	isNull,
 	platformRole,
@@ -23,7 +22,7 @@ export function ensureIdentityDatabaseFixtures(): Promise<void> {
 	if (!hasDatabase) {
 		return Promise.resolve();
 	}
-	fixturesPromise ??= ensurePlatformPermissionCatalog(db).then(() => undefined);
+	fixturesPromise ??= afendaDatabase.permissions.ensure().then(() => undefined);
 	return fixturesPromise;
 }
 
@@ -38,7 +37,7 @@ export function resolveSystemTemplateRoleId(
 
 	const promise = (async () => {
 		await ensureIdentityDatabaseFixtures();
-		const [row] = await db
+		const [row] = await afendaDatabase.client
 			.select({ id: platformRole.id })
 			.from(platformRole)
 			.where(

@@ -1,4 +1,4 @@
-import { db, sql } from "@afenda/db";
+import { database as afendaDatabase, sql } from "@afenda/db";
 import { env, MAX_SELECT1_LATENCY_MS } from "@afenda/env";
 import { errorIngress } from "@afenda/errors";
 
@@ -138,7 +138,7 @@ interface TimedProbe {
 async function probeDatabase(): Promise<TimedProbe> {
 	const result = await runBoundedProbe(MAX_SELECT1_LATENCY_MS, async () => {
 		try {
-			await db.execute(sql`select 1`);
+			await afendaDatabase.client.execute(sql`select 1`);
 		} catch (error) {
 			throw errorIngress.postgres(error, { operation: "persistence.postgres" });
 		}

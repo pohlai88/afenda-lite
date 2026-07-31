@@ -2,10 +2,9 @@
  * Invoked by ensure-platform-permission-catalog.mjs (N10).
  * Prints redacted catalog ensure summary — no connection strings.
  */
-import { db } from "../src/client";
-import { ensurePlatformPermissionCatalog } from "../src/platform-permission-catalog";
+import { database } from "../src";
 
-const result = await ensurePlatformPermissionCatalog(db);
+const result = await database.permissions.ensure();
 
 console.log("@afenda/db db:ensure-permission-catalog OK");
 console.log(`  permissionCount: ${result.permissionCount}`);

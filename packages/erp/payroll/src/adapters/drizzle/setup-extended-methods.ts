@@ -1,6 +1,6 @@
 import {
+	database as afendaDatabase,
 	and,
-	db,
 	eq,
 	payrollCalendar,
 	payrollDeductionRule,
@@ -287,7 +287,7 @@ export function createDrizzleSetupExtendedMethods(
 		>[0],
 	): Promise<Result<boolean>> {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select({ id: payrollRuleFinalizedUsage.id })
 				.from(payrollRuleFinalizedUsage)
 				.where(
@@ -347,7 +347,7 @@ export function createDrizzleSetupExtendedMethods(
 		}
 
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.update(payrollCalendar)
 				.set({
 					status: nextStatus,
@@ -397,7 +397,7 @@ export function createDrizzleSetupExtendedMethods(
 	return {
 		async listCalendars(listInput) {
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.select()
 					.from(payrollCalendar)
 					.where(
@@ -450,7 +450,7 @@ export function createDrizzleSetupExtendedMethods(
 			}
 
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.update(payrollPayGroup)
 					.set({
 						name: payGroupInput.name ?? current.data.name,
@@ -523,7 +523,7 @@ export function createDrizzleSetupExtendedMethods(
 			}
 
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.update(payrollPayGroup)
 					.set({
 						status: "archived",
@@ -594,7 +594,7 @@ export function createDrizzleSetupExtendedMethods(
 			}
 
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.update(payrollPeriod)
 					.set({
 						cutoffDate: periodInput.cutoffDate ?? current.data.cutoffDate,
@@ -662,7 +662,7 @@ export function createDrizzleSetupExtendedMethods(
 			}
 
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.update(payrollPeriod)
 					.set({
 						status: "closed",
@@ -708,7 +708,7 @@ export function createDrizzleSetupExtendedMethods(
 
 		async getEarningRule(getInput) {
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.select()
 					.from(payrollEarningRule)
 					.where(
@@ -765,7 +765,7 @@ export function createDrizzleSetupExtendedMethods(
 			}
 
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.update(payrollEarningRule)
 					.set({
 						name: ruleInput.name ?? current.data.name,
@@ -855,7 +855,7 @@ export function createDrizzleSetupExtendedMethods(
 			}
 
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.update(payrollEarningRule)
 					.set({
 						status: "archived",
@@ -938,7 +938,7 @@ export function createDrizzleSetupExtendedMethods(
 
 			let supersededRow: typeof payrollEarningRule.$inferSelect | undefined;
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.update(payrollEarningRule)
 					.set({
 						status: "superseded",
@@ -992,7 +992,7 @@ export function createDrizzleSetupExtendedMethods(
 			);
 			if (!successorResult.ok) {
 				try {
-					await db
+					await afendaDatabase.client
 						.update(payrollEarningRule)
 						.set({
 							status: existing.status,
@@ -1023,7 +1023,7 @@ export function createDrizzleSetupExtendedMethods(
 
 		async getDeductionRule(getInput) {
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.select()
 					.from(payrollDeductionRule)
 					.where(
@@ -1080,7 +1080,7 @@ export function createDrizzleSetupExtendedMethods(
 			}
 
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.update(payrollDeductionRule)
 					.set({
 						name: ruleInput.name ?? current.data.name,
@@ -1174,7 +1174,7 @@ export function createDrizzleSetupExtendedMethods(
 			}
 
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.update(payrollDeductionRule)
 					.set({
 						status: "archived",
@@ -1257,7 +1257,7 @@ export function createDrizzleSetupExtendedMethods(
 
 			let supersededRow: typeof payrollDeductionRule.$inferSelect | undefined;
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.update(payrollDeductionRule)
 					.set({
 						status: "superseded",
@@ -1312,7 +1312,7 @@ export function createDrizzleSetupExtendedMethods(
 			);
 			if (!successorResult.ok) {
 				try {
-					await db
+					await afendaDatabase.client
 						.update(payrollDeductionRule)
 						.set({
 							status: existing.status,
@@ -1343,7 +1343,7 @@ export function createDrizzleSetupExtendedMethods(
 
 		async getStatutoryRule(getInput) {
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.select()
 					.from(payrollStatutoryRule)
 					.where(
@@ -1400,7 +1400,7 @@ export function createDrizzleSetupExtendedMethods(
 			}
 
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.update(payrollStatutoryRule)
 					.set({
 						name: ruleInput.name ?? current.data.name,
@@ -1487,7 +1487,7 @@ export function createDrizzleSetupExtendedMethods(
 			}
 
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.update(payrollStatutoryRule)
 					.set({
 						status: "archived",
@@ -1570,7 +1570,7 @@ export function createDrizzleSetupExtendedMethods(
 
 			let supersededRow: typeof payrollStatutoryRule.$inferSelect | undefined;
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.update(payrollStatutoryRule)
 					.set({
 						status: "superseded",
@@ -1623,7 +1623,7 @@ export function createDrizzleSetupExtendedMethods(
 			);
 			if (!successorResult.ok) {
 				try {
-					await db
+					await afendaDatabase.client
 						.update(payrollStatutoryRule)
 						.set({
 							status: existing.status,
@@ -1659,7 +1659,7 @@ export function createDrizzleSetupExtendedMethods(
 			}
 
 			try {
-				await db.insert(payrollRuleFinalizedUsage).values({
+				await afendaDatabase.client.insert(payrollRuleFinalizedUsage).values({
 					organizationId: usageInput.organizationId,
 					ruleKind: usageInput.ruleKind,
 					ruleId: usageInput.ruleId,

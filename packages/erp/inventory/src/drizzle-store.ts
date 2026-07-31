@@ -1,17 +1,16 @@
 import { randomUUID } from "node:crypto";
 
 import {
+	audit as afendaAudit,
 	type PreparedTransactionalAuditInsertValues,
-	prepareTransactionalAuditInsertValues,
 } from "@afenda/audit";
 import {
+	database as afendaDatabase,
 	and,
 	asc,
-	db,
 	desc,
 	eq,
 	inArray,
-	runNeonHttpTransaction,
 	stockBalance,
 	stockLedgerEntry,
 	stockMovement,
@@ -492,7 +491,7 @@ function prepareReservationPostAudit(
 	if (reservation === null || mutation === null) {
 		return errorResult.ok(null);
 	}
-	const prepared = prepareTransactionalAuditInsertValues({
+	const prepared = afendaAudit.transaction.prepare({
 		organizationId: record.organizationId,
 		actorUserId: record.actorUserId,
 		correlationId,
@@ -719,7 +718,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 		header: typeof stockMovement.$inferSelect,
 	): Promise<Result<StockMovement>> {
 		try {
-			const lines = await db
+			const lines = await afendaDatabase.client
 				.select()
 				.from(stockMovementLine)
 				.where(
@@ -774,7 +773,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 		organizationId: string,
 	): Promise<Result<number>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select({ ledgerSequence: stockLedgerEntry.ledgerSequence })
 				.from(stockLedgerEntry)
 				.where(eq(stockLedgerEntry.organizationId, organizationId))
@@ -807,7 +806,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 		organizationId: string,
 		effect: BalanceEffect,
 	): Promise<Result<void>> {
-		const [row] = await db
+		const [row] = await afendaDatabase.client
 			.select()
 			.from(stockBalance)
 			.where(
@@ -894,7 +893,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 		const entityId = randomUUID();
 		const auditId = randomUUID();
 		const eventId = randomUUID();
-		const preparedAudit = prepareTransactionalAuditInsertValues({
+		const preparedAudit = afendaAudit.transaction.prepare({
 			organizationId: record.organizationId,
 			actorUserId: record.createdBy,
 			correlationId: meta.correlationId,
@@ -933,7 +932,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH mutated AS (
 						INSERT INTO stock_movement (
@@ -1062,7 +1061,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 			movement.lines.reduce((max, line) => Math.max(max, line.lineNo), 0) + 1;
 		const lineId = randomUUID();
 		const auditId = randomUUID();
-		const preparedAudit = prepareTransactionalAuditInsertValues({
+		const preparedAudit = afendaAudit.transaction.prepare({
 			organizationId: record.organizationId,
 			actorUserId: record.createdBy,
 			correlationId: meta.correlationId,
@@ -1092,7 +1091,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 		const audit = preparedAudit.data;
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH parent AS (
 						UPDATE stock_movement
@@ -1210,7 +1209,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 		const nextVersion = movement.version + 1;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
-		const preparedAudit = prepareTransactionalAuditInsertValues({
+		const preparedAudit = afendaAudit.transaction.prepare({
 			organizationId: record.organizationId,
 			actorUserId: record.actorUserId,
 			correlationId: meta.correlationId,
@@ -1259,7 +1258,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 		const reservationAuditContext = preparedReservationAudit.data;
 
 		try {
-			const resultSets = await runNeonHttpTransaction((sql) => {
+			const resultSets = await afendaDatabase.transaction((sql) => {
 				const statements = [
 					sql`
 						WITH mutated AS (
@@ -1503,7 +1502,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 		const nextVersion = movement.version + 1;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
-		const preparedAudit = prepareTransactionalAuditInsertValues({
+		const preparedAudit = afendaAudit.transaction.prepare({
 			organizationId: record.organizationId,
 			actorUserId: record.actorUserId,
 			correlationId: meta.correlationId,
@@ -1539,7 +1538,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH mutated AS (
 						UPDATE stock_movement
@@ -1666,7 +1665,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 		const eventId = randomUUID();
 		const reservedDelta = formatQuantity(quantity);
 		const availableDelta = formatQuantity(-quantity);
-		const preparedAudit = prepareTransactionalAuditInsertValues({
+		const preparedAudit = afendaAudit.transaction.prepare({
 			organizationId: record.organizationId,
 			actorUserId: record.createdBy,
 			correlationId: meta.correlationId,
@@ -1707,7 +1706,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 		});
 
 		try {
-			const resultSets = await runNeonHttpTransaction((sql) => [
+			const resultSets = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH upserted AS (
 						INSERT INTO stock_balance (
@@ -1860,7 +1859,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 		const releasedDelta = formatQuantity(-remainingQuantity);
 		const availableDelta = formatQuantity(remainingQuantity);
 		const eventType = reservationTerminalEventType(record.terminalStatus);
-		const preparedAudit = prepareTransactionalAuditInsertValues({
+		const preparedAudit = afendaAudit.transaction.prepare({
 			organizationId: record.organizationId,
 			actorUserId: record.actorUserId,
 			correlationId: meta.correlationId,
@@ -1902,7 +1901,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 		});
 
 		try {
-			const resultSets = await runNeonHttpTransaction((sql) => {
+			const resultSets = await afendaDatabase.transaction((sql) => {
 				const statements =
 					remainingQuantity > 0
 						? [
@@ -2027,7 +2026,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 		id: string,
 	): Promise<Result<StockMovement | null>> {
 		try {
-			const [header] = await db
+			const [header] = await afendaDatabase.client
 				.select()
 				.from(stockMovement)
 				.where(
@@ -2051,7 +2050,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 		createIdempotencyKey: string,
 	): Promise<Result<StockMovement | null>> {
 		try {
-			const [header] = await db
+			const [header] = await afendaDatabase.client
 				.select()
 				.from(stockMovement)
 				.where(
@@ -2086,7 +2085,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 			if (filter.movementType !== undefined) {
 				conditions.push(eq(stockMovement.movementType, filter.movementType));
 			}
-			const headers = await db
+			const headers = await afendaDatabase.client
 				.select()
 				.from(stockMovement)
 				.where(and(...conditions))
@@ -2098,7 +2097,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 			}
 
 			const movementIds = headers.map((header) => header.id);
-			const lines = await db
+			const lines = await afendaDatabase.client
 				.select()
 				.from(stockMovementLine)
 				.where(
@@ -2149,7 +2148,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 			if (filter.itemId !== undefined) {
 				conditions.push(eq(stockReservation.itemId, filter.itemId));
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(stockReservation)
 				.where(and(...conditions))
@@ -2181,7 +2180,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 			if (filter.itemId !== undefined) {
 				conditions.push(eq(stockBalance.itemId, filter.itemId));
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(stockBalance)
 				.where(and(...conditions))
@@ -2212,7 +2211,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 		id: string,
 	): Promise<Result<StockReservation | null>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select()
 				.from(stockReservation)
 				.where(
@@ -2233,7 +2232,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 		createIdempotencyKey: string,
 	): Promise<Result<StockReservation | null>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select()
 				.from(stockReservation)
 				.where(
@@ -2266,7 +2265,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 		>
 	> {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(stockLedgerEntry)
 				.where(eq(stockLedgerEntry.organizationId, organizationId))
@@ -2288,7 +2287,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 
 	async listBalances(organizationId: string): Promise<Result<StockBalance[]>> {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(stockBalance)
 				.where(eq(stockBalance.organizationId, organizationId))
@@ -2310,7 +2309,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 		>
 	> {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(stockReservation)
 				.where(eq(stockReservation.organizationId, organizationId))

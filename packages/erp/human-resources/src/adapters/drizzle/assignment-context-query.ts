@@ -1,6 +1,6 @@
 import {
+	database as afendaDatabase,
 	and,
-	db,
 	eq,
 	gte,
 	hrEmployment,
@@ -31,7 +31,7 @@ import type {
 export function createDrizzleAssignmentContextQuery(): AssignmentContextQueryPort {
 	return {
 		async resolveAsOf(input): Promise<Result<EmployeeAssignmentContext>> {
-			const employmentRows = await db
+			const employmentRows = await afendaDatabase.client
 				.select({ id: hrEmployment.id, employeeId: hrEmployment.employeeId })
 				.from(hrEmployment)
 				.where(
@@ -51,7 +51,7 @@ export function createDrizzleAssignmentContextQuery(): AssignmentContextQueryPor
 				});
 			}
 
-			const workAssignmentRows = await db
+			const workAssignmentRows = await afendaDatabase.client
 				.select({
 					positionId: hrWorkAssignment.positionId,
 					locationKey: hrWorkAssignment.locationKeySnapshot,
@@ -95,7 +95,7 @@ export function createDrizzleAssignmentContextQuery(): AssignmentContextQueryPor
 
 			let departmentId: string | null = null;
 			if (assignment.positionId !== undefined) {
-				const positionRows = await db
+				const positionRows = await afendaDatabase.client
 					.select({ departmentId: hrPosition.departmentId })
 					.from(hrPosition)
 					.where(

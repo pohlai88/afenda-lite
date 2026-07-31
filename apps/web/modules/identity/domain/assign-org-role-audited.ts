@@ -5,13 +5,12 @@
 
 import { ROLE_ASSIGN_AUDIT_ACTION } from "@afenda/admin/audit";
 import {
+	database as afendaDatabase,
 	and,
-	db,
 	eq,
 	isNull,
 	platformRole,
 	platformRoleAssignment,
-	runNeonHttpTransaction,
 } from "@afenda/db";
 import { errorIngress, errorResult } from "@afenda/errors";
 
@@ -79,7 +78,7 @@ function mapAssignmentRow(
 }
 
 async function findAssignableRole(roleId: string, orgId: string) {
-	const [template] = await db
+	const [template] = await afendaDatabase.client
 		.select()
 		.from(platformRole)
 		.where(
@@ -96,7 +95,7 @@ async function findAssignableRole(roleId: string, orgId: string) {
 		return template;
 	}
 
-	const [orgRole] = await db
+	const [orgRole] = await afendaDatabase.client
 		.select()
 		.from(platformRole)
 		.where(
@@ -155,7 +154,7 @@ export async function assignOrgRoleWithAudit(
 		});
 	}
 
-	const existing = await db
+	const existing = await afendaDatabase.client
 		.select()
 		.from(platformRoleAssignment)
 		.where(
@@ -185,7 +184,7 @@ export async function assignOrgRoleWithAudit(
 		reactivated,
 	});
 
-	const [rows] = await runNeonHttpTransaction((sql) => {
+	const [rows] = await afendaDatabase.transaction((sql) => {
 		const statement = current
 			? sql`
 						WITH mutated AS (

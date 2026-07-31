@@ -1,6 +1,6 @@
 import {
+	database as afendaDatabase,
 	and,
-	db,
 	eq,
 	platformRoleAssignment,
 	platformRolePermission,
@@ -20,7 +20,7 @@ export async function listUserPermissions(
 	const scopedOrgId = requireTrimmed(orgId, "orgId", "listUserPermissions");
 	const scopedUserId = requireTrimmed(userId, "userId", "listUserPermissions");
 
-	const rows = await db
+	const rows = await afendaDatabase.client
 		.selectDistinct({ code: platformRolePermission.permissionCode })
 		.from(platformRoleAssignment)
 		.innerJoin(

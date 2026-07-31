@@ -6,6 +6,7 @@
  */
 
 import {
+	database as afendaDatabase,
 	type hrAttendanceAdjustment,
 	type hrAttendanceEvent,
 	type hrShift,
@@ -17,7 +18,6 @@ import {
 	type hrTimesheetApprovalDecision,
 	type hrWorkCalendar,
 	type NeonHttpTransactionResults,
-	runNeonHttpTransaction,
 } from "@afenda/db";
 
 function parseDate(value: Date | string): Date {
@@ -255,10 +255,10 @@ export interface TimesheetApprovalDecisionSqlRow {
 }
 
 export async function runTimeTransaction(
-	queriesOrFn: Parameters<typeof runNeonHttpTransaction>[0],
-	options?: Parameters<typeof runNeonHttpTransaction>[1],
+	queriesOrFn: Parameters<typeof afendaDatabase.transaction>[0],
+	options?: Parameters<typeof afendaDatabase.transaction>[1],
 ): Promise<NeonHttpTransactionResults> {
-	return await runNeonHttpTransaction(queriesOrFn, {
+	return await afendaDatabase.transaction(queriesOrFn, {
 		isolationLevel: "ReadCommitted",
 		...options,
 	});

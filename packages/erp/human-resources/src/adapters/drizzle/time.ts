@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
 
 import {
+	database as afendaDatabase,
 	and,
 	asc,
-	db,
 	desc,
 	eq,
 	gte,
@@ -1352,7 +1352,7 @@ function pageOffset(
 export const drizzleTimeMethods: HumanResourcesTimeStore = {
 	async findWorkCalendarByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrWorkCalendar)
 				.where(
@@ -1383,7 +1383,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		try {
 			const id = randomUUID();
 			const now = new Date();
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.insert(hrWorkCalendar)
 				.values({
 					id,
@@ -1652,7 +1652,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!versionCheck.ok) {
 				return versionCheck;
 			}
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.update(hrWorkCalendar)
 				.set({
 					name: input.name ?? existing.data.name,
@@ -1724,7 +1724,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (existing.data.status === "archived") {
 				return invalidState("Work calendar is already archived");
 			}
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.update(hrWorkCalendar)
 				.set({
 					status: "archived",
@@ -1766,7 +1766,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 	async getWorkCalendar(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrWorkCalendar)
 				.where(
@@ -1794,7 +1794,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (input.status !== undefined) {
 				conditions.push(eq(hrWorkCalendar.status, input.status));
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrWorkCalendar)
 				.where(and(...conditions))
@@ -1828,7 +1828,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			}
 			const id = randomUUID();
 			const now = new Date();
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.insert(hrWorkCalendarHoliday)
 				.values({
 					id,
@@ -1873,7 +1873,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 	async removeWorkCalendarHoliday(input, ports) {
 		try {
-			const deleted = await db
+			const deleted = await afendaDatabase.client
 				.delete(hrWorkCalendarHoliday)
 				.where(
 					and(
@@ -1917,7 +1917,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (input.toDate !== undefined) {
 				conditions.push(lte(hrWorkCalendarHoliday.holidayDate, input.toDate));
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrWorkCalendarHoliday)
 				.where(and(...conditions));
@@ -1952,7 +1952,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			}
 			const id = randomUUID();
 			const now = new Date();
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.insert(hrEmploymentCalendarAssignment)
 				.values({
 					id,
@@ -1997,7 +1997,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 	async endEmploymentCalendarAssignment(input, ports) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrEmploymentCalendarAssignment)
 				.where(
@@ -2030,7 +2030,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (input.effectiveTo < existing.data.effectiveFrom) {
 				return invalidState("effectiveTo must be on or after effectiveFrom");
 			}
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.update(hrEmploymentCalendarAssignment)
 				.set({
 					effectiveTo: input.effectiveTo,
@@ -2078,7 +2078,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 	async listWorkCalendarScopeAssignments(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrWorkCalendarScopeAssignment)
 				.where(
@@ -2129,7 +2129,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				return notFound("Work calendar not found");
 			}
 
-			const overlapRows = await db
+			const overlapRows = await afendaDatabase.client
 				.select({ id: hrWorkCalendarScopeAssignment.id })
 				.from(hrWorkCalendarScopeAssignment)
 				.where(
@@ -2160,7 +2160,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 			const id = randomUUID();
 			const now = new Date();
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.insert(hrWorkCalendarScopeAssignment)
 				.values({
 					id,
@@ -2203,7 +2203,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 	async endWorkCalendarScopeAssignment(input, ports) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrWorkCalendarScopeAssignment)
 				.where(
@@ -2238,7 +2238,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (input.effectiveTo < existing.data.effectiveFrom) {
 				return invalidState("effectiveTo must be on or after effectiveFrom");
 			}
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.update(hrWorkCalendarScopeAssignment)
 				.set({
 					effectiveTo: input.effectiveTo,
@@ -2286,7 +2286,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 	async resolveEmploymentCalendar(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrEmploymentCalendarAssignment)
 				.where(
@@ -2308,7 +2308,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!match) {
 				return errorResult.ok(null);
 			}
-			const assignedCalendarRows = await db
+			const assignedCalendarRows = await afendaDatabase.client
 				.select()
 				.from(hrWorkCalendar)
 				.where(
@@ -2322,7 +2322,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				return errorResult.ok(null);
 			}
 			const assignedCalendar = requirePersistenceRow(assignedCalendarRows[0]);
-			const calendarFamily = await db
+			const calendarFamily = await afendaDatabase.client
 				.select()
 				.from(hrWorkCalendar)
 				.where(
@@ -2356,7 +2356,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 	async findTimePolicyByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrTimePolicy)
 				.where(
@@ -2386,7 +2386,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 	async createTimePolicy(input: TimePolicyCreateRecord, ports) {
 		try {
 			const now = new Date();
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.insert(hrTimePolicy)
 				.values({
 					id: randomUUID(),
@@ -2423,7 +2423,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				action: "CREATE",
 			});
 			if (!recorded.ok) {
-				await db
+				await afendaDatabase.client
 					.delete(hrTimePolicy)
 					.where(
 						and(
@@ -2596,7 +2596,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (existing.data.status !== "draft") {
 				return invalidState("Only draft time policies can be activated");
 			}
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.update(hrTimePolicy)
 				.set({
 					status: "active",
@@ -2628,7 +2628,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				action: "UPDATE",
 			});
 			if (!recorded.ok) {
-				await db
+				await afendaDatabase.client
 					.update(hrTimePolicy)
 					.set({
 						status: existing.data.status,
@@ -2662,7 +2662,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (policy.data === null || policy.data.status !== "active") {
 				return invalidState("Active time policy not found");
 			}
-			const employmentRows = await db
+			const employmentRows = await afendaDatabase.client
 				.select({ id: hrEmployment.id })
 				.from(hrEmployment)
 				.where(
@@ -2737,7 +2737,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				action: "CREATE",
 			});
 			if (!recorded.ok) {
-				await db
+				await afendaDatabase.client
 					.delete(hrTimePolicyAssignment)
 					.where(
 						and(
@@ -2755,7 +2755,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 	async getTimePolicy(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrTimePolicy)
 				.where(
@@ -2776,7 +2776,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 	async resolveTimePolicy(input) {
 		try {
-			const assignments = await db
+			const assignments = await afendaDatabase.client
 				.select()
 				.from(hrTimePolicyAssignment)
 				.where(
@@ -2810,7 +2810,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (assignedPolicy.data === null) {
 				return errorResult.ok(null);
 			}
-			const policies = await db
+			const policies = await afendaDatabase.client
 				.select()
 				.from(hrTimePolicy)
 				.where(
@@ -2899,7 +2899,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				action: "CREATE",
 			});
 			if (!recorded.ok) {
-				await db
+				await afendaDatabase.client
 					.delete(hrTimeApprovalAuthorityAssignment)
 					.where(
 						and(
@@ -2923,7 +2923,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 	async endTimeApprovalAuthorityAssignment(input, ports) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrTimeApprovalAuthorityAssignment)
 				.where(
@@ -2955,7 +2955,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (input.effectiveTo < current.data.effectiveFrom) {
 				return invalidState("effectiveTo must be on or after effectiveFrom");
 			}
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.update(hrTimeApprovalAuthorityAssignment)
 				.set({
 					effectiveTo: input.effectiveTo,
@@ -2993,7 +2993,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				action: "UPDATE",
 			});
 			if (!recorded.ok) {
-				await db
+				await afendaDatabase.client
 					.update(hrTimeApprovalAuthorityAssignment)
 					.set({
 						effectiveTo: current.data.effectiveTo,
@@ -3027,7 +3027,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 	async resolveTimeApprovalAuthority(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrTimeApprovalAuthorityAssignment)
 				.where(
@@ -3063,7 +3063,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 	async findShiftByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrShift)
 				.where(
@@ -3094,7 +3094,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		try {
 			const id = randomUUID();
 			const now = new Date();
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.insert(hrShift)
 				.values({
 					id,
@@ -3364,7 +3364,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!versionCheck.ok) {
 				return versionCheck;
 			}
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.update(hrShift)
 				.set({
 					name: input.name ?? existing.data.name,
@@ -3453,7 +3453,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 	async getShift(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrShift)
 				.where(
@@ -3479,7 +3479,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (input.status !== undefined) {
 				conditions.push(eq(hrShift.status, input.status));
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrShift)
 				.where(and(...conditions))
@@ -3513,7 +3513,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			}
 			const id = randomUUID();
 			const now = new Date();
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.insert(hrShiftBreak)
 				.values({
 					id,
@@ -3551,7 +3551,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 	async removeShiftBreak(input, ports) {
 		try {
-			const deleted = await db
+			const deleted = await afendaDatabase.client
 				.delete(hrShiftBreak)
 				.where(
 					and(
@@ -3582,7 +3582,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 	async listShiftBreaks(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrShiftBreak)
 				.where(
@@ -3607,7 +3607,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 	async findShiftAssignmentByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrShiftAssignment)
 				.where(
@@ -3868,7 +3868,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!versionCheck.ok) {
 				return versionCheck;
 			}
-			const attendance = await db
+			const attendance = await afendaDatabase.client
 				.select({ id: hrAttendanceEvent.id })
 				.from(hrAttendanceEvent)
 				.where(
@@ -3915,7 +3915,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (overlaps.data.length > 0) {
 				return conflict("Shift assignment overlaps an existing assignment");
 			}
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.update(hrShiftAssignment)
 				.set({
 					shiftId: input.shiftId ?? existing.data.shiftId,
@@ -3966,7 +3966,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 	async getShiftAssignment(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrShiftAssignment)
 				.where(
@@ -4013,7 +4013,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					eq(hrShiftAssignment.publicationStatus, input.publicationStatus),
 				);
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrShiftAssignment)
 				.where(and(...conditions))
@@ -4042,7 +4042,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (assignment.data === null) {
 				return errorResult.ok([]);
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrShiftAssignmentSegment)
 				.where(
@@ -4071,7 +4071,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 	async getScheduledShiftForEmployeeDate(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrShiftAssignment)
 				.where(
@@ -4135,7 +4135,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (input.excludeAssignmentId !== undefined) {
 				conditions.push(ne(hrShiftAssignment.id, input.excludeAssignmentId));
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrShiftAssignment)
 				.where(and(...conditions));
@@ -4158,7 +4158,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 	async findAttendanceEventByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrAttendanceEvent)
 				.where(
@@ -4187,7 +4187,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 	async findAttendanceEventBySourceReference(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrAttendanceEvent)
 				.where(
@@ -4220,7 +4220,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 	async findAttendanceImportBatchByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrAttendanceImportBatch)
 				.where(
@@ -4336,7 +4336,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 						return sequentialContinue();
 					}
 
-					const employeeRows = await db
+					const employeeRows = await afendaDatabase.client
 						.select({ id: hrEmployee.id })
 						.from(hrEmployee)
 						.where(
@@ -4381,7 +4381,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					if (row.employmentId !== null && row.employmentId !== undefined) {
 						employmentConditions.push(eq(hrEmployment.id, row.employmentId));
 					}
-					const employmentRows = await db
+					const employmentRows = await afendaDatabase.client
 						.select({ id: hrEmployment.id })
 						.from(hrEmployment)
 						.where(and(...employmentConditions))
@@ -4556,7 +4556,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			};
 
 			try {
-				await db.insert(hrAttendanceImportBatch).values({
+				await afendaDatabase.client.insert(hrAttendanceImportBatch).values({
 					id: importBatchId,
 					organizationId: input.organizationId,
 					batchId: input.batchId,
@@ -4594,7 +4594,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			}
 
 			if (errorRows.length > 0) {
-				await db.insert(hrAttendanceImportError).values(errorRows);
+				await afendaDatabase.client
+					.insert(hrAttendanceImportError)
+					.values(errorRows);
 			}
 
 			const audited = await audit(ports, {
@@ -4619,7 +4621,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async recordAttendanceEvent(input, ports) {
 		try {
-			const maxRows = await db
+			const maxRows = await afendaDatabase.client
 				.select({
 					maxSequence: sql<number>`COALESCE(MAX(${hrAttendanceEvent.sourceSequence}), -1)`,
 				})
@@ -4641,7 +4643,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			});
 			const id = randomUUID();
 			const now = new Date();
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.insert(hrAttendanceEvent)
 				.values({
 					id,
@@ -4898,7 +4900,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (existing.data.voidedAt !== null) {
 				return invalidState("Attendance event is already voided");
 			}
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.update(hrAttendanceEvent)
 				.set({
 					voidedAt: new Date(),
@@ -4941,7 +4943,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 	async getAttendanceEvent(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrAttendanceEvent)
 				.where(
@@ -4962,7 +4964,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 	async listAttendanceAdjustments(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrAttendanceAdjustment)
 				.where(
@@ -5011,7 +5013,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (input.eventType !== undefined) {
 				conditions.push(eq(hrAttendanceEvent.eventType, input.eventType));
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrAttendanceEvent)
 				.where(and(...conditions))
@@ -5039,7 +5041,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 	async findAttendanceSessionByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrAttendanceSession)
 				.where(
@@ -5069,7 +5071,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async resolveAttendanceSession(input, ports) {
 		try {
-			const eventRows = await db
+			const eventRows = await afendaDatabase.client
 				.select()
 				.from(hrAttendanceEvent)
 				.where(
@@ -5103,7 +5105,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				input.automaticBreakPolicy,
 			);
 
-			const existingRows = await db
+			const existingRows = await afendaDatabase.client
 				.select()
 				.from(hrAttendanceSession)
 				.where(
@@ -5121,7 +5123,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					return current;
 				}
 				const previous = current.data;
-				const [row] = await db
+				const [row] = await afendaDatabase.client
 					.update(hrAttendanceSession)
 					.set({
 						timezone: input.timezone,
@@ -5184,7 +5186,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 			const id = randomUUID();
 			const now = new Date();
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.insert(hrAttendanceSession)
 				.values({
 					id,
@@ -5240,7 +5242,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				ports,
 			);
 			if (!detected.ok) {
-				await db
+				await afendaDatabase.client
 					.delete(hrAttendanceSession)
 					.where(
 						and(
@@ -5278,7 +5280,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 	async getAttendanceSession(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrAttendanceSession)
 				.where(
@@ -5328,7 +5330,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				);
 			}
 			const asOf = new Date().toISOString().slice(0, 10);
-			const authorityRows = await db
+			const authorityRows = await afendaDatabase.client
 				.select({ id: hrTimeApprovalAuthorityAssignment.id })
 				.from(hrTimeApprovalAuthorityAssignment)
 				.where(
@@ -5357,7 +5359,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (authorityRows.length === 0) {
 				return invalidState("Approval authority assignment is not active");
 			}
-			const eventRows = await db
+			const eventRows = await afendaDatabase.client
 				.select()
 				.from(hrAttendanceEvent)
 				.where(
@@ -5392,7 +5394,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					"Recorded breaks already satisfy the automatic break requirement",
 				);
 			}
-			const duplicateRows = await db
+			const duplicateRows = await afendaDatabase.client
 				.select({ id: hrAttendanceBreakWaiverDecision.id })
 				.from(hrAttendanceBreakWaiverDecision)
 				.where(
@@ -5412,7 +5414,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				);
 			}
 			const now = new Date();
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.insert(hrAttendanceBreakWaiverDecision)
 				.values({
 					id: randomUUID(),
@@ -5447,7 +5449,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				action: "CREATE",
 			});
 			if (!recorded.ok) {
-				await db
+				await afendaDatabase.client
 					.delete(hrAttendanceBreakWaiverDecision)
 					.where(
 						and(
@@ -5476,7 +5478,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 	async listAttendanceBreakWaiverDecisions(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrAttendanceBreakWaiverDecision)
 				.where(
@@ -5521,7 +5523,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (input.toDate !== undefined) {
 				conditions.push(lte(hrAttendanceSession.localWorkDate, input.toDate));
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrAttendanceSession)
 				.where(and(...conditions))
@@ -5543,7 +5545,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 	async getPreviousCompletedAttendanceSession(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrAttendanceSession)
 				.where(
@@ -5572,7 +5574,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		try {
 			const id = randomUUID();
 			const now = new Date();
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.insert(hrAttendanceException)
 				.values({
 					id,
@@ -5657,7 +5659,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 	async getAttendanceException(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrAttendanceException)
 				.where(
@@ -5690,7 +5692,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					eq(hrAttendanceException.reviewStatus, input.reviewStatus),
 				);
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrAttendanceException)
 				.where(and(...conditions))
@@ -5723,7 +5725,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (input.employeeId !== undefined) {
 				conditions.push(eq(hrAttendanceException.employeeId, input.employeeId));
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrAttendanceException)
 				.where(and(...conditions))
@@ -5825,7 +5827,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 	async findTimesheetByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrTimesheet)
 				.where(
@@ -5856,7 +5858,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		try {
 			const id = randomUUID();
 			const now = new Date();
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.insert(hrTimesheet)
 				.values({
 					id,
@@ -6001,7 +6003,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					}
 					const id = randomUUID();
 					const now = new Date();
-					await db.insert(hrTimesheetEntry).values({
+					await afendaDatabase.client.insert(hrTimesheetEntry).values({
 						id,
 						organizationId: input.organizationId,
 						timesheetId: input.timesheetId,
@@ -6039,7 +6041,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				});
 				const id = randomUUID();
 				const now = new Date();
-				await db.insert(hrTimesheetEntry).values({
+				await afendaDatabase.client.insert(hrTimesheetEntry).values({
 					id,
 					organizationId: mapped.organizationId,
 					timesheetId: mapped.timesheetId,
@@ -6188,7 +6190,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				return sequentialOutcome4.value;
 			}
 
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.update(hrTimesheet)
 				.set({
 					totalRecordedMinutes: totalRecorded,
@@ -6262,7 +6264,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			}
 			const id = randomUUID();
 			const now = new Date();
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.insert(hrTimesheetEntry)
 				.values({
 					id,
@@ -6291,7 +6293,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					updatedAt: now,
 				})
 				.returning();
-			await db
+			await afendaDatabase.client
 				.update(hrTimesheet)
 				.set({
 					totalRecordedMinutes:
@@ -6332,7 +6334,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async updateTimesheetEntry(input, ports) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrTimesheetEntry)
 				.where(
@@ -6372,7 +6374,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			) {
 				return invalidState("Timesheet is not editable");
 			}
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.update(hrTimesheetEntry)
 				.set({
 					workDate: input.workDate ?? existing.data.workDate,
@@ -6453,7 +6455,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 	async removeTimesheetEntry(input, ports) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrTimesheetEntry)
 				.where(
@@ -6493,7 +6495,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			) {
 				return invalidState("Timesheet is not editable");
 			}
-			await db
+			await afendaDatabase.client
 				.delete(hrTimesheetEntry)
 				.where(
 					and(
@@ -6723,7 +6725,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				);
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrTimesheetApprovalDecision)
 				.where(and(...conditions))
@@ -6790,7 +6792,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!transition.ok) {
 				return transition;
 			}
-			await db
+			await afendaDatabase.client
 				.update(hrTimesheet)
 				.set({
 					status: "superseded",
@@ -6826,7 +6828,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 	async getTimesheet(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrTimesheet)
 				.where(
@@ -6847,7 +6849,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 	async findTimesheetForEmployeePeriod(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrTimesheet)
 				.where(
@@ -6885,7 +6887,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (input.periodStart !== undefined) {
 				conditions.push(eq(hrTimesheet.periodStart, input.periodStart));
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrTimesheet)
 				.where(and(...conditions))
@@ -6907,7 +6909,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 	async listTimesheetEntries(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrTimesheetEntry)
 				.where(
@@ -7021,7 +7023,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 	async findOvertimeRequestByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrOvertimeRequest)
 				.where(
@@ -7052,7 +7054,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		try {
 			const id = randomUUID();
 			const now = new Date();
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.insert(hrOvertimeRequest)
 				.values({
 					id,
@@ -7156,7 +7158,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!transition.ok) {
 				return transition;
 			}
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.update(hrOvertimeRequest)
 				.set({
 					status: "approved",
@@ -7176,7 +7178,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!row) {
 				return notFound("Overtime request not found");
 			}
-			await db.insert(hrOvertimeApproval).values({
+			await afendaDatabase.client.insert(hrOvertimeApproval).values({
 				id: randomUUID(),
 				organizationId: input.organizationId,
 				overtimeRequestId: input.requestId,
@@ -7257,7 +7259,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!transition.ok) {
 				return transition;
 			}
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.update(hrOvertimeRequest)
 				.set({
 					status: "worked",
@@ -7324,7 +7326,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!transition.ok) {
 				return transition;
 			}
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.update(hrOvertimeRequest)
 				.set({
 					status: "verified",
@@ -7344,7 +7346,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!row) {
 				return notFound("Overtime request not found");
 			}
-			await db.insert(hrOvertimeApproval).values({
+			await afendaDatabase.client.insert(hrOvertimeApproval).values({
 				id: randomUUID(),
 				organizationId: input.organizationId,
 				overtimeRequestId: input.requestId,
@@ -7378,7 +7380,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 	async getOvertimeRequest(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrOvertimeRequest)
 				.where(
@@ -7409,7 +7411,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (input.status !== undefined) {
 				conditions.push(eq(hrOvertimeRequest.status, input.status));
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrOvertimeRequest)
 				.where(and(...conditions))
@@ -7434,7 +7436,7 @@ async function recomputeTimesheetTotals(
 	organizationId: string,
 	timesheetId: string,
 ): Promise<void> {
-	const entries = await db
+	const entries = await afendaDatabase.client
 		.select()
 		.from(hrTimesheetEntry)
 		.where(
@@ -7451,7 +7453,7 @@ async function recomputeTimesheetTotals(
 		(sum, entry) => sum + entry.approvedMinutes,
 		0,
 	);
-	const current = await db
+	const current = await afendaDatabase.client
 		.select({ version: hrTimesheet.version })
 		.from(hrTimesheet)
 		.where(
@@ -7462,7 +7464,7 @@ async function recomputeTimesheetTotals(
 		)
 		.limit(1);
 	const version = current[0]?.version ?? 1;
-	await db
+	await afendaDatabase.client
 		.update(hrTimesheet)
 		.set({
 			totalRecordedMinutes,
@@ -7512,7 +7514,7 @@ async function transitionShiftStatus(
 		return transition;
 	}
 	try {
-		const [row] = await db
+		const [row] = await afendaDatabase.client
 			.update(hrShift)
 			.set({
 				status: next,
@@ -7569,7 +7571,7 @@ function drizzleExceptionDetectionHost(
 			store.createAttendanceException(input, ports),
 		async deleteAttendanceExceptionForRollback(input) {
 			try {
-				await db
+				await afendaDatabase.client
 					.delete(hrAttendanceException)
 					.where(
 						and(
@@ -7591,7 +7593,7 @@ function drizzleExceptionDetectionHost(
 async function restoreAttendanceSession(
 	previous: AttendanceSession,
 ): Promise<void> {
-	await db
+	await afendaDatabase.client
 		.update(hrAttendanceSession)
 		.set({
 			timezone: previous.timezone,
@@ -7617,7 +7619,7 @@ async function restoreAttendanceSession(
 async function restoreShiftAssignmentPublication(
 	previous: ShiftAssignment,
 ): Promise<void> {
-	await db
+	await afendaDatabase.client
 		.update(hrShiftAssignment)
 		.set({
 			publicationStatus: previous.publicationStatus,
@@ -7670,7 +7672,7 @@ async function transitionAssignment(
 		return transition;
 	}
 	try {
-		const [row] = await db
+		const [row] = await afendaDatabase.client
 			.update(hrShiftAssignment)
 			.set({
 				publicationStatus: next,
@@ -7766,7 +7768,7 @@ async function transitionException(
 		return transition;
 	}
 	try {
-		const [row] = await db
+		const [row] = await afendaDatabase.client
 			.update(hrAttendanceException)
 			.set({
 				reviewStatus: next,
@@ -7862,7 +7864,7 @@ async function transitionTimesheet(
 		return transition;
 	}
 	try {
-		const [row] = await db
+		const [row] = await afendaDatabase.client
 			.update(hrTimesheet)
 			.set({
 				status: next,
@@ -7999,7 +8001,7 @@ async function transitionOvertime(
 		return transition;
 	}
 	try {
-		const [row] = await db
+		const [row] = await afendaDatabase.client
 			.update(hrOvertimeRequest)
 			.set({
 				status: next,
@@ -8019,7 +8021,7 @@ async function transitionOvertime(
 			return notFound("Overtime request not found");
 		}
 		if (next === "rejected" || next === "cancelled") {
-			await db.insert(hrOvertimeApproval).values({
+			await afendaDatabase.client.insert(hrOvertimeApproval).values({
 				id: randomUUID(),
 				organizationId: input.organizationId,
 				overtimeRequestId: input.requestId,

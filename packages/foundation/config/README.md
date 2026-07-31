@@ -47,7 +47,18 @@ Root Biome delegates once:
 
 Chain: root [`biome.jsonc`](../../../biome.jsonc) → `@afenda/config/biome.json` → `ultracite/biome/{core,react,next,vitest}`. Package trees do **not** ship nested `biome.json` unless a real package-only carve-out appears.
 
-**Living consumers:** root + `apps/{web,docs}` + packages (`auth`, `db`, `env`, `emails`, `ui-system`, `errors`, `logger`, `rate-limit`, `admin`, …) list `@afenda/config` as `workspace:*` and extend the matching tsconfig. Vitest / Playwright factory lives under [`testing/`](../../../testing/) — not this package.
+Workspace apps and packages declare `@afenda/config` as a `workspace:*`
+devDependency and extend the matching exported file. The Vitest / Playwright
+factory lives under [`testing/`](../../../testing/README.md), not this package.
+
+## Consumer boundary
+
+- Consume only the JSON export paths declared in `package.json`.
+- Keep package-specific `rootDir`, ambient `types`, aliases, and include/exclude
+  choices in the consuming `tsconfig.json`.
+- Change a shared compiler or formatter decision here only when it should
+  upgrade every matching consumer.
+- Do not add a JavaScript root export or runtime dependency surface.
 
 ## Maintain
 
@@ -65,6 +76,8 @@ Intentional edits to this package require the local-only
 pnpm --filter @afenda/config protect:update
 pnpm --filter @afenda/config protect:check
 ```
+
+Run `pnpm check:readme` from the repository root after changing this guide.
 
 ## Exports
 

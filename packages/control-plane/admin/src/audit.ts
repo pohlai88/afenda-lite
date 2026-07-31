@@ -1,7 +1,7 @@
 import {
+	database as afendaDatabase,
 	and,
 	count,
-	db,
 	desc,
 	eq,
 	gte,
@@ -122,12 +122,12 @@ export async function listRbacAudit(
 		const where = buildRbacAuditWhere(command);
 		const offset = (command.page - 1) * command.pageSize;
 
-		const [totalRow] = await db
+		const [totalRow] = await afendaDatabase.client
 			.select({ value: count() })
 			.from(platformRbacAudit)
 			.where(where);
 
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(platformRbacAudit)
 			.where(where)
@@ -166,7 +166,7 @@ export async function recordRbacAudit(
 	const command: RecordRbacAuditCommand = parsed.data;
 
 	try {
-		const [row] = await db
+		const [row] = await afendaDatabase.client
 			.insert(platformRbacAudit)
 			.values({
 				action: command.action,
@@ -211,7 +211,7 @@ export async function deleteRbacAuditRow(
 	const command: DeleteRbacAuditInput = parsed.data;
 
 	try {
-		const [row] = await db
+		const [row] = await afendaDatabase.client
 			.delete(platformRbacAudit)
 			.where(
 				and(

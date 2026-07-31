@@ -1,5 +1,6 @@
 // biome-ignore-all lint/suspicious/useAwait: Cleanup wrappers expose a uniform asynchronous test API.
 import {
+	database as afendaDatabase,
 	and,
 	caCompanyActivity,
 	caCompanyFinancialYear,
@@ -16,12 +17,10 @@ import {
 	caMutationReceipt,
 	caPremise,
 	caRegisteredAddress,
-	db,
 	eq,
 	type NeonHttpSql,
 	platformAuditLog,
 	platformDomainEvent,
-	runNeonHttpTransaction,
 	sql,
 } from "@afenda/db";
 import { errorIngress, errorProject, errorResult } from "@afenda/errors";
@@ -110,7 +109,7 @@ export function createNeonCorporateAdministrationPendingEventAppender(): Corpora
 				return errorResult.ok(undefined);
 			}
 			try {
-				await runNeonHttpTransaction(
+				await afendaDatabase.transaction(
 					(neonSql) =>
 						events.map((event) =>
 							createStatement(event)(neonSql),
@@ -132,7 +131,7 @@ export async function cleanupCorporateAdministrationInfrastructureTestData(
 ): Promise<void> {
 	const scopedOrganizationId = normalizeTestOrganizationId(organizationId);
 
-	await db
+	await afendaDatabase.client
 		.delete(platformDomainEvent)
 		.where(
 			and(
@@ -140,7 +139,7 @@ export async function cleanupCorporateAdministrationInfrastructureTestData(
 				eq(platformDomainEvent.sourceModule, CORPORATE_ADMINISTRATION_MODULE),
 			),
 		);
-	await db
+	await afendaDatabase.client
 		.delete(platformAuditLog)
 		.where(
 			and(
@@ -148,56 +147,56 @@ export async function cleanupCorporateAdministrationInfrastructureTestData(
 				eq(platformAuditLog.module, CORPORATE_ADMINISTRATION_MODULE),
 			),
 		);
-	await db
+	await afendaDatabase.client
 		.delete(caCompanyActivity)
 		.where(eq(caCompanyActivity.organizationId, scopedOrganizationId));
-	await db
+	await afendaDatabase.client
 		.delete(caCompanyFinancialYear)
 		.where(eq(caCompanyFinancialYear.organizationId, scopedOrganizationId));
-	await db
+	await afendaDatabase.client
 		.delete(caCompanyIdentifier)
 		.where(eq(caCompanyIdentifier.organizationId, scopedOrganizationId));
-	await db
+	await afendaDatabase.client
 		.delete(caCompanyLegalFormHistory)
 		.where(eq(caCompanyLegalFormHistory.organizationId, scopedOrganizationId));
-	await db
+	await afendaDatabase.client
 		.delete(caCompanyName)
 		.where(eq(caCompanyName.organizationId, scopedOrganizationId));
-	await db
+	await afendaDatabase.client
 		.delete(caCompanyStatusHistory)
 		.where(eq(caCompanyStatusHistory.organizationId, scopedOrganizationId));
-	await db
+	await afendaDatabase.client
 		.delete(caCompanyJurisdictionProfile)
 		.where(
 			eq(caCompanyJurisdictionProfile.organizationId, scopedOrganizationId),
 		);
-	await db
+	await afendaDatabase.client
 		.delete(caEstablishmentStatusHistory)
 		.where(
 			eq(caEstablishmentStatusHistory.organizationId, scopedOrganizationId),
 		);
-	await db
+	await afendaDatabase.client
 		.delete(caCompanyStatusHistory)
 		.where(eq(caCompanyStatusHistory.organizationId, scopedOrganizationId));
-	await db
+	await afendaDatabase.client
 		.delete(caRegisteredAddress)
 		.where(eq(caRegisteredAddress.organizationId, scopedOrganizationId));
-	await db
+	await afendaDatabase.client
 		.delete(caPremise)
 		.where(eq(caPremise.organizationId, scopedOrganizationId));
-	await db
+	await afendaDatabase.client
 		.delete(caGovernanceMembership)
 		.where(eq(caGovernanceMembership.organizationId, scopedOrganizationId));
-	await db
+	await afendaDatabase.client
 		.delete(caGovernanceBody)
 		.where(eq(caGovernanceBody.organizationId, scopedOrganizationId));
-	await db
+	await afendaDatabase.client
 		.delete(caLegalEstablishment)
 		.where(eq(caLegalEstablishment.organizationId, scopedOrganizationId));
-	await db
+	await afendaDatabase.client
 		.delete(caLegalCompany)
 		.where(eq(caLegalCompany.organizationId, scopedOrganizationId));
-	await db
+	await afendaDatabase.client
 		.delete(caMutationReceipt)
 		.where(eq(caMutationReceipt.organizationId, scopedOrganizationId));
 }
@@ -206,7 +205,7 @@ export async function cleanupCorporateAdministrationEstablishmentTestData(
 	organizationId: string,
 ): Promise<void> {
 	const scopedOrganizationId = normalizeTestOrganizationId(organizationId);
-	await db
+	await afendaDatabase.client
 		.delete(platformDomainEvent)
 		.where(
 			and(
@@ -214,7 +213,7 @@ export async function cleanupCorporateAdministrationEstablishmentTestData(
 				eq(platformDomainEvent.sourceModule, CORPORATE_ADMINISTRATION_MODULE),
 			),
 		);
-	await db
+	await afendaDatabase.client
 		.delete(platformAuditLog)
 		.where(
 			and(
@@ -222,30 +221,30 @@ export async function cleanupCorporateAdministrationEstablishmentTestData(
 				eq(platformAuditLog.module, CORPORATE_ADMINISTRATION_MODULE),
 			),
 		);
-	await db
+	await afendaDatabase.client
 		.delete(caEstablishmentStatusHistory)
 		.where(
 			eq(caEstablishmentStatusHistory.organizationId, scopedOrganizationId),
 		);
-	await db
+	await afendaDatabase.client
 		.delete(caRegisteredAddress)
 		.where(eq(caRegisteredAddress.organizationId, scopedOrganizationId));
-	await db
+	await afendaDatabase.client
 		.delete(caPremise)
 		.where(eq(caPremise.organizationId, scopedOrganizationId));
-	await db
+	await afendaDatabase.client
 		.delete(caGovernanceMembership)
 		.where(eq(caGovernanceMembership.organizationId, scopedOrganizationId));
-	await db
+	await afendaDatabase.client
 		.delete(caGovernanceBody)
 		.where(eq(caGovernanceBody.organizationId, scopedOrganizationId));
-	await db
+	await afendaDatabase.client
 		.delete(caLegalEstablishment)
 		.where(eq(caLegalEstablishment.organizationId, scopedOrganizationId));
-	await db
+	await afendaDatabase.client
 		.delete(caLegalCompany)
 		.where(eq(caLegalCompany.organizationId, scopedOrganizationId));
-	await db
+	await afendaDatabase.client
 		.delete(caMutationReceipt)
 		.where(eq(caMutationReceipt.organizationId, scopedOrganizationId));
 }
@@ -253,7 +252,7 @@ export async function cleanupCorporateAdministrationEstablishmentTestData(
 export async function countCorporateAdministrationLegalEstablishments(
 	organizationId: string,
 ): Promise<number> {
-	const rows = await db
+	const rows = await afendaDatabase.client
 		.select({ value: sql<number>`count(*)::int` })
 		.from(caLegalEstablishment)
 		.where(eq(caLegalEstablishment.organizationId, organizationId));
@@ -263,7 +262,7 @@ export async function countCorporateAdministrationLegalEstablishments(
 export async function countCorporateAdministrationMutationReceipts(
 	scope: CorporateAdministrationIdempotencyScope,
 ): Promise<number> {
-	const rows = await db
+	const rows = await afendaDatabase.client
 		.select({ value: sql<number>`count(*)::int` })
 		.from(caMutationReceipt)
 		.where(
@@ -280,7 +279,7 @@ export async function countCorporateAdministrationMutationReceiptsByStatus(
 	scope: CorporateAdministrationIdempotencyScope,
 	status: "completed" | "in_progress" | "released",
 ): Promise<number> {
-	const rows = await db
+	const rows = await afendaDatabase.client
 		.select({ value: sql<number>`count(*)::int` })
 		.from(caMutationReceipt)
 		.where(
@@ -297,7 +296,7 @@ export async function countCorporateAdministrationMutationReceiptsByStatus(
 export async function countCorporateAdministrationOutboxEvents(
 	organizationId: string,
 ): Promise<number> {
-	const rows = await db
+	const rows = await afendaDatabase.client
 		.select({ value: sql<number>`count(*)::int` })
 		.from(platformDomainEvent)
 		.where(
@@ -312,7 +311,7 @@ export async function countCorporateAdministrationOutboxEvents(
 export async function countCorporateAdministrationCompanyIdentifiers(
 	organizationId: string,
 ): Promise<number> {
-	const rows = await db
+	const rows = await afendaDatabase.client
 		.select({ value: sql<number>`count(*)::int` })
 		.from(caCompanyIdentifier)
 		.where(eq(caCompanyIdentifier.organizationId, organizationId));
@@ -322,7 +321,7 @@ export async function countCorporateAdministrationCompanyIdentifiers(
 export async function countCorporateAdministrationCompanyFinancialYears(
 	organizationId: string,
 ): Promise<number> {
-	const rows = await db
+	const rows = await afendaDatabase.client
 		.select({ value: sql<number>`count(*)::int` })
 		.from(caCompanyFinancialYear)
 		.where(eq(caCompanyFinancialYear.organizationId, organizationId));
@@ -332,7 +331,7 @@ export async function countCorporateAdministrationCompanyFinancialYears(
 export async function countCorporateAdministrationCompanyActivities(
 	organizationId: string,
 ): Promise<number> {
-	const rows = await db
+	const rows = await afendaDatabase.client
 		.select({ value: sql<number>`count(*)::int` })
 		.from(caCompanyActivity)
 		.where(eq(caCompanyActivity.organizationId, organizationId));
@@ -342,7 +341,7 @@ export async function countCorporateAdministrationCompanyActivities(
 export async function countCorporateAdministrationCompanyStatusHistory(
 	organizationId: string,
 ): Promise<number> {
-	const rows = await db
+	const rows = await afendaDatabase.client
 		.select({ value: sql<number>`count(*)::int` })
 		.from(caCompanyStatusHistory)
 		.where(eq(caCompanyStatusHistory.organizationId, organizationId));
@@ -363,7 +362,7 @@ export async function listCorporateAdministrationOutboxEvents(
 		processedAt: Date | null;
 	}>
 > {
-	return db
+	return afendaDatabase.client
 		.select({
 			organizationId: platformDomainEvent.organizationId,
 			type: platformDomainEvent.type,

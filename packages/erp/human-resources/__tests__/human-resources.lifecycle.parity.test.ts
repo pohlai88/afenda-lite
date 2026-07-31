@@ -3,8 +3,8 @@
  */
 
 import {
+	database as afendaDatabase,
 	and,
-	db,
 	eq,
 	hrOffboardingAccessRevocation,
 	hrOffboardingPayrollHandoff,
@@ -296,7 +296,7 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				return;
 			}
 
-			const events = await db
+			const events = await afendaDatabase.client
 				.select()
 				.from(platformDomainEvent)
 				.where(
@@ -576,7 +576,7 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				return;
 			}
 
-			const terminationRows = await db
+			const terminationRows = await afendaDatabase.client
 				.select()
 				.from(hrTermination)
 				.where(
@@ -589,7 +589,7 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 			expect(terminationRows[0]?.approvedAt).not.toBeNull();
 			expect(terminationRows[0]?.rehireEligible).toBe(false);
 
-			const accessRows = await db
+			const accessRows = await afendaDatabase.client
 				.select()
 				.from(hrOffboardingAccessRevocation)
 				.where(
@@ -603,7 +603,7 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				);
 			expect(accessRows[0]?.status).toBe("revoked");
 
-			const payrollRows = await db
+			const payrollRows = await afendaDatabase.client
 				.select()
 				.from(hrOffboardingPayrollHandoff)
 				.where(
@@ -759,7 +759,7 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				return;
 			}
 
-			const events = await db
+			const events = await afendaDatabase.client
 				.select()
 				.from(platformDomainEvent)
 				.where(
@@ -839,7 +839,7 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				return;
 			}
 
-			const orientationRows = await db
+			const orientationRows = await afendaDatabase.client
 				.select()
 				.from(hrOnboardingOrientation)
 				.where(
@@ -850,7 +850,7 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				);
 			expect(orientationRows[0]?.status).toBe("acknowledged");
 
-			const equipmentRows = await db
+			const equipmentRows = await afendaDatabase.client
 				.select()
 				.from(hrOnboardingEquipmentHandoff)
 				.where(
@@ -864,7 +864,7 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				);
 			expect(equipmentRows[0]?.status).toBe("handed_over");
 
-			const accessRows = await db
+			const accessRows = await afendaDatabase.client
 				.select()
 				.from(hrOnboardingAccessHandoff)
 				.where(

@@ -1,8 +1,8 @@
 import {
+	database as afendaDatabase,
 	and,
 	asc,
 	count,
-	db,
 	desc,
 	eq,
 	gte,
@@ -84,7 +84,7 @@ function buildFilterWhere(options: DomainEventQueryOptions) {
 export class DrizzleEventStore implements EventStore {
 	async append(entry: DomainEventWriteInput): Promise<Result<DomainEvent>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.insert(platformDomainEvent)
 				.values({
 					organizationId: entry.organizationId,
@@ -117,7 +117,7 @@ export class DrizzleEventStore implements EventStore {
 				entry.deduplicationKey !== undefined &&
 				entry.deduplicationKey !== null
 			) {
-				[resolvedRow] = await db
+				[resolvedRow] = await afendaDatabase.client
 					.select()
 					.from(platformDomainEvent)
 					.where(
@@ -156,7 +156,7 @@ export class DrizzleEventStore implements EventStore {
 			}
 
 			const offset = (options.page - 1) * options.pageSize;
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(platformDomainEvent)
 				.where(where)
@@ -177,7 +177,7 @@ export class DrizzleEventStore implements EventStore {
 				return errorResult.fail("INTERNAL_ERROR");
 			}
 
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select({ value: count() })
 				.from(platformDomainEvent)
 				.where(where);
@@ -201,7 +201,7 @@ export class DrizzleEventStore implements EventStore {
 				return errorResult.fail("INTERNAL_ERROR");
 			}
 
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(platformDomainEvent)
 				.where(where)
@@ -222,7 +222,7 @@ export class DrizzleEventStore implements EventStore {
 	): Promise<Result<DomainEvent | null>> {
 		try {
 			const processedAt = input.processedAt ?? new Date();
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.update(platformDomainEvent)
 				.set({
 					status: "processed",
@@ -258,7 +258,7 @@ export class DrizzleEventStore implements EventStore {
 		input: DomainEventMarkFailedInput,
 	): Promise<Result<DomainEvent | null>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.update(platformDomainEvent)
 				.set({
 					status: "failed",
@@ -291,7 +291,7 @@ export class DrizzleEventStore implements EventStore {
 		input: DomainEventRequeueInput,
 	): Promise<Result<DomainEvent | null>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.update(platformDomainEvent)
 				.set({
 					status: "pending",
@@ -334,7 +334,7 @@ export class DrizzleEventStore implements EventStore {
 				return errorResult.fail("INTERNAL_ERROR");
 			}
 
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.delete(platformDomainEvent)
 				.where(where)
 				.returning({ id: platformDomainEvent.id });

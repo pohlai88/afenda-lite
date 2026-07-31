@@ -5,7 +5,7 @@ import {
 	registerLegalEstablishment,
 } from "@afenda/corporate-administration";
 import { createDrizzleCorporateAdministrationEstablishmentStore } from "@afenda/corporate-administration/adapters/drizzle";
-import { db } from "@afenda/db";
+import { database as afendaDatabase } from "@afenda/db";
 import { errorResult } from "@afenda/errors";
 import { describe, expect, it } from "vitest";
 
@@ -32,7 +32,7 @@ describe.skipIf(!RUN_CORPORATE_ADMINISTRATION_NEON_PARITY)(
 			const base = createDrizzleCompanyDependencies();
 			const establishmentStore =
 				createDrizzleCorporateAdministrationEstablishmentStore({
-					database: db,
+					database: afendaDatabase.client,
 					createId: randomUUID,
 				});
 			const dependencies = {

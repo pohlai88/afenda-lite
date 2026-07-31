@@ -2,7 +2,7 @@
 
 import { createHash } from "node:crypto";
 
-import { createAuditRecorder } from "@afenda/audit";
+import { audit as afendaAudit } from "@afenda/audit";
 import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
@@ -47,7 +47,7 @@ async function auditReliabilityOperation(input: {
 	entityId: string;
 	action: string;
 }) {
-	return await createAuditRecorder().record({
+	return await afendaAudit.recorder().record({
 		...input,
 		module: "human-resources",
 		metadata: { surface: "reliability_operator" },

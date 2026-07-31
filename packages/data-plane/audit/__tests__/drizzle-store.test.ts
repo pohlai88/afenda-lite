@@ -1,10 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
 const select = vi.fn();
 const insert = vi.fn();
 const del = vi.fn();
+let createDrizzleAuditStore: typeof import("../src/drizzle-store").createDrizzleAuditStore;
 
 vi.mock("@afenda/db", () => {
 	const platformAuditLog = {
@@ -28,10 +29,12 @@ vi.mock("@afenda/db", () => {
 		lte: (column: unknown, value: unknown) => ({ kind: "lte", column, value }),
 		or: (...predicates: unknown[]) => ({ kind: "or", predicates }),
 		platformAuditLog,
-		db: {
-			select: (...args: unknown[]) => select(...args),
-			insert: (...args: unknown[]) => insert(...args),
-			delete: (...args: unknown[]) => del(...args),
+		database: {
+			client: {
+				select: (...args: unknown[]) => select(...args),
+				insert: (...args: unknown[]) => insert(...args),
+				delete: (...args: unknown[]) => del(...args),
+			},
 		},
 	};
 });
@@ -64,11 +67,14 @@ const sampleRow = {
 };
 
 describe("@afenda/audit DrizzleAuditStore", () => {
+	beforeAll(async () => {
+		({ createDrizzleAuditStore } = await import("../src/drizzle-store"));
+	});
+
 	beforeEach(() => {
 		select.mockReset();
 		insert.mockReset();
 		del.mockReset();
-		vi.resetModules();
 	});
 
 	it("writes and maps a returned row", async () => {
@@ -76,7 +82,6 @@ describe("@afenda/audit DrizzleAuditStore", () => {
 		const values = vi.fn().mockReturnValue({ returning });
 		insert.mockReturnValue({ values });
 
-		const { createDrizzleAuditStore } = await import("../src/drizzle-store");
 		const store = createDrizzleAuditStore();
 		const result = await store.write({
 			organizationId: "org-1",
@@ -115,7 +120,6 @@ describe("@afenda/audit DrizzleAuditStore", () => {
 		const values = vi.fn();
 		insert.mockReturnValue({ values });
 
-		const { createDrizzleAuditStore } = await import("../src/drizzle-store");
 		const store = createDrizzleAuditStore();
 		const result = await Reflect.apply(store.write, store, [
 			{
@@ -144,7 +148,6 @@ describe("@afenda/audit DrizzleAuditStore", () => {
 			from: () => ({ where }),
 		});
 
-		const { createDrizzleAuditStore } = await import("../src/drizzle-store");
 		const store = createDrizzleAuditStore();
 		const result = await store.query({
 			organizationId: "org-1",
@@ -169,7 +172,6 @@ describe("@afenda/audit DrizzleAuditStore", () => {
 			from: () => ({ where }),
 		});
 
-		const { createDrizzleAuditStore } = await import("../src/drizzle-store");
 		const store = createDrizzleAuditStore();
 		const result = await store.count({ organizationId: "org-1" });
 
@@ -187,7 +189,6 @@ describe("@afenda/audit DrizzleAuditStore", () => {
 			from: () => ({ where }),
 		});
 
-		const { createDrizzleAuditStore } = await import("../src/drizzle-store");
 		const store = createDrizzleAuditStore();
 		const result = await store.queryCursor({
 			organizationId: "org-1",
@@ -210,7 +211,6 @@ describe("@afenda/audit DrizzleAuditStore", () => {
 		const where = vi.fn().mockReturnValue({ returning });
 		del.mockReturnValue({ where });
 
-		const { createDrizzleAuditStore } = await import("../src/drizzle-store");
 		const store = createDrizzleAuditStore();
 		const result = await store.purge({
 			organizationId: "org-1",
@@ -234,7 +234,6 @@ describe("@afenda/audit DrizzleAuditStore", () => {
 			from: () => ({ where }),
 		});
 
-		const { createDrizzleAuditStore } = await import("../src/drizzle-store");
 		const store = createDrizzleAuditStore();
 		const result = await store.query({
 			organizationId: "org-1",

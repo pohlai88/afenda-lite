@@ -1,13 +1,13 @@
 import { randomUUID } from "node:crypto";
 
 import {
+	audit as afendaAudit,
 	type PreparedTransactionalAuditInsertValues,
-	prepareTransactionalAuditInsertValues,
 } from "@afenda/audit";
 import {
+	database as afendaDatabase,
 	and,
 	asc,
-	db,
 	desc,
 	eq,
 	gte,
@@ -18,7 +18,6 @@ import {
 	hrLearningCourse,
 	hrLearningSession,
 	lte,
-	runNeonHttpTransaction,
 } from "@afenda/db";
 import { errorResult, type Result } from "@afenda/errors";
 import {
@@ -111,7 +110,7 @@ interface LearningAuditInput {
 function prepareLearningAudit(
 	input: LearningAuditInput,
 ): Result<PreparedTransactionalAuditInsertValues> {
-	return prepareTransactionalAuditInsertValues({
+	return afendaAudit.transaction.prepare({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: input.correlationId,
@@ -730,7 +729,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 	ThisType<LearningHost & DrizzleLearningMethods> = {
 	async getCourseById(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrLearningCourse)
 				.where(
@@ -752,7 +751,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 	async findCourseByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrLearningCourse)
 				.where(
@@ -827,7 +826,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 		}
 		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							INSERT INTO hr_learning_course (
@@ -939,7 +938,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 		}
 		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_learning_course
@@ -1030,7 +1029,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 		}
 		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_learning_course
@@ -1128,7 +1127,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 		}
 		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH check_assignments AS (
 							SELECT COUNT(*) AS active_count
@@ -1194,7 +1193,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 	async listCourses(input) {
 		try {
-			let query = db
+			let query = afendaDatabase.client
 				.select()
 				.from(hrLearningCourse)
 				.where(eq(hrLearningCourse.organizationId, input.organizationId))
@@ -1231,7 +1230,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 	async countActiveAssignmentsForCourse(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrLearningAssignment)
 				.where(
@@ -1251,7 +1250,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 	async getSessionById(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrLearningSession)
 				.where(
@@ -1273,7 +1272,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 	async findSessionByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrLearningSession)
 				.where(
@@ -1383,7 +1382,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 		}
 		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH course AS (
 							SELECT id
@@ -1510,7 +1509,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 		}
 		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_learning_session
@@ -1606,7 +1605,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 		}
 		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_learning_session
@@ -1696,7 +1695,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 		}
 		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_learning_session
@@ -1786,7 +1785,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 		}
 		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_learning_session
@@ -1836,7 +1835,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 	async listSessions(input) {
 		try {
-			let query = db
+			let query = afendaDatabase.client
 				.select()
 				.from(hrLearningSession)
 				.where(eq(hrLearningSession.organizationId, input.organizationId))
@@ -1878,7 +1877,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 	async countEnrolledInSession(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrLearningAssignment)
 				.where(
@@ -1896,7 +1895,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 	async getLearningAssignmentById(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrLearningAssignment)
 				.where(
@@ -1918,7 +1917,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 	async findLearningAssignmentByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrLearningAssignment)
 				.where(
@@ -2066,7 +2065,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 		const audit = preparedAudit.data;
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH employee AS (
 						SELECT id
@@ -2267,7 +2266,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 		}
 		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH check_session AS (
 						SELECT
@@ -2394,7 +2393,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 		}
 		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH mutated AS (
 						UPDATE hr_learning_assignment
@@ -2444,7 +2443,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 	async listLearningAssignments(input) {
 		try {
-			let query = db
+			let query = afendaDatabase.client
 				.select()
 				.from(hrLearningAssignment)
 				.where(eq(hrLearningAssignment.organizationId, input.organizationId))
@@ -2492,7 +2491,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 	async getCompletionById(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrLearningCompletion)
 				.where(
@@ -2514,7 +2513,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 	async findCompletionByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrLearningCompletion)
 				.where(
@@ -2553,7 +2552,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 	async findCompletionByAssignmentId(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrLearningCompletion)
 				.where(
@@ -2705,7 +2704,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 		const audit = preparedAudit.data;
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH assignment AS (
 							SELECT id, organization_id, employee_id, course_id, session_id, version
@@ -2832,7 +2831,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 	async listCompletions(input) {
 		try {
-			let query = db
+			let query = afendaDatabase.client
 				.select()
 				.from(hrLearningCompletion)
 				.where(eq(hrLearningCompletion.organizationId, input.organizationId))
@@ -2874,7 +2873,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 	async getLearningAttendanceById(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrLearningAttendance)
 				.where(
@@ -2896,7 +2895,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 	async findLearningAttendanceByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrLearningAttendance)
 				.where(
@@ -2929,7 +2928,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 	async findLearningAttendanceByAssignmentAndSession(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrLearningAttendance)
 				.where(
@@ -3058,7 +3057,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 		}
 		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH assignment AS (
 							SELECT id, organization_id, employee_id, session_id, status
@@ -3170,7 +3169,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 	async listLearningAttendance(input) {
 		try {
-			let query = db
+			let query = afendaDatabase.client
 				.select()
 				.from(hrLearningAttendance)
 				.where(eq(hrLearningAttendance.organizationId, input.organizationId))
@@ -3214,7 +3213,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 	async getCertificationById(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrEmployeeCertification)
 				.where(
@@ -3236,7 +3235,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 	async findCertificationByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrEmployeeCertification)
 				.where(
@@ -3375,7 +3374,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 		}
 		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH employee AS (
 							SELECT id
@@ -3502,7 +3501,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 		}
 		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_employee_certification
@@ -3598,7 +3597,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 		}
 		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_employee_certification
@@ -3773,7 +3772,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 		const audit = preparedAudit.data;
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH prior_cert AS (
 							SELECT id, organization_id, employee_id, course_id, status, version
@@ -3871,7 +3870,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 	async listCertifications(input) {
 		try {
-			let query = db
+			let query = afendaDatabase.client
 				.select()
 				.from(hrEmployeeCertification)
 				.where(eq(hrEmployeeCertification.organizationId, input.organizationId))
@@ -3922,7 +3921,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			windowEndDate.setUTCDate(windowEndDate.getUTCDate() + input.withinDays);
 			const windowEnd = windowEndDate.toISOString().slice(0, 10);
 
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrEmployeeCertification)
 				.where(

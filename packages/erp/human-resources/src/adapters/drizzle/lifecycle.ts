@@ -1,13 +1,13 @@
 import { randomUUID } from "node:crypto";
 
 import {
+	audit as afendaAudit,
 	type PreparedTransactionalAuditInsertValues,
-	prepareTransactionalAuditInsertValues,
 } from "@afenda/audit";
 import {
+	database as afendaDatabase,
 	and,
 	asc,
-	db,
 	desc,
 	eq,
 	hrClearance,
@@ -25,7 +25,6 @@ import {
 	hrProbationAssessment,
 	hrProbationReview,
 	hrTermination,
-	runNeonHttpTransaction,
 } from "@afenda/db";
 import { errorResult, type Result } from "@afenda/errors";
 import {
@@ -178,7 +177,7 @@ interface LifecycleAuditInput {
 function prepareLifecycleAudit(
 	input: LifecycleAuditInput,
 ): Result<PreparedTransactionalAuditInsertValues> {
-	return prepareTransactionalAuditInsertValues({
+	return afendaAudit.transaction.prepare({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: input.correlationId,
@@ -1241,7 +1240,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 	ThisType<LifecycleHost & DrizzleLifecycleMethods> = {
 	async getOnboardingCase(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrOnboardingCase)
 				.where(
@@ -1263,7 +1262,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 
 	async findOnboardingByStartIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrOnboardingCase)
 				.where(
@@ -1389,7 +1388,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH employment AS (
 							SELECT id, organization_id, employee_id, status
@@ -1554,7 +1553,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		const audit = preparedLifecycleAudit.data;
 		const auditId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH task_row AS (
 							SELECT *
@@ -1658,7 +1657,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH case_row AS (
 							SELECT *
@@ -1769,7 +1768,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			if (caseRow.data === null) {
 				return notFound("Onboarding case not found");
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrOnboardingOrientation)
 				.where(
@@ -1807,7 +1806,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			if (caseRow.data === null) {
 				return notFound("Onboarding case not found");
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrOnboardingEquipmentHandoff)
 				.where(
@@ -1848,7 +1847,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			if (caseRow.data === null) {
 				return notFound("Onboarding case not found");
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrOnboardingAccessHandoff)
 				.where(
@@ -1875,7 +1874,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 	},
 
 	async recordOnboardingOrientation(input, _ports, meta) {
-		const orientationRows = await db
+		const orientationRows = await afendaDatabase.client
 			.select()
 			.from(hrOnboardingOrientation)
 			.where(
@@ -1954,7 +1953,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		const audit = preparedLifecycleAudit.data;
 		const auditId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_onboarding_orientation o
@@ -2039,7 +2038,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 	},
 
 	async recordOnboardingEquipmentHandoff(input, _ports, meta) {
-		const equipmentRows = await db
+		const equipmentRows = await afendaDatabase.client
 			.select()
 			.from(hrOnboardingEquipmentHandoff)
 			.where(
@@ -2121,7 +2120,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		const audit = preparedLifecycleAudit.data;
 		const auditId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_onboarding_equipment_handoff e
@@ -2206,7 +2205,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 	},
 
 	async recordOnboardingAccessHandoff(input, _ports, meta) {
-		const accessRows = await db
+		const accessRows = await afendaDatabase.client
 			.select()
 			.from(hrOnboardingAccessHandoff)
 			.where(
@@ -2288,7 +2287,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		const audit = preparedLifecycleAudit.data;
 		const auditId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_onboarding_access_handoff a
@@ -2374,7 +2373,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 
 	async getProbationReview(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrProbationReview)
 				.where(
@@ -2396,7 +2395,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 
 	async listProbationReviewsByEmployment(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrProbationReview)
 				.where(
@@ -2435,7 +2434,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			return notFound("Probation review not found");
 		}
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrProbationAssessment)
 				.where(
@@ -2467,7 +2466,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 
 	async findProbationByOpenIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrProbationReview)
 				.where(
@@ -2548,7 +2547,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		const audit = preparedLifecycleAudit.data;
 		const auditId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH employment AS (
 							SELECT id, organization_id, employee_id
@@ -2693,7 +2692,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			),
 		);
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_probation_review
@@ -2827,7 +2826,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			),
 		);
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH review AS (
 							UPDATE hr_probation_review
@@ -2974,7 +2973,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			),
 		);
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_probation_review
@@ -3039,7 +3038,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 
 	async getEmploymentConfirmation(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrEmploymentConfirmation)
 				.where(
@@ -3064,7 +3063,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 
 	async findConfirmationByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrEmploymentConfirmation)
 				.where(
@@ -3130,7 +3129,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			);
 		}
 
-		const probationRows = await db
+		const probationRows = await afendaDatabase.client
 			.select()
 			.from(hrProbationReview)
 			.where(
@@ -3198,7 +3197,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			evidenceNote: record.evidenceNote,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH employment AS (
 							SELECT id, organization_id, employee_id
@@ -3286,7 +3285,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 
 	async findTransferByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrEmploymentMovement)
 				.where(
@@ -3452,7 +3451,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		const nextAssignmentVersion = currentAssignment.version + 1;
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH employment AS (
 							SELECT id, organization_id, employee_id
@@ -3640,7 +3639,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 
 	async getTermination(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrTermination)
 				.where(
@@ -3662,7 +3661,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 
 	async findTerminationByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrTermination)
 				.where(
@@ -3761,7 +3760,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH employment AS (
 							SELECT id, organization_id, employee_id, starts_on
@@ -3893,7 +3892,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		const audit = preparedLifecycleAudit.data;
 		const auditId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_termination
@@ -4021,7 +4020,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		const fromEmploymentStatus = currentEmployment.status;
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH employment AS (
 							SELECT id, organization_id, employee_id, starts_on, status, version
@@ -4137,7 +4136,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 
 	async getOffboardingCase(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrOffboardingCase)
 				.where(
@@ -4159,7 +4158,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 
 	async findOffboardingByStartIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrOffboardingCase)
 				.where(
@@ -4221,7 +4220,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			);
 		}
 
-		const finalized = await db
+		const finalized = await afendaDatabase.client
 			.select()
 			.from(hrTermination)
 			.where(
@@ -4298,7 +4297,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH employment AS (
 							SELECT id, organization_id, employee_id, status
@@ -4471,7 +4470,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		const audit = preparedLifecycleAudit.data;
 		const auditId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 							WITH mutated AS (
 								UPDATE hr_offboarding_task task
@@ -4582,7 +4581,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		const audit = preparedLifecycleAudit.data;
 		const auditId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 							WITH case_row AS (
 								SELECT *
@@ -4658,7 +4657,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_clearance c
@@ -4770,7 +4769,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH case_row AS (
 							SELECT *
@@ -4891,7 +4890,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			if (caseRow.data === null) {
 				return notFound("Onboarding case not found");
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrOnboardingTask)
 				.where(
@@ -4917,7 +4916,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 
 	async getOnboardingTask(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrOnboardingTask)
 				.where(
@@ -4949,7 +4948,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			if (caseRow.data === null) {
 				return notFound("Offboarding case not found");
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrOffboardingTask)
 				.where(
@@ -4985,7 +4984,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			if (caseRow.data === null) {
 				return notFound("Offboarding case not found");
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrClearance)
 				.where(
@@ -5017,7 +5016,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			if (caseRow.data === null) {
 				return notFound("Offboarding case not found");
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrOffboardingAccessRevocation)
 				.where(
@@ -5058,7 +5057,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			if (caseRow.data === null) {
 				return notFound("Offboarding case not found");
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrOffboardingPayrollHandoff)
 				.where(
@@ -5110,7 +5109,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		const audit = preparedLifecycleAudit.data;
 		const auditId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_offboarding_access_revocation ar
@@ -5199,7 +5198,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		const audit = preparedLifecycleAudit.data;
 		const auditId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_offboarding_payroll_handoff ph

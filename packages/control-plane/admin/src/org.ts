@@ -5,7 +5,12 @@ import {
 	listMemberOrganizations,
 	persistActiveOrganization,
 } from "@afenda/auth";
-import { db, inArray, max, platformRbacAudit } from "@afenda/db";
+import {
+	database as afendaDatabase,
+	inArray,
+	max,
+	platformRbacAudit,
+} from "@afenda/db";
 import {
 	errorIngress,
 	errorProject,
@@ -41,7 +46,7 @@ async function loadLastActivityByOrgId(
 		return activity;
 	}
 
-	const rows = await db
+	const rows = await afendaDatabase.client
 		.select({
 			organizationId: platformRbacAudit.organizationId,
 			lastActivityAt: max(platformRbacAudit.createdAt),

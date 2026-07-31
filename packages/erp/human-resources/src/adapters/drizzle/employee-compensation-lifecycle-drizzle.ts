@@ -1,17 +1,15 @@
 import { randomUUID } from "node:crypto";
 
 import {
+	audit as afendaAudit,
 	type PreparedDerivedEntityAuditInsertValues,
 	type PreparedTransactionalAuditInsertValues,
-	prepareDerivedEntityAuditInsertValues,
-	prepareTransactionalAuditInsertValues,
 } from "@afenda/audit";
 import {
+	database as afendaDatabase,
 	and,
-	db,
 	eq,
 	hrEmployeeCompensation,
-	runNeonHttpTransaction,
 } from "@afenda/db";
 import { errorResult, type Result } from "@afenda/errors";
 import { HUMAN_RESOURCES_COMPENSATION_CHANGED_EVENT } from "@afenda/events/schemas";
@@ -64,7 +62,7 @@ function prepareEmployeeCompensationAudit(input: {
 	organizationId: string;
 	reasonCode: string;
 }): Result<PreparedTransactionalAuditInsertValues> {
-	return prepareTransactionalAuditInsertValues({
+	return afendaAudit.transaction.prepare({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: input.correlationId,
@@ -96,7 +94,7 @@ function prepareDerivedEmployeeCompensationAudit(input: {
 	organizationId: string;
 	reasonCode: string;
 }): Result<PreparedDerivedEntityAuditInsertValues> {
-	return prepareDerivedEntityAuditInsertValues({
+	return afendaAudit.transaction.prepareDerived({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: input.correlationId,
@@ -137,7 +135,7 @@ async function findEmployeeCompensationByEmploymentAndStatus(
 	status: EmployeeCompensation["status"],
 ): Promise<Result<EmployeeCompensation | null>> {
 	try {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(hrEmployeeCompensation)
 			.where(
@@ -293,7 +291,7 @@ export async function drizzleAmendEmployeeCompensation(
 	const audit = preparedAudit.data;
 
 	try {
-		const [rows] = await runNeonHttpTransaction((sqlTag) => [
+		const [rows] = await afendaDatabase.transaction((sqlTag) => [
 			sqlTag`
 					WITH mutated AS (
 						UPDATE hr_employee_compensation
@@ -473,7 +471,7 @@ export async function drizzleApproveEmployeeCompensation(
 	}
 
 	try {
-		const [rows] = await runNeonHttpTransaction((sqlTag) => [
+		const [rows] = await afendaDatabase.transaction((sqlTag) => [
 			nextStatus === "active"
 				? sqlTag`
 						WITH active_comp AS (
@@ -809,7 +807,7 @@ export async function drizzleActivateEmployeeCompensation(
 	const activatedAudit = preparedActivatedAudit.data;
 
 	try {
-		const [, rows] = await runNeonHttpTransaction((sqlTag) => [
+		const [, rows] = await afendaDatabase.transaction((sqlTag) => [
 			sqlTag`
 					WITH active_comp AS (
 						SELECT id, version
@@ -1140,7 +1138,7 @@ export async function drizzleCorrectEmployeeCompensation(
 	const { endedAudit, successorAudit, supersededAudit } = preparedAudits.data;
 
 	try {
-		const [, rows] = await runNeonHttpTransaction((sqlTag) => [
+		const [, rows] = await afendaDatabase.transaction((sqlTag) => [
 			successorStatus === "active"
 				? sqlTag`
 						WITH superseded AS (

@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
 
-import { prepareTransactionalAuditInsertValues } from "@afenda/audit";
+import { audit as afendaAudit } from "@afenda/audit";
 import {
+	database as afendaDatabase,
 	and,
-	db,
 	eq,
 	hrEmployee,
 	hrPerson,
@@ -12,7 +12,6 @@ import {
 	hrPersonIdentityVersion,
 	hrWorker,
 	hrWorkerClassificationVersion,
-	runNeonHttpTransaction,
 	sql,
 } from "@afenda/db";
 import { errorResult, type Result } from "@afenda/errors";
@@ -511,7 +510,7 @@ async function updatePersonScalarFieldDrizzle(input: {
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const nextVersion = input.expectedVersion + 1;
-		const preparedAudit = prepareTransactionalAuditInsertValues({
+		const preparedAudit = afendaAudit.transaction.prepare({
 			organizationId: input.organizationId,
 			actorUserId: input.actorUserId,
 			correlationId: input.meta.correlationId,
@@ -550,7 +549,7 @@ async function updatePersonScalarFieldDrizzle(input: {
 			actorId: input.actorUserId,
 			correlationId: input.meta.correlationId,
 		});
-		const [rows] = await runNeonHttpTransaction((sqlTx) => [
+		const [rows] = await afendaDatabase.transaction((sqlTx) => [
 			input.field === "preferred_name"
 				? sqlTx`
 						WITH mutated AS (
@@ -656,7 +655,7 @@ async function validateEmployeeLinkForWorkerDrizzle(
 	},
 	findWorkerByEmployeeId: HumanResourcesWorkforceFoundationStore["findWorkerByEmployeeId"],
 ): Promise<Result<void>> {
-	const employeeRows = await db
+	const employeeRows = await afendaDatabase.client
 		.select({ id: hrEmployee.id })
 		.from(hrEmployee)
 		.where(
@@ -756,7 +755,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 	{
 		async getPersonById(input): Promise<Result<Person | null>> {
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.select()
 					.from(hrPerson)
 					.where(
@@ -792,7 +791,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					return errorResult.ok(null);
 				}
 
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.select()
 					.from(hrPersonIdentityVersion)
 					.where(
@@ -846,7 +845,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 
 		async listPersonIdentityVersions(input) {
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.select()
 					.from(hrPersonIdentityVersion)
 					.where(
@@ -876,7 +875,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			input,
 		): Promise<Result<IdempotentPersonRecord | null>> {
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.select()
 					.from(hrPerson)
 					.where(
@@ -916,7 +915,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			const auditId = randomUUID();
 			const eventId = randomUUID();
 			const effectiveFrom = new Date().toISOString().slice(0, 10);
-			const preparedAudit = prepareTransactionalAuditInsertValues({
+			const preparedAudit = afendaAudit.transaction.prepare({
 				organizationId: record.organizationId,
 				actorUserId: record.createdBy,
 				correlationId: meta.correlationId,
@@ -955,7 +954,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			});
 
 			try {
-				const [rows] = await runNeonHttpTransaction((sqlValue5) => [
+				const [rows] = await afendaDatabase.transaction((sqlValue5) => [
 					sqlValue5`
 						WITH mutated AS (
 							INSERT INTO hr_person (
@@ -1104,7 +1103,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				const successorId = randomUUID();
 				const nextVersion = input.expectedVersion + 1;
 				const predecessorEnd = previousIsoDate(input.effectiveOn);
-				const preparedAudit = prepareTransactionalAuditInsertValues({
+				const preparedAudit = afendaAudit.transaction.prepare({
 					organizationId: input.organizationId,
 					actorUserId: input.actorUserId,
 					correlationId: meta.correlationId,
@@ -1143,7 +1142,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					correlationId: meta.correlationId,
 				});
 
-				const [rows] = await runNeonHttpTransaction((sqlValue4) => [
+				const [rows] = await afendaDatabase.transaction((sqlValue4) => [
 					sqlValue4`
 						WITH mutated AS (
 							UPDATE hr_person
@@ -1265,7 +1264,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 
 		async findPersonContactByIdempotencyKey(input) {
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.select()
 					.from(hrPersonContact)
 					.where(
@@ -1303,7 +1302,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			const entityId = randomUUID();
 			const auditId = randomUUID();
 			const eventId = randomUUID();
-			const preparedAudit = prepareTransactionalAuditInsertValues({
+			const preparedAudit = afendaAudit.transaction.prepare({
 				organizationId: record.organizationId,
 				actorUserId: record.createdBy,
 				correlationId: meta.correlationId,
@@ -1346,7 +1345,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				correlationId: meta.correlationId,
 			});
 			try {
-				const [rows] = await runNeonHttpTransaction((sqlTx) => [
+				const [rows] = await afendaDatabase.transaction((sqlTx) => [
 					sqlTx`
 							WITH mutated AS (
 								INSERT INTO hr_person_contact (
@@ -1424,7 +1423,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			const auditId = randomUUID();
 			const eventId = randomUUID();
 			const nextVersion = input.expectedVersion + 1;
-			const preparedAudit = prepareTransactionalAuditInsertValues({
+			const preparedAudit = afendaAudit.transaction.prepare({
 				organizationId: input.organizationId,
 				actorUserId: input.actorUserId,
 				correlationId: meta.correlationId,
@@ -1467,7 +1466,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				correlationId: meta.correlationId,
 			});
 			try {
-				const [rows] = await runNeonHttpTransaction((sqlTx) => [
+				const [rows] = await afendaDatabase.transaction((sqlTx) => [
 					sqlTx`
 							WITH mutated AS (
 								UPDATE hr_person_contact
@@ -1537,7 +1536,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			const auditId = randomUUID();
 			const eventId = randomUUID();
 			const nextVersion = input.expectedVersion + 1;
-			const preparedAudit = prepareTransactionalAuditInsertValues({
+			const preparedAudit = afendaAudit.transaction.prepare({
 				organizationId: input.organizationId,
 				actorUserId: input.actorUserId,
 				correlationId: meta.correlationId,
@@ -1567,7 +1566,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				correlationId: meta.correlationId,
 			});
 			try {
-				const [rows] = await runNeonHttpTransaction((sqlTx) => [
+				const [rows] = await afendaDatabase.transaction((sqlTx) => [
 					sqlTx`
 							WITH mutated AS (
 								UPDATE hr_person_contact
@@ -1642,7 +1641,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						),
 					});
 				}
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.select()
 					.from(hrPersonContact)
 					.where(
@@ -1670,7 +1669,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 
 		async findPersonIdentifierByIdempotencyKey(input) {
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.select()
 					.from(hrPersonIdentifier)
 					.where(
@@ -1708,7 +1707,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			const entityId = randomUUID();
 			const auditId = randomUUID();
 			const eventId = randomUUID();
-			const preparedAudit = prepareTransactionalAuditInsertValues({
+			const preparedAudit = afendaAudit.transaction.prepare({
 				organizationId: record.organizationId,
 				actorUserId: record.createdBy,
 				correlationId: meta.correlationId,
@@ -1752,7 +1751,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				correlationId: meta.correlationId,
 			});
 			try {
-				const [rows] = await runNeonHttpTransaction((sqlTx) => [
+				const [rows] = await afendaDatabase.transaction((sqlTx) => [
 					sqlTx`
 							WITH mutated AS (
 								INSERT INTO hr_person_identifier (
@@ -1832,7 +1831,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			const auditId = randomUUID();
 			const eventId = randomUUID();
 			const nextVersion = input.expectedVersion + 1;
-			const preparedAudit = prepareTransactionalAuditInsertValues({
+			const preparedAudit = afendaAudit.transaction.prepare({
 				organizationId: input.organizationId,
 				actorUserId: input.actorUserId,
 				correlationId: meta.correlationId,
@@ -1873,7 +1872,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				correlationId: meta.correlationId,
 			});
 			try {
-				const [rows] = await runNeonHttpTransaction((sqlTx) => [
+				const [rows] = await afendaDatabase.transaction((sqlTx) => [
 					sqlTx`
 							WITH mutated AS (
 								UPDATE hr_person_identifier
@@ -1948,7 +1947,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						),
 					});
 				}
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.select()
 					.from(hrPersonIdentifier)
 					.where(
@@ -2000,7 +1999,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					existing.add(reason);
 					matches.set(personId, existing);
 				};
-				const legalNameMatches = await db
+				const legalNameMatches = await afendaDatabase.client
 					.select()
 					.from(hrPerson)
 					.where(
@@ -2012,7 +2011,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				for (const row of legalNameMatches) {
 					addMatch(row.id, "legal_name");
 				}
-				const sourceEmails = await db
+				const sourceEmails = await afendaDatabase.client
 					.select()
 					.from(hrPersonContact)
 					.where(
@@ -2024,7 +2023,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						),
 					);
 				await runSequential(sourceEmails, async (email) => {
-					const emailMatches = await db
+					const emailMatches = await afendaDatabase.client
 						.select()
 						.from(hrPersonContact)
 						.where(
@@ -2039,7 +2038,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						addMatch(match.personId, "email");
 					}
 				});
-				const sourceIdentifiers = await db
+				const sourceIdentifiers = await afendaDatabase.client
 					.select()
 					.from(hrPersonIdentifier)
 					.where(
@@ -2051,7 +2050,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						),
 					);
 				await runSequential(sourceIdentifiers, async (identifier) => {
-					const identifierMatches = await db
+					const identifierMatches = await afendaDatabase.client
 						.select()
 						.from(hrPersonIdentifier)
 						.where(
@@ -2113,7 +2112,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 
 		async getWorkerById(input): Promise<Result<Worker | null>> {
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.select()
 					.from(hrWorker)
 					.where(
@@ -2151,7 +2150,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					return errorResult.ok(null);
 				}
 
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.select()
 					.from(hrWorkerClassificationVersion)
 					.where(
@@ -2211,7 +2210,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 
 		async listWorkerClassificationVersions(input) {
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.select()
 					.from(hrWorkerClassificationVersion)
 					.where(
@@ -2242,7 +2241,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 
 		async findWorkerByPersonId(input): Promise<Result<Worker | null>> {
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.select()
 					.from(hrWorker)
 					.where(
@@ -2269,7 +2268,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			input,
 		): Promise<Result<EmployeeWorker | null>> {
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.select()
 					.from(hrWorker)
 					.where(
@@ -2304,7 +2303,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			input,
 		): Promise<Result<IdempotentWorkerRecord | null>> {
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.select()
 					.from(hrWorker)
 					.where(
@@ -2353,7 +2352,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			const classificationVersionId = randomUUID();
 			const auditId = randomUUID();
 			const eventId = randomUUID();
-			const preparedAudit = prepareTransactionalAuditInsertValues({
+			const preparedAudit = afendaAudit.transaction.prepare({
 				organizationId: record.organizationId,
 				actorUserId: record.createdBy,
 				correlationId: meta.correlationId,
@@ -2395,7 +2394,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				record.workerType === "employee" ? record.employeeId : null;
 
 			try {
-				const [rows] = await runNeonHttpTransaction((sqlValue3) => [
+				const [rows] = await afendaDatabase.transaction((sqlValue3) => [
 					sqlValue3`
 						WITH mutated AS (
 							INSERT INTO hr_worker (
@@ -2566,7 +2565,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			const successorId = randomUUID();
 			const nextVersion = input.expectedVersion + 1;
 			const predecessorEnd = previousIsoDate(input.effectiveOn);
-			const preparedAudit = prepareTransactionalAuditInsertValues({
+			const preparedAudit = afendaAudit.transaction.prepare({
 				organizationId: input.organizationId,
 				actorUserId: input.actorUserId,
 				correlationId: meta.correlationId,
@@ -2610,7 +2609,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				correlationId: meta.correlationId,
 			});
 			try {
-				const [rows] = await runNeonHttpTransaction((sqlValue2) => [
+				const [rows] = await afendaDatabase.transaction((sqlValue2) => [
 					sqlValue2`
 						WITH mutated AS (
 							UPDATE hr_worker
@@ -2769,7 +2768,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			const successorId = randomUUID();
 			const nextVersion = input.expectedVersion + 1;
 			const predecessorEnd = previousIsoDate(input.effectiveOn);
-			const preparedAudit = prepareTransactionalAuditInsertValues({
+			const preparedAudit = afendaAudit.transaction.prepare({
 				organizationId: input.organizationId,
 				actorUserId: input.actorUserId,
 				correlationId: meta.correlationId,
@@ -2814,7 +2813,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			});
 
 			try {
-				const [rows] = await runNeonHttpTransaction((sqlValue) => [
+				const [rows] = await afendaDatabase.transaction((sqlValue) => [
 					sqlValue`
 						WITH mutated AS (
 							UPDATE hr_worker

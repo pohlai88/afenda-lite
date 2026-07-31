@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 
 import {
+	database as afendaDatabase,
 	and,
-	db,
 	eq,
 	platformWorkItem,
 	platformWorkItemActivity,
@@ -398,7 +398,7 @@ export function createDrizzlePlatformWorkItemStore(): PlatformWorkItemStore {
 				return validated;
 			}
 			try {
-				const inserted = await db
+				const inserted = await afendaDatabase.client
 					.insert(platformWorkItem)
 					.values({
 						organizationId: input.organizationId,
@@ -427,7 +427,7 @@ export function createDrizzlePlatformWorkItemStore(): PlatformWorkItemStore {
 				const rows =
 					inserted.length > 0
 						? inserted
-						: await db
+						: await afendaDatabase.client
 								.select()
 								.from(platformWorkItem)
 								.where(
@@ -452,7 +452,7 @@ export function createDrizzlePlatformWorkItemStore(): PlatformWorkItemStore {
 						publicMessage: "Platform work-item deduplication key was reused",
 					});
 				}
-				await db
+				await afendaDatabase.client
 					.insert(platformWorkItemActivity)
 					.values({
 						organizationId: input.organizationId,
@@ -481,7 +481,7 @@ export function createDrizzlePlatformWorkItemStore(): PlatformWorkItemStore {
 		},
 		async find(input) {
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.select()
 					.from(platformWorkItem)
 					.where(
@@ -525,7 +525,7 @@ export function createDrizzlePlatformWorkItemStore(): PlatformWorkItemStore {
 			try {
 				const now = new Date();
 				const terminal = !["pending", "in_progress"].includes(input.toStatus);
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.update(platformWorkItem)
 					.set({
 						status: input.toStatus,
@@ -552,7 +552,7 @@ export function createDrizzlePlatformWorkItemStore(): PlatformWorkItemStore {
 				if (!mapped.ok) {
 					return mapped;
 				}
-				await db.insert(platformWorkItemActivity).values({
+				await afendaDatabase.client.insert(platformWorkItemActivity).values({
 					organizationId: input.organizationId,
 					workItemId: input.workItemId,
 					fromStatus: found.data.status,
@@ -573,7 +573,7 @@ export function createDrizzlePlatformWorkItemStore(): PlatformWorkItemStore {
 		},
 		async listActivity(input) {
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.select()
 					.from(platformWorkItemActivity)
 					.where(

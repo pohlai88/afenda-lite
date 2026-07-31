@@ -1,13 +1,12 @@
 import { randomUUID } from "node:crypto";
-import { buildTransactionalAuditInsert } from "@afenda/audit";
+import { audit as afendaAudit } from "@afenda/audit";
 import {
+	database as afendaDatabase,
 	and,
 	asc,
-	db,
 	sql as drizzleSql,
 	eq,
 	type NeonHttpSql,
-	runNeonHttpTransaction,
 	salesOrder,
 	salesOrderHold,
 	salesOrderLine,
@@ -355,7 +354,7 @@ function mutationQueries(
 	entityId: string,
 	version: number,
 ) {
-	const auditInsert = buildTransactionalAuditInsert({
+	const auditInsert = afendaAudit.transaction.buildInsert({
 		sql,
 		input: {
 			organizationId: evidence.organizationId,
@@ -409,7 +408,7 @@ async function atomicInsert(
 	const placeholders = params.map((_, index) => `$${index + 1}`).join(",");
 	const statement = `INSERT INTO ${quoteIdentifier(table)} (${columns.map(quoteIdentifier).join(",")}) VALUES (${placeholders})`;
 	try {
-		await runNeonHttpTransaction((sql) =>
+		await afendaDatabase.transaction((sql) =>
 			mutationQueries(sql, statement, params, evidence, entityId, version),
 		);
 		return errorResult.ok(undefined);
@@ -432,7 +431,7 @@ async function atomicUpdate(
 		.join(",");
 	const statement = `UPDATE ${quoteIdentifier(table)} SET ${assignments}, version=version+1, updated_at=now() WHERE organization_id=$${params.length + 1} AND id=$${params.length + 2}::uuid AND version=$${params.length + 3}`;
 	try {
-		await runNeonHttpTransaction((sql) => [
+		await afendaDatabase.transaction((sql) => [
 			sql.query(
 				`SELECT 1/(SELECT count(*)::int FROM ${quoteIdentifier(table)} WHERE organization_id=$1 AND id=$2::uuid AND version=$3)`,
 				[org, id, expectedVersion],
@@ -514,7 +513,7 @@ export class DrizzleSalesStore implements SalesStore {
 		if (!written.ok) {
 			return written;
 		}
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(salesPriceBookEntry)
 			.where(
@@ -529,7 +528,7 @@ export class DrizzleSalesStore implements SalesStore {
 			: errorResult.fail("INTERNAL_ERROR");
 	}
 	async getPriceBook(input: Parameters<SalesStore["getPriceBook"]>[0]) {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(salesPriceBook)
 			.where(
@@ -548,7 +547,7 @@ export class DrizzleSalesStore implements SalesStore {
 		if (input.cursor) {
 			conditions.push(drizzleSql`${salesPriceBook.id} > ${input.cursor}`);
 		}
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(salesPriceBook)
 			.where(and(...conditions))
@@ -579,7 +578,7 @@ export class DrizzleSalesStore implements SalesStore {
 		return this.getBookRequired(input.organizationId, input.id);
 	}
 	async findPriceEntries(input: Parameters<SalesStore["findPriceEntries"]>[0]) {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select({ book: salesPriceBook, entry: salesPriceBookEntry })
 			.from(salesPriceBookEntry)
 			.innerJoin(
@@ -657,7 +656,7 @@ export class DrizzleSalesStore implements SalesStore {
 	): Promise<Result<SalesQuotationLine>> {
 		const id = salesQuotationLineIdSchema.parse(randomUUID());
 		try {
-			await runNeonHttpTransaction((sql) => [
+			await afendaDatabase.transaction((sql) => [
 				sql.query(
 					"SELECT 1/(SELECT count(*)::int FROM sales_quotation WHERE organization_id=$1 AND id=$2::uuid AND version=$3 AND status='draft')",
 					[input.organizationId, input.quotationId, input.expectedVersion],
@@ -694,7 +693,7 @@ export class DrizzleSalesStore implements SalesStore {
 		} catch (error) {
 			return failFromPersistence(error, "Could not persist quotation line");
 		}
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(salesQuotationLine)
 			.where(
@@ -730,7 +729,7 @@ export class DrizzleSalesStore implements SalesStore {
 		return this.getQuotationRequired(input.organizationId, input.id);
 	}
 	async getQuotation(input: Parameters<SalesStore["getQuotation"]>[0]) {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(salesQuotation)
 			.where(
@@ -745,7 +744,7 @@ export class DrizzleSalesStore implements SalesStore {
 	async listQuotationLines(
 		input: Parameters<SalesStore["listQuotationLines"]>[0],
 	) {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(salesQuotationLine)
 			.where(
@@ -765,7 +764,7 @@ export class DrizzleSalesStore implements SalesStore {
 		if (input.cursor) {
 			conditions.push(drizzleSql`${salesQuotation.id} > ${input.cursor}`);
 		}
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(salesQuotation)
 			.where(and(...conditions))
@@ -825,7 +824,7 @@ export class DrizzleSalesStore implements SalesStore {
 		const id = salesOrderLineIdSchema.parse(randomUUID());
 		const scheduleId = salesOrderScheduleIdSchema.parse(randomUUID());
 		try {
-			await runNeonHttpTransaction((sql) => [
+			await afendaDatabase.transaction((sql) => [
 				sql.query(
 					"SELECT 1/(SELECT count(*)::int FROM sales_order WHERE organization_id=$1 AND id=$2::uuid AND version=$3 AND status='draft')",
 					[input.organizationId, input.orderId, input.expectedVersion],
@@ -879,7 +878,7 @@ export class DrizzleSalesStore implements SalesStore {
 				"Could not add sales-order line atomically",
 			);
 		}
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(salesOrderLine)
 			.where(
@@ -951,7 +950,7 @@ export class DrizzleSalesStore implements SalesStore {
 			return document;
 		}
 		try {
-			await runNeonHttpTransaction((sql) => [
+			await afendaDatabase.transaction((sql) => [
 				sql.query(
 					"SELECT 1/(SELECT count(*)::int FROM sales_order WHERE organization_id=$1 AND id=$2::uuid AND version=$3 AND status IN ('approved','confirmed'))",
 					[input.organizationId, input.id, input.expectedVersion],
@@ -991,7 +990,7 @@ export class DrizzleSalesStore implements SalesStore {
 		return this.getOrderRequired(input.organizationId, input.id);
 	}
 	async getOrder(input: Parameters<SalesStore["getOrder"]>[0]) {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(salesOrder)
 			.where(
@@ -1011,7 +1010,7 @@ export class DrizzleSalesStore implements SalesStore {
 		if (input.cursor) {
 			conditions.push(drizzleSql`${salesOrder.id} > ${input.cursor}`);
 		}
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(salesOrder)
 			.where(and(...conditions))
@@ -1023,7 +1022,7 @@ export class DrizzleSalesStore implements SalesStore {
 		return errorResult.ok(nextCursor ? { items, nextCursor } : { items });
 	}
 	async listOrderLines(input: Parameters<SalesStore["listOrderLines"]>[0]) {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(salesOrderLine)
 			.where(
@@ -1038,7 +1037,7 @@ export class DrizzleSalesStore implements SalesStore {
 	async listOrderSchedules(
 		input: Parameters<SalesStore["listOrderSchedules"]>[0],
 	) {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(salesOrderSchedule)
 			.where(
@@ -1103,7 +1102,7 @@ export class DrizzleSalesStore implements SalesStore {
 		return this.getHold(input.organizationId, input.id);
 	}
 	async listOpenHolds(input: Parameters<SalesStore["listOpenHolds"]>[0]) {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(salesOrderHold)
 			.where(
@@ -1119,7 +1118,7 @@ export class DrizzleSalesStore implements SalesStore {
 		input: Parameters<SalesStore["recordFulfillment"]>[0],
 		evidence: EvidenceSeed,
 	) {
-		const lineRows = await db
+		const lineRows = await afendaDatabase.client
 			.select()
 			.from(salesOrderLine)
 			.where(
@@ -1149,7 +1148,7 @@ export class DrizzleSalesStore implements SalesStore {
 			});
 		}
 		try {
-			await runNeonHttpTransaction((sql) => [
+			await afendaDatabase.transaction((sql) => [
 				sql.query(
 					"SELECT 1/(SELECT count(*)::int FROM sales_order WHERE organization_id=$1 AND id=$2::uuid AND version=$3 AND status IN ('released','partially_fulfilled'))",
 					[input.organizationId, input.orderId, input.expectedVersion],
@@ -1218,7 +1217,7 @@ export class DrizzleSalesStore implements SalesStore {
 	) {
 		const id = returnAuthorizationLineIdSchema.parse(randomUUID());
 		try {
-			await runNeonHttpTransaction((sql) => [
+			await afendaDatabase.transaction((sql) => [
 				sql.query(
 					"SELECT 1/(SELECT count(*)::int FROM sales_return_authorization r JOIN sales_order_line l ON l.organization_id=r.organization_id AND l.order_id=r.order_id WHERE r.organization_id=$1 AND r.id=$2::uuid AND r.version=$3 AND r.status='draft' AND l.id=$4::uuid AND l.fulfilled_quantity >= $5::numeric)",
 					[
@@ -1257,7 +1256,7 @@ export class DrizzleSalesStore implements SalesStore {
 		} catch (error) {
 			return failFromPersistence(error, "Could not persist return line");
 		}
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(salesReturnAuthorizationLine)
 			.where(
@@ -1274,7 +1273,7 @@ export class DrizzleSalesStore implements SalesStore {
 	async getReturnAuthorization(
 		input: Parameters<SalesStore["getReturnAuthorization"]>[0],
 	) {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(salesReturnAuthorization)
 			.where(
@@ -1297,7 +1296,7 @@ export class DrizzleSalesStore implements SalesStore {
 				drizzleSql`${salesReturnAuthorization.id} > ${input.cursor}`,
 			);
 		}
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(salesReturnAuthorization)
 			.where(and(...conditions))
@@ -1311,7 +1310,7 @@ export class DrizzleSalesStore implements SalesStore {
 		});
 	}
 	async listReturnLines(input: Parameters<SalesStore["listReturnLines"]>[0]) {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(salesReturnAuthorizationLine)
 			.where(
@@ -1348,7 +1347,7 @@ export class DrizzleSalesStore implements SalesStore {
 		org: string,
 		id: string,
 	): Promise<Result<PriceBook>> {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(salesPriceBook)
 			.where(
@@ -1384,7 +1383,7 @@ export class DrizzleSalesStore implements SalesStore {
 			: errorResult.fail("INTERNAL_ERROR");
 	}
 	private async getHold(org: string, id: string): Promise<Result<SalesHold>> {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(salesOrderHold)
 			.where(
@@ -1401,7 +1400,7 @@ export class DrizzleSalesStore implements SalesStore {
 		org: string,
 		id: string,
 	): Promise<Result<ReturnAuthorization>> {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(salesReturnAuthorization)
 			.where(

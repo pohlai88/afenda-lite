@@ -1,15 +1,14 @@
 import { randomUUID } from "node:crypto";
 
 import {
+	audit as afendaAudit,
 	type PreparedDerivedEntityAuditInsertValues,
 	type PreparedTransactionalAuditInsertValues,
-	prepareDerivedEntityAuditInsertValues,
-	prepareTransactionalAuditInsertValues,
 } from "@afenda/audit";
 import {
+	database as afendaDatabase,
 	and,
 	asc,
-	db,
 	eq,
 	isNull,
 	mdImportBatch,
@@ -27,9 +26,7 @@ import {
 	refTimeZone,
 	refUom,
 	refUomDimension,
-	runNeonHttpTransaction,
 	sql,
-	tenantEntityPredicate,
 } from "@afenda/db";
 import {
 	errorIngress,
@@ -266,7 +263,7 @@ interface CoreMasterAuditInput {
 function prepareCoreMasterAudit(
 	input: CoreMasterAuditInput & { entityId: string },
 ): Result<PreparedTransactionalAuditInsertValues> {
-	return prepareTransactionalAuditInsertValues({
+	return afendaAudit.transaction.prepare({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: input.correlationId,
@@ -290,7 +287,7 @@ function prepareCoreMasterAudit(
 function prepareDerivedCoreMasterAudit(
 	input: CoreMasterAuditInput,
 ): Result<PreparedDerivedEntityAuditInsertValues> {
-	return prepareDerivedEntityAuditInsertValues({
+	return afendaAudit.transaction.prepareDerived({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: input.correlationId,
@@ -951,7 +948,7 @@ function assertItemGroupParent(
 			return invalidState("Item group parent would create a cycle");
 		}
 		seen.add(cursor);
-		const [row] = await db
+		const [row] = await afendaDatabase.client
 			.select({
 				id: mdItemGroup.id,
 				organizationId: mdItemGroup.organizationId,
@@ -961,7 +958,7 @@ function assertItemGroupParent(
 			})
 			.from(mdItemGroup)
 			.where(
-				tenantEntityPredicate(
+				afendaDatabase.tenancy.entity(
 					{ id: mdItemGroup.id, organizationId: mdItemGroup.organizationId },
 					{ id: cursor, organizationId },
 				),
@@ -1006,11 +1003,11 @@ function assertWarehouseParent(
 			return validationFailed("Warehouse parent would create a cycle");
 		}
 		seen.add(cursor);
-		const [rawRow] = await db
+		const [rawRow] = await afendaDatabase.client
 			.select()
 			.from(mdWarehouse)
 			.where(
-				tenantEntityPredicate(
+				afendaDatabase.tenancy.entity(
 					{ id: mdWarehouse.id, organizationId: mdWarehouse.organizationId },
 					{ id: cursor, organizationId },
 				),
@@ -1103,7 +1100,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 
 	async getRefCountryByCode(code: string): Promise<Result<RefCountry | null>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select()
 				.from(refCountry)
 				.where(eq(refCountry.code, code.trim().toUpperCase()))
@@ -1116,7 +1113,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 
 	async getRefCountryById(id: string): Promise<Result<RefCountry | null>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select()
 				.from(refCountry)
 				.where(eq(refCountry.id, id))
@@ -1131,7 +1128,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		code: string,
 	): Promise<Result<RefCurrency | null>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select()
 				.from(refCurrency)
 				.where(eq(refCurrency.code, code.trim().toUpperCase()))
@@ -1144,7 +1141,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 
 	async getRefCurrencyById(id: string): Promise<Result<RefCurrency | null>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select()
 				.from(refCurrency)
 				.where(eq(refCurrency.id, id))
@@ -1159,7 +1156,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		code: string,
 	): Promise<Result<RefLanguage | null>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select()
 				.from(refLanguage)
 				.where(eq(refLanguage.code, code.trim().toLowerCase()))
@@ -1174,7 +1171,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		ianaName: string,
 	): Promise<Result<RefTimeZone | null>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select()
 				.from(refTimeZone)
 				.where(eq(refTimeZone.ianaName, ianaName.trim()))
@@ -1189,7 +1186,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		code: string,
 	): Promise<Result<RefUomDimension | null>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select()
 				.from(refUomDimension)
 				.where(eq(refUomDimension.code, code.trim().toLowerCase()))
@@ -1202,7 +1199,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 
 	async getRefUomById(id: string): Promise<Result<RefUom | null>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select()
 				.from(refUom)
 				.where(eq(refUom.id, id))
@@ -1215,7 +1212,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 
 	async getRefUomByCode(code: string): Promise<Result<RefUom | null>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select()
 				.from(refUom)
 				.where(eq(refUom.code, code.trim().toUpperCase()))
@@ -1228,7 +1225,10 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 
 	async listRefUoms(): Promise<Result<RefUom[]>> {
 		try {
-			const rows = await db.select().from(refUom).orderBy(asc(refUom.code));
+			const rows = await afendaDatabase.client
+				.select()
+				.from(refUom)
+				.orderBy(asc(refUom.code));
 			return errorResult.ok(rows.map(mapRefUom));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to list ref UoMs");
@@ -1240,7 +1240,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		id: string,
 	): Promise<Result<Party | null>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select()
 				.from(mdParty)
 				.where(
@@ -1258,7 +1258,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		normalizedCode: string,
 	): Promise<Result<Party | null>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select()
 				.from(mdParty)
 				.where(
@@ -1285,7 +1285,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			if (filter.updatedSince !== undefined) {
 				predicates.push(sql`${mdParty.updatedAt} > ${filter.updatedSince}`);
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(mdParty)
 				.where(and(...predicates))
@@ -1318,7 +1318,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			if (filter.updatedSince !== undefined) {
 				predicates.push(sql`${mdParty.updatedAt} > ${filter.updatedSince}`);
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(mdParty)
 				.where(and(...predicates))
@@ -1335,7 +1335,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		filter: PartyTaxRegistrationLookup,
 	): Promise<Result<Party | null>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select({ party: mdParty })
 				.from(mdParty)
 				.innerJoin(
@@ -1386,7 +1386,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			if (filter.updatedSince !== undefined) {
 				predicates.push(sql`${mdParty.updatedAt} > ${filter.updatedSince}`);
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(mdParty)
 				.where(and(...predicates))
@@ -1459,7 +1459,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction((transactionSql) => [
+			const [rows] = await afendaDatabase.transaction((transactionSql) => [
 				transactionSql`
 					WITH mutated AS (
 						INSERT INTO md_party (
@@ -1652,7 +1652,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const eventId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((transactionSql) => [
+			const [rows] = await afendaDatabase.transaction((transactionSql) => [
 				transactionSql`
 					WITH mutated AS (
 						UPDATE md_party
@@ -1819,7 +1819,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			// Serialize party lifecycle with role transitions. The active-role check
 			// runs in the following statement, after this lock has been acquired, so
 			// it cannot observe the pre-commit snapshot of a final-role transition.
-			const [, rows] = await runNeonHttpTransaction((transactionSql) => [
+			const [, rows] = await afendaDatabase.transaction((transactionSql) => [
 				transactionSql`
 					SELECT id
 					FROM md_party
@@ -2202,7 +2202,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const mergeChangeRequestAudit = preparedMergeChangeRequestAudit.data;
 
 		try {
-			const [rows] = await runNeonHttpTransaction((transactionSql) => [
+			const [rows] = await afendaDatabase.transaction((transactionSql) => [
 				transactionSql`
 					WITH claimed AS (
 						UPDATE md_change_request
@@ -2462,7 +2462,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		id: string,
 	): Promise<Result<ItemGroup | null>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select()
 				.from(mdItemGroup)
 				.where(
@@ -2483,7 +2483,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		normalizedCode: string,
 	): Promise<Result<ItemGroup | null>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select()
 				.from(mdItemGroup)
 				.where(
@@ -2511,7 +2511,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			if (filter.updatedSince !== undefined) {
 				predicates.push(sql`${mdItemGroup.updatedAt} > ${filter.updatedSince}`);
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(mdItemGroup)
 				.where(and(...predicates))
@@ -2568,7 +2568,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction((transactionSql) => [
+			const [rows] = await afendaDatabase.transaction((transactionSql) => [
 				transactionSql`
 						WITH eligible_parent AS (
 							SELECT 1
@@ -2702,7 +2702,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction((transactionSql) => [
+			const [rows] = await afendaDatabase.transaction((transactionSql) => [
 				transactionSql`
 						WITH RECURSIVE ancestor AS (
 							SELECT id, parent_id, ARRAY[id] AS path
@@ -2851,7 +2851,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				: existing.activatedBy;
 		const retiredBy = record.toStatus === "retired" ? record.actorUserId : null;
 		try {
-			const [rows] = await runNeonHttpTransaction((transactionSql) => [
+			const [rows] = await afendaDatabase.transaction((transactionSql) => [
 				transactionSql`
 						WITH mutated AS (
 							UPDATE md_item_group
@@ -2961,7 +2961,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		id: string,
 	): Promise<Result<Item | null>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select()
 				.from(mdItem)
 				.where(
@@ -2979,7 +2979,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		normalizedCode: string,
 	): Promise<Result<Item | null>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select()
 				.from(mdItem)
 				.where(
@@ -3008,7 +3008,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			if (filter.itemGroupId !== undefined) {
 				predicates.push(eq(mdItem.itemGroupId, filter.itemGroupId));
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(mdItem)
 				.where(and(...predicates))
@@ -3097,7 +3097,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction((transactionSql) => [
+			const [rows] = await afendaDatabase.transaction((transactionSql) => [
 				transactionSql`
 					WITH eligible_references AS (
 						SELECT 1
@@ -3297,7 +3297,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction((transactionSql) => [
+			const [rows] = await afendaDatabase.transaction((transactionSql) => [
 				transactionSql`
 					WITH mutated AS (
 						UPDATE md_item
@@ -3421,7 +3421,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		id: string,
 	): Promise<Result<Warehouse | null>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select()
 				.from(mdWarehouse)
 				.where(
@@ -3442,7 +3442,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		normalizedCode: string,
 	): Promise<Result<Warehouse | null>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select()
 				.from(mdWarehouse)
 				.where(
@@ -3470,7 +3470,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			if (filter.updatedSince !== undefined) {
 				predicates.push(sql`${mdWarehouse.updatedAt} > ${filter.updatedSince}`);
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(mdWarehouse)
 				.where(and(...predicates))
@@ -3541,7 +3541,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction((transactionSql) => [
+			const [rows] = await afendaDatabase.transaction((transactionSql) => [
 				transactionSql`
 						WITH eligible_parent AS (
 							SELECT 1
@@ -3709,7 +3709,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction((transactionSql) => [
+			const [rows] = await afendaDatabase.transaction((transactionSql) => [
 				transactionSql`
 						WITH mutated AS (
 							UPDATE md_warehouse
@@ -3873,7 +3873,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction((transactionSql) => [
+			const [rows] = await afendaDatabase.transaction((transactionSql) => [
 				transactionSql`
 						WITH RECURSIVE ancestor AS (
 							SELECT id, parent_id, ARRAY[id] AS path
@@ -4024,7 +4024,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				: existing.activatedBy;
 		const retiredBy = record.toStatus === "retired" ? record.actorUserId : null;
 		try {
-			const [rows] = await runNeonHttpTransaction((transactionSql) => [
+			const [rows] = await afendaDatabase.transaction((transactionSql) => [
 				transactionSql`
 						WITH mutated AS (
 							UPDATE md_warehouse
@@ -4129,7 +4129,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		id: string,
 	): Promise<Result<PaymentTerm | null>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select()
 				.from(mdPaymentTerm)
 				.where(
@@ -4150,7 +4150,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		normalizedCode: string,
 	): Promise<Result<PaymentTerm | null>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select()
 				.from(mdPaymentTerm)
 				.where(
@@ -4180,7 +4180,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					sql`${mdPaymentTerm.updatedAt} > ${filter.updatedSince}`,
 				);
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(mdPaymentTerm)
 				.where(and(...predicates))
@@ -4243,7 +4243,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction((transactionSql) => [
+			const [rows] = await afendaDatabase.transaction((transactionSql) => [
 				transactionSql`
 						WITH mutated AS (
 							INSERT INTO md_payment_term (
@@ -4386,7 +4386,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction((transactionSql) => [
+			const [rows] = await afendaDatabase.transaction((transactionSql) => [
 				transactionSql`
 						WITH mutated AS (
 							UPDATE md_payment_term
@@ -4508,7 +4508,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				: existing.activatedBy;
 		const retiredBy = record.toStatus === "retired" ? record.actorUserId : null;
 		try {
-			const [rows] = await runNeonHttpTransaction((transactionSql) => [
+			const [rows] = await afendaDatabase.transaction((transactionSql) => [
 				transactionSql`
 						WITH mutated AS (
 							UPDATE md_payment_term
@@ -4586,7 +4586,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		id: string,
 	): Promise<Result<TaxRegistration | null>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select()
 				.from(mdTaxRegistration)
 				.where(
@@ -4620,7 +4620,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					sql`${mdTaxRegistration.updatedAt} > ${filter.updatedSince}`,
 				);
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(mdTaxRegistration)
 				.where(and(...predicates))
@@ -4652,7 +4652,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		query: TaxRegistrationOverlapQuery,
 	): Promise<Result<TaxRegistration | null>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select()
 				.from(mdTaxRegistration)
 				.where(
@@ -4733,7 +4733,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction((transactionSql) => [
+			const [rows] = await afendaDatabase.transaction((transactionSql) => [
 				transactionSql`
 						WITH mutated AS (
 							INSERT INTO md_tax_registration (
@@ -4894,7 +4894,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction(
+			const [rows] = await afendaDatabase.transaction(
 				(transactionSql) => [
 					transactionSql`
 						WITH mutated AS (
@@ -5093,7 +5093,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			record.toStatus === "blocked" ? record.actorUserId : existing.blockedBy;
 		const retiredBy = record.toStatus === "retired" ? record.actorUserId : null;
 		try {
-			const [rows] = await runNeonHttpTransaction(
+			const [rows] = await afendaDatabase.transaction(
 				(transactionSql) => [
 					transactionSql`
 						WITH mutated AS (
@@ -5220,11 +5220,11 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		expectedVersion: number,
 	): Promise<Result<Party>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select()
 				.from(mdParty)
 				.where(
-					tenantEntityPredicate(
+					afendaDatabase.tenancy.entity(
 						{ id: mdParty.id, organizationId: mdParty.organizationId },
 						{ id, organizationId },
 					),
@@ -5248,11 +5248,11 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		expectedVersion: number,
 	): Promise<Result<ItemGroup>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select()
 				.from(mdItemGroup)
 				.where(
-					tenantEntityPredicate(
+					afendaDatabase.tenancy.entity(
 						{ id: mdItemGroup.id, organizationId: mdItemGroup.organizationId },
 						{ id, organizationId },
 					),
@@ -5279,11 +5279,11 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		expectedVersion: number,
 	): Promise<Result<Item>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select()
 				.from(mdItem)
 				.where(
-					tenantEntityPredicate(
+					afendaDatabase.tenancy.entity(
 						{ id: mdItem.id, organizationId: mdItem.organizationId },
 						{ id, organizationId },
 					),
@@ -5307,11 +5307,11 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		expectedVersion: number,
 	): Promise<Result<Warehouse>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select()
 				.from(mdWarehouse)
 				.where(
-					tenantEntityPredicate(
+					afendaDatabase.tenancy.entity(
 						{ id: mdWarehouse.id, organizationId: mdWarehouse.organizationId },
 						{ id, organizationId },
 					),
@@ -5338,11 +5338,11 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		expectedVersion: number,
 	): Promise<Result<PaymentTerm>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select()
 				.from(mdPaymentTerm)
 				.where(
-					tenantEntityPredicate(
+					afendaDatabase.tenancy.entity(
 						{
 							id: mdPaymentTerm.id,
 							organizationId: mdPaymentTerm.organizationId,
@@ -5372,11 +5372,11 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		expectedVersion: number,
 	): Promise<Result<TaxRegistration>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select()
 				.from(mdTaxRegistration)
 				.where(
-					tenantEntityPredicate(
+					afendaDatabase.tenancy.entity(
 						{
 							id: mdTaxRegistration.id,
 							organizationId: mdTaxRegistration.organizationId,
@@ -5468,7 +5468,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		idempotencyKey: string,
 	): Promise<Result<ImportBatchRecord | null>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select()
 				.from(mdImportBatch)
 				.where(
@@ -5491,7 +5491,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		record: ImportBatchClaimRecord,
 	): Promise<Result<ImportBatchClaimResult>> {
 		try {
-			const transactionResults = await runNeonHttpTransaction(
+			const transactionResults = await afendaDatabase.transaction(
 				(transactionSql) => [
 					transactionSql`
 						INSERT INTO md_import_batch (
@@ -5553,7 +5553,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		record: ImportBatchLeaseRequest,
 	): Promise<Result<ImportBatchLeaseResult>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.update(mdImportBatch)
 				.set({
 					status: "applying",
@@ -5605,7 +5605,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		batchId: string,
 	): Promise<Result<ImportBatchRowRecord[]>> {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(mdImportBatchRow)
 				.where(
@@ -5625,7 +5625,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		record: ImportBatchCompletionRecord,
 	): Promise<Result<ImportBatchRecord>> {
 		try {
-			const transactionResults = await runNeonHttpTransaction(
+			const transactionResults = await afendaDatabase.transaction(
 				(transactionSql) => [
 					...record.rows.map(
 						(row) => transactionSql`
@@ -5698,11 +5698,11 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		batchId: string,
 	): Promise<Result<ImportBatchRecord | null>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select()
 				.from(mdImportBatch)
 				.where(
-					tenantEntityPredicate(
+					afendaDatabase.tenancy.entity(
 						{
 							id: mdImportBatch.id,
 							organizationId: mdImportBatch.organizationId,

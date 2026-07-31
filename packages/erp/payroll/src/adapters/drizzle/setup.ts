@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import {
+	database as afendaDatabase,
 	and,
-	db,
 	eq,
 	payrollCalendar,
 	payrollDeductionRule,
@@ -401,7 +401,7 @@ const drizzleSetupCore = {
 		idempotencyKey: string;
 	}): Promise<Result<IdempotentPayrollCalendarRecord | null>> {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(payrollCalendar)
 				.where(
@@ -459,7 +459,7 @@ const drizzleSetupCore = {
 		}
 
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.insert(payrollCalendar)
 				.values({
 					id: calendarId.data,
@@ -531,7 +531,7 @@ const drizzleSetupCore = {
 		calendarId: PayrollCalendarId;
 	}): Promise<Result<PayrollCalendar | null>> {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(payrollCalendar)
 				.where(
@@ -575,7 +575,7 @@ const drizzleSetupCore = {
 		}
 
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.update(payrollCalendar)
 				.set({
 					name: input.name ?? current.data.name,
@@ -631,7 +631,7 @@ const drizzleSetupCore = {
 		return resolveIdempotentCreate(
 			async () => {
 				try {
-					const rows = await db
+					const rows = await afendaDatabase.client
 						.select()
 						.from(payrollPayGroup)
 						.where(
@@ -681,7 +681,7 @@ const drizzleSetupCore = {
 				}
 
 				try {
-					const rows = await db
+					const rows = await afendaDatabase.client
 						.insert(payrollPayGroup)
 						.values({
 							id: payGroupId.data,
@@ -726,7 +726,7 @@ const drizzleSetupCore = {
 					return errorResult.ok(row);
 				} catch (error) {
 					if (isCreateIdempotencyUniqueViolation(error)) {
-						const rows = await db
+						const rows = await afendaDatabase.client
 							.select()
 							.from(payrollPayGroup)
 							.where(
@@ -763,7 +763,7 @@ const drizzleSetupCore = {
 		payGroupId: PayrollPayGroupId;
 	}): Promise<Result<PayrollPayGroup | null>> {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(payrollPayGroup)
 				.where(
@@ -788,7 +788,7 @@ const drizzleSetupCore = {
 		status?: "active" | "archived" | undefined;
 	}): Promise<Result<PayrollPayGroup[]>> {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(payrollPayGroup)
 				.where(
@@ -820,7 +820,7 @@ const drizzleSetupCore = {
 		return resolveIdempotentCreate(
 			async () => {
 				try {
-					const rows = await db
+					const rows = await afendaDatabase.client
 						.select()
 						.from(payrollPeriod)
 						.where(
@@ -870,7 +870,7 @@ const drizzleSetupCore = {
 				}
 
 				try {
-					const rows = await db
+					const rows = await afendaDatabase.client
 						.insert(payrollPeriod)
 						.values({
 							id: periodId.data,
@@ -915,7 +915,7 @@ const drizzleSetupCore = {
 					return errorResult.ok(row);
 				} catch (error) {
 					if (isCreateIdempotencyUniqueViolation(error)) {
-						const rows = await db
+						const rows = await afendaDatabase.client
 							.select()
 							.from(payrollPeriod)
 							.where(
@@ -949,7 +949,7 @@ const drizzleSetupCore = {
 		periodId: PayrollPeriodId;
 	}): Promise<Result<PayrollPeriod | null>> {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(payrollPeriod)
 				.where(
@@ -975,7 +975,7 @@ const drizzleSetupCore = {
 		status?: "open" | "closed" | undefined;
 	}): Promise<Result<PayrollPeriod[]>> {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(payrollPeriod)
 				.where(
@@ -1014,7 +1014,7 @@ const drizzleSetupCore = {
 		return resolveIdempotentCreate(
 			async () => {
 				try {
-					const rows = await db
+					const rows = await afendaDatabase.client
 						.select()
 						.from(payrollEarningRule)
 						.where(
@@ -1062,7 +1062,7 @@ const drizzleSetupCore = {
 				}
 
 				try {
-					const activeRows = await db
+					const activeRows = await afendaDatabase.client
 						.select()
 						.from(payrollEarningRule)
 						.where(
@@ -1085,7 +1085,7 @@ const drizzleSetupCore = {
 						return ruleId;
 					}
 
-					const rows = await db
+					const rows = await afendaDatabase.client
 						.insert(payrollEarningRule)
 						.values({
 							id: ruleId.data,
@@ -1136,7 +1136,7 @@ const drizzleSetupCore = {
 					return errorResult.ok(row);
 				} catch (error) {
 					if (isCreateIdempotencyUniqueViolation(error)) {
-						const rows = await db
+						const rows = await afendaDatabase.client
 							.select()
 							.from(payrollEarningRule)
 							.where(
@@ -1175,7 +1175,7 @@ const drizzleSetupCore = {
 		return resolveIdempotentCreate(
 			async () => {
 				try {
-					const rows = await db
+					const rows = await afendaDatabase.client
 						.select()
 						.from(payrollDeductionRule)
 						.where(
@@ -1223,7 +1223,7 @@ const drizzleSetupCore = {
 				}
 
 				try {
-					const activeRows = await db
+					const activeRows = await afendaDatabase.client
 						.select()
 						.from(payrollDeductionRule)
 						.where(
@@ -1246,7 +1246,7 @@ const drizzleSetupCore = {
 						return ruleId;
 					}
 
-					const rows = await db
+					const rows = await afendaDatabase.client
 						.insert(payrollDeductionRule)
 						.values({
 							id: ruleId.data,
@@ -1298,7 +1298,7 @@ const drizzleSetupCore = {
 					return errorResult.ok(row);
 				} catch (error) {
 					if (isCreateIdempotencyUniqueViolation(error)) {
-						const rows = await db
+						const rows = await afendaDatabase.client
 							.select()
 							.from(payrollDeductionRule)
 							.where(
@@ -1340,7 +1340,7 @@ const drizzleSetupCore = {
 		return resolveIdempotentCreate(
 			async () => {
 				try {
-					const rows = await db
+					const rows = await afendaDatabase.client
 						.select()
 						.from(payrollStatutoryRule)
 						.where(
@@ -1388,7 +1388,7 @@ const drizzleSetupCore = {
 				}
 
 				try {
-					const activeRows = await db
+					const activeRows = await afendaDatabase.client
 						.select()
 						.from(payrollStatutoryRule)
 						.where(
@@ -1411,7 +1411,7 @@ const drizzleSetupCore = {
 						return ruleId;
 					}
 
-					const rows = await db
+					const rows = await afendaDatabase.client
 						.insert(payrollStatutoryRule)
 						.values({
 							id: ruleId.data,
@@ -1460,7 +1460,7 @@ const drizzleSetupCore = {
 					return errorResult.ok(row);
 				} catch (error) {
 					if (isCreateIdempotencyUniqueViolation(error)) {
-						const rows = await db
+						const rows = await afendaDatabase.client
 							.select()
 							.from(payrollStatutoryRule)
 							.where(
@@ -1502,7 +1502,7 @@ const drizzleSetupCore = {
 		effectiveDate: string;
 	}): Promise<Result<PayrollEarningRule | null>> {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(payrollEarningRule)
 				.where(
@@ -1533,7 +1533,7 @@ const drizzleSetupCore = {
 		effectiveDate: string;
 	}): Promise<Result<PayrollDeductionRule | null>> {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(payrollDeductionRule)
 				.where(
@@ -1564,7 +1564,7 @@ const drizzleSetupCore = {
 		effectiveDate: string;
 	}): Promise<Result<PayrollStatutoryRule | null>> {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(payrollStatutoryRule)
 				.where(
@@ -1594,7 +1594,7 @@ const drizzleSetupCore = {
 		effectiveDate: string;
 	}): Promise<Result<PayrollEarningRule[]>> {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(payrollEarningRule)
 				.where(
@@ -1628,7 +1628,7 @@ const drizzleSetupCore = {
 		effectiveDate: string;
 	}): Promise<Result<PayrollDeductionRule[]>> {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(payrollDeductionRule)
 				.where(
@@ -1662,7 +1662,7 @@ const drizzleSetupCore = {
 		effectiveDate: string;
 	}): Promise<Result<PayrollStatutoryRule[]>> {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(payrollStatutoryRule)
 				.where(

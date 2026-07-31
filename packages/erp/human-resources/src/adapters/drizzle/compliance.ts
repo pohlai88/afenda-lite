@@ -1,12 +1,12 @@
 import { randomUUID } from "node:crypto";
 
 import {
+	audit as afendaAudit,
 	type PreparedTransactionalAuditInsertValues,
-	prepareTransactionalAuditInsertValues,
 } from "@afenda/audit";
 import {
+	database as afendaDatabase,
 	and,
-	db,
 	desc,
 	eq,
 	gte,
@@ -17,7 +17,6 @@ import {
 	hrWorkEligibility,
 	lte,
 	ne,
-	runNeonHttpTransaction,
 } from "@afenda/db";
 import { errorResult, type Result } from "@afenda/errors";
 import {
@@ -118,7 +117,7 @@ interface ComplianceAuditInput {
 function prepareComplianceAudit(
 	input: ComplianceAuditInput,
 ): Result<PreparedTransactionalAuditInsertValues> {
-	return prepareTransactionalAuditInsertValues({
+	return afendaAudit.transaction.prepare({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: input.correlationId,
@@ -568,7 +567,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 	ThisType<ComplianceHost & DrizzleComplianceMethods> = {
 	async getDocumentRequirementById(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrDocumentRequirement)
 				.where(
@@ -593,7 +592,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 
 	async findDocumentRequirementByCode(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrDocumentRequirement)
 				.where(
@@ -656,7 +655,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		const applicabilityJson = JSON.stringify(record.applicability);
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							INSERT INTO hr_document_requirement (
@@ -762,7 +761,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 				: JSON.stringify(input.applicability);
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_document_requirement
@@ -859,7 +858,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_document_requirement
@@ -952,7 +951,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_document_requirement
@@ -1002,7 +1001,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 
 	async listPublishedDocumentRequirements(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrDocumentRequirement)
 				.where(
@@ -1039,7 +1038,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 
 	async getEmployeeDocumentById(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrEmployeeDocument)
 				.where(
@@ -1061,7 +1060,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 
 	async findEmployeeDocumentByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrEmployeeDocument)
 				.where(
@@ -1209,7 +1208,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH employee AS (
 							SELECT id FROM hr_employee
@@ -1402,7 +1401,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_employee_document
@@ -1518,7 +1517,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_employee_document
@@ -1636,7 +1635,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_employee_document
@@ -1742,7 +1741,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_employee_document
@@ -1843,7 +1842,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_employee_document
@@ -1919,7 +1918,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 					eq(hrEmployeeDocument.verificationStatus, input.verificationStatus),
 				);
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrEmployeeDocument)
 				.where(and(...conditions));
@@ -1947,7 +1946,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 
 	async listMissingRequiredDocuments(input) {
 		try {
-			const published = await db
+			const published = await afendaDatabase.client
 				.select()
 				.from(hrDocumentRequirement)
 				.where(
@@ -1956,7 +1955,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 						eq(hrDocumentRequirement.status, "published"),
 					),
 				);
-			const employeeRows = await db
+			const employeeRows = await afendaDatabase.client
 				.select({ id: hrEmployee.id })
 				.from(hrEmployee)
 				.where(eq(hrEmployee.organizationId, input.organizationId));
@@ -1966,7 +1965,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 					(employeeId) =>
 						input.employeeId === undefined || employeeId === input.employeeId,
 				);
-			const verifiedDocs = await db
+			const verifiedDocs = await afendaDatabase.client
 				.select({
 					employeeId: hrEmployeeDocument.employeeId,
 					requirementId: hrEmployeeDocument.requirementId,
@@ -2034,7 +2033,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			if (input.employeeId !== undefined) {
 				conditions.push(eq(hrEmployeeDocument.employeeId, input.employeeId));
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrEmployeeDocument)
 				.where(and(...conditions));
@@ -2069,7 +2068,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 
 	async getWorkEligibilityById(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrWorkEligibility)
 				.where(
@@ -2091,7 +2090,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 
 	async getActiveWorkEligibilityForEmployee(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrWorkEligibility)
 				.where(
@@ -2118,7 +2117,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 
 	async findWorkEligibilityByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrWorkEligibility)
 				.where(
@@ -2223,7 +2222,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH employee AS (
 							SELECT id FROM hr_employee
@@ -2345,7 +2344,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_work_eligibility
@@ -2458,7 +2457,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_work_eligibility
@@ -2586,7 +2585,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_work_eligibility
@@ -2699,7 +2698,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_work_eligibility
@@ -2759,7 +2758,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 
 	async listEmployeesWithWorkEligibilityRisk(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrWorkEligibility)
 				.where(eq(hrWorkEligibility.organizationId, input.organizationId));
@@ -2818,7 +2817,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 
 	async getPolicyAcknowledgementById(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrPolicyAcknowledgement)
 				.where(
@@ -2843,7 +2842,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 
 	async findPolicyAcknowledgementByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrPolicyAcknowledgement)
 				.where(
@@ -2914,7 +2913,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			);
 		}
 
-		const outstanding = await db
+		const outstanding = await afendaDatabase.client
 			.select({ id: hrPolicyAcknowledgement.id })
 			.from(hrPolicyAcknowledgement)
 			.where(
@@ -2966,7 +2965,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH employee AS (
 							SELECT id FROM hr_employee
@@ -3106,7 +3105,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_policy_acknowledgement
@@ -3211,7 +3210,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_policy_acknowledgement
@@ -3322,7 +3321,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		const supersededAuditId = randomUUID();
 		const replacementAuditId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH existing AS (
 							SELECT *
@@ -3426,7 +3425,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 					eq(hrPolicyAcknowledgement.policyVersion, input.policyVersion),
 				);
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrPolicyAcknowledgement)
 				.where(and(...conditions))
@@ -3456,7 +3455,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 					eq(hrPolicyAcknowledgement.employeeId, input.employeeId),
 				);
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrPolicyAcknowledgement)
 				.where(and(...conditions));
@@ -3501,7 +3500,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 					eq(hrPolicyAcknowledgement.employeeId, input.employeeId),
 				);
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrPolicyAcknowledgement)
 				.where(and(...conditions));

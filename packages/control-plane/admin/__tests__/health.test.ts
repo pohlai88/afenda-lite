@@ -8,8 +8,10 @@ const fetchMock = vi.fn();
 vi.stubGlobal("fetch", fetchMock);
 
 vi.mock("@afenda/db", () => ({
-	db: {
-		execute: (...args: unknown[]) => dbExecute(...args),
+	database: {
+		client: {
+			execute: (...args: unknown[]) => dbExecute(...args),
+		},
 	},
 	sql: (strings: TemplateStringsArray) => strings.join(""),
 }));

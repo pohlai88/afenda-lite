@@ -1,6 +1,6 @@
 import {
+	database as afendaDatabase,
 	and,
-	db,
 	eq,
 	payrollResultLine,
 	payrollRun,
@@ -135,7 +135,7 @@ async function assertRunAllowsOutputMutation(input: {
 	runId: PayrollRunId;
 }): Promise<Result<{ status: string }>> {
 	try {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select({ status: payrollRun.status })
 			.from(payrollRun)
 			.where(
@@ -169,7 +169,7 @@ export const drizzleOutputsMethods: PayrollOutputsStore = {
 		}
 
 		try {
-			await db
+			await afendaDatabase.client
 				.delete(payrollResultLine)
 				.where(
 					and(
@@ -177,7 +177,7 @@ export const drizzleOutputsMethods: PayrollOutputsStore = {
 						eq(payrollResultLine.runId, input.runId),
 					),
 				);
-			await db
+			await afendaDatabase.client
 				.delete(payrollRunEmployee)
 				.where(
 					and(
@@ -231,7 +231,7 @@ export const drizzleOutputsMethods: PayrollOutputsStore = {
 
 		try {
 			if (input.runEmployees.length > 0) {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.insert(payrollRunEmployee)
 					.values(
 						input.runEmployees.map((employee) => ({
@@ -263,7 +263,7 @@ export const drizzleOutputsMethods: PayrollOutputsStore = {
 			}
 
 			if (input.resultLines.length > 0) {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.insert(payrollResultLine)
 					.values(
 						input.resultLines.map((line) => ({
@@ -318,7 +318,7 @@ export const drizzleOutputsMethods: PayrollOutputsStore = {
 
 	async listRunEmployeesForRun(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(payrollRunEmployee)
 				.where(
@@ -346,7 +346,7 @@ export const drizzleOutputsMethods: PayrollOutputsStore = {
 
 	async listResultLinesForRun(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(payrollResultLine)
 				.where(

@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 import {
-	db,
+	database as afendaDatabase,
 	payrollException,
 	payrollPayGroup,
 	payrollPeriod,
@@ -239,7 +239,7 @@ describe.skipIf(!payrollFoundationReady)(
 
 		it("rejects invalid run status via payroll_run_status_check", async () => {
 			await expect(
-				db.insert(payrollRun).values({
+				afendaDatabase.client.insert(payrollRun).values({
 					id: crypto.randomUUID(),
 					organizationId,
 					payGroupId: seed.payGroupId,
@@ -263,7 +263,7 @@ describe.skipIf(!payrollFoundationReady)(
 
 		it("rejects inverted period ranges via payroll_period_range_check", async () => {
 			await expect(
-				db.insert(payrollPeriod).values({
+				afendaDatabase.client.insert(payrollPeriod).values({
 					id: crypto.randomUUID(),
 					organizationId,
 					payGroupId: seed.payGroupId,
@@ -284,7 +284,7 @@ describe.skipIf(!payrollFoundationReady)(
 
 		it("rejects invalid exception severity via payroll_exception_severity_check", async () => {
 			await expect(
-				db.insert(payrollException).values({
+				afendaDatabase.client.insert(payrollException).values({
 					id: crypto.randomUUID(),
 					organizationId,
 					runId: seed.runId,
@@ -301,7 +301,7 @@ describe.skipIf(!payrollFoundationReady)(
 
 		it("rejects duplicate run identity via payroll_run_org_identity_uidx", async () => {
 			await expect(
-				db.insert(payrollRun).values({
+				afendaDatabase.client.insert(payrollRun).values({
 					id: crypto.randomUUID(),
 					organizationId,
 					payGroupId: seed.payGroupId,
@@ -325,7 +325,7 @@ describe.skipIf(!payrollFoundationReady)(
 
 		it("rejects duplicate pay group code via payroll_pay_group_org_code_uidx", async () => {
 			await expect(
-				db.insert(payrollPayGroup).values({
+				afendaDatabase.client.insert(payrollPayGroup).values({
 					id: crypto.randomUUID(),
 					organizationId,
 					calendarId: seed.calendarId,
@@ -346,7 +346,7 @@ describe.skipIf(!payrollFoundationReady)(
 
 		it("rejects missing run FK via payroll_exception_org_run_fk", async () => {
 			await expect(
-				db.insert(payrollException).values({
+				afendaDatabase.client.insert(payrollException).values({
 					id: crypto.randomUUID(),
 					organizationId,
 					runId: crypto.randomUUID(),
@@ -363,7 +363,7 @@ describe.skipIf(!payrollFoundationReady)(
 
 		it("rejects missing calendar FK via payroll_pay_group_org_calendar_fk", async () => {
 			await expect(
-				db.insert(payrollPayGroup).values({
+				afendaDatabase.client.insert(payrollPayGroup).values({
 					id: crypto.randomUUID(),
 					organizationId,
 					calendarId: crypto.randomUUID(),

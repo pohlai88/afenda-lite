@@ -6,7 +6,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import { parse as parseYaml } from "yaml";
 
-/** @typedef {import("../../packages/data-plane/db/src/module-manifest-contract.ts").AfendaModuleManifest} AfendaModuleManifest */
+/** @typedef {import("@afenda/db/module-manifest").AfendaModuleManifest} AfendaModuleManifest */
 
 const DEEP_AFENDA_SRC_IMPORT_PATTERN = /from\s+["']@afenda\/[^"']+\/src\//;
 const BARE_METRICS_IMPORT_PATTERN = /from\s+["']@afenda\/metrics["']/;

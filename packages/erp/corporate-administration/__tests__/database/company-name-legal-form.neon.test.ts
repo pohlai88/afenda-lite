@@ -9,9 +9,9 @@ import {
 	setCompanyLegalForm,
 } from "@afenda/corporate-administration";
 import {
+	database as afendaDatabase,
 	caCompanyLegalFormHistory,
 	caCompanyName,
-	db,
 	eq,
 	sql,
 } from "@afenda/db";
@@ -48,7 +48,7 @@ function createHistoryDependencies() {
 }
 
 async function countNames(organizationId: string): Promise<number> {
-	const rows = await db
+	const rows = await afendaDatabase.client
 		.select({ value: sql<number>`count(*)::int` })
 		.from(caCompanyName)
 		.where(eq(caCompanyName.organizationId, organizationId));
@@ -56,7 +56,7 @@ async function countNames(organizationId: string): Promise<number> {
 }
 
 async function countLegalForms(organizationId: string): Promise<number> {
-	const rows = await db
+	const rows = await afendaDatabase.client
 		.select({ value: sql<number>`count(*)::int` })
 		.from(caCompanyLegalFormHistory)
 		.where(eq(caCompanyLegalFormHistory.organizationId, organizationId));

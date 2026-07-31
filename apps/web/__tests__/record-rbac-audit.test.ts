@@ -12,7 +12,7 @@ import {
 	MEMBER_INVITE_AUDIT_ACTION,
 	recordRbacAudit,
 } from "@afenda/admin/audit";
-import { platformRbacAudit, withOrg } from "@afenda/db";
+import { database as afendaDatabase, platformRbacAudit } from "@afenda/db";
 import { afterAll, describe, expect, it } from "vitest";
 import { hasDatabase } from "./helpers/identity-database";
 
@@ -79,10 +79,16 @@ describe.skipIf(!hasDatabase)("recordRbacAudit tenancy write (I2.3)", () => {
 		expect(row.action).toBe(MEMBER_INVITE_AUDIT_ACTION);
 		expect(row.actorUserId).toBe(actorUserId);
 
-		const forOrgA = await withOrg(platformRbacAudit, orgA);
+		const forOrgA = await afendaDatabase.tenancy.readAll(
+			platformRbacAudit,
+			orgA,
+		);
 		expect(forOrgA.some((item) => item.id === row.id)).toBe(true);
 
-		const forOrgB = await withOrg(platformRbacAudit, orgB);
+		const forOrgB = await afendaDatabase.tenancy.readAll(
+			platformRbacAudit,
+			orgB,
+		);
 		expect(forOrgB.some((item) => item.id === row.id)).toBe(false);
 
 		const wrongOrgDelete = await deleteRbacAuditRow({
@@ -94,7 +100,10 @@ describe.skipIf(!hasDatabase)("recordRbacAudit tenancy write (I2.3)", () => {
 			expect(wrongOrgDelete.data).toBeNull();
 		}
 
-		const forOrgAAfterDeniedDelete = await withOrg(platformRbacAudit, orgA);
+		const forOrgAAfterDeniedDelete = await afendaDatabase.tenancy.readAll(
+			platformRbacAudit,
+			orgA,
+		);
 		expect(forOrgAAfterDeniedDelete.some((item) => item.id === row.id)).toBe(
 			true,
 		);

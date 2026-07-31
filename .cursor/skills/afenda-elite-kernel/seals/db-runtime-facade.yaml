@@ -1,0 +1,94 @@
+kernel_seal:
+  version: 1
+  target: packages/data-plane/db
+  capability: canonical database runtime facade and repository cutover
+  owner: "@afenda/db"
+  compatibility: breaking
+  content_digest: 13d30a66f404fe7312f3c6b2eef6c16b3a23b9bb70b82c79e55736c0d4dc3eac
+  authority:
+    - AGENTS.md
+    - packages/data-plane/db/CONTRACT.md
+    - packages/data-plane/db/README.md
+    - .cursor/skills/afenda-elite-kernel/references/db-kernel.md
+    - docs-V2/monorepo/README.md
+    - docs-V2/modules/SCHEMA-OWNERSHIP-MANIFEST.yaml
+  scope:
+    includes:
+      - frozen database runtime facade
+      - tenant predicate and hard-tenant-root capabilities
+      - Neon HTTP transaction capability
+      - permission catalog projection and reconciliation capability
+      - final repository consumer cutover and recurrence enforcement
+    excludes:
+      - schema or SQL migration changes
+      - production data mutation
+      - business write-ownership changes
+  public_contract:
+    exports:
+      - database
+      - PlatformPermissionCode
+      - Drizzle operators and schema tables
+      - Neon HTTP transaction types
+      - "@afenda/db/module-manifest"
+    consumers:
+      - apps/web
+      - packages/control-plane/admin
+      - packages/data-plane/{audit,events,notifications,search}
+      - packages/erp/*
+      - repository testing and governance scripts
+  gates:
+    - name: target lint
+      command: pnpm --filter @afenda/db lint
+      outcome: PASS
+      evidence: Biome checked 114 files with no fixes required.
+    - name: target typecheck
+      command: pnpm --filter @afenda/db typecheck
+      outcome: PASS
+      evidence: TypeScript completed without diagnostics.
+    - name: target tests
+      command: pnpm --filter @afenda/db test
+      outcome: PASS
+      evidence: 58 files and 261 tests passed.
+    - name: runtime facade boundary
+      command: pnpm check:db-boundary && pnpm test:db-boundary
+      outcome: PASS
+      evidence: Live scan passed; three rejection/acceptance fixtures passed.
+    - name: tenancy SQL safety
+      command: pnpm check:tenant-sql-safety && pnpm test:tenant-sql-safety
+      outcome: PASS
+      evidence: 1981 files scanned; eight policy fixtures passed.
+    - name: root compiler surface
+      command: pnpm typecheck:root
+      outcome: PASS
+      evidence: Root TypeScript completed without diagnostics.
+    - name: affected consumer graph
+      command: 'pnpm exec turbo run typecheck --filter="...@afenda/db" --concurrency=4'
+      outcome: PASS
+      evidence: 37 tasks across 39 scoped packages succeeded.
+    - name: module schema ownership governance
+      command: pnpm validate:modules
+      outcome: N/A
+      evidence: Runtime-facade cutover changed no schema, migration, module manifest, or ownership manifest; the observed 11 HR bulk/user-employee register findings pre-exist outside this digest scope.
+    - name: documentation
+      command: N/A
+      outcome: PASS
+      evidence: README, package CONTRACT, kernel target reference, router, and catalog describe the permanent facade and deleted surfaces.
+    - name: cutover deletion
+      command: pnpm check:db-boundary
+      outcome: PASS
+      evidence: Deleted runtime imports and unpublished DB subpaths are absent from living consumers and rejected by CI.
+    - name: final snapshot
+      command: node .cursor/skills/afenda-elite-kernel/scripts/inspect-target.mjs packages/data-plane/db
+      outcome: PASS
+      evidence: Digest and seven target changes match this seal record.
+  working_tree:
+    state: dirty
+    target_changes:
+      - packages/data-plane/db/README.md
+      - packages/data-plane/db/CONTRACT.md
+      - packages/data-plane/db/scripts/ensure-platform-permission-catalog-run.ts
+      - packages/data-plane/db/scripts/ensure-platform-permission-catalog.mjs
+      - packages/data-plane/db/src/index.ts
+      - packages/data-plane/db/src/capabilities/database.ts
+      - packages/data-plane/db/__tests__/database-capability.test.ts
+  sealed_at: 2026-07-31T15:07:08Z

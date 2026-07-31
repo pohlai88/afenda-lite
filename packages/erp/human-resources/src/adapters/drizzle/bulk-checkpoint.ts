@@ -1,14 +1,13 @@
 import {
+	database as afendaDatabase,
 	and,
 	asc,
-	db,
 	desc,
 	eq,
 	hrBulkImportAudit,
 	hrBulkImportCheckpoint,
 	hrBulkImportErrorArtifact,
 	type NeonHttpSql,
-	runNeonHttpTransaction,
 } from "@afenda/db";
 import { errorResult, type Result } from "@afenda/errors";
 import { z } from "zod";
@@ -95,7 +94,7 @@ async function loadAuditTrail(input: {
 	checkpointId: string;
 }): Promise<Result<BulkAuditEvent[]>> {
 	try {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select({
 				sequence: hrBulkImportAudit.sequence,
 				event: hrBulkImportAudit.event,
@@ -141,7 +140,7 @@ async function findRow(input: {
 	organizationId: string;
 	idempotencyKey: string;
 }): Promise<CheckpointRow | undefined> {
-	const rows = await db
+	const rows = await afendaDatabase.client
 		.select()
 		.from(hrBulkImportCheckpoint)
 		.where(
@@ -244,7 +243,7 @@ export function createDrizzleBulkCheckpointPort<
 							)
 							SELECT id FROM saved
 						`;
-				const [saved] = await runNeonHttpTransaction((sqlTag) => [
+				const [saved] = await afendaDatabase.transaction((sqlTag) => [
 					statement(sqlTag),
 				]);
 				if (!saved[0]) {
@@ -283,7 +282,7 @@ export function createDrizzleBulkCheckpointPort<
 				if (!checkpoint) {
 					return errorResult.ok(null);
 				}
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.select()
 					.from(hrBulkImportErrorArtifact)
 					.where(

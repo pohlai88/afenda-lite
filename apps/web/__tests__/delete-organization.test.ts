@@ -185,7 +185,7 @@ describe("deleteOrganizationAction", () => {
 		expect(action).not.toContain("recordRbacAudit");
 		expect(action).not.toContain('from "@afenda/audit"');
 		expect(domain).toContain('from "@afenda/audit"');
-		expect(domain).toContain("createAuditRecorder");
+		expect(domain).toContain("afendaAudit.recorder");
 		expect(domain).not.toContain("recordRbacAudit");
 	});
 });

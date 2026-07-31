@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { createDrizzleAuditStore } from "@afenda/audit";
+import { audit as afendaAudit } from "@afenda/audit";
 import {
 	type AddressReferencePort,
 	type ApprovalDecisionPort,
@@ -34,16 +34,15 @@ import {
 	createDrizzleCorporateAdministrationLegalCompanyStore,
 } from "@afenda/corporate-administration/adapters/drizzle";
 import {
+	database as afendaDatabase,
 	and,
 	asc,
-	db,
 	eq,
 	mdParty,
 	mdPartyAddress,
 	refCountry,
 	refCurrency,
 	refLanguage,
-	runNeonHttpTransaction,
 } from "@afenda/db";
 import { errorResult } from "@afenda/errors";
 import {
@@ -82,7 +81,7 @@ const activeDraftJurisdictionRules: CompanyJurisdictionRulePort = {
 
 const partyReferences: CompanyPartyReferencePort = {
 	async getOrganizationParty(input) {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select({
 				partyId: mdParty.id,
 				partyKind: mdParty.partyKind,
@@ -110,7 +109,7 @@ const partyReferences: CompanyPartyReferencePort = {
 
 const referenceData: CompanyReferenceDataPort = {
 	validateLanguage: async (input) => {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select({
 				code: refLanguage.code,
 				active: refLanguage.active,
@@ -124,7 +123,7 @@ const referenceData: CompanyReferenceDataPort = {
 		);
 	},
 	resolveLanguage: async (input) => {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select({
 				code: refLanguage.code,
 				active: refLanguage.active,
@@ -157,7 +156,7 @@ const referenceData: CompanyReferenceDataPort = {
 			},
 		]),
 	resolveCountry: async (input) => {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select({
 				code: refCountry.code,
 				active: refCountry.active,
@@ -169,7 +168,7 @@ const referenceData: CompanyReferenceDataPort = {
 		return errorResult.ok(rows[0] ?? null);
 	},
 	resolveCurrency: async (input) => {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select({
 				code: refCurrency.code,
 				currencyCode: refCurrency.code,
@@ -231,7 +230,7 @@ const documentObjects: DocumentObjectPort = {
 
 const addressReferences: AddressReferencePort = {
 	async getPartyAddress(input) {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select({
 				organizationId: mdPartyAddress.organizationId,
 				partyId: mdPartyAddress.partyId,
@@ -401,12 +400,12 @@ export function createCorporateAdministrationCompanyDependencies(): RegisterLega
 		taxRegistrations: TaxRegistrationReadPort;
 	}> {
 	const store = createDrizzleCorporateAdministrationLegalCompanyStore({
-		database: db,
+		database: afendaDatabase.client,
 		createLegalCompanyId: randomUUID,
 	});
 	const establishmentStore =
 		createDrizzleCorporateAdministrationEstablishmentStore({
-			database: db,
+			database: afendaDatabase.client,
 			createId: randomUUID,
 		});
 
@@ -427,12 +426,12 @@ export function createCorporateAdministrationCompanyDependencies(): RegisterLega
 		taxRegistrations,
 		runtime: createCorporateAdministrationAppRuntime({
 			clock: corporateAdministrationClock,
-			database: db,
-			auditStore: createDrizzleAuditStore(),
+			database: afendaDatabase.client,
+			auditStore: afendaAudit.store.drizzle(),
 			executeTransaction: (buildQueries) =>
-				runNeonHttpTransaction(buildQueries),
+				afendaDatabase.transaction(buildQueries),
 			executeOutboxTransaction: (buildQueries) =>
-				runNeonHttpTransaction(buildQueries),
+				afendaDatabase.transaction(buildQueries),
 			createReservationToken: randomUUID,
 			createAuditId: randomUUID,
 		}),
@@ -486,7 +485,7 @@ function normalizedTaxRegistrationNumber(value: string): string {
 export async function listCorporateAdministrationActiveOrganizationParties(input: {
 	organizationId: string;
 }): Promise<readonly { id: string; code: string; name: string }[]> {
-	return await db
+	return await afendaDatabase.client
 		.select({
 			id: mdParty.id,
 			code: mdParty.code,
@@ -514,7 +513,7 @@ export async function listCorporateAdministrationPartyAddresses(input: {
 		label: string;
 	}[]
 > {
-	const rows = await db
+	const rows = await afendaDatabase.client
 		.select({
 			id: mdPartyAddress.id,
 			line1: mdPartyAddress.line1,

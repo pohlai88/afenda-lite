@@ -1,17 +1,16 @@
 import { randomUUID } from "node:crypto";
 import {
+	audit as afendaAudit,
 	type PreparedTransactionalAuditInsertValues,
-	prepareTransactionalAuditInsertValues,
 } from "@afenda/audit";
 import {
+	database as afendaDatabase,
 	and,
-	db,
 	desc,
 	eq,
 	hrHeadcountPlan,
 	hrHeadcountPlanLine,
 	hrHeadcountReservation,
-	runNeonHttpTransaction,
 	sql,
 } from "@afenda/db";
 import { errorResult, type Result } from "@afenda/errors";
@@ -88,7 +87,7 @@ function prepareWorkforcePlanningAudit(input: {
 	organizationId: string;
 	reasonCode?: string | null | undefined;
 }): Result<PreparedTransactionalAuditInsertValues> {
-	return prepareTransactionalAuditInsertValues({
+	return afendaAudit.transaction.prepare({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: input.correlationId,
@@ -575,7 +574,7 @@ async function transitionHeadcountReservationStatus(
 	}
 	const audit = preparedAudit.data;
 	try {
-		const [rows] = await runNeonHttpTransaction((sqlValue9) => [
+		const [rows] = await afendaDatabase.transaction((sqlValue9) => [
 			sqlValue9`
 					WITH mutated AS (
 						UPDATE hr_headcount_reservation
@@ -654,7 +653,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 	ThisType<WorkforcePlanningHost & DrizzleWorkforcePlanningMethods> = {
 	async findHeadcountPlanByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrHeadcountPlan)
 				.where(
@@ -686,7 +685,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 
 	async getHeadcountPlanById(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrHeadcountPlan)
 				.where(
@@ -708,7 +707,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 
 	async findApprovedHeadcountPlanForScope(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrHeadcountPlan)
 				.where(
@@ -769,7 +768,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 		const audit = preparedAudit.data;
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlValue8) => [
+			const [rows] = await afendaDatabase.transaction((sqlValue8) => [
 				sqlValue8`
 						WITH mutated AS (
 							INSERT INTO hr_headcount_plan (
@@ -897,7 +896,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 		const audit = preparedAudit.data;
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlValue7) => [
+			const [rows] = await afendaDatabase.transaction((sqlValue7) => [
 				sqlValue7`
 						WITH mutated AS (
 							UPDATE hr_headcount_plan
@@ -1045,7 +1044,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 		}
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlValue6) => [
+			const [rows] = await afendaDatabase.transaction((sqlValue6) => [
 				sqlValue6`
 						WITH mutated AS (
 							UPDATE hr_headcount_plan
@@ -1212,7 +1211,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 		const audit = preparedAudit.data;
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlValue5) => [
+			const [rows] = await afendaDatabase.transaction((sqlValue5) => [
 				sqlValue5`
 						WITH source_check AS (
 							SELECT id FROM hr_headcount_plan
@@ -1325,14 +1324,14 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 			}
 			const offset = (input.page - 1) * input.pageSize;
 			const [rows, countRows] = await Promise.all([
-				db
+				afendaDatabase.client
 					.select()
 					.from(hrHeadcountPlan)
 					.where(and(...conditions))
 					.orderBy(desc(hrHeadcountPlan.createdAt))
 					.limit(input.pageSize)
 					.offset(offset),
-				db
+				afendaDatabase.client
 					.select({ count: sql<number>`count(*)::int` })
 					.from(hrHeadcountPlan)
 					.where(and(...conditions)),
@@ -1358,7 +1357,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 
 	async getHeadcountPlanLineById(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrHeadcountPlanLine)
 				.where(
@@ -1380,7 +1379,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 
 	async listHeadcountPlanLinesByPlanId(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrHeadcountPlanLine)
 				.where(
@@ -1448,7 +1447,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 		const audit = preparedAudit.data;
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlValue4) => [
+			const [rows] = await afendaDatabase.transaction((sqlValue4) => [
 				sqlValue4`
 						WITH plan_check AS (
 							SELECT id FROM hr_headcount_plan
@@ -1601,7 +1600,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 		const audit = preparedAudit.data;
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlValue3) => [
+			const [rows] = await afendaDatabase.transaction((sqlValue3) => [
 				sqlValue3`
 						WITH mutated AS (
 							UPDATE hr_headcount_plan_line l
@@ -1720,7 +1719,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 		const audit = preparedAudit.data;
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlValue2) => [
+			const [rows] = await afendaDatabase.transaction((sqlValue2) => [
 				sqlValue2`
 						WITH mutated AS (
 							DELETE FROM hr_headcount_plan_line l
@@ -1775,7 +1774,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 
 	async findHeadcountReservationByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrHeadcountReservation)
 				.where(
@@ -1810,7 +1809,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 
 	async getHeadcountReservationById(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrHeadcountReservation)
 				.where(
@@ -1835,7 +1834,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 
 	async findActiveHeadcountReservationForRequisition(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrHeadcountReservation)
 				.where(
@@ -1975,7 +1974,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 		const audit = preparedAudit.data;
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlValue) => [
+			const [rows] = await afendaDatabase.transaction((sqlValue) => [
 				sqlValue`
 						WITH mutated AS (
 							INSERT INTO hr_headcount_reservation (
@@ -2074,7 +2073,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 
 	async releaseActiveHeadcountReservationsForRequisition(input, ports, meta) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrHeadcountReservation)
 				.where(
@@ -2157,14 +2156,14 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 			}
 			const offset = (input.page - 1) * input.pageSize;
 			const [rows, countRows] = await Promise.all([
-				db
+				afendaDatabase.client
 					.select()
 					.from(hrHeadcountReservation)
 					.where(and(...conditions))
 					.orderBy(desc(hrHeadcountReservation.createdAt))
 					.limit(input.pageSize)
 					.offset(offset),
-				db
+				afendaDatabase.client
 					.select({ count: sql<number>`count(*)::int` })
 					.from(hrHeadcountReservation)
 					.where(and(...conditions)),
@@ -2193,7 +2192,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 
 	async listHeadcountReservationsByPlanLineId(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrHeadcountReservation)
 				.where(
@@ -2221,7 +2220,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 
 	async getHeadcountAvailability(input) {
 		try {
-			const lineRows = await db
+			const lineRows = await afendaDatabase.client
 				.select()
 				.from(hrHeadcountPlanLine)
 				.where(
@@ -2331,7 +2330,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 				return actuals;
 			}
 
-			const lineRows = await db
+			const lineRows = await afendaDatabase.client
 				.select()
 				.from(hrHeadcountPlanLine)
 				.where(

@@ -1,6 +1,12 @@
 import { randomUUID } from "node:crypto";
 
-import { and, db, eq, payrollPeriod, payrollVariableInput } from "@afenda/db";
+import {
+	database as afendaDatabase,
+	and,
+	eq,
+	payrollPeriod,
+	payrollVariableInput,
+} from "@afenda/db";
 import { errorResult, type Result } from "@afenda/errors";
 
 import {
@@ -138,7 +144,7 @@ function mapPeriodRow(
 export const drizzleInputsMethods: PayrollInputsStore = {
 	async findVariableInputBySource(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(payrollVariableInput)
 				.where(
@@ -164,7 +170,7 @@ export const drizzleInputsMethods: PayrollInputsStore = {
 
 	async findVariableInputByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(payrollVariableInput)
 				.where(
@@ -244,7 +250,7 @@ export const drizzleInputsMethods: PayrollInputsStore = {
 		}
 
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.insert(payrollVariableInput)
 				.values({
 					id: variableInputId.data,
@@ -303,7 +309,7 @@ export const drizzleInputsMethods: PayrollInputsStore = {
 
 	async getVariableInput(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(payrollVariableInput)
 				.where(
@@ -328,7 +334,7 @@ export const drizzleInputsMethods: PayrollInputsStore = {
 
 	async listVariableInputsForPeriod(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(payrollVariableInput)
 				.where(
@@ -364,7 +370,7 @@ export const drizzleInputPeriodLookup = {
 		periodId: import("../../brands").PayrollPeriodId;
 	}): Promise<Result<PayrollPeriod | null>> {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(payrollPeriod)
 				.where(

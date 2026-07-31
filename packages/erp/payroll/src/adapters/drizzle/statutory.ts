@@ -1,4 +1,10 @@
-import { and, db, eq, payrollRun, payrollStatutoryResult } from "@afenda/db";
+import {
+	database as afendaDatabase,
+	and,
+	eq,
+	payrollRun,
+	payrollStatutoryResult,
+} from "@afenda/db";
 import { errorResult, type Result } from "@afenda/errors";
 
 import {
@@ -88,7 +94,7 @@ async function assertRunAllowsStatutoryMutation(input: {
 	runId: PayrollRunId;
 }): Promise<Result<true>> {
 	try {
-		const statusRows = await db
+		const statusRows = await afendaDatabase.client
 			.select({ status: payrollRun.status })
 			.from(payrollRun)
 			.where(
@@ -122,7 +128,7 @@ export const drizzleStatutoryMethods: PayrollStatutoryStore = {
 		}
 
 		try {
-			await db
+			await afendaDatabase.client
 				.delete(payrollStatutoryResult)
 				.where(
 					and(
@@ -133,7 +139,7 @@ export const drizzleStatutoryMethods: PayrollStatutoryStore = {
 
 			const results: PayrollStatutoryResult[] = [];
 			if (input.results.length > 0) {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.insert(payrollStatutoryResult)
 					.values(
 						input.results.map((result) => ({
@@ -186,7 +192,7 @@ export const drizzleStatutoryMethods: PayrollStatutoryStore = {
 
 	async listStatutoryResultsForRun(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(payrollStatutoryResult)
 				.where(

@@ -25,21 +25,21 @@ const governedCteWriters = new Map([
 		"packages/erp/fulfillment/src/drizzle-store.ts",
 		{
 			expectedWrites: 6,
-			preparationCallPattern: /prepareTransactionalAuditInsertValues\(\{/g,
+			preparationCallPattern: /afendaAudit\.transaction\.prepare\(\{/g,
 		},
 	],
 	[
 		"packages/erp/human-resources/src/adapters/drizzle/benefit-methods-drizzle.ts",
 		{
 			expectedWrites: 4,
-			preparationCallPattern: /prepareTransactionalAuditInsertValues\(\{/g,
+			preparationCallPattern: /afendaAudit\.transaction\.prepare\(\{/g,
 		},
 	],
 	[
 		"packages/erp/human-resources/src/adapters/drizzle/compensation-review-cycle-drizzle.ts",
 		{
 			expectedWrites: 2,
-			preparationCallPattern: /prepareTransactionalAuditInsertValues\(\{/g,
+			preparationCallPattern: /afendaAudit\.transaction\.prepare\(\{/g,
 		},
 	],
 	[
@@ -67,7 +67,7 @@ const governedCteWriters = new Map([
 		"packages/erp/human-resources/src/adapters/drizzle/core.ts",
 		{
 			expectedWrites: 11,
-			preparationCallPattern: /prepareTransactionalAuditInsertValues\(\{/g,
+			preparationCallPattern: /afendaAudit\.transaction\.prepare\(\{/g,
 		},
 	],
 	[
@@ -92,7 +92,7 @@ const governedCteWriters = new Map([
 		"packages/erp/human-resources/src/adapters/drizzle/leave-transactions.ts",
 		{
 			expectedWrites: 1,
-			preparationCallPattern: /prepareDerivedEntityAuditInsertValues\(\{/g,
+			preparationCallPattern: /afendaAudit\.transaction\.prepareDerived\(\{/g,
 		},
 	],
 	[
@@ -159,7 +159,7 @@ const governedCteWriters = new Map([
 			expectedWrites: 12,
 			expectedPreparations: 11,
 			expectedMetadataBindings: 12,
-			preparationCallPattern: /prepareTransactionalAuditInsertValues\(\{/g,
+			preparationCallPattern: /afendaAudit\.transaction\.prepare\(\{/g,
 		},
 	],
 	[
@@ -173,7 +173,7 @@ const governedCteWriters = new Map([
 		"packages/erp/master-data/src/capabilities/data-governance-workflows/drizzle-change-request-store.ts",
 		{
 			expectedWrites: 2,
-			preparationCallPattern: /prepareTransactionalAuditInsertValues\(\{/g,
+			preparationCallPattern: /afendaAudit\.transaction\.prepare\(\{/g,
 		},
 	],
 	[
@@ -182,7 +182,7 @@ const governedCteWriters = new Map([
 			expectedWrites: 3,
 			expectedPreparations: 4,
 			expectedMetadataBindings: 4,
-			preparationCallPattern: /prepareTransactionalAuditInsertValues\(\{/g,
+			preparationCallPattern: /afendaAudit\.transaction\.prepare\(\{/g,
 		},
 	],
 	[
@@ -214,21 +214,21 @@ const governedCteWriters = new Map([
 		"packages/erp/inventory/src/drizzle-store.ts",
 		{
 			expectedWrites: 7,
-			preparationCallPattern: /prepareTransactionalAuditInsertValues\(\{/g,
+			preparationCallPattern: /afendaAudit\.transaction\.prepare\(\{/g,
 		},
 	],
 	[
 		"packages/erp/purchasing/src/drizzle-store.ts",
 		{
 			expectedWrites: 5,
-			preparationCallPattern: /prepareTransactionalAuditInsertValues\(\{/g,
+			preparationCallPattern: /afendaAudit\.transaction\.prepare\(\{/g,
 		},
 	],
 	[
 		"packages/erp/receiving/src/drizzle-store.ts",
 		{
 			expectedWrites: 7,
-			preparationCallPattern: /prepareTransactionalAuditInsertValues\(\{/g,
+			preparationCallPattern: /afendaAudit\.transaction\.prepare\(\{/g,
 		},
 	],
 ]);
@@ -324,7 +324,7 @@ describe("@afenda/audit direct-writer boundary", () => {
 				expect(source).toMatch(contract.transactionGuardPattern);
 			}
 			expect(source).toMatch(
-				/prepare(?:DerivedEntity|Transactional)AuditInsertValues/,
+				/afendaAudit\.transaction\.(?:prepare|prepareDerived)/,
 			);
 		}
 	});

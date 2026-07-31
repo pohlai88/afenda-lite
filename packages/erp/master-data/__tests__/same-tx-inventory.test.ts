@@ -40,7 +40,7 @@ const commandSourceFiles = [
 ] as const;
 
 describe("@afenda/master-data same-TX inventory", () => {
-	it("embeds runNeonHttpTransaction for every org mutation surface", () => {
+	it("uses the canonical database transaction capability for every org mutation surface", () => {
 		const source = readFileSync(drizzleStorePath, "utf8");
 		expect(source).not.toContain("afterWritePorts");
 		const mutationMethods = [
@@ -112,7 +112,7 @@ describe("@afenda/master-data same-TX inventory", () => {
 			"utf8",
 		);
 		const combined = `${source}\n${extensionSource}\n${changeRequestSource}\n${variantSource}`;
-		const txCalls = combined.match(/runNeonHttpTransaction/g) ?? [];
+		const txCalls = combined.match(/afendaDatabase\.transaction/g) ?? [];
 		expect(txCalls.length).toBeGreaterThanOrEqual(mutationMethods.length);
 	});
 

@@ -10,8 +10,8 @@
 
 import { randomUUID } from "node:crypto";
 import {
+	database as afendaDatabase,
 	and,
-	db,
 	eq,
 	hrLeaveAdjustment,
 	hrLeaveRequest,
@@ -110,12 +110,12 @@ describe.skipIf(!runDrizzleParity)("Leave Failure Injection Tests", () => {
 			expect(result.ok).toBe(false);
 
 			// Verify no partial records exist
-			const requests = await db
+			const requests = await afendaDatabase.client
 				.select()
 				.from(hrLeaveRequest)
 				.where(eq(hrLeaveRequest.organizationId, harness.organizationId));
 
-			const segments = await db
+			const segments = await afendaDatabase.client
 				.select()
 				.from(hrLeaveRequestSegment)
 				.where(
@@ -162,7 +162,7 @@ describe.skipIf(!runDrizzleParity)("Leave Failure Injection Tests", () => {
 			expect(result.ok).toBe(false);
 
 			// Verify no records were created
-			const requests = await db
+			const requests = await afendaDatabase.client
 				.select()
 				.from(hrLeaveRequest)
 				.where(eq(hrLeaveRequest.organizationId, harness.organizationId));
@@ -238,7 +238,7 @@ describe.skipIf(!runDrizzleParity)("Leave Failure Injection Tests", () => {
 			expect(requestCheck.data?.version).toBe(2); // Unchanged
 
 			// Verify no consumption adjustment was created
-			const adjustments = await db
+			const adjustments = await afendaDatabase.client
 				.select()
 				.from(hrLeaveAdjustment)
 				.where(
@@ -369,7 +369,7 @@ describe.skipIf(!runDrizzleParity)("Leave Failure Injection Tests", () => {
 			expect(requestCheck.data?.version).toBe(3); // Unchanged
 
 			// Verify no reversal adjustment was created
-			const adjustments = await db
+			const adjustments = await afendaDatabase.client
 				.select()
 				.from(hrLeaveAdjustment)
 				.where(
@@ -449,7 +449,7 @@ describe.skipIf(!runDrizzleParity)("Leave Failure Injection Tests", () => {
 			expect(adjustment.ok).toBe(false);
 
 			// Verify no adjustment was created
-			const adjustments = await db
+			const adjustments = await afendaDatabase.client
 				.select()
 				.from(hrLeaveAdjustment)
 				.where(
@@ -562,7 +562,7 @@ describe.skipIf(!runDrizzleParity)("Leave Failure Injection Tests", () => {
 			expect(result.ok).toBe(false);
 
 			// Verify no partial state exists after timeout
-			const requests = await db
+			const requests = await afendaDatabase.client
 				.select()
 				.from(hrLeaveRequest)
 				.where(eq(hrLeaveRequest.organizationId, harness.organizationId));

@@ -127,22 +127,24 @@ vi.mock("@afenda/db", () => ({
 		partyKind: "partyKind",
 		status: "status",
 	},
-	db: {
-		select: vi.fn(() => ({
-			from: vi.fn(() => ({
-				where: vi.fn(() => ({
-					orderBy: vi.fn(() => ({
-						limit: vi.fn(async () => [
-							{
-								id: "11111111-1111-4111-8111-111111111111",
-								code: "AF-PARTY",
-								name: "Afenda Party",
-							},
-						]),
+	database: {
+		client: {
+			select: vi.fn(() => ({
+				from: vi.fn(() => ({
+					where: vi.fn(() => ({
+						orderBy: vi.fn(() => ({
+							limit: vi.fn(async () => [
+								{
+									id: "11111111-1111-4111-8111-111111111111",
+									code: "AF-PARTY",
+									name: "Afenda Party",
+								},
+							]),
+						})),
 					})),
 				})),
 			})),
-		})),
+		},
 	},
 }));
 

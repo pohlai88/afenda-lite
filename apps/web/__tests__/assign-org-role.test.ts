@@ -4,7 +4,12 @@
  */
 
 import { deleteRbacAuditRow } from "@afenda/admin/audit";
-import { and, db, eq, platformRoleAssignment, withOrg } from "@afenda/db";
+import {
+	database as afendaDatabase,
+	and,
+	eq,
+	platformRoleAssignment,
+} from "@afenda/db";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { assignOrgRoleWithAudit } from "../modules/identity/domain/assign-org-role-audited";
 import { parseAssignOrgRoleCommand } from "../modules/identity/schemas/assign-org-role";
@@ -68,7 +73,7 @@ describe.skipIf(!hasDatabase)(
 				await deleteRbacAuditRow({ id: row.id, orgId: row.orgId });
 			}
 			for (const row of createdAssignmentIds) {
-				await db
+				await afendaDatabase.client
 					.delete(platformRoleAssignment)
 					.where(
 						and(
@@ -100,12 +105,18 @@ describe.skipIf(!hasDatabase)(
 			expect(result.reactivated).toBe(false);
 			expect(result.auditId).toBeTruthy();
 
-			const forOrgA = await withOrg(platformRoleAssignment, orgA);
+			const forOrgA = await afendaDatabase.tenancy.readAll(
+				platformRoleAssignment,
+				orgA,
+			);
 			expect(forOrgA.some((item) => item.id === result.assignment.id)).toBe(
 				true,
 			);
 
-			const forOrgB = await withOrg(platformRoleAssignment, orgB);
+			const forOrgB = await afendaDatabase.tenancy.readAll(
+				platformRoleAssignment,
+				orgB,
+			);
 			expect(forOrgB.some((item) => item.id === result.assignment.id)).toBe(
 				false,
 			);

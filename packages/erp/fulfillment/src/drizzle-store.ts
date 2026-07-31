@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { prepareTransactionalAuditInsertValues } from "@afenda/audit";
+import { audit as afendaAudit } from "@afenda/audit";
 import {
+	database as afendaDatabase,
 	and,
 	asc,
-	db,
 	delivery,
 	deliveryLine,
 	deliveryPack,
@@ -12,7 +12,6 @@ import {
 	eq,
 	inArray,
 	proofOfDelivery,
-	runNeonHttpTransaction,
 } from "@afenda/db";
 import {
 	errorIngress,
@@ -261,7 +260,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 		const id = randomUUID();
 		const auditId = randomUUID();
 		const eventId = randomUUID();
-		const preparedAudit = prepareTransactionalAuditInsertValues({
+		const preparedAudit = afendaAudit.transaction.prepare({
 			organizationId: record.organizationId,
 			actorUserId: record.createdBy,
 			correlationId: meta.correlationId,
@@ -298,7 +297,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 			),
 		);
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH mutated AS (
 						INSERT INTO delivery (
@@ -360,7 +359,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 	): Promise<Result<DeliveryLine>> {
 		const id = randomUUID();
 		const auditId = randomUUID();
-		const preparedAudit = prepareTransactionalAuditInsertValues({
+		const preparedAudit = afendaAudit.transaction.prepare({
 			organizationId: record.organizationId,
 			actorUserId: record.createdBy,
 			correlationId: meta.correlationId,
@@ -384,7 +383,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 		}
 		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH parent AS (
 						UPDATE delivery
@@ -435,7 +434,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 					publicMessage: "Delivery line add conflict",
 				});
 			}
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select()
 				.from(deliveryLine)
 				.where(
@@ -505,7 +504,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const nextVersion = record.expectedVersion + 1;
-		const preparedAudit = prepareTransactionalAuditInsertValues({
+		const preparedAudit = afendaAudit.transaction.prepare({
 			organizationId: record.organizationId,
 			actorUserId: record.actorUserId,
 			correlationId: meta.correlationId,
@@ -556,7 +555,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 			quantity: record.quantityPicked,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH parent AS (
 						UPDATE delivery
@@ -607,7 +606,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 					publicMessage: "Delivery pick confirmation conflict",
 				});
 			}
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select()
 				.from(deliveryPick)
 				.where(
@@ -679,7 +678,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const nextVersion = record.expectedVersion + 1;
-		const preparedAudit = prepareTransactionalAuditInsertValues({
+		const preparedAudit = afendaAudit.transaction.prepare({
 			organizationId: record.organizationId,
 			actorUserId: record.actorUserId,
 			correlationId: meta.correlationId,
@@ -709,7 +708,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 			),
 		);
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH parent AS (
 						UPDATE delivery
@@ -760,7 +759,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 					publicMessage: "Delivery pack confirmation conflict",
 				});
 			}
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select()
 				.from(deliveryPack)
 				.where(
@@ -843,7 +842,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 		const podEventId = randomUUID();
 		const completedEventId = randomUUID();
 		const nextVersion = record.expectedVersion + 1;
-		const preparedAudit = prepareTransactionalAuditInsertValues({
+		const preparedAudit = afendaAudit.transaction.prepare({
 			organizationId: record.organizationId,
 			actorUserId: record.actorUserId,
 			correlationId: meta.correlationId,
@@ -874,7 +873,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 			),
 		);
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH parent AS (
 						UPDATE delivery
@@ -941,7 +940,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 					publicMessage: "Proof of delivery record conflict",
 				});
 			}
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select()
 				.from(proofOfDelivery)
 				.where(
@@ -1039,7 +1038,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 		id: string,
 	): Promise<Result<Delivery | null>> {
 		try {
-			const [header] = await db
+			const [header] = await afendaDatabase.client
 				.select()
 				.from(delivery)
 				.where(
@@ -1050,7 +1049,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 				return errorResult.ok(null);
 			}
 			const [lines, picks, packs, proofs] = await Promise.all([
-				db
+				afendaDatabase.client
 					.select()
 					.from(deliveryLine)
 					.where(
@@ -1060,7 +1059,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 						),
 					)
 					.orderBy(asc(deliveryLine.lineNo)),
-				db
+				afendaDatabase.client
 					.select()
 					.from(deliveryPick)
 					.where(
@@ -1070,7 +1069,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 						),
 					)
 					.orderBy(asc(deliveryPick.pickedAt)),
-				db
+				afendaDatabase.client
 					.select()
 					.from(deliveryPack)
 					.where(
@@ -1080,7 +1079,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 						),
 					)
 					.orderBy(asc(deliveryPack.packedAt)),
-				db
+				afendaDatabase.client
 					.select()
 					.from(proofOfDelivery)
 					.where(
@@ -1126,7 +1125,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 			} else if (sort === "status") {
 				primaryOrder = desc(delivery.status);
 			}
-			const headers = await db
+			const headers = await afendaDatabase.client
 				.select()
 				.from(delivery)
 				.where(and(...conditions))
@@ -1138,7 +1137,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 			}
 			const ids = headers.map((row) => row.id);
 			const [lines, picks, packs, proofs] = await Promise.all([
-				db
+				afendaDatabase.client
 					.select()
 					.from(deliveryLine)
 					.where(
@@ -1148,7 +1147,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 						),
 					)
 					.orderBy(asc(deliveryLine.lineNo)),
-				db
+				afendaDatabase.client
 					.select()
 					.from(deliveryPick)
 					.where(
@@ -1157,7 +1156,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 							inArray(deliveryPick.deliveryId, ids),
 						),
 					),
-				db
+				afendaDatabase.client
 					.select()
 					.from(deliveryPack)
 					.where(
@@ -1166,7 +1165,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 							inArray(deliveryPack.deliveryId, ids),
 						),
 					),
-				db
+				afendaDatabase.client
 					.select()
 					.from(proofOfDelivery)
 					.where(
@@ -1248,7 +1247,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 		const nextVersion = record.expectedVersion + 1;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
-		const preparedAudit = prepareTransactionalAuditInsertValues({
+		const preparedAudit = afendaAudit.transaction.prepare({
 			organizationId: record.organizationId,
 			actorUserId: record.actorUserId,
 			correlationId: meta.correlationId,
@@ -1278,7 +1277,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 			),
 		);
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH mutated AS (
 						UPDATE delivery
@@ -1356,7 +1355,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 		salesOrderLineId: string,
 	): Promise<Result<string>> {
 		try {
-			const result = await db.execute(/*sql*/ `
+			const result = await afendaDatabase.client.execute(/*sql*/ `
 				SELECT COALESCE(SUM(dl.quantity_to_deliver::numeric), 0) as total
 				FROM delivery_line dl
 				JOIN delivery d ON d.id = dl.delivery_id

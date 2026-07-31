@@ -1,10 +1,9 @@
 import {
+	database as afendaDatabase,
 	and,
 	asc,
-	db,
 	eq,
 	hrPayrollHandoffDelivery,
-	runNeonHttpTransaction,
 } from "@afenda/db";
 import { errorResult, type Result } from "@afenda/errors";
 import { approvedPayrollHandoffSchema } from "@afenda/events/schemas";
@@ -160,7 +159,7 @@ export function createDrizzlePayrollDeliveryStore(): PayrollDeliveryStorePort {
 	return {
 		async findByIdempotencyKey(input) {
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.select()
 					.from(hrPayrollHandoffDelivery)
 					.where(
@@ -177,7 +176,7 @@ export function createDrizzlePayrollDeliveryStore(): PayrollDeliveryStorePort {
 		},
 		async getById(input) {
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.select()
 					.from(hrPayrollHandoffDelivery)
 					.where(
@@ -203,7 +202,7 @@ export function createDrizzlePayrollDeliveryStore(): PayrollDeliveryStorePort {
 				});
 			}
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.select()
 					.from(hrPayrollHandoffDelivery)
 					.where(
@@ -235,7 +234,7 @@ export function createDrizzlePayrollDeliveryStore(): PayrollDeliveryStorePort {
 		},
 		async create(record) {
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.insert(hrPayrollHandoffDelivery)
 					.values(values(record))
 					.returning();
@@ -252,7 +251,7 @@ export function createDrizzlePayrollDeliveryStore(): PayrollDeliveryStorePort {
 		async createCorrection(input) {
 			const { correction } = input;
 			try {
-				const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				const [rows] = await afendaDatabase.transaction((sqlTag) => [
 					sqlTag`
 							WITH linked_source AS (
 								UPDATE hr_payroll_handoff_delivery
@@ -296,7 +295,7 @@ export function createDrizzlePayrollDeliveryStore(): PayrollDeliveryStorePort {
 						publicMessage: "The request conflicts with current state",
 					});
 				}
-				const inserted = await db
+				const inserted = await afendaDatabase.client
 					.select()
 					.from(hrPayrollHandoffDelivery)
 					.where(
@@ -331,7 +330,7 @@ export function createDrizzlePayrollDeliveryStore(): PayrollDeliveryStorePort {
 				});
 			}
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.update(hrPayrollHandoffDelivery)
 					.set(mutableValues(input.next))
 					.where(

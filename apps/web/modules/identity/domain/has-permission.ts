@@ -1,8 +1,7 @@
 import {
+	database as afendaDatabase,
 	and,
-	db,
 	eq,
-	isPlatformPermissionCodeV1,
 	platformRoleAssignment,
 	platformRolePermission,
 } from "@afenda/db";
@@ -37,11 +36,11 @@ export async function hasPermission(
 	const userId = requireTrimmed(input.userId, "userId", "hasPermission");
 	const code = requireTrimmed(input.code, "code", "hasPermission");
 
-	if (!isPlatformPermissionCodeV1(code)) {
+	if (!afendaDatabase.permissions.isCode(code)) {
 		return false;
 	}
 
-	const granted = await db
+	const granted = await afendaDatabase.client
 		.select({ roleId: platformRolePermission.roleId })
 		.from(platformRoleAssignment)
 		.innerJoin(
@@ -62,7 +61,7 @@ export async function hasPermission(
 		return true;
 	}
 
-	const activeAssignments = await db
+	const activeAssignments = await afendaDatabase.client
 		.select({ id: platformRoleAssignment.id })
 		.from(platformRoleAssignment)
 		.where(

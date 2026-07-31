@@ -1,14 +1,13 @@
 import { randomUUID } from "node:crypto";
 
 import {
+	audit as afendaAudit,
 	type PreparedDerivedEntityAuditInsertValues,
 	type PreparedTransactionalAuditInsertValues,
-	prepareDerivedEntityAuditInsertValues,
-	prepareTransactionalAuditInsertValues,
 } from "@afenda/audit";
 import {
+	database as afendaDatabase,
 	and,
-	db,
 	desc,
 	eq,
 	hrBenefitEnrollment,
@@ -21,7 +20,6 @@ import {
 	hrEmployment,
 	hrSalaryBand,
 	or,
-	runNeonHttpTransaction,
 } from "@afenda/db";
 import { errorResult, type Result } from "@afenda/errors";
 import {
@@ -176,7 +174,7 @@ function compensationBenefitsAuditEventContext(input: {
 function prepareCompensationBenefitsAudit(
 	input: CompensationBenefitsAuditInput,
 ): Result<PreparedTransactionalAuditInsertValues> {
-	return prepareTransactionalAuditInsertValues({
+	return afendaAudit.transaction.prepare({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: input.correlationId,
@@ -199,7 +197,7 @@ function prepareDerivedCompensationBenefitsAudit(input: {
 	organizationId: string;
 	reasonCode: string;
 }): Result<PreparedDerivedEntityAuditInsertValues> {
-	return prepareDerivedEntityAuditInsertValues({
+	return afendaAudit.transaction.prepareDerived({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: input.correlationId,
@@ -1038,7 +1036,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 	...drizzleCompensationReviewCycleMethods,
 	async getCompensationGrade(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrCompensationGrade)
 				.where(
@@ -1060,7 +1058,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 
 	async findCompensationGradeByCode(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrCompensationGrade)
 				.where(
@@ -1118,7 +1116,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							INSERT INTO hr_compensation_grade (
@@ -1211,7 +1209,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_compensation_grade
@@ -1300,7 +1298,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH active_bands AS (
 							SELECT 1 AS exists
@@ -1342,7 +1340,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			]);
 			const [row] = rows;
 			if (!row) {
-				const bandRows = await db
+				const bandRows = await afendaDatabase.client
 					.select()
 					.from(hrSalaryBand)
 					.where(
@@ -1380,7 +1378,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			if (input.status) {
 				conditions.push(eq(hrCompensationGrade.status, input.status));
 			}
-			const allRows = await db
+			const allRows = await afendaDatabase.client
 				.select()
 				.from(hrCompensationGrade)
 				.where(and(...conditions));
@@ -1409,7 +1407,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 
 	async getSalaryBand(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrSalaryBand)
 				.where(
@@ -1488,7 +1486,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH overlapping AS (
 							SELECT 1 AS exists
@@ -1593,7 +1591,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			predecessor = band.data;
 		} else {
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.select()
 					.from(hrSalaryBand)
 					.where(
@@ -1701,7 +1699,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		const auditSuccessorId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH superseded AS (
 						UPDATE hr_salary_band
@@ -1847,7 +1845,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_salary_band
@@ -1911,7 +1909,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			if (input.status) {
 				conditions.push(eq(hrSalaryBand.status, input.status));
 			}
-			const allRows = await db
+			const allRows = await afendaDatabase.client
 				.select()
 				.from(hrSalaryBand)
 				.where(and(...conditions))
@@ -1940,7 +1938,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 
 	async findSalaryBandByGradeAndCurrencyAsOf(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrSalaryBand)
 				.where(
@@ -1977,7 +1975,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 
 	async getCompensationGradeProgressionRule(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrCompensationGradeProgressionRule)
 				.where(
@@ -2065,7 +2063,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH overlapping AS (
 						SELECT 1 AS exists
@@ -2165,7 +2163,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH mutated AS (
 						UPDATE hr_compensation_grade_progression_rule
@@ -2211,7 +2209,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 
 	async listCompensationGradeProgressionRulesFromGrade(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrCompensationGradeProgressionRule)
 				.where(
@@ -2275,7 +2273,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 
 	async getEmployeeCompensation(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrEmployeeCompensation)
 				.where(
@@ -2300,7 +2298,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 
 	async findEmployeeCompensationByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrEmployeeCompensation)
 				.where(
@@ -2404,7 +2402,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH employment AS (
 							SELECT id, organization_id, employee_id
@@ -2615,7 +2613,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_employee_compensation
@@ -2678,7 +2676,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 
 	async listEmployeeCompensationsByEmployee(input) {
 		try {
-			const allRows = await db
+			const allRows = await afendaDatabase.client
 				.select()
 				.from(hrEmployeeCompensation)
 				.where(
@@ -2715,7 +2713,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 
 	async findActiveEmployeeCompensationByEmployment(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrEmployeeCompensation)
 				.where(
@@ -2741,7 +2739,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 
 	async findEmployeeCompensationByEmploymentAsOf(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrEmployeeCompensation)
 				.where(
@@ -2776,7 +2774,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 
 	async getCompensationReview(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrCompensationReview)
 				.where(
@@ -2798,7 +2796,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 
 	async findCompensationReviewByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrCompensationReview)
 				.where(
@@ -2906,7 +2904,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							INSERT INTO hr_compensation_review (
@@ -3054,7 +3052,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_compensation_review
@@ -3172,7 +3170,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_compensation_review
@@ -3357,7 +3355,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH active_comp AS (
 							SELECT id, version
@@ -3525,7 +3523,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 
 	async listCompensationReviewsByEmployee(input) {
 		try {
-			const allRows = await db
+			const allRows = await afendaDatabase.client
 				.select()
 				.from(hrCompensationReview)
 				.where(
@@ -3562,7 +3560,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 
 	async getCompensationProposal(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrCompensationProposal)
 				.where(
@@ -3635,7 +3633,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							INSERT INTO hr_compensation_proposal (
@@ -3759,7 +3757,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_compensation_proposal
@@ -3882,7 +3880,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		}
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_compensation_proposal
@@ -3952,7 +3950,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					eq(hrCompensationProposal.applicationId, input.applicationId),
 				);
 			}
-			const allRows = await db
+			const allRows = await afendaDatabase.client
 				.select()
 				.from(hrCompensationProposal)
 				.where(and(...filters))
@@ -3984,7 +3982,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 
 	async getBenefitPlan(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrBenefitPlan)
 				.where(
@@ -4006,7 +4004,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 
 	async findBenefitPlanByCode(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrBenefitPlan)
 				.where(
@@ -4064,7 +4062,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							INSERT INTO hr_benefit_plan (
@@ -4157,7 +4155,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_benefit_plan
@@ -4222,7 +4220,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		}
 
 		try {
-			const openRows = await db
+			const openRows = await afendaDatabase.client
 				.select({
 					id: hrBenefitEnrollment.id,
 					status: hrBenefitEnrollment.status,
@@ -4274,7 +4272,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_benefit_plan
@@ -4320,7 +4318,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 
 	async listBenefitPlans(input) {
 		try {
-			const allRows = await db
+			const allRows = await afendaDatabase.client
 				.select()
 				.from(hrBenefitPlan)
 				.where(eq(hrBenefitPlan.organizationId, input.organizationId));
@@ -4357,7 +4355,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 
 	async getBenefitEnrollment(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrBenefitEnrollment)
 				.where(
@@ -4379,7 +4377,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 
 	async findBenefitEnrollmentByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrBenefitEnrollment)
 				.where(
@@ -4501,7 +4499,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		const contributionFrequency = record.contributionFrequency ?? null;
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH open_check AS (
 							SELECT 1 AS exists
@@ -4672,7 +4670,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_benefit_enrollment
@@ -4783,7 +4781,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_benefit_enrollment
@@ -4845,7 +4843,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 
 	async listBenefitEnrollmentsByEmployee(input) {
 		try {
-			const allRows = await db
+			const allRows = await afendaDatabase.client
 				.select()
 				.from(hrBenefitEnrollment)
 				.where(
@@ -4895,7 +4893,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		}
 
 		try {
-			const employmentRows = await db
+			const employmentRows = await afendaDatabase.client
 				.select()
 				.from(hrEmployment)
 				.where(
@@ -4910,7 +4908,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 
 			let activeCompensation: EmployeeCompensation | null = null;
 			if (activeEmployment) {
-				const compRows = await db
+				const compRows = await afendaDatabase.client
 					.select()
 					.from(hrEmployeeCompensation)
 					.where(
@@ -4930,7 +4928,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 				}
 			}
 
-			const enrollmentRows = await db
+			const enrollmentRows = await afendaDatabase.client
 				.select()
 				.from(hrBenefitEnrollment)
 				.where(

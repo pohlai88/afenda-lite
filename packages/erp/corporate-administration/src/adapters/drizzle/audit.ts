@@ -1,8 +1,4 @@
-import {
-	buildTransactionalAuditInsert,
-	prepareAuditWrite,
-	type RecordAuditCommand,
-} from "@afenda/audit";
+import { audit as afendaAudit, type RecordAuditCommand } from "@afenda/audit";
 import type { NeonHttpSql } from "@afenda/db";
 import { errorResult, type Result } from "@afenda/errors";
 import type {
@@ -69,7 +65,7 @@ export function createDrizzleCorporateAdministrationAuditFactPort(
 			if (options?.transaction !== undefined) {
 				options.transaction.enqueue((database) => {
 					const sql = database as NeonHttpSql;
-					const insert = buildTransactionalAuditInsert({
+					const insert = afendaAudit.transaction.buildInsert({
 						id: auditId,
 						input: auditInput,
 						sql,
@@ -85,7 +81,7 @@ export function createDrizzleCorporateAdministrationAuditFactPort(
 			}
 
 			try {
-				const prepared = prepareAuditWrite(auditInput);
+				const prepared = afendaAudit.write.prepare(auditInput);
 				if (!prepared.ok) {
 					return errorResult.fail("INTERNAL_ERROR");
 				}

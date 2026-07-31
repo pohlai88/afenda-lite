@@ -10,6 +10,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { database } from "@afenda/db";
 import {
 	LIVING_ERP_MANIFEST_PACKAGES,
 	loadRoadmapModules,
@@ -81,17 +82,8 @@ async function loadLivingManifests() {
 	});
 }
 
-async function loadPlatformPermissionCodes() {
-	const catalogPath = join(
-		root,
-		"packages",
-		"data-plane",
-		"db",
-		"src",
-		"platform-permission-catalog.ts",
-	);
-	const mod = await import(pathToFileURL(catalogPath).href);
-	return new Set(mod.PLATFORM_PERMISSION_CODES_V1);
+function loadPlatformPermissionCodes() {
+	return new Set(database.permissions.codes);
 }
 
 async function main() {
@@ -105,7 +97,7 @@ async function main() {
 	}
 
 	const manifests = await loadLivingManifests();
-	const platformCodes = await loadPlatformPermissionCodes();
+	const platformCodes = loadPlatformPermissionCodes();
 	const roadmap = loadRoadmapModules(join(modulesDir, "MODULE-ROADMAP.yaml"));
 	const knownTables = new Set(Object.values(SCHEMA_SYMBOL_TO_TABLE));
 	const eventsMod = await import(

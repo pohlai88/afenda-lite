@@ -31,9 +31,9 @@ test("loads hard-tenant identifiers from the package SSOT", () => {
 
 test("accepts an entity mutation with identity and organization predicates", () => {
 	const findings = analyze(`
-		await db.update(platformRoleAssignment).set(input).where(and(
+		await afendaDatabase.client.update(platformRoleAssignment).set(input).where(and(
 			eq(platformRoleAssignment.id, assignmentId),
-			orgWhere(platformRoleAssignment.organizationId, organizationId),
+			afendaDatabase.tenancy.where(platformRoleAssignment.organizationId, organizationId),
 		));
 	`);
 	assert.deepEqual(findings, []);
@@ -41,7 +41,7 @@ test("accepts an entity mutation with identity and organization predicates", () 
 
 test("accepts a tenant insert that stamps organization ownership", () => {
 	const findings = analyze(`
-		await db.insert(platformRoleAssignment).values({
+		await afendaDatabase.client.insert(platformRoleAssignment).values({
 			id: assignmentId,
 			organizationId,
 		});
@@ -51,14 +51,14 @@ test("accepts a tenant insert that stamps organization ownership", () => {
 
 test("rejects a tenant insert without organization ownership", () => {
 	const findings = analyze(`
-		await db.insert(platformRoleAssignment).values({ id: assignmentId });
+		await afendaDatabase.client.insert(platformRoleAssignment).values({ id: assignmentId });
 	`);
 	assert.equal(findings[0]?.rule, "tenant-insert-missing-organization");
 });
 
 test("rejects ID-only mutation predicates", () => {
 	const findings = analyze(`
-		await db.delete(platformRoleAssignment).where(
+		await afendaDatabase.client.delete(platformRoleAssignment).where(
 			eq(platformRoleAssignment.id, assignmentId),
 		);
 	`);
@@ -67,8 +67,8 @@ test("rejects ID-only mutation predicates", () => {
 
 test("rejects organization-only mutation predicates", () => {
 	const findings = analyze(`
-		await db.delete(platformRoleAssignment).where(
-			orgWhere(platformRoleAssignment.organizationId, organizationId),
+		await afendaDatabase.client.delete(platformRoleAssignment).where(
+			afendaDatabase.tenancy.where(platformRoleAssignment.organizationId, organizationId),
 		);
 	`);
 	assert.equal(findings[0]?.rule, "tenant-mutation-missing-record-selection");
@@ -76,9 +76,9 @@ test("rejects organization-only mutation predicates", () => {
 
 test("requires every tenant table in a join to be scoped", () => {
 	const findings = analyze(`
-		await db.select().from(platformRoleAssignment)
+		await afendaDatabase.client.select().from(platformRoleAssignment)
 			.innerJoin(joinedTenant, eq(joinedTenant.assignmentId, platformRoleAssignment.id))
-			.where(orgWhere(platformRoleAssignment.organizationId, organizationId));
+			.where(afendaDatabase.tenancy.where(platformRoleAssignment.organizationId, organizationId));
 	`);
 	assert.equal(findings.length, 1);
 	assert.equal(findings[0]?.table, "joinedTenant");
@@ -87,12 +87,12 @@ test("requires every tenant table in a join to be scoped", () => {
 
 test("accepts organization predicates for every tenant table in a join", () => {
 	const findings = analyze(`
-		await db.select().from(platformRoleAssignment)
+		await afendaDatabase.client.select().from(platformRoleAssignment)
 			.innerJoin(joinedTenant, and(
 				eq(joinedTenant.assignmentId, platformRoleAssignment.id),
-				orgWhere(joinedTenant.organizationId, organizationId),
+				afendaDatabase.tenancy.where(joinedTenant.organizationId, organizationId),
 			))
-			.where(orgWhere(platformRoleAssignment.organizationId, organizationId));
+			.where(afendaDatabase.tenancy.where(platformRoleAssignment.organizationId, organizationId));
 	`);
 	assert.deepEqual(findings, []);
 });

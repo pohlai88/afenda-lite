@@ -1,5 +1,5 @@
 import {
-	db,
+	database as afendaDatabase,
 	eq,
 	payrollCalendar,
 	payrollException,
@@ -10,7 +10,7 @@ import {
 } from "@afenda/db";
 
 export async function isPayrollFoundationMigrationApplied(): Promise<boolean> {
-	const rows = await db.execute(sql`
+	const rows = await afendaDatabase.client.execute(sql`
 		SELECT 1
 		FROM information_schema.columns
 		WHERE table_schema = 'public'
@@ -23,7 +23,7 @@ export async function isPayrollFoundationMigrationApplied(): Promise<boolean> {
 		return false;
 	}
 
-	const runColumns = await db.execute(sql`
+	const runColumns = await afendaDatabase.client.execute(sql`
 		SELECT 1
 		FROM information_schema.columns
 		WHERE table_schema = 'public'
@@ -53,7 +53,7 @@ export async function seedPayrollConstraintChain(input: {
 	const periodId = crypto.randomUUID();
 	const runId = crypto.randomUUID();
 
-	await db.insert(payrollCalendar).values({
+	await afendaDatabase.client.insert(payrollCalendar).values({
 		id: calendarId,
 		organizationId: input.organizationId,
 		code: `CAL-${input.suffix}`,
@@ -69,7 +69,7 @@ export async function seedPayrollConstraintChain(input: {
 		updatedBy: input.actorUserId,
 	});
 
-	await db.insert(payrollPayGroup).values({
+	await afendaDatabase.client.insert(payrollPayGroup).values({
 		id: payGroupId,
 		organizationId: input.organizationId,
 		calendarId,
@@ -84,7 +84,7 @@ export async function seedPayrollConstraintChain(input: {
 		updatedBy: input.actorUserId,
 	});
 
-	await db.insert(payrollPeriod).values({
+	await afendaDatabase.client.insert(payrollPeriod).values({
 		id: periodId,
 		organizationId: input.organizationId,
 		payGroupId,
@@ -99,7 +99,7 @@ export async function seedPayrollConstraintChain(input: {
 		updatedBy: input.actorUserId,
 	});
 
-	await db.insert(payrollRun).values({
+	await afendaDatabase.client.insert(payrollRun).values({
 		id: runId,
 		organizationId: input.organizationId,
 		payGroupId,
@@ -130,19 +130,19 @@ export async function seedPayrollConstraintChain(input: {
 export async function deletePayrollConstraintOrg(
 	organizationId: string,
 ): Promise<void> {
-	await db
+	await afendaDatabase.client
 		.delete(payrollException)
 		.where(eq(payrollException.organizationId, organizationId));
-	await db
+	await afendaDatabase.client
 		.delete(payrollRun)
 		.where(eq(payrollRun.organizationId, organizationId));
-	await db
+	await afendaDatabase.client
 		.delete(payrollPeriod)
 		.where(eq(payrollPeriod.organizationId, organizationId));
-	await db
+	await afendaDatabase.client
 		.delete(payrollPayGroup)
 		.where(eq(payrollPayGroup.organizationId, organizationId));
-	await db
+	await afendaDatabase.client
 		.delete(payrollCalendar)
 		.where(eq(payrollCalendar.organizationId, organizationId));
 }

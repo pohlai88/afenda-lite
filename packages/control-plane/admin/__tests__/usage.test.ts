@@ -12,8 +12,10 @@ vi.mock("@afenda/auth", () => ({
 vi.mock("@afenda/db", () => ({
 	and: vi.fn(() => ({ kind: "and" })),
 	count: vi.fn(() => ({ kind: "count" })),
-	db: {
-		select: (...args: unknown[]) => select(...args),
+	database: {
+		client: {
+			select: (...args: unknown[]) => select(...args),
+		},
 	},
 	eq: vi.fn(() => ({ kind: "eq" })),
 	gte: vi.fn(() => ({ kind: "gte" })),

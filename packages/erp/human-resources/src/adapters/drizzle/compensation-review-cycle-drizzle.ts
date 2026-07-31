@@ -1,14 +1,13 @@
 import { randomUUID } from "node:crypto";
 
-import { prepareTransactionalAuditInsertValues } from "@afenda/audit";
+import { audit as afendaAudit } from "@afenda/audit";
 import {
+	database as afendaDatabase,
 	and,
-	db,
 	desc,
 	eq,
 	hrCompensationReview,
 	hrCompensationReviewCycle,
-	runNeonHttpTransaction,
 } from "@afenda/db";
 import { errorResult, type Result } from "@afenda/errors";
 
@@ -165,7 +164,7 @@ async function transitionReviewCycleStatus(
 
 	const nextVersion = input.expectedVersion + 1;
 	const auditId = randomUUID();
-	const preparedAudit = prepareTransactionalAuditInsertValues({
+	const preparedAudit = afendaAudit.transaction.prepare({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: meta.correlationId,
@@ -193,7 +192,7 @@ async function transitionReviewCycleStatus(
 	const audit = preparedAudit.data;
 
 	try {
-		const [rows] = await runNeonHttpTransaction((sqlTag) => [
+		const [rows] = await afendaDatabase.transaction((sqlTag) => [
 			sqlTag`
 				WITH mutated AS (
 					UPDATE hr_compensation_review_cycle
@@ -246,7 +245,7 @@ export const drizzleCompensationReviewCycleMethods = {
 		cycleId: HumanResourcesCompensationReviewCycleId;
 	}): Promise<Result<CompensationReviewCycle | null>> {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrCompensationReviewCycle)
 				.where(
@@ -274,7 +273,7 @@ export const drizzleCompensationReviewCycleMethods = {
 		idempotencyKey: string;
 	}): Promise<Result<IdempotentCompensationReviewCycleRecord | null>> {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrCompensationReviewCycle)
 				.where(
@@ -346,7 +345,7 @@ export const drizzleCompensationReviewCycleMethods = {
 			return brandedId;
 		}
 		const auditId = randomUUID();
-		const preparedAudit = prepareTransactionalAuditInsertValues({
+		const preparedAudit = afendaAudit.transaction.prepare({
 			organizationId: record.organizationId,
 			actorUserId: record.createdBy,
 			correlationId: meta.correlationId,
@@ -382,7 +381,7 @@ export const drizzleCompensationReviewCycleMethods = {
 		const audit = preparedAudit.data;
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH mutated AS (
 						INSERT INTO hr_compensation_review_cycle (
@@ -505,7 +504,7 @@ export const drizzleCompensationReviewCycleMethods = {
 			if (input.status) {
 				conditions.push(eq(hrCompensationReviewCycle.status, input.status));
 			}
-			const allRows = await db
+			const allRows = await afendaDatabase.client
 				.select()
 				.from(hrCompensationReviewCycle)
 				.where(and(...conditions))
@@ -540,7 +539,7 @@ export const drizzleCompensationReviewCycleMethods = {
 		cycleId: HumanResourcesCompensationReviewCycleId;
 	}): Promise<Result<CompensationReview[]>> {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrCompensationReview)
 				.where(

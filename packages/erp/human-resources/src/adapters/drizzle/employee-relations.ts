@@ -1,20 +1,19 @@
 import { randomUUID } from "node:crypto";
 
 import {
+	audit as afendaAudit,
 	type PreparedTransactionalAuditInsertValues,
-	prepareTransactionalAuditInsertValues,
 } from "@afenda/audit";
 import {
+	database as afendaDatabase,
 	and,
 	asc,
-	db,
 	desc,
 	eq,
 	hrEmployeeCase,
 	hrEmployeeCaseAction,
 	hrEmployeeCaseAppeal,
 	hrEmployeeCaseEvent,
-	runNeonHttpTransaction,
 } from "@afenda/db";
 import { errorResult, type Result } from "@afenda/errors";
 import {
@@ -105,7 +104,7 @@ interface EmployeeRelationsAuditInput {
 function prepareEmployeeRelationsAudit(
 	input: EmployeeRelationsAuditInput,
 ): Result<PreparedTransactionalAuditInsertValues> {
-	return prepareTransactionalAuditInsertValues({
+	return afendaAudit.transaction.prepare({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: input.correlationId,
@@ -595,7 +594,7 @@ async function fetchCaseById(input: {
 	caseId: HumanResourcesEmployeeCaseId;
 }): Promise<Result<EmployeeCase | null>> {
 	try {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(hrEmployeeCase)
 			.where(
@@ -653,7 +652,7 @@ async function fetchEventInOrg(input: {
 	eventId: HumanResourcesEmployeeCaseEventId;
 }): Promise<Result<EmployeeCaseEvent>> {
 	try {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(hrEmployeeCaseEvent)
 			.where(
@@ -680,7 +679,7 @@ async function fetchActionInOrg(input: {
 	actionId: HumanResourcesEmployeeCaseActionId;
 }): Promise<Result<EmployeeCaseAction>> {
 	try {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(hrEmployeeCaseAction)
 			.where(
@@ -707,7 +706,7 @@ async function fetchAppealInOrg(input: {
 	appealId: HumanResourcesEmployeeCaseAppealId;
 }): Promise<Result<EmployeeCaseAppeal>> {
 	try {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(hrEmployeeCaseAppeal)
 			.where(
@@ -732,7 +731,7 @@ async function listCasesForOrg(
 	organizationId: string,
 ): Promise<Result<EmployeeCase[]>> {
 	try {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(hrEmployeeCase)
 			.where(eq(hrEmployeeCase.organizationId, organizationId))
@@ -755,7 +754,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 	ThisType<EmployeeRelationsHost & DrizzleEmployeeRelationsMethods> = {
 	async findEmployeeCaseByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrEmployeeCase)
 				.where(
@@ -877,7 +876,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH employee AS (
 						SELECT id FROM hr_employee
@@ -1087,7 +1086,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		}
 		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
 						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
@@ -1211,7 +1210,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
 						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
@@ -1354,7 +1353,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		}
 		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
 						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
@@ -1461,7 +1460,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		}
 		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
 						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
@@ -1569,7 +1568,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		}
 		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
 						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
@@ -1681,7 +1680,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		}
 		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
 						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
@@ -1807,7 +1806,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
 						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
@@ -1951,7 +1950,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
 						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
@@ -2032,7 +2031,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 
 	async findEmployeeCaseActionByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrEmployeeCaseAction)
 				.where(
@@ -2135,7 +2134,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		}
 		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
 						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
@@ -2320,7 +2319,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
 						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
@@ -2411,7 +2410,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 
 	async findEmployeeCaseAppealByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrEmployeeCaseAppeal)
 				.where(
@@ -2527,7 +2526,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		});
 		const nextCaseVersion = record.expectedVersion + 1;
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
 						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
@@ -2717,7 +2716,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
 						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
@@ -2869,7 +2868,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
 						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
@@ -3003,7 +3002,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
 						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
@@ -3089,7 +3088,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			return loaded;
 		}
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrEmployeeCaseEvent)
 				.where(
@@ -3129,7 +3128,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			return loaded;
 		}
 		try {
-			const actionRows = await db
+			const actionRows = await afendaDatabase.client
 				.select()
 				.from(hrEmployeeCaseAction)
 				.where(
@@ -3147,7 +3146,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 				}
 				approvedActions.push(mapped.data);
 			}
-			const appealRows = await db
+			const appealRows = await afendaDatabase.client
 				.select()
 				.from(hrEmployeeCaseAppeal)
 				.where(

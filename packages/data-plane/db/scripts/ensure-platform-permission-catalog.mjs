@@ -1,7 +1,7 @@
 /**
  * N10 — release seed path for ARCH-023 v1 platform permission catalog.
  *
- * Idempotent upsert via ensurePlatformPermissionCatalog (typed SSOT).
+ * Idempotent upsert via the database permissions capability (typed SSOT).
  * Not drizzle baseline migrate — never apply 0000_* on br-tiny-hill-ao82jp6f.
  *
  * Usage: pnpm --filter @afenda/db db:ensure-permission-catalog

@@ -1,12 +1,12 @@
 import { randomUUID } from "node:crypto";
 import {
+	audit as afendaAudit,
 	type PreparedTransactionalAuditInsertValues,
-	prepareTransactionalAuditInsertValues,
 } from "@afenda/audit";
 import {
+	database as afendaDatabase,
 	and,
 	asc,
-	db,
 	desc,
 	eq,
 	gte,
@@ -20,7 +20,6 @@ import {
 	isNull,
 	lte,
 	or,
-	runNeonHttpTransaction,
 	sql,
 } from "@afenda/db";
 import { errorResult, type Result } from "@afenda/errors";
@@ -148,7 +147,7 @@ interface OrganizationAuditInput {
 function prepareOrganizationAudit(
 	input: OrganizationAuditInput,
 ): Result<PreparedTransactionalAuditInsertValues> {
-	return prepareTransactionalAuditInsertValues({
+	return afendaAudit.transaction.prepare({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: input.correlationId,
@@ -578,7 +577,7 @@ async function listDepartmentStructureVersions(input: {
 	departmentId: HumanResourcesDepartmentId;
 }): Promise<Result<DepartmentStructureVersion[]>> {
 	try {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(hrDepartmentStructureVersion)
 			.where(
@@ -609,7 +608,7 @@ async function listJobDefinitionVersions(input: {
 	jobId: HumanResourcesJobId;
 }): Promise<Result<JobDefinitionVersion[]>> {
 	try {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(hrJobDefinitionVersion)
 			.where(
@@ -640,7 +639,7 @@ async function listPositionDefinitionVersions(input: {
 	positionId: HumanResourcesPositionId;
 }): Promise<Result<PositionDefinitionVersion[]>> {
 	try {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(hrPositionDefinitionVersion)
 			.where(
@@ -826,7 +825,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		departmentId: HumanResourcesDepartmentId;
 	}): Promise<Result<Department | null>> {
 		try {
-			const result = await db
+			const result = await afendaDatabase.client
 				.select()
 				.from(hrDepartment)
 				.where(
@@ -851,7 +850,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		code: string;
 	}): Promise<Result<Department | null>> {
 		try {
-			const result = await db
+			const result = await afendaDatabase.client
 				.select()
 				.from(hrDepartment)
 				.where(
@@ -921,7 +920,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		}
 		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlValue12) => [
+			const [rows] = await afendaDatabase.transaction((sqlValue12) => [
 				parentId === null
 					? sqlValue12`
 								WITH mutated AS (
@@ -1222,7 +1221,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		}
 		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlValue11) => [
+			const [rows] = await afendaDatabase.transaction((sqlValue11) => [
 				sqlValue11`
 							WITH mutated AS (
 								UPDATE hr_department
@@ -1395,7 +1394,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		}
 		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlValue10) => [
+			const [rows] = await afendaDatabase.transaction((sqlValue10) => [
 				domainEventType
 					? sqlValue10`
 							WITH mutated AS (
@@ -1513,14 +1512,14 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 
 			const offset = (input.page - 1) * input.pageSize;
 			const [rows, countRows] = await Promise.all([
-				db
+				afendaDatabase.client
 					.select()
 					.from(hrDepartment)
 					.where(and(...conditions))
 					.orderBy(asc(hrDepartment.code))
 					.limit(input.pageSize)
 					.offset(offset),
-				db
+				afendaDatabase.client
 					.select({ count: sql<number>`count(*)::int` })
 					.from(hrDepartment)
 					.where(and(...conditions)),
@@ -1547,7 +1546,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		organizationId: string;
 	}): Promise<Result<Department[]>> {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrDepartment)
 				.where(eq(hrDepartment.organizationId, input.organizationId))
@@ -1571,7 +1570,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		jobId: HumanResourcesJobId;
 	}): Promise<Result<Job | null>> {
 		try {
-			const result = await db
+			const result = await afendaDatabase.client
 				.select()
 				.from(hrJob)
 				.where(
@@ -1596,7 +1595,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		code: string;
 	}): Promise<Result<Job | null>> {
 		try {
-			const result = await db
+			const result = await afendaDatabase.client
 				.select()
 				.from(hrJob)
 				.where(
@@ -1664,7 +1663,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		}
 		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlValue9) => [
+			const [rows] = await afendaDatabase.transaction((sqlValue9) => [
 				sqlValue9`
 						WITH mutated AS (
 							INSERT INTO hr_job (
@@ -1817,7 +1816,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		}
 		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlValue8) => [
+			const [rows] = await afendaDatabase.transaction((sqlValue8) => [
 				sqlValue8`
 						WITH mutated AS (
 							UPDATE hr_job
@@ -1974,7 +1973,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		}
 		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlValue7) => [
+			const [rows] = await afendaDatabase.transaction((sqlValue7) => [
 				domainEventType
 					? sqlValue7`
 						WITH mutated AS (
@@ -2079,14 +2078,14 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			}
 			const offset = (input.page - 1) * input.pageSize;
 			const [rows, countRows] = await Promise.all([
-				db
+				afendaDatabase.client
 					.select()
 					.from(hrJob)
 					.where(and(...conditions))
 					.orderBy(asc(hrJob.code))
 					.limit(input.pageSize)
 					.offset(offset),
-				db
+				afendaDatabase.client
 					.select({ count: sql<number>`count(*)::int` })
 					.from(hrJob)
 					.where(and(...conditions)),
@@ -2113,7 +2112,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		positionId: HumanResourcesPositionId;
 	}): Promise<Result<Position | null>> {
 		try {
-			const result = await db
+			const result = await afendaDatabase.client
 				.select()
 				.from(hrPosition)
 				.where(
@@ -2138,7 +2137,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		code: string;
 	}): Promise<Result<Position | null>> {
 		try {
-			const result = await db
+			const result = await afendaDatabase.client
 				.select()
 				.from(hrPosition)
 				.where(
@@ -2192,7 +2191,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		}
 		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlValue6) => [
+			const [rows] = await afendaDatabase.transaction((sqlValue6) => [
 				sqlValue6`
 						WITH department AS (
 							SELECT id, organization_id
@@ -2462,7 +2461,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		}
 		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlValue5) => [
+			const [rows] = await afendaDatabase.transaction((sqlValue5) => [
 				sqlValue5`
 						WITH mutated AS (
 							UPDATE hr_position
@@ -2627,7 +2626,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		}
 		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlValue4) => [
+			const [rows] = await afendaDatabase.transaction((sqlValue4) => [
 				domainEventType
 					? sqlValue4`
 						WITH mutated AS (
@@ -2742,14 +2741,14 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			const offset = (input.page - 1) * input.pageSize;
 
 			const [rows, countRows] = await Promise.all([
-				db
+				afendaDatabase.client
 					.select()
 					.from(hrPosition)
 					.where(and(...conditions))
 					.orderBy(asc(hrPosition.title))
 					.limit(input.pageSize)
 					.offset(offset),
-				db
+				afendaDatabase.client
 					.select({ count: sql<number>`count(*)::int` })
 					.from(hrPosition)
 					.where(and(...conditions)),
@@ -2778,7 +2777,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		departmentId: HumanResourcesDepartmentId;
 	}): Promise<Result<number>> {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select({ count: sql<number>`count(*)::int` })
 				.from(hrPosition)
 				.where(
@@ -2805,7 +2804,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		jobId: HumanResourcesJobId;
 	}): Promise<Result<number>> {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select({ count: sql<number>`count(*)::int` })
 				.from(hrPosition)
 				.where(
@@ -2832,7 +2831,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		parentDepartmentId: HumanResourcesDepartmentId;
 	}): Promise<Result<number>> {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select({ count: sql<number>`count(*)::int` })
 				.from(hrDepartment)
 				.where(
@@ -2856,7 +2855,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		reportingLineId: HumanResourcesReportingLineId;
 	}): Promise<Result<ReportingLine | null>> {
 		try {
-			const result = await db
+			const result = await afendaDatabase.client
 				.select()
 				.from(hrReportingLine)
 				.where(
@@ -2881,7 +2880,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		employeeId: HumanResourcesEmployeeId;
 	}): Promise<Result<ReportingLine[]>> {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrReportingLine)
 				.where(
@@ -2913,7 +2912,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		employeeId: HumanResourcesEmployeeId;
 	}): Promise<Result<ReportingLine | null>> {
 		try {
-			const result = await db
+			const result = await afendaDatabase.client
 				.select()
 				.from(hrReportingLine)
 				.where(
@@ -2944,7 +2943,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		asOf: string;
 	}): Promise<Result<ReportingLine | null>> {
 		try {
-			const result = await db
+			const result = await afendaDatabase.client
 				.select()
 				.from(hrReportingLine)
 				.where(
@@ -2997,14 +2996,14 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			);
 			const offset = (input.page - 1) * input.pageSize;
 			const [rows, countRows] = await Promise.all([
-				db
+				afendaDatabase.client
 					.select()
 					.from(hrReportingLine)
 					.where(conditions)
 					.orderBy(asc(hrReportingLine.startsOn))
 					.limit(input.pageSize)
 					.offset(offset),
-				db
+				afendaDatabase.client
 					.select({ count: sql<number>`count(*)::int` })
 					.from(hrReportingLine)
 					.where(conditions),
@@ -3077,7 +3076,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		}
 		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlValue3) => [
+			const [rows] = await afendaDatabase.transaction((sqlValue3) => [
 				sqlValue3`
 							WITH employee AS (
 								SELECT id, organization_id
@@ -3213,7 +3212,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		}
 		const audit = preparedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlValue2) => [
+			const [rows] = await afendaDatabase.transaction((sqlValue2) => [
 				sqlValue2`
 							WITH mutated AS (
 								UPDATE hr_reporting_line
@@ -3389,7 +3388,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		}
 		const createdAudit = preparedCreatedAudit.data;
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlValue) => [
+			const [rows] = await afendaDatabase.transaction((sqlValue) => [
 				sqlValue`
 							WITH closed AS (
 								UPDATE hr_reporting_line

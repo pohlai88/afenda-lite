@@ -157,6 +157,9 @@ importers:
       '@afenda/config':
         specifier: workspace:*
         version: link:packages/foundation/config
+      '@afenda/db':
+        specifier: workspace:*
+        version: link:packages/data-plane/db
       '@afenda/openapi':
         specifier: workspace:*
         version: link:packages/runtime/openapi

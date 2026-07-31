@@ -1,13 +1,12 @@
 import { randomUUID } from "node:crypto";
 
-import { prepareTransactionalAuditInsertValues } from "@afenda/audit";
+import { audit as afendaAudit } from "@afenda/audit";
 import {
+	database as afendaDatabase,
 	and,
 	asc,
-	db,
 	eq,
 	mdChangeRequest,
-	runNeonHttpTransaction,
 } from "@afenda/db";
 import {
 	errorIngress,
@@ -118,7 +117,7 @@ export async function drizzleGetChangeRequestById(
 	id: string,
 ): Promise<Result<ChangeRequest | null>> {
 	try {
-		const [row] = await db
+		const [row] = await afendaDatabase.client
 			.select()
 			.from(mdChangeRequest)
 			.where(
@@ -172,7 +171,7 @@ export async function drizzleListChangeRequests(
 		if (filter.commandKind !== undefined) {
 			predicates.push(eq(mdChangeRequest.commandKind, filter.commandKind));
 		}
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(mdChangeRequest)
 			.where(and(...predicates))
@@ -218,7 +217,7 @@ export async function drizzleCreateChangeRequest(
 	const auditId = randomUUID();
 	const eventId = randomUUID();
 	const payloadJson = JSON.stringify(record.payload);
-	const preparedAudit = prepareTransactionalAuditInsertValues({
+	const preparedAudit = afendaAudit.transaction.prepare({
 		organizationId: record.organizationId,
 		actorUserId: record.submittedBy,
 		correlationId: meta.correlationId,
@@ -253,7 +252,7 @@ export async function drizzleCreateChangeRequest(
 	});
 
 	try {
-		const [rows] = await runNeonHttpTransaction((sql) => [
+		const [rows] = await afendaDatabase.transaction((sql) => [
 			sql`
 					WITH mutated AS (
 						INSERT INTO md_change_request (
@@ -335,7 +334,7 @@ export async function drizzleTransitionChangeRequest(
 	const eventType = `master_data.change_request.${meta.eventSuffix}.v1`;
 	const auditId = randomUUID();
 	const eventId = randomUUID();
-	const preparedAudit = prepareTransactionalAuditInsertValues({
+	const preparedAudit = afendaAudit.transaction.prepare({
 		organizationId: record.organizationId,
 		actorUserId: record.actorUserId,
 		correlationId: meta.correlationId,
@@ -380,7 +379,7 @@ export async function drizzleTransitionChangeRequest(
 	});
 
 	try {
-		const [rows] = await runNeonHttpTransaction((sql) => [
+		const [rows] = await afendaDatabase.transaction((sql) => [
 			sql`
 					WITH mutated AS (
 						UPDATE md_change_request

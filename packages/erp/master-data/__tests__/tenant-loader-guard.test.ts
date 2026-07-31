@@ -61,7 +61,7 @@ describe("@afenda/master-data tenant loader architecture", () => {
 		const loaderSources = `${drizzleStore}\n${variantMutations}`;
 
 		expect(
-			loaderSources.match(/tenantEntityPredicate\(/g)?.length,
+			loaderSources.match(/afendaDatabase\.tenancy\.entity\(/g)?.length,
 		).toBeGreaterThanOrEqual(9);
 		expect(loaderSources).not.toMatch(
 			/(?:row|rawRow|existing)\.organizationId\s*!==/,

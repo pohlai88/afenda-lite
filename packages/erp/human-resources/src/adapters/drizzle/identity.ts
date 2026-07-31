@@ -1,6 +1,6 @@
 import {
+	database as afendaDatabase,
 	and,
-	db,
 	eq,
 	gte,
 	hrReportingLine,
@@ -25,7 +25,7 @@ export const drizzleIdentityMethods: HumanResourcesIdentityStore = {
 		try {
 			const queryDate = input.asOf ?? new Date().toISOString().slice(0, 10);
 
-			const result = await db
+			const result = await afendaDatabase.client
 				.select({
 					employeeId: hrUserEmployee.employeeId,
 					relationshipType: hrUserEmployee.relationshipType,
@@ -89,7 +89,7 @@ export const drizzleIdentityMethods: HumanResourcesIdentityStore = {
 			const queryDate = input.asOf ?? new Date().toISOString().slice(0, 10);
 
 			// Find all employees that report to this manager (primary reporting lines)
-			const result = await db
+			const result = await afendaDatabase.client
 				.select({
 					employeeId: hrReportingLine.employeeId,
 				})
@@ -129,7 +129,7 @@ export const drizzleIdentityMethods: HumanResourcesIdentityStore = {
 		actorUserId: string;
 	}): Promise<Result<{ id: string }>> {
 		try {
-			const result = await db
+			const result = await afendaDatabase.client
 				.insert(hrUserEmployee)
 				.values({
 					organizationId: input.organizationId,

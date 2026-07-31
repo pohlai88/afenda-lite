@@ -11,9 +11,9 @@ Use this server-only package when a domain mutation needs a durable activity tra
 Import from the package barrel:
 
 ```ts
-import { createAuditRecorder, queryAuditLogCursor } from "@afenda/audit";
+import { audit } from "@afenda/audit";
 
-const recorder = createAuditRecorder();
+const recorder = audit.recorder();
 const recorded = await recorder.record({
   organizationId,
   actorUserId,
@@ -38,7 +38,7 @@ if (!recorded.ok) {
   // Map Result at the application boundary.
 }
 
-const page = await queryAuditLogCursor({
+const page = await audit.read.cursor({
   organizationId,
   pageSize: 50,
 });
@@ -50,11 +50,11 @@ Sensitive keys such as passwords, tokens, credentials, cookies, and authorizatio
 
 | Need | API |
 |------|-----|
-| Standard write through the production store | `createAuditRecorder()` |
-| Inject a store for tests or composition | `createAuditRecorder({ store })` |
-| Prepare validated and masked values for a caller-owned guarded CTE | `prepareTransactionalAuditInsertValues()` |
-| Let a mutation row supply `entity_id` | `prepareDerivedEntityAuditInsertValues()` |
-| Build a parameterized insert for a synchronous Neon transaction batch | `buildTransactionalAuditInsert()` |
+| Standard write through the production store | `audit.recorder()` |
+| Inject a store for tests or composition | `audit.recorder({ store })` |
+| Prepare validated and masked values for a caller-owned guarded CTE | `audit.transaction.prepare()` |
+| Let a mutation row supply `entity_id` | `audit.transaction.prepareDerived()` |
+| Build a parameterized insert for a synchronous Neon transaction batch | `audit.transaction.buildInsert()` |
 
 Keep the domain mutation and its audit insert in the same transaction whenever audit durability is part of the mutation contract. The preparation helpers fail closed before SQL construction and serialize the versioned event context into reserved audit metadata.
 
@@ -62,14 +62,14 @@ Keep the domain mutation and its audit insert in the same transaction whenever a
 
 | API | Purpose |
 |-----|---------|
-| `queryAuditLog` | Offset page plus total count |
-| `queryAuditLogCursor` | Stable keyset page plus opaque continuation cursor |
-| `getEntityHistory` | Organization-scoped history for one entity |
-| `getUserActivity` | Organization-scoped activity for one actor |
-| `countByAction` | Filtered action count |
-| `exportAuditLogDetailed` | Bounded JSON or CSV export with row count, truncation state, and continuation cursor |
-| `exportAuditLog` | String-only compatibility wrapper around detailed export |
-| `purgeOldEntries` | Delete organization-scoped entries older than a cutoff |
+| `audit.read.page` | Offset page plus total count |
+| `audit.read.cursor` | Stable keyset page plus opaque continuation cursor |
+| `audit.read.entityHistory` | Organization-scoped history for one entity |
+| `audit.read.userActivity` | Organization-scoped activity for one actor |
+| `audit.read.countByAction` | Filtered action count |
+| `audit.export.detailed` | Bounded JSON or CSV export with row count, truncation state, and continuation cursor |
+| `audit.export.content` | Content-only projection of a bounded export |
+| `audit.retention.purge` | Delete organization-scoped entries older than a cutoff |
 
 Offset pages default to 50 rows and are capped at 100. Exports are capped at `MAX_AUDIT_EXPORT_ROWS` (10,000); continue a truncated detailed export with its returned cursor. CSV output contains summary columns rather than the full changes JSON.
 
@@ -77,7 +77,7 @@ Offset pages default to 50 rows and are capped at 100. Exports are capped at `MA
 
 | Surface | Contract |
 |---------|----------|
-| Production adapter | `DrizzleAuditStore` → `platform_audit_log` via `@afenda/db` |
+| Production adapter | `audit.store.drizzle()` → `platform_audit_log` via `@afenda/db` |
 | Persistence port | `AuditStore` |
 | Test injection | Recorder and query helpers accept an `AuditStore` |
 | Diagnostics | `AUDIT_TELEMETRY_CHANNEL` (`afenda.audit.operation.v1`) |
@@ -92,20 +92,20 @@ Requires the repository engines: Node `24.x` and pnpm `>=10.33.4`.
 pnpm --filter @afenda/audit lint
 pnpm --filter @afenda/audit typecheck
 pnpm --filter @afenda/audit test
+pnpm check:audit-boundary
+pnpm test:audit-boundary
 ```
 
 ## Export surface
 
-The single public import path, `@afenda/audit`, exposes:
+The single public import path, `@afenda/audit`, exposes one frozen `audit` runtime facade plus structural TypeScript contracts:
 
-- recorder, Drizzle store, and `AuditStore` contracts;
-- offset and cursor queries, export, count, and purge helpers;
-- audit actions, event context, entries, changes, schemas, and bounds;
-- diffing, sensitive-data masking, CSV, and cursor helpers;
-- guarded transaction-write preparation and SQL construction;
-- payload-free diagnostics-channel telemetry contracts.
+- `audit.recorder`, `audit.store`, `audit.read`, `audit.export`, and `audit.retention` operations;
+- `audit.transaction` validation and SQL construction for atomic domain mutations;
+- `audit.schemas`, `audit.vocabulary`, `audit.limits`, `audit.data`, `audit.cursor`, and payload-free `audit.telemetry` projections;
+- type-only command, entry, store, recorder, query, export, and prepared-transaction contracts.
 
-See [`src/index.ts`](./src/index.ts) for the exact barrel. Do not deep-import package internals.
+The former named runtime functions and `DrizzleAuditStore` implementation class are intentionally absent. See [`src/index.ts`](./src/index.ts) for the exact barrel. Do not deep-import package internals.
 
 ## Ownership and boundaries
 

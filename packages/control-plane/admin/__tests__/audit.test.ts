@@ -9,10 +9,12 @@ const del = vi.fn();
 vi.mock("@afenda/db", () => ({
 	and: vi.fn(() => ({ kind: "and" })),
 	count: vi.fn(() => ({ kind: "count" })),
-	db: {
-		select: (...args: unknown[]) => select(...args),
-		insert: (...args: unknown[]) => insert(...args),
-		delete: (...args: unknown[]) => del(...args),
+	database: {
+		client: {
+			select: (...args: unknown[]) => select(...args),
+			insert: (...args: unknown[]) => insert(...args),
+			delete: (...args: unknown[]) => del(...args),
+		},
 	},
 	desc: vi.fn(() => ({ kind: "desc" })),
 	eq: vi.fn(() => ({ kind: "eq" })),

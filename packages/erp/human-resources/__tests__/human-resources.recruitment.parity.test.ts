@@ -2,7 +2,13 @@
  * Memory vs Drizzle parity for recruitment pipeline invariants (HR-04).
  */
 
-import { and, db, eq, inArray, platformDomainEvent } from "@afenda/db";
+import {
+	database as afendaDatabase,
+	and,
+	eq,
+	inArray,
+	platformDomainEvent,
+} from "@afenda/db";
 import {
 	HUMAN_RESOURCES_OFFER_ACCEPTED_EVENT,
 	HUMAN_RESOURCES_REQUISITION_APPROVED_EVENT,
@@ -156,7 +162,7 @@ function defineRecruitmentParitySuite(adapter: WorkforceStoreAdapter): void {
 			return;
 		}
 
-		const events = await db
+		const events = await afendaDatabase.client
 			.select()
 			.from(platformDomainEvent)
 			.where(

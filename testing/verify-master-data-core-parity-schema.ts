@@ -1,14 +1,14 @@
-// Master-data schema probes still use the DB package source while runner setup is root-owned.
+// Master-data schema probes consume the permanent DB package facade.
 
+import { database, sql } from "@afenda/db";
 import { testingDatabase } from "@afenda/testing";
-import { db, sql } from "../packages/data-plane/db/src/index.ts";
 
 const REQUIRED_CORE_SCHEMA_MARKERS = 4;
 
 export default async function verifyMasterDataCoreParitySchema(): Promise<void> {
 	process.env.REQUIRE_DATABASE_TESTS = "1";
 	testingDatabase.setup();
-	const currentSchema = await db.execute(sql`
+	const currentSchema = await database.client.execute(sql`
 		SELECT table_name, column_name
 		FROM information_schema.columns
 		WHERE table_schema = 'public'

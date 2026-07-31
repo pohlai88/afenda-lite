@@ -1,4 +1,4 @@
-import { db, sql } from "@afenda/db";
+import { database as afendaDatabase, sql } from "@afenda/db";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
 	addSalesOrderLine,
@@ -26,11 +26,13 @@ const UOM_DIMENSION_ID = "88888888-8888-4888-8888-888888888888";
 const UOM_ID = "66666666-6666-4666-8666-666666666666";
 
 function executeSequentially(
-	statements: readonly Parameters<typeof db.execute>[0][],
+	statements: readonly Parameters<typeof afendaDatabase.client.execute>[0][],
 ): Promise<void> {
 	return statements.reduce<Promise<void>>(
 		(sequence, statement) =>
-			sequence.then(() => db.execute(statement)).then(() => undefined),
+			sequence
+				.then(() => afendaDatabase.client.execute(statement))
+				.then(() => undefined),
 		Promise.resolve(),
 	);
 }
@@ -151,7 +153,7 @@ describe.runIf(runIntegration)(
 			);
 			expect(crossTenant).toEqual({ ok: true, data: null });
 
-			const evidence = await db.execute(sql`
+			const evidence = await afendaDatabase.client.execute(sql`
 			SELECT
 				(SELECT count(*)::int FROM platform_audit_log WHERE organization_id = ${ORGANIZATION_ID} AND correlation_id LIKE 'test:drizzle-%') AS audit_count,
 				(SELECT count(*)::int FROM platform_domain_event WHERE organization_id = ${ORGANIZATION_ID} AND correlation_id LIKE 'test:drizzle-%') AS event_count

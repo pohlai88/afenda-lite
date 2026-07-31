@@ -5,7 +5,7 @@
 
 import {
 	type AuditEntry,
-	createAuditRecorder,
+	audit as afendaAudit,
 	type RecordAuditCommand,
 } from "@afenda/audit";
 import type { Result } from "@afenda/errors";
@@ -34,7 +34,7 @@ export async function recordOrganizationDeletedAudit(
 	const attribution = await readRequestAttribution();
 	const { organizationId } = input;
 
-	return createAuditRecorder().record({
+	return afendaAudit.recorder().record({
 		organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: input.correlationId,

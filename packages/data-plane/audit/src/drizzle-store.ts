@@ -1,7 +1,7 @@
 import {
+	database as afendaDatabase,
 	and,
 	count,
-	db,
 	desc,
 	eq,
 	gte,
@@ -119,7 +119,7 @@ export class DrizzleAuditStore implements AuditStore {
 		const validated = prepared.data;
 
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.insert(platformAuditLog)
 				.values({
 					organizationId: validated.organizationId,
@@ -161,7 +161,7 @@ export class DrizzleAuditStore implements AuditStore {
 			const where = buildWhere(options);
 			const offset = (options.page - 1) * options.pageSize;
 
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(platformAuditLog)
 				.where(where)
@@ -178,7 +178,7 @@ export class DrizzleAuditStore implements AuditStore {
 	async count(options: AuditQueryFilter): Promise<Result<number>> {
 		try {
 			const where = buildWhere(options);
-			const [totalRow] = await db
+			const [totalRow] = await afendaDatabase.client
 				.select({ value: count() })
 				.from(platformAuditLog)
 				.where(where);
@@ -193,7 +193,7 @@ export class DrizzleAuditStore implements AuditStore {
 		options: AuditCursorQueryOptions,
 	): Promise<Result<AuditEntry[]>> {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(platformAuditLog)
 				.where(buildCursorWhere(options))
@@ -216,7 +216,7 @@ export class DrizzleAuditStore implements AuditStore {
 				return errorResult.fail("INTERNAL_ERROR");
 			}
 
-			const deleted = await db
+			const deleted = await afendaDatabase.client
 				.delete(platformAuditLog)
 				.where(where)
 				.returning({ id: platformAuditLog.id });

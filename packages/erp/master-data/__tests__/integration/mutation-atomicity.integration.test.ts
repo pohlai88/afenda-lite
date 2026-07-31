@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 
 import {
+	database as afendaDatabase,
 	and,
-	db,
 	eq,
 	mdParty,
 	platformAuditLog,
@@ -30,7 +30,7 @@ it("rolls back entity and audit when the outbox write fails", async () => {
 		const store = createDrizzleMasterDataStore({
 			generateId: () => generatedIds.shift() ?? randomUUID(),
 		});
-		await db.insert(platformDomainEvent).values({
+		await afendaDatabase.client.insert(platformDomainEvent).values({
 			id: collidingEventId,
 			organizationId: harness.organizationId,
 			type: "master_data.atomicity.sentinel.v1",
@@ -53,7 +53,7 @@ it("rolls back entity and audit when the outbox write fails", async () => {
 		);
 		expect(result.ok).toBe(false);
 
-		const parties = await db
+		const parties = await afendaDatabase.client
 			.select({ id: mdParty.id })
 			.from(mdParty)
 			.where(
@@ -62,7 +62,7 @@ it("rolls back entity and audit when the outbox write fails", async () => {
 					eq(mdParty.id, partyId),
 				),
 			);
-		const audits = await db
+		const audits = await afendaDatabase.client
 			.select({ id: platformAuditLog.id })
 			.from(platformAuditLog)
 			.where(
@@ -71,7 +71,7 @@ it("rolls back entity and audit when the outbox write fails", async () => {
 					eq(platformAuditLog.id, auditId),
 				),
 			);
-		const events = await db
+		const events = await afendaDatabase.client
 			.select({ id: platformDomainEvent.id })
 			.from(platformDomainEvent)
 			.where(

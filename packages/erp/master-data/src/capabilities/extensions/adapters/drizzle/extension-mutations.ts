@@ -5,15 +5,14 @@
 import { randomUUID } from "node:crypto";
 
 import {
+	audit as afendaAudit,
 	type PreparedDerivedEntityAuditInsertValues,
 	type PreparedTransactionalAuditInsertValues,
-	prepareDerivedEntityAuditInsertValues,
-	prepareTransactionalAuditInsertValues,
 } from "@afenda/audit";
 import {
+	database as afendaDatabase,
 	and,
 	asc,
-	db,
 	eq,
 	isNull,
 	mdItem,
@@ -33,7 +32,6 @@ import {
 	refCountry,
 	refUom,
 	refUomDimension,
-	runNeonHttpTransaction,
 } from "@afenda/db";
 import {
 	errorIngress,
@@ -181,7 +179,7 @@ interface ExtensionAuditInput {
 function prepareExtensionAudit(
 	input: ExtensionAuditInput & { entityId: string },
 ): Result<PreparedTransactionalAuditInsertValues> {
-	return prepareTransactionalAuditInsertValues({
+	return afendaAudit.transaction.prepare({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: input.correlationId,
@@ -205,7 +203,7 @@ function prepareExtensionAudit(
 function prepareDerivedExtensionAudit(
 	input: ExtensionAuditInput,
 ): Result<PreparedDerivedEntityAuditInsertValues> {
-	return prepareDerivedEntityAuditInsertValues({
+	return afendaAudit.transaction.prepareDerived({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: input.correlationId,
@@ -233,7 +231,7 @@ async function requireUsablePartyMutationParent(
 	organizationId: string,
 	partyId: string,
 ): Promise<Result<true>> {
-	const [party] = await db
+	const [party] = await afendaDatabase.client
 		.select({
 			status: mdParty.status,
 			retiredAt: mdParty.retiredAt,
@@ -262,7 +260,7 @@ async function requireUsablePartyMutationParent(
 async function requireActiveAddressCountry(
 	countryId: string,
 ): Promise<Result<true>> {
-	const [country] = await db
+	const [country] = await afendaDatabase.client
 		.select({ active: refCountry.active })
 		.from(refCountry)
 		.where(eq(refCountry.id, countryId))
@@ -284,7 +282,7 @@ async function requireUsableItemMutationParent(
 	organizationId: string,
 	itemId: string,
 ): Promise<Result<true>> {
-	const [item] = await db
+	const [item] = await afendaDatabase.client
 		.select({ status: mdItem.status, retiredAt: mdItem.retiredAt })
 		.from(mdItem)
 		.where(
@@ -583,7 +581,7 @@ export async function drizzleCountActivePartyRoles(
 	partyId: string,
 ): Promise<Result<number>> {
 	try {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select({ id: mdPartyRole.id })
 			.from(mdPartyRole)
 			.where(
@@ -604,7 +602,7 @@ export async function drizzleListPartyRoles(
 	filter: PartyRoleListFilter,
 ): Promise<Result<ExtensionListPage<PartyRole>>> {
 	try {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(mdPartyRole)
 			.where(
@@ -631,7 +629,7 @@ export async function drizzleListActivePartyRoles(
 	filter: PartyRoleListFilter,
 ): Promise<Result<ExtensionListPage<PartyRole>>> {
 	try {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(mdPartyRole)
 			.where(
@@ -662,7 +660,7 @@ export async function drizzleGetPartyRoleById(
 	id: string,
 ): Promise<Result<PartyRole | null>> {
 	try {
-		const [row] = await db
+		const [row] = await afendaDatabase.client
 			.select()
 			.from(mdPartyRole)
 			.where(
@@ -684,7 +682,7 @@ export async function drizzleGetPartyRoleLifecycleContext(
 	id: string,
 ): Promise<Result<PartyRoleLifecycleContext>> {
 	try {
-		const [roleRow] = await db
+		const [roleRow] = await afendaDatabase.client
 			.select()
 			.from(mdPartyRole)
 			.where(
@@ -698,7 +696,7 @@ export async function drizzleGetPartyRoleLifecycleContext(
 			return errorResult.ok({ role: null, party: null, activeRoleCount: 0 });
 		}
 		const role = mapPartyRole(roleRow);
-		const [partyRow] = await db
+		const [partyRow] = await afendaDatabase.client
 			.select()
 			.from(mdParty)
 			.where(
@@ -761,7 +759,7 @@ export async function drizzleCreatePartyRole(
 		correlationId: meta.correlationId,
 	});
 	try {
-		const [rows] = await runNeonHttpTransaction((sql) => [
+		const [rows] = await afendaDatabase.transaction((sql) => [
 			sql`
 				WITH mutated AS (
 					INSERT INTO md_party_role (
@@ -853,7 +851,7 @@ export async function drizzleUpdatePartyRole(
 	meta: { correlationId: string },
 ): Promise<Result<PartyRole>> {
 	try {
-		const [existing] = await db
+		const [existing] = await afendaDatabase.client
 			.select()
 			.from(mdPartyRole)
 			.where(
@@ -928,7 +926,7 @@ export async function drizzleUpdatePartyRole(
 			actorId: record.updatedBy,
 			correlationId: meta.correlationId,
 		});
-		const [rows] = await runNeonHttpTransaction((sql) => [
+		const [rows] = await afendaDatabase.transaction((sql) => [
 			sql`
 					WITH mutated AS (
 						UPDATE md_party_role
@@ -1027,7 +1025,7 @@ async function validatePartyRoleParentState(
 	if (requirement !== "parent_active") {
 		return errorResult.ok(true);
 	}
-	const [party] = await db
+	const [party] = await afendaDatabase.client
 		.select({ status: mdParty.status })
 		.from(mdParty)
 		.where(
@@ -1056,7 +1054,7 @@ async function protectFinalActivePartyRole(
 	) {
 		return errorResult.ok(true);
 	}
-	const [party] = await db
+	const [party] = await afendaDatabase.client
 		.select({ status: mdParty.status })
 		.from(mdParty)
 		.where(
@@ -1106,7 +1104,7 @@ function resolvePartyRoleLifecycleTimestamps(
 async function partyRoleMutationConflict(
 	record: PartyRoleLifecycleRecord,
 ): Promise<Result<never>> {
-	const [current] = await db
+	const [current] = await afendaDatabase.client
 		.select({
 			partyId: mdPartyRole.partyId,
 			status: mdPartyRole.status,
@@ -1143,7 +1141,7 @@ export async function drizzleTransitionPartyRole(
 	const eventId = randomUUID();
 	const eventType = partyRoleLifecycleEventType(meta.eventSuffix);
 	try {
-		const [existing] = await db
+		const [existing] = await afendaDatabase.client
 			.select()
 			.from(mdPartyRole)
 			.where(
@@ -1231,7 +1229,7 @@ export async function drizzleTransitionPartyRole(
 			archivedAt,
 			archivedBy,
 		} = resolvePartyRoleLifecycleTimestamps(record, existing);
-		const [, rows] = await runNeonHttpTransaction((sql) => [
+		const [, rows] = await afendaDatabase.transaction((sql) => [
 			sql`
 					SELECT party.id
 					FROM md_party AS party
@@ -1406,7 +1404,7 @@ export async function drizzleCreatePartyAddress(
 		if (!country.ok) {
 			return country;
 		}
-		const [rows] = await runNeonHttpTransaction((sql) => [
+		const [rows] = await afendaDatabase.transaction((sql) => [
 			sql`
 					WITH parent_locked AS MATERIALIZED (
 						SELECT party.id AS parent_id
@@ -1644,7 +1642,7 @@ export async function drizzleUpdatePartyAddress(
 	meta: { correlationId: string },
 ): Promise<Result<PartyAddress>> {
 	try {
-		const [existing] = await db
+		const [existing] = await afendaDatabase.client
 			.select()
 			.from(mdPartyAddress)
 			.where(
@@ -1733,7 +1731,7 @@ export async function drizzleUpdatePartyAddress(
 			actorId: record.updatedBy,
 			correlationId: meta.correlationId,
 		});
-		const [rows] = await runNeonHttpTransaction((sql) => [
+		const [rows] = await afendaDatabase.transaction((sql) => [
 			sql`
 					WITH parent_locked AS MATERIALIZED (
 						SELECT party.id AS parent_id
@@ -1915,7 +1913,7 @@ export async function drizzleListPartyAddresses(
 	filter: ParentListFilter,
 ): Promise<Result<PartyAddress[]>> {
 	try {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(mdPartyAddress)
 			.where(
@@ -1938,7 +1936,7 @@ export async function drizzleGetPartyAddressById(
 	id: string,
 ): Promise<Result<PartyAddress | null>> {
 	try {
-		const [row] = await db
+		const [row] = await afendaDatabase.client
 			.select()
 			.from(mdPartyAddress)
 			.where(
@@ -1961,7 +1959,7 @@ export async function drizzleGetPrimaryPartyAddress(
 	purpose: PartyAddress["purpose"],
 ): Promise<Result<PartyAddress | null>> {
 	try {
-		const [row] = await db
+		const [row] = await afendaDatabase.client
 			.select()
 			.from(mdPartyAddress)
 			.where(
@@ -1985,7 +1983,7 @@ export async function drizzleListPartyContacts(
 	filter: ParentListFilter,
 ): Promise<Result<PartyContact[]>> {
 	try {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(mdPartyContact)
 			.where(
@@ -2009,7 +2007,7 @@ export async function drizzleGetPrimaryPartyContact(
 	purpose: string | null,
 ): Promise<Result<PartyContact | null>> {
 	try {
-		const [row] = await db
+		const [row] = await afendaDatabase.client
 			.select()
 			.from(mdPartyContact)
 			.where(
@@ -2088,7 +2086,7 @@ export async function drizzleCreatePartyContact(
 		correlationId: meta.correlationId,
 	});
 	try {
-		const [rows] = await runNeonHttpTransaction((sql) => [
+		const [rows] = await afendaDatabase.transaction((sql) => [
 			sql`
 					WITH parent_locked AS MATERIALIZED (
 						SELECT party.id AS parent_id
@@ -2319,7 +2317,7 @@ export async function drizzleUpdatePartyContact(
 	meta: { correlationId: string },
 ): Promise<Result<PartyContact>> {
 	try {
-		const [existing] = await db
+		const [existing] = await afendaDatabase.client
 			.select()
 			.from(mdPartyContact)
 			.where(
@@ -2408,7 +2406,7 @@ export async function drizzleUpdatePartyContact(
 			actorId: record.updatedBy,
 			correlationId: meta.correlationId,
 		});
-		const [rows] = await runNeonHttpTransaction((sql) => [
+		const [rows] = await afendaDatabase.transaction((sql) => [
 			sql`
 					WITH parent_locked AS MATERIALIZED (
 						SELECT party.id AS parent_id
@@ -2635,7 +2633,7 @@ export async function drizzleCreatePartyExternalId(
 		correlationId: meta.correlationId,
 	});
 	try {
-		const [rows] = await runNeonHttpTransaction((sql) => [
+		const [rows] = await afendaDatabase.transaction((sql) => [
 			sql`
 					WITH parent_locked AS MATERIALIZED (
 						SELECT party.id AS parent_id
@@ -2777,7 +2775,7 @@ export async function drizzleFindPartyByExternalId(
 	filter: PartyExternalIdLookup,
 ): Promise<Result<Party | null>> {
 	try {
-		const matches = await db
+		const matches = await afendaDatabase.client
 			.select()
 			.from(mdPartyExternalId)
 			.where(
@@ -2801,7 +2799,7 @@ export async function drizzleFindPartyByExternalId(
 		if (ext === undefined) {
 			return errorResult.ok(null);
 		}
-		const [party] = await db
+		const [party] = await afendaDatabase.client
 			.select()
 			.from(mdParty)
 			.where(
@@ -2872,7 +2870,7 @@ export async function drizzleCreatePartyRelationship(
 		correlationId: meta.correlationId,
 	});
 	try {
-		const [rows] = await runNeonHttpTransaction((sql) => [
+		const [rows] = await afendaDatabase.transaction((sql) => [
 			sql`
 					WITH RECURSIVE hierarchy_guard AS MATERIALIZED (
 						SELECT pg_advisory_xact_lock(
@@ -2992,7 +2990,7 @@ export async function drizzleListPartyRelationships(
 	filter: PartyRelationshipListFilter,
 ): Promise<Result<ExtensionListPage<PartyRelationship>>> {
 	try {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(mdPartyRelationship)
 			.where(
@@ -3030,7 +3028,7 @@ export async function drizzleResolveItemUomCompatibilityContext(
 	filter: ItemUomCompatibilityContextFilter,
 ): Promise<Result<ItemUomCompatibilityContext>> {
 	try {
-		const [row] = await db
+		const [row] = await afendaDatabase.client
 			.select({
 				itemId: mdItem.id,
 				baseUomId: mdItem.baseUomId,
@@ -3058,7 +3056,7 @@ export async function drizzleResolveItemUomCompatibilityContext(
 				publicMessage: "Item UoM conversion duplicates base UoM",
 			});
 		}
-		const [alternate] = await db
+		const [alternate] = await afendaDatabase.client
 			.select({
 				id: refUom.id,
 				active: refUom.active,
@@ -3094,7 +3092,7 @@ export async function drizzleListItemUoms(
 	filter: ItemUomListFilter,
 ): Promise<Result<ExtensionListPage<ItemUom>>> {
 	try {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(mdItemUom)
 			.where(
@@ -3133,7 +3131,7 @@ async function drizzleGetDefaultItemUom(
 			usage === "sales"
 				? eq(mdItemUom.isDefaultSalesUom, true)
 				: eq(mdItemUom.isDefaultPurchaseUom, true);
-		const [row] = await db
+		const [row] = await afendaDatabase.client
 			.select()
 			.from(mdItemUom)
 			.where(
@@ -3188,7 +3186,7 @@ async function validateItemUomCreateReferences(
 	record: ItemUomCreateRecord,
 ): Promise<Result<true>> {
 	try {
-		const [item] = await db
+		const [item] = await afendaDatabase.client
 			.select()
 			.from(mdItem)
 			.where(
@@ -3201,12 +3199,12 @@ async function validateItemUomCreateReferences(
 		if (item === undefined) {
 			return errorResult.fail("NOT_FOUND", { publicMessage: "Item not found" });
 		}
-		const [baseUom] = await db
+		const [baseUom] = await afendaDatabase.client
 			.select()
 			.from(refUom)
 			.where(eq(refUom.id, item.baseUomId))
 			.limit(1);
-		const [altUom] = await db
+		const [altUom] = await afendaDatabase.client
 			.select()
 			.from(refUom)
 			.where(eq(refUom.id, record.alternateUomId))
@@ -3226,12 +3224,12 @@ async function validateItemUomCreateReferences(
 				publicMessage: "Item UoM conversion duplicates base UoM",
 			});
 		}
-		const [baseDimension] = await db
+		const [baseDimension] = await afendaDatabase.client
 			.select()
 			.from(refUomDimension)
 			.where(eq(refUomDimension.id, baseUom.dimensionId))
 			.limit(1);
-		const [alternateDimension] = await db
+		const [alternateDimension] = await afendaDatabase.client
 			.select()
 			.from(refUomDimension)
 			.where(eq(refUomDimension.id, altUom.dimensionId))
@@ -3324,7 +3322,7 @@ export async function drizzleCreateItemUom(
 		correlationId: meta.correlationId,
 	});
 	try {
-		const [rows] = await runNeonHttpTransaction((sql) => [
+		const [rows] = await afendaDatabase.transaction((sql) => [
 			sql`
 					WITH item_locked AS MATERIALIZED (
 						SELECT item.id, item.base_uom_id
@@ -3570,7 +3568,7 @@ export async function drizzleCreateItemBarcode(
 		correlationId: meta.correlationId,
 	});
 	try {
-		const [rows] = await runNeonHttpTransaction((sql) => [
+		const [rows] = await afendaDatabase.transaction((sql) => [
 			sql`
 					WITH parent_locked AS MATERIALIZED (
 						SELECT item.id AS parent_id, item.base_uom_id
@@ -3751,7 +3749,7 @@ export async function drizzleFindItemByBarcode(
 			predicates.push(eq(mdItemBarcode.status, "active"));
 			predicates.push(isNull(mdItemBarcode.archivedAt));
 		}
-		const barcodes = await db
+		const barcodes = await afendaDatabase.client
 			.select()
 			.from(mdItemBarcode)
 			.where(and(...predicates))
@@ -3766,7 +3764,7 @@ export async function drizzleFindItemByBarcode(
 			return errorResult.ok(null);
 		}
 
-		const [item] = await db
+		const [item] = await afendaDatabase.client
 			.select()
 			.from(mdItem)
 			.where(
@@ -3837,7 +3835,7 @@ export async function drizzleCreateItemExternalId(
 		correlationId: meta.correlationId,
 	});
 	try {
-		const [rows] = await runNeonHttpTransaction((sql) => [
+		const [rows] = await afendaDatabase.transaction((sql) => [
 			sql`
 					WITH parent_locked AS MATERIALIZED (
 						SELECT item.id AS parent_id
@@ -3976,7 +3974,7 @@ export async function drizzleFindItemByExternalId(
 	filter: ItemExternalIdLookup,
 ): Promise<Result<Item | null>> {
 	try {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(mdItemExternalId)
 			.where(
@@ -4000,7 +3998,7 @@ export async function drizzleFindItemByExternalId(
 		if (ext === undefined) {
 			return errorResult.ok(null);
 		}
-		const [item] = await db
+		const [item] = await afendaDatabase.client
 			.select()
 			.from(mdItem)
 			.where(
@@ -4058,7 +4056,7 @@ export async function drizzleCreateItemAlias(
 		correlationId: meta.correlationId,
 	});
 	try {
-		const [rows] = await runNeonHttpTransaction((sql) => [
+		const [rows] = await afendaDatabase.transaction((sql) => [
 			sql`
 					WITH parent_locked AS MATERIALIZED (
 						SELECT item.id AS parent_id
@@ -4166,7 +4164,7 @@ export async function drizzleListItemAliases(
 	filter: ItemAliasListFilter,
 ): Promise<Result<ExtensionListPage<ItemAlias>>> {
 	try {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(mdItemAlias)
 			.where(
@@ -4213,7 +4211,7 @@ export async function drizzleListItemsByAlias(
 					: eq(mdItemAlias.languageId, filter.languageId),
 			);
 		}
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.selectDistinct({ item: mdItem })
 			.from(mdItemAlias)
 			.innerJoin(
@@ -4298,7 +4296,7 @@ export async function drizzleCreateWarehouseExternalId(
 		correlationId: meta.correlationId,
 	});
 	try {
-		const [rows] = await runNeonHttpTransaction((sql) => [
+		const [rows] = await afendaDatabase.transaction((sql) => [
 			sql`
 					WITH parent_locked AS MATERIALIZED (
 						SELECT warehouse.id AS parent_id
@@ -4392,7 +4390,7 @@ export async function drizzleFindWarehouseByExternalId(
 	normalizedValue: string,
 ): Promise<Result<Warehouse | null>> {
 	try {
-		const matches = await db
+		const matches = await afendaDatabase.client
 			.select()
 			.from(mdWarehouseExternalId)
 			.where(
@@ -4415,7 +4413,7 @@ export async function drizzleFindWarehouseByExternalId(
 		if (ext === undefined) {
 			return errorResult.ok(null);
 		}
-		const [warehouse] = await db
+		const [warehouse] = await afendaDatabase.client
 			.select()
 			.from(mdWarehouse)
 			.where(

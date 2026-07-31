@@ -32,6 +32,10 @@
 		"check:tenancy-residue": "node scripts/check-tenancy-residue.mjs",
 		"check:tenant-sql-safety": "node scripts/check-tenant-sql-safety.mjs",
 		"test:tenant-sql-safety": "node --test scripts/check-tenant-sql-safety.test.mjs",
+		"check:db-boundary": "node scripts/check-db-boundary.mjs",
+		"test:db-boundary": "node --test scripts/check-db-boundary.test.mjs",
+		"check:audit-boundary": "node scripts/check-audit-boundary.mjs",
+		"test:audit-boundary": "node --test scripts/check-audit-boundary.test.mjs",
 		"audit:github-actions-secrets": "node scripts/audit-github-actions-secrets.mjs",
 		"protect:main": "node scripts/protect-main.mjs",
 		"gh": "node scripts/gh.mjs",
@@ -107,6 +111,7 @@
 	},
 	"devDependencies": {
 		"@afenda/config": "workspace:*",
+		"@afenda/db": "workspace:*",
 		"@afenda/openapi": "workspace:*",
 		"@afenda/testing": "workspace:*",
 		"@axe-core/playwright": "^4.12.1",

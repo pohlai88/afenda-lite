@@ -5,6 +5,10 @@ policy, runner projections, database-evidence resolution, and reusable setup
 behavior. Repo-root [`testing/`](../../../testing/README.md) remains the runner
 entrypoint and repository-composition home, not a second policy owner.
 
+Package maintainers use this package when they need a governed Vitest or
+Playwright lane, a database-evidence decision, or runner setup. Runtime product
+code must not depend on it.
+
 ## Permanent consumer surface
 
 Import four frozen capabilities from the package root:
@@ -72,7 +76,7 @@ Do not:
 The package is an R1-A dev/test leaf with no runtime dependencies or workspace
 runtime edges.
 
-## Verification
+## Maintain
 
 ```bash
 pnpm --filter @afenda/testing lint
@@ -80,3 +84,34 @@ pnpm --filter @afenda/testing typecheck
 pnpm --filter @afenda/testing test
 pnpm check:testing-governance
 ```
+
+Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
+
+Intentional changes require the local protection unlock after the focused gates
+are green:
+
+```bash
+pnpm --filter @afenda/testing protect:update
+pnpm --filter @afenda/testing protect:check
+```
+
+## Export reference
+
+| Export | Role |
+|--------|------|
+| `testingPolicy` | Canonical lane registry lookup and repository policy projections |
+| `testingVitest` | Vitest config projection from canonical lanes |
+| `testingPlaywright` | Playwright config projection from canonical lanes |
+| `testingDatabase` | Database evidence, CI/local resolution, and setup operations |
+| `TestingLane` · `TestingLaneId` | Types derived from the lane registry |
+| `DatabaseForTests` · `DatabaseUrlSource` | Typed database-evidence results |
+
+The package root is the permanent policy facade. The two setup subpaths are
+side-effect entrypoints for runner configuration, not general-purpose APIs.
+
+## Authority
+
+- [Repository testing control plane](../../../testing/README.md)
+- [Testing architecture pack](../../../docs-V2/testing/README.md)
+- [Monorepo dependency boundaries](../../../docs-V2/monorepo/README.md)
+- [Repository operating rules](../../../AGENTS.md)

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { type AuditRecorder, createAuditRecorder } from "@afenda/audit";
+import { type AuditRecorder, audit as afendaAudit } from "@afenda/audit";
 import { errorResult, type Result } from "@afenda/errors";
 import {
 	type HumanResourcesAuthorizationPort,
@@ -36,7 +36,7 @@ export function createHumanResourcesBulkExportPorts(
 ): HumanResourcesBulkExportPorts {
 	const authorization =
 		dependencies.authorization ?? createHumanResourcesAuthorizationPort();
-	const audit = dependencies.audit ?? createAuditRecorder();
+	const audit = dependencies.audit ?? afendaAudit.recorder();
 	const createEvidenceId = dependencies.createEvidenceId ?? randomUUID;
 	return {
 		authorize(input) {

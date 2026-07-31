@@ -20,8 +20,10 @@ vi.mock("@afenda/auth", () => ({
 }));
 
 vi.mock("@afenda/db", () => ({
-	db: {
-		select: (...args: unknown[]) => select(...args),
+	database: {
+		client: {
+			select: (...args: unknown[]) => select(...args),
+		},
 	},
 	inArray: vi.fn(() => ({ kind: "inArray" })),
 	max: vi.fn(() => ({ kind: "max" })),

@@ -5,11 +5,10 @@
 
 import { ROLE_REVOKE_AUDIT_ACTION } from "@afenda/admin/audit";
 import {
+	database as afendaDatabase,
 	and,
-	db,
 	eq,
 	platformRoleAssignment,
-	runNeonHttpTransaction,
 } from "@afenda/db";
 import { errorIngress, errorResult } from "@afenda/errors";
 
@@ -101,7 +100,7 @@ export async function revokeOrgRoleWithAudit(
 	const ipAddress = input.ipAddress?.trim() || null;
 	const userAgent = input.userAgent?.trim() || null;
 
-	const [active] = await db
+	const [active] = await afendaDatabase.client
 		.select()
 		.from(platformRoleAssignment)
 		.where(
@@ -127,7 +126,7 @@ export async function revokeOrgRoleWithAudit(
 	});
 	const newValueJson = JSON.stringify({ active: false });
 
-	const [rows] = await runNeonHttpTransaction((sql) => [
+	const [rows] = await afendaDatabase.transaction((sql) => [
 		sql`
 				WITH mutated AS (
 					UPDATE platform_role_assignment

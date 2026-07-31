@@ -6,7 +6,13 @@
  * `./helpers/database-gate` → `testingDatabase` from `@afenda/testing`.
  */
 
-import { and, db, eq, platformAuditLog, platformDomainEvent } from "@afenda/db";
+import {
+	database as afendaDatabase,
+	and,
+	eq,
+	platformAuditLog,
+	platformDomainEvent,
+} from "@afenda/db";
 import {
 	HUMAN_RESOURCES_EMPLOYEE_CREATED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_REHIRED_EVENT,
@@ -680,7 +686,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			return;
 		}
 
-		const audits = await db
+		const audits = await afendaDatabase.client
 			.select()
 			.from(platformAuditLog)
 			.where(
@@ -692,7 +698,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 		expect(audits.length).toBeGreaterThanOrEqual(1);
 		expect(audits.some((row) => row.entity === "hr_employee")).toBe(true);
 
-		const events = await db
+		const events = await afendaDatabase.client
 			.select()
 			.from(platformDomainEvent)
 			.where(

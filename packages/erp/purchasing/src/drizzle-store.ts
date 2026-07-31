@@ -1,16 +1,15 @@
 import { randomUUID } from "node:crypto";
 
-import { prepareTransactionalAuditInsertValues } from "@afenda/audit";
+import { audit as afendaAudit } from "@afenda/audit";
 import {
+	database as afendaDatabase,
 	and,
 	asc,
-	db,
 	desc,
 	eq,
 	inArray,
 	purchaseOrder,
 	purchaseOrderLine,
-	runNeonHttpTransaction,
 } from "@afenda/db";
 import {
 	errorIngress,
@@ -318,7 +317,7 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 		const entityId = randomUUID();
 		const auditId = randomUUID();
 		const eventId = randomUUID();
-		const preparedAudit = prepareTransactionalAuditInsertValues({
+		const preparedAudit = afendaAudit.transaction.prepare({
 			organizationId: record.organizationId,
 			actorUserId: record.createdBy,
 			correlationId: meta.correlationId,
@@ -349,7 +348,7 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH mutated AS (
 						INSERT INTO purchase_order (
@@ -458,7 +457,7 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 		const lineId = randomUUID();
 		const auditId = randomUUID();
 		const eventId = randomUUID();
-		const preparedAudit = prepareTransactionalAuditInsertValues({
+		const preparedAudit = afendaAudit.transaction.prepare({
 			organizationId: record.organizationId,
 			actorUserId: record.createdBy,
 			correlationId: meta.correlationId,
@@ -498,7 +497,7 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 			lineNo,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH mutated AS (
 						INSERT INTO purchase_order_line (
@@ -634,7 +633,7 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const nextVersion = currentOrder.version + 1;
-		const preparedAudit = prepareTransactionalAuditInsertValues({
+		const preparedAudit = afendaAudit.transaction.prepare({
 			organizationId: record.organizationId,
 			actorUserId: record.actorUserId,
 			correlationId: meta.correlationId,
@@ -667,7 +666,7 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => {
+			const [rows] = await afendaDatabase.transaction((sql) => {
 				const statements = [
 					sql`
 						WITH mutated AS (
@@ -827,7 +826,7 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const nextVersion = currentOrder.version + 1;
-		const preparedAudit = prepareTransactionalAuditInsertValues({
+		const preparedAudit = afendaAudit.transaction.prepare({
 			organizationId: record.organizationId,
 			actorUserId: record.actorUserId,
 			correlationId: meta.correlationId,
@@ -869,7 +868,7 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH mutated AS (
 						UPDATE purchase_order
@@ -981,7 +980,7 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const nextVersion = currentOrder.version + 1;
-		const preparedAudit = prepareTransactionalAuditInsertValues({
+		const preparedAudit = afendaAudit.transaction.prepare({
 			organizationId: record.organizationId,
 			actorUserId: record.actorUserId,
 			correlationId: meta.correlationId,
@@ -1014,7 +1013,7 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH mutated AS (
 						UPDATE purchase_order
@@ -1091,7 +1090,7 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 		id: string,
 	): Promise<Result<PurchaseOrder | null>> {
 		try {
-			const [header] = await db
+			const [header] = await afendaDatabase.client
 				.select()
 				.from(purchaseOrder)
 				.where(
@@ -1104,7 +1103,7 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 			if (header === undefined) {
 				return errorResult.ok(null);
 			}
-			const lines = await db
+			const lines = await afendaDatabase.client
 				.select()
 				.from(purchaseOrderLine)
 				.where(
@@ -1130,7 +1129,7 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 		createIdempotencyKey: string,
 	): Promise<Result<PurchaseOrder | null>> {
 		try {
-			const [header] = await db
+			const [header] = await afendaDatabase.client
 				.select()
 				.from(purchaseOrder)
 				.where(
@@ -1143,7 +1142,7 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 			if (header === undefined) {
 				return errorResult.ok(null);
 			}
-			const lines = await db
+			const lines = await afendaDatabase.client
 				.select()
 				.from(purchaseOrderLine)
 				.where(
@@ -1175,7 +1174,7 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 			if (filter.status !== undefined) {
 				conditions.push(eq(purchaseOrder.status, filter.status));
 			}
-			const headers = await db
+			const headers = await afendaDatabase.client
 				.select()
 				.from(purchaseOrder)
 				.where(and(...conditions))
@@ -1188,7 +1187,7 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 			}
 
 			const orderIds = headers.map((header) => header.id);
-			const lineRows = await db
+			const lineRows = await afendaDatabase.client
 				.select()
 				.from(purchaseOrderLine)
 				.where(

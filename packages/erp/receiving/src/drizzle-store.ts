@@ -1,10 +1,10 @@
 import { randomUUID } from "node:crypto";
 
-import { prepareTransactionalAuditInsertValues } from "@afenda/audit";
+import { audit as afendaAudit } from "@afenda/audit";
 import {
+	database as afendaDatabase,
 	and,
 	asc,
-	db,
 	desc,
 	eq,
 	goodsReceipt,
@@ -14,7 +14,6 @@ import {
 	type NeonHttpSql,
 	ne,
 	receivingDiscrepancy,
-	runNeonHttpTransaction,
 	sql,
 } from "@afenda/db";
 import {
@@ -290,7 +289,7 @@ async function hydrateReceipts(
 	}
 	const ids = headers.map((row) => row.id);
 	const [lines, discrepancies] = await Promise.all([
-		db
+		afendaDatabase.client
 			.select()
 			.from(goodsReceiptLine)
 			.where(
@@ -300,7 +299,7 @@ async function hydrateReceipts(
 				),
 			)
 			.orderBy(asc(goodsReceiptLine.lineNo)),
-		db
+		afendaDatabase.client
 			.select()
 			.from(receivingDiscrepancy)
 			.where(
@@ -374,7 +373,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 		const id = randomUUID();
 		const auditId = randomUUID();
 		const eventId = randomUUID();
-		const preparedAudit = prepareTransactionalAuditInsertValues({
+		const preparedAudit = afendaAudit.transaction.prepare({
 			organizationId: record.organizationId,
 			actorUserId: record.createdBy,
 			correlationId: meta.correlationId,
@@ -408,7 +407,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 			warehouseId: record.warehouseId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction((txSql) => [
+			const [rows] = await afendaDatabase.transaction((txSql) => [
 				txSql`
 					WITH mutated AS (
 						INSERT INTO goods_receipt (
@@ -513,7 +512,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const currentReceiptVersion = existing.data.version;
-		const preparedAudit = prepareTransactionalAuditInsertValues({
+		const preparedAudit = afendaAudit.transaction.prepare({
 			organizationId: record.organizationId,
 			actorUserId: record.createdBy,
 			correlationId: meta.correlationId,
@@ -552,7 +551,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 			quantity: record.quantityAccepted,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction((txSql) => [
+			const [rows] = await afendaDatabase.transaction((txSql) => [
 				txSql`
 					WITH parent AS (
 						UPDATE goods_receipt
@@ -611,7 +610,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 					publicMessage: "Goods receipt line add conflict",
 				});
 			}
-			const [line] = await db
+			const [line] = await afendaDatabase.client
 				.select()
 				.from(goodsReceiptLine)
 				.where(
@@ -675,7 +674,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 		const nextVersion = record.expectedVersion + 1;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
-		const preparedAudit = prepareTransactionalAuditInsertValues({
+		const preparedAudit = afendaAudit.transaction.prepare({
 			organizationId: record.organizationId,
 			actorUserId: record.actorUserId,
 			correlationId: meta.correlationId,
@@ -712,7 +711,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 		const guard = record.poConsumptionGuard;
 		const guardParams = postGuardSqlParams(guard);
 		try {
-			const txResults = await runNeonHttpTransaction((txSql) => {
+			const txResults = await afendaDatabase.transaction((txSql) => {
 				const statements: ReturnType<NeonHttpSql>[] = [];
 				if (guard !== undefined) {
 					// Serialize concurrent PO posts (neon-http cannot interleave JS).
@@ -907,7 +906,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 		const nextVersion = record.expectedVersion + 1;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
-		const preparedAudit = prepareTransactionalAuditInsertValues({
+		const preparedAudit = afendaAudit.transaction.prepare({
 			organizationId: record.organizationId,
 			actorUserId: record.actorUserId,
 			correlationId: meta.correlationId,
@@ -942,7 +941,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 			warehouseId: existing.data.warehouseId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction((txSql) => [
+			const [rows] = await afendaDatabase.transaction((txSql) => [
 				txSql`
 					WITH mutated AS (
 						UPDATE goods_receipt
@@ -1020,7 +1019,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 		_ports: MutationPorts,
 		meta: { correlationId: string },
 	): Promise<Result<GoodsReceipt>> {
-		const [replayHeader] = await db
+		const [replayHeader] = await afendaDatabase.client
 			.select()
 			.from(goodsReceipt)
 			.where(
@@ -1073,7 +1072,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 		const nextOriginalVersion = record.expectedVersion + 1;
 		const inventoryApplicationStatus =
 			original.inventoryMovementId === null ? "not_applicable" : "pending";
-		const preparedAudit = prepareTransactionalAuditInsertValues({
+		const preparedAudit = afendaAudit.transaction.prepare({
 			organizationId: record.organizationId,
 			actorUserId: record.actorUserId,
 			correlationId: meta.correlationId,
@@ -1119,7 +1118,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction((txSql) => {
+			const [rows] = await afendaDatabase.transaction((txSql) => {
 				const statements = [
 					txSql`
 						WITH claimed AS (
@@ -1227,7 +1226,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 			);
 		} catch (error) {
 			if (isIdempotencyConflict(error, "reverse_idempotency")) {
-				const [again] = await db
+				const [again] = await afendaDatabase.client
 					.select()
 					.from(goodsReceipt)
 					.where(
@@ -1260,7 +1259,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 		record: ReceiptInventoryApplicationRecord,
 	): Promise<Result<GoodsReceipt>> {
 		try {
-			const [rows] = await runNeonHttpTransaction((txSql) => [
+			const [rows] = await afendaDatabase.transaction((txSql) => [
 				txSql`
 					UPDATE goods_receipt
 					SET inventory_application_status = ${record.status},
@@ -1323,7 +1322,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 		const id = randomUUID();
 		const auditId = randomUUID();
 		const eventId = randomUUID();
-		const preparedAudit = prepareTransactionalAuditInsertValues({
+		const preparedAudit = afendaAudit.transaction.prepare({
 			organizationId: record.organizationId,
 			actorUserId: record.createdBy,
 			correlationId: meta.correlationId,
@@ -1370,7 +1369,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 			discrepancyStatus: "open",
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction((txSql) => [
+			const [rows] = await afendaDatabase.transaction((txSql) => [
 				txSql`
 					WITH parent AS (
 						SELECT * FROM goods_receipt
@@ -1418,7 +1417,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 					publicMessage: "Receiving discrepancy create conflict",
 				});
 			}
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select()
 				.from(receivingDiscrepancy)
 				.where(
@@ -1496,7 +1495,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 		const nextVersion = record.expectedVersion + 1;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
-		const preparedAudit = prepareTransactionalAuditInsertValues({
+		const preparedAudit = afendaAudit.transaction.prepare({
 			organizationId: record.organizationId,
 			actorUserId: record.actorUserId,
 			correlationId: meta.correlationId,
@@ -1534,7 +1533,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 			discrepancyStatus: "resolved",
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction((txSql) => [
+			const [rows] = await afendaDatabase.transaction((txSql) => [
 				txSql`
 					WITH mutated AS (
 						UPDATE receiving_discrepancy
@@ -1583,7 +1582,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 					publicMessage: "Discrepancy version conflict",
 				});
 			}
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select()
 				.from(receivingDiscrepancy)
 				.where(
@@ -1598,7 +1597,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 				: errorResult.ok(mapDiscrepancy(row));
 		} catch (error) {
 			if (isIdempotencyConflict(error, "resolve_idempotency")) {
-				const [row] = await db
+				const [row] = await afendaDatabase.client
 					.select()
 					.from(receivingDiscrepancy)
 					.where(
@@ -1650,7 +1649,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 			if (excludeReceiptId !== undefined) {
 				conditions.push(ne(goodsReceipt.id, excludeReceiptId));
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select({
 					purchaseOrderLineId: goodsReceiptLine.purchaseOrderLineId,
 					acceptedQuantity: sql<string>`coalesce(sum(${goodsReceiptLine.quantityAccepted}::numeric), 0)`,
@@ -1699,7 +1698,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 		id: string,
 	): Promise<Result<GoodsReceipt | null>> {
 		try {
-			const [header] = await db
+			const [header] = await afendaDatabase.client
 				.select()
 				.from(goodsReceipt)
 				.where(
@@ -1724,7 +1723,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 		idempotencyKey: string,
 	): Promise<Result<GoodsReceipt | null>> {
 		try {
-			const [header] = await db
+			const [header] = await afendaDatabase.client
 				.select()
 				.from(goodsReceipt)
 				.where(
@@ -1760,7 +1759,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 			if (filter.sourceType !== undefined) {
 				conditions.push(eq(goodsReceipt.sourceType, filter.sourceType));
 			}
-			const headers = await db
+			const headers = await afendaDatabase.client
 				.select()
 				.from(goodsReceipt)
 				.where(and(...conditions))
@@ -1779,7 +1778,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 		filter: ReceiptListFilter,
 	): Promise<Result<GoodsReceipt[]>> {
 		try {
-			const headers = await db
+			const headers = await afendaDatabase.client
 				.select()
 				.from(goodsReceipt)
 				.where(

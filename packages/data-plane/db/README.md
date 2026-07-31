@@ -13,27 +13,31 @@ Import runtime and schema APIs from the root barrel:
 ```ts
 import {
   and,
-  db,
+  database,
   eq,
-  orgWhere,
   platformRoleAssignment,
-  withOrg,
 } from "@afenda/db";
 
-const assignments = await withOrg(platformRoleAssignment, organizationId);
+const assignments = await database.tenancy.readAll(
+  platformRoleAssignment,
+  organizationId,
+);
 
-const assignment = await db
+const assignment = await database.client
   .select()
   .from(platformRoleAssignment)
   .where(
     and(
-      orgWhere(platformRoleAssignment.organizationId, organizationId),
+      database.tenancy.where(
+        platformRoleAssignment.organizationId,
+        organizationId,
+      ),
       eq(platformRoleAssignment.id, assignmentId),
     ),
   );
 ```
 
-`withOrg(table, organizationId)` is a convenience for full-table tenant reads. Use `orgWhere` or `tenantEntityPredicate` when composing joins, entity lookups, updates, and deletes. Every organization-owned table participating in a statement still needs an explicit ownership predicate.
+`database.tenancy.readAll(table, organizationId)` is a convenience for full-table tenant reads. Use `database.tenancy.where` or `database.tenancy.entity` when composing joins, entity lookups, updates, and deletes. Every organization-owned table participating in a statement still needs an explicit ownership predicate.
 
 Empty organization IDs fail closed. The Neon SQL driver also rejects unowned raw statements that mention registered hard-tenant roots; this runtime policy complements rather than replaces explicit query predicates and repository checks.
 
@@ -41,13 +45,13 @@ Empty organization IDs fail closed. The Neon SQL driver also rejects unowned raw
 
 | Operation | `DATABASE_URL` requirement |
 |-----------|----------------------------|
-| Product `db` client and Neon HTTP transactions | Neon `-pooler` endpoint |
+| Product `database.client` and `database.transaction` | Neon `-pooler` endpoint |
 | Drizzle Kit generation, checks, and inspection | PostgreSQL endpoint; pooled or direct |
 | Guarded migration execution | Direct endpoint; pooler prohibited |
 
 All connection classes use `DATABASE_URL`; do not invent a second direct-URL product variable. Product configuration remains owned by `@afenda/env` and `.env.local`. This lower-layer package reads the process environment internally and must not import `@afenda/env`.
 
-The product client is initialized lazily on first database access. For atomic multi-statement writes over Neon HTTP, `runNeonHttpTransaction` accepts a synchronous builder that returns a fixed query array. Statements execute in order and commit or roll back together; application code cannot branch on intermediate results. Use it inside the package that owns the mutation, keep every tenant predicate explicit, and prefer owning-package helpers—such as `@afenda/audit` transaction-write preparation—over hand-building shared infrastructure records.
+The product client is initialized lazily on first database access. For atomic multi-statement writes over Neon HTTP, `database.transaction` accepts a synchronous builder that returns a fixed query array. Statements execute in order and commit or roll back together; application code cannot branch on intermediate results. Use it inside the package that owns the mutation, keep every tenant predicate explicit, and prefer owning-package helpers—such as `@afenda/audit` transaction-write preparation—over hand-building shared infrastructure records.
 
 ## Schema ownership
 
@@ -98,10 +102,10 @@ pnpm --filter @afenda/db db:ensure-permission-catalog
 
 | Import path | Role |
 |-------------|------|
-| `@afenda/db` | Lazy `db` client; tenancy helpers; Drizzle operators; schema tables; Neon HTTP transactions; hard-tenant root registry; permission catalog contracts |
+| `@afenda/db` | Permanent `database` runtime facade; Drizzle operators; schema tables; transaction types; `PlatformPermissionCode` |
 | `@afenda/db/module-manifest` | Type-only ERP module manifest contract |
 
-See [`src/index.ts`](./src/index.ts) for the exact root barrel. Do not deep-import package internals.
+See [`src/index.ts`](./src/index.ts) for the exact root barrel. Runtime consumers use `database.client`, `database.transaction`, `database.tenancy`, and `database.permissions`; the replaced named runtime exports are intentionally absent. Do not deep-import package internals.
 
 ## Maintain
 

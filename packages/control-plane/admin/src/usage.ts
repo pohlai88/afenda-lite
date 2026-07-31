@@ -1,8 +1,8 @@
 import { listOrgMembers } from "@afenda/auth";
 import {
+	database as afendaDatabase,
 	and,
 	count,
-	db,
 	eq,
 	gte,
 	lt,
@@ -100,8 +100,11 @@ export async function getOrganizationUsageMetrics(
 		}
 
 		const [[auditCountRow], [assignmentCountRow]] = await Promise.all([
-			db.select({ value: count() }).from(platformRbacAudit).where(auditWhere),
-			db
+			afendaDatabase.client
+				.select({ value: count() })
+				.from(platformRbacAudit)
+				.where(auditWhere),
+			afendaDatabase.client
 				.select({ value: count() })
 				.from(platformRoleAssignment)
 				.where(assignmentWhere),

@@ -1,14 +1,13 @@
 import { randomUUID } from "node:crypto";
 
-import { prepareTransactionalAuditInsertValues } from "@afenda/audit";
+import { audit as afendaAudit } from "@afenda/audit";
 import {
+	database as afendaDatabase,
 	and,
-	db,
 	eq,
 	hrBenefitEligibility,
 	type hrBenefitEnrollment,
 	hrBenefitEnrollmentDependent,
-	runNeonHttpTransaction,
 } from "@afenda/db";
 import { errorResult, type Result } from "@afenda/errors";
 import { HUMAN_RESOURCES_BENEFIT_ENROLLMENT_CHANGED_EVENT } from "@afenda/events/schemas";
@@ -308,7 +307,7 @@ export async function drizzleGetBenefitPlanEligibility(input: {
 	planId: HumanResourcesBenefitPlanId;
 }): Promise<Result<BenefitPlanEligibility | null>> {
 	try {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(hrBenefitEligibility)
 			.where(
@@ -379,7 +378,7 @@ export async function drizzleSetBenefitPlanEligibility(
 	const auditId = randomUUID();
 	const allowedStatuses = input.allowedEmploymentStatuses.join(",");
 	const action = existing.data === null ? "CREATE" : "UPDATE";
-	const preparedAudit = prepareTransactionalAuditInsertValues({
+	const preparedAudit = afendaAudit.transaction.prepare({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: meta.correlationId,
@@ -425,7 +424,7 @@ export async function drizzleSetBenefitPlanEligibility(
 	const audit = preparedAudit.data;
 
 	try {
-		const [rows] = await runNeonHttpTransaction((sqlTag) => [
+		const [rows] = await afendaDatabase.transaction((sqlTag) => [
 			sqlTag`
 					WITH mutated AS (
 						INSERT INTO hr_benefit_eligibility (
@@ -519,7 +518,7 @@ export async function drizzleWaiveBenefit(
 	const nextVersion = input.expectedVersion + 1;
 	const auditId = randomUUID();
 	const eventId = randomUUID();
-	const preparedAudit = prepareTransactionalAuditInsertValues({
+	const preparedAudit = afendaAudit.transaction.prepare({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: meta.correlationId,
@@ -565,7 +564,7 @@ export async function drizzleWaiveBenefit(
 	});
 
 	try {
-		const [rows] = await runNeonHttpTransaction((sqlTag) => [
+		const [rows] = await afendaDatabase.transaction((sqlTag) => [
 			sqlTag`
 					WITH mutated AS (
 						UPDATE hr_benefit_enrollment
@@ -629,7 +628,7 @@ export async function drizzleGetBenefitEnrollmentDependent(input: {
 	dependentId: HumanResourcesBenefitEnrollmentDependentId;
 }): Promise<Result<BenefitEnrollmentDependent | null>> {
 	try {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(hrBenefitEnrollmentDependent)
 			.where(
@@ -670,7 +669,7 @@ export async function drizzleListBenefitEnrollmentDependentsByEnrollment(input: 
 	enrollmentId: HumanResourcesBenefitEnrollmentId;
 }): Promise<Result<BenefitEnrollmentDependent[]>> {
 	try {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(hrBenefitEnrollmentDependent)
 			.where(
@@ -760,7 +759,7 @@ export async function drizzleAddBenefitEnrollmentDependent(
 		return brandedId;
 	}
 	const auditId = randomUUID();
-	const preparedAudit = prepareTransactionalAuditInsertValues({
+	const preparedAudit = afendaAudit.transaction.prepare({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: meta.correlationId,
@@ -795,7 +794,7 @@ export async function drizzleAddBenefitEnrollmentDependent(
 	const audit = preparedAudit.data;
 
 	try {
-		const [rows] = await runNeonHttpTransaction((sqlTag) => [
+		const [rows] = await afendaDatabase.transaction((sqlTag) => [
 			sqlTag`
 				WITH mutated AS (
 					INSERT INTO hr_benefit_enrollment_dependent (
@@ -884,7 +883,7 @@ export async function drizzleEndBenefitEnrollmentDependent(
 
 	const nextVersion = input.expectedVersion + 1;
 	const auditId = randomUUID();
-	const preparedAudit = prepareTransactionalAuditInsertValues({
+	const preparedAudit = afendaAudit.transaction.prepare({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: meta.correlationId,
@@ -926,7 +925,7 @@ export async function drizzleEndBenefitEnrollmentDependent(
 	const audit = preparedAudit.data;
 
 	try {
-		const [rows] = await runNeonHttpTransaction((sqlTag) => [
+		const [rows] = await afendaDatabase.transaction((sqlTag) => [
 			sqlTag`
 				WITH mutated AS (
 					UPDATE hr_benefit_enrollment_dependent

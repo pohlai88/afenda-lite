@@ -13,9 +13,11 @@ const attributionMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@afenda/audit", () => ({
-	createAuditRecorder: () => ({
-		record: auditMocks.record,
-	}),
+	audit: {
+		recorder: () => ({
+			record: auditMocks.record,
+		}),
+	},
 }));
 
 vi.mock("@/modules/platform/domain/request-attribution", () => ({

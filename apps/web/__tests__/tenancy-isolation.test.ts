@@ -11,15 +11,15 @@ import {
 	MEMBER_INVITE_AUDIT_ACTION,
 	recordRbacAudit,
 } from "@afenda/admin/audit";
-import { platformRbacAudit, withOrg } from "@afenda/db";
+import { database as afendaDatabase, platformRbacAudit } from "@afenda/db";
 import { afterAll, describe, expect, it } from "vitest";
 import { hasDatabase } from "./helpers/identity-database";
 
 describe("tenancy isolation guards (N9)", () => {
 	it("withOrg rejects empty orgId", async () => {
-		await expect(withOrg(platformRbacAudit, "  ")).rejects.toThrow(
-			/non-empty organizationId/,
-		);
+		await expect(
+			afendaDatabase.tenancy.readAll(platformRbacAudit, "  "),
+		).rejects.toThrow(/non-empty organizationId/);
 	});
 });
 
@@ -53,10 +53,10 @@ describe.skipIf(!hasDatabase)("tenancy isolation two-org (N9)", () => {
 		const row = recorded.data;
 		auditIds.push({ id: row.id, orgId: orgA });
 
-		const forA = await withOrg(platformRbacAudit, orgA);
+		const forA = await afendaDatabase.tenancy.readAll(platformRbacAudit, orgA);
 		expect(forA.some((item) => item.id === row.id)).toBe(true);
 
-		const forB = await withOrg(platformRbacAudit, orgB);
+		const forB = await afendaDatabase.tenancy.readAll(platformRbacAudit, orgB);
 		expect(forB.some((item) => item.id === row.id)).toBe(false);
 	});
 });

@@ -1,7 +1,7 @@
 import {
+	database as afendaDatabase,
 	and,
 	count,
-	db,
 	desc,
 	eq,
 	isNull,
@@ -70,7 +70,7 @@ function failFromPersistence(error: unknown, _fallbackMessage: string) {
 export class DrizzleNotificationStore implements NotificationStore {
 	async write(entry: NotificationWriteInput): Promise<Result<Notification>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.insert(platformNotification)
 				.values({
 					organizationId: entry.organizationId,
@@ -105,7 +105,7 @@ export class DrizzleNotificationStore implements NotificationStore {
 				) {
 					return errorResult.fail("INTERNAL_ERROR");
 				}
-				const [existing] = await db
+				const [existing] = await afendaDatabase.client
 					.select()
 					.from(platformNotification)
 					.where(
@@ -155,7 +155,7 @@ export class DrizzleNotificationStore implements NotificationStore {
 			}
 
 			const offset = (options.page - 1) * options.pageSize;
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(platformNotification)
 				.where(where)
@@ -181,7 +181,7 @@ export class DrizzleNotificationStore implements NotificationStore {
 				return errorResult.fail("INTERNAL_ERROR");
 			}
 
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.select({ value: count() })
 				.from(platformNotification)
 				.where(where);
@@ -196,7 +196,7 @@ export class DrizzleNotificationStore implements NotificationStore {
 		options: NotificationMarkReadOptions,
 	): Promise<Result<Notification | null>> {
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.update(platformNotification)
 				.set({ read: true })
 				.where(
@@ -230,7 +230,7 @@ export class DrizzleNotificationStore implements NotificationStore {
 				return errorResult.fail("INTERNAL_ERROR");
 			}
 
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.update(platformNotification)
 				.set({ read: true })
 				.where(where)
@@ -249,7 +249,7 @@ export class DrizzleNotificationStore implements NotificationStore {
 		options: NotificationDeleteOptions,
 	): Promise<Result<{ deleted: boolean }>> {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.delete(platformNotification)
 				.where(
 					ownershipWhere(options.organizationId, options.userId, options.id),
@@ -290,7 +290,7 @@ export class DrizzleNotificationStore implements NotificationStore {
 				return errorResult.fail("INTERNAL_ERROR");
 			}
 
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.delete(platformNotification)
 				.where(where)
 				.returning({ id: platformNotification.id });

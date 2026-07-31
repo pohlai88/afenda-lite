@@ -1,15 +1,14 @@
 import { randomUUID } from "node:crypto";
 
 import {
+	database as afendaDatabase,
 	and,
 	asc,
 	customerAllocation,
 	customerBalanceProjection,
-	db,
 	desc,
 	eq,
 	inArray,
-	runNeonHttpTransaction,
 	salesCreditNote,
 	salesInvoice,
 	salesInvoiceLine,
@@ -189,7 +188,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 		record: InvoiceCreateRecord,
 	): Promise<Result<SalesInvoice>> {
 		try {
-			const [existing] = await db
+			const [existing] = await afendaDatabase.client
 				.select({ id: salesInvoice.id })
 				.from(salesInvoice)
 				.where(
@@ -209,7 +208,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 			}
 
 			const id = randomUUID();
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					INSERT INTO sales_invoice (
 						id, organization_id, code, normalized_code, status, invoice_source,
@@ -245,7 +244,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 		record: Parameters<ReceivablesStore["addLine"]>[0],
 	): Promise<Result<SalesInvoiceLine>> {
 		try {
-			const [existing] = await db
+			const [existing] = await afendaDatabase.client
 				.select()
 				.from(salesInvoiceLine)
 				.where(
@@ -260,7 +259,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 			}
 
 			const id = randomUUID();
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH inserted AS (
 						INSERT INTO sales_invoice_line (
@@ -298,7 +297,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 					publicMessage: "Sales invoice line conflict",
 				});
 			}
-			const [line] = await db
+			const [line] = await afendaDatabase.client
 				.select()
 				.from(salesInvoiceLine)
 				.where(
@@ -328,7 +327,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 			}
 		}
 		try {
-			const [alreadyPosted] = await db
+			const [alreadyPosted] = await afendaDatabase.client
 				.select({ id: salesInvoice.id })
 				.from(salesInvoice)
 				.where(
@@ -349,7 +348,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 
 			const eventId = randomUUID();
 			const balanceId = randomUUID();
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH mutated AS (
 						UPDATE sales_invoice
@@ -415,7 +414,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 		record: Parameters<ReceivablesStore["issueCredit"]>[0],
 	): Promise<Result<SalesCreditNote>> {
 		try {
-			const [existing] = await db
+			const [existing] = await afendaDatabase.client
 				.select()
 				.from(salesCreditNote)
 				.where(
@@ -432,7 +431,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 			const id = randomUUID();
 			const eventId = randomUUID();
 			const balanceId = randomUUID();
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH eligible AS (
 						SELECT invoice.*, (SELECT COALESCE(SUM(line_amount::numeric), 0) FROM sales_invoice_line
@@ -496,7 +495,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 					publicMessage: "Credit note issue conflict",
 				});
 			}
-			const [credit] = await db
+			const [credit] = await afendaDatabase.client
 				.select()
 				.from(salesCreditNote)
 				.where(
@@ -518,7 +517,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 		record: Parameters<ReceivablesStore["applyReceipt"]>[0],
 	): Promise<Result<CustomerAllocation>> {
 		try {
-			const [existing] = await db
+			const [existing] = await afendaDatabase.client
 				.select()
 				.from(customerAllocation)
 				.where(
@@ -534,7 +533,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 
 			const id = randomUUID();
 			const eventId = randomUUID();
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH eligible AS (
 						SELECT invoice.*, (SELECT COALESCE(SUM(line_amount::numeric), 0) FROM sales_invoice_line
@@ -594,7 +593,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 					publicMessage: "Customer receipt application conflict",
 				});
 			}
-			const [allocation] = await db
+			const [allocation] = await afendaDatabase.client
 				.select()
 				.from(customerAllocation)
 				.where(
@@ -617,7 +616,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 	): Promise<Result<CustomerAllocation>> {
 		try {
 			const eventId = randomUUID();
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH reversed AS (
 						UPDATE customer_allocation SET status = 'reversed', reversed_at = now(),
@@ -659,7 +658,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				const [allocation] = await db
+				const [allocation] = await afendaDatabase.client
 					.select()
 					.from(customerAllocation)
 					.where(
@@ -675,7 +674,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 							publicMessage: "Customer receipt application reversal conflict",
 						});
 			}
-			const [allocation] = await db
+			const [allocation] = await afendaDatabase.client
 				.select()
 				.from(customerAllocation)
 				.where(
@@ -700,7 +699,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 		record: Parameters<ReceivablesStore["reverseAllocationsByPayment"]>[0],
 	): Promise<Result<CustomerAllocation[]>> {
 		try {
-			const allocations = await db
+			const allocations = await afendaDatabase.client
 				.select({ id: customerAllocation.id })
 				.from(customerAllocation)
 				.where(
@@ -742,7 +741,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 		record: Parameters<ReceivablesStore["cancelDraft"]>[0],
 	): Promise<Result<SalesInvoice>> {
 		try {
-			const [existing] = await db
+			const [existing] = await afendaDatabase.client
 				.select({ id: salesInvoice.id })
 				.from(salesInvoice)
 				.where(
@@ -761,7 +760,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				);
 			}
 			const eventId = randomUUID();
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH mutated AS (
 						UPDATE sales_invoice SET status = 'cancelled', cancelled_at = now(), cancelled_by = ${record.actorUserId},
@@ -801,7 +800,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 		record: Parameters<ReceivablesStore["closeInvoice"]>[0],
 	): Promise<Result<SalesInvoice>> {
 		try {
-			const [existing] = await db
+			const [existing] = await afendaDatabase.client
 				.select({ id: salesInvoice.id })
 				.from(salesInvoice)
 				.where(
@@ -820,7 +819,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				);
 			}
 			const eventId = randomUUID();
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH eligible AS (
 						SELECT invoice.id FROM sales_invoice invoice
@@ -871,7 +870,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 		id: string,
 	): Promise<Result<SalesInvoice | null>> {
 		try {
-			const [header] = await db
+			const [header] = await afendaDatabase.client
 				.select()
 				.from(salesInvoice)
 				.where(
@@ -885,7 +884,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				return errorResult.ok(null);
 			}
 			const [lines, allocations, credits] = await Promise.all([
-				db
+				afendaDatabase.client
 					.select()
 					.from(salesInvoiceLine)
 					.where(
@@ -895,7 +894,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 						),
 					)
 					.orderBy(asc(salesInvoiceLine.lineNo)),
-				db
+				afendaDatabase.client
 					.select()
 					.from(customerAllocation)
 					.where(
@@ -905,7 +904,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 							eq(customerAllocation.status, "active"),
 						),
 					),
-				db
+				afendaDatabase.client
 					.select()
 					.from(salesCreditNote)
 					.where(
@@ -941,7 +940,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 			if (filter.status !== undefined) {
 				conditions.push(eq(salesInvoice.status, filter.status));
 			}
-			const headers = await db
+			const headers = await afendaDatabase.client
 				.select()
 				.from(salesInvoice)
 				.where(and(...conditions))
@@ -953,7 +952,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 			}
 			const ids = headers.map((header) => header.id);
 			const [lines, allocations, credits] = await Promise.all([
-				db
+				afendaDatabase.client
 					.select()
 					.from(salesInvoiceLine)
 					.where(
@@ -963,7 +962,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 						),
 					)
 					.orderBy(asc(salesInvoiceLine.lineNo)),
-				db
+				afendaDatabase.client
 					.select()
 					.from(customerAllocation)
 					.where(
@@ -973,7 +972,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 							eq(customerAllocation.status, "active"),
 						),
 					),
-				db
+				afendaDatabase.client
 					.select()
 					.from(salesCreditNote)
 					.where(
@@ -1036,7 +1035,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 					eq(customerBalanceProjection.currencyCode, currencyCode),
 				);
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(customerBalanceProjection)
 				.where(and(...conditions))
@@ -1120,7 +1119,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 		input: Parameters<ReceivablesStore["sumPostedQuantityForSourceLine"]>[0],
 	): Promise<Result<string>> {
 		try {
-			const headers = await db
+			const headers = await afendaDatabase.client
 				.select({ id: salesInvoice.id })
 				.from(salesInvoice)
 				.where(
@@ -1149,7 +1148,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 					eq(salesInvoiceLine.deliveryLineId, input.deliveryLineId),
 				);
 			}
-			const lines = await db
+			const lines = await afendaDatabase.client
 				.select({ quantity: salesInvoiceLine.quantity })
 				.from(salesInvoiceLine)
 				.where(and(...conditions));
@@ -1193,7 +1192,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 		try {
 			const [invoiceResult, credits, allocations] = await Promise.all([
 				this.list({ organizationId, page: 1, pageSize: 100, status: "posted" }),
-				db
+				afendaDatabase.client
 					.select()
 					.from(salesCreditNote)
 					.where(
@@ -1202,7 +1201,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 							eq(salesCreditNote.status, "posted"),
 						),
 					),
-				db
+				afendaDatabase.client
 					.select()
 					.from(customerAllocation)
 					.where(
@@ -1224,7 +1223,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 			if (!closed.ok) {
 				return closed;
 			}
-			const balanceRows = await db
+			const balanceRows = await afendaDatabase.client
 				.select()
 				.from(customerBalanceProjection)
 				.where(eq(customerBalanceProjection.organizationId, organizationId));

@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { HARD_TENANT_ROOT_TABLE_NAMES } from "@afenda/db";
+import { database as afendaDatabase } from "@afenda/db";
 import {
 	HUMAN_RESOURCES_EVENT_IDS,
 	PLATFORM_HUMAN_RESOURCES_ACCOUNTING_PROVISIONING_FACT_RECORDED_EVENT,
@@ -266,7 +266,7 @@ describe("humanResourcesModuleManifest", () => {
 	});
 
 	it("registers every mutation table as a hard tenant root (HR1)", () => {
-		const hrRoots = HARD_TENANT_ROOT_TABLE_NAMES.filter((name) =>
+		const hrRoots = afendaDatabase.tenancy.rootNames.filter((name) =>
 			name.startsWith("hr_"),
 		);
 		expect(hrRoots).toEqual([...HUMAN_RESOURCES_MUTATION_TABLES]);

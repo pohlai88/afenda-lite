@@ -1,7 +1,7 @@
 import {
+	database as afendaDatabase,
 	and,
 	asc,
-	db,
 	eq,
 	or,
 	refCountry,
@@ -258,7 +258,7 @@ function mapUom(row: RefUomRow): RefUom {
 
 export class DrizzlePlatformReferenceStore implements PlatformReferenceStore {
 	async getCountryById(id: RefCountryId): Promise<RefCountry | null> {
-		const [row] = await db
+		const [row] = await afendaDatabase.client
 			.select(countryColumns)
 			.from(refCountry)
 			.where(eq(refCountry.id, id))
@@ -267,7 +267,7 @@ export class DrizzlePlatformReferenceStore implements PlatformReferenceStore {
 	}
 
 	async getCountryByCode(code: CountryCode): Promise<RefCountry | null> {
-		const [row] = await db
+		const [row] = await afendaDatabase.client
 			.select(countryColumns)
 			.from(refCountry)
 			.where(eq(refCountry.code, code))
@@ -290,7 +290,7 @@ export class DrizzlePlatformReferenceStore implements PlatformReferenceStore {
 			);
 		}
 		const offset = cursorOffset(input.cursor);
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select(countryColumns)
 			.from(refCountry)
 			.where(predicates.length > 0 ? and(...predicates) : undefined)
@@ -301,7 +301,7 @@ export class DrizzlePlatformReferenceStore implements PlatformReferenceStore {
 	}
 
 	async getCurrencyById(id: RefCurrencyId): Promise<RefCurrency | null> {
-		const [row] = await db
+		const [row] = await afendaDatabase.client
 			.select(currencyColumns)
 			.from(refCurrency)
 			.where(eq(refCurrency.id, id))
@@ -310,7 +310,7 @@ export class DrizzlePlatformReferenceStore implements PlatformReferenceStore {
 	}
 
 	async getCurrencyByCode(code: CurrencyCode): Promise<RefCurrency | null> {
-		const [row] = await db
+		const [row] = await afendaDatabase.client
 			.select(currencyColumns)
 			.from(refCurrency)
 			.where(eq(refCurrency.code, code))
@@ -333,7 +333,7 @@ export class DrizzlePlatformReferenceStore implements PlatformReferenceStore {
 			);
 		}
 		const offset = cursorOffset(input.cursor);
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select(currencyColumns)
 			.from(refCurrency)
 			.where(predicates.length > 0 ? and(...predicates) : undefined)
@@ -344,7 +344,7 @@ export class DrizzlePlatformReferenceStore implements PlatformReferenceStore {
 	}
 
 	async getLanguageById(id: RefLanguageId): Promise<RefLanguage | null> {
-		const [row] = await db
+		const [row] = await afendaDatabase.client
 			.select(languageColumns)
 			.from(refLanguage)
 			.where(eq(refLanguage.id, id))
@@ -353,7 +353,7 @@ export class DrizzlePlatformReferenceStore implements PlatformReferenceStore {
 	}
 
 	async getLanguageByCode(code: LanguageCode): Promise<RefLanguage | null> {
-		const [row] = await db
+		const [row] = await afendaDatabase.client
 			.select(languageColumns)
 			.from(refLanguage)
 			.where(eq(refLanguage.code, code))
@@ -376,7 +376,7 @@ export class DrizzlePlatformReferenceStore implements PlatformReferenceStore {
 			);
 		}
 		const offset = cursorOffset(input.cursor);
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select(languageColumns)
 			.from(refLanguage)
 			.where(predicates.length > 0 ? and(...predicates) : undefined)
@@ -387,7 +387,7 @@ export class DrizzlePlatformReferenceStore implements PlatformReferenceStore {
 	}
 
 	async getTimeZoneById(id: RefTimeZoneId): Promise<RefTimeZone | null> {
-		const [row] = await db
+		const [row] = await afendaDatabase.client
 			.select(timeZoneColumns)
 			.from(refTimeZone)
 			.where(eq(refTimeZone.id, id))
@@ -396,7 +396,7 @@ export class DrizzlePlatformReferenceStore implements PlatformReferenceStore {
 	}
 
 	async getTimeZoneByCode(code: TimeZoneCode): Promise<RefTimeZone | null> {
-		const [row] = await db
+		const [row] = await afendaDatabase.client
 			.select(timeZoneColumns)
 			.from(refTimeZone)
 			.where(eq(refTimeZone.ianaName, code))
@@ -419,7 +419,7 @@ export class DrizzlePlatformReferenceStore implements PlatformReferenceStore {
 			);
 		}
 		const offset = cursorOffset(input.cursor);
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select(timeZoneColumns)
 			.from(refTimeZone)
 			.where(predicates.length > 0 ? and(...predicates) : undefined)
@@ -432,7 +432,7 @@ export class DrizzlePlatformReferenceStore implements PlatformReferenceStore {
 	async getUomDimensionById(
 		id: RefUomDimensionId,
 	): Promise<RefUomDimension | null> {
-		const [row] = await db
+		const [row] = await afendaDatabase.client
 			.select(uomDimensionColumns)
 			.from(refUomDimension)
 			.where(eq(refUomDimension.id, id))
@@ -443,7 +443,7 @@ export class DrizzlePlatformReferenceStore implements PlatformReferenceStore {
 	async getUomDimensionByCode(
 		code: UomDimensionCode,
 	): Promise<RefUomDimension | null> {
-		const [row] = await db
+		const [row] = await afendaDatabase.client
 			.select(uomDimensionColumns)
 			.from(refUomDimension)
 			.where(eq(refUomDimension.code, code))
@@ -455,7 +455,7 @@ export class DrizzlePlatformReferenceStore implements PlatformReferenceStore {
 		input: ListRefUomDimensionsInput,
 	): Promise<ListPage<RefUomDimension>> {
 		const search = searchPattern(input.search);
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select(uomDimensionColumns)
 			.from(refUomDimension)
 			.where(
@@ -475,7 +475,7 @@ export class DrizzlePlatformReferenceStore implements PlatformReferenceStore {
 	}
 
 	async getUomById(id: RefUomId): Promise<RefUom | null> {
-		const [row] = await db
+		const [row] = await afendaDatabase.client
 			.select(uomColumns)
 			.from(refUom)
 			.where(eq(refUom.id, id))
@@ -484,7 +484,7 @@ export class DrizzlePlatformReferenceStore implements PlatformReferenceStore {
 	}
 
 	async getUomByCode(code: UomCode): Promise<RefUom | null> {
-		const [row] = await db
+		const [row] = await afendaDatabase.client
 			.select(uomColumns)
 			.from(refUom)
 			.where(eq(refUom.code, code))
@@ -503,7 +503,7 @@ export class DrizzlePlatformReferenceStore implements PlatformReferenceStore {
 			predicates.push(textSearchEither(refUom.code, refUom.name, search));
 		}
 		const offset = cursorOffset(input.cursor);
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select(uomColumns)
 			.from(refUom)
 			.where(predicates.length > 0 ? and(...predicates) : undefined)
@@ -526,7 +526,7 @@ export class DrizzlePlatformReferenceStore implements PlatformReferenceStore {
 			predicates.push(textSearchEither(refUom.code, refUom.name, search));
 		}
 		const offset = cursorOffset(input.cursor);
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select(uomColumns)
 			.from(refUom)
 			.where(and(...predicates))

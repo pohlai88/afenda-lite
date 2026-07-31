@@ -1,5 +1,5 @@
 import {
-	db,
+	database as afendaDatabase,
 	eq,
 	hrBulkImportAudit,
 	hrBulkImportCheckpoint,
@@ -302,20 +302,20 @@ describe("HR bulk and reliability store parity", () => {
 				assertBulk(bulk);
 				assertReliability(reliability);
 			} finally {
-				await db
+				await afendaDatabase.client
 					.delete(hrBulkImportErrorArtifact)
 					.where(
 						eq(hrBulkImportErrorArtifact.organizationId, bulk.organizationId),
 					);
-				await db
+				await afendaDatabase.client
 					.delete(hrBulkImportAudit)
 					.where(eq(hrBulkImportAudit.organizationId, bulk.organizationId));
-				await db
+				await afendaDatabase.client
 					.delete(hrBulkImportCheckpoint)
 					.where(
 						eq(hrBulkImportCheckpoint.organizationId, bulk.organizationId),
 					);
-				await db
+				await afendaDatabase.client
 					.delete(hrReliabilityDeadLetter)
 					.where(
 						eq(
@@ -323,12 +323,12 @@ describe("HR bulk and reliability store parity", () => {
 							reliabilityOrganizationId,
 						),
 					);
-				await db
+				await afendaDatabase.client
 					.delete(hrConnectorCursor)
 					.where(
 						eq(hrConnectorCursor.organizationId, reliabilityOrganizationId),
 					);
-				await db
+				await afendaDatabase.client
 					.delete(hrReliabilityWorkItem)
 					.where(
 						eq(hrReliabilityWorkItem.organizationId, reliabilityOrganizationId),

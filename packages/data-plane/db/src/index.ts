@@ -14,11 +14,8 @@ export {
 	or,
 	sql,
 } from "drizzle-orm";
-export { db, orgWhere, tenantEntityPredicate, withOrg } from "./client";
-export {
-	HARD_TENANT_ROOT_TABLE_NAMES,
-	HARD_TENANT_ROOT_TABLES,
-} from "./hard-tenant-roots";
+export type { PlatformPermissionCode } from "./capabilities/database";
+export { database } from "./capabilities/database";
 export type {
 	NeonHttpIsolationLevel,
 	NeonHttpSql,
@@ -28,17 +25,4 @@ export type {
 	NeonHttpTransactionQuery,
 	NeonHttpTransactionResults,
 } from "./http-transaction";
-export { runNeonHttpTransaction } from "./http-transaction";
-export type {
-	EnsurePlatformPermissionCatalogResult,
-	PlatformPermissionCodeV1,
-	PlatformRoleTemplateV1,
-} from "./platform-permission-catalog";
-export {
-	ensurePlatformPermissionCatalog,
-	isPlatformPermissionCodeV1,
-	PLATFORM_PERMISSION_CODES_V1,
-	PLATFORM_PERMISSION_V1,
-	PLATFORM_ROLE_TEMPLATES_V1,
-} from "./platform-permission-catalog";
 export * from "./schema";

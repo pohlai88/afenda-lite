@@ -1,5 +1,5 @@
 import type { Change } from "@afenda/audit";
-import { computeDiff, maskSensitiveData } from "@afenda/audit";
+import { audit as afendaAudit } from "@afenda/audit";
 
 import type { AuditFactInput } from "../ports";
 import type { HumanResourcesMutationMeta } from "./mutation-meta";
@@ -45,7 +45,7 @@ function maskHrSnapshot(
 	if (value === undefined || value === null) {
 		return null;
 	}
-	const auditMasked = maskSensitiveData(value);
+	const auditMasked = afendaAudit.data.mask(value);
 	const out: Record<string, unknown> = {};
 	for (const [key, fieldValue] of Object.entries(auditMasked)) {
 		if (isHrPiiField(key)) {
@@ -98,7 +98,7 @@ function computeHrDiff(
 	oldValue: Record<string, unknown> | null | undefined,
 	newValue: Record<string, unknown> | null | undefined,
 ): Change[] {
-	const raw = computeDiff(oldValue ?? null, newValue ?? null);
+	const raw = afendaAudit.data.diff(oldValue ?? null, newValue ?? null);
 	return maskHrChanges(raw);
 }
 

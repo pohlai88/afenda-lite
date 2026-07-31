@@ -1,4 +1,8 @@
-import { asc, db, platformPermission } from "@afenda/db";
+import {
+	database as afendaDatabase,
+	asc,
+	platformPermission,
+} from "@afenda/db";
 
 export interface PermissionCatalogRow {
 	code: string;
@@ -12,7 +16,7 @@ export interface PermissionCatalogRow {
  * (ARCH-023 §3.2 · N10). Does not invent codes; product path is DB-backed.
  */
 export async function listPermissionCatalog(): Promise<PermissionCatalogRow[]> {
-	const rows = await db
+	const rows = await afendaDatabase.client
 		.select({
 			code: platformPermission.code,
 			module: platformPermission.module,

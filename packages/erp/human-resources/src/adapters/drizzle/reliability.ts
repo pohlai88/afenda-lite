@@ -1,11 +1,10 @@
 import {
+	database as afendaDatabase,
 	and,
-	db,
 	eq,
 	hrConnectorCursor,
 	hrReliabilityDeadLetter,
 	hrReliabilityWorkItem,
-	runNeonHttpTransaction,
 } from "@afenda/db";
 import { errorResult, type Result } from "@afenda/errors";
 
@@ -149,7 +148,7 @@ async function getWork(input: {
 	organizationId: string;
 	workItemId: string;
 }): Promise<Result<ReliabilityWorkItem | null>> {
-	const rows = await db
+	const rows = await afendaDatabase.client
 		.select()
 		.from(hrReliabilityWorkItem)
 		.where(
@@ -166,7 +165,7 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 	return {
 		async findByIdempotencyKey(input) {
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.select()
 					.from(hrReliabilityWorkItem)
 					.where(
@@ -194,7 +193,7 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 		},
 		async createWorkItem(item) {
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.insert(hrReliabilityWorkItem)
 					.values(workValues(item))
 					.returning();
@@ -209,7 +208,7 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 		},
 		async claimDueWork(input) {
 			try {
-				const [claimed] = await runNeonHttpTransaction((sqlTag) => [
+				const [claimed] = await afendaDatabase.transaction((sqlTag) => [
 					sqlTag`
 						WITH ranked AS (
 							SELECT id, organization_id,
@@ -283,7 +282,7 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 			}
 			try {
 				if (input.deadLetter === null) {
-					const rows = await db
+					const rows = await afendaDatabase.client
 						.update(hrReliabilityWorkItem)
 						.set({
 							status: item.status,
@@ -314,7 +313,7 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 							});
 				}
 				const dead = input.deadLetter;
-				const [saved] = await runNeonHttpTransaction((sqlTag) => [
+				const [saved] = await afendaDatabase.transaction((sqlTag) => [
 					sqlTag`
 						WITH updated AS (
 							UPDATE hr_reliability_work_item
@@ -372,7 +371,7 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 		},
 		async getDeadLetter(input) {
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.select()
 					.from(hrReliabilityDeadLetter)
 					.where(
@@ -392,7 +391,7 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 		},
 		async findDeadLetterByWorkItem(input) {
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.select()
 					.from(hrReliabilityDeadLetter)
 					.where(
@@ -413,7 +412,7 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 		async createDeadLetterReplay(input) {
 			const item = input.workItem;
 			try {
-				const [created] = await runNeonHttpTransaction((sqlTag) => [
+				const [created] = await afendaDatabase.transaction((sqlTag) => [
 					sqlTag`
 						WITH eligible AS (
 							SELECT id FROM hr_reliability_dead_letter
@@ -472,7 +471,7 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 		},
 		async getCursor(input) {
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.select()
 					.from(hrConnectorCursor)
 					.where(
@@ -497,14 +496,14 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 			try {
 				const rows =
 					input.expectedVersion === null
-						? await db
+						? await afendaDatabase.client
 								.insert(hrConnectorCursor)
 								.values({
 									...input.cursor,
 									organizationId: input.cursor.organizationId,
 								})
 								.returning()
-						: await db
+						: await afendaDatabase.client
 								.update(hrConnectorCursor)
 								.set({
 									cursor: input.cursor.cursor,

@@ -1,8 +1,8 @@
 import type { AuditStore } from "@afenda/audit";
-import type { db, NeonHttpSql } from "@afenda/db";
+import type { database as afendaDatabase, NeonHttpSql } from "@afenda/db";
 
 export type CorporateAdministrationDrizzleDatabase = Pick<
-	typeof db,
+	typeof afendaDatabase.client,
 	"execute" | "insert" | "select" | "update"
 >;
 

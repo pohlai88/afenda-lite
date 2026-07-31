@@ -1,4 +1,9 @@
-import { and, db, eq, mdOrganizationDimension } from "@afenda/db";
+import {
+	database as afendaDatabase,
+	and,
+	eq,
+	mdOrganizationDimension,
+} from "@afenda/db";
 import { errorResult } from "@afenda/errors";
 
 import type {
@@ -25,7 +30,7 @@ export function createDrizzleTestOrganizationDimensionDirectory(): OrganizationD
 				] as const,
 				async (kind) => {
 					const key = input.keys[kind].trim().toUpperCase();
-					await db
+					await afendaDatabase.client
 						.insert(mdOrganizationDimension)
 						.values({
 							organizationId: input.organizationId,
@@ -39,7 +44,7 @@ export function createDrizzleTestOrganizationDimensionDirectory(): OrganizationD
 							createdBy: input.actorUserId,
 						})
 						.onConflictDoNothing();
-					const rows = await db
+					const rows = await afendaDatabase.client
 						.select()
 						.from(mdOrganizationDimension)
 						.where(

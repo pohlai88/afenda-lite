@@ -1,15 +1,14 @@
 import { randomUUID } from "node:crypto";
 
 import {
+	database as afendaDatabase,
 	and,
-	db,
 	desc,
 	eq,
 	payment,
 	paymentAccount,
 	paymentAllocation,
 	paymentReversal,
-	runNeonHttpTransaction,
 } from "@afenda/db";
 import {
 	errorIngress,
@@ -240,7 +239,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 	): Promise<Result<PaymentAccount>> {
 		const id = randomUUID();
 		try {
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.insert(paymentAccount)
 				.values({
 					id,
@@ -267,7 +266,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 		organizationId: string,
 	): Promise<Result<PaymentAccount[]>> {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(paymentAccount)
 				.where(eq(paymentAccount.organizationId, organizationId))
@@ -301,7 +300,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 			correlationId: record.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH account AS (
 						SELECT id FROM payment_account
@@ -355,7 +354,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 		const id = randomUUID();
 		const eventId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH eligible AS (
 						SELECT p.id, p.currency_code
@@ -464,7 +463,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 	): Promise<Result<Payment>> {
 		const eventId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH mutated AS (
 						UPDATE payment
@@ -532,7 +531,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 		const reversalId = randomUUID();
 		const eventId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH mutated AS (
 						UPDATE payment
@@ -619,7 +618,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 		const outgoingCode = `${record.code}-OUT`;
 		const incomingCode = `${record.code}-IN`;
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH from_account AS (
 						SELECT id, currency_code FROM payment_account
@@ -726,7 +725,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 		const id = randomUUID();
 		const eventId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH original AS (
 						SELECT p.*
@@ -816,7 +815,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 	): Promise<Result<PaymentApplicationInstruction>> {
 		const eventId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH mutated AS (
 						UPDATE payment_allocation
@@ -898,7 +897,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 	): Promise<Result<PaymentApplicationInstruction>> {
 		const eventId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH mutated AS (
 						UPDATE payment_allocation
@@ -978,7 +977,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 		id: string,
 	): Promise<Result<Payment | null>> {
 		try {
-			const [header] = await db
+			const [header] = await afendaDatabase.client
 				.select()
 				.from(payment)
 				.where(
@@ -989,7 +988,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 				return errorResult.ok(null);
 			}
 			const [instructions, reversals] = await Promise.all([
-				db
+				afendaDatabase.client
 					.select()
 					.from(paymentAllocation)
 					.where(
@@ -998,7 +997,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 							eq(paymentAllocation.paymentId, id),
 						),
 					),
-				db
+				afendaDatabase.client
 					.select()
 					.from(paymentReversal)
 					.where(
@@ -1032,7 +1031,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 			if (filter.direction !== undefined) {
 				conditions.push(eq(payment.direction, filter.direction));
 			}
-			const headers = await db
+			const headers = await afendaDatabase.client
 				.select()
 				.from(payment)
 				.where(and(...conditions))
@@ -1087,7 +1086,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 					(sum, instruction) => sum + Number(instruction.intendedAmount),
 					0,
 				);
-			const refundRows = await db
+			const refundRows = await afendaDatabase.client
 				.select({ amount: payment.amount })
 				.from(payment)
 				.where(

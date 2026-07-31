@@ -13,8 +13,10 @@ const mockEnv = vi.hoisted(() => ({
 }));
 
 vi.mock("@afenda/db", () => ({
-	db: {
-		execute: executeMock,
+	database: {
+		client: {
+			execute: executeMock,
+		},
 	},
 	sql: (strings: TemplateStringsArray) => strings.join(""),
 }));

@@ -1,4 +1,4 @@
-import { createDrizzleAuditStore } from "@afenda/audit";
+import { audit as afendaAudit } from "@afenda/audit";
 import { errorResult, type Result } from "@afenda/errors";
 import { createEventPublisher } from "@afenda/events";
 
@@ -13,7 +13,7 @@ import type {
 const PAYROLL_MODULE = "payroll" as const;
 
 export function createSqlAuditFactPort(): AuditFactPort {
-	const store = createDrizzleAuditStore();
+	const store = afendaAudit.store.drizzle();
 	return {
 		async record(input: AuditFactInput): Promise<Result<{ id: string }>> {
 			const result = await store.write({

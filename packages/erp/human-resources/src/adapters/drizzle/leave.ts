@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import {
+	database as afendaDatabase,
 	and,
-	db,
 	eq,
 	hrLeaveAdjustment,
 	hrLeaveEntitlement,
@@ -185,7 +185,7 @@ async function transitionLeavePolicyStatus(input: {
 	meta: HumanResourcesMutationMeta;
 }): Promise<Result<LeavePolicy>> {
 	try {
-		const result = await db
+		const result = await afendaDatabase.client
 			.update(hrLeavePolicy)
 			.set({
 				status: input.nextStatus,
@@ -661,7 +661,7 @@ function activeLeaveOverlapStatuses(): LeaveRequestStatus[] {
 export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 	async getLeavePolicyById(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrLeavePolicy)
 				.where(
@@ -683,7 +683,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 
 	async getLeavePolicyEligibility(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrLeavePolicyEligibility)
 				.where(
@@ -723,7 +723,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		}
 
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrLeavePolicy)
 				.where(
@@ -808,7 +808,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 
 	async findLeavePolicyByCode(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrLeavePolicy)
 				.where(
@@ -936,7 +936,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		const balanceRules = mergeLeavePolicyBalanceRules(existing.data, input);
 		const nextVersion = input.expectedVersion + 1;
 		try {
-			const updated = await db
+			const updated = await afendaDatabase.client
 				.update(hrLeavePolicy)
 				.set({
 					name: input.name ?? existing.data.name,
@@ -981,7 +981,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 					return eligibility;
 				}
 				if (eligibility.data !== null) {
-					await db
+					await afendaDatabase.client
 						.update(hrLeavePolicyEligibility)
 						.set({
 							minTenureDays:
@@ -1168,7 +1168,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		}
 
 		try {
-			await db
+			await afendaDatabase.client
 				.update(hrLeavePolicy)
 				.set({
 					status: "published",
@@ -1206,7 +1206,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 
 	async listLeavePolicies(input) {
 		try {
-			let rows = await db
+			let rows = await afendaDatabase.client
 				.select()
 				.from(hrLeavePolicy)
 				.where(eq(hrLeavePolicy.organizationId, input.organizationId));
@@ -1238,7 +1238,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 
 	async getLeaveEntitlementById(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrLeaveEntitlement)
 				.where(
@@ -1260,7 +1260,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 
 	async findLeaveEntitlementByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrLeaveEntitlement)
 				.where(
@@ -1613,7 +1613,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		input,
 	): Promise<Result<IdempotentLeaveAdjustmentRecord | null>> {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrLeaveAdjustment)
 				.where(
@@ -1793,7 +1793,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 
 	async listLeaveEntitlements(input) {
 		try {
-			let rows = await db
+			let rows = await afendaDatabase.client
 				.select()
 				.from(hrLeaveEntitlement)
 				.where(eq(hrLeaveEntitlement.organizationId, input.organizationId));
@@ -1831,7 +1831,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 
 	async listPostedLeaveAdjustments(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrLeaveAdjustment)
 				.where(
@@ -1896,7 +1896,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 
 	async getLeaveRequestById(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrLeaveRequest)
 				.where(
@@ -1918,7 +1918,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 
 	async findLeaveRequestByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrLeaveRequest)
 				.where(
@@ -1950,7 +1950,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 
 	async listLeaveRequestSegments(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrLeaveRequestSegment)
 				.where(
@@ -1979,7 +1979,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 
 	async listOverlappingLeaveSegments(input) {
 		try {
-			let requests = await db
+			let requests = await afendaDatabase.client
 				.select()
 				.from(hrLeaveRequest)
 				.where(
@@ -2000,7 +2000,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				return errorResult.ok([]);
 			}
 			const requestIds = requests.map((row) => row.id);
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrLeaveRequestSegment)
 				.where(
@@ -2723,7 +2723,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 
 	async listLeaveRequests(input) {
 		try {
-			let rows = await db
+			let rows = await afendaDatabase.client
 				.select()
 				.from(hrLeaveRequest)
 				.where(eq(hrLeaveRequest.organizationId, input.organizationId));
@@ -2774,7 +2774,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		);
 
 		try {
-			let rows = await db
+			let rows = await afendaDatabase.client
 				.select()
 				.from(hrLeaveRequest)
 				.where(
@@ -2830,7 +2830,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		);
 
 		try {
-			let rows = await db
+			let rows = await afendaDatabase.client
 				.select()
 				.from(hrLeaveRequest)
 				.where(eq(hrLeaveRequest.organizationId, input.organizationId));

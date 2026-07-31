@@ -1,4 +1,11 @@
-import { and, db, desc, eq, platformSearchDocument, sql } from "@afenda/db";
+import {
+	database as afendaDatabase,
+	and,
+	desc,
+	eq,
+	platformSearchDocument,
+	sql,
+} from "@afenda/db";
 import {
 	errorIngress,
 	errorProject,
@@ -65,7 +72,7 @@ export class DrizzleSearchStore implements SearchStore {
 			const now = new Date();
 			const searchVector = toTsvectorSql(input.title, description);
 
-			const [row] = await db
+			const [row] = await afendaDatabase.client
 				.insert(platformSearchDocument)
 				.values({
 					organizationId: input.organizationId,
@@ -128,7 +135,7 @@ export class DrizzleSearchStore implements SearchStore {
 		input: SearchDeleteInput,
 	): Promise<Result<{ deleted: boolean }>> {
 		try {
-			const deleted = await db
+			const deleted = await afendaDatabase.client
 				.delete(platformSearchDocument)
 				.where(
 					and(
@@ -147,7 +154,7 @@ export class DrizzleSearchStore implements SearchStore {
 
 	async listDocumentIds(input: SearchListIdsInput): Promise<Result<string[]>> {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select({ documentId: platformSearchDocument.documentId })
 				.from(platformSearchDocument)
 				.where(
@@ -181,7 +188,7 @@ export class DrizzleSearchStore implements SearchStore {
 
 			const rank = sql<number>`ts_rank(${platformSearchDocument.searchVector}, ${tsQuery})`;
 
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select({
 					id: platformSearchDocument.id,
 					organizationId: platformSearchDocument.organizationId,

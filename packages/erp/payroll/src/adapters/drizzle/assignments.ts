@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 
 import {
+	database as afendaDatabase,
 	and,
-	db,
 	eq,
 	payrollDeductionRule,
 	payrollEarningRule,
@@ -227,7 +227,7 @@ function mapDeductionRuleRow(
 export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 	async findEmployeeAssignmentByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(payrollEmployeeAssignment)
 				.where(
@@ -291,7 +291,7 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 		}
 
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.insert(payrollEmployeeAssignment)
 				.values({
 					id: assignmentId.data,
@@ -341,7 +341,7 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 
 	async getEmployeeAssignment(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(payrollEmployeeAssignment)
 				.where(
@@ -366,7 +366,7 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 
 	async findRecurringEarningByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(payrollRecurringEarning)
 				.where(
@@ -430,7 +430,7 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 		}
 
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.insert(payrollRecurringEarning)
 				.values({
 					id: recurringEarningId.data,
@@ -483,7 +483,7 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 
 	async getRecurringEarning(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(payrollRecurringEarning)
 				.where(
@@ -508,7 +508,7 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 
 	async findRecurringDeductionByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(payrollRecurringDeduction)
 				.where(
@@ -572,7 +572,7 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 		}
 
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.insert(payrollRecurringDeduction)
 				.values({
 					id: recurringDeductionId.data,
@@ -625,7 +625,7 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 
 	async getRecurringDeduction(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(payrollRecurringDeduction)
 				.where(
@@ -654,7 +654,7 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 		effectiveDate: string;
 	}) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(payrollEmployeeAssignment)
 				.where(
@@ -696,7 +696,7 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 		effectiveDate: string;
 	}) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(payrollRecurringEarning)
 				.where(
@@ -738,7 +738,7 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 		effectiveDate: string;
 	}) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(payrollRecurringDeduction)
 				.where(
@@ -781,7 +781,7 @@ export const drizzleAssignmentRuleLookups = {
 		earningRuleId: import("../../brands").PayrollEarningRuleId;
 	}): Promise<Result<PayrollEarningRule | null>> {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(payrollEarningRule)
 				.where(
@@ -809,7 +809,7 @@ export const drizzleAssignmentRuleLookups = {
 		deductionRuleId: import("../../brands").PayrollDeductionRuleId;
 	}): Promise<Result<PayrollDeductionRule | null>> {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(payrollDeductionRule)
 				.where(

@@ -1,4 +1,10 @@
-import { and, db, eq, isNull, platformRole } from "@afenda/db";
+import {
+	database as afendaDatabase,
+	and,
+	eq,
+	isNull,
+	platformRole,
+} from "@afenda/db";
 import { errorIngress } from "@afenda/errors";
 
 export type AssignableRole = typeof platformRole.$inferSelect;
@@ -22,7 +28,7 @@ export async function listAssignableRoles(
 	}
 
 	const [templates, orgRoles] = await Promise.all([
-		db
+		afendaDatabase.client
 			.select()
 			.from(platformRole)
 			.where(
@@ -32,7 +38,7 @@ export async function listAssignableRoles(
 					isNull(platformRole.organizationId),
 				),
 			),
-		db
+		afendaDatabase.client
 			.select()
 			.from(platformRole)
 			.where(

@@ -2,7 +2,12 @@
  * Memory vs Drizzle parity for performance management (HR-PERF-01).
  */
 
-import { and, db, eq, platformDomainEvent } from "@afenda/db";
+import {
+	database as afendaDatabase,
+	and,
+	eq,
+	platformDomainEvent,
+} from "@afenda/db";
 import {
 	HUMAN_RESOURCES_IMPROVEMENT_PLAN_COMPLETED_EVENT,
 	HUMAN_RESOURCES_IMPROVEMENT_PLAN_STARTED_EVENT,
@@ -138,7 +143,7 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 		ready: ReturnType<typeof createHrParityHarness>;
 	}): Promise<void> {
 		if (adapter === "drizzle") {
-			const events = await db
+			const events = await afendaDatabase.client
 				.select({ id: platformDomainEvent.id })
 				.from(platformDomainEvent)
 				.where(

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { and, db, eq, hrHireAttempt } from "@afenda/db";
+import { database as afendaDatabase, and, eq, hrHireAttempt } from "@afenda/db";
 import { errorResult } from "@afenda/errors";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import { conflict, notFound } from "../../shared/domain-guards";
@@ -20,7 +20,7 @@ export const drizzleHireOrchestrationMethods: Pick<
 	| "updateHireAttemptProgress"
 > = {
 	async findHireAttemptByIdempotencyKey(input) {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(hrHireAttempt)
 			.where(
@@ -48,7 +48,7 @@ export const drizzleHireOrchestrationMethods: Pick<
 	},
 
 	async findOpenHireAttemptByOfferId(input) {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(hrHireAttempt)
 			.where(
@@ -96,7 +96,7 @@ export const drizzleHireOrchestrationMethods: Pick<
 		const now = new Date();
 
 		try {
-			await db.insert(hrHireAttempt).values({
+			await afendaDatabase.client.insert(hrHireAttempt).values({
 				id,
 				organizationId: record.organizationId,
 				offerId: record.offerId,
@@ -134,7 +134,7 @@ export const drizzleHireOrchestrationMethods: Pick<
 			return mapPersistenceFailure(error, "Failed to create hire attempt");
 		}
 
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(hrHireAttempt)
 			.where(
@@ -152,7 +152,7 @@ export const drizzleHireOrchestrationMethods: Pick<
 	},
 
 	async updateHireAttemptProgress(input, _ports, _meta) {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(hrHireAttempt)
 			.where(
@@ -180,7 +180,7 @@ export const drizzleHireOrchestrationMethods: Pick<
 		const nextVersion = existing.version + 1;
 
 		try {
-			const updatedRows = await db
+			const updatedRows = await afendaDatabase.client
 				.update(hrHireAttempt)
 				.set({
 					currentStep: input.currentStep ?? existing.currentStep,

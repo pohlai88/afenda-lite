@@ -19,7 +19,7 @@ import {
 	setRegisteredAddress,
 } from "@afenda/corporate-administration";
 import { createDrizzleCorporateAdministrationEstablishmentStore } from "@afenda/corporate-administration/adapters/drizzle";
-import { db } from "@afenda/db";
+import { database as afendaDatabase } from "@afenda/db";
 import { describe, expect, it } from "vitest";
 import {
 	caCommandOptions,
@@ -58,7 +58,7 @@ function createPhaseOneDependencies() {
 		activityStore: store,
 		companyStore: store,
 		establishmentStore: createDrizzleCorporateAdministrationEstablishmentStore({
-			database: db,
+			database: afendaDatabase.client,
 			createId: randomUUID,
 		}) as EstablishmentStore,
 		addressReferences: {

@@ -1,14 +1,13 @@
 import { randomUUID } from "node:crypto";
 
 import {
+	audit as afendaAudit,
 	type PreparedDerivedEntityAuditInsertValues,
 	type PreparedTransactionalAuditInsertValues,
-	prepareDerivedEntityAuditInsertValues,
-	prepareTransactionalAuditInsertValues,
 } from "@afenda/audit";
 import {
+	database as afendaDatabase,
 	and,
-	db,
 	desc,
 	eq,
 	hrCareerPlan,
@@ -25,7 +24,6 @@ import {
 	hrTalentProfileAssessment,
 	hrTalentProfileMobility,
 	inArray,
-	runNeonHttpTransaction,
 } from "@afenda/db";
 import { errorResult, type Result } from "@afenda/errors";
 import {
@@ -196,7 +194,7 @@ function talentAuditEventContext(input: {
 function prepareTalentAudit(
 	input: TalentAuditInput,
 ): Result<PreparedTransactionalAuditInsertValues> {
-	return prepareTransactionalAuditInsertValues({
+	return afendaAudit.transaction.prepare({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: input.correlationId,
@@ -213,7 +211,7 @@ function prepareTalentAudit(
 function prepareDerivedTalentAudit(
 	input: Omit<TalentAuditInput, "entityId">,
 ): Result<PreparedDerivedEntityAuditInsertValues> {
-	return prepareDerivedEntityAuditInsertValues({
+	return afendaAudit.transaction.prepareDerived({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: input.correlationId,
@@ -1348,7 +1346,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 	ThisType<TalentHost & DrizzleTalentMethods> = {
 	async getCompetencyById(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrCompetency)
 				.where(
@@ -1370,7 +1368,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 	async findCompetencyByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrCompetency)
 				.where(
@@ -1448,7 +1446,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							INSERT INTO hr_competency (
@@ -1562,7 +1560,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_competency
@@ -1652,7 +1650,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_competency
@@ -1702,7 +1700,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			if (input.status !== undefined) {
 				conditions.push(eq(hrCompetency.status, input.status));
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrCompetency)
 				.where(and(...conditions))
@@ -1750,7 +1748,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		}
 
 		try {
-			const existingRows = await db
+			const existingRows = await afendaDatabase.client
 				.select()
 				.from(hrJobCompetency)
 				.where(
@@ -1808,7 +1806,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							INSERT INTO hr_job_competency (
@@ -1862,7 +1860,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 	async removeCompetencyFromJob(input, _ports, meta) {
 		try {
-			const existingRows = await db
+			const existingRows = await afendaDatabase.client
 				.select()
 				.from(hrJobCompetency)
 				.where(
@@ -1913,7 +1911,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			}
 			const audit = preparedAudit.data;
 			const auditId = randomUUID();
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_job_competency
@@ -1960,7 +1958,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		try {
 			const page = input.page ?? 1;
 			const pageSize = input.pageSize ?? 20;
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrJobCompetency)
 				.where(
@@ -1992,7 +1990,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 	async getCompetencyAssessmentById(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrCompetencyAssessment)
 				.where(
@@ -2017,7 +2015,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 	async findCurrentCompetencyAssessment(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrCompetencyAssessment)
 				.where(
@@ -2044,7 +2042,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 	async findCompetencyAssessmentByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrCompetencyAssessment)
 				.where(
@@ -2172,7 +2170,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH competency AS (
 						SELECT id, scale_code
@@ -2384,7 +2382,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		const nextSourceVersion = record.expectedVersion + 1;
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH source AS (
 						SELECT *
@@ -2555,7 +2553,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH mutated AS (
 						UPDATE hr_competency_assessment
@@ -2623,7 +2621,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			return notFound("Employee not found");
 		}
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrCompetencyAssessment)
 				.where(
@@ -2656,7 +2654,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 	async getTalentProfileById(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrTalentProfile)
 				.where(
@@ -2682,7 +2680,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 	async findTalentProfileByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrTalentProfile)
 				.where(
@@ -2779,7 +2777,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							INSERT INTO hr_talent_profile (
@@ -2912,7 +2910,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_talent_profile
@@ -3011,7 +3009,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_talent_profile
@@ -3053,7 +3051,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 	async getTalentProfileByEmployee(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrTalentProfile)
 				.where(
@@ -3122,7 +3120,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH mutated AS (
 						INSERT INTO hr_talent_profile_assessment (
@@ -3171,7 +3169,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 	async confirmTalentProfileAssessment(input, _ports, meta) {
 		try {
-			const existingRows = await db
+			const existingRows = await afendaDatabase.client
 				.select()
 				.from(hrTalentProfileAssessment)
 				.where(
@@ -3256,7 +3254,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			const auditId = randomUUID();
 			const profileAuditId = randomUUID();
 
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH target AS (
 						SELECT *
@@ -3370,7 +3368,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 	async listTalentProfileAssessments(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrTalentProfileAssessment)
 				.where(
@@ -3404,7 +3402,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 	async findTalentProfileMobilityByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrTalentProfileMobility)
 				.where(
@@ -3523,7 +3521,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH profile AS (
 						SELECT id
@@ -3635,7 +3633,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 	async listTalentProfileMobility(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrTalentProfileMobility)
 				.where(
@@ -3666,7 +3664,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 	async findCriticalRoleReadinessByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrTalentCriticalRoleReadiness)
 				.where(
@@ -3798,7 +3796,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH profile AS (
 						SELECT id
@@ -3916,7 +3914,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 	async listCriticalRoleReadiness(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrTalentCriticalRoleReadiness)
 				.where(
@@ -3953,7 +3951,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 	async getTalentPoolById(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrTalentPool)
 				.where(
@@ -3975,7 +3973,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 	async findTalentPoolByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrTalentPool)
 				.where(
@@ -4053,7 +4051,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							INSERT INTO hr_talent_pool (
@@ -4168,7 +4166,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_talent_pool
@@ -4255,7 +4253,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_talent_pool
@@ -4297,7 +4295,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 	async findTalentPoolMemberByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrTalentPoolMember)
 				.where(
@@ -4374,7 +4372,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		}
 
 		try {
-			const existingMemberRows = await db
+			const existingMemberRows = await afendaDatabase.client
 				.select()
 				.from(hrTalentPoolMember)
 				.where(
@@ -4430,7 +4428,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH pool_ok AS (
 							SELECT id, status
@@ -4511,7 +4509,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 	async approveTalentPoolMember(input, _ports, meta) {
 		try {
-			const existingRows = await db
+			const existingRows = await afendaDatabase.client
 				.select()
 				.from(hrTalentPoolMember)
 				.where(
@@ -4574,7 +4572,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				correlationId: meta.correlationId,
 			});
 
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_talent_pool_member
@@ -4634,7 +4632,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 	async removeTalentPoolMember(input, _ports, meta) {
 		try {
-			const existingRows = await db
+			const existingRows = await afendaDatabase.client
 				.select()
 				.from(hrTalentPoolMember)
 				.where(
@@ -4694,7 +4692,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				correlationId: meta.correlationId,
 			});
 
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_talent_pool_member
@@ -4762,7 +4760,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			if (input.status !== undefined) {
 				conditions.push(eq(hrTalentPoolMember.status, input.status));
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrTalentPoolMember)
 				.where(and(...conditions))
@@ -4784,7 +4782,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 	async findCareerPlanByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrCareerPlan)
 				.where(
@@ -4873,7 +4871,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							INSERT INTO hr_career_plan (
@@ -4984,7 +4982,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_career_plan
@@ -5080,7 +5078,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_career_plan
@@ -5183,7 +5181,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_career_plan
@@ -5225,7 +5223,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 	async getCareerPlanById(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrCareerPlan)
 				.where(
@@ -5244,7 +5242,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				return plan;
 			}
 
-			const actionRows = await db
+			const actionRows = await afendaDatabase.client
 				.select()
 				.from(hrCareerPlanAction)
 				.where(
@@ -5283,7 +5281,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			if (input.status !== undefined) {
 				conditions.push(eq(hrCareerPlan.status, input.status));
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrCareerPlan)
 				.where(and(...conditions))
@@ -5358,7 +5356,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH plan_ok AS (
 							SELECT id
@@ -5413,7 +5411,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 	async completeCareerPlanAction(input, _ports, meta) {
 		try {
-			const existingRows = await db
+			const existingRows = await afendaDatabase.client
 				.select()
 				.from(hrCareerPlanAction)
 				.where(
@@ -5465,7 +5463,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			const audit = preparedAudit.data;
 			const auditId = randomUUID();
 
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_career_plan_action
@@ -5510,7 +5508,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 	async getCareerPlanActionById(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrCareerPlanAction)
 				.where(
@@ -5532,7 +5530,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 	async findSuccessionPlanByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrSuccessionPlan)
 				.where(
@@ -5621,7 +5619,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							INSERT INTO hr_succession_plan (
@@ -5734,7 +5732,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_succession_plan
@@ -5824,7 +5822,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_succession_plan
@@ -5866,7 +5864,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 	async getSuccessionPlanById(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrSuccessionPlan)
 				.where(
@@ -5899,7 +5897,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			if (input.status !== undefined) {
 				conditions.push(eq(hrSuccessionPlan.status, input.status));
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrSuccessionPlan)
 				.where(and(...conditions))
@@ -5926,7 +5924,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 	async findSuccessionCandidateByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrSuccessionCandidate)
 				.where(
@@ -6060,7 +6058,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH plan_ok AS (
 							SELECT id, status, allows_external_candidates
@@ -6147,7 +6145,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 	async assessSuccessionReadiness(input, _ports, meta) {
 		try {
-			const existingRows = await db
+			const existingRows = await afendaDatabase.client
 				.select()
 				.from(hrSuccessionCandidate)
 				.where(
@@ -6217,7 +6215,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				correlationId: meta.correlationId,
 			});
 
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_succession_candidate
@@ -6277,7 +6275,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 	async approveSuccessionCandidate(input, _ports, meta) {
 		try {
-			const existingRows = await db
+			const existingRows = await afendaDatabase.client
 				.select()
 				.from(hrSuccessionCandidate)
 				.where(
@@ -6339,7 +6337,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				correlationId: meta.correlationId,
 			});
 
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_succession_candidate
@@ -6397,7 +6395,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 	async removeSuccessionCandidate(input, _ports, meta) {
 		try {
-			const existingRows = await db
+			const existingRows = await afendaDatabase.client
 				.select()
 				.from(hrSuccessionCandidate)
 				.where(
@@ -6449,7 +6447,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			const audit = preparedAudit.data;
 			const auditId = randomUUID();
 
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_succession_candidate
@@ -6503,7 +6501,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			if (input.status !== undefined) {
 				conditions.push(eq(hrSuccessionCandidate.status, input.status));
 			}
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrSuccessionCandidate)
 				.where(and(...conditions))
@@ -6528,7 +6526,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 	async getPositionSuccessionCoverage(input) {
 		try {
-			const planRows = await db
+			const planRows = await afendaDatabase.client
 				.select()
 				.from(hrSuccessionPlan)
 				.where(
@@ -6557,7 +6555,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				} satisfies PositionSuccessionCoverage);
 			}
 
-			const candidateRows = await db
+			const candidateRows = await afendaDatabase.client
 				.select()
 				.from(hrSuccessionCandidate)
 				.where(

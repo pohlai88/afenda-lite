@@ -1,6 +1,12 @@
 import { randomUUID } from "node:crypto";
 import type { Change } from "@afenda/audit";
-import { and, db, eq, payrollException, payrollRun } from "@afenda/db";
+import {
+	database as afendaDatabase,
+	and,
+	eq,
+	payrollException,
+	payrollRun,
+} from "@afenda/db";
 import { errorResult, type Result } from "@afenda/errors";
 
 import {
@@ -136,7 +142,7 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 		idempotencyKey: string;
 	}): Promise<Result<IdempotentPayrollRunRecord | null>> {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(payrollRun)
 				.where(
@@ -194,7 +200,7 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 		}
 
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.insert(payrollRun)
 				.values({
 					id: runId.data,
@@ -273,7 +279,7 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 		runId: PayrollRunId;
 	}): Promise<Result<PayrollRun | null>> {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(payrollRun)
 				.where(
@@ -338,7 +344,7 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 		}
 
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.update(payrollRun)
 				.set({
 					status: input.status ?? current.data.status,
@@ -433,7 +439,7 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 		}
 
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.insert(payrollException)
 				.values({
 					id: exceptionId.data,
@@ -493,7 +499,7 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 		}
 
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(payrollException)
 				.where(
@@ -537,7 +543,7 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 		}
 
 		try {
-			const existing = await db
+			const existing = await afendaDatabase.client
 				.select({ id: payrollException.id })
 				.from(payrollException)
 				.where(
@@ -550,7 +556,7 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 				return errorResult.ok({ deletedCount: 0 });
 			}
 
-			await db
+			await afendaDatabase.client
 				.delete(payrollException)
 				.where(
 					and(

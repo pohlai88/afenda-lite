@@ -14,11 +14,14 @@ facade and never interpret those policies themselves.
 | Canonical registry and five capability facades | Verified |
 | Repository consumer cutover | Implemented; boundary and strict semantic gates green |
 | Compatibility subpaths and `AppError` | Deleted |
-| Governance seal | Sealed; evidence in `PR.md` and `.protected.sha256` |
+| Errors cutover contract | Sealed; evidence in `PR.md`, `CONTRACT.md`, and `.protected.sha256` |
 
 The durable authority is [CONTRACT.md](./CONTRACT.md). It records the frozen
 semantic decisions, implementation evidence, migration lanes, and seal
 conditions. This README is the permanent consumer and maintainer entry.
+
+This package-specific cutover seal is not a generic module-readiness claim or a
+substitute for a digest-scoped kernel readiness record.
 
 ## Permanent consumer surface
 
@@ -239,6 +242,8 @@ pnpm check:errors-boundary
 pnpm check:errors-semantics
 ```
 
+Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
+
 The package test command includes registry contracts, hostile boundaries,
 static-copy analysis, and result/retry/wire/OpenAPI bundle containment.
 
@@ -246,6 +251,11 @@ Repository gates enforce the root-only facade and reject distributed semantic
 interpretation. Update protected-package metadata only after all repository
 checks, generated documentation, Scratch synchronization, and the full
 repository suite pass.
+
+```bash
+pnpm --filter @afenda/errors protect:update
+pnpm --filter @afenda/errors protect:check
+```
 
 ## Detailed authority
 

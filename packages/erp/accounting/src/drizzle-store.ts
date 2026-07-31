@@ -2,14 +2,13 @@ import { randomUUID } from "node:crypto";
 
 import {
 	accountingPeriod,
+	database as afendaDatabase,
 	and,
-	db,
 	desc,
 	eq,
 	journal,
 	journalLine,
 	ledgerPosting,
-	runNeonHttpTransaction,
 } from "@afenda/db";
 import {
 	errorIngress,
@@ -375,7 +374,7 @@ async function reloadPeriod(
 	id: string,
 	_message: string,
 ): Promise<Result<AccountingPeriod>> {
-	const [row] = await db
+	const [row] = await afendaDatabase.client
 		.select()
 		.from(accountingPeriod)
 		.where(
@@ -396,7 +395,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 	): Promise<Result<AccountingPeriod>> {
 		const id = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction(
+			const [rows] = await afendaDatabase.transaction(
 				(sql) => [
 					sql`
 						INSERT INTO accounting_period (
@@ -437,7 +436,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 		record: Parameters<AccountingStore["softClosePeriod"]>[0],
 	): Promise<Result<AccountingPeriod>> {
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					UPDATE accounting_period
 					SET status = 'soft_closed', soft_closed = true,
@@ -471,7 +470,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 		record: Parameters<AccountingStore["closePeriod"]>[0],
 	): Promise<Result<AccountingPeriod>> {
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					UPDATE accounting_period
 					SET status = 'closed', version = version + 1,
@@ -502,7 +501,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 		record: Parameters<AccountingStore["reopenPeriod"]>[0],
 	): Promise<Result<AccountingPeriod>> {
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					UPDATE accounting_period
 					SET status = 'open', soft_closed = false,
@@ -536,7 +535,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 	): Promise<Result<Journal>> {
 		const id = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					INSERT INTO journal (
 						id, organization_id, period_id, code, normalized_code, description,
@@ -572,7 +571,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 	): Promise<Result<JournalLine>> {
 		const id = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH eligible AS (
 						SELECT j.id, COALESCE(MAX(l.line_no), 0) + 1 AS next_line
@@ -628,7 +627,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 	): Promise<Result<Journal>> {
 		const eventId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH eligible AS (
 						SELECT j.*
@@ -710,7 +709,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 		const reversalId = randomUUID();
 		const eventId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH eligible AS (
 						SELECT j.*
@@ -820,7 +819,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 		id: string,
 	): Promise<Result<Journal | null>> {
 		try {
-			const [header] = await db
+			const [header] = await afendaDatabase.client
 				.select()
 				.from(journal)
 				.where(
@@ -831,7 +830,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 				return errorResult.ok(null);
 			}
 			const [lines, postings] = await Promise.all([
-				db
+				afendaDatabase.client
 					.select()
 					.from(journalLine)
 					.where(
@@ -840,7 +839,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 							eq(journalLine.journalId, id),
 						),
 					),
-				db
+				afendaDatabase.client
 					.select()
 					.from(ledgerPosting)
 					.where(
@@ -869,7 +868,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 			if (filter.periodId !== undefined) {
 				conditions.push(eq(journal.periodId, filter.periodId));
 			}
-			const headers = await db
+			const headers = await afendaDatabase.client
 				.select()
 				.from(journal)
 				.where(and(...conditions))
@@ -899,7 +898,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 		filter: Parameters<AccountingStore["trialBalance"]>[0],
 	): Promise<Result<TrialBalanceRow[]>> {
 		try {
-			const [rows] = await runNeonHttpTransaction(
+			const [rows] = await afendaDatabase.transaction(
 				(sql) => [
 					sql`
 						SELECT account_code,
@@ -934,7 +933,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 	): Promise<Result<ChartOfAccounts>> {
 		const id = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					INSERT INTO chart_of_account (id, organization_id, code, name, status, version, created_by, updated_by)
 					VALUES (${id}, ${record.organizationId}, ${record.code}, ${record.name}, 'active', 1, ${record.actorUserId}, ${record.actorUserId})
@@ -969,7 +968,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 	): Promise<Result<LedgerAccount>> {
 		const id = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					INSERT INTO ledger_account (
 						id, organization_id, chart_of_account_id, code, normalized_code,
@@ -1015,7 +1014,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 		record: Parameters<AccountingStore["updateLedgerAccount"]>[0],
 	): Promise<Result<LedgerAccount>> {
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					UPDATE ledger_account
 					SET name = ${record.name}, account_type = ${record.accountType},
@@ -1042,7 +1041,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 		record: Parameters<AccountingStore["deactivateLedgerAccount"]>[0],
 	): Promise<Result<LedgerAccount>> {
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					UPDATE ledger_account
 					SET status = 'inactive', version = version + 1,
@@ -1068,7 +1067,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 		filter: Parameters<AccountingStore["listLedgerAccounts"]>[0],
 	): Promise<Result<LedgerAccount[]>> {
 		try {
-			const [rows] = await runNeonHttpTransaction(
+			const [rows] = await afendaDatabase.transaction(
 				(sql) => [
 					sql`
 					SELECT * FROM ledger_account
@@ -1093,7 +1092,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 		normalizedCode: string,
 	): Promise<Result<LedgerAccount | null>> {
 		try {
-			const [rows] = await runNeonHttpTransaction(
+			const [rows] = await afendaDatabase.transaction(
 				(sql) => [
 					sql`
 					SELECT * FROM ledger_account
@@ -1118,7 +1117,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 	): Promise<Result<AccountRoleMapping>> {
 		const id = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					INSERT INTO account_role_mapping (id, organization_id, account_role, ledger_account_id, version, created_by, updated_by)
 					VALUES (${id}, ${record.organizationId}, ${record.accountRole}, ${record.ledgerAccountId}, 1, ${record.actorUserId}, ${record.actorUserId})
@@ -1143,7 +1142,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 		accountRole: string,
 	): Promise<Result<AccountRoleMapping | null>> {
 		try {
-			const [rows] = await runNeonHttpTransaction(
+			const [rows] = await afendaDatabase.transaction(
 				(sql) => [
 					sql`
 					SELECT * FROM account_role_mapping
@@ -1171,7 +1170,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 			accountRole: line.accountRole,
 		}));
 		try {
-			const [profileRows] = await runNeonHttpTransaction((sql) => {
+			const [profileRows] = await afendaDatabase.transaction((sql) => {
 				const statements = [
 					sql`
 						INSERT INTO posting_profile (
@@ -1246,7 +1245,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 		code: string,
 	): Promise<Result<PostingProfile | null>> {
 		try {
-			const [rows] = await runNeonHttpTransaction(
+			const [rows] = await afendaDatabase.transaction(
 				(sql) => [
 					sql`
 					SELECT pp.*, json_agg(json_build_object(
@@ -1297,7 +1296,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 		record: Parameters<AccountingStore["findSourcePostingLink"]>[0],
 	): Promise<Result<SourcePostingLink | null>> {
 		try {
-			const [rows] = await runNeonHttpTransaction(
+			const [rows] = await afendaDatabase.transaction(
 				(sql) => [
 					sql`
 					SELECT * FROM source_posting_link
@@ -1326,7 +1325,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 	): Promise<Result<SourcePostingLink>> {
 		const id = randomUUID();
 		try {
-			await runNeonHttpTransaction((sql) => [
+			await afendaDatabase.transaction((sql) => [
 				sql`
 					INSERT INTO source_posting_link (
 						id, organization_id, source_module, source_aggregate_id,
@@ -1365,7 +1364,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 	): Promise<Result<PostingException>> {
 		const id = randomUUID();
 		try {
-			await runNeonHttpTransaction((sql) => [
+			await afendaDatabase.transaction((sql) => [
 				sql`
 					INSERT INTO financial_posting_exception (
 						id, organization_id, source_module, source_aggregate_id,
@@ -1412,7 +1411,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 		filter: Parameters<AccountingStore["listPostingExceptions"]>[0],
 	): Promise<Result<PostingException[]>> {
 		try {
-			const [rows] = await runNeonHttpTransaction(
+			const [rows] = await afendaDatabase.transaction(
 				(sql) => [
 					sql`
 					SELECT * FROM financial_posting_exception
@@ -1456,7 +1455,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 		record: Parameters<AccountingStore["resolvePostingException"]>[0],
 	): Promise<Result<PostingException>> {
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					UPDATE financial_posting_exception
 					SET status = 'resolved', resolution_note = ${record.resolutionNote},
@@ -1503,7 +1502,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 		filter: Parameters<AccountingStore["getSourcePostingTrace"]>[0],
 	): Promise<Result<SourcePostingTrace[]>> {
 		try {
-			const [rows] = await runNeonHttpTransaction(
+			const [rows] = await afendaDatabase.transaction(
 				(sql) => [
 					sql`
 					SELECT * FROM source_posting_link
@@ -1563,7 +1562,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 		filter: Parameters<AccountingStore["getLedgerAccountActivity"]>[0],
 	): Promise<Result<LedgerAccountActivityRow[]>> {
 		try {
-			const [rows] = await runNeonHttpTransaction(
+			const [rows] = await afendaDatabase.transaction(
 				(sql) => [
 					sql`
 					SELECT lp.journal_id, j.code AS journal_code, lp.period_id,

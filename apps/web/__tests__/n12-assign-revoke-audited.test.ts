@@ -9,12 +9,11 @@ import {
 	ROLE_REVOKE_AUDIT_ACTION,
 } from "@afenda/admin/audit";
 import {
+	database as afendaDatabase,
 	and,
-	db,
 	eq,
 	platformRbacAudit,
 	platformRoleAssignment,
-	withOrg,
 } from "@afenda/db";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { assignOrgRoleWithAudit } from "../modules/identity/domain/assign-org-role-audited";
@@ -44,7 +43,7 @@ describe.skipIf(!hasDatabase)("assign/revoke WithAudit atomicity (N12)", () => {
 			await deleteRbacAuditRow({ id: row.id, orgId: row.orgId });
 		}
 		for (const row of createdAssignmentIds) {
-			await db
+			await afendaDatabase.client
 				.delete(platformRoleAssignment)
 				.where(
 					and(
@@ -77,12 +76,15 @@ describe.skipIf(!hasDatabase)("assign/revoke WithAudit atomicity (N12)", () => {
 		expect(result.reactivated).toBe(false);
 		expect(result.auditId).toBeTruthy();
 
-		const assignments = await withOrg(platformRoleAssignment, orgA);
+		const assignments = await afendaDatabase.tenancy.readAll(
+			platformRoleAssignment,
+			orgA,
+		);
 		expect(assignments.some((row) => row.id === result.assignment.id)).toBe(
 			true,
 		);
 
-		const audits = await db
+		const audits = await afendaDatabase.client
 			.select()
 			.from(platformRbacAudit)
 			.where(
@@ -129,7 +131,7 @@ describe.skipIf(!hasDatabase)("assign/revoke WithAudit atomicity (N12)", () => {
 		expect(revoked.assignment.active).toBe(false);
 		expect(revoked.assignment.organizationId).toBe(orgA);
 
-		const audits = await db
+		const audits = await afendaDatabase.client
 			.select()
 			.from(platformRbacAudit)
 			.where(

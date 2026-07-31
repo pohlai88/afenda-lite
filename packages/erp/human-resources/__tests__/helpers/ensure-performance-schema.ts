@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { runNeonHttpTransaction } from "@afenda/db";
+import { database as afendaDatabase } from "@afenda/db";
 
 const migrationPath = join(
 	dirname(fileURLToPath(import.meta.url)),
@@ -22,7 +22,7 @@ const migrationStatements = readFileSync(migrationPath, "utf8")
 let ensured = false;
 
 async function ensurePerformanceCycleConfigurationTables(): Promise<void> {
-	await runNeonHttpTransaction((sql) => [
+	await afendaDatabase.transaction((sql) => [
 		sql`
 			ALTER TABLE "hr_performance_cycle"
 				DROP CONSTRAINT IF EXISTS "hr_performance_cycle_status_check"
@@ -239,7 +239,7 @@ export async function ensurePerformanceSchemaForTests(): Promise<void> {
 		return;
 	}
 
-	const [exists] = await runNeonHttpTransaction((sql) => [
+	const [exists] = await afendaDatabase.transaction((sql) => [
 		sql`
 			SELECT EXISTS (
 				SELECT 1
@@ -255,12 +255,12 @@ export async function ensurePerformanceSchemaForTests(): Promise<void> {
 		return;
 	}
 
-	await runNeonHttpTransaction((sql) => [
+	await afendaDatabase.transaction((sql) => [
 		...migrationStatements.map((statement) => sql.query(statement)),
 	]);
 	await ensurePerformanceCycleConfigurationTables();
 
-	await runNeonHttpTransaction((sql) => [
+	await afendaDatabase.transaction((sql) => [
 		sql`
 			INSERT INTO drizzle.__drizzle_migrations (hash, created_at)
 			SELECT ${migrationHash}, ${1_784_900_000_000}

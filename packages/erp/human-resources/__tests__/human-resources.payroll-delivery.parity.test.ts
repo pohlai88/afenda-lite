@@ -1,4 +1,8 @@
-import { db, eq, hrPayrollHandoffDelivery } from "@afenda/db";
+import {
+	database as afendaDatabase,
+	eq,
+	hrPayrollHandoffDelivery,
+} from "@afenda/db";
 import { errorResult } from "@afenda/errors";
 import {
 	type ApprovedPayrollHandoff,
@@ -232,7 +236,7 @@ describe("payroll delivery store parity", () => {
 					});
 				}
 			} finally {
-				await db
+				await afendaDatabase.client
 					.delete(hrPayrollHandoffDelivery)
 					.where(
 						eq(hrPayrollHandoffDelivery.organizationId, result.organizationId),

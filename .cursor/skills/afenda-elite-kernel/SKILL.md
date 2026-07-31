@@ -1,6 +1,6 @@
 ---
 name: afenda-elite-kernel
-description: Deterministically discover, scaffold, apply, implement, semantically cut over, upgrade, verify, reopen, and readiness-seal reusable Afenda package kernels, including package-band inventory and the protected @afenda/errors, @afenda/env, and @afenda/testing contracts. Use when inventorying a package band such as packages/foundation, centralizing a shared concept behind one registry and durable facade, deriving runtime projections from canonical definitions, planning or executing an authorized codemod and final consumer migration, upgrading a core package contract or internals, or producing repeatable readiness evidence.
+description: Deterministically discover, scaffold, apply, implement, semantically cut over, upgrade, verify, reopen, and readiness-seal reusable Afenda package kernels, including package-band inventory and the protected @afenda/errors, @afenda/env, @afenda/testing, @afenda/db, and @afenda/audit contracts. Use when inventorying a package band, centralizing a shared concept behind one registry and durable facade, deriving runtime projections from canonical definitions, planning or executing an authorized codemod and final consumer migration, upgrading a core package contract or internals, or producing repeatable readiness evidence.
 ---
 
 # Afenda Elite Kernel
@@ -19,6 +19,8 @@ Read before changing a target:
 6. [references/errors-kernel.md](references/errors-kernel.md) when the target is `@afenda/errors` or the mission applies its contract to a consumer.
 7. [references/env-kernel.md](references/env-kernel.md) when the target is `@afenda/env` or a mission centralizes configuration registries and runtime projections.
 8. [references/testing-kernel.md](references/testing-kernel.md) when the target is `@afenda/testing` or a mission centralizes runner policy, lane projections, or test database evidence.
+9. [references/db-kernel.md](references/db-kernel.md) when the target is `@afenda/db` or a mission changes schema-host runtime access, tenant predicates, Neon HTTP transactions, hard-tenant-root projections, or the permission catalog.
+10. [references/audit-kernel.md](references/audit-kernel.md) when the target is `@afenda/audit` or a mission changes general activity recording, guarded transaction preparation, masking, query/export/retention policy, or audit telemetry.
 
 Load only the target-specific references required by the selected farm. Do not load absent Living `docs/**` as authority.
 
@@ -29,6 +31,8 @@ Load only the target-specific references required by the selected farm. Do not l
 | `@afenda/errors` | `packages/foundation/errors` | [references/errors-kernel.md](references/errors-kernel.md) |
 | `@afenda/env` | `packages/foundation/env` | [references/env-kernel.md](references/env-kernel.md) |
 | `@afenda/testing` | `packages/foundation/testing` | [references/testing-kernel.md](references/testing-kernel.md) |
+| `@afenda/db` | `packages/data-plane/db` | [references/db-kernel.md](references/db-kernel.md) |
+| `@afenda/audit` | `packages/data-plane/audit` | [references/audit-kernel.md](references/audit-kernel.md) |
 
 ## Required mission contract
 
@@ -199,4 +203,6 @@ Remaining conditions: none | <blocking condition>
 - [references/errors-kernel.md](references/errors-kernel.md) — protected error-kernel contract, consumer application, upgrade rules, and focused gates.
 - [references/env-kernel.md](references/env-kernel.md) — canonical environment registries, isolated deployment entrypoints, derived runtime projection, and consumer gates.
 - [references/testing-kernel.md](references/testing-kernel.md) — canonical testing lanes, root capabilities, executable setup boundaries, private source resolution, and cutover gates.
+- [references/db-kernel.md](references/db-kernel.md) — canonical database runtime facade, structural schema exports, tenancy and permission projections, ownership boundaries, and cutover gates.
+- [references/audit-kernel.md](references/audit-kernel.md) — canonical general-activity audit facade, guarded transaction boundary, masking and serialization ownership, projections, and cutover gates.
 - `scripts/inspect-target.mjs` — stable target or immediate package-band inventory, content digests, package metadata, and working-tree evidence.

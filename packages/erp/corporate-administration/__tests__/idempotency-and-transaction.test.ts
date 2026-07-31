@@ -25,7 +25,7 @@ import {
 	createDrizzleCorporateAdministrationOutboxPort,
 	createDrizzleCorporateAdministrationTransactionPort,
 } from "@afenda/corporate-administration/adapters/drizzle";
-import { db, type NeonHttpSql, runNeonHttpTransaction } from "@afenda/db";
+import { database as afendaDatabase, type NeonHttpSql } from "@afenda/db";
 import { errorResult } from "@afenda/errors";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createInlineCorporateAdministrationTransactionPort } from "./helpers/inline-transaction";
@@ -46,7 +46,7 @@ const otherFingerprint = commandFingerprintSchema.parse("b".repeat(64));
 
 function createDurableIdempotencyPort() {
 	return createDrizzleCorporateAdministrationIdempotencyPort({
-		database: db,
+		database: afendaDatabase.client,
 		createReservationToken: randomUUID,
 		now: () => new Date(),
 	});
@@ -60,7 +60,7 @@ function createDurableOutboxPort() {
 
 function createDurableTransactionPort() {
 	return createDrizzleCorporateAdministrationTransactionPort({
-		execute: (buildQueries) => runNeonHttpTransaction(buildQueries),
+		execute: (buildQueries) => afendaDatabase.transaction(buildQueries),
 	});
 }
 

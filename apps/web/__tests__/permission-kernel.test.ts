@@ -6,10 +6,9 @@
 
 import { deleteRbacAuditRow } from "@afenda/admin/audit";
 import {
+	database as afendaDatabase,
 	and,
-	db,
 	eq,
-	PLATFORM_PERMISSION_CODES_V1,
 	platformRoleAssignment,
 } from "@afenda/db";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -62,7 +61,7 @@ describe.skipIf(!hasDatabase)("permission kernel product wiring (N10)", () => {
 			await deleteRbacAuditRow({ id: row.id, orgId: row.orgId });
 		}
 		for (const row of createdAssignmentIds) {
-			await db
+			await afendaDatabase.client
 				.delete(platformRoleAssignment)
 				.where(
 					and(
@@ -76,7 +75,7 @@ describe.skipIf(!hasDatabase)("permission kernel product wiring (N10)", () => {
 	it("lists catalog codes that include ARCH-023 v1", async () => {
 		const catalog = await listPermissionCatalog();
 		const codes = catalog.map((row) => row.code);
-		for (const code of PLATFORM_PERMISSION_CODES_V1) {
+		for (const code of afendaDatabase.permissions.codes) {
 			expect(codes).toContain(code);
 		}
 	});

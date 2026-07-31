@@ -1,13 +1,12 @@
 import {
+	database as afendaDatabase,
 	and,
 	asc,
-	db,
 	eq,
 	hrBulkExportArtifactChunk,
 	hrBulkExportJob,
 	hrBulkImportJob,
 	hrBulkImportJobRow,
-	runNeonHttpTransaction,
 } from "@afenda/db";
 import { errorResult, type Result } from "@afenda/errors";
 import { z } from "zod";
@@ -95,7 +94,7 @@ export function createDrizzleHumanResourcesBulkJobStore(): HumanResourcesBulkJob
 	return {
 		async findImportJob(input) {
 			try {
-				const [row] = await db
+				const [row] = await afendaDatabase.client
 					.select()
 					.from(hrBulkImportJob)
 					.where(
@@ -112,7 +111,7 @@ export function createDrizzleHumanResourcesBulkJobStore(): HumanResourcesBulkJob
 		},
 		async getImportJob(input) {
 			try {
-				const [row] = await db
+				const [row] = await afendaDatabase.client
 					.select()
 					.from(hrBulkImportJob)
 					.where(
@@ -139,7 +138,7 @@ export function createDrizzleHumanResourcesBulkJobStore(): HumanResourcesBulkJob
 			);
 			const work = workJson(input.workItem);
 			try {
-				const [saved] = await runNeonHttpTransaction((sql) => [
+				const [saved] = await afendaDatabase.transaction((sql) => [
 					sql`
 					WITH inserted_job AS (
 						INSERT INTO hr_bulk_import_job (
@@ -194,7 +193,7 @@ export function createDrizzleHumanResourcesBulkJobStore(): HumanResourcesBulkJob
 		},
 		async listImportRows(input) {
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.select()
 					.from(hrBulkImportJobRow)
 					.where(
@@ -217,7 +216,7 @@ export function createDrizzleHumanResourcesBulkJobStore(): HumanResourcesBulkJob
 				? workJson(input.cleanupWorkItem)
 				: null;
 			try {
-				const [saved] = await runNeonHttpTransaction((sql) => [
+				const [saved] = await afendaDatabase.transaction((sql) => [
 					sql`
 					WITH updated AS (
 						UPDATE hr_bulk_import_job SET status=${input.job.status}, version=${input.job.version},
@@ -251,7 +250,7 @@ export function createDrizzleHumanResourcesBulkJobStore(): HumanResourcesBulkJob
 		},
 		async purgeImportPayload(input) {
 			try {
-				await runNeonHttpTransaction((sql) => [
+				await afendaDatabase.transaction((sql) => [
 					sql`UPDATE hr_bulk_import_job_row SET payload=NULL WHERE organization_id=${input.organizationId} AND job_id=${input.jobId}`,
 					sql`DELETE FROM hr_bulk_import_error_artifact artifact USING hr_bulk_import_checkpoint checkpoint, hr_bulk_import_job job WHERE artifact.organization_id=${input.organizationId} AND job.id=${input.jobId} AND job.organization_id=artifact.organization_id AND checkpoint.organization_id=artifact.organization_id AND checkpoint.id=artifact.checkpoint_id AND checkpoint.idempotency_key=job.idempotency_key`,
 					sql`UPDATE hr_bulk_import_job SET payload_purged_at=${input.now}, updated_at=${input.now}, version=version+1 WHERE organization_id=${input.organizationId} AND id=${input.jobId}`,
@@ -271,7 +270,7 @@ export function createDrizzleHumanResourcesBulkJobStore(): HumanResourcesBulkJob
 		},
 		async findExportJob(input) {
 			try {
-				const [row] = await db
+				const [row] = await afendaDatabase.client
 					.select()
 					.from(hrBulkExportJob)
 					.where(
@@ -288,7 +287,7 @@ export function createDrizzleHumanResourcesBulkJobStore(): HumanResourcesBulkJob
 		},
 		async getExportJob(input) {
 			try {
-				const [row] = await db
+				const [row] = await afendaDatabase.client
 					.select()
 					.from(hrBulkExportJob)
 					.where(
@@ -306,7 +305,7 @@ export function createDrizzleHumanResourcesBulkJobStore(): HumanResourcesBulkJob
 		async createExportJob(input) {
 			const work = workJson(input.workItem);
 			try {
-				const [saved] = await runNeonHttpTransaction((sql) => [
+				const [saved] = await afendaDatabase.transaction((sql) => [
 					sql`
 					WITH inserted_job AS (
 						INSERT INTO hr_bulk_export_job (id, organization_id, actor_user_id, correlation_id,
@@ -355,7 +354,7 @@ export function createDrizzleHumanResourcesBulkJobStore(): HumanResourcesBulkJob
 			);
 			const cleanup = workJson(input.cleanupWorkItem);
 			try {
-				const [saved] = await runNeonHttpTransaction((sql) => [
+				const [saved] = await afendaDatabase.transaction((sql) => [
 					sql`
 					WITH updated AS (
 						UPDATE hr_bulk_export_job SET status=${input.job.status}, version=${input.job.version}, next_page=${input.job.nextPage},
@@ -392,7 +391,7 @@ export function createDrizzleHumanResourcesBulkJobStore(): HumanResourcesBulkJob
 				return job.ok ? errorResult.ok(null) : job;
 			}
 			try {
-				const chunks = await db
+				const chunks = await afendaDatabase.client
 					.select()
 					.from(hrBulkExportArtifactChunk)
 					.where(
@@ -418,7 +417,7 @@ export function createDrizzleHumanResourcesBulkJobStore(): HumanResourcesBulkJob
 		},
 		async purgeExportArtifact(input) {
 			try {
-				await runNeonHttpTransaction((sql) => [
+				await afendaDatabase.transaction((sql) => [
 					sql`DELETE FROM hr_bulk_export_artifact_chunk WHERE organization_id=${input.organizationId} AND job_id=${input.jobId}`,
 					sql`UPDATE hr_bulk_export_job SET artifact_purged_at=${input.now}, updated_at=${input.now}, version=version+1 WHERE organization_id=${input.organizationId} AND id=${input.jobId}`,
 				]);

@@ -8,12 +8,12 @@
 
 import { randomUUID } from "node:crypto";
 import {
+	audit as afendaAudit,
 	type PreparedDerivedEntityAuditInsertValues,
-	prepareDerivedEntityAuditInsertValues,
 } from "@afenda/audit";
 import {
+	database as afendaDatabase,
 	type NeonHttpTransactionResults,
-	runNeonHttpTransaction,
 } from "@afenda/db";
 import { errorResult, type Result } from "@afenda/errors";
 import type { OutboxFactInput } from "../../ports";
@@ -205,7 +205,7 @@ export function buildAuditCte(params: {
 		params.entityIdReference,
 		"entity ID reference",
 	);
-	const preparedAudit = prepareDerivedEntityAuditInsertValues({
+	const preparedAudit = afendaAudit.transaction.prepareDerived({
 		organizationId: params.organizationId,
 		actorUserId: params.actorUserId,
 		correlationId: params.correlationId,
@@ -357,10 +357,10 @@ export function buildBalanceCheckCte(params: {
  * Generic transaction wrapper for leave operations
  */
 export async function runLeaveTransaction(
-	queriesOrFn: Parameters<typeof runNeonHttpTransaction>[0],
-	options?: Parameters<typeof runNeonHttpTransaction>[1],
+	queriesOrFn: Parameters<typeof afendaDatabase.transaction>[0],
+	options?: Parameters<typeof afendaDatabase.transaction>[1],
 ): Promise<NeonHttpTransactionResults> {
-	return await runNeonHttpTransaction(queriesOrFn, {
+	return await afendaDatabase.transaction(queriesOrFn, {
 		isolationLevel: "ReadCommitted",
 		...options,
 	});

@@ -1,6 +1,6 @@
 import {
+	database as afendaDatabase,
 	and,
-	db,
 	eq,
 	goodsReceipt,
 	goodsReceiptLine,
@@ -40,7 +40,7 @@ export function createPurchasingCommitmentQueryPort(): PurchaseOrderCommitmentQu
 			purchaseOrderId: string;
 		}): Promise<Result<PurchaseOrderCommitmentStatus>> {
 			try {
-				const [orderedRow] = await db
+				const [orderedRow] = await afendaDatabase.client
 					.select({
 						orderedQuantity: sql<string>`coalesce(sum(${purchaseOrderLine.quantity}::numeric), 0)::text`,
 					})
@@ -52,7 +52,7 @@ export function createPurchasingCommitmentQueryPort(): PurchaseOrderCommitmentQu
 						),
 					);
 
-				const receiptHeaders = await db
+				const receiptHeaders = await afendaDatabase.client
 					.select({ id: goodsReceipt.id, status: goodsReceipt.status })
 					.from(goodsReceipt)
 					.where(
@@ -67,7 +67,7 @@ export function createPurchasingCommitmentQueryPort(): PurchaseOrderCommitmentQu
 				const receiptIds = receiptHeaders.map((row) => row.id);
 				let receivedQuantity = "0";
 				if (receiptIds.length > 0) {
-					const [receivedRow] = await db
+					const [receivedRow] = await afendaDatabase.client
 						.select({
 							receivedQuantity: sql<string>`coalesce(sum(${goodsReceiptLine.quantityReceived}::numeric), 0)::text`,
 						})
@@ -81,7 +81,7 @@ export function createPurchasingCommitmentQueryPort(): PurchaseOrderCommitmentQu
 					receivedQuantity = receivedRow?.receivedQuantity ?? "0";
 				}
 
-				const invoiceHeaders = await db
+				const invoiceHeaders = await afendaDatabase.client
 					.select({ id: supplierInvoice.id })
 					.from(supplierInvoice)
 					.where(
@@ -95,7 +95,7 @@ export function createPurchasingCommitmentQueryPort(): PurchaseOrderCommitmentQu
 				const invoiceIds = invoiceHeaders.map((row) => row.id);
 				let invoicedQuantity = "0";
 				if (invoiceIds.length > 0) {
-					const [invoicedRow] = await db
+					const [invoicedRow] = await afendaDatabase.client
 						.select({
 							invoicedQuantity: sql<string>`coalesce(sum(${supplierInvoiceLine.quantity}::numeric), 0)::text`,
 						})

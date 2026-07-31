@@ -1,6 +1,6 @@
 import {
+	database as afendaDatabase,
 	and,
-	db,
 	eq,
 	goodsReceipt,
 	goodsReceiptLine,
@@ -51,7 +51,7 @@ export function createPurchaseOrderReceivingQueryPort(): PurchaseOrderReceivingQ
 			purchaseOrderId: string;
 		}): Promise<Result<PurchaseOrderReceivingSnapshot | null>> {
 			try {
-				const [order] = await db
+				const [order] = await afendaDatabase.client
 					.select({
 						id: purchaseOrder.id,
 						status: purchaseOrder.status,
@@ -70,7 +70,7 @@ export function createPurchaseOrderReceivingQueryPort(): PurchaseOrderReceivingQ
 					return errorResult.ok(null);
 				}
 
-				const lines = await db
+				const lines = await afendaDatabase.client
 					.select({
 						id: purchaseOrderLine.id,
 						quantity: purchaseOrderLine.quantity,
@@ -84,7 +84,7 @@ export function createPurchaseOrderReceivingQueryPort(): PurchaseOrderReceivingQ
 						),
 					);
 
-				const receiptHeaders = await db
+				const receiptHeaders = await afendaDatabase.client
 					.select({ id: goodsReceipt.id })
 					.from(goodsReceipt)
 					.where(
@@ -99,7 +99,7 @@ export function createPurchaseOrderReceivingQueryPort(): PurchaseOrderReceivingQ
 				const receiptIds = receiptHeaders.map((row) => row.id);
 				const receivedByLineId = new Map<string, string>();
 				if (receiptIds.length > 0 && lines.length > 0) {
-					const receivedRows = await db
+					const receivedRows = await afendaDatabase.client
 						.select({
 							purchaseOrderLineId: goodsReceiptLine.purchaseOrderLineId,
 							receivedQuantity: sql<string>`coalesce(sum(${goodsReceiptLine.quantityReceived}::numeric), 0)::text`,

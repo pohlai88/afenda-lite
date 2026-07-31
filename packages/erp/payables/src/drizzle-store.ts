@@ -1,13 +1,12 @@
 import { randomUUID } from "node:crypto";
 
 import {
+	database as afendaDatabase,
 	and,
 	asc,
-	db,
 	desc,
 	eq,
 	inArray,
-	runNeonHttpTransaction,
 	supplierAllocation,
 	supplierCreditNote,
 	supplierCreditNoteLine,
@@ -244,7 +243,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 				organizationId: record.organizationId,
 				supplierId: record.supplierId,
 			});
-			await runNeonHttpTransaction((sql) => [
+			await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH mutated AS (
 						INSERT INTO supplier_invoice (
@@ -282,7 +281,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 	): Promise<Result<SupplierInvoiceLine>> {
 		const id = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH numbered AS (
 						SELECT COALESCE(MAX(line_no), 0) + 1 AS line_no
@@ -322,7 +321,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 					publicMessage: "Supplier invoice line conflict",
 				});
 			}
-			const [line] = await db
+			const [line] = await afendaDatabase.client
 				.select()
 				.from(supplierInvoiceLine)
 				.where(
@@ -352,7 +351,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 				entityId: record.invoiceId,
 				organizationId: record.organizationId,
 			});
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH mutated AS (
 						UPDATE supplier_invoice
@@ -433,7 +432,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 				entityId: record.invoiceId,
 				organizationId: record.organizationId,
 			});
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH mutated AS (
 						UPDATE supplier_invoice
@@ -502,7 +501,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 	): Promise<Result<SupplierInvoice>> {
 		const id = randomUUID();
 		try {
-			await db.insert(supplierCreditNote).values({
+			await afendaDatabase.client.insert(supplierCreditNote).values({
 				amount: "0",
 				code: record.code,
 				createdBy: record.actorUserId,
@@ -517,7 +516,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 				updatedBy: record.actorUserId,
 				version: 1,
 			});
-			const [credit] = await db
+			const [credit] = await afendaDatabase.client
 				.select()
 				.from(supplierCreditNote)
 				.where(
@@ -570,7 +569,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 	): Promise<Result<SupplierInvoiceLine>> {
 		const id = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH eligible AS (
 						SELECT id FROM supplier_credit_note
@@ -627,7 +626,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 		record: Parameters<PayablesStore["postCredit"]>[0],
 	): Promise<Result<SupplierInvoice>> {
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH totaled AS (
 						SELECT credit.*, (SELECT COALESCE(SUM(line_amount::numeric), 0) FROM supplier_credit_note_line
@@ -654,7 +653,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 					publicMessage: "Supplier credit note post conflict",
 				});
 			}
-			const [credit] = await db
+			const [credit] = await afendaDatabase.client
 				.select()
 				.from(supplierCreditNote)
 				.where(
@@ -667,7 +666,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 			if (credit === undefined) {
 				return errorResult.fail("INTERNAL_ERROR");
 			}
-			const lines = await db
+			const lines = await afendaDatabase.client
 				.select()
 				.from(supplierCreditNoteLine)
 				.where(
@@ -757,7 +756,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 				organizationId: record.organizationId,
 				supplierId: record.supplierId,
 			});
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH mutated AS (
 						INSERT INTO supplier_credit_note (
@@ -805,7 +804,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 					publicMessage: "Supplier credit note issue conflict",
 				});
 			}
-			const [credit] = await db
+			const [credit] = await afendaDatabase.client
 				.select()
 				.from(supplierCreditNote)
 				.where(
@@ -856,7 +855,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 		const id = randomUUID();
 		const eventId = randomUUID();
 		try {
-			const [replay] = await db
+			const [replay] = await afendaDatabase.client
 				.select()
 				.from(supplierAllocation)
 				.where(
@@ -869,7 +868,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 			if (replay !== undefined) {
 				return errorResult.ok(mapAllocation(replay));
 			}
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH eligible AS (
 						SELECT invoice.*, (
@@ -970,7 +969,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 	): Promise<Result<SupplierAllocation>> {
 		const id = randomUUID();
 		try {
-			const [replay] = await db
+			const [replay] = await afendaDatabase.client
 				.select()
 				.from(supplierAllocation)
 				.where(
@@ -983,7 +982,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 			if (replay !== undefined) {
 				return errorResult.ok(mapAllocation(replay));
 			}
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH invoice AS (
 						SELECT row.*, (SELECT COALESCE(SUM(amount::numeric), 0) FROM supplier_allocation
@@ -1029,7 +1028,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 					publicMessage: "Supplier credit application conflict",
 				});
 			}
-			const [allocation] = await db
+			const [allocation] = await afendaDatabase.client
 				.select()
 				.from(supplierAllocation)
 				.where(
@@ -1051,7 +1050,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 		record: Parameters<PayablesStore["reversePaymentApplication"]>[0],
 	): Promise<Result<SupplierAllocation[]>> {
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH deleted AS (
 						UPDATE supplier_allocation
@@ -1138,7 +1137,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 		record: Parameters<PayablesStore["cancel"]>[0],
 	): Promise<Result<SupplierInvoice>> {
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					WITH mutated AS (
 						UPDATE supplier_invoice
@@ -1189,7 +1188,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 		id: string,
 	): Promise<Result<SupplierInvoice | null>> {
 		try {
-			const [header] = await db
+			const [header] = await afendaDatabase.client
 				.select()
 				.from(supplierInvoice)
 				.where(
@@ -1203,7 +1202,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 				return errorResult.ok(null);
 			}
 			const [lines, matches, allocations] = await Promise.all([
-				db
+				afendaDatabase.client
 					.select()
 					.from(supplierInvoiceLine)
 					.where(
@@ -1213,7 +1212,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 						),
 					)
 					.orderBy(asc(supplierInvoiceLine.lineNo)),
-				db
+				afendaDatabase.client
 					.select()
 					.from(threeWayMatchResult)
 					.where(
@@ -1223,7 +1222,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 						),
 					)
 					.limit(1),
-				db
+				afendaDatabase.client
 					.select()
 					.from(supplierAllocation)
 					.where(
@@ -1261,7 +1260,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 			if (filter.status !== undefined) {
 				conditions.push(eq(supplierInvoice.status, filter.status));
 			}
-			const headers = await db
+			const headers = await afendaDatabase.client
 				.select()
 				.from(supplierInvoice)
 				.where(and(...conditions))
@@ -1273,7 +1272,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 			}
 			const ids = headers.map((row) => row.id);
 			const [lines, matches, allocations] = await Promise.all([
-				db
+				afendaDatabase.client
 					.select()
 					.from(supplierInvoiceLine)
 					.where(
@@ -1282,7 +1281,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 							inArray(supplierInvoiceLine.invoiceId, ids),
 						),
 					),
-				db
+				afendaDatabase.client
 					.select()
 					.from(threeWayMatchResult)
 					.where(
@@ -1291,7 +1290,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 							inArray(threeWayMatchResult.supplierInvoiceId, ids),
 						),
 					),
-				db
+				afendaDatabase.client
 					.select()
 					.from(supplierAllocation)
 					.where(
@@ -1341,7 +1340,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 		currencyCode?: string,
 	): Promise<Result<SupplierBalance[]>> {
 		try {
-			const [rows] = await runNeonHttpTransaction((sql) => [
+			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
 					SELECT balance.organization_id, balance.supplier_party_id AS supplier_id,
 						balance.currency_code, balance.open_balance, balance.updated_at,

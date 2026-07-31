@@ -1,6 +1,12 @@
 import { randomUUID } from "node:crypto";
 
-import { and, db, eq, hrEmployee, hrUserEmployee } from "@afenda/db";
+import {
+	database as afendaDatabase,
+	and,
+	eq,
+	hrEmployee,
+	hrUserEmployee,
+} from "@afenda/db";
 import { afterAll, describe, expect, it } from "vitest";
 
 import { runDrizzleParity } from "./helpers/database-gate";
@@ -21,7 +27,7 @@ describeDatabase("HR tenant foreign-reference isolation", () => {
 	});
 
 	it("rejects an HR reference to a row owned by another tenant", async () => {
-		await db.insert(hrEmployee).values({
+		await afendaDatabase.client.insert(hrEmployee).values({
 			id: employeeId,
 			organizationId: ownerOrganizationId,
 			employeeNumber: `E-${suffix}`,
@@ -34,7 +40,7 @@ describeDatabase("HR tenant foreign-reference isolation", () => {
 		});
 
 		await expect(
-			db.insert(hrUserEmployee).values({
+			afendaDatabase.client.insert(hrUserEmployee).values({
 				id: mappingId,
 				organizationId: attackerOrganizationId,
 				userId: `user-${suffix}`,
@@ -45,7 +51,7 @@ describeDatabase("HR tenant foreign-reference isolation", () => {
 			}),
 		).rejects.toThrow();
 
-		const leakedReferences = await db
+		const leakedReferences = await afendaDatabase.client
 			.select({ id: hrUserEmployee.id })
 			.from(hrUserEmployee)
 			.where(

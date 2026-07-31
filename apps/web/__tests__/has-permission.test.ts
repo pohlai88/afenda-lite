@@ -4,7 +4,12 @@
  */
 
 import { deleteRbacAuditRow } from "@afenda/admin/audit";
-import { and, db, eq, platformRoleAssignment } from "@afenda/db";
+import {
+	database as afendaDatabase,
+	and,
+	eq,
+	platformRoleAssignment,
+} from "@afenda/db";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { assignOrgRoleWithAudit } from "../modules/identity/domain/assign-org-role-audited";
 import { hasPermission } from "../modules/identity/domain/has-permission";
@@ -69,7 +74,7 @@ describe.skipIf(!hasDatabase)("hasPermission product wiring (I3.1)", () => {
 			await deleteRbacAuditRow({ id: row.id, orgId: row.orgId });
 		}
 		for (const row of createdAssignmentIds) {
-			await db
+			await afendaDatabase.client
 				.delete(platformRoleAssignment)
 				.where(
 					and(

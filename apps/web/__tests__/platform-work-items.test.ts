@@ -2,8 +2,8 @@
 import { randomUUID } from "node:crypto";
 
 import {
+	database as afendaDatabase,
 	and,
-	db,
 	eq,
 	platformWorkItem,
 	platformWorkItemActivity,
@@ -160,10 +160,10 @@ describe("platform work-item owner", () => {
 describe.runIf(hasDatabase)("platform work-item Drizzle parity", () => {
 	afterAll(async () => {
 		for (const organizationId of databaseOrganizations) {
-			await db
+			await afendaDatabase.client
 				.delete(platformWorkItemActivity)
 				.where(eq(platformWorkItemActivity.organizationId, organizationId));
-			await db
+			await afendaDatabase.client
 				.delete(platformWorkItem)
 				.where(eq(platformWorkItem.organizationId, organizationId));
 		}
@@ -197,7 +197,7 @@ describe.runIf(hasDatabase)("platform work-item Drizzle parity", () => {
 			ok: false,
 			code: "CONFLICT",
 		});
-		const [persisted] = await db
+		const [persisted] = await afendaDatabase.client
 			.select({ id: platformWorkItem.id })
 			.from(platformWorkItem)
 			.where(

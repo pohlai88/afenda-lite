@@ -1,4 +1,4 @@
-import { createAuditRecorder } from "@afenda/audit";
+import { audit as afendaAudit } from "@afenda/audit";
 
 import { createModuleSubjectInventory } from "../domain/human-resources-subject-inventory";
 import { createPlatformPrivacyService } from "../domain/platform-privacy-service";
@@ -9,7 +9,7 @@ let cached: PlatformPrivacyService | undefined;
 export function getPlatformPrivacyService(): PlatformPrivacyService {
 	if (cached === undefined) {
 		cached = createPlatformPrivacyService({
-			audit: createAuditRecorder(),
+			audit: afendaAudit.recorder(),
 			inventory: createModuleSubjectInventory("human-resources"),
 		});
 	}

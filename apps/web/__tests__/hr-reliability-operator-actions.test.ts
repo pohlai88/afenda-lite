@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@afenda/audit", () => ({
-	createAuditRecorder: () => ({ record: mocks.audit }),
+	audit: { recorder: () => ({ record: mocks.audit }) },
 }));
 vi.mock("@/app/actions/run-hr-operator-permission-action", () => ({
 	runHrIntegrationOperatorPermissionAction: mocks.runner,

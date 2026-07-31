@@ -20,7 +20,7 @@ const TABLE_AGGREGATE_BY_TABLE = new Map([
 ]);
 
 /**
- * @typedef {import("../../packages/data-plane/db/src/module-manifest-contract.ts").AfendaModuleManifest} AfendaModuleManifest
+ * @typedef {import("@afenda/db/module-manifest").AfendaModuleManifest} AfendaModuleManifest
  */
 
 /**

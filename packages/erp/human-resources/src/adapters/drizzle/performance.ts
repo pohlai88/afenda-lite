@@ -1,14 +1,13 @@
 import { randomUUID } from "node:crypto";
 
 import {
+	audit as afendaAudit,
 	type PreparedDerivedEntityAuditInsertValues,
 	type PreparedTransactionalAuditInsertValues,
-	prepareDerivedEntityAuditInsertValues,
-	prepareTransactionalAuditInsertValues,
 } from "@afenda/audit";
 import {
+	database as afendaDatabase,
 	and,
-	db,
 	desc,
 	eq,
 	hrPerformanceAssessment,
@@ -22,7 +21,6 @@ import {
 	hrPerformanceImprovementPlan,
 	hrPerformanceReview,
 	hrPerformanceReviewParticipant,
-	runNeonHttpTransaction,
 } from "@afenda/db";
 import { errorResult, type Result } from "@afenda/errors";
 import {
@@ -205,7 +203,7 @@ function performanceAuditEventContext(input: {
 function preparePerformanceAudit(
 	input: PerformanceAuditInput,
 ): Result<PreparedTransactionalAuditInsertValues> {
-	return prepareTransactionalAuditInsertValues({
+	return afendaAudit.transaction.prepare({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: input.correlationId,
@@ -222,7 +220,7 @@ function preparePerformanceAudit(
 function prepareDerivedPerformanceAudit(
 	input: Omit<PerformanceAuditInput, "entityId">,
 ): Result<PreparedDerivedEntityAuditInsertValues> {
-	return prepareDerivedEntityAuditInsertValues({
+	return afendaAudit.transaction.prepareDerived({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: input.correlationId,
@@ -655,7 +653,7 @@ async function loadCycleReviewPeriods(input: {
 	cycleId: HumanResourcesPerformanceCycleId;
 }): Promise<Result<PerformanceCycleReviewPeriod[]>> {
 	try {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(hrPerformanceCycleReviewPeriod)
 			.where(
@@ -697,7 +695,7 @@ async function loadCycleEligibility(input: {
 	cycleId: HumanResourcesPerformanceCycleId;
 }): Promise<Result<PerformanceCycleEligibility | null>> {
 	try {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(hrPerformanceCycleEligibility)
 			.where(
@@ -943,7 +941,7 @@ async function findFinalizedReviewReplay(input: {
 	organizationId: string;
 }): Promise<Result<PerformanceReview | null>> {
 	try {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(hrPerformanceReview)
 			.where(
@@ -1265,7 +1263,7 @@ async function isActiveParticipantDb(
 	employmentId: HumanResourcesEmploymentId,
 ): Promise<Result<boolean>> {
 	try {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select({ id: hrPerformanceCycleParticipant.id })
 			.from(hrPerformanceCycleParticipant)
 			.where(
@@ -1358,7 +1356,7 @@ async function mutateGoalStatus(
 	const currentStatus = existing.data.status;
 
 	try {
-		const [rows] = await runNeonHttpTransaction((sqlTag) => [
+		const [rows] = await afendaDatabase.transaction((sqlTag) => [
 			sqlTag`
 				WITH mutated AS (
 					UPDATE hr_performance_goal
@@ -1418,7 +1416,7 @@ async function loadAlignmentAncestorMap(input: {
 		const rows: Array<{
 			id: string;
 			alignedToGoalId: string | null;
-		}> = await db
+		}> = await afendaDatabase.client
 			.select({
 				id: hrPerformanceGoal.id,
 				alignedToGoalId: hrPerformanceGoal.alignedToGoalId,
@@ -1508,7 +1506,7 @@ async function mutateReviewStatus(
 	const currentStatus = review.status;
 
 	try {
-		const [rows] = await runNeonHttpTransaction((sqlTag) => [
+		const [rows] = await afendaDatabase.transaction((sqlTag) => [
 			sqlTag`
 				WITH mutated AS (
 					UPDATE hr_performance_review
@@ -1561,7 +1559,7 @@ async function listImprovementPlanCheckpointsForPlan(input: {
 	planId: HumanResourcesImprovementPlanId;
 }): Promise<Result<PerformanceImprovementCheckpoint[]>> {
 	try {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(hrPerformanceImprovementCheckpoint)
 			.where(
@@ -1651,7 +1649,7 @@ async function mutatePlanStatus(
 	const currentStatus = existing.data.status;
 
 	try {
-		const [rows] = await runNeonHttpTransaction((sqlTag) => [
+		const [rows] = await afendaDatabase.transaction((sqlTag) => [
 			sqlTag`
 				WITH mutated AS (
 					UPDATE hr_performance_improvement_plan
@@ -1822,7 +1820,7 @@ async function submitAssessment(
 	const currentReviewStatus = review.status;
 
 	try {
-		const [rows] = await runNeonHttpTransaction((sqlTag) => [
+		const [rows] = await afendaDatabase.transaction((sqlTag) => [
 			sqlTag`
 				WITH updated_assessment AS (
 					UPDATE hr_performance_assessment
@@ -1905,7 +1903,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 	ThisType<PerformanceHost & DrizzlePerformanceMethods> = {
 	async getPerformanceCycleById(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrPerformanceCycle)
 				.where(
@@ -1927,7 +1925,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 
 	async findPerformanceCycleByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrPerformanceCycle)
 				.where(
@@ -2008,7 +2006,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		const ratingScaleJson = JSON.stringify(record.ratingScale);
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH mutated AS (
 						INSERT INTO hr_performance_cycle (
@@ -2156,7 +2154,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		const ratingScaleJson = JSON.stringify(ratingScale);
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH mutated AS (
 						UPDATE hr_performance_cycle
@@ -2279,7 +2277,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH mutated AS (
 						UPDATE hr_performance_cycle
@@ -2386,7 +2384,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH mutated AS (
 						UPDATE hr_performance_cycle
@@ -2481,7 +2479,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH mutated AS (
 						UPDATE hr_performance_cycle
@@ -2599,7 +2597,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH mutated AS (
 						UPDATE hr_performance_cycle
@@ -2768,7 +2766,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		const auditId = randomUUID();
 
 		try {
-			const results = await runNeonHttpTransaction((sqlTag) => {
+			const results = await afendaDatabase.transaction((sqlTag) => {
 				const statements = [
 					sqlTag`
 						WITH mutated AS (
@@ -2991,7 +2989,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		const cycleAuditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH cycle_mutated AS (
 							UPDATE hr_performance_cycle
@@ -3295,7 +3293,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		}
 
 		try {
-			const existingRows = await db
+			const existingRows = await afendaDatabase.client
 				.select()
 				.from(hrPerformanceCycleParticipant)
 				.where(
@@ -3333,7 +3331,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				}
 				const audit = preparedAudit.data;
 				const auditId = randomUUID();
-				const [rows] = await runNeonHttpTransaction((sqlTag) => [
+				const [rows] = await afendaDatabase.transaction((sqlTag) => [
 					sqlTag`
 						WITH mutated AS (
 							UPDATE hr_performance_cycle_participant
@@ -3397,7 +3395,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			const audit = preparedAudit.data;
 			const auditId = randomUUID();
 
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH mutated AS (
 						INSERT INTO hr_performance_cycle_participant (
@@ -3443,7 +3441,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 
 	async removeCycleParticipant(input, _ports, meta) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrPerformanceCycleParticipant)
 				.where(
@@ -3493,7 +3491,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			}
 			const audit = preparedAudit.data;
 			const auditId = randomUUID();
-			const [updated] = await runNeonHttpTransaction((sqlTag) => [
+			const [updated] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH mutated AS (
 						UPDATE hr_performance_cycle_participant
@@ -3541,7 +3539,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 
 	async listPerformanceCycles(input) {
 		try {
-			let query = db
+			let query = afendaDatabase.client
 				.select()
 				.from(hrPerformanceCycle)
 				.where(eq(hrPerformanceCycle.organizationId, input.organizationId))
@@ -3574,7 +3572,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 
 	async listCycleParticipants(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrPerformanceCycleParticipant)
 				.where(
@@ -3602,7 +3600,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 
 	async getPerformanceGoalById(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrPerformanceGoal)
 				.where(
@@ -3624,7 +3622,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 
 	async findPerformanceGoalByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrPerformanceGoal)
 				.where(
@@ -3780,7 +3778,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH mutated AS (
 						INSERT INTO hr_performance_goal (
@@ -3933,7 +3931,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH mutated AS (
 						UPDATE hr_performance_goal
@@ -4114,7 +4112,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH mutated AS (
 						UPDATE hr_performance_goal
@@ -4211,7 +4209,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		const currentStatus = existing.data.status;
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH mutated AS (
 						UPDATE hr_performance_goal
@@ -4307,7 +4305,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		}
 
 		if (cycle.data.weightingModel === "percent100") {
-			const peerGoals = await db
+			const peerGoals = await afendaDatabase.client
 				.select()
 				.from(hrPerformanceGoal)
 				.where(
@@ -4365,7 +4363,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH mutated AS (
 						UPDATE hr_performance_goal
@@ -4463,7 +4461,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		const recordedAt = new Date();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH mutated AS (
 						INSERT INTO hr_performance_goal_progress (
@@ -4508,7 +4506,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		input,
 	): Promise<Result<PerformanceGoalProgressListPage>> {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrPerformanceGoalProgress)
 				.where(
@@ -4542,7 +4540,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 
 	async listEmployeeGoals(input) {
 		try {
-			let query = db
+			let query = afendaDatabase.client
 				.select()
 				.from(hrPerformanceGoal)
 				.where(
@@ -4621,7 +4619,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		}
 
 		try {
-			const duplicate = await db
+			const duplicate = await afendaDatabase.client
 				.select({ id: hrPerformanceReview.id })
 				.from(hrPerformanceReview)
 				.where(
@@ -4710,7 +4708,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH inserted_review AS (
 						INSERT INTO hr_performance_review (
@@ -4959,7 +4957,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH inserted_participant AS (
 						INSERT INTO hr_performance_review_participant (
@@ -5181,7 +5179,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		const submittedAt = new Date();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH updated_assessment AS (
 						UPDATE hr_performance_assessment
@@ -5336,7 +5334,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH mutated AS (
 						UPDATE hr_performance_review
@@ -5443,7 +5441,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH mutated AS (
 						UPDATE hr_performance_review
@@ -5578,7 +5576,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH mutated AS (
 						UPDATE hr_performance_review
@@ -5708,7 +5706,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH mutated AS (
 						UPDATE hr_performance_review
@@ -5770,7 +5768,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 
 	async getPerformanceReviewById(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrPerformanceReview)
 				.where(
@@ -5789,7 +5787,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				return review;
 			}
 
-			const participantRows = await db
+			const participantRows = await afendaDatabase.client
 				.select()
 				.from(hrPerformanceReviewParticipant)
 				.where(
@@ -5823,7 +5821,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				participants.push(mapped.data);
 			}
 
-			const assessmentRows = await db
+			const assessmentRows = await afendaDatabase.client
 				.select()
 				.from(hrPerformanceAssessment)
 				.where(
@@ -5854,7 +5852,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 
 	async listEmployeePerformanceReviews(input) {
 		try {
-			const query = db
+			const query = afendaDatabase.client
 				.select()
 				.from(hrPerformanceReview)
 				.where(
@@ -5892,7 +5890,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 
 	async listReviewsPendingManagerAction(input) {
 		try {
-			const participantRows = await db
+			const participantRows = await afendaDatabase.client
 				.select()
 				.from(hrPerformanceReviewParticipant)
 				.where(
@@ -5918,7 +5916,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				});
 			}
 
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrPerformanceReview)
 				.where(
@@ -5958,7 +5956,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 
 	async getImprovementPlanById(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrPerformanceImprovementPlan)
 				.where(
@@ -5983,7 +5981,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 
 	async findImprovementPlanByIdempotencyKey(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrPerformanceImprovementPlan)
 				.where(
@@ -6038,7 +6036,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			return conflict("Idempotency key already used with different data");
 		}
 
-		const reviewRows = await db
+		const reviewRows = await afendaDatabase.client
 			.select()
 			.from(hrPerformanceReview)
 			.where(
@@ -6129,7 +6127,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		}
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => {
+			const [rows] = await afendaDatabase.transaction((sqlTag) => {
 				const statements = [
 					sqlTag`
 						WITH inserted_plan AS (
@@ -6298,7 +6296,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH mutated AS (
 						UPDATE hr_performance_improvement_plan
@@ -6375,7 +6373,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		}
 
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrPerformanceImprovementCheckpoint)
 				.where(
@@ -6433,7 +6431,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			const auditId = randomUUID();
 			const recordedAt = new Date();
 
-			const [updated] = await runNeonHttpTransaction((sqlTag) => [
+			const [updated] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH mutated AS (
 						UPDATE hr_performance_improvement_checkpoint
@@ -6620,7 +6618,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			: 0;
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => {
+			const [rows] = await afendaDatabase.transaction((sqlTag) => {
 				const statements = [
 					sqlTag`
 						WITH mutated AS (
@@ -6784,7 +6782,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH mutated AS (
 						UPDATE hr_performance_improvement_plan
@@ -6911,7 +6909,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		const currentStatus = existing.data.status;
 
 		try {
-			const [rows] = await runNeonHttpTransaction((sqlTag) => [
+			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH mutated AS (
 						UPDATE hr_performance_improvement_plan
@@ -6967,7 +6965,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 
 	async listActiveImprovementPlans(input) {
 		try {
-			const rows = await db
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrPerformanceImprovementPlan)
 				.where(
@@ -7028,7 +7026,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 
 	async getEmployeePerformanceHistory(input) {
 		try {
-			const reviewRows = await db
+			const reviewRows = await afendaDatabase.client
 				.select()
 				.from(hrPerformanceReview)
 				.where(
@@ -7060,7 +7058,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 						return sequentialContinue();
 					}
 
-					const goalRows = await db
+					const goalRows = await afendaDatabase.client
 						.select()
 						.from(hrPerformanceGoal)
 						.where(
@@ -7079,7 +7077,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 						goals.push(mapped.data);
 					}
 
-					const planRows = await db
+					const planRows = await afendaDatabase.client
 						.select()
 						.from(hrPerformanceImprovementPlan)
 						.where(

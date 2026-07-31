@@ -1,21 +1,20 @@
 import { randomUUID } from "node:crypto";
 
 import {
+	audit as afendaAudit,
 	type Change,
 	type PreparedTransactionalAuditInsertValues,
-	prepareTransactionalAuditInsertValues,
 } from "@afenda/audit";
 import {
+	database as afendaDatabase,
 	and,
 	asc,
-	db,
 	eq,
 	gte,
 	isNull,
 	lte,
 	mdOrganizationDimension,
 	or,
-	runNeonHttpTransaction,
 } from "@afenda/db";
 import {
 	errorIngress,
@@ -313,7 +312,7 @@ async function loadOrganizationDimensionVersion(
 	id: string,
 ): Promise<Result<{ id: string; version: number } | null>> {
 	try {
-		const [row] = await db
+		const [row] = await afendaDatabase.client
 			.select({
 				id: mdOrganizationDimension.id,
 				version: mdOrganizationDimension.version,
@@ -340,7 +339,7 @@ async function loadOrganizationDimensionForAudit(input: {
 	organizationId: string;
 }): Promise<Result<OrganizationDimension | null>> {
 	try {
-		const [row] = await db
+		const [row] = await afendaDatabase.client
 			.select()
 			.from(mdOrganizationDimension)
 			.where(
@@ -374,7 +373,7 @@ async function prepareCreateOrganizationDimensionAudits(input: {
 		predecessorAudit: PreparedTransactionalAuditInsertValues | null;
 	}>
 > {
-	const preparedCreateAudit = prepareTransactionalAuditInsertValues({
+	const preparedCreateAudit = afendaAudit.transaction.prepare({
 		organizationId: input.record.organizationId,
 		actorUserId: input.record.createdBy,
 		correlationId: input.record.correlationId,
@@ -451,7 +450,7 @@ async function prepareCreateOrganizationDimensionAudits(input: {
 		});
 	}
 	const predecessorEffectiveTo = previousIsoDate(input.record.effectiveFrom);
-	const preparedPredecessorAudit = prepareTransactionalAuditInsertValues({
+	const preparedPredecessorAudit = afendaAudit.transaction.prepare({
 		organizationId: input.record.organizationId,
 		actorUserId: input.record.createdBy,
 		correlationId: input.record.correlationId,
@@ -557,7 +556,7 @@ async function prepareUpdateOrganizationDimensionAudit(
 		oldValue: current.data.version,
 		newValue: nextVersion,
 	});
-	return prepareTransactionalAuditInsertValues({
+	return afendaAudit.transaction.prepare({
 		organizationId: record.organizationId,
 		actorUserId: record.updatedBy,
 		correlationId: record.correlationId,
@@ -605,7 +604,7 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 			}
 			const { createAudit, predecessorAudit } = preparedAudits.data;
 			try {
-				const [, rows] = await runNeonHttpTransaction((sql) => [
+				const [, rows] = await afendaDatabase.transaction((sql) => [
 					sql`SELECT pg_advisory_xact_lock(hashtextextended(${`${record.organizationId}:${record.kind}:${record.normalizedKey}`}, 0))`,
 					sql`
 						WITH predecessor AS (
@@ -786,7 +785,7 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 			try {
 				const auditId = randomUUID();
 				const eventId = randomUUID();
-				const [, rows] = await runNeonHttpTransaction((sql) => [
+				const [, rows] = await afendaDatabase.transaction((sql) => [
 					sql`SELECT pg_advisory_xact_lock(hashtextextended(${`${record.organizationId}:${record.id}`}, 0))`,
 					sql`
 						WITH current_row AS (
@@ -944,7 +943,7 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 				});
 			}
 			const nextVersion = current.data.version + 1;
-			const preparedAudit = prepareTransactionalAuditInsertValues({
+			const preparedAudit = afendaAudit.transaction.prepare({
 				organizationId: input.organizationId,
 				actorUserId: input.updatedBy,
 				correlationId: input.correlationId,
@@ -984,7 +983,7 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 			try {
 				const auditId = randomUUID();
 				const eventId = randomUUID();
-				const [, rows] = await runNeonHttpTransaction((sql) => [
+				const [, rows] = await afendaDatabase.transaction((sql) => [
 					sql`SELECT pg_advisory_xact_lock(hashtextextended(${`${input.organizationId}:${input.id}`}, 0))`,
 					sql`
 						WITH current_row AS (
@@ -1074,7 +1073,7 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 		},
 		async getById(input) {
 			try {
-				const [row] = await db
+				const [row] = await afendaDatabase.client
 					.select()
 					.from(mdOrganizationDimension)
 					.where(
@@ -1094,7 +1093,7 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 		},
 		async getByCode(input) {
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.select()
 					.from(mdOrganizationDimension)
 					.where(
@@ -1142,7 +1141,7 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 					);
 				}
 				const offset = (input.page - 1) * input.pageSize;
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.select()
 					.from(mdOrganizationDimension)
 					.where(and(...predicates))
@@ -1166,7 +1165,7 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 		},
 		async findEffective(input) {
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.select()
 					.from(mdOrganizationDimension)
 					.where(
@@ -1195,7 +1194,7 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 		},
 		async findEffectiveById(input) {
 			try {
-				const rows = await db
+				const rows = await afendaDatabase.client
 					.select()
 					.from(mdOrganizationDimension)
 					.where(

@@ -432,11 +432,11 @@ describe("N12 join accept NOT APPLICABLE (ARCH-023 Tier-1)", () => {
 		expect(deleteOrg).toContain("platform_audit_log");
 		expect(deleteOrg).not.toContain("recordRbacAudit");
 		expect(deleteOrg).not.toContain("createAuditRecorder");
-		expect(deleteOrgAudit).toContain("createAuditRecorder");
+		expect(deleteOrgAudit).toContain("afendaAudit.recorder");
 		expect(deleteOrgAudit).not.toContain("recordRbacAudit");
 
-		expect(assignDomain).toContain("runNeonHttpTransaction");
-		expect(revokeDomain).toContain("runNeonHttpTransaction");
+		expect(assignDomain).toContain("afendaDatabase.transaction");
+		expect(revokeDomain).toContain("afendaDatabase.transaction");
 
 		expect(assignTypes).not.toMatch(/export async function assignOrgRole\b/);
 		expect(revokeTypes).not.toMatch(/export async function revokeOrgRole\b/);

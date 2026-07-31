@@ -14,15 +14,14 @@
 import { randomUUID } from "node:crypto";
 
 import {
+	audit as afendaAudit,
 	type PreparedDerivedEntityAuditInsertValues,
 	type PreparedTransactionalAuditInsertValues,
-	prepareDerivedEntityAuditInsertValues,
-	prepareTransactionalAuditInsertValues,
 } from "@afenda/audit";
 import {
+	database as afendaDatabase,
 	and,
 	asc,
-	db,
 	eq,
 	inArray,
 	isNull,
@@ -35,8 +34,6 @@ import {
 	mdItemVariantAttributeValue,
 	mdItemVariantAttributeValueOption,
 	refUom,
-	runNeonHttpTransaction,
-	tenantEntityPredicate,
 } from "@afenda/db";
 import {
 	errorIngress,
@@ -120,7 +117,7 @@ interface VariantAuditInput {
 function prepareVariantAudit(
 	input: VariantAuditInput & { entityId: string },
 ): Result<PreparedTransactionalAuditInsertValues> {
-	return prepareTransactionalAuditInsertValues({
+	return afendaAudit.transaction.prepare({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: input.correlationId,
@@ -144,7 +141,7 @@ function prepareVariantAudit(
 function prepareDerivedVariantAudit(
 	input: VariantAuditInput,
 ): Result<PreparedDerivedEntityAuditInsertValues> {
-	return prepareDerivedEntityAuditInsertValues({
+	return afendaAudit.transaction.prepareDerived({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		correlationId: input.correlationId,
@@ -534,7 +531,7 @@ async function loadVariantValues(
 		return errorResult.ok(new Map());
 	}
 	try {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(mdItemVariantAttributeValue)
 			.where(
@@ -550,7 +547,7 @@ async function loadVariantValues(
 		const optionRows =
 			rows.length === 0
 				? []
-				: await db
+				: await afendaDatabase.client
 						.select()
 						.from(mdItemVariantAttributeValueOption)
 						.where(
@@ -596,7 +593,7 @@ export async function drizzleGetItemTemplateById(
 	id: string,
 ): Promise<Result<ItemTemplate | null>> {
 	try {
-		const [row] = await db
+		const [row] = await afendaDatabase.client
 			.select()
 			.from(mdItemTemplate)
 			.where(
@@ -617,7 +614,7 @@ export async function drizzleGetItemTemplateByCode(
 	normalizedCode: string,
 ): Promise<Result<ItemTemplate | null>> {
 	try {
-		const [row] = await db
+		const [row] = await afendaDatabase.client
 			.select()
 			.from(mdItemTemplate)
 			.where(
@@ -644,7 +641,7 @@ export async function drizzleListItemTemplates(
 		if (filter.status !== undefined) {
 			predicates.push(eq(mdItemTemplate.status, filter.status));
 		}
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(mdItemTemplate)
 			.where(and(...predicates))
@@ -689,7 +686,7 @@ export async function drizzleCreateItemTemplate(
 		correlationId: meta.correlationId,
 	});
 	try {
-		const [rows] = await runNeonHttpTransaction((sql) => [
+		const [rows] = await afendaDatabase.transaction((sql) => [
 			sql`
 					WITH mutated AS (
 						INSERT INTO md_item_template (
@@ -750,7 +747,7 @@ export async function drizzleUpdateItemTemplate(
 	meta: { correlationId: string },
 ): Promise<Result<ItemTemplate>> {
 	try {
-		const [existing] = await db
+		const [existing] = await afendaDatabase.client
 			.select()
 			.from(mdItemTemplate)
 			.where(
@@ -796,7 +793,7 @@ export async function drizzleUpdateItemTemplate(
 			actorId: record.updatedBy,
 			correlationId: meta.correlationId,
 		});
-		const [rows] = await runNeonHttpTransaction((sql) => [
+		const [rows] = await afendaDatabase.transaction((sql) => [
 			sql`
 					WITH mutated AS (
 						UPDATE md_item_template
@@ -866,7 +863,7 @@ export async function drizzleTransitionItemTemplate(
 	const eventId = randomUUID();
 	const eventType = `master_data.item_template.${meta.eventSuffix}.v1`;
 	try {
-		const [existing] = await db
+		const [existing] = await afendaDatabase.client
 			.select()
 			.from(mdItemTemplate)
 			.where(
@@ -924,7 +921,7 @@ export async function drizzleTransitionItemTemplate(
 			record.toStatus === "retired" ? new Date() : existing.retiredAt;
 		const retiredBy =
 			record.toStatus === "retired" ? record.actorUserId : existing.retiredBy;
-		const [rows] = await runNeonHttpTransaction((sql) => [
+		const [rows] = await afendaDatabase.transaction((sql) => [
 			sql`
 					WITH mutated AS (
 						UPDATE md_item_template
@@ -1011,7 +1008,7 @@ export async function drizzleTransitionItemTemplate(
 		]);
 		const [row] = rows;
 		if (row === undefined) {
-			const [current] = await db
+			const [current] = await afendaDatabase.client
 				.select({ version: mdItemTemplate.version })
 				.from(mdItemTemplate)
 				.where(
@@ -1027,7 +1024,7 @@ export async function drizzleTransitionItemTemplate(
 				});
 			}
 			if (record.toStatus === "retired") {
-				const [liveVariant] = await db
+				const [liveVariant] = await afendaDatabase.client
 					.select({ id: mdItemVariant.id })
 					.from(mdItemVariant)
 					.where(
@@ -1063,7 +1060,7 @@ export async function drizzleListItemTemplateAttributes(
 	templateId: string,
 ): Promise<Result<ItemTemplateAttribute[]>> {
 	try {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(mdItemTemplateAttribute)
 			.where(
@@ -1091,7 +1088,7 @@ export async function drizzleGetItemTemplateAttributeContextById(
 	attributeId: string,
 ): Promise<Result<ItemTemplateAttributeContext | null>> {
 	try {
-		const [row] = await db
+		const [row] = await afendaDatabase.client
 			.select({
 				attribute: mdItemTemplateAttribute,
 				template: mdItemTemplate,
@@ -1134,7 +1131,7 @@ export async function drizzleListItemTemplateAttributeOptions(
 	attributeId: string,
 ): Promise<Result<ItemTemplateAttributeOption[]>> {
 	try {
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(mdItemTemplateAttributeOption)
 			.where(
@@ -1162,7 +1159,7 @@ export async function drizzleListItemTemplateAttributeOptionsByTemplate(
 	templateId: string,
 ): Promise<Result<ItemTemplateAttributeOption[]>> {
 	try {
-		const attributes = await db
+		const attributes = await afendaDatabase.client
 			.select({ id: mdItemTemplateAttribute.id })
 			.from(mdItemTemplateAttribute)
 			.where(
@@ -1174,7 +1171,7 @@ export async function drizzleListItemTemplateAttributeOptionsByTemplate(
 		if (attributes.length === 0) {
 			return errorResult.ok([]);
 		}
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select()
 			.from(mdItemTemplateAttributeOption)
 			.where(
@@ -1206,7 +1203,7 @@ export async function drizzleAddItemTemplateAttribute(
 	meta: { correlationId: string },
 ): Promise<Result<ItemTemplateAttribute>> {
 	try {
-		const [template] = await db
+		const [template] = await afendaDatabase.client
 			.select()
 			.from(mdItemTemplate)
 			.where(
@@ -1265,7 +1262,7 @@ export async function drizzleAddItemTemplateAttribute(
 		correlationId: meta.correlationId,
 	});
 	try {
-		const [rows] = await runNeonHttpTransaction((sql) => [
+		const [rows] = await afendaDatabase.transaction((sql) => [
 			sql`
 					WITH parent_locked AS MATERIALIZED (
 						SELECT template.id
@@ -1343,7 +1340,7 @@ export async function drizzleAddItemTemplateAttributeOption(
 	meta: { correlationId: string },
 ): Promise<Result<ItemTemplateAttributeOption>> {
 	try {
-		const [attribute] = await db
+		const [attribute] = await afendaDatabase.client
 			.select()
 			.from(mdItemTemplateAttribute)
 			.where(
@@ -1367,7 +1364,7 @@ export async function drizzleAddItemTemplateAttributeOption(
 					"Options can only be added to option-compatible attributes",
 			});
 		}
-		const [template] = await db
+		const [template] = await afendaDatabase.client
 			.select()
 			.from(mdItemTemplate)
 			.where(
@@ -1426,7 +1423,7 @@ export async function drizzleAddItemTemplateAttributeOption(
 		correlationId: meta.correlationId,
 	});
 	try {
-		const [rows] = await runNeonHttpTransaction((sql) => [
+		const [rows] = await afendaDatabase.transaction((sql) => [
 			sql`
 					WITH parent_locked AS MATERIALIZED (
 						SELECT attribute.id
@@ -1505,7 +1502,7 @@ export async function drizzleGetItemVariantById(
 	id: string,
 ): Promise<Result<ItemVariant | null>> {
 	try {
-		const [variant] = await db
+		const [variant] = await afendaDatabase.client
 			.select()
 			.from(mdItemVariant)
 			.where(
@@ -1518,7 +1515,7 @@ export async function drizzleGetItemVariantById(
 		if (variant === undefined) {
 			return errorResult.ok(null);
 		}
-		const [itemRow] = await db
+		const [itemRow] = await afendaDatabase.client
 			.select()
 			.from(mdItem)
 			.where(
@@ -1558,7 +1555,7 @@ export async function drizzleListItemVariantsByTemplate(
 		if (filter.status !== undefined) {
 			predicates.push(eq(mdItem.status, filter.status));
 		}
-		const rows = await db
+		const rows = await afendaDatabase.client
 			.select({
 				variant: mdItemVariant,
 				item: mdItem,
@@ -1604,7 +1601,7 @@ export async function drizzleCreateItemVariant(
 	meta: { correlationId: string },
 ): Promise<Result<ItemVariant>> {
 	try {
-		const [uom] = await db
+		const [uom] = await afendaDatabase.client
 			.select()
 			.from(refUom)
 			.where(eq(refUom.id, record.baseUomId))
@@ -1619,7 +1616,7 @@ export async function drizzleCreateItemVariant(
 				publicMessage: "baseUomId must reference an active platform UoM",
 			});
 		}
-		const [group] = await db
+		const [group] = await afendaDatabase.client
 			.select()
 			.from(mdItemGroup)
 			.where(
@@ -1634,7 +1631,7 @@ export async function drizzleCreateItemVariant(
 				publicMessage: "Item group not found",
 			});
 		}
-		const [template] = await db
+		const [template] = await afendaDatabase.client
 			.select()
 			.from(mdItemTemplate)
 			.where(
@@ -1694,7 +1691,7 @@ export async function drizzleCreateItemVariant(
 	const { itemAudit, valueAudits, variantAudit } = preparedAudits.data;
 
 	try {
-		const results = await runNeonHttpTransaction(
+		const results = await afendaDatabase.transaction(
 			(sql) => {
 				const statements = [
 					sql`
@@ -2071,7 +2068,7 @@ export async function drizzleRetireItemVariantMembership(
 ): Promise<Result<{ retired: boolean }>> {
 	const eventId = randomUUID();
 	try {
-		const [rows] = await runNeonHttpTransaction((sql) => [
+		const [rows] = await afendaDatabase.transaction((sql) => [
 			sql`
 					WITH variant_retired AS (
 						UPDATE md_item_variant
@@ -2132,11 +2129,11 @@ export async function drizzleTransitionItemWithVariantSideEffect(
 	},
 ): Promise<Result<Item>> {
 	try {
-		const [existing] = await db
+		const [existing] = await afendaDatabase.client
 			.select()
 			.from(mdItem)
 			.where(
-				tenantEntityPredicate(
+				afendaDatabase.tenancy.entity(
 					{ id: mdItem.id, organizationId: mdItem.organizationId },
 					{ id: record.id, organizationId: record.organizationId },
 				),
@@ -2224,7 +2221,7 @@ export async function drizzleTransitionItemWithVariantSideEffect(
 			variantAudit = preparedVariantAudit.data;
 		}
 
-		const [rows] = await runNeonHttpTransaction(
+		const [rows] = await afendaDatabase.transaction(
 			(sql) => [
 				retireVariant
 					? sql`

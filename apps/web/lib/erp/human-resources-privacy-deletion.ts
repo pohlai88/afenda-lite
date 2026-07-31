@@ -1,4 +1,4 @@
-import { type AuditRecorder, createAuditRecorder } from "@afenda/audit";
+import { type AuditRecorder, audit as afendaAudit } from "@afenda/audit";
 import { errorResult, type Result } from "@afenda/errors";
 import {
 	decideHumanResourcesSubjectDeletion,
@@ -185,7 +185,7 @@ async function evaluateWithComposition(
 	}>
 > {
 	const privacy = deps.privacy ?? createHumanResourcesPrivacyPort();
-	const audit = deps.audit ?? createAuditRecorder();
+	const audit = deps.audit ?? afendaAudit.recorder();
 	const boundaryResolver =
 		deps.resolveProcessorBoundary ??
 		(async (input) =>

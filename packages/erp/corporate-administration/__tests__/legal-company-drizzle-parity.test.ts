@@ -20,13 +20,12 @@ import {
 	createDrizzleCorporateAdministrationTransactionPort,
 } from "@afenda/corporate-administration/adapters/drizzle";
 import {
+	database as afendaDatabase,
 	and,
 	caCompanyJurisdictionProfile,
 	caLegalCompany,
-	db,
 	eq,
 	platformAuditLog,
-	runNeonHttpTransaction,
 	sql,
 } from "@afenda/db";
 import { errorResult } from "@afenda/errors";
@@ -85,7 +84,7 @@ function dependencies() {
 	});
 	return {
 		store: createDrizzleCorporateAdministrationLegalCompanyStore({
-			database: db,
+			database: afendaDatabase.client,
 			createLegalCompanyId: randomUUID,
 		}),
 		jurisdictionRules: activeRulePort(),
@@ -95,10 +94,10 @@ function dependencies() {
 				"2026-07-26T10:00:00.000Z",
 			),
 			transaction: createDrizzleCorporateAdministrationTransactionPort({
-				execute: (buildQueries) => runNeonHttpTransaction(buildQueries),
+				execute: (buildQueries) => afendaDatabase.transaction(buildQueries),
 			}),
 			idempotency: createDrizzleCorporateAdministrationIdempotencyPort({
-				database: db,
+				database: afendaDatabase.client,
 				createReservationToken: randomUUID,
 				now: () => new Date("2026-07-26T10:00:00.000Z"),
 			}),
@@ -115,7 +114,7 @@ function dependencies() {
 }
 
 async function countLegalCompanies(organizationId: string): Promise<number> {
-	const rows = await db
+	const rows = await afendaDatabase.client
 		.select({ value: sql<number>`count(*)::int` })
 		.from(caLegalCompany)
 		.where(eq(caLegalCompany.organizationId, organizationId));
@@ -123,7 +122,7 @@ async function countLegalCompanies(organizationId: string): Promise<number> {
 }
 
 async function countLegalCompanyAudit(organizationId: string): Promise<number> {
-	const rows = await db
+	const rows = await afendaDatabase.client
 		.select({ value: sql<number>`count(*)::int` })
 		.from(platformAuditLog)
 		.where(
@@ -139,7 +138,7 @@ async function countLegalCompanyAudit(organizationId: string): Promise<number> {
 async function countCorporateAdministrationAudit(
 	organizationId: string,
 ): Promise<number> {
-	const rows = await db
+	const rows = await afendaDatabase.client
 		.select({ value: sql<number>`count(*)::int` })
 		.from(platformAuditLog)
 		.where(
@@ -154,7 +153,7 @@ async function countCorporateAdministrationAudit(
 async function countJurisdictionProfiles(
 	organizationId: string,
 ): Promise<number> {
-	const rows = await db
+	const rows = await afendaDatabase.client
 		.select({ value: sql<number>`count(*)::int` })
 		.from(caCompanyJurisdictionProfile)
 		.where(eq(caCompanyJurisdictionProfile.organizationId, organizationId));

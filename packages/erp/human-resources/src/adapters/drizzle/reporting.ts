@@ -1,7 +1,7 @@
 import {
+	database as afendaDatabase,
 	and,
 	count,
-	db,
 	eq,
 	hrAttendanceSession,
 	hrCandidateApplication,
@@ -82,14 +82,14 @@ async function loadFacts(input: {
 	switch (input.kind) {
 		case "employment": {
 			const [rows, totals] = await Promise.all([
-				db
+				afendaDatabase.client
 					.select()
 					.from(hrEmployment)
 					.where(eq(hrEmployment.organizationId, input.organizationId))
 					.orderBy(hrEmployment.id)
 					.limit(limit)
 					.offset(offset),
-				db
+				afendaDatabase.client
 					.select({ total: count() })
 					.from(hrEmployment)
 					.where(eq(hrEmployment.organizationId, input.organizationId)),
@@ -109,7 +109,7 @@ async function loadFacts(input: {
 		}
 		case "recruitment": {
 			const [rows, totals] = await Promise.all([
-				db
+				afendaDatabase.client
 					.select()
 					.from(hrCandidateApplication)
 					.where(
@@ -118,7 +118,7 @@ async function loadFacts(input: {
 					.orderBy(hrCandidateApplication.id)
 					.limit(limit)
 					.offset(offset),
-				db
+				afendaDatabase.client
 					.select({ total: count() })
 					.from(hrCandidateApplication)
 					.where(
@@ -143,14 +143,14 @@ async function loadFacts(input: {
 		}
 		case "leave": {
 			const [rows, totals] = await Promise.all([
-				db
+				afendaDatabase.client
 					.select()
 					.from(hrLeaveRequest)
 					.where(eq(hrLeaveRequest.organizationId, input.organizationId))
 					.orderBy(hrLeaveRequest.id)
 					.limit(limit)
 					.offset(offset),
-				db
+				afendaDatabase.client
 					.select({ total: count() })
 					.from(hrLeaveRequest)
 					.where(eq(hrLeaveRequest.organizationId, input.organizationId)),
@@ -183,14 +183,14 @@ async function loadFacts(input: {
 		}
 		case "attendance": {
 			const [rows, totals] = await Promise.all([
-				db
+				afendaDatabase.client
 					.select()
 					.from(hrAttendanceSession)
 					.where(eq(hrAttendanceSession.organizationId, input.organizationId))
 					.orderBy(hrAttendanceSession.id)
 					.limit(limit)
 					.offset(offset),
-				db
+				afendaDatabase.client
 					.select({ total: count() })
 					.from(hrAttendanceSession)
 					.where(eq(hrAttendanceSession.organizationId, input.organizationId)),
@@ -211,14 +211,14 @@ async function loadFacts(input: {
 		}
 		case "overtime": {
 			const [rows, totals] = await Promise.all([
-				db
+				afendaDatabase.client
 					.select()
 					.from(hrOvertimeRequest)
 					.where(eq(hrOvertimeRequest.organizationId, input.organizationId))
 					.orderBy(hrOvertimeRequest.id)
 					.limit(limit)
 					.offset(offset),
-				db
+				afendaDatabase.client
 					.select({ total: count() })
 					.from(hrOvertimeRequest)
 					.where(eq(hrOvertimeRequest.organizationId, input.organizationId)),
@@ -246,7 +246,7 @@ async function loadFacts(input: {
 		}
 		case "compensation": {
 			const [rows, totals] = await Promise.all([
-				db
+				afendaDatabase.client
 					.select()
 					.from(hrEmployeeCompensation)
 					.where(
@@ -255,7 +255,7 @@ async function loadFacts(input: {
 					.orderBy(hrEmployeeCompensation.id)
 					.limit(limit)
 					.offset(offset),
-				db
+				afendaDatabase.client
 					.select({ total: count() })
 					.from(hrEmployeeCompensation)
 					.where(
@@ -283,7 +283,7 @@ async function loadFacts(input: {
 		}
 		case "compliance": {
 			const [rows, totals] = await Promise.all([
-				db
+				afendaDatabase.client
 					.select()
 					.from(hrPolicyAcknowledgement)
 					.where(
@@ -292,7 +292,7 @@ async function loadFacts(input: {
 					.orderBy(hrPolicyAcknowledgement.id)
 					.limit(limit)
 					.offset(offset),
-				db
+				afendaDatabase.client
 					.select({ total: count() })
 					.from(hrPolicyAcknowledgement)
 					.where(
@@ -318,14 +318,14 @@ async function loadFacts(input: {
 		}
 		case "learning": {
 			const [rows, totals] = await Promise.all([
-				db
+				afendaDatabase.client
 					.select()
 					.from(hrLearningAssignment)
 					.where(eq(hrLearningAssignment.organizationId, input.organizationId))
 					.orderBy(hrLearningAssignment.id)
 					.limit(limit)
 					.offset(offset),
-				db
+				afendaDatabase.client
 					.select({ total: count() })
 					.from(hrLearningAssignment)
 					.where(eq(hrLearningAssignment.organizationId, input.organizationId)),
@@ -334,7 +334,7 @@ async function loadFacts(input: {
 			const completions =
 				assignmentIds.length === 0
 					? []
-					: await db
+					: await afendaDatabase.client
 							.select()
 							.from(hrLearningCompletion)
 							.where(
@@ -347,7 +347,7 @@ async function loadFacts(input: {
 			const certifications =
 				completionIds.length === 0
 					? []
-					: await db
+					: await afendaDatabase.client
 							.select()
 							.from(hrEmployeeCertification)
 							.where(
@@ -381,7 +381,7 @@ async function loadFacts(input: {
 		}
 		case "performance": {
 			const [rows, totals] = await Promise.all([
-				db
+				afendaDatabase.client
 					.select({ review: hrPerformanceReview, cycle: hrPerformanceCycle })
 					.from(hrPerformanceReview)
 					.innerJoin(
@@ -395,7 +395,7 @@ async function loadFacts(input: {
 					.orderBy(hrPerformanceReview.id)
 					.limit(limit)
 					.offset(offset),
-				db
+				afendaDatabase.client
 					.select({ total: count() })
 					.from(hrPerformanceReview)
 					.where(eq(hrPerformanceReview.organizationId, input.organizationId)),
@@ -406,7 +406,7 @@ async function loadFacts(input: {
 			const activeGoals =
 				employeeIds.length === 0
 					? []
-					: await db
+					: await afendaDatabase.client
 							.select({
 								employeeId: hrPerformanceGoal.employeeId,
 								status: hrPerformanceGoal.status,
@@ -441,14 +441,14 @@ async function loadFacts(input: {
 		}
 		case "succession": {
 			const [rows, totals] = await Promise.all([
-				db
+				afendaDatabase.client
 					.select()
 					.from(hrSuccessionPlan)
 					.where(eq(hrSuccessionPlan.organizationId, input.organizationId))
 					.orderBy(hrSuccessionPlan.id)
 					.limit(limit)
 					.offset(offset),
-				db
+				afendaDatabase.client
 					.select({ total: count() })
 					.from(hrSuccessionPlan)
 					.where(eq(hrSuccessionPlan.organizationId, input.organizationId)),
@@ -457,7 +457,7 @@ async function loadFacts(input: {
 			const candidates =
 				planIds.length === 0
 					? []
-					: await db
+					: await afendaDatabase.client
 							.select()
 							.from(hrSuccessionCandidate)
 							.where(
@@ -506,7 +506,7 @@ async function loadFacts(input: {
 		}
 		case "workforce_plan": {
 			const [rows, totals] = await Promise.all([
-				db
+				afendaDatabase.client
 					.select({ line: hrHeadcountPlanLine, plan: hrHeadcountPlan })
 					.from(hrHeadcountPlanLine)
 					.innerJoin(
@@ -520,12 +520,12 @@ async function loadFacts(input: {
 					.orderBy(hrHeadcountPlanLine.id)
 					.limit(limit)
 					.offset(offset),
-				db
+				afendaDatabase.client
 					.select({ total: count() })
 					.from(hrHeadcountPlanLine)
 					.where(eq(hrHeadcountPlanLine.organizationId, input.organizationId)),
 			]);
-			const assignments = await db
+			const assignments = await afendaDatabase.client
 				.select({
 					assignment: hrWorkAssignment,
 					employment: hrEmployment,
