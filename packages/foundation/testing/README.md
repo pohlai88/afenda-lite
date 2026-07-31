@@ -1,79 +1,82 @@
 # `@afenda/testing`
 
-Canonical workspace package for shared test policy and reusable test utilities
-consumed by product packages and apps. Repo-root [`testing/`](../../../testing/README.md)
-is the runner HOME because Vitest, Playwright, aliases, and web-server startup are
-repo-root architecture concerns. It must extend this package's policy registry;
-it is not a second testing system.
+Canonical workspace testing control plane. It owns lane identity, selection
+policy, runner projections, database-evidence resolution, and reusable setup
+behavior. Repo-root [`testing/`](../../../testing/README.md) remains the runner
+entrypoint and repository-composition home, not a second policy owner.
 
-| Subpath | Role |
-| ------- | ---- |
-| `.` | Package barrel, including the testing lane registry |
-| `./require-database-for-ci` | GUIDE-018 I5.5 fail-closed `DATABASE_URL` resolution for DB-backed test suites |
-| `./setups/database` | Shared DB-backed lane setup helper |
-| `./setups/required-database` | Shared fail-closed DB-backed release setup helper |
-| `./vitest` | Vitest config factory consuming package lane policy |
-| `./playwright` | Playwright lane config helper consuming package lane policy |
+## Permanent consumer surface
 
-Repo-root [`testing/`](../../../testing/README.md) retains Vitest/Playwright
-**runner entrypoints**, matrices, and e2e helpers. The lane list and approved
-control files are registered in
-[`src/testing-control-plane.ts`](src/testing-control-plane.ts). Import shared
-utilities from `@afenda/testing/*` only — not from repo-root `testing/` paths in
-product tests.
-
-**Layer:** R1-A foundation (dev/test only; not a runtime product import).
-
-## Guarantees
-
-`@afenda/testing` is the single policy source for approved test lanes and
-runner-control files. `pnpm check:testing-governance` fails when a second runner
-system appears.
-
-`@afenda/testing/require-database-for-ci` establishes the database-test
-evidence boundary required by GUIDE-018 I5.5.
-
-- CI requires an explicitly injected `DATABASE_URL`.
-- CI never loads `.env.local`.
-- Local runs may load `DATABASE_URL` from the repository-root `.env.local`.
-- `REQUIRE_DATABASE_TESTS=1` applies the same fail-closed requirement locally.
-- Missing local database access may skip a suite, but that skip is not passing
-  production evidence.
-- Blank or whitespace-only values are treated as missing.
-- Unexpected environment-file I/O failures are surfaced.
-
-## Approved usage
+Import four frozen capabilities from the package root:
 
 ```ts
-import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
+import {
+	testingDatabase,
+	testingPlaywright,
+	testingPolicy,
+	testingVitest,
+} from "@afenda/testing";
+```
 
-const database = resolveDatabaseUrlForTests();
+| Capability | Owns |
+|------------|------|
+| `testingPolicy` | Lane registry, control files, runner bans, database-read exceptions, lane lookup |
+| `testingVitest` | Vitest configuration and include/exclude projections |
+| `testingPlaywright` | Playwright lane configuration projection |
+| `testingDatabase` | Database evidence resolution, E2E requirements, and setup operations |
+
+The only subpaths are executable runner setup entrypoints:
+
+- `@afenda/testing/setup/database`
+- `@afenda/testing/setup/required-database`
+
+They perform setup when loaded by Vitest. They are not alternative consumer
+APIs. All former policy, resolver, runner, and compatibility subpaths are
+deleted and must not be restored.
+
+## Semantic ownership
+
+`TESTING_LANES` is the canonical registry. Types and Vitest/Playwright
+projections derive from it. `include` and `exclude` are the only selection
+fields; historical `allowedGlobs` and `forbiddenGlobs` aliases are removed.
+
+The database capability is the only test-evidence ingress for `DATABASE_URL`:
+
+```ts
+import { testingDatabase } from "@afenda/testing";
+
+const database = testingDatabase.resolve();
 
 describe.runIf(database.hasDatabase)("database contract", () => {
-	// Tests
+	// tests
 });
 ```
 
+- CI requires an injected `DATABASE_URL` and never loads `.env.local`.
+- Local runs may load the repository-root `.env.local`.
+- `REQUIRE_DATABASE_TESTS=1` applies the same fail-closed rule locally.
+- A skipped database suite is not passing release evidence.
+- Blank values are missing; unexpected file I/O failures surface.
+
+## Boundaries
+
 Do not:
 
-- read `DATABASE_URL` independently inside product package tests;
-- load `.env.local` directly from individual test suites;
-- convert a missing CI database into `describe.skip`;
-- import helpers from repo-root `testing/`;
-- import `@afenda/testing` from runtime product code.
+- declare lane globs, runner policy, or DB bootstrap outside this package;
+- import `@afenda/testing/*` except the two setup entrypoints in runner config;
+- read `DATABASE_URL` independently in product tests;
+- import repo-root `testing/` helpers from product packages;
+- import `@afenda/testing` from runtime product code;
+- add Jest or Cypress as another runner stack.
 
-## Ownership boundary
+The package is an R1-A dev/test leaf with no runtime dependencies or workspace
+runtime edges.
 
-`@afenda/testing` owns reusable test utilities.
+## Verification
 
-Repo-root `testing/` continues to own:
-
-- Vitest runner entrypoints;
-- Playwright runner entrypoints;
-- repository-wide matrices;
-- end-to-end orchestration;
-- suite grouping and execution policy.
-
-The package owns the lane registry and reusable test utilities. It does not own
-product behavior, runtime configuration, migrations, database connectivity, or
-CI workflow definitions.
+```bash
+pnpm --filter @afenda/testing lint
+pnpm --filter @afenda/testing typecheck
+pnpm --filter @afenda/testing test
+pnpm check:testing-governance
+```

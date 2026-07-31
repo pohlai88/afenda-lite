@@ -1,6 +1,6 @@
 ---
 name: afenda-elite-kernel
-description: Deterministically discover, scaffold, apply, implement, semantically cut over, upgrade, verify, reopen, and readiness-seal reusable Afenda package kernels, including package-band inventory and the protected @afenda/errors root-capability contract. Use when inventorying a package band such as packages/foundation, centralizing a shared concept behind one registry and durable facade, planning or executing an authorized codemod and final consumer migration, upgrading a core package contract or internals, applying the @afenda/errors boundary, or producing repeatable readiness evidence.
+description: Deterministically discover, scaffold, apply, implement, semantically cut over, upgrade, verify, reopen, and readiness-seal reusable Afenda package kernels, including package-band inventory and the protected @afenda/errors, @afenda/env, and @afenda/testing contracts. Use when inventorying a package band such as packages/foundation, centralizing a shared concept behind one registry and durable facade, deriving runtime projections from canonical definitions, planning or executing an authorized codemod and final consumer migration, upgrading a core package contract or internals, or producing repeatable readiness evidence.
 ---
 
 # Afenda Elite Kernel
@@ -17,6 +17,8 @@ Read before changing a target:
 4. [references/lifecycle.md](references/lifecycle.md) for mode and transition rules.
 5. [references/seal-contract.md](references/seal-contract.md) for evidence and seal gates.
 6. [references/errors-kernel.md](references/errors-kernel.md) when the target is `@afenda/errors` or the mission applies its contract to a consumer.
+7. [references/env-kernel.md](references/env-kernel.md) when the target is `@afenda/env` or a mission centralizes configuration registries and runtime projections.
+8. [references/testing-kernel.md](references/testing-kernel.md) when the target is `@afenda/testing` or a mission centralizes runner policy, lane projections, or test database evidence.
 
 Load only the target-specific references required by the selected farm. Do not load absent Living `docs/**` as authority.
 
@@ -25,6 +27,8 @@ Load only the target-specific references required by the selected farm. Do not l
 | Package | Target | Contract |
 |---------|--------|----------|
 | `@afenda/errors` | `packages/foundation/errors` | [references/errors-kernel.md](references/errors-kernel.md) |
+| `@afenda/env` | `packages/foundation/env` | [references/env-kernel.md](references/env-kernel.md) |
+| `@afenda/testing` | `packages/foundation/testing` | [references/testing-kernel.md](references/testing-kernel.md) |
 
 ## Required mission contract
 
@@ -92,9 +96,25 @@ Do not start a codemod while any of those decisions remain distributed or
 unresolved. A large migration count is an architecture finding: first move the
 repeated decision behind the owner, then migrate the smallest stable call shape.
 
+When a declaration and its runtime representation use the same key set, keep
+the keys in one registry and derive the projection. Do not synchronize schema,
+runtime-read, classification, documentation, or allowlist maps by hand. Preserve
+separate entrypoints only when loading one would eagerly validate or expose a
+different deployment/security context; isolation is not permission for parallel
+versions of the same contract.
+
 ### 4. Implement one complete slice
 
-Preserve the target's established shapes. Create real behavior, boundary validation, production adapters, and tests required by the contract. Route special concerns to their owning farms:
+Preserve the target's established shapes. Create real behavior, boundary validation, production adapters, and tests required by the contract.
+
+For source-exported ESM packages loaded by native runner/config machinery, prove
+both runtime resolution and downstream TypeScript resolution. When direct `.ts`
+specifiers leak compiler policy and extensionless or virtual `.js` specifiers
+cannot resolve the source at runtime, prefer a package-private `imports` map.
+Never solve this mismatch by publishing implementation subpaths or duplicating
+generated JavaScript beside the semantic source.
+
+Route special concerns to their owning farms:
 
 | Concern | Owning farm |
 |---------|-------------|
@@ -177,4 +197,6 @@ Remaining conditions: none | <blocking condition>
 - [references/lifecycle.md](references/lifecycle.md) — modes, transitions, and required outputs.
 - [references/seal-contract.md](references/seal-contract.md) — readiness gates and seal record schema.
 - [references/errors-kernel.md](references/errors-kernel.md) — protected error-kernel contract, consumer application, upgrade rules, and focused gates.
+- [references/env-kernel.md](references/env-kernel.md) — canonical environment registries, isolated deployment entrypoints, derived runtime projection, and consumer gates.
+- [references/testing-kernel.md](references/testing-kernel.md) — canonical testing lanes, root capabilities, executable setup boundaries, private source resolution, and cutover gates.
 - `scripts/inspect-target.mjs` — stable target or immediate package-band inventory, content digests, package metadata, and working-tree evidence.

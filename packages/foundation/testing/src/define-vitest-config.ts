@@ -4,10 +4,9 @@
  * Protected: changes require local pre-edit token and compatibility checks.
  */
 
-import { defineConfig } from "vitest/config";
+import type { ViteUserConfig } from "vitest/config";
 
-import type { TestingLaneId } from "./contracts.ts";
-import { getTestingLane } from "./lanes.ts";
+import { getTestingLane, type TestingLaneId } from "#testing/lanes";
 
 const LEADING_DOT_SLASH_PATTERN = /^\.\//;
 const TRAILING_SLASH_PATTERN = /\/$/;
@@ -71,7 +70,7 @@ export function defineAfendaVitestConfig(
 	const exclude = resolveVitestLaneExclude({ lane: options.lane });
 	const hookTimeout = lane.hookTimeoutMs ?? lane.timeoutMs;
 
-	return defineConfig({
+	return {
 		test: {
 			name: lane.id,
 			include: resolveVitestLaneInclude({ lane: options.lane }),
@@ -91,5 +90,5 @@ export function defineAfendaVitestConfig(
 					}
 				: {}),
 		},
-	});
+	} satisfies ViteUserConfig;
 }

@@ -31,7 +31,7 @@ export default mergeConfig(
 				),
 			],
 			environment: "node",
-			setupFiles: ["@afenda/testing/setups/database"],
+			setupFiles: ["@afenda/testing/setup/database"],
 			...laneTimeoutOptions("human-resources-parity"),
 			fileParallelism: false,
 			maxWorkers: 1,

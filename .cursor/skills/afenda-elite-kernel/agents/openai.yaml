@@ -1,4 +1,4 @@
 interface:
   display_name: "Afenda Elite Kernel"
   short_description: "Build and cut over semantic package kernels"
-  default_prompt: "Use $afenda-elite-kernel to centralize one shared concept behind a durable capability surface, execute any authorized final cutover, and verify it with reproducible evidence."
+  default_prompt: "Use $afenda-elite-kernel to centralize one shared concept behind a durable facade and derived projections, preserve required load boundaries without public API multiplication, execute any authorized final cutover, and verify runtime plus consumer resolution with reproducible evidence."

@@ -2,14 +2,15 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import {
-	APPROVED_DIRECT_DATABASE_URL_TEST_FILES,
-	APPROVED_TESTING_CONFIG_FILES,
-	FORBIDDEN_TEST_RUNNERS,
-	TESTING_LANES,
-	TESTING_POLICY_BOUND_CONFIG_FILES,
-} from "@afenda/testing";
+import { testingPolicy } from "@afenda/testing";
 import fg from "fast-glob";
+
+const APPROVED_DIRECT_DATABASE_URL_TEST_FILES =
+	testingPolicy.approvedDirectDatabaseUrlTestFiles;
+const APPROVED_TESTING_CONFIG_FILES = testingPolicy.configFiles;
+const FORBIDDEN_TEST_RUNNERS = testingPolicy.forbiddenRunners;
+const TESTING_LANES = testingPolicy.lanes;
+const TESTING_POLICY_BOUND_CONFIG_FILES = testingPolicy.policyBoundConfigFiles;
 
 const repoRoot = path.resolve(
 	path.dirname(fileURLToPath(import.meta.url)),
@@ -24,6 +25,12 @@ const STATIC_TESTING_SOURCE_IMPORT_PATTERN =
 	/from\s+["'][^"']*packages\/foundation\/testing\/src\/[^"']*["']/;
 const DYNAMIC_TESTING_SOURCE_IMPORT_PATTERN =
 	/import\(["'][^"']*packages\/foundation\/testing\/src\/[^"']*["']\)/;
+const TESTING_SUBPATH_IMPORT_PATTERN =
+	/(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s*)["'](@afenda\/testing\/[^"']+)["']/g;
+const ALLOWED_TESTING_SETUP_IMPORTS = new Set([
+	"@afenda/testing/setup/database",
+	"@afenda/testing/setup/required-database",
+]);
 const DIRECT_DATABASE_URL_PATTERN = /process\.env\.DATABASE_URL/;
 const WORD_DATABASE_URL_PATTERN = /\bprocess\.env\.DATABASE_URL\b/;
 const VITEST_RUN_PATTERN = /\bvitest\s+run\b/;
@@ -31,8 +38,7 @@ const PLAYWRIGHT_TEST_PATTERN = /\bplaywright\s+test\b/;
 const CONFIG_REFERENCE_PATTERN = /--config(?:=|\s+)([^\s]+)/g;
 const PACKAGE_SOURCE_TEST_PATTERN = /\/src\/.+\.(test|spec)\.(ts|tsx)$/;
 const TEST_FILENAME_PATTERN = /\.(test|spec)\.(ts|tsx)$/;
-const DATABASE_GATE_IMPORT_PATTERN =
-	/@afenda\/testing\/require-database-for-ci/;
+const DATABASE_GATE_CALL_PATTERN = /\btestingDatabase\.resolve\s*\(/;
 
 type PackageJson = Readonly<{
 	name?: string;
@@ -61,6 +67,45 @@ function repoPath(target: string): string {
 
 function readJson<T>(target: string): T {
 	return JSON.parse(fs.readFileSync(target, "utf8")) as T;
+}
+
+function disallowedTestingSubpathImports(source: string): string[] {
+	return [...source.matchAll(TESTING_SUBPATH_IMPORT_PATTERN)]
+		.map((match) => match[1] ?? "")
+		.filter(
+			(specifier) =>
+				specifier.length > 0 && !ALLOWED_TESTING_SETUP_IMPORTS.has(specifier),
+		);
+}
+
+function assertTestingSubpathDetectorContract(errors: string[]): void {
+	const rejectedFixtures = [
+		'import { legacy } from "@afenda/testing/legacy";',
+		'export { legacy } from "@afenda/testing/legacy";',
+		'import("@afenda/testing/legacy");',
+		'import "@afenda/testing/legacy";',
+	];
+	const allowedFixtures = [
+		'import { testingPolicy } from "@afenda/testing";',
+		'import "@afenda/testing/setup/database";',
+		'import "@afenda/testing/setup/required-database";',
+	];
+
+	for (const fixture of rejectedFixtures) {
+		if (disallowedTestingSubpathImports(fixture).length === 0) {
+			errors.push(
+				`Testing subpath detector missed rejection fixture: ${fixture}`,
+			);
+		}
+	}
+
+	for (const fixture of allowedFixtures) {
+		if (disallowedTestingSubpathImports(fixture).length > 0) {
+			errors.push(
+				`Testing subpath detector rejected approved fixture: ${fixture}`,
+			);
+		}
+	}
 }
 
 function walkFiles(
@@ -222,7 +267,8 @@ function assertNoTestingPackageSourceImports(errors: string[]): void {
 
 		return (
 			SCRIPT_SOURCE_FILENAME_PATTERN.test(relativePath) &&
-			!relativePath.startsWith("packages/foundation/testing/")
+			!relativePath.startsWith("packages/foundation/testing/") &&
+			relativePath !== "scripts/check-testing-governance.mts"
 		);
 	});
 
@@ -235,6 +281,13 @@ function assertNoTestingPackageSourceImports(errors: string[]): void {
 		if (importsTestingPackageSource) {
 			errors.push(
 				`Use @afenda/testing public exports instead of package source import: ${sourceFile}`,
+			);
+		}
+
+		const disallowedSubpaths = disallowedTestingSubpathImports(source);
+		if (disallowedSubpaths.length > 0) {
+			errors.push(
+				`Use @afenda/testing root capabilities instead of consumer subpath imports (${disallowedSubpaths.join(", ")}): ${sourceFile}`,
 			);
 		}
 	}
@@ -457,7 +510,7 @@ function assertDatabaseGate(errors: string[]): void {
 		const absolutePath = path.join(repoRoot, testFile);
 		const source = fs.readFileSync(absolutePath, "utf8");
 		const readsDatabaseUrl = DIRECT_DATABASE_URL_PATTERN.test(source);
-		const usesGate = DATABASE_GATE_IMPORT_PATTERN.test(source);
+		const usesGate = DATABASE_GATE_CALL_PATTERN.test(source);
 
 		if (
 			readsDatabaseUrl &&
@@ -473,6 +526,7 @@ function assertDatabaseGate(errors: string[]): void {
 
 const governanceErrors: string[] = [];
 
+assertTestingSubpathDetectorContract(governanceErrors);
 assertLaneControlFilesExist(governanceErrors);
 assertNoRogueRunnerConfigs(governanceErrors);
 assertPolicyBoundConfigsExtendRegistry(governanceErrors);

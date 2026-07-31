@@ -6,9 +6,9 @@ import {
 	isNull,
 	platformRole,
 } from "@afenda/db";
-import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
+import { testingDatabase } from "@afenda/testing";
 
-export const { hasDatabase } = resolveDatabaseUrlForTests();
+export const { hasDatabase } = testingDatabase.resolve();
 
 export type SystemRoleTemplateKey = "org_admin" | "editor" | "viewer";
 

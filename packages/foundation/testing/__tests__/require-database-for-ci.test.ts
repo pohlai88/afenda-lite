@@ -6,10 +6,8 @@
 
 import { describe, expect, it } from "vitest";
 import {
-	hasE2eDatabaseUrl,
 	type ResolveDatabaseUrlOptions,
-	requireE2eDatabaseUrl,
-	resolveDatabaseUrlForTests,
+	testingDatabase,
 } from "../src/index.js";
 
 type VirtualFiles = Readonly<Record<string, string>>;
@@ -49,7 +47,7 @@ describe("resolveDatabaseUrlForTests", () => {
 			DATABASE_URL: "postgresql://user:pass@example.test/app",
 		};
 
-		const result = resolveDatabaseUrlForTests(createOptions(environment));
+		const result = testingDatabase.resolve(createOptions(environment));
 
 		expect(result).toEqual({
 			databaseUrl: "postgresql://user:pass@example.test/app",
@@ -63,7 +61,7 @@ describe("resolveDatabaseUrlForTests", () => {
 			DATABASE_URL: "  postgresql://user:pass@example.test/app  ",
 		};
 
-		const result = resolveDatabaseUrlForTests(createOptions(environment));
+		const result = testingDatabase.resolve(createOptions(environment));
 
 		expect(result.databaseUrl).toBe("postgresql://user:pass@example.test/app");
 		expect(environment.DATABASE_URL).toBe(
@@ -76,7 +74,7 @@ describe("resolveDatabaseUrlForTests", () => {
 			DATABASE_URL: "   ",
 		};
 
-		const result = resolveDatabaseUrlForTests(createOptions(environment));
+		const result = testingDatabase.resolve(createOptions(environment));
 
 		expect(result).toEqual({
 			databaseUrl: undefined,
@@ -88,7 +86,7 @@ describe("resolveDatabaseUrlForTests", () => {
 	it("loads DATABASE_URL from local .env.local", () => {
 		const environment: NodeJS.ProcessEnv = {};
 
-		const result = resolveDatabaseUrlForTests(
+		const result = testingDatabase.resolve(
 			createOptions(environment, {
 				"/repo/.env.local": 'DATABASE_URL="postgresql://local/app"\n',
 			}),
@@ -107,7 +105,7 @@ describe("resolveDatabaseUrlForTests", () => {
 			DATABASE_URL: "postgresql://injected/app",
 		};
 
-		const result = resolveDatabaseUrlForTests(
+		const result = testingDatabase.resolve(
 			createOptions(environment, {
 				"/repo/.env.local": "DATABASE_URL=postgresql://local/app",
 			}),
@@ -128,7 +126,7 @@ describe("resolveDatabaseUrlForTests", () => {
 		};
 
 		expect(() =>
-			resolveDatabaseUrlForTests(
+			testingDatabase.resolve(
 				createOptions(environment, {
 					"/repo/.env.local": "DATABASE_URL=postgresql://local/app",
 				}),
@@ -142,7 +140,7 @@ describe("resolveDatabaseUrlForTests", () => {
 		};
 
 		expect(() =>
-			resolveDatabaseUrlForTests(
+			testingDatabase.resolve(
 				createOptions(environment, {
 					"/repo/.env.local": "DATABASE_URL=postgresql://local/app",
 				}),
@@ -160,13 +158,13 @@ describe("resolveDatabaseUrlForTests", () => {
 			REQUIRE_DATABASE_TESTS: requireValue,
 		};
 
-		expect(() =>
-			resolveDatabaseUrlForTests(createOptions(environment)),
-		).toThrow("GUIDE-018 I5.5 database test gate blocked");
+		expect(() => testingDatabase.resolve(createOptions(environment))).toThrow(
+			"GUIDE-018 I5.5 database test gate blocked",
+		);
 	});
 
 	it("allows local execution without a database", () => {
-		const result = resolveDatabaseUrlForTests(createOptions({}));
+		const result = testingDatabase.resolve(createOptions({}));
 
 		expect(result).toEqual({
 			databaseUrl: undefined,
@@ -176,7 +174,7 @@ describe("resolveDatabaseUrlForTests", () => {
 	});
 
 	it("unwraps single-quoted values", () => {
-		const result = resolveDatabaseUrlForTests(
+		const result = testingDatabase.resolve(
 			createOptions(
 				{},
 				{
@@ -189,7 +187,7 @@ describe("resolveDatabaseUrlForTests", () => {
 	});
 
 	it("ignores comments and unrelated values", () => {
-		const result = resolveDatabaseUrlForTests(
+		const result = testingDatabase.resolve(
 			createOptions(
 				{},
 				{
@@ -210,7 +208,7 @@ describe("resolveDatabaseUrlForTests", () => {
 		const environment: NodeJS.ProcessEnv = {};
 
 		expect(() =>
-			resolveDatabaseUrlForTests({
+			testingDatabase.resolve({
 				environment,
 				repositoryRoot: "/repo",
 				fileSystem: {
@@ -224,7 +222,7 @@ describe("resolveDatabaseUrlForTests", () => {
 	});
 
 	it("discovers the repository root by marker", () => {
-		const result = resolveDatabaseUrlForTests({
+		const result = testingDatabase.resolve({
 			environment: {},
 			startDirectory: "/repo/packages/foundation/testing/dist",
 			fileSystem: {
@@ -244,7 +242,7 @@ describe("resolveDatabaseUrlForTests", () => {
 
 	it("fails when automatic repository-root discovery cannot find a marker", () => {
 		expect(() =>
-			resolveDatabaseUrlForTests({
+			testingDatabase.resolve({
 				environment: {},
 				startDirectory: "/not-a-repo",
 				fileSystem: {
@@ -265,8 +263,8 @@ describe("E2E database helpers", () => {
 			process.env.DATABASE_URL = "postgresql://e2e/app";
 			delete process.env.REQUIRE_DATABASE_TESTS;
 
-			expect(requireE2eDatabaseUrl()).toBe("postgresql://e2e/app");
-			expect(hasE2eDatabaseUrl()).toBe(true);
+			expect(testingDatabase.requireE2eUrl()).toBe("postgresql://e2e/app");
+			expect(testingDatabase.hasE2eUrl()).toBe(true);
 		} finally {
 			if (originalDatabaseUrl === undefined) {
 				delete process.env.DATABASE_URL;

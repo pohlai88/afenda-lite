@@ -2,10 +2,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
-	getTestingLane,
-	resolveVitestLaneExclude,
-	resolveVitestLaneInclude,
 	type TestingLaneId,
+	testingPolicy,
+	testingVitest,
 } from "@afenda/testing";
 import type { ViteUserConfig } from "vitest/config";
 
@@ -65,10 +64,10 @@ export const sharedVitestConfig = {
 export const laneIncludeForProject = (
 	lane: TestingLaneId,
 	projectPath: string,
-) => resolveVitestLaneInclude({ lane, projectPath });
+) => testingVitest.include({ lane, projectPath });
 
 export const laneExclude = (lane: TestingLaneId) =>
-	resolveVitestLaneExclude({ lane });
+	testingVitest.exclude({ lane });
 
 export const laneExcludeOptions = (lane: TestingLaneId) => {
 	const exclude = laneExclude(lane);
@@ -76,12 +75,12 @@ export const laneExcludeOptions = (lane: TestingLaneId) => {
 };
 
 export const nodeProject = (name: string, root: string) => {
-	const exclude = resolveVitestLaneExclude({ lane: "unit" });
+	const exclude = testingVitest.exclude({ lane: "unit" });
 	return {
 		test: {
 			name,
 			root,
-			include: resolveVitestLaneInclude({ lane: "unit" }),
+			include: testingVitest.include({ lane: "unit" }),
 			...(exclude === undefined ? {} : { exclude }),
 			environment: "node" as const,
 			maxWorkers: 1,
@@ -99,13 +98,14 @@ export const nodeProjectWithServerOnly = (name: string, root: string) => ({
 	},
 });
 
-export const laneProjectName = (lane: TestingLaneId) => getTestingLane(lane).id;
+export const laneProjectName = (lane: TestingLaneId) =>
+	testingPolicy.lane(lane).id;
 
 export const laneTimeout = (lane: TestingLaneId) =>
-	getTestingLane(lane).timeoutMs;
+	testingPolicy.lane(lane).timeoutMs;
 
 export const laneHookTimeout = (lane: TestingLaneId) =>
-	getTestingLane(lane).hookTimeoutMs ?? getTestingLane(lane).timeoutMs;
+	testingPolicy.lane(lane).hookTimeoutMs ?? testingPolicy.lane(lane).timeoutMs;
 
 export const laneTimeoutOptions = (lane: TestingLaneId) => {
 	const testTimeout = laneTimeout(lane);

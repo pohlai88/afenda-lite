@@ -4,8 +4,7 @@
  * Protected: changes require local pre-edit token and compatibility checks.
  */
 
-import type { TestingLaneId } from "./contracts.ts";
-import { getTestingLane } from "./lanes.ts";
+import { getTestingLane, type TestingLaneId } from "#testing/lanes";
 
 export type DefineAfendaPlaywrightConfigOptions = Readonly<{
 	lane: TestingLaneId;

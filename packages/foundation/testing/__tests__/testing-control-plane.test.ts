@@ -4,50 +4,59 @@
  * Protected: changes require local pre-edit token and compatibility checks.
  */
 
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-
 import {
-	APPROVED_DIRECT_DATABASE_URL_TEST_FILES,
-	APPROVED_TESTING_CONFIG_FILES,
-	defineAfendaPlaywrightConfig,
-	defineAfendaVitestConfig,
-	FORBIDDEN_TEST_RUNNERS,
-	getTestingLane,
-	resolveVitestLaneExclude,
-	resolveVitestLaneInclude,
-	setupDatabaseTestLane,
-	setupRequiredDatabaseTestLane,
-	TESTING_CONTROL_PLANE_HOME,
-	TESTING_LANES,
-	TESTING_POLICY_BOUND_CONFIG_FILES,
+	testingDatabase,
+	testingPlaywright,
+	testingPolicy,
+	testingVitest,
 } from "../src/index.js";
 
 describe("testing control plane registry", () => {
+	it("exposes one frozen root capability style", async () => {
+		const testingRoot = await import("../src/index.js");
+
+		expect(Object.keys(testingRoot).sort()).toEqual([
+			"testingDatabase",
+			"testingPlaywright",
+			"testingPolicy",
+			"testingVitest",
+		]);
+		expect(Object.isFrozen(testingPolicy)).toBe(true);
+		expect(Object.isFrozen(testingVitest)).toBe(true);
+		expect(Object.isFrozen(testingPlaywright)).toBe(true);
+		expect(Object.isFrozen(testingDatabase)).toBe(true);
+		expect(Object.isFrozen(testingPolicy.lanes)).toBe(true);
+		expect(Object.isFrozen(testingPolicy.lanes[0])).toBe(true);
+		expect(Object.isFrozen(testingPolicy.lanes[0]?.include)).toBe(true);
+		expect(() =>
+			(testingPolicy.lanes[0]?.include as string[]).push("rogue/**/*.test.ts"),
+		).toThrow();
+	});
+
 	it("declares testing as the root runner HOME", () => {
-		expect(TESTING_CONTROL_PLANE_HOME).toBe("testing");
+		expect(testingPolicy.home).toBe("testing");
 	});
 
 	it("keeps lane ids unique", () => {
-		const laneIds = TESTING_LANES.map((lane) => lane.id);
+		const laneIds = testingPolicy.lanes.map((lane) => lane.id);
 
 		expect(new Set(laneIds).size).toBe(laneIds.length);
 	});
 
 	it("points every lane at an approved control file", () => {
-		for (const lane of TESTING_LANES) {
-			expect(APPROVED_TESTING_CONFIG_FILES).toContain(lane.controlFile);
-		}
-	});
-
-	it("keeps canonical include fields aligned with compatibility globs", () => {
-		for (const lane of TESTING_LANES) {
-			expect(lane.include).toEqual(lane.allowedGlobs);
+		for (const lane of testingPolicy.lanes) {
+			expect(testingPolicy.configFiles).toContain(lane.controlFile);
 			expect(lane.include.length).toBeGreaterThan(0);
+			expect("allowedGlobs" in lane).toBe(false);
+			expect("forbiddenGlobs" in lane).toBe(false);
 		}
 	});
 
 	it("requires satellite configs to bind back to policy", () => {
-		expect(TESTING_POLICY_BOUND_CONFIG_FILES).toEqual([
+		expect(testingPolicy.policyBoundConfigFiles).toEqual([
 			"playwright.config.ts",
 			"apps/storybook/vitest.coverage.config.ts",
 			"apps/storybook/vitest.storybook.config.ts",
@@ -56,24 +65,24 @@ describe("testing control plane registry", () => {
 	});
 
 	it("tracks the expected runner families", () => {
-		expect(getTestingLane("unit").runner).toBe("vitest");
-		expect(getTestingLane("e2e-smoke").runner).toBe("playwright");
-		expect(getTestingLane("storybook-visual").owner).toBe("apps/storybook");
+		expect(testingPolicy.lane("unit").runner).toBe("vitest");
+		expect(testingPolicy.lane("e2e-smoke").runner).toBe("playwright");
+		expect(testingPolicy.lane("storybook-visual").owner).toBe("apps/storybook");
 	});
 
 	it("keeps direct DATABASE_URL reads explicit", () => {
-		expect(APPROVED_DIRECT_DATABASE_URL_TEST_FILES).toEqual([
+		expect(testingPolicy.approvedDirectDatabaseUrlTestFiles).toEqual([
 			"packages/data-plane/db/__tests__/env.test.ts",
 		]);
 	});
 
 	it("rejects alternate runner stacks by policy", () => {
-		expect(FORBIDDEN_TEST_RUNNERS).toContain("jest");
-		expect(FORBIDDEN_TEST_RUNNERS).toContain("cypress");
+		expect(testingPolicy.forbiddenRunners).toContain("jest");
+		expect(testingPolicy.forbiddenRunners).toContain("cypress");
 	});
 
 	it("builds Vitest config from package lane policy", () => {
-		const config = defineAfendaVitestConfig({ lane: "unit" });
+		const config = testingVitest.define({ lane: "unit" });
 
 		expect(config.test?.include).toEqual([
 			"__tests__/**/!(*.interaction|*.inventory|*.journey|*journeys|*.neon).test.ts",
@@ -83,7 +92,7 @@ describe("testing control plane registry", () => {
 
 	it("normalizes lane includes for package-local Vitest roots", () => {
 		expect(
-			resolveVitestLaneInclude({
+			testingVitest.include({
 				lane: "master-data-parity",
 				projectPath: "packages/erp/master-data",
 			}),
@@ -94,7 +103,7 @@ describe("testing control plane registry", () => {
 	});
 
 	it("normalizes lane excludes for package-local Vitest roots", () => {
-		expect(resolveVitestLaneExclude({ lane: "unit" })).toEqual([
+		expect(testingVitest.exclude({ lane: "unit" })).toEqual([
 			"**/*.interaction.test.tsx",
 			"**/*.inventory.test.ts",
 			"**/*.journey.test.ts",
@@ -112,27 +121,90 @@ describe("testing control plane registry", () => {
 		]);
 	});
 
-	it("rejects Playwright lanes from the Vitest factory", () => {
-		expect(() => defineAfendaVitestConfig({ lane: "e2e-smoke" })).toThrow(
+	it("rejects Playwright lanes from the Vitest capability", () => {
+		expect(() => testingVitest.define({ lane: "e2e-smoke" })).toThrow(
 			'Testing lane "e2e-smoke" is not a Vitest lane.',
 		);
 	});
 
 	it("builds Playwright lane config from package lane policy", () => {
-		const config = defineAfendaPlaywrightConfig({ lane: "e2e-smoke" });
+		const config = testingPlaywright.define({ lane: "e2e-smoke" });
 
-		expect(config.testMatch).toEqual(getTestingLane("e2e-smoke").include);
+		expect(config.testMatch).toEqual(testingPolicy.lane("e2e-smoke").include);
 		expect(config.timeout).toBe(90_000);
 	});
 
-	it("rejects Vitest lanes from the Playwright factory", () => {
-		expect(() => defineAfendaPlaywrightConfig({ lane: "unit" })).toThrow(
+	it("rejects Vitest lanes from the Playwright capability", () => {
+		expect(() => testingPlaywright.define({ lane: "unit" })).toThrow(
 			'Testing lane "unit" is not a Playwright lane.',
 		);
 	});
 
-	it("exports the package-owned database setup helper", () => {
-		expect(setupDatabaseTestLane).toBeTypeOf("function");
-		expect(setupRequiredDatabaseTestLane).toBeTypeOf("function");
+	it("publishes only root capabilities and setup entrypoints", () => {
+		const packageJson = JSON.parse(
+			readFileSync(join(import.meta.dirname, "../package.json"), "utf8"),
+		) as {
+			exports: Record<string, unknown>;
+			imports: Record<string, unknown>;
+		};
+
+		expect(Object.keys(packageJson.exports).sort()).toEqual([
+			".",
+			"./setup/database",
+			"./setup/required-database",
+		]);
+		expect(packageJson.imports).toEqual({ "#testing/*": "./src/*.ts" });
+	});
+
+	it("executes the optional database setup entrypoint", async () => {
+		const originalDatabaseUrl = process.env.DATABASE_URL;
+		const originalCi = process.env.CI;
+		const originalRequired = process.env.REQUIRE_DATABASE_TESTS;
+
+		try {
+			process.env.DATABASE_URL = "  postgresql://setup/app  ";
+			delete process.env.CI;
+			delete process.env.REQUIRE_DATABASE_TESTS;
+
+			await import("../src/entrypoints/setup-database.js");
+
+			expect(process.env.DATABASE_URL).toBe("postgresql://setup/app");
+		} finally {
+			restoreEnvironmentValue("DATABASE_URL", originalDatabaseUrl);
+			restoreEnvironmentValue("CI", originalCi);
+			restoreEnvironmentValue("REQUIRE_DATABASE_TESTS", originalRequired);
+		}
+	});
+
+	it("executes the required setup entrypoint fail-closed", async () => {
+		const originalDatabaseUrl = process.env.DATABASE_URL;
+		const originalCi = process.env.CI;
+		const originalRequired = process.env.REQUIRE_DATABASE_TESTS;
+
+		try {
+			delete process.env.DATABASE_URL;
+			process.env.CI = "true";
+			delete process.env.REQUIRE_DATABASE_TESTS;
+
+			await expect(
+				import("../src/entrypoints/setup-required-database.js"),
+			).rejects.toThrow("GUIDE-018 I5.5 database test gate blocked");
+		} finally {
+			restoreEnvironmentValue("DATABASE_URL", originalDatabaseUrl);
+			restoreEnvironmentValue("CI", originalCi);
+			restoreEnvironmentValue("REQUIRE_DATABASE_TESTS", originalRequired);
+		}
 	});
 });
+
+function restoreEnvironmentValue(
+	name: "DATABASE_URL" | "CI" | "REQUIRE_DATABASE_TESTS",
+	value: string | undefined,
+): void {
+	if (value === undefined) {
+		delete process.env[name];
+		return;
+	}
+
+	process.env[name] = value;
+}

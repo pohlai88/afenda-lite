@@ -3,7 +3,7 @@
  *
  * Memory cases always run. Drizzle cases hit live Neon and skip cleanly when
  * DATABASE_URL is absent (local). CI / REQUIRE_DATABASE_TESTS=1 fail-closed via
- * `./helpers/database-gate` → `@afenda/testing/require-database-for-ci`.
+ * `./helpers/database-gate` → `testingDatabase` from `@afenda/testing`.
  */
 
 import { and, db, eq, platformAuditLog, platformDomainEvent } from "@afenda/db";

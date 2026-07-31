@@ -1,16 +1,15 @@
-import { getTestingLane } from "@afenda/testing/lanes";
-import { defineAfendaPlaywrightConfig } from "@afenda/testing/playwright";
+import { testingPlaywright, testingPolicy } from "@afenda/testing";
 import { defineConfig, devices } from "@playwright/test";
 import { loadPlaywrightEnv } from "./testing/e2e/env";
 
 loadPlaywrightEnv();
 
-const smokeLane = getTestingLane("e2e-smoke");
-const journeyLane = getTestingLane("e2e-journey");
-const allLane = getTestingLane("e2e-all");
-const smokeConfig = defineAfendaPlaywrightConfig({ lane: "e2e-smoke" });
-const journeyConfig = defineAfendaPlaywrightConfig({ lane: "e2e-journey" });
-const allConfig = defineAfendaPlaywrightConfig({ lane: "e2e-all" });
+const smokeLane = testingPolicy.lane("e2e-smoke");
+const journeyLane = testingPolicy.lane("e2e-journey");
+const allLane = testingPolicy.lane("e2e-all");
+const smokeConfig = testingPlaywright.define({ lane: "e2e-smoke" });
+const journeyConfig = testingPlaywright.define({ lane: "e2e-journey" });
+const allConfig = testingPlaywright.define({ lane: "e2e-all" });
 const port = process.env.PLAYWRIGHT_PORT?.trim() || "3000";
 const baseURL =
 	process.env.PLAYWRIGHT_BASE_URL?.trim() || `http://localhost:${port}`;

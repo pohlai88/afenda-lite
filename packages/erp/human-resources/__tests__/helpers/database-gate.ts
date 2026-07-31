@@ -8,9 +8,9 @@
  *   inner-loop files that import this helper do not hit Neon from `.env.local` alone
  */
 
-import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
+import { testingDatabase } from "@afenda/testing";
 
-const resolved = resolveDatabaseUrlForTests();
+const resolved = testingDatabase.resolve();
 
 /** True when DATABASE_URL is available after resolution. */
 export const { hasDatabase } = resolved;
@@ -28,6 +28,6 @@ function requireDatabaseMode(): boolean {
  * Prefer `describe.runIf(runDrizzleParity)` or `describe.skipIf(!runDrizzleParity)`.
  *
  * Under CI / REQUIRE_DATABASE_TESTS=1, missing URL already threw in
- * `resolveDatabaseUrlForTests` — so a skip here cannot mask a required DB gap.
+ * `testingDatabase.resolve` — so a skip here cannot mask a required DB gap.
  */
 export const runDrizzleParity = hasDatabase && requireDatabaseMode();

@@ -1,4 +1,4 @@
-import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
+import { testingDatabase } from "@afenda/testing";
 import { describe, expect, it } from "vitest";
 import {
 	parsePayrollResultLineId,
@@ -12,7 +12,7 @@ import {
 	seedPayrollRunChain,
 } from "./helpers/payroll-store-parity-harness";
 
-const { hasDatabase } = resolveDatabaseUrlForTests();
+const { hasDatabase } = testingDatabase.resolve();
 const runDrizzleParity =
 	hasDatabase && process.env.REQUIRE_DATABASE_TESTS === "1";
 

@@ -4,47 +4,28 @@
  * Protected: changes require local pre-edit token and compatibility checks.
  */
 
-import type { TestingLane, TestingLaneId } from "./contracts.ts";
+import type { TestingLaneDefinition } from "#testing/contracts";
 
 export const TESTING_CONTROL_PLANE_HOME = "testing";
 
-export const APPROVED_TESTING_CONFIG_FILES = [
+const TESTING_SUPPORT_CONFIG_FILES = [
 	"testing/vitest.config.ts",
 	"testing/vitest.shared.ts",
-	"testing/vitest.unit.config.ts",
-	"testing/vitest.interaction.config.ts",
-	"testing/vitest.web-scenario.config.ts",
-	"testing/vitest.corporate-administration-parity.config.ts",
-	"testing/vitest.hr-parity.config.ts",
-	"testing/vitest.master-data-parity.config.ts",
-	"testing/vitest.master-data-core-parity.config.ts",
-	"testing/vitest.master-data-memory-parity.config.ts",
-	"playwright.config.ts",
-	"apps/storybook/vitest.coverage.config.ts",
-	"apps/storybook/vitest.storybook.config.ts",
-	"apps/storybook/playwright.visual.config.ts",
 ] as const;
 
-export const TESTING_POLICY_BOUND_CONFIG_FILES = [
-	"playwright.config.ts",
-	"apps/storybook/vitest.coverage.config.ts",
-	"apps/storybook/vitest.storybook.config.ts",
-	"apps/storybook/playwright.visual.config.ts",
-] as const;
-
-export const FORBIDDEN_TEST_RUNNERS = [
+export const FORBIDDEN_TEST_RUNNERS = Object.freeze([
 	"jest",
 	"ts-jest",
 	"babel-jest",
 	"cypress",
 	"@cypress",
-] as const;
+] as const);
 
-export const APPROVED_DIRECT_DATABASE_URL_TEST_FILES = [
+export const APPROVED_DIRECT_DATABASE_URL_TEST_FILES = Object.freeze([
 	"packages/data-plane/db/__tests__/env.test.ts",
-] as const;
+] as const);
 
-export const TESTING_LANES = [
+const TESTING_LANE_DEFINITIONS = [
 	{
 		id: "unit",
 		runner: "vitest",
@@ -55,25 +36,6 @@ export const TESTING_LANES = [
 			"<workspace>/__tests__/**/!(*.interaction|*.inventory|*.journey|*journeys|*.neon).test.ts",
 		],
 		exclude: [
-			"**/*.interaction.test.tsx",
-			"**/*.inventory.test.ts",
-			"**/*.journey.test.ts",
-			"**/*journeys.test.ts",
-			"**/*.neon.test.ts",
-			"**/*.parity.test.ts",
-			"**/parity/**",
-			"**/concurrency/**",
-			"**/database/**",
-			"**/failure-injection/**",
-			"**/integration/**",
-			"**/leave-concurrency.test.ts",
-			"**/leave-failure-injection.test.ts",
-			"**/time-policy-concurrency.test.ts",
-		],
-		allowedGlobs: [
-			"<workspace>/__tests__/**/!(*.interaction|*.inventory|*.journey|*journeys|*.neon).test.ts",
-		],
-		forbiddenGlobs: [
 			"**/*.interaction.test.tsx",
 			"**/*.inventory.test.ts",
 			"**/*.journey.test.ts",
@@ -105,10 +67,6 @@ export const TESTING_LANES = [
 			"apps/web/__tests__/**/*.interaction.test.tsx",
 			"packages/surfaces/ui-system/__tests__/**/*.interaction.test.tsx",
 		],
-		allowedGlobs: [
-			"apps/web/__tests__/**/*.interaction.test.tsx",
-			"packages/surfaces/ui-system/__tests__/**/*.interaction.test.tsx",
-		],
 		cache: "turbo-cacheable",
 		requiresDatabase: false,
 		requiresBrowser: false,
@@ -121,11 +79,6 @@ export const TESTING_LANES = [
 		controlFile: "testing/vitest.web-scenario.config.ts",
 		rootCommand: "pnpm test:web:scenario",
 		include: [
-			"apps/web/__tests__/**/*.inventory.test.ts",
-			"apps/web/__tests__/**/*.journey.test.ts",
-			"apps/web/__tests__/**/*journeys.test.ts",
-		],
-		allowedGlobs: [
 			"apps/web/__tests__/**/*.inventory.test.ts",
 			"apps/web/__tests__/**/*.journey.test.ts",
 			"apps/web/__tests__/**/*journeys.test.ts",
@@ -152,13 +105,6 @@ export const TESTING_LANES = [
 			"packages/erp/corporate-administration/__tests__/database/**/*.neon.test.ts",
 			"packages/erp/corporate-administration/__tests__/failure-injection/**/*.test.ts",
 		],
-		allowedGlobs: [
-			"packages/erp/corporate-administration/__tests__/parity/**/*.parity.test.ts",
-			"packages/erp/corporate-administration/__tests__/concurrency/**/*.concurrency.test.ts",
-			"packages/erp/corporate-administration/__tests__/concurrency/**/*concurrency.test.ts",
-			"packages/erp/corporate-administration/__tests__/database/**/*.neon.test.ts",
-			"packages/erp/corporate-administration/__tests__/failure-injection/**/*.test.ts",
-		],
 		cache: "uncached",
 		requiresDatabase: true,
 		requiresBrowser: false,
@@ -173,12 +119,6 @@ export const TESTING_LANES = [
 		rootCommand: "pnpm test:hr:parity",
 		packageCommands: ["pnpm --filter @afenda/human-resources test:parity"],
 		include: [
-			"packages/erp/human-resources/__tests__/**/*.parity.test.ts",
-			"packages/erp/human-resources/__tests__/**/leave-concurrency.test.ts",
-			"packages/erp/human-resources/__tests__/**/time-policy-concurrency.test.ts",
-			"packages/erp/human-resources/__tests__/**/leave-failure-injection.test.ts",
-		],
-		allowedGlobs: [
 			"packages/erp/human-resources/__tests__/**/*.parity.test.ts",
 			"packages/erp/human-resources/__tests__/**/leave-concurrency.test.ts",
 			"packages/erp/human-resources/__tests__/**/time-policy-concurrency.test.ts",
@@ -201,10 +141,6 @@ export const TESTING_LANES = [
 			"packages/erp/master-data/__tests__/parity/**/*.parity.test.ts",
 			"packages/erp/master-data/__tests__/integration/**/*.integration.test.ts",
 		],
-		allowedGlobs: [
-			"packages/erp/master-data/__tests__/parity/**/*.parity.test.ts",
-			"packages/erp/master-data/__tests__/integration/**/*.integration.test.ts",
-		],
 		cache: "uncached",
 		requiresDatabase: true,
 		requiresBrowser: false,
@@ -222,10 +158,6 @@ export const TESTING_LANES = [
 			"packages/erp/master-data/__tests__/parity/{party,item,item-group,organization-dimension,warehouse,payment-term,tax-registration,variants}.parity.test.ts",
 			"packages/erp/master-data/__tests__/integration/{tenant-isolation,mutation-atomicity,cas-concurrency,sensitive-projections}.integration.test.ts",
 		],
-		allowedGlobs: [
-			"packages/erp/master-data/__tests__/parity/{party,item,item-group,organization-dimension,warehouse,payment-term,tax-registration,variants}.parity.test.ts",
-			"packages/erp/master-data/__tests__/integration/{tenant-isolation,mutation-atomicity,cas-concurrency,sensitive-projections}.integration.test.ts",
-		],
 		cache: "uncached",
 		requiresDatabase: true,
 		requiresBrowser: false,
@@ -240,9 +172,6 @@ export const TESTING_LANES = [
 		rootCommand: "pnpm test:master-data:parity:memory",
 		packageCommands: ["pnpm --filter @afenda/master-data test:parity:memory"],
 		include: ["packages/erp/master-data/__tests__/parity/**/*.parity.test.ts"],
-		allowedGlobs: [
-			"packages/erp/master-data/__tests__/parity/**/*.parity.test.ts",
-		],
 		cache: "turbo-cacheable",
 		requiresDatabase: false,
 		requiresBrowser: false,
@@ -256,7 +185,6 @@ export const TESTING_LANES = [
 		controlFile: "playwright.config.ts",
 		rootCommand: "pnpm test:e2e:smoke",
 		include: ["e2e/smoke/**/*.spec.ts"],
-		allowedGlobs: ["e2e/smoke/**/*.spec.ts"],
 		cache: "playwright-artifacts",
 		requiresDatabase: true,
 		requiresBrowser: true,
@@ -269,7 +197,6 @@ export const TESTING_LANES = [
 		controlFile: "playwright.config.ts",
 		rootCommand: "pnpm test:e2e:journey",
 		include: ["e2e/journey/**/*.spec.ts"],
-		allowedGlobs: ["e2e/journey/**/*.spec.ts"],
 		cache: "playwright-artifacts",
 		requiresDatabase: true,
 		requiresBrowser: true,
@@ -282,7 +209,6 @@ export const TESTING_LANES = [
 		controlFile: "playwright.config.ts",
 		rootCommand: "pnpm test:e2e",
 		include: ["e2e/**/*.spec.ts"],
-		allowedGlobs: ["e2e/**/*.spec.ts"],
 		cache: "playwright-artifacts",
 		requiresDatabase: true,
 		requiresBrowser: true,
@@ -299,11 +225,6 @@ export const TESTING_LANES = [
 			"e2e/smoke/wrong-role-gate.spec.ts",
 			"e2e/smoke/two-org-denial.spec.ts",
 		],
-		allowedGlobs: [
-			"e2e/smoke/anonymous-gate.spec.ts",
-			"e2e/smoke/wrong-role-gate.spec.ts",
-			"e2e/smoke/two-org-denial.spec.ts",
-		],
 		cache: "playwright-artifacts",
 		requiresDatabase: true,
 		requiresBrowser: true,
@@ -316,7 +237,6 @@ export const TESTING_LANES = [
 		controlFile: "apps/storybook/vitest.coverage.config.ts",
 		rootCommand: "pnpm --filter @afenda/storybook test",
 		include: ["apps/storybook/__tests__/**/*.test.ts"],
-		allowedGlobs: ["apps/storybook/__tests__/**/*.test.ts"],
 		cache: "turbo-cacheable",
 		requiresDatabase: false,
 		requiresBrowser: false,
@@ -329,7 +249,6 @@ export const TESTING_LANES = [
 		controlFile: "apps/storybook/vitest.storybook.config.ts",
 		rootCommand: "pnpm --filter @afenda/storybook test:stories",
 		include: ["apps/storybook/**/*.stories.@(ts|tsx)"],
-		allowedGlobs: ["apps/storybook/**/*.stories.@(ts|tsx)"],
 		cache: "uncached",
 		requiresDatabase: false,
 		requiresBrowser: true,
@@ -342,13 +261,57 @@ export const TESTING_LANES = [
 		controlFile: "apps/storybook/playwright.visual.config.ts",
 		rootCommand: "pnpm --filter @afenda/storybook test:visual",
 		include: ["apps/storybook/visual-tests/**/*.spec.ts"],
-		allowedGlobs: ["apps/storybook/visual-tests/**/*.spec.ts"],
 		cache: "playwright-artifacts",
 		requiresDatabase: false,
 		requiresBrowser: true,
 		timeoutMs: 90_000,
 	},
-] as const satisfies readonly TestingLane[];
+] as const satisfies readonly TestingLaneDefinition[];
+
+type DeepReadonly<T> = T extends (...args: never[]) => unknown
+	? T
+	: T extends readonly (infer Item)[]
+		? readonly DeepReadonly<Item>[]
+		: T extends object
+			? { readonly [Key in keyof T]: DeepReadonly<T[Key]> }
+			: T;
+
+function deepFreeze<const T>(value: T): DeepReadonly<T> {
+	if (typeof value !== "object" || value === null || Object.isFrozen(value)) {
+		return value as DeepReadonly<T>;
+	}
+
+	for (const nested of Object.values(value)) {
+		deepFreeze(nested);
+	}
+
+	return Object.freeze(value) as DeepReadonly<T>;
+}
+
+export const TESTING_LANES = deepFreeze(TESTING_LANE_DEFINITIONS);
+
+export type TestingLaneId = (typeof TESTING_LANES)[number]["id"];
+export type TestingLane = TestingLaneDefinition &
+	Readonly<{ id: TestingLaneId }>;
+
+function uniqueControlFiles(
+	lanes: readonly TestingLane[],
+): readonly TestingLane["controlFile"][] {
+	return Object.freeze([...new Set(lanes.map((lane) => lane.controlFile))]);
+}
+
+const TESTING_LANE_CONTROL_FILES = uniqueControlFiles(TESTING_LANES);
+
+export const APPROVED_TESTING_CONFIG_FILES = Object.freeze([
+	...TESTING_SUPPORT_CONFIG_FILES,
+	...TESTING_LANE_CONTROL_FILES,
+]);
+
+export const TESTING_POLICY_BOUND_CONFIG_FILES = Object.freeze(
+	TESTING_LANE_CONTROL_FILES.filter(
+		(controlFile) => !controlFile.startsWith("testing/"),
+	),
+);
 
 export function getTestingLane(id: TestingLaneId): TestingLane {
 	const lane = TESTING_LANES.find((candidate) => candidate.id === id);
@@ -357,5 +320,5 @@ export function getTestingLane(id: TestingLaneId): TestingLane {
 		throw new Error(`Unknown testing lane: ${id}`);
 	}
 
-	return lane;
+	return lane as TestingLane;
 }

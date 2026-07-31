@@ -1,10 +1,10 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { getTestingLane } from "@afenda/testing";
+import { testingPolicy } from "@afenda/testing";
 import { defineConfig, devices } from "@playwright/test";
 
 const configDirectory = path.dirname(fileURLToPath(import.meta.url));
-const lane = getTestingLane("storybook-visual");
+const lane = testingPolicy.lane("storybook-visual");
 
 export default defineConfig({
 	testDir: "./visual-tests",

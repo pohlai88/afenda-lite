@@ -5,10 +5,7 @@
  * so `E2E_FACTORY_PASSWORD` must match that template’s plaintext.
  */
 
-import {
-	hasE2eDatabaseUrl,
-	requireE2eDatabaseUrl,
-} from "@afenda/testing/e2e-database";
+import { testingDatabase } from "@afenda/testing";
 import { createNeonSql, type NeonSql } from "./neon-sql";
 
 export interface FactoryCredential {
@@ -49,7 +46,7 @@ async function forEachStringSequentially(
 }
 
 function requireDatabaseUrl(): string {
-	return requireE2eDatabaseUrl();
+	return testingDatabase.requireE2eUrl();
 }
 
 /**
@@ -71,7 +68,7 @@ function resolveHashTemplateEmail(): string {
 
 /** True when provision/cleanup can run (honest skip when false). */
 export function isFactoryEnvReady(): boolean {
-	return Boolean(hasE2eDatabaseUrl() && resolveFactoryPassword());
+	return Boolean(testingDatabase.hasE2eUrl() && resolveFactoryPassword());
 }
 
 async function readTemplatePasswordHash(
@@ -397,7 +394,7 @@ export async function clearOperatorPlatformAssignments(
 export async function cleanupWorkerTenant(
 	handle: WorkerTenantHandle,
 ): Promise<void> {
-	if (!hasE2eDatabaseUrl()) {
+	if (!testingDatabase.hasE2eUrl()) {
 		return;
 	}
 

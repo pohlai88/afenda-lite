@@ -1,7 +1,7 @@
-import { getTestingLane } from "@afenda/testing";
+import { testingPolicy } from "@afenda/testing";
 import { defineConfig } from "vitest/config";
 
-const lane = getTestingLane("storybook-unit");
+const lane = testingPolicy.lane("storybook-unit");
 const hookTimeout = lane.hookTimeoutMs ?? lane.timeoutMs;
 
 export default defineConfig({

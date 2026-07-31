@@ -1,7 +1,6 @@
 {
 	"extends": "@afenda/config/tsconfig/node-library.json",
 	"compilerOptions": {
-		"allowImportingTsExtensions": true,
 		"rootDir": "src"
 	},
 	"include": ["src/**/*.ts"],

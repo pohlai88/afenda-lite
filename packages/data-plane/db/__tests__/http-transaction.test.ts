@@ -2,10 +2,10 @@
  * Neon HTTP non-interactive transaction helper (N12 residual · ARCH-025).
  */
 
-import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
+import { testingDatabase } from "@afenda/testing";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-const { hasDatabase } = resolveDatabaseUrlForTests();
+const { hasDatabase } = testingDatabase.resolve();
 
 describe("runNeonHttpTransaction contract", () => {
 	it("rejects an empty query list before contacting Neon", async () => {

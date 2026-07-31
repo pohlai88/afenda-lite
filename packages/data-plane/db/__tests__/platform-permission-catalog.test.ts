@@ -3,7 +3,7 @@
  * SSOT = platform-permission-catalog.ts (no frozen ARCH-023 snapshot duplicate).
  */
 
-import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
+import { testingDatabase } from "@afenda/testing";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { db } from "../src/client";
@@ -20,7 +20,7 @@ import {
 	platformRolePermission,
 } from "../src/schema/platform";
 
-const { hasDatabase } = resolveDatabaseUrlForTests();
+const { hasDatabase } = testingDatabase.resolve();
 
 const V1_COUNT = PLATFORM_PERMISSION_CODES_V1.length;
 

@@ -4,38 +4,21 @@
 	"private": true,
 	"type": "module",
 	"description": "Shared Vitest/Playwright test utilities (dev/test only)",
+	"imports": {
+		"#testing/*": "./src/*.ts"
+	},
 	"exports": {
 		".": {
 			"types": "./src/index.ts",
 			"default": "./src/index.ts"
 		},
-		"./require-database-for-ci": {
-			"types": "./src/require-database-for-ci.ts",
-			"default": "./src/require-database-for-ci.ts"
+		"./setup/database": {
+			"types": "./src/entrypoints/setup-database.ts",
+			"default": "./src/entrypoints/setup-database.ts"
 		},
-		"./e2e-database": {
-			"types": "./src/e2e-database.ts",
-			"default": "./src/e2e-database.ts"
-		},
-		"./lanes": {
-			"types": "./src/lanes.ts",
-			"default": "./src/lanes.ts"
-		},
-		"./setups/database": {
-			"types": "./src/setups/database.ts",
-			"default": "./src/setups/database.ts"
-		},
-		"./setups/required-database": {
-			"types": "./src/setups/required-database.ts",
-			"default": "./src/setups/required-database.ts"
-		},
-		"./vitest": {
-			"types": "./src/define-vitest-config.ts",
-			"default": "./src/define-vitest-config.ts"
-		},
-		"./playwright": {
-			"types": "./src/define-playwright-config.ts",
-			"default": "./src/define-playwright-config.ts"
+		"./setup/required-database": {
+			"types": "./src/entrypoints/setup-required-database.ts",
+			"default": "./src/entrypoints/setup-required-database.ts"
 		}
 	},
 	"scripts": {

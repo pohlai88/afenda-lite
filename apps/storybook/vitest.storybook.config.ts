@@ -1,9 +1,9 @@
-import { getTestingLane } from "@afenda/testing";
+import { testingPolicy } from "@afenda/testing";
 import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
 import { playwright } from "@vitest/browser-playwright";
 import { defineConfig } from "vitest/config";
 
-const lane = getTestingLane("storybook-stories");
+const lane = testingPolicy.lane("storybook-stories");
 
 export default defineConfig({
 	plugins: [storybookTest({ configDir: ".storybook" })],

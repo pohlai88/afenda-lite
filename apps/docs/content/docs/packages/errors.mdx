@@ -32,11 +32,11 @@ facade and never interpret those policies themselves.
 | Canonical registry and five capability facades | Verified |
 | Repository consumer cutover | Implemented; boundary and strict semantic gates green |
 | Compatibility subpaths and `AppError` | Deleted |
-| Governance seal | Open pending full repository, generated-doc, Scratch, and protection gates |
+| Governance seal | Sealed; evidence in `PR.md` and `.protected.sha256` |
 
 The durable authority is [CONTRACT.md](https://github.com/pohlai88/afenda-lite/blob/main/packages/foundation/errors/CONTRACT.md). It records the frozen
-semantic decisions, implementation evidence, migration lanes, and remaining
-seal conditions. This README is the permanent consumer and maintainer entry.
+semantic decisions, implementation evidence, migration lanes, and seal
+conditions. This README is the permanent consumer and maintainer entry.
 
 ## Permanent consumer surface
 
@@ -80,6 +80,7 @@ wording, diagnostics, serialization, or operational behavior.
 |---|---|
 | Return success | `errorResult.ok(data)` |
 | Return a known public failure | `errorResult.fail(code, input)` |
+| Attach/read trusted non-wire domain context | `errorResult.withContext(result, context)` / `errorResult.context(result)` |
 | Create an opaque boundary failure | `errorIngress.code(code, input)` |
 | Normalize an unknown exception | `errorIngress.unknown(error, context)` |
 | Normalize a PostgreSQL exception | `errorIngress.postgres(error, context)` |

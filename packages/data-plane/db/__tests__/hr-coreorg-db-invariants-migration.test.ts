@@ -4,7 +4,7 @@
 
 import { readFileSync } from "node:fs";
 
-import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
+import { testingDatabase } from "@afenda/testing";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { assertAdditiveMigrations } from "../scripts/lib/assert-additive-migration.mjs";
@@ -32,7 +32,7 @@ const registerInventory = validateCoreorgRegisterInventory({
 	pgTableNames: hrPgTableNames,
 });
 
-const { hasDatabase } = resolveDatabaseUrlForTests();
+const { hasDatabase } = testingDatabase.resolve();
 
 function requireDatabaseTests(): boolean {
 	const ci = process.env.CI;

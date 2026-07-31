@@ -4,7 +4,7 @@
  * Protected: changes require local pre-edit token and compatibility checks.
  */
 
-import { resolveDatabaseUrlForTests } from "../require-database-for-ci.ts";
+import { resolveDatabaseUrlForTests } from "#testing/require-database-for-ci";
 
 export function setupDatabaseTestLane(): void {
 	resolveDatabaseUrlForTests();

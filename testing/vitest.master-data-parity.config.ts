@@ -28,7 +28,7 @@ export default mergeConfig(
 			globalSetup: [
 				path.join(repoRoot, "testing/verify-master-data-parity-schema.ts"),
 			],
-			setupFiles: ["@afenda/testing/setups/required-database"],
+			setupFiles: ["@afenda/testing/setup/required-database"],
 			...laneTimeoutOptions("master-data-parity"),
 			fileParallelism: false,
 			maxWorkers: 1,

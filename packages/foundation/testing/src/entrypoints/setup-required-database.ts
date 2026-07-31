@@ -1,9 +1,9 @@
 /**
  * @afenda/testing
- * Contract: TESTING-CONTROL-PLANE
+ * Contract: TESTING-SETUP-REQUIRED-DATABASE
  * Protected: changes require local pre-edit token and compatibility checks.
  */
 
-import { setupRequiredDatabaseTestLane } from "./database.ts";
+import { setupRequiredDatabaseTestLane } from "#testing/setups/database";
 
 setupRequiredDatabaseTestLane();

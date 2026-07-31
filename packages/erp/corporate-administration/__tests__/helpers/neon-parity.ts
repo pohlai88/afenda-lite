@@ -1,5 +1,5 @@
 // biome-ignore-all lint/style/noNestedTernary: Three-state Neon availability mapping remains visible at the boundary.
-import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
+import { testingDatabase } from "@afenda/testing";
 
 function truthy(value: string | undefined): boolean {
 	return value === "1" || value === "true";
@@ -27,7 +27,7 @@ function assertNotProductionDatabaseTarget(): void {
 	}
 }
 
-const resolvedDatabase = resolveDatabaseUrlForTests();
+const resolvedDatabase = testingDatabase.resolve();
 const databaseRequired = requiresDatabaseTests();
 
 if (resolvedDatabase.hasDatabase && databaseRequired) {

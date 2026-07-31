@@ -8,7 +8,7 @@ import {
 	platformWorkItem,
 	platformWorkItemActivity,
 } from "@afenda/db";
-import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
+import { testingDatabase } from "@afenda/testing";
 import { afterAll, describe, expect, it } from "vitest";
 import { createProductionHumanResourcesWorkItemSink } from "@/modules/platform/domain/human-resources-platform-events";
 import {
@@ -20,7 +20,7 @@ import {
 	type RecordPlatformWorkItemInput,
 } from "@/modules/platform/domain/platform-work-items";
 
-const { hasDatabase } = resolveDatabaseUrlForTests();
+const { hasDatabase } = testingDatabase.resolve();
 const databaseOrganizations = new Set<string>();
 
 function input(

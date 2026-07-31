@@ -11,25 +11,8 @@ export type TestingCacheClass =
 	| "uncached"
 	| "playwright-artifacts";
 
-export type TestingLaneId =
-	| "unit"
-	| "interaction"
-	| "web-scenario"
-	| "corporate-administration-parity"
-	| "human-resources-parity"
-	| "master-data-parity"
-	| "master-data-core-parity"
-	| "master-data-memory-parity"
-	| "e2e-smoke"
-	| "e2e-journey"
-	| "e2e-all"
-	| "e2e-adverse"
-	| "storybook-unit"
-	| "storybook-stories"
-	| "storybook-visual";
-
-export type TestingLane = Readonly<{
-	id: TestingLaneId;
+export type TestingLaneDefinition = Readonly<{
+	id: string;
 	runner: TestingRunner;
 	owner: "testing" | "apps/storybook";
 	controlFile: string;
@@ -37,8 +20,6 @@ export type TestingLane = Readonly<{
 	packageCommands?: readonly string[];
 	include: readonly string[];
 	exclude?: readonly string[];
-	allowedGlobs: readonly string[];
-	forbiddenGlobs?: readonly string[];
 	cache: TestingCacheClass;
 	requiresDatabase: boolean;
 	requiresBrowser: boolean;

@@ -8,7 +8,7 @@ import {
 	payrollPeriod,
 	payrollRun,
 } from "@afenda/db";
-import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
+import { testingDatabase } from "@afenda/testing";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import {
@@ -64,7 +64,7 @@ function expectTableHasColumn(
 	}
 }
 
-const { hasDatabase } = resolveDatabaseUrlForTests();
+const { hasDatabase } = testingDatabase.resolve();
 const payrollFoundationReady =
 	hasDatabase && (await isPayrollFoundationMigrationApplied());
 
