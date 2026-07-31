@@ -44,10 +44,7 @@ function postgresFailureCode(sqlState: string): PostgresFailureCode {
 	return POSTGRES_FAILURE_CODES[sqlState] ?? "INTERNAL_ERROR";
 }
 
-export function postgresSqlState(
-	value: unknown,
-	depth = 0,
-): string | undefined {
+function postgresSqlState(value: unknown, depth = 0): string | undefined {
 	if (depth > MAX_CAUSE_DEPTH) {
 		return;
 	}
@@ -66,14 +63,6 @@ export function postgresSqlState(
 
 	const cause = readProperty(value, "cause");
 	return cause === undefined ? undefined : postgresSqlState(cause, depth + 1);
-}
-
-export function hasPostgresSqlState(error: unknown, expected: string): boolean {
-	const normalizedExpected = expected.toUpperCase();
-	return (
-		SQLSTATE_PATTERN.test(normalizedExpected) &&
-		postgresSqlState(error) === normalizedExpected
-	);
 }
 
 /**

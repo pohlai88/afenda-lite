@@ -4,7 +4,6 @@
  * Protected: changes require local pre-edit token and compatibility checks.
  */
 
-import type { RetryAfterSeconds } from "../contract/details";
 import { getErrorDefinition, isCanonicalErrorCode } from "../contract/registry";
 import { isTrustedFailure, readFailureRecord } from "../failure/identity";
 import type { Failure } from "../failure/types";
@@ -46,16 +45,6 @@ export function projectRegistryRetry<Code extends CanonicalErrorCode>(
 		retryable: true,
 		retryAfterSeconds,
 	}) as RetryDisposition<Code>;
-}
-
-/** Adapts an already validated legacy retry delay to the canonical field. */
-export function retryDetailsFromLegacyDelay(
-	retryAfterSeconds: number | undefined,
-): Readonly<{ retryAfterSeconds: RetryAfterSeconds }> | undefined {
-	const normalized = normalizeRetryAfterSeconds(retryAfterSeconds);
-	return normalized === undefined
-		? undefined
-		: Object.freeze({ retryAfterSeconds: normalized });
 }
 
 export function retry<const Code extends CanonicalErrorCode>(
