@@ -8,7 +8,6 @@ import { type PaymentTerm, updatePaymentTerm } from "@afenda/master-data";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
@@ -27,7 +26,7 @@ const updatePaymentTermFormSchema = z.object({
 });
 
 /**
- * Master-data payment term update — `expectedVersion` CAS + `master_data.manage`.
+ * Master-data payment term update — package-authorized `expectedVersion` CAS.
  */
 export async function updatePaymentTermAction(
 	_prev: UpdatePaymentTermActionState,
@@ -55,14 +54,6 @@ export async function updatePaymentTermAction(
 			publicMessage:
 				"Provide a valid payment term id, expected version, and fields.",
 		});
-	}
-
-	const permissionDenied = await forbidUnlessPermission(
-		session,
-		"master_data.manage",
-	);
-	if (permissionDenied) {
-		return permissionDenied;
 	}
 
 	try {

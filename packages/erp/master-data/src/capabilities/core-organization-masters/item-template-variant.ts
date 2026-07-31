@@ -65,12 +65,10 @@ import { assertExpectedVersion } from "./version-cas";
 export {
 	addItemTemplateAttribute,
 	listItemTemplateAttributes,
-	listTemplateAttributes,
 } from "../extensions/template-attributes";
 export {
 	addItemTemplateAttributeOption,
 	listItemTemplateAttributeOptions,
-	listTemplateAttributeOptions,
 } from "../extensions/template-options";
 export {
 	getVariantConfiguration,

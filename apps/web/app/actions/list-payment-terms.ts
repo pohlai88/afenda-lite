@@ -6,7 +6,6 @@ import { http } from "@afenda/http";
 import { logger } from "@afenda/logger";
 import { listPaymentTerms, type PaymentTerm } from "@afenda/master-data";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
 
 export interface ListPaymentTermsActionData {
@@ -14,7 +13,7 @@ export interface ListPaymentTermsActionData {
 }
 
 /**
- * Master-data payment term list — session org stamp + `master_data.read`.
+ * Master-data payment-term list — package-authorized and session scoped.
  */
 export async function listPaymentTermsAction(input?: {
 	page?: number;
@@ -23,14 +22,6 @@ export async function listPaymentTermsAction(input?: {
 }): Promise<ActionResult<ListPaymentTermsActionData>> {
 	const correlationId = http.correlation.create();
 	const session = await authServer.session.get();
-
-	const permissionDenied = await forbidUnlessPermission(
-		session,
-		"master_data.read",
-	);
-	if (permissionDenied) {
-		return permissionDenied;
-	}
 
 	try {
 		const result = await listPaymentTerms(

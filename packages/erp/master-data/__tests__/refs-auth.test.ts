@@ -4,7 +4,7 @@ import { upsertPartiesByCode, validatePartyImportBatch } from "../src";
 import {
 	getRefCountryByCode,
 	listRefUoms,
-} from "../src/capabilities/platform-references/legacy-queries";
+} from "../src/capabilities/platform-references/authorized-queries";
 import {
 	MASTER_DATA_PERMISSION_IMPORT_APPLY,
 	MASTER_DATA_PERMISSION_IMPORT_APPROVE,

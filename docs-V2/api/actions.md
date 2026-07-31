@@ -26,41 +26,41 @@ UI mutation adapters only. Contract: `ActionResult<T>` (`ok: true | false`) — 
 | `provision-organization.ts` | `provisionOrganizationAction` | platform | Org provision |
 | `delete-organization.ts` | `deleteOrganizationAction` | platform | Org delete |
 | `get-organization-usage.ts` | `getOrganizationUsageAction` | platform | Org usage position (`@afenda/admin/usage` matrix) |
-| `list-parties.ts` | `listPartiesAction` | master-data | List parties (`master_data.read`) |
-| `create-party.ts` | `createPartyAction` | master-data | Create party (`master_data.manage`) |
-| `activate-party.ts` | `activatePartyAction` | master-data | Activate party (`master_data.manage`; MDG-gated) |
-| `list-party-roles.ts` | `listPartyRolesAction` | master-data | List party roles (`master_data.read`) |
-| `create-party-role.ts` | `createPartyRoleAction` | master-data | Create party role (`master_data.manage`) |
-| `merge-parties.ts` | `mergePartiesAction` | master-data | Governed party merge (`master_data.manage`; MDG-gated) |
-| `list-items.ts` | `listItemsAction` | master-data | List items (`master_data.read`) |
-| `list-item-groups.ts` | `listItemGroupsAction` | master-data | List item groups (`master_data.read`) |
-| `list-warehouses.ts` | `listWarehousesAction` | master-data | List warehouses (`master_data.read`) |
-| `list-payment-terms.ts` | `listPaymentTermsAction` | master-data | List payment terms (`master_data.read`) |
-| `create-payment-term.ts` | `createPaymentTermAction` | master-data | Create payment term (`master_data.manage`) |
-| `update-payment-term.ts` | `updatePaymentTermAction` | master-data | Update payment term CAS (`master_data.manage`) |
-| `activate-payment-term.ts` | `activatePaymentTermAction` | master-data | Activate payment term (`master_data.manage`) |
-| `inactive-payment-term.ts` | `inactivePaymentTermAction` | master-data | Inactivate payment term (`master_data.manage`) |
-| `retire-payment-term.ts` | `retirePaymentTermAction` | master-data | Retire payment term (`master_data.manage`) |
+| `list-parties.ts` | `listPartiesAction` | master-data | List parties (`master_data.party_read`) |
+| `create-party.ts` | `createPartyAction` | master-data | Create party (`master_data.party_create`) |
+| `activate-party.ts` | `activatePartyAction` | master-data | Activate party (`master_data.party_activate`; MDG-gated) |
+| `list-party-roles.ts` | `listPartyRolesAction` | master-data | List party roles (`master_data.party_read`) |
+| `create-party-role.ts` | `createPartyRoleAction` | master-data | Create party role (`master_data.party_role_manage`) |
+| `merge-parties.ts` | `mergePartiesAction` | master-data | Governed party merge (`master_data.party_merge`; MDG-gated) |
+| `list-items.ts` | `listItemsAction` | master-data | List items (`master_data.item_read`) |
+| `list-item-groups.ts` | `listItemGroupsAction` | master-data | List item groups (`master_data.item_read`) |
+| `list-warehouses.ts` | `listWarehousesAction` | master-data | List warehouses (`master_data.warehouse_read`) |
+| `list-payment-terms.ts` | `listPaymentTermsAction` | master-data | List payment terms (`master_data.payment_term_read`) |
+| `create-payment-term.ts` | `createPaymentTermAction` | master-data | Create payment term (`master_data.payment_term_manage`) |
+| `update-payment-term.ts` | `updatePaymentTermAction` | master-data | Update payment term CAS (`master_data.payment_term_manage`) |
+| `activate-payment-term.ts` | `activatePaymentTermAction` | master-data | Activate payment term (`master_data.payment_term_manage`) |
+| `inactive-payment-term.ts` | `inactivePaymentTermAction` | master-data | Inactivate payment term (`master_data.payment_term_manage`) |
+| `retire-payment-term.ts` | `retirePaymentTermAction` | master-data | Retire payment term (`master_data.payment_term_manage`) |
 | `payment-term-lifecycle.ts` | `runPaymentTermLifecycle` | master-data | Shared payment-term lifecycle helper |
-| `list-tax-registrations.ts` | `listTaxRegistrationsAction` | master-data | List tax registrations (`master_data.read`) |
-| `create-tax-registration.ts` | `createTaxRegistrationAction` | master-data | Create tax registration (`master_data.manage`) |
-| `update-tax-registration.ts` | `updateTaxRegistrationAction` | master-data | Update tax registration CAS (`master_data.manage`) |
-| `activate-tax-registration.ts` | `activateTaxRegistrationAction` | master-data | Activate tax registration (`master_data.manage`) |
-| `block-tax-registration.ts` | `blockTaxRegistrationAction` | master-data | Block tax registration (`master_data.manage`) |
-| `restore-tax-registration.ts` | `restoreTaxRegistrationAction` | master-data | Restore tax registration (`master_data.manage`) |
-| `retire-tax-registration.ts` | `retireTaxRegistrationAction` | master-data | Retire tax registration (`master_data.manage`) |
+| `list-tax-registrations.ts` | `listTaxRegistrationsAction` | master-data | List tax registrations (`master_data.tax_registration_read`) |
+| `create-tax-registration.ts` | `createTaxRegistrationAction` | master-data | Create tax registration (`master_data.tax_registration_manage`) |
+| `update-tax-registration.ts` | `updateTaxRegistrationAction` | master-data | Update tax registration CAS (`master_data.tax_registration_manage`) |
+| `activate-tax-registration.ts` | `activateTaxRegistrationAction` | master-data | Activate tax registration (`master_data.tax_registration_manage`) |
+| `block-tax-registration.ts` | `blockTaxRegistrationAction` | master-data | Block tax registration (`master_data.tax_registration_manage`) |
+| `restore-tax-registration.ts` | `restoreTaxRegistrationAction` | master-data | Restore tax registration (`master_data.tax_registration_manage`) |
+| `retire-tax-registration.ts` | `retireTaxRegistrationAction` | master-data | Retire tax registration (`master_data.tax_registration_manage`) |
 | `tax-registration-lifecycle.ts` | `runTaxRegistrationLifecycle` | master-data | Shared tax-registration lifecycle helper |
-| `list-item-templates.ts` | `listItemTemplatesAction` | master-data | List item templates (`master_data.read`) |
-| `create-item-template.ts` | `createItemTemplateAction` | master-data | Create item template (`master_data.manage`) |
-| `activate-item-template.ts` | `activateItemTemplateAction` · `activateItemTemplateFormAction` | master-data | Activate draft template (`master_data.manage`) |
-| `add-item-template-attribute.ts` | `addItemTemplateAttributeAction` | master-data | Add template attribute (`master_data.manage`) |
-| `add-item-template-attribute-option.ts` | `addItemTemplateAttributeOptionAction` | master-data | Add closed attribute option (`master_data.manage`) |
-| `create-item-variant.ts` | `createItemVariantAction` | master-data | Create concrete variant item (`master_data.manage`) |
-| `submit-change-request.ts` | `submitChangeRequestAction` | master-data | Submit MDG CR (`master_data.manage`) |
-| `approve-change-request.ts` | `approveChangeRequestAction` | master-data | Approve MDG CR (`master_data.approve`) |
-| `reject-change-request.ts` | `rejectChangeRequestAction` | master-data | Reject MDG CR (`master_data.approve`) |
-| `search-master-data.ts` | `searchMasterDataAction` | master-data | Read-only FTS over `md_*` projections (`master_data.read`) |
-| `rebuild-master-data-search.ts` | `rebuildMasterDataSearchAction` | master-data | Rebuild search from SSOT (`master_data.manage`) |
+| `list-item-templates.ts` | `listItemTemplatesAction` | master-data | List item templates (`master_data.item_read`) |
+| `create-item-template.ts` | `createItemTemplateAction` | master-data | Create item template (`master_data.template_manage`) |
+| `activate-item-template.ts` | `activateItemTemplateAction` · `activateItemTemplateFormAction` | master-data | Activate draft template (`master_data.template_manage`) |
+| `add-item-template-attribute.ts` | `addItemTemplateAttributeAction` | master-data | Add template attribute (`master_data.item_template_attribute_manage`) |
+| `add-item-template-attribute-option.ts` | `addItemTemplateAttributeOptionAction` | master-data | Add closed attribute option (`master_data.item_template_option_manage`) |
+| `create-item-variant.ts` | `createItemVariantAction` | master-data | Create concrete variant item (`master_data.item_variant_attribute_manage`) |
+| `submit-change-request.ts` | `submitChangeRequestAction` | master-data | Submit MDG CR (`master_data.change_request_submit`) |
+| `approve-change-request.ts` | `approveChangeRequestAction` | master-data | Approve MDG CR (`master_data.change_request_approve`) |
+| `reject-change-request.ts` | `rejectChangeRequestAction` | master-data | Reject MDG CR (`master_data.change_request_approve`) |
+| `search-master-data.ts` | `searchMasterDataAction` | master-data | Read-only FTS over `md_*` projections (`master_data.search_read`) |
+| `rebuild-master-data-search.ts` | `rebuildMasterDataSearchAction` | master-data | Rebuild search from SSOT (`master_data.search_rebuild`) |
 | `validate-master-data-import.ts` | `validateMasterDataImportAction` | master-data | Dry-run party import reconcile (`master_data.import_validate`) |
 | `apply-master-data-import.ts` | `applyMasterDataImportAction` | master-data | Apply bounded party upsert-by-code (`master_data.import_apply`) |
 | `list-sales-orders.ts` | `listSalesOrdersAction` | sales | List sales orders (`sales.order.list`) |

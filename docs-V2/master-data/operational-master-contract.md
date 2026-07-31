@@ -12,7 +12,7 @@
 
 | Class | Tables | Write path |
 |-------|--------|------------|
-| Platform refs | `ref_country` · `ref_currency` · `ref_language` · `ref_time_zone` · `ref_uom_dimension` · `ref_uom` | Seed / system ops only — package exposes **read** helpers (`master_data.read` via `requireMasterQueryPermission`); orgs never mutate refs |
+| Platform refs | `ref_country` · `ref_currency` · `ref_language` · `ref_time_zone` · `ref_uom_dimension` · `ref_uom` | Seed / system ops only — package exposes authorized read capabilities (`master_data.reference_read`); orgs never mutate refs |
 | Org operational masters | `md_party` · `md_item_group` · `md_item` · `md_warehouse` · `md_payment_term` · `md_tax_registration` · templates/variants | Sole writes via `@afenda/master-data` commands |
 | Extensions | `md_party_*` · `md_item_*` · `md_warehouse_external_id` | Same package; lifecycle invariants (e.g. final active role) |
 | Import durability | `md_import_batch` | Apply stores report keyed by org + `idempotencyKey` (unique); replay returns stored report |
@@ -25,9 +25,10 @@ Party relationship types are controlled: `parent_of` · `subsidiary_of` · `cont
 
 | Code | Duty |
 |------|------|
-| `master_data.read` | Lists, get-by-code, search |
-| `master_data.manage` | Creates, updates, lifecycle, import validate (dry-run) |
-| `master_data.approve` | MDG approve/reject change requests |
+| `master_data.party_read` / `item_read` / `warehouse_read` / `payment_term_read` / `tax_registration_read` | Aggregate-specific lists and lookups |
+| `master_data.search_read` / `search_rebuild` | Search query and projection rebuild |
+| Aggregate create/update/manage/lifecycle capabilities | Exact command authorization derived by `masterDataModuleManifest` |
+| `master_data.change_request_create` / `read` / `submit` / `approve` / `apply` | MDG maker-checker lifecycle |
 | `master_data.import_create` | Create import batches |
 | `master_data.import_validate` | Validate import batches / dry-runs |
 | `master_data.import_approve` | Approve import batches |
@@ -49,7 +50,7 @@ Web Actions use authenticated member session + these codes (not operator-only). 
 
 ## Merge
 
-- `mergeParties` requires an **approved** change request (MDG); permission remains `master_data.manage` (Tier A — no fine-grained `party.merge`).
+- `mergeParties` requires an **approved** change request (MDG) and `master_data.party_merge`; the package manifest owns both checks.
 - Survivor keeps identity; source is tombstoned (`merged_into_id`); former codes preserved.
 - Reject merge if source or target is already merged (one-hop tombstone; no merge-of-merged). Readers may use `resolveCanonicalPartyId`.
 - Same-TX consolidation: non-colliding active roles reassigned to survivor; colliding source roles retired; addresses/contacts re-pointed; external IDs moved when non-colliding.

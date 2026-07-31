@@ -8,7 +8,6 @@ import { createItemTemplate, type ItemTemplate } from "@afenda/master-data";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
@@ -24,7 +23,7 @@ const createItemTemplateFormSchema = z.object({
 	name: z.string().trim().min(1).max(200),
 });
 
-/** Item template create — session org stamp + `master_data.manage`. */
+/** Item template create — session stamp with package-owned authorization. */
 export async function createItemTemplateAction(
 	_prev: CreateItemTemplateActionState,
 	formData: FormData,
@@ -40,14 +39,6 @@ export async function createItemTemplateAction(
 		return errorResult.fail("VALIDATION_ERROR", {
 			publicMessage: "Enter a valid template code and name.",
 		});
-	}
-
-	const permissionDenied = await forbidUnlessPermission(
-		session,
-		"master_data.manage",
-	);
-	if (permissionDenied) {
-		return permissionDenied;
 	}
 
 	try {

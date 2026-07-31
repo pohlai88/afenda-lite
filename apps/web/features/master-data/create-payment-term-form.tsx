@@ -25,7 +25,7 @@ interface CreatePaymentTermFormProps {
 }
 
 /**
- * Payment term create form — CAPABLE when `master_data.manage` is granted.
+ * Payment-term create form — visible with its exact package capability.
  */
 export function CreatePaymentTermForm({
 	canManage,

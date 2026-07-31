@@ -8,7 +8,6 @@ import { activateItemTemplate, type ItemTemplate } from "@afenda/master-data";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
@@ -31,7 +30,7 @@ export async function activateItemTemplateFormAction(
 	await activateItemTemplateAction(null, formData);
 }
 
-/** Activate draft template (freezes attribute set) — `master_data.manage`. */
+/** Activate a draft template; package authorization owns the permission. */
 export async function activateItemTemplateAction(
 	_prev: ActivateItemTemplateActionState,
 	formData: FormData,
@@ -47,14 +46,6 @@ export async function activateItemTemplateAction(
 		return errorResult.fail("VALIDATION_ERROR", {
 			publicMessage: "Select a valid draft template to activate.",
 		});
-	}
-
-	const permissionDenied = await forbidUnlessPermission(
-		session,
-		"master_data.manage",
-	);
-	if (permissionDenied) {
-		return permissionDenied;
 	}
 
 	try {

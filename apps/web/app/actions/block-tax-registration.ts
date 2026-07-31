@@ -11,7 +11,7 @@ export type {
 } from "@/app/actions/tax-registration-lifecycle";
 
 /**
- * Master-data tax registration block — `expectedVersion` CAS + `master_data.manage`.
+ * Master-data tax registration block — package-authorized `expectedVersion` CAS.
  */
 export async function blockTaxRegistrationAction(
 	_prev: TaxRegistrationLifecycleActionState,

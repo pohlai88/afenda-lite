@@ -316,24 +316,3 @@ export function parseTemplateAttributeValidationRules(
 	}
 	return errorResult.ok(parsed.data);
 }
-
-/** Compatibility mapping for the original text/option public input. */
-export function dataTypeFromLegacyValueKind(
-	valueKind: "text" | "option",
-): ItemTemplateAttributeDataType {
-	return valueKind === "option" ? "single_option" : "text";
-}
-
-/** Compatibility projection retained for existing consumers. */
-export function legacyValueKindFromDataType(
-	dataType: ItemTemplateAttributeDataType,
-): "text" | "option" {
-	/*
-	 * Lossy compatibility projection.
-	 *
-	 * Only option-compatible types retain semantic identity. All other modern
-	 * data types project to legacy "text"; do not use this result for validation
-	 * or round-trip persistence.
-	 */
-	return isOptionCompatibleAttributeDataType(dataType) ? "option" : "text";
-}

@@ -154,11 +154,6 @@ export type Item = OrgMasterBase & {
 	serviceIndicator: boolean;
 };
 
-/** @deprecated Use `ITEM_TEMPLATE_ATTRIBUTE_DATA_TYPES`. */
-export const ITEM_TEMPLATE_ATTRIBUTE_VALUE_KINDS = ["text", "option"] as const;
-/** @deprecated Use `ItemTemplateAttributeDataType`. */
-export type ItemTemplateAttributeValueKind =
-	(typeof ITEM_TEMPLATE_ATTRIBUTE_VALUE_KINDS)[number];
 export {
 	ITEM_TEMPLATE_ATTRIBUTE_DATA_TYPES,
 	type ItemTemplateAttributeDataType,
@@ -175,14 +170,10 @@ export type ItemTemplateAttribute = MutableExtensionRecord & {
 	name: string;
 	description: string | null;
 	dataType: ItemTemplateAttributeDataType;
-	/** @deprecated Compatibility projection; use `dataType`. */
-	valueKind: ItemTemplateAttributeValueKind;
 	isRequired: boolean;
 	isVariantDefining: boolean;
 	isSearchable: boolean;
 	displayOrder: number;
-	/** @deprecated Compatibility alias; use `displayOrder`. */
-	sortOrder: number;
 	validationRules: ItemTemplateAttributeValidationRules;
 	status: StandardChildLifecycleStatus;
 	archivedAt: Date | null;
@@ -196,8 +187,6 @@ export type ItemTemplateAttributeOption = MutableExtensionRecord & {
 	label: string;
 	description: string | null;
 	displayOrder: number;
-	/** @deprecated Compatibility alias; use `displayOrder`. */
-	sortOrder: number;
 	status: StandardChildLifecycleStatus;
 	archivedAt: Date | null;
 	archivedBy: string | null;
@@ -208,8 +197,6 @@ export type ItemVariantAttributeValue = MutableExtensionRecord & {
 	attributeId: string;
 	valueType: ItemTemplateAttributeDataType;
 	textValue: string | null;
-	/** @deprecated Compatibility alias; use `textValue`. */
-	valueText: string | null;
 	integerValue: string | null;
 	decimalValue: string | null;
 	booleanValue: boolean | null;
@@ -486,11 +473,6 @@ export const EXTERNAL_ID_CASE_SENSITIVITIES = [
 ] as const;
 export type ExternalIdCaseSensitivity =
 	(typeof EXTERNAL_ID_CASE_SENSITIVITIES)[number];
-/** @deprecated Use ExternalIdCaseSensitivity. */
-export type PartyExternalIdCaseSensitivity = ExternalIdCaseSensitivity;
-/** @deprecated Use EXTERNAL_ID_CASE_SENSITIVITIES. */
-export const PARTY_EXTERNAL_ID_CASE_SENSITIVITIES =
-	EXTERNAL_ID_CASE_SENSITIVITIES;
 
 export type PartyExternalId = MutableExtensionRecord & {
 	partyId: string;
@@ -498,7 +480,7 @@ export type PartyExternalId = MutableExtensionRecord & {
 	externalIdType: string;
 	externalValue: string;
 	normalizedValue: string;
-	caseSensitivity: PartyExternalIdCaseSensitivity;
+	caseSensitivity: ExternalIdCaseSensitivity;
 	isPrimary: boolean;
 	status: StandardChildLifecycleStatus;
 	archivedAt: Date | null;
@@ -553,7 +535,7 @@ export type ItemExternalId = MutableExtensionRecord & {
 	externalIdType: string;
 	externalValue: string;
 	normalizedValue: string;
-	caseSensitivity: PartyExternalIdCaseSensitivity;
+	caseSensitivity: ExternalIdCaseSensitivity;
 	isPrimary: boolean;
 	status: StandardChildLifecycleStatus;
 	archivedAt: Date | null;
@@ -579,7 +561,7 @@ export type WarehouseExternalId = MutableExtensionRecord & {
 	externalIdType: string;
 	externalValue: string;
 	normalizedValue: string;
-	caseSensitivity: PartyExternalIdCaseSensitivity;
+	caseSensitivity: ExternalIdCaseSensitivity;
 	status: StandardChildLifecycleStatus;
 	archivedAt: Date | null;
 	archivedBy: string | null;

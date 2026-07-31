@@ -11,7 +11,7 @@ import {
 import {
 	expectedVersionSchema,
 	idempotencyKeySchema,
-	orgActorContextSchema,
+	masterDataMutationContextSchema,
 } from "../../contracts/context";
 import type { MasterFailureDetails } from "../../contracts/reasons";
 import {
@@ -170,7 +170,7 @@ export type ImportReconciliationReport = z.infer<
 	typeof importReconciliationReportSchema
 >;
 
-const orgImportContextSchema = orgActorContextSchema.extend({
+const orgImportContextSchema = masterDataMutationContextSchema.extend({
 	sourceSystem: z.string().trim().min(1).max(64),
 	mode: z.enum(IMPORT_MODES).default("create_or_update"),
 	dryRun: z.boolean().default(false),

@@ -12,7 +12,6 @@ import {
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
@@ -33,7 +32,7 @@ const createTaxRegistrationFormSchema = z.object({
 });
 
 /**
- * Master-data tax registration create — session org/actor stamp + `master_data.manage`.
+ * Master-data tax registration create — session stamp with package-owned authorization.
  */
 export async function createTaxRegistrationAction(
 	_prev: CreateTaxRegistrationActionState,
@@ -63,14 +62,6 @@ export async function createTaxRegistrationAction(
 			publicMessage:
 				"Enter a valid party, jurisdiction, type, and registration number.",
 		});
-	}
-
-	const permissionDenied = await forbidUnlessPermission(
-		session,
-		"master_data.manage",
-	);
-	if (permissionDenied) {
-		return permissionDenied;
 	}
 
 	try {

@@ -7,7 +7,6 @@ import { logger } from "@afenda/logger";
 import { listPartyRoles, type PartyRole } from "@afenda/master-data";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
@@ -22,7 +21,7 @@ const listPartyRolesQuerySchema = z.object({
 });
 
 /**
- * Master-data party role list — session org stamp + `master_data.read`.
+ * Master-data party-role list — package-authorized and session scoped.
  */
 export async function listPartyRolesAction(
 	input: unknown,
@@ -35,14 +34,6 @@ export async function listPartyRolesAction(
 		return errorResult.fail("VALIDATION_ERROR", {
 			publicMessage: "Provide a valid party id.",
 		});
-	}
-
-	const permissionDenied = await forbidUnlessPermission(
-		session,
-		"master_data.read",
-	);
-	if (permissionDenied) {
-		return permissionDenied;
 	}
 
 	try {

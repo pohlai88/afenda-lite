@@ -31,7 +31,7 @@ import {
 	findItemByExternalId,
 	findPartyByExternalId,
 	getPartyAddressById,
-	getPartyRole,
+	getPartyRoleById,
 	isPartyContactTrustedDestination,
 	listActivePartyRoles,
 	listItemAliases,
@@ -771,7 +771,7 @@ describe("@afenda/master-data extensions", () => {
 		);
 		expect(duplicateActivation.ok).toBe(false);
 
-		const fetched = await getPartyRole(
+		const fetched = await getPartyRoleById(
 			{ ...ctx(), partyId: party.data.id, id: first.data.id },
 			options,
 		);

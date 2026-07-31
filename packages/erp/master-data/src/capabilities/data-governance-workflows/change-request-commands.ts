@@ -11,7 +11,7 @@ import {
 } from "../../command-options";
 import {
 	expectedVersionSchema,
-	orgActorContextSchema,
+	masterDataMutationContextSchema,
 	orgQueryActorSchema,
 } from "../../contracts/context";
 import {
@@ -59,23 +59,24 @@ const mergePartiesPayloadSchema = z.object({
 });
 
 export const submitChangeRequestInputSchema = z.union([
-	orgActorContextSchema.extend({
+	masterDataMutationContextSchema.extend({
 		commandKind: z.literal("activate_party"),
 		code: optionalCodeSchema,
 		payload: activatePartyPayloadSchema,
 	}),
-	orgActorContextSchema.extend({
+	masterDataMutationContextSchema.extend({
 		commandKind: z.literal("merge_parties"),
 		code: optionalCodeSchema,
 		payload: mergePartiesPayloadSchema,
 	}),
 ]);
 
-export const reviewChangeRequestInputSchema = orgActorContextSchema.extend({
-	id: changeRequestIdSchema,
-	expectedVersion: expectedVersionSchema,
-	reviewNote: z.string().trim().min(1).max(500).optional(),
-});
+export const reviewChangeRequestInputSchema =
+	masterDataMutationContextSchema.extend({
+		id: changeRequestIdSchema,
+		expectedVersion: expectedVersionSchema,
+		reviewNote: z.string().trim().min(1).max(500).optional(),
+	});
 
 export const listChangeRequestsInputSchema = z
 	.object({

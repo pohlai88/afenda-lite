@@ -1,10 +1,9 @@
 import { describe, expect, it } from "vitest";
+// biome-ignore lint/performance/noNamespaceImport: This contract test intentionally enumerates the complete module surface.
+import * as queries from "../src/capabilities/extensions/extension-queries";
 
 describe("extension query public surface", () => {
-	it("exports only governed extension queries", async () => {
-		const queries = await import(
-			"../src/capabilities/extensions/extension-queries"
-		);
+	it("exports only governed extension queries", () => {
 		expect(Object.keys(queries).sort()).toEqual(
 			[
 				"findItemByAlias",
@@ -15,7 +14,6 @@ describe("extension query public surface", () => {
 				"getDefaultItemPurchaseUom",
 				"getDefaultItemSalesUom",
 				"getPartyAddressById",
-				"getPartyRole",
 				"getPartyRoleById",
 				"getPrimaryPartyAddress",
 				"getPrimaryPartyContact",
@@ -30,8 +28,6 @@ describe("extension query public surface", () => {
 				"listPartyContacts",
 				"listPartyRelationships",
 				"listPartyRoles",
-				"listTemplateAttributeOptions",
-				"listTemplateAttributes",
 				"listVariantAttributeValues",
 			].sort(),
 		);

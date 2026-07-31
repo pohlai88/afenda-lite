@@ -38,20 +38,13 @@ export { findPartyByExternalId } from "./party-external-ids";
 export { listPartyRelationships } from "./party-relationships";
 // Party roles
 export {
-	getPartyRole,
 	getPartyRoleById,
 	listActivePartyRoles,
 	listPartyRoles,
 } from "./party-roles";
 // Item template and variant extension queries
-export {
-	listItemTemplateAttributes,
-	listTemplateAttributes,
-} from "./template-attributes";
-export {
-	listItemTemplateAttributeOptions,
-	listTemplateAttributeOptions,
-} from "./template-options";
+export { listItemTemplateAttributes } from "./template-attributes";
+export { listItemTemplateAttributeOptions } from "./template-options";
 export {
 	getVariantConfiguration,
 	listVariantAttributeValues,

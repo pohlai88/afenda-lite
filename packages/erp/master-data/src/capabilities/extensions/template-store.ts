@@ -185,8 +185,4 @@ export interface ItemVariantExtensionStore {
 	) => Promise<Result<ItemTemplate>>;
 }
 
-/** Backward-compatible names retained for existing package consumers. */
-export type MasterDataVariantStore = ItemVariantExtensionStore;
-export type ItemTemplateVariantStore = ItemVariantExtensionStore;
-
 export type { MasterStatus } from "../../types";

@@ -28,7 +28,7 @@ interface CreatePartyFormProps {
 }
 
 /**
- * Party create form — CAPABLE when `master_data.manage` is granted.
+ * Party create form — visible with its exact package capability.
  * Kind catalog is passed from RSC (package is server-only).
  */
 export function CreatePartyForm({

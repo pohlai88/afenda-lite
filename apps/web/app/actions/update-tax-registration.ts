@@ -11,7 +11,6 @@ import {
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
@@ -31,7 +30,7 @@ const updateTaxRegistrationFormSchema = z.object({
 });
 
 /**
- * Master-data tax registration update — `expectedVersion` CAS + `master_data.manage`.
+ * Master-data tax registration update — package-authorized `expectedVersion` CAS.
  */
 export async function updateTaxRegistrationAction(
 	_prev: UpdateTaxRegistrationActionState,
@@ -64,14 +63,6 @@ export async function updateTaxRegistrationAction(
 			publicMessage:
 				"Provide a valid tax registration id, expected version, and fields.",
 		});
-	}
-
-	const permissionDenied = await forbidUnlessPermission(
-		session,
-		"master_data.manage",
-	);
-	if (permissionDenied) {
-		return permissionDenied;
 	}
 
 	try {

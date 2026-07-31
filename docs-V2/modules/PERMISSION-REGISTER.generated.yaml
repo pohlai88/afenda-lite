@@ -559,7 +559,13 @@ permissions:
   - code: master_data.item_extension_manage
     moduleId: master-data
     namespace: master_data
+  - code: master_data.warehouse_read
+    moduleId: master-data
+    namespace: master_data
   - code: master_data.warehouse_manage
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.payment_term_read
     moduleId: master-data
     namespace: master_data
   - code: master_data.payment_term_manage
@@ -575,6 +581,9 @@ permissions:
     moduleId: master-data
     namespace: master_data
   - code: master_data.variant_manage
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.change_request_read
     moduleId: master-data
     namespace: master_data
   - code: master_data.change_request_create
@@ -601,6 +610,9 @@ permissions:
   - code: master_data.import_apply
     moduleId: master-data
     namespace: master_data
+  - code: master_data.search_read
+    moduleId: master-data
+    namespace: master_data
   - code: master_data.search_rebuild
     moduleId: master-data
     namespace: master_data
@@ -614,15 +626,6 @@ permissions:
     moduleId: master-data
     namespace: master_data
   - code: master_data.sensitive_external_id_read
-    moduleId: master-data
-    namespace: master_data
-  - code: master_data.read
-    moduleId: master-data
-    namespace: master_data
-  - code: master_data.manage
-    moduleId: master-data
-    namespace: master_data
-  - code: master_data.approve
     moduleId: master-data
     namespace: master_data
   - code: master_data.import_cancel

@@ -39,13 +39,13 @@ DNA borrow/reject: [master-data-dna.md](master-data-dna.md). Operational contrac
 | Aggregate extensions (§3.3) | `md_party_*` · `md_item_*` · `md_warehouse_external_id` + `extensions.ts` |
 | Hierarchy + lifecycle + concurrency + merge | MD-1.3 organization-dimension parent rules prevent self-parenting, ancestor cycles, cross-org parents, and inactive-parent child assignment; status CAS · `mergeParties` · `master_data.party.merged.v1` |
 | Audit + outbox same-TX | Production mutations atomically persist state, audit, and outbox in one database transaction; current simple mutations use `runNeonHttpTransaction` CTEs |
-| Web RBAC Actions | `master_data.read` / `master_data.manage` / `master_data.approve` / `master_data.import_create` / `master_data.import_validate` / `master_data.import_approve` / `master_data.import_apply` / `master_data.import_cancel` · Actions under `apps/web/app/actions/` |
+| Web RBAC Actions | Exact `master_data.*` capabilities from the package manifest; Actions pass the authorization port and never duplicate operation-to-permission policy |
 | Search projections | Async/idempotent derived index in `search-projectors.ts`; entity keys `md_party` · `md_item` · `md_item_group` · `md_warehouse` · `md_payment_term`; rebuild-from-SSOT recovery |
 | Import bulk upsert-by-code | `import-bulk.ts` · validate (`import_validate`) / approve (`import_approve`) / apply (`import_apply` + package `approved`) |
 | Steward merge UI | `features/master-data/merge-parties-form.tsx` |
 | Payment term (R3) | `md_payment_term` · `payment-term.ts` · `master_data.payment_term.*.v1` · web CRUD Actions |
 | Item templates + concrete variants (R1) | `md_item_template*` · `md_item_variant*` · `item-variant.ts` · web template/variant Actions |
-| Change requests + maker-checker (R2) | `md_change_request` · `change-request.ts` · `master_data.approve` · gated `activateParty` / `mergeParties`; controlled master-data governance only, not generic workflow · `change_request.*.v1` · steward panel |
+| Change requests + maker-checker (R2) | `md_change_request` · exact create/read/submit/approve/apply capabilities · package-gated `activateParty` / `mergeParties`; controlled master-data governance only, not generic workflow · `change_request.*.v1` · steward panel |
 
 **Named leftovers (not silent):** [remaining-slices.md](remaining-slices.md) — R4 implement (SSOT [../tax/tax-architecture.md](../tax/tax-architecture.md)) · R6 ([r6-harden-missions.md](r6-harden-missions.md)). R1–R3 **shipped**; R5-0 accepted; **R5-1 Sales shipped** (`@afenda/sales` · [arch-006-consumer-contract.md](arch-006-consumer-contract.md)).
 

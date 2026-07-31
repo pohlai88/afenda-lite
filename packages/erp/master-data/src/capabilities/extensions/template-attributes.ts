@@ -131,6 +131,3 @@ export async function listItemTemplateAttributes(
 		parsed.data.templateId,
 	);
 }
-
-/** @deprecated Use listItemTemplateAttributes. */
-export const listTemplateAttributes = listItemTemplateAttributes;

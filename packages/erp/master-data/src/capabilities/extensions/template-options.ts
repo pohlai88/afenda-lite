@@ -139,6 +139,3 @@ export async function listItemTemplateAttributeOptions(
 		parsed.data.attributeId,
 	);
 }
-
-/** @deprecated Use listItemTemplateAttributeOptions. */
-export const listTemplateAttributeOptions = listItemTemplateAttributeOptions;

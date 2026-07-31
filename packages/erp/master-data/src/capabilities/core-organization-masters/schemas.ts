@@ -13,7 +13,7 @@ import {
 	warehouseIdSchema,
 } from "../../brands";
 import {
-	orgActorContextSchema,
+	masterDataMutationContextSchema,
 	orgQueryActorSchema,
 	versionedMutationContextSchema,
 } from "../../contracts/context";
@@ -24,7 +24,6 @@ import {
 	type masterListOptionsSchema,
 } from "../../pagination";
 import {
-	ITEM_TEMPLATE_ATTRIBUTE_VALUE_KINDS,
 	ITEM_TRACKING_POLICIES,
 	ITEM_TYPES,
 	MAX_PAYMENT_TERM_NET_DAYS,
@@ -44,7 +43,9 @@ import {
 } from "../platform-references/brands";
 import { normalizePaymentTermRule } from "./payment-term-rule";
 
-export { orgActorContextSchema } from "../../contracts/context";
+const LEGACY_ITEM_TEMPLATE_ATTRIBUTE_VALUE_KINDS = ["text", "option"] as const;
+
+export { masterDataMutationContextSchema } from "../../contracts/context";
 export {
 	DEFAULT_MASTER_PAGE,
 	DEFAULT_MASTER_PAGE_SIZE,
@@ -59,7 +60,7 @@ const codeInputSchema = z.string().trim().min(1).max(64);
  * Party create — no customer/supplier booleans.
  * Activation requires ≥1 active `md_party_role`.
  */
-export const createPartyInputSchema = orgActorContextSchema.extend({
+export const createPartyInputSchema = masterDataMutationContextSchema.extend({
 	code: codeInputSchema,
 	name: nameSchema,
 	partyKind: z.enum(PARTY_KINDS),
@@ -109,11 +110,12 @@ export const searchPartiesInputSchema = z
 		pageSize: value.pageSize ?? DEFAULT_MASTER_PAGE_SIZE,
 	}));
 
-export const createItemGroupInputSchema = orgActorContextSchema.extend({
-	code: codeInputSchema,
-	name: nameSchema,
-	parentId: itemGroupIdSchema.optional(),
-});
+export const createItemGroupInputSchema =
+	masterDataMutationContextSchema.extend({
+		code: codeInputSchema,
+		name: nameSchema,
+		parentId: itemGroupIdSchema.optional(),
+	});
 
 export const updateItemGroupInputSchema = versionedMutationContextSchema.extend(
 	{
@@ -128,7 +130,7 @@ export const itemGroupLifecycleInputSchema =
 		id: itemGroupIdSchema,
 	});
 
-export const createItemInputSchema = orgActorContextSchema.extend({
+export const createItemInputSchema = masterDataMutationContextSchema.extend({
 	code: codeInputSchema,
 	name: nameSchema,
 	description: z.string().trim().max(1000).nullable().optional(),
@@ -160,18 +162,19 @@ export const itemLifecycleInputSchema = versionedMutationContextSchema.extend({
 	id: itemIdSchema,
 });
 
-export const createWarehouseInputSchema = orgActorContextSchema.extend({
-	code: codeInputSchema,
-	name: nameSchema,
-	locationType: z.enum(WAREHOUSE_LOCATION_TYPES),
-	parentId: warehouseIdSchema.optional(),
-	addressCountryId: refCountryIdSchema.optional(),
-	addressLine1: z.string().trim().min(1).max(200).optional(),
-	addressLine2: z.string().trim().min(1).max(200).optional(),
-	addressCity: z.string().trim().min(1).max(100).optional(),
-	addressRegion: z.string().trim().min(1).max(100).optional(),
-	addressPostalCode: z.string().trim().min(1).max(32).optional(),
-});
+export const createWarehouseInputSchema =
+	masterDataMutationContextSchema.extend({
+		code: codeInputSchema,
+		name: nameSchema,
+		locationType: z.enum(WAREHOUSE_LOCATION_TYPES),
+		parentId: warehouseIdSchema.optional(),
+		addressCountryId: refCountryIdSchema.optional(),
+		addressLine1: z.string().trim().min(1).max(200).optional(),
+		addressLine2: z.string().trim().min(1).max(200).optional(),
+		addressCity: z.string().trim().min(1).max(100).optional(),
+		addressRegion: z.string().trim().min(1).max(100).optional(),
+		addressPostalCode: z.string().trim().min(1).max(32).optional(),
+	});
 
 export const updateWarehouseInputSchema = versionedMutationContextSchema.extend(
 	{
@@ -202,7 +205,7 @@ const discountPercentSchema = z
 	.trim()
 	.regex(/^\d{1,3}(?:\.\d{1,4})?$/u);
 
-export const createPaymentTermInputSchema = orgActorContextSchema
+export const createPaymentTermInputSchema = masterDataMutationContextSchema
 	.extend({
 		code: codeInputSchema,
 		name: nameSchema,
@@ -285,15 +288,16 @@ export const paymentTermLifecycleInputSchema =
 		id: paymentTermIdSchema,
 	});
 
-export const createTaxRegistrationInputSchema = orgActorContextSchema.extend({
-	partyId: partyIdSchema,
-	jurisdictionCountryId: refCountryIdSchema,
-	registrationType: z.enum(TAX_REGISTRATION_TYPES),
-	registrationNumber: z.string().trim().min(1).max(128),
-	name: z.string().trim().min(1).max(200).optional(),
-	validFrom: z.coerce.date().optional(),
-	validTo: z.coerce.date().optional(),
-});
+export const createTaxRegistrationInputSchema =
+	masterDataMutationContextSchema.extend({
+		partyId: partyIdSchema,
+		jurisdictionCountryId: refCountryIdSchema,
+		registrationType: z.enum(TAX_REGISTRATION_TYPES),
+		registrationNumber: z.string().trim().min(1).max(128),
+		name: z.string().trim().min(1).max(200).optional(),
+		validFrom: z.coerce.date().optional(),
+		validTo: z.coerce.date().optional(),
+	});
 
 export const updateTaxRegistrationInputSchema =
 	versionedMutationContextSchema.extend({
@@ -415,10 +419,11 @@ export const listItemsByGroupInputSchema = z
 		pageSize: value.pageSize ?? DEFAULT_MASTER_PAGE_SIZE,
 	}));
 
-export const createItemTemplateInputSchema = orgActorContextSchema.extend({
-	code: codeInputSchema,
-	name: nameSchema,
-});
+export const createItemTemplateInputSchema =
+	masterDataMutationContextSchema.extend({
+		code: codeInputSchema,
+		name: nameSchema,
+	});
 
 export const updateItemTemplateInputSchema =
 	versionedMutationContextSchema.extend({
@@ -431,95 +436,96 @@ export const itemTemplateLifecycleInputSchema =
 		id: itemTemplateIdSchema,
 	});
 
-export const addItemTemplateAttributeInputSchema = orgActorContextSchema
-	.extend({
-		templateId: itemTemplateIdSchema,
-		code: codeInputSchema,
-		name: nameSchema,
-		description: z.string().trim().max(1000).optional(),
-		dataType: z.enum(ITEM_TEMPLATE_ATTRIBUTE_DATA_TYPES).optional(),
-		/** @deprecated Compatibility input; use dataType. */
-		valueKind: z.enum(ITEM_TEMPLATE_ATTRIBUTE_VALUE_KINDS).optional(),
-		isRequired: z.boolean().optional(),
-		isVariantDefining: z.boolean().optional(),
-		isSearchable: z.boolean().optional(),
-		displayOrder: z.number().int().min(0).optional(),
-		/** @deprecated Compatibility input; use displayOrder. */
-		sortOrder: z.number().int().min(0).optional(),
-		validationRules: z.unknown().optional(),
-	})
-	.superRefine((value, ctx) => {
-		if (value.dataType === undefined && value.valueKind === undefined) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
-				message: "dataType is required",
-				path: ["dataType"],
-			});
-		}
-		let legacyDataType: "single_option" | "text" | undefined;
-		if (value.valueKind === "option") {
-			legacyDataType = "single_option";
-		} else if (value.valueKind === "text") {
-			legacyDataType = "text";
-		}
-		if (
-			value.dataType !== undefined &&
-			legacyDataType !== undefined &&
-			value.dataType !== legacyDataType
-		) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
-				message: "dataType conflicts with legacy valueKind",
-				path: ["dataType"],
-			});
-		}
-		if (
-			value.displayOrder !== undefined &&
-			value.sortOrder !== undefined &&
-			value.displayOrder !== value.sortOrder
-		) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
-				message: "displayOrder conflicts with legacy sortOrder",
-				path: ["displayOrder"],
-			});
-		}
-	})
-	.transform((value) => ({
-		...value,
-		dataType:
-			value.dataType ??
-			(value.valueKind === "option" ? "single_option" : "text"),
-		displayOrder: value.displayOrder ?? value.sortOrder ?? 0,
-	}));
+export const addItemTemplateAttributeInputSchema =
+	masterDataMutationContextSchema
+		.extend({
+			templateId: itemTemplateIdSchema,
+			code: codeInputSchema,
+			name: nameSchema,
+			description: z.string().trim().max(1000).optional(),
+			dataType: z.enum(ITEM_TEMPLATE_ATTRIBUTE_DATA_TYPES).optional(),
+			/** @deprecated Compatibility input; use dataType. */
+			valueKind: z.enum(LEGACY_ITEM_TEMPLATE_ATTRIBUTE_VALUE_KINDS).optional(),
+			isRequired: z.boolean().optional(),
+			isVariantDefining: z.boolean().optional(),
+			isSearchable: z.boolean().optional(),
+			displayOrder: z.number().int().min(0).optional(),
+			/** @deprecated Compatibility input; use displayOrder. */
+			sortOrder: z.number().int().min(0).optional(),
+			validationRules: z.unknown().optional(),
+		})
+		.superRefine((value, ctx) => {
+			if (value.dataType === undefined && value.valueKind === undefined) {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					message: "dataType is required",
+					path: ["dataType"],
+				});
+			}
+			let legacyDataType: "single_option" | "text" | undefined;
+			if (value.valueKind === "option") {
+				legacyDataType = "single_option";
+			} else if (value.valueKind === "text") {
+				legacyDataType = "text";
+			}
+			if (
+				value.dataType !== undefined &&
+				legacyDataType !== undefined &&
+				value.dataType !== legacyDataType
+			) {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					message: "dataType conflicts with legacy valueKind",
+					path: ["dataType"],
+				});
+			}
+			if (
+				value.displayOrder !== undefined &&
+				value.sortOrder !== undefined &&
+				value.displayOrder !== value.sortOrder
+			) {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					message: "displayOrder conflicts with legacy sortOrder",
+					path: ["displayOrder"],
+				});
+			}
+		})
+		.transform(({ valueKind, sortOrder, ...value }) => ({
+			...value,
+			dataType:
+				value.dataType ?? (valueKind === "option" ? "single_option" : "text"),
+			displayOrder: value.displayOrder ?? sortOrder ?? 0,
+		}));
 
-export const addItemTemplateAttributeOptionInputSchema = orgActorContextSchema
-	.extend({
-		attributeId: itemTemplateAttributeIdSchema,
-		code: codeInputSchema,
-		label: nameSchema,
-		description: z.string().trim().max(1000).optional(),
-		displayOrder: z.number().int().min(0).optional(),
-		/** @deprecated Compatibility input; use displayOrder. */
-		sortOrder: z.number().int().min(0).optional(),
-	})
-	.superRefine((value, ctx) => {
-		if (
-			value.displayOrder !== undefined &&
-			value.sortOrder !== undefined &&
-			value.displayOrder !== value.sortOrder
-		) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
-				message: "displayOrder conflicts with legacy sortOrder",
-				path: ["displayOrder"],
-			});
-		}
-	})
-	.transform((value) => ({
-		...value,
-		displayOrder: value.displayOrder ?? value.sortOrder ?? 0,
-	}));
+export const addItemTemplateAttributeOptionInputSchema =
+	masterDataMutationContextSchema
+		.extend({
+			attributeId: itemTemplateAttributeIdSchema,
+			code: codeInputSchema,
+			label: nameSchema,
+			description: z.string().trim().max(1000).optional(),
+			displayOrder: z.number().int().min(0).optional(),
+			/** @deprecated Compatibility input; use displayOrder. */
+			sortOrder: z.number().int().min(0).optional(),
+		})
+		.superRefine((value, ctx) => {
+			if (
+				value.displayOrder !== undefined &&
+				value.sortOrder !== undefined &&
+				value.displayOrder !== value.sortOrder
+			) {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					message: "displayOrder conflicts with legacy sortOrder",
+					path: ["displayOrder"],
+				});
+			}
+		})
+		.transform(({ sortOrder, ...value }) => ({
+			...value,
+			displayOrder: value.displayOrder ?? sortOrder ?? 0,
+		}));
 
 export const createItemVariantAttributeValueInputSchema = z
 	.object({
@@ -584,23 +590,24 @@ export const createItemVariantAttributeValueInputSchema = z
 			});
 		}
 	})
-	.transform((value) => ({
+	.transform(({ valueText, ...value }) => ({
 		...value,
-		textValue: value.textValue ?? value.valueText,
+		textValue: value.textValue ?? valueText,
 	}));
 
-export const createItemVariantInputSchema = orgActorContextSchema.extend({
-	templateId: itemTemplateIdSchema,
-	code: codeInputSchema,
-	name: nameSchema,
-	itemType: z.enum(ITEM_TYPES),
-	baseUomId: refUomIdSchema,
-	itemGroupId: itemGroupIdSchema,
-	attributeValues: z
-		.array(createItemVariantAttributeValueInputSchema)
-		.min(1)
-		.max(50),
-});
+export const createItemVariantInputSchema =
+	masterDataMutationContextSchema.extend({
+		templateId: itemTemplateIdSchema,
+		code: codeInputSchema,
+		name: nameSchema,
+		itemType: z.enum(ITEM_TYPES),
+		baseUomId: refUomIdSchema,
+		itemGroupId: itemGroupIdSchema,
+		attributeValues: z
+			.array(createItemVariantAttributeValueInputSchema)
+			.min(1)
+			.max(50),
+	});
 
 /** CAS `expectedVersion` is the variant membership version (`md_item_variant.version`). */
 export const retireItemVariantInputSchema =

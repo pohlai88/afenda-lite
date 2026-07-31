@@ -11,7 +11,6 @@ import {
 } from "@afenda/master-data";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
@@ -22,7 +21,7 @@ const rebuildFormSchema = z.object({
 });
 
 /**
- * Rebuild derived master-data search docs from SSOT — `master_data.manage`.
+ * Rebuild derived master-data search docs through package authorization.
  */
 export async function rebuildMasterDataSearchAction(
 	input?: unknown,
@@ -35,14 +34,6 @@ export async function rebuildMasterDataSearchAction(
 		return errorResult.fail("VALIDATION_ERROR", {
 			publicMessage: "Enter a valid master-data search entity filter.",
 		});
-	}
-
-	const permissionDenied = await forbidUnlessPermission(
-		session,
-		"master_data.manage",
-	);
-	if (permissionDenied) {
-		return permissionDenied;
 	}
 
 	try {

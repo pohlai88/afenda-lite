@@ -14,7 +14,6 @@ import {
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
@@ -33,7 +32,7 @@ const createPartyFormSchema = z.object({
 });
 
 /**
- * Master-data party create — session org/actor stamp + `master_data.manage`.
+ * Master-data party create — session stamp with package-owned authorization.
  * Package owns Zod domain validation; Action stamps tenancy only.
  */
 export async function createPartyAction(
@@ -52,14 +51,6 @@ export async function createPartyAction(
 		return errorResult.fail("VALIDATION_ERROR", {
 			publicMessage: "Enter a valid party code, name, and kind.",
 		});
-	}
-
-	const permissionDenied = await forbidUnlessPermission(
-		session,
-		"master_data.manage",
-	);
-	if (permissionDenied) {
-		return permissionDenied;
 	}
 
 	try {

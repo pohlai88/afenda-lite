@@ -6,7 +6,6 @@ import { http } from "@afenda/http";
 import { logger } from "@afenda/logger";
 import {
 	addItemTemplateAttribute,
-	ITEM_TEMPLATE_ATTRIBUTE_VALUE_KINDS,
 	type ItemTemplateAttribute,
 } from "@afenda/master-data";
 import { revalidatePath } from "next/cache";
@@ -14,6 +13,7 @@ import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
+import { ITEM_TEMPLATE_ATTRIBUTE_FORM_DATA_TYPES } from "@/lib/erp/master-data-item-template-ui-policy";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export interface AddItemTemplateAttributeActionData {
@@ -27,7 +27,7 @@ const addItemTemplateAttributeFormSchema = z.object({
 	templateId: z.string().uuid(),
 	code: z.string().trim().min(1).max(64),
 	name: z.string().trim().min(1).max(200),
-	valueKind: z.enum(ITEM_TEMPLATE_ATTRIBUTE_VALUE_KINDS),
+	dataType: z.enum(ITEM_TEMPLATE_ATTRIBUTE_FORM_DATA_TYPES),
 });
 
 /** Add a variant-defining attribute to a draft template. */
@@ -42,7 +42,7 @@ export async function addItemTemplateAttributeAction(
 		templateId: formData.get("templateId"),
 		code: formData.get("code"),
 		name: formData.get("name"),
-		valueKind: formData.get("valueKind"),
+		dataType: formData.get("dataType"),
 	});
 	if (!parsed.success) {
 		return errorResult.fail("VALIDATION_ERROR", {
@@ -68,7 +68,7 @@ export async function addItemTemplateAttributeAction(
 				templateId: parsed.data.templateId,
 				code: parsed.data.code,
 				name: parsed.data.name,
-				valueKind: parsed.data.valueKind,
+				dataType: parsed.data.dataType,
 			},
 			{ authorization: createMasterDataAuthorizationPort() },
 		);

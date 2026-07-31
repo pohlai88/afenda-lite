@@ -4,12 +4,12 @@ import {
 	getPartyById,
 	getPaymentTermById,
 	type MasterQueryOptions,
+	refUomIdSchema,
 } from "@afenda/master-data";
 import {
 	createDrizzleMasterDataStore,
 	createDrizzlePlatformReferenceStore,
 } from "@afenda/master-data/adapters/drizzle";
-import { refUomIdSchema } from "@afenda/master-data/platform-references";
 import type { MasterDataSnapshotPort } from "@afenda/sales";
 
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";

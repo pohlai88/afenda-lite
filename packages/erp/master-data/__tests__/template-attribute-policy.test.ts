@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-	legacyValueKindFromDataType,
-	parseTemplateAttributeValidationRules,
-} from "../src/capabilities/extensions/template-attribute-policy";
+import { parseTemplateAttributeValidationRules } from "../src/capabilities/extensions/template-attribute-policy";
 import { normalizeVariantAttributeValue } from "../src/capabilities/extensions/variant-attribute-value-policy";
 
 describe("template attribute validation policy", () => {
@@ -129,12 +126,5 @@ describe("template attribute validation policy", () => {
 				referenceType: "ITEM",
 			}),
 		).toMatchObject({ ok: true, data: { referenceType: "item" } });
-	});
-
-	it("documents legacy value-kind projection as lossy", () => {
-		expect(legacyValueKindFromDataType("single_option")).toBe("option");
-		expect(legacyValueKindFromDataType("multiple_option")).toBe("option");
-		expect(legacyValueKindFromDataType("decimal")).toBe("text");
-		expect(legacyValueKindFromDataType("reference")).toBe("text");
 	});
 });

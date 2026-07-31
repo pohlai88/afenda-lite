@@ -35,7 +35,7 @@ interface CreateTaxRegistrationFormProps {
 }
 
 /**
- * Tax registration create form — CAPABLE when `master_data.manage` is granted.
+ * Tax-registration create form — visible with its exact package capability.
  */
 export function CreateTaxRegistrationForm({
 	canManage,

@@ -507,6 +507,20 @@ describe("@afenda/master-data platform references", () => {
 		});
 		expect(masterDataRoot).not.toHaveProperty("DrizzlePlatformReferenceStore");
 		expect(masterDataRoot).not.toHaveProperty("MemoryPlatformReferenceStore");
+		for (const internalCapability of [
+			"getRefCountry",
+			"getRefCurrency",
+			"getRefLanguage",
+			"getRefTimeZone",
+			"getRefUomDimension",
+			"getRefUom",
+			"readRefCountry",
+			"readRefUom",
+			"failInvalidReference",
+			"failReferenceNotFound",
+		]) {
+			expect(masterDataRoot).not.toHaveProperty(internalCapability);
+		}
 		for (const exportName of prohibitedReferenceMutationExports) {
 			expect(masterDataRoot).not.toHaveProperty(exportName);
 			expect(platformReferences).not.toHaveProperty(exportName);
@@ -519,7 +533,8 @@ describe("@afenda/master-data platform references", () => {
 		const packageConfig = JSON.parse(packageJson) as {
 			exports: Record<string, unknown>;
 		};
-		expect(packageConfig.exports).toHaveProperty("./platform-references");
+		expect(packageConfig.exports).not.toHaveProperty("./platform-references");
+		expect(packageConfig.exports).not.toHaveProperty("./lifecycle-governance");
 
 		const capabilityIndexSource = readFileSync(
 			join(

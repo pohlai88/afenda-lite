@@ -11,7 +11,6 @@ import {
 } from "@afenda/master-data";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
@@ -47,14 +46,6 @@ export async function searchMasterDataAction(
 		return errorResult.fail("VALIDATION_ERROR", {
 			publicMessage: "Enter a non-empty master-data search query.",
 		});
-	}
-
-	const permissionDenied = await forbidUnlessPermission(
-		session,
-		"master_data.read",
-	);
-	if (permissionDenied) {
-		return permissionDenied;
 	}
 
 	try {

@@ -5,7 +5,7 @@ import { createPaymentTerm, type PaymentTerm } from "@afenda/master-data";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { runMemberPermissionAction } from "@/app/actions/run-member-permission-action";
+import { runMemberSessionAction } from "@/app/actions/run-member-session-action";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
@@ -24,7 +24,7 @@ const createPaymentTermFormSchema = z.object({
 });
 
 /**
- * Master-data payment term create — session org/actor stamp + `master_data.manage`.
+ * Master-data payment term create — session stamp with package-owned authorization.
  */
 export async function createPaymentTermAction(
 	_prev: CreatePaymentTermActionState,
@@ -41,9 +41,8 @@ export async function createPaymentTermAction(
 		});
 	}
 
-	return await runMemberPermissionAction({
+	return await runMemberSessionAction({
 		path: "createPaymentTermAction",
-		permission: "master_data.manage",
 		safeMessage:
 			"Could not create payment term. Try again or contact an admin.",
 		execute: async (session, correlationId) => {

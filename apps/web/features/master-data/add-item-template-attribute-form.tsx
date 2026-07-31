@@ -24,15 +24,15 @@ const initialState: AddItemTemplateAttributeActionState = null;
 
 interface AddItemTemplateAttributeFormProps {
 	canManage: boolean;
+	dataTypes: readonly string[];
 	draftTemplates: Array<{ id: string; label: string }>;
-	valueKinds: readonly string[];
 }
 
 /** Add attribute while template is draft. */
 export function AddItemTemplateAttributeForm({
 	canManage,
 	draftTemplates,
-	valueKinds,
+	dataTypes,
 }: AddItemTemplateAttributeFormProps) {
 	const [state, formAction, pending] = useActionState(
 		addItemTemplateAttributeAction,
@@ -69,7 +69,7 @@ export function AddItemTemplateAttributeForm({
 				<Alert role="status">
 					<AlertTitle>Attribute added</AlertTitle>
 					<AlertDescription>
-						{state.data.attribute.code} · {state.data.attribute.valueKind}
+						{state.data.attribute.code} · {state.data.attribute.dataType}
 					</AlertDescription>
 				</Alert>
 			) : null}
@@ -91,11 +91,11 @@ export function AddItemTemplateAttributeForm({
 			<FormField error={nameError} fieldId="attr-name" label="Name" required>
 				<Input autoComplete="off" disabled={pending} name="name" required />
 			</FormField>
-			<FormField fieldId="attr-kind" label="Value kind" required>
-				<NativeSelect disabled={pending} name="valueKind" required>
-					{valueKinds.map((kind) => (
-						<NativeSelectOption key={kind} value={kind}>
-							{kind}
+			<FormField fieldId="attr-data-type" label="Data type" required>
+				<NativeSelect disabled={pending} name="dataType" required>
+					{dataTypes.map((dataType) => (
+						<NativeSelectOption key={dataType} value={dataType}>
+							{dataType}
 						</NativeSelectOption>
 					))}
 				</NativeSelect>

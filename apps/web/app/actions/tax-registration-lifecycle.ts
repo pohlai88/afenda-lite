@@ -16,7 +16,6 @@ import {
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
 
 import { parseSchema } from "@/modules/platform/schemas/common";
@@ -47,7 +46,7 @@ const LIFECYCLE_COMMANDS = {
 export type TaxRegistrationLifecycleKind = keyof typeof LIFECYCLE_COMMANDS;
 
 /**
- * Shared tax-registration lifecycle Action runner — CAS + `master_data.manage`.
+ * Shared tax-registration lifecycle Action runner — package-authorized CAS.
  * Called from thin `"use server"` Action entrypoints (not a Server Action itself).
  */
 export async function runTaxRegistrationLifecycle(
@@ -66,14 +65,6 @@ export async function runTaxRegistrationLifecycle(
 			publicMessage:
 				"Provide a valid tax registration id and expected version.",
 		});
-	}
-
-	const permissionDenied = await forbidUnlessPermission(
-		session,
-		"master_data.manage",
-	);
-	if (permissionDenied) {
-		return permissionDenied;
 	}
 
 	const command = LIFECYCLE_COMMANDS[kind];

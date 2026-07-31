@@ -1,6 +1,7 @@
 // biome-ignore-all lint/performance/noJsxPropsBind: The enabled React Compiler stabilizes JSX callback props.
 "use client";
 
+import type { ItemTemplateAttributeDataType } from "@afenda/master-data";
 import {
 	Alert,
 	AlertDescription,
@@ -28,7 +29,7 @@ export interface VariantTemplateOption {
 		id: string;
 		code: string;
 		name: string;
-		valueKind: "text" | "option";
+		dataType: ItemTemplateAttributeDataType;
 		options: Array<{ id: string; label: string }>;
 	}>;
 	id: string;
@@ -166,7 +167,8 @@ export function CreateItemVariantForm({
 				</NativeSelect>
 			</FormField>
 			{attributes.map((attribute) =>
-				attribute.valueKind === "option" ? (
+				attribute.dataType === "single_option" ||
+				attribute.dataType === "multiple_option" ? (
 					<FormField
 						fieldId={`variant-option-${attribute.id}`}
 						key={attribute.id}
@@ -195,7 +197,7 @@ export function CreateItemVariantForm({
 						<Input
 							autoComplete="off"
 							disabled={pending}
-							name={`valueText_${attribute.id}`}
+							name={`textValue_${attribute.id}`}
 							required
 						/>
 					</FormField>

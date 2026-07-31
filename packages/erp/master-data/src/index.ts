@@ -116,8 +116,6 @@ export {
 	listItemTemplateAttributes,
 	listItemTemplates,
 	listItemVariantsByTemplate,
-	listTemplateAttributeOptions,
-	listTemplateAttributes,
 	listVariantAttributeValues,
 	retireItemTemplate,
 	retireItemVariant,
@@ -382,7 +380,6 @@ export {
 	getDefaultItemPurchaseUom,
 	getDefaultItemSalesUom,
 	getPartyAddressById,
-	getPartyRole,
 	getPartyRoleById,
 	getPrimaryPartyAddress,
 	getPrimaryPartyContact,
@@ -432,10 +429,8 @@ export {
 	MAX_EXTERNAL_ID_QUALIFIER_LENGTH,
 	MAX_EXTERNAL_ID_VALUE_LENGTH,
 	type NormalizedExternalId,
-	type NormalizedPartyExternalId,
 	normalizeExternalId,
 	normalizeExternalIdQualifier,
-	normalizePartyExternalId,
 } from "./capabilities/extensions/external-id-normalization";
 export {
 	ITEM_ALIAS_TYPES,
@@ -478,11 +473,7 @@ export type {
 	PartyExtensionStore,
 	WarehouseExtensionStore,
 } from "./capabilities/extensions/store";
-export type {
-	ItemTemplateVariantStore,
-	ItemVariantExtensionStore,
-	MasterDataVariantStore,
-} from "./capabilities/extensions/template-store";
+export type { ItemVariantExtensionStore } from "./capabilities/extensions/template-store";
 export * from "./capabilities/integration-projections";
 export {
 	MASTER_SEARCH_ENTITY,
@@ -505,10 +496,7 @@ export {
 	getRefUomById,
 	getRefUomDimensionByCode,
 	listRefUoms,
-} from "./capabilities/platform-references/legacy-queries";
-export * from "./capabilities/platform-references/policies";
-export * from "./capabilities/platform-references/queries";
-export * from "./capabilities/platform-references/reference-errors";
+} from "./capabilities/platform-references/authorized-queries";
 export * from "./capabilities/platform-references/schemas";
 export * from "./capabilities/platform-references/types";
 export type {
@@ -524,10 +512,8 @@ export {
 	idempotencyKeySchema,
 	type MasterDataMutationContext,
 	masterDataMutationContextSchema,
-	type OrgActorContext,
 	type OrganizationId,
 	type OrgQueryActor,
-	orgActorContextSchema,
 	organizationIdSchema,
 	orgQueryActorSchema,
 	type UserId,
@@ -597,7 +583,6 @@ export {
 	IDENTITY_REGISTRATION_LIFECYCLE_STATUSES,
 	type IdentityRegistrationLifecycleStatus,
 	ITEM_TEMPLATE_ATTRIBUTE_DATA_TYPES,
-	ITEM_TEMPLATE_ATTRIBUTE_VALUE_KINDS,
 	ITEM_TRACKING_POLICIES,
 	ITEM_TYPES,
 	type Item,
@@ -610,7 +595,6 @@ export {
 	type ItemTemplateAttributeDataType,
 	type ItemTemplateAttributeOption,
 	type ItemTemplateAttributeValidationRules,
-	type ItemTemplateAttributeValueKind,
 	type ItemTrackingPolicy,
 	type ItemType,
 	type ItemUom,
@@ -627,7 +611,6 @@ export {
 	PARTY_ADDRESS_VALIDATION_STATUSES,
 	PARTY_CONTACT_TYPES,
 	PARTY_CONTACT_VERIFICATION_STATUSES,
-	PARTY_EXTERNAL_ID_CASE_SENSITIVITIES,
 	PARTY_KINDS,
 	PARTY_RELATIONSHIP_DIRECTIONS,
 	PARTY_RELATIONSHIP_TYPES,
@@ -642,7 +625,6 @@ export {
 	type PartyContactType,
 	type PartyContactVerificationStatus,
 	type PartyExternalId,
-	type PartyExternalIdCaseSensitivity,
 	type PartyKind,
 	type PartyRelationship,
 	type PartyRelationshipDirection,

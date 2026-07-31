@@ -126,9 +126,12 @@ describe("PLATFORM_PERMISSION_V1 (N10 / ARCH-023)", () => {
 			expect(orgAdminSet.has(code)).toBe(true);
 		}
 
-		expect(editorCodes).toContain("master_data.manage");
-		expect(editorCodes).not.toContain("master_data.approve");
-		expect(viewerCodes).toContain("master_data.read");
+		expect(editorCodes).toContain("master_data.warehouse_read");
+		expect(editorCodes).toContain("master_data.payment_term_read");
+		expect(editorCodes).toContain("master_data.change_request_read");
+		expect(editorCodes).toContain("master_data.search_read");
+		expect(editorCodes).not.toContain("master_data.change_request_approve");
+		expect(viewerCodes).toContain("master_data.party_read");
 		expect(viewerCodes).toContain("master_data.tax_registration_read");
 		expect(viewerCodes).toContain("master_data.party_contact_read");
 		expect(viewerCodes).not.toContain(
@@ -137,7 +140,7 @@ describe("PLATFORM_PERMISSION_V1 (N10 / ARCH-023)", () => {
 		expect(viewerCodes).not.toContain(
 			"master_data.party_contact_sensitive_read",
 		);
-		expect(viewerCodes).not.toContain("master_data.manage");
+		expect(viewerCodes).not.toContain("master_data.payment_term_manage");
 		expect(viewerCodes).toContain("accounting.journal.read");
 		expect(viewerCodes).not.toContain("accounting.journal.post");
 	});

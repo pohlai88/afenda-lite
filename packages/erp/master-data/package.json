@@ -16,14 +16,6 @@
 			"types": "./src/module.manifest.ts",
 			"default": "./src/module.manifest.ts"
 		},
-		"./platform-references": {
-			"types": "./src/capabilities/platform-references/index.ts",
-			"default": "./src/capabilities/platform-references/index.ts"
-		},
-		"./lifecycle-governance": {
-			"types": "./src/capabilities/lifecycle-governance/index.ts",
-			"default": "./src/capabilities/lifecycle-governance/index.ts"
-		},
 		"./testing/organization-dimensions": {
 			"types": "./src/capabilities/core-organization-masters/testing-organization-dimension-store.ts",
 			"default": "./src/capabilities/core-organization-masters/testing-organization-dimension-store.ts"

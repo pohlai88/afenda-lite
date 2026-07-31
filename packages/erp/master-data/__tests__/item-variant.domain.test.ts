@@ -63,10 +63,10 @@ async function seedActiveTemplate(options: {
 			templateId: template.data.id,
 			code: "COLOR",
 			name: "Color",
-			valueKind: "option",
+			dataType: "single_option",
 			isRequired: true,
 			isVariantDefining: true,
-			sortOrder: 1,
+			displayOrder: 1,
 		},
 		options,
 	);
@@ -79,7 +79,7 @@ async function seedActiveTemplate(options: {
 			attributeId: color.data.id,
 			code: "RED",
 			label: "Red",
-			sortOrder: 1,
+			displayOrder: 1,
 		},
 		options,
 	);
@@ -92,7 +92,7 @@ async function seedActiveTemplate(options: {
 			attributeId: color.data.id,
 			code: "BLUE",
 			label: "Blue",
-			sortOrder: 2,
+			displayOrder: 2,
 		},
 		options,
 	);
@@ -147,7 +147,7 @@ describe("@afenda/master-data item variants (R1)", () => {
 				templateId: template.data.id,
 				code: "SIZE",
 				name: "Size",
-				valueKind: "text",
+				dataType: "text",
 			},
 			options,
 		);
@@ -158,7 +158,7 @@ describe("@afenda/master-data item variants (R1)", () => {
 				templateId: template.data.id,
 				code: "size",
 				name: "Size again",
-				valueKind: "text",
+				dataType: "text",
 			},
 			options,
 		);
@@ -743,7 +743,7 @@ describe("@afenda/master-data item variants (R1)", () => {
 				templateId: template.data.id,
 				code: "COLOR",
 				name: "Color",
-				valueKind: "option",
+				dataType: "single_option",
 				isVariantDefining: true,
 			},
 			options,

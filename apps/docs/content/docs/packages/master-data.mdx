@@ -268,7 +268,7 @@ Every lifecycle transition must declare allowed source states, target state, req
 
 ## Authorization Matrix
 
-The canonical core permission catalog is `MASTER_DATA_CORE_PERMISSION_CODES` in `src/permissions.ts`; `masterDataModuleManifest.authorization` maps every command/query to one of these explicit permissions when the matrix covers the operation. Legacy broad grants `master_data.read`, `master_data.manage`, and `master_data.approve` remain published only for compatibility and role migration.
+The canonical core permission catalog is `MASTER_DATA_CORE_PERMISSION_CODES` in `src/permissions.ts`; `masterDataModuleManifest.authorization` maps every command and query exhaustively. Broad read/manage/approve grants were deleted: consumers declare exact capabilities while the package alone resolves operations to permissions.
 
 | Area | Permissions |
 |------|-------------|

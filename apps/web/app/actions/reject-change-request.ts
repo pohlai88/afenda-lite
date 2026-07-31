@@ -12,7 +12,6 @@ import {
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
@@ -30,7 +29,7 @@ const rejectChangeRequestFormSchema = z.object({
 });
 
 /**
- * Reject MDG change request (checker) — `master_data.approve`.
+ * Reject an MDG change request; package authorization owns checker policy.
  */
 export async function rejectChangeRequestAction(
 	_prev: RejectChangeRequestActionState,
@@ -48,14 +47,6 @@ export async function rejectChangeRequestAction(
 		return errorResult.fail("VALIDATION_ERROR", {
 			publicMessage: "Provide a valid change request id and version.",
 		});
-	}
-
-	const permissionDenied = await forbidUnlessPermission(
-		session,
-		"master_data.approve",
-	);
-	if (permissionDenied) {
-		return permissionDenied;
 	}
 
 	try {

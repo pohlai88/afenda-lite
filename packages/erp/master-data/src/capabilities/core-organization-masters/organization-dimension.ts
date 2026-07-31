@@ -31,7 +31,7 @@ import {
 } from "../../authorization";
 import {
 	expectedVersionSchema,
-	orgActorContextSchema,
+	masterDataMutationContextSchema,
 	orgQueryActorSchema,
 } from "../../contracts/context";
 import {
@@ -121,48 +121,51 @@ const organizationDimensionPageSizeSchema = z
 	.max(100)
 	.default(25);
 
-export const createOrganizationDimensionInputSchema = orgActorContextSchema
-	.extend({
-		kind: z.enum(ORGANIZATION_DIMENSION_KINDS),
-		key: z.string().trim().min(1).max(100),
-		name: z.string().trim().min(1).max(200),
-		parentId: z.uuid().nullable().optional(),
-		effectiveFrom: isoDateSchema,
-		effectiveTo: isoDateSchema.nullable().optional(),
-		supersedesId: z.uuid().nullable().optional(),
-		supersedesExpectedVersion: expectedVersionSchema.nullable().optional(),
-	})
-	.strict()
-	.superRefine((value, context) => {
-		if (
-			value.effectiveTo !== undefined &&
-			value.effectiveTo !== null &&
-			value.effectiveTo < value.effectiveFrom
-		) {
+export const createOrganizationDimensionInputSchema =
+	masterDataMutationContextSchema
+		.extend({
+			kind: z.enum(ORGANIZATION_DIMENSION_KINDS),
+			key: z.string().trim().min(1).max(100),
+			name: z.string().trim().min(1).max(200),
+			parentId: z.uuid().nullable().optional(),
+			effectiveFrom: isoDateSchema,
+			effectiveTo: isoDateSchema.nullable().optional(),
+			supersedesId: z.uuid().nullable().optional(),
+			supersedesExpectedVersion: expectedVersionSchema.nullable().optional(),
+		})
+		.strict()
+		.superRefine((value, context) => {
+			if (
+				value.effectiveTo !== undefined &&
+				value.effectiveTo !== null &&
+				value.effectiveTo < value.effectiveFrom
+			) {
+				context.addIssue({
+					code: "custom",
+					path: ["effectiveTo"],
+					message: "effectiveTo must be on or after effectiveFrom",
+				});
+			}
+
+			const hasSupersedesId =
+				value.supersedesId !== undefined && value.supersedesId !== null;
+			const hasExpectedVersion =
+				value.supersedesExpectedVersion !== undefined &&
+				value.supersedesExpectedVersion !== null;
+			if (hasSupersedesId === hasExpectedVersion) {
+				return;
+			}
+
 			context.addIssue({
 				code: "custom",
-				path: ["effectiveTo"],
-				message: "effectiveTo must be on or after effectiveFrom",
+				path: hasSupersedesId
+					? ["supersedesExpectedVersion"]
+					: ["supersedesId"],
+				message: hasSupersedesId
+					? "supersedesExpectedVersion is required when supersedesId is provided"
+					: "supersedesId is required when supersedesExpectedVersion is provided",
 			});
-		}
-
-		const hasSupersedesId =
-			value.supersedesId !== undefined && value.supersedesId !== null;
-		const hasExpectedVersion =
-			value.supersedesExpectedVersion !== undefined &&
-			value.supersedesExpectedVersion !== null;
-		if (hasSupersedesId === hasExpectedVersion) {
-			return;
-		}
-
-		context.addIssue({
-			code: "custom",
-			path: hasSupersedesId ? ["supersedesExpectedVersion"] : ["supersedesId"],
-			message: hasSupersedesId
-				? "supersedesExpectedVersion is required when supersedesId is provided"
-				: "supersedesId is required when supersedesExpectedVersion is provided",
 		});
-	});
 
 export const resolveOrganizationDimensionsAsOfInputSchema = orgQueryActorSchema
 	.extend({
@@ -198,22 +201,24 @@ export const getOrganizationDimensionEffectiveInputSchema = z.union([
 		.strict(),
 ]);
 
-export const updateOrganizationDimensionInputSchema = orgActorContextSchema
-	.extend({
-		id: z.uuid(),
-		expectedVersion: expectedVersionSchema,
-		name: z.string().trim().min(1).max(200).optional(),
-		parentId: z.uuid().nullable().optional(),
-		effectiveTo: isoDateSchema.nullable().optional(),
-	})
-	.strict();
+export const updateOrganizationDimensionInputSchema =
+	masterDataMutationContextSchema
+		.extend({
+			id: z.uuid(),
+			expectedVersion: expectedVersionSchema,
+			name: z.string().trim().min(1).max(200).optional(),
+			parentId: z.uuid().nullable().optional(),
+			effectiveTo: isoDateSchema.nullable().optional(),
+		})
+		.strict();
 
-export const organizationDimensionLifecycleInputSchema = orgActorContextSchema
-	.extend({
-		id: z.uuid(),
-		expectedVersion: expectedVersionSchema,
-	})
-	.strict();
+export const organizationDimensionLifecycleInputSchema =
+	masterDataMutationContextSchema
+		.extend({
+			id: z.uuid(),
+			expectedVersion: expectedVersionSchema,
+		})
+		.strict();
 
 export const getOrganizationDimensionByIdInputSchema = orgQueryActorSchema
 	.extend({

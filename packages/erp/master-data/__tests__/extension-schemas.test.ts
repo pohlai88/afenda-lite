@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import {
 	createPartyRoleInputSchema,
-	findByExternalIdInputSchema,
 	findPartyByExternalIdInputSchema,
 	getPartyAddressInputSchema,
 	getPrimaryPartyContactInputSchema,
@@ -208,7 +207,7 @@ describe("extension input schemas", () => {
 		).toBe(false);
 	});
 
-	it("uses one canonical external-id vocabulary for generic and party lookup", () => {
+	it("uses the canonical external-id vocabulary for party lookup", () => {
 		const input = {
 			...queryActor,
 			sourceSystem: "legacy-erp",
@@ -216,16 +215,14 @@ describe("extension input schemas", () => {
 			externalValue: "BP-1",
 			caseSensitivity: "insensitive",
 		};
-		const generic = findByExternalIdInputSchema.safeParse(input);
 		const party = findPartyByExternalIdInputSchema.safeParse(input);
 
-		expect(generic).toMatchObject({
+		expect(party).toMatchObject({
 			success: true,
 			data: { externalIdType: "business_partner" },
 		});
-		expect(party).toEqual(generic);
 		expect(
-			findByExternalIdInputSchema.safeParse({
+			findPartyByExternalIdInputSchema.safeParse({
 				...queryActor,
 				system: "legacy-erp",
 				namespace: "bp",

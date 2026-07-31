@@ -16,9 +16,6 @@ export type NormalizedExternalId = Readonly<{
 	caseSensitivity: ExternalIdCaseSensitivity;
 }>;
 
-/** @deprecated Use NormalizedExternalId. */
-export type NormalizedPartyExternalId = NormalizedExternalId;
-
 export function normalizeExternalIdQualifier(
 	value: string,
 	_field: "sourceSystem" | "externalIdType",
@@ -36,16 +33,6 @@ export function normalizeExternalIdQualifier(
 	}
 
 	return errorResult.ok(normalized);
-}
-
-/** @deprecated Use normalizeExternalId. */
-export function normalizePartyExternalId(input: {
-	sourceSystem: string;
-	externalIdType: string;
-	externalValue: string;
-	caseSensitivity: ExternalIdCaseSensitivity;
-}): Result<NormalizedExternalId> {
-	return normalizeExternalId(input);
 }
 
 /**

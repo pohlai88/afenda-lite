@@ -40,7 +40,7 @@ const attributeIdSchema = z.string().uuid();
 
 type AttributeValueInput =
 	| { attributeId: string; optionId: string }
-	| { attributeId: string; valueText: string };
+	| { attributeId: string; textValue: string };
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Validation keeps mutually exclusive attribute inputs in one atomic parser.
 function parseAttributeValues(
@@ -69,17 +69,17 @@ function parseAttributeValues(
 	const values: AttributeValueInput[] = [];
 	for (const attributeId of attributeIds) {
 		const optionRaw = formData.get(`optionId_${attributeId}`);
-		const textRaw = formData.get(`valueText_${attributeId}`);
+		const textRaw = formData.get(`textValue_${attributeId}`);
 		const optionId =
 			typeof optionRaw === "string" && optionRaw.trim().length > 0
 				? optionRaw.trim()
 				: undefined;
-		const valueText =
+		const textValue =
 			typeof textRaw === "string" && textRaw.trim().length > 0
 				? textRaw.trim()
 				: undefined;
 		const hasOption = optionId !== undefined;
-		const hasText = valueText !== undefined;
+		const hasText = textValue !== undefined;
 		if (hasOption === hasText) {
 			return errorResult.fail("VALIDATION_ERROR", {
 				publicMessage:
@@ -96,20 +96,20 @@ function parseAttributeValues(
 			values.push({ attributeId, optionId: optionParsed.data });
 			continue;
 		}
-		if (valueText === undefined) {
+		if (textValue === undefined) {
 			return errorResult.fail("VALIDATION_ERROR", {
 				publicMessage:
 					"Each template attribute needs exactly one of option or text value.",
 			});
 		}
-		values.push({ attributeId, valueText });
+		values.push({ attributeId, textValue });
 	}
 	return { ok: true, values };
 }
 
 /**
  * Concrete variant item create — own md_item id+code + typed attribute values.
- * Form posts one value per template attribute (option_* or valueText_*).
+ * Form posts one value per template attribute (option_* or textValue_*).
  */
 export async function createItemVariantAction(
 	_prev: CreateItemVariantActionState,

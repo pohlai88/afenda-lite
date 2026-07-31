@@ -10,7 +10,7 @@ import {
 	resolveCommandDeps,
 } from "../../command-options";
 import {
-	orgActorContextSchema,
+	masterDataMutationContextSchema,
 	orgQueryActorSchema,
 } from "../../contracts/context";
 import {
@@ -32,7 +32,7 @@ import { assertApprovedChangeRequestForApply } from "./change-request-commands";
 
 const mergeFieldDecisionSchema = z.enum(["source", "target"]);
 
-export const mergePartiesInputSchema = orgActorContextSchema.extend({
+export const mergePartiesInputSchema = masterDataMutationContextSchema.extend({
 	changeRequestId: changeRequestIdSchema.optional(),
 	sourcePartyId: partyIdSchema,
 	targetPartyId: partyIdSchema,

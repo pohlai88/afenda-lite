@@ -100,8 +100,8 @@ describe("master-data Server Actions", () => {
 		});
 	});
 
-	it("denies create when master_data.manage is missing", async () => {
-		permissionMocks.forbidUnlessPermission.mockResolvedValue({
+	it("forwards package-owned party-create denial", async () => {
+		masterDataMocks.createParty.mockResolvedValue({
 			ok: false,
 			code: "FORBIDDEN",
 			message: "You do not have permission to manage organization master data.",
@@ -119,10 +119,9 @@ describe("master-data Server Actions", () => {
 			code: "FORBIDDEN",
 			message: "You do not have permission to manage organization master data.",
 		});
-		expect(masterDataMocks.createParty).not.toHaveBeenCalled();
-		expect(permissionMocks.forbidUnlessPermission).toHaveBeenCalledWith(
-			operatorSession,
-			"master_data.manage",
+		expect(masterDataMocks.createParty).toHaveBeenCalledWith(
+			expect.objectContaining({ organizationId: operatorSession.orgId }),
+			expect.objectContaining({ authorization: expect.anything() }),
 		);
 	});
 
@@ -160,7 +159,7 @@ describe("master-data Server Actions", () => {
 		);
 	});
 
-	it("lists parties under session org with master_data.read", async () => {
+	it("lists parties under the session organization", async () => {
 		masterDataMocks.listParties.mockResolvedValue({
 			ok: true,
 			data: [],
@@ -169,10 +168,6 @@ describe("master-data Server Actions", () => {
 		const result = await listPartiesAction({ pageSize: 10 });
 
 		expect(result).toEqual({ ok: true, data: { parties: [] } });
-		expect(permissionMocks.forbidUnlessPermission).toHaveBeenCalledWith(
-			operatorSession,
-			"master_data.read",
-		);
 		expect(masterDataMocks.listParties).toHaveBeenCalledWith(
 			expect.objectContaining({
 				organizationId: "org-md-active",
@@ -235,8 +230,8 @@ describe("master-data Server Actions", () => {
 		);
 	});
 
-	it("denies payment term create when master_data.manage is missing", async () => {
-		permissionMocks.forbidUnlessPermission.mockResolvedValue({
+	it("forwards package-owned payment-term create denial", async () => {
+		masterDataMocks.createPaymentTerm.mockResolvedValue({
 			ok: false,
 			code: "FORBIDDEN",
 			message: "You do not have permission to manage organization master data.",
@@ -254,10 +249,9 @@ describe("master-data Server Actions", () => {
 			code: "FORBIDDEN",
 			message: "You do not have permission to manage organization master data.",
 		});
-		expect(masterDataMocks.createPaymentTerm).not.toHaveBeenCalled();
-		expect(permissionMocks.forbidUnlessPermission).toHaveBeenCalledWith(
-			operatorSession,
-			"master_data.manage",
+		expect(masterDataMocks.createPaymentTerm).toHaveBeenCalledWith(
+			expect.objectContaining({ organizationId: operatorSession.orgId }),
+			expect.objectContaining({ authorization: expect.anything() }),
 		);
 	});
 
@@ -295,7 +289,7 @@ describe("master-data Server Actions", () => {
 		);
 	});
 
-	it("lists payment terms under session org with master_data.read", async () => {
+	it("lists payment terms under the session organization", async () => {
 		masterDataMocks.listPaymentTerms.mockResolvedValue({
 			ok: true,
 			data: [],
@@ -304,10 +298,6 @@ describe("master-data Server Actions", () => {
 		const result = await listPaymentTermsAction({ pageSize: 10 });
 
 		expect(result).toEqual({ ok: true, data: { paymentTerms: [] } });
-		expect(permissionMocks.forbidUnlessPermission).toHaveBeenCalledWith(
-			operatorSession,
-			"master_data.read",
-		);
 		expect(masterDataMocks.listPaymentTerms).toHaveBeenCalledWith(
 			expect.objectContaining({
 				organizationId: "org-md-active",
@@ -317,8 +307,8 @@ describe("master-data Server Actions", () => {
 		);
 	});
 
-	it("denies payment term activate when master_data.manage is missing", async () => {
-		permissionMocks.forbidUnlessPermission.mockResolvedValue({
+	it("forwards package-owned payment-term activation denial", async () => {
+		masterDataMocks.activatePaymentTerm.mockResolvedValue({
 			ok: false,
 			code: "FORBIDDEN",
 			message: "You do not have permission to manage organization master data.",
@@ -335,15 +325,21 @@ describe("master-data Server Actions", () => {
 			code: "FORBIDDEN",
 			message: "You do not have permission to manage organization master data.",
 		});
-		expect(masterDataMocks.activatePaymentTerm).not.toHaveBeenCalled();
-		expect(permissionMocks.forbidUnlessPermission).toHaveBeenCalledWith(
-			operatorSession,
-			"master_data.manage",
-		);
+		expect(masterDataMocks.activatePaymentTerm).toHaveBeenCalled();
 	});
 
-	it("denies tax registration create when master_data.manage is missing", async () => {
-		permissionMocks.forbidUnlessPermission.mockResolvedValue({
+	it("forwards package-owned tax-registration create denial", async () => {
+		masterDataMocks.getRefCountryByCode.mockResolvedValue({
+			ok: true,
+			data: {
+				id: "c1000000-0000-4000-8000-000000000001",
+				code: "MY",
+				alpha3: "MYS",
+				name: "Malaysia",
+				active: true,
+			},
+		});
+		masterDataMocks.createTaxRegistration.mockResolvedValue({
 			ok: false,
 			code: "FORBIDDEN",
 			message: "You do not have permission to manage organization master data.",
@@ -362,7 +358,10 @@ describe("master-data Server Actions", () => {
 			code: "FORBIDDEN",
 			message: "You do not have permission to manage organization master data.",
 		});
-		expect(masterDataMocks.createTaxRegistration).not.toHaveBeenCalled();
+		expect(masterDataMocks.createTaxRegistration).toHaveBeenCalledWith(
+			expect.objectContaining({ organizationId: operatorSession.orgId }),
+			expect.objectContaining({ authorization: expect.anything() }),
+		);
 	});
 
 	it("stamps session org on tax registration create", async () => {
@@ -414,7 +413,7 @@ describe("master-data Server Actions", () => {
 		);
 	});
 
-	it("lists tax registrations under session org with master_data.read", async () => {
+	it("lists tax registrations under the session organization", async () => {
 		masterDataMocks.listTaxRegistrations.mockResolvedValue({
 			ok: true,
 			data: [],
@@ -423,10 +422,6 @@ describe("master-data Server Actions", () => {
 		const result = await listTaxRegistrationsAction({ pageSize: 10 });
 
 		expect(result).toEqual({ ok: true, data: { taxRegistrations: [] } });
-		expect(permissionMocks.forbidUnlessPermission).toHaveBeenCalledWith(
-			operatorSession,
-			"master_data.read",
-		);
 		expect(masterDataMocks.listTaxRegistrations).toHaveBeenCalledWith(
 			expect.objectContaining({
 				organizationId: "org-md-active",
@@ -436,8 +431,8 @@ describe("master-data Server Actions", () => {
 		);
 	});
 
-	it("denies tax registration activate when master_data.manage is missing", async () => {
-		permissionMocks.forbidUnlessPermission.mockResolvedValue({
+	it("forwards package-owned tax-registration activation denial", async () => {
+		masterDataMocks.activateTaxRegistration.mockResolvedValue({
 			ok: false,
 			code: "FORBIDDEN",
 			message: "You do not have permission to manage organization master data.",
@@ -454,11 +449,11 @@ describe("master-data Server Actions", () => {
 			code: "FORBIDDEN",
 			message: "You do not have permission to manage organization master data.",
 		});
-		expect(masterDataMocks.activateTaxRegistration).not.toHaveBeenCalled();
+		expect(masterDataMocks.activateTaxRegistration).toHaveBeenCalled();
 	});
 
-	it("denies item template create when master_data.manage is missing", async () => {
-		permissionMocks.forbidUnlessPermission.mockResolvedValue({
+	it("forwards package-owned template-create denial", async () => {
+		masterDataMocks.createItemTemplate.mockResolvedValue({
 			ok: false,
 			code: "FORBIDDEN",
 			message: "You do not have permission to manage organization master data.",
@@ -475,7 +470,7 @@ describe("master-data Server Actions", () => {
 			code: "FORBIDDEN",
 			message: "You do not have permission to manage organization master data.",
 		});
-		expect(masterDataMocks.createItemTemplate).not.toHaveBeenCalled();
+		expect(masterDataMocks.createItemTemplate).toHaveBeenCalled();
 	});
 
 	it("stamps session org on item template create", async () => {
@@ -509,7 +504,7 @@ describe("master-data Server Actions", () => {
 		);
 	});
 
-	it("lists item templates under session org with master_data.read", async () => {
+	it("lists item templates under the session organization", async () => {
 		masterDataMocks.listItemTemplates.mockResolvedValue({
 			ok: true,
 			data: [],
@@ -518,10 +513,6 @@ describe("master-data Server Actions", () => {
 		const result = await listItemTemplatesAction();
 
 		expect(result).toEqual({ ok: true, data: { templates: [] } });
-		expect(permissionMocks.forbidUnlessPermission).toHaveBeenCalledWith(
-			operatorSession,
-			"master_data.read",
-		);
 		expect(masterDataMocks.listItemTemplates).toHaveBeenCalledWith(
 			expect.objectContaining({
 				organizationId: "org-md-active",
@@ -531,7 +522,7 @@ describe("master-data Server Actions", () => {
 		);
 	});
 
-	it("denies attribute option create when master_data.manage is missing", async () => {
+	it("denies attribute option create without its exact permission", async () => {
 		permissionMocks.forbidUnlessPermission.mockResolvedValue({
 			ok: false,
 			code: "FORBIDDEN",
@@ -592,7 +583,7 @@ describe("master-data Server Actions", () => {
 			`optionId_${attrColor}`,
 			"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
 		);
-		formData.set(`valueText_${attrSize}`, "M");
+		formData.set(`textValue_${attrSize}`, "M");
 
 		const result = await createItemVariantAction(null, formData);
 
@@ -611,7 +602,7 @@ describe("master-data Server Actions", () => {
 						attributeId: attrColor,
 						optionId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
 					},
-					{ attributeId: attrSize, valueText: "M" },
+					{ attributeId: attrSize, textValue: "M" },
 				],
 			}),
 			expect.objectContaining({ authorization: expect.anything() }),

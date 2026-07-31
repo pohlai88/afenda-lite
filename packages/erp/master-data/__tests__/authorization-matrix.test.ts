@@ -21,15 +21,19 @@ import {
 	MASTER_COMMAND_SEARCH_REBUILD,
 	MASTER_COMMAND_TAX_REGISTRATION_UPDATE,
 	MASTER_COMMAND_WAREHOUSE_UPDATE,
+	MASTER_QUERY_CHANGE_REQUEST_LIST,
 	MASTER_QUERY_ITEM_GET_BY_CODE,
 	MASTER_QUERY_ORGANIZATION_DIMENSION_LIST,
 	MASTER_QUERY_PARTY_CONTACT_LIST,
 	MASTER_QUERY_PARTY_CONTACT_LIST_SENSITIVE,
 	MASTER_QUERY_PARTY_FIND_DUPLICATES,
 	MASTER_QUERY_PARTY_GET_BY_CODE,
+	MASTER_QUERY_PAYMENT_TERM_LIST,
 	MASTER_QUERY_REF_CURRENCY_GET_BY_CODE,
+	MASTER_QUERY_SEARCH_QUERY,
 	MASTER_QUERY_TAX_REGISTRATION_GET,
 	MASTER_QUERY_TAX_REGISTRATION_GET_SENSITIVE,
+	MASTER_QUERY_WAREHOUSE_LIST,
 } from "../src/module-ids";
 import {
 	MASTER_DATA_CORE_PERMISSION_CODES,
@@ -64,12 +68,15 @@ const EXPECTED_CORE_PERMISSION_CODES = [
 	"master_data.item_suspend",
 	"master_data.item_archive",
 	"master_data.item_extension_manage",
+	"master_data.warehouse_read",
 	"master_data.warehouse_manage",
+	"master_data.payment_term_read",
 	"master_data.payment_term_manage",
 	"master_data.tax_registration_read",
 	"master_data.tax_registration_manage",
 	"master_data.template_manage",
 	"master_data.variant_manage",
+	"master_data.change_request_read",
 	"master_data.change_request_create",
 	"master_data.change_request_submit",
 	"master_data.change_request_approve",
@@ -78,6 +85,7 @@ const EXPECTED_CORE_PERMISSION_CODES = [
 	"master_data.import_validate",
 	"master_data.import_approve",
 	"master_data.import_apply",
+	"master_data.search_read",
 	"master_data.search_rebuild",
 	"master_data.duplicate_review",
 ] as const;
@@ -99,6 +107,14 @@ describe("master-data authorization matrix", () => {
 			"master_data.party_contact_sensitive_read",
 			"master_data.sensitive_external_id_read",
 		]);
+	});
+
+	it("does not republish retired broad permissions", () => {
+		for (const suffix of ["read", "manage", "approve"] as const) {
+			expect(MASTER_DATA_PERMISSION_CODES).not.toContain(
+				`master_data.${suffix}`,
+			);
+		}
 	});
 
 	it("maps representative commands to the matrix permissions", () => {
@@ -181,6 +197,16 @@ describe("master-data authorization matrix", () => {
 		expect(queries[MASTER_QUERY_ITEM_GET_BY_CODE]).toBe(
 			"master_data.item_read",
 		);
+		expect(queries[MASTER_QUERY_WAREHOUSE_LIST]).toBe(
+			"master_data.warehouse_read",
+		);
+		expect(queries[MASTER_QUERY_PAYMENT_TERM_LIST]).toBe(
+			"master_data.payment_term_read",
+		);
+		expect(queries[MASTER_QUERY_CHANGE_REQUEST_LIST]).toBe(
+			"master_data.change_request_read",
+		);
+		expect(queries[MASTER_QUERY_SEARCH_QUERY]).toBe("master_data.search_read");
 		expect(queries[MASTER_QUERY_PARTY_FIND_DUPLICATES]).toBe(
 			"master_data.duplicate_review",
 		);

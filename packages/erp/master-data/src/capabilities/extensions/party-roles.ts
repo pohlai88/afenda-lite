@@ -412,6 +412,3 @@ export async function getPartyRoleById(
 		parsed.data.id,
 	);
 }
-
-/** @deprecated Use getPartyRoleById for explicit lookup semantics. */
-export const getPartyRole = getPartyRoleById;

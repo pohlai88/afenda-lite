@@ -11,7 +11,7 @@ export type {
 } from "@/app/actions/payment-term-lifecycle";
 
 /**
- * Master-data payment term inactive — `expectedVersion` CAS + `master_data.manage`.
+ * Master-data payment term inactive — package-authorized `expectedVersion` CAS.
  */
 export async function inactivePaymentTermAction(
 	_prev: PaymentTermLifecycleActionState,

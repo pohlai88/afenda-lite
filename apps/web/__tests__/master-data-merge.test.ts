@@ -15,20 +15,12 @@ const authMocks = vi.hoisted(() => ({
 	getSession: vi.fn(),
 }));
 
-const permissionMocks = vi.hoisted(() => ({
-	forbidUnlessPermission: vi.fn(),
-}));
-
 const mergeMocks = vi.hoisted(() => ({
 	mergeParties: vi.fn(),
 }));
 
 vi.mock("@afenda/auth", () => ({
 	authServer: { session: { get: authMocks.getSession } },
-}));
-
-vi.mock("@/app/actions/permission-gate", () => ({
-	forbidUnlessPermission: permissionMocks.forbidUnlessPermission,
 }));
 
 vi.mock("@afenda/master-data", async (importOriginal) => {
@@ -49,11 +41,10 @@ describe("mergePartiesAction", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		authMocks.getSession.mockResolvedValue(operatorSession);
-		permissionMocks.forbidUnlessPermission.mockResolvedValue(null);
 	});
 
-	it("denies without master_data.manage", async () => {
-		permissionMocks.forbidUnlessPermission.mockResolvedValue({
+	it("forwards package-owned merge denial", async () => {
+		mergeMocks.mergeParties.mockResolvedValue({
 			ok: false,
 			code: "FORBIDDEN",
 			message: "denied",
@@ -66,7 +57,10 @@ describe("mergePartiesAction", () => {
 
 		const result = await mergePartiesAction(null, formData);
 		expect(result?.ok).toBe(false);
-		expect(mergeMocks.mergeParties).not.toHaveBeenCalled();
+		expect(mergeMocks.mergeParties).toHaveBeenCalledWith(
+			expect.objectContaining({ organizationId: operatorSession.orgId }),
+			expect.objectContaining({ authorization: expect.anything() }),
+		);
 	});
 
 	it("stamps session org and maps success", async () => {

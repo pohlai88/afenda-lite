@@ -6,7 +6,6 @@ import { http } from "@afenda/http";
 import { logger } from "@afenda/logger";
 import { listParties, type Party } from "@afenda/master-data";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
 
 export interface ListPartiesActionData {
@@ -14,7 +13,7 @@ export interface ListPartiesActionData {
 }
 
 /**
- * Master-data party list — session org stamp + `master_data.read`.
+ * Master-data party list — package-authorized and session scoped.
  * Thin adapter; no SQL in the Action.
  */
 export async function listPartiesAction(input?: {
@@ -24,14 +23,6 @@ export async function listPartiesAction(input?: {
 }): Promise<ActionResult<ListPartiesActionData>> {
 	const correlationId = http.correlation.create();
 	const session = await authServer.session.get();
-
-	const permissionDenied = await forbidUnlessPermission(
-		session,
-		"master_data.read",
-	);
-	if (permissionDenied) {
-		return permissionDenied;
-	}
 
 	try {
 		const result = await listParties(

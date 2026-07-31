@@ -11,7 +11,7 @@ export type {
 } from "@/app/actions/tax-registration-lifecycle";
 
 /**
- * Master-data tax registration retire — `expectedVersion` CAS + `master_data.manage`.
+ * Master-data tax registration retire — package-authorized `expectedVersion` CAS.
  */
 export async function retireTaxRegistrationAction(
 	_prev: TaxRegistrationLifecycleActionState,

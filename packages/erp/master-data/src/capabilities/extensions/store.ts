@@ -16,7 +16,6 @@ import type {
 	PartyContactType,
 	PartyContactVerificationStatus,
 	PartyExternalId,
-	PartyExternalIdCaseSensitivity,
 	PartyRelationship,
 	PartyRelationshipDirection,
 	PartyRelationshipType,
@@ -154,7 +153,7 @@ export interface PartyContactVerificationRecord {
 }
 
 export interface PartyExternalIdCreateRecord {
-	caseSensitivity: PartyExternalIdCaseSensitivity;
+	caseSensitivity: ExternalIdCaseSensitivity;
 	createdBy: string;
 	externalIdType: string;
 	externalValue: string;
@@ -166,7 +165,7 @@ export interface PartyExternalIdCreateRecord {
 }
 
 export interface PartyExternalIdLookup {
-	caseSensitivity: PartyExternalIdCaseSensitivity;
+	caseSensitivity: ExternalIdCaseSensitivity;
 	externalIdType: string;
 	normalizedValue: string;
 	organizationId: string;
@@ -314,7 +313,7 @@ export type ItemAliasSearchFilter = ItemAliasLookup & {
 };
 
 export interface WarehouseExternalIdCreateRecord {
-	caseSensitivity: PartyExternalIdCaseSensitivity;
+	caseSensitivity: ExternalIdCaseSensitivity;
 	createdBy: string;
 	externalIdType: string;
 	externalValue: string;

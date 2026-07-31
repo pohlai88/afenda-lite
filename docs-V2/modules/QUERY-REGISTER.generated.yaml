@@ -795,22 +795,22 @@ queries:
     permission: master_data.item_read
   - id: master_data.warehouse.get_by_id
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.warehouse_read
   - id: master_data.warehouse.get_by_code
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.warehouse_read
   - id: master_data.warehouse.list
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.warehouse_read
   - id: master_data.payment_term.get_by_id
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.payment_term_read
   - id: master_data.payment_term.get_by_code
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.payment_term_read
   - id: master_data.payment_term.list
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.payment_term_read
   - id: master_data.tax_registration.get
     moduleId: master-data
     permission: master_data.tax_registration_read
@@ -891,7 +891,7 @@ queries:
     permission: master_data.party_read
   - id: master_data.warehouse.find_by_external_id
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.warehouse_read
   - id: master_data.item_template.get_by_id
     moduleId: master-data
     permission: master_data.item_read
@@ -921,10 +921,10 @@ queries:
     permission: master_data.item_read
   - id: master_data.change_request.get_by_id
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.change_request_read
   - id: master_data.change_request.list
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.change_request_read
   - id: master_data.ref.country.get_by_code
     moduleId: master-data
     permission: master_data.reference_read
@@ -951,7 +951,7 @@ queries:
     permission: master_data.reference_read
   - id: master_data.search.query
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.search_read
   - id: payables.invoice.get
     moduleId: payables
     permission: payables.read

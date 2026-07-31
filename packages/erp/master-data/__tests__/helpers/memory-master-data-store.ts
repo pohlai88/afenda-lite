@@ -6638,8 +6638,8 @@ export class MemoryMasterDataStore implements MasterDataStore {
 						row.templateId === templateId,
 				)
 				.sort((a, b) => {
-					if (a.sortOrder !== b.sortOrder) {
-						return a.sortOrder - b.sortOrder;
+					if (a.displayOrder !== b.displayOrder) {
+						return a.displayOrder - b.displayOrder;
 					}
 					if (a.normalizedCode !== b.normalizedCode) {
 						return a.normalizedCode.localeCompare(b.normalizedCode);
@@ -6662,8 +6662,8 @@ export class MemoryMasterDataStore implements MasterDataStore {
 						row.attributeId === attributeId,
 				)
 				.sort((a, b) => {
-					if (a.sortOrder !== b.sortOrder) {
-						return a.sortOrder - b.sortOrder;
+					if (a.displayOrder !== b.displayOrder) {
+						return a.displayOrder - b.displayOrder;
 					}
 					if (a.normalizedCode !== b.normalizedCode) {
 						return a.normalizedCode.localeCompare(b.normalizedCode);
@@ -6721,9 +6721,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 						attributeIds.has(option.attributeId),
 				)
 				.sort((a, b) =>
-					a.sortOrder === b.sortOrder
+					a.displayOrder === b.displayOrder
 						? a.id.localeCompare(b.id)
-						: a.sortOrder - b.sortOrder,
+						: a.displayOrder - b.displayOrder,
 				);
 			return errorResult.ok(rows.map(cloneItemTemplateAttributeOption));
 		});
@@ -6769,16 +6769,10 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			name: record.name,
 			description: record.description,
 			dataType: record.dataType,
-			valueKind:
-				record.dataType === "single_option" ||
-				record.dataType === "multiple_option"
-					? "option"
-					: "text",
 			isRequired: record.isRequired,
 			isVariantDefining: record.isVariantDefining,
 			isSearchable: record.isSearchable,
 			displayOrder: record.displayOrder,
-			sortOrder: record.displayOrder,
 			validationRules: record.validationRules,
 			status: "active",
 			archivedAt: null,
@@ -6887,7 +6881,6 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			label: record.label,
 			description: record.description,
 			displayOrder: record.displayOrder,
-			sortOrder: record.displayOrder,
 			status: "active",
 			archivedAt: null,
 			archivedBy: null,
@@ -7222,7 +7215,6 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				attributeId: value.attributeId,
 				valueType: value.valueType,
 				textValue: value.textValue,
-				valueText: value.textValue,
 				integerValue: value.integerValue,
 				decimalValue: value.decimalValue,
 				booleanValue: value.booleanValue,

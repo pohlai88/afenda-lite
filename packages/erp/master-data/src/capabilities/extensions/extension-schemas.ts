@@ -10,7 +10,7 @@ import {
 } from "../../brands";
 import {
 	expectedVersionSchema,
-	orgActorContextSchema,
+	masterDataMutationContextSchema,
 	orgQueryActorSchema,
 } from "../../contracts/context";
 import {
@@ -125,7 +125,7 @@ function createListByParentInputSchema<ParentSchema extends z.ZodTypeAny>(
 	});
 }
 
-export const createPartyRoleInputSchema = orgActorContextSchema
+export const createPartyRoleInputSchema = masterDataMutationContextSchema
 	.extend({
 		partyId: partyIdSchema,
 		roleCode: z.enum(PARTY_ROLE_CODES),
@@ -139,13 +139,14 @@ export const createPartyRoleInputSchema = orgActorContextSchema
 		);
 	});
 
-export const partyRoleLifecycleInputSchema = orgActorContextSchema.extend({
-	id: partyRoleIdSchema,
-	expectedVersion: expectedVersionSchema,
-	reason: lifecycleReasonSchema,
-});
+export const partyRoleLifecycleInputSchema =
+	masterDataMutationContextSchema.extend({
+		id: partyRoleIdSchema,
+		expectedVersion: expectedVersionSchema,
+		reason: lifecycleReasonSchema,
+	});
 
-export const updatePartyRoleInputSchema = orgActorContextSchema
+export const updatePartyRoleInputSchema = masterDataMutationContextSchema
 	.extend({
 		id: partyRoleIdSchema,
 		expectedVersion: expectedVersionSchema,
@@ -172,7 +173,7 @@ export const getPartyRoleInputSchema = orgQueryActorSchema.extend({
 	id: partyRoleIdSchema,
 });
 
-export const createPartyAddressInputSchema = orgActorContextSchema
+export const createPartyAddressInputSchema = masterDataMutationContextSchema
 	.extend({
 		partyId: partyIdSchema,
 		addressType: z.enum(PARTY_ADDRESS_TYPES),
@@ -192,7 +193,7 @@ export const createPartyAddressInputSchema = orgActorContextSchema
 	})
 	.superRefine(validateSuppliedEffectiveRange);
 
-export const updatePartyAddressInputSchema = orgActorContextSchema
+export const updatePartyAddressInputSchema = masterDataMutationContextSchema
 	.extend({
 		id: partyAddressIdSchema,
 		expectedVersion: expectedVersionSchema,
@@ -244,7 +245,7 @@ export const getPartyAddressInputSchema = orgQueryActorSchema.extend({
 	id: partyAddressIdSchema,
 });
 
-export const createPartyContactInputSchema = orgActorContextSchema
+export const createPartyContactInputSchema = masterDataMutationContextSchema
 	.extend({
 		partyId: partyIdSchema,
 		contactType: z.enum(PARTY_CONTACT_TYPES),
@@ -257,7 +258,7 @@ export const createPartyContactInputSchema = orgActorContextSchema
 	})
 	.superRefine(validateSuppliedEffectiveRange);
 
-export const updatePartyContactInputSchema = orgActorContextSchema
+export const updatePartyContactInputSchema = masterDataMutationContextSchema
 	.extend({
 		id: partyContactIdSchema,
 		expectedVersion: expectedVersionSchema,
@@ -298,32 +299,34 @@ export const updatePartyContactInputSchema = orgActorContextSchema
 	});
 
 export const updatePartyContactVerificationInputSchema =
-	orgActorContextSchema.extend({
+	masterDataMutationContextSchema.extend({
 		id: partyContactIdSchema,
 		expectedVersion: expectedVersionSchema,
 		verificationStatus: z.enum(PARTY_CONTACT_VERIFICATION_STATUSES),
 	});
 
-export const createPartyExternalIdInputSchema = orgActorContextSchema.extend({
-	partyId: partyIdSchema,
-	sourceSystem: systemSchema,
-	externalIdType: externalIdTypeSchema,
-	externalValue: externalIdValueSchema,
-	caseSensitivity: z.enum(EXTERNAL_ID_CASE_SENSITIVITIES),
-	isPrimary: z.boolean().default(false),
-});
+export const createPartyExternalIdInputSchema =
+	masterDataMutationContextSchema.extend({
+		partyId: partyIdSchema,
+		sourceSystem: systemSchema,
+		externalIdType: externalIdTypeSchema,
+		externalValue: externalIdValueSchema,
+		caseSensitivity: z.enum(EXTERNAL_ID_CASE_SENSITIVITIES),
+		isPrimary: z.boolean().default(false),
+	});
 
-export const createPartyRelationshipInputSchema = orgActorContextSchema
-	.extend({
-		sourcePartyId: partyIdSchema,
-		targetPartyId: partyIdSchema,
-		relationshipType: z.enum(PARTY_RELATIONSHIP_TYPES),
-		effectiveFrom: optionalEffectiveDateSchema,
-		effectiveTo: optionalEffectiveDateSchema,
-	})
-	.superRefine(validateSuppliedEffectiveRange);
+export const createPartyRelationshipInputSchema =
+	masterDataMutationContextSchema
+		.extend({
+			sourcePartyId: partyIdSchema,
+			targetPartyId: partyIdSchema,
+			relationshipType: z.enum(PARTY_RELATIONSHIP_TYPES),
+			effectiveFrom: optionalEffectiveDateSchema,
+			effectiveTo: optionalEffectiveDateSchema,
+		})
+		.superRefine(validateSuppliedEffectiveRange);
 
-export const createItemUomInputSchema = orgActorContextSchema
+export const createItemUomInputSchema = masterDataMutationContextSchema
 	.extend({
 		itemId: itemIdSchema,
 		alternateUomId: refUomIdSchema,
@@ -371,7 +374,7 @@ export const createItemUomInputSchema = orgActorContextSchema
 		}
 	});
 
-export const createItemBarcodeInputSchema = orgActorContextSchema
+export const createItemBarcodeInputSchema = masterDataMutationContextSchema
 	.extend({
 		itemId: itemIdSchema,
 		barcodeValue: z.string().trim().min(1).max(MAX_ITEM_BARCODE_VALUE_LENGTH),
@@ -396,26 +399,28 @@ export const findItemByBarcodeInputSchema = orgQueryActorSchema.extend({
 	includeArchived: z.boolean().optional(),
 });
 
-export const createItemExternalIdInputSchema = orgActorContextSchema.extend({
-	itemId: itemIdSchema,
-	sourceSystem: systemSchema,
-	externalIdType: externalIdTypeSchema,
-	externalValue: externalIdValueSchema,
-	caseSensitivity: z.enum(EXTERNAL_ID_CASE_SENSITIVITIES),
-	isPrimary: z.boolean().default(false),
-});
+export const createItemExternalIdInputSchema =
+	masterDataMutationContextSchema.extend({
+		itemId: itemIdSchema,
+		sourceSystem: systemSchema,
+		externalIdType: externalIdTypeSchema,
+		externalValue: externalIdValueSchema,
+		caseSensitivity: z.enum(EXTERNAL_ID_CASE_SENSITIVITIES),
+		isPrimary: z.boolean().default(false),
+	});
 
-export const createItemAliasInputSchema = orgActorContextSchema.extend({
-	itemId: itemIdSchema,
-	aliasType: z.enum(ITEM_ALIAS_TYPES),
-	aliasValue: z.string().trim().min(1).max(MAX_ITEM_ALIAS_VALUE_LENGTH),
-	languageId: refLanguageIdSchema.optional(),
-	source: z.string().trim().min(1).max(MAX_ITEM_ALIAS_SOURCE_LENGTH),
-	isSearchable: z.boolean().default(true),
-});
+export const createItemAliasInputSchema =
+	masterDataMutationContextSchema.extend({
+		itemId: itemIdSchema,
+		aliasType: z.enum(ITEM_ALIAS_TYPES),
+		aliasValue: z.string().trim().min(1).max(MAX_ITEM_ALIAS_VALUE_LENGTH),
+		languageId: refLanguageIdSchema.optional(),
+		source: z.string().trim().min(1).max(MAX_ITEM_ALIAS_SOURCE_LENGTH),
+		isSearchable: z.boolean().default(true),
+	});
 
 export const createWarehouseExternalIdInputSchema =
-	orgActorContextSchema.extend({
+	masterDataMutationContextSchema.extend({
 		warehouseId: warehouseIdSchema,
 		sourceSystem: systemSchema,
 		externalIdType: externalIdTypeSchema,
@@ -429,9 +434,6 @@ export const findPartyByExternalIdInputSchema = orgQueryActorSchema.extend({
 	externalValue: externalIdValueSchema,
 	caseSensitivity: z.enum(EXTERNAL_ID_CASE_SENSITIVITIES),
 });
-
-/** @deprecated Use a domain-specific find*ByExternalIdInputSchema. */
-export const findByExternalIdInputSchema = findPartyByExternalIdInputSchema;
 
 export const findWarehouseByExternalIdInputSchema = orgQueryActorSchema.extend({
 	sourceSystem: systemSchema,
@@ -488,13 +490,6 @@ export const listItemExtensionsInputSchema =
 	createListByParentInputSchema(itemIdSchema);
 export const listWarehouseExtensionsInputSchema =
 	createListByParentInputSchema(warehouseIdSchema);
-/** @deprecated Use a domain-specific list*ExtensionsInputSchema. */
-export const listByParentInputSchema = orgQueryActorSchema.extend({
-	parentId: z.string().uuid(),
-	page: extensionPageSchema,
-	pageSize: extensionPageSizeSchema,
-});
-
 export const getPrimaryPartyAddressInputSchema = orgQueryActorSchema.extend({
 	partyId: partyIdSchema,
 	purpose: z.enum(PARTY_ADDRESS_PURPOSES),
@@ -569,7 +564,6 @@ export type ListPartyRelationshipsInput = z.infer<
 	typeof listPartyRelationshipsInputSchema
 >;
 export type ListItemsByAliasInput = z.infer<typeof listItemsByAliasInputSchema>;
-export type ListByParentInput = z.infer<typeof listByParentInputSchema>;
 export type ListPartyExtensionsInput = z.infer<
 	typeof listPartyExtensionsInputSchema
 >;

@@ -15,10 +15,6 @@ const authMocks = vi.hoisted(() => ({
 	getSession: vi.fn(),
 }));
 
-const permissionMocks = vi.hoisted(() => ({
-	forbidUnlessPermission: vi.fn(),
-}));
-
 const crMocks = vi.hoisted(() => ({
 	submitChangeRequest: vi.fn(),
 	approveChangeRequest: vi.fn(),
@@ -27,10 +23,6 @@ const crMocks = vi.hoisted(() => ({
 
 vi.mock("@afenda/auth", () => ({
 	authServer: { session: { get: authMocks.getSession } },
-}));
-
-vi.mock("@/app/actions/permission-gate", () => ({
-	forbidUnlessPermission: permissionMocks.forbidUnlessPermission,
 }));
 
 vi.mock("@afenda/master-data", async (importOriginal) => {
@@ -66,11 +58,10 @@ describe("master-data change-request Actions", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		authMocks.getSession.mockResolvedValue(operatorSession);
-		permissionMocks.forbidUnlessPermission.mockResolvedValue(null);
 	});
 
-	it("denies submit without master_data.manage", async () => {
-		permissionMocks.forbidUnlessPermission.mockResolvedValue({
+	it("forwards package-owned submit denial", async () => {
+		crMocks.submitChangeRequest.mockResolvedValue({
 			ok: false,
 			code: "FORBIDDEN",
 			message: "denied",
@@ -82,10 +73,9 @@ describe("master-data change-request Actions", () => {
 
 		const result = await submitChangeRequestAction(null, formData);
 		expect(result?.ok).toBe(false);
-		expect(crMocks.submitChangeRequest).not.toHaveBeenCalled();
-		expect(permissionMocks.forbidUnlessPermission).toHaveBeenCalledWith(
-			operatorSession,
-			"master_data.manage",
+		expect(crMocks.submitChangeRequest).toHaveBeenCalledWith(
+			expect.objectContaining({ organizationId: operatorSession.orgId }),
+			expect.objectContaining({ authorization: expect.anything() }),
 		);
 	});
 
@@ -112,8 +102,8 @@ describe("master-data change-request Actions", () => {
 		);
 	});
 
-	it("denies approve without master_data.approve", async () => {
-		permissionMocks.forbidUnlessPermission.mockResolvedValue({
+	it("forwards package-owned approval denial", async () => {
+		crMocks.approveChangeRequest.mockResolvedValue({
 			ok: false,
 			code: "FORBIDDEN",
 			message: "denied",
@@ -125,10 +115,9 @@ describe("master-data change-request Actions", () => {
 
 		const result = await approveChangeRequestAction(null, formData);
 		expect(result?.ok).toBe(false);
-		expect(crMocks.approveChangeRequest).not.toHaveBeenCalled();
-		expect(permissionMocks.forbidUnlessPermission).toHaveBeenCalledWith(
-			operatorSession,
-			"master_data.approve",
+		expect(crMocks.approveChangeRequest).toHaveBeenCalledWith(
+			expect.objectContaining({ organizationId: operatorSession.orgId }),
+			expect.objectContaining({ authorization: expect.anything() }),
 		);
 	});
 
@@ -155,7 +144,7 @@ describe("master-data change-request Actions", () => {
 		);
 	});
 
-	it("rejects CR with master_data.approve", async () => {
+	it("rejects a change request through package authorization", async () => {
 		crMocks.rejectChangeRequest.mockResolvedValue({
 			ok: true,
 			data: { ...sampleCr, status: "rejected", version: 2 },
@@ -168,10 +157,6 @@ describe("master-data change-request Actions", () => {
 
 		const result = await rejectChangeRequestAction(null, formData);
 		expect(result?.ok).toBe(true);
-		expect(permissionMocks.forbidUnlessPermission).toHaveBeenCalledWith(
-			operatorSession,
-			"master_data.approve",
-		);
 		expect(crMocks.rejectChangeRequest).toHaveBeenCalledWith(
 			expect.objectContaining({
 				organizationId: "org-cr",

@@ -9,7 +9,7 @@ import {
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { runMemberPermissionAction } from "@/app/actions/run-member-permission-action";
+import { runMemberSessionAction } from "@/app/actions/run-member-session-action";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
@@ -39,9 +39,8 @@ export async function createWarehouseAction(
 			publicMessage: "Enter a valid warehouse code, name, and location type.",
 		});
 	}
-	return await runMemberPermissionAction({
+	return await runMemberSessionAction({
 		path: "createWarehouseAction",
-		permission: "master_data.manage",
 		safeMessage: "Could not create warehouse. Try again or contact an admin.",
 		execute: async (session, correlationId) => {
 			const result = await createWarehouse(

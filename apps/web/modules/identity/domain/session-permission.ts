@@ -21,12 +21,6 @@ export const PERMISSION_DENIED_MESSAGE: Record<PlatformPermissionCode, string> =
 			"You do not have permission to manage organization roles.",
 		"clients.invite": "You do not have permission to invite members.",
 		"account.self": "You do not have permission to manage this account.",
-		"master_data.read":
-			"You do not have permission to read organization master data.",
-		"master_data.manage":
-			"You do not have permission to manage organization master data.",
-		"master_data.approve":
-			"You do not have permission to approve master-data change requests.",
 		"master_data.import_create":
 			"You do not have permission to create master-data imports.",
 		"master_data.import_validate":
@@ -514,8 +508,12 @@ export const PERMISSION_DENIED_MESSAGE: Record<PlatformPermissionCode, string> =
 			"You do not have permission to suspend item masters from operational use.",
 		"master_data.item_extension_manage":
 			"You do not have permission to manage item groups, UoM conversions, barcodes, aliases, and item external IDs.",
+		"master_data.warehouse_read":
+			"You do not have permission to read warehouse masters.",
 		"master_data.warehouse_manage":
 			"You do not have permission to manage warehouse master identities.",
+		"master_data.payment_term_read":
+			"You do not have permission to read payment-term masters.",
 		"master_data.payment_term_manage":
 			"You do not have permission to manage payment-term masters.",
 		"master_data.tax_registration_manage":
@@ -524,6 +522,8 @@ export const PERMISSION_DENIED_MESSAGE: Record<PlatformPermissionCode, string> =
 			"You do not have permission to manage item templates and template attributes.",
 		"master_data.variant_manage":
 			"You do not have permission to manage item variants and variant attribute values.",
+		"master_data.change_request_read":
+			"You do not have permission to read controlled master-data change requests.",
 		"master_data.change_request_create":
 			"You do not have permission to create controlled master-data change requests.",
 		"master_data.change_request_submit":
@@ -534,6 +534,8 @@ export const PERMISSION_DENIED_MESSAGE: Record<PlatformPermissionCode, string> =
 			"You do not have permission to apply approved master-data change requests.",
 		"master_data.search_rebuild":
 			"You do not have permission to rebuild master-data search projections.",
+		"master_data.search_read":
+			"You do not have permission to search master-data projections.",
 		"master_data.duplicate_review":
 			"You do not have permission to review master-data duplicate candidates.",
 		"master_data.tax_registration_read":

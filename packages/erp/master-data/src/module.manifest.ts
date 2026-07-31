@@ -36,6 +36,7 @@ import {
 } from "./module-ids";
 import {
 	MASTER_DATA_PERMISSION_CHANGE_REQUEST_APPROVE,
+	MASTER_DATA_PERMISSION_CHANGE_REQUEST_READ,
 	MASTER_DATA_PERMISSION_CHANGE_REQUEST_SUBMIT,
 	MASTER_DATA_PERMISSION_CODES,
 	MASTER_DATA_PERMISSION_DIMENSION_ACTIVATE,
@@ -65,8 +66,9 @@ import {
 	MASTER_DATA_PERMISSION_PARTY_UNBLOCK,
 	MASTER_DATA_PERMISSION_PARTY_UPDATE,
 	MASTER_DATA_PERMISSION_PAYMENT_TERM_MANAGE,
-	MASTER_DATA_PERMISSION_READ,
+	MASTER_DATA_PERMISSION_PAYMENT_TERM_READ,
 	MASTER_DATA_PERMISSION_REFERENCE_READ,
+	MASTER_DATA_PERMISSION_SEARCH_READ,
 	MASTER_DATA_PERMISSION_SEARCH_REBUILD,
 	MASTER_DATA_PERMISSION_TAX_REGISTRATION_MANAGE,
 	MASTER_DATA_PERMISSION_TAX_REGISTRATION_READ,
@@ -74,6 +76,7 @@ import {
 	MASTER_DATA_PERMISSION_TEMPLATE_MANAGE,
 	MASTER_DATA_PERMISSION_VARIANT_MANAGE,
 	MASTER_DATA_PERMISSION_WAREHOUSE_MANAGE,
+	MASTER_DATA_PERMISSION_WAREHOUSE_READ,
 } from "./permissions";
 
 const MASTER_DATA_MUTATION_TABLES = [
@@ -308,14 +311,17 @@ function coreQueryPermission(
 	) {
 		return MASTER_DATA_PERMISSION_ITEM_READ;
 	}
-	if (
-		query.startsWith("master_data.warehouse.") ||
-		query.startsWith("master_data.payment_term.") ||
-		query === "master_data.change_request.get_by_id" ||
-		query === "master_data.change_request.list" ||
-		query === "master_data.search.query"
-	) {
-		return MASTER_DATA_PERMISSION_READ;
+	if (query.startsWith("master_data.warehouse.")) {
+		return MASTER_DATA_PERMISSION_WAREHOUSE_READ;
+	}
+	if (query.startsWith("master_data.payment_term.")) {
+		return MASTER_DATA_PERMISSION_PAYMENT_TERM_READ;
+	}
+	if (query.startsWith("master_data.change_request.")) {
+		return MASTER_DATA_PERMISSION_CHANGE_REQUEST_READ;
+	}
+	if (query === "master_data.search.query") {
+		return MASTER_DATA_PERMISSION_SEARCH_READ;
 	}
 	throw new Error(`Unmapped master-data query permission: ${query}`);
 }

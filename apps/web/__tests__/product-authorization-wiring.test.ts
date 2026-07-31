@@ -141,31 +141,11 @@ describe("N11 product authorization wiring", () => {
 			"app/actions/assign-org-role.ts": ["org.roles.manage"],
 			"app/actions/revoke-org-role.ts": ["org.roles.manage"],
 			"app/actions/invite-org-member.ts": ["clients.invite"],
-			"app/actions/list-parties.ts": ["master_data.read"],
-			"app/actions/create-party.ts": ["master_data.manage"],
-			"app/actions/activate-party.ts": ["master_data.manage"],
-			"app/actions/merge-parties.ts": ["master_data.manage"],
 			"app/actions/create-party-role.ts": ["master_data.party_role_manage"],
-			"app/actions/create-item.ts": ["master_data.manage"],
-			"app/actions/create-item-group.ts": ["master_data.manage"],
-			"app/actions/create-warehouse.ts": ["master_data.manage"],
-			"app/actions/master-root-lifecycle.ts": ["master_data.manage"],
-			"app/actions/list-payment-terms.ts": ["master_data.read"],
-			"app/actions/create-payment-term.ts": ["master_data.manage"],
-			"app/actions/update-payment-term.ts": ["master_data.manage"],
-			"app/actions/payment-term-lifecycle.ts": ["master_data.manage"],
-			"app/actions/list-tax-registrations.ts": ["master_data.read"],
-			"app/actions/create-tax-registration.ts": ["master_data.manage"],
-			"app/actions/update-tax-registration.ts": ["master_data.manage"],
-			"app/actions/tax-registration-lifecycle.ts": ["master_data.manage"],
-			"app/actions/submit-change-request.ts": ["master_data.manage"],
-			"app/actions/approve-change-request.ts": ["master_data.approve"],
-			"app/actions/reject-change-request.ts": ["master_data.approve"],
 			"app/actions/validate-master-data-import.ts": [
 				"master_data.import_validate",
 			],
 			"app/actions/apply-master-data-import.ts": ["master_data.import_apply"],
-			"app/actions/search-master-data.ts": ["master_data.read"],
 			"app/actions/register-legal-company-draft.ts": [
 				"corporate_administration.company.manage",
 			],
@@ -297,9 +277,24 @@ describe("N11 product authorization wiring", () => {
 				"clients.invite",
 			],
 			"features/master-data/master-data-shell.tsx": [
-				"master_data.read",
-				"master_data.manage",
-				"master_data.approve",
+				"master_data.party_read",
+				"master_data.item_read",
+				"master_data.warehouse_read",
+				"master_data.payment_term_read",
+				"master_data.tax_registration_read",
+				"master_data.change_request_read",
+				"master_data.search_read",
+				"master_data.party_create",
+				"master_data.change_request_submit",
+				"master_data.change_request_approve",
+				"master_data.party_activate",
+				"master_data.party_merge",
+				"master_data.payment_term_manage",
+				"master_data.tax_registration_manage",
+				"master_data.template_manage",
+				"master_data.item_extension_manage",
+				"master_data.item_create",
+				"master_data.warehouse_manage",
 				"master_data.import_validate",
 				"master_data.import_apply",
 			],
@@ -391,6 +386,33 @@ describe("N11 product authorization wiring", () => {
 					code,
 				);
 			}
+		}
+
+		for (const relativePath of [
+			"app/actions/list-parties.ts",
+			"app/actions/create-party.ts",
+			"app/actions/activate-party.ts",
+			"app/actions/merge-parties.ts",
+			"app/actions/create-item.ts",
+			"app/actions/create-item-group.ts",
+			"app/actions/create-warehouse.ts",
+			"app/actions/master-root-lifecycle.ts",
+			"app/actions/list-payment-terms.ts",
+			"app/actions/create-payment-term.ts",
+			"app/actions/update-payment-term.ts",
+			"app/actions/payment-term-lifecycle.ts",
+			"app/actions/list-tax-registrations.ts",
+			"app/actions/create-tax-registration.ts",
+			"app/actions/update-tax-registration.ts",
+			"app/actions/tax-registration-lifecycle.ts",
+			"app/actions/submit-change-request.ts",
+			"app/actions/approve-change-request.ts",
+			"app/actions/reject-change-request.ts",
+			"app/actions/search-master-data.ts",
+		]) {
+			const actionSource = source(relativePath);
+			expect(actionSource).toContain("createMasterDataAuthorizationPort");
+			expect(actionSource).not.toMatch(/master_data\.(?:read|manage|approve)/u);
 		}
 
 		for (const relativePath of [
@@ -588,21 +610,7 @@ describe("N11 product authorization wiring", () => {
 			"app/actions/assign-org-role.ts",
 			"app/actions/revoke-org-role.ts",
 			"app/actions/invite-org-member.ts",
-			"app/actions/create-party.ts",
 			"app/actions/create-party-role.ts",
-			"app/actions/activate-party.ts",
-			"app/actions/merge-parties.ts",
-			"app/actions/list-parties.ts",
-			"app/actions/list-payment-terms.ts",
-			"app/actions/update-payment-term.ts",
-			"app/actions/payment-term-lifecycle.ts",
-			"app/actions/list-tax-registrations.ts",
-			"app/actions/create-tax-registration.ts",
-			"app/actions/update-tax-registration.ts",
-			"app/actions/tax-registration-lifecycle.ts",
-			"app/actions/submit-change-request.ts",
-			"app/actions/approve-change-request.ts",
-			"app/actions/reject-change-request.ts",
 		]) {
 			expect(source(relativePath)).toContain("forbidUnlessPermission");
 		}
@@ -615,8 +623,8 @@ describe("N11 product authorization wiring", () => {
 		]) {
 			expect(
 				source(relativePath),
-				`${relativePath} must use member permission helper`,
-			).toContain("runMemberPermissionAction");
+				`${relativePath} must use the non-authorizing member envelope`,
+			).toContain("runMemberSessionAction");
 		}
 	});
 });

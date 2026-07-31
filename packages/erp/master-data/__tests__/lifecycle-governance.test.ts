@@ -1,8 +1,4 @@
 import { errorResult } from "@afenda/errors";
-import {
-	evaluateLifecycleAvailability as evaluateLifecycleAvailabilityFromSubpath,
-	partyLifecyclePolicy as partyLifecyclePolicyFromSubpath,
-} from "@afenda/master-data/lifecycle-governance";
 import { describe, expect, it } from "vitest";
 import {
 	evaluateLifecycleAvailability as evaluateLifecycleAvailabilityFromRoot,
@@ -966,12 +962,8 @@ describe("lifecycle governance capability", () => {
 
 	it("exports lifecycle governance through the package root", () => {
 		expect(partyLifecyclePolicyFromRoot).toBe(partyLifecyclePolicy);
-		expect(partyLifecyclePolicyFromSubpath).toBe(partyLifecyclePolicy);
 		expect(evaluateLifecycleAvailabilityFromRoot({ state: "active" })).toEqual(
 			evaluateLifecycleAvailability({ state: "active" }),
 		);
-		expect(
-			evaluateLifecycleAvailabilityFromSubpath({ state: "blocked" }),
-		).toEqual(evaluateLifecycleAvailability({ state: "blocked" }));
 	});
 });

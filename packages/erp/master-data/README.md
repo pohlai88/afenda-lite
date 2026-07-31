@@ -245,7 +245,7 @@ Every lifecycle transition must declare allowed source states, target state, req
 
 ## Authorization Matrix
 
-The canonical core permission catalog is `MASTER_DATA_CORE_PERMISSION_CODES` in `src/permissions.ts`; `masterDataModuleManifest.authorization` maps every command/query to one of these explicit permissions when the matrix covers the operation. Legacy broad grants `master_data.read`, `master_data.manage`, and `master_data.approve` remain published only for compatibility and role migration.
+The canonical core permission catalog is `MASTER_DATA_CORE_PERMISSION_CODES` in `src/permissions.ts`; `masterDataModuleManifest.authorization` maps every command and query exhaustively. Broad read/manage/approve grants were deleted: consumers declare exact capabilities while the package alone resolves operations to permissions.
 
 | Area | Permissions |
 |------|-------------|
@@ -267,17 +267,15 @@ Sensitive reads are separate operations and grants. `master_data.tax_registratio
 | Path | Role |
 |------|------|
 | `@afenda/master-data` | Commands · queries · Zod schemas · brands · permissions · reasons · `MasterDataStore` type · lifecycle/code helpers (no Drizzle class) |
-| `@afenda/master-data/platform-references` | Typed reference read-store, queries, policies, schemas, and Memory adapter |
-| `@afenda/master-data/lifecycle-governance` | Lifecycle policy, availability, canonical identity, merge, and version-CAS helpers |
 | `@afenda/master-data/adapters/drizzle` | Master-data and platform-reference Drizzle stores/factories |
 | `@afenda/master-data/module-manifest` | Module manifest |
 | `@afenda/master-data/testing/organization-dimensions` | Organization-dimension testing store helpers |
 
-Never re-exports raw Drizzle tables or `db` / `eq`.
+The root is the permanent semantic facade. Subpaths exist only for production-adapter loading, structural manifest access, or isolated testing. The package never re-exports raw Drizzle tables, stores, injected reference-query machinery, `db`, or `eq` from the root.
 
 ## Public callable API
 
-The tables below enumerate every callable exported by the root barrel at the time of this review: **337 root callables**. Names are grouped by their implementation source so commands, queries, policies, normalizers, and integration helpers remain distinguishable. [`src/index.ts`](src/index.ts) and `package.json#exports` are the compiler source of truth for the complete symbol surface, including types, schemas, constants, and manifests.
+The tables below enumerate the governed callable groups exported by the root barrel. Names are grouped by their implementation source so commands, queries, policies, normalizers, and integration helpers remain distinguishable. [`src/index.ts`](src/index.ts) and `package.json#exports` are the compiler source of truth for the complete symbol surface, including types, schemas, constants, and manifests.
 
 ### Kernel and core organization masters
 
@@ -320,7 +318,7 @@ The tables below enumerate every callable exported by the root barrel at the tim
 | `contact-normalization.ts` | `normalizePartyContactValue` |
 | `extension-lifecycle.ts` | `assertExtensionTransitionReason` · `assertStandardChildLifecycleStatus` · `isStandardChildLifecycleStatus` · `parseStandardChildLifecycleStatus` · `resolveExtensionLifecycleTransition` |
 | `extension-version-cas.ts` | `assertExpectedExtensionVersion` · `nextExtensionVersion` |
-| `external-id-normalization.ts` | `normalizeExternalId` · `normalizeExternalIdQualifier` · `normalizePartyExternalId` |
+| `external-id-normalization.ts` | `normalizeExternalId` · `normalizeExternalIdQualifier` |
 | `item-alias-policy.ts` | `normalizeItemAlias` · `normalizeItemAliasSource` |
 | `item-aliases.ts` | `createItemAlias` · `findItemByAlias` · `listItemAliases` · `listItemsByAlias` |
 | `item-barcode-policy.ts` | `normalizeBarcode` · `normalizeBarcodePackQuantity` |
@@ -332,10 +330,10 @@ The tables below enumerate every callable exported by the root barrel at the tim
 | `party-contacts.ts` | `createPartyContact` · `getPrimaryPartyContact` · `getSensitivePrimaryPartyContact` · `listPartyContacts` · `listSensitivePartyContacts` · `updatePartyContact` · `updatePartyContactVerification` |
 | `party-external-ids.ts` | `createPartyExternalId` · `findPartyByExternalId` |
 | `party-relationships.ts` | `createPartyRelationship` · `listPartyRelationships` |
-| `party-roles.ts` | `activatePartyRole` · `archivePartyRole` · `createPartyRole` · `deactivatePartyRole` · `getPartyRole` · `getPartyRoleById` · `listActivePartyRoles` · `listPartyRoles` · `retirePartyRole` · `updatePartyRole` |
+| `party-roles.ts` | `activatePartyRole` · `archivePartyRole` · `createPartyRole` · `deactivatePartyRole` · `getPartyRoleById` · `listActivePartyRoles` · `listPartyRoles` · `retirePartyRole` · `updatePartyRole` |
 | `primary-record-policy.ts` | `isSameNullablePrimaryScope` |
-| `template-attributes.ts` | `addItemTemplateAttribute` · `listItemTemplateAttributes` · `listTemplateAttributes` |
-| `template-options.ts` | `addItemTemplateAttributeOption` · `listItemTemplateAttributeOptions` · `listTemplateAttributeOptions` |
+| `template-attributes.ts` | `addItemTemplateAttribute` · `listItemTemplateAttributes` |
+| `template-options.ts` | `addItemTemplateAttributeOption` · `listItemTemplateAttributeOptions` |
 | `variant-attribute-values.ts` | `getVariantConfiguration` · `listVariantAttributeValues` |
 | `warehouse-external-ids.ts` | `createWarehouseExternalId` · `findWarehouseByExternalId` |
 
@@ -376,18 +374,13 @@ The tables below enumerate every callable exported by the root barrel at the tim
 
 | Source | Callable exports |
 |--------|------------------|
-| `legacy-queries.ts` | `getRefCountryByCode` · `getRefCurrencyByCode` · `getRefLanguageByCode` · `getRefTimeZoneByIana` · `getRefUomByCode` · `getRefUomById` · `getRefUomDimensionByCode` · `listRefUoms` |
-| `policies.ts` | `resolveActiveCountry` · `resolveActiveCurrency` · `resolveActiveLanguage` · `resolveActiveTimeZone` · `resolveActiveUom` · `resolveUomDimension` · `validateItemUomCompatibility` |
-| `queries.ts` | `getRefCountry` · `getRefCurrency` · `getRefLanguage` · `getRefTimeZone` · `getRefUom` · `getRefUomDimension` · `listRefCountries` · `listRefCurrencies` · `listRefLanguages` · `listRefTimeZones` · `listRefUomDimensions` · `readRefCountries` · `readRefCountry` · `readRefCountryByCode` · `readRefCurrencies` · `readRefCurrency` · `readRefCurrencyByCode` · `readRefLanguage` · `readRefLanguageByCode` · `readRefLanguages` · `readRefTimeZone` · `readRefTimeZoneByCode` · `readRefTimeZones` · `readRefUom` · `readRefUomByCode` · `readRefUomDimension` · `readRefUomDimensionByCode` · `readRefUomDimensions` · `readRefUoms` · `readRefUomsByDimension` |
-| `reference-errors.ts` | `failInactiveReference` · `failInvalidReference` · `failReferenceDimensionMismatch` · `failReferenceNotFound` |
+| `authorized-queries.ts` | Organization-authorized `getRef*` and `listRefUoms` facade operations |
 
 ### Subpath-only callables
 
 | Import path | Callable exports not provided by that subpath's type/manifest-only surfaces |
 |-------------|--------------------------------------------------------------------------|
 | `@afenda/master-data/adapters/drizzle` | `buildPendingOutboxRecord` · `createDrizzleMasterDataStore` · `createDrizzlePlatformReferenceStore` · `prepareDrizzleAuditWrite` |
-| `@afenda/master-data/platform-references` | The 42 reference queries, policies, and error helpers listed above; this subpath also exports `MemoryPlatformReferenceStore` and the `PlatformReferenceStore` type |
-| `@afenda/master-data/lifecycle-governance` | The 29 lifecycle-governance callables listed above |
 | `@afenda/master-data/testing/organization-dimensions` | `createMemoryOrganizationDimensionStore` |
 | `@afenda/master-data/module-manifest` | No callables; exports the module manifest |
 
@@ -418,11 +411,7 @@ There is no org-scoped `md_uom`. Item packaging conversions live in `md_item_uom
 
 ## MD-1 Platform References and Organization Dimensions
 
-Platform references are read-only and are not organization-scoped. Use the `@afenda/master-data/platform-references` store-query APIs for no-org-scope reference reads:
-
-`getRefCountry` · `listRefCountries` · `getRefCurrency` · `listRefCurrencies` · `getRefLanguage` · `listRefLanguages` · `getRefTimeZone` · `listRefTimeZones` · `getRefUomDimension` · `listRefUomDimensions` · `getRefUom` · `listRefUoms`
-
-Lists default to active rows where the reference family has an active flag, accept explicit `status: "active" | "inactive" | "all"`, sort deterministically, and paginate with bounded cursor/page-size inputs. `ref_uom_dimension` has no active state, so status filters are invalid for that family.
+Platform reference rows are global and read-only, but application access uses the root organization-authorized facade: `getRefCountryByCode`, `getRefCurrencyByCode`, `getRefLanguageByCode`, `getRefTimeZoneByIana`, `getRefUomDimensionByCode`, `getRefUomById`, `getRefUomByCode`, and `listRefUoms`. These operations require an explicit organization/actor context and `master_data.reference_read`. Injected store queries, active-reference policies, and reference error helpers remain internal implementation capabilities rather than a second consumer API.
 
 Organization dimensions are hard-tenant operational masters. The controlled taxonomy is:
 
@@ -499,6 +488,8 @@ Cross-module contract: sales references party, party role, item, payment term, a
 Item templates are enforceable product-family schemas with optimistic versioning. They are not loose authoring helpers and not immutable family definitions. Template update and lifecycle commands require `expectedVersion`; schema shape is mutable only while the template is `draft`. Public commands are `createItemTemplate`, `updateItemTemplate`, `activateItemTemplate`, and `archiveItemTemplate` (`archiveItemTemplate` maps to the stored `retired` status).
 
 Template attributes define code, name, data type, required flag, variant-defining flag, searchable flag, display order, and typed validation rules. Supported data types are explicit: `text`, `integer`, `decimal`, `boolean`, `date`, `single_option`, `multiple_option`, and `reference`. Variant values are stored in typed columns, not as unvalidated strings or a JSON bag.
+
+The permanent contract uses `dataType`, `displayOrder`, and `textValue`. Historical `valueKind`, `sortOrder`, and `valueText` inputs are accepted only by the schema ingress boundary, normalized immediately, and never returned by domain records. Consumers must not reconstruct the removed lossy `text | option` projection or use the retired `listTemplateAttributes` / `listTemplateAttributeOptions` aliases.
 
 Attribute options belong to exactly one option-compatible attribute. Active option codes are unique per attribute by normalized code. Archived options cannot be assigned to new variants; historical assignments remain readable through variant configuration queries.
 

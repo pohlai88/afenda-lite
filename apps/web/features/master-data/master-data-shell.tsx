@@ -1,6 +1,5 @@
 import { authServer } from "@afenda/auth";
 import {
-	ITEM_TEMPLATE_ATTRIBUTE_VALUE_KINDS,
 	ITEM_TYPES,
 	listChangeRequests,
 	listItemGroups,
@@ -33,7 +32,7 @@ import {
 } from "@afenda/ui-system";
 
 import { activateItemTemplateFormAction } from "@/app/actions/activate-item-template";
-import { requirePermission } from "@/features/auth/require-permission";
+import { requireAnyPermission } from "@/features/auth/require-permission";
 import { AddItemTemplateAttributeForm } from "@/features/master-data/add-item-template-attribute-form";
 import { AddItemTemplateAttributeOptionForm } from "@/features/master-data/add-item-template-attribute-option-form";
 import { ChangeRequestPanel } from "@/features/master-data/change-request-panel";
@@ -53,33 +52,83 @@ import { MergePartiesForm } from "@/features/master-data/merge-parties-form";
 import { PaymentTermLifecycleForm } from "@/features/master-data/payment-term-lifecycle-form";
 import { TaxRegistrationLifecycleForm } from "@/features/master-data/tax-registration-lifecycle-form";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
+import { ITEM_TEMPLATE_ATTRIBUTE_FORM_DATA_TYPES } from "@/lib/erp/master-data-item-template-ui-policy";
 import { sessionHasPermission } from "@/modules/identity/domain/session-permission";
 
 const EA_UOM_ID = "b1000000-0000-4000-8000-000000000001";
 const TAX_JURISDICTION_COUNTRY_CODES = ["MY", "SG", "US"] as const;
+const MASTER_DATA_WORKSPACE_READ_PERMISSIONS = [
+	"master_data.party_read",
+	"master_data.item_read",
+	"master_data.warehouse_read",
+	"master_data.payment_term_read",
+	"master_data.tax_registration_read",
+	"master_data.change_request_read",
+	"master_data.search_read",
+] as const;
 
 interface MasterDataShellProps {
 	/** Operator admin chrome vs client workspace. */
 	surface: "admin" | "client";
 }
 
+function loadWhenAllowed<T>(
+	allowed: boolean,
+	load: () => Promise<T>,
+): Promise<T | null> {
+	return allowed ? load() : Promise.resolve(null);
+}
+
+function getMasterDataSession(surface: MasterDataShellProps["surface"]) {
+	return surface === "admin"
+		? authServer.session.requireRole("operator")
+		: authServer.session.get();
+}
+
 /**
  * Master-data console — RSC load via package commands; mutations via Actions.
  */
 export async function MasterDataShell({ surface }: MasterDataShellProps) {
-	const session =
-		surface === "admin"
-			? await authServer.session.requireRole("operator")
-			: await authServer.session.get();
+	const session = await getMasterDataSession(surface);
 
-	await requirePermission(session, "master_data.read");
-	const canManage = await sessionHasPermission(session, "master_data.manage");
+	await requireAnyPermission(session, MASTER_DATA_WORKSPACE_READ_PERMISSIONS);
 	const [
+		canReadParties,
+		canReadItems,
+		canReadWarehouses,
+		canReadPaymentTerms,
+		canReadTaxRegistrations,
+		canReadChangeRequests,
+		canSearch,
+		canCreateParties,
 		canManagePartyRoles,
 		canManageVariantDefiningAttributes,
 		canManageTemplateOptions,
 		canManageVariantAttributes,
+		canSubmitChangeRequests,
+		canApproveChangeRequests,
+		canApplyPartyActivation,
+		canMergeParties,
+		canManagePaymentTerms,
+		canManageTaxRegistrations,
+		canManageTemplates,
+		canManageItemGroups,
+		canCreateItems,
+		canActivateItems,
+		canSuspendItems,
+		canArchiveItems,
+		canManageWarehouses,
+		canImportValidate,
+		canImportApply,
 	] = await Promise.all([
+		sessionHasPermission(session, "master_data.party_read"),
+		sessionHasPermission(session, "master_data.item_read"),
+		sessionHasPermission(session, "master_data.warehouse_read"),
+		sessionHasPermission(session, "master_data.payment_term_read"),
+		sessionHasPermission(session, "master_data.tax_registration_read"),
+		sessionHasPermission(session, "master_data.change_request_read"),
+		sessionHasPermission(session, "master_data.search_read"),
+		sessionHasPermission(session, "master_data.party_create"),
 		sessionHasPermission(session, "master_data.party_role_manage"),
 		sessionHasPermission(
 			session,
@@ -87,16 +136,24 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 		),
 		sessionHasPermission(session, "master_data.item_template_option_manage"),
 		sessionHasPermission(session, "master_data.item_variant_attribute_manage"),
+		sessionHasPermission(session, "master_data.change_request_submit"),
+		sessionHasPermission(session, "master_data.change_request_approve"),
+		sessionHasPermission(session, "master_data.party_activate"),
+		sessionHasPermission(session, "master_data.party_merge"),
+		sessionHasPermission(session, "master_data.payment_term_manage"),
+		sessionHasPermission(session, "master_data.tax_registration_manage"),
+		sessionHasPermission(session, "master_data.template_manage"),
+		sessionHasPermission(session, "master_data.item_extension_manage"),
+		sessionHasPermission(session, "master_data.item_create"),
+		sessionHasPermission(session, "master_data.item_activate"),
+		sessionHasPermission(session, "master_data.item_suspend"),
+		sessionHasPermission(session, "master_data.item_archive"),
+		sessionHasPermission(session, "master_data.warehouse_manage"),
+		sessionHasPermission(session, "master_data.import_validate"),
+		sessionHasPermission(session, "master_data.import_apply"),
 	]);
-	const canApprove = await sessionHasPermission(session, "master_data.approve");
-	const canImportValidate = await sessionHasPermission(
-		session,
-		"master_data.import_validate",
-	);
-	const canImportApply = await sessionHasPermission(
-		session,
-		"master_data.import_apply",
-	);
+	const canManageItemLifecycle =
+		canActivateItems || canSuspendItems || canArchiveItems;
 	const masterDataAuth = { authorization: createMasterDataAuthorizationPort() };
 	const listActor = {
 		organizationId: session.orgId,
@@ -113,28 +170,44 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 		changeRequestsResult,
 		templatesResult,
 	] = await Promise.all([
-		listParties({ ...listActor, pageSize: 50 }, masterDataAuth),
-		listItems({ ...listActor, pageSize: 50 }, masterDataAuth),
-		listItemGroups({ ...listActor, pageSize: 50 }, masterDataAuth),
-		listWarehouses({ ...listActor, pageSize: 50 }, masterDataAuth),
-		listPaymentTerms({ ...listActor, pageSize: 50 }, masterDataAuth),
-		listTaxRegistrations({ ...listActor, pageSize: 50 }, masterDataAuth),
-		listChangeRequests({ ...listActor, pageSize: 50 }, masterDataAuth),
-		listItemTemplates({ ...listActor, pageSize: 50 }, masterDataAuth),
+		loadWhenAllowed(canReadParties, () =>
+			listParties({ ...listActor, pageSize: 50 }, masterDataAuth),
+		),
+		loadWhenAllowed(canReadItems, () =>
+			listItems({ ...listActor, pageSize: 50 }, masterDataAuth),
+		),
+		loadWhenAllowed(canReadItems, () =>
+			listItemGroups({ ...listActor, pageSize: 50 }, masterDataAuth),
+		),
+		loadWhenAllowed(canReadWarehouses, () =>
+			listWarehouses({ ...listActor, pageSize: 50 }, masterDataAuth),
+		),
+		loadWhenAllowed(canReadPaymentTerms, () =>
+			listPaymentTerms({ ...listActor, pageSize: 50 }, masterDataAuth),
+		),
+		loadWhenAllowed(canReadTaxRegistrations, () =>
+			listTaxRegistrations({ ...listActor, pageSize: 50 }, masterDataAuth),
+		),
+		loadWhenAllowed(canReadChangeRequests, () =>
+			listChangeRequests({ ...listActor, pageSize: 50 }, masterDataAuth),
+		),
+		loadWhenAllowed(canReadItems, () =>
+			listItemTemplates({ ...listActor, pageSize: 50 }, masterDataAuth),
+		),
 	]);
 
-	const parties = partiesResult.ok ? partiesResult.data : [];
-	const items = itemsResult.ok ? itemsResult.data : [];
-	const itemGroups = groupsResult.ok ? groupsResult.data : [];
-	const warehouses = warehousesResult.ok ? warehousesResult.data : [];
-	const paymentTerms = paymentTermsResult.ok ? paymentTermsResult.data : [];
-	const taxRegistrations = taxRegistrationsResult.ok
+	const parties = partiesResult?.ok ? partiesResult.data : [];
+	const items = itemsResult?.ok ? itemsResult.data : [];
+	const itemGroups = groupsResult?.ok ? groupsResult.data : [];
+	const warehouses = warehousesResult?.ok ? warehousesResult.data : [];
+	const paymentTerms = paymentTermsResult?.ok ? paymentTermsResult.data : [];
+	const taxRegistrations = taxRegistrationsResult?.ok
 		? taxRegistrationsResult.data
 		: [];
-	const changeRequests = changeRequestsResult.ok
+	const changeRequests = changeRequestsResult?.ok
 		? changeRequestsResult.data
 		: [];
-	const templates = templatesResult.ok ? templatesResult.data : [];
+	const templates = templatesResult?.ok ? templatesResult.data : [];
 	const templatePanels = await Promise.all(
 		templates.map(async (template) => {
 			const [attrsResult, variantsResult] = await Promise.all([
@@ -158,7 +231,10 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 			const variants = variantsResult.ok ? variantsResult.data : [];
 			const withOptions = await Promise.all(
 				attributes.map(async (attribute) => {
-					if (attribute.valueKind !== "option") {
+					if (
+						attribute.dataType !== "single_option" &&
+						attribute.dataType !== "multiple_option"
+					) {
 						return {
 							...attribute,
 							options: [] as Array<{ id: string; label: string }>,
@@ -187,7 +263,11 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 		({ template, attributes }) =>
 			template.status === "draft"
 				? attributes
-						.filter((attribute) => attribute.valueKind === "option")
+						.filter(
+							(attribute) =>
+								attribute.dataType === "single_option" ||
+								attribute.dataType === "multiple_option",
+						)
 						.map((attribute) => ({
 							id: attribute.id,
 							label: `${template.code} · ${attribute.code} · ${attribute.name}`,
@@ -200,16 +280,16 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 			variant,
 		})),
 	);
-	const loadError = !(
-		partiesResult.ok &&
-		itemsResult.ok &&
-		groupsResult.ok &&
-		warehousesResult.ok &&
-		paymentTermsResult.ok &&
-		taxRegistrationsResult.ok &&
-		changeRequestsResult.ok &&
-		templatesResult.ok
-	);
+	const loadError = [
+		partiesResult,
+		itemsResult,
+		groupsResult,
+		warehousesResult,
+		paymentTermsResult,
+		taxRegistrationsResult,
+		changeRequestsResult,
+		templatesResult,
+	].some((result) => result !== null && !result.ok);
 
 	const partyOptions = parties.map((party) => ({
 		id: party.id,
@@ -289,17 +369,19 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 			) : null}
 
 			<div className="grid gap-6 lg:grid-cols-2">
-				<Card>
-					<CardHeader>
-						<CardTitle>Search</CardTitle>
-						<CardDescription>
-							Derived FTS index — never authorizes writes.
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<MasterDataSearchPanel />
-					</CardContent>
-				</Card>
+				{canSearch ? (
+					<Card>
+						<CardHeader>
+							<CardTitle>Search</CardTitle>
+							<CardDescription>
+								Derived FTS index — never authorizes writes.
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							<MasterDataSearchPanel />
+						</CardContent>
+					</Card>
+				) : null}
 				<Card>
 					<CardHeader>
 						<CardTitle>Party import</CardTitle>
@@ -325,7 +407,10 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<CreatePartyForm canManage={canManage} partyKinds={PARTY_KINDS} />
+						<CreatePartyForm
+							canManage={canCreateParties}
+							partyKinds={PARTY_KINDS}
+						/>
 					</CardContent>
 				</Card>
 				<Card>
@@ -355,8 +440,9 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 				<CardContent>
 					<ChangeRequestPanel
 						approvedActivateRequests={approvedActivateRequests}
-						canApprove={canApprove}
-						canManage={canManage}
+						canApply={canApplyPartyActivation}
+						canApprove={canApproveChangeRequests}
+						canSubmit={canSubmitChangeRequests}
 						parties={partyOptions}
 						submittedRequests={submittedRequests}
 					/>
@@ -374,7 +460,7 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 				<CardContent>
 					<MergePartiesForm
 						approvedMergeRequests={approvedMergeRequests}
-						canManage={canManage}
+						canManage={canMergeParties}
 						parties={mergePartyOptions}
 					/>
 				</CardContent>
@@ -420,7 +506,7 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<CreatePaymentTermForm canManage={canManage} />
+						<CreatePaymentTermForm canManage={canManagePaymentTerms} />
 					</CardContent>
 				</Card>
 				<Card>
@@ -455,7 +541,7 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 						<div className="mt-6 border-border border-t pt-4">
 							<p className="mb-3 font-medium text-sm">Lifecycle</p>
 							<PaymentTermLifecycleForm
-								canManage={canManage}
+								canManage={canManagePaymentTerms}
 								terms={paymentTerms}
 							/>
 						</div>
@@ -474,7 +560,7 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 					</CardHeader>
 					<CardContent>
 						<CreateTaxRegistrationForm
-							canManage={canManage}
+							canManage={canManageTaxRegistrations}
 							countryCodes={TAX_JURISDICTION_COUNTRY_CODES}
 							parties={partyOptions.map((party) => ({
 								id: party.id,
@@ -516,7 +602,7 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 						<div className="mt-6 border-border border-t pt-4">
 							<p className="mb-3 font-medium text-sm">Lifecycle</p>
 							<TaxRegistrationLifecycleForm
-								canManage={canManage}
+								canManage={canManageTaxRegistrations}
 								registrations={taxRegistrations}
 							/>
 						</div>
@@ -534,16 +620,16 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 						</CardDescription>
 					</CardHeader>
 					<CardContent className="space-y-6">
-						<CreateItemTemplateForm canManage={canManage} />
+						<CreateItemTemplateForm canManage={canManageTemplates} />
 						<AddItemTemplateAttributeForm
 							canManage={canManageVariantDefiningAttributes}
+							dataTypes={ITEM_TEMPLATE_ATTRIBUTE_FORM_DATA_TYPES}
 							draftTemplates={templates
 								.filter((template) => template.status === "draft")
 								.map((template) => ({
 									id: template.id,
 									label: `${template.code} · ${template.name}`,
 								}))}
-							valueKinds={ITEM_TEMPLATE_ATTRIBUTE_VALUE_KINDS}
 						/>
 						<AddItemTemplateAttributeOptionForm
 							canManage={canManageTemplateOptions}
@@ -580,8 +666,9 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 												{attributes.map((attribute) => (
 													<li key={attribute.id}>
 														<Code>{attribute.code}</Code> {attribute.name} (
-														{attribute.valueKind}
-														{attribute.valueKind === "option"
+														{attribute.dataType}
+														{attribute.dataType === "single_option" ||
+														attribute.dataType === "multiple_option"
 															? ` · ${attribute.options.length} options`
 															: ""}
 														)
@@ -589,7 +676,7 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 												))}
 											</ul>
 										) : null}
-										{canManage && template.status === "draft" ? (
+										{canManageTemplates && template.status === "draft" ? (
 											<form action={activateItemTemplateFormAction}>
 												<input name="id" type="hidden" value={template.id} />
 												<input
@@ -638,7 +725,7 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 										id: attribute.id,
 										code: attribute.code,
 										name: attribute.name,
-										valueKind: attribute.valueKind,
+										dataType: attribute.dataType,
 										options: attribute.options,
 									})),
 								}))}
@@ -689,7 +776,7 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<CreateItemGroupForm canManage={canManage} />
+						<CreateItemGroupForm canManage={canManageItemGroups} />
 					</CardContent>
 				</Card>
 				<Card>
@@ -724,7 +811,7 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 						<div className="mt-6 border-border border-t pt-4">
 							<p className="mb-3 font-medium text-sm">Lifecycle</p>
 							<MasterRootLifecycleForm
-								canManage={canManage}
+								canManage={canManageItemGroups}
 								entity="itemGroup"
 								options={itemGroups.map((group) => ({
 									id: group.id,
@@ -751,7 +838,7 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 					<CardContent>
 						<CreateItemForm
 							baseUomId={EA_UOM_ID}
-							canManage={canManage}
+							canManage={canCreateItems}
 							itemGroups={itemGroups.map((group) => ({
 								id: group.id,
 								label: `${group.code} · ${group.name}`,
@@ -790,7 +877,7 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 						<div className="mt-6 border-border border-t pt-4">
 							<p className="mb-3 font-medium text-sm">Lifecycle</p>
 							<MasterRootLifecycleForm
-								canManage={canManage}
+								canManage={canManageItemLifecycle}
 								entity="item"
 								options={items.map((item) => ({
 									id: item.id,
@@ -816,7 +903,7 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 					</CardHeader>
 					<CardContent>
 						<CreateWarehouseForm
-							canManage={canManage}
+							canManage={canManageWarehouses}
 							locationTypes={WAREHOUSE_LOCATION_TYPES}
 						/>
 					</CardContent>
@@ -854,7 +941,7 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 						<div className="mt-6 border-border border-t pt-4">
 							<p className="mb-3 font-medium text-sm">Lifecycle</p>
 							<MasterRootLifecycleForm
-								canManage={canManage}
+								canManage={canManageWarehouses}
 								entity="warehouse"
 								options={warehouses.map((warehouse) => ({
 									id: warehouse.id,

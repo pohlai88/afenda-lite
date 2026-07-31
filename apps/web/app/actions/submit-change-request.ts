@@ -12,7 +12,6 @@ import {
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
@@ -39,7 +38,7 @@ const submitChangeRequestFormSchema = z.discriminatedUnion("commandKind", [
 ]);
 
 /**
- * Submit MDG change request (maker) — `master_data.manage`.
+ * Submit an MDG change request through package-owned maker policy.
  */
 export async function submitChangeRequestAction(
 	_prev: SubmitChangeRequestActionState,
@@ -60,14 +59,6 @@ export async function submitChangeRequestAction(
 		return errorResult.fail("VALIDATION_ERROR", {
 			publicMessage: "Provide a valid change request command.",
 		});
-	}
-
-	const permissionDenied = await forbidUnlessPermission(
-		session,
-		"master_data.manage",
-	);
-	if (permissionDenied) {
-		return permissionDenied;
 	}
 
 	try {

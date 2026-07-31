@@ -2,24 +2,6 @@ import type { PlatformPermissionCatalogRow } from "../platform-permission-catalo
 
 export const MASTER_DATA_PLATFORM_PERMISSIONS = [
 	{
-		code: "master_data.read",
-		module: "master_data",
-		description: "Read organization master data (party, item, warehouse)",
-		sensitive: false,
-	},
-	{
-		code: "master_data.manage",
-		module: "master_data",
-		description: "Create and mutate organization master data",
-		sensitive: true,
-	},
-	{
-		code: "master_data.approve",
-		module: "master_data",
-		description: "Approve or reject master-data change requests (checker)",
-		sensitive: true,
-	},
-	{
 		code: "master_data.reference_read",
 		module: "master_data",
 		description: "Read platform reference values used by ERP master data",
@@ -117,10 +99,22 @@ export const MASTER_DATA_PLATFORM_PERMISSIONS = [
 		sensitive: true,
 	},
 	{
+		code: "master_data.warehouse_read",
+		module: "master_data",
+		description: "Read warehouse masters",
+		sensitive: false,
+	},
+	{
 		code: "master_data.payment_term_manage",
 		module: "master_data",
 		description: "Manage payment-term masters",
 		sensitive: true,
+	},
+	{
+		code: "master_data.payment_term_read",
+		module: "master_data",
+		description: "Read payment-term masters",
+		sensitive: false,
 	},
 	{
 		code: "master_data.tax_registration_manage",
@@ -145,6 +139,12 @@ export const MASTER_DATA_PLATFORM_PERMISSIONS = [
 		module: "master_data",
 		description: "Create controlled master-data change requests",
 		sensitive: true,
+	},
+	{
+		code: "master_data.change_request_read",
+		module: "master_data",
+		description: "Read master-data change requests",
+		sensitive: false,
 	},
 	{
 		code: "master_data.change_request_submit",
@@ -199,6 +199,12 @@ export const MASTER_DATA_PLATFORM_PERMISSIONS = [
 		module: "master_data",
 		description: "Rebuild master-data search projections",
 		sensitive: true,
+	},
+	{
+		code: "master_data.search_read",
+		module: "master_data",
+		description: "Search organization master-data projections",
+		sensitive: false,
 	},
 	{
 		code: "master_data.duplicate_review",

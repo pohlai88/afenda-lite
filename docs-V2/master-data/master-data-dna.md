@@ -1143,7 +1143,7 @@ Microsoft’s current Finance and Operations documentation describes cross-compa
 | Aggregate extensions           | **Shipped**                     | Roles, addresses, contacts, UoMs, aliases, external IDs                |
 | Lifecycle and concurrency      | This mission                    | Status commands, version checks, dependency contract                   |
 | Audit and outbox facts         | This mission                    | `@afenda/audit`, `@afenda/events` contracts                            |
-| Web actions and authorization  | **Shipped**                     | `apps/web` Actions + `master_data.read` / `master_data.manage`         |
+| Web actions and authorization  | **Shipped**                     | `apps/web` Actions pass the authorization port; manifest owns exact permissions |
 | Search projections             | **Shipped**                     | `md_*` projectors + rebuild-from-SSOT via `@afenda/search`             |
 | Import and bulk upsert-by-code | **Shipped**                     | Dry-run + bounded upsert-by-code + reconcile report                    |
 | Duplicate review and merge UI  | **Shipped** (steward minimal)   | Warning detection + `mergeParties` + steward Action/UI                 |

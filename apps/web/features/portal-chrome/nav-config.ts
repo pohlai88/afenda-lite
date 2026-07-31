@@ -47,7 +47,15 @@ export const OPERATOR_SHELL_NAV: readonly ShellNavItem[] = [
 		href: "/admin/master-data",
 		moduleId: "master-data",
 		kind: "module",
-		permissionCodes: ["master_data.read"],
+		permissionCodes: [
+			"master_data.party_read",
+			"master_data.item_read",
+			"master_data.warehouse_read",
+			"master_data.payment_term_read",
+			"master_data.tax_registration_read",
+			"master_data.change_request_read",
+			"master_data.search_read",
+		],
 	},
 	{
 		id: "sales",
@@ -162,7 +170,15 @@ export const CLIENT_SHELL_NAV: readonly ShellNavItem[] = [
 		href: "/client/master-data",
 		moduleId: "master-data",
 		kind: "module",
-		permissionCodes: ["master_data.read"],
+		permissionCodes: [
+			"master_data.party_read",
+			"master_data.item_read",
+			"master_data.warehouse_read",
+			"master_data.payment_term_read",
+			"master_data.tax_registration_read",
+			"master_data.change_request_read",
+			"master_data.search_read",
+		],
 	},
 	{
 		id: "sales",

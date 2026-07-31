@@ -73,7 +73,6 @@ import {
 	type ExtensionEventPayload,
 	extensionEventClassification,
 } from "../../extension-transaction-contract";
-import { legacyValueKindFromDataType } from "../../template-attribute-policy";
 import type {
 	ItemTemplateAttributeContext,
 	ItemTemplateAttributeCreateRecord,
@@ -316,14 +315,10 @@ function mapItemTemplateAttribute(
 		name: row.name,
 		description: row.description,
 		dataType: row.dataType as ItemTemplateAttributeDataType,
-		valueKind: legacyValueKindFromDataType(
-			row.dataType as ItemTemplateAttributeDataType,
-		),
 		isRequired: row.isRequired,
 		isVariantDefining: row.isVariantDefining,
 		isSearchable: row.isSearchable,
 		displayOrder: row.displayOrder,
-		sortOrder: row.displayOrder,
 		validationRules:
 			row.validationRules as ItemTemplateAttributeValidationRules,
 		status: (row.status ?? "active") as ItemTemplateAttribute["status"],
@@ -379,7 +374,6 @@ function mapItemTemplateAttributeOption(
 		label: row.label,
 		description: row.description,
 		displayOrder: row.displayOrder,
-		sortOrder: row.displayOrder,
 		status: (row.status ?? "active") as ItemTemplateAttributeOption["status"],
 		archivedAt: row.archivedAt ?? null,
 		archivedBy: row.archivedBy ?? null,
@@ -427,7 +421,6 @@ function mapItemVariantAttributeValue(
 		attributeId: row.attributeId,
 		valueType: row.valueType as ItemVariantAttributeValue["valueType"],
 		textValue: row.textValue,
-		valueText: row.textValue,
 		integerValue: row.integerValue,
 		decimalValue: row.decimalValue,
 		booleanValue: row.booleanValue,

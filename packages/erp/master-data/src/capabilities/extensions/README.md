@@ -216,7 +216,7 @@ seen by the following invariant check.
 ### Authorization
 
 Extension mutations use capability-specific permissions rather than the broad
-`master_data.manage` grant:
+the exact extension permission declared by the package manifest:
 
 | Extension capability | Required permission |
 | --- | --- |

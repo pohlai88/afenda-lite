@@ -38,10 +38,10 @@ Keep this capability intentionally small. Do not add a generic `getReference` or
 | `types.ts` | Platform-reference domain types and UoM compatibility policy types |
 | `schemas.ts` | Family-specific code normalization and query/list input schemas |
 | `store.ts` | Read-only `PlatformReferenceStore` contract |
-| `queries.ts` | Exported query wrappers: parse input, call store, return `Result` |
+| `queries.ts` | Injected organization-neutral query capabilities: parse input, call store, return `Result` |
+| `authorized-queries.ts` | Permanent organization-authorized `getRef*` / `listRefUoms` consumer facade |
 | `policies.ts` | Active-reference and UoM compatibility policies for commands |
 | `reference-errors.ts` | Reference-specific failure reasons carried in `Result.details` |
-| `legacy-queries.ts` | Existing permission-aware root helpers retained for consumer compatibility |
 | `adapters/memory/*` | Deterministic test/reference implementation |
 | `adapters/drizzle/*` | Production persistence implementation with explicit column projections |
 
@@ -56,7 +56,7 @@ The organization-neutral read contract uses explicit family operations:
 - `readRefUomDimension`, `readRefUomDimensionByCode`, `readRefUomDimensions`
 - `readRefUom`, `readRefUomByCode`, `readRefUoms`, `readRefUomsByDimension`
 
-The existing permission-aware root operations retain their established `getRef*` and `listRefUoms` names so application and ERP consumers do not break.
+The permission-aware root operations are the permanent application facade. They retain the established `getRef*` and `listRefUoms` names and enforce `master_data.reference_read` before reaching the store.
 
 The root package barrel exposes domain helpers and retains the established permission-aware query names. It does not expose stores, adapters, raw Drizzle tables, `db`, query builders, or reference mutation commands. Production adapter construction remains under `@afenda/master-data/adapters/drizzle`.
 

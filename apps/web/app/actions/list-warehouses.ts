@@ -6,7 +6,6 @@ import { http } from "@afenda/http";
 import { logger } from "@afenda/logger";
 import { listWarehouses, type Warehouse } from "@afenda/master-data";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
 
 export interface ListWarehousesActionData {
@@ -14,7 +13,7 @@ export interface ListWarehousesActionData {
 }
 
 /**
- * Master-data warehouse list — session org stamp + `master_data.read`.
+ * Master-data warehouse list — package-authorized and session scoped.
  */
 export async function listWarehousesAction(input?: {
 	page?: number;
@@ -23,14 +22,6 @@ export async function listWarehousesAction(input?: {
 }): Promise<ActionResult<ListWarehousesActionData>> {
 	const correlationId = http.correlation.create();
 	const session = await authServer.session.get();
-
-	const permissionDenied = await forbidUnlessPermission(
-		session,
-		"master_data.read",
-	);
-	if (permissionDenied) {
-		return permissionDenied;
-	}
 
 	try {
 		const result = await listWarehouses(

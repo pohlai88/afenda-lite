@@ -43,11 +43,6 @@ export type VersionedMutationContext = z.infer<
 	typeof versionedMutationContextSchema
 >;
 
-/** @deprecated Use `masterDataMutationContextSchema`. */
-export const orgActorContextSchema = masterDataMutationContextSchema;
-/** @deprecated Use `MasterDataMutationContext`. */
-export type OrgActorContext = MasterDataMutationContext;
-
 /** Org-scoped read context — actor required for authorization port checks. */
 export const orgQueryActorSchema = z.object({
 	organizationId: organizationIdSchema,

@@ -11,7 +11,7 @@ export type {
 } from "@/app/actions/payment-term-lifecycle";
 
 /**
- * Master-data payment term retire — `expectedVersion` CAS + `master_data.manage`.
+ * Master-data payment term retire — package-authorized `expectedVersion` CAS.
  */
 export async function retirePaymentTermAction(
 	_prev: PaymentTermLifecycleActionState,

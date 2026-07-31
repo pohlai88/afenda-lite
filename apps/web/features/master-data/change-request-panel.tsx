@@ -50,8 +50,9 @@ interface ChangeRequestOption {
 
 interface ChangeRequestPanelProps {
 	approvedActivateRequests: ChangeRequestOption[];
+	canApply: boolean;
 	canApprove: boolean;
-	canManage: boolean;
+	canSubmit: boolean;
 	parties: PartyOption[];
 	submittedRequests: ChangeRequestOption[];
 }
@@ -76,8 +77,9 @@ function pickById<T extends { id: string }>(
  */
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Lifecycle and approval branches share one governed change-request surface.
 export function ChangeRequestPanel({
-	canManage,
+	canApply,
 	canApprove,
+	canSubmit,
 	parties,
 	submittedRequests,
 	approvedActivateRequests,
@@ -120,7 +122,7 @@ export function ChangeRequestPanel({
 
 	return (
 		<div className="flex flex-col gap-8">
-			{canManage ? (
+			{canSubmit ? (
 				<section className="space-y-3">
 					<h3 className="font-medium text-sm">Submit activate request</h3>
 					{draftParties.length === 0 ? (
@@ -238,7 +240,7 @@ export function ChangeRequestPanel({
 				</section>
 			) : null}
 
-			{canManage ? (
+			{canApply ? (
 				<section className="space-y-3">
 					<h3 className="font-medium text-sm">Apply approved activation</h3>
 					{selectedActivateCr === undefined || applyParty === undefined ? (

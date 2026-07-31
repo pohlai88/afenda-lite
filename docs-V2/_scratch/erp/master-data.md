@@ -106,7 +106,7 @@ The optional organization ID is useful only for platform-scoped operations. An a
 
 ### Suggested permission structure
 
-Avoid one broad `master_data.manage` permission.
+Avoid a single broad master-data mutation permission.
 
 ```ts
 export const masterDataPermissions = {
