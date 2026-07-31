@@ -42,7 +42,20 @@ pnpm --filter @afenda/env test
 
 Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
 
-Schema home: `packages/foundation/env/src/web.ts` (product) · `packages/foundation/env/src/docs.ts` (docs). Add new product vars in `web.ts` (and `.env.example` keys without secrets).
+Registry home: `src/product-registry.ts` (product) · `src/docs-registry.ts` (docs). Add a variable to its registry and the committed `.env.example` key list without a secret value. Runtime projections derive from registry keys through `src/runtime-projection.ts`; do not recreate a second `process.env` map.
+
+## Semantic ownership
+
+| Decision | Canonical owner |
+|----------|-----------------|
+| Product key and Zod schema | `createProductEnvRegistry()` |
+| Docs key and Zod schema | `createDocsEnvRegistry()` |
+| Product deployment classification | `NEON_ENV_CLASSIFICATION` (compile-time exhaustive with the product registry) |
+| Local-only key set | Derived from `NEON_ENV_CLASSIFICATION` |
+| Runtime value projection | `projectRuntimeEnv()` over the selected registry |
+| Cross-key production policy | Package-private refinements in `web.ts` / `docs.ts` |
+
+Consumers receive typed `env` or `docsEnv` values and must not interpret deployment classifications, read aliases, or rebuild validation.
 
 ## Exports
 

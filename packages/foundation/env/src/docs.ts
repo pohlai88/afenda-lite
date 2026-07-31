@@ -7,81 +7,15 @@
 import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
 
-const TRAILING_DOT_PATTERN = /\.$/;
-const PRIVATE_KEY_PATTERN =
-	/^-----BEGIN (?:RSA )?PRIVATE KEY-----[\s\S]+-----END (?:RSA )?PRIVATE KEY-----$/;
+import { createDocsEnvRegistry } from "./docs-registry";
+import { projectRuntimeEnv } from "./runtime-projection";
 
 const runtimeCtx = {
 	nodeEnv: process.env.NODE_ENV,
 	vercelEnv: process.env.VERCEL_ENV,
 } as const;
 
-function isDocsProductionDeployment({
-	nodeEnv,
-	vercelEnv,
-}: typeof runtimeCtx): boolean {
-	if (vercelEnv === "production") {
-		return true;
-	}
-
-	if (vercelEnv === "preview" || vercelEnv === "development") {
-		return false;
-	}
-
-	return (
-		nodeEnv === "production" && vercelEnv !== undefined && vercelEnv !== ""
-	);
-}
-
-const productionDeployment = isDocsProductionDeployment(runtimeCtx);
-
-function isOriginUrl(value: string): boolean {
-	const url = new URL(value);
-	return (
-		url.username === "" &&
-		url.password === "" &&
-		(url.pathname === "" || url.pathname === "/") &&
-		url.search === "" &&
-		url.hash === ""
-	);
-}
-
-function isLocalHostname(hostname: string): boolean {
-	const normalized = hostname
-		.trim()
-		.toLowerCase()
-		.replace(TRAILING_DOT_PATTERN, "");
-	return (
-		normalized === "localhost" ||
-		normalized === "127.0.0.1" ||
-		normalized === "::1" ||
-		normalized === "[::1]"
-	);
-}
-
-const baseDocsUrlSchema = z.url().refine(isOriginUrl, {
-	message:
-		"DOCS_URL must be an origin without credentials, path, query, or fragment.",
-});
-
-const docsUrlSchema = productionDeployment
-	? baseDocsUrlSchema
-			.refine((value) => new URL(value).protocol === "https:", {
-				message: "DOCS_URL must use https: in production.",
-			})
-			.refine((value) => !isLocalHostname(new URL(value).hostname), {
-				message: "DOCS_URL must not use a local hostname in production.",
-			})
-	: baseDocsUrlSchema.default("http://localhost:3001");
-
-const githubAppPrivateKeySchema = z
-	.string()
-	.trim()
-	.min(1)
-	.transform((value) => value.replace(/\\n/g, "\n"))
-	.refine((value) => PRIVATE_KEY_PATTERN.test(value), {
-		message: "GITHUB_APP_PRIVATE_KEY must be a valid PEM private key.",
-	});
+const docsEnvRegistry = createDocsEnvRegistry(runtimeCtx);
 
 /**
  * Typed environment contract for `@afenda/docs`.
@@ -101,23 +35,9 @@ const githubAppPrivateKeySchema = z
  * deployments must provide an explicit HTTPS origin.
  */
 export const docsEnv = createEnv({
-	server: {
-		DOCS_URL: docsUrlSchema,
-		GITHUB_APP_ID: z
-			.string()
-			.trim()
-			.regex(/^\d+$/, {
-				message: "GITHUB_APP_ID must contain digits only.",
-			})
-			.optional(),
-		GITHUB_APP_PRIVATE_KEY: githubAppPrivateKeySchema.optional(),
-	},
+	server: docsEnvRegistry,
 	client: {},
-	runtimeEnv: {
-		DOCS_URL: process.env.DOCS_URL,
-		GITHUB_APP_ID: process.env.GITHUB_APP_ID,
-		GITHUB_APP_PRIVATE_KEY: process.env.GITHUB_APP_PRIVATE_KEY,
-	},
+	runtimeEnv: projectRuntimeEnv(docsEnvRegistry, process.env),
 	emptyStringAsUndefined: true,
 	createFinalSchema: (shape) =>
 		z.object(shape).superRefine((value, ctx) => {

@@ -421,36 +421,26 @@ export function assertNeonCloudIds(input: {
 	return { ok: issues.length === 0, issues };
 }
 
-export const LOCAL_ONLY_PRODUCT_ENV_KEYS = [
-	"NEON_API_KEY",
-	"PLAYGROUND_ENABLED",
-	"PLAYGROUND_SURVEY_ID",
-	"PLAYGROUND_ASSIGNMENT_ID",
-	"PLAYGROUND_SURVEY_SLUG",
-	"SHARED_ADMIN_EMAIL",
-	"SHARED_ADMIN_NAME",
-	"SHARED_ADMIN_PASSWORD",
-	"PREVIEW_CLIENT_EMAIL",
-	"PREVIEW_CLIENT_NAME",
-	"PREVIEW_CLIENT_PASSWORD",
-	"CLIENT_DEFAULT_PASSWORD",
-	"E2E_ORGANIZATION_ID",
-	"E2E_FACTORY_PASSWORD",
-	"E2E_FACTORY_HASH_TEMPLATE_EMAIL",
-	"E2E_OPERATOR_EMAIL",
-	"E2E_OPERATOR_PASSWORD",
-	"E2E_CLIENT_EMAIL",
-	"E2E_CLIENT_PASSWORD",
-	"E2E_INVITEE_EMAIL",
-	"E2E_INVITEE_PASSWORD",
-	"E2E_SURVEY_SLUG",
-	"E2E_INVITE_TOKEN",
-	"SHADCN_STUDIO_EMAIL",
-	"SHADCN_STUDIO_API_KEY",
-] as const;
+type ProductEnvKey = keyof typeof NEON_ENV_CLASSIFICATION;
+export type LocalOnlyProductEnvKey = {
+	[K in ProductEnvKey]: (typeof NEON_ENV_CLASSIFICATION)[K] extends "local-only"
+		? K
+		: never;
+}[ProductEnvKey];
 
-export type LocalOnlyProductEnvKey =
-	(typeof LOCAL_ONLY_PRODUCT_ENV_KEYS)[number];
+function productEnvKeys(): readonly ProductEnvKey[] {
+	return Object.keys(NEON_ENV_CLASSIFICATION) as ProductEnvKey[];
+}
+
+function isLocalOnlyProductEnvKey(
+	key: ProductEnvKey,
+): key is LocalOnlyProductEnvKey {
+	return NEON_ENV_CLASSIFICATION[key] === "local-only";
+}
+
+export const LOCAL_ONLY_PRODUCT_ENV_KEYS = Object.freeze(
+	productEnvKeys().filter(isLocalOnlyProductEnvKey),
+);
 
 export function assertLocalOnlyConfigAbsentInProduction(
 	values: Partial<Record<LocalOnlyProductEnvKey, unknown>>,

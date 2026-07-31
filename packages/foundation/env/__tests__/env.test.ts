@@ -30,6 +30,7 @@ import {
 	PRODUCTION_BASELINE_MIGRATE_PROHIBITED,
 	redactEnvValue,
 } from "../src/neon-contract";
+import { createProductEnvRegistry } from "../src/product-registry";
 
 const POOLER_URL =
 	"postgresql://neondb_owner:secret@ep-example-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb?sslmode=require";
@@ -249,21 +250,10 @@ describe("@afenda/env neon-contract", () => {
 	});
 
 	it("keeps web runtime env keys classified and represented in .env.example", () => {
-		const webSource = readFileSync(
-			join(import.meta.dirname, "../src/web.ts"),
-			"utf8",
-		);
 		const exampleSource = readFileSync(join(REPO_ROOT, ".env.example"), "utf8");
-		const runtimeEnvBlock = webSource.match(/runtimeEnv:\s*{([\s\S]*?)\n\t},/);
-
-		expect(runtimeEnvBlock).not.toBeNull();
-
-		const runtimeEnvKeys = Array.from(
-			runtimeEnvBlock?.[1].matchAll(
-				/^\s+([A-Z0-9_]+):\s*process\.env\.[A-Z0-9_]+,?$/gm,
-			) ?? [],
-			(match) => match[1],
-		).filter((key): key is string => key !== undefined);
+		const runtimeEnvKeys = Object.keys(
+			createProductEnvRegistry({ nodeEnv: "development" }),
+		);
 		const missingClassifications = runtimeEnvKeys.filter(
 			(key) => !(key in NEON_ENV_CLASSIFICATION),
 		);
