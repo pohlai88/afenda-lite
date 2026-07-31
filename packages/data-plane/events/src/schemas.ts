@@ -1,46 +1,76 @@
 import { z } from "zod";
 
-import { AllEventSchemas, isKnownEventType } from "./schemas/index";
+import {
+	EVENT_LIFECYCLE_POLICY,
+	eventDefinition,
+	isRegisteredEventType,
+} from "./semantic-registry";
 import { EVENT_SOURCE_MODULES, EVENT_STATUSES } from "./types";
 
 export const DEFAULT_EVENT_PAGE = 1 as const;
 export const DEFAULT_EVENT_PAGE_SIZE = 50 as const;
 export const MAX_EVENT_PAGE_SIZE = 100 as const;
-export const DEFAULT_DISPATCH_LIMIT = 50 as const;
-export const MAX_DISPATCH_LIMIT = 200 as const;
+export const DEFAULT_DISPATCH_LIMIT = EVENT_LIFECYCLE_POLICY.defaultClaimLimit;
+export const MAX_DISPATCH_LIMIT = EVENT_LIFECYCLE_POLICY.maxClaimLimit;
 
 export const eventSourceModuleSchema = z.enum(EVENT_SOURCE_MODULES);
 export const eventStatusSchema = z.enum(EVENT_STATUSES);
 
 const jsonObjectSchema = z.record(z.string(), z.unknown());
 
-export const domainEventSchema = z.object({
-	id: z.string().min(1),
-	type: z.string().min(1),
-	sourceModule: eventSourceModuleSchema,
-	deduplicationKey: z.string().trim().min(1).max(255).nullable().optional(),
-	occurredAt: z
-		.union([z.string().datetime(), z.date()])
-		.transform((value) => (value instanceof Date ? value : new Date(value))),
-	correlationId: z.string().min(1),
-	causationId: z.string().min(1).nullable(),
-	organizationId: z.string().min(1),
-	actorUserId: z.string().min(1),
-	payload: jsonObjectSchema,
-	metadata: jsonObjectSchema.nullable(),
-	status: eventStatusSchema,
-	attempts: z.number().int().min(0),
-	lastError: z.string().nullable(),
-	processedAt: z
-		.union([z.string().datetime(), z.date()])
-		.nullable()
-		.transform((value) => {
-			if (value === null) {
-				return null;
-			}
-			return value instanceof Date ? value : new Date(value);
-		}),
-});
+export const domainEventSchema = z
+	.object({
+		id: z.string().min(1),
+		type: z.string().min(1),
+		sourceModule: eventSourceModuleSchema,
+		deduplicationKey: z.string().trim().min(1).max(255).nullable().optional(),
+		occurredAt: z
+			.union([z.string().datetime(), z.date()])
+			.transform((value) => (value instanceof Date ? value : new Date(value))),
+		correlationId: z.string().min(1),
+		causationId: z.string().min(1).nullable(),
+		organizationId: z.string().min(1),
+		actorUserId: z.string().min(1),
+		payload: jsonObjectSchema,
+		metadata: jsonObjectSchema.nullable(),
+		status: eventStatusSchema,
+		attempts: z.number().int().min(0),
+		lastError: z.string().nullable(),
+		processedAt: z
+			.union([z.string().datetime(), z.date()])
+			.nullable()
+			.transform((value) => {
+				if (value === null) {
+					return null;
+				}
+				return value instanceof Date ? value : new Date(value);
+			}),
+	})
+	.superRefine((value, ctx) => {
+		if (!isRegisteredEventType(value.type)) {
+			ctx.addIssue({
+				code: "custom",
+				message: "Unknown event type",
+				path: ["type"],
+			});
+			return;
+		}
+		const definition = eventDefinition(value.type);
+		if (definition.sourceModule !== value.sourceModule) {
+			ctx.addIssue({
+				code: "custom",
+				message: "Event source module does not match canonical registry",
+				path: ["sourceModule"],
+			});
+		}
+		if (!definition.schema.safeParse(value.payload).success) {
+			ctx.addIssue({
+				code: "custom",
+				message: "Invalid event payload for type",
+				path: ["payload"],
+			});
+		}
+	});
 
 export type ParsedDomainEvent = z.infer<typeof domainEventSchema>;
 
@@ -57,7 +87,7 @@ export const publishEventCommandSchema = z
 		metadata: jsonObjectSchema.optional(),
 	})
 	.superRefine((value, ctx) => {
-		if (!isKnownEventType(value.type)) {
+		if (!isRegisteredEventType(value.type)) {
 			ctx.addIssue({
 				code: "custom",
 				message: `Unknown event type: ${value.type}`,
@@ -65,7 +95,16 @@ export const publishEventCommandSchema = z
 			});
 			return;
 		}
-		const payloadResult = AllEventSchemas[value.type].safeParse(value.payload);
+		if (eventDefinition(value.type).sourceModule !== value.sourceModule) {
+			ctx.addIssue({
+				code: "custom",
+				message: "Event source module does not match canonical registry",
+				path: ["sourceModule"],
+			});
+		}
+		const payloadResult = eventDefinition(value.type).schema.safeParse(
+			value.payload,
+		);
 		if (!payloadResult.success) {
 			ctx.addIssue({
 				code: "custom",
@@ -127,11 +166,16 @@ export type EventPage = z.infer<typeof eventPageSchema>;
 export const eventDispatchOptionsSchema = z
 	.object({
 		organizationId: z.string().trim().min(1),
-		limit: z.number().int().min(1).max(MAX_DISPATCH_LIMIT).optional(),
+		limit: z
+			.number()
+			.int()
+			.min(1)
+			.max(EVENT_LIFECYCLE_POLICY.maxClaimLimit)
+			.optional(),
 	})
 	.transform((value) => ({
 		organizationId: value.organizationId,
-		limit: value.limit ?? DEFAULT_DISPATCH_LIMIT,
+		limit: value.limit ?? EVENT_LIFECYCLE_POLICY.defaultClaimLimit,
 	}));
 
 export type ParsedEventDispatchOptions = z.infer<

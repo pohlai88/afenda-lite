@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { authPlainTextFailure } from "./auth-failure";
 import { AUTH_LOGIN_PATH } from "./auth-paths";
 import { getNeonAuth } from "./neon-auth";
+import { normalizeNeonEmail } from "./neon-normalization";
 import {
 	persistActiveOrganization,
 	resolveMemberOrganizationId,
@@ -20,14 +21,6 @@ export const ENSURE_ACTIVE_ORGANIZATION_PATH =
 	"/api/session/ensure-active-organization" as const;
 
 const ENSURE_NEXT_PARAM = "next" as const;
-
-function normalizeSessionEmail(email: unknown): string | null {
-	if (typeof email !== "string") {
-		return null;
-	}
-	const normalized = email.trim().toLowerCase();
-	return normalized.length > 0 ? normalized : null;
-}
 
 /** Build the ensure Route Handler URL with an optional same-origin return path. */
 export function buildEnsureActiveOrganizationUrl(next?: string | null): string {
@@ -80,7 +73,7 @@ export async function handleEnsureActiveOrganizationRequest(
 		orgId = organizationId;
 	}
 
-	const email = normalizeSessionEmail(data.user.email);
+	const email = normalizeNeonEmail(data.user.email);
 	if (!email) {
 		return authPlainTextFailure(errorResult.fail("INTERNAL_ERROR"));
 	}

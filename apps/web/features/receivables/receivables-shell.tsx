@@ -1,4 +1,4 @@
-import { getSession, requireRole } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import { listSalesInvoices } from "@afenda/receivables";
 import {
 	Alert,
@@ -52,7 +52,9 @@ const formSections = [
 /** Receivables console — RSC reads via `@afenda/receivables`; mutations via Actions. */
 export async function ReceivablesShell({ surface }: ReceivablesShellProps) {
 	const session =
-		surface === "admin" ? await requireRole("operator") : await getSession();
+		surface === "admin"
+			? await authServer.session.requireRole("operator")
+			: await authServer.session.get();
 	await requirePermission(session, "receivables.invoice.read");
 	const formPermissions = await Promise.all(
 		formSections.map(([, , permission]) =>

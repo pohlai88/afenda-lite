@@ -1,6 +1,7 @@
 import type { NeonHttpSql } from "@afenda/db";
 import { errorResult, type Result } from "@afenda/errors";
 
+import { publishEventCommandSchema } from "./schemas";
 import type { EventSourceModule } from "./types";
 
 export type PendingDomainEventWriteInput = Readonly<{
@@ -38,6 +39,7 @@ export function createPendingDomainEventAppender(dependencies: {
 	function createStatement(
 		event: PendingDomainEventWriteInput,
 	): PendingDomainEventTransactionStatement {
+		const parsed = publishEventCommandSchema.parse(event);
 		return (database) => {
 			const sql = database as NeonHttpSql;
 			return sql`
@@ -54,15 +56,15 @@ export function createPendingDomainEventAppender(dependencies: {
 					status
 				)
 				VALUES (
-					${event.organizationId},
-					${event.type},
-					${event.sourceModule},
-					${event.deduplicationKey},
-					${event.correlationId},
-					${event.causationId ?? null},
-					${event.actorUserId},
-					${JSON.stringify(event.payload)}::jsonb,
-					${JSON.stringify(event.metadata)}::jsonb,
+					${parsed.organizationId},
+					${parsed.type},
+					${parsed.sourceModule},
+					${parsed.deduplicationKey ?? null},
+					${parsed.correlationId},
+					${parsed.causationId ?? null},
+					${parsed.actorUserId},
+					${JSON.stringify(parsed.payload)}::jsonb,
+					${JSON.stringify(parsed.metadata ?? {})}::jsonb,
 					${"pending"}
 				)
 				ON CONFLICT (
@@ -83,6 +85,13 @@ export function createPendingDomainEventAppender(dependencies: {
 		): Promise<Result<void>> {
 			if (events.length === 0) {
 				return errorResult.ok(undefined);
+			}
+			for (const event of events) {
+				if (!publishEventCommandSchema.safeParse(event).success) {
+					return errorResult.fail("VALIDATION_ERROR", {
+						publicMessage: "Invalid pending domain event",
+					});
+				}
 			}
 			await dependencies.executeTransaction(
 				(sql) =>

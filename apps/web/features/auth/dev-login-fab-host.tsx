@@ -1,4 +1,4 @@
-import { getAuthBootstrap } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 
 import { DevLoginFab } from "@/features/auth/dev-login-fab";
 import {
@@ -21,7 +21,7 @@ export async function DevLoginFabHost() {
 		return null;
 	}
 
-	const bootstrap = await getAuthBootstrap();
+	const bootstrap = await authServer.session.bootstrap();
 	if (bootstrap.state !== "anonymous") {
 		return null;
 	}

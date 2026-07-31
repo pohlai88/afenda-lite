@@ -10,7 +10,7 @@ import {
 	PLATFORM_HUMAN_RESOURCES_RELIABILITY_WORK_REQUESTED_EVENT,
 	PLATFORM_HUMAN_RESOURCES_REPORTING_FACT_RECORDED_EVENT,
 	PLATFORM_HUMAN_RESOURCES_WORKFLOW_FACT_RECORDED_EVENT,
-} from "@afenda/events";
+} from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
 import { validateEffectiveTruthClassificationRegister } from "../src/effective-truth-classification";
 import {

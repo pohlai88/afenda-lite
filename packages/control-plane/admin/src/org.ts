@@ -1,10 +1,4 @@
-import {
-	createOrganization as createNeonOrganization,
-	deleteOrganization as deleteNeonOrganization,
-	inviteOrgMember,
-	listMemberOrganizations,
-	persistActiveOrganization,
-} from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import {
 	database as afendaDatabase,
 	inArray,
@@ -71,7 +65,7 @@ export async function listOrganizations(): Promise<
 	Result<OrganizationSummary[]>
 > {
 	try {
-		const listed = await listMemberOrganizations();
+		const listed = await authServer.organizations.list();
 		if (!listed.ok) {
 			return listed;
 		}
@@ -104,7 +98,7 @@ export async function createOrganization(
 		});
 	}
 
-	const created = await createNeonOrganization(parsedInput.data);
+	const created = await authServer.organizations.create(parsedInput.data);
 	if (!created.ok) {
 		return created;
 	}
@@ -125,7 +119,7 @@ export async function deleteOrganization(
 		});
 	}
 
-	const deleted = await deleteNeonOrganization(parsedInput.data.orgId);
+	const deleted = await authServer.organizations.delete(parsedInput.data.orgId);
 	if (!deleted.ok) {
 		return deleted;
 	}
@@ -154,7 +148,7 @@ export async function provisionOrganization(
 
 	const command = parsedInput.data;
 
-	const created = await createNeonOrganization({
+	const created = await authServer.organizations.create({
 		name: command.name,
 		slug: command.slug,
 	});
@@ -163,12 +157,14 @@ export async function provisionOrganization(
 	}
 	const organization = createdOrganizationSchema.parse(created.data);
 
-	const persisted = await persistActiveOrganization(organization.id);
+	const persisted = await authServer.organizations.persistActive(
+		organization.id,
+	);
 	if (!persisted.ok) {
 		return errorResult.fail("INTERNAL_ERROR");
 	}
 
-	const invited = await inviteOrgMember({
+	const invited = await authServer.invitations.inviteMember({
 		email: command.adminEmail,
 		orgId: organization.id,
 		role: command.adminRole,

@@ -24,10 +24,14 @@ const navigationMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@afenda/auth", () => ({
-	AUTH_FORBIDDEN_PATH: "/403",
-	getApiSession: authMocks.getApiSession,
-	requireRole: authMocks.requireRole,
-	roleSatisfies: authMocks.roleSatisfies,
+	authServer: {
+		paths: { forbidden: "/403" },
+		session: {
+			getApi: authMocks.getApiSession,
+			requireRole: authMocks.requireRole,
+		},
+		roles: { satisfies: authMocks.roleSatisfies },
+	},
 }));
 
 vi.mock("next/cache", () => ({
@@ -125,10 +129,10 @@ describe("N11 product authorization wiring", () => {
 			'from "@afenda/admin"',
 		);
 		expect(source("app/actions/get-organization-usage.ts")).toContain(
-			'from "@afenda/admin/usage"',
+			'from "@afenda/admin"',
 		);
-		expect(source("app/actions/get-organization-usage.ts")).not.toMatch(
-			/from ["']@afenda\/admin["']/,
+		expect(source("app/actions/get-organization-usage.ts")).toContain(
+			"admin.usage.get",
 		);
 	});
 

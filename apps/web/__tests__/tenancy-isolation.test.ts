@@ -6,11 +6,7 @@
  * Fixtures use synthetic org ids and are deleted in afterAll.
  */
 
-import {
-	deleteRbacAuditRow,
-	MEMBER_INVITE_AUDIT_ACTION,
-	recordRbacAudit,
-} from "@afenda/admin/audit";
+import { rbacAudit } from "@afenda/admin/audit";
 import { database as afendaDatabase, platformRbacAudit } from "@afenda/db";
 import { afterAll, describe, expect, it } from "vitest";
 import { hasDatabase } from "./helpers/identity-database";
@@ -33,14 +29,14 @@ describe.skipIf(!hasDatabase)("tenancy isolation two-org (N9)", () => {
 
 	afterAll(async () => {
 		for (const row of auditIds) {
-			await deleteRbacAuditRow(row);
+			await rbacAudit.rows.delete(row);
 		}
 	});
 
 	it("RBAC audit: withOrg A sees row; withOrg B does not", async () => {
-		const recorded = await recordRbacAudit({
+		const recorded = await rbacAudit.record({
 			orgId: orgA,
-			action: MEMBER_INVITE_AUDIT_ACTION,
+			action: rbacAudit.actions.memberInvite,
 			actorUserId: `user-n9-iso-${runId}`,
 			targetType: "membership",
 			targetId: clientEmail,

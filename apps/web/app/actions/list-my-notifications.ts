@@ -1,7 +1,7 @@
 "use server";
 
 import { type Result as ActionResult, errorResult } from "@afenda/errors";
-import { listNotifications, type Notification } from "@afenda/notifications";
+import { type Notification, notifications } from "@afenda/notifications";
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runMemberSessionAction } from "@/app/actions/run-member-session-action";
 import { listMyNotificationsCommandSchema } from "@/modules/identity/schemas/my-notifications";
@@ -37,7 +37,7 @@ export async function listMyNotificationsAction(
 				});
 			}
 
-			const result = await listNotifications({
+			const result = await notifications.inbox.list({
 				organizationId: session.orgId,
 				userId: session.userId,
 				page: parsed.data.page,

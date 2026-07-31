@@ -56,7 +56,7 @@ async function afterWarehouseMutation(
 		await syncMasterRootProjection(
 			MASTER_SEARCH_ENTITY.warehouse,
 			result.data,
-			options.searchStore,
+			options.searchCapability,
 		);
 	} catch {
 		// Search is derived; committed mutation events and rebuilds provide recovery.

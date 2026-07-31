@@ -3,11 +3,7 @@
  * N12 — assign/revoke + audit atomic domain entry points (Neon HTTP tx).
  */
 
-import {
-	deleteRbacAuditRow,
-	ROLE_ASSIGN_AUDIT_ACTION,
-	ROLE_REVOKE_AUDIT_ACTION,
-} from "@afenda/admin/audit";
+import { rbacAudit } from "@afenda/admin/audit";
 import {
 	database as afendaDatabase,
 	and,
@@ -40,7 +36,7 @@ describe.skipIf(!hasDatabase)("assign/revoke WithAudit atomicity (N12)", () => {
 
 	afterAll(async () => {
 		for (const row of createdAuditIds) {
-			await deleteRbacAuditRow({ id: row.id, orgId: row.orgId });
+			await rbacAudit.rows.delete({ id: row.id, orgId: row.orgId });
 		}
 		for (const row of createdAssignmentIds) {
 			await afendaDatabase.client
@@ -91,7 +87,7 @@ describe.skipIf(!hasDatabase)("assign/revoke WithAudit atomicity (N12)", () => {
 				and(
 					eq(platformRbacAudit.id, result.auditId),
 					eq(platformRbacAudit.organizationId, orgA),
-					eq(platformRbacAudit.action, ROLE_ASSIGN_AUDIT_ACTION),
+					eq(platformRbacAudit.action, rbacAudit.actions.roleAssign),
 				),
 			);
 		expect(audits).toHaveLength(1);
@@ -138,7 +134,7 @@ describe.skipIf(!hasDatabase)("assign/revoke WithAudit atomicity (N12)", () => {
 				and(
 					eq(platformRbacAudit.id, revoked.auditId),
 					eq(platformRbacAudit.organizationId, orgA),
-					eq(platformRbacAudit.action, ROLE_REVOKE_AUDIT_ACTION),
+					eq(platformRbacAudit.action, rbacAudit.actions.roleRevoke),
 				),
 			);
 		expect(audits).toHaveLength(1);

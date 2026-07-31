@@ -1,8 +1,9 @@
 "use server";
 
-import { getSession } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import { type Result as ActionResult, errorResult } from "@afenda/errors";
-import { createCorrelationId } from "@afenda/http";
+import { http } from "@afenda/http";
+import { logger } from "@afenda/logger";
 import {
 	addItemTemplateAttributeOption,
 	type ItemTemplateAttributeOption,
@@ -12,7 +13,6 @@ import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
-import { logProductEvent } from "@/modules/platform/observability/product-log";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export interface AddItemTemplateAttributeOptionActionData {
@@ -33,8 +33,8 @@ export async function addItemTemplateAttributeOptionAction(
 	_prev: AddItemTemplateAttributeOptionActionState,
 	formData: FormData,
 ): Promise<AddItemTemplateAttributeOptionActionState> {
-	const correlationId = createCorrelationId();
-	const session = await getSession();
+	const correlationId = http.correlation.create();
+	const session = await authServer.session.get();
 
 	const parsed = parseSchema(addOptionFormSchema, {
 		attributeId: formData.get("attributeId"),
@@ -75,7 +75,7 @@ export async function addItemTemplateAttributeOptionAction(
 		revalidatePath("/client/master-data");
 		return { ok: true, data: { option: mapped.data } };
 	} catch {
-		logProductEvent({
+		logger.event({
 			level: "error",
 			event: "action.internal_error",
 			correlationId,

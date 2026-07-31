@@ -1,95 +1,72 @@
 # `@afenda/admin`
 
-**What it is** — Rank-1 Platform (R1-D) org-console and ops services for Afenda-Lite.
+Canonical organization-administration, platform RBAC-audit, role-assignment transaction, health, and organization-usage capabilities for Afenda-Lite.
 
-**What it does** — Neon Auth organization list / provision / hard-delete, sole `platform_rbac_audit` write·list SSOT, health/readiness probes, and active-org usage metrics. Root and subpath barrels are **server-only**; outcomes use `@afenda/errors` `Result`.
-
-**When you need it** — Server Actions, RSC shells, and Platform domain adapters under `apps/web` that must call org-console, RBAC audit, health, or usage APIs without dual-writing audit tables.
-
-**Who it is for** — App and Platform maintainers consuming `@afenda/admin` (not UI authors — no client components here). Prefer subpaths `./audit` · `./health` · `./usage` when you do not need org-console APIs (those entry points avoid loading the Neon Auth org client). Org APIs live on the root barrel only (there is no `@afenda/admin/org` export).
-
-Category index: [control-plane/README.md](../README.md). Catalog: [packages/README.md](../../README.md).
-
-## Consume
-
-Workspace dependency — import by export path:
+## Organization administration
 
 ```ts
-// Prefer subpaths when you only need audit / health / usage
-import {
-  recordRbacAudit,
-  listRbacAudit,
-  MEMBER_INVITE_AUDIT_ACTION,
-} from "@afenda/admin/audit";
-import {
-  getLivenessSnapshot,
-  getReadinessSnapshot,
-} from "@afenda/admin/health";
-import { getOrganizationUsageMetrics } from "@afenda/admin/usage";
+import { admin } from "@afenda/admin";
 
-// Org-console (root barrel — pulls Neon Auth org client)
-import {
-  listOrganizations,
-  provisionOrganization,
-  deleteOrganization,
-  provisionOrganizationInputSchema,
-} from "@afenda/admin";
+const organizations = await admin.organizations.list();
+const usage = await admin.usage.get({ orgId, period: "2026-08" });
+const parsed = admin.schemas.organizations.provisionInput.safeParse(input);
 ```
 
-Outcomes are `Result<T>` (`ok: true | false`). Map to product `ActionResult` at Actions — do not invent `{ success, data }` envelopes.
+The root capability loads the authenticated Neon organization context through `@afenda/auth`. Usage belongs here because it also requires that context; there is no `./usage` entrypoint.
 
-**Living consumers:** `apps/web` — `@afenda/admin/audit` (invite + assign/revoke audited ports); `@afenda/admin/health` (`modules/platform/domain/health`); `@afenda/admin/usage` + root org APIs (org-admin shell + provision/delete/usage Actions). Do **not** dual-write `platform_rbac_audit` from `apps/web`.
+## RBAC audit
+
+```ts
+import { rbacAudit } from "@afenda/admin/audit";
+
+await rbacAudit.record({
+  orgId,
+  actorUserId,
+  correlationId,
+  action: rbacAudit.actions.memberInvite,
+});
+
+await rbacAudit.roles.assign(command);
+```
+
+`./audit` is isolated from the Neon Auth client. It owns `platform_rbac_audit`, including atomic role assignment/revocation plus audit insertion. Consumers cannot construct RBAC audit SQL or query its table directly.
+
+General activity audit remains separate:
+
+- RBAC changes and invitations → `rbacAudit` → `platform_rbac_audit`.
+- Organization deletion and business activity → `@afenda/audit` → `platform_audit_log`.
+
+## Operational health
+
+```ts
+import { adminHealth } from "@afenda/admin/health";
+
+const live = adminHealth.liveness();
+const ready = await adminHealth.readiness();
+```
+
+`./health` is isolated so readiness and liveness checks do not load the Neon Auth organization client.
+
+## Ownership
+
+| Concern | Owner |
+|---|---|
+| Organization administration and usage | Root `admin` capability |
+| Platform roles and RBAC audit semantics | `rbacAudit` |
+| General domain activity audit | `@afenda/audit` |
+| Liveness and readiness | `adminHealth` |
+| Sessions, organization binding and Neon normalization | `@afenda/auth` |
+| Structural database schema | `@afenda/db` |
 
 ## Maintain
 
 ```bash
 pnpm --filter @afenda/admin lint
 pnpm --filter @afenda/admin typecheck
+pnpm --filter @afenda/admin typecheck:contract
 pnpm --filter @afenda/admin test
+pnpm check:admin-boundary
+pnpm test:admin-boundary
 ```
 
-Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**. No package-local `build` script — `typecheck` is the compile gate.
-
-## Exports
-
-| Path | Role |
-|------|------|
-| `@afenda/admin` | Org-console (`listOrganizations` · `createOrganization` · `provisionOrganization` · `deleteOrganization`) + Zod input/result schemas + re-exports of audit/health/usage |
-| `@afenda/admin/audit` | `recordRbacAudit` · `listRbacAudit` · `deleteRbacAuditRow` + action constants — **no** Neon Auth org client |
-| `@afenda/admin/health` | Liveness / readiness / DB inspect + `latencyMs` SSOT — **no** Neon Auth org client |
-| `@afenda/admin/usage` | `getOrganizationUsageMetrics` · `buildUsagePosition` · `usagePeriodUtcBounds` (active session org + `YYYY-MM` position matrix) |
-
-**Org-console notes**
-
-| API | Behavior |
-|-----|----------|
-| `listOrganizations` | Session memberships + `lastActivityAt` from audit max |
-| `provisionOrganization` | Create → `persistActiveOrganization` → invite first admin; partial failures return `INTERNAL_ERROR` + disposition (no fake rollback) |
-| `deleteOrganization` | Neon Auth **hard-delete** — not soft-deactivate |
-| `getOrganizationUsageMetrics` | Active org only; living counts + ops bands/alerts for a UTC month (not SKU / module limits) |
-
-## Ownership
-
-| Surface | Owner |
-|---------|-------|
-| Org-console Neon Auth ops · RBAC audit SSOT · health probes · usage position | `@afenda/admin` |
-| Session / invite / membership primitives | `@afenda/auth` |
-| Drizzle schema · `platform_*` tables (host) | `@afenda/db` |
-| `platform_rbac_audit` write ownership | `@afenda/admin` ([SCHEMA-OWNERSHIP-MANIFEST](../../../docs-V2/modules/SCHEMA-OWNERSHIP-MANIFEST.yaml)) |
-| ActionResult adapters · org-admin UI | `apps/web` |
-
-**Layer:** Rank-1 Platform (`@afenda/auth` · `@afenda/db` · `@afenda/env` · `@afenda/errors`). Must not import Surfaces or `apps/*`. See [docs-V2/monorepo](../../../docs-V2/monorepo/README.md).
-
-## Out of scope
-
-Do not add to this package: dual audit writers, soft-delete org flags, client/UI components, tutorial REST envelopes, OpenAPI document ownership, or a second tenancy model (shared schema · hard `organization_id` only — never multi-DB / project-per-tenant isolation).
-
-## Authority
-
-| Topic | Link |
-|-------|------|
-| Tenancy · pooler · shared schema (Scratch; Living ARCH-023 dormant) | [docs-V2/tenancy](../../../docs-V2/tenancy/README.md) · [neon-optimize](../../../docs-V2/tenancy/neon-optimize.md) |
-| Auth / Neon Auth ops | [docs-V2/auth](../../../docs-V2/auth/README.md) |
-| ActionResult · API wire | [docs-V2/api](../../../docs-V2/api/README.md) |
-| Package DAG | [docs-V2/monorepo](../../../docs-V2/monorepo/README.md) · [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
-| Agent checkout posture | [AGENTS.md](../../../AGENTS.md) |
+See [CONTRACT.md](./CONTRACT.md).

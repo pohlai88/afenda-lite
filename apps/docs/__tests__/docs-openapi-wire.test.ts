@@ -1982,7 +1982,12 @@ describe("docs OpenAPI wire", () => {
 		);
 		const docsEnvSource = readFileSync(docsEnvPath, "utf8");
 		expect(docsEnvSource).toContain("DOCS_URL");
-		expect(docsEnvSource).toContain("http://localhost:3001");
+		const docsEnvRegistryPath = join(
+			appDir,
+			"../../packages/foundation/env/src/docs-registry.ts",
+		);
+		const docsEnvRegistrySource = readFileSync(docsEnvRegistryPath, "utf8");
+		expect(docsEnvRegistrySource).toContain('default("http://localhost:3001")');
 
 		const sourceTs = readFileSync(sourcePath, "utf8");
 		expect(sourceTs).toContain("export function getPageImage");

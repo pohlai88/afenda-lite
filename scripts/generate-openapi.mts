@@ -8,18 +8,10 @@
  */
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { OpenAPIRegistry, OpenApiGeneratorV3, z } from "@afenda/openapi";
-import {
-	dataEnvelope,
-	OPENAPI_DOCUMENT_ID,
-	OPENAPI_VERSION,
-	type OperationMetadataMap,
-	stampAfendaDocument,
-	stampOperationMetadata,
-	writeOpenApiYaml,
-} from "@afenda/openapi/node";
+import { errorOpenApi } from "@afenda/errors";
+import { type OperationMetadataMap, openapi } from "@afenda/openapi";
+import { openapiNode } from "@afenda/openapi/node";
 
-import { apiErrorBodySchema } from "../apps/web/modules/platform/schemas/api-error";
 import {
 	livenessResponseSchema,
 	readinessResponseSchema,
@@ -52,29 +44,28 @@ const OPERATION_METADATA = {
 } as const satisfies OperationMetadataMap;
 
 const DOCUMENT_META = {
-	id: OPENAPI_DOCUMENT_ID,
+	id: openapi.document.id,
 	version: "1.2.0",
 	generatedAt: "2026-07-20",
 } as const;
 
-const livenessEnvelopeSchema = dataEnvelope(
+const livenessEnvelopeSchema = openapi.envelope.data(
 	livenessResponseSchema,
 	"LivenessEnvelope",
 );
-const readinessEnvelopeSchema = dataEnvelope(
+const readinessEnvelopeSchema = openapi.envelope.data(
 	readinessResponseSchema,
 	"ReadinessEnvelope",
 );
 
-const registry = new OpenAPIRegistry();
+const registry = openapi.registry.create();
 
-registry.register("APIErrorBody", apiErrorBodySchema);
-registry.register("LivenessResponse", livenessResponseSchema);
-registry.register("ReadinessResponse", readinessResponseSchema);
-registry.register("LivenessEnvelope", livenessEnvelopeSchema);
-registry.register("ReadinessEnvelope", readinessEnvelopeSchema);
+registry.schema("LivenessResponse", livenessResponseSchema);
+registry.schema("ReadinessResponse", readinessResponseSchema);
+registry.schema("LivenessEnvelope", livenessEnvelopeSchema);
+registry.schema("ReadinessEnvelope", readinessEnvelopeSchema);
 
-registry.registerComponent("securitySchemes", "neonAuthSession", {
+registry.securityScheme("neonAuthSession", {
 	type: "apiKey",
 	in: "cookie",
 	name: "session",
@@ -82,14 +73,14 @@ registry.registerComponent("securitySchemes", "neonAuthSession", {
 		"Neon Auth client session cookie (browser same-origin). Cookie name here is illustrative — Neon owns the real name.",
 });
 
-registry.registerComponent("securitySchemes", "metricsScrapeBearer", {
+registry.securityScheme("metricsScrapeBearer", {
 	type: "http",
 	scheme: "bearer",
 	description:
 		"Bearer token matching server env METRICS_SCRAPE_TOKEN. Unset token → 404 (fail closed).",
 });
 
-registry.registerPath({
+registry.path({
 	method: "get",
 	path: "/api/health/liveness",
 	summary: "Process liveness probe",
@@ -105,7 +96,7 @@ registry.registerPath({
 	},
 });
 
-registry.registerPath({
+registry.path({
 	method: "get",
 	path: "/api/health/readiness",
 	summary: "Dependency readiness probe",
@@ -129,7 +120,12 @@ registry.registerPath({
 	},
 });
 
-registry.registerPath({
+const metricsErrorResponses = errorOpenApi.responses([
+	"UNAUTHORIZED",
+	"NOT_FOUND",
+] as const);
+
+registry.path({
 	method: "get",
 	path: "/api/metrics",
 	summary: "Prometheus metrics scrape",
@@ -142,48 +138,44 @@ registry.registerPath({
 			description: "Prometheus exposition text",
 			content: {
 				"text/plain": {
-					schema: z.string().openapi({
+					schema: openapi.schema.z.string().openapi({
 						type: "string",
 						description: "Prometheus metrics body",
 					}),
 				},
 			},
 		},
-		401: {
-			description: "Missing or invalid bearer token",
-		},
-		404: {
-			description: "Scrape disabled — METRICS_SCRAPE_TOKEN unset",
-		},
+		...metricsErrorResponses,
 	},
 });
 
-const generator = new OpenApiGeneratorV3(registry.definitions);
-const document = generator.generateDocument({
-	openapi: OPENAPI_VERSION,
-	info: {
-		title: "Afenda-Lite HTTP (api-now)",
-		version: "1.0.0",
-		description:
-			"Machine OpenAPI for implemented Route Handlers only. Success JSON uses `{ data }` (healthJson / apiData). Errors use APIErrorBody (no data wrapper). Neon Auth `/api/auth/*` is excluded. Contract-only REST lives in REST-001 until handlers exist. One-version rule: no `/api/v1`.",
+const document = registry.document({
+	config: {
+		openapi: openapi.document.version,
+		info: {
+			title: "Afenda-Lite HTTP (api-now)",
+			version: "1.0.0",
+			description:
+				"Machine OpenAPI for implemented Route Handlers only. Success JSON uses `{ data }` (healthJson / apiData). Error responses derive from the canonical @afenda/errors registry. Neon Auth `/api/auth/*` is excluded. Contract-only REST lives in REST-001 until handlers exist. One-version rule: no `/api/v1`.",
+		},
+		servers: [
+			{
+				url: "https://afenda-lite.vercel.app",
+				description: "Production",
+			},
+			{
+				url: "http://localhost:3000",
+				description: "Local next dev",
+			},
+		],
+		tags: [
+			{ name: "Health", description: "Public probes" },
+			{ name: "Observability", description: "Prometheus scrape" },
+		],
 	},
-	servers: [
-		{
-			url: "https://afenda-lite.vercel.app",
-			description: "Production",
-		},
-		{
-			url: "http://localhost:3000",
-			description: "Local next dev",
-		},
-	],
-	tags: [
-		{ name: "Health", description: "Public probes" },
-		{ name: "Observability", description: "Prometheus scrape" },
-	],
+	meta: DOCUMENT_META,
+	operations: OPERATION_METADATA,
 });
 
-stampOperationMetadata(document, OPERATION_METADATA);
-stampAfendaDocument(document, DOCUMENT_META);
-writeOpenApiYaml(outPath, document, YAML_HEADER_LINES);
+openapiNode.yaml.write(outPath, document, YAML_HEADER_LINES);
 console.log(`Wrote ${outPath}`);

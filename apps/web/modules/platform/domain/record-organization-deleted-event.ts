@@ -5,7 +5,7 @@
  */
 
 import type { Result } from "@afenda/errors";
-import { createEventPublisher, type DomainEvent } from "@afenda/events";
+import { type DomainEvent, events } from "@afenda/events";
 
 export interface RecordOrganizationDeletedEventInput {
 	correlationId: string;
@@ -20,7 +20,7 @@ export interface RecordOrganizationDeletedEventInput {
 export async function recordOrganizationDeletedEvent(
 	input: RecordOrganizationDeletedEventInput,
 ): Promise<Result<DomainEvent>> {
-	return await createEventPublisher().publish({
+	return await events.publisher.create().publish({
 		type: "platform.organization.deleted",
 		sourceModule: "platform",
 		organizationId: input.organizationId,

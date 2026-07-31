@@ -2,6 +2,7 @@
  * The Machine chat RH — session gate, fail-closed Gateway, validation.
  */
 
+import { rateLimitTesting } from "@afenda/rate-limit/testing";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const authMocks = vi.hoisted(() => ({
@@ -19,7 +20,7 @@ const machineMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@afenda/auth", () => ({
-	getApiSession: authMocks.getApiSession,
+	authServer: { session: { getApi: authMocks.getApiSession } },
 }));
 
 vi.mock("@afenda/env", () => ({
@@ -34,13 +35,25 @@ vi.mock("@afenda/env", () => ({
 	isVercelRuntimeNow: () => false,
 }));
 
-vi.mock("@afenda/rate-limit", () => ({
-	checkRateLimit: vi.fn(async () => ({
-		ok: true,
-		quota: { limit: 20, remaining: 19, resetEpochMs: Date.now() + 60_000 },
-	})),
-	toRateLimitAppError: vi.fn(),
-}));
+vi.mock("@afenda/rate-limit", async () => {
+	const actual =
+		await vi.importActual<typeof import("@afenda/rate-limit")>(
+			"@afenda/rate-limit",
+		);
+	return {
+		...actual,
+		rateLimit: {
+			...actual.rateLimit,
+			check: vi.fn(async () =>
+				rateLimitTesting.decision.allowed({
+					limit: 20,
+					remaining: 19,
+					resetEpochMs: Date.now() + 60_000,
+				}),
+			),
+		},
+	};
+});
 
 vi.mock("@/modules/platform/ai/create-web-machine", () => ({
 	canReachAiGateway: () => machineMocks.canReach(),

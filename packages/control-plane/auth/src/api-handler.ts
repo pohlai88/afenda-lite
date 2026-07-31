@@ -5,30 +5,14 @@ import {
 	type Failure,
 	type ResultFailure,
 } from "@afenda/errors";
-import {
-	applyRateLimitHeaders,
-	applyServerTimingHeader,
-	type RateLimitHeaderQuota,
-} from "@afenda/http";
-import { createLogger } from "@afenda/logger";
-import {
-	checkRateLimit,
-	type RateLimitQuota,
-	toRateLimitFailure,
-} from "@afenda/rate-limit";
+import { http } from "@afenda/http";
+import { logger } from "@afenda/logger";
+import { type RateLimitQuotaProjection, rateLimit } from "@afenda/rate-limit";
 
 import { getNeonAuth } from "./neon-auth";
 
-const authBffLogger = createLogger({ service: "afenda-auth-bff" });
-
-/** Wire header for BFF correlation (API-007 twin — package-local, no apps/web import). */
-export const AUTH_BFF_CORRELATION_HEADER = "x-correlation-id" as const;
-
 const UNKNOWN_CLIENT_IP = "unknown";
 const SERVER_TIMING_METRIC = "auth_bff";
-
-const UUID_RE =
-	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 type AuthRouteHandler = (
 	request: Request,
@@ -39,37 +23,6 @@ type AuthRouteHandler = (
 export interface AuthApiHandlers {
 	GET: AuthRouteHandler;
 	POST: AuthRouteHandler;
-}
-
-/**
- * Prefer a valid inbound correlation id; otherwise mint a new UUID.
- */
-export function resolveAuthBffCorrelationId(
-	inbound: string | null | undefined,
-): string {
-	const trimmed = inbound?.trim();
-	if (trimmed && UUID_RE.test(trimmed)) {
-		return trimmed;
-	}
-	return crypto.randomUUID();
-}
-
-/**
- * Redact secrets and credential headers for BFF log / test surfaces.
- * Never log raw Authorization, Cookie, Set-Cookie, or secret/token-named values.
- */
-export function redactAuthHeaderValue(name: string, value: string): string {
-	const lower = name.toLowerCase();
-	if (
-		lower === "authorization" ||
-		lower === "cookie" ||
-		lower === "set-cookie" ||
-		lower.includes("secret") ||
-		lower.includes("token")
-	) {
-		return "[redacted]";
-	}
-	return value;
 }
 
 function firstHeaderValue(value: string | null): string | undefined {
@@ -135,28 +88,20 @@ export function isTrustedAuthBffPost(request: Request): boolean {
 	);
 }
 
-function toHeaderQuota(quota: RateLimitQuota): RateLimitHeaderQuota {
-	return {
-		limit: quota.limit,
-		remaining: quota.remaining,
-		resetEpochMs: quota.resetEpochMs,
-	};
-}
-
 function stampBffResponse(
 	response: Response,
 	input: {
 		correlationId: string;
 		startTimeMs: number;
-		quota?: RateLimitQuota;
+		quota?: RateLimitQuotaProjection;
 	},
 ): Response {
-	response.headers.set(AUTH_BFF_CORRELATION_HEADER, input.correlationId);
-	applyServerTimingHeader(response.headers, input.startTimeMs, {
+	response.headers.set(http.correlation.header, input.correlationId);
+	http.headers.applyServerTiming(response.headers, input.startTimeMs, {
 		metric: SERVER_TIMING_METRIC,
 	});
 	if (input.quota !== undefined) {
-		applyRateLimitHeaders(response.headers, toHeaderQuota(input.quota));
+		http.headers.applyRateLimit(response.headers, input.quota);
 	}
 	return response;
 }
@@ -204,16 +149,16 @@ function appErrorResponse(input: {
 	correlationId: string;
 	startTimeMs: number;
 	error: Failure | ResultFailure;
-	quota?: RateLimitQuota;
+	quota?: RateLimitQuotaProjection;
 }): Response {
 	const projection = errorProject.http(input.error);
 	const headers = new Headers(projection.headers);
 	headers.set("content-type", "application/json");
-	headers.set(AUTH_BFF_CORRELATION_HEADER, input.correlationId);
+	headers.set(http.correlation.header, input.correlationId);
 	if (input.quota !== undefined) {
-		applyRateLimitHeaders(headers, toHeaderQuota(input.quota));
+		http.headers.applyRateLimit(headers, input.quota);
 	}
-	applyServerTimingHeader(headers, input.startTimeMs, {
+	http.headers.applyServerTiming(headers, input.startTimeMs, {
 		metric: SERVER_TIMING_METRIC,
 	});
 	return new Response(JSON.stringify(projection.body), {
@@ -227,11 +172,16 @@ function logAuthBffUnexpectedError(input: {
 	method: string;
 	pathname: string;
 }): void {
-	authBffLogger.child({ correlationId: input.correlationId }).error({
-		event: "auth_bff.unexpected_error",
-		method: input.method,
-		path: input.pathname,
-	});
+	logger.event(
+		{
+			level: "error",
+			correlationId: input.correlationId,
+			event: "auth_bff.unexpected_error",
+			method: input.method,
+			path: input.pathname,
+		},
+		{ service: "afenda-auth-bff" },
+	);
 }
 
 function wrapProviderHandler(
@@ -240,8 +190,8 @@ function wrapProviderHandler(
 ): AuthRouteHandler {
 	return async (request, context) => {
 		const startTimeMs = Date.now();
-		const correlationId = resolveAuthBffCorrelationId(
-			request.headers.get(AUTH_BFF_CORRELATION_HEADER),
+		const correlationId = http.correlation.resolve(
+			request.headers.get(http.correlation.header),
 		);
 		const { pathname } = new URL(request.url);
 
@@ -249,31 +199,41 @@ function wrapProviderHandler(
 			return forbiddenResponse(correlationId, startTimeMs);
 		}
 
-		let postQuota: RateLimitQuota | undefined;
+		let postQuota: RateLimitQuotaProjection | undefined;
 		if (method === "POST") {
-			const limit = await checkRateLimit({
+			const limit = await rateLimit.check({
 				bucket: "auth_bff_post",
-				key: `${clientIpFromRequest(request)}:${pathname}`,
+				identity: {
+					ipAddress: clientIpFromRequest(request),
+					pathname,
+				},
 			});
 			if (!limit.ok) {
-				const error = toRateLimitFailure(limit);
+				const error = rateLimit.project.failure(limit);
+				const diagnostics = rateLimit.project.diagnostics(limit);
 				const event =
-					limit.reason === "unavailable"
+					diagnostics.outcome === "unavailable"
 						? "auth_bff.rate_limit_unavailable"
 						: "auth_bff.rate_limited";
-				authBffLogger.child({ correlationId }).warn({
-					code: errorProject.result(error).code,
-					event,
-					path: pathname,
-				});
+				logger.event(
+					{
+						level: "warn",
+						correlationId,
+						code: errorProject.result(error).code,
+						event,
+						path: pathname,
+					},
+					{ service: "afenda-auth-bff" },
+				);
+				const quota = rateLimit.project.quota(limit);
 				return appErrorResponse({
 					correlationId,
 					error,
 					startTimeMs,
-					...(limit.reason === "rate_limited" ? { quota: limit.quota } : {}),
+					...(quota === undefined ? {} : { quota }),
 				});
 			}
-			postQuota = limit.quota;
+			postQuota = rateLimit.project.quota(limit);
 		}
 
 		try {

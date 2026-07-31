@@ -1,7 +1,7 @@
 "use server";
 
 import type { Result as ActionResult } from "@afenda/errors";
-import { countUnreadNotifications } from "@afenda/notifications";
+import { notifications } from "@afenda/notifications";
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runMemberSessionAction } from "@/app/actions/run-member-session-action";
 
@@ -24,7 +24,7 @@ export async function getUnreadNotificationCountAction(
 		path: "getUnreadNotificationCountAction",
 		safeMessage: "Could not load unread count. Try again or contact an admin.",
 		execute: async (session) => {
-			const result = await countUnreadNotifications({
+			const result = await notifications.inbox.countUnread({
 				organizationId: session.orgId,
 				userId: session.userId,
 			});

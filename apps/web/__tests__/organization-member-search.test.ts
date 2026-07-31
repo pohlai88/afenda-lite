@@ -2,7 +2,7 @@
  * Identity org-member search projection — sync prune + hit mapping.
  */
 
-import { MemorySearchStore } from "@afenda/search/testing";
+import { searchTesting } from "@afenda/search/testing";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	searchOrganizationMembers,
@@ -15,8 +15,9 @@ const authMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@afenda/auth", () => ({
-	listOrgMembers: authMocks.listOrgMembers,
-	findOrgMember: authMocks.findOrgMember,
+	authServer: {
+		members: { list: authMocks.listOrgMembers, find: authMocks.findOrgMember },
+	},
 }));
 
 describe("organization-member-search Identity port", () => {
@@ -25,7 +26,7 @@ describe("organization-member-search Identity port", () => {
 	});
 
 	it("upserts members and prunes stale index rows", async () => {
-		const store = new MemorySearchStore();
+		const store = searchTesting.createMemory();
 		authMocks.listOrgMembers.mockResolvedValue([
 			{
 				userId: "u-1",
@@ -78,7 +79,7 @@ describe("organization-member-search Identity port", () => {
 	});
 
 	it("prunes all member docs when org has no members", async () => {
-		const store = new MemorySearchStore();
+		const store = searchTesting.createMemory();
 		authMocks.listOrgMembers.mockResolvedValueOnce([
 			{
 				userId: "u-1",

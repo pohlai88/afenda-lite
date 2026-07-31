@@ -2,11 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import {
-	CLIENT_HOME_PATH,
-	OPERATOR_HOME_PATH,
-	resolveRoleHome,
-} from "@afenda/auth/client";
+import { authBrowser } from "@afenda/auth/client";
 import { describe, expect, it } from "vitest";
 
 import { CLIENT_DASHBOARD_PATH } from "../features/auth/client-paths";
@@ -21,11 +17,17 @@ const webRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
  */
 describe("post-login routing wiring (N7)", () => {
 	it("pins app role-home constants to the governed resolver SSOT", () => {
-		expect(OPERATOR_ADMIN_PATH).toBe(OPERATOR_HOME_PATH);
-		expect(CLIENT_DASHBOARD_PATH).toBe(CLIENT_HOME_PATH);
-		expect(resolveRoleHome("operator")).toBe(OPERATOR_ADMIN_PATH);
-		expect(resolveRoleHome("admin")).toBe(OPERATOR_ADMIN_PATH);
-		expect(resolveRoleHome("client")).toBe(CLIENT_DASHBOARD_PATH);
+		expect(OPERATOR_ADMIN_PATH).toBe(authBrowser.paths.postLogin.operatorHome);
+		expect(CLIENT_DASHBOARD_PATH).toBe(authBrowser.paths.postLogin.clientHome);
+		expect(authBrowser.paths.postLogin.resolveRoleHome("operator")).toBe(
+			OPERATOR_ADMIN_PATH,
+		);
+		expect(authBrowser.paths.postLogin.resolveRoleHome("admin")).toBe(
+			OPERATOR_ADMIN_PATH,
+		);
+		expect(authBrowser.paths.postLogin.resolveRoleHome("client")).toBe(
+			CLIENT_DASHBOARD_PATH,
+		);
 	});
 
 	it("bounces a signed-in `/` through the resolver, not a hardcoded path", () => {

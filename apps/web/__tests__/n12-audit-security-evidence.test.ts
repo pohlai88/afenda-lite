@@ -34,11 +34,17 @@ const auditMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@afenda/auth", () => ({
-	requireRole: authMocks.requireRole,
-	getApiSession: authMocks.getApiSession,
-	canInviteMember: authMocks.canInviteMember,
-	inviteOrgMember: authMocks.inviteOrgMember,
-	buildJoinUrl: authMocks.buildJoinUrl,
+	authServer: {
+		session: {
+			requireRole: authMocks.requireRole,
+			getApi: authMocks.getApiSession,
+		},
+		roles: { canInvite: authMocks.canInviteMember },
+		invitations: {
+			inviteMember: authMocks.inviteOrgMember,
+			buildJoinUrl: authMocks.buildJoinUrl,
+		},
+	},
 }));
 
 vi.mock("next/cache", () => ({
@@ -71,11 +77,11 @@ vi.mock("@afenda/admin/audit", async (importOriginal) => {
 	const actual = await importOriginal<typeof import("@afenda/admin/audit")>();
 	return {
 		...actual,
-		recordRbacAudit: auditMocks.recordRbacAudit,
+		rbacAudit: { ...actual.rbacAudit, record: auditMocks.recordRbacAudit },
 	};
 });
 
-import { MEMBER_INVITE_AUDIT_ACTION } from "@afenda/admin/audit";
+import { rbacAudit } from "@afenda/admin/audit";
 import { assignOrgRoleAction } from "../app/actions/assign-org-role";
 import { inviteOrgMemberAction } from "../app/actions/invite-org-member";
 import { revokeOrgRoleAction } from "../app/actions/revoke-org-role";
@@ -140,7 +146,7 @@ describe("N12 living authz audit evidence", () => {
 		expect(auditMocks.recordRbacAudit).toHaveBeenCalledWith(
 			expect.objectContaining({
 				orgId: "org-n12",
-				action: MEMBER_INVITE_AUDIT_ACTION,
+				action: rbacAudit.actions.memberInvite,
 				actorUserId: "user-n12-operator",
 				targetType: "membership",
 				targetId: "new.member@example.com",
@@ -394,7 +400,9 @@ describe("N12 join accept NOT APPLICABLE (ARCH-023 Tier-1)", () => {
 		expect(joinShell).not.toContain("recordRbacAudit");
 		expect(joinPage).toContain("JoinShell");
 		expect(joinPage).not.toContain("recordRbacAudit");
-		expect(ensureActive).toContain("handleEnsureActiveOrganizationRequest");
+		expect(ensureActive).toContain(
+			"authServer.routes.ensureActiveOrganization.handle",
+		);
 		expect(ensureActive).not.toContain("recordRbacAudit");
 	});
 
@@ -412,7 +420,7 @@ describe("N12 join accept NOT APPLICABLE (ARCH-023 Tier-1)", () => {
 		const revokeTypes = source("modules/identity/domain/revoke-org-role.ts");
 
 		expect(invite).toContain("inviteOrgMember");
-		expect(invite).toContain("recordRbacAudit");
+		expect(invite).toContain("rbacAudit.record");
 		expect(invite).not.toContain("runNeonHttpTransaction");
 		expect(invite).not.toContain("createAuditRecorder");
 
@@ -435,8 +443,10 @@ describe("N12 join accept NOT APPLICABLE (ARCH-023 Tier-1)", () => {
 		expect(deleteOrgAudit).toContain("afendaAudit.recorder");
 		expect(deleteOrgAudit).not.toContain("recordRbacAudit");
 
-		expect(assignDomain).toContain("afendaDatabase.transaction");
-		expect(revokeDomain).toContain("afendaDatabase.transaction");
+		expect(assignDomain).toContain("rbacAudit.roles.assign");
+		expect(revokeDomain).toContain("rbacAudit.roles.revoke");
+		expect(assignDomain).not.toContain("platform_rbac_audit");
+		expect(revokeDomain).not.toContain("platform_rbac_audit");
 
 		expect(assignTypes).not.toMatch(/export async function assignOrgRole\b/);
 		expect(revokeTypes).not.toMatch(/export async function revokeOrgRole\b/);

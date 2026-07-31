@@ -1,22 +1,14 @@
 "use server";
 
-import {
-	MEMBER_INVITE_AUDIT_ACTION,
-	recordRbacAudit,
-} from "@afenda/admin/audit";
-import {
-	buildJoinUrl,
-	canInviteMember,
-	inviteOrgMember,
-	requireRole,
-} from "@afenda/auth";
+import { rbacAudit } from "@afenda/admin/audit";
+import { authServer } from "@afenda/auth";
 import { type Result as ActionResult, errorResult } from "@afenda/errors";
-import { createCorrelationId } from "@afenda/http";
+import { http } from "@afenda/http";
+import { logger } from "@afenda/logger";
 import { revalidatePath } from "next/cache";
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { inviteOrgMemberCommandSchema } from "@/modules/identity/schemas/invite-org-member";
 import { readRequestAttribution } from "@/modules/platform/domain/request-attribution";
-import { logProductEvent } from "@/modules/platform/observability/product-log";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export interface InviteOrgMemberActionData {
@@ -43,8 +35,8 @@ export async function inviteOrgMemberAction(
 	_prev: InviteOrgMemberActionState,
 	formData: FormData,
 ): Promise<InviteOrgMemberActionState> {
-	const correlationId = createCorrelationId();
-	const session = await requireRole("operator");
+	const correlationId = http.correlation.create();
+	const session = await authServer.session.requireRole("operator");
 
 	const parsed = parseSchema(inviteOrgMemberCommandSchema, {
 		email: formData.get("email"),
@@ -56,7 +48,7 @@ export async function inviteOrgMemberAction(
 		});
 	}
 
-	if (!canInviteMember(session.role, parsed.data.role)) {
+	if (!authServer.roles.canInvite(session.role, parsed.data.role)) {
 		return errorResult.fail("FORBIDDEN");
 	}
 
@@ -71,9 +63,9 @@ export async function inviteOrgMemberAction(
 	let auditId: string;
 	try {
 		const attribution = await readRequestAttribution();
-		const audit = await recordRbacAudit({
+		const audit = await rbacAudit.record({
 			orgId: session.orgId,
-			action: MEMBER_INVITE_AUDIT_ACTION,
+			action: rbacAudit.actions.memberInvite,
 			actorUserId: session.userId,
 			correlationId,
 			targetType: "membership",
@@ -87,7 +79,7 @@ export async function inviteOrgMemberAction(
 			userAgent: attribution.userAgent,
 		});
 		if (!audit.ok) {
-			logProductEvent({
+			logger.event({
 				level: "error",
 				event: "action.internal_error",
 				correlationId,
@@ -100,7 +92,7 @@ export async function inviteOrgMemberAction(
 		}
 		auditId = audit.data.id;
 	} catch {
-		logProductEvent({
+		logger.event({
 			level: "error",
 			event: "action.internal_error",
 			correlationId,
@@ -112,13 +104,13 @@ export async function inviteOrgMemberAction(
 		return errorResult.fail("INTERNAL_ERROR", { correlationId });
 	}
 
-	const invited = await inviteOrgMember({
+	const invited = await authServer.invitations.inviteMember({
 		email: parsed.data.email,
 		orgId: session.orgId,
 		role: parsed.data.role,
 	});
 	if (!invited.ok) {
-		logProductEvent({
+		logger.event({
 			level: "error",
 			event: "action.internal_error",
 			correlationId,
@@ -131,7 +123,7 @@ export async function inviteOrgMemberAction(
 	}
 	const { invitationId } = invited.data;
 
-	logProductEvent({
+	logger.event({
 		level: "info",
 		event: "member.invite",
 		correlationId,
@@ -145,6 +137,8 @@ export async function inviteOrgMemberAction(
 	return errorResult.ok({
 		email: parsed.data.email,
 		auditId,
-		joinUrl: invitationId ? buildJoinUrl({ invitationId }) : null,
+		joinUrl: invitationId
+			? authServer.invitations.buildJoinUrl({ invitationId })
+			: null,
 	});
 }

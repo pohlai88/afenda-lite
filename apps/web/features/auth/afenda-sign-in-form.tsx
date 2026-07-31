@@ -1,9 +1,6 @@
 "use client";
 
-import {
-	AUTH_FORGOT_PASSWORD_PATH,
-	POST_LOGIN_CALLBACK_PARAM,
-} from "@afenda/auth/client";
+import { authBrowser } from "@afenda/auth/client";
 import {
 	Alert,
 	AlertDescription,
@@ -35,7 +32,8 @@ const SIGN_IN_FIELD_IDS = [
  */
 export function AfendaSignInForm() {
 	const searchParams = useSearchParams();
-	const callback = searchParams.get(POST_LOGIN_CALLBACK_PARAM) ?? "";
+	const callback =
+		searchParams.get(authBrowser.paths.postLogin.callbackParameter) ?? "";
 	const [state, formAction, pending] = useActionState(
 		signInAction,
 		initialState,
@@ -54,7 +52,11 @@ export function AfendaSignInForm() {
 
 	return (
 		<form action={formAction} className="flex flex-col gap-(--field-gap)">
-			<input name={POST_LOGIN_CALLBACK_PARAM} type="hidden" value={callback} />
+			<input
+				name={authBrowser.paths.postLogin.callbackParameter}
+				type="hidden"
+				value={callback}
+			/>
 			<div className="flex flex-col gap-1">
 				<h1 className="font-semibold text-2xl tracking-tight">Sign in</h1>
 				<p className="text-foreground-secondary text-sm">
@@ -106,7 +108,7 @@ export function AfendaSignInForm() {
 			<div className="flex flex-col gap-2 text-center text-sm">
 				<Link
 					className="text-foreground hover:underline"
-					href={AUTH_FORGOT_PASSWORD_PATH}
+					href={authBrowser.paths.forgotPassword}
 				>
 					Forgot password?
 				</Link>

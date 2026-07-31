@@ -1,4 +1,4 @@
-import { requireRole } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 
 import { forbidPermissionAccess } from "@/features/auth/require-permission";
 
@@ -10,7 +10,7 @@ import {
 import { RecruitmentWorkspace } from "./recruitment-workspace";
 
 export async function RecruitmentWorkspaceServer() {
-	const session = await requireRole("operator");
+	const session = await authServer.session.requireRole("operator");
 	const capabilities = await resolveRecruitmentCapabilities(session);
 	if (!hasRecruitmentCapability(capabilities)) {
 		forbidPermissionAccess();

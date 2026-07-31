@@ -1,5 +1,9 @@
 /**
  * Re-export the shared OpenAPI-extended Zod instance.
- * SSOT: `@afenda/openapi/zod`.
+ * SSOT: the root `@afenda/openapi` capability.
  */
-export { z } from "@afenda/openapi/zod";
+import { openapi } from "@afenda/openapi";
+
+export const {
+	schema: { z },
+} = openapi;

@@ -4,6 +4,7 @@ import { errorResult, type Result } from "@afenda/errors";
 
 import type { EventStore } from "../../src/store";
 import type {
+	ClaimedDomainEvent,
 	DomainEvent,
 	DomainEventClaimOptions,
 	DomainEventMarkFailedInput,
@@ -29,6 +30,7 @@ export { assertOk };
 
 /** In-memory EventStore for Vitest only — not a production export. */
 export class MemoryEventStore implements EventStore {
+	private readonly claims = new Map<string, string>();
 	private readonly entries: DomainEvent[] = [];
 
 	all(): DomainEvent[] {
@@ -86,7 +88,7 @@ export class MemoryEventStore implements EventStore {
 
 	claimPending(
 		options: DomainEventClaimOptions,
-	): Promise<Result<DomainEvent[]>> {
+	): Promise<Result<ClaimedDomainEvent[]>> {
 		const pending = this.entries
 			.filter(
 				(entry) =>
@@ -95,7 +97,13 @@ export class MemoryEventStore implements EventStore {
 			)
 			.toSorted((a, b) => a.occurredAt.getTime() - b.occurredAt.getTime());
 		return okAsync(
-			pending.slice(0, options.limit).map((entry) => ({ ...entry })),
+			pending.slice(0, options.limit).map((entry) => {
+				const claimToken = randomUUID();
+				entry.status = "processing";
+				entry.attempts += 1;
+				this.claims.set(entry.id, claimToken);
+				return { claimToken, event: { ...entry } };
+			}),
 		);
 	}
 
@@ -104,7 +112,10 @@ export class MemoryEventStore implements EventStore {
 	): Promise<Result<DomainEvent | null>> {
 		const entry = this.entries.find(
 			(row) =>
-				row.id === input.id && row.organizationId === input.organizationId,
+				row.id === input.id &&
+				row.organizationId === input.organizationId &&
+				row.status === "processing" &&
+				this.claims.get(row.id) === input.claimToken,
 		);
 		if (!entry) {
 			return okAsync<DomainEvent | null>(null);
@@ -112,6 +123,7 @@ export class MemoryEventStore implements EventStore {
 		entry.status = "processed";
 		entry.processedAt = input.processedAt ?? new Date();
 		entry.lastError = null;
+		this.claims.delete(entry.id);
 		return okAsync({ ...entry });
 	}
 
@@ -120,14 +132,17 @@ export class MemoryEventStore implements EventStore {
 	): Promise<Result<DomainEvent | null>> {
 		const entry = this.entries.find(
 			(row) =>
-				row.id === input.id && row.organizationId === input.organizationId,
+				row.id === input.id &&
+				row.organizationId === input.organizationId &&
+				row.status === "processing" &&
+				this.claims.get(row.id) === input.claimToken,
 		);
 		if (!entry) {
 			return okAsync<DomainEvent | null>(null);
 		}
 		entry.status = "failed";
-		entry.attempts += 1;
 		entry.lastError = input.lastError;
+		this.claims.delete(entry.id);
 		return okAsync({ ...entry });
 	}
 
@@ -144,6 +159,7 @@ export class MemoryEventStore implements EventStore {
 		entry.status = "pending";
 		entry.lastError = null;
 		entry.processedAt = null;
+		this.claims.delete(entry.id);
 		return okAsync({ ...entry });
 	}
 

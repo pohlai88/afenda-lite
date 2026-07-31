@@ -1,16 +1,12 @@
 "use server";
 
-import {
-	getOrganizationUsageMetrics,
-	type OrganizationUsageMetrics,
-	usagePeriodSchema,
-} from "@afenda/admin/usage";
-import { requireRole } from "@afenda/auth";
+import { admin, type OrganizationUsageMetrics } from "@afenda/admin";
+import { authServer } from "@afenda/auth";
 import { type Result as ActionResult, errorResult } from "@afenda/errors";
-import { createCorrelationId } from "@afenda/http";
+import { http } from "@afenda/http";
+import { logger } from "@afenda/logger";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { logProductEvent } from "@/modules/platform/observability/product-log";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export type GetOrganizationUsageActionData = OrganizationUsageMetrics;
@@ -20,20 +16,20 @@ export type GetOrganizationUsageActionState =
 	ActionResult<GetOrganizationUsageActionData> | null;
 
 const usagePeriodFormSchema = z.object({
-	period: usagePeriodSchema,
+	period: admin.schemas.usage.period,
 });
 
 /**
  * Operator org-console usage refresh — active session org only.
  * `orgId` is stamped from session (never client-trusted). Metrics via
- * `@afenda/admin/usage` `getOrganizationUsageMetrics` (counts + ops bands).
+ * `@afenda/admin` `admin.usage.get` (counts + operational bands).
  */
 export async function getOrganizationUsageAction(
 	_prev: GetOrganizationUsageActionState,
 	formData: FormData,
 ): Promise<GetOrganizationUsageActionState> {
-	const correlationId = createCorrelationId();
-	const session = await requireRole("operator");
+	const correlationId = http.correlation.create();
+	const session = await authServer.session.requireRole("operator");
 
 	const parsed = parseSchema(usagePeriodFormSchema, {
 		period: formData.get("period"),
@@ -44,14 +40,14 @@ export async function getOrganizationUsageAction(
 		});
 	}
 
-	let result: Awaited<ReturnType<typeof getOrganizationUsageMetrics>>;
+	let result: Awaited<ReturnType<typeof admin.usage.get>>;
 	try {
-		result = await getOrganizationUsageMetrics({
+		result = await admin.usage.get({
 			orgId: session.orgId,
 			period: parsed.data.period,
 		});
 	} catch {
-		logProductEvent({
+		logger.event({
 			level: "error",
 			event: "action.internal_error",
 			correlationId,

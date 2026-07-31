@@ -59,7 +59,7 @@ async function afterItemMutation(
 		await syncMasterRootProjection(
 			MASTER_SEARCH_ENTITY.item,
 			result.data,
-			options.searchStore,
+			options.searchCapability,
 		);
 	} catch {
 		// Search is derived; committed mutation events and rebuilds provide recovery.

@@ -1,15 +1,15 @@
 "use server";
 
-import { getSession } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import { type Result as ActionResult, errorResult } from "@afenda/errors";
-import { createCorrelationId } from "@afenda/http";
+import { http } from "@afenda/http";
+import { logger } from "@afenda/logger";
 import { type PaymentTerm, updatePaymentTerm } from "@afenda/master-data";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
-import { logProductEvent } from "@/modules/platform/observability/product-log";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export interface UpdatePaymentTermActionData {
@@ -33,8 +33,8 @@ export async function updatePaymentTermAction(
 	_prev: UpdatePaymentTermActionState,
 	formData: FormData,
 ): Promise<UpdatePaymentTermActionState> {
-	const correlationId = createCorrelationId();
-	const session = await getSession();
+	const correlationId = http.correlation.create();
+	const session = await authServer.session.get();
 
 	const nameRaw = formData.get("name");
 	const netDaysRaw = formData.get("netDays");
@@ -86,7 +86,7 @@ export async function updatePaymentTermAction(
 		revalidatePath("/client/master-data");
 		return { ok: true, data: { paymentTerm: mapped.data } };
 	} catch {
-		logProductEvent({
+		logger.event({
 			level: "error",
 			event: "action.internal_error",
 			correlationId,

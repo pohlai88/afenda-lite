@@ -3,12 +3,11 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@afenda/auth", () => ({
-	getSession: vi.fn(),
-	requireRole: vi.fn(),
+	authServer: { session: { get: vi.fn(), requireRole: vi.fn() } },
 }));
 
 vi.mock("@afenda/http", () => ({
-	createCorrelationId: () => "corr-ca-activity-form-test",
+	http: { correlation: { create: () => "corr-ca-activity-form-test" } },
 }));
 
 vi.mock("@/app/actions/permission-gate", () => ({

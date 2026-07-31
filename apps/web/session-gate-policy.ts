@@ -6,7 +6,7 @@
  * stays with `getApiSession` (API-002 JSON 401) — never HTML login redirects.
  */
 
-import { AUTH_API_BASE_PATH } from "@afenda/auth/client";
+import { authBrowser } from "@afenda/auth/client";
 
 import { CLIENT_GATE_PATHS } from "./features/auth/client-paths";
 import { PRE_LOGIN_API_PATHS } from "./features/auth/pre-login-route-contract";
@@ -38,7 +38,7 @@ function isPlaygroundPath(pathname: string): boolean {
  */
 function isPreLoginApiPath(pathname: string): boolean {
 	for (const apiPath of PRE_LOGIN_API_PATHS) {
-		if (apiPath === AUTH_API_BASE_PATH) {
+		if (apiPath === authBrowser.paths.apiBase) {
 			if (pathname === apiPath || pathname.startsWith(`${apiPath}/`)) {
 				return true;
 			}

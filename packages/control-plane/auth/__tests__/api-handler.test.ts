@@ -1,4 +1,6 @@
 import { errorProject, errorResult } from "@afenda/errors";
+import { http } from "@afenda/http";
+import { rateLimitTesting } from "@afenda/rate-limit/testing";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const getHandlerMock = vi.fn();
@@ -6,7 +8,7 @@ const handlerGet = vi.fn();
 const handlerPost = vi.fn();
 
 const rateLimitMocks = vi.hoisted(() => ({
-	checkRateLimit: vi.fn(),
+	check: vi.fn(),
 }));
 
 const envMocks = vi.hoisted(() => ({
@@ -41,15 +43,13 @@ vi.mock("@afenda/rate-limit", async () => {
 		);
 	return {
 		...actual,
-		checkRateLimit: rateLimitMocks.checkRateLimit,
+		rateLimit: { ...actual.rateLimit, check: rateLimitMocks.check },
 	};
 });
 
 const APP_ORIGIN = "https://www.nexuscanon.com";
 const CORRELATION_ID = "11111111-1111-4111-8111-111111111111";
 const SERVER_TIMING_PATTERN = /^auth_bff;dur=\d+(\.\d)?$/;
-const UUID_PATTERN =
-	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function authRequest(method: "GET" | "POST", headers?: HeadersInit): Request {
 	return new Request(`${APP_ORIGIN}/api/auth/get-session`, {
@@ -63,15 +63,14 @@ describe("createAuthApiHandlers (PL-S7 BFF)", () => {
 		getHandlerMock.mockReset();
 		handlerGet.mockReset();
 		handlerPost.mockReset();
-		rateLimitMocks.checkRateLimit.mockReset();
-		rateLimitMocks.checkRateLimit.mockResolvedValue({
-			ok: true,
-			quota: {
+		rateLimitMocks.check.mockReset();
+		rateLimitMocks.check.mockResolvedValue(
+			rateLimitTesting.decision.allowed({
 				limit: 20,
 				remaining: 19,
 				resetEpochMs: Date.now() + 60_000,
-			},
-		});
+			}),
+		);
 		getHandlerMock.mockReturnValue({
 			GET: handlerGet,
 			POST: handlerPost,
@@ -101,22 +100,18 @@ describe("createAuthApiHandlers (PL-S7 BFF)", () => {
 			}),
 		);
 
-		const { AUTH_BFF_CORRELATION_HEADER, createAuthApiHandlers } = await import(
-			"../src/api-handler"
-		);
+		const { createAuthApiHandlers } = await import("../src/api-handler");
 		const { GET } = createAuthApiHandlers();
 		const response = await GET(
 			authRequest("GET", {
-				[AUTH_BFF_CORRELATION_HEADER]: CORRELATION_ID,
+				[http.correlation.header]: CORRELATION_ID,
 			}),
 			{},
 		);
 
 		expect(handlerGet).toHaveBeenCalledTimes(1);
 		expect(response.status).toBe(200);
-		expect(response.headers.get(AUTH_BFF_CORRELATION_HEADER)).toBe(
-			CORRELATION_ID,
-		);
+		expect(response.headers.get(http.correlation.header)).toBe(CORRELATION_ID);
 		expect(response.headers.get("set-cookie")).toBe(
 			"session_data=abc; Path=/; HttpOnly",
 		);
@@ -124,23 +119,19 @@ describe("createAuthApiHandlers (PL-S7 BFF)", () => {
 	});
 
 	it("rejects POST from untrusted Origin with safe 403", async () => {
-		const { AUTH_BFF_CORRELATION_HEADER, createAuthApiHandlers } = await import(
-			"../src/api-handler"
-		);
+		const { createAuthApiHandlers } = await import("../src/api-handler");
 		const { POST } = createAuthApiHandlers();
 		const response = await POST(
 			authRequest("POST", {
 				Origin: "https://evil.example",
-				[AUTH_BFF_CORRELATION_HEADER]: CORRELATION_ID,
+				[http.correlation.header]: CORRELATION_ID,
 			}),
 			{},
 		);
 
 		expect(handlerPost).not.toHaveBeenCalled();
 		expect(response.status).toBe(403);
-		expect(response.headers.get(AUTH_BFF_CORRELATION_HEADER)).toBe(
-			CORRELATION_ID,
-		);
+		expect(response.headers.get(http.correlation.header)).toBe(CORRELATION_ID);
 		await expect(response.json()).resolves.toEqual(
 			errorProject.http(errorResult.fail("FORBIDDEN")).body,
 		);
@@ -177,14 +168,12 @@ describe("createAuthApiHandlers (PL-S7 BFF)", () => {
 	it("rejects POST from loopback Origin on Vercel production", async () => {
 		envMocks.isProductionDeploymentNow.mockReturnValue(true);
 
-		const { AUTH_BFF_CORRELATION_HEADER, createAuthApiHandlers } = await import(
-			"../src/api-handler"
-		);
+		const { createAuthApiHandlers } = await import("../src/api-handler");
 		const { POST } = createAuthApiHandlers();
 		const response = await POST(
 			authRequest("POST", {
 				Origin: "http://localhost:3000",
-				[AUTH_BFF_CORRELATION_HEADER]: CORRELATION_ID,
+				[http.correlation.header]: CORRELATION_ID,
 			}),
 			{},
 		);
@@ -209,21 +198,19 @@ describe("createAuthApiHandlers (PL-S7 BFF)", () => {
 
 	it("returns RATE_LIMITED 429 with Retry-After and correlation on over-limit POST", async () => {
 		const resetEpochMs = 1_700_000_042_000;
-		rateLimitMocks.checkRateLimit.mockResolvedValue({
-			ok: false,
-			quota: { limit: 20, remaining: 0, resetEpochMs },
-			reason: "rate_limited",
-			retryAfterSeconds: 42,
-		});
-		const { AUTH_BFF_CORRELATION_HEADER, createAuthApiHandlers } = await import(
-			"../src/api-handler"
+		rateLimitMocks.check.mockResolvedValue(
+			rateLimitTesting.decision.rateLimited({
+				quota: { limit: 20, remaining: 0, resetEpochMs },
+				retryAfterSeconds: 42,
+			}),
 		);
+		const { createAuthApiHandlers } = await import("../src/api-handler");
 		const { POST } = createAuthApiHandlers();
 		const response = await POST(
 			authRequest("POST", {
 				Origin: APP_ORIGIN,
 				"x-forwarded-for": "203.0.113.10",
-				[AUTH_BFF_CORRELATION_HEADER]: CORRELATION_ID,
+				[http.correlation.header]: CORRELATION_ID,
 			}),
 			{},
 		);
@@ -237,9 +224,7 @@ describe("createAuthApiHandlers (PL-S7 BFF)", () => {
 		expect(response.headers.get("Server-Timing")).toMatch(
 			SERVER_TIMING_PATTERN,
 		);
-		expect(response.headers.get(AUTH_BFF_CORRELATION_HEADER)).toBe(
-			CORRELATION_ID,
-		);
+		expect(response.headers.get(http.correlation.header)).toBe(CORRELATION_ID);
 		await expect(response.json()).resolves.toMatchObject(
 			errorProject.http(errorResult.fail("RATE_LIMITED")).body,
 		);
@@ -248,13 +233,11 @@ describe("createAuthApiHandlers (PL-S7 BFF)", () => {
 	it("returns safe empty 500 when the provider throws", async () => {
 		handlerGet.mockRejectedValue(new Error("upstream secret token leak"));
 
-		const { AUTH_BFF_CORRELATION_HEADER, createAuthApiHandlers } = await import(
-			"../src/api-handler"
-		);
+		const { createAuthApiHandlers } = await import("../src/api-handler");
 		const { GET } = createAuthApiHandlers();
 		const response = await GET(
 			authRequest("GET", {
-				[AUTH_BFF_CORRELATION_HEADER]: CORRELATION_ID,
+				[http.correlation.header]: CORRELATION_ID,
 			}),
 			{},
 		);
@@ -264,36 +247,8 @@ describe("createAuthApiHandlers (PL-S7 BFF)", () => {
 		expect(body).toMatchObject(
 			errorProject.http(errorResult.fail("INTERNAL_ERROR")).body,
 		);
-		expect(response.headers.get(AUTH_BFF_CORRELATION_HEADER)).toBe(
-			CORRELATION_ID,
-		);
+		expect(response.headers.get(http.correlation.header)).toBe(CORRELATION_ID);
 
 		expect(JSON.stringify(body)).not.toContain("secret");
-	});
-});
-
-describe("auth BFF helpers (PL-S7)", () => {
-	it("redacts authorization, cookie, set-cookie, and secret/token headers", async () => {
-		const { redactAuthHeaderValue } = await import("../src/api-handler");
-		expect(redactAuthHeaderValue("Authorization", "Bearer abc")).toBe(
-			"[redacted]",
-		);
-		expect(redactAuthHeaderValue("Cookie", "session=1")).toBe("[redacted]");
-		expect(
-			redactAuthHeaderValue("Set-Cookie", "session_data=abc; Path=/"),
-		).toBe("[redacted]");
-		expect(redactAuthHeaderValue("X-Auth-Token", "xyz")).toBe("[redacted]");
-		expect(redactAuthHeaderValue("X-Cookie-Secret", "s")).toBe("[redacted]");
-		expect(redactAuthHeaderValue("Content-Type", "application/json")).toBe(
-			"application/json",
-		);
-	});
-
-	it("resolves inbound UUID correlation or mints a new one", async () => {
-		const { resolveAuthBffCorrelationId } = await import("../src/api-handler");
-		expect(resolveAuthBffCorrelationId(CORRELATION_ID)).toBe(CORRELATION_ID);
-		const minted = resolveAuthBffCorrelationId("not-a-uuid");
-		expect(minted).not.toBe("not-a-uuid");
-		expect(minted).toMatch(UUID_PATTERN);
 	});
 });

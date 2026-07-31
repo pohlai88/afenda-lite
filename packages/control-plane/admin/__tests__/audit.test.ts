@@ -253,15 +253,13 @@ describe("@afenda/admin rbac audit", () => {
 	});
 
 	it("recordRbacAudit rejects oversized ipAddress", async () => {
-		const { MAX_RBAC_AUDIT_IP_ADDRESS_LENGTH, recordRbacAudit } = await import(
-			"../src/audit-entry"
-		);
-		const result = await recordRbacAudit({
+		const { rbacAudit } = await import("../src/audit-entry");
+		const result = await rbacAudit.record({
 			orgId: "org-1",
 			action: "member.invite",
 			actorUserId: "user-1",
 			correlationId: "corr-1",
-			ipAddress: "x".repeat(MAX_RBAC_AUDIT_IP_ADDRESS_LENGTH + 1),
+			ipAddress: "x".repeat(rbacAudit.limits.ipAddressLength + 1),
 		});
 		expect(result.ok).toBe(false);
 		if (!result.ok) {

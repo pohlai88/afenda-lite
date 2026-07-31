@@ -9,20 +9,14 @@ import {
 	errorResult,
 	type Result,
 } from "@afenda/errors";
-import {
-	deleteSearchDocument,
-	listSearchDocumentIds,
-	type SearchStore,
-	searchDocuments,
-	upsertSearchDocuments,
-} from "@afenda/search";
+import { type SearchCapability, search } from "@afenda/search";
 
 import {
 	listOrganizationUsers,
 	type OrganizationUser,
 } from "@/modules/identity/domain/organization-users";
 
-export const MEMBER_SEARCH_ENTITY = "member" as const;
+export const MEMBER_SEARCH_ENTITY = search.entities.identity.member;
 
 export interface OrganizationMemberSearchHit {
 	id: string;
@@ -61,7 +55,7 @@ function toSearchHit(hit: {
  */
 export async function syncOrganizationMemberSearchIndex(
 	orgId: string,
-	store?: SearchStore,
+	searchCapability: SearchCapability = search,
 ): Promise<Result<{ upserted: number; pruned: number }>> {
 	let users: OrganizationUser[];
 	try {
@@ -73,19 +67,18 @@ export async function syncOrganizationMemberSearchIndex(
 	}
 
 	if (users.length > 0) {
-		const upserted = await upsertSearchDocuments(
+		const upserted = await searchCapability.documents.upsertMany(
 			users.map((user) => toUpsertInput(orgId, user)),
-			store,
 		);
 		if (!upserted.ok) {
 			return upserted;
 		}
 	}
 
-	const listed = await listSearchDocumentIds(
-		{ organizationId: orgId, entity: MEMBER_SEARCH_ENTITY },
-		store,
-	);
+	const listed = await searchCapability.documents.listIds({
+		organizationId: orgId,
+		entity: MEMBER_SEARCH_ENTITY,
+	});
 	if (!listed.ok) {
 		return listed;
 	}
@@ -97,14 +90,11 @@ export async function syncOrganizationMemberSearchIndex(
 	);
 	const deleteResults = await Promise.all(
 		staleDocumentIds.map((documentId) =>
-			deleteSearchDocument(
-				{
-					organizationId: orgId,
-					entity: MEMBER_SEARCH_ENTITY,
-					documentId,
-				},
-				store,
-			),
+			searchCapability.documents.delete({
+				organizationId: orgId,
+				entity: MEMBER_SEARCH_ENTITY,
+				documentId,
+			}),
 		),
 	);
 	for (const deleted of deleteResults) {
@@ -124,17 +114,14 @@ export async function searchOrganizationMembers(
 	orgId: string,
 	query: string,
 	limit?: number,
-	store?: SearchStore,
+	searchCapability: SearchCapability = search,
 ): Promise<Result<OrganizationMemberSearchHit[]>> {
-	const hits = await searchDocuments(
-		{
-			organizationId: orgId,
-			query,
-			entity: MEMBER_SEARCH_ENTITY,
-			limit,
-		},
-		store,
-	);
+	const hits = await searchCapability.query({
+		organizationId: orgId,
+		query,
+		entity: MEMBER_SEARCH_ENTITY,
+		limit,
+	});
 	if (!hits.ok) {
 		return hits;
 	}

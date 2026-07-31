@@ -1,14 +1,14 @@
 "use server";
 
-import { requireRole } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import { type Result as ActionResult, errorResult } from "@afenda/errors";
-import { createCorrelationId } from "@afenda/http";
+import { http } from "@afenda/http";
+import { logger } from "@afenda/logger";
 import { revalidatePath } from "next/cache";
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { revokeOrgRoleWithAudit } from "@/modules/identity/domain/revoke-org-role-audited";
 import { revokeOrgRoleCommandSchema } from "@/modules/identity/schemas/revoke-org-role";
 import { readRequestAttribution } from "@/modules/platform/domain/request-attribution";
-import { logProductEvent } from "@/modules/platform/observability/product-log";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export interface RevokeOrgRoleActionData {
@@ -32,8 +32,8 @@ export async function revokeOrgRoleAction(
 	_prev: RevokeOrgRoleActionState,
 	formData: FormData,
 ): Promise<RevokeOrgRoleActionState> {
-	const correlationId = createCorrelationId();
-	const session = await requireRole("operator");
+	const correlationId = http.correlation.create();
+	const session = await authServer.session.requireRole("operator");
 
 	const parsed = parseSchema(revokeOrgRoleCommandSchema, {
 		assignmentId: formData.get("assignmentId"),
@@ -68,7 +68,7 @@ export async function revokeOrgRoleAction(
 				: { userAgent: attribution.userAgent }),
 		});
 	} catch {
-		logProductEvent({
+		logger.event({
 			level: "error",
 			event: "action.internal_error",
 			correlationId,
@@ -84,7 +84,7 @@ export async function revokeOrgRoleAction(
 		return result;
 	}
 
-	logProductEvent({
+	logger.event({
 		level: "info",
 		event: "role.revoke",
 		correlationId,

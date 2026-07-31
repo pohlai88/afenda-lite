@@ -1,5 +1,5 @@
 import { getTrialBalance, listJournals } from "@afenda/accounting";
-import { getSession, requireRole } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import {
 	Alert,
 	AlertDescription,
@@ -46,7 +46,9 @@ const formSections = [
 /** Accounting console — RSC reads via `@afenda/accounting`; mutations via Actions. */
 export async function AccountingShell({ surface }: AccountingShellProps) {
 	const session =
-		surface === "admin" ? await requireRole("operator") : await getSession();
+		surface === "admin"
+			? await authServer.session.requireRole("operator")
+			: await authServer.session.get();
 	await requirePermission(session, "accounting.journal.read");
 	const canManage = await sessionHasPermission(
 		session,

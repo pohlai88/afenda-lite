@@ -1,4 +1,4 @@
-import { HumanResourcesEventSchemas } from "@afenda/events";
+import { HumanResourcesEventSchemas } from "@afenda/events/schemas";
 
 import { tryGetEventCatalogEntry } from "../event-catalog/get-event-catalog-entry";
 import { HUMAN_RESOURCES_COMMAND_IDS } from "../module-ids";

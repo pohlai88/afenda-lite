@@ -39,7 +39,7 @@ const masterDataMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@afenda/auth", () => ({
-	getSession: authMocks.getSession,
+	authServer: { session: { get: authMocks.getSession } },
 }));
 
 vi.mock("@/app/actions/permission-gate", () => ({

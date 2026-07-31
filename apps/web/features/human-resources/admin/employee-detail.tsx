@@ -1,5 +1,5 @@
 // biome-ignore-all lint/style/noNestedTernary: Exhaustive status and tri-state view mappings remain explicit at their use sites.
-import { requireRole } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import type { HumanResourcesEmployeeId } from "@afenda/human-resources";
 import {
 	Alert,
@@ -75,7 +75,7 @@ export async function EmployeeAdminDetail({
 	employeeId: HumanResourcesEmployeeId;
 	preferences: HrDisplayPreferences;
 }) {
-	const session = await requireRole("operator");
+	const session = await authServer.session.requireRole("operator");
 	await requirePermission(session, "human-resources.employee.read");
 	const asOf = new Date().toISOString().slice(0, 10);
 	const [

@@ -1,18 +1,14 @@
 "use server";
 
-import {
-	type DeletedOrganization,
-	deleteOrganization,
-	deleteOrganizationInputSchema,
-} from "@afenda/admin";
-import { requireRole } from "@afenda/auth";
+import { admin, type DeletedOrganization } from "@afenda/admin";
+import { authServer } from "@afenda/auth";
 import { type Result as ActionResult, errorResult } from "@afenda/errors";
-import { createCorrelationId } from "@afenda/http";
+import { http } from "@afenda/http";
+import { logger } from "@afenda/logger";
 import { revalidatePath } from "next/cache";
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { recordOrganizationDeletedAudit } from "@/modules/platform/domain/record-organization-deleted-audit";
 import { recordOrganizationDeletedEvent } from "@/modules/platform/domain/record-organization-deleted-event";
-import { logProductEvent } from "@/modules/platform/observability/product-log";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export type DeleteOrganizationActionData = DeletedOrganization;
@@ -23,7 +19,7 @@ export type DeleteOrganizationActionState =
 
 /**
  * Operator org-console hard-delete — Neon Auth `organization.delete` via
- * `@afenda/admin` `deleteOrganization`. Permanent removal only (never a soft
+ * `@afenda/admin` `admin.organizations.delete`. Permanent removal only (never a soft
  * archive). Package enforces session membership / owner; adapter maps
  * `Result` → `ActionResult` honestly.
  *
@@ -36,10 +32,10 @@ export async function deleteOrganizationAction(
 	_prev: DeleteOrganizationActionState,
 	formData: FormData,
 ): Promise<DeleteOrganizationActionState> {
-	const correlationId = createCorrelationId();
-	const session = await requireRole("operator");
+	const correlationId = http.correlation.create();
+	const session = await authServer.session.requireRole("operator");
 
-	const parsed = parseSchema(deleteOrganizationInputSchema, {
+	const parsed = parseSchema(admin.schemas.organizations.deleteInput, {
 		orgId: formData.get("orgId"),
 	});
 	if (!parsed.success) {
@@ -48,11 +44,11 @@ export async function deleteOrganizationAction(
 		});
 	}
 
-	let result: Awaited<ReturnType<typeof deleteOrganization>>;
+	let result: Awaited<ReturnType<typeof admin.organizations.delete>>;
 	try {
-		result = await deleteOrganization(parsed.data);
+		result = await admin.organizations.delete(parsed.data);
 	} catch {
-		logProductEvent({
+		logger.event({
 			level: "error",
 			event: "action.internal_error",
 			correlationId,
@@ -84,7 +80,7 @@ export async function deleteOrganizationAction(
 		correlationId,
 	});
 
-	logProductEvent({
+	logger.event({
 		level: "info",
 		event: "organization.delete",
 		correlationId,
@@ -114,7 +110,7 @@ async function writeOrganizationDeleteAudit(input: {
 		if (audit.ok) {
 			return null;
 		}
-		logProductEvent({
+		logger.event({
 			level: "error",
 			event: "action.internal_error",
 			correlationId,
@@ -124,7 +120,7 @@ async function writeOrganizationDeleteAudit(input: {
 			code: audit.code,
 		});
 	} catch {
-		logProductEvent({
+		logger.event({
 			level: "error",
 			event: "action.internal_error",
 			correlationId,
@@ -155,7 +151,7 @@ async function writeOrganizationDeleteEvent(input: {
 		if (recorded.ok) {
 			return;
 		}
-		logProductEvent({
+		logger.event({
 			level: "error",
 			event: "action.internal_error",
 			correlationId,
@@ -165,7 +161,7 @@ async function writeOrganizationDeleteEvent(input: {
 			code: recorded.code,
 		});
 	} catch {
-		logProductEvent({
+		logger.event({
 			level: "error",
 			event: "action.internal_error",
 			correlationId,

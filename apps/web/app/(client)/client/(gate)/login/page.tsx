@@ -1,4 +1,4 @@
-import { AUTH_LOGIN_PATH } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
@@ -11,5 +11,5 @@ export const metadata: Metadata = {
  * Session-gate bypasses this path so anonymous traffic can reach the redirect.
  */
 export default function ClientLoginGatePage() {
-	redirect(AUTH_LOGIN_PATH);
+	redirect(authServer.paths.login);
 }

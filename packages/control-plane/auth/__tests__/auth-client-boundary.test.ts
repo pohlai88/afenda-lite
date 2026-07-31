@@ -33,19 +33,21 @@ describe("@afenda/auth/client boundary (N5)", () => {
 		expect(offenders).toEqual([]);
 	});
 
-	it("exports AUTH_API_BASE_PATH and getBrowserAuthClient", () => {
+	it("exports one browser capability using the shared path projection", () => {
 		const source = readFileSync(clientSourcePath, "utf-8");
-		expect(source).toContain("AUTH_API_BASE_PATH");
-		expect(source).toContain("export function getBrowserAuthClient");
-		expect(source).toContain('from "@neondatabase/auth/next"');
+		expect(source).toContain("export const authBrowser");
+		expect(source).toContain("AUTH_PATHS");
+		expect(source).not.toContain("resetBrowserAuthClientForTests");
 	});
 });
 
 describe("@afenda/auth server barrel hygiene", () => {
-	it("exports AuthBootstrap and CredentialAuthResult types without a middleware subpath", () => {
+	it("exports the server capability and durable types without legacy functions", () => {
 		const source = readFileSync(serverIndexPath, "utf-8");
-		expect(source).toContain("export type { CredentialAuthResult }");
+		expect(source).toContain("authServer");
+		expect(source).toContain("CredentialAuthResult");
 		expect(source).toContain("AuthBootstrap");
+		expect(source).not.toContain("getSession");
 		expect(source).not.toMatch(MIDDLEWARE_EXPORT_PATTERN);
 		expect(source).not.toContain("./middleware");
 	});

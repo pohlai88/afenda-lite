@@ -46,18 +46,18 @@ const navigationMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@afenda/auth", () => ({
-	AUTH_FORBIDDEN_PATH: "/403",
-	JOIN_PATH: authMocks.JOIN_PATH,
-	inviteableRolesFor: authMocks.inviteableRolesFor,
-	requireRole: authMocks.requireRole,
+	authServer: {
+		paths: { forbidden: "/403", join: { path: authMocks.JOIN_PATH } },
+		roles: { inviteableFor: authMocks.inviteableRolesFor },
+		session: { requireRole: authMocks.requireRole },
+	},
 }));
 
 vi.mock("@afenda/admin", () => ({
-	listOrganizations: adminMocks.listOrganizations,
-}));
-
-vi.mock("@afenda/admin/usage", () => ({
-	getOrganizationUsageMetrics: adminMocks.getOrganizationUsageMetrics,
+	admin: {
+		organizations: { list: adminMocks.listOrganizations },
+		usage: { get: adminMocks.getOrganizationUsageMetrics },
+	},
 }));
 
 vi.mock("next/navigation", () => ({
@@ -220,8 +220,8 @@ describe("OrgAdminShell — RSC STABILITY", () => {
 		expect(shell).toContain("<main");
 		expect(shell).toContain("gap-(--section-gap)");
 		expect(shell).toContain("MetricGrid");
-		expect(shell).toContain("listOrganizations");
-		expect(shell).toContain('from "@afenda/admin/usage"');
+		expect(shell).toContain("admin.organizations.list");
+		expect(shell).toContain("admin.usage.get");
 		expect(chrome).toContain('AppShell } from "@afenda/ui-system"');
 		expect(chrome).toContain("<AppShell");
 		expect(chrome).toContain("mainContentId={MAIN_CONTENT_ID}");

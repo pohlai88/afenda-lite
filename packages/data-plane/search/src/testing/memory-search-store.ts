@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { errorResult, type Result } from "@afenda/errors";
 
 import { sanitizeSearchMetadata } from "../sanitize";
+import { SEARCH_RANKING_POLICY } from "../semantic-registry";
 import type { SearchStore } from "../store";
 import type {
 	SearchDeleteInput,
@@ -20,10 +21,15 @@ function scoreDocument(doc: SearchDocument, query: string): number {
 	const title = doc.title.toLowerCase();
 	const description = (doc.description ?? "").toLowerCase();
 	if (title.includes(q)) {
-		return 1 + q.length / Math.max(title.length, 1);
+		return (
+			SEARCH_RANKING_POLICY.titleWeight + q.length / Math.max(title.length, 1)
+		);
 	}
 	if (description.includes(q)) {
-		return 0.5 + q.length / Math.max(description.length, 1);
+		return (
+			SEARCH_RANKING_POLICY.descriptionWeight +
+			q.length / Math.max(description.length, 1)
+		);
 	}
 	const tokens = q
 		.split(SEARCH_TOKEN_SEPARATOR)
@@ -129,7 +135,9 @@ export class MemorySearchStore implements SearchStore {
 				score,
 			});
 		}
-		hits.sort((a, b) => b.score - a.score);
+		hits.sort(
+			(a, b) => b.score - a.score || a.documentId.localeCompare(b.documentId),
+		);
 		return Promise.resolve(
 			errorResult.ok(
 				hits.slice(options.offset, options.offset + options.limit),

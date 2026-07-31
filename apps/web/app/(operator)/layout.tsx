@@ -1,4 +1,4 @@
-import { requireRole } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import type { ReactNode } from "react";
 
 import { OperatorPlatformShell } from "@/features/portal-chrome/operator-platform-shell";
@@ -15,6 +15,6 @@ export default async function OperatorLayout({
 }: {
 	children: ReactNode;
 }) {
-	await requireRole("operator");
+	await authServer.session.requireRole("operator");
 	return <OperatorPlatformShell>{children}</OperatorPlatformShell>;
 }

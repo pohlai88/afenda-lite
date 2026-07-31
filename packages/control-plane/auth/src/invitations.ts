@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 
 import { failFromInviteHttpStatus } from "./auth-failure";
 import { requireAppOrigin } from "./join-paths";
+import { normalizeNeonInvitationId } from "./neon-normalization";
 import type { Role } from "./role";
 import { toNeonOrgRole } from "./roles";
 import { getSession } from "./session";
@@ -31,29 +32,7 @@ function normalizeInviteEmail(email: string): string {
  * Accepts common Better Auth / Neon envelope shapes only.
  */
 export function extractInvitationId(data: unknown): string | null {
-	if (typeof data !== "object" || data === null) {
-		return null;
-	}
-
-	const record = data as Record<string, unknown>;
-
-	if (typeof record.id === "string" && record.id.trim().length > 0) {
-		return record.id.trim();
-	}
-
-	if (typeof record.invitationId === "string" && record.invitationId.trim()) {
-		return record.invitationId.trim();
-	}
-
-	if (typeof record.invitation === "object" && record.invitation !== null) {
-		return extractInvitationId(record.invitation);
-	}
-
-	if (typeof record.data === "object" && record.data !== null) {
-		return extractInvitationId(record.data);
-	}
-
-	return null;
+	return normalizeNeonInvitationId(data);
 }
 
 /**

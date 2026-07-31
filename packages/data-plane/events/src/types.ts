@@ -22,7 +22,12 @@ export const EVENT_SOURCE_MODULES = [
 
 export type EventSourceModule = (typeof EVENT_SOURCE_MODULES)[number];
 
-export const EVENT_STATUSES = ["pending", "processed", "failed"] as const;
+export const EVENT_STATUSES = [
+	"pending",
+	"processing",
+	"processed",
+	"failed",
+] as const;
 
 export type EventStatus = (typeof EVENT_STATUSES)[number];
 
@@ -78,13 +83,20 @@ export interface DomainEventClaimOptions {
 	organizationId: string;
 }
 
+export interface ClaimedDomainEvent {
+	claimToken: string;
+	event: DomainEvent;
+}
+
 export interface DomainEventMarkProcessedInput {
+	claimToken: string;
 	id: string;
 	organizationId: string;
 	processedAt?: Date;
 }
 
 export interface DomainEventMarkFailedInput {
+	claimToken: string;
 	id: string;
 	lastError: string;
 	organizationId: string;

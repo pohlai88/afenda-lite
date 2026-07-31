@@ -1,7 +1,6 @@
 import {
 	database as afendaDatabase,
 	and,
-	asc,
 	count,
 	desc,
 	eq,
@@ -19,8 +18,10 @@ import {
 } from "@afenda/errors";
 
 import { mapDomainEventRow } from "./map-row";
+import { EVENT_LIFECYCLE_POLICY } from "./semantic-registry";
 import type { EventStore } from "./store";
 import type {
+	ClaimedDomainEvent,
 	DomainEvent,
 	DomainEventClaimOptions,
 	DomainEventMarkFailedInput,
@@ -79,6 +80,52 @@ function buildFilterWhere(options: DomainEventQueryOptions) {
 		predicates.push(lte(platformDomainEvent.createdAt, options.to));
 	}
 	return and(...predicates);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function mapClaimedRow(row: unknown): Result<ClaimedDomainEvent> {
+	if (!isRecord(row) || typeof row.claimToken !== "string") {
+		return errorResult.fail("INTERNAL_ERROR");
+	}
+	const mapped = mapDomainEventRow({
+		actorUserId: String(row.actorUserId ?? ""),
+		attempts: Number(row.attempts),
+		causationId: typeof row.causationId === "string" ? row.causationId : null,
+		claimedAt: row.claimedAt ? new Date(String(row.claimedAt)) : null,
+		correlationId: String(row.correlationId ?? ""),
+		createdAt: new Date(String(row.createdAt)),
+		deduplicationKey:
+			typeof row.deduplicationKey === "string" ? row.deduplicationKey : null,
+		id: String(row.id ?? ""),
+		lastError: typeof row.lastError === "string" ? row.lastError : null,
+		metadata: row.metadata,
+		organizationId: String(row.organizationId ?? ""),
+		payload: row.payload,
+		processedAt: row.processedAt ? new Date(String(row.processedAt)) : null,
+		sourceModule: String(row.sourceModule ?? ""),
+		status: String(row.status ?? ""),
+		type: String(row.type ?? ""),
+	});
+	return mapped.ok
+		? errorResult.ok({ claimToken: row.claimToken, event: mapped.data })
+		: errorResult.fail("INTERNAL_ERROR");
+}
+
+function mapClaimedRows(
+	rows: readonly unknown[],
+): Result<ClaimedDomainEvent[]> {
+	const claimed: ClaimedDomainEvent[] = [];
+	for (const row of rows) {
+		const mapped = mapClaimedRow(row);
+		if (!mapped.ok) {
+			return mapped;
+		}
+		claimed.push(mapped.data);
+	}
+	return errorResult.ok(claimed);
 }
 
 export class DrizzleEventStore implements EventStore {
@@ -190,25 +237,55 @@ export class DrizzleEventStore implements EventStore {
 
 	async claimPending(
 		options: DomainEventClaimOptions,
-	): Promise<Result<DomainEvent[]>> {
+	): Promise<Result<ClaimedDomainEvent[]>> {
 		try {
-			const predicates = [
-				eq(platformDomainEvent.organizationId, options.organizationId),
-				eq(platformDomainEvent.status, "pending"),
-			];
-			const where = and(...predicates);
-			if (where === undefined) {
-				return errorResult.fail("INTERNAL_ERROR");
-			}
+			const claimToken = crypto.randomUUID();
+			const staleBefore = new Date(
+				Date.now() - EVENT_LIFECYCLE_POLICY.claimLeaseMs,
+			);
+			const result = await afendaDatabase.client.execute(sql`
+				WITH candidates AS (
+					SELECT id
+					FROM platform_domain_event
+					WHERE organization_id = ${options.organizationId}
+						AND attempts < ${EVENT_LIFECYCLE_POLICY.maxAttempts}
+						AND (
+							status = 'pending'
+							OR (status = 'processing' AND claimed_at <= ${staleBefore})
+						)
+					ORDER BY created_at ASC
+					FOR UPDATE SKIP LOCKED
+					LIMIT ${options.limit}
+				)
+				UPDATE platform_domain_event AS event
+				SET status = 'processing',
+					attempts = event.attempts + 1,
+					claim_token = ${claimToken},
+					claimed_at = NOW()
+				FROM candidates
+				WHERE event.id = candidates.id
+					AND event.organization_id = ${options.organizationId}
+				RETURNING
+					event.id,
+					event.organization_id AS "organizationId",
+					event.type,
+					event.source_module AS "sourceModule",
+					event.deduplication_key AS "deduplicationKey",
+					event.correlation_id AS "correlationId",
+					event.causation_id AS "causationId",
+					event.actor_user_id AS "actorUserId",
+					event.payload,
+					event.metadata,
+					event.status,
+					event.attempts,
+					event.last_error AS "lastError",
+					event.processed_at AS "processedAt",
+					event.claimed_at AS "claimedAt",
+					event.claim_token AS "claimToken",
+					event.created_at AS "createdAt"
+			`);
 
-			const rows = await afendaDatabase.client
-				.select()
-				.from(platformDomainEvent)
-				.where(where)
-				.orderBy(asc(platformDomainEvent.createdAt))
-				.limit(options.limit);
-
-			return mapRows(rows);
+			return mapClaimedRows(result.rows);
 		} catch (error) {
 			return failFromPersistence(
 				error,
@@ -228,11 +305,15 @@ export class DrizzleEventStore implements EventStore {
 					status: "processed",
 					processedAt,
 					lastError: null,
+					claimToken: null,
+					claimedAt: null,
 				})
 				.where(
 					and(
 						eq(platformDomainEvent.id, input.id),
 						eq(platformDomainEvent.organizationId, input.organizationId),
+						eq(platformDomainEvent.status, "processing"),
+						eq(platformDomainEvent.claimToken, input.claimToken),
 					),
 				)
 				.returning();
@@ -263,12 +344,15 @@ export class DrizzleEventStore implements EventStore {
 				.set({
 					status: "failed",
 					lastError: input.lastError,
-					attempts: sql`${platformDomainEvent.attempts} + 1`,
+					claimToken: null,
+					claimedAt: null,
 				})
 				.where(
 					and(
 						eq(platformDomainEvent.id, input.id),
 						eq(platformDomainEvent.organizationId, input.organizationId),
+						eq(platformDomainEvent.status, "processing"),
+						eq(platformDomainEvent.claimToken, input.claimToken),
 					),
 				)
 				.returning();
@@ -297,6 +381,8 @@ export class DrizzleEventStore implements EventStore {
 					status: "pending",
 					lastError: null,
 					processedAt: null,
+					claimToken: null,
+					claimedAt: null,
 				})
 				.where(
 					and(

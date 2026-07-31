@@ -18,7 +18,6 @@
 		"modules/identity/domain/assign-org-role.ts": ["types"],
 		"modules/identity/domain/revoke-org-role-audited.ts": ["types"],
 		"modules/identity/domain/revoke-org-role.ts": ["types"],
-		"modules/platform/observability/product-log.ts": ["types"],
 		"modules/platform/schemas/api-error.ts": ["exports", "duplicates"],
 		"modules/platform/schemas/common.ts": ["exports", "types"]
 	},

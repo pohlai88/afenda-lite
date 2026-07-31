@@ -8,7 +8,11 @@ import {
 import { resolveEventStore } from "./resolve-store";
 import { eventDispatchOptionsSchema } from "./schemas";
 import type { EventStore } from "./store";
-import type { DomainEvent, DomainEventHandlerMap } from "./types";
+import type {
+	ClaimedDomainEvent,
+	DomainEvent,
+	DomainEventHandlerMap,
+} from "./types";
 
 export interface CreateEventDispatcherOptions {
 	handlers: DomainEventHandlerMap;
@@ -48,16 +52,34 @@ interface EventDispatchAccumulator {
 }
 
 async function dispatchEvent(
-	event: DomainEvent,
+	claimed: ClaimedDomainEvent,
 	handler: DomainEventHandlerMap[string] | undefined,
 	store: EventStore,
 ): Promise<Result<EventDispatchOutcome>> {
+	const { claimToken, event } = claimed;
 	if (handler === undefined) {
-		return errorResult.ok({ event, failed: 0, processed: 0, skipped: 1 });
+		const marked = await store.markFailed({
+			claimToken,
+			id: event.id,
+			lastError: `No handler registered for event type: ${event.type}`,
+			organizationId: event.organizationId,
+		});
+		if (!marked.ok) {
+			return marked;
+		}
+		return marked.data === null
+			? errorResult.fail("INTERNAL_ERROR")
+			: errorResult.ok({
+					event: marked.data,
+					failed: 1,
+					processed: 0,
+					skipped: 1,
+				});
 	}
 	try {
 		await handler(event);
 		const marked = await store.markProcessed({
+			claimToken,
 			id: event.id,
 			organizationId: event.organizationId,
 		});
@@ -74,6 +96,7 @@ async function dispatchEvent(
 				});
 	} catch (error) {
 		const marked = await store.markFailed({
+			claimToken,
 			id: event.id,
 			organizationId: event.organizationId,
 			lastError: errorMessage(error),
@@ -118,15 +141,15 @@ export function createEventDispatcher(
 			const dispatched = await claimed.reduce<
 				Promise<Result<EventDispatchAccumulator>>
 			>(
-				async (previousResult, event) => {
+				async (previousResult, claimedEvent) => {
 					const accumulated = await previousResult;
 					if (!accumulated.ok) {
 						return accumulated;
 					}
 
 					const outcome = await dispatchEvent(
-						event,
-						handlers[event.type],
+						claimedEvent,
+						handlers[claimedEvent.event.type],
 						store,
 					);
 					if (!outcome.ok) {

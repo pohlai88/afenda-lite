@@ -1,8 +1,9 @@
 "use server";
 
-import { getSession } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import { type Result as ActionResult, errorResult } from "@afenda/errors";
-import { createCorrelationId } from "@afenda/http";
+import { http } from "@afenda/http";
+import { logger } from "@afenda/logger";
 import {
 	type ChangeRequest,
 	partyIdSchema,
@@ -13,7 +14,6 @@ import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
-import { logProductEvent } from "@/modules/platform/observability/product-log";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export interface SubmitChangeRequestActionData {
@@ -45,8 +45,8 @@ export async function submitChangeRequestAction(
 	_prev: SubmitChangeRequestActionState,
 	formData: FormData,
 ): Promise<SubmitChangeRequestActionState> {
-	const correlationId = createCorrelationId();
-	const session = await getSession();
+	const correlationId = http.correlation.create();
+	const session = await authServer.session.get();
 
 	const commandKind = formData.get("commandKind");
 	const parsed = parseSchema(submitChangeRequestFormSchema, {
@@ -105,7 +105,7 @@ export async function submitChangeRequestAction(
 		revalidatePath("/client/master-data");
 		return { ok: true, data: { changeRequest: mapped.data } };
 	} catch {
-		logProductEvent({
+		logger.event({
 			level: "error",
 			event: "action.internal_error",
 			correlationId,

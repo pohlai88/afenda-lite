@@ -1,35 +1,19 @@
-/**
- * Org-scoped in-app notification vocabulary (IN_APP channel only in slice-1).
- */
+import type {
+	NotificationChannel as NotificationChannelValue,
+	NotificationPriority as NotificationPriorityValue,
+	NotificationType as NotificationTypeValue,
+} from "./semantic-registry";
 
-export const NOTIFICATION_TYPES = [
-	"INFO",
-	"WARNING",
-	"ERROR",
-	"SUCCESS",
-	"ACTION_REQUIRED",
-] as const;
-
-export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
-
-export const NOTIFICATION_PRIORITIES = [
-	"LOW",
-	"MEDIUM",
-	"HIGH",
-	"URGENT",
-] as const;
-
-export type NotificationPriority = (typeof NOTIFICATION_PRIORITIES)[number];
-
-/** Slice-1 ships IN_APP only — widen when a second real transport lands. */
-export const NOTIFICATION_CHANNELS = ["IN_APP"] as const;
-
-export type NotificationChannel = (typeof NOTIFICATION_CHANNELS)[number];
+export type {
+	NotificationChannel,
+	NotificationPriority,
+	NotificationType,
+} from "./semantic-registry";
 
 export interface Notification {
 	actionUrl: string | null;
 	body: string;
-	channel: NotificationChannel;
+	channel: NotificationChannelValue;
 	createdAt: Date;
 	deduplicationKey: string | null;
 	expiresAt: Date | null;
@@ -37,26 +21,26 @@ export interface Notification {
 	metadata: Record<string, unknown> | null;
 	module: string;
 	organizationId: string;
-	priority: NotificationPriority;
+	priority: NotificationPriorityValue;
 	read: boolean;
 	title: string;
-	type: NotificationType;
+	type: NotificationTypeValue;
 	userId: string;
 }
 
 export interface NotificationWriteInput {
 	actionUrl?: string | null;
 	body: string;
-	channel: NotificationChannel;
+	channel: NotificationChannelValue;
 	createdAt?: Date;
 	deduplicationKey?: string | null;
 	expiresAt?: Date | null;
 	metadata?: Record<string, unknown> | null;
 	module: string;
 	organizationId: string;
-	priority: NotificationPriority;
+	priority: NotificationPriorityValue;
 	title: string;
-	type: NotificationType;
+	type: NotificationTypeValue;
 	userId: string;
 }
 

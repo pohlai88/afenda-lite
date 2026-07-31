@@ -1,14 +1,7 @@
 // biome-ignore-all lint/performance/noJsxPropsBind: The enabled React Compiler stabilizes JSX callback props.
 "use client";
 
-import {
-	AFENDA_AUTH_VIEW_PATHS,
-	AUTH_BASE_PATH,
-	getBrowserAuthClient,
-	JOIN_PATH,
-	POST_LOGIN_CALLBACK_PARAM,
-	sanitizeCallbackUrl,
-} from "@afenda/auth/client";
+import { authBrowser } from "@afenda/auth/client";
 import { NeonAuthUIProvider } from "@neondatabase/auth-ui";
 import NextLink from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -65,7 +58,7 @@ function toSafeNavigatePath(href: string): string {
 			return "/";
 		}
 	}
-	return sanitizeCallbackUrl(candidate) ?? "/";
+	return authBrowser.paths.postLogin.sanitizeCallback(candidate) ?? "/";
 }
 
 /**
@@ -89,18 +82,20 @@ export function AuthUiProvider({ appOrigin, children }: AuthUiProviderProps) {
 	const router = useRouter();
 	const pathname = usePathname();
 	const searchParams = useSearchParams();
-	const authClient = getBrowserAuthClient();
+	const authClient = authBrowser.getClient();
 
 	const invitationId = searchParams.get("invitationId")?.trim() ?? "";
 	const joinReturnPath =
-		pathname === JOIN_PATH && invitationId.length > 0
-			? sanitizeCallbackUrl(
-					`${JOIN_PATH}?${new URLSearchParams({ invitationId }).toString()}`,
+		pathname === authBrowser.paths.join.path && invitationId.length > 0
+			? authBrowser.paths.postLogin.sanitizeCallback(
+					`${authBrowser.paths.join.path}?${new URLSearchParams({ invitationId }).toString()}`,
 				)
 			: null;
 
 	const redirectTo =
-		sanitizeCallbackUrl(searchParams.get(POST_LOGIN_CALLBACK_PARAM)) ??
+		authBrowser.paths.postLogin.sanitizeCallback(
+			searchParams.get(authBrowser.paths.postLogin.callbackParameter),
+		) ??
 		joinReturnPath ??
 		"/";
 
@@ -114,7 +109,7 @@ export function AuthUiProvider({ appOrigin, children }: AuthUiProviderProps) {
 	return (
 		<NeonAuthUIProvider
 			authClient={authClient}
-			basePath={AUTH_BASE_PATH}
+			basePath={authBrowser.paths.base}
 			baseURL={appOrigin}
 			credentials={{ forgotPassword: true }}
 			defaultTheme="light"
@@ -126,7 +121,7 @@ export function AuthUiProvider({ appOrigin, children }: AuthUiProviderProps) {
 			redirectTo={redirectTo}
 			replace={replaceSafe}
 			signUp
-			viewPaths={AFENDA_AUTH_VIEW_PATHS}
+			viewPaths={authBrowser.paths.view}
 		>
 			{children}
 		</NeonAuthUIProvider>

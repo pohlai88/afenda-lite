@@ -1,4 +1,4 @@
-import { handleSyncSessionCookiesRequest } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 
 /**
  * Cookie-safe Neon Auth session mint / refresh for RSC entry surfaces
@@ -7,5 +7,5 @@ import { handleSyncSessionCookiesRequest } from "@afenda/auth";
  * cannot write when `auth.getSession()` refreshes or mints session_data.
  */
 export async function GET(request: Request): Promise<Response> {
-	return await handleSyncSessionCookiesRequest(request);
+	return await authServer.routes.syncSessionCookies.handle(request);
 }

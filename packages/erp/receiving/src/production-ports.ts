@@ -1,6 +1,6 @@
 import { audit as afendaAudit } from "@afenda/audit";
 import { errorResult, type Result } from "@afenda/errors";
-import { createEventPublisher } from "@afenda/events";
+import { events } from "@afenda/events";
 
 import type {
 	AuditFactInput,
@@ -37,7 +37,7 @@ export function createSqlAuditFactPort(): AuditFactPort {
 }
 
 export function createSqlOutboxPort(): OutboxPort {
-	const publisher = createEventPublisher();
+	const publisher = events.publisher.create();
 	return {
 		async append(input: OutboxFactInput): Promise<Result<{ id: string }>> {
 			const result = await publisher.publish({

@@ -1,4 +1,4 @@
-import { getSession, requireRole } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import { listItems, listParties, listPaymentTerms } from "@afenda/master-data";
 import { listSalesOrders } from "@afenda/sales";
 import {
@@ -31,7 +31,9 @@ interface SalesShellProps {
  */
 export async function SalesShell({ surface }: SalesShellProps) {
 	const session =
-		surface === "admin" ? await requireRole("operator") : await getSession();
+		surface === "admin"
+			? await authServer.session.requireRole("operator")
+			: await authServer.session.get();
 
 	await requirePermission(session, "sales.order.read");
 	const [canCreate, canUpdate, canPost, canCancel] = await Promise.all([

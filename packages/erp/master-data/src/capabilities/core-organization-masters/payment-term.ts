@@ -55,7 +55,7 @@ async function afterPaymentTermMutation(
 		await syncMasterRootProjection(
 			MASTER_SEARCH_ENTITY.paymentTerm,
 			result.data,
-			options.searchStore,
+			options.searchCapability,
 		);
 	} catch {
 		// Search is derived; committed mutation events and rebuilds provide recovery.

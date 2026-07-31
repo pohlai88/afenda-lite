@@ -1,114 +1,78 @@
 import { isProductionDeploymentNow } from "@afenda/env";
 
+import { createAllowedDecision, createRejectedDecision } from "./decision";
 import { createMemoryRateLimitStore } from "./memory-store";
 import { resolveRateLimitBackend } from "./resolve-store";
+import { keyFor, type RateLimitCheckInput } from "./semantic-registry";
 import type {
-	RateLimitBucket,
-	RateLimitHitResult,
-	RateLimitQuota,
-	RateLimitResult,
+	RateLimitDecision,
 	RateLimitStore,
+	StoreHitResult,
 } from "./types";
-
-export interface CheckRateLimitInput {
-	bucket: RateLimitBucket;
-	/** Opaque composite identity (email, org:user, IP+path). Never log secrets. */
-	key: string;
-}
-
-export interface CheckRateLimitOptions {
-	/** Injected store for Vitest; production callers omit this. */
-	store?: RateLimitStore;
-}
-
-const EMPTY_KEY_RETRY_AFTER_SECONDS = 60;
-
-const STORE_UNAVAILABLE: RateLimitResult = {
-	ok: false,
-	reason: "unavailable",
-	service: "upstash_redis",
-};
-
-function emptyKeyQuota(nowMs: number): RateLimitQuota {
-	return {
-		limit: 0,
-		remaining: 0,
-		resetEpochMs: nowMs + EMPTY_KEY_RETRY_AFTER_SECONDS * 1000,
-	};
-}
-
-function normalizeKey(key: string): string {
-	return key.trim().toLowerCase();
-}
-
-function fromHit(hit: RateLimitHitResult): RateLimitResult {
-	if (hit.allowed) {
-		return { ok: true, quota: hit.quota };
-	}
-	return {
-		ok: false,
-		reason: "rate_limited",
-		retryAfterSeconds: hit.retryAfterSeconds,
-		quota: hit.quota,
-	};
-}
 
 let memoryFallbackStore: RateLimitStore | undefined;
 
 function memoryFallback(): RateLimitStore {
-	if (!memoryFallbackStore) {
-		memoryFallbackStore = createMemoryRateLimitStore();
-	}
+	memoryFallbackStore ??= createMemoryRateLimitStore();
 	return memoryFallbackStore;
 }
 
-function isProductionRateLimitRuntime(): boolean {
-	return isProductionDeploymentNow();
+function decisionFromHit(hit: StoreHitResult): RateLimitDecision {
+	return hit.allowed
+		? createAllowedDecision({ outcome: "allowed", quota: hit.quota })
+		: createRejectedDecision({
+				outcome: "rate_limited",
+				quota: hit.quota,
+				retryAfterSeconds: hit.retryAfterSeconds,
+			});
+}
+
+function unavailableDecision(): RateLimitDecision {
+	return createRejectedDecision({
+		outcome: "unavailable",
+		service: "upstash_redis",
+	});
+}
+
+async function hitStore(
+	store: RateLimitStore,
+	input: RateLimitCheckInput,
+): Promise<RateLimitDecision> {
+	return decisionFromHit(
+		await store.hit({ bucket: input.bucket, key: keyFor(input) }),
+	);
 }
 
 async function hitResolvedStore(
 	store: RateLimitStore,
-	input: { bucket: RateLimitBucket; key: string },
-): Promise<RateLimitResult> {
+	input: RateLimitCheckInput,
+): Promise<RateLimitDecision> {
 	try {
-		return fromHit(await store.hit(input));
+		return await hitStore(store, input);
 	} catch {
-		// Production stays fail-closed. Local/preview with a dead Upstash host
-		// falls back to process memory so auth (and local-dev login) still works.
-		if (!isProductionRateLimitRuntime()) {
+		if (!isProductionDeploymentNow()) {
 			try {
-				return fromHit(await memoryFallback().hit(input));
+				return await hitStore(memoryFallback(), input);
 			} catch {
-				return STORE_UNAVAILABLE;
+				return unavailableDecision();
 			}
 		}
-		return STORE_UNAVAILABLE;
+		return unavailableDecision();
 	}
 }
 
-export async function checkRateLimit(
-	input: CheckRateLimitInput,
-	options?: CheckRateLimitOptions,
-): Promise<RateLimitResult> {
-	const key = normalizeKey(input.key);
-	if (key.length === 0) {
-		return {
-			ok: false,
-			reason: "rate_limited",
-			retryAfterSeconds: EMPTY_KEY_RETRY_AFTER_SECONDS,
-			quota: emptyKeyQuota(Date.now()),
-		};
-	}
-
-	const injected = options?.store;
-	if (injected) {
-		return fromHit(await injected.hit({ bucket: input.bucket, key }));
-	}
-
+export function checkRateLimit(
+	input: RateLimitCheckInput,
+): Promise<RateLimitDecision> {
 	const backend = resolveRateLimitBackend();
-	if (backend.kind === "unavailable") {
-		return { ok: false, reason: "unavailable", service: backend.service };
-	}
+	return backend.kind === "unavailable"
+		? Promise.resolve(unavailableDecision())
+		: hitResolvedStore(backend.store, input);
+}
 
-	return hitResolvedStore(backend.store, { bucket: input.bucket, key });
+export function checkRateLimitWithStore(
+	input: RateLimitCheckInput,
+	store: RateLimitStore,
+): Promise<RateLimitDecision> {
+	return hitStore(store, input);
 }

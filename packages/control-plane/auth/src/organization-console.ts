@@ -3,6 +3,10 @@ import { errorResult, type Result } from "@afenda/errors";
 import { failFromNeonOrgProbe } from "./auth-failure";
 import { getNeonAuth } from "./neon-auth";
 import {
+	type NeonCreatedOrganization,
+	normalizeNeonCreatedOrganization,
+} from "./neon-normalization";
+import {
 	type MemberOrganization,
 	normalizeMemberOrganizations,
 	persistActiveOrganization as persistActiveOrganizationWithClient,
@@ -15,15 +19,7 @@ export interface CreateOrganizationInput {
 	slug: string;
 }
 
-export interface CreatedOrganization {
-	id: string;
-	name: string;
-	slug: string;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === "object" && value !== null;
-}
+export type CreatedOrganization = NeonCreatedOrganization;
 
 /**
  * Pull `{ id, slug, name }` from Neon `organization.create` JSON without inventing ids.
@@ -31,33 +27,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 export function parseCreatedOrganization(
 	data: unknown,
 ): CreatedOrganization | null {
-	if (!isRecord(data)) {
-		return null;
-	}
-
-	let nestedCandidate = data;
-	if (isRecord(data.organization)) {
-		nestedCandidate = data.organization;
-	} else if (isRecord(data.data)) {
-		nestedCandidate = data.data;
-	}
-
-	if (
-		typeof nestedCandidate.id !== "string" ||
-		nestedCandidate.id.trim().length === 0 ||
-		typeof nestedCandidate.slug !== "string" ||
-		nestedCandidate.slug.trim().length === 0 ||
-		typeof nestedCandidate.name !== "string" ||
-		nestedCandidate.name.trim().length === 0
-	) {
-		return null;
-	}
-
-	return {
-		id: nestedCandidate.id.trim(),
-		name: nestedCandidate.name.trim(),
-		slug: nestedCandidate.slug.trim(),
-	};
+	return normalizeNeonCreatedOrganization(data);
 }
 
 /**

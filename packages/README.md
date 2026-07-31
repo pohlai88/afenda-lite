@@ -72,9 +72,9 @@ Unregistered package folders are not governed catalog entries until they are add
 | [`@afenda/http`](./runtime/http/README.md) | Universal | `.` | Active | Fetch compose · correlation · pagination · rate-limit / timing headers |
 | [`@afenda/security`](./runtime/security/README.md) | Universal | `.` | Active | Security headers · CSP · CORS builders |
 | [`@afenda/metrics`](./runtime/metrics/README.md) | Node + Edge | `.` → split planned | Active | Prometheus registry · HTTP/DB/cache instruments |
-| [`@afenda/openapi`](./runtime/openapi/README.md) | Node/build | `.`, `/zod`, `/document` | Active | Zod→OpenAPI glue · `{ data }` envelope · YAML emit |
-| [`@afenda/rate-limit`](./runtime/rate-limit/README.md) | Universal | `.` | Active | Sliding-window abuse limiter (Upstash; memory = local/test only) |
-| [`@afenda/cache`](./runtime/cache/README.md) | Universal | `.` | Active | L1 process + Upstash Redis L2 (fail closed in production without Upstash) |
+| [`@afenda/openapi`](./runtime/openapi/README.md) | Universal + Node emit | `.`, `/node` | Active | Canonical schema registry · envelopes · stamped document generation |
+| [`@afenda/rate-limit`](./runtime/rate-limit/README.md) | Universal | `.`, `/testing` | Active | Canonical quota decisions · key policy · bounded Upstash normalization |
+| [`@afenda/cache`](./runtime/cache/README.md) | Universal | `.`, `/testing` | Active | Canonical namespaces · opaque keys · L1/L2 policy · JSON and failure ownership |
 
 **Runtime-specific subpath exports:** packages with Node-only dependencies, such as `prom-client`, `pino`, or `node:fs`, expose runtime-specific subpaths to prevent accidental bundling into Edge/Vercel Functions. Pattern: `/core` for types, `/node` for Node implementation, `/edge` for Edge-safe emit, and `/testing` for test utilities. See `@afenda/logger` for a reference implementation.
 
@@ -87,8 +87,8 @@ Memory adapters for rate-limit and cache are test and local-development only unl
 | [`@afenda/db`](./data-plane/db/README.md) | Node only | Active | Neon HTTP + Drizzle · schema representation, connectivity, migrations |
 | [`@afenda/audit`](./data-plane/audit/README.md) | Node | Active | Sole `platform_audit_log` write/list/export SSOT |
 | [`@afenda/events`](./data-plane/events/README.md) | Node | Active | Sole `platform_domain_event` outbox SSOT |
-| [`@afenda/search`](./data-plane/search/README.md) | Node | Active | Sole `platform_search_document` Postgres FTS SSOT |
-| [`@afenda/notifications`](./data-plane/notifications/README.md) | Node | Active | Sole `platform_notification` IN_APP inbox SSOT |
+| [`@afenda/search`](./data-plane/search/README.md) | Node | Active | Canonical search-document registry, normalization, ranking and `platform_search_document` lifecycle |
+| [`@afenda/notifications`](./data-plane/notifications/README.md) | Node | Active | Canonical in-app vocabulary, persistence, expiry and recipient read-state capability |
 
 `@afenda/db` owns schema representation, database connectivity, and migrations. It does **not** gain business mutation ownership by hosting a table definition. Business write ownership remains with the package declared in [SCHEMA-OWNERSHIP-MANIFEST.yaml](../docs-V2/modules/SCHEMA-OWNERSHIP-MANIFEST.yaml).
 

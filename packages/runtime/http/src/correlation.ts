@@ -2,7 +2,9 @@
  * API-007 — correlation identity for Actions, RH, and edge gate.
  */
 
-export const CORRELATION_HEADER = "x-correlation-id" as const;
+import { HTTP_SEMANTIC_REGISTRY } from "./semantic-registry";
+
+export const CORRELATION_HEADER = HTTP_SEMANTIC_REGISTRY.headers.correlation;
 
 const UUID_RE =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;

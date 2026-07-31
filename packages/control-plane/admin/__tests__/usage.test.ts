@@ -6,7 +6,9 @@ const listOrgMembers = vi.fn();
 const select = vi.fn();
 
 vi.mock("@afenda/auth", () => ({
-	listOrgMembers: (...args: unknown[]) => listOrgMembers(...args),
+	authServer: {
+		members: { list: (...args: unknown[]) => listOrgMembers(...args) },
+	},
 }));
 
 vi.mock("@afenda/db", () => ({

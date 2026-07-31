@@ -1,7 +1,7 @@
 import "server-only";
 
 import { errorResult, type Result } from "@afenda/errors";
-import { createEventPublisher } from "@afenda/events";
+import { events } from "@afenda/events";
 import { z } from "zod";
 
 import {
@@ -182,7 +182,7 @@ function resolveEffects(effects?: PayablesEffects): PayablesEffects {
 	if (effects !== undefined) {
 		return effects;
 	}
-	const publisher = createEventPublisher();
+	const publisher = events.publisher.create();
 	return {
 		async emit(event) {
 			const result = await publisher.publish({

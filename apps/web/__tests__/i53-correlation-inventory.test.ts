@@ -5,12 +5,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { errorResult } from "@afenda/errors";
-import {
-	CORRELATION_HEADER,
-	createCorrelationId,
-	isCorrelationId,
-	resolveCorrelationId,
-} from "@afenda/http";
+import { http } from "@afenda/http";
 import { describe, expect, it } from "vitest";
 
 const webRoot = join(import.meta.dirname, "..");
@@ -21,15 +16,15 @@ function readWeb(rel: string): string {
 
 describe("I5.3 correlation helpers (API-007)", () => {
 	it("mints and validates UUID correlation ids", () => {
-		const id = createCorrelationId();
-		expect(isCorrelationId(id)).toBe(true);
-		expect(resolveCorrelationId(id)).toBe(id);
-		expect(isCorrelationId("not-a-uuid")).toBe(false);
-		expect(resolveCorrelationId("bad")).not.toBe("bad");
+		const id = http.correlation.create();
+		expect(http.correlation.is(id)).toBe(true);
+		expect(http.correlation.resolve(id)).toBe(id);
+		expect(http.correlation.is("not-a-uuid")).toBe(false);
+		expect(http.correlation.resolve("bad")).not.toBe("bad");
 	});
 
 	it("surfaces correlationId only in ActionFailure details for INTERNAL_ERROR", () => {
-		const correlationId = createCorrelationId();
+		const correlationId = http.correlation.create();
 		const failure = errorResult.fail("INTERNAL_ERROR", { correlationId });
 		expect(failure).toMatchObject({
 			ok: false,
@@ -46,20 +41,20 @@ describe("I5.3 critical-path wiring inventory", () => {
 		"app/actions/revoke-org-role.ts",
 	] as const;
 
-	it("wires createCorrelationId + canonical failures on critical Actions", () => {
+	it("wires the HTTP correlation capability and canonical failures", () => {
 		for (const rel of criticalActions) {
 			const source = readWeb(rel);
-			expect(source).toContain("createCorrelationId");
+			expect(source).toContain("http.correlation.create");
 			expect(source).toContain('errorResult.fail("INTERNAL_ERROR"');
-			expect(source).toContain("logProductEvent");
+			expect(source).toContain("logger.event");
 		}
 	});
 
 	it("stamps x-correlation-id from proxy session gate", () => {
 		const proxy = readWeb("proxy.ts");
-		expect(proxy).toContain(CORRELATION_HEADER);
-		expect(proxy).toContain("resolveCorrelationId");
-		expect(proxy).toContain("logProductEvent");
+		expect(proxy).toContain("http.correlation.header");
+		expect(proxy).toContain("http.correlation.resolve");
+		expect(proxy).toContain("logger.event");
 	});
 
 	it("requires correlationId on recordRbacAudit writes", () => {

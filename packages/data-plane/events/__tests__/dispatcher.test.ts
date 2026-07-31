@@ -156,7 +156,8 @@ describe("@afenda/events dispatcher", () => {
 		);
 
 		expect(summary.skipped).toBe(1);
+		expect(summary.failed).toBe(1);
 		expect(summary.processed).toBe(0);
-		expect(store.all()[0]?.status).toBe("pending");
+		expect(store.all()[0]?.status).toBe("failed");
 	});
 });

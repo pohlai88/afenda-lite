@@ -1,344 +1,222 @@
-import { patternToRegExp } from "./pattern";
+import { inspectCacheKey } from "./semantic-registry";
+import { decodeEntry, encodeEntry, normalizeValue } from "./serialization";
 import type {
-	CacheConfig,
+	CacheDiagnostics,
 	CacheEntry,
+	CacheKey,
 	CacheL2Store,
-	CacheStats,
-	CacheStrategy,
-	GetOrSetOptions,
-	SetCacheOptions,
+	CacheLoadOptions,
+	CacheRuntime,
 } from "./types";
 
-const DEFAULT_CONFIG: CacheConfig = {
-	defaultTTL: 300,
-	l1MaxSize: 1000,
-};
+const DEFAULT_L1_MAX_SIZE = 1000;
 
-function runSequentially<T>(
-	items: readonly T[],
-	operation: (item: T) => Promise<unknown>,
-): Promise<void> {
+function sequential<T>(items: readonly T[], run: (item: T) => Promise<void>) {
 	return items.reduce(
-		(pending, item) =>
-			pending.then(() => operation(item)).then(() => undefined),
+		(pending, item) => pending.then(() => run(item)),
 		Promise.resolve(),
 	);
 }
 
-export class CacheManager {
+export class CacheManager implements CacheRuntime {
+	private readonly backend: "l1" | "upstash";
 	private readonly l1 = new Map<string, CacheEntry>();
-	private readonly tagIndex = new Map<string, Set<string>>();
-	private readonly config: CacheConfig;
+	private readonly l1MaxSize: number;
 	private readonly l2: CacheL2Store | undefined;
+	private readonly tagIndex = new Map<string, Set<string>>();
+	private evictions = 0;
 	private l1Hits = 0;
 	private l1Misses = 0;
 	private l2Hits = 0;
 	private l2Misses = 0;
-	private evictions = 0;
 
-	constructor(config: Partial<CacheConfig> = {}, l2?: CacheL2Store) {
-		this.config = { ...DEFAULT_CONFIG, ...config };
+	constructor(
+		backend: "l1" | "upstash",
+		l2?: CacheL2Store,
+		l1MaxSize = DEFAULT_L1_MAX_SIZE,
+	) {
+		this.backend = backend;
 		this.l2 = l2;
+		this.l1MaxSize = l1MaxSize;
 	}
 
-	/** True when an Upstash (or injected) L2 store is attached. */
-	get hasL2(): boolean {
-		return this.l2 !== undefined;
-	}
-
-	async get<T>(key: string): Promise<T | null> {
+	async get<T>(key: CacheKey): Promise<T | null> {
+		const { logicalKey } = inspectCacheKey(key);
 		const now = Date.now();
-		const l1Entry = this.l1.get(key);
-		if (l1Entry) {
-			if (l1Entry.expiresAt > now) {
-				l1Entry.hitCount += 1;
-				this.l1Hits += 1;
-				return l1Entry.data as T;
-			}
-			this.removeL1(key, l1Entry);
+		const local = this.l1.get(logicalKey);
+		if (local && local.expiresAt > now) {
+			this.l1Hits += 1;
+			return local.data as T;
 		}
-
+		if (local) {
+			this.removeL1(logicalKey, local);
+		}
 		this.l1Misses += 1;
-
 		if (!this.l2) {
 			return null;
 		}
-
-		const l2Entry = await this.l2.get(key);
-		if (!l2Entry || l2Entry.expiresAt <= now) {
+		const encoded = await this.l2.get(logicalKey);
+		const remote = encoded === null ? null : decodeEntry(encoded);
+		if (!remote || remote.expiresAt <= now) {
 			this.l2Misses += 1;
-			if (l2Entry) {
-				await this.l2.delete(key);
+			if (encoded !== null) {
+				await this.l2.delete(logicalKey);
 			}
 			return null;
 		}
-
 		this.l2Hits += 1;
-		this.writeL1(key, l2Entry);
-		return l2Entry.data as T;
+		this.writeL1(logicalKey, remote);
+		return remote.data as T;
 	}
 
-	async set<T>(
-		key: string,
-		value: T,
-		options: SetCacheOptions = {},
-	): Promise<void> {
-		const ttl = options.ttl ?? this.config.defaultTTL;
-		const tags = options.tags ?? [];
+	async set<T>(key: CacheKey, value: T): Promise<void> {
+		const { logicalKey, policy, tags } = inspectCacheKey(key);
 		const now = Date.now();
-		const entry: CacheEntry<T> = {
-			data: value,
+		const entry: CacheEntry = {
 			createdAt: now,
-			expiresAt: now + ttl * 1000,
+			data: normalizeValue(value),
+			expiresAt: now + policy.ttlSeconds * 1000,
 			tags,
-			hitCount: 0,
 		};
-
-		this.writeL1(key, entry);
-
-		const { l2 } = this;
-		if (l2) {
-			await l2.set(key, entry, ttl);
-			await runSequentially(tags, (tag) => l2.addToTag(tag, key));
-		}
-	}
-
-	async delete(key: string): Promise<void> {
-		const existing = this.l1.get(key);
-		let tags = existing?.tags ?? [];
-		if (existing) {
-			this.removeL1(key, existing);
-		}
-
-		const { l2 } = this;
-		if (!l2) {
+		this.writeL1(logicalKey, entry);
+		if (!this.l2) {
 			return;
 		}
-
-		if (!existing) {
-			const remote = await l2.get(key);
-			if (remote) {
-				({ tags } = remote);
-			}
-		}
-
-		await l2.delete(key);
-		await runSequentially(tags, (tag) => l2.removeFromTag(tag, key));
+		await this.l2.set(logicalKey, encodeEntry(entry), policy.ttlSeconds);
+		await sequential(
+			tags,
+			(tag) => this.l2?.addToTag(tag, logicalKey) ?? Promise.resolve(),
+		);
 	}
 
-	async invalidateByTag(tag: string): Promise<number> {
-		const keys = new Set<string>(this.tagIndex.get(tag) ?? []);
+	async delete(key: CacheKey): Promise<void> {
+		const { logicalKey } = inspectCacheKey(key);
+		const existing = this.l1.get(logicalKey);
+		let tags = existing?.tags ?? [];
+		if (existing) {
+			this.removeL1(logicalKey, existing);
+		}
+		if (!this.l2) {
+			return;
+		}
+		if (!existing) {
+			const encoded = await this.l2.get(logicalKey);
+			tags = encoded === null ? [] : (decodeEntry(encoded)?.tags ?? []);
+		}
+		await this.l2.delete(logicalKey);
+		await sequential(
+			tags,
+			(tag) => this.l2?.removeFromTag(tag, logicalKey) ?? Promise.resolve(),
+		);
+	}
 
+	async getOrLoad<T>(
+		key: CacheKey,
+		loader: () => Promise<T>,
+		options: CacheLoadOptions = {},
+	): Promise<T> {
+		if (options.strategy === "network-first") {
+			try {
+				const fresh = await loader();
+				await this.set(key, fresh);
+				return fresh;
+			} catch (error) {
+				const cached = await this.get<T>(key);
+				if (cached !== null) {
+					return cached;
+				}
+				throw error;
+			}
+		}
+		const cached = await this.get<T>(key);
+		if (cached !== null) {
+			return cached;
+		}
+		const fresh = await loader();
+		await this.set(key, fresh);
+		return fresh;
+	}
+
+	async invalidateTag(tag: string): Promise<number> {
+		const keys = new Set(this.tagIndex.get(tag) ?? []);
 		if (this.l2) {
 			for (const key of await this.l2.keysForTag(tag)) {
 				keys.add(key);
 			}
 		}
-
-		if (keys.size === 0) {
-			this.tagIndex.delete(tag);
-			if (this.l2) {
-				await this.l2.clearTag(tag);
-			}
-			return 0;
-		}
-
 		for (const key of keys) {
 			const entry = this.l1.get(key);
 			if (entry) {
 				this.removeL1(key, entry);
-			} else {
-				this.l1.delete(key);
 			}
 		}
-
 		if (this.l2) {
 			await this.l2.deleteMany([...keys]);
 			await this.l2.clearTag(tag);
 		}
-
 		this.tagIndex.delete(tag);
 		return keys.size;
 	}
 
-	async invalidateByPattern(pattern: string): Promise<number> {
-		const regex = patternToRegExp(pattern);
-		const matched = new Set<string>();
-
-		for (const key of this.l1.keys()) {
-			if (regex.test(key)) {
-				matched.add(key);
-			}
-		}
-
-		if (this.l2) {
-			for (const key of await this.l2.keysByPattern(pattern)) {
-				matched.add(key);
-			}
-		}
-
-		await runSequentially([...matched], (key) => this.delete(key));
-
-		return matched.size;
-	}
-
-	async getOrSet<T>(
-		key: string,
-		factory: () => Promise<T>,
-		options: GetOrSetOptions = {},
-	): Promise<T> {
-		const strategy: CacheStrategy = options.strategy ?? "cache-first";
-
-		switch (strategy) {
-			case "cache-first": {
-				const cached = await this.get<T>(key);
-				if (cached !== null) {
-					return cached;
-				}
-				const value = await factory();
-				await this.set(key, value, options);
-				return value;
-			}
-			case "stale-while-revalidate": {
-				const cached = await this.get<T>(key);
-				if (cached !== null) {
-					factory()
-						.then((refreshedValue) => this.set(key, refreshedValue, options))
-						.catch(() => {
-							/* background revalidate failures stay silent */
-						});
-					return cached;
-				}
-				const value = await factory();
-				await this.set(key, value, options);
-				return value;
-			}
-			case "network-first": {
-				try {
-					const value = await factory();
-					await this.set(key, value, options);
-					return value;
-				} catch (error) {
-					const cached = await this.get<T>(key);
-					if (cached !== null) {
-						return cached;
-					}
-					throw error;
-				}
-			}
-			default: {
-				const _exhaustive: never = strategy;
-				return _exhaustive;
-			}
-		}
-	}
-
-	async mget<T>(keys: string[]): Promise<Map<string, T | null>> {
-		const results = new Map<string, T | null>();
-		await runSequentially(keys, async (key) => {
-			results.set(key, await this.get<T>(key));
-		});
-		return results;
-	}
-
-	async mset<T>(
-		entries: Array<{
-			key: string;
-			value: T;
-			ttl?: number;
-			tags?: string[];
-		}>,
-	): Promise<void> {
-		await runSequentially(entries, (entry) =>
-			this.set(entry.key, entry.value, {
-				...(entry.ttl === undefined ? {} : { ttl: entry.ttl }),
-				...(entry.tags === undefined ? {} : { tags: entry.tags }),
-			}),
-		);
-	}
-
-	getStats(): CacheStats {
-		const hits = this.l1Hits + this.l2Hits;
-		const misses = this.l1Misses + this.l2Misses;
-		const total = hits + misses;
+	diagnostics(): CacheDiagnostics {
 		return {
-			hits,
-			misses,
-			hitRate: total > 0 ? hits / total : 0,
-			totalKeys: this.l1.size,
+			backend: this.backend,
 			evictions: this.evictions,
 			l1Hits: this.l1Hits,
 			l1Misses: this.l1Misses,
 			l2Hits: this.l2Hits,
 			l2Misses: this.l2Misses,
+			totalKeys: this.l1.size,
 		};
 	}
 
 	async flush(): Promise<void> {
 		this.l1.clear();
 		this.tagIndex.clear();
+		this.evictions = 0;
 		this.l1Hits = 0;
 		this.l1Misses = 0;
 		this.l2Hits = 0;
 		this.l2Misses = 0;
-		this.evictions = 0;
 		if (this.l2) {
 			await this.l2.flushPrefix();
 		}
 	}
 
-	private writeL1(key: string, entry: CacheEntry): void {
+	private writeL1(key: string, entry: CacheEntry) {
 		const previous = this.l1.get(key);
 		if (previous) {
 			this.unlinkTags(key, previous.tags);
 		}
-
-		if (this.l1.size >= this.config.l1MaxSize && !this.l1.has(key)) {
-			this.evictL1();
+		if (this.l1.size >= this.l1MaxSize && !this.l1.has(key)) {
+			const first = this.l1.entries().next().value as
+				| [string, CacheEntry]
+				| undefined;
+			if (first) {
+				this.removeL1(first[0], first[1]);
+				this.evictions += 1;
+			}
 		}
-
 		this.l1.set(key, entry);
 		for (const tag of entry.tags) {
-			let set = this.tagIndex.get(tag);
-			if (!set) {
-				set = new Set();
-				this.tagIndex.set(tag, set);
-			}
-			set.add(key);
+			const keys = this.tagIndex.get(tag) ?? new Set<string>();
+			keys.add(key);
+			this.tagIndex.set(tag, keys);
 		}
 	}
 
-	private removeL1(key: string, entry: CacheEntry): void {
+	private removeL1(key: string, entry: CacheEntry) {
 		this.l1.delete(key);
 		this.unlinkTags(key, entry.tags);
 	}
 
-	private unlinkTags(key: string, tags: string[]): void {
+	private unlinkTags(key: string, tags: readonly string[]) {
 		for (const tag of tags) {
-			const set = this.tagIndex.get(tag);
-			if (!set) {
-				continue;
-			}
-			set.delete(key);
-			if (set.size === 0) {
+			const keys = this.tagIndex.get(tag);
+			keys?.delete(key);
+			if (keys?.size === 0) {
 				this.tagIndex.delete(tag);
 			}
-		}
-	}
-
-	private evictL1(): void {
-		const entries = [...this.l1.entries()].sort(
-			(a, b) => a[1].hitCount - b[1].hitCount,
-		);
-		const removeCount = Math.max(1, Math.floor(this.config.l1MaxSize * 0.1));
-		for (let i = 0; i < removeCount && i < entries.length; i += 1) {
-			const pair = entries[i];
-			if (!pair) {
-				break;
-			}
-			const [key, entry] = pair;
-			this.removeL1(key, entry);
-			this.evictions += 1;
 		}
 	}
 }

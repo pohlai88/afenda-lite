@@ -5,6 +5,7 @@ export interface DomainEventRow {
 	actorUserId: string;
 	attempts: number;
 	causationId: string | null;
+	claimedAt?: Date | null;
 	correlationId: string;
 	createdAt: Date;
 	deduplicationKey?: string | null;

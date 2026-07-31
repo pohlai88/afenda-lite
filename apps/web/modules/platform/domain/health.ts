@@ -3,8 +3,8 @@
  * Runtime SSOT: `@afenda/admin/health` (real DB / auth-config probes + latencyMs).
  */
 
-export {
-	getLivenessSnapshot,
-	getReadinessSnapshot,
-	inspectDatabaseConnection,
-} from "@afenda/admin/health";
+import { adminHealth } from "@afenda/admin/health";
+
+export const getLivenessSnapshot = adminHealth.liveness;
+export const getReadinessSnapshot = adminHealth.readiness;
+export const inspectDatabaseConnection = adminHealth.database.inspect;

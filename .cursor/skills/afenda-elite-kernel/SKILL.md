@@ -1,6 +1,6 @@
 ---
 name: afenda-elite-kernel
-description: Deterministically discover, scaffold, apply, implement, semantically cut over, upgrade, verify, reopen, and readiness-seal reusable Afenda package kernels, including package-band inventory and the protected @afenda/errors, @afenda/env, @afenda/testing, @afenda/db, and @afenda/audit contracts. Use when inventorying a package band, centralizing a shared concept behind one registry and durable facade, deriving runtime projections from canonical definitions, planning or executing an authorized codemod and final consumer migration, upgrading a core package contract or internals, or producing repeatable readiness evidence.
+description: Deterministically discover, scaffold, apply, implement, semantically cut over, upgrade, verify, reopen, and readiness-seal reusable Afenda package kernels, including registered config, errors, env, testing, db, audit, events, search, notifications, logger, HTTP, security, metrics, OpenAPI, rate-limit, cache, auth, and admin contracts. Use when inventorying a package band, centralizing a shared concept behind one registry and durable facade, deriving runtime or tool-required projections from canonical definitions, planning or executing an authorized codemod and final consumer migration, upgrading a core package contract or internals, or producing repeatable readiness evidence.
 ---
 
 # Afenda Elite Kernel
@@ -16,11 +16,24 @@ Read before changing a target:
 3. `docs-V2/monorepo/README.md` and the owning farm selected by `using-afenda-elite-skills`.
 4. [references/lifecycle.md](references/lifecycle.md) for mode and transition rules.
 5. [references/seal-contract.md](references/seal-contract.md) for evidence and seal gates.
-6. [references/errors-kernel.md](references/errors-kernel.md) when the target is `@afenda/errors` or the mission applies its contract to a consumer.
-7. [references/env-kernel.md](references/env-kernel.md) when the target is `@afenda/env` or a mission centralizes configuration registries and runtime projections.
-8. [references/testing-kernel.md](references/testing-kernel.md) when the target is `@afenda/testing` or a mission centralizes runner policy, lane projections, or test database evidence.
-9. [references/db-kernel.md](references/db-kernel.md) when the target is `@afenda/db` or a mission changes schema-host runtime access, tenant predicates, Neon HTTP transactions, hard-tenant-root projections, or the permission catalog.
-10. [references/audit-kernel.md](references/audit-kernel.md) when the target is `@afenda/audit` or a mission changes general activity recording, guarded transaction preparation, masking, query/export/retention policy, or audit telemetry.
+6. [references/config-kernel.md](references/config-kernel.md) when the target is `@afenda/config` or a mission changes shared TypeScript/Biome profiles or their consumer boundary.
+7. [references/errors-kernel.md](references/errors-kernel.md) when the target is `@afenda/errors` or the mission applies its contract to a consumer.
+8. [references/env-kernel.md](references/env-kernel.md) when the target is `@afenda/env` or a mission centralizes configuration registries and runtime projections.
+9. [references/testing-kernel.md](references/testing-kernel.md) when the target is `@afenda/testing` or a mission centralizes runner policy, lane projections, or test database evidence.
+10. [references/db-kernel.md](references/db-kernel.md) when the target is `@afenda/db` or a mission changes schema-host runtime access, tenant predicates, Neon HTTP transactions, hard-tenant-root projections, or the permission catalog.
+11. [references/audit-kernel.md](references/audit-kernel.md) when the target is `@afenda/audit` or a mission changes general activity recording, guarded transaction preparation, masking, query/export/retention policy, or audit telemetry.
+12. [references/logger-kernel.md](references/logger-kernel.md) when the target is `@afenda/logger` or a mission changes structured fields, redaction, correlation carriage, or Node/edge log projection.
+13. [references/http-kernel.md](references/http-kernel.md) when the target is `@afenda/http` or a mission changes correlation, transport pagination, Fetch pipelines, or Retry-After/rate-limit/timing header attachment.
+14. [references/security-kernel.md](references/security-kernel.md) when the target is `@afenda/security` or a mission changes CSP, CORS, security-header policy, or framework adaptation boundaries.
+15. [references/metrics-kernel.md](references/metrics-kernel.md) when the target is `@afenda/metrics` or a mission changes metric registries, names, labels, recording, cardinality, or exposition.
+16. [references/openapi-kernel.md](references/openapi-kernel.md) when the target is `@afenda/openapi` or a mission changes schema registration, envelopes, document generation, Node emission, or error-projection composition.
+17. [references/rate-limit-kernel.md](references/rate-limit-kernel.md) when the target is `@afenda/rate-limit` or a mission changes quota policy, key construction, bounded timing, vendor normalization, or transport projections.
+18. [references/cache-kernel.md](references/cache-kernel.md) when the target is `@afenda/cache` or a mission changes cache namespace, L1/L2 policy, serialization, invalidation, backend selection, or failure behavior.
+19. [references/events-kernel.md](references/events-kernel.md) when the target is `@afenda/events` or a mission changes event registration, envelopes, outbox lifecycle, claims, serialization, or handler composition.
+20. [references/search-kernel.md](references/search-kernel.md) when the target is `@afenda/search` or a mission changes search entities, document normalization, ranking, projection lifecycle, or testing capability isolation.
+21. [references/notifications-kernel.md](references/notifications-kernel.md) when the target is `@afenda/notifications` or a mission changes in-app vocabulary, persistence, deduplication, expiry visibility, recipient ownership, read state, or event composition boundaries.
+22. [references/auth-kernel.md](references/auth-kernel.md) when the target is `@afenda/auth` or a mission changes sessions, organization binding, roles, Neon Auth normalization, or server/browser capabilities.
+23. [references/admin-kernel.md](references/admin-kernel.md) when the target is `@afenda/admin` or a mission changes organization administration, organization usage, platform RBAC audit, atomic role assignment, or health capabilities.
 
 Load only the target-specific references required by the selected farm. Do not load absent Living `docs/**` as authority.
 
@@ -28,11 +41,24 @@ Load only the target-specific references required by the selected farm. Do not l
 
 | Package | Target | Contract |
 |---------|--------|----------|
+| `@afenda/config` | `packages/foundation/config` | [references/config-kernel.md](references/config-kernel.md) |
 | `@afenda/errors` | `packages/foundation/errors` | [references/errors-kernel.md](references/errors-kernel.md) |
 | `@afenda/env` | `packages/foundation/env` | [references/env-kernel.md](references/env-kernel.md) |
 | `@afenda/testing` | `packages/foundation/testing` | [references/testing-kernel.md](references/testing-kernel.md) |
 | `@afenda/db` | `packages/data-plane/db` | [references/db-kernel.md](references/db-kernel.md) |
 | `@afenda/audit` | `packages/data-plane/audit` | [references/audit-kernel.md](references/audit-kernel.md) |
+| `@afenda/logger` | `packages/runtime/logger` | [references/logger-kernel.md](references/logger-kernel.md) |
+| `@afenda/http` | `packages/runtime/http` | [references/http-kernel.md](references/http-kernel.md) |
+| `@afenda/security` | `packages/runtime/security` | [references/security-kernel.md](references/security-kernel.md) |
+| `@afenda/metrics` | `packages/runtime/metrics` | [references/metrics-kernel.md](references/metrics-kernel.md) |
+| `@afenda/openapi` | `packages/runtime/openapi` | [references/openapi-kernel.md](references/openapi-kernel.md) |
+| `@afenda/rate-limit` | `packages/runtime/rate-limit` | [references/rate-limit-kernel.md](references/rate-limit-kernel.md) |
+| `@afenda/cache` | `packages/runtime/cache` | [references/cache-kernel.md](references/cache-kernel.md) |
+| `@afenda/events` | `packages/data-plane/events` | [references/events-kernel.md](references/events-kernel.md) |
+| `@afenda/search` | `packages/data-plane/search` | [references/search-kernel.md](references/search-kernel.md) |
+| `@afenda/notifications` | `packages/data-plane/notifications` | [references/notifications-kernel.md](references/notifications-kernel.md) |
+| `@afenda/auth` | `packages/control-plane/auth` | [references/auth-kernel.md](references/auth-kernel.md) |
+| `@afenda/admin` | `packages/control-plane/admin` | [references/admin-kernel.md](references/admin-kernel.md) |
 
 ## Required mission contract
 
@@ -200,9 +226,22 @@ Remaining conditions: none | <blocking condition>
 
 - [references/lifecycle.md](references/lifecycle.md) — modes, transitions, and required outputs.
 - [references/seal-contract.md](references/seal-contract.md) — readiness gates and seal record schema.
+- [references/config-kernel.md](references/config-kernel.md) — canonical dev-time profile registry, tool-required projections, consumer boundary, and cutover gates.
 - [references/errors-kernel.md](references/errors-kernel.md) — protected error-kernel contract, consumer application, upgrade rules, and focused gates.
 - [references/env-kernel.md](references/env-kernel.md) — canonical environment registries, isolated deployment entrypoints, derived runtime projection, and consumer gates.
 - [references/testing-kernel.md](references/testing-kernel.md) — canonical testing lanes, root capabilities, executable setup boundaries, private source resolution, and cutover gates.
 - [references/db-kernel.md](references/db-kernel.md) — canonical database runtime facade, structural schema exports, tenancy and permission projections, ownership boundaries, and cutover gates.
 - [references/audit-kernel.md](references/audit-kernel.md) — canonical general-activity audit facade, guarded transaction boundary, masking and serialization ownership, projections, and cutover gates.
+- [references/logger-kernel.md](references/logger-kernel.md) — canonical structured fields and redaction registry, correlation carriage, leaf boundary, and Node/edge projection parity.
+- [references/http-kernel.md](references/http-kernel.md) — canonical correlation, transport pagination, Fetch pipeline, safe header attachment, and error-projection ownership split.
+- [references/security-kernel.md](references/security-kernel.md) — canonical CSP, CORS, neutral security-header policy, hostile-input validation, and application-owned framework adaptation.
+- [references/metrics-kernel.md](references/metrics-kernel.md) — canonical registry definitions, opaque recording capability, bounded cardinality, prohibited tenancy labels, and exposition ownership.
+- [references/openapi-kernel.md](references/openapi-kernel.md) — leaf schema registration, envelope and stamped document generation, Node emission isolation, and canonical error-projection composition.
+- [references/rate-limit-kernel.md](references/rate-limit-kernel.md) — canonical quota/key registry, opaque decisions, bounded vendor normalization, and cross-kernel projection composition before auth.
+- [references/cache-kernel.md](references/cache-kernel.md) — canonical cache namespaces, opaque keys, L1/L2 and TTL policy, identical serialization, semantic invalidation, and failure normalization independent of rate limiting.
+- [references/events-kernel.md](references/events-kernel.md) — canonical event registry, durable envelope, serialization, atomic lease claims, outbox lifecycle, and application-owned handler composition.
+- [references/search-kernel.md](references/search-kernel.md) — canonical search entities, document normalization, sensitive metadata filtering, ranking, lifecycle, and isolated testing capability.
+- [references/notifications-kernel.md](references/notifications-kernel.md) — canonical in-app vocabulary, persistence, expiry visibility, deduplication, recipient read state, and application-owned event interpretation.
+- [references/auth-kernel.md](references/auth-kernel.md) — canonical sessions, organization binding, roles, Neon normalization, and isolated server/browser capabilities.
+- [references/admin-kernel.md](references/admin-kernel.md) — canonical organization administration and usage, isolated RBAC-audit and health capabilities, atomic role/audit transactions, and general-audit separation.
 - `scripts/inspect-target.mjs` — stable target or immediate package-band inventory, content digests, package metadata, and working-tree evidence.

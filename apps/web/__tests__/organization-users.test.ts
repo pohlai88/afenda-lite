@@ -10,8 +10,9 @@ const authMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@afenda/auth", () => ({
-	listOrgMembers: authMocks.listOrgMembers,
-	findOrgMember: authMocks.findOrgMember,
+	authServer: {
+		members: { list: authMocks.listOrgMembers, find: authMocks.findOrgMember },
+	},
 }));
 
 describe("organization-users Identity port", () => {

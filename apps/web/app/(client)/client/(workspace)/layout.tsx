@@ -1,4 +1,4 @@
-import { requireRole } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import type { ReactNode } from "react";
 
 import { MAIN_CONTENT_ID } from "@/features/auth/main-content";
@@ -16,7 +16,7 @@ export default async function ClientWorkspaceLayout({
 }: {
 	children: ReactNode;
 }) {
-	await requireRole("client");
+	await authServer.session.requireRole("client");
 	return (
 		<>
 			<ClientWorkspaceNav />

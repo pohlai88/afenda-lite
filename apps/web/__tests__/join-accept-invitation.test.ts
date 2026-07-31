@@ -7,11 +7,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import {
-	AUTH_ACCEPT_INVITATION_PATH,
-	JOIN_PATH,
-	PRE_LOGIN_PUBLIC_PATHS,
-} from "@afenda/auth/client";
+import { authBrowser } from "@afenda/auth/client";
 import { describe, expect, it } from "vitest";
 
 const webRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -30,10 +26,14 @@ const JOIN_SEGMENT_FILES = [
 
 describe("join accept-invitation (PL-S4)", () => {
 	it("keeps /join on the Pre-Login public allowlist", () => {
-		expect(JOIN_PATH).toBe("/join");
-		expect(PRE_LOGIN_PUBLIC_PATHS).toContain(JOIN_PATH);
-		expect(AUTH_ACCEPT_INVITATION_PATH).toBe("/auth/accept-invitation");
-		expect(PRE_LOGIN_PUBLIC_PATHS).not.toContain(AUTH_ACCEPT_INVITATION_PATH);
+		expect(authBrowser.paths.join.path).toBe("/join");
+		expect(authBrowser.paths.preLoginPublic).toContain(
+			authBrowser.paths.join.path,
+		);
+		expect(authBrowser.paths.acceptInvitation).toBe("/auth/accept-invitation");
+		expect(authBrowser.paths.preLoginPublic).not.toContain(
+			authBrowser.paths.acceptInvitation,
+		);
 	});
 
 	it("ships the join island tree on disk", () => {
@@ -101,12 +101,14 @@ describe("join accept-invitation (PL-S4)", () => {
 	it("declares accept-invitation → /join as permanent redirect preserving invitationId", () => {
 		const nextConfig = source("next.config.ts");
 		// CJS-safe local consts pin the same literals as @afenda/auth SSOT.
-		expect(AUTH_ACCEPT_INVITATION_PATH).toBe("/auth/accept-invitation");
-		expect(JOIN_PATH).toBe("/join");
+		expect(authBrowser.paths.acceptInvitation).toBe("/auth/accept-invitation");
+		expect(authBrowser.paths.join.path).toBe("/join");
 		expect(nextConfig).toContain(
-			`const AUTH_ACCEPT_INVITATION_PATH = "${AUTH_ACCEPT_INVITATION_PATH}"`,
+			`const AUTH_ACCEPT_INVITATION_PATH = "${authBrowser.paths.acceptInvitation}"`,
 		);
-		expect(nextConfig).toContain(`const JOIN_PATH = "${JOIN_PATH}"`);
+		expect(nextConfig).toContain(
+			`const JOIN_PATH = "${authBrowser.paths.join.path}"`,
+		);
 		expect(nextConfig).toContain("source: AUTH_ACCEPT_INVITATION_PATH");
 		// Pin next.config template literal text without embedding `${` in a string literal.
 		expect(nextConfig).toContain(

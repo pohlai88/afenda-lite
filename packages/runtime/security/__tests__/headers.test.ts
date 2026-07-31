@@ -1,152 +1,78 @@
 import { describe, expect, it } from "vitest";
+import { security } from "../src";
 
-import {
-	applySecurityHeaders,
-	CONTENT_TYPE_OPTIONS_HEADER,
-	CSP_HEADER,
-	DEFAULT_SECURITY_HEADERS,
-	FRAME_OPTIONS_HEADER,
-	HSTS_HEADER,
-	PERMISSIONS_POLICY_HEADER,
-	securityHeadersForNext,
-	strictSecurityHeadersForNext,
-} from "../src/headers";
+const find = (
+	headers: readonly { name: string; value: string }[],
+	name: string,
+) => headers.find((header) => header.name === name)?.value;
 
-describe("@afenda/security securityHeadersForNext", () => {
-	it("matches the living baseline without CSP/HSTS", () => {
-		const headers = securityHeadersForNext();
-		expect(headers).toEqual([...DEFAULT_SECURITY_HEADERS]);
-		expect(headers.some((h) => h.key === CSP_HEADER)).toBe(false);
-		expect(headers.some((h) => h.key === HSTS_HEADER)).toBe(false);
-		expect(
-			headers.find((h) => h.key === PERMISSIONS_POLICY_HEADER)?.value,
-		).toBe("camera=(), microphone=(), geolocation=(), payment=()");
-	});
-
-	it("overrides Permissions-Policy when configured", () => {
-		const headers = securityHeadersForNext({
-			permissionsPolicy: "camera=(self)",
-		});
-		expect(
-			headers.find((h) => h.key === PERMISSIONS_POLICY_HEADER)?.value,
-		).toBe("camera=(self)");
-	});
-
-	it("includes CSP when opted in", () => {
-		const headers = securityHeadersForNext({ includeCsp: true });
-		const csp = headers.find((h) => h.key === CSP_HEADER);
-		expect(csp?.value).toContain("default-src 'self'");
-		expect(headers.find((h) => h.key === FRAME_OPTIONS_HEADER)?.value).toBe(
-			"SAMEORIGIN",
+describe("@afenda/security header policy", () => {
+	it("creates the framework-neutral baseline", () => {
+		const headers = security.headers.create();
+		expect(find(headers, "X-Frame-Options")).toBe("SAMEORIGIN");
+		expect(find(headers, "X-Content-Type-Options")).toBe("nosniff");
+		expect(find(headers, "Permissions-Policy")).toBe(
+			"camera=(), microphone=(), geolocation=(), payment=()",
 		);
-		expect(
-			headers.find((h) => h.key === CONTENT_TYPE_OPTIONS_HEADER)?.value,
-		).toBe("nosniff");
+		expect(find(headers, "Content-Security-Policy")).toBeUndefined();
+		expect(find(headers, "Strict-Transport-Security")).toBeUndefined();
+		expect(headers[0]).toHaveProperty("name");
+		expect(headers[0]).not.toHaveProperty("key");
 	});
 
-	it("derives X-Frame-Options DENY from frameAncestors none", () => {
-		const headers = securityHeadersForNext({
+	it("derives CSP, frame denial, reports, and HSTS from one policy", () => {
+		const headers = security.headers.create({
 			includeCsp: true,
 			frameAncestors: ["'none'"],
-		});
-		const csp = headers.find((h) => h.key === CSP_HEADER)?.value ?? "";
-		expect(csp).toContain("frame-ancestors 'none'");
-		expect(headers.find((h) => h.key === FRAME_OPTIONS_HEADER)?.value).toBe(
-			"DENY",
-		);
-	});
-
-	it("lets explicit frameOptions win over frameAncestors none", () => {
-		const headers = securityHeadersForNext({
-			frameAncestors: ["'none'"],
-			frameOptions: "SAMEORIGIN",
-		});
-		expect(headers.find((h) => h.key === FRAME_OPTIONS_HEADER)?.value).toBe(
-			"SAMEORIGIN",
-		);
-	});
-
-	it("honors frameOptions DENY", () => {
-		const headers = securityHeadersForNext({ frameOptions: "DENY" });
-		expect(headers.find((h) => h.key === FRAME_OPTIONS_HEADER)?.value).toBe(
-			"DENY",
-		);
-	});
-
-	it("merges reportUri and reportTo into CSP when includeCsp", () => {
-		const headers = securityHeadersForNext({
-			includeCsp: true,
 			reportUri: "https://example.com/csp",
 			reportTo: "csp-endpoint",
-		});
-		const csp = headers.find((h) => h.key === CSP_HEADER)?.value ?? "";
-		expect(csp).toContain("report-uri https://example.com/csp");
-		expect(csp).toContain("report-to csp-endpoint");
-	});
-
-	it("does not emit report directives without includeCsp", () => {
-		const headers = securityHeadersForNext({
-			reportUri: "https://example.com/csp",
-		});
-		expect(headers.some((h) => h.key === CSP_HEADER)).toBe(false);
-	});
-
-	it("includes HSTS when opted in", () => {
-		const headers = securityHeadersForNext({ hsts: true });
-		expect(headers.find((h) => h.key === HSTS_HEADER)?.value).toBe(
-			"max-age=31536000; includeSubDomains",
-		);
-	});
-
-	it("appends preload only when hstsPreload is true", () => {
-		const headers = securityHeadersForNext({
 			hsts: true,
 			hstsPreload: true,
 		});
-		expect(headers.find((h) => h.key === HSTS_HEADER)?.value).toBe(
+		const csp = find(headers, "Content-Security-Policy");
+		expect(csp).toContain("frame-ancestors 'none'");
+		expect(csp).toContain("report-uri https://example.com/csp");
+		expect(csp).toContain("report-to csp-endpoint");
+		expect(find(headers, "X-Frame-Options")).toBe("DENY");
+		expect(find(headers, "Strict-Transport-Security")).toBe(
 			"max-age=31536000; includeSubDomains; preload",
 		);
 	});
 
-	it("omits includeSubDomains when disabled", () => {
-		const headers = securityHeadersForNext({
+	it("lets explicit frame policy win and supports bounded HSTS", () => {
+		const headers = security.headers.create({
+			frameAncestors: ["'none'"],
+			frameOptions: "SAMEORIGIN",
 			hsts: true,
 			hstsIncludeSubdomains: false,
 			hstsMaxAge: 60,
 		});
-		expect(headers.find((h) => h.key === HSTS_HEADER)?.value).toBe(
-			"max-age=60",
-		);
-	});
-});
-
-describe("@afenda/security strictSecurityHeadersForNext", () => {
-	it("opts into strict CSP, DENY frames, and HSTS", () => {
-		const headers = strictSecurityHeadersForNext();
-		const csp = headers.find((h) => h.key === CSP_HEADER)?.value ?? "";
-		expect(csp).toContain("script-src 'self' 'strict-dynamic'");
-		expect(csp).toContain("frame-ancestors 'none'");
-		expect(csp).toContain("upgrade-insecure-requests");
-		expect(headers.find((h) => h.key === FRAME_OPTIONS_HEADER)?.value).toBe(
-			"DENY",
-		);
-		expect(headers.find((h) => h.key === HSTS_HEADER)?.value).toContain(
-			"max-age=",
-		);
+		expect(find(headers, "X-Frame-Options")).toBe("SAMEORIGIN");
+		expect(find(headers, "Strict-Transport-Security")).toBe("max-age=60");
 	});
 
-	it("keeps CSP when caller tries to disable includeCsp", () => {
-		const headers = strictSecurityHeadersForNext({ includeCsp: false });
-		expect(headers.some((h) => h.key === CSP_HEADER)).toBe(true);
+	it("creates the strict preset without allowing CSP removal", () => {
+		const headers = security.headers.strict({ includeCsp: false });
+		expect(find(headers, "Content-Security-Policy")).toContain(
+			"script-src 'self' 'strict-dynamic'",
+		);
+		expect(find(headers, "X-Frame-Options")).toBe("DENY");
+		expect(find(headers, "Strict-Transport-Security")).toContain("max-age=");
 	});
-});
 
-describe("@afenda/security applySecurityHeaders", () => {
-	it("copies the Next-shaped list onto Fetch Headers", () => {
+	it("applies policy entries to Fetch Headers", () => {
 		const headers = new Headers();
-		applySecurityHeaders(headers);
-		expect(headers.get(FRAME_OPTIONS_HEADER)).toBe("SAMEORIGIN");
-		expect(headers.get(CONTENT_TYPE_OPTIONS_HEADER)).toBe("nosniff");
-		expect(headers.get(PERMISSIONS_POLICY_HEADER)).toContain("camera=()");
+		security.headers.apply(headers);
+		expect(headers.get("X-Frame-Options")).toBe("SAMEORIGIN");
+		expect(headers.get("Permissions-Policy")).toContain("camera=()");
+	});
+
+	it("rejects injection and invalid HSTS values", () => {
+		expect(() =>
+			security.headers.create({ permissionsPolicy: "camera=()\r\nX-Evil: 1" }),
+		).toThrow(RangeError);
+		expect(() =>
+			security.headers.create({ hsts: true, hstsMaxAge: -1 }),
+		).toThrow(RangeError);
 	});
 });

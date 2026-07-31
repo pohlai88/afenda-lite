@@ -1,4 +1,4 @@
-import { getSession } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import Link from "next/link";
 
 import { CLIENT_DASHBOARD_PATH } from "@/features/auth/client-paths";
@@ -8,7 +8,7 @@ import { resolveClientShellNav } from "@/features/portal-chrome/resolve-shell-ac
  * Permission-gated client workspace module links (read consoles).
  */
 export async function ClientWorkspaceNav() {
-	const session = await getSession();
+	const session = await authServer.session.get();
 	const navItems = await resolveClientShellNav(session);
 
 	return (

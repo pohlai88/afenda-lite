@@ -11,13 +11,24 @@ function pendingEvent(
 ): PendingDomainEventWriteInput {
 	return {
 		organizationId: "org_1",
-		type: "corporate_administration.test_entity.created.v1",
+		type: "corporate_administration.legal_company.draft_registered.v1",
 		sourceModule: "corporate-administration",
 		deduplicationKey: "event_1",
 		correlationId: "correlation_1",
 		causationId: "causation_1",
 		actorUserId: "user_1",
-		payload: { id: "entity_1" },
+		payload: {
+			organizationId: "org_1",
+			legalCompanyId: "company_1",
+			occurredAt: "2026-08-01T00:00:00.000Z",
+			actorUserId: "user_1",
+			correlationId: "correlation_1",
+			causationId: "causation_1",
+			companyCode: "AFENDA",
+			homeJurisdictionCountryCode: "MY",
+			profileVersion: 1,
+			state: "draft",
+		},
 		metadata: { aggregateVersion: 1 },
 		...overrides,
 	};
@@ -83,7 +94,7 @@ describe("pending domain event appender", () => {
 		expect(builtQueries[0]?.values).toContain("org_1");
 		expect(builtQueries[0]?.values).toContain("event_1");
 		expect(builtQueries[0]?.values).toContain(
-			JSON.stringify({ id: "entity_1" }),
+			JSON.stringify(events[0].payload),
 		);
 		expect(builtQueries[1]?.values).toContain("org_2");
 		expect(builtQueries[1]?.values).toContain(null);

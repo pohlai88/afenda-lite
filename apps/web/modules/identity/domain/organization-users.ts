@@ -3,7 +3,7 @@
  * Neon Auth membership via `@afenda/auth`; no SQL, Request, or UI.
  */
 
-import { findOrgMember, listOrgMembers, type OrgMember } from "@afenda/auth";
+import { authServer, type OrgMember } from "@afenda/auth";
 
 export interface OrganizationUser {
 	email: string;
@@ -42,7 +42,7 @@ function compareOrganizationUsers(
 export async function listOrganizationUsers(
 	orgId: string,
 ): Promise<OrganizationUser[]> {
-	const members = await listOrgMembers(orgId);
+	const members = await authServer.members.list(orgId);
 	const users = members.map(toOrganizationUser);
 	return [...users].sort(compareOrganizationUsers);
 }
@@ -52,6 +52,6 @@ export async function getOrganizationUser(
 	orgId: string,
 	userId: string,
 ): Promise<OrganizationUser | null> {
-	const member = await findOrgMember(orgId, userId);
+	const member = await authServer.members.find(orgId, userId);
 	return member ? toOrganizationUser(member) : null;
 }

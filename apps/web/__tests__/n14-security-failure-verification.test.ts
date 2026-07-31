@@ -34,11 +34,15 @@ const auditMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@afenda/auth", () => ({
-	AUTH_FORBIDDEN_PATH: "/403",
-	requireRole: authMocks.requireRole,
-	canInviteMember: authMocks.canInviteMember,
-	inviteOrgMember: authMocks.inviteOrgMember,
-	buildJoinUrl: authMocks.buildJoinUrl,
+	authServer: {
+		paths: { forbidden: "/403" },
+		session: { requireRole: authMocks.requireRole },
+		roles: { canInvite: authMocks.canInviteMember },
+		invitations: {
+			inviteMember: authMocks.inviteOrgMember,
+			buildJoinUrl: authMocks.buildJoinUrl,
+		},
+	},
 }));
 
 vi.mock("next/cache", () => ({
@@ -71,7 +75,7 @@ vi.mock("@afenda/admin/audit", async (importOriginal) => {
 	const actual = await importOriginal<typeof import("@afenda/admin/audit")>();
 	return {
 		...actual,
-		recordRbacAudit: auditMocks.recordRbacAudit,
+		rbacAudit: { ...actual.rbacAudit, record: auditMocks.recordRbacAudit },
 	};
 });
 
@@ -184,7 +188,7 @@ describe("N14 denial surface evidence pins", () => {
 
 	it("keeps proxy fail-closed on createSessionProxy + shouldBypassSessionGate", () => {
 		const proxy = source("proxy.ts");
-		expect(proxy).toContain("createSessionProxy");
+		expect(proxy).toContain("authServer.proxy.create");
 		expect(proxy).toContain("shouldBypassSessionGate");
 		expect(proxy).toContain("/admin/:path*");
 		expect(proxy).toContain("/client/:path*");
@@ -203,7 +207,7 @@ describe("N14 denial surface evidence pins", () => {
 		const requirePermission = source("features/auth/require-permission.ts");
 		expect(authPaths).toContain('AUTH_FORBIDDEN_PATH = "/403"');
 		expect(rbac).toContain("AUTH_FORBIDDEN_PATH");
-		expect(requirePermission).toContain("AUTH_FORBIDDEN_PATH");
+		expect(requirePermission).toContain("authServer.paths.forbidden");
 		expect(requirePermission).toContain("redirect");
 	});
 

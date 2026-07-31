@@ -141,11 +141,34 @@ describe("@afenda/events query", () => {
 			}),
 		);
 
+		const claims = assertOk(
+			await store.claimPending({ organizationId: "org-1", limit: 2 }),
+		);
+		const processedClaim = claims.find(
+			(claim) => claim.event.id === oldProcessed.id,
+		);
+		const pendingClaim = claims.find((claim) => claim.event.id === pending.id);
 		await store.markProcessed({
+			claimToken: processedClaim?.claimToken ?? "missing-claim",
 			id: oldProcessed.id,
 			organizationId: "org-1",
 			processedAt: new Date("2020-01-02T00:00:00.000Z"),
 		});
+		if (pendingClaim) {
+			await store.markFailed({
+				claimToken: pendingClaim.claimToken,
+				id: pending.id,
+				lastError: "test claim cleanup",
+				organizationId: "org-1",
+			});
+			assertOk(
+				await store.requeue({
+					fromStatus: "failed",
+					id: pending.id,
+					organizationId: "org-1",
+				}),
+			);
+		}
 		const stored = store.all().find((row) => row.id === oldProcessed.id);
 		if (stored) {
 			stored.occurredAt = new Date("2020-01-01T00:00:00.000Z");
@@ -185,6 +208,10 @@ describe("@afenda/events query", () => {
 		);
 		assertOk(
 			await store.markFailed({
+				claimToken:
+					assertOk(
+						await store.claimPending({ organizationId: "org-retry", limit: 1 }),
+					)[0]?.claimToken ?? "missing-claim",
 				id: event.id,
 				organizationId: "org-retry",
 				lastError: "transport unavailable",
@@ -226,6 +253,13 @@ describe("@afenda/events query", () => {
 		);
 		assertOk(
 			await store.markProcessed({
+				claimToken:
+					assertOk(
+						await store.claimPending({
+							organizationId: "org-replay",
+							limit: 1,
+						}),
+					)[0]?.claimToken ?? "missing-claim",
 				id: event.id,
 				organizationId: "org-replay",
 			}),
@@ -267,6 +301,8 @@ describe("@afenda/events query", () => {
 						entityId: `employee-${index}`,
 						actorId: "load-actor",
 						correlationId: `corr-load-${index}`,
+						operation: "create",
+						idempotencyKey: `employee-${index}`,
 					},
 				}),
 			),
@@ -310,11 +346,17 @@ describe("@afenda/events query", () => {
 					entityId: "employee-drill",
 					actorId: "drill-actor",
 					correlationId: "corr-drill",
+					operation: "create",
+					idempotencyKey: "employee-drill",
 				},
 			}),
 		);
 		assertOk(
 			await store.markFailed({
+				claimToken:
+					assertOk(
+						await store.claimPending({ organizationId: "org-drill", limit: 1 }),
+					)[0]?.claimToken ?? "missing-claim",
 				id: event.id,
 				organizationId: "org-drill",
 				lastError: "simulated connector outage",
@@ -346,6 +388,6 @@ describe("@afenda/events query", () => {
 				limit: 10,
 			}),
 		);
-		expect(claimed.map((entry) => entry.id)).toContain(event.id);
+		expect(claimed.map((entry) => entry.event.id)).toContain(event.id);
 	});
 });

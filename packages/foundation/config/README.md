@@ -64,6 +64,9 @@ factory lives under [`testing/`](../../../testing/README.md), not this package.
 
 ```bash
 pnpm --filter @afenda/config lint
+pnpm --filter @afenda/config test
+pnpm check:tsconfig-governance
+pnpm check:biome-governance
 pnpm --filter @afenda/config protect:check
 ```
 
@@ -83,13 +86,17 @@ Run `pnpm check:readme` from the repository root after changing this guide.
 
 | Path | Role |
 |------|------|
-| `@afenda/config/biome` · `@afenda/config/biome.json` | Shared Biome config (Ultracite presets + ignore defaults) |
+| `@afenda/config/biome.json` | Shared Biome config (Afenda policy applied after the root Ultracite presets) |
 | `@afenda/config/tsconfig/base.json` | Strict ES2022 / preserve + bundler resolution with no ambient type packages |
 | `@afenda/config/tsconfig/node-library.json` | Extends base + explicit Node ambient types; still source-consumed/no-emit |
 | `@afenda/config/tsconfig/nextjs.json` | Extends base + DOM · `jsx` · Next plugin — apps |
 | `@afenda/config/tsconfig/react-library.json` | Extends base + DOM · `jsx` — React libraries |
 
 On disk: `packages/foundation/config/biome.json`, `packages/foundation/config/tsconfig/{base,node-library,nextjs,react-library}.json`.
+
+`package.json#exports` is the machine-readable profile registry. Repository
+governance derives the approved TypeScript and Biome specifiers from that
+registry; consumers must not maintain a second preset allowlist.
 
 ## Ownership
 

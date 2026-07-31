@@ -47,6 +47,17 @@ function ownershipWhere(organizationId: string, userId: string, id?: string) {
 	return where;
 }
 
+function activeNotificationWhere(now = new Date()) {
+	const where = or(
+		isNull(platformNotification.expiresAt),
+		sql`${platformNotification.expiresAt} > ${now}`,
+	);
+	if (where === undefined) {
+		throw new Error("@afenda/notifications: active predicate is required");
+	}
+	return where;
+}
+
 function mapRows(
 	rows: Parameters<typeof mapNotificationRow>[0][],
 ): Result<Notification[]> {
@@ -145,6 +156,7 @@ export class DrizzleNotificationStore implements NotificationStore {
 			const predicates = [
 				eq(platformNotification.organizationId, options.organizationId),
 				eq(platformNotification.userId, options.userId),
+				activeNotificationWhere(),
 			];
 			if (options.unreadOnly === true) {
 				predicates.push(eq(platformNotification.read, false));
@@ -176,6 +188,7 @@ export class DrizzleNotificationStore implements NotificationStore {
 			const where = and(
 				ownershipWhere(options.organizationId, options.userId),
 				eq(platformNotification.read, false),
+				activeNotificationWhere(),
 			);
 			if (where === undefined) {
 				return errorResult.fail("INTERNAL_ERROR");

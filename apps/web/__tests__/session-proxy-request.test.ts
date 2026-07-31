@@ -7,7 +7,7 @@
  * Public `/auth/*` and `/join` stay outside the matcher (session-gate-policy).
  */
 
-import { AUTH_LOGIN_PATH } from "@afenda/auth/client";
+import { authBrowser } from "@afenda/auth/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CLIENT_GATE_PATHS } from "../features/auth/client-paths";
@@ -15,7 +15,7 @@ import { CLIENT_GATE_PATHS } from "../features/auth/client-paths";
 const sessionGateMock = vi.fn();
 
 vi.mock("@afenda/auth", () => ({
-	createSessionProxy: () => sessionGateMock,
+	authServer: { proxy: { create: () => sessionGateMock } },
 }));
 
 vi.mock("@afenda/env", () => ({
@@ -33,7 +33,7 @@ describe("N6 apps/web proxy request gate", () => {
 	it("request-level: unauthenticated protected path redirects via createSessionProxy to AUTH_LOGIN_PATH", async () => {
 		const { NextRequest, NextResponse } = await import("next/server");
 		sessionGateMock.mockImplementation(async (request) =>
-			NextResponse.redirect(new URL(AUTH_LOGIN_PATH, request.url)),
+			NextResponse.redirect(new URL(authBrowser.paths.login, request.url)),
 		);
 
 		const { proxy } = await import("../proxy");
@@ -47,7 +47,7 @@ describe("N6 apps/web proxy request gate", () => {
 			expect(response.status).toBeGreaterThanOrEqual(300);
 			expect(response.status).toBeLessThan(400);
 			expect(new URL(String(response.headers.get("location"))).pathname).toBe(
-				AUTH_LOGIN_PATH,
+				authBrowser.paths.login,
 			);
 		}
 	});

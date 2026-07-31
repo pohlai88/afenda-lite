@@ -1,8 +1,9 @@
 "use server";
 
-import { requireRole } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import { type Result as ActionResult, errorResult } from "@afenda/errors";
-import { createCorrelationId } from "@afenda/http";
+import { http } from "@afenda/http";
+import { logger } from "@afenda/logger";
 import { revalidatePath } from "next/cache";
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { assignOrgRoleWithAudit } from "@/modules/identity/domain/assign-org-role-audited";
@@ -10,7 +11,6 @@ import { getOrganizationUser } from "@/modules/identity/domain/organization-user
 import { recordOrgRoleAssignedEvent } from "@/modules/identity/domain/record-org-role-assigned-event";
 import { assignOrgRoleCommandSchema } from "@/modules/identity/schemas/assign-org-role";
 import { readRequestAttribution } from "@/modules/platform/domain/request-attribution";
-import { logProductEvent } from "@/modules/platform/observability/product-log";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export interface AssignOrgRoleActionData {
@@ -36,8 +36,8 @@ export async function assignOrgRoleAction(
 	_prev: AssignOrgRoleActionState,
 	formData: FormData,
 ): Promise<AssignOrgRoleActionState> {
-	const correlationId = createCorrelationId();
-	const session = await requireRole("operator");
+	const correlationId = http.correlation.create();
+	const session = await authServer.session.requireRole("operator");
 
 	const parsed = parseSchema(assignOrgRoleCommandSchema, {
 		userId: formData.get("userId"),
@@ -61,7 +61,7 @@ export async function assignOrgRoleAction(
 	try {
 		member = await getOrganizationUser(session.orgId, parsed.data.userId);
 	} catch {
-		logProductEvent({
+		logger.event({
 			level: "error",
 			event: "action.internal_error",
 			correlationId,
@@ -97,7 +97,7 @@ export async function assignOrgRoleAction(
 				: { userAgent: attribution.userAgent }),
 		});
 	} catch {
-		logProductEvent({
+		logger.event({
 			level: "error",
 			event: "action.internal_error",
 			correlationId,
@@ -128,7 +128,7 @@ export async function assignOrgRoleAction(
 			const { notificationId: recordedNotificationId } = recorded.data;
 			notificationId = recordedNotificationId;
 		} else {
-			logProductEvent({
+			logger.event({
 				level: "error",
 				event: "action.internal_error",
 				correlationId,
@@ -139,7 +139,7 @@ export async function assignOrgRoleAction(
 			});
 		}
 	} catch {
-		logProductEvent({
+		logger.event({
 			level: "error",
 			event: "action.internal_error",
 			correlationId,
@@ -150,7 +150,7 @@ export async function assignOrgRoleAction(
 		});
 	}
 
-	logProductEvent({
+	logger.event({
 		level: "info",
 		event: "role.assign",
 		correlationId,

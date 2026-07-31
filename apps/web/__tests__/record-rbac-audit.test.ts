@@ -7,11 +7,7 @@
  * prove `withOrg` isolation, then delete the fixture ids.
  */
 
-import {
-	deleteRbacAuditRow,
-	MEMBER_INVITE_AUDIT_ACTION,
-	recordRbacAudit,
-} from "@afenda/admin/audit";
+import { rbacAudit } from "@afenda/admin/audit";
 import { database as afendaDatabase, platformRbacAudit } from "@afenda/db";
 import { afterAll, describe, expect, it } from "vitest";
 import { hasDatabase } from "./helpers/identity-database";
@@ -20,9 +16,9 @@ const createdAuditIds: Array<{ id: string; orgId: string }> = [];
 
 describe("recordRbacAudit guards (I2.3)", () => {
 	it("rejects empty orgId before touching the database", async () => {
-		const result = await recordRbacAudit({
+		const result = await rbacAudit.record({
 			orgId: "   ",
-			action: MEMBER_INVITE_AUDIT_ACTION,
+			action: rbacAudit.actions.memberInvite,
 			actorUserId: "user-a",
 			correlationId: "test-correlation-id",
 		});
@@ -33,9 +29,9 @@ describe("recordRbacAudit guards (I2.3)", () => {
 	});
 
 	it("rejects empty actorUserId", async () => {
-		const result = await recordRbacAudit({
+		const result = await rbacAudit.record({
 			orgId: "org-a",
-			action: MEMBER_INVITE_AUDIT_ACTION,
+			action: rbacAudit.actions.memberInvite,
 			actorUserId: "",
 			correlationId: "test-correlation-id",
 		});
@@ -53,14 +49,14 @@ describe.skipIf(!hasDatabase)("recordRbacAudit tenancy write (I2.3)", () => {
 
 	afterAll(async () => {
 		for (const row of createdAuditIds) {
-			await deleteRbacAuditRow(row);
+			await rbacAudit.rows.delete(row);
 		}
 	});
 
 	it("inserts with explicit organization_id and isolates via withOrg", async () => {
-		const recorded = await recordRbacAudit({
+		const recorded = await rbacAudit.record({
 			orgId: orgA,
-			action: MEMBER_INVITE_AUDIT_ACTION,
+			action: rbacAudit.actions.memberInvite,
 			actorUserId,
 			targetType: "membership",
 			targetId: "invitee@example.com",
@@ -76,7 +72,7 @@ describe.skipIf(!hasDatabase)("recordRbacAudit tenancy write (I2.3)", () => {
 		createdAuditIds.push({ id: row.id, orgId: orgA });
 
 		expect(row.organizationId).toBe(orgA);
-		expect(row.action).toBe(MEMBER_INVITE_AUDIT_ACTION);
+		expect(row.action).toBe(rbacAudit.actions.memberInvite);
 		expect(row.actorUserId).toBe(actorUserId);
 
 		const forOrgA = await afendaDatabase.tenancy.readAll(
@@ -91,7 +87,7 @@ describe.skipIf(!hasDatabase)("recordRbacAudit tenancy write (I2.3)", () => {
 		);
 		expect(forOrgB.some((item) => item.id === row.id)).toBe(false);
 
-		const wrongOrgDelete = await deleteRbacAuditRow({
+		const wrongOrgDelete = await rbacAudit.rows.delete({
 			id: row.id,
 			orgId: orgB,
 		});

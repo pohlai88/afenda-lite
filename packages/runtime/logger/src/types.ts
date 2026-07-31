@@ -1,39 +1,32 @@
+import type { LOG_FIELD_REGISTRY } from "./semantic-registry";
+
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
-export type ProductLogLevel = "info" | "warn" | "error";
+type LogFieldName = keyof typeof LOG_FIELD_REGISTRY;
 
-/**
- * Closed product-event allowlist. Callers must never pass secrets, tokens,
- * SQL, stacks, or full request bodies.
- */
-export interface ProductLogEvent {
-	actorUserId?: string;
-	code?: string;
-	correlationId: string;
-	event: string;
-	level: ProductLogLevel;
-	orgId?: string;
-	path?: string;
+type RequiredLogFieldName = {
+	[Field in LogFieldName]: (typeof LOG_FIELD_REGISTRY)[Field]["required"] extends true
+		? Field
+		: never;
+}[LogFieldName];
+
+type OptionalLogFieldName = Exclude<LogFieldName, RequiredLogFieldName>;
+
+export type StructuredLogFields = {
+	readonly [Field in RequiredLogFieldName]: string;
+} & {
+	readonly [Field in OptionalLogFieldName]?: string;
+};
+
+export type StructuredLogEvent = StructuredLogFields & {
+	readonly level: LogLevel;
+};
+
+export interface LogEventOptions {
+	readonly service?: string;
 }
 
-export interface LogProductEventOptions {
-	service?: string;
-}
-
-export interface CreateLoggerOptions {
-	level?: LogLevel;
-	service: string;
-}
-
-export interface EdgeLoggerBindings {
-	readonly correlationId?: string;
-	readonly module?: string;
-}
-
-export interface EdgeLogger {
-	child: (bindings: EdgeLoggerBindings) => EdgeLogger;
-	debug: (fields: Record<string, unknown>, msg?: string) => void;
-	error: (fields: Record<string, unknown>, msg?: string) => void;
-	info: (fields: Record<string, unknown>, msg?: string) => void;
-	warn: (fields: Record<string, unknown>, msg?: string) => void;
+export interface LoggerCapability {
+	event: (entry: StructuredLogEvent, options?: LogEventOptions) => void;
+	redactFieldValue: (name: string, value: string) => string;
 }

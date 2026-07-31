@@ -1,13 +1,13 @@
 "use server";
 
-import { getSession } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import { type Result as ActionResult, errorResult } from "@afenda/errors";
-import { createCorrelationId } from "@afenda/http";
+import { http } from "@afenda/http";
+import { logger } from "@afenda/logger";
 import { listPaymentTerms, type PaymentTerm } from "@afenda/master-data";
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
-import { logProductEvent } from "@/modules/platform/observability/product-log";
 
 export interface ListPaymentTermsActionData {
 	paymentTerms: PaymentTerm[];
@@ -21,8 +21,8 @@ export async function listPaymentTermsAction(input?: {
 	pageSize?: number;
 	status?: PaymentTerm["status"];
 }): Promise<ActionResult<ListPaymentTermsActionData>> {
-	const correlationId = createCorrelationId();
-	const session = await getSession();
+	const correlationId = http.correlation.create();
+	const session = await authServer.session.get();
 
 	const permissionDenied = await forbidUnlessPermission(
 		session,
@@ -49,7 +49,7 @@ export async function listPaymentTermsAction(input?: {
 		}
 		return { ok: true, data: { paymentTerms: mapped.data } };
 	} catch {
-		logProductEvent({
+		logger.event({
 			level: "error",
 			event: "action.internal_error",
 			correlationId,

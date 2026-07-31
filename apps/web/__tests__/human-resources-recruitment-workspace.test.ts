@@ -17,7 +17,7 @@ vi.mock("@/modules/identity/domain/session-permission", () => ({
 	sessionHasPermission: mocks.sessionHasPermission,
 }));
 vi.mock("@afenda/http", () => ({
-	createCorrelationId: () => "corr-recruitment",
+	http: { correlation: { create: () => "corr-recruitment" } },
 }));
 vi.mock("@afenda/human-resources", () => ({
 	listRequisitions: mocks.listRequisitions,

@@ -14,7 +14,6 @@ description: "Shared Biome + TypeScript bases (dev-time only — not a runtime i
 
 | Import path | Export key |
 | --- | --- |
-| `@afenda/config/biome` | `./biome` |
 | `@afenda/config/biome.json` | `./biome.json` |
 | `@afenda/config/tsconfig/base.json` | `./tsconfig/base.json` |
 | `@afenda/config/tsconfig/nextjs.json` | `./tsconfig/nextjs.json` |
@@ -70,12 +69,26 @@ Root Biome delegates once:
 
 Chain: root [`biome.jsonc`](https://github.com/pohlai88/afenda-lite/blob/main/biome.jsonc) → `@afenda/config/biome.json` → `ultracite/biome/{core,react,next,vitest}`. Package trees do **not** ship nested `biome.json` unless a real package-only carve-out appears.
 
-**Living consumers:** root + `apps/{web,docs}` + packages (`auth`, `db`, `env`, `emails`, `ui-system`, `errors`, `logger`, `rate-limit`, `admin`, …) list `@afenda/config` as `workspace:*` and extend the matching tsconfig. Vitest / Playwright factory lives under [`testing/`](https://github.com/pohlai88/afenda-lite/blob/main/testing) — not this package.
+Workspace apps and packages declare `@afenda/config` as a `workspace:*`
+devDependency and extend the matching exported file. The Vitest / Playwright
+factory lives under [`testing/`](https://github.com/pohlai88/afenda-lite/blob/main/testing/README.md), not this package.
+
+## Consumer boundary
+
+- Consume only the JSON export paths declared in `package.json`.
+- Keep package-specific `rootDir`, ambient `types`, aliases, and include/exclude
+  choices in the consuming `tsconfig.json`.
+- Change a shared compiler or formatter decision here only when it should
+  upgrade every matching consumer.
+- Do not add a JavaScript root export or runtime dependency surface.
 
 ## Maintain
 
 ```bash
 pnpm --filter @afenda/config lint
+pnpm --filter @afenda/config test
+pnpm check:tsconfig-governance
+pnpm check:biome-governance
 pnpm --filter @afenda/config protect:check
 ```
 
@@ -89,17 +102,23 @@ pnpm --filter @afenda/config protect:update
 pnpm --filter @afenda/config protect:check
 ```
 
+Run `pnpm check:readme` from the repository root after changing this guide.
+
 ## Exports
 
 | Path | Role |
 |------|------|
-| `@afenda/config/biome` · `@afenda/config/biome.json` | Shared Biome config (Ultracite presets + ignore defaults) |
+| `@afenda/config/biome.json` | Shared Biome config (Afenda policy applied after the root Ultracite presets) |
 | `@afenda/config/tsconfig/base.json` | Strict ES2022 / preserve + bundler resolution with no ambient type packages |
 | `@afenda/config/tsconfig/node-library.json` | Extends base + explicit Node ambient types; still source-consumed/no-emit |
 | `@afenda/config/tsconfig/nextjs.json` | Extends base + DOM · `jsx` · Next plugin — apps |
 | `@afenda/config/tsconfig/react-library.json` | Extends base + DOM · `jsx` — React libraries |
 
 On disk: `packages/foundation/config/biome.json`, `packages/foundation/config/tsconfig/{base,node-library,nextjs,react-library}.json`.
+
+`package.json#exports` is the machine-readable profile registry. Repository
+governance derives the approved TypeScript and Biome specifiers from that
+registry; consumers must not maintain a second preset allowlist.
 
 ## Ownership
 

@@ -1,11 +1,12 @@
-/**
- * @afenda/openapi - Universal OpenAPI utilities
- * For Node-specific document writing, import from @afenda/openapi/node
- */
-
+/** @afenda/openapi - canonical universal OpenAPI capability. */
 export {
-	OpenAPIRegistry,
-	OpenApiGeneratorV3,
-} from "@asteasolutions/zod-to-openapi";
-
-export { z } from "./zod";
+	type AfendaDocumentMeta,
+	type AfendaOperationStatus,
+	type GenerateDocumentInput,
+	type OpenApiDocument,
+	type OpenApiHttpMethod,
+	type OperationMetadata,
+	type OperationMetadataMap,
+	openapi,
+	type SecurityScheme,
+} from "./capability";

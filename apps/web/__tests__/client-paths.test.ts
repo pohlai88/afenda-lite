@@ -1,12 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-import {
-	AUTH_LOGIN_PATH,
-	CLIENT_HOME_PATH,
-	isPreLoginPublicPath,
-	PRE_LOGIN_PUBLIC_PATHS,
-} from "@afenda/auth/client";
+import { authBrowser } from "@afenda/auth/client";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -54,20 +49,26 @@ describe("client path SSOT (PL-S1)", () => {
 
 	it("keeps workspace home path stable and pinned to auth SSOT", () => {
 		expect(CLIENT_DASHBOARD_PATH).toBe("/client");
-		expect(CLIENT_DASHBOARD_PATH).toBe(CLIENT_HOME_PATH);
+		expect(CLIENT_DASHBOARD_PATH).toBe(authBrowser.paths.postLogin.clientHome);
 		expect(CLIENT_DASHBOARD_ALIAS_PATH).toBe("/client/dashboard");
 		expect(CLIENT_DASHBOARD_ALIAS_PATH).not.toBe(CLIENT_DASHBOARD_PATH);
 	});
 
 	it("does not classify gate or post-login client paths as public", () => {
 		for (const gatePath of CLIENT_GATE_PATHS) {
-			expect(isPreLoginPublicPath(gatePath)).toBe(false);
+			expect(authBrowser.paths.isPreLoginPublic(gatePath)).toBe(false);
 			expect(PRE_LOGIN_PUBLIC_ROUTE_PATHS).not.toContain(gatePath);
-			expect(PRE_LOGIN_PUBLIC_PATHS).not.toContain(gatePath);
+			expect(authBrowser.paths.preLoginPublic).not.toContain(gatePath);
 		}
-		expect(isPreLoginPublicPath(CLIENT_DASHBOARD_PATH)).toBe(false);
-		expect(isPreLoginPublicPath(CLIENT_DASHBOARD_ALIAS_PATH)).toBe(false);
-		expect(POST_LOGIN_PATHS_NOT_PUBLIC).toContain(CLIENT_HOME_PATH);
+		expect(authBrowser.paths.isPreLoginPublic(CLIENT_DASHBOARD_PATH)).toBe(
+			false,
+		);
+		expect(
+			authBrowser.paths.isPreLoginPublic(CLIENT_DASHBOARD_ALIAS_PATH),
+		).toBe(false);
+		expect(POST_LOGIN_PATHS_NOT_PUBLIC).toContain(
+			authBrowser.paths.postLogin.clientHome,
+		);
 		expect(POST_LOGIN_PATHS_NOT_PUBLIC).toContain(CLIENT_DASHBOARD_ALIAS_PATH);
 	});
 });
@@ -83,9 +84,9 @@ describe("client gate aliases (PL-S6)", () => {
 	it("redirects /client/login to AUTH_LOGIN_PATH without a second auth UI", () => {
 		const source = readFileSync(gateLoginPage, "utf8");
 		expect(source).toContain("redirect(");
-		expect(source).toContain("AUTH_LOGIN_PATH");
-		expect(AUTH_LOGIN_PATH).toBe("/auth/login");
-		expect(CLIENT_GATE_PATHS).not.toContain(AUTH_LOGIN_PATH);
+		expect(source).toContain("authServer.paths.login");
+		expect(authBrowser.paths.login).toBe("/auth/login");
+		expect(CLIENT_GATE_PATHS).not.toContain(authBrowser.paths.login);
 		expect(source).not.toMatch(/AuthView|NeonAuth|sign-in-form|login-form/i);
 		for (const marker of FORBIDDEN_GATE_IMPORT_MARKERS) {
 			expect(source).not.toContain(marker);

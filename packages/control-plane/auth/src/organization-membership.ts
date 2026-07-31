@@ -1,10 +1,11 @@
 import { env } from "@afenda/env";
 import type { NeonAuth } from "@neondatabase/auth/next/server";
+import {
+	type NeonMemberOrganization,
+	normalizeNeonMemberOrganizations,
+} from "./neon-normalization";
 
-export interface MemberOrganization {
-	id: string;
-	slug: string;
-}
+export type MemberOrganization = NeonMemberOrganization;
 
 /**
  * Normalize Neon `organization.list()` payload into membership rows.
@@ -13,25 +14,7 @@ export interface MemberOrganization {
 export function normalizeMemberOrganizations(
 	data: unknown,
 ): MemberOrganization[] {
-	if (!Array.isArray(data)) {
-		return [];
-	}
-
-	return data.flatMap((organization) => {
-		if (
-			typeof organization !== "object" ||
-			organization === null ||
-			!("id" in organization) ||
-			!("slug" in organization) ||
-			typeof organization.id !== "string" ||
-			typeof organization.slug !== "string" ||
-			organization.id.length === 0
-		) {
-			return [];
-		}
-
-		return [{ id: organization.id, slug: organization.slug }];
-	});
+	return normalizeNeonMemberOrganizations(data);
 }
 
 /**

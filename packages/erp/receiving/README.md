@@ -71,7 +71,7 @@ Living consumers are `apps/web` server adapters when wired by the composition ro
 
 ## Operations
 
-Emit metrics using constants from `@afenda/receiving` (`RECEIVING_METRIC_*`) at the Action boundary after `Result`.
+Metric names and labels are not receiving exports. Application composition may report approved facts only through the canonical `@afenda/metrics` capability.
 
 ### Runbook scenarios
 

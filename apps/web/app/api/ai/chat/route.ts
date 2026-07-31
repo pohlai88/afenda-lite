@@ -4,10 +4,10 @@ import {
 	classifyIntent,
 	type MachineModule,
 } from "@afenda/ai-the-machine";
-import { getApiSession } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import { errorResult } from "@afenda/errors";
-import { applyRateLimitHeaders } from "@afenda/http";
-import { checkRateLimit, toRateLimitFailure } from "@afenda/rate-limit";
+import { http } from "@afenda/http";
+import { rateLimit } from "@afenda/rate-limit";
 import {
 	canReachAiGateway,
 	createWebTheMachine,
@@ -59,24 +59,21 @@ function resolveModule(
  */
 export const POST = createPlatformRouteHandler(
 	async (request) => {
-		const session = await getApiSession();
+		const session = await authServer.session.getApi();
 		if (session === null) {
 			return jsonFailure(errorResult.fail("UNAUTHORIZED"));
 		}
 
-		const limit = await checkRateLimit({
+		const limit = await rateLimit.check({
 			bucket: "ai_chat",
-			key: session.userId,
+			identity: { userId: session.userId },
 		});
 		if (!limit.ok) {
-			const error = toRateLimitFailure(limit);
+			const error = rateLimit.project.failure(limit);
 			const response = jsonFailure(error);
-			if (limit.reason === "rate_limited") {
-				applyRateLimitHeaders(response.headers, {
-					limit: limit.quota.limit,
-					remaining: limit.quota.remaining,
-					resetEpochMs: limit.quota.resetEpochMs,
-				});
+			const quota = rateLimit.project.quota(limit);
+			if (quota !== undefined) {
+				http.headers.applyRateLimit(response.headers, quota);
 			}
 			return response;
 		}
@@ -120,11 +117,10 @@ export const POST = createPlatformRouteHandler(
 			context,
 		});
 
-		applyRateLimitHeaders(response.headers, {
-			limit: limit.quota.limit,
-			remaining: limit.quota.remaining,
-			resetEpochMs: limit.quota.resetEpochMs,
-		});
+		const quota = rateLimit.project.quota(limit);
+		if (quota !== undefined) {
+			http.headers.applyRateLimit(response.headers, quota);
+		}
 		return response;
 	},
 	{

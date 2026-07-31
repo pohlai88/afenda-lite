@@ -82,10 +82,10 @@ describe("@afenda/web Neon Auth SDK boundary (N5)", () => {
 		const routePath = path.join(webRoot, bffRouteRelative);
 		const source = readFileSync(routePath, "utf-8");
 		expect(source).toMatch(
-			/import\s*\{\s*createAuthApiHandlers\s*\}\s*from\s*["']@afenda\/auth["']/,
+			/import\s*\{\s*authServer\s*\}\s*from\s*["']@afenda\/auth["']/,
 		);
 		expect(source).toMatch(
-			/export\s+const\s*\{\s*GET\s*,\s*POST\s*\}\s*=\s*createAuthApiHandlers\s*\(\s*\)/,
+			/export\s+const\s*\{\s*GET\s*,\s*POST\s*\}\s*=\s*authServer\.api\.createHandlers\s*\(\s*\)/,
 		);
 	});
 });

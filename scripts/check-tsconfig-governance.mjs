@@ -2,13 +2,6 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-const APPROVED_PRESETS = new Set([
-	"@afenda/config/tsconfig/base.json",
-	"@afenda/config/tsconfig/node-library.json",
-	"@afenda/config/tsconfig/react-library.json",
-	"@afenda/config/tsconfig/nextjs.json",
-]);
-
 const CENTRAL_OPTIONS = new Set([
 	"target",
 	"module",
@@ -58,6 +51,34 @@ function readJson(file, errors) {
 	}
 }
 
+function loadApprovedPresets(root, errors) {
+	const packageFile = join(root, "packages/foundation/config/package.json");
+	const packageJson = readJson(packageFile, errors);
+	const approved = new Set();
+	for (const [exportPath, target] of Object.entries(
+		packageJson?.exports ?? {},
+	)) {
+		if (
+			!(exportPath.startsWith("./tsconfig/") && exportPath.endsWith(".json"))
+		) {
+			continue;
+		}
+		if (target !== exportPath) {
+			errors.push(
+				`packages/foundation/config/package.json: export ${exportPath} must target itself`,
+			);
+			continue;
+		}
+		approved.add(`@afenda/config/${exportPath.slice(2)}`);
+	}
+	if (approved.size === 0) {
+		errors.push(
+			"packages/foundation/config/package.json: no TypeScript profiles are exported",
+		);
+	}
+	return approved;
+}
+
 function listTsconfigs(root) {
 	const files = [];
 	function walk(directory) {
@@ -95,10 +116,11 @@ function resolveRelativeExtends(configFile, extendsValue) {
 function findApprovedPreset(
 	configFile,
 	extendsValue,
+	approvedPresets,
 	errors,
 	seen = new Set(),
 ) {
-	if (APPROVED_PRESETS.has(extendsValue)) {
+	if (approvedPresets.has(extendsValue)) {
 		return extendsValue;
 	}
 	if (!extendsValue.startsWith(".")) {
@@ -117,7 +139,13 @@ function findApprovedPreset(
 	if (!parent || typeof parent.extends !== "string") {
 		return;
 	}
-	return findApprovedPreset(parentFile, parent.extends, errors, seen);
+	return findApprovedPreset(
+		parentFile,
+		parent.extends,
+		approvedPresets,
+		errors,
+		seen,
+	);
 }
 
 function sameJsonValue(actual, expected) {
@@ -144,6 +172,7 @@ function checkPreset(root, relativeFile, expected, errors) {
 
 export function checkTsconfigGovernance(root) {
 	const errors = [];
+	const approvedPresets = loadApprovedPresets(root, errors);
 	checkPreset(
 		root,
 		`${PRESET_DIRECTORY}/base.json`,
@@ -215,7 +244,12 @@ export function checkTsconfigGovernance(root) {
 			);
 			continue;
 		}
-		const preset = findApprovedPreset(file, config.extends, errors);
+		const preset = findApprovedPreset(
+			file,
+			config.extends,
+			approvedPresets,
+			errors,
+		);
 		if (!preset) {
 			errors.push(
 				`${relativeFile}: extends chain must resolve to an approved @afenda/config preset`,
@@ -230,16 +264,6 @@ export function checkTsconfigGovernance(root) {
 		}
 	}
 
-	const packageFile = join(root, "packages/foundation/config/package.json");
-	const packageJson = readJson(packageFile, errors);
-	for (const preset of APPROVED_PRESETS) {
-		const exportPath = `./${preset.slice("@afenda/config/".length)}`;
-		if (packageJson?.exports?.[exportPath] !== exportPath) {
-			errors.push(
-				`packages/foundation/config/package.json: missing export ${exportPath}`,
-			);
-		}
-	}
 	return errors;
 }
 

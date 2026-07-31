@@ -295,12 +295,12 @@ export async function mergeParties(
 	await syncMasterRootProjection(
 		MASTER_SEARCH_ENTITY.party,
 		result.data.survivor,
-		options.searchStore,
+		options.searchCapability,
 	);
 	await syncMasterRootProjection(
 		MASTER_SEARCH_ENTITY.party,
 		result.data.merged,
-		options.searchStore,
+		options.searchCapability,
 	);
 
 	return result;

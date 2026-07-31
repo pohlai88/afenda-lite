@@ -1,5 +1,5 @@
 import { errorResult, type Result } from "@afenda/errors";
-
+import { normalizeSearchQuery } from "./normalization";
 import { resolveSearchStore } from "./resolve-store";
 import { searchQueryOptionsSchema } from "./schemas";
 import type { SearchStore } from "./store";
@@ -20,5 +20,5 @@ export function searchDocuments(
 			}),
 		);
 	}
-	return resolveSearchStore(store).search(parsed.data);
+	return resolveSearchStore(store).search(normalizeSearchQuery(parsed.data));
 }

@@ -25,13 +25,13 @@ Path: `@afenda/http` (`packages/runtime/http` — `CORRELATION_HEADER` · `resol
 
 ## Structured product logs
 
-`@afenda/logger` — Pino on Node; `@afenda/logger/edge` for `proxy.ts`. Closed `logProductEvent` allowlist (`service: "afenda-web"` default).
+`@afenda/logger` — one `logger.event` capability with Pino on Node and an isolated `@afenda/logger/edge` console projection (`service: "afenda-web"` default). Both projections derive fields and redaction from the same canonical policy.
 
 | Allowed fields | Forbidden |
 |----------------|-----------|
-| `level` · `event` · `correlationId` · optional `orgId` · `actorUserId` · `path` · `code` | Secrets · tokens · SQL · stacks · full request bodies |
+| `level` · `event` · `correlationId` · optional `orgId` · `actorUserId` · `path` · `method` · `module` · `code` | Secrets · tokens · SQL · stacks · full request bodies · open metadata |
 
-Paths: `packages/runtime/logger` · web re-export `modules/platform/observability/product-log.ts` · edge import in `proxy.ts`.
+Paths: `packages/runtime/logger` · direct package consumers in Actions/auth · edge import in `proxy.ts`.
 
 ---
 
@@ -50,9 +50,9 @@ Runtime SSOT: `@afenda/admin/health` (re-exported via `modules/platform/domain/h
 
 | Item | Disk |
 |------|------|
-| Package | `@afenda/metrics` — registry · HTTP/DB/cache instruments · `renderPrometheusText` |
+| Package | `@afenda/metrics` — private registry/names/labels · root `metrics.record` and `metrics.exposition` capabilities |
 | Scrape | `GET /api/metrics` — bearer `METRICS_SCRAPE_TOKEN` (fail closed when unset → **404**) |
-| HTTP record | `createPlatformRouteHandler({ routeTemplate })` → `recordHttpRequest` |
+| HTTP record | `createPlatformRouteHandler({ routeTemplate })` → `metrics.record.http` |
 | Not this | `@afenda/http` `Server-Timing` (per-response header) · vendor APM / OTEL |
 
 DNA absorb/reject: [metrics-dna.md](metrics-dna.md).
@@ -73,7 +73,7 @@ Filter by `correlationId` from Action failure `details` or response header.
 
 ### Rate-limited responses (429)
 
-`@afenda/rate-limit` denials map via `toRateLimitAppError` → `RATE_LIMITED` / `SERVICE_UNAVAILABLE` (+ `Retry-After` on Route Handlers). Allowed and rate-limited BFF responses also stamp `X-RateLimit-Limit` / `Remaining` / `Reset` from the store quota. Living surfaces: auth BFF POST (`auth_bff_post`) · Path A `signInAction` (`auth_sign_in`, key `IP:email`). Limited paths log allowlisted fields only: `event` · `correlationId` · `path` · `code`. Store: Upstash when configured; process memory for non-production without keys; store throws fail closed as unavailable.
+`@afenda/rate-limit` returns opaque decisions. Consumers request canonical failure, quota, and diagnostics through `rateLimit.project`; `@afenda/errors` supplies `RATE_LIMITED` / `SERVICE_UNAVAILABLE` and `Retry-After`, while `@afenda/http` serializes `X-RateLimit-*`. Living surfaces are auth BFF POST, Path A sign-in/dev-login, and authenticated AI chat. Keys, limits, windows, reset bounds, and Upstash normalization remain private to the package.
 
 Health RHs and auth BFF also emit `Server-Timing` (`health_*` / `auth_bff` metrics) via `@afenda/http` — not a second correlation header.
 

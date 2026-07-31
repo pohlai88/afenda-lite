@@ -13,7 +13,7 @@ and exposes its own durable surface.
 
 | Package | Semantic responsibility | Consumer surface |
 |---------|-------------------------|------------------|
-| [`config`](./config/README.md) | Shared Biome and TypeScript bases | JSON export paths from `@afenda/config` |
+| [`config`](./config/README.md) | Canonical Biome and TypeScript profile registry | Explicit JSON `extends` paths from `@afenda/config` |
 | [`env`](./env/README.md) | Typed product/docs environment contracts and Neon posture | `@afenda/env` · `@afenda/env/docs` |
 | [`errors`](./errors/README.md) | Canonical failures, results, ingress, projections, wire, and OpenAPI | Root-only `@afenda/errors` capabilities |
 | [`testing`](./testing/README.md) | Test lanes, runner projections, and database evidence | Root capabilities plus two setup entrypoints |

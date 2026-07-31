@@ -1,4 +1,4 @@
-import { getSession } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 
 import { forbidPermissionAccess } from "@/features/auth/require-permission";
 import type { HrDisplayPreferences } from "@/features/human-resources/display-preferences";
@@ -18,7 +18,7 @@ export async function SelfServiceWorkspaceServer({
 	page: number;
 	preferences: HrDisplayPreferences;
 }) {
-	const session = await getSession();
+	const session = await authServer.session.get();
 	const permissions = await resolveSelfServicePermissions(session);
 	if (!hasSelfServiceCapability(permissions)) {
 		forbidPermissionAccess();

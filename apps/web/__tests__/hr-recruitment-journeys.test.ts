@@ -13,9 +13,11 @@ const mocks = vi.hoisted(() => ({
 	hireFromAcceptedOffer: vi.fn(),
 }));
 
-vi.mock("@afenda/auth", () => ({ requireRole: mocks.requireRole }));
+vi.mock("@afenda/auth", () => ({
+	authServer: { session: { requireRole: mocks.requireRole } },
+}));
 vi.mock("@afenda/http", () => ({
-	createCorrelationId: () => "corr-recruitment",
+	http: { correlation: { create: () => "corr-recruitment" } },
 }));
 vi.mock("@/app/actions/permission-gate", () => ({
 	forbidUnlessPermission: mocks.forbidUnlessPermission,

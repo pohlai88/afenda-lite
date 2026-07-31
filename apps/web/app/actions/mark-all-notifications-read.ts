@@ -1,7 +1,7 @@
 "use server";
 
 import type { Result as ActionResult } from "@afenda/errors";
-import { markAllNotificationsRead } from "@afenda/notifications";
+import { notifications } from "@afenda/notifications";
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runMemberSessionAction } from "@/app/actions/run-member-session-action";
 
@@ -25,7 +25,7 @@ export async function markAllNotificationsReadAction(
 		safeMessage:
 			"Could not mark notifications read. Try again or contact an admin.",
 		execute: async (session) => {
-			const result = await markAllNotificationsRead({
+			const result = await notifications.inbox.markAllRead({
 				organizationId: session.orgId,
 				userId: session.userId,
 			});

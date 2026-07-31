@@ -16,6 +16,7 @@
 	"scripts": {
 		"lint": "biome check .",
 		"typecheck": "tsc --noEmit -p tsconfig.json",
+		"typecheck:contract": "tsc --noEmit -p tsconfig.contract.json",
 		"test": "vitest run --config ../../../testing/vitest.unit.config.ts --project logger"
 	},
 	"dependencies": {

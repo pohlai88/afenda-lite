@@ -1,4 +1,4 @@
-import type { SearchStore } from "@afenda/search";
+import type { SearchCapability } from "@afenda/search";
 
 import type { MasterAuthorizationPort } from "./authorization";
 import { createUnavailableDependencyInspector } from "./capabilities/core-organization-masters/dependency";
@@ -21,7 +21,7 @@ export interface MasterCommandOptions {
 	organizationDimensionStore?: OrganizationDimensionStore | undefined;
 	ports?: MutationPorts | undefined;
 	/** Optional derived search store for projectors (defaults to Drizzle). */
-	searchStore?: SearchStore | undefined;
+	searchCapability?: SearchCapability | undefined;
 	store?: MasterDataStore | undefined;
 }
 

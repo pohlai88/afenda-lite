@@ -1,4 +1,4 @@
-import { AUTH_SIGN_OUT_PATH, JOIN_PATH } from "@afenda/auth/client";
+import { authBrowser } from "@afenda/auth/client";
 import { Button } from "@afenda/ui-system";
 import Link from "next/link";
 
@@ -15,10 +15,10 @@ export function UnresolvedOrganizationShell() {
 			footer={
 				<div className="mt-2 flex flex-wrap items-center justify-center gap-3">
 					<Button asChild variant="outline">
-						<Link href={JOIN_PATH}>Have an invitation?</Link>
+						<Link href={authBrowser.paths.join.path}>Have an invitation?</Link>
 					</Button>
 					<Button asChild variant="ghost">
-						<Link href={AUTH_SIGN_OUT_PATH}>Sign out</Link>
+						<Link href={authBrowser.paths.signOut}>Sign out</Link>
 					</Button>
 				</div>
 			}

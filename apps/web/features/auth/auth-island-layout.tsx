@@ -1,4 +1,4 @@
-import { resolveAuthUiOrigin } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import type { ReactNode } from "react";
 import { Suspense } from "react";
 
@@ -16,7 +16,7 @@ import { MAIN_CONTENT_ID } from "@/features/auth/main-content";
  * post-login callback allowlist.
  */
 export async function AuthIslandLayout({ children }: { children: ReactNode }) {
-	const appOrigin = await resolveAuthUiOrigin();
+	const appOrigin = await authServer.ui.resolveOrigin();
 	return (
 		<main className="min-h-dvh" id={MAIN_CONTENT_ID} tabIndex={-1}>
 			<Suspense fallback={null}>

@@ -1,4 +1,4 @@
-import { getSession, requireRole } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import { listDeliveries } from "@afenda/fulfillment";
 import { listItems, listWarehouses } from "@afenda/master-data";
 import {
@@ -36,7 +36,9 @@ interface FulfillmentShellProps {
 /** Fulfillment console — RSC reads via `@afenda/fulfillment`; mutations via Actions. */
 export async function FulfillmentShell({ surface }: FulfillmentShellProps) {
 	const session =
-		surface === "admin" ? await requireRole("operator") : await getSession();
+		surface === "admin"
+			? await authServer.session.requireRole("operator")
+			: await authServer.session.get();
 	await requirePermission(session, "fulfillment.delivery.read");
 	const canManage = (
 		await Promise.all([

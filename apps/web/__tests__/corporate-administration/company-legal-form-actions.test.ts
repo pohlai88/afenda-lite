@@ -30,12 +30,11 @@ const cacheMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@afenda/auth", () => ({
-	getSession: authMocks.getSession,
-	requireRole: vi.fn(),
+	authServer: { session: { get: authMocks.getSession, requireRole: vi.fn() } },
 }));
 
 vi.mock("@afenda/http", () => ({
-	createCorrelationId: () => "corr-ca-legal-form-action-test",
+	http: { correlation: { create: () => "corr-ca-legal-form-action-test" } },
 }));
 
 vi.mock("@/app/actions/permission-gate", () => ({

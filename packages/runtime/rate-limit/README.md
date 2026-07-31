@@ -1,91 +1,74 @@
 # `@afenda/rate-limit`
 
-Rank-1 Platform abuse limiter for Afenda-Lite: shared sliding-window checks for Neon Auth BFF POSTs and Path A credential sign-in. Outcomes map to `@afenda/errors` via `toRateLimitAppError` — this package does not own HTTP status lines, `NextResponse`, or Action envelopes.
-
-Use this package from `@afenda/auth` BFF handlers and `apps/web` credential Actions when a request must be allowed, delayed (`RATE_LIMITED` + `retryAfter`), or fail closed (`SERVICE_UNAVAILABLE` when Upstash is required but missing). Maintainers run lint / typecheck / Vitest via the filter scripts below (Node `24.x`, pnpm `≥10.33.4` from the repo root `engines`).
-
-Declaration and FFT product surfaces are removed from this checkout — no buckets for those modules.
+Canonical quota decision, key policy, bounded timing, and Upstash normalization capability.
 
 ## Consume
 
-Workspace dependency — import from the root barrel:
+Consumers submit bucket-specific identity facts. The package constructs and normalizes storage keys internally.
 
 ```ts
-import { checkRateLimit, toRateLimitAppError } from "@afenda/rate-limit";
+import { rateLimit } from "@afenda/rate-limit";
 
-const result = await checkRateLimit({
+const decision = await rateLimit.check({
   bucket: "auth_sign_in",
-  key: email,
+  identity: {
+    kind: "credentials",
+    ipAddress: "203.0.113.10",
+    email: "user@example.test",
+  },
 });
-if (!result.ok) {
-  throw toRateLimitAppError(result);
+
+if (!decision.ok) {
+  const failure = rateLimit.project.failure(decision);
+  const quota = rateLimit.project.quota(decision);
+  // Return failure through @afenda/errors; pass quota to @afenda/http when present.
 }
 ```
 
-`key` is an opaque composite identity (email, `org:user`, IP+path). Never log secrets. Empty/whitespace keys are treated as rate-limited (60s retry, `quota.limit = 0`).
+Decisions expose only `ok`. Quota state, retry timing, backend classification, and canonical failures are available only through `rateLimit.project`.
 
-Successful and `rate_limited` results include `quota: { limit, remaining, resetEpochMs }` for `X-RateLimit-*` attach via `@afenda/http` `applyRateLimitHeaders`. `unavailable` has no quota.
+## Permanent surface
 
-**Living consumers:** `@afenda/auth` (`auth_bff_post` on BFF POSTs — stamps RateLimit headers on Response); `apps/web` Path A sign-in Action (`auth_sign_in` keyed by email). Project the opaque failure through root `@afenda/errors` capabilities at the adapter — do not invent `{ success, data }` envelopes.
+| Capability | Role |
+|---|---|
+| `rateLimit.check(input)` | Apply the bucket’s canonical quota and key policy |
+| `rateLimit.project.failure(rejected)` | Produce `RATE_LIMITED` or `SERVICE_UNAVAILABLE` |
+| `rateLimit.project.quota(decision)` | Produce validated quota facts for `http.headers.applyRateLimit` |
+| `rateLimit.project.diagnostics(decision)` | Produce bounded operational classification |
+| `@afenda/rate-limit/testing` | Construct opaque decisions in consumer tests |
 
-## Store
+`@afenda/http` remains the sole serializer of `X-RateLimit-*` headers. `@afenda/errors` remains the sole owner of status, public error body, retryability, and `Retry-After`.
+
+## Canonical policies
+
+| Bucket | Limit | Identity facts |
+|---|---:|---|
+| `auth_bff_post` | 20 / 60 seconds | client IP and pathname |
+| `auth_sign_in` | 5 / 60 seconds | credentials IP/email or dev-login IP/role |
+| `ai_chat` | 20 / 60 seconds | authenticated user ID |
+
+Identity parts are trimmed, lowercased, length-bounded, and assigned canonical missing-value sentinels. Consumers never provide raw keys, limits, windows, prefixes, or retry timing.
+
+## Runtime policy
 
 | Runtime | Backend |
-|---------|---------|
-| `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` set | `@upstash/ratelimit` (shared across Vercel isolates) |
-| Non-production (`VERCEL_ENV` ≠ `production`), no Upstash | Process-local memory sliding window |
-| Vercel production (`VERCEL_ENV=production`), no Upstash | Fail closed (`unavailable` → `serviceUnavailable`) |
+|---|---|
+| Upstash credentials present | Shared Upstash sliding window |
+| Non-production without credentials | Process-local memory |
+| Production without credentials or failed store | Fail closed as `SERVICE_UNAVAILABLE` |
 
-Env keys via `@afenda/env` only. No foreign Redis clients outside Upstash REST.
+Upstash results are untrusted input. Remaining quota is clamped to the canonical limit, reset time is bounded to the authored window, malformed results fail closed, and retry seconds derive from the normalized reset.
 
-## Buckets
-
-| Bucket | Limit / window | Typical key |
-|--------|----------------|-------------|
-| `auth_bff_post` | 20 / 60s | `IP:pathname` |
-| `auth_sign_in` | 5 / 60s | `IP:email` (email lowercased; missing → `_invalid`) |
-
-Callers never pass limit/window — policy lives in `BUCKET_POLICIES`. Resolved store throws (Upstash/network): production → `unavailable` / `SERVICE_UNAVAILABLE` (fail closed); non-production → process-memory fallback.
-
-## Maintain
+## Verify
 
 ```bash
 pnpm --filter @afenda/rate-limit lint
 pnpm --filter @afenda/rate-limit typecheck
 pnpm --filter @afenda/rate-limit test
+pnpm check:rate-limit-boundary
+pnpm test:rate-limit-boundary
+pnpm --filter @afenda/auth typecheck
+pnpm --filter @afenda/auth test
 ```
 
-Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
-
-## Exports
-
-| Path | Role |
-|------|------|
-| `@afenda/rate-limit` | `checkRateLimit` · `toRateLimitAppError` · `BUCKET_POLICIES` / `bucketPolicy` · `RATE_LIMIT_BUCKETS` · `resolveRateLimitBackend` · `createMemoryRateLimitStore` · `RateLimitQuota` (+ types) |
-
-`createMemoryRateLimitStore` and `checkRateLimit(..., { store })` are for Vitest injection. `resetResolvedRateLimitBackend` clears the process cache between tests. Production callers omit `store` and use the resolved backend.
-
-## Ownership
-
-| Surface | Owner |
-|---------|-------|
-| Bucket policies · store resolve · `checkRateLimit` · `toRateLimitAppError` | `@afenda/rate-limit` |
-| `RATE_LIMITED` / `SERVICE_UNAVAILABLE` vocabulary + factories | [`@afenda/errors`](../../foundation/errors/README.md) |
-| Upstash URL/token schema | `@afenda/env` |
-| BFF POST limit call sites | `@afenda/auth` |
-| Path A sign-in Action + ActionResult mapping | `apps/web` |
-
-**Layer:** Rank-1 Platform (`@afenda/env` · `@afenda/errors` · Upstash). Must not import Surfaces or `apps/*`. See [docs-V2/monorepo](../../../docs-V2/monorepo/README.md).
-
-## Out of scope
-
-Do not add to this package: Next.js handlers, ActionResult envelopes, OpenAPI document ownership, foreign Redis SDKs, declaration/FFT buckets, UI/locale copy, or a second tenancy model (shared schema · organization-scoped rows only — never multi-DB / project-per-tenant isolation).
-
-## Authority
-
-| Topic | Link |
-|-------|------|
-| Auth / Neon Auth BFF · Path A sign-in | [docs-V2/auth](../../../docs-V2/auth/README.md) |
-| Error vocabulary (`rateLimited` · `serviceUnavailable`) | [`@afenda/errors`](../../foundation/errors/README.md) |
-| Package DAG | [docs-V2/monorepo](../../../docs-V2/monorepo/README.md) · [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
-| Agent checkout posture | [AGENTS.md](../../../AGENTS.md) |
+See [CONTRACT.md](./CONTRACT.md), [auth Scratch](../../../docs-V2/auth/README.md), and [monorepo layering](../../../docs-V2/monorepo/README.md).

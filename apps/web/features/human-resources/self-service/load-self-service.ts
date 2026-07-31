@@ -1,5 +1,5 @@
 // biome-ignore-all lint/style/noNestedTernary: Exhaustive status and tri-state view mappings remain explicit at their use sites.
-import { createCorrelationId } from "@afenda/http";
+import { http } from "@afenda/http";
 import {
 	getEmployeeComplianceSummary,
 	getEmployeeProfile,
@@ -37,7 +37,7 @@ export async function loadSelfServiceSnapshot(input: {
 	employeeId: HumanResourcesEmployeeId;
 	page: number;
 }): Promise<SelfServiceSnapshot> {
-	const correlationId = createCorrelationId();
+	const correlationId = http.correlation.create();
 	const today = new Date().toISOString().slice(0, 10);
 	const fromDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
 		.toISOString()

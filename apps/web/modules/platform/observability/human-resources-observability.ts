@@ -8,7 +8,7 @@ import {
 	type HrObservabilityPorts,
 } from "@afenda/human-resources";
 
-import { logProductEvent } from "@/modules/platform/observability/product-log";
+import { logger } from "@afenda/logger";
 
 export interface HrTelemetrySinkPort {
 	write: (input: {
@@ -25,7 +25,7 @@ function labelCode(values: Record<string, string>): string {
 export function createProductionHrObservabilityRecorder(
 	sink: HrTelemetrySinkPort = {
 		write(input) {
-			logProductEvent({
+			logger.event({
 				level: input.level,
 				event: input.event,
 				code: input.code,

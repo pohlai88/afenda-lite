@@ -26,11 +26,10 @@ const composition = vi.hoisted(() => ({
 }));
 
 vi.mock("@afenda/auth", () => ({
-	getSession: auth.getSession,
-	requireRole: vi.fn(),
+	authServer: { session: { get: auth.getSession, requireRole: vi.fn() } },
 }));
 vi.mock("@afenda/http", () => ({
-	createCorrelationId: () => "corr-ca-lifecycle-journey",
+	http: { correlation: { create: () => "corr-ca-lifecycle-journey" } },
 }));
 vi.mock("@/app/actions/permission-gate", () => ({
 	forbidUnlessPermission: permission.forbidUnlessPermission,

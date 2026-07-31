@@ -1,6 +1,4 @@
-/**
- * @afenda/metrics/testing - Test utilities
- * For test files only - not for product paths
- */
-
-export { resetDefaultMetricsRegistryForTests } from "./registry";
+export {
+	createMetricsTestCapability,
+	resetDefaultRuntimeForTests as resetMetricsForTests,
+} from "../capability";

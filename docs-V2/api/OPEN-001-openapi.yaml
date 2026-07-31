@@ -7,9 +7,9 @@ info:
   title: Afenda-Lite HTTP (api-now)
   version: 1.0.0
   description: "Machine OpenAPI for implemented Route Handlers only. Success JSON uses `{ data }`
-    (healthJson / apiData). Errors use APIErrorBody (no data wrapper). Neon Auth `/api/auth/*` is
-    excluded. Contract-only REST lives in REST-001 until handlers exist. One-version rule: no
-    `/api/v1`."
+    (healthJson / apiData). Error responses derive from the canonical @afenda/errors registry. Neon
+    Auth `/api/auth/*` is excluded. Contract-only REST lives in REST-001 until handlers exist.
+    One-version rule: no `/api/v1`."
 servers:
   - url: https://afenda-lite.vercel.app
     description: Production
@@ -33,39 +33,6 @@ components:
       scheme: bearer
       description: Bearer token matching server env METRICS_SCRAPE_TOKEN. Unset token → 404 (fail closed).
   schemas:
-    APIErrorBody:
-      type: object
-      properties:
-        error:
-          type: object
-          properties:
-            code:
-              type: string
-              enum:
-                - BAD_REQUEST
-                - UNAUTHORIZED
-                - FORBIDDEN
-                - NOT_FOUND
-                - CONFLICT
-                - CONCURRENCY_CONFLICT
-                - VALIDATION_ERROR
-                - RATE_LIMITED
-                - INTERNAL_ERROR
-                - SERVICE_UNAVAILABLE
-            messageKey:
-              type: string
-              minLength: 1
-            message:
-              type: string
-              minLength: 1
-            details:
-              nullable: true
-          required:
-            - code
-            - messageKey
-            - message
-      required:
-        - error
     LivenessResponse:
       type: object
       properties:
@@ -414,9 +381,65 @@ paths:
                 type: string
                 description: Prometheus metrics body
         "401":
-          description: Missing or invalid bearer token
+          description: Authentication is required
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  error:
+                    type: object
+                    additionalProperties: false
+                    properties:
+                      code:
+                        type: string
+                        enum:
+                          - UNAUTHORIZED
+                      message:
+                        type: string
+                        enum:
+                          - Authentication is required
+                      messageKey:
+                        type: string
+                        enum:
+                          - errors.unauthorized
+                    required:
+                      - code
+                      - message
+                      - messageKey
+                required:
+                  - error
         "404":
-          description: Scrape disabled — METRICS_SCRAPE_TOKEN unset
+          description: The requested resource was not found
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  error:
+                    type: object
+                    additionalProperties: false
+                    properties:
+                      code:
+                        type: string
+                        enum:
+                          - NOT_FOUND
+                      message:
+                        type: string
+                        maxLength: 500
+                        minLength: 1
+                      messageKey:
+                        type: string
+                        enum:
+                          - errors.notFound
+                    required:
+                      - code
+                      - message
+                      - messageKey
+                required:
+                  - error
       operationId: getMetricsScrape
       x-afenda-status: api-now
 x-afenda-document:

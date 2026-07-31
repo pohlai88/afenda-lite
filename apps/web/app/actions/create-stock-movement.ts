@@ -1,16 +1,16 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { requireRole } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import { type Result as ActionResult, errorResult } from "@afenda/errors";
-import { createCorrelationId } from "@afenda/http";
+import { http } from "@afenda/http";
 import { createStockMovement, type StockMovement } from "@afenda/inventory";
+import { logger } from "@afenda/logger";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { revalidateInventoryPaths } from "@/app/actions/revalidate-inventory-paths";
 import { createInventoryCommandOptions } from "@/lib/erp/inventory-command-options";
-import { logProductEvent } from "@/modules/platform/observability/product-log";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export interface CreateStockMovementActionData {
@@ -73,8 +73,8 @@ export async function createStockMovementAction(
 	_prev: CreateStockMovementActionState,
 	formData: FormData,
 ): Promise<CreateStockMovementActionState> {
-	const correlationId = createCorrelationId();
-	const session = await requireRole("operator");
+	const correlationId = http.correlation.create();
+	const session = await authServer.session.requireRole("operator");
 
 	try {
 		const parsed = parseSchema(createStockMovementFormSchema, {
@@ -130,7 +130,7 @@ export async function createStockMovementAction(
 		revalidateInventoryPaths();
 		return { ok: true, data: { movement: mapped.data } };
 	} catch {
-		logProductEvent({
+		logger.event({
 			level: "error",
 			event: "action.internal_error",
 			correlationId,

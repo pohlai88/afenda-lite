@@ -9,9 +9,11 @@ const eventMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@afenda/events", () => ({
-	createEventPublisher: () => ({
-		publish: eventMocks.publish,
-	}),
+	events: {
+		publisher: {
+			create: () => ({ publish: eventMocks.publish }),
+		},
+	},
 }));
 
 import { recordOrganizationDeletedEvent } from "../modules/platform/domain/record-organization-deleted-event";

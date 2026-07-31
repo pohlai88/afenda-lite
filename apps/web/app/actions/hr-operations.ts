@@ -1,7 +1,7 @@
 "use server";
 
 import { type Result as ActionResult, errorResult } from "@afenda/errors";
-import { queryDomainEvents, retryFailedDomainEvent } from "@afenda/events";
+import { events } from "@afenda/events";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { runHrIntegrationOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
@@ -31,7 +31,7 @@ export async function retryFailedHrEventAction(
 				});
 			}
 
-			const target = await queryDomainEvents({
+			const target = await events.query.page({
 				organizationId: session.orgId,
 				id: parsed.data.eventId,
 				sourceModule: "human-resources",
@@ -45,7 +45,7 @@ export async function retryFailedHrEventAction(
 				});
 			}
 
-			const retried = await retryFailedDomainEvent({
+			const retried = await events.query.retryFailed({
 				organizationId: session.orgId,
 				id: parsed.data.eventId,
 			});

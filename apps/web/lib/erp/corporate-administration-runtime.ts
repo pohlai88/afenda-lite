@@ -13,7 +13,7 @@ import {
 	createDrizzleCorporateAdministrationTransactionPort,
 } from "@afenda/corporate-administration/adapters/drizzle";
 import {
-	createPendingDomainEventAppender,
+	events,
 	type PendingDomainEventTransactionExecutor,
 } from "@afenda/events";
 
@@ -51,7 +51,7 @@ export function createCorporateAdministrationAppRuntime(
 			createAuditId: dependencies.createAuditId,
 		}),
 		outbox: createDrizzleCorporateAdministrationOutboxPort({
-			appender: createPendingDomainEventAppender({
+			appender: events.outbox.createAppender({
 				executeTransaction: dependencies.executeOutboxTransaction,
 			}),
 		}),

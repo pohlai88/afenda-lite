@@ -1,7 +1,7 @@
 // biome-ignore-all lint/performance/noJsxPropsBind: The enabled React Compiler stabilizes JSX callback props.
 "use client";
 
-import { JOIN_PATH } from "@afenda/auth/client";
+import { authBrowser } from "@afenda/auth/client";
 import { Button, Spinner } from "@afenda/ui-system";
 import {
 	AcceptInvitationCard,
@@ -19,7 +19,7 @@ type InviteeAuthMode = "sign-up" | "sign-in";
 
 function buildJoinReturnPath(invitationId: string): string {
 	const query = new URLSearchParams({ invitationId });
-	return `${JOIN_PATH}?${query.toString()}`;
+	return `${authBrowser.paths.join.path}?${query.toString()}`;
 }
 
 /**
@@ -85,7 +85,9 @@ export function JoinShell() {
 	const searchParams = useSearchParams();
 	const invitationId = searchParams.get("invitationId")?.trim() ?? "";
 	const joinReturnPath =
-		invitationId.length > 0 ? buildJoinReturnPath(invitationId) : JOIN_PATH;
+		invitationId.length > 0
+			? buildJoinReturnPath(invitationId)
+			: authBrowser.paths.join.path;
 
 	return (
 		<>

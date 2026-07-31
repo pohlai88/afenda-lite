@@ -116,3 +116,40 @@ export const deleteRbacAuditInputSchema = z.object({
 });
 
 export type DeleteRbacAuditInput = z.infer<typeof deleteRbacAuditInputSchema>;
+
+const auditAttributionSchema = z.object({
+	actorUserId: z.string().trim().min(1),
+	correlationId: z.string().trim().min(1),
+	ipAddress: z
+		.string()
+		.trim()
+		.min(1)
+		.max(MAX_RBAC_AUDIT_IP_ADDRESS_LENGTH)
+		.optional(),
+	userAgent: z
+		.string()
+		.trim()
+		.min(1)
+		.max(MAX_RBAC_AUDIT_USER_AGENT_LENGTH)
+		.optional(),
+});
+
+export const assignRoleWithAuditCommandSchema = auditAttributionSchema.extend({
+	grantedBy: z.string().trim().min(1),
+	orgId: z.string().trim().min(1),
+	roleId: z.string().trim().min(1),
+	userId: z.string().trim().min(1),
+});
+
+export type AssignRoleWithAuditCommand = z.infer<
+	typeof assignRoleWithAuditCommandSchema
+>;
+
+export const revokeRoleWithAuditCommandSchema = auditAttributionSchema.extend({
+	assignmentId: z.string().trim().min(1),
+	orgId: z.string().trim().min(1),
+});
+
+export type RevokeRoleWithAuditCommand = z.infer<
+	typeof revokeRoleWithAuditCommandSchema
+>;

@@ -1,4 +1,4 @@
-import { getSession } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import { Suspense } from "react";
 
 import { requireAnyPermission } from "@/features/auth/require-permission";
@@ -31,7 +31,7 @@ export default async function ManagerHumanResourcesPage({
 	searchParams,
 }: PageProps) {
 	const params = await searchParams;
-	const session = await getSession();
+	const session = await authServer.session.get();
 	await requireAnyPermission(session, MANAGER_WORKSPACE_PERMISSIONS);
 	const page = parseHrPage(params.page);
 	const preferences = parseHrDisplayPreferences(params);

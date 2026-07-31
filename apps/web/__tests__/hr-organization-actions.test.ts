@@ -27,7 +27,7 @@ const hrOrganizationMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@afenda/auth", () => ({
-	requireRole: authMocks.requireRole,
+	authServer: { session: { requireRole: authMocks.requireRole } },
 }));
 
 vi.mock("@/app/actions/permission-gate", () => ({
@@ -35,7 +35,7 @@ vi.mock("@/app/actions/permission-gate", () => ({
 }));
 
 vi.mock("@afenda/http", () => ({
-	createCorrelationId: () => "corr-hr-organization-test",
+	http: { correlation: { create: () => "corr-hr-organization-test" } },
 }));
 
 vi.mock("@afenda/human-resources", async (importOriginal) => {

@@ -1,6 +1,5 @@
-import { listOrganizations } from "@afenda/admin";
-import { getOrganizationUsageMetrics } from "@afenda/admin/usage";
-import { inviteableRolesFor, JOIN_PATH, requireRole } from "@afenda/auth";
+import { admin } from "@afenda/admin";
+import { authServer } from "@afenda/auth";
 import {
 	Card,
 	CardContent,
@@ -121,7 +120,7 @@ async function loadMemberDirectory(
  * (same pattern as roles/assignments). Mutations use Server Actions.
  */
 async function loadOrgList(): Promise<OrgListLoadState> {
-	const result = await listOrganizations();
+	const result = await admin.organizations.list();
 	if (!result.ok) {
 		return {
 			status: "unavailable",
@@ -147,7 +146,7 @@ async function loadUsage(
 	orgId: string,
 	period: string,
 ): Promise<UsageLoadState> {
-	const result = await getOrganizationUsageMetrics({ orgId, period });
+	const result = await admin.usage.get({ orgId, period });
 	if (!result.ok) {
 		return { status: "unavailable", message: ORG_USAGE_UNAVAILABLE_MESSAGE };
 	}
@@ -168,7 +167,7 @@ async function loadUsage(
  * (member-directory Combobox · Sheet), revoke, audit View Dialog, MetricGrid.
  */
 export async function OrgAdminShell() {
-	const session = await requireRole("operator");
+	const session = await authServer.session.requireRole("operator");
 	const { orgId, role } = session;
 	const [canManageRoles, canInvite] = await Promise.all([
 		sessionHasPermission(session, "org.roles.manage"),
@@ -195,7 +194,7 @@ export async function OrgAdminShell() {
 			loadUsage(orgId, usagePeriod),
 		]);
 
-	const inviteableRoles = canInvite ? inviteableRolesFor(role) : [];
+	const inviteableRoles = canInvite ? authServer.roles.inviteableFor(role) : [];
 	const roleNameById = new Map(roles.map((item) => [item.id, item.name]));
 	const activeAssignments = assignments.filter((item) => item.active);
 
@@ -245,13 +244,13 @@ export async function OrgAdminShell() {
 						<CardDescription>
 							Neon Auth delivers the invitation email; success also writes an
 							org-scoped RBAC audit row. Invitees open{" "}
-							<Code>{JOIN_PATH}?invitationId=…</Code>.
+							<Code>{authServer.paths.join.path}?invitationId=…</Code>.
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
 						<InviteMemberForm
 							inviteableRoles={inviteableRoles}
-							joinPath={JOIN_PATH}
+							joinPath={authServer.paths.join.path}
 						/>
 					</CardContent>
 				</Card>

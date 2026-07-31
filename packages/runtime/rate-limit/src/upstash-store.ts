@@ -1,30 +1,13 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
-import { BUCKET_POLICIES } from "./buckets";
-import { retryAfterSecondsFromReset } from "./retry-after";
-import type {
-	RateLimitBucket,
-	RateLimitHitResult,
-	RateLimitQuota,
-	RateLimitStore,
-} from "./types";
+import { normalizeUpstashResult } from "./normalization";
+import { policyFor, type RateLimitBucket } from "./semantic-registry";
+import type { RateLimitStore, StoreHitResult } from "./types";
 
 function windowSeconds(windowMs: number): `${number} s` {
 	const seconds = Math.max(1, Math.ceil(windowMs / 1000));
 	return `${seconds} s`;
-}
-
-function quotaFromUpstash(result: {
-	limit: number;
-	remaining: number;
-	reset: number;
-}): RateLimitQuota {
-	return {
-		limit: result.limit,
-		remaining: Math.max(0, result.remaining),
-		resetEpochMs: result.reset,
-	};
 }
 
 export function createUpstashRateLimitStore(input: {
@@ -43,7 +26,7 @@ export function createUpstashRateLimitStore(input: {
 		if (existing) {
 			return existing;
 		}
-		const policy = BUCKET_POLICIES[bucket];
+		const policy = policyFor(bucket);
 		const created = new Ratelimit({
 			redis,
 			limiter: Ratelimit.slidingWindow(
@@ -57,17 +40,13 @@ export function createUpstashRateLimitStore(input: {
 	}
 
 	return {
-		async hit(hitInput): Promise<RateLimitHitResult> {
+		async hit(hitInput): Promise<StoreHitResult> {
 			const result = await limiterFor(hitInput.bucket).limit(hitInput.key);
-			const quota = quotaFromUpstash(result);
-			if (result.success) {
-				return { allowed: true, quota };
-			}
-			return {
-				allowed: false,
-				retryAfterSeconds: retryAfterSecondsFromReset(result.reset, Date.now()),
-				quota,
-			};
+			return normalizeUpstashResult(
+				policyFor(hitInput.bucket),
+				result,
+				Date.now(),
+			);
 		},
 	};
 }

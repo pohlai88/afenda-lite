@@ -1,4 +1,4 @@
-import { getSession, requireRole } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import {
 	listItems,
 	listParties,
@@ -37,7 +37,9 @@ interface PurchasingShellProps {
  */
 export async function PurchasingShell({ surface }: PurchasingShellProps) {
 	const session =
-		surface === "admin" ? await requireRole("operator") : await getSession();
+		surface === "admin"
+			? await authServer.session.requireRole("operator")
+			: await authServer.session.get();
 
 	await requirePermission(session, "purchasing.order.read");
 	const [canCreate, canUpdate, canPost, canCancel, canClose] =

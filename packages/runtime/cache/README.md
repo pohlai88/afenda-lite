@@ -1,43 +1,42 @@
 # `@afenda/cache`
 
-Rank-1 Platform multi-layer cache for Afenda-Lite: process L1 plus Upstash Redis L2 (REST). Shares the Upstash instance with `@afenda/rate-limit` under a dedicated key prefix — never `FLUSHDB`. Outcomes map unavailable backends to `@afenda/errors` via `toCacheAppError`.
-
-Use this package from Platform / app server code when a value must be cached across Vercel isolates or deduplicated in-process. Maintainers run lint / typecheck / Vitest via the filter scripts below (Node `24.x`, pnpm `≥10.33.4` from the repo root `engines`).
+Canonical L1/L2 cache policy for Afenda-Lite. The package owns semantic namespaces, opaque keys, TTLs, JSON round-tripping, invalidation tags, backend selection, the private Upstash prefix, and cache failure normalization.
 
 ## Consume
 
-Workspace dependency — import from the root barrel:
+Use the root `cache` capability. Consumers provide identity facts; they do not build keys, choose TTLs, select stores, or serialize values.
 
 ```ts
-import {
-  createCacheManager,
-  CacheKeys,
-  CacheTTL,
-  toCacheAppError,
-} from "@afenda/cache";
+import { cache } from "@afenda/cache";
 
-const cache = createCacheManager();
-const key = CacheKeys.orgConfig(organizationId);
-const config = await cache.getOrSet(
-  key,
-  () => loadOrgConfig(organizationId),
-  { ttl: CacheTTL.LONG, tags: [`org:${organizationId}`] },
-);
+const key = cache.key.organizationConfig({ organizationId });
+const config = await cache.getOrLoad(key, () => loadOrganizationConfig(organizationId));
+
+await cache.invalidate.organization({ organizationId });
 ```
 
-Cached values must be JSON-serializable (L2 round-trips through Upstash JSON). Never log secrets or tokens from cache payloads.
+Available key intents are organization configuration, organization features, user sessions, user permissions, and the platform permission catalog. Adding a new cache intent requires one registry entry and a named key capability—not a consumer-owned prefix.
 
-**Living consumers:** none required for this package scaffold — wire from Platform modules when a slice needs shared cache.
+## Runtime policy
 
-## Store
+| Environment | Behavior |
+|---|---|
+| Upstash credentials present | Process L1 plus Upstash Redis L2 |
+| Non-production without Upstash | Explicit L1-only operation |
+| Production without Upstash | Fail closed as canonical `SERVICE_UNAVAILABLE` |
 
-| Runtime | Backend |
-|---------|---------|
-| `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` set | L1 + `@upstash/redis` L2 (prefix `@afenda/cache:v1:`) |
-| Non-production (`VERCEL_ENV` ≠ `production`), no Upstash | L1-only (explicit — not a fake Redis) |
-| Vercel production (`VERCEL_ENV=production`), no Upstash | Fail closed (`unavailable` → `serviceUnavailable`) |
+L1 and L2 both observe the same JSON round-trip. Non-JSON values fail as canonical `VALIDATION_ERROR`. Vendor/storage failures are normalized at the package boundary. Loader failures from `getOrLoad` remain loader failures and are not mislabeled as cache outages.
 
-Env keys via `@afenda/env` only. No foreign Redis clients outside Upstash REST. `flush()` clears L1 and deletes keys under the package prefix only.
+The L2 namespace is private and starts with `@afenda/cache:v1:`. Prefix-scoped deletion is used only by isolated test cleanup; Redis-wide `FLUSHDB`/`FLUSHALL` is forbidden because rate limiting shares the Upstash instance while remaining a separate semantic kernel.
+
+## Exports
+
+| Path | Role |
+|---|---|
+| `@afenda/cache` | Permanent `cache` capability and durable input/projection types |
+| `@afenda/cache/testing` | Isolated L1/L2 test runtime and reset capability |
+
+The public manager, backend resolver, raw key/TTL maps, Redis store types, pattern invalidation, cursor helpers, batch loader, and request deduplicator were deleted in the final cutover.
 
 ## Maintain
 
@@ -45,37 +44,8 @@ Env keys via `@afenda/env` only. No foreign Redis clients outside Upstash REST. 
 pnpm --filter @afenda/cache lint
 pnpm --filter @afenda/cache typecheck
 pnpm --filter @afenda/cache test
+pnpm check:cache-boundary
+pnpm test:cache-boundary
 ```
 
-Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
-
-## Exports
-
-| Path | Role |
-|------|------|
-| `@afenda/cache` | `CacheManager` · `createCacheManager` · `resolveCacheBackend` · `CacheKeys` / `CacheTTL` · cursor helpers · `RequestDeduplicator` · `BatchLoader` · `toCacheAppError` (+ types) |
-
-`createCacheManager({ backend: "l1" })`, `{ redis }`, `{ l2 }`, or TTL/size overrides bypass the process singleton (still fail-closed in Vercel production without Upstash unless `backend: "l1"` / inject). `resetResolvedCacheBackend` clears the process cache between tests. Default `createCacheManager()` returns the resolved singleton.
-
-## Ownership
-
-| Surface | Owner |
-|---------|-------|
-| L1+L2 manager · resolve · keys/TTL · helpers · `toCacheAppError` | `@afenda/cache` |
-| `SERVICE_UNAVAILABLE` vocabulary + factories | [`@afenda/errors`](../../foundation/errors/README.md) |
-| Upstash URL/token schema | `@afenda/env` |
-| Abuse limiting on the same Upstash instance | [`@afenda/rate-limit`](../rate-limit/README.md) |
-
-**Layer:** Rank-1 Platform (`@afenda/env` · `@afenda/errors` · Upstash). Must not import Surfaces or `apps/*`. See [docs-V2/monorepo](../../../docs-V2/monorepo/README.md).
-
-## Out of scope
-
-Do not add to this package: Next.js handlers, ActionResult envelopes, OpenAPI ownership, foreign Redis SDKs (`ioredis`), `FLUSHDB`, declaration/FFT product keys, UI/locale copy, or a second tenancy model.
-
-## Authority
-
-| Topic | Link |
-|-------|------|
-| Error vocabulary (`serviceUnavailable`) | [`@afenda/errors`](../../foundation/errors/README.md) |
-| Package DAG | [docs-V2/monorepo](../../../docs-V2/monorepo/README.md) · [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
-| Agent checkout posture | [AGENTS.md](../../../AGENTS.md) |
+See [CONTRACT.md](./CONTRACT.md) for the semantic boundary. `@afenda/cache` depends only on `@afenda/env`, `@afenda/errors`, and Upstash Redis; it never depends on `@afenda/rate-limit`, Next.js, Surfaces, or applications.

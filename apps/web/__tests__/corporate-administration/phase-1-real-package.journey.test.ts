@@ -67,11 +67,10 @@ const composition = vi.hoisted(() => ({
 const cache = vi.hoisted(() => ({ revalidatePath: vi.fn() }));
 
 vi.mock("@afenda/auth", () => ({
-	getSession: auth.getSession,
-	requireRole: vi.fn(),
+	authServer: { session: { get: auth.getSession, requireRole: vi.fn() } },
 }));
 vi.mock("@afenda/http", () => ({
-	createCorrelationId: () => "corr-ca-real-journey",
+	http: { correlation: { create: () => "corr-ca-real-journey" } },
 }));
 vi.mock("@/app/actions/permission-gate", () => ({
 	forbidUnlessPermission: permission.forbidUnlessPermission,

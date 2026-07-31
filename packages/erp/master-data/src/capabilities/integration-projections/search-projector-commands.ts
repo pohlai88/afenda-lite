@@ -1,12 +1,5 @@
 import { errorResult, type Result } from "@afenda/errors";
-import {
-	deleteSearchDocument,
-	listSearchDocumentIds,
-	type SearchStore,
-	searchDocuments,
-	upsertSearchDocument,
-	upsertSearchDocuments,
-} from "@afenda/search";
+import { type SearchCapability, search } from "@afenda/search";
 import { z } from "zod";
 import {
 	requireMasterCommandPermission,
@@ -38,26 +31,12 @@ import {
 import type { MasterDataStore } from "../core-organization-masters/store";
 
 /** Search entity keys for Authority B roots (derived; rebuildable). */
-export const MASTER_SEARCH_ENTITY = {
-	party: "md_party",
-	item: "md_item",
-	itemGroup: "md_item_group",
-	warehouse: "md_warehouse",
-	organizationDimension: "md_organization_dimension",
-	paymentTerm: "md_payment_term",
-} as const;
+export const MASTER_SEARCH_ENTITY = search.entities.masterData;
 
 export type MasterSearchEntity =
 	(typeof MASTER_SEARCH_ENTITY)[keyof typeof MASTER_SEARCH_ENTITY];
 
-export const MASTER_SEARCH_ENTITY_VALUES = [
-	MASTER_SEARCH_ENTITY.party,
-	MASTER_SEARCH_ENTITY.item,
-	MASTER_SEARCH_ENTITY.itemGroup,
-	MASTER_SEARCH_ENTITY.warehouse,
-	MASTER_SEARCH_ENTITY.organizationDimension,
-	MASTER_SEARCH_ENTITY.paymentTerm,
-] as const;
+export const MASTER_SEARCH_ENTITY_VALUES = search.masterDataEntityValues;
 
 /** Index draft/active/inactive; remove blocked/retired from the derived index. */
 type ProjectableMasterStatus = MasterStatus | OrganizationDimension["status"];
@@ -137,26 +116,22 @@ function toUpsertInput(
 export async function projectMasterRoot(
 	entity: MasterSearchEntity,
 	root: MasterRoot,
-	searchStore?: SearchStore,
+	searchCapability?: SearchCapability,
 ): Promise<Result<{ projected: boolean }>> {
 	if (!shouldIndexMasterStatus(root.status)) {
-		const deleted = await deleteSearchDocument(
-			{
-				organizationId: root.organizationId,
-				entity,
-				documentId: root.id,
-			},
-			searchStore,
-		);
+		const deleted = await (searchCapability ?? search).documents.delete({
+			organizationId: root.organizationId,
+			entity,
+			documentId: root.id,
+		});
 		if (!deleted.ok) {
 			return deleted;
 		}
 		return errorResult.ok({ projected: false });
 	}
 
-	const upserted = await upsertSearchDocument(
+	const upserted = await (searchCapability ?? search).documents.upsert(
 		toUpsertInput(entity, root),
-		searchStore,
 	);
 	if (!upserted.ok) {
 		return upserted;
@@ -172,9 +147,9 @@ export async function projectMasterRoot(
 export async function syncMasterRootProjection(
 	entity: MasterSearchEntity,
 	root: MasterRoot,
-	searchStore?: SearchStore,
+	searchCapability?: SearchCapability,
 ): Promise<void> {
-	await projectMasterRoot(entity, root, searchStore);
+	await projectMasterRoot(entity, root, searchCapability);
 }
 
 const rebuildInputSchema = orgQueryActorSchema.extend({
@@ -197,23 +172,22 @@ async function rebuildOneEntity(
 	organizationId: string,
 	entity: MasterSearchEntity,
 	roots: MasterRoot[],
-	searchStore?: SearchStore,
+	searchCapability?: SearchCapability,
 ): Promise<Result<{ upserted: number; pruned: number }>> {
 	const live = roots.filter((root) => shouldIndexMasterStatus(root.status));
 	if (live.length > 0) {
-		const upserted = await upsertSearchDocuments(
+		const upserted = await (searchCapability ?? search).documents.upsertMany(
 			live.map((root) => toUpsertInput(entity, root)),
-			searchStore,
 		);
 		if (!upserted.ok) {
 			return upserted;
 		}
 	}
 
-	const listed = await listSearchDocumentIds(
-		{ organizationId, entity },
-		searchStore,
-	);
+	const listed = await (searchCapability ?? search).documents.listIds({
+		organizationId,
+		entity,
+	});
 	if (!listed.ok) {
 		return listed;
 	}
@@ -226,10 +200,11 @@ async function rebuildOneEntity(
 			if (liveIds.has(documentId)) {
 				return;
 			}
-			const deleted = await deleteSearchDocument(
-				{ organizationId, entity, documentId },
-				searchStore,
-			);
+			const deleted = await (searchCapability ?? search).documents.delete({
+				organizationId,
+				entity,
+				documentId,
+			});
 			if (!deleted.ok) {
 				return deleted;
 			}
@@ -288,7 +263,7 @@ function unsupportedSearchEntity(value: never): never {
  */
 export async function rebuildMasterDataSearchIndex(
 	input: unknown,
-	options: MasterCommandOptions & { searchStore?: SearchStore } = {},
+	options: MasterCommandOptions & { searchCapability?: SearchCapability } = {},
 ): Promise<Result<RebuildMasterDataSearchResult>> {
 	const parsed = parseMasterInput(
 		rebuildInputSchema,
@@ -308,7 +283,7 @@ export async function rebuildMasterDataSearchIndex(
 	if (!authorized.ok) {
 		return authorized;
 	}
-	const { searchStore } = options;
+	const { searchCapability } = options;
 	const entities: MasterSearchEntity[] = parsed.data.entity
 		? [parsed.data.entity]
 		: [...MASTER_SEARCH_ENTITY_VALUES];
@@ -330,7 +305,7 @@ export async function rebuildMasterDataSearchIndex(
 			parsed.data.organizationId,
 			entity,
 			listed.data,
-			searchStore,
+			searchCapability,
 		);
 		if (!rebuilt.ok) {
 			return rebuilt;
@@ -347,7 +322,7 @@ export async function rebuildMasterDataSearchIndex(
 
 export async function searchMasterDataDocuments(
 	input: unknown,
-	options: MasterCommandOptions & { searchStore?: SearchStore } = {},
+	options: MasterCommandOptions & { searchCapability?: SearchCapability } = {},
 ): Promise<
 	Result<
 		ReadonlyArray<{
@@ -376,15 +351,12 @@ export async function searchMasterDataDocuments(
 	if (!authorized.ok) {
 		return authorized;
 	}
-	const result = await searchDocuments(
-		{
-			organizationId: parsed.data.organizationId,
-			query: parsed.data.query,
-			entity: parsed.data.entity,
-			limit: parsed.data.limit,
-		},
-		options.searchStore,
-	);
+	const result = await (options.searchCapability ?? search).query({
+		organizationId: parsed.data.organizationId,
+		query: parsed.data.query,
+		entity: parsed.data.entity,
+		limit: parsed.data.limit,
+	});
 	if (!result.ok) {
 		return result;
 	}

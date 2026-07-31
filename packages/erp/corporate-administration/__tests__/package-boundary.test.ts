@@ -915,7 +915,7 @@ describe("Corporate Administration CA-0.4 package boundary", () => {
 		);
 		expect(appCompositionSource).not.toContain('from "@afenda/db"');
 		expect(appCompositionSource).not.toContain('from "@afenda/audit"');
-		expect(appCompositionSource).toContain("createPendingDomainEventAppender");
+		expect(appCompositionSource).toContain("events.outbox.createAppender");
 		expect(appCompositionSource).toContain(
 			"dependencies.executeOutboxTransaction",
 		);

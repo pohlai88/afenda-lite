@@ -1,6 +1,7 @@
 import {
 	database as afendaDatabase,
 	and,
+	asc,
 	desc,
 	eq,
 	platformSearchDocument,
@@ -14,7 +15,7 @@ import {
 } from "@afenda/errors";
 
 import { mapSearchDocumentRow, mapSearchHitRow } from "./map-row";
-import { sanitizeSearchMetadata } from "./sanitize";
+import { SEARCH_RANKING_POLICY } from "./semantic-registry";
 import type { SearchStore } from "./store";
 import type {
 	SearchDeleteInput,
@@ -38,14 +39,8 @@ const documentReturning = {
 	updatedAt: platformSearchDocument.updatedAt,
 } as const;
 
-function buildSearchText(title: string, description: string | null): string {
-	return description === null || description.trim().length === 0
-		? title
-		: `${title} ${description}`;
-}
-
 function toTsvectorSql(title: string, description: string | null) {
-	return sql`to_tsvector('english', ${buildSearchText(title, description)})`;
+	return sql`setweight(to_tsvector(${SEARCH_RANKING_POLICY.dictionary}, ${title}), 'A') || setweight(to_tsvector(${SEARCH_RANKING_POLICY.dictionary}, ${description ?? ""}), 'B')`;
 }
 
 function mapDocument(
@@ -68,7 +63,7 @@ export class DrizzleSearchStore implements SearchStore {
 	async upsert(input: SearchUpsertInput): Promise<Result<SearchDocument>> {
 		try {
 			const description = input.description ?? null;
-			const metadata = sanitizeSearchMetadata(input.metadata);
+			const metadata = input.metadata ?? null;
 			const now = new Date();
 			const searchVector = toTsvectorSql(input.title, description);
 
@@ -172,7 +167,7 @@ export class DrizzleSearchStore implements SearchStore {
 
 	async search(options: SearchQueryOptions): Promise<Result<SearchHit[]>> {
 		try {
-			const tsQuery = sql`plainto_tsquery('english', ${options.query})`;
+			const tsQuery = sql`plainto_tsquery(${SEARCH_RANKING_POLICY.dictionary}, ${options.query})`;
 			const predicates = [
 				eq(platformSearchDocument.organizationId, options.organizationId),
 				sql`${platformSearchDocument.searchVector} @@ ${tsQuery}`,
@@ -186,7 +181,7 @@ export class DrizzleSearchStore implements SearchStore {
 				return errorResult.fail("INTERNAL_ERROR");
 			}
 
-			const rank = sql<number>`ts_rank(${platformSearchDocument.searchVector}, ${tsQuery})`;
+			const rank = sql<number>`ts_rank_cd(${platformSearchDocument.searchVector}, ${tsQuery})`;
 
 			const rows = await afendaDatabase.client
 				.select({
@@ -202,7 +197,7 @@ export class DrizzleSearchStore implements SearchStore {
 				})
 				.from(platformSearchDocument)
 				.where(where)
-				.orderBy(desc(rank))
+				.orderBy(desc(rank), asc(platformSearchDocument.documentId))
 				.limit(options.limit)
 				.offset(options.offset);
 

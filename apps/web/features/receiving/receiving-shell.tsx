@@ -1,4 +1,4 @@
-import { getSession, requireRole } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import { listItems, listWarehouses } from "@afenda/master-data";
 import {
 	listGoodsReceipts,
@@ -35,7 +35,9 @@ interface ReceivingShellProps {
 /** Receiving console — RSC reads via `@afenda/receiving`; mutations via Actions. */
 export async function ReceivingShell({ surface }: ReceivingShellProps) {
 	const session =
-		surface === "admin" ? await requireRole("operator") : await getSession();
+		surface === "admin"
+			? await authServer.session.requireRole("operator")
+			: await authServer.session.get();
 	await requirePermission(session, "receiving.receipt.read");
 	const [
 		canCreate,

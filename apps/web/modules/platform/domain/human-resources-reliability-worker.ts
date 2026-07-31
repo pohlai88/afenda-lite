@@ -1,5 +1,5 @@
 import { errorResult, type Result } from "@afenda/errors";
-import { createEventDispatcher } from "@afenda/events";
+import { events } from "@afenda/events";
 import {
 	acknowledgeReliabilityWork,
 	checkpointConnectorCursor,
@@ -106,9 +106,11 @@ export function createProductionReliabilityOperationHandlers(): ReliabilityOpera
 			});
 		},
 		"platform.dispatch-events": async (item) => {
-			const dispatched = await createEventDispatcher({
-				handlers: createHumanResourcesPlatformEventHandlers(),
-			}).dispatchPending({ organizationId: item.organizationId, limit: 25 });
+			const dispatched = await events.dispatcher
+				.create({
+					handlers: createHumanResourcesPlatformEventHandlers(),
+				})
+				.dispatchPending({ organizationId: item.organizationId, limit: 25 });
 			if (!dispatched.ok) {
 				return dispatched;
 			}

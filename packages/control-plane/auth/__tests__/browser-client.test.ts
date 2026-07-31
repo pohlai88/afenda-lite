@@ -6,7 +6,7 @@ vi.mock("@neondatabase/auth/next", () => ({
 	createAuthClient: () => createAuthClientMock(),
 }));
 
-describe("getBrowserAuthClient (N5)", () => {
+describe("browser auth runtime (N5)", () => {
 	beforeEach(() => {
 		vi.resetModules();
 		createAuthClientMock.mockReset();
@@ -15,7 +15,7 @@ describe("getBrowserAuthClient (N5)", () => {
 
 	it("creates a singleton via createAuthClient()", async () => {
 		const { getBrowserAuthClient, resetBrowserAuthClientForTests } =
-			await import("../src/client");
+			await import("../src/browser-runtime");
 		resetBrowserAuthClientForTests();
 
 		const first = getBrowserAuthClient();
@@ -28,7 +28,7 @@ describe("getBrowserAuthClient (N5)", () => {
 
 	it("resetBrowserAuthClientForTests clears the singleton", async () => {
 		const { getBrowserAuthClient, resetBrowserAuthClientForTests } =
-			await import("../src/client");
+			await import("../src/browser-runtime");
 		resetBrowserAuthClientForTests();
 		createAuthClientMock.mockClear();
 

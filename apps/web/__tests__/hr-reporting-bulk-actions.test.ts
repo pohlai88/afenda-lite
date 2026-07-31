@@ -23,9 +23,11 @@ const workerMocks = vi.hoisted(() => ({
 	loadErrorArtifact: vi.fn(),
 }));
 
-vi.mock("@afenda/auth", () => ({ requireRole: authMocks.requireRole }));
+vi.mock("@afenda/auth", () => ({
+	authServer: { session: { requireRole: authMocks.requireRole } },
+}));
 vi.mock("@afenda/http", () => ({
-	createCorrelationId: () => "corr-hr-reporting-test",
+	http: { correlation: { create: () => "corr-hr-reporting-test" } },
 }));
 vi.mock("@/app/actions/permission-gate", () => ({
 	forbidUnlessPermission: permissionMocks.forbidUnlessPermission,

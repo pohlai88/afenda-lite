@@ -1,12 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { compose } from "../src/compose";
-import { createHttpContext } from "../src/context";
+import { http } from "../src";
 
 describe("@afenda/http compose", () => {
 	it("runs middleware left-to-right then the terminal handler", async () => {
 		const order: string[] = [];
-		const handler = compose(
+		const handler = http.pipeline.compose(
 			async (req, ctx, next) => {
 				order.push("a-enter");
 				const res = await next(req, ctx);
@@ -26,7 +25,7 @@ describe("@afenda/http compose", () => {
 		);
 
 		const request = new Request("http://local.test/api");
-		const context = createHttpContext(request);
+		const context = http.correlation.createContext(request);
 		const response = await handler(request, context);
 
 		expect(await response.text()).toBe("ok");
@@ -44,10 +43,12 @@ describe("@afenda/http compose", () => {
 		const request = new Request("http://local.test/api", {
 			headers: { "x-correlation-id": inbound },
 		});
-		const ctx = createHttpContext(request);
+		const ctx = http.correlation.createContext(request);
 		expect(ctx.correlationId).toBe(inbound);
 
-		const handler = compose((_req, c) => new Response(c.correlationId));
+		const handler = http.pipeline.compose(
+			(_req, c) => new Response(c.correlationId),
+		);
 		const response = await handler(request, ctx);
 		expect(await response.text()).toBe(inbound);
 	});

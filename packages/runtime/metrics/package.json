@@ -4,13 +4,9 @@
 	"private": true,
 	"type": "module",
 	"exports": {
-		"./core": {
-			"types": "./src/core/index.ts",
-			"default": "./src/core/index.ts"
-		},
-		"./node": {
-			"types": "./src/node/index.ts",
-			"default": "./src/node/index.ts"
+		".": {
+			"types": "./src/index.ts",
+			"default": "./src/index.ts"
 		},
 		"./testing": {
 			"types": "./src/testing/index.ts",
@@ -19,7 +15,8 @@
 	},
 	"scripts": {
 		"lint": "biome check .",
-		"typecheck": "tsc --noEmit -p tsconfig.json",
+		"typecheck": "tsc --noEmit -p tsconfig.json && pnpm run typecheck:contract",
+		"typecheck:contract": "tsc --noEmit -p tsconfig.contract.json",
 		"test": "vitest run --config ../../../testing/vitest.unit.config.ts --project metrics"
 	},
 	"dependencies": {

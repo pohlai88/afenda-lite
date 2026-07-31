@@ -1,12 +1,12 @@
 "use server";
 
-import { getSession } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import { type Result as ActionResult, errorResult } from "@afenda/errors";
-import { createCorrelationId } from "@afenda/http";
+import { http } from "@afenda/http";
+import { logger } from "@afenda/logger";
 import type { ImportReconciliationReport } from "@afenda/master-data";
 import { revalidatePath } from "next/cache";
 import { runApplyMasterDataImport } from "@/lib/erp/master-data-import";
-import { logProductEvent } from "@/modules/platform/observability/product-log";
 
 export type ApplyMasterDataImportActionData = ImportReconciliationReport;
 
@@ -18,8 +18,8 @@ export type ApplyMasterDataImportActionData = ImportReconciliationReport;
 export async function applyMasterDataImportAction(
 	input: unknown,
 ): Promise<ActionResult<ApplyMasterDataImportActionData>> {
-	const correlationId = createCorrelationId();
-	const session = await getSession();
+	const correlationId = http.correlation.create();
+	const session = await authServer.session.get();
 
 	try {
 		const mapped = await runApplyMasterDataImport({
@@ -32,7 +32,7 @@ export async function applyMasterDataImportAction(
 		}
 		return mapped;
 	} catch {
-		logProductEvent({
+		logger.event({
 			level: "error",
 			event: "action.internal_error",
 			correlationId,

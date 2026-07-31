@@ -1,5 +1,6 @@
 import type { Session } from "@afenda/auth";
 import type { ResultFailure } from "@afenda/errors";
+import { events as eventKernel } from "@afenda/events";
 import {
 	HUMAN_RESOURCES_ASSIGNMENT_CREATED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT,
@@ -9,8 +10,7 @@ import {
 	HUMAN_RESOURCES_OFFBOARDING_STARTED_EVENT,
 	HUMAN_RESOURCES_ONBOARDING_COMPLETED_EVENT,
 	HUMAN_RESOURCES_ONBOARDING_STARTED_EVENT,
-	queryDomainEvents,
-} from "@afenda/events";
+} from "@afenda/events/schemas";
 import {
 	type Employee,
 	type EmployeeComplianceSummary,
@@ -145,7 +145,7 @@ async function lifecycleEvents(organizationId: string) {
 	] as const;
 	const pages = await Promise.all(
 		types.map((type) =>
-			queryDomainEvents({
+			eventKernel.query.page({
 				organizationId,
 				sourceModule: "human-resources",
 				type,

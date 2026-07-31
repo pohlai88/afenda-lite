@@ -540,7 +540,7 @@ function UsageMetricsPanel({
 
 /**
  * Org-console panels — list · provision · hard-delete · usage
- * (`@afenda/admin` / `@afenda/admin/usage`). ADR-010 barrel only.
+ * (`@afenda/admin`). ADR-010 barrel only.
  */
 export function OrgConsolePanels({
 	orgList,

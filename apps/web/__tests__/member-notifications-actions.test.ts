@@ -16,23 +16,27 @@ const notificationMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@afenda/auth", () => ({
-	getSession: authMocks.getSession,
+	authServer: { session: { get: authMocks.getSession } },
 }));
 
 vi.mock("@afenda/http", () => ({
-	createCorrelationId: () => "corr-test-1",
+	http: { correlation: { create: () => "corr-test-1" } },
 }));
 
 vi.mock("@afenda/notifications", () => ({
-	MAX_NOTIFICATION_PAGE_SIZE: 100,
-	listNotifications: notificationMocks.listNotifications,
-	countUnreadNotifications: notificationMocks.countUnreadNotifications,
-	markNotificationRead: notificationMocks.markNotificationRead,
-	markAllNotificationsRead: notificationMocks.markAllNotificationsRead,
+	notifications: {
+		inbox: {
+			list: notificationMocks.listNotifications,
+			countUnread: notificationMocks.countUnreadNotifications,
+			markRead: notificationMocks.markNotificationRead,
+			markAllRead: notificationMocks.markAllNotificationsRead,
+		},
+		policy: { pagination: { maxPageSize: 100 } },
+	},
 }));
 
-vi.mock("@/modules/platform/observability/product-log", () => ({
-	logProductEvent: vi.fn(),
+vi.mock("@afenda/logger", () => ({
+	logger: { event: vi.fn() },
 }));
 
 import { getUnreadNotificationCountAction } from "../app/actions/get-unread-notification-count";

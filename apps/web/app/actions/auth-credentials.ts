@@ -1,29 +1,21 @@
 "use server";
 
-import {
-	AUTH_LOGIN_PATH,
-	POST_LOGIN_CALLBACK_PARAM,
-	sanitizeCallbackUrl,
-	signInWithEmail,
-	signOutSession,
-} from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import {
 	type Result as ActionResult,
 	errorIngress,
 	errorProject,
 	errorResult,
 } from "@afenda/errors";
-import { createCorrelationId } from "@afenda/http";
-import { checkRateLimit, toRateLimitFailure } from "@afenda/rate-limit";
+import { http } from "@afenda/http";
+import { logger } from "@afenda/logger";
+import { rateLimit } from "@afenda/rate-limit";
 import { redirect } from "next/navigation";
 import { signInSchema } from "@/modules/identity/schemas/auth";
 import { readRequestAttribution } from "@/modules/platform/domain/request-attribution";
-import { logProductEvent } from "@/modules/platform/observability/product-log";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-const AUTH_SIGN_IN_PATH = AUTH_LOGIN_PATH;
-const UNKNOWN_CLIENT_IP = "unknown";
-const INVALID_EMAIL_KEY = "_invalid";
+const AUTH_SIGN_IN_PATH = authServer.paths.login;
 
 export interface SignInActionData {
 	redirected: true;
@@ -44,46 +36,37 @@ function resolvePostAuthRedirect(rawCallback: string | undefined): string {
 	if (!rawCallback) {
 		return "/";
 	}
-	return sanitizeCallbackUrl(rawCallback) ?? "/";
+	return authServer.paths.postLogin.sanitizeCallback(rawCallback) ?? "/";
 }
 
 /**
  * Path A — email/password sign-in via `@afenda/auth` → Neon Auth SDK.
  * Success redirects to sanitized callback or `/` (post-login bounce hub).
  */
-function signInRateLimitKey(input: {
-	ipAddress: string | undefined;
-	emailRaw: FormDataEntryValue | null;
-}): string {
-	const ip = input.ipAddress?.trim() || UNKNOWN_CLIENT_IP;
-	const email =
-		typeof input.emailRaw === "string"
-			? input.emailRaw.trim().toLowerCase()
-			: "";
-	return `${ip}:${email.length > 0 ? email : INVALID_EMAIL_KEY}`;
-}
-
 export async function signInAction(
 	_prev: SignInActionState,
 	formData: FormData,
 ): Promise<SignInActionState> {
-	const correlationId = createCorrelationId();
+	const correlationId = http.correlation.create();
 	const attribution = await readRequestAttribution();
 
 	// Limit before schema parse so invalid-email sprays still consume budget.
-	const limit = await checkRateLimit({
+	const emailRaw = formData.get("email");
+	const limit = await rateLimit.check({
 		bucket: "auth_sign_in",
-		key: signInRateLimitKey({
+		identity: {
+			kind: "credentials",
 			ipAddress: attribution.ipAddress,
-			emailRaw: formData.get("email"),
-		}),
+			email: typeof emailRaw === "string" ? emailRaw : undefined,
+		},
 	});
 	if (!limit.ok) {
-		const error = toRateLimitFailure(limit);
-		logProductEvent({
+		const error = rateLimit.project.failure(limit);
+		const diagnostics = rateLimit.project.diagnostics(limit);
+		logger.event({
 			level: "warn",
 			event:
-				limit.reason === "unavailable"
+				diagnostics.outcome === "unavailable"
 					? "auth_sign_in.rate_limit_unavailable"
 					: "auth_sign_in.rate_limited",
 			correlationId,
@@ -98,7 +81,8 @@ export async function signInAction(
 	const parsed = parseSchema(signInSchema, {
 		email: formData.get("email"),
 		password: formData.get("password"),
-		callback: formData.get(POST_LOGIN_CALLBACK_PARAM) || undefined,
+		callback:
+			formData.get(authServer.paths.postLogin.callbackParameter) || undefined,
 	});
 	if (!parsed.success) {
 		return errorResult.fail("VALIDATION_ERROR", {
@@ -106,7 +90,7 @@ export async function signInAction(
 		});
 	}
 
-	const result = await signInWithEmail({
+	const result = await authServer.credentials.signInWithEmail({
 		email: parsed.data.email,
 		password: parsed.data.password,
 	});
@@ -122,6 +106,6 @@ export async function signInAction(
  * Never returns ActionResult on success (redirect).
  */
 export async function signOutAction(): Promise<void> {
-	await signOutSession();
-	redirect(AUTH_LOGIN_PATH);
+	await authServer.credentials.signOut();
+	redirect(authServer.paths.login);
 }

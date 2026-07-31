@@ -6,7 +6,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { PUBLIC_AUTH_PATHS } from "@afenda/auth/client";
+import { authBrowser } from "@afenda/auth/client";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -27,13 +27,13 @@ describe("PL-S3 Auth Island surface", () => {
 	});
 
 	it("pins declared public auth segments (login not sign-in; no public sign-up)", () => {
-		expect([...PUBLIC_AUTH_PATHS]).toEqual([
+		expect([...authBrowser.paths.publicSegments]).toEqual([
 			"login",
 			"forgot-password",
 			"reset-password",
 			"sign-out",
 		]);
-		expect(PUBLIC_AUTH_PATHS).not.toContain("sign-up");
+		expect(authBrowser.paths.publicSegments).not.toContain("sign-up");
 	});
 
 	it("keeps the dynamic auth page thin and fail-closed", () => {
@@ -279,7 +279,7 @@ describe("PL-S3 Auth Island surface", () => {
 		expect(provider).toContain('from "@neondatabase/auth-ui"');
 		expect(provider).toContain('from "@afenda/auth/client"');
 		expect(provider).toContain("NeonAuthUIProvider");
-		expect(provider).toContain("getBrowserAuthClient");
+		expect(provider).toContain("authBrowser.getClient");
 		expect(provider).not.toMatch(/@neondatabase\/auth['"]/);
 	});
 });

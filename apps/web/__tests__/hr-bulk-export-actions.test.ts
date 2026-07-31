@@ -25,7 +25,9 @@ const permissionMocks = vi.hoisted(() => ({
 }));
 const queueMocks = vi.hoisted(() => ({ enqueueExport: vi.fn() }));
 
-vi.mock("@afenda/auth", () => ({ requireRole: authMocks.requireRole }));
+vi.mock("@afenda/auth", () => ({
+	authServer: { session: { requireRole: authMocks.requireRole } },
+}));
 vi.mock("@afenda/human-resources", async (importOriginal) => {
 	const actual =
 		await importOriginal<typeof import("@afenda/human-resources")>();
@@ -45,7 +47,7 @@ vi.mock("@afenda/human-resources/adapters/drizzle", async (importOriginal) => {
 	};
 });
 vi.mock("@afenda/http", () => ({
-	createCorrelationId: () => "corr-hr-export-test",
+	http: { correlation: { create: () => "corr-hr-export-test" } },
 }));
 vi.mock("@/app/actions/permission-gate", () => ({
 	forbidUnlessPermission: permissionMocks.forbidUnlessPermission,

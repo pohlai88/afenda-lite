@@ -20,17 +20,23 @@ const usageMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@afenda/auth", () => ({
-	requireRole: authMocks.requireRole,
+	authServer: { session: { requireRole: authMocks.requireRole } },
 }));
 
-vi.mock("@afenda/admin/usage", async () => {
+vi.mock("@afenda/admin", async () => {
 	const { z } = await import("zod");
 	return {
-		getOrganizationUsageMetrics: usageMocks.getOrganizationUsageMetrics,
-		usagePeriodSchema: z
-			.string()
-			.trim()
-			.regex(/^\d{4}-(0[1-9]|1[0-2])$/, "period must be YYYY-MM"),
+		admin: {
+			schemas: {
+				usage: {
+					period: z
+						.string()
+						.trim()
+						.regex(/^\d{4}-(0[1-9]|1[0-2])$/, "period must be YYYY-MM"),
+				},
+			},
+			usage: { get: usageMocks.getOrganizationUsageMetrics },
+		},
 	};
 });
 
@@ -126,7 +132,7 @@ describe("getOrganizationUsageAction", () => {
 			path.join(webRoot, "app/actions/get-organization-usage.ts"),
 			"utf8",
 		);
-		expect(source).toContain('from "@afenda/admin/usage"');
-		expect(source).not.toMatch(/from ["']@afenda\/admin["']/);
+		expect(source).toContain('from "@afenda/admin"');
+		expect(source).toContain("admin.usage.get");
 	});
 });

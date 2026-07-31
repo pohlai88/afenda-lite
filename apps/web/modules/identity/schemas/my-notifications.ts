@@ -1,4 +1,4 @@
-import { MAX_NOTIFICATION_PAGE_SIZE } from "@afenda/notifications";
+import { notifications } from "@afenda/notifications";
 import { z } from "zod";
 
 export const listMyNotificationsCommandSchema = z.object({
@@ -7,7 +7,7 @@ export const listMyNotificationsCommandSchema = z.object({
 		.number()
 		.int()
 		.min(1)
-		.max(MAX_NOTIFICATION_PAGE_SIZE)
+		.max(notifications.policy.pagination.maxPageSize)
 		.optional(),
 	unreadOnly: z
 		.enum(["true", "false"])

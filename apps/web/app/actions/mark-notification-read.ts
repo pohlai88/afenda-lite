@@ -1,7 +1,7 @@
 "use server";
 
 import { type Result as ActionResult, errorResult } from "@afenda/errors";
-import { markNotificationRead, type Notification } from "@afenda/notifications";
+import { type Notification, notifications } from "@afenda/notifications";
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runMemberSessionAction } from "@/app/actions/run-member-session-action";
 import { markMyNotificationReadCommandSchema } from "@/modules/identity/schemas/my-notifications";
@@ -36,7 +36,7 @@ export async function markNotificationReadAction(
 				});
 			}
 
-			const result = await markNotificationRead({
+			const result = await notifications.inbox.markRead({
 				organizationId: session.orgId,
 				userId: session.userId,
 				id: parsed.data.id,

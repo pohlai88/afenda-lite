@@ -1,72 +1,71 @@
-import type { Redis } from "@upstash/redis";
+declare const cacheKeyBrand: unique symbol;
 
-export type CacheStrategy =
-	| "cache-first"
-	| "network-first"
-	| "stale-while-revalidate";
+/** Opaque key produced only by the canonical cache key capability. */
+export type CacheKey = Readonly<{ [cacheKeyBrand]: "CacheKey" }>;
 
-export interface CacheEntry<T = unknown> {
-	createdAt: number;
-	data: T;
-	expiresAt: number;
-	hitCount: number;
-	tags: string[];
+export type CacheLoadStrategy = "cache-first" | "network-first";
+
+export interface CacheLoadOptions {
+	strategy?: CacheLoadStrategy;
 }
 
-export interface CacheStats {
+export interface CacheDiagnostics {
+	backend: "l1" | "upstash";
 	evictions: number;
-	hitRate: number;
-	hits: number;
 	l1Hits: number;
 	l1Misses: number;
 	l2Hits: number;
 	l2Misses: number;
-	misses: number;
-	/** Current L1 entry count. */
 	totalKeys: number;
 }
 
-export interface CacheConfig {
-	defaultTTL: number;
-	l1MaxSize: number;
+export interface CacheEntry {
+	createdAt: number;
+	data: unknown;
+	expiresAt: number;
+	tags: readonly string[];
 }
 
-export interface SetCacheOptions {
-	tags?: string[];
-	ttl?: number;
-}
-
-export type GetOrSetOptions = SetCacheOptions & {
-	strategy?: CacheStrategy;
-};
-
-/** Optional L2 store — Upstash Redis or test doubles. */
 export interface CacheL2Store {
 	addToTag: (tag: string, key: string) => Promise<void>;
 	clearTag: (tag: string) => Promise<void>;
 	delete: (key: string) => Promise<void>;
-	deleteMany: (keys: string[]) => Promise<void>;
-	/** Delete all keys under the package prefix (never FLUSHDB). */
+	deleteMany: (keys: readonly string[]) => Promise<void>;
 	flushPrefix: () => Promise<void>;
-	get: (key: string) => Promise<CacheEntry | null>;
-	/** Logical cache keys matching a glob (`*` → any run). */
-	keysByPattern: (pattern: string) => Promise<string[]>;
-	keysForTag: (tag: string) => Promise<string[]>;
+	get: (key: string) => Promise<string | null>;
+	keysForTag: (tag: string) => Promise<readonly string[]>;
 	removeFromTag: (tag: string, key: string) => Promise<void>;
-	set: (key: string, entry: CacheEntry, ttlSeconds: number) => Promise<void>;
+	set: (key: string, encodedEntry: string, ttlSeconds: number) => Promise<void>;
 }
 
-export type CreateCacheManagerOptions = Partial<CacheConfig> & {
-	/** Explicit L1-only (tests / local without Upstash). */
-	backend?: "upstash" | "l1";
-	/** Injected Upstash client (tests / override). */
-	redis?: Redis;
-	/** Injected L2 store (tests). */
-	l2?: CacheL2Store;
-};
+export interface CachePolicy {
+	readonly namespace: CacheNamespace;
+	readonly ttlSeconds: number;
+}
 
-export interface CacheUnavailableFailure {
-	ok: false;
-	reason: "unavailable";
-	service: "upstash_redis";
+export type CacheNamespace =
+	| "organization_config"
+	| "organization_features"
+	| "permission_catalog"
+	| "user_permissions"
+	| "user_session";
+
+export interface InternalCacheKey {
+	logicalKey: string;
+	policy: CachePolicy;
+	tags: readonly string[];
+}
+
+export interface CacheRuntime {
+	delete: (key: CacheKey) => Promise<void>;
+	diagnostics: () => CacheDiagnostics;
+	flush: () => Promise<void>;
+	get: <T>(key: CacheKey) => Promise<T | null>;
+	getOrLoad: <T>(
+		key: CacheKey,
+		loader: () => Promise<T>,
+		options?: CacheLoadOptions,
+	) => Promise<T>;
+	invalidateTag: (tag: string) => Promise<number>;
+	set: <T>(key: CacheKey, value: T) => Promise<void>;
 }

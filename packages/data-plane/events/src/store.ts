@@ -1,6 +1,7 @@
 import type { Result } from "@afenda/errors";
 
 import type {
+	ClaimedDomainEvent,
 	DomainEvent,
 	DomainEventClaimOptions,
 	DomainEventMarkFailedInput,
@@ -18,7 +19,7 @@ export interface EventStore {
 	append: (entry: DomainEventWriteInput) => Promise<Result<DomainEvent>>;
 	claimPending: (
 		options: DomainEventClaimOptions,
-	) => Promise<Result<DomainEvent[]>>;
+	) => Promise<Result<ClaimedDomainEvent[]>>;
 	count: (options: DomainEventQueryOptions) => Promise<Result<number>>;
 	markFailed: (
 		input: DomainEventMarkFailedInput,

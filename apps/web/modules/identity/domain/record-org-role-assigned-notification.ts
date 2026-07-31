@@ -3,11 +3,7 @@
  */
 
 import type { Result } from "@afenda/errors";
-import {
-	createNotificationRecorder,
-	type Notification,
-	type RecordNotificationCommand,
-} from "@afenda/notifications";
+import { type Notification, notifications } from "@afenda/notifications";
 
 export interface RecordOrgRoleAssignedNotificationInput {
 	actorUserId: string;
@@ -21,15 +17,12 @@ export interface RecordOrgRoleAssignedNotificationInput {
 }
 
 const ROLE_ASSIGNED_NOTIFICATION = {
-	type: "SUCCESS",
-	priority: "MEDIUM",
-	channel: "IN_APP",
+	type: notifications.vocabulary.type.success,
+	priority: notifications.vocabulary.priority.medium,
+	channel: notifications.vocabulary.channel.inApp,
 	module: "identity",
 	actionUrl: "/admin",
-} as const satisfies Pick<
-	RecordNotificationCommand,
-	"type" | "priority" | "channel" | "module" | "actionUrl"
->;
+} as const;
 
 /**
  * Record an in-app notification for the member who was assigned a role.
@@ -46,7 +39,7 @@ export async function recordOrgRoleAssignedNotification(
 		? "An organization role assignment was reactivated for your account."
 		: "You were assigned an organization role.";
 
-	return await createNotificationRecorder().record({
+	return await notifications.record({
 		organizationId: input.organizationId,
 		userId: input.userId,
 		type: ROLE_ASSIGNED_NOTIFICATION.type,

@@ -1,4 +1,4 @@
-import { createCorrelationId } from "@afenda/http";
+import { http } from "@afenda/http";
 import {
 	listApplications,
 	listCandidates,
@@ -25,7 +25,7 @@ export async function loadRecruitmentWorkspace(input: {
 	const context = {
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
-		correlationId: createCorrelationId(),
+		correlationId: http.correlation.create(),
 		page: 1,
 		pageSize: 100,
 	};

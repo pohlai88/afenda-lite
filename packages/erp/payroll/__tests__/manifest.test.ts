@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { PAYROLL_EVENT_IDS } from "@afenda/events";
+import { PAYROLL_EVENT_IDS } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
 
 import { payrollModuleManifest } from "../src/module.manifest";

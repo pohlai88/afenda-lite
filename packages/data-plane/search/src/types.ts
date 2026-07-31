@@ -6,7 +6,7 @@ export interface SearchDocument {
 	createdAt: Date;
 	description: string | null;
 	documentId: string;
-	entity: string;
+	entity: SearchEntity;
 	id: string;
 	metadata: Record<string, unknown> | null;
 	organizationId: string;
@@ -18,7 +18,7 @@ export interface SearchDocument {
 export interface SearchHit {
 	description: string | null;
 	documentId: string;
-	entity: string;
+	entity: SearchEntity;
 	id: string;
 	metadata: Record<string, unknown> | null;
 	organizationId: string;
@@ -30,7 +30,7 @@ export interface SearchHit {
 export interface SearchUpsertInput {
 	description?: string | null | undefined;
 	documentId: string;
-	entity: string;
+	entity: SearchEntity;
 	metadata?: Record<string, unknown> | null | undefined;
 	organizationId: string;
 	title: string;
@@ -39,19 +39,21 @@ export interface SearchUpsertInput {
 
 export interface SearchDeleteInput {
 	documentId: string;
-	entity: string;
+	entity: SearchEntity;
 	organizationId: string;
 }
 
 export interface SearchListIdsInput {
-	entity: string;
+	entity: SearchEntity;
 	organizationId: string;
 }
 
 export interface SearchQueryOptions {
-	entity?: string | undefined;
+	entity?: SearchEntity | undefined;
 	limit: number;
 	offset: number;
 	organizationId: string;
 	query: string;
 }
+
+import type { SearchEntity } from "./semantic-registry";

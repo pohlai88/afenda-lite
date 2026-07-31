@@ -1,9 +1,6 @@
 import { errorResult, type Result } from "@afenda/errors";
-import {
-	createEventPublisher,
-	type EventPublisher,
-	PLATFORM_HUMAN_RESOURCES_PAYROLL_DELIVERY_REQUESTED_EVENT,
-} from "@afenda/events";
+import { type EventPublisher, events } from "@afenda/events";
+import { PLATFORM_HUMAN_RESOURCES_PAYROLL_DELIVERY_REQUESTED_EVENT } from "@afenda/events/schemas";
 import {
 	deliverPayrollHandoff as deliverPayrollHandoffWorkflow,
 	type HrObservabilityPorts,
@@ -21,7 +18,7 @@ import {
 } from "@/modules/platform/observability/human-resources-observability";
 
 export function createPayrollDeliveryEventProducer(
-	publisher: Pick<EventPublisher, "publish"> = createEventPublisher(),
+	publisher: Pick<EventPublisher, "publish"> = events.publisher.create(),
 	actorUserId = "system",
 	observability: HrObservabilityPorts = createProductionHrObservabilityPorts(),
 ): PayrollDeliveryProducerPort {

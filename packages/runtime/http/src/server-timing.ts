@@ -1,26 +1,35 @@
-export const SERVER_TIMING_HEADER = "Server-Timing" as const;
+import { HTTP_SEMANTIC_REGISTRY } from "./semantic-registry";
 
-const DEFAULT_METRIC_NAME = "app";
+const METRIC_NAME_PATTERN = /^[A-Za-z][A-Za-z0-9_-]*$/;
 
-/**
- * Attach `Server-Timing` duration from a start timestamp (ms) to now.
- * Metric name defaults to `app` — keep names short and non-secret.
- */
+function normalizeMetricName(metric: string | undefined): string {
+	const normalized =
+		metric?.trim() || HTTP_SEMANTIC_REGISTRY.serverTiming.defaultMetric;
+	if (!METRIC_NAME_PATTERN.test(normalized)) {
+		throw new RangeError(
+			"@afenda/http Server-Timing metric must be a safe token",
+		);
+	}
+	return normalized;
+}
+
 export function applyServerTimingHeader(
 	headers: Headers,
 	startTimeMs: number,
 	options?: { readonly metric?: string; readonly nowMs?: number },
 ): void {
 	if (!Number.isFinite(startTimeMs)) {
-		return;
+		throw new RangeError("@afenda/http Server-Timing start must be finite");
 	}
 	const nowMs = options?.nowMs ?? Date.now();
 	if (!Number.isFinite(nowMs) || nowMs < startTimeMs) {
-		return;
+		throw new RangeError(
+			"@afenda/http Server-Timing end must be finite and not precede start",
+		);
 	}
-	const metric = options?.metric?.trim() || DEFAULT_METRIC_NAME;
-	const durationMs = Math.max(0, nowMs - startTimeMs);
-	// One decimal keeps the header compact without inventing fake precision.
-	const dur = (Math.round(durationMs * 10) / 10).toFixed(1);
-	headers.set(SERVER_TIMING_HEADER, `${metric};dur=${dur}`);
+	const duration = (Math.round((nowMs - startTimeMs) * 10) / 10).toFixed(1);
+	headers.set(
+		HTTP_SEMANTIC_REGISTRY.headers.serverTiming,
+		`${normalizeMetricName(options?.metric)};dur=${duration}`,
+	);
 }

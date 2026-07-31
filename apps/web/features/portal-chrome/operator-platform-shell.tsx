@@ -1,4 +1,4 @@
-import { getSession } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import {
 	APPLICATION_SHELL_SETTINGS_COOKIE,
 	parseApplicationShellSettings,
@@ -22,7 +22,10 @@ interface OperatorPlatformShellProps {
 export async function OperatorPlatformShell({
 	children,
 }: OperatorPlatformShellProps) {
-	const [session, cookieStore] = await Promise.all([getSession(), cookies()]);
+	const [session, cookieStore] = await Promise.all([
+		authServer.session.get(),
+		cookies(),
+	]);
 	const navItems = await resolveOperatorShellNav(session);
 	const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE_NAME)?.value;
 	const defaultSidebarOpen = sidebarCookie !== "false";

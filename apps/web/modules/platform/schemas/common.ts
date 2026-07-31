@@ -1,3 +1,4 @@
+import type { infer as ZodInfer, ZodType } from "zod";
 import { z } from "@/modules/platform/schemas/openapi-zod";
 
 /**
@@ -32,10 +33,10 @@ export type ParseSchemaResult<T> = ParseSchemaSuccess<T> | ParseSchemaFailure;
 /**
  * Safe-parse at the adapter boundary. Never re-validate the same shape in domain.
  */
-export function parseSchema<TSchema extends z.ZodType>(
+export function parseSchema<TSchema extends ZodType>(
 	schema: TSchema,
 	input: unknown,
-): ParseSchemaResult<z.infer<TSchema>> {
+): ParseSchemaResult<ZodInfer<TSchema>> {
 	const result = schema.safeParse(input);
 	if (result.success) {
 		return { success: true, data: result.data };

@@ -1,4 +1,4 @@
-import { requireRole } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import { forbidPermissionAccess } from "@/features/auth/require-permission";
 import type { HrDisplayPreferences } from "@/features/human-resources/display-preferences";
 import { OperationsHrShell } from "@/features/human-resources/human-resources-shell";
@@ -16,7 +16,7 @@ export async function HrOperationsWorkspaceServer({
 	page: number;
 	preferences: HrDisplayPreferences;
 }) {
-	const session = await requireRole("operator");
+	const session = await authServer.session.requireRole("operator");
 	const capabilities = await resolveHrOperationsCapabilities(session);
 	if (!hasHrOperationsCapability(capabilities)) {
 		forbidPermissionAccess();

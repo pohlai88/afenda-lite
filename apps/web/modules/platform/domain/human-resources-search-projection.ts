@@ -1,15 +1,12 @@
 import { errorResult, type Result } from "@afenda/errors";
 import { type EmployeeListPage, listEmployees } from "@afenda/human-resources";
 import {
-	deleteSearchDocument,
-	listSearchDocumentIds,
+	type SearchCapability,
 	type SearchDeleteInput,
 	type SearchDocument,
 	type SearchHit,
-	type SearchStore,
 	type SearchUpsertInput,
-	searchDocuments,
-	upsertSearchDocuments,
+	search,
 } from "@afenda/search";
 
 import { createHumanResourcesCommandOptions } from "@/lib/erp/human-resources-command-options";
@@ -19,7 +16,8 @@ import {
 } from "@/modules/identity/domain/session-permission";
 
 const SEARCH_PAGE_SIZE = 100;
-const HUMAN_RESOURCES_EMPLOYEE_SEARCH_ENTITY = "human_resources_employee";
+const HUMAN_RESOURCES_EMPLOYEE_SEARCH_ENTITY =
+	search.entities.humanResources.employee;
 const HUMAN_RESOURCES_EMPLOYEE_SEARCH_PERMISSION =
 	"human-resources.employee.read" as const;
 
@@ -76,19 +74,19 @@ export interface SearchHumanResourcesEmployeesDeps {
 function productionDeps(): HumanResourcesEmployeeSearchProjectionDeps {
 	return {
 		list: (input) => listEmployees(input, createHumanResourcesCommandOptions()),
-		upsert: (input) => upsertSearchDocuments(input),
-		listIds: (input) => listSearchDocumentIds(input),
-		deleteDocument: (input) => deleteSearchDocument(input),
+		upsert: (input) => search.documents.upsertMany(input),
+		listIds: (input) => search.documents.listIds(input),
+		deleteDocument: (input) => search.documents.delete(input),
 	};
 }
 
 function productionSearchDeps(
-	store?: SearchStore,
+	searchCapability: SearchCapability = search,
 ): SearchHumanResourcesEmployeesDeps {
 	return {
 		hasPermission: (session) =>
 			sessionHasPermission(session, HUMAN_RESOURCES_EMPLOYEE_SEARCH_PERMISSION),
-		search: (input) => searchDocuments(input, store),
+		search: (input) => searchCapability.query(input),
 	};
 }
 

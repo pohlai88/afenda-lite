@@ -2,17 +2,19 @@
 import { errorResult, errorWire, type Result } from "@afenda/errors";
 
 import {
-	createEventPublisher,
 	type DomainEvent,
 	type DomainEventHandlerMap,
 	type EventPublisher,
+	events,
+	type PublishEventCommand,
+} from "@afenda/events";
+import {
 	HUMAN_RESOURCES_EVENT_IDS,
 	IDENTITY_HUMAN_RESOURCES_LIFECYCLE_FACT_RECORDED_EVENT,
 	PLATFORM_HUMAN_RESOURCES_ACCOUNTING_PROVISIONING_FACT_RECORDED_EVENT,
 	PLATFORM_HUMAN_RESOURCES_REPORTING_FACT_RECORDED_EVENT,
 	PLATFORM_HUMAN_RESOURCES_WORKFLOW_FACT_RECORDED_EVENT,
-	type PublishEventCommand,
-} from "@afenda/events";
+} from "@afenda/events/schemas";
 import {
 	type HrObservabilityPorts,
 	type HumanResourcesAccountingProvisioningFact,
@@ -23,10 +25,7 @@ import {
 	recordHrEventFailure,
 	recordHrOutboxLag,
 } from "@afenda/human-resources";
-import {
-	createNotificationRecorder,
-	type Notification,
-} from "@afenda/notifications";
+import { type Notification, notifications } from "@afenda/notifications";
 import {
 	classifyHrFailure,
 	createProductionHrObservabilityPorts,
@@ -196,8 +195,8 @@ async function publishPlatformFacts(
 
 async function handleHumanResourcesPlatformEventCore(
 	event: DomainEvent,
-	recorder: HumanResourcesNotificationRecorderPort = createNotificationRecorder(),
-	publisher: HumanResourcesFactPublisherPort = createEventPublisher(),
+	recorder: HumanResourcesNotificationRecorderPort = notifications,
+	publisher: HumanResourcesFactPublisherPort = events.publisher.create(),
 	workItemSink: HumanResourcesWorkItemSinkPort | null = createProductionHumanResourcesWorkItemSink(),
 ): Promise<Result<HumanResourcesPlatformEventResult>> {
 	const projected = projectHumanResourcesPlatformFacts(event);
@@ -239,7 +238,7 @@ async function handleHumanResourcesPlatformEventCore(
 		userId: intent.recipientUserId,
 		type: intent.type,
 		priority: intent.priority,
-		channel: "IN_APP",
+		channel: notifications.vocabulary.channel.inApp,
 		title: intent.title,
 		body: intent.body,
 		module: "human-resources",
@@ -263,8 +262,8 @@ async function handleHumanResourcesPlatformEventCore(
 
 export async function handleHumanResourcesPlatformEvent(
 	event: DomainEvent,
-	recorder: HumanResourcesNotificationRecorderPort = createNotificationRecorder(),
-	publisher: HumanResourcesFactPublisherPort = createEventPublisher(),
+	recorder: HumanResourcesNotificationRecorderPort = notifications,
+	publisher: HumanResourcesFactPublisherPort = events.publisher.create(),
 	workItemSink: HumanResourcesWorkItemSinkPort | null = createProductionHumanResourcesWorkItemSink(),
 	observability: HrObservabilityPorts = createProductionHrObservabilityPorts(),
 ): Promise<Result<HumanResourcesPlatformEventResult>> {

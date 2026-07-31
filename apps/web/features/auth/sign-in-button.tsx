@@ -1,4 +1,4 @@
-import { AUTH_LOGIN_PATH } from "@afenda/auth/client";
+import { authBrowser } from "@afenda/auth/client";
 import { Button, cn } from "@afenda/ui-system";
 import Link from "next/link";
 import type { ComponentProps } from "react";
@@ -38,7 +38,7 @@ export function SignInButton({
 				)}
 				variant="ghost"
 			>
-				<Link href={AUTH_LOGIN_PATH}>
+				<Link href={authBrowser.paths.login}>
 					<span aria-hidden="true" className="sign-in-button__mark" />
 					<span className="sign-in-button__label">Sign in</span>
 				</Link>
@@ -52,7 +52,7 @@ export function SignInButton({
 			className={cn("sign-in-button", className)}
 			variant={variant}
 		>
-			<Link href={AUTH_LOGIN_PATH}>Sign in</Link>
+			<Link href={authBrowser.paths.login}>Sign in</Link>
 		</Button>
 	);
 }

@@ -1,8 +1,9 @@
 "use server";
 
-import { requireRole } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import { type Result as ActionResult, errorResult } from "@afenda/errors";
-import { createCorrelationId } from "@afenda/http";
+import { http } from "@afenda/http";
+import { logger } from "@afenda/logger";
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import {
@@ -10,7 +11,6 @@ import {
 	searchOrganizationMembers,
 } from "@/modules/identity/domain/organization-member-search";
 import { searchOrgMembersQuerySchema } from "@/modules/identity/schemas/search-org-members";
-import { logProductEvent } from "@/modules/platform/observability/product-log";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export interface SearchOrgMembersActionData {
@@ -24,8 +24,8 @@ export interface SearchOrgMembersActionData {
 export async function searchOrgMembersAction(
 	input: unknown,
 ): Promise<ActionResult<SearchOrgMembersActionData>> {
-	const correlationId = createCorrelationId();
-	const session = await requireRole("operator");
+	const correlationId = http.correlation.create();
+	const session = await authServer.session.requireRole("operator");
 
 	const parsed = parseSchema(searchOrgMembersQuerySchema, input);
 	if (!parsed.success) {
@@ -54,7 +54,7 @@ export async function searchOrgMembersAction(
 		}
 		return { ok: true, data: { members: mapped.data } };
 	} catch {
-		logProductEvent({
+		logger.event({
 			level: "error",
 			event: "action.internal_error",
 			correlationId,

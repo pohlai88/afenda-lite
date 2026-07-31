@@ -1,0 +1,11 @@
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"rootDir": "."
+	},
+	"include": [
+		"src/**/*.ts",
+		"__tests__/contract.fixture.ts",
+		"__tests__/testing-contract.fixture.ts"
+	]
+}

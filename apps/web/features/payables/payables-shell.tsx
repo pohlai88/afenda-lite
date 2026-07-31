@@ -1,4 +1,4 @@
-import { getSession, requireRole } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import { listSupplierInvoices } from "@afenda/payables";
 import {
 	Alert,
@@ -52,7 +52,9 @@ const formSections = [
 /** Payables console — RSC reads via `@afenda/payables`; mutations via Actions. */
 export async function PayablesShell({ surface }: PayablesShellProps) {
 	const session =
-		surface === "admin" ? await requireRole("operator") : await getSession();
+		surface === "admin"
+			? await authServer.session.requireRole("operator")
+			: await authServer.session.get();
 	await requirePermission(session, "payables.read");
 	const canManage = await sessionHasPermission(session, "payables.manage");
 	const invoicesResult = await listSupplierInvoices(

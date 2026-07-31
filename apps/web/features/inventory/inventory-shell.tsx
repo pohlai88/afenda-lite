@@ -1,5 +1,5 @@
 // biome-ignore-all lint/style/noNestedTernary: Exhaustive status and tri-state view mappings remain explicit at their use sites.
-import { getSession, requireRole } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import {
 	getStockAvailability,
 	getStockMovementById,
@@ -62,7 +62,9 @@ export async function InventoryShell({
 	movementId,
 }: InventoryShellProps) {
 	const session =
-		surface === "admin" ? await requireRole("operator") : await getSession();
+		surface === "admin"
+			? await authServer.session.requireRole("operator")
+			: await authServer.session.get();
 
 	await requirePermission(session, "inventory.movement.read");
 	const mutationsEnabled = surface === "admin";

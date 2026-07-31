@@ -12,15 +12,27 @@ const sharedConfigPath = path.join(
 	root,
 	"packages/foundation/config/biome.json",
 );
+const configPackagePath = path.join(
+	root,
+	"packages/foundation/config/package.json",
+);
 const docsProbePath = "apps/docs/tsconfig.json";
 const broadDocsExclusionPattern = /^!{1,2}\*\*\/docs(?:\/\*\*)?$/;
+const configPackage = JSON.parse(readFileSync(configPackagePath, "utf8"));
+const biomeExport = Object.entries(configPackage.exports ?? {}).find(
+	([exportPath, target]) =>
+		target === "./biome.json" && exportPath.endsWith(".json"),
+)?.[0];
+const biomeSpecifier = biomeExport
+	? `@afenda/config/${biomeExport.slice(2)}`
+	: "@afenda/config/<missing-biome-export>";
 
 const requiredExtends = [
 	"ultracite/biome/core",
 	"ultracite/biome/react",
 	"ultracite/biome/next",
 	"ultracite/biome/vitest",
-	"@afenda/config/biome.json",
+	biomeSpecifier,
 ];
 
 // One sentinel per required rule family. Ultracite remains the rule SSOT.
@@ -35,6 +47,12 @@ const requiredRuleSentinels = [
 
 /** @type {string[]} */
 const errors = [];
+
+if (!biomeExport) {
+	errors.push(
+		"packages/foundation/config/package.json must export the shared Biome JSON artifact",
+	);
+}
 
 function readJsonc(file) {
 	const raw = readFileSync(file, "utf8");

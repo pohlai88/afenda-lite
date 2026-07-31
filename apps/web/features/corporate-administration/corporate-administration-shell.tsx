@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { getSession, requireRole } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import {
 	findCompanyFinancialYearAsOf,
 	findCompanyLegalFormAsOf,
@@ -53,7 +53,9 @@ export async function CorporateAdministrationShell({
 	surface,
 }: CorporateAdministrationShellProps) {
 	const session =
-		surface === "admin" ? await requireRole("operator") : await getSession();
+		surface === "admin"
+			? await authServer.session.requireRole("operator")
+			: await authServer.session.get();
 	await requirePermission(session, "corporate_administration.company.read");
 	const canWrite = await sessionHasPermission(
 		session,

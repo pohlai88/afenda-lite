@@ -2,10 +2,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 
 import { env } from "@afenda/env";
 import { errorResult } from "@afenda/errors";
-import {
-	PROMETHEUS_CONTENT_TYPE,
-	renderPrometheusText,
-} from "@afenda/metrics/node";
+import { metrics } from "@afenda/metrics";
 
 import { jsonFailure } from "@/modules/platform/api/json-response";
 import { createPlatformRouteHandler } from "@/modules/platform/api/route-pipeline";
@@ -55,11 +52,11 @@ export const GET = createPlatformRouteHandler(
 			});
 		}
 
-		const body = await renderPrometheusText();
+		const body = await metrics.exposition.render();
 		return new Response(body, {
 			status: 200,
 			headers: {
-				"Content-Type": PROMETHEUS_CONTENT_TYPE,
+				"Content-Type": metrics.exposition.contentType,
 				"Cache-Control": "no-store",
 			},
 		});

@@ -1,10 +1,6 @@
 "use server";
 
-import {
-	CLIENT_HOME_PATH,
-	OPERATOR_HOME_PATH,
-	signInWithEmail,
-} from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import { env } from "@afenda/env";
 import {
 	type Result as ActionResult,
@@ -12,8 +8,9 @@ import {
 	errorProject,
 	errorResult,
 } from "@afenda/errors";
-import { createCorrelationId } from "@afenda/http";
-import { checkRateLimit, toRateLimitFailure } from "@afenda/rate-limit";
+import { http } from "@afenda/http";
+import { logger } from "@afenda/logger";
+import { rateLimit } from "@afenda/rate-limit";
 import { redirect } from "next/navigation";
 import {
 	getLocalDevLoginAvailability,
@@ -21,7 +18,6 @@ import {
 	type LocalDevLoginRole,
 } from "@/lib/local-dev-login";
 import { readRequestAttribution } from "@/modules/platform/domain/request-attribution";
-import { logProductEvent } from "@/modules/platform/observability/product-log";
 
 export type DevLoginActionState = ActionResult<{ redirected: true }> | null;
 
@@ -37,7 +33,7 @@ function resolveCredentials(role: LocalDevLoginRole): {
 		if (typeof email !== "string" || typeof password !== "string") {
 			return null;
 		}
-		return { email, password, home: OPERATOR_HOME_PATH };
+		return { email, password, home: authServer.paths.postLogin.operatorHome };
 	}
 	if (role === "client" && availability.client) {
 		const email = env.PREVIEW_CLIENT_EMAIL;
@@ -45,7 +41,7 @@ function resolveCredentials(role: LocalDevLoginRole): {
 		if (typeof email !== "string" || typeof password !== "string") {
 			return null;
 		}
-		return { email, password, home: CLIENT_HOME_PATH };
+		return { email, password, home: authServer.paths.postLogin.clientHome };
 	}
 	return null;
 }
@@ -58,10 +54,10 @@ export async function devLoginAction(
 	_prev: DevLoginActionState,
 	formData: FormData,
 ): Promise<DevLoginActionState> {
-	const correlationId = createCorrelationId();
+	const correlationId = http.correlation.create();
 
 	if (!isLocalDevLoginRuntime()) {
-		logProductEvent({
+		logger.event({
 			level: "warn",
 			event: "dev_login.denied_runtime",
 			correlationId,
@@ -88,18 +84,22 @@ export async function devLoginAction(
 	}
 
 	const attribution = await readRequestAttribution();
-	const limit = await checkRateLimit({
+	const limit = await rateLimit.check({
 		bucket: "auth_sign_in",
-		key: `${attribution.ipAddress?.trim() || "unknown"}:dev-login:${role}`,
+		identity: {
+			kind: "dev-login",
+			ipAddress: attribution.ipAddress,
+			role,
+		},
 	});
 	if (!limit.ok) {
-		const error = toRateLimitFailure(limit);
+		const error = rateLimit.project.failure(limit);
 		return errorProject.result(
 			errorIngress.unknown(error, { operation: "web.action" }),
 		);
 	}
 
-	const result = await signInWithEmail({
+	const result = await authServer.credentials.signInWithEmail({
 		email: credentials.email,
 		password: credentials.password,
 	});

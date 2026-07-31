@@ -1,16 +1,12 @@
-import {
-	buildContentSecurityPolicy,
-	type CspDirectives,
-	DEFAULT_CSP_DIRECTIVES,
-	STRICT_CSP_DIRECTIVES,
-} from "./csp";
+import { buildContentSecurityPolicy, type CspDirectives } from "./csp";
+import { SECURITY_SEMANTIC_REGISTRY } from "./semantic-registry";
 
-export interface NextSecurityHeader {
-	readonly key: string;
+export interface SecurityHeader {
+	readonly name: string;
 	readonly value: string;
 }
 
-export interface SecurityHeadersConfig {
+export interface SecurityHeadersOptions {
 	readonly cspDirectives?: CspDirectives;
 	readonly frameAncestors?: readonly string[];
 	readonly frameOptions?: "DENY" | "SAMEORIGIN";
@@ -25,172 +21,128 @@ export interface SecurityHeadersConfig {
 	readonly reportUri?: string;
 }
 
-export const DNS_PREFETCH_CONTROL_HEADER = "X-DNS-Prefetch-Control" as const;
-export const FRAME_OPTIONS_HEADER = "X-Frame-Options" as const;
-export const CONTENT_TYPE_OPTIONS_HEADER = "X-Content-Type-Options" as const;
-export const REFERRER_POLICY_HEADER = "Referrer-Policy" as const;
-export const PERMISSIONS_POLICY_HEADER = "Permissions-Policy" as const;
-export const HSTS_HEADER = "Strict-Transport-Security" as const;
-export const CSP_HEADER = "Content-Security-Policy" as const;
+const FRAME_ANCESTORS_NONE = "'none'";
+const HEADER_LINE_BREAK_PATTERN = /[\r\n]/;
 
-const DEFAULT_FRAME_OPTIONS = "SAMEORIGIN" as const;
-const DEFAULT_REFERRER_POLICY = "strict-origin-when-cross-origin" as const;
-const DEFAULT_PERMISSIONS_POLICY =
-	"camera=(), microphone=(), geolocation=(), payment=()" as const;
-const DEFAULT_HSTS_MAX_AGE = 31_536_000;
-const FRAME_ANCESTORS_NONE = "'none'" as const;
+function safeHeaderValue(value: string, label: string): string {
+	const normalized = value.trim();
+	if (normalized === "" || HEADER_LINE_BREAK_PATTERN.test(normalized)) {
+		throw new RangeError(
+			`@afenda/security ${label} must be a safe header value`,
+		);
+	}
+	return normalized;
+}
 
-/**
- * Living baseline matching apps/web next.config before package cutover,
- * plus Permissions-Policy. CSP/HSTS remain opt-in via SecurityHeadersConfig.
- */
-export const DEFAULT_SECURITY_HEADERS: readonly NextSecurityHeader[] = [
-	{ key: DNS_PREFETCH_CONTROL_HEADER, value: "on" },
-	{ key: FRAME_OPTIONS_HEADER, value: DEFAULT_FRAME_OPTIONS },
-	{ key: CONTENT_TYPE_OPTIONS_HEADER, value: "nosniff" },
-	{
-		key: REFERRER_POLICY_HEADER,
-		value: DEFAULT_REFERRER_POLICY,
-	},
-	{
-		key: PERMISSIONS_POLICY_HEADER,
-		value: DEFAULT_PERMISSIONS_POLICY,
-	},
-] as const;
-
-function isFrameAncestorsNone(
-	frameAncestors: readonly string[] | undefined,
-): boolean {
-	return (
-		frameAncestors !== undefined &&
-		frameAncestors.length === 1 &&
-		frameAncestors[0] === FRAME_ANCESTORS_NONE
-	);
+function nonNegativeInteger(value: number, label: string): number {
+	if (!Number.isSafeInteger(value) || value < 0) {
+		throw new RangeError(
+			`@afenda/security ${label} must be a non-negative safe integer`,
+		);
+	}
+	return value;
 }
 
 function resolveFrameOptions(
-	config: SecurityHeadersConfig,
+	options: SecurityHeadersOptions,
 ): "DENY" | "SAMEORIGIN" {
-	if (config.frameOptions !== undefined) {
-		return config.frameOptions;
+	if (options.frameOptions !== undefined) {
+		return options.frameOptions;
 	}
-	if (isFrameAncestorsNone(config.frameAncestors)) {
-		return "DENY";
-	}
-	return DEFAULT_FRAME_OPTIONS;
+	return options.frameAncestors?.length === 1 &&
+		options.frameAncestors[0] === FRAME_ANCESTORS_NONE
+		? "DENY"
+		: SECURITY_SEMANTIC_REGISTRY.headers.defaults.frameOptions;
 }
 
-function resolveCspDirectives(config: SecurityHeadersConfig): CspDirectives {
+function resolveCspDirectives(options: SecurityHeadersOptions): CspDirectives {
 	let directives: CspDirectives =
-		config.cspDirectives ?? DEFAULT_CSP_DIRECTIVES;
-
-	if (config.frameAncestors !== undefined) {
-		directives = {
-			...directives,
-			"frame-ancestors": config.frameAncestors,
-		};
+		options.cspDirectives ?? SECURITY_SEMANTIC_REGISTRY.csp.baseline;
+	if (options.frameAncestors !== undefined) {
+		directives = { ...directives, "frame-ancestors": options.frameAncestors };
 	}
-
-	const reportUri = config.reportUri?.trim();
-	if (reportUri !== undefined && reportUri !== "") {
-		directives = {
-			...directives,
-			"report-uri": [reportUri],
-		};
+	const reportUri = options.reportUri?.trim();
+	if (reportUri) {
+		directives = { ...directives, "report-uri": [reportUri] };
 	}
-
-	const reportTo = config.reportTo?.trim();
-	if (reportTo !== undefined && reportTo !== "") {
-		directives = {
-			...directives,
-			"report-to": [reportTo],
-		};
+	const reportTo = options.reportTo?.trim();
+	if (reportTo) {
+		directives = { ...directives, "report-to": [reportTo] };
 	}
-
 	return directives;
 }
 
-function buildHstsValue(config: SecurityHeadersConfig): string {
-	const maxAge = config.hstsMaxAge ?? DEFAULT_HSTS_MAX_AGE;
-	const includeSub = config.hstsIncludeSubdomains !== false;
+function buildHstsValue(options: SecurityHeadersOptions): string {
+	const maxAge = nonNegativeInteger(
+		options.hstsMaxAge ??
+			SECURITY_SEMANTIC_REGISTRY.headers.defaults.hstsMaxAge,
+		"HSTS max age",
+	);
 	const parts = [`max-age=${maxAge}`];
-	if (includeSub) {
+	if (options.hstsIncludeSubdomains !== false) {
 		parts.push("includeSubDomains");
 	}
-	if (config.hstsPreload === true) {
+	if (options.hstsPreload === true) {
 		parts.push("preload");
 	}
 	return parts.join("; ");
 }
 
-/**
- * Next.js `headers()`-shaped security header list.
- */
-export function securityHeadersForNext(
-	config: SecurityHeadersConfig = {},
-): NextSecurityHeader[] {
-	const frameOptions = resolveFrameOptions(config);
-	const referrerPolicy = config.referrerPolicy ?? DEFAULT_REFERRER_POLICY;
-	const permissionsPolicy =
-		config.permissionsPolicy ?? DEFAULT_PERMISSIONS_POLICY;
-
-	const headers: NextSecurityHeader[] = DEFAULT_SECURITY_HEADERS.map(
-		(header) => {
-			if (header.key === FRAME_OPTIONS_HEADER) {
-				return { key: header.key, value: frameOptions };
-			}
-			if (header.key === REFERRER_POLICY_HEADER) {
-				return { key: header.key, value: referrerPolicy };
-			}
-			if (header.key === PERMISSIONS_POLICY_HEADER) {
-				return { key: header.key, value: permissionsPolicy };
-			}
-			return header;
+export function createSecurityHeaders(
+	options: SecurityHeadersOptions = {},
+): SecurityHeader[] {
+	const { defaults, names } = SECURITY_SEMANTIC_REGISTRY.headers;
+	const entries: SecurityHeader[] = [
+		{ name: names.dnsPrefetchControl, value: defaults.dnsPrefetchControl },
+		{ name: names.frameOptions, value: resolveFrameOptions(options) },
+		{ name: names.contentTypeOptions, value: defaults.contentTypeOptions },
+		{
+			name: names.referrerPolicy,
+			value: safeHeaderValue(
+				options.referrerPolicy ?? defaults.referrerPolicy,
+				"Referrer-Policy",
+			),
 		},
-	);
-
-	if (config.includeCsp) {
-		headers.push({
-			key: CSP_HEADER,
-			value: buildContentSecurityPolicy(resolveCspDirectives(config)),
+		{
+			name: names.permissionsPolicy,
+			value: safeHeaderValue(
+				options.permissionsPolicy ?? defaults.permissionsPolicy,
+				"Permissions-Policy",
+			),
+		},
+	];
+	if (options.includeCsp === true) {
+		entries.push({
+			name: names.contentSecurityPolicy,
+			value: buildContentSecurityPolicy(resolveCspDirectives(options)),
 		});
 	}
-
-	if (config.hsts) {
-		headers.push({
-			key: HSTS_HEADER,
-			value: buildHstsValue(config),
+	if (options.hsts === true) {
+		entries.push({
+			name: names.strictTransportSecurity,
+			value: buildHstsValue(options),
 		});
 	}
-
-	return headers;
+	return entries;
 }
 
-/**
- * Opt-in production hardening: strict CSP, frame DENY, HSTS on.
- * Not wired to living next.config — App Router may still need soft CSP.
- * `includeCsp` stays forced so the preset cannot silently drop CSP.
- */
-export function strictSecurityHeadersForNext(
-	config: SecurityHeadersConfig = {},
-): NextSecurityHeader[] {
-	return securityHeadersForNext({
-		cspDirectives: STRICT_CSP_DIRECTIVES,
+export function createStrictSecurityHeaders(
+	options: SecurityHeadersOptions = {},
+): SecurityHeader[] {
+	return createSecurityHeaders({
+		cspDirectives: SECURITY_SEMANTIC_REGISTRY.csp.strict,
 		frameAncestors: [FRAME_ANCESTORS_NONE],
 		hsts: true,
-		...config,
+		...options,
 		includeCsp: true,
 	});
 }
 
-/**
- * Apply a Next-shaped header list onto Fetch Headers (RH / middleware use).
- */
 export function applySecurityHeaders(
 	headers: Headers,
-	nextHeaders: readonly NextSecurityHeader[] = DEFAULT_SECURITY_HEADERS,
+	entries: readonly SecurityHeader[] = createSecurityHeaders(),
 ): void {
-	for (const { key, value } of nextHeaders) {
-		headers.set(key, value);
+	for (const { name, value } of entries) {
+		headers.set(name, value);
 	}
 }

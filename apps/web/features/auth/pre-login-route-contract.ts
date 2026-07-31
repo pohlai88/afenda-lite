@@ -3,12 +3,7 @@
  * Auth URL SSOT remains `@afenda/auth` (`auth-paths` · `join-paths`).
  */
 
-import {
-	AUTH_API_BASE_PATH,
-	CLIENT_HOME_PATH,
-	OPERATOR_HOME_PATH,
-	PRE_LOGIN_PUBLIC_PATHS,
-} from "@afenda/auth/client";
+import { authBrowser } from "@afenda/auth/client";
 
 import {
 	CLIENT_DASHBOARD_ALIAS_PATH,
@@ -16,7 +11,7 @@ import {
 } from "@/features/auth/client-paths";
 
 /** Document-public pages — re-export of `@afenda/auth` allowlist. */
-export const PRE_LOGIN_PUBLIC_ROUTE_PATHS = PRE_LOGIN_PUBLIC_PATHS;
+export const PRE_LOGIN_PUBLIC_ROUTE_PATHS = authBrowser.paths.preLoginPublic;
 
 export type { PreLoginPublicPath } from "@afenda/auth/client";
 
@@ -35,7 +30,7 @@ export const METRICS_SCRAPE_PATH = "/api/metrics" as const;
  * Session cookie/org APIs are post-login and intentionally excluded.
  */
 export const PRE_LOGIN_API_PATHS = [
-	AUTH_API_BASE_PATH,
+	authBrowser.paths.apiBase,
 	HEALTH_LIVENESS_PATH,
 	HEALTH_READINESS_PATH,
 	METRICS_SCRAPE_PATH,
@@ -64,10 +59,10 @@ export type SessionGateProtectedMatcher =
  * Coarse role homes + legacy client dashboard alias only.
  */
 export const POST_LOGIN_PATHS_NOT_PUBLIC = [
-	CLIENT_HOME_PATH,
-	OPERATOR_HOME_PATH,
+	authBrowser.paths.postLogin.clientHome,
+	authBrowser.paths.postLogin.operatorHome,
 	CLIENT_DASHBOARD_ALIAS_PATH,
 ] as const;
 
 /** Declared redirect source (next.config → JOIN_PATH); not a public page. */
-export { AUTH_ACCEPT_INVITATION_PATH } from "@afenda/auth/client";
+export const AUTH_ACCEPT_INVITATION_PATH = authBrowser.paths.acceptInvitation;

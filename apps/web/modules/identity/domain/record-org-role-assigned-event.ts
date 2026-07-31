@@ -10,12 +10,11 @@ import {
 } from "@afenda/errors";
 
 import {
-	createEventDispatcher,
-	createEventPublisher,
 	type DomainEvent,
 	type EventDispatchSummary,
-	identityOrgRoleAssignedPayloadSchema,
+	events,
 } from "@afenda/events";
+import { identityOrgRoleAssignedPayloadSchema } from "@afenda/events/schemas";
 
 import { recordOrgRoleAssignedNotification } from "./record-org-role-assigned-notification";
 
@@ -43,7 +42,7 @@ export interface RecordOrgRoleAssignedEventData {
 export async function recordOrgRoleAssignedEvent(
 	input: RecordOrgRoleAssignedEventInput,
 ): Promise<Result<RecordOrgRoleAssignedEventData>> {
-	const published = await createEventPublisher().publish({
+	const published = await events.publisher.create().publish({
 		type: "identity.org_role.assigned",
 		sourceModule: "identity",
 		organizationId: input.organizationId,
@@ -63,37 +62,39 @@ export async function recordOrgRoleAssignedEvent(
 
 	let notificationId: string | null = null;
 
-	const dispatch = await createEventDispatcher({
-		handlers: {
-			"identity.org_role.assigned": async (event) => {
-				const parsed = identityOrgRoleAssignedPayloadSchema.safeParse(
-					event.payload,
-				);
-				if (!parsed.success) {
-					throw errorIngress.code("INTERNAL_ERROR", {
-						operation: "identity.role-assigned.payload",
+	const dispatch = await events.dispatcher
+		.create({
+			handlers: {
+				"identity.org_role.assigned": async (event) => {
+					const parsed = identityOrgRoleAssignedPayloadSchema.safeParse(
+						event.payload,
+					);
+					if (!parsed.success) {
+						throw errorIngress.code("INTERNAL_ERROR", {
+							operation: "identity.role-assigned.payload",
+						});
+					}
+
+					const notification = await recordOrgRoleAssignedNotification({
+						organizationId: event.organizationId,
+						userId: parsed.data.recipientUserId,
+						roleId: parsed.data.roleId,
+						assignmentId: parsed.data.assignmentId,
+						eventId: event.id,
+						actorUserId: event.actorUserId,
+						reactivated: parsed.data.reactivated,
 					});
-				}
 
-				const notification = await recordOrgRoleAssignedNotification({
-					organizationId: event.organizationId,
-					userId: parsed.data.recipientUserId,
-					roleId: parsed.data.roleId,
-					assignmentId: parsed.data.assignmentId,
-					eventId: event.id,
-					actorUserId: event.actorUserId,
-					reactivated: parsed.data.reactivated,
-				});
-
-				if (!notification.ok) {
-					throw errorWire.deserialize(errorWire.serialize(notification));
-				}
-				notificationId = notification.data.id;
+					if (!notification.ok) {
+						throw errorWire.deserialize(errorWire.serialize(notification));
+					}
+					notificationId = notification.data.id;
+				},
 			},
-		},
-	}).dispatchPending({
-		organizationId: input.organizationId,
-	});
+		})
+		.dispatchPending({
+			organizationId: input.organizationId,
+		});
 
 	if (!dispatch.ok) {
 		return dispatch;

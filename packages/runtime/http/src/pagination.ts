@@ -1,13 +1,13 @@
-export const DEFAULT_PAGE_LIMIT = 20;
-export const MAX_PAGE_LIMIT = 100;
+import { toNonNegativeInteger } from "./non-negative-integer";
+import { HTTP_SEMANTIC_REGISTRY } from "./semantic-registry";
 
-export type PaginationOrder = "asc" | "desc";
+export const DEFAULT_PAGE_LIMIT =
+	HTTP_SEMANTIC_REGISTRY.pagination.defaultLimit;
+export const MAX_PAGE_LIMIT = HTTP_SEMANTIC_REGISTRY.pagination.maxLimit;
 
 export interface PaginationParams {
 	readonly limit: number;
 	readonly offset: number;
-	readonly order?: PaginationOrder;
-	readonly orderBy?: string;
 }
 
 function hasUrlString(input: object): input is { readonly url: string } {
@@ -18,7 +18,7 @@ function readProperty(input: object, key: PropertyKey): unknown {
 	try {
 		return Reflect.get(input, key);
 	} catch {
-		// Throwing getters are treated as absent pagination input.
+		// Throwing getters are treated as absent transport input.
 	}
 }
 
@@ -30,18 +30,23 @@ function asSearchParams(input: unknown): URLSearchParams {
 		return input.searchParams;
 	}
 	if (typeof input === "string") {
-		const url = input.includes("://")
-			? new URL(input)
-			: new URL(input, "http://local.invalid");
-		return url.searchParams;
+		try {
+			return new URL(input, "http://local.invalid").searchParams;
+		} catch {
+			return new URLSearchParams();
+		}
 	}
 	if (typeof input === "object" && input !== null && hasUrlString(input)) {
-		return new URL(input.url).searchParams;
+		try {
+			return new URL(input.url, "http://local.invalid").searchParams;
+		} catch {
+			return new URLSearchParams();
+		}
 	}
 	return new URLSearchParams();
 }
 
-function parsePositiveInt(
+function parseBoundedInteger(
 	raw: string | null,
 	fallback: number,
 	max: number,
@@ -49,42 +54,27 @@ function parsePositiveInt(
 	if (raw === null || raw.trim() === "") {
 		return fallback;
 	}
-	const n = Number.parseInt(raw, 10);
-	if (!Number.isFinite(n) || n < 0) {
+	const value = Number(raw);
+	if (!Number.isInteger(value) || value < 0) {
 		return fallback;
 	}
-	return Math.min(n, max);
+	return Math.min(toNonNegativeInteger(value, "pagination value"), max);
 }
 
-function parseOrder(raw: string | null): PaginationOrder | undefined {
-	if (raw === "asc" || raw === "desc") {
-		return raw;
-	}
-}
-
-/**
- * Parse list-query pagination into Drizzle-shaped `{ limit, offset }`.
- * Invalid values fall back to defaults; limit is clamped to MAX_PAGE_LIMIT.
- */
+/** Parse bounded transport pagination. Sorting remains domain-owned. */
 export function extractPagination(input: unknown): PaginationParams {
 	const params = asSearchParams(input);
-	const limit = parsePositiveInt(
+	const limit = parseBoundedInteger(
 		params.get("limit"),
 		DEFAULT_PAGE_LIMIT,
 		MAX_PAGE_LIMIT,
 	);
-	const offset = parsePositiveInt(
-		params.get("offset"),
-		0,
-		Number.MAX_SAFE_INTEGER,
-	);
-	const orderByRaw = params.get("orderBy")?.trim();
-	const order = parseOrder(params.get("order"));
-
 	return {
 		limit: limit === 0 ? DEFAULT_PAGE_LIMIT : limit,
-		offset,
-		...(orderByRaw ? { orderBy: orderByRaw } : {}),
-		...(order ? { order } : {}),
+		offset: parseBoundedInteger(
+			params.get("offset"),
+			0,
+			Number.MAX_SAFE_INTEGER,
+		),
 	};
 }

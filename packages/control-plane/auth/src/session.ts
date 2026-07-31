@@ -6,6 +6,7 @@ import { cache } from "react";
 import { AUTH_LOGIN_PATH } from "./auth-paths";
 import { buildEnsureActiveOrganizationUrl } from "./ensure-active-organization";
 import { getNeonAuth } from "./neon-auth";
+import { normalizeNeonEmail } from "./neon-normalization";
 import { resolveMemberOrganizationId } from "./organization-membership";
 import { sanitizeCallbackUrl } from "./post-login";
 import type { Role } from "./role";
@@ -49,14 +50,6 @@ function isCookieMutationBlockedError(error: unknown): boolean {
 	);
 }
 
-function normalizeSessionEmail(email: unknown): string | null {
-	if (typeof email !== "string") {
-		return null;
-	}
-	const normalized = email.trim().toLowerCase();
-	return normalized.length > 0 ? normalized : null;
-}
-
 async function loadApiSession(): Promise<
 	| { ok: true; session: ApiSession }
 	| { ok: false; reason: SessionResolveFailure }
@@ -90,7 +83,7 @@ async function loadApiSession(): Promise<
 		return { ok: false, reason: "missing_org" };
 	}
 
-	const email = normalizeSessionEmail(data.user.email);
+	const email = normalizeNeonEmail(data.user.email);
 	if (!email) {
 		return { ok: false, reason: "missing_email" };
 	}

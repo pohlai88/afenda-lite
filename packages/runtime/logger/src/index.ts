@@ -1,10 +1,16 @@
-export { createLogger } from "./create-logger";
-export { logProductEvent } from "./product-log";
-export { DEFAULT_REDACT_PATHS } from "./redact-paths";
+import { emitNodeEvent } from "./node-projection";
+import { redactFieldValue } from "./policy";
+import type { LoggerCapability } from "./types";
+
+export const logger = {
+	event: emitNodeEvent,
+	redactFieldValue,
+} satisfies LoggerCapability;
+
 export type {
-	CreateLoggerOptions,
+	LogEventOptions,
+	LoggerCapability,
 	LogLevel,
-	LogProductEventOptions,
-	ProductLogEvent,
-	ProductLogLevel,
+	StructuredLogEvent,
+	StructuredLogFields,
 } from "./types";

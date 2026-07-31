@@ -296,9 +296,13 @@ export const platformDomainEvent = pgTable(
 		actorUserId: text("actor_user_id").notNull(),
 		payload: jsonb("payload").notNull(),
 		metadata: jsonb("metadata"),
-		/** Outbox status — pending | processed | failed */
+		/** Outbox status — pending | processing | processed | failed */
 		status: text("status").notNull().default("pending"),
 		attempts: integer("attempts").notNull().default(0),
+		/** Private lease token proving the worker owns a processing transition. */
+		claimToken: uuid("claim_token"),
+		/** Lease start; stale processing rows become claimable after policy expiry. */
+		claimedAt: timestamp("claimed_at", { withTimezone: true }),
 		lastError: text("last_error"),
 		processedAt: timestamp("processed_at", { withTimezone: true }),
 		createdAt: timestamp("created_at", { withTimezone: true })

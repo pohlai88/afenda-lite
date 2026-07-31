@@ -1,11 +1,6 @@
-import type { HttpHandler, HttpMiddleware } from "@afenda/http";
-import { compose, withHttpContext } from "@afenda/http";
-import { recordHttpRequest } from "@afenda/metrics/node";
-import {
-	buildCorsHeaders,
-	type CorsConfig,
-	handleCorsPreflight,
-} from "@afenda/security";
+import { type HttpHandler, type HttpMiddleware, http } from "@afenda/http";
+import { metrics } from "@afenda/metrics";
+import { type CorsConfig, security } from "@afenda/security";
 
 export interface PlatformRouteOptions {
 	/** When set, OPTIONS short-circuits and allow-listed origins get CORS headers. */
@@ -20,13 +15,13 @@ export interface PlatformRouteOptions {
 
 function corsMiddleware(config: CorsConfig): HttpMiddleware {
 	return async (request, ctx, next) => {
-		const preflight = handleCorsPreflight({ request, config });
+		const preflight = security.cors.preflight({ request, config });
 		if (preflight !== null) {
 			return preflight;
 		}
 
 		const response = await next(request, ctx);
-		const corsHeaders = buildCorsHeaders({
+		const corsHeaders = security.cors.project({
 			config,
 			requestOrigin: request.headers.get("Origin"),
 		});
@@ -48,10 +43,10 @@ export function createPlatformRouteHandler(
 	options: PlatformRouteOptions,
 ): (request: Request) => Promise<Response> {
 	const terminal = options.cors
-		? compose(corsMiddleware(options.cors), handler)
+		? http.pipeline.compose(corsMiddleware(options.cors), handler)
 		: handler;
 
-	const withContext = withHttpContext(terminal, {
+	const withContext = http.pipeline.withContext(terminal, {
 		...(options.serverTimingMetric === undefined
 			? {}
 			: { serverTimingMetric: options.serverTimingMetric }),
@@ -60,7 +55,7 @@ export function createPlatformRouteHandler(
 	return async (request) => {
 		const started = performance.now();
 		const response = await withContext(request);
-		recordHttpRequest({
+		metrics.record.http({
 			method: request.method,
 			routeTemplate: options.routeTemplate,
 			statusCode: response.status,

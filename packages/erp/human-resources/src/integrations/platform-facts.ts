@@ -1,6 +1,7 @@
 import { errorResult, type Result } from "@afenda/errors";
+import type { DomainEvent, HumanResourcesEventType } from "@afenda/events";
 import {
-	type DomainEvent,
+	HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_NEARING_EXPIRY_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_TRANSFERRED_EVENT,
 	HUMAN_RESOURCES_EMPLOYMENT_STARTED_EVENT,
@@ -12,12 +13,8 @@ import {
 	HUMAN_RESOURCES_OFFBOARDING_STARTED_EVENT,
 	HUMAN_RESOURCES_ONBOARDING_COMPLETED_EVENT,
 	HUMAN_RESOURCES_ONBOARDING_STARTED_EVENT,
-	type HumanResourcesEventType,
-	humanResourcesEntityPayloadSchema,
-} from "@afenda/events";
-import {
-	HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_NEARING_EXPIRY_EVENT,
 	HUMAN_RESOURCES_POLICY_ACKNOWLEDGEMENT_OUTSTANDING_EVENT,
+	humanResourcesEntityPayloadSchema,
 } from "@afenda/events/schemas";
 
 const HUMAN_RESOURCES_EVENT_TYPE_SET = new Set<string>(

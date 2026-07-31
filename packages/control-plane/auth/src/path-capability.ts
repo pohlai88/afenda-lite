@@ -1,0 +1,66 @@
+import {
+	AFENDA_AUTH_VIEW_PATHS,
+	AUTH_ACCEPT_INVITATION_PATH,
+	AUTH_API_BASE_PATH,
+	AUTH_BASE_PATH,
+	AUTH_FORBIDDEN_PATH,
+	AUTH_FORGOT_PASSWORD_PATH,
+	AUTH_LOGIN_PATH,
+	AUTH_RESET_PASSWORD_PATH,
+	AUTH_SIGN_OUT_PATH,
+	isPreLoginPublicPath,
+	isPublicAuthPath,
+	isRejectedAuthPathAlias,
+	PRE_LOGIN_PUBLIC_PATHS,
+	PUBLIC_AUTH_FULL_PATHS,
+	PUBLIC_AUTH_PATHS,
+	PUBLIC_LANDING_PATH,
+	REJECTED_AUTH_PATH_ALIASES,
+} from "./auth-paths";
+import {
+	JOIN_INVITATION_ID_MAX_LENGTH,
+	JOIN_PATH,
+	parseJoinInvitationQuery,
+} from "./join-paths";
+import {
+	CLIENT_HOME_PATH,
+	OPERATOR_HOME_PATH,
+	POST_LOGIN_CALLBACK_PARAM,
+	resolvePostLoginPath,
+	resolveRoleHome,
+	sanitizeCallbackUrl,
+} from "./post-login";
+
+/** One client-safe projection consumed by both server and browser capabilities. */
+export const AUTH_PATHS = Object.freeze({
+	acceptInvitation: AUTH_ACCEPT_INVITATION_PATH,
+	apiBase: AUTH_API_BASE_PATH,
+	base: AUTH_BASE_PATH,
+	forbidden: AUTH_FORBIDDEN_PATH,
+	forgotPassword: AUTH_FORGOT_PASSWORD_PATH,
+	join: Object.freeze({
+		invitationIdMaxLength: JOIN_INVITATION_ID_MAX_LENGTH,
+		parseInvitationQuery: parseJoinInvitationQuery,
+		path: JOIN_PATH,
+	}),
+	login: AUTH_LOGIN_PATH,
+	postLogin: Object.freeze({
+		callbackParameter: POST_LOGIN_CALLBACK_PARAM,
+		clientHome: CLIENT_HOME_PATH,
+		operatorHome: OPERATOR_HOME_PATH,
+		resolve: resolvePostLoginPath,
+		resolveRoleHome,
+		sanitizeCallback: sanitizeCallbackUrl,
+	}),
+	preLoginPublic: PRE_LOGIN_PUBLIC_PATHS,
+	publicAuth: PUBLIC_AUTH_FULL_PATHS,
+	publicLanding: PUBLIC_LANDING_PATH,
+	publicSegments: PUBLIC_AUTH_PATHS,
+	rejectedAliases: REJECTED_AUTH_PATH_ALIASES,
+	resetPassword: AUTH_RESET_PASSWORD_PATH,
+	signOut: AUTH_SIGN_OUT_PATH,
+	view: AFENDA_AUTH_VIEW_PATHS,
+	isPreLoginPublic: isPreLoginPublicPath,
+	isPublicAuth: isPublicAuthPath,
+	isRejectedAlias: isRejectedAuthPathAlias,
+});

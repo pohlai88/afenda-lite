@@ -4,7 +4,7 @@
  * Assign/revoke via WithAudit (N12 Path-to-100%).
  */
 
-import { deleteRbacAuditRow } from "@afenda/admin/audit";
+import { rbacAudit } from "@afenda/admin/audit";
 import {
 	database as afendaDatabase,
 	and,
@@ -58,7 +58,7 @@ describe.skipIf(!hasDatabase)("permission kernel product wiring (N10)", () => {
 
 	afterAll(async () => {
 		for (const row of createdAuditIds) {
-			await deleteRbacAuditRow({ id: row.id, orgId: row.orgId });
+			await rbacAudit.rows.delete({ id: row.id, orgId: row.orgId });
 		}
 		for (const row of createdAssignmentIds) {
 			await afendaDatabase.client

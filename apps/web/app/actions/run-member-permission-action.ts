@@ -1,9 +1,9 @@
-import { getSession, type Session } from "@afenda/auth";
+import { authServer, type Session } from "@afenda/auth";
 import { type Result as ActionResult, errorResult } from "@afenda/errors";
-import { createCorrelationId } from "@afenda/http";
+import { http } from "@afenda/http";
+import { logger } from "@afenda/logger";
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import type { ProductPermissionCode } from "@/modules/identity/domain/session-permission";
-import { logProductEvent } from "@/modules/platform/observability/product-log";
 
 /**
  * Shared authenticated-member session + permission + internal-error envelope.
@@ -20,8 +20,8 @@ export async function runMemberPermissionAction<T>(input: {
 		correlationId: string,
 	) => Promise<ActionResult<T>>;
 }): Promise<ActionResult<T>> {
-	const correlationId = createCorrelationId();
-	const session = await getSession();
+	const correlationId = http.correlation.create();
+	const session = await authServer.session.get();
 
 	const permissionDenied = await forbidUnlessPermission(
 		session,
@@ -34,7 +34,7 @@ export async function runMemberPermissionAction<T>(input: {
 	try {
 		return await input.execute(session, correlationId);
 	} catch {
-		logProductEvent({
+		logger.event({
 			level: "error",
 			event: "action.internal_error",
 			correlationId,

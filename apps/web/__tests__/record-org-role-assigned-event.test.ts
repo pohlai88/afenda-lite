@@ -14,45 +14,51 @@ vi.mock("@afenda/events", async (importOriginal) => {
 	const actual = await importOriginal<typeof import("@afenda/events")>();
 	return {
 		...actual,
-		createEventPublisher: () => ({
-			publish: eventMocks.publish,
-		}),
-		createEventDispatcher: (options: {
-			handlers: Record<string, (event: unknown) => Promise<void>>;
-		}) => ({
-			dispatchPending: async (input: unknown) => {
-				const result = await eventMocks.dispatchPending(input);
-				if (
-					result.ok &&
-					typeof options.handlers["identity.org_role.assigned"] === "function"
-				) {
-					const event = {
-						id: "evt-1",
-						type: "identity.org_role.assigned",
-						organizationId: "org-1",
-						actorUserId: "user-actor",
-						payload: {
-							roleId: "role-1",
-							assignmentId: "assign-1",
-							recipientUserId: "user-target",
-							reactivated: false,
-						},
-					};
-					await options.handlers["identity.org_role.assigned"](event);
-					return {
-						ok: true,
-						data: {
-							claimed: 1,
-							processed: 1,
-							failed: 0,
-							skipped: 0,
-							events: [{ ...event, status: "processed", lastError: null }],
-						},
-					};
-				}
-				return result;
+		events: {
+			...actual.events,
+			publisher: {
+				create: () => ({ publish: eventMocks.publish }),
 			},
-		}),
+			dispatcher: {
+				create: (options: {
+					handlers: Record<string, (event: unknown) => Promise<void>>;
+				}) => ({
+					dispatchPending: async (input: unknown) => {
+						const result = await eventMocks.dispatchPending(input);
+						if (
+							result.ok &&
+							typeof options.handlers["identity.org_role.assigned"] ===
+								"function"
+						) {
+							const event = {
+								id: "evt-1",
+								type: "identity.org_role.assigned",
+								organizationId: "org-1",
+								actorUserId: "user-actor",
+								payload: {
+									roleId: "role-1",
+									assignmentId: "assign-1",
+									recipientUserId: "user-target",
+									reactivated: false,
+								},
+							};
+							await options.handlers["identity.org_role.assigned"](event);
+							return {
+								ok: true,
+								data: {
+									claimed: 1,
+									processed: 1,
+									failed: 0,
+									skipped: 0,
+									events: [{ ...event, status: "processed", lastError: null }],
+								},
+							};
+						}
+						return result;
+					},
+				}),
+			},
+		},
 	};
 });
 

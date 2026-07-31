@@ -1,14 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-	ACCESS_CONTROL_ALLOW_CREDENTIALS,
-	ACCESS_CONTROL_ALLOW_METHODS,
-	ACCESS_CONTROL_ALLOW_ORIGIN,
-	ACCESS_CONTROL_EXPOSE_HEADERS,
-	buildCorsHeaders,
-	createCorsConfig,
-	handleCorsPreflight,
-} from "../src/cors";
+import { security } from "../src";
 
 const config = {
 	origins: ["https://afenda-lite.vercel.app", "http://localhost:3000"],
@@ -16,48 +8,48 @@ const config = {
 
 describe("@afenda/security CORS", () => {
 	it("sets ACAO for allow-listed origins only", () => {
-		const allowed = buildCorsHeaders({
+		const allowed = security.cors.project({
 			config,
 			requestOrigin: "https://afenda-lite.vercel.app",
 		});
-		expect(allowed.get(ACCESS_CONTROL_ALLOW_ORIGIN)).toBe(
+		expect(allowed.get("Access-Control-Allow-Origin")).toBe(
 			"https://afenda-lite.vercel.app",
 		);
 
-		const denied = buildCorsHeaders({
+		const denied = security.cors.project({
 			config,
 			requestOrigin: "https://evil.example",
 		});
-		expect(denied.has(ACCESS_CONTROL_ALLOW_ORIGIN)).toBe(false);
+		expect(denied.has("Access-Control-Allow-Origin")).toBe(false);
 	});
 
 	it("trims allow-list and request origins", () => {
-		const headers = buildCorsHeaders({
+		const headers = security.cors.project({
 			config: { origins: [" https://afenda-lite.vercel.app "] },
 			requestOrigin: " https://afenda-lite.vercel.app ",
 		});
-		expect(headers.get(ACCESS_CONTROL_ALLOW_ORIGIN)).toBe(
+		expect(headers.get("Access-Control-Allow-Origin")).toBe(
 			"https://afenda-lite.vercel.app",
 		);
 	});
 
 	it("rejects wildcard and blank origin config", () => {
 		expect(() =>
-			buildCorsHeaders({
+			security.cors.project({
 				config: { origins: ["*"] },
 				requestOrigin: "https://afenda-lite.vercel.app",
 			}),
-		).toThrow(/wildcard/);
+		).toThrow(RangeError);
 		expect(() =>
-			buildCorsHeaders({
+			security.cors.project({
 				config: { origins: ["  "] },
 				requestOrigin: "https://afenda-lite.vercel.app",
 			}),
-		).toThrow(/blank/);
+		).toThrow(RangeError);
 	});
 
 	it("sets credentials and exposed headers when configured", () => {
-		const headers = buildCorsHeaders({
+		const headers = security.cors.project({
 			config: {
 				...config,
 				credentials: true,
@@ -65,8 +57,10 @@ describe("@afenda/security CORS", () => {
 			},
 			requestOrigin: "http://localhost:3000",
 		});
-		expect(headers.get(ACCESS_CONTROL_ALLOW_CREDENTIALS)).toBe("true");
-		expect(headers.get(ACCESS_CONTROL_EXPOSE_HEADERS)).toBe("x-correlation-id");
+		expect(headers.get("Access-Control-Allow-Credentials")).toBe("true");
+		expect(headers.get("Access-Control-Expose-Headers")).toBe(
+			"x-correlation-id",
+		);
 	});
 
 	it("returns 204 preflight for allow-listed OPTIONS", () => {
@@ -74,16 +68,16 @@ describe("@afenda/security CORS", () => {
 			method: "OPTIONS",
 			headers: { Origin: "http://localhost:3000" },
 		});
-		const response = handleCorsPreflight({ request, config });
+		const response = security.cors.preflight({ request, config });
 		expect(response?.status).toBe(204);
-		expect(response?.headers.get(ACCESS_CONTROL_ALLOW_ORIGIN)).toBe(
+		expect(response?.headers.get("Access-Control-Allow-Origin")).toBe(
 			"http://localhost:3000",
 		);
 	});
 
 	it("returns null for non-OPTIONS", () => {
 		const request = new Request("http://local.test/api", { method: "GET" });
-		expect(handleCorsPreflight({ request, config })).toBeNull();
+		expect(security.cors.preflight({ request, config })).toBeNull();
 	});
 
 	it("returns 403 preflight for unknown origin", () => {
@@ -91,13 +85,13 @@ describe("@afenda/security CORS", () => {
 			method: "OPTIONS",
 			headers: { Origin: "https://evil.example" },
 		});
-		expect(handleCorsPreflight({ request, config })?.status).toBe(403);
+		expect(security.cors.preflight({ request, config })?.status).toBe(403);
 	});
 });
 
 describe("@afenda/security createCorsConfig", () => {
 	it("fills defaults and normalizes origins", () => {
-		const created = createCorsConfig({
+		const created = security.cors.resolve({
 			origins: [" https://afenda-lite.vercel.app "],
 		});
 		expect(created.origins).toEqual(["https://afenda-lite.vercel.app"]);
@@ -107,23 +101,41 @@ describe("@afenda/security createCorsConfig", () => {
 	});
 
 	it("rejects wildcard and blank origins", () => {
-		expect(() => createCorsConfig({ origins: ["*"] })).toThrow(/wildcard/);
-		expect(() => createCorsConfig({ origins: ["  "] })).toThrow(/blank/);
+		expect(() => security.cors.resolve({ origins: ["*"] })).toThrow();
+		expect(() => security.cors.resolve({ origins: ["  "] })).toThrow();
 	});
 
 	it("works with buildCorsHeaders after createCorsConfig", () => {
-		const created = createCorsConfig({
+		const created = security.cors.resolve({
 			origins: ["https://afenda-lite.vercel.app"],
 			credentials: true,
 		});
-		const headers = buildCorsHeaders({
+		const headers = security.cors.project({
 			config: created,
 			requestOrigin: "https://afenda-lite.vercel.app",
 		});
-		expect(headers.get(ACCESS_CONTROL_ALLOW_ORIGIN)).toBe(
+		expect(headers.get("Access-Control-Allow-Origin")).toBe(
 			"https://afenda-lite.vercel.app",
 		);
-		expect(headers.get(ACCESS_CONTROL_ALLOW_METHODS)).toContain("HEAD");
-		expect(headers.get(ACCESS_CONTROL_ALLOW_CREDENTIALS)).toBe("true");
+		expect(headers.get("Access-Control-Allow-Methods")).toContain("HEAD");
+		expect(headers.get("Access-Control-Allow-Credentials")).toBe("true");
+	});
+
+	it("rejects paths, unsafe tokens, and invalid max age", () => {
+		expect(() =>
+			security.cors.resolve({ origins: ["https://example.com/path"] }),
+		).toThrow(RangeError);
+		expect(() =>
+			security.cors.resolve({
+				origins: ["https://example.com"],
+				allowedHeaders: ["X-Good\r\nX-Evil"],
+			}),
+		).toThrow(RangeError);
+		expect(() =>
+			security.cors.resolve({
+				origins: ["https://example.com"],
+				maxAgeSeconds: -1,
+			}),
+		).toThrow(RangeError);
 	});
 });

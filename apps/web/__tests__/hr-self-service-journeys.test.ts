@@ -21,8 +21,12 @@ const mocks = vi.hoisted(() => ({
 	revalidatePath: vi.fn(),
 }));
 
-vi.mock("@afenda/auth", () => ({ getSession: mocks.getSession }));
-vi.mock("@afenda/http", () => ({ createCorrelationId: () => "corr-self" }));
+vi.mock("@afenda/auth", () => ({
+	authServer: { session: { get: mocks.getSession } },
+}));
+vi.mock("@afenda/http", () => ({
+	http: { correlation: { create: () => "corr-self" } },
+}));
 vi.mock("@/app/actions/permission-gate", () => ({
 	forbidUnlessPermission: mocks.forbidUnlessPermission,
 }));

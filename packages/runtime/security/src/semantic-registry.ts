@@ -1,0 +1,67 @@
+export const SECURITY_SEMANTIC_REGISTRY = {
+	headers: {
+		names: {
+			dnsPrefetchControl: "X-DNS-Prefetch-Control",
+			frameOptions: "X-Frame-Options",
+			contentTypeOptions: "X-Content-Type-Options",
+			referrerPolicy: "Referrer-Policy",
+			permissionsPolicy: "Permissions-Policy",
+			strictTransportSecurity: "Strict-Transport-Security",
+			contentSecurityPolicy: "Content-Security-Policy",
+		},
+		defaults: {
+			dnsPrefetchControl: "on",
+			frameOptions: "SAMEORIGIN",
+			contentTypeOptions: "nosniff",
+			referrerPolicy: "strict-origin-when-cross-origin",
+			permissionsPolicy: "camera=(), microphone=(), geolocation=(), payment=()",
+			hstsMaxAge: 31_536_000,
+		},
+	},
+	csp: {
+		baseline: {
+			"default-src": ["'self'"],
+			"base-uri": ["'self'"],
+			"frame-ancestors": ["'self'"],
+			"object-src": ["'none'"],
+			"img-src": ["'self'", "data:", "https:"],
+			"font-src": ["'self'", "data:"],
+			"style-src": ["'self'", "'unsafe-inline'"],
+			"script-src": ["'self'", "'unsafe-inline'"],
+			"connect-src": ["'self'", "https:"],
+		},
+		strict: {
+			"default-src": ["'self'"],
+			"base-uri": ["'self'"],
+			"frame-ancestors": ["'none'"],
+			"object-src": ["'none'"],
+			"img-src": ["'self'", "data:"],
+			"font-src": ["'self'"],
+			"style-src": ["'self'"],
+			"script-src": ["'self'", "'strict-dynamic'"],
+			"connect-src": ["'self'"],
+			"upgrade-insecure-requests": [],
+		},
+	},
+	cors: {
+		headerNames: {
+			allowOrigin: "Access-Control-Allow-Origin",
+			allowMethods: "Access-Control-Allow-Methods",
+			allowHeaders: "Access-Control-Allow-Headers",
+			allowCredentials: "Access-Control-Allow-Credentials",
+			maxAge: "Access-Control-Max-Age",
+			exposeHeaders: "Access-Control-Expose-Headers",
+			vary: "Vary",
+		},
+		defaults: {
+			methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+			allowedHeaders: [
+				"Accept",
+				"Authorization",
+				"Content-Type",
+				"x-correlation-id",
+			],
+			maxAgeSeconds: 600,
+		},
+	},
+} as const;

@@ -187,7 +187,7 @@ Must not import Surfaces, `apps/*`, or Next.js. See [docs-V2/monorepo](https://g
 | Permission catalog | `pnpm --filter @afenda/db db:ensure-permission-catalog` seeds `purchasing.order.*` (removes retired `purchasing.read`/`manage`) |
 | Close vs cancel | Cancel = draft only. Close = posted only; always allowed (partial fulfilment OK). Do not hard-delete posted/closed rows. |
 | Repair | No hard delete of orders; repair via compensating close/cancel or data-lane SQL under Ops |
-| Metrics | Named constants `PURCHASING_METRIC_COMMAND` (+ command/outcome labels) exported from barrel. Rank-1 ERP must not depend on `@afenda/metrics` — apps/web Actions emit after `Result`. Platform scrape: `GET /api/metrics`. |
+| Metrics | Metric names and labels are not domain exports. Application composition may report approved facts only through the canonical `@afenda/metrics` capability. Platform scrape: `GET /api/metrics`. |
 | Verify | `pnpm --filter @afenda/purchasing check` · `pnpm validate:modules` · `pnpm --filter @afenda/web test -- product-authorization-wiring` · `pnpm --filter @afenda/db test -- purchasing-schema` |
 | Lifecycle | `draft \| posted \| cancelled \| closed` |
 

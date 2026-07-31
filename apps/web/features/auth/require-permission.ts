@@ -1,4 +1,4 @@
-import { AUTH_FORBIDDEN_PATH, type Session } from "@afenda/auth";
+import { authServer, type Session } from "@afenda/auth";
 import { redirect } from "next/navigation";
 
 import {
@@ -7,7 +7,7 @@ import {
 } from "@/modules/identity/domain/session-permission";
 
 export function forbidPermissionAccess(): never {
-	redirect(AUTH_FORBIDDEN_PATH);
+	redirect(authServer.paths.forbidden);
 }
 
 /**

@@ -80,6 +80,7 @@ export class MemoryNotificationStore implements NotificationStore {
 				(entry) =>
 					entry.organizationId === options.organizationId &&
 					entry.userId === options.userId &&
+					(entry.expiresAt === null || entry.expiresAt > new Date()) &&
 					(options.unreadOnly !== true || !entry.read),
 			)
 			.toSorted((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
@@ -95,6 +96,7 @@ export class MemoryNotificationStore implements NotificationStore {
 			(entry) =>
 				entry.organizationId === options.organizationId &&
 				entry.userId === options.userId &&
+				(entry.expiresAt === null || entry.expiresAt > new Date()) &&
 				!entry.read,
 		).length;
 		return okAsync(count);

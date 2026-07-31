@@ -1,4 +1,4 @@
-import { getSession, requireRole } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import { listPaymentAccounts, listPayments } from "@afenda/payments";
 import {
 	Alert,
@@ -61,7 +61,9 @@ const formSections = [
 /** Payments console — RSC reads via `@afenda/payments`; mutations via Actions. */
 export async function PaymentsShell({ surface }: PaymentsShellProps) {
 	const session =
-		surface === "admin" ? await requireRole("operator") : await getSession();
+		surface === "admin"
+			? await authServer.session.requireRole("operator")
+			: await authServer.session.get();
 	await requirePermission(session, "payments.payment.read");
 	const formPermissions = await Promise.all(
 		formSections.map(([, , permission]) =>

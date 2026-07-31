@@ -1,7 +1,5 @@
-import {
-	HumanResourcesEventSchemas,
-	type HumanResourcesEventType,
-} from "@afenda/events";
+import type { HumanResourcesEventType } from "@afenda/events";
+import { HumanResourcesEventSchemas } from "@afenda/events/schemas";
 
 import {
 	buildEventTypeDomainMap,

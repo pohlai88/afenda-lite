@@ -1,22 +1,6 @@
-import { bucketPolicy } from "./buckets";
-import { retryAfterSecondsFromReset } from "./retry-after";
-import type {
-	RateLimitHitResult,
-	RateLimitQuota,
-	RateLimitStore,
-} from "./types";
-
-function quotaAt(input: {
-	limit: number;
-	remaining: number;
-	resetEpochMs: number;
-}): RateLimitQuota {
-	return {
-		limit: input.limit,
-		remaining: Math.max(0, input.remaining),
-		resetEpochMs: input.resetEpochMs,
-	};
-}
+import { normalizeQuota, retryAfterSecondsFromReset } from "./normalization";
+import { policyFor } from "./semantic-registry";
+import type { RateLimitStore, StoreHitResult } from "./types";
 
 function onPromiseBoundary<T>(operation: () => T | PromiseLike<T>): Promise<T> {
 	return Promise.resolve().then(operation);
@@ -30,9 +14,9 @@ export function createMemoryRateLimitStore(): RateLimitStore {
 	const windows = new Map<string, number[]>();
 
 	return {
-		hit(input): Promise<RateLimitHitResult> {
+		hit(input): Promise<StoreHitResult> {
 			return onPromiseBoundary(() => {
-				const policy = bucketPolicy(input.bucket);
+				const policy = policyFor(input.bucket);
 				const now = Date.now();
 				const fullKey = `${input.bucket}:${input.key}`;
 				const windowStart = now - policy.windowMs;
@@ -48,15 +32,19 @@ export function createMemoryRateLimitStore(): RateLimitStore {
 							: oldest + policy.windowMs;
 					return {
 						allowed: false,
-						retryAfterSeconds:
-							oldest === undefined
-								? 1
-								: retryAfterSecondsFromReset(resetEpochMs, now),
-						quota: quotaAt({
-							limit: policy.limit,
-							remaining: 0,
+						retryAfterSeconds: retryAfterSecondsFromReset(
+							policy,
 							resetEpochMs,
-						}),
+							now,
+						),
+						quota: normalizeQuota(
+							policy,
+							{
+								remaining: 0,
+								resetEpochMs,
+							},
+							now,
+						),
 					};
 				}
 
@@ -65,11 +53,14 @@ export function createMemoryRateLimitStore(): RateLimitStore {
 				const [oldest = now] = active;
 				return {
 					allowed: true,
-					quota: quotaAt({
-						limit: policy.limit,
-						remaining: policy.limit - active.length,
-						resetEpochMs: oldest + policy.windowMs,
-					}),
+					quota: normalizeQuota(
+						policy,
+						{
+							remaining: policy.limit - active.length,
+							resetEpochMs: oldest + policy.windowMs,
+						},
+						now,
+					),
 				};
 			});
 		},

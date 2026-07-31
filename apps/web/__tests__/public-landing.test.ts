@@ -7,11 +7,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import {
-	AUTH_LOGIN_PATH,
-	PRE_LOGIN_PUBLIC_PATHS,
-	PUBLIC_LANDING_PATH,
-} from "@afenda/auth/client";
+import { authBrowser } from "@afenda/auth/client";
 import { describe, expect, it } from "vitest";
 
 import { MAIN_CONTENT_ID } from "../features/auth/main-content";
@@ -24,8 +20,10 @@ function source(relativePath: string): string {
 
 describe("public landing (PL-S2)", () => {
 	it("keeps `/` on the Pre-Login public allowlist as PUBLIC_LANDING_PATH", () => {
-		expect(PUBLIC_LANDING_PATH).toBe("/");
-		expect(PRE_LOGIN_PUBLIC_PATHS).toContain(PUBLIC_LANDING_PATH);
+		expect(authBrowser.paths.publicLanding).toBe("/");
+		expect(authBrowser.paths.preLoginPublic).toContain(
+			authBrowser.paths.publicLanding,
+		);
 	});
 
 	it("pins Sign in CTA through SignInButton → AUTH_LOGIN_PATH", () => {
@@ -36,13 +34,13 @@ describe("public landing (PL-S2)", () => {
 		expect(stage).not.toContain('href="/auth/sign-in"');
 		expect(stage).not.toContain('href="/auth/login"');
 		expect(cta).toContain("AUTH_LOGIN_PATH");
-		expect(cta).toContain("<Link href={AUTH_LOGIN_PATH}>");
+		expect(cta).toContain("<Link href={authBrowser.paths.login}>");
 		expect(cta).toContain("Sign in");
 		expect(cta).toContain("sign-in-button__mark");
 		expect(cta).toContain("asChild");
 		expect(cta).toContain("<Button");
 		expect(cta).toContain('surface?: "default" | "machine"');
-		expect(AUTH_LOGIN_PATH).toBe("/auth/login");
+		expect(authBrowser.paths.login).toBe("/auth/login");
 	});
 
 	it("mounts The Machine for anonymous `/` with main-content landmark", () => {
@@ -98,8 +96,8 @@ describe("public landing (PL-S2)", () => {
 	it("keeps signed-in unresolved org off The Machine marketing landing", () => {
 		const shell = source("features/auth/unresolved-organization-shell.tsx");
 		expect(shell).toContain("Organization required");
-		expect(shell).toContain("AUTH_SIGN_OUT_PATH");
-		expect(shell).toContain("JOIN_PATH");
+		expect(shell).toContain("authBrowser.paths.signOut");
+		expect(shell).toContain("authBrowser.paths.join.path");
 		expect(shell).not.toContain("TheMachineLanding");
 	});
 

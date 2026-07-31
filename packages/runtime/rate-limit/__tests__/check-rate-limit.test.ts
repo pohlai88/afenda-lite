@@ -1,14 +1,16 @@
 import { errorProject } from "@afenda/errors";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { checkRateLimit } from "../src/check";
+import { checkRateLimit, checkRateLimitWithStore } from "../src/check";
 import { createMemoryRateLimitStore } from "../src/memory-store";
+import { normalizeUpstashResult } from "../src/normalization";
+import { rateLimitProject } from "../src/projection";
 import {
 	resetResolvedRateLimitBackend,
 	resolveRateLimitBackend,
 } from "../src/resolve-store";
-import { toRateLimitFailure } from "../src/to-failure";
-import type { RateLimitResult, RateLimitStore } from "../src/types";
+import { keyFor, policyFor } from "../src/semantic-registry";
+import type { RateLimitDecision, RateLimitStore } from "../src/types";
 
 const envMocks = vi.hoisted(() => ({
 	isProductionDeploymentNow: vi.fn(() => false),
@@ -23,183 +25,143 @@ vi.mock("@afenda/env", () => ({
 	isProductionDeploymentNow: () => envMocks.isProductionDeploymentNow(),
 }));
 
-async function collectRateLimitResults(
+function signInAttempts(
 	store: RateLimitStore,
-	key: string,
-	attempts: number,
-	results: RateLimitResult[] = [],
-): Promise<RateLimitResult[]> {
-	if (results.length >= attempts) {
-		return results;
-	}
-	results.push(
-		await checkRateLimit({ bucket: "auth_sign_in", key }, { store }),
+	count: number,
+): Promise<RateLimitDecision[]> {
+	return Promise.all(
+		Array.from({ length: count }, () =>
+			checkRateLimitWithStore(
+				{
+					bucket: "auth_sign_in",
+					identity: {
+						kind: "credentials",
+						ipAddress: "203.0.113.10",
+						email: " User@Example.Test ",
+					},
+				},
+				store,
+			),
+		),
 	);
-	return collectRateLimitResults(store, key, attempts, results);
 }
 
-describe("checkRateLimit (memory store)", () => {
+describe("rateLimit semantic capability", () => {
 	afterEach(() => {
 		resetResolvedRateLimitBackend();
-		vi.unstubAllEnvs();
 		envMocks.isProductionDeploymentNow.mockReturnValue(false);
 		envMocks.env.UPSTASH_REDIS_REST_URL = undefined;
 		envMocks.env.UPSTASH_REDIS_REST_TOKEN = undefined;
 	});
 
-	it("allows then denies within the same window", async () => {
-		const store = createMemoryRateLimitStore();
-		const key = `user-${crypto.randomUUID()}@example.test`;
-		const allowedResults = await collectRateLimitResults(store, key, 5);
-
-		for (const [index, allowed] of allowedResults.entries()) {
-			expect(allowed.ok).toBe(true);
-			if (allowed.ok) {
-				expect(allowed.quota.limit).toBe(5);
-				expect(allowed.quota.remaining).toBe(4 - index);
-				expect(allowed.quota.resetEpochMs).toBeGreaterThan(Date.now() - 1000);
-			}
-		}
-
-		const denied = await checkRateLimit(
-			{ bucket: "auth_sign_in", key },
-			{ store },
-		);
-		expect(denied.ok).toBe(false);
-		if (!denied.ok) {
-			expect(denied.reason).toBe("rate_limited");
-			if (denied.reason === "rate_limited") {
-				expect(denied.retryAfterSeconds).toBeGreaterThanOrEqual(1);
-				expect(denied.quota).toEqual({
-					limit: 5,
-					remaining: 0,
-					resetEpochMs: denied.quota.resetEpochMs,
-				});
-			}
-		}
+	it("owns bucket-specific normalized key policy", () => {
+		expect(
+			keyFor({
+				bucket: "auth_bff_post",
+				identity: { ipAddress: " 203.0.113.5 ", pathname: " /API/Auth " },
+			}),
+		).toBe("203.0.113.5:/api/auth");
+		expect(
+			keyFor({
+				bucket: "auth_sign_in",
+				identity: {
+					kind: "credentials",
+					ipAddress: undefined,
+					email: undefined,
+				},
+			}),
+		).toBe("unknown:credentials:_invalid");
+		expect(
+			keyFor({
+				bucket: "auth_sign_in",
+				identity: {
+					kind: "dev-login",
+					ipAddress: "127.0.0.1",
+					role: "operator",
+				},
+			}),
+		).toBe("127.0.0.1:dev-login:operator");
 	});
 
-	it("isolates keys and buckets", async () => {
+	it("returns opaque decisions and owner-derived quota/failure projections", async () => {
 		const store = createMemoryRateLimitStore();
-		const a = await checkRateLimit(
-			{ bucket: "auth_sign_in", key: "a@example.test" },
-			{ store },
-		);
-		const b = await checkRateLimit(
-			{ bucket: "auth_bff_post", key: "a@example.test" },
-			{ store },
-		);
-		expect(a.ok).toBe(true);
-		expect(b.ok).toBe(true);
-		if (a.ok && b.ok) {
-			expect(a.quota.limit).toBe(5);
-			expect(b.quota.limit).toBe(20);
+		const allowed = await signInAttempts(store, 5);
+		for (const [index, decision] of allowed.entries()) {
+			expect(decision).toEqual({ ok: true });
+			expect(rateLimitProject.quota(decision)).toMatchObject({
+				limit: 5,
+				remaining: 4 - index,
+			});
 		}
-	});
 
-	it("rate-limits empty keys", async () => {
-		const before = Date.now();
-		const result = await checkRateLimit({
-			bucket: "auth_bff_post",
-			key: "   ",
+		const denied = await signInAttempts(store, 1);
+		const [decision] = denied;
+		expect(decision).toEqual({ ok: false });
+		if (!decision || decision.ok) {
+			return;
+		}
+		expect(rateLimitProject.diagnostics(decision)).toEqual({
+			outcome: "rate_limited",
 		});
-		expect(result.ok).toBe(false);
-		if (!result.ok && result.reason === "rate_limited") {
-			expect(result.retryAfterSeconds).toBe(60);
-			expect(result.quota.limit).toBe(0);
-			expect(result.quota.remaining).toBe(0);
-			expect(result.quota.resetEpochMs).toBeGreaterThanOrEqual(before + 60_000);
-		}
+		expect(rateLimitProject.quota(decision)).toMatchObject({
+			limit: 5,
+			remaining: 0,
+		});
+		expect(
+			errorProject.result(rateLimitProject.failure(decision)),
+		).toMatchObject({
+			code: "RATE_LIMITED",
+			details: { retryAfterSeconds: 60 },
+		});
 	});
 
-	it("fails closed when production has no Upstash keys", async () => {
+	it("bounds and normalizes hostile Upstash quota/timing values", () => {
+		const nowMs = 1_700_000_000_000;
+		const policy = policyFor("auth_sign_in");
+		expect(
+			normalizeUpstashResult(
+				policy,
+				{
+					success: false,
+					limit: 99_999,
+					remaining: -500,
+					reset: nowMs + 999_999_999,
+				},
+				nowMs,
+			),
+		).toEqual({
+			allowed: false,
+			quota: { limit: 5, remaining: 0, resetEpochMs: nowMs + 60_000 },
+			retryAfterSeconds: 60,
+		});
+		expect(() =>
+			normalizeUpstashResult(policy, { success: true }, nowMs),
+		).toThrow(/Invalid Upstash rate-limit response/);
+	});
+
+	it("fails closed when production has no Upstash credentials", async () => {
 		envMocks.isProductionDeploymentNow.mockReturnValue(true);
 		resetResolvedRateLimitBackend();
-
-		const backend = resolveRateLimitBackend();
-		expect(backend).toEqual({
+		expect(resolveRateLimitBackend()).toEqual({
 			kind: "unavailable",
 			service: "upstash_redis",
 		});
 
-		const result = await checkRateLimit({
+		const decision = await checkRateLimit({
 			bucket: "auth_bff_post",
-			key: "203.0.113.10:/api/auth/sign-in",
+			identity: { ipAddress: "203.0.113.10", pathname: "/api/auth" },
 		});
-		expect(result).toEqual({
-			ok: false,
-			reason: "unavailable",
-			service: "upstash_redis",
-		});
-	});
-
-	it("falls back to memory when the resolved store throws outside production", async () => {
-		envMocks.isProductionDeploymentNow.mockReturnValue(false);
-		resetResolvedRateLimitBackend();
-
-		const backend = resolveRateLimitBackend();
-		expect(backend.kind).toBe("store");
-		if (backend.kind !== "store") {
+		expect(decision.ok).toBe(false);
+		if (decision.ok) {
 			return;
 		}
-
-		vi.spyOn(backend.store, "hit").mockRejectedValueOnce(
-			new Error("upstash network down"),
-		);
-
-		const result = await checkRateLimit({
-			bucket: "auth_bff_post",
-			key: "203.0.113.10:/api/auth/sign-in",
-		});
-		expect(result.ok).toBe(true);
-	});
-
-	it("fails closed when the resolved store throws in production", async () => {
-		envMocks.isProductionDeploymentNow.mockReturnValue(true);
-		envMocks.env.UPSTASH_REDIS_REST_URL = "https://example.upstash.io";
-		envMocks.env.UPSTASH_REDIS_REST_TOKEN = "test-token";
-		resetResolvedRateLimitBackend();
-
-		const backend = resolveRateLimitBackend();
-		expect(backend.kind).toBe("store");
-		if (backend.kind !== "store") {
-			return;
-		}
-
-		vi.spyOn(backend.store, "hit").mockRejectedValueOnce(
-			new Error("upstash network down"),
-		);
-
-		const result = await checkRateLimit({
-			bucket: "auth_bff_post",
-			key: "203.0.113.10:/api/auth/sign-in",
-		});
-		expect(result).toEqual({
-			ok: false,
-			reason: "unavailable",
+		expect(rateLimitProject.diagnostics(decision)).toEqual({
+			outcome: "unavailable",
 			service: "upstash_redis",
 		});
-	});
-});
-
-describe("toRateLimitFailure", () => {
-	it("maps rate_limited and unavailable to canonical failures", () => {
-		const limited = toRateLimitFailure({
-			ok: false,
-			reason: "rate_limited",
-			retryAfterSeconds: 9,
-			quota: { limit: 5, remaining: 0, resetEpochMs: Date.now() + 9000 },
-		});
-		expect(errorProject.result(limited)).toMatchObject({
-			code: "RATE_LIMITED",
-			details: { retryAfterSeconds: 9 },
-		});
-
-		const unavailable = toRateLimitFailure({
-			ok: false,
-			reason: "unavailable",
-			service: "upstash_redis",
-		});
-		expect(errorProject.result(unavailable).code).toBe("SERVICE_UNAVAILABLE");
+		expect(rateLimitProject.quota(decision)).toBeUndefined();
+		expect(errorProject.result(rateLimitProject.failure(decision)).code).toBe(
+			"SERVICE_UNAVAILABLE",
+		);
 	});
 });

@@ -18,7 +18,7 @@ export function stampHttpResponse(
 ): Response {
 	response.headers.set(CORRELATION_HEADER, ctx.correlationId);
 	if (options?.includeServerTiming !== false) {
-		applyServerTimingHeader(response.headers, ctx.startTime, {
+		applyServerTimingHeader(response.headers, ctx.startTimeMs, {
 			...(options?.serverTimingMetric === undefined
 				? {}
 				: { metric: options.serverTimingMetric }),

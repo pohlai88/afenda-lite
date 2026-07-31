@@ -10,13 +10,17 @@ const inviteOrgMember = vi.fn();
 const select = vi.fn();
 
 vi.mock("@afenda/auth", () => ({
-	listMemberOrganizations: (...args: unknown[]) =>
-		listMemberOrganizations(...args),
-	createOrganization: (...args: unknown[]) => createNeonOrganization(...args),
-	deleteOrganization: (...args: unknown[]) => deleteNeonOrganization(...args),
-	persistActiveOrganization: (...args: unknown[]) =>
-		persistActiveOrganization(...args),
-	inviteOrgMember: (...args: unknown[]) => inviteOrgMember(...args),
+	authServer: {
+		organizations: {
+			list: (...args: unknown[]) => listMemberOrganizations(...args),
+			create: (...args: unknown[]) => createNeonOrganization(...args),
+			delete: (...args: unknown[]) => deleteNeonOrganization(...args),
+			persistActive: (...args: unknown[]) => persistActiveOrganization(...args),
+		},
+		invitations: {
+			inviteMember: (...args: unknown[]) => inviteOrgMember(...args),
+		},
+	},
 }));
 
 vi.mock("@afenda/db", () => ({

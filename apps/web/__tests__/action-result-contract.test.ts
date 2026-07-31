@@ -7,12 +7,7 @@ import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import { signInSchema } from "../modules/identity/schemas/auth";
 import { actionFieldMessage } from "../modules/platform/schemas/action-result";
-import {
-	apiData,
-	apiErrorBodySchema,
-	apiErrorCodeSchema,
-	healthJson,
-} from "../modules/platform/schemas/api-error";
+import { apiData, healthJson } from "../modules/platform/schemas/api-error";
 import { emailSchema, parseSchema } from "../modules/platform/schemas/common";
 
 describe("ActionResult + shared error codes (I2.1)", () => {
@@ -69,8 +64,6 @@ describe("ActionResult + shared error codes (I2.1)", () => {
 		expect(
 			errorProject.http(errorResult.fail("SERVICE_UNAVAILABLE")).status,
 		).toBe(503);
-		expect(apiErrorCodeSchema.safeParse("NOT_FOUND").success).toBe(true);
-		expect(apiErrorCodeSchema.safeParse("TEAPOT").success).toBe(false);
 	});
 
 	it("builds bare APIErrorBody and { data } success envelopes", () => {
@@ -79,7 +72,8 @@ describe("ActionResult + shared error codes (I2.1)", () => {
 				publicMessage: "Malformed JSON.",
 			}),
 		);
-		expect(apiErrorBodySchema.parse(body)).toEqual(body);
+		expect(body.error.code).toBe("BAD_REQUEST");
+		expect(body.error.message).toBe("Malformed JSON.");
 		expect(apiData({ status: "alive" })).toEqual({
 			data: { status: "alive" },
 		});

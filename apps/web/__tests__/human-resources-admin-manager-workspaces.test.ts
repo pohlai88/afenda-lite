@@ -11,7 +11,9 @@ const { sessionHasPermission, redirect } = vi.hoisted(() => ({
 	}),
 }));
 
-vi.mock("@afenda/auth", () => ({ AUTH_FORBIDDEN_PATH: "/forbidden" }));
+vi.mock("@afenda/auth", () => ({
+	authServer: { paths: { forbidden: "/forbidden" } },
+}));
 vi.mock("next/navigation", () => ({ redirect }));
 vi.mock("@/modules/identity/domain/session-permission", () => ({
 	sessionHasPermission,

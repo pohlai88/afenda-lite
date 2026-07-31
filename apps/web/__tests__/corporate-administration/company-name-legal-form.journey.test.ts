@@ -31,12 +31,11 @@ const compositionMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@afenda/auth", () => ({
-	getSession: authMocks.getSession,
-	requireRole: vi.fn(),
+	authServer: { session: { get: authMocks.getSession, requireRole: vi.fn() } },
 }));
 
 vi.mock("@afenda/http", () => ({
-	createCorrelationId: () => "corr-ca-journey-test",
+	http: { correlation: { create: () => "corr-ca-journey-test" } },
 }));
 
 vi.mock("@/app/actions/permission-gate", () => ({

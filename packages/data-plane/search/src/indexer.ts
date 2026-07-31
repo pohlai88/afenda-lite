@@ -1,5 +1,5 @@
 import { errorResult, type Result } from "@afenda/errors";
-
+import { normalizeSearchUpsert } from "./normalization";
 import { resolveSearchStore } from "./resolve-store";
 import {
 	searchDeleteInputSchema,
@@ -21,7 +21,7 @@ export function upsertSearchDocument(
 			}),
 		);
 	}
-	return resolveSearchStore(store).upsert(parsed.data);
+	return resolveSearchStore(store).upsert(normalizeSearchUpsert(parsed.data));
 }
 
 export function upsertSearchDocuments(
@@ -36,7 +36,9 @@ export function upsertSearchDocuments(
 			}),
 		);
 	}
-	return resolveSearchStore(store).upsertBatch(parsed.data);
+	return resolveSearchStore(store).upsertBatch(
+		parsed.data.map(normalizeSearchUpsert),
+	);
 }
 
 export function deleteSearchDocument(

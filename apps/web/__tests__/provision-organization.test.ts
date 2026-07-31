@@ -20,14 +20,20 @@ const adminMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@afenda/auth", () => ({
-	requireRole: authMocks.requireRole,
+	authServer: { session: { requireRole: authMocks.requireRole } },
 }));
 
 vi.mock("@afenda/admin", async (importOriginal) => {
 	const actual = await importOriginal<typeof import("@afenda/admin")>();
 	return {
 		...actual,
-		provisionOrganization: adminMocks.provisionOrganization,
+		admin: {
+			...actual.admin,
+			organizations: {
+				...actual.admin.organizations,
+				provision: adminMocks.provisionOrganization,
+			},
+		},
 	};
 });
 

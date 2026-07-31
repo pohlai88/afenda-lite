@@ -29,14 +29,14 @@ Borrow/reject matrix for Prometheus scrape metrics. Operator path: [README.md](R
 
 | Idea | Disk |
 |------|------|
-| Dedicated Prometheus `Registry` | `packages/runtime/metrics/src/registry.ts` |
-| `collectDefaultMetrics` (Node) | factory default (`collectDefaults: true`) |
+| Dedicated Prometheus `Registry` | private runtime derived from `src/semantic-registry.ts` |
+| `collectDefaultMetrics` (Node) | private process capability default |
 | HTTP duration histogram + request counter | `http_request_duration_seconds` · `http_request_total` |
 | DB query duration histogram | `db_query_duration_seconds` (labels: `operation`, `table`) |
 | Cache access counter | `cache_access_total` (labels: `operation`, `result`) |
 | Shared `service` label (was `app`) | all instruments; default `afenda-web` |
-| Histogram bucket starting points | HTTP / DB constants in `instruments.ts` |
-| Scrape text helper | `renderPrometheusText()` + `PROMETHEUS_CONTENT_TYPE` |
+| Histogram bucket starting points | canonical semantic registry; never exported |
+| Scrape text helper | `metrics.exposition.{render,contentType}` |
 
 ---
 
@@ -51,7 +51,7 @@ Borrow/reject matrix for Prometheus scrape metrics. Operator path: [README.md](R
 | `prom-client: *` | Pin via pnpm `catalog:` |
 | Deep `@pkg/src/...` imports | Public `exports` only |
 | OpenTelemetry / vendor APM SDK | Observability hard stop — Prometheus pull only this slice |
-| Module-only singleton with no test isolation | Factory + default registry |
+| Exposed registry or instrument factory | Consumers report facts through `metrics.record`; tests receive an isolated capability |
 | Soft-fail `console.warn` wrappers | Fail closed; no silent degrade |
 | `organization_id` / tenant Prometheus labels | Tenancy stays out of scrape cardinality |
 

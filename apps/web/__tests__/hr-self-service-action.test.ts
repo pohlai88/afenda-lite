@@ -19,11 +19,11 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@afenda/auth", () => ({
-	getSession: mocks.getSession,
+	authServer: { session: { get: mocks.getSession } },
 }));
 
 vi.mock("@afenda/http", () => ({
-	createCorrelationId: () => "corr-self",
+	http: { correlation: { create: () => "corr-self" } },
 }));
 
 vi.mock("@afenda/human-resources", () => ({

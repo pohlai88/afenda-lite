@@ -20,9 +20,9 @@ describe("@afenda/web Auth BFF route (PL-S7)", () => {
 	it("exports GET and POST from createAuthApiHandlers", () => {
 		const source = readFileSync(path.join(webRoot, bffRouteRelative), "utf-8");
 		expect(source).toContain('from "@afenda/auth"');
-		expect(source).toContain("createAuthApiHandlers");
+		expect(source).toContain("authServer.api.createHandlers");
 		expect(source).toMatch(
-			/export\s+const\s*\{\s*GET\s*,\s*POST\s*\}\s*=\s*createAuthApiHandlers\s*\(\s*\)/,
+			/export\s+const\s*\{\s*GET\s*,\s*POST\s*\}\s*=\s*authServer\.api\.createHandlers\s*\(\s*\)/,
 		);
 	});
 

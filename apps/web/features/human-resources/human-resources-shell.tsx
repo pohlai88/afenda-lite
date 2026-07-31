@@ -1,5 +1,5 @@
-import { getSession, requireRole } from "@afenda/auth";
-import { queryDomainEvents } from "@afenda/events";
+import { authServer } from "@afenda/auth";
+import { events } from "@afenda/events";
 import {
 	listCandidates,
 	listEmployees,
@@ -110,7 +110,7 @@ function PageControls({
 }
 
 export async function EmployeeHrShell({ page, preferences }: ShellProps) {
-	const session = await getSession();
+	const session = await authServer.session.get();
 	await requirePermission(session, "human-resources.leave-request.own");
 	const canRecordAttendance = await sessionHasPermission(
 		session,
@@ -224,7 +224,7 @@ export async function EmployeeHrShell({ page, preferences }: ShellProps) {
 }
 
 export async function ManagerHrShell({ page, preferences }: ShellProps) {
-	const session = await getSession();
+	const session = await authServer.session.get();
 	await requirePermission(
 		session,
 		"human-resources.leave-request.approve-team",
@@ -305,7 +305,7 @@ export async function ManagerHrShell({ page, preferences }: ShellProps) {
 }
 
 export async function AdminHrShell({ page, preferences }: ShellProps) {
-	const session = await requireRole("operator");
+	const session = await authServer.session.requireRole("operator");
 	await requirePermission(session, "human-resources.employee.read");
 	const canViewCandidates = await sessionHasPermission(
 		session,
@@ -395,7 +395,7 @@ export async function AdminHrShell({ page, preferences }: ShellProps) {
 }
 
 export async function CandidateHrShell({ page, preferences }: ShellProps) {
-	const session = await requireRole("operator");
+	const session = await authServer.session.requireRole("operator");
 	await requirePermission(session, "human-resources.candidate.manage");
 	const result = await listCandidates(
 		{
@@ -469,7 +469,7 @@ export async function CandidateHrShell({ page, preferences }: ShellProps) {
 }
 
 export async function OperationsHrShell({ page, preferences }: ShellProps) {
-	const session = await requireRole("operator");
+	const session = await authServer.session.requireRole("operator");
 	await requirePermission(session, "human-resources.organization.read");
 	const canRepair = await sessionHasPermission(
 		session,
@@ -483,10 +483,10 @@ export async function OperationsHrShell({ page, preferences }: ShellProps) {
 	};
 	const staleCutoff = new Date(Date.now() - 15 * 60 * 1000);
 	const [pending, failed, processed, stalePending] = await Promise.all([
-		queryDomainEvents({ ...base, status: "pending" }),
-		queryDomainEvents({ ...base, status: "failed" }),
-		queryDomainEvents({ ...base, status: "processed" }),
-		queryDomainEvents({
+		events.query.page({ ...base, status: "pending" }),
+		events.query.page({ ...base, status: "failed" }),
+		events.query.page({ ...base, status: "processed" }),
+		events.query.page({
 			...base,
 			status: "pending",
 			to: staleCutoff,

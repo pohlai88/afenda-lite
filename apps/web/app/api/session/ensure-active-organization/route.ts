@@ -1,4 +1,4 @@
-import { handleEnsureActiveOrganizationRequest } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 
 /**
  * N8 — cookie-safe active organization persistence
@@ -6,5 +6,5 @@ import { handleEnsureActiveOrganizationRequest } from "@afenda/auth";
  * Neon `organization.setActive` must run in a Route Handler (not RSC).
  */
 export async function GET(request: Request): Promise<Response> {
-	return await handleEnsureActiveOrganizationRequest(request);
+	return await authServer.routes.ensureActiveOrganization.handle(request);
 }

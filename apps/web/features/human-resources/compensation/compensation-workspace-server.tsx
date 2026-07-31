@@ -1,4 +1,4 @@
-import { requireRole } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import { forbidPermissionAccess } from "@/features/auth/require-permission";
 import {
 	hasCompensationCapability,
@@ -8,7 +8,7 @@ import { CompensationWorkspace } from "./compensation-workspace";
 import { loadCompensationWorkspace } from "./load-compensation-workspace";
 
 export async function CompensationWorkspaceServer() {
-	const session = await requireRole("operator");
+	const session = await authServer.session.requireRole("operator");
 	const capabilities = await resolveCompensationCapabilities(session);
 	if (!hasCompensationCapability(capabilities)) {
 		forbidPermissionAccess();

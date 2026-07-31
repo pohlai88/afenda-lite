@@ -1,6 +1,6 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { securityHeadersForNext } from "@afenda/security";
+import { security } from "@afenda/security";
 import { loadEnvConfig } from "@next/env";
 import type { NextConfig } from "next";
 
@@ -13,7 +13,10 @@ const repoRoot = path.join(appDir, "../..");
 // the 4th arg the root dir is ignored (vercel/next.js#92040).
 loadEnvConfig(repoRoot, undefined, undefined, true);
 
-const securityHeaders = securityHeadersForNext();
+// Next.js adaptation stays at the application composition boundary.
+const securityHeaders = security.headers
+	.create()
+	.map(({ name, value }) => ({ key: name, value }));
 
 // When the dev server is accessed via explicit IP (127.0.0.1) rather than the
 // hostname it binds to (localhost), Next.js sets x-forwarded-host to localhost

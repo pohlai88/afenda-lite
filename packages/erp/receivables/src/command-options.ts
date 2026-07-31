@@ -1,5 +1,5 @@
 import { errorResult } from "@afenda/errors";
-import { createEventPublisher } from "@afenda/events";
+import { events } from "@afenda/events";
 
 import type { ReceivablesAuthorizationPort } from "./authorization";
 import type {
@@ -26,7 +26,7 @@ export function resolveEffects(
 	if (effects !== undefined) {
 		return effects;
 	}
-	const publisher = createEventPublisher();
+	const publisher = events.publisher.create();
 	return {
 		async emit(event) {
 			const result = await publisher.publish({

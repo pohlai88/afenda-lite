@@ -3,10 +3,11 @@ import type { DomainEvent } from "@afenda/events";
 import type { Employee, EmployeeListPage } from "@afenda/human-resources";
 import type { HumanResourcesEmployeeId } from "@afenda/human-resources/brands";
 import type { Notification } from "@afenda/notifications";
-import type {
-	SearchDocument,
-	SearchHit,
-	SearchUpsertInput,
+import {
+	type SearchDocument,
+	type SearchHit,
+	type SearchUpsertInput,
+	search as searchKernel,
 } from "@afenda/search";
 import { describe, expect, it, vi } from "vitest";
 
@@ -451,7 +452,7 @@ describe("Human Resources platform integrations", () => {
 		expect(upsert).toHaveBeenCalledWith([
 			expect.objectContaining({
 				organizationId: "org-1",
-				entity: "human_resources_employee",
+				entity: searchKernel.entities.humanResources.employee,
 				title: "Ada Lovelace",
 				metadata: expect.objectContaining({
 					requiredPermission: "human-resources.employee.read",
@@ -461,7 +462,7 @@ describe("Human Resources platform integrations", () => {
 		]);
 		expect(deleteDocument).toHaveBeenCalledWith({
 			organizationId: "org-1",
-			entity: "human_resources_employee",
+			entity: searchKernel.entities.humanResources.employee,
 			documentId: "stale-employee",
 		});
 		if (result.ok) {
@@ -506,7 +507,7 @@ describe("Human Resources platform integrations", () => {
 				{
 					id: "search-1",
 					organizationId: "org-1",
-					entity: "human_resources_employee",
+					entity: searchKernel.entities.humanResources.employee,
 					documentId: sampleEmployeeId,
 					title: "Ada Lovelace",
 					description: "E-001",
@@ -534,7 +535,7 @@ describe("Human Resources platform integrations", () => {
 		expect(search).toHaveBeenCalledWith({
 			organizationId: "org-1",
 			query: "Ada",
-			entity: "human_resources_employee",
+			entity: searchKernel.entities.humanResources.employee,
 			limit: 5,
 			offset: undefined,
 		});
@@ -559,7 +560,7 @@ describe("Human Resources platform integrations", () => {
 		const invalidHit: SearchHit = {
 			id: "search-1",
 			organizationId: "org-other",
-			entity: "human_resources_employee",
+			entity: searchKernel.entities.humanResources.employee,
 			documentId: sampleEmployeeId,
 			title: "Ada Lovelace",
 			description: "E-001",

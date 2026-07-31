@@ -3,7 +3,7 @@
  * Strict 348/348 — zero HR-AUD-06 exemptions.
  */
 
-import { HumanResourcesEventSchemas } from "@afenda/events";
+import { HumanResourcesEventSchemas } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
 import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } from "../src/emissions/registry";
 import { validateHumanResourcesMutationEmissionRegistry } from "../src/emissions/validate-emission";

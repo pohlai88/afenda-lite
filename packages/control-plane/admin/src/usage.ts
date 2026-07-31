@@ -1,4 +1,4 @@
-import { listOrgMembers } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import {
 	database as afendaDatabase,
 	and,
@@ -78,7 +78,7 @@ export async function getOrganizationUsageMetrics(
 
 	try {
 		// Session/active-org gate first (cheap Auth failure before DB work).
-		const members = await listOrgMembers(command.orgId);
+		const members = await authServer.members.list(command.orgId);
 
 		const auditWhere = and(
 			eq(platformRbacAudit.organizationId, command.orgId),

@@ -2,16 +2,18 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
 	requireRole: vi.fn(),
-	createCorrelationId: vi.fn(),
+	createHttpCorrelation: vi.fn(),
 	forbidUnlessPermission: vi.fn(),
-	logProductEvent: vi.fn(),
+	logEvent: vi.fn(),
 	recordHrAuthorizationDenial: vi.fn(),
 	createProductionHrObservabilityPorts: vi.fn(),
 }));
 
-vi.mock("@afenda/auth", () => ({ requireRole: mocks.requireRole }));
+vi.mock("@afenda/auth", () => ({
+	authServer: { session: { requireRole: mocks.requireRole } },
+}));
 vi.mock("@afenda/http", () => ({
-	createCorrelationId: mocks.createCorrelationId,
+	http: { correlation: { create: mocks.createHttpCorrelation } },
 }));
 vi.mock("@afenda/human-resources", () => ({
 	recordHrAuthorizationDenial: mocks.recordHrAuthorizationDenial,
@@ -19,8 +21,8 @@ vi.mock("@afenda/human-resources", () => ({
 vi.mock("@/app/actions/permission-gate", () => ({
 	forbidUnlessPermission: mocks.forbidUnlessPermission,
 }));
-vi.mock("@/modules/platform/observability/product-log", () => ({
-	logProductEvent: mocks.logProductEvent,
+vi.mock("@afenda/logger", () => ({
+	logger: { event: mocks.logEvent },
 }));
 vi.mock(
 	"@/modules/platform/observability/human-resources-observability",
@@ -48,7 +50,7 @@ describe("operator permission denial observability", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mocks.requireRole.mockResolvedValue(session);
-		mocks.createCorrelationId.mockReturnValue("correlation-1");
+		mocks.createHttpCorrelation.mockReturnValue("correlation-1");
 		mocks.createProductionHrObservabilityPorts.mockReturnValue({
 			recorder: {},
 			clock: {},
@@ -119,7 +121,7 @@ describe("operator permission denial observability", () => {
 		});
 
 		expect(result).toEqual(denial);
-		expect(mocks.logProductEvent).toHaveBeenCalledWith(
+		expect(mocks.logEvent).toHaveBeenCalledWith(
 			expect.objectContaining({
 				event: "action.permission_denial_observer_error",
 				path: "deniedAction",

@@ -1,7 +1,7 @@
-import { getSession, type Session } from "@afenda/auth";
+import { authServer, type Session } from "@afenda/auth";
 import { type Result as ActionResult, errorResult } from "@afenda/errors";
-import { createCorrelationId } from "@afenda/http";
-import { logProductEvent } from "@/modules/platform/observability/product-log";
+import { http } from "@afenda/http";
+import { logger } from "@afenda/logger";
 
 /**
  * Shared session + correlation + internal-error envelope for member-scoped
@@ -15,13 +15,13 @@ export async function runMemberSessionAction<T>(input: {
 		correlationId: string,
 	) => Promise<ActionResult<T>>;
 }): Promise<ActionResult<T>> {
-	const correlationId = createCorrelationId();
-	const session = await getSession();
+	const correlationId = http.correlation.create();
+	const session = await authServer.session.get();
 
 	try {
 		return await input.execute(session, correlationId);
 	} catch {
-		logProductEvent({
+		logger.event({
 			level: "error",
 			event: "action.internal_error",
 			correlationId,

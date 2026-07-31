@@ -1,33 +1,15 @@
 import { errorProject, errorResult, type ResultFailure } from "@afenda/errors";
 
 import { NextResponse } from "next/server";
+import { probeNeonError } from "./neon-normalization";
 
 const NEON_ORG_CONFLICT_PATTERN = /slug taken|already exists|conflict/i;
 const NEON_ORG_FORBIDDEN_PATTERN =
 	/unauthor|forbidden|denied|not owner|not permitted/i;
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === "object" && value !== null;
-}
-
-function readStringProperty(value: unknown, key: PropertyKey): string {
-	if (!isRecord(value)) {
-		return "";
-	}
-	try {
-		const property = Reflect.get(value, key);
-		return typeof property === "string" ? property : "";
-	} catch {
-		return "";
-	}
-}
-
 /** Safe message probe from Neon SDK / fetch-shaped errors — never returned as public text. */
 export function neonErrorProbe(error: unknown): string {
-	if (error instanceof Error && error.message.trim().length > 0) {
-		return error.message.trim();
-	}
-	return readStringProperty(error, "message").trim();
+	return probeNeonError(error);
 }
 
 /**

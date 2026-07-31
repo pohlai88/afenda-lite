@@ -9,13 +9,14 @@
 			"default": "./src/index.ts"
 		},
 		"./testing": {
-			"types": "./src/testing/memory-search-store.ts",
-			"default": "./src/testing/memory-search-store.ts"
+			"types": "./src/testing.ts",
+			"default": "./src/testing.ts"
 		}
 	},
 	"scripts": {
 		"lint": "biome check .",
 		"typecheck": "tsc --noEmit -p tsconfig.json",
+		"typecheck:contract": "tsc --noEmit -p tsconfig.contract.json",
 		"test": "vitest run --config ../../../testing/vitest.unit.config.ts --project search"
 	},
 	"dependencies": {

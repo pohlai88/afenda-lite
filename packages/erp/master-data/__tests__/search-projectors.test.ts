@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
 
-import { listSearchDocumentIds, searchDocuments } from "@afenda/search";
+import type { SearchCapability } from "@afenda/search";
+import { searchTesting } from "@afenda/search/testing";
 import { describe, expect, it } from "vitest";
 
-import { MemorySearchStore } from "../../../data-plane/search/__tests__/helpers/memory-search-store";
 import { MASTER_SEARCH_ENTITY, rebuildMasterDataSearchIndex } from "../src";
 import { createItem } from "../src/capabilities/core-organization-masters/item";
 import {
@@ -38,18 +38,23 @@ function ctx(organizationId = "org-search-a") {
 	};
 }
 
+function failingSearchCapability(): SearchCapability {
+	const base = searchTesting.createMemory();
+	return {
+		...base,
+		documents: {
+			...base.documents,
+			upsert: () =>
+				resolveAsync(() => {
+					throw new Error("search unavailable");
+				}),
+		},
+	};
+}
+
 describe("@afenda/master-data search projectors", () => {
 	it("does not turn a committed party mutation into a failure when search throws", async () => {
 		const { options: harnessOptions } = createMasterDataTestHarness();
-		class ThrowingSearchStore extends MemorySearchStore {
-			override upsert(
-				_input: Parameters<MemorySearchStore["upsert"]>[0],
-			): Promise<never> {
-				return resolveAsync(() => {
-					throw new Error("search unavailable");
-				});
-			}
-		}
 		const result = await createParty(
 			{
 				...ctx(),
@@ -57,7 +62,7 @@ describe("@afenda/master-data search projectors", () => {
 				name: "Committed Party",
 				partyKind: "organization",
 			},
-			{ ...harnessOptions, searchStore: new ThrowingSearchStore() },
+			{ ...harnessOptions, searchCapability: failingSearchCapability() },
 		);
 
 		expect(result.ok).toBe(true);
@@ -76,18 +81,9 @@ describe("@afenda/master-data search projectors", () => {
 
 	it("does not turn a committed item-group mutation into a failure when search throws", async () => {
 		const { options: harnessOptions } = createMasterDataTestHarness();
-		class ThrowingSearchStore extends MemorySearchStore {
-			override upsert(
-				_input: Parameters<MemorySearchStore["upsert"]>[0],
-			): Promise<never> {
-				return resolveAsync(() => {
-					throw new Error("search unavailable");
-				});
-			}
-		}
 		const result = await createItemGroup(
 			{ ...ctx(), code: "GROUP-FAIL", name: "Committed Group" },
-			{ ...harnessOptions, searchStore: new ThrowingSearchStore() },
+			{ ...harnessOptions, searchCapability: failingSearchCapability() },
 		);
 
 		expect(result.ok).toBe(true);
@@ -122,15 +118,6 @@ describe("@afenda/master-data search projectors", () => {
 		if (!activeGroup.ok) {
 			return;
 		}
-		class ThrowingSearchStore extends MemorySearchStore {
-			override upsert(
-				_input: Parameters<MemorySearchStore["upsert"]>[0],
-			): Promise<never> {
-				return resolveAsync(() => {
-					throw new Error("search unavailable");
-				});
-			}
-		}
 		const result = await createItem(
 			{
 				...ctx(),
@@ -140,7 +127,7 @@ describe("@afenda/master-data search projectors", () => {
 				baseUomId: "b1000000-0000-4000-8000-000000000001",
 				itemGroupId: activeGroup.data.id,
 			},
-			{ ...harnessOptions, searchStore: new ThrowingSearchStore() },
+			{ ...harnessOptions, searchCapability: failingSearchCapability() },
 		);
 
 		expect(result.ok).toBe(true);
@@ -159,15 +146,6 @@ describe("@afenda/master-data search projectors", () => {
 
 	it("does not turn a committed warehouse mutation into a failure when search throws", async () => {
 		const { options: harnessOptions } = createMasterDataTestHarness();
-		class ThrowingSearchStore extends MemorySearchStore {
-			override upsert(
-				_input: Parameters<MemorySearchStore["upsert"]>[0],
-			): Promise<never> {
-				return resolveAsync(() => {
-					throw new Error("search unavailable");
-				});
-			}
-		}
 		const result = await createWarehouse(
 			{
 				...ctx(),
@@ -175,7 +153,7 @@ describe("@afenda/master-data search projectors", () => {
 				name: "Committed warehouse",
 				locationType: "warehouse",
 			},
-			{ ...harnessOptions, searchStore: new ThrowingSearchStore() },
+			{ ...harnessOptions, searchCapability: failingSearchCapability() },
 		);
 
 		expect(result.ok).toBe(true);
@@ -194,15 +172,6 @@ describe("@afenda/master-data search projectors", () => {
 
 	it("does not turn a committed payment-term mutation into a failure when search throws", async () => {
 		const { options: harnessOptions } = createMasterDataTestHarness();
-		class ThrowingSearchStore extends MemorySearchStore {
-			override upsert(
-				_input: Parameters<MemorySearchStore["upsert"]>[0],
-			): Promise<never> {
-				return resolveAsync(() => {
-					throw new Error("search unavailable");
-				});
-			}
-		}
 		const result = await createPaymentTerm(
 			{
 				...ctx(),
@@ -210,7 +179,7 @@ describe("@afenda/master-data search projectors", () => {
 				name: "Committed payment term",
 				netDays: 30,
 			},
-			{ ...harnessOptions, searchStore: new ThrowingSearchStore() },
+			{ ...harnessOptions, searchCapability: failingSearchCapability() },
 		);
 
 		expect(result.ok).toBe(true);
@@ -229,8 +198,8 @@ describe("@afenda/master-data search projectors", () => {
 
 	it("upserts md_party on create and removes on retire", async () => {
 		const { options: harnessOptions } = createMasterDataTestHarness();
-		const searchStore = new MemorySearchStore();
-		const options = { ...harnessOptions, searchStore };
+		const searchCapability = searchTesting.createMemory();
+		const options = { ...harnessOptions, searchCapability };
 
 		const party = await createParty(
 			{
@@ -246,26 +215,20 @@ describe("@afenda/master-data search projectors", () => {
 			return;
 		}
 
-		const listed = await listSearchDocumentIds(
-			{
-				organizationId: "org-search-a",
-				entity: MASTER_SEARCH_ENTITY.party,
-			},
-			searchStore,
-		);
+		const listed = await searchCapability.documents.listIds({
+			organizationId: "org-search-a",
+			entity: MASTER_SEARCH_ENTITY.party,
+		});
 		expect(listed.ok).toBe(true);
 		if (!listed.ok) {
 			return;
 		}
 		expect(listed.data).toContain(party.data.id);
-		const partyHits = await searchDocuments(
-			{
-				organizationId: "org-search-a",
-				query: "Searchable Party",
-				entity: MASTER_SEARCH_ENTITY.party,
-			},
-			searchStore,
-		);
+		const partyHits = await searchCapability.query({
+			organizationId: "org-search-a",
+			query: "Searchable Party",
+			entity: MASTER_SEARCH_ENTITY.party,
+		});
 		expect(partyHits.ok).toBe(true);
 		if (!partyHits.ok) {
 			return;
@@ -337,13 +300,10 @@ describe("@afenda/master-data search projectors", () => {
 		);
 		expect(retired.ok).toBe(true);
 
-		const afterRetire = await listSearchDocumentIds(
-			{
-				organizationId: "org-search-a",
-				entity: MASTER_SEARCH_ENTITY.party,
-			},
-			searchStore,
-		);
+		const afterRetire = await searchCapability.documents.listIds({
+			organizationId: "org-search-a",
+			entity: MASTER_SEARCH_ENTITY.party,
+		});
 		expect(afterRetire.ok).toBe(true);
 		if (!afterRetire.ok) {
 			return;
@@ -353,8 +313,8 @@ describe("@afenda/master-data search projectors", () => {
 
 	it("rebuilds from SSOT idempotently and isolates orgs", async () => {
 		const { options: harnessOptions } = createMasterDataTestHarness();
-		const searchStore = new MemorySearchStore();
-		const options = { ...harnessOptions, searchStore };
+		const searchCapability = searchTesting.createMemory();
+		const options = { ...harnessOptions, searchCapability };
 
 		const a = await createParty(
 			{
@@ -408,14 +368,11 @@ describe("@afenda/master-data search projectors", () => {
 		expect(second.data.upserted).toBe(1);
 		expect(second.data.pruned).toBe(0);
 
-		const hits = await searchDocuments(
-			{
-				organizationId: "org-a",
-				query: "Org A",
-				entity: MASTER_SEARCH_ENTITY.party,
-			},
-			searchStore,
-		);
+		const hits = await searchCapability.query({
+			organizationId: "org-a",
+			query: "Org A",
+			entity: MASTER_SEARCH_ENTITY.party,
+		});
 		expect(hits.ok).toBe(true);
 		if (!hits.ok) {
 			return;
@@ -428,11 +385,11 @@ describe("@afenda/master-data search projectors", () => {
 	it("rebuilds organization-dimension search documents and prunes archived dimensions", async () => {
 		const { options: harnessOptions } = createMasterDataTestHarness();
 		const organizationDimensionStore = createMemoryOrganizationDimensionStore();
-		const searchStore = new MemorySearchStore();
+		const searchCapability = searchTesting.createMemory();
 		const options = {
 			...harnessOptions,
 			organizationDimensionStore,
-			searchStore,
+			searchCapability,
 		};
 		const dimensionOptions = {
 			store: organizationDimensionStore,
@@ -471,14 +428,11 @@ describe("@afenda/master-data search projectors", () => {
 			MASTER_SEARCH_ENTITY.organizationDimension,
 		]);
 
-		const hits = await searchDocuments(
-			{
-				organizationId: "org-dim-search",
-				query: "Cost Center Search",
-				entity: MASTER_SEARCH_ENTITY.organizationDimension,
-			},
-			searchStore,
-		);
+		const hits = await searchCapability.query({
+			organizationId: "org-dim-search",
+			query: "Cost Center Search",
+			entity: MASTER_SEARCH_ENTITY.organizationDimension,
+		});
 		expect(hits.ok).toBe(true);
 		if (!hits.ok) {
 			return;

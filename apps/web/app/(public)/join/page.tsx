@@ -1,8 +1,4 @@
-import {
-	JOIN_PATH,
-	type JoinInvitationQuery,
-	parseJoinInvitationQuery,
-} from "@afenda/auth";
+import { authServer, type JoinInvitationQuery } from "@afenda/auth";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
@@ -33,7 +29,9 @@ function renderJoinState(query: JoinInvitationQuery): ReactNode {
 				>
 					<p>
 						Open the link from your invitation email. Expected shape:{" "}
-						<code className="text-foreground">{JOIN_PATH}?invitationId=…</code>
+						<code className="text-foreground">
+							{authServer.paths.join.path}?invitationId=…
+						</code>
 					</p>
 				</PublicMessageShell>
 			);
@@ -66,6 +64,6 @@ function renderJoinState(query: JoinInvitationQuery): ReactNode {
 export default async function JoinPage({ searchParams }: JoinPageProps) {
 	const params = await searchParams;
 	const { invitationId } = params;
-	const query = parseJoinInvitationQuery(invitationId);
+	const query = authServer.paths.join.parseInvitationQuery(invitationId);
 	return renderJoinState(query);
 }

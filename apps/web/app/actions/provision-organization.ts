@@ -1,16 +1,12 @@
 "use server";
 
-import {
-	type ProvisionOrganizationResult,
-	provisionOrganization,
-	provisionOrganizationInputSchema,
-} from "@afenda/admin";
-import { requireRole } from "@afenda/auth";
+import { admin, type ProvisionOrganizationResult } from "@afenda/admin";
+import { authServer } from "@afenda/auth";
 import { type Result as ActionResult, errorResult } from "@afenda/errors";
-import { createCorrelationId } from "@afenda/http";
+import { http } from "@afenda/http";
+import { logger } from "@afenda/logger";
 import { revalidatePath } from "next/cache";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { logProductEvent } from "@/modules/platform/observability/product-log";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export type ProvisionOrganizationActionData = ProvisionOrganizationResult;
@@ -21,7 +17,7 @@ export type ProvisionOrganizationActionState =
 
 /**
  * Operator org-console provision — create → set active → invite first admin
- * via `@afenda/admin` `provisionOrganization`. Package owns Neon Auth gates;
+ * via `@afenda/admin` `admin.organizations.provision`. Package owns Neon Auth gates;
  * adapter maps `Result` → `ActionResult` honestly (incl. partial-failure
  * disposition details).
  */
@@ -29,10 +25,10 @@ export async function provisionOrganizationAction(
 	_prev: ProvisionOrganizationActionState,
 	formData: FormData,
 ): Promise<ProvisionOrganizationActionState> {
-	const correlationId = createCorrelationId();
-	const session = await requireRole("operator");
+	const correlationId = http.correlation.create();
+	const session = await authServer.session.requireRole("operator");
 
-	const parsed = parseSchema(provisionOrganizationInputSchema, {
+	const parsed = parseSchema(admin.schemas.organizations.provisionInput, {
 		name: formData.get("name"),
 		slug: formData.get("slug"),
 		adminEmail: formData.get("adminEmail"),
@@ -45,11 +41,11 @@ export async function provisionOrganizationAction(
 		});
 	}
 
-	let result: Awaited<ReturnType<typeof provisionOrganization>>;
+	let result: Awaited<ReturnType<typeof admin.organizations.provision>>;
 	try {
-		result = await provisionOrganization(parsed.data);
+		result = await admin.organizations.provision(parsed.data);
 	} catch {
-		logProductEvent({
+		logger.event({
 			level: "error",
 			event: "action.internal_error",
 			correlationId,
@@ -65,7 +61,7 @@ export async function provisionOrganizationAction(
 		return mapPackageResult(result);
 	}
 
-	logProductEvent({
+	logger.event({
 		level: "info",
 		event: "organization.provision",
 		correlationId,

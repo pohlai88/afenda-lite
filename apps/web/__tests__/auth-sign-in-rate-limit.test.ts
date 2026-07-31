@@ -1,7 +1,8 @@
+import { rateLimitTesting } from "@afenda/rate-limit/testing";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const rateLimitMocks = vi.hoisted(() => ({
-	checkRateLimit: vi.fn(),
+	check: vi.fn(),
 }));
 
 const authMocks = vi.hoisted(() => ({
@@ -11,7 +12,7 @@ const authMocks = vi.hoisted(() => ({
 }));
 
 const logMocks = vi.hoisted(() => ({
-	logProductEvent: vi.fn(),
+	event: vi.fn(),
 }));
 
 vi.mock("@afenda/rate-limit", async () => {
@@ -21,20 +22,28 @@ vi.mock("@afenda/rate-limit", async () => {
 		);
 	return {
 		...actual,
-		checkRateLimit: rateLimitMocks.checkRateLimit,
+		rateLimit: { ...actual.rateLimit, check: rateLimitMocks.check },
 	};
 });
 
 vi.mock("@afenda/auth", () => ({
-	AUTH_LOGIN_PATH: "/auth/login",
-	POST_LOGIN_CALLBACK_PARAM: "callbackUrl",
-	sanitizeCallbackUrl: authMocks.sanitizeCallbackUrl,
-	signInWithEmail: authMocks.signInWithEmail,
-	signOutSession: authMocks.signOutSession,
+	authServer: {
+		paths: {
+			login: "/auth/login",
+			postLogin: {
+				callbackParameter: "callbackUrl",
+				sanitizeCallback: authMocks.sanitizeCallbackUrl,
+			},
+		},
+		credentials: {
+			signInWithEmail: authMocks.signInWithEmail,
+			signOut: authMocks.signOutSession,
+		},
+	},
 }));
 
-vi.mock("@/modules/platform/observability/product-log", () => ({
-	logProductEvent: logMocks.logProductEvent,
+vi.mock("@afenda/logger", () => ({
+	logger: { event: logMocks.event },
 }));
 
 vi.mock("@/modules/platform/domain/request-attribution", () => ({
@@ -55,23 +64,22 @@ import { signInAction } from "../app/actions/auth-credentials";
 describe("signInAction rate limit", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		rateLimitMocks.checkRateLimit.mockResolvedValue({
-			ok: true,
-			quota: {
+		rateLimitMocks.check.mockResolvedValue(
+			rateLimitTesting.decision.allowed({
 				limit: 5,
 				remaining: 4,
 				resetEpochMs: Date.now() + 60_000,
-			},
-		});
+			}),
+		);
 	});
 
 	it("returns ActionResult RATE_LIMITED with retryAfter and logs correlation", async () => {
-		rateLimitMocks.checkRateLimit.mockResolvedValue({
-			ok: false,
-			reason: "rate_limited",
-			retryAfterSeconds: 17,
-			quota: { limit: 5, remaining: 0, resetEpochMs: Date.now() + 17_000 },
-		});
+		rateLimitMocks.check.mockResolvedValue(
+			rateLimitTesting.decision.rateLimited({
+				retryAfterSeconds: 17,
+				quota: { limit: 5, remaining: 0, resetEpochMs: Date.now() + 17_000 },
+			}),
+		);
 
 		const formData = new FormData();
 		formData.set("email", "client@example.com");
@@ -79,9 +87,13 @@ describe("signInAction rate limit", () => {
 
 		const result = await signInAction(null, formData);
 
-		expect(rateLimitMocks.checkRateLimit).toHaveBeenCalledWith({
+		expect(rateLimitMocks.check).toHaveBeenCalledWith({
 			bucket: "auth_sign_in",
-			key: "203.0.113.50:client@example.com",
+			identity: {
+				kind: "credentials",
+				ipAddress: "203.0.113.50",
+				email: "client@example.com",
+			},
 		});
 		expect(authMocks.signInWithEmail).not.toHaveBeenCalled();
 		expect(result).toMatchObject({
@@ -89,7 +101,7 @@ describe("signInAction rate limit", () => {
 			code: "RATE_LIMITED",
 			details: { retryAfterSeconds: 17 },
 		});
-		expect(logMocks.logProductEvent).toHaveBeenCalledWith(
+		expect(logMocks.event).toHaveBeenCalledWith(
 			expect.objectContaining({
 				level: "warn",
 				event: "auth_sign_in.rate_limited",
@@ -103,12 +115,12 @@ describe("signInAction rate limit", () => {
 	});
 
 	it("rate-limits before schema validation (malformed email still consumes budget)", async () => {
-		rateLimitMocks.checkRateLimit.mockResolvedValue({
-			ok: false,
-			reason: "rate_limited",
-			retryAfterSeconds: 12,
-			quota: { limit: 5, remaining: 0, resetEpochMs: Date.now() + 12_000 },
-		});
+		rateLimitMocks.check.mockResolvedValue(
+			rateLimitTesting.decision.rateLimited({
+				retryAfterSeconds: 12,
+				quota: { limit: 5, remaining: 0, resetEpochMs: Date.now() + 12_000 },
+			}),
+		);
 
 		const formData = new FormData();
 		formData.set("email", "not-an-email");
@@ -116,9 +128,13 @@ describe("signInAction rate limit", () => {
 
 		const result = await signInAction(null, formData);
 
-		expect(rateLimitMocks.checkRateLimit).toHaveBeenCalledWith({
+		expect(rateLimitMocks.check).toHaveBeenCalledWith({
 			bucket: "auth_sign_in",
-			key: "203.0.113.50:not-an-email",
+			identity: {
+				kind: "credentials",
+				ipAddress: "203.0.113.50",
+				email: "not-an-email",
+			},
 		});
 		expect(result).toMatchObject({
 			ok: false,
@@ -128,23 +144,26 @@ describe("signInAction rate limit", () => {
 	});
 
 	it("uses _invalid sentinel when email is missing", async () => {
-		rateLimitMocks.checkRateLimit.mockResolvedValue({
-			ok: true,
-			quota: {
+		rateLimitMocks.check.mockResolvedValue(
+			rateLimitTesting.decision.allowed({
 				limit: 5,
 				remaining: 4,
 				resetEpochMs: Date.now() + 60_000,
-			},
-		});
+			}),
+		);
 
 		const formData = new FormData();
 		formData.set("password", "x");
 
 		await signInAction(null, formData);
 
-		expect(rateLimitMocks.checkRateLimit).toHaveBeenCalledWith({
+		expect(rateLimitMocks.check).toHaveBeenCalledWith({
 			bucket: "auth_sign_in",
-			key: "203.0.113.50:_invalid",
+			identity: {
+				kind: "credentials",
+				ipAddress: "203.0.113.50",
+				email: undefined,
+			},
 		});
 	});
 });

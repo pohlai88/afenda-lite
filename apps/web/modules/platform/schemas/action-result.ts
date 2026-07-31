@@ -4,7 +4,7 @@ import type { Result as ActionResult } from "@afenda/errors";
  * Shared Server Action result contract (API-002 · API-003).
  * Core Result capability: `errorResult` from `@afenda/errors`.
  * Expected failures return `{ ok: false, … }`; throw only for unexpected bugs.
- * Error codes: import `ApiErrorCode` from `@afenda/errors` (or schemas/api-error).
+ * Error codes: import `CanonicalErrorCode` from `@afenda/errors`.
  */
 
 function firstFieldError(details: unknown, field: string): string | undefined {

@@ -1,32 +1,7 @@
-export const ACCESS_CONTROL_ALLOW_ORIGIN =
-	"Access-Control-Allow-Origin" as const;
-export const ACCESS_CONTROL_ALLOW_METHODS =
-	"Access-Control-Allow-Methods" as const;
-export const ACCESS_CONTROL_ALLOW_HEADERS =
-	"Access-Control-Allow-Headers" as const;
-export const ACCESS_CONTROL_ALLOW_CREDENTIALS =
-	"Access-Control-Allow-Credentials" as const;
-export const ACCESS_CONTROL_MAX_AGE = "Access-Control-Max-Age" as const;
-export const ACCESS_CONTROL_EXPOSE_HEADERS =
-	"Access-Control-Expose-Headers" as const;
-export const VARY_HEADER = "Vary" as const;
+import { SECURITY_SEMANTIC_REGISTRY } from "./semantic-registry";
 
-const DEFAULT_METHODS = [
-	"GET",
-	"HEAD",
-	"POST",
-	"PUT",
-	"PATCH",
-	"DELETE",
-	"OPTIONS",
-] as const;
-const DEFAULT_ALLOWED_HEADERS = [
-	"Accept",
-	"Authorization",
-	"Content-Type",
-	"x-correlation-id",
-] as const;
-const DEFAULT_MAX_AGE_SECONDS = 600;
+const HEADER_NAME_PATTERN = /^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/;
+const METHOD_PATTERN = /^[A-Z]+$/;
 
 export interface CorsConfig {
 	readonly allowedHeaders?: readonly string[];
@@ -37,7 +12,6 @@ export interface CorsConfig {
 	readonly origins: readonly string[];
 }
 
-/** CorsConfig after origin validation and default fill. */
 export interface ResolvedCorsConfig {
 	readonly allowedHeaders: readonly string[];
 	readonly credentials?: boolean;
@@ -58,59 +32,109 @@ export interface HandleCorsPreflightInput {
 }
 
 function normalizeOrigins(origins: readonly string[]): string[] {
-	const normalized: string[] = [];
+	const normalized = new Set<string>();
 	for (const origin of origins) {
 		const trimmed = origin.trim();
-		if (trimmed === "") {
-			throw new Error(
-				"@afenda/security CORS rejects blank origin entries in the allow-list",
+		if (trimmed === "" || trimmed === "*") {
+			throw new RangeError(
+				"@afenda/security CORS requires explicit non-blank origins",
 			);
 		}
-		if (trimmed === "*") {
-			throw new Error(
-				"@afenda/security CORS rejects wildcard origins; pass an explicit allow-list",
+		let url: URL;
+		try {
+			url = new URL(trimmed);
+		} catch (cause) {
+			throw new RangeError(
+				"@afenda/security CORS origin must be an absolute URL",
+				{ cause },
 			);
 		}
-		normalized.push(trimmed);
+		if (
+			(url.protocol !== "https:" && url.protocol !== "http:") ||
+			url.origin !== trimmed
+		) {
+			throw new RangeError(
+				"@afenda/security CORS origin must be an exact HTTP origin",
+			);
+		}
+		normalized.add(url.origin);
 	}
-	return normalized;
+	return [...normalized];
+}
+
+function normalizeTokens(
+	values: readonly string[],
+	pattern: RegExp,
+	label: string,
+): string[] {
+	const normalized = new Set<string>();
+	for (const value of values) {
+		const trimmed = value.trim();
+		if (!pattern.test(trimmed)) {
+			throw new RangeError(
+				`@afenda/security CORS ${label} contains an unsafe token`,
+			);
+		}
+		normalized.add(trimmed);
+	}
+	return [...normalized];
+}
+
+function normalizeMaxAge(value: number): number {
+	if (!Number.isSafeInteger(value) || value < 0) {
+		throw new RangeError(
+			"@afenda/security CORS max age must be a non-negative safe integer",
+		);
+	}
+	return value;
+}
+
+export function createCorsConfig(config: CorsConfig): ResolvedCorsConfig {
+	const { defaults } = SECURITY_SEMANTIC_REGISTRY.cors;
+	return {
+		origins: normalizeOrigins(config.origins),
+		methods: normalizeTokens(
+			config.methods ?? defaults.methods,
+			METHOD_PATTERN,
+			"methods",
+		),
+		allowedHeaders: normalizeTokens(
+			config.allowedHeaders ?? defaults.allowedHeaders,
+			HEADER_NAME_PATTERN,
+			"allowed headers",
+		),
+		maxAgeSeconds: normalizeMaxAge(
+			config.maxAgeSeconds ?? defaults.maxAgeSeconds,
+		),
+		...(config.credentials === undefined
+			? {}
+			: { credentials: config.credentials }),
+		...(config.exposedHeaders === undefined
+			? {}
+			: {
+					exposedHeaders: normalizeTokens(
+						config.exposedHeaders,
+						HEADER_NAME_PATTERN,
+						"exposed headers",
+					),
+				}),
+	};
 }
 
 function resolveAllowedOrigin(
 	origins: readonly string[],
 	requestOrigin: string | null,
 ): string | null {
-	if (requestOrigin === null || requestOrigin.trim() === "") {
+	if (requestOrigin === null) {
 		return null;
 	}
 	const trimmed = requestOrigin.trim();
 	return origins.includes(trimmed) ? trimmed : null;
 }
 
-/**
- * Validate origins and fill CORS defaults. Does not read process.env.
- */
-export function createCorsConfig(config: CorsConfig): ResolvedCorsConfig {
-	return {
-		origins: normalizeOrigins(config.origins),
-		methods: config.methods ?? DEFAULT_METHODS,
-		allowedHeaders: config.allowedHeaders ?? DEFAULT_ALLOWED_HEADERS,
-		maxAgeSeconds: config.maxAgeSeconds ?? DEFAULT_MAX_AGE_SECONDS,
-		...(config.credentials === undefined
-			? {}
-			: { credentials: config.credentials }),
-		...(config.exposedHeaders === undefined
-			? {}
-			: { exposedHeaders: config.exposedHeaders }),
-	};
-}
-
-/**
- * Build CORS response headers for an allow-listed origin.
- * Fail closed: unknown/missing origin → empty Headers (no ACAO).
- */
 export function buildCorsHeaders(input: BuildCorsHeadersInput): Headers {
 	const config = createCorsConfig(input.config);
+	const names = SECURITY_SEMANTIC_REGISTRY.cors.headerNames;
 	const headers = new Headers();
 	const allowedOrigin = resolveAllowedOrigin(
 		config.origins,
@@ -119,47 +143,32 @@ export function buildCorsHeaders(input: BuildCorsHeadersInput): Headers {
 	if (allowedOrigin === null) {
 		return headers;
 	}
-
-	headers.set(ACCESS_CONTROL_ALLOW_ORIGIN, allowedOrigin);
-	headers.set(ACCESS_CONTROL_ALLOW_METHODS, config.methods.join(", "));
-	headers.set(ACCESS_CONTROL_ALLOW_HEADERS, config.allowedHeaders.join(", "));
-	headers.set(ACCESS_CONTROL_MAX_AGE, String(config.maxAgeSeconds));
-	headers.set(VARY_HEADER, "Origin");
-
-	if (config.credentials) {
-		headers.set(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
+	headers.set(names.allowOrigin, allowedOrigin);
+	headers.set(names.allowMethods, config.methods.join(", "));
+	headers.set(names.allowHeaders, config.allowedHeaders.join(", "));
+	headers.set(names.maxAge, String(config.maxAgeSeconds));
+	headers.set(names.vary, "Origin");
+	if (config.credentials === true) {
+		headers.set(names.allowCredentials, "true");
 	}
-	if (config.exposedHeaders !== undefined && config.exposedHeaders.length > 0) {
-		headers.set(
-			ACCESS_CONTROL_EXPOSE_HEADERS,
-			config.exposedHeaders.join(", "),
-		);
+	if (config.exposedHeaders?.length) {
+		headers.set(names.exposeHeaders, config.exposedHeaders.join(", "));
 	}
-
 	return headers;
 }
 
-/**
- * Handle CORS preflight. Returns 204 Response when OPTIONS + allow-listed origin;
- * null when the request is not a preflight (caller continues).
- */
 export function handleCorsPreflight(
 	input: HandleCorsPreflightInput,
 ): Response | null {
 	if (input.request.method !== "OPTIONS") {
 		return null;
 	}
-
-	const corsHeaders = buildCorsHeaders({
+	const headers = buildCorsHeaders({
 		config: input.config,
 		requestOrigin: input.request.headers.get("Origin"),
 	});
-	if (!corsHeaders.has(ACCESS_CONTROL_ALLOW_ORIGIN)) {
+	if (!headers.has(SECURITY_SEMANTIC_REGISTRY.cors.headerNames.allowOrigin)) {
 		return new Response(null, { status: 403 });
 	}
-
-	return new Response(null, {
-		status: 204,
-		headers: corsHeaders,
-	});
+	return new Response(null, { status: 204, headers });
 }

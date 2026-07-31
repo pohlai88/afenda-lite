@@ -1,111 +1,24 @@
 import { errorIngress } from "@afenda/errors";
 
 import { getNeonAuth } from "./neon-auth";
-import type { NeonOrgRole } from "./roles";
+import {
+	type NeonOrgMember,
+	normalizeNeonOrgMembers,
+} from "./neon-normalization";
 import { getSession } from "./session";
 
 const PAGE_SIZE = 100;
 const MAX_PAGES = 50;
 
 /** Minimal org member row — never expose Neon Auth response envelopes. */
-export interface OrgMember {
-	email: string;
-	name: string;
-	role: NeonOrgRole;
-	userId: string;
-}
-
-const NEON_ORG_ROLES = new Set<NeonOrgRole>(["owner", "admin", "member"]);
-
-function isNeonOrgRole(value: unknown): value is NeonOrgRole {
-	return typeof value === "string" && NEON_ORG_ROLES.has(value as NeonOrgRole);
-}
-
-function normalizeEmail(email: unknown): string | null {
-	if (typeof email !== "string") {
-		return null;
-	}
-	const normalized = email.trim().toLowerCase();
-	return normalized.length > 0 ? normalized : null;
-}
-
-function normalizeName(name: unknown, email: string): string {
-	if (typeof name === "string") {
-		const trimmed = name.trim();
-		if (trimmed.length > 0) {
-			return trimmed;
-		}
-	}
-	return email;
-}
-
-function memberFromUnknown(row: unknown): OrgMember | null {
-	if (typeof row !== "object" || row === null) {
-		return null;
-	}
-
-	const record = row as Record<string, unknown>;
-	const user =
-		typeof record.user === "object" && record.user !== null
-			? (record.user as Record<string, unknown>)
-			: null;
-
-	const userId =
-		(typeof record.userId === "string" && record.userId.trim()) ||
-		(user && typeof user.id === "string" && user.id.trim()) ||
-		null;
-
-	if (!userId) {
-		return null;
-	}
-
-	const email =
-		normalizeEmail(user?.email) ?? normalizeEmail(record.email) ?? null;
-	if (!email) {
-		return null;
-	}
-
-	if (!isNeonOrgRole(record.role)) {
-		return null;
-	}
-
-	return {
-		email,
-		name: normalizeName(user?.name ?? record.name, email),
-		role: record.role,
-		userId,
-	};
-}
+export type OrgMember = NeonOrgMember;
 
 /**
  * Normalize Neon `organization.listMembers` payload into minimal member rows.
  * Accepts `{ members: [...] }` envelopes or raw arrays. Invalid rows are dropped.
  */
 export function normalizeOrgMembers(data: unknown): OrgMember[] {
-	let rows: unknown[] | null = null;
-	if (Array.isArray(data)) {
-		rows = data;
-	} else if (
-		typeof data === "object" &&
-		data !== null &&
-		"members" in data &&
-		Array.isArray((data as { members: unknown }).members)
-	) {
-		rows = (data as { members: unknown[] }).members;
-	}
-
-	if (!rows) {
-		return [];
-	}
-
-	const byUserId = new Map<string, OrgMember>();
-	for (const row of rows) {
-		const member = memberFromUnknown(row);
-		if (member) {
-			byUserId.set(member.userId, member);
-		}
-	}
-	return [...byUserId.values()];
+	return normalizeNeonOrgMembers(data);
 }
 
 function assertActiveSessionOrg(organizationId: string, sessionOrgId: string) {

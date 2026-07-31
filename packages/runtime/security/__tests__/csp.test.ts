@@ -1,28 +1,22 @@
 import { describe, expect, it } from "vitest";
+import { security } from "../src";
 
-import { buildContentSecurityPolicy, STRICT_CSP_DIRECTIVES } from "../src/csp";
-
-describe("@afenda/security buildContentSecurityPolicy", () => {
-	it("joins directives and values", () => {
+describe("@afenda/security CSP policy", () => {
+	it("serializes valued and flag directives", () => {
 		expect(
-			buildContentSecurityPolicy({
+			security.csp.serialize({
 				"default-src": ["'self'"],
-				"object-src": ["'none'"],
-			}),
-		).toBe("default-src 'self'; object-src 'none'");
-	});
-
-	it("emits flag directives with empty values", () => {
-		expect(
-			buildContentSecurityPolicy({
 				"upgrade-insecure-requests": [],
 			}),
-		).toBe("upgrade-insecure-requests");
+		).toBe("default-src 'self'; upgrade-insecure-requests");
 	});
 
-	it("builds STRICT_CSP_DIRECTIVES without empty gaps", () => {
-		const value = buildContentSecurityPolicy(STRICT_CSP_DIRECTIVES);
-		expect(value).toContain("frame-ancestors 'none'");
-		expect(value).toContain("upgrade-insecure-requests");
+	it("rejects directive and value injection", () => {
+		expect(() =>
+			security.csp.serialize({ "bad;script-src": ["'self'"] }),
+		).toThrow(RangeError);
+		expect(() =>
+			security.csp.serialize({ "default-src": ["'self'; report-uri evil"] }),
+		).toThrow(RangeError);
 	});
 });

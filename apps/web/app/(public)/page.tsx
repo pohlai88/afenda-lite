@@ -1,8 +1,4 @@
-import {
-	getAuthBootstrap,
-	POST_LOGIN_CALLBACK_PARAM,
-	resolvePostLoginPath,
-} from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
@@ -30,12 +26,12 @@ export const metadata: Metadata = {
  */
 export default async function HomePage({ searchParams }: HomePageProps) {
 	const query = await searchParams;
-	const rawCallback = query[POST_LOGIN_CALLBACK_PARAM];
+	const rawCallback = query[authServer.paths.postLogin.callbackParameter];
 	const callbackUrl = Array.isArray(rawCallback) ? undefined : rawCallback;
 	// Omit bare `/` as ensure/sync `next` — those handlers already resolve role
 	// home. Passing `next=/` created ensure↔`/` bounce risk when session_data
 	// cookies lagged behind Neon Auth server state.
-	const bootstrap = await getAuthBootstrap(callbackUrl);
+	const bootstrap = await authServer.session.bootstrap(callbackUrl);
 	switch (bootstrap.state) {
 		// biome-ignore lint/suspicious/noUnnecessaryConditions: AuthBootstrap is an external discriminated union; this case is runtime-reachable.
 		case "sync_cookies":
@@ -46,7 +42,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 		// biome-ignore lint/suspicious/noUnnecessaryConditions: AuthBootstrap is an external discriminated union; this case is runtime-reachable.
 		case "ready":
 			return redirect(
-				resolvePostLoginPath({
+				authServer.paths.postLogin.resolve({
 					role: bootstrap.session.role,
 					callbackUrl,
 				}),

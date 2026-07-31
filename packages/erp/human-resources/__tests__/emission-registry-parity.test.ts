@@ -1,4 +1,7 @@
-import { AllEventSchemas, HumanResourcesEventSchemas } from "@afenda/events";
+import {
+	AllEventSchemas,
+	HumanResourcesEventSchemas,
+} from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
 import { humanResourcesModuleManifest } from "../src/module.manifest";
 import {

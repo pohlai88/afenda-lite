@@ -1,4 +1,4 @@
-import { getSession, requireRole } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import {
 	ITEM_TEMPLATE_ATTRIBUTE_VALUE_KINDS,
 	ITEM_TYPES,
@@ -68,7 +68,9 @@ interface MasterDataShellProps {
  */
 export async function MasterDataShell({ surface }: MasterDataShellProps) {
 	const session =
-		surface === "admin" ? await requireRole("operator") : await getSession();
+		surface === "admin"
+			? await authServer.session.requireRole("operator")
+			: await authServer.session.get();
 
 	await requirePermission(session, "master_data.read");
 	const canManage = await sessionHasPermission(session, "master_data.manage");

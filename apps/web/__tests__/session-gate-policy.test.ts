@@ -145,7 +145,7 @@ describe("N6 proxy session gate (disk)", () => {
 	it("wires createSessionProxy and only bypasses via shouldBypassSessionGate", () => {
 		const source = readProxySource();
 		expect(source).toContain('from "@afenda/auth"');
-		expect(source).toContain("createSessionProxy");
+		expect(source).toContain("authServer.proxy.create");
 		expect(source).toContain("shouldBypassSessionGate");
 		expect(source).toContain("runSessionGate(request)");
 		expect(source).toContain("x-afenda-pathname");

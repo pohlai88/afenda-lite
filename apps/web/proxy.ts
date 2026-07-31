@@ -1,7 +1,7 @@
-import { createSessionProxy } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import { env } from "@afenda/env";
-import { CORRELATION_HEADER, resolveCorrelationId } from "@afenda/http";
-import { logProductEvent } from "@afenda/logger/edge";
+import { http } from "@afenda/http";
+import { logger } from "@afenda/logger/edge";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
@@ -20,7 +20,7 @@ import { shouldBypassSessionGate } from "./session-gate-policy";
  * `config.matcher` must stay a static literal array (Next compile-time parse).
  */
 
-const runSessionGate = createSessionProxy();
+const runSessionGate = authServer.proxy.create();
 
 const AFENDA_PATHNAME_HEADER = "x-afenda-pathname";
 
@@ -37,13 +37,13 @@ function withCorrelation(
 	response: NextResponse,
 	correlationId: string,
 ): NextResponse {
-	response.headers.set(CORRELATION_HEADER, correlationId);
+	response.headers.set(http.correlation.header, correlationId);
 	return response;
 }
 
 export async function proxy(request: NextRequest) {
-	const correlationId = resolveCorrelationId(
-		request.headers.get(CORRELATION_HEADER),
+	const correlationId = http.correlation.resolve(
+		request.headers.get(http.correlation.header),
 	);
 
 	if (
@@ -65,13 +65,13 @@ export async function proxy(request: NextRequest) {
 
 	const gateResponse = await runSessionGate(request);
 	if (gateResponse.status >= 300 && gateResponse.status < 400) {
-		logProductEvent({
+		logger.event({
 			level: "info",
 			event: "proxy.session_redirect",
 			correlationId,
 			path: request.nextUrl.pathname,
 		});
-		gateResponse.headers.set(CORRELATION_HEADER, correlationId);
+		gateResponse.headers.set(http.correlation.header, correlationId);
 		return gateResponse;
 	}
 

@@ -1,9 +1,6 @@
 "use client";
 
-import {
-	AUTH_FORGOT_PASSWORD_PATH,
-	AUTH_RESET_PASSWORD_PATH,
-} from "@afenda/auth/client";
+import { authBrowser } from "@afenda/auth/client";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -27,8 +24,8 @@ interface AuthSurfaceChromeProps {
 function AuthSurfaceIdentitySupport() {
 	const pathname = usePathname();
 	const showSupport =
-		pathname === AUTH_FORGOT_PASSWORD_PATH ||
-		pathname === AUTH_RESET_PASSWORD_PATH;
+		pathname === authBrowser.paths.forgotPassword ||
+		pathname === authBrowser.paths.resetPassword;
 
 	if (!showSupport) {
 		return null;

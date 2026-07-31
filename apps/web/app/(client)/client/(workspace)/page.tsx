@@ -1,4 +1,4 @@
-import { getSession } from "@afenda/auth";
+import { authServer } from "@afenda/auth";
 import Link from "next/link";
 
 import { TheMachineChat } from "@/features/ai-the-machine/the-machine-chat";
@@ -8,7 +8,7 @@ import { resolveClientShellNav } from "@/features/portal-chrome/resolve-shell-ac
  * Client workspace home — enabled modules + The Machine chat.
  */
 export default async function ClientWorkspaceHomePage() {
-	const session = await getSession();
+	const session = await authServer.session.get();
 	const modules = await resolveClientShellNav(session);
 
 	return (

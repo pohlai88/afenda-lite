@@ -9,9 +9,14 @@ const notificationMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@afenda/notifications", () => ({
-	createNotificationRecorder: () => ({
+	notifications: {
 		record: notificationMocks.record,
-	}),
+		vocabulary: {
+			channel: { inApp: "IN_APP" },
+			priority: { medium: "MEDIUM" },
+			type: { success: "SUCCESS" },
+		},
+	},
 }));
 
 import { recordOrgRoleAssignedNotification } from "../modules/identity/domain/record-org-role-assigned-notification";

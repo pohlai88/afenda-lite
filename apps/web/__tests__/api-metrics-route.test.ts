@@ -59,7 +59,7 @@ vi.mock("@/modules/platform/domain/health", () => ({
 	}),
 }));
 
-import { resetDefaultMetricsRegistryForTests } from "@afenda/metrics/testing";
+import { resetMetricsForTests } from "@afenda/metrics/testing";
 
 import { GET as getLiveness } from "../app/api/health/liveness/route";
 import { GET as getMetrics } from "../app/api/metrics/route";
@@ -67,7 +67,7 @@ import { GET as getMetrics } from "../app/api/metrics/route";
 describe("@afenda/web metrics Route Handler", () => {
 	beforeEach(() => {
 		metricsEnvState.METRICS_SCRAPE_TOKEN = undefined;
-		resetDefaultMetricsRegistryForTests();
+		resetMetricsForTests();
 	});
 
 	it("returns 404 when METRICS_SCRAPE_TOKEN is unset (fail closed)", async () => {

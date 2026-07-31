@@ -1,6 +1,5 @@
-export const RATE_LIMIT_LIMIT_HEADER = "X-RateLimit-Limit" as const;
-export const RATE_LIMIT_REMAINING_HEADER = "X-RateLimit-Remaining" as const;
-export const RATE_LIMIT_RESET_HEADER = "X-RateLimit-Reset" as const;
+import { toNonNegativeInteger } from "./non-negative-integer";
+import { HTTP_SEMANTIC_REGISTRY } from "./semantic-registry";
 
 export interface RateLimitHeaderQuota {
 	readonly limit: number;
@@ -9,19 +8,23 @@ export interface RateLimitHeaderQuota {
 	readonly resetEpochMs: number;
 }
 
-/**
- * Attach standard X-RateLimit-* headers onto Fetch Headers.
- * Reset is Unix epoch **seconds** (RFC-style clients).
- */
 export function applyRateLimitHeaders(
 	headers: Headers,
 	quota: RateLimitHeaderQuota,
 ): void {
-	const limit = Math.max(0, Math.floor(quota.limit));
-	const remaining = Math.max(0, Math.floor(quota.remaining));
-	const resetSeconds = Math.max(0, Math.floor(quota.resetEpochMs / 1000));
-
-	headers.set(RATE_LIMIT_LIMIT_HEADER, String(limit));
-	headers.set(RATE_LIMIT_REMAINING_HEADER, String(remaining));
-	headers.set(RATE_LIMIT_RESET_HEADER, String(resetSeconds));
+	const names = HTTP_SEMANTIC_REGISTRY.headers.rateLimit;
+	headers.set(
+		names.limit,
+		String(toNonNegativeInteger(quota.limit, "rate-limit limit")),
+	);
+	headers.set(
+		names.remaining,
+		String(toNonNegativeInteger(quota.remaining, "rate-limit remaining")),
+	);
+	headers.set(
+		names.reset,
+		String(
+			toNonNegativeInteger(quota.resetEpochMs / 1000, "rate-limit reset epoch"),
+		),
+	);
 }

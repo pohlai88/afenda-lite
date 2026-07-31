@@ -24,7 +24,7 @@ const permissionMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@afenda/auth", () => ({
-	requireRole: authMocks.requireRole,
+	authServer: { session: { requireRole: authMocks.requireRole } },
 }));
 
 vi.mock("@/modules/identity/domain/organization-member-search", () => ({
@@ -45,8 +45,8 @@ vi.mock(
 	},
 );
 
-vi.mock("@/modules/platform/observability/product-log", () => ({
-	logProductEvent: vi.fn(),
+vi.mock("@afenda/logger", () => ({
+	logger: { event: vi.fn() },
 }));
 
 import { searchOrgMembersAction } from "../app/actions/search-org-members";

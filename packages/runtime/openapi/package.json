@@ -8,10 +8,6 @@
 			"types": "./src/index.ts",
 			"default": "./src/index.ts"
 		},
-		"./zod": {
-			"types": "./src/zod.ts",
-			"default": "./src/zod.ts"
-		},
 		"./node": {
 			"types": "./src/node/index.ts",
 			"default": "./src/node/index.ts"
@@ -19,11 +15,11 @@
 	},
 	"scripts": {
 		"lint": "biome check .",
-		"typecheck": "tsc --noEmit -p tsconfig.json",
+		"typecheck": "tsc --noEmit -p tsconfig.json && pnpm run typecheck:contract",
+		"typecheck:contract": "tsc --noEmit -p tsconfig.contract.json",
 		"test": "vitest run --config ../../../testing/vitest.unit.config.ts --project openapi"
 	},
 	"dependencies": {
-		"@afenda/errors": "workspace:*",
 		"@asteasolutions/zod-to-openapi": "^8.5.0",
 		"yaml": "^2.9.0",
 		"zod": "catalog:"

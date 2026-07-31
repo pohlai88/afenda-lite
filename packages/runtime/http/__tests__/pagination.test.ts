@@ -1,42 +1,36 @@
 import { describe, expect, it } from "vitest";
 
-import {
-	DEFAULT_PAGE_LIMIT,
-	extractPagination,
-	MAX_PAGE_LIMIT,
-} from "../src/pagination";
+import { http } from "../src";
 
 describe("@afenda/http extractPagination", () => {
 	it("defaults limit and offset", () => {
-		expect(extractPagination(new URLSearchParams())).toEqual({
-			limit: DEFAULT_PAGE_LIMIT,
+		expect(http.pagination.extract(new URLSearchParams())).toEqual({
+			limit: http.pagination.defaultLimit,
 			offset: 0,
 		});
 	});
 
 	it("clamps limit to MAX_PAGE_LIMIT", () => {
 		const params = new URLSearchParams({
-			limit: String(MAX_PAGE_LIMIT + 50),
+			limit: String(http.pagination.maxLimit + 50),
 			offset: "10",
 		});
-		expect(extractPagination(params)).toEqual({
-			limit: MAX_PAGE_LIMIT,
+		expect(http.pagination.extract(params)).toEqual({
+			limit: http.pagination.maxLimit,
 			offset: 10,
 		});
 	});
 
-	it("parses orderBy and order", () => {
+	it("does not interpret domain-owned sorting", () => {
 		const params = new URLSearchParams({
 			limit: "5",
 			offset: "0",
 			orderBy: "createdAt",
 			order: "desc",
 		});
-		expect(extractPagination(params)).toEqual({
+		expect(http.pagination.extract(params)).toEqual({
 			limit: 5,
 			offset: 0,
-			orderBy: "createdAt",
-			order: "desc",
 		});
 	});
 
@@ -45,17 +39,24 @@ describe("@afenda/http extractPagination", () => {
 			limit: "nope",
 			order: "sideways",
 		});
-		expect(extractPagination(params)).toEqual({
-			limit: DEFAULT_PAGE_LIMIT,
+		expect(http.pagination.extract(params)).toEqual({
+			limit: http.pagination.defaultLimit,
 			offset: 0,
 		});
 	});
 
 	it("reads query from Request.url", () => {
 		const request = new Request("http://local.test/api/items?limit=7&offset=3");
-		expect(extractPagination(request)).toEqual({
+		expect(http.pagination.extract(request)).toEqual({
 			limit: 7,
 			offset: 3,
+		});
+	});
+
+	it("rejects decimal and negative transport values to defaults", () => {
+		expect(http.pagination.extract("?limit=2.5&offset=-1")).toEqual({
+			limit: http.pagination.defaultLimit,
+			offset: 0,
 		});
 	});
 });

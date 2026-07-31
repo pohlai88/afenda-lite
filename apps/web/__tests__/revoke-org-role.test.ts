@@ -3,7 +3,7 @@
  * GUIDE-018 I3.1 — revoke org role Zod + hard-tenancy soft-revoke with audit (N12 Path-to-100%).
  */
 
-import { deleteRbacAuditRow } from "@afenda/admin/audit";
+import { rbacAudit } from "@afenda/admin/audit";
 import {
 	database as afendaDatabase,
 	and,
@@ -52,7 +52,7 @@ describe.skipIf(!hasDatabase)("revokeOrgRoleWithAudit tenancy (I3.1)", () => {
 
 	afterAll(async () => {
 		for (const row of createdAuditIds) {
-			await deleteRbacAuditRow({ id: row.id, orgId: row.orgId });
+			await rbacAudit.rows.delete({ id: row.id, orgId: row.orgId });
 		}
 		for (const row of createdAssignmentIds) {
 			await afendaDatabase.client

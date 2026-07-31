@@ -1,7 +1,7 @@
 // biome-ignore-all lint/style/noNestedTernary: Exhaustive status and tri-state view mappings remain explicit at their use sites.
 import type { Session } from "@afenda/auth";
 import { type Result as ActionResult, errorResult } from "@afenda/errors";
-import { createCorrelationId } from "@afenda/http";
+import { http } from "@afenda/http";
 import {
 	IMPORT_MODES,
 	type ImportReconciliationReport,
@@ -104,7 +104,7 @@ export async function runApplyMasterDataImport(input: {
 		return permissionDenied;
 	}
 
-	const correlationId = createCorrelationId();
+	const correlationId = http.correlation.create();
 	const authorization = createMasterDataAuthorizationPort();
 	const base = {
 		organizationId: input.session.orgId,

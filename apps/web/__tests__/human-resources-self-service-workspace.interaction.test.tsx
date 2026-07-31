@@ -16,8 +16,10 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@afenda/auth", () => ({
-	getSession: mocks.getSession,
-	AUTH_FORBIDDEN_PATH: "/forbidden",
+	authServer: {
+		session: { get: mocks.getSession },
+		paths: { forbidden: "/forbidden" },
+	},
 }));
 
 vi.mock("next/navigation", () => ({

@@ -7,20 +7,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import {
-	AUTH_ACCEPT_INVITATION_PATH,
-	AUTH_API_BASE_PATH,
-	AUTH_BASE_PATH,
-	AUTH_LOGIN_PATH,
-	isPreLoginPublicPath,
-	isPublicAuthPath,
-	isRejectedAuthPathAlias,
-	JOIN_PATH,
-	PRE_LOGIN_PUBLIC_PATHS,
-	PUBLIC_AUTH_FULL_PATHS,
-	PUBLIC_AUTH_PATHS,
-	REJECTED_AUTH_PATH_ALIASES,
-} from "@afenda/auth/client";
+import { authBrowser } from "@afenda/auth/client";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -45,7 +32,7 @@ const gateAppRoot = path.join(webRoot, "app", "(client)", "client", "(gate)");
 const nextConfigPath = path.join(webRoot, "next.config.ts");
 const proxyPath = path.join(webRoot, "proxy.ts");
 
-const DYNAMIC_AUTH_PAGE = `${AUTH_BASE_PATH}/[path]` as const;
+const DYNAMIC_AUTH_PAGE = `${authBrowser.paths.base}/[path]` as const;
 
 /** Relative page.tsx paths under a route group → URL pathnames. */
 function collectPageUrls(appRoot: string, urlPrefix = ""): string[] {
@@ -82,7 +69,7 @@ function collectPageUrls(appRoot: string, urlPrefix = ""): string[] {
 }
 
 function apiRouteFile(apiPath: string): string {
-	if (apiPath === AUTH_API_BASE_PATH) {
+	if (apiPath === authBrowser.paths.apiBase) {
 		return path.join(webRoot, "app", "api", "auth", "[...path]", "route.ts");
 	}
 	const relative = apiPath.replace(/^\//, "");
@@ -92,15 +79,17 @@ function apiRouteFile(apiPath: string): string {
 describe("PL-S1 Pre-Login route inventory", () => {
 	it("pins web public class to @afenda/auth PRE_LOGIN_PUBLIC_PATHS", () => {
 		expect([...PRE_LOGIN_PUBLIC_ROUTE_PATHS]).toEqual([
-			...PRE_LOGIN_PUBLIC_PATHS,
+			...authBrowser.paths.preLoginPublic,
 		]);
 	});
 
 	it("keeps PUBLIC_AUTH_FULL_PATHS aligned with PUBLIC_AUTH_PATHS segments", () => {
-		expect(PUBLIC_AUTH_FULL_PATHS).toHaveLength(PUBLIC_AUTH_PATHS.length);
-		for (const [index, segment] of PUBLIC_AUTH_PATHS.entries()) {
-			expect(PUBLIC_AUTH_FULL_PATHS[index]).toBe(
-				`${AUTH_BASE_PATH}/${segment}`,
+		expect(authBrowser.paths.publicAuth).toHaveLength(
+			authBrowser.paths.publicSegments.length,
+		);
+		for (const [index, segment] of authBrowser.paths.publicSegments.entries()) {
+			expect(authBrowser.paths.publicAuth[index]).toBe(
+				`${authBrowser.paths.base}/${segment}`,
 			);
 		}
 	});
@@ -115,24 +104,24 @@ describe("PL-S1 Pre-Login route inventory", () => {
 
 		for (const url of staticUrls) {
 			expect(
-				isPreLoginPublicPath(url),
+				authBrowser.paths.isPreLoginPublic(url),
 				`undeclared public page on disk: ${url}`,
 			).toBe(true);
 		}
 
 		expect(diskUrls).toContain(DYNAMIC_AUTH_PAGE);
-		for (const fullPath of PUBLIC_AUTH_FULL_PATHS) {
-			expect(isPreLoginPublicPath(fullPath)).toBe(true);
+		for (const fullPath of authBrowser.paths.publicAuth) {
+			expect(authBrowser.paths.isPreLoginPublic(fullPath)).toBe(true);
 		}
-		for (const segment of PUBLIC_AUTH_PATHS) {
-			expect(isPublicAuthPath(segment)).toBe(true);
+		for (const segment of authBrowser.paths.publicSegments) {
+			expect(authBrowser.paths.isPublicAuth(segment)).toBe(true);
 		}
 	});
 
 	it("fails closed when public allowlist entries lack disk pages", () => {
 		const diskUrls = new Set(collectPageUrls(publicAppRoot));
-		const expectedStatic = PRE_LOGIN_PUBLIC_PATHS.filter(
-			(url) => !url.startsWith(`${AUTH_BASE_PATH}/`),
+		const expectedStatic = authBrowser.paths.preLoginPublic.filter(
+			(url) => !url.startsWith(`${authBrowser.paths.base}/`),
 		);
 		for (const url of expectedStatic) {
 			expect(diskUrls.has(url), `missing public page for ${url}`).toBe(true);
@@ -149,7 +138,7 @@ describe("PL-S1 Pre-Login route inventory", () => {
 
 	it("ships Route Handlers for every Pre-Login API path", () => {
 		expect(PRE_LOGIN_API_PATHS).toEqual([
-			AUTH_API_BASE_PATH,
+			authBrowser.paths.apiBase,
 			HEALTH_LIVENESS_PATH,
 			HEALTH_READINESS_PATH,
 			METRICS_SCRAPE_PATH,
@@ -161,7 +150,9 @@ describe("PL-S1 Pre-Login route inventory", () => {
 	});
 
 	it("declares accept-invitation redirect in next.config (not a public page)", () => {
-		expect(isPreLoginPublicPath(AUTH_ACCEPT_INVITATION_PATH)).toBe(false);
+		expect(
+			authBrowser.paths.isPreLoginPublic(authBrowser.paths.acceptInvitation),
+		).toBe(false);
 		const nextConfig = readFileSync(nextConfigPath, "utf8");
 		expect(nextConfig).toContain("AUTH_ACCEPT_INVITATION_PATH");
 		expect(nextConfig).toContain("JOIN_PATH");
@@ -170,10 +161,10 @@ describe("PL-S1 Pre-Login route inventory", () => {
 		expect(nextConfig).toContain("invitationId=:invitationId");
 		expect(nextConfig).toContain("permanent: true");
 		// next.config must pin the same literals as package SSOT (CJS-safe; no .ts import).
-		expect(AUTH_ACCEPT_INVITATION_PATH).toBe("/auth/accept-invitation");
-		expect(JOIN_PATH).toBe("/join");
-		expect(nextConfig).toContain(`"${AUTH_ACCEPT_INVITATION_PATH}"`);
-		expect(nextConfig).toContain(`"${JOIN_PATH}"`);
+		expect(authBrowser.paths.acceptInvitation).toBe("/auth/accept-invitation");
+		expect(authBrowser.paths.join.path).toBe("/join");
+		expect(nextConfig).toContain(`"${authBrowser.paths.acceptInvitation}"`);
+		expect(nextConfig).toContain(`"${authBrowser.paths.join.path}"`);
 	});
 
 	it("keeps proxy config.matcher static and equal to SESSION_GATE_PROTECTED_MATCHERS", () => {
@@ -205,24 +196,28 @@ describe("PL-S1 Pre-Login route inventory", () => {
 
 	it("never classifies post-login homes as public", () => {
 		for (const postLogin of POST_LOGIN_PATHS_NOT_PUBLIC) {
-			expect(isPreLoginPublicPath(postLogin)).toBe(false);
-			expect(PRE_LOGIN_PUBLIC_PATHS).not.toContain(postLogin);
+			expect(authBrowser.paths.isPreLoginPublic(postLogin)).toBe(false);
+			expect(authBrowser.paths.preLoginPublic).not.toContain(postLogin);
 		}
-		expect(isPreLoginPublicPath(CLIENT_DASHBOARD_PATH)).toBe(false);
-		expect(isPreLoginPublicPath(CLIENT_DASHBOARD_ALIAS_PATH)).toBe(false);
+		expect(authBrowser.paths.isPreLoginPublic(CLIENT_DASHBOARD_PATH)).toBe(
+			false,
+		);
+		expect(
+			authBrowser.paths.isPreLoginPublic(CLIENT_DASHBOARD_ALIAS_PATH),
+		).toBe(false);
 	});
 
 	it("rejects undeclared sign-in alias (not AUTH_LOGIN_PATH)", () => {
-		const [rejectedSignIn] = REJECTED_AUTH_PATH_ALIASES;
-		expect(rejectedSignIn).not.toBe(AUTH_LOGIN_PATH);
-		expect(isRejectedAuthPathAlias(rejectedSignIn)).toBe(true);
-		expect(isPreLoginPublicPath(rejectedSignIn)).toBe(false);
-		expect(isPublicAuthPath("sign-in")).toBe(false);
+		const [rejectedSignIn] = authBrowser.paths.rejectedAliases;
+		expect(rejectedSignIn).not.toBe(authBrowser.paths.login);
+		expect(authBrowser.paths.isRejectedAlias(rejectedSignIn)).toBe(true);
+		expect(authBrowser.paths.isPreLoginPublic(rejectedSignIn)).toBe(false);
+		expect(authBrowser.paths.isPublicAuth("sign-in")).toBe(false);
 	});
 
 	it("does not place gate bypass paths in the public document allowlist", () => {
 		for (const gatePath of CLIENT_GATE_PATHS) {
-			expect(isPreLoginPublicPath(gatePath)).toBe(false);
+			expect(authBrowser.paths.isPreLoginPublic(gatePath)).toBe(false);
 		}
 	});
 });

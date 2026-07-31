@@ -1,9 +1,9 @@
-import { requireRole, type Session } from "@afenda/auth";
+import { authServer, type Session } from "@afenda/auth";
 import { type Result as ActionResult, errorResult } from "@afenda/errors";
-import { createCorrelationId } from "@afenda/http";
+import { http } from "@afenda/http";
+import { logger } from "@afenda/logger";
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import type { ProductPermissionCode } from "@/modules/identity/domain/session-permission";
-import { logProductEvent } from "@/modules/platform/observability/product-log";
 
 export interface OperatorPermissionActionInput<T> {
 	execute: (
@@ -27,8 +27,8 @@ export interface OperatorPermissionActionInput<T> {
 export async function runOperatorPermissionAction<T>(
 	input: OperatorPermissionActionInput<T>,
 ): Promise<ActionResult<T>> {
-	const correlationId = createCorrelationId();
-	const session = await requireRole("operator");
+	const correlationId = http.correlation.create();
+	const session = await authServer.session.requireRole("operator");
 
 	const permissionDenied = await forbidUnlessPermission(
 		session,
@@ -44,7 +44,7 @@ export async function runOperatorPermissionAction<T>(
 				});
 			} catch {
 				// Denial telemetry is best-effort and cannot replace the governed failure.
-				logProductEvent({
+				logger.event({
 					level: "error",
 					event: "action.permission_denial_observer_error",
 					correlationId,
@@ -61,7 +61,7 @@ export async function runOperatorPermissionAction<T>(
 	try {
 		return await input.execute(session, correlationId);
 	} catch {
-		logProductEvent({
+		logger.event({
 			level: "error",
 			event: "action.internal_error",
 			correlationId,
